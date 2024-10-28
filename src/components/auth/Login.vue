@@ -7,6 +7,7 @@
       <button type="submit">Login</button>
       <div v-if="errorMessage">{{ errorMessage }}</div>
     </form>
+    <Carregamento />
   </div>
 </template>
 
@@ -15,6 +16,7 @@ import { onMounted, ref } from 'vue';
 import { useUserStore } from '../../stores/userStore';
 import { loginUser } from '../../utils/api';
 import { useRouter } from 'vue-router';
+import Carregamento from '../Carregamento.vue';
 
 const router = useRouter();
 const userStore = useUserStore();

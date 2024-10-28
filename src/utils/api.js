@@ -1,7 +1,9 @@
 const API_URL = 'http://localhost:5000/api/auth'; // Altere para a URL da sua API em produção
 
+import { fetchCarregamento } from './fetchCarregamento';
+
 export const registerUser = async (username, password, email) => {
-  const response = await fetch(`${API_URL}/register`, {
+  const response = await fetchCarregamento(`${API_URL}/register`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -12,7 +14,7 @@ export const registerUser = async (username, password, email) => {
 };
 
 export const loginUser = async (username, password) => {
-  const response = await fetch(`${API_URL}/login`, {
+  const response = await fetchCarregamento(`${API_URL}/login`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
