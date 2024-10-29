@@ -18,6 +18,19 @@ const routes = [
     },
   },
   {
+    path: '/events',
+    name: 'Events',
+    component: () => import('../views/Events.vue'),
+    beforeEnter: (to, from, next) => {
+      const userStore = useUserStore();
+      if (!userStore.isAuthenticated()) {
+        next('/login'); // Redireciona para a página de login se não estiver autenticado
+      } else {
+        next(); // Permite o acesso à página
+      }
+    },
+  },
+  {
     path: '/register',
     name: 'register',
     component: () => import('../views/Register.vue')

@@ -1,9 +1,9 @@
-// src/utils/api.js
+// src/utils/apiAuth.js
 import { fetchCarregamento } from './fetchCarregamento';
-import API_URL from '../config/apiConfig'
+import AUTH_URL from '../config/apiAuthUrl';
 
 export const registerUser = async (username, password, email) => {
-  const response = await fetchCarregamento(`${API_URL}/register`, {
+  const response = await fetchCarregamento(`${AUTH_URL}/register`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -14,7 +14,7 @@ export const registerUser = async (username, password, email) => {
 };
 
 export const loginUser = async (username, password) => {
-  const response = await fetchCarregamento(`${API_URL}/login`, {
+  const response = await fetchCarregamento(`${AUTH_URL}/login`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -32,7 +32,7 @@ export const loginUser = async (username, password) => {
 
 // src/utils/api.js
 export const getUserInfo = async () => {
-  const response = await fetchCarregamento(`${API_URL}/user`, { 
+  const response = await fetchCarregamento(`${AUTH_URL}/user`, { 
     method: 'GET',
     headers: {
       'Authorization': `Bearer ${localStorage.getItem('token')}`,

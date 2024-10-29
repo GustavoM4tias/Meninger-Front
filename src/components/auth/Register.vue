@@ -15,7 +15,7 @@
 <script setup>
 import { onMounted, ref } from 'vue';
 import { useUserStore } from '../../stores/userStore';
-import { registerUser } from '../../utils/api';
+import { registerUser } from '../../utils/apiAuth';
 import { useRouter } from 'vue-router';
 
 const router = useRouter();

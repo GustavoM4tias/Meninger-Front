@@ -1,11 +1,12 @@
 <template>
   <div>
     menu
-    <RouterLink to="/Login">Login</RouterLink>
-    <RouterLink to="/Register">Register</RouterLink>
+    <RouterLink class="text-blue-500 hover:text-blue-100 m-2 px-2 py-1 bg-gray-300 hover:bg-gray-400 rounded-lg cursor-pointer" to="/Login">Login</RouterLink>
+    <RouterLink class="text-blue-500 hover:text-blue-100 m-2 px-2 py-1 bg-gray-300 hover:bg-gray-400 rounded-lg cursor-pointer" to="/Register">Register</RouterLink>
+    <RouterLink class="text-blue-500 hover:text-blue-100 m-2 px-2 py-1 bg-gray-300 hover:bg-gray-400 rounded-lg cursor-pointer" to="/Events">Events</RouterLink>
     <div v-if="user">
-      <p><strong>Username:</strong> {{ user.data.username }}</p>
-      <p><strong>Email:</strong> {{ user.data.email }}</p>
+      <p><strong>Username:</strong> {{ user.username }}</p>
+      <p><strong>Email:</strong> {{ user.email }}</p>
     </div>
     <div v-else>
       <p>Carregando informações do usuário...</p>
@@ -15,24 +16,15 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { onMounted } from 'vue';
+
+// Puxa informações do usuario 
+import { useFetchUserInfo } from '../utils/fetchUserInfo';
+const { user, errorMessage, fetchUserInfo } = useFetchUserInfo();
+
+// Validação de Autenticação
 import { useUserStore } from '../stores/userStore';
-import { getUserInfo } from '../utils/api';
-
 const userStore = useUserStore();
-const user = ref(null);
-const errorMessage = ref('');
-
-const fetchUserInfo = async () => {
-  errorMessage.value = ''; 
-  try {
-    const result = await getUserInfo(); 
-    user.value = result; 
-  } catch (error) {
-    console.error('Erro ao obter informações do usuário:', error);
-    errorMessage.value = 'Erro ao carregar informações do usuário.';
-  }
-};
 
 onMounted(() => {
   if (userStore.isAuthenticated()) {
@@ -45,7 +37,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* Estilos para o perfil do usuário */
 .error {
   color: red;
 }
