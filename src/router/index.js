@@ -1,3 +1,4 @@
+// src/router/index.js
 import { createRouter, createWebHistory } from 'vue-router';
 import { useUserStore } from '../stores/userStore'; // Importa a store
 import Home from '../views/Home.vue'
@@ -27,7 +28,6 @@ const routes = [
     component: () => import('../views/Login.vue')
   },
 ];
-
 
 const router = createRouter({
   history: createWebHistory(),

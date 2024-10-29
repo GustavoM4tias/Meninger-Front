@@ -1,3 +1,4 @@
+<!-- src/components/Auth/Login.vue -->
 <template>
   <div>
     <h2>Login</h2>
@@ -7,7 +8,6 @@
       <button type="submit">Login</button>
       <div v-if="errorMessage">{{ errorMessage }}</div>
     </form>
-    <Carregamento />
   </div>
 </template>
 
@@ -16,7 +16,6 @@ import { onMounted, ref } from 'vue';
 import { useUserStore } from '../../stores/userStore';
 import { loginUser } from '../../utils/api';
 import { useRouter } from 'vue-router';
-import Carregamento from '../Carregamento.vue';
 
 const router = useRouter();
 const userStore = useUserStore();
@@ -25,36 +24,32 @@ const password = ref('');
 const errorMessage = ref('');
 
 const handleLogin = async () => {
-  errorMessage.value = ''; // Limpa a mensagem de erro antes de tentar o login
+  errorMessage.value = ''; 
   try {
     const result = await loginUser(username.value, password.value);
 
-    // console.log('Login result:', result); // Adiciona log do resultado
-
-    // Acessa o token na estrutura correta da resposta
     if (result.success && result.data.token) {
-      userStore.setToken(result.data.token); // Armazena o token na store
-      router.push('/'); // Redireciona após o login
+      userStore.setToken(result.data.token); 
+      router.push('/'); 
+      // console.log(result.data.token)
     } else {
-      errorMessage.value = result.error ; // Exibe mensagem de erro
+      errorMessage.value = result.error ; 
     }
   } catch (error) {
-    console.error('Login error:', error); // Adiciona log do erro
-    errorMessage.value = 'Erro ao tentar fazer login. Tente novamente.'; // Mensagem genérica
+    console.error('Login error:', error); 
+    errorMessage.value = 'Erro ao tentar fazer login. Tente novamente.'; 
   }
 };
 
-// Obriga a logar novamente caso volte a tela de login
 onMounted(() => {
   if (userStore.isAuthenticated()) {
-    userStore.clearUser(); // Limpa os dados do usuário se já estiver autenticado
+    userStore.clearUser(); 
   }
 });
 
 </script>
 
 <style scoped>
-/* Estilos para o Login */
 .error {
   color: red;
 }

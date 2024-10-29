@@ -1,17 +1,19 @@
+// src/utils/fetchCarregamento.js
 import { useCarregamentoStore } from '../stores/carregamento';
  
 export async function fetchCarregamento(url, options = {}) {
   const carregamentoStore = useCarregamentoStore();
+  carregamentoStore.iniciarCarregamento();
 
   try {
-    carregamentoStore.iniciarCarregamento();
-
     const response = await fetch(url, options);
-
-    return response; 
+    if (!response.ok) {
+      throw new Error('Falha na requisição. Tente novamente mais tarde.');
+    }
+    return response;
   } catch (error) {
     console.error('Erro na requisição:', error);
-    throw error; 
+    throw error;
   } finally {
     carregamentoStore.finalizarCarregamento();
   }

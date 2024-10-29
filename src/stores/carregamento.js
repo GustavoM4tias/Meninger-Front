@@ -1,3 +1,4 @@
+// src/stores/carreagamento
 import { defineStore } from 'pinia';
 
 export const useCarregamentoStore = defineStore('carregamento', {

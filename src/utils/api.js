@@ -1,6 +1,6 @@
-const API_URL = 'http://localhost:5000/api/auth'; // Altere para a URL da sua API em produção
-
+// src/utils/api.js
 import { fetchCarregamento } from './fetchCarregamento';
+import API_URL from '../config/apiConfig'
 
 export const registerUser = async (username, password, email) => {
   const response = await fetchCarregamento(`${API_URL}/register`, {
@@ -27,6 +27,23 @@ export const loginUser = async (username, password) => {
     const errorData = await response.json();
     throw new Error(errorData.message || 'Erro ao fazer login');
   }
+  return response.json();
+};
 
+// src/utils/api.js
+export const getUserInfo = async () => {
+  const response = await fetchCarregamento(`${API_URL}/user`, { 
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      'Content-Type': 'application/json', 
+    },
+  });
+
+  // Verifica se a resposta da API foi bem-sucedida
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || 'Erro ao obter informações do usuário');
+  }
   return response.json();
 };
