@@ -49,7 +49,7 @@ const removeImage = (index) => {
 </script>
 
 <template>
-    <div class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center">
+    <div class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center z-50">
         <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-lg">
             <h3 class="text-xl font-semibold mb-4 text-center">Adicionar Evento</h3>
             <form @submit.prevent="submitAdd" class="space-y-4">

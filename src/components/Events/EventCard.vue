@@ -14,37 +14,45 @@ const emit = defineEmits(['click']);
 const showEventDetails = () => {
     emit('click', props.event);
 };
+
+
 </script>
 
 <template>
-    <div class="event-card" @click="showEventDetails">
-        <h3>{{ event.title }}</h3>
-        <p>{{ event.description }}</p>
-        <p><strong>Data do Evento:</strong> {{ new Date(event.event_date).toLocaleDateString() }}</p>
-        <div class="tags">
-            <span v-for="tag in event.tags" :key="tag">{{ tag }}</span>
+    <div class="shadow-2xl relative rounded-lg overflow-hidden duration-300 transform hover:scale-105 h-full"
+        @click="showEventDetails">
+
+        <img :src="(event.images && event.images.length > 0) ? event.images[0] : '/noimg.jpg'"
+            class="w-full h-full object-cover bg-center absolute z-0" />
+
+        <div class="absolute inset-0 rounded-xl bg-gradient-to-t from-gray-900 to-transparent opacity-75"></div>
+
+        <div class="content flex flex-col justify-between h-72 z-10 relative p-4 text-white">
+            <div class="titulo">
+                <div class="flex justify-between">
+                    <h1 class="text-xl truncate md:text-2xl font-semibold drop-shadow-md">{{ event.title }}</h1>
+                    <p
+                        class="text-gray-300 cursor-pointer duration-200 hover:text-gray-100 text-wrap text-sm bottom-0 right-0 m-1 md:m-3">
+                        {{ event.event_date }}
+                    </p>
+                </div>
+                <ul class="flex flex-wrap">
+                    <li class="hover:bg-gray-100 hover:text-gray-800 text-gray-200 border border-gray-300 cursor-pointer duration-300 shadow px-2 py- m-1 rounded-lg"
+                        v-for="tag in event.tags" :key="tag">{{ tag }}</li>
+                </ul>
+            </div>
+
+            <div class="descricao flex-1 flex items-end justify-between">
+                <p class="text-md md:text-lg text-gray-300 cursor-pointer duration-200 hover:text-gray-100 -mt-1">
+                    Marília </p>
+                <button @click="$emit('abrir-modal')"
+                    class="border rounded-md md:rounded-lg text-white text-lg text-wrap hover:bg-gray-100 hover:text-gray-800 duration-300 py-1 px-2 md:py-2 md:px-4 ml-4">
+                    Ver Mais
+                </button>
+            </div>
+
         </div>
-        <div class="images">
-            <img v-for="(image, index) in event.images" :key="index" :src="image" alt="Imagem do evento" />
-        </div>
+
     </div>
+
 </template>
-
-<style scoped>
-.event-card {
-    border: 1px solid #ccc;
-    padding: 1em;
-    margin: 1em 0;
-    cursor: pointer;
-    transition: transform 0.2s ease;
-}
-
-.event-card:hover {
-    transform: scale(1.02);
-}
-
-.images img {
-    max-width: 100%;
-    height: auto;
-}
-</style>
