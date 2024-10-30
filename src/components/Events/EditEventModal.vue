@@ -1,7 +1,7 @@
 <!-- src/components/Events/EditEventModal.vue -->
 <script setup>
 import { ref } from 'vue';
-import { updateEvent, deleteEvent } from '../../utils/apiEvents';
+import { updateEvent } from '../../utils/apiEvents';
 
 const props = defineProps({ event: Object });
 const emit = defineEmits(['close'], ['event-deleted']);
@@ -22,19 +22,6 @@ const submitEdit = async () => {
         emit('close'); // Fecha o modal após salvar as mudanças
     } catch (error) {
         console.error('Erro ao atualizar o evento:', error);
-    }
-};
-
-const submitDelete = async () => {
-    const confirmar = confirm('Você tem certeza que deseja excluir este evento?');
-
-    if (confirmar === true) {
-        try {
-            await deleteEvent(editedEvent.value.id); // Passando o ID do evento para deletar
-            emit('event-deleted');
-        } catch (error) {
-            console.error('Erro ao excluir o evento:', error);
-        }
     }
 };
 
@@ -66,7 +53,7 @@ const removeImage = (index) => {
 
 <template>
     <div class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center z-50">
-        <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-lg">
+        <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-lg text-gray-600 ">
             <h3 class="text-xl font-semibold mb-4 text-center">Editar Evento</h3>
             <form @submit.prevent="submitEdit" class="space-y-4">
                 <div>
@@ -123,8 +110,6 @@ const removeImage = (index) => {
                 </div>
 
                 <div class="flex justify-end gap-2 mt-4">
-                    <button type="button" @click="submitDelete"
-                        class="bg-red-500 text-white px-4 py-2 rounded-md">Excluir Evento</button>
                     <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded-md">Salvar
                         Alterações</button>
                     <button type="button" @click="$emit('close')"

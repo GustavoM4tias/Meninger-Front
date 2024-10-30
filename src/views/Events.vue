@@ -8,6 +8,7 @@ import EventModal from '../components/Events/EventModal.vue';
 import AddEventModal from '../components/Events/AddEventModal.vue';
 
 const route = useRoute();
+const router = useRouter();
 const dataAtual = new Date();
 const busca = ref(''); // Estado para armazenar o valor do input
 const events = ref([]);
@@ -49,12 +50,6 @@ const handleEventDeleted = () => {
     fetchEvents(); // Atualiza a lista de eventos
 };
 
-
-const handleEventAdded = () => {
-    fetchEvents(); // Atualiza a lista de eventos após adicionar um novo
-};
-
-
 const formatDate = (dateString) => {
     const date = new Date(dateString);
     return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
@@ -95,46 +90,44 @@ onMounted(fetchEvents);
 
 <template>
 
-    <div class="bg-gray-100 min-h-screen w-full relative overflow-hidden">
+    <div class="bg-gray-800 text-gray-200 min-h-screen w-full relative overflow-hidden">
 
-        <img class="absolute z-0 left-72 top-0 h-full" src="/public/traçado.png">
+        <img class="absolute z-0 left-72 top-0 w-full opacity-25" src="../../public/traçado.png">
 
-        <div class="container md:mx-auto my-10 relative z-10">
-            <h1 class="text-2xl md:text-5xl text-center font-bold mb-5">Eventos Marketing</h1>
+        <i @click="openAddEventModal" class="far fa-calendar-plus absolute text-gray-400 hover:text-gray-500 cursor-pointer top-0 right-0 m-8 text-4xl"></i> <!-- Verificar se usuario é admin/mkt  -->
 
-            <div class="search d-flex">
-                <input type="text" v-model="busca" @input="atualizarBusca"
-                    class="busca px-3 py-2 rounded outline-none placeholder-gray-500" placeholder="Buscar eventos..." />
+        <div class="container md:mx-auto my-5 relative z-10">
 
-                <button @click="openAddEventModal"
-                    class="bg-blue-500 text-white mx-4 px-4 py-2 rounded-md mb-4">Adicionar
-                    Evento</button>
+            <div class="search items-center -mb-3">
+                <h1 class="text-2xl md:text-4xl text-center font-bold mb-2">Eventos</h1>
+                <div class="nav bg-gray-400 rounded-full mx-auto p-2  filter w-2/5">
+                    <input type="text" v-model="busca" @input="atualizarBusca" class="busca bg-gray-200 w-full rounded-full px-5 py-3 text-gray-700 rounded outline-none font-semibold placeholder-gray-600" placeholder="Buscar eventos..." />
+                </div>
             </div>
 
             <!-- <EventCard v-for="event in events" :key="event.id"
                 :event="{ ...event, event_date: formatDate(event.event_date) }" @click="openEventModal(event)" /> -->
 
+            <!-- Se houver busca ativa -->
+            <div v-if="route.query.busca">
+                <!-- Se houver resultados da pesquisa, mostrar apenas os resultados filtrados -->
+                <div v-if="eventosFiltrados.length > 0" class="mb-10">
+                    <h2 class="text-2xl font-semibold m-3">Resultados da Pesquisa</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <EventCard v-for="event in eventosFiltrados" :key="event.id"
+                            :event="{ ...event, event_date: formatDate(event.event_date) }"
+                            @click="openEventModal(event)" />
+                    </div>
+                </div>
 
-            <EventModal v-if="selectedEvent" :event="selectedEvent" @close="closeEventModal"
-                @event-deleted="handleEventDeleted" />
-            <AddEventModal v-if="addEvent" @close="closeAddEventModal" @event-added="handleEventAdded" />
-            <div v-if="errorMessage">{{ errorMessage }}</div>
-
-
-
-            <!-- Se houver resultados da pesquisa, mostrar apenas os resultados filtrados -->
-            <div v-if="route.query.busca && eventosFiltrados.length > 0" class="mb-10">
-                <h2 class="text-2xl font-semibold mb-3">Resultados da Pesquisa</h2>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <EventCard v-for="event in eventosFiltrados" :key="event.id"
-                        :event="{ ...event, event_date: formatDate(event.event_date) }"
-                        @click="openEventModal(event)" />
+                <div v-else>
+                    <p class="text-gray-500 text-5xl text-center mt-64">Sem Resultados</p>
                 </div>
             </div>
 
             <!-- Se não houver busca ativa, mostrar as seções normais -->
-            <div v-else class="divide-y divide-gray-300">
-                <div class="mb-10">
+            <div v-else class="divide-y divide-gray-500">
+                <div v-if="eventosEmAndamento.length > 0" class="mb-10">
                     <h2 class="text-2xl font-semibold m-3">Próximos Eventos</h2>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <EventCard v-for="event in eventosEmAndamento" :key="event.id"
@@ -145,7 +138,7 @@ onMounted(fetchEvents);
 
                 <div class="mb-10">
                     <h2 class="text-2xl font-semibold m-3">Eventos Finalizados</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div v-if="eventosFinalizados.length > 0" class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <EventCard v-for="event in eventosFinalizados" :key="event.id"
                             :event="{ ...event, event_date: formatDate(event.event_date) }"
                             @click="openEventModal(event)" />
@@ -154,19 +147,23 @@ onMounted(fetchEvents);
 
                 <div class="mb-10">
                     <h2 class="text-2xl font-semibold m-3">Posts Recentes</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div v-if="eventosRecentes.length > 0" class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <EventCard v-for="event in eventosRecentes" :key="event.id"
                             :event="{ ...event, event_date: formatDate(event.event_date) }"
                             @click="openEventModal(event)" />
                     </div>
                 </div>
-
-
-
-
-
             </div>
+
         </div>
+
+        <EventModal v-if="selectedEvent" :event="selectedEvent" @close="closeEventModal"
+            @event-deleted="handleEventDeleted" />
+            
+        <AddEventModal v-if="addEvent" @close="closeAddEventModal" @openAddEventModal="openAddEventModal" />
+        <div v-if="errorMessage">{{ errorMessage }}</div>
+
+
     </div>
 
 </template>
