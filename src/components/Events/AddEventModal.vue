@@ -8,7 +8,15 @@ const newEvent = ref({
     description: '',
     eventDate: '',
     tags: [],
-    images: []
+    images: [],
+    address: {
+        street: '',
+        number: '',
+        neighborhood: '',
+        city: '',
+        state: '',
+        zip_code: ''
+    }
 });
 
 // Defina as variáveis para tags e imagens
@@ -68,13 +76,32 @@ const removeImage = (index) => {
                     <input v-model="newEvent.eventDate" type="date" required class="w-full p-2 border rounded-md" />
                 </div>
 
+                <div>
+                    <label class="block text-sm font-medium mb-1">Endereço</label>
+                    <div class="space-y-2">
+                        <input v-model="newEvent.address.street" placeholder="Rua"
+                            class="w-full p-2 border rounded-md" />
+                        <input v-model="newEvent.address.number" placeholder="Número"
+                            class="w-full p-2 border rounded-md" />
+                        <input v-model="newEvent.address.neighborhood" placeholder="Bairro"
+                            class="w-full p-2 border rounded-md" />
+                        <input v-model="newEvent.address.city" placeholder="Cidade"
+                            class="w-full p-2 border rounded-md" />
+                        <input v-model="newEvent.address.state" placeholder="Estado"
+                            class="w-full p-2 border rounded-md" />
+                        <input v-model="newEvent.address.zip_code" placeholder="CEP"
+                            class="w-full p-2 border rounded-md" />
+                    </div>
+                </div>
+
                 <!-- Campo para Tags -->
                 <div>
                     <label class="block text-sm font-medium mb-1">Tags</label>
                     <div class="flex items-center gap-2 flex-wrap">
                         <input v-model="newTag" placeholder="Adicionar tag" @keyup.enter="addTag"
                             class="p-2 border rounded-md w-full md:w-auto" />
-                        <button type="button" @click="addTag" class="bg-blue-500 text-white px-4 py-1 rounded-md">Adicionar Tag</button>
+                        <button type="button" @click="addTag"
+                            class="bg-blue-500 text-white px-4 py-1 rounded-md">Adicionar Tag</button>
                     </div>
                     <div class="flex gap-2 mt-2 flex-wrap">
                         <span v-for="(tag, index) in newEvent.tags" :key="index"
@@ -91,7 +118,8 @@ const removeImage = (index) => {
                     <div class="flex items-center gap-2 flex-wrap">
                         <input v-model="newImageUrl" placeholder="URL da imagem" @keyup.enter="addImage"
                             class="p-2 border rounded-md w-full md:w-auto" />
-                        <button type="button" @click="addImage" class="bg-blue-500 text-white px-4 py-1 rounded-md">Adicionar Imagem</button>
+                        <button type="button" @click="addImage"
+                            class="bg-blue-500 text-white px-4 py-1 rounded-md">Adicionar Imagem</button>
                     </div>
                     <div class="grid grid-cols-2 gap-2 mt-2">
                         <div v-for="(image, index) in newEvent.images" :key="index" class="relative">
@@ -103,7 +131,8 @@ const removeImage = (index) => {
                 </div>
 
                 <div class="flex justify-end gap-2 mt-4">
-                    <button type="button" @click="$emit('close')" class="bg-gray-500 text-white px-4 py-2 rounded-md">Cancelar</button>
+                    <button type="button" @click="$emit('close')"
+                        class="bg-gray-500 text-white px-4 py-2 rounded-md">Cancelar</button>
                     <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded-md">Adicionar Evento</button>
                 </div>
             </form>

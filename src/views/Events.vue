@@ -31,6 +31,7 @@ const openEventModal = (event) => {
     selectedEvent.value = event;
 };
 
+
 const closeEventModal = () => {
     selectedEvent.value = null;
 };
@@ -157,7 +158,7 @@ onMounted(fetchEvents);
 
         </div>
 
-        <EventModal v-if="selectedEvent" :event="selectedEvent" @close="closeEventModal"
+        <EventModal v-if="selectedEvent" :event="selectedEvent" @close="closeEventModal" 
             @event-deleted="handleEventDeleted" />
             
         <AddEventModal v-if="addEvent" @close="closeAddEventModal" @openAddEventModal="openAddEventModal" />

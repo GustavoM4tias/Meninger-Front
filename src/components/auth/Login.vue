@@ -24,26 +24,29 @@ const password = ref('');
 const errorMessage = ref('');
 
 const handleLogin = async () => {
-  errorMessage.value = ''; 
+  errorMessage.value = '';
   try {
     const result = await loginUser(username.value, password.value);
 
     if (result.success && result.data.token) {
-      userStore.setToken(result.data.token); 
-      router.push('/'); 
+      userStore.setToken(result.data.token);
+      router.push('/');
       // console.log(result.data.token)
     } else {
-      errorMessage.value = result.error ; 
+      errorMessage.value = result.error;
     }
   } catch (error) {
-    console.error('Login error:', error); 
-    errorMessage.value = 'Erro ao tentar fazer login. Tente novamente.'; 
+    console.error('Login error:', error);
+    errorMessage.value = 'Erro ao tentar fazer login. Tente novamente.';
   }
 };
 
 onMounted(() => {
   if (userStore.isAuthenticated()) {
-    userStore.clearUser(); 
+    router.push('/');
+  } else {
+    userStore.clearUser()
+    router.push('/login');
   }
 });
 
