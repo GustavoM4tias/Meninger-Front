@@ -70,29 +70,25 @@
    -->
 <!-- src/components/Nav.vue -->
 <template>
-    <div class="menu fixed flex h-screen w-16 flex-col justify-between border border-gray-800 bg-gray-700 z-30">
+    <div @click="toggleMenu" class="menu fixed flex h-screen w-16 flex-col justify-between cursor-pointer border border-gray-800 bg-gray-700 z-30">
         <div>
-            <div @click="toggleMenu" class="inline-flex size-16 items-center justify-center p-2 cursor-pointer">
+            <div class="inline-flex size-16 items-center justify-center p-2">
                 <img src="/public/logo.png" class="filter drop-shadow" />
             </div>
             <div class="px-2 text-2xl">
                 <ul class="space-y-1 border-t border-gray-500 pt-3">
-                    <RouterLink to="/Events"
-                        class="group relative flex justify-center rounded cursor-pointer px-2 py-2.5 text-gray-300 hover:bg-gray-400 hover:text-gray-200">
+                    <div class="group relative flex justify-center rounded cursor-pointer px-2 py-2.5 text-gray-300 hover:bg-gray-400 hover:text-gray-200">
                         <i class="fa-solid fa-calendar-days"></i>
-                    </RouterLink>
-                    <RouterLink to="/"
-                        class="group relative flex justify-center rounded cursor-pointer px-2 py-2.5 text-gray-300 hover:bg-gray-400 hover:text-gray-200">
+                    </div>
+                    <div class="group relative flex justify-center rounded cursor-pointer px-2 py-2.5 text-gray-300 hover:bg-gray-400 hover:text-gray-200">
                         <i class="fa-solid fa-chart-line"></i>
-                    </RouterLink>
-                    <RouterLink to=""
-                        class="group relative flex justify-center rounded cursor-pointer px-2 py-2.5 text-gray-300 hover:bg-gray-400 hover:text-gray-200">
+                    </div>
+                    <div class="group relative flex justify-center rounded cursor-pointer px-2 py-2.5 text-gray-300 hover:bg-gray-400 hover:text-gray-200">
                         <i class="fa-solid fa-money-bills"></i>
-                    </RouterLink>
-                    <RouterLink to=""
-                        class="group relative flex justify-center rounded cursor-pointer px-2 py-2.5 text-gray-300 hover:bg-gray-400 hover:text-gray-200">
+                    </div>
+                    <div class="group relative flex justify-center rounded cursor-pointer px-2 py-2.5 text-gray-300 hover:bg-gray-400 hover:text-gray-200">
                         <i class="fa-solid fa-gear"></i>
-                    </RouterLink>
+                    </div>
                 </ul>
             </div>
         </div>
@@ -106,7 +102,7 @@
 
 
     <div :class="{ 'translate-x-0': menuOpen, '-translate-x-full': !menuOpen }"
-        class="menu-hover absolute flex h-screen flex-1 flex-col justify-between border-e bg-gray-700 z-20 transform transition-transform duration-300 ease-in-out">
+        class="menu-hover fixed flex h-screen flex-1 flex-col justify-between border-e bg-gray-700 z-20 transform transition-transform duration-300 ease-in-out">
         <div class="px-4 pb-6">
             <p class="text-gray-200 text-center font-bold text-xl leading-5 py-2.5">Bem vindo <br> {{ user?.username }}
             </p>
