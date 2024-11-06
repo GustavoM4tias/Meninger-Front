@@ -3,8 +3,8 @@
 
     <div class="h-full w-full relative">
 
-        <div class="menu horizontal fixed top-0 left-16 h-16 flex items-center justify-between border-b border-gray-800 bg-gray-700 z-20"
-            style="width: calc(100% - 4rem);">
+        <div class="menu horizontal fixed top-0 left-16 h-16 flex items-center justify-between border-b border-gray-800 bg-gray-700 z-20" style="width: calc(100% - 4rem);">
+
             <div class="pl-4">
                 <img src="/Meninger-logo.png" class="h-16 filter drop-shadow" alt="Logo" />
             </div>
@@ -24,7 +24,7 @@
                 <div class="profile">
                     <!-- profile card in progress --> CARD
                 </div>
-
+                
             </div>
 
         </div>
