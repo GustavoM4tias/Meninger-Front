@@ -15,7 +15,8 @@ const isAuthenticated = computed(() => userStore.isAuthenticated());
     <div class="w-16 top-0 left-0" v-if="isAuthenticated">
       <Nav />
     </div>
-    <div class="flex-1 mt-16">
+    <div class="flex-1">
+      <div class="mt-16" v-if="isAuthenticated"></div>
       <Carregamento />
       <router-view />
     </div>
