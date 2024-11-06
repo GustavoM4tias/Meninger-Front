@@ -3,7 +3,8 @@
 
     <div class="h-full w-full relative">
 
-        <div class="menu horizontal fixed top-0 left-16 h-16 flex items-center justify-between border-b border-gray-800 bg-gray-700 z-20" style="width: calc(100% - 4rem);">
+        <div class="menu horizontal fixed top-0 left-16 h-16 flex items-center justify-between border-b border-gray-800 bg-gray-700 z-20"
+            style="width: calc(100% - 4rem);">
 
             <div class="pl-4">
                 <img src="/Meninger-logo.png" class="h-16 filter drop-shadow" alt="Logo" />
@@ -11,22 +12,68 @@
 
             <div class="relative flex">
 
-                <div class="busca">
-                    <input type="search" placeholder="Buscar..."
-                        class="w-full h-10 pl-10 pr-4 text-md text-gray-700 placeholder-gray-400 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-blue-500 transition duration-200" />
-                    <i class="fas fa-search absolute left-3 my-3 text-gray-400"></i>
+                <div class="search flex">
+                    <div>
+                        <input type="search" placeholder="Buscar..."
+                            class="w-full h-10 pl-10 pr-4 text-md text-gray-700 placeholder-gray-400 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-blue-500 transition duration-200" />
+                        <i class="fas fa-search absolute left-3 my-3 text-gray-400"></i>
+                    </div>
                 </div>
 
-                <div class="text-3xl flex text-gray-200">
-                    <i class="far fa-bell m-auto"></i>
+                <div class="notification flex mx-5">
+                    <div class="text-3xl flex text-gray-200 m-auto">
+                        <i class="far fa-bell"></i>
+                        <i class="fa-solid fa-circle text-sm text-red-500 -ml-2.5 fa-bounce slow-animation"></i>
+                        <!-- Adicionar condicional para notificar eventos -->
+                    </div>
                 </div>
 
-                <div class="profile">
-                    <!-- profile card in progress --> CARD
+                <div class="profile flex mr-6">
+
+                    <div x-data="{ isActive: false }" class="relative dropdown m-auto">
+
+                        <div class="flex cursor-pointer">
+                            <div x-on:click="isActive = !isActive"
+                                class="profile-img relative bg-gray-400 rounded-full p-4 overflow-hidden">
+                                <p class="absolute text-gray-100 top-0 left-0 p-1">GD</p>
+                            </div>
+                        </div>
+
+                        <div class="absolute right-0 z-10 w-auto rounded-md border border-gray-600 bg-gray-500 shadow-lg"
+                            role="menu" x-cloak x-transition x-show="isActive" x-on:click.away="isActive = false"
+                            x-on:keydown.escape.window="isActive = false">
+
+                            <div class="account text-xl flex flex-col">
+
+                                <div
+                                    class="profile-img relative flex bg-gray-400 rounded-full w-16 h-16 m-auto my-3 overflow-hidden shadow-sm">
+                                    <p class="text-gray-100 m-auto text-3xl m-auto">GD</p>
+                                </div>
+
+                                <hr class="border-gray-600">
+                                <div class="m-auto p-2">
+                                    <button @click="editProfile"
+                                        class="flex w-full truncate justify-center rounded-lg cursor-pointer px-2 py-1 text-gray-300 hover:bg-gray-400 hover:text-gray-200">
+                                        <i class="fa-solid fa-pen m-auto mr-3"></i>
+                                        <p>Editar Conta</p>
+                                    </button>
+                                </div>
+
+                                <hr class="border-gray-600">
+                                <div class="m-auto p-2 w-full flex">
+                                    <button @click="logout"
+                                        class="flex w-full justify-center rounded-lg cursor-pointer px-2 py-1 text-gray-300 hover:bg-gray-400 hover:text-gray-200">
+                                        <div class="m-auto flex truncate">
+                                            <i class="fa-solid fa-arrow-right-from-bracket m-auto mr-3"></i>
+                                            <p>Logout</p>
+                                        </div>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                
             </div>
-
         </div>
 
         <div @click="toggleMenu"
