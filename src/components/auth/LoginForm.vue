@@ -1,10 +1,13 @@
 <template>
   <form @submit.prevent="handleLogin">
-    <InputField v-model="username" type="text" placeholder="Username" required />
-    <InputField v-model="password" type="password" placeholder="Password" required />
+    <p class="text-xl font-light uppercase my-2 text-gray-500">Acesse sua conta </p>
+    <hr class="border-t border-gray-400 mb-10"></hr>
+    <InputField v-model="username" type="text" placeholder="Nome de usuario" required />
+    <InputField v-model="password" type="password" placeholder="Senha" required />
     <p class="text-sm -mt-3 text-blue-500 underline cursor-pointer hover:text-blue-600">Esquecer a Senha? </p>
     <Button type="submit">Login</Button>
     <div v-if="errorMessage" class="error">{{ errorMessage }}</div>
+    <hr class="border-t border-gray-400 my-6"></hr>
   </form>
 </template>
 

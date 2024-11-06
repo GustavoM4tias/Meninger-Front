@@ -1,12 +1,11 @@
 <template>
-    <div class="input-field w-full my-4">
-      <input 
-        :type="type" 
-        :placeholder="placeholder" 
-        :value="modelValue" 
-        @input="updateValue"
-        :required="required"
-        class="input"
+    <div class="input-field w-full my-6">
+      <input class="p-3 border border-gray-100 rounded-lg shadow-sm w-full" 
+      :type="type" 
+      :placeholder="placeholder" 
+      :value="modelValue" 
+      @input="updateValue" 
+      :required="required" 
       />
     </div>
   </template>
@@ -27,12 +26,4 @@
   };
   </script>
   
-  <style scoped>
-  .input {
-    padding: 0.5rem;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    width: 100%;
-  }
-  </style>
   

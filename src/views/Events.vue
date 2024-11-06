@@ -91,7 +91,7 @@ onMounted(fetchEvents);
 
 <template>
 
-    <div class="bg-gray-800 text-gray-200 min-h-screen w-full relative overflow-hidden">
+    <div class="bg-gray-800 px-4 md:px-8 text-gray-200 min-h-screen w-full relative overflow-hidden">
 
         <img class="absolute z-0 left-72 top-0 w-full opacity-25" src="../../public/traçado.png">
 
