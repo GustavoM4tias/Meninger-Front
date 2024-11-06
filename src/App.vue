@@ -12,10 +12,10 @@ const isAuthenticated = computed(() => userStore.isAuthenticated());
 
 <template>
   <div class="flex">
-    <div class="w-16" v-if="isAuthenticated">
+    <div class="w-16 top-0 left-0" v-if="isAuthenticated">
       <Nav />
     </div>
-    <div class="flex-1 overflow-auto">
+    <div class="flex-1 mt-16">
       <Carregamento />
       <router-view />
     </div>

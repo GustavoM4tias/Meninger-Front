@@ -1,25 +1,40 @@
 <!-- src/components/Nav.vue -->
 <template>
 
-    <div class="h-screen w-screen bg-green-300 relative">
+    <div class="h-full w-full relative">
 
-        <div
-            class="menu horizontal fixed top-0 left-16 w-full h-16 flex items-center justify-between border-b border-gray-800 bg-gray-700 z-20">
-            <div class="flex items-center pl-4">
+        <div class="menu horizontal fixed top-0 left-16 h-16 flex items-center justify-between border-b border-gray-800 bg-gray-700 z-20"
+            style="width: calc(100% - 4rem);">
+            <div class="pl-4">
                 <img src="/Meninger-logo.png" class="h-16 filter drop-shadow" alt="Logo" />
             </div>
-            <div class="pr-4">
-                <button @click="logout" class="text-gray-300 hover:text-gray-200">
-                    <i class="fa-solid fa-arrow-right-from-bracket"></i>
-                </button>
+
+            <div class="relative flex">
+
+                <div class="busca">
+                    <input type="search" placeholder="Buscar..."
+                        class="w-full h-10 pl-10 pr-4 text-md text-gray-700 placeholder-gray-400 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-blue-500 transition duration-200" />
+                    <i class="fas fa-search absolute left-3 my-3 text-gray-400"></i>
+                </div>
+
+                <div class="text-3xl flex text-gray-200">
+                    <i class="far fa-bell m-auto"></i>
+                </div>
+
+                <div class="profile">
+                    <!-- profile card in progress --> CARD
+                </div>
+
             </div>
+
         </div>
 
         <div @click="toggleMenu"
             class="menu vertical fixed top-0 left-0 h-full w-16 flex flex-col justify-between cursor-pointer border-r border-gray-800 bg-gray-700 z-30">
             <div>
                 <div class="flex size-16 items-center justify-center py-4 text-3xl">
-                    <div class="group relative flex justify-center rounded cursor-pointer pl-1 text-gray-300 hover:text-gray-100">
+                    <div
+                        class="group relative flex justify-center rounded cursor-pointer pl-1 text-gray-300 hover:text-gray-100">
                         <i class="fas fa-house"></i>
                     </div>
                 </div>
