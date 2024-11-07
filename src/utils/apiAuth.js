@@ -13,13 +13,13 @@ export const registerUser = async (username, password, email) => {
   return response.json();
 };
 
-export const loginUser = async (username, password) => {
+export const loginUser = async (email, password) => {
   const response = await fetchCarregamento(`${AUTH_URL}/login`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ username, password }),
+    body: JSON.stringify({ email, password }),
   });
 
   // Verifica se a resposta da API foi bem-sucedida

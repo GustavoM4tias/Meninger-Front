@@ -70,6 +70,23 @@ const eventosFiltrados = computed(() => {
     );
 });
 
+// Computed para determinar qual seção mostrar
+const currentSection = computed(() => route.query.section || 'geral');
+
+const eventosExibidos = computed(() => {
+    switch (currentSection.value) {
+        case 'proximos':
+            return eventosFiltrados.value.filter(event => new Date(event.event_date) >= dataAtual);
+        case 'finalizados':
+            return eventosFiltrados.value.filter(event => new Date(event.event_date) < dataAtual);
+        case 'geral':
+        default:
+            return eventosFiltrados.value;
+    }
+});
+
+console.log(currentSection.value)
+
 const eventosEmAndamento = computed(() => eventosFiltrados.value.filter(event => new Date(event.event_date) >= dataAtual));
 const eventosFinalizados = computed(() => eventosFiltrados.value
     .filter(event => new Date(event.event_date) < dataAtual)
@@ -82,7 +99,7 @@ const eventosRecentes = computed(() => eventosFiltrados.value
 );
 
 const atualizarBusca = () => {
-    router.push({ query: { busca: busca.value } });
+    router.push({ query: { busca: busca.value, section: currentSection.value } });
 };
 
 onMounted(fetchEvents);
@@ -95,19 +112,34 @@ onMounted(fetchEvents);
 
         <img class="absolute z-0 left-72 top-0 w-full opacity-25" src="../../public/traçado.png">
 
-        <i @click="openAddEventModal" class="far fa-calendar-plus absolute text-gray-400 hover:text-gray-500 cursor-pointer top-0 right-0 m-8 text-4xl"></i> <!-- Verificar se usuario é admin/mkt  -->
+        <i @click="openAddEventModal"
+            class="far fa-calendar-plus absolute text-gray-400 hover:text-gray-500 cursor-pointer top-0 right-0 m-8 text-4xl"></i>
+        <!-- Verificar se usuario é admin/mkt  -->
 
         <div class="container md:mx-auto my-5 relative z-10">
 
             <div class="search items-center -mb-3">
                 <h1 class="text-2xl md:text-4xl text-center font-bold mb-2">Eventos</h1>
                 <div class="nav bg-gray-400 rounded-full mx-auto p-2  filter w-2/5">
-                    <input type="text" v-model="busca" @input="atualizarBusca" class="busca bg-gray-200 w-full rounded-full px-5 py-3 text-gray-700 rounded outline-none font-semibold placeholder-gray-600" placeholder="Buscar eventos..." />
+                    <input type="text" v-model="busca" @input="atualizarBusca"
+                        class="busca bg-gray-200 w-full rounded-full px-5 py-3 text-gray-700 rounded outline-none font-semibold placeholder-gray-600"
+                        placeholder="Buscar eventos..." />
                 </div>
             </div>
 
-            <!-- <EventCard v-for="event in events" :key="event.id"
-                :event="{ ...event, event_date: formatDate(event.event_date) }" @click="openEventModal(event)" /> -->
+
+
+            <!-- Exibição dos eventos filtrados -->
+            <!-- <div v-if="eventosExibidos.length > 0" class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                <EventCard v-for="event in eventosExibidos" :key="event.id"
+                    :event="{ ...event, event_date: formatDate(event.event_date) }"
+                    @click="openEventModal(event)" />
+            </div>
+            <div v-else>
+                <p class="text-gray-500 text-5xl text-center mt-64">Sem Resultados</p>
+            </div> -->
+
+
 
             <!-- Se houver busca ativa -->
             <div v-if="route.query.busca">
@@ -128,7 +160,9 @@ onMounted(fetchEvents);
 
             <!-- Se não houver busca ativa, mostrar as seções normais -->
             <div v-else class="divide-y divide-gray-500">
-                <div v-if="eventosEmAndamento.length > 0" class="mb-10">
+
+                <div v-if="eventosEmAndamento.length > 0 && (currentSection === 'geral' || currentSection === 'proximos')"
+                    class="mb-10">
                     <h2 class="text-2xl font-semibold m-3">Próximos Eventos</h2>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <EventCard v-for="event in eventosEmAndamento" :key="event.id"
@@ -136,19 +170,23 @@ onMounted(fetchEvents);
                             @click="openEventModal(event)" />
                     </div>
                 </div>
+                <div v-if="eventosEmAndamento >= 0 && (currentSection === 'proximos')">
+                    <p class="text-gray-500 text-5xl text-center mt-64">Sem Próximos Eventos</p>
+                </div>
 
-                <div class="mb-10">
+                <div class="mb-10"
+                    v-if="eventosFinalizados.length > 0 && (currentSection === 'geral' || currentSection === 'finalizados')">
                     <h2 class="text-2xl font-semibold m-3">Eventos Finalizados</h2>
-                    <div v-if="eventosFinalizados.length > 0" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <EventCard v-for="event in eventosFinalizados" :key="event.id"
                             :event="{ ...event, event_date: formatDate(event.event_date) }"
                             @click="openEventModal(event)" />
                     </div>
                 </div>
 
-                <div class="mb-10">
+                <div class="mb-10" v-if="eventosRecentes.length > 0 && (currentSection === 'geral')">
                     <h2 class="text-2xl font-semibold m-3">Posts Recentes</h2>
-                    <div v-if="eventosRecentes.length > 0" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <EventCard v-for="event in eventosRecentes" :key="event.id"
                             :event="{ ...event, event_date: formatDate(event.event_date) }"
                             @click="openEventModal(event)" />
@@ -158,9 +196,9 @@ onMounted(fetchEvents);
 
         </div>
 
-        <EventModal v-if="selectedEvent" :event="selectedEvent" @close="closeEventModal" 
+        <EventModal v-if="selectedEvent" :event="selectedEvent" @close="closeEventModal"
             @event-deleted="handleEventDeleted" />
-            
+
         <AddEventModal v-if="addEvent" @close="closeAddEventModal" @openAddEventModal="openAddEventModal" />
         <div v-if="errorMessage">{{ errorMessage }}</div>
 
