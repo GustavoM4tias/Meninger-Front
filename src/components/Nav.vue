@@ -23,7 +23,7 @@
                 <div class="notification flex mx-5">
                     <div class="text-3xl flex text-gray-200 m-auto">
                         <i class="far fa-bell"></i>
-                        <i class="fa-solid fa-circle text-sm text-red-500 -ml-2.5 fa-bounce slow-animation"></i>
+                        <i class="fas fa-circle text-sm text-red-500 -ml-2.5 fa-bounce slow-animation"></i>
                         <!-- Adicionar condicional para notificar eventos -->
                     </div>
                 </div>
@@ -54,7 +54,7 @@
                                 <div class="m-auto p-2">
                                     <button @click="editProfile"
                                         class="flex w-full truncate justify-center rounded-lg cursor-pointer px-2 py-1 text-gray-300 hover:bg-gray-400 hover:text-gray-200">
-                                        <i class="fa-solid fa-pen m-auto mr-3"></i>
+                                        <i class="fas fa-pen m-auto mr-3"></i>
                                         <p>Editar Conta</p>
                                     </button>
                                 </div>
@@ -64,7 +64,7 @@
                                     <button @click="logout"
                                         class="flex w-full justify-center rounded-lg cursor-pointer px-2 py-1 text-gray-300 hover:bg-gray-400 hover:text-gray-200">
                                         <div class="m-auto flex truncate">
-                                            <i class="fa-solid fa-arrow-right-from-bracket m-auto mr-3"></i>
+                                            <i class="fas fa-arrow-right-from-bracket m-auto mr-3"></i>
                                             <p>Logout</p>
                                         </div>
                                     </button>
@@ -89,27 +89,27 @@
                     <ul class="space-y-1 border-t border-gray-500 pt-3">
                         <div
                             class="group relative flex justify-center rounded cursor-pointer px-2 py-2.5 text-gray-300 hover:bg-gray-400 hover:text-gray-200">
-                            <i class="fa-solid fa-calendar-days"></i>
+                            <i class="fas fa-calendar-days"></i>
                         </div>
                         <div
                             class="group relative flex justify-center rounded cursor-pointer px-2 py-2.5 text-gray-300 hover:bg-gray-400 hover:text-gray-200">
-                            <i class="fa-solid fa-chart-line"></i>
+                            <i class="fas fa-chart-line"></i>
                         </div>
                         <div
                             class="group relative flex justify-center rounded cursor-pointer px-2 py-2.5 text-gray-300 hover:bg-gray-400 hover:text-gray-200">
-                            <i class="fa-solid fa-money-bills"></i>
+                            <i class="fas fa-money-bills"></i>
                         </div>
                         <div
                             class="group relative flex justify-center rounded cursor-pointer px-2 py-2.5 text-gray-300 hover:bg-gray-400 hover:text-gray-200">
-                            <i class="fa-solid fa-gear"></i>
+                            <i class="fas fa-gear"></i>
                         </div>
                     </ul>
                 </div>
             </div>
             <div class="sticky inset-x-0 bottom-0 border-t border-gray-800 p-2 text-2xl">
-                <button @click="logout"
+                <button
                     class="flex w-full justify-center rounded-lg cursor-pointer px-2 py-2 text-gray-300 hover:bg-gray-400 hover:text-gray-200">
-                    <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                    <i class="fas fa-circle-info"></i>
                 </button>
             </div>
         </div>
