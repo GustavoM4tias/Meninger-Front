@@ -109,13 +109,14 @@ const anterior = () => {
 
                 <div class="text flex flex-col">
                     <div class="text text-gray-100 flex flex-col py-4 px-4 md:px-6">
+                        
                         <div x-data="{ isActive: false }" class="relative dropdown">
                             <div class="inline-flex items-center overflow-hidden">
                                 <i x-on:click="isActive = !isActive"
                                     class="fas fa-ellipsis-vertical text-2xl m-1.5 cursor-pointer text-gray-100 hover:text-gray-300 duration-200"></i>
                             </div>
 
-                            <div class="absolute end-0 z-10 w-auto rounded-md border border-gray-700 bg-gray-500 shadow-lg"
+                            <div class="absolute left-0 z-10 w-auto rounded-md border border-gray-700 bg-gray-500 shadow-lg"
                                 role="menu" x-cloak x-transition x-show="isActive" x-on:click.away="isActive = false"
                                 x-on:keydown.escape.window="isActive = false">
                                 <div class="p-2">

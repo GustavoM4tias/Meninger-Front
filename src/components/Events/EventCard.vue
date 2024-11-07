@@ -25,7 +25,7 @@ const showEventDetails = () => {
         <img :src="(event.images && event.images.length > 0) ? event.images[0] : '/noimg.jpg'"
             class="w-full h-full object-cover bg-center absolute z-0" />
 
-        <div class="absolute inset-0 rounded-xl bg-gradient-to-t from-gray-900 to-transparent opacity-75"></div>
+        <div class="absolute inset-0 rounded-lg bg-gradient-to-t from-gray-900 to-transparent opacity-75"></div>
 
         <div class="content flex flex-col justify-between h-72 z-10 relative p-4 text-white">
             <div class="titulo">
