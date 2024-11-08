@@ -49,11 +49,10 @@
                             <div class="account text-xl flex flex-col">
 
                                 <div
-                                    class="profile-img relative flex bg-gray-400 rounded-full w-16 h-16 m-auto mt-3 overflow-hidden shadow-sm">
+                                    class="profile-img relative flex bg-gray-400 dark:bg-blue-500 rounded-full w-16 h-16 m-auto mt-3 overflow-hidden shadow-sm">
                                     <p class="text-gray-100 m-auto text-3xl">{{ user?.username?.split(" ").slice(0,
                                         2).map(name =>
                                             name[0].toUpperCase()).join("") }}</p>
-
                                 </div>
 
                                 <p class="text-gray-200 font-semibold text-center my-1 px-3 truncate">{{
@@ -61,12 +60,31 @@
                                         "e"].includes(name.toLowerCase())).slice(0, 2).join(" ") }}</p>
 
                                 <hr class="border-gray-600">
+
+                                <div class="m-auto p-2 w-full flex">
+                                    <button @click="editProfile"
+                                        class="flex w-full truncate justify-center rounded-lg cursor-pointer px-2 py-1 text-gray-300 hover:bg-gray-400 hover:text-gray-200">
+                                        <div class="m-auto flex truncate">
+                                            <label
+                                                class="relative inline-block h-8 w-24 cursor-pointer rounded-full bg-gray-300 dark:bg-gray-800 transition-all ease-in-out">
+                                                <input class="peer sr-only" id="themeToggle" type="checkbox"
+                                                    v-model="darkMode" @change="toggleTheme" />
+                                                <i :class="{
+                                                    'far fa-moon text-gray-300': darkMode,
+                                                    'far fa-sun text-gray-800': !darkMode
+                                                }" class="absolute inset-y-0 left-1 m-auto transition-all peer-checked:-right-16 peer-checked:text-white"></i>
+                                            </label>
+
+                                        </div>
+                                    </button>
+                                </div>
+
                                 <div class="m-auto p-2 w-full flex">
                                     <button @click="editProfile"
                                         class="flex w-full truncate justify-center rounded-lg cursor-pointer px-2 py-1 text-gray-300 hover:bg-gray-400 hover:text-gray-200">
                                         <div class="m-auto flex truncate">
                                             <i class="fas fa-pen m-auto mr-3"></i>
-                                            <p>Editar Conta</p>
+                                            <RouterLink to="/account">Editar Conta</RouterLink>
                                         </div>
                                     </button>
                                 </div>
@@ -88,7 +106,8 @@
             </div>
         </div>
 
-        <div class="menu vertical fixed top-0 left-0 h-full w-16 flex flex-col justify-between cursor-pointer border-r border-gray-800 bg-gray-700 z-30">
+        <div
+            class="menu vertical fixed top-0 left-0 h-full w-16 flex flex-col justify-between cursor-pointer border-r border-gray-800 bg-gray-700 z-30">
             <div>
                 <div class="flex size-16 items-center justify-center py-4 text-3xl">
                     <div
@@ -290,7 +309,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '../stores/userStore';
 import { useFetchUserInfo } from '../utils/fetchUserInfo';
@@ -364,9 +383,33 @@ onMounted(() => {
         fetchUserInfo();
     } else {
         errorMessage.value = 'Usuário não está autenticado.';
+        router.push('/login');
     }
     document.addEventListener('click', closeMenu);
 });
+
+
+
+const darkMode = ref(false);
+
+// Função para alternar o tema
+const toggleTheme = () => {
+    if (darkMode.value) {
+        document.documentElement.classList.add('dark');
+    } else {
+        document.documentElement.classList.remove('dark');
+    }
+};
+
+// Verifica a preferência inicial do sistema e aplica o tema
+onMounted(() => {
+    const prefersDarkScheme = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    darkMode.value = prefersDarkScheme;
+    if (prefersDarkScheme) {
+        document.documentElement.classList.add('dark');
+    }
+});
+
 </script>
 
 <style scoped>

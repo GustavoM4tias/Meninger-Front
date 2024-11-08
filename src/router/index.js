@@ -31,6 +31,19 @@ const routes = [
     },
   },
   {
+    path: '/account',
+    name: 'Account',
+    component: () => import('../views/Account.vue'),
+    beforeEnter: (to, from, next) => {
+      const userStore = useUserStore();
+      if (!userStore.isAuthenticated()) {
+        next('/login'); // Redireciona para a página de login se não estiver autenticado
+      } else {
+        next(); // Permite o acesso à página
+      }
+    },
+  },
+  {
     path: '/register',
     name: 'register',
     component: () => import('../views/Register.vue')
