@@ -10,12 +10,12 @@ import LoginForm from '../components/auth/LoginForm.vue'
         <select
           class="py-2 px-2 rounded-lg text-gray-50 hover:text-white bg-blue-500 hover:bg-blue-600 cursor-pointer duration-200"
           name="" id="">
-          <option value="Gestor">Gestor</option>
-          <option value="Financeiro">Financeiro</option>
-          <option value="Marketing">Marketing</option>
-          <option value="Comercial">Comercial</option>
-          <option value="Gerente">Gerente</option>
-          <option value="Usuário">Usuário</option>
+          <option value="gestor">Gestor</option>
+          <option value="financeiro">Financeiro</option>
+          <option value="marketing">Marketing</option>
+          <option value="comercial">Comercial</option>
+          <option value="usuario">Usuário</option>
+          <option value="diretoria">Diretoria</option>
         </select>
       </div>
       <div class="form m-auto w-4/6">
