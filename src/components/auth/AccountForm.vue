@@ -6,15 +6,13 @@
                 class="edit opacity-0 group-hover:opacity-75 duration-200 cursor-pointer bg-gray-900 absolute flex z-10 w-full h-full">
                 <i class="fas fa-pen text-white m-auto text-4xl"></i>
             </div>
-            <p class="text-gray-100 m-auto text-6xl">{{ user?.username?.split(" ").slice(0,
-                2).map(name =>
-                    name[0].toUpperCase()).join("") }}</p>
+            <p class="text-gray-100 m-auto text-6xl">
+                {{ userStore.user?.username?.split(" ").slice(0, 2).map(name => name[0].toUpperCase()).join("") }}
+            </p>
         </div>
-        <p class="text-center text-sm text-gray-200 font-semibold my-2">Criado em {{ new
-            Date(user?.created_at).toLocaleDateString("pt-BR") }}</p>
-        <!-- <p class="text-center text-sm text-gray-200 font-semibold my-2">Criado em {{ new
-            Date(user?.created_at).toLocaleDateString("pt-BR") }} às {{ new
-                Date(user?.created_at).toLocaleTimeString("pt-BR", { hour: '2-digit', minute: '2-digit' }) }}</p> -->
+        <p class="text-center text-sm text-gray-200 font-semibold my-2">
+            Criado em {{ new Date(userStore.user?.created_at).toLocaleDateString("pt-BR") }}
+        </p>
         <Input v-model="editableUser.username" type="text" placeholder="Nome" required />
         <Input v-model="editableUser.email" type="email" placeholder="Email" required />
         <Input v-model="editableUser.city" type="text" placeholder="Cidade" required />
@@ -23,22 +21,16 @@
     </form>
 
     <p v-if="message" class="success-message text-green-400">{{ message }}</p>
-    <p v-if="errorMessage" class="error-message text-red-500">{{ errorMessage }}</p>
-
 </template>
 
 <script setup>
 import { ref, onMounted, watch } from 'vue';
-import { useRouter } from 'vue-router';
 import { useUserStore } from '../../stores/userStore';
-import { useFetchUserInfo } from '../../utils/fetchUserInfo';
 import { updateUserInfo } from '../../utils/apiAuth';
 import Input from '../UI/Input.vue';
 import Button from '../UI/Button.vue';
 
 const userStore = useUserStore();
-const router = useRouter();
-const { user, errorMessage, fetchUserInfo } = useFetchUserInfo();
 
 const editableUser = ref({
     username: '',
@@ -46,26 +38,29 @@ const editableUser = ref({
     city: '',
     position: ''
 });
+
 const message = ref('');
-const errorMessageLocal = ref('');
 
-// Atualiza editableUser com os dados do usuário quando user é carregado
-watch(user, (newUser) => {
-    if (newUser) {
-        editableUser.value = { ...newUser };
+const preencherEditableUser = () => {
+    if (userStore.user) {
+        editableUser.value = {
+            username: userStore.user.username || '',
+            email: userStore.user.email || '',
+            city: userStore.user.city || '',
+            position: userStore.user.position || '',
+        };
     }
+};
+
+watch(() => userStore.user, preencherEditableUser);
+
+onMounted(async () => {
+    if (!userStore.user) {
+        await userStore.fetchUserInfo();
+    }
+    preencherEditableUser();
 });
 
-onMounted(() => {
-    if (userStore.isAuthenticated()) {
-        fetchUserInfo();
-    } else {
-        errorMessageLocal.value = 'Usuário não está autenticado.';
-        router.push('/login');
-    }
-});
-
-// Função para atualizar informações do usuário
 const updateUser = async () => {
     try {
         const response = await updateUserInfo(
@@ -74,10 +69,11 @@ const updateUser = async () => {
             editableUser.value.position,
             editableUser.value.city
         );
-        message.value = response.message || 'Informações atualizadas com sucesso';
-        await fetchUserInfo(); // Atualiza os dados do usuário após a atualização
+        message.value = response.message;
+        await userStore.fetchUserInfo();
+        preencherEditableUser();
     } catch (error) {
-        errorMessageLocal.value = error.message;
+        console.error(error);
     }
 };
 </script>

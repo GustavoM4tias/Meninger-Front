@@ -155,6 +155,8 @@ const anterior = () => {
                         <p>{{ event.address?.city }}</p>
                         <p>{{ event.address?.state }}</p>
                         <p>{{ event.address?.zip_code }}</p>
+
+                        <p class="truncate">Criador: {{ event?.created_by }}</p>
                     </div>
 
                     <i class="fas fa-xmark absolute text-2xl top-0 right-0 m-5 cursor-pointer text-gray-200 hover:text-gray-300 duration-200"

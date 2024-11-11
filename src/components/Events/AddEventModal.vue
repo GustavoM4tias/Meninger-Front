@@ -1,6 +1,9 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { addEvent } from '../../utils/apiEvents'; // Certifique-se de que esta função está corretamente implementada
+import { useUserStore } from '../../stores/userStore';
+
+const userStore = useUserStore();
 
 const emit = defineEmits(['close']); // Para fechar o modal
 const newEvent = ref({
@@ -16,7 +19,8 @@ const newEvent = ref({
         city: '',
         state: '',
         zip_code: ''
-    }
+    },
+    created_by: userStore.user.username
 });
 
 // Defina as variáveis para tags e imagens
@@ -54,6 +58,13 @@ const addImage = () => {
 const removeImage = (index) => {
     newEvent.value.images.splice(index, 1); // Remove a imagem pelo índice
 };
+
+onMounted(async () => {
+    if (!userStore.user) {
+        await userStore.fetchUserInfo(); 
+    }
+});
+
 </script>
 
 <template>

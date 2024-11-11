@@ -22,10 +22,9 @@ export const loginUser = async (email, password) => {
     body: JSON.stringify({ email, password }),
   });
 
-  // Verifica se a resposta da API foi bem-sucedida
   if (!response.ok) {
     const errorData = await response.json();
-    throw new Error(errorData.message || 'Erro ao fazer login');
+    throw new Error(errorData.message);
   }
   return response.json();
 };
@@ -40,10 +39,9 @@ export const getUserInfo = async () => {
     },
   });
   
-  // Verifica se a resposta da API foi bem-sucedida
   if (!response.ok) {
     const errorData = await response.json();
-    throw new Error(errorData.message || 'Erro ao obter informações do usuário');
+    throw new Error(errorData.message);
   }
   return response.json();
 };
@@ -58,10 +56,9 @@ export const updateUserInfo = async (username, email, position, city) => {
     body: JSON.stringify({ username, email, position, city }),
   });
 
-  // Verifica se a resposta da API foi bem-sucedida
   if (!response.ok) {
     const errorData = await response.json();
-    throw new Error(errorData.message || 'Erro ao atualizar informações');
+    throw new Error(errorData.message);
   }
 
   return response.json(); // Retorna os dados da resposta, caso seja necessário
