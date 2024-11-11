@@ -1,5 +1,6 @@
 // src/store/userStore.js
 import { defineStore } from 'pinia';
+import { getUserInfo } from '../utils/apiAuth';
 
 export const useUserStore = defineStore('user', {
   state: () => ({
@@ -20,7 +21,15 @@ export const useUserStore = defineStore('user', {
       localStorage.removeItem('token'); // Remove o token do localStorage
     },
     isAuthenticated() {
-      return !!this.token; // Retorna true se o token estiver presente
+      return !!this.token; 
+    },
+    async fetchUserInfo() {
+      try {
+        const result = await getUserInfo();
+        this.user = result.data;
+      } catch (error) {
+        console.error(error);
+      }
     },
   },
 });

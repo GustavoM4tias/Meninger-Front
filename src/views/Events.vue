@@ -85,8 +85,6 @@ const eventosExibidos = computed(() => {
     }
 });
 
-console.log(currentSection.value)
-
 const eventosEmAndamento = computed(() => eventosFiltrados.value.filter(event => new Date(event.event_date) >= dataAtual));
 const eventosFinalizados = computed(() => eventosFiltrados.value
     .filter(event => new Date(event.event_date) < dataAtual)
@@ -110,7 +108,7 @@ onMounted(fetchEvents);
 
     <div class="bg-gray-800 px-4 md:px-8 text-gray-200 min-h-screen w-full relative overflow-hidden">
 
-        <img class="absolute z-0 left-72 top-0 w-full opacity-25" src="../../public/traçado.png">
+        <img class="absolute z-0 left-72 top-0 w-full opacity-25" src="/traçado.png">
 
         <i @click="openAddEventModal"
             class="far fa-calendar-plus absolute text-gray-400 hover:text-gray-500 cursor-pointer top-0 right-0 m-8 text-4xl"></i>
@@ -122,24 +120,10 @@ onMounted(fetchEvents);
                 <h1 class="text-2xl md:text-4xl text-center font-bold mb-2">Eventos</h1>
                 <div class="nav bg-gray-400 rounded-full mx-auto p-2  filter w-2/5">
                     <input type="text" v-model="busca" @input="atualizarBusca"
-                        class="busca bg-gray-200 w-full rounded-full px-5 py-3 text-gray-700 rounded outline-none font-semibold placeholder-gray-600"
+                        class="busca bg-gray-200 w-full rounded-full px-5 py-3 text-gray-700 outline-none font-semibold placeholder-gray-600"
                         placeholder="Buscar eventos..." />
                 </div>
             </div>
-
-
-
-            <!-- Exibição dos eventos filtrados -->
-            <!-- <div v-if="eventosExibidos.length > 0" class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-                <EventCard v-for="event in eventosExibidos" :key="event.id"
-                    :event="{ ...event, event_date: formatDate(event.event_date) }"
-                    @click="openEventModal(event)" />
-            </div>
-            <div v-else>
-                <p class="text-gray-500 text-5xl text-center mt-64">Sem Resultados</p>
-            </div> -->
-
-
 
             <!-- Se houver busca ativa -->
             <div v-if="route.query.busca">
