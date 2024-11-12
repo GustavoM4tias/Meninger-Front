@@ -6,6 +6,7 @@ import { useUserStore } from '../../stores/userStore';
 const userStore = useUserStore();
 
 const emit = defineEmits(['close']); // Para fechar o modal
+
 const newEvent = ref({
     title: '',
     description: '',
