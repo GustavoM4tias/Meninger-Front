@@ -10,11 +10,11 @@ import AddEventModal from '../components/Events/AddEventModal.vue';
 const route = useRoute();
 const router = useRouter();
 const dataAtual = new Date();
-const busca = ref(''); // Estado para armazenar o valor do input
+const busca = ref(''); 
 const events = ref([]);
 const errorMessage = ref('');
 const selectedEvent = ref(null);
-const addEvent = ref(false); // Para controlar a exibição do modal de adicionar evento
+const addEvent = ref(false); 
 
 const fetchEvents = async () => {
     errorMessage.value = '';
@@ -106,9 +106,9 @@ onMounted(fetchEvents);
 
 <template>
 
-    <div class="bg-gray-800 px-4 md:px-8 text-gray-200 min-h-screen w-full relative overflow-hidden">
+    <div class="bg-gray-300 dark:bg-gray-800 px-4 md:px-8 text-gray-800 dark:text-gray-200 min-h-screen w-full relative overflow-hidden">
 
-        <img class="absolute z-0 left-72 top-0 w-full opacity-25" src="/traçado.png">
+        <img class="absolute invert dark:invert-0 z-0 left-72 top-0 w-full opacity-25" src="/traçado.png">
 
         <i @click="openAddEventModal"
             class="far fa-calendar-plus absolute text-gray-400 hover:text-gray-500 cursor-pointer top-0 right-0 m-8 text-4xl"></i>
@@ -118,7 +118,7 @@ onMounted(fetchEvents);
 
             <div class="search items-center -mb-3">
                 <h1 class="text-2xl md:text-4xl text-center font-bold mb-2">Eventos</h1>
-                <div class="nav bg-gray-400 rounded-full mx-auto p-2  filter w-2/5">
+                <div class="nav bg-gray-400 rounded-full mx-auto p-2 filter w-2/5">
                     <input type="text" v-model="busca" @input="atualizarBusca"
                         class="busca bg-gray-200 w-full rounded-full px-5 py-3 text-gray-700 outline-none font-semibold placeholder-gray-600"
                         placeholder="Buscar eventos..." />
