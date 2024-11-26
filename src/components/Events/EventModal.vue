@@ -72,8 +72,8 @@ const anterior = () => {
     <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" @click.self="closeModal">
         <div class="bg-gray-700 sm:h-5/6 sm:w-8/12 w-11/12 rounded-lg mx-auto relative">
             <div class="content h-full grid grid-cols-1 lg:grid-cols-3">
-
-                <div class="img col-span-1 sm:col-span-2 relative rounded-t-lg lg:rounded-l-lg lg:rounded-tr-none h-100 w-full h-full overflow-hidden">
+                <div
+                    class="img col-span-1 sm:col-span-2 relative rounded-t-lg lg:rounded-l-lg lg:rounded-tr-none h-100 w-full h-full overflow-hidden">
                     <img :src="event.images[imagemAtual] || '/noimg.jpg'" class="w-full h-full object-cover" />
 
                     <div class="absolute filter drop-shadow top-0 left-0 m-5">
@@ -109,7 +109,7 @@ const anterior = () => {
 
                 <div class="text flex flex-col">
                     <div class="text text-gray-100 flex flex-col py-4 px-4 md:px-6">
-                        
+
                         <div x-data="{ isActive: false }" class="relative dropdown">
                             <div class="inline-flex items-center overflow-hidden">
                                 <i x-on:click="isActive = !isActive"
@@ -148,7 +148,7 @@ const anterior = () => {
                                 formatarData(event?.dataHoraPostagem, false) }}, <span class="font-bold text-lg">{{
                                     event?.criador }}.</span></p>
                         </div> -->
-                            
+
                         <p>{{ event.address?.street }}</p>
                         <p>{{ event.address?.number }}</p>
                         <p>{{ event.address?.neighborhood }}</p>

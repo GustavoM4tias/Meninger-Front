@@ -1,7 +1,4 @@
-<!-- src/components/Events/EventCard.vue -->
 <script setup>
-import { defineProps, defineEmits } from 'vue';
-
 const props = defineProps({
     event: {
         type: Object,
@@ -19,19 +16,17 @@ const formatDate = (dateString) => {
     const date = new Date(dateString);
     return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
 };
-
 </script>
 
 <template>
-    <div class="shadow-md dark:shadow-2xl relative filter drop-shadow-lg rounded-xl overflow-hidden duration-300 transform hover:scale-105 h-full"
+    <div class="relative filter rounded-xl overflow-hidden w-full h-64 md:h-80"
         @click="showEventDetails">
-
+        <!-- Imagem que ocupa 100% do seu container pai -->
         <img :src="(event.images && event.images.length > 0) ? event.images[0] : '/noimg.jpg'"
             class="w-full h-full object-cover bg-center absolute z-0" />
-
+        <!-- Sobreposição escura para melhorar legibilidade -->
         <div class="absolute inset-0 rounded-lg bg-gradient-to-t from-gray-900 to-transparent opacity-75"></div>
-
-        <div class="content flex flex-col justify-between h-72 z-10 relative p-4 text-white">
+        <div class="content flex flex-col justify-between h-full z-10 relative p-4 text-white">
             <div class="titulo">
                 <div class="flex justify-between">
                     <h1 class="text-xl truncate filter md:text-2xl font-semibold drop-shadow-md">{{ event.title }}</h1>
@@ -46,18 +41,18 @@ const formatDate = (dateString) => {
                 </ul>
             </div>
 
+            <!-- Descrição do evento -->
             <div class="descricao flex-1 flex items-end justify-between">
                 <p class="text-md md:text-lg text-gray-300 cursor-pointer duration-200 hover:text-gray-100 -mt-1">
                     <!-- Cidade  -->
                 </p>
-                <button @click="$emit('abrir-modal')"
-                    class="border rounded-md md:rounded-lg text-white text-lg text-wrap hover:bg-gray-100 hover:text-gray-800 duration-300 py-1 px-2 md:py-2 md:px-4 ml-4">
+                <RouterLink :to="{
+                    path: '/events',
+                    query: { busca: event.title, section: 'geral' }
+                }" class="border rounded-md md:rounded-lg text-white text-lg text-wrap hover:bg-gray-100 hover:text-gray-800 duration-300 py-1 px-2 md:py-2 md:px-4 ml-4">
                     Ver Mais
-                </button>
+                </RouterLink>
             </div>
-
         </div>
-
     </div>
-
 </template>

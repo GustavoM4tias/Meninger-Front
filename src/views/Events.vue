@@ -3,6 +3,7 @@
 import { ref, onMounted, computed, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { getEvents } from '../utils/apiEvents';
+import { useEventStore } from '../stores/eventStore';
 import EventCard from '../components/Events/EventCard.vue';
 import EventModal from '../components/Events/EventModal.vue';
 import AddEventModal from '../components/Events/AddEventModal.vue';
@@ -10,27 +11,14 @@ import AddEventModal from '../components/Events/AddEventModal.vue';
 const route = useRoute();
 const router = useRouter();
 const dataAtual = new Date();
-const busca = ref(''); 
-const events = ref([]);
-const errorMessage = ref('');
+const busca = ref('');
 const selectedEvent = ref(null);
-const addEvent = ref(false); 
-
-const fetchEvents = async () => {
-    errorMessage.value = '';
-    try {
-        const result = await getEvents();
-        events.value = result.data.events;
-    } catch (error) {
-        console.error('Erro ao obter eventos:', error);
-        errorMessage.value = 'Erro ao carregar eventos.';
-    }
-};
+const addEvent = ref(false);
+const eventStore = useEventStore(); // Usando a store
 
 const openEventModal = (event) => {
     selectedEvent.value = event;
 };
-
 
 const closeEventModal = () => {
     selectedEvent.value = null;
@@ -42,7 +30,7 @@ const openAddEventModal = () => {
 
 const closeAddEventModal = () => {
     addEvent.value = false;
-    fetchEvents();
+    eventStore.fetchEvents(); // Atualiza eventos após adicionar
 };
 
 // Centraliza o fechamento e atualização após a exclusão
@@ -51,20 +39,21 @@ const handleEventDeleted = () => {
     fetchEvents(); // Atualiza a lista de eventos
 };
 
-const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
-};
 
-// Observa mudanças na query da URL para sincronizar com a `busca`
-watch(() => route.query.busca, (newBusca) => {
-    busca.value = newBusca || '';
-});
 
-// Computed para filtrar os eventos
+// Atualiza a busca ao alterar a query
+watch(
+    () => route.query.busca,
+    (novaBusca) => {
+        busca.value = novaBusca || '';
+    },
+    { immediate: true }
+);;
+
+// Computed para acessar o estado da store
 const eventosFiltrados = computed(() => {
     const filtro = busca.value.toLowerCase();
-    return events.value.filter(event =>
+    return eventStore.events.filter(event =>
         event.title.toLowerCase().includes(filtro) ||
         event.description.toLowerCase().includes(filtro)
     );
@@ -76,9 +65,13 @@ const currentSection = computed(() => route.query.section || 'geral');
 const eventosExibidos = computed(() => {
     switch (currentSection.value) {
         case 'proximos':
-            return eventosFiltrados.value.filter(event => new Date(event.event_date) >= dataAtual);
+            return eventStore.eventosEmAndamento.filter(event =>
+                eventosFiltrados.value.includes(event)
+            );
         case 'finalizados':
-            return eventosFiltrados.value.filter(event => new Date(event.event_date) < dataAtual);
+            return eventStore.eventosFinalizados.filter(event =>
+                eventosFiltrados.value.includes(event)
+            );
         case 'geral':
         default:
             return eventosFiltrados.value;
@@ -100,13 +93,14 @@ const atualizarBusca = () => {
     router.push({ query: { busca: busca.value, section: currentSection.value } });
 };
 
-onMounted(fetchEvents);
-
+// Inicializa os eventos
+onMounted(() => eventStore.fetchEvents());
 </script>
 
 <template>
 
-    <div class="bg-gray-300 dark:bg-gray-800 px-4 md:px-8 text-gray-800 dark:text-gray-200 min-h-screen w-full relative overflow-hidden">
+    <div
+        class="bg-gray-300 dark:bg-gray-800 px-4 md:px-8 text-gray-800 dark:text-gray-200 min-h-screen w-full relative overflow-hidden">
 
         <img class="absolute invert dark:invert-0 z-0 left-72 top-0 w-full opacity-25" src="/traçado.png">
 
@@ -132,8 +126,7 @@ onMounted(fetchEvents);
                     <h2 class="text-2xl font-semibold m-3">Resultados da Pesquisa</h2>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <EventCard v-for="event in eventosFiltrados" :key="event.id"
-                            :event="{ ...event, event_date: formatDate(event.event_date) }"
-                            @click="openEventModal(event)" />
+                            :event="{ ...event, event_date: (event.event_date) }" @click="openEventModal(event)" />
                     </div>
                 </div>
 
@@ -150,8 +143,7 @@ onMounted(fetchEvents);
                     <h2 class="text-2xl font-semibold m-3">Próximos Eventos</h2>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <EventCard v-for="event in eventosEmAndamento" :key="event.id"
-                            :event="{ ...event, event_date: formatDate(event.event_date) }"
-                            @click="openEventModal(event)" />
+                            :event="{ ...event, event_date: (event.event_date) }" @click="openEventModal(event)" />
                     </div>
                 </div>
                 <div v-if="eventosEmAndamento >= 0 && (currentSection === 'proximos')">
@@ -163,8 +155,7 @@ onMounted(fetchEvents);
                     <h2 class="text-2xl font-semibold m-3">Eventos Finalizados</h2>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <EventCard v-for="event in eventosFinalizados" :key="event.id"
-                            :event="{ ...event, event_date: formatDate(event.event_date) }"
-                            @click="openEventModal(event)" />
+                            :event="{ ...event, event_date: (event.event_date) }" @click="openEventModal(event)" />
                     </div>
                 </div>
 
@@ -172,8 +163,7 @@ onMounted(fetchEvents);
                     <h2 class="text-2xl font-semibold m-3">Posts Recentes</h2>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <EventCard v-for="event in eventosRecentes" :key="event.id"
-                            :event="{ ...event, event_date: formatDate(event.event_date) }"
-                            @click="openEventModal(event)" />
+                            :event="{ ...event, event_date: (event.event_date) }" @click="openEventModal(event)" />
                     </div>
                 </div>
             </div>
@@ -184,8 +174,7 @@ onMounted(fetchEvents);
             @event-deleted="handleEventDeleted" />
 
         <AddEventModal v-if="addEvent" @close="closeAddEventModal" @openAddEventModal="openAddEventModal" />
-        <div v-if="errorMessage">{{ errorMessage }}</div>
-
+        <div v-if="eventStore.errorMessage">{{ eventStore.errorMessage }}</div>
 
     </div>
 
