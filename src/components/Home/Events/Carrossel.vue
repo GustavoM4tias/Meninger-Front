@@ -42,12 +42,12 @@ const goToSlide = (index) => {
 </script>
 
 <template>
-  <div class="relative overflow-hidden">
+  <div class="relative overflow-hidden h-full"> <!-- Defina h-full aqui -->
     <!-- Contêiner do Carrossel -->
-    <div class="flex transition-transform duration-700 ease-in-out"
+    <div class="flex transition-transform duration-700 ease-in-out h-full" 
       :style="{ transform: `translateX(-${currentIndex * 100}%)` }">
       <!-- Cards dos Eventos -->
-      <div v-for="event in props.eventos" :key="event.id" class="w-full flex-shrink-0">
+      <div v-for="event in props.eventos" :key="event.id" class="w-full h-full flex-shrink-0"> <!-- h-full aqui -->
         <EventCard :event="event" />
       </div>
     </div>
