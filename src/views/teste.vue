@@ -1,4 +1,4 @@
-<script setup>
+<!-- <script setup>
 import { ref, onMounted } from 'vue';
 import Carrossel from "../components/Home/Events/Carrossel.vue";
 import EventTextHome from "../components/Home/Events/EventTextHome.vue";
@@ -16,7 +16,7 @@ onMounted(() => {
 <template>
     <div class="bg-red-300 h-auto md:h-[calc(100%-4rem)] flex">
 
-        <!-- Segunda coluna (events-notification + enterprise) -->
+        <!-- Segunda coluna (events-notification + enterprise) 
         <div class="w-full md:w-9/12 h-full">
 
             <div class="events-preview bg-blue-200 h-1/2 p-4 px-8">
@@ -33,7 +33,7 @@ onMounted(() => {
         </div>
 
 
-        <!-- Segunda coluna (events-notification + enterprise) -->
+        <!-- Segunda coluna (events-notification + enterprise) 
         <div class="w-full md:w-3/12 h-full">
             <div class="events-notification relative bg-green-200 h-4/6 p-4">
 
@@ -51,7 +51,7 @@ onMounted(() => {
                         </RouterLink>
                     </div>
 
-                    <!-- Ajustar scroll  -->
+                    <!-- Ajustar scroll 
                     <div class="events relative h-[calc(100%-85px)] overflow-y-auto">
 
                         <div v-for="event in eventStore.eventosEmAndamento" :key="event.id">
@@ -78,4 +78,4 @@ onMounted(() => {
         </div>
 
     </div>
-</template>
+</template> -->
