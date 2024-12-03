@@ -11,8 +11,6 @@
 </template>
 
 <script setup>
-import { defineProps, defineEmits } from 'vue';
-
 const props = defineProps({
     modelValue: String, // Valor selecionado
     options: { // Array de opções de seleção
