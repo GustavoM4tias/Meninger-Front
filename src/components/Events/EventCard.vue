@@ -1,6 +1,5 @@
 <!-- src/components/Events/EventCard.vue -->
 <script setup>
-import { defineProps, defineEmits } from 'vue';
 
 const props = defineProps({
     event: {

@@ -1,7 +1,6 @@
 <!-- src/components/Events/EventModal.vue -->
 <script setup>
 import { ref, computed } from 'vue';
-import { defineProps, defineEmits } from 'vue';
 import EditEventModal from './EditEventModal.vue';
 import { deleteEvent } from '../../utils/apiEvents';
 

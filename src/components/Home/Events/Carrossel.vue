@@ -13,11 +13,10 @@ const currentIndex = ref(0);
 
 watch(() => props.eventos, (newEventos) => {
   if (newEventos.length > 0) {
-    currentIndex.value = 0; // Reseta o índice quando os eventos mudarem
+    currentIndex.value = 0;
   }
 });
 
-// Função para ir para o slide anterior
 const prev = () => {
   if (currentIndex.value === 0) {
     currentIndex.value = props.eventos.length - 1;
@@ -26,7 +25,6 @@ const prev = () => {
   }
 };
 
-// Função para ir para o slide seguinte
 const next = () => {
   if (currentIndex.value === props.eventos.length - 1) {
     currentIndex.value = 0;
@@ -35,31 +33,28 @@ const next = () => {
   }
 };
 
-// Função para ir para um slide específico ao clicar no marcador
 const goToSlide = (index) => {
   currentIndex.value = index;
 };
 </script>
 
 <template>
-  <div class="relative overflow-hidden h-full"> <!-- Defina h-full aqui -->
-    <!-- Contêiner do Carrossel -->
-    <div class="flex transition-transform duration-700 ease-in-out h-full" 
+  <div class="relative overflow-hidden rounded-xl">
+
+    <div class="flex transition-transform duration-700 ease-in-out"
       :style="{ transform: `translateX(-${currentIndex * 100}%)` }">
-      <!-- Cards dos Eventos -->
-      <div v-for="event in props.eventos" :key="event.id" class="w-full h-full flex-shrink-0"> <!-- h-full aqui -->
+      <div v-for="event in props.eventos" :key="event.id" class="w-full flex-shrink-0">
         <EventCard :event="event" />
       </div>
     </div>
 
-    <!-- Controles de Navegação: Setas -->
-    <button @click="prev" class="absolute top-1/2 left-4 -translate-y-1/2 text-gray-100 font-black p-3 text-2xl hover:text-3xl hover:text-gray-200 duration-200">
+    <!-- Controles de Navegação -->
+    <button @click="prev" class="absolute top-1/2 left-4 -translate-y-1/2 text-gray-100 p-3">
       <i class="fas fa-chevron-left"></i>
     </button>
-    <button @click="next" class="absolute top-1/2 right-4 -translate-y-1/2 text-gray-100 font-black p-3 text-2xl hover:text-3xl hover:text-gray-200 duration-200">
+    <button @click="next" class="absolute top-1/2 right-4 -translate-y-1/2 text-gray-100 p-3">
       <i class="fas fa-chevron-right"></i>
     </button>
-
     <!-- Marcadores de Páginas -->
     <div class="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
       <div v-for="(event, index) in props.eventos" :key="event.id" @click="goToSlide(index)" :class="{
@@ -69,5 +64,6 @@ const goToSlide = (index) => {
         'cursor-pointer': true
       }"></div>
     </div>
+
   </div>
 </template>
