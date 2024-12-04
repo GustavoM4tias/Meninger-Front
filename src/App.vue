@@ -1,11 +1,19 @@
 <script setup>
-import { computed } from 'vue'; // Importando ref para reatividade
+import { ref, onMounted, computed } from 'vue';
 import Carregamento from './components/Carregamento.vue';
 import Nav from './components/Nav.vue';
 import { useAuthStore } from './stores/authStore'; // Importando o authStore
 const authStore = useAuthStore();
 
 const isAuthenticated = computed(() => authStore.isAuthenticated());
+
+// Verifica a preferência inicial do sistema e aplica o tema
+onMounted(async () => {
+    const darkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    if (darkMode) {
+        document.documentElement.classList.add('dark');
+    }
+});
 
 </script>
 
