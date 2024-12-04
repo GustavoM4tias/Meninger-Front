@@ -35,7 +35,7 @@
                         <div class="flex cursor-pointer">
                             <div x-on:click="isActive = !isActive"
                                 class="profile-img flex bg-gray-400 rounded-full w-10 h-10 overflow-hidden">
-                                <p class="text-gray-100 m-auto font-semibold"> {{ userStore.user?.username?.split(" ").slice(0,
+                                <p class="text-gray-100 m-auto font-semibold"> {{ authStore.user?.username?.split(" ").slice(0,
                                     2).map(name =>
                                         name[0].toUpperCase()).join("") }}
                                 </p>
@@ -51,13 +51,13 @@
 
                                 <div
                                     class="profile-img relative flex bg-gray-400 rounded-full w-16 h-16 m-auto mt-3 overflow-hidden shadow">
-                                    <p class="text-gray-100 m-auto text-3xl">{{ userStore.user?.username?.split(" ").slice(0,
+                                    <p class="text-gray-100 m-auto text-3xl">{{ authStore.user?.username?.split(" ").slice(0,
                                         2).map(name =>
                                             name[0].toUpperCase()).join("") }}</p>
                                 </div>
 
                                 <p class="font-semibold text-center my-1 px-3 truncate">{{
-                                    userStore.user?.username?.split(" ").filter(name => !["de", "da", "do", "dos", "das",
+                                    authStore.user?.username?.split(" ").filter(name => !["de", "da", "do", "dos", "das",
                                         "e"].includes(name.toLowerCase())).slice(0, 2).join(" ") }}</p>
 
 
@@ -294,9 +294,9 @@
                         </button>
                         <ul v-if="dropdowns.settings" class="mt-2 text-gray-600 dark:text-gray-300">
                             <li>
-                                <RouterLink to=""
+                                <RouterLink to="/users"
                                     class="block px-4 py-1.5 my-1.5 bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 rounded-md">
-                                    Submenu 1
+                                    Usuários
                                 </RouterLink>
                             </li>
                             <li>
@@ -324,11 +324,11 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { useUserStore } from '../stores/userStore';
+import { useAuthStore } from '../stores/authStore';
 
 const menuOpen = ref(false);
 const menuRef = ref(null);
-const userStore = useUserStore();
+const authStore = useAuthStore();
 const router = useRouter();
 
 const toggleMenu = () => {
@@ -342,7 +342,7 @@ const closeMenu = (event) => {
 };
 
 const logout = () => {
-    userStore.clearUser();
+    authStore.clearUser();
     router.push('/login');
 };
 
@@ -409,8 +409,8 @@ onMounted(async () => {
     }
     document.addEventListener('click', closeMenu);
 
-    if (!userStore.user) {
-        await userStore.fetchUserInfo(); 
+    if (!authStore.user) {
+        await authStore.fetchUserInfo(); 
     }
 });
 

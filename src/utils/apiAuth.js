@@ -31,14 +31,14 @@ export const loginUser = async (email, password) => {
 
 // src/utils/api.js
 export const getUserInfo = async () => {
-  const response = await fetchCarregamento(`${AUTH_URL}/user`, { 
+  const response = await fetchCarregamento(`${AUTH_URL}/user`, {
     method: 'GET',
     headers: {
       'Authorization': `Bearer ${localStorage.getItem('token')}`,
-      'Content-Type': 'application/json', 
+      'Content-Type': 'application/json',
     },
   });
-  
+
   if (!response.ok) {
     const errorData = await response.json();
     throw new Error(errorData.message);
@@ -46,7 +46,7 @@ export const getUserInfo = async () => {
   return response.json();
 };
 
-export const updateUserInfo = async (username, email, position, city) => {
+export const updateMeInfo = async (username, email, position, city) => {
   const response = await fetchCarregamento(`${AUTH_URL}/user`, {
     method: 'PUT',
     headers: {
@@ -62,4 +62,38 @@ export const updateUserInfo = async (username, email, position, city) => {
   }
 
   return response.json(); // Retorna os dados da resposta, caso seja necessário
+};
+
+export const updateUserInfo = async (id, username, email, position, city) => {
+  const response = await fetchCarregamento(`${AUTH_URL}/users`, {
+    method: 'PUT',
+    headers: {
+      'Authorization': `Bearer ${localStorage.getItem('token')}`, // Token de autenticação
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({id, username, email, position, city }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message);
+  }
+
+  return response.json(); // Retorna os dados da resposta, caso seja necessário
+};
+
+export const getAllUsers = async () => {
+  const response = await fetchCarregamento(`${AUTH_URL}/users`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message);
+  }
+  return response.json();
 };

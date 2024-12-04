@@ -24,7 +24,7 @@
 
 <script setup>
 import { onMounted, ref } from 'vue';
-import { useUserStore } from '../../stores/userStore';
+import { useAuthStore } from '../../stores/authStore';
 import { registerUser } from '../../utils/apiAuth';
 import { useRouter } from 'vue-router';
 import Input from '../UI/Input.vue';
@@ -32,7 +32,7 @@ import Button from '../UI/Button.vue';
 import Select from '../UI/Select.vue';
 
 const router = useRouter();
-const userStore = useUserStore();
+const authStore = useAuthStore();
 const username = ref('');
 const city = ref('');
 const position = ref('');
@@ -69,7 +69,7 @@ const handleRegister = async () => {
 
     // Acessa o token na estrutura correta da resposta
     if (result.success) {
-      userStore.setToken(result.data.token); // Armazena o token na store
+      authStore.setToken(result.data.token); // Armazena o token na store
       router.push('/'); // Redireciona após o login
     } else {
       errorMessage.value = result.error; // Exibe mensagem de erro
@@ -82,7 +82,7 @@ const handleRegister = async () => {
 
 // Obriga a logar novamente caso volte a tela de registro
 onMounted(() => {
-  if (userStore.isAuthenticated()) {
+  if (authStore.isAuthenticated()) {
     router.push('/'); // Redireciona após o login
   }
 });

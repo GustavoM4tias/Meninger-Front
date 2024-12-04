@@ -13,9 +13,9 @@ onMounted(() => {
 </script>
 
 <template>
-    <div class="events-notification relative h-4/6 p-4">
+    <div class="events-notification relative">
         <p class="text-2xl font-semibold py-1">Listagem</p>
-        <div class="border-2 relative rounded-xl h-5/6 w-full m-auto border-gray-300 bg-gray-200 dark:border-gray-600 dark:bg-gray-700 overflow-hidden">
+        <div class="border-2 relative rounded-xl h-[calc(100%-2rem)] w-full m-auto border-gray-300 bg-gray-200 dark:border-gray-600 dark:bg-gray-700 overflow-hidden">
             <div class="title border-b-2 border-gray-300 dark:border-gray-600 p-5 text-2xl">
                 <RouterLink class="hover:text-gray-700 dark:hover:text-gray-300" :to="{
                     path: '/events',
@@ -30,7 +30,7 @@ onMounted(() => {
                 <div v-for="event in eventStore.eventosEmAndamento" :key="event.id">
                     <EventTextHome :event="event" />
                 </div>
-                <div class="finished bg-gray-100 dark:bg-gray-600 text-center text-lg font-medium p-1">Eventos Realizados</div>
+                <div class="finished bg-gray-100 dark:bg-gray-600 text-center text-lg font-medium p-1 border-b-2 border-gray-300 dark:border-gray-600">Eventos Realizados</div>
                 <div v-for="event in eventStore.eventosFinalizados" :key="event.id">
                     <EventTextHome :event="event" />
                 </div>

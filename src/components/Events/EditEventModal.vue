@@ -110,7 +110,6 @@ const removeImage = (index) => {
                     </div>
                 </div>
 
-
                 <!-- Campo para Tags -->
                 <div class="relative mb-2 mt-5 border border-gray-500 rounded-xl p-3">
                     <label class="absolute -top-5 ">Tags</label>
@@ -155,7 +154,6 @@ const removeImage = (index) => {
                         </div>
                     </div>
                 </div>
-
 
                 <div class="flex justify-end gap-2 mt-4">
                     <button type="button" @click="submitEdit"
