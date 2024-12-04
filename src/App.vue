@@ -2,10 +2,10 @@
 import { computed } from 'vue'; // Importando ref para reatividade
 import Carregamento from './components/Carregamento.vue';
 import Nav from './components/Nav.vue';
-import { useUserStore } from './stores/userStore'; // Importando o userStore
-const userStore = useUserStore();
+import { useAuthStore } from './stores/authStore'; // Importando o authStore
+const authStore = useAuthStore();
 
-const isAuthenticated = computed(() => userStore.isAuthenticated());
+const isAuthenticated = computed(() => authStore.isAuthenticated());
 
 </script>
 

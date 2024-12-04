@@ -15,14 +15,14 @@
 
 <script setup>
 import { onMounted, ref } from 'vue';
-import { useUserStore } from '../../stores/userStore';
+import { useAuthStore } from '../../stores/authStore';
 import { loginUser } from '../../utils/apiAuth';
 import { useRouter } from 'vue-router';
 import Input from '../UI/Input.vue';
 import Button from '../UI/Button.vue';
 
 const router = useRouter();
-const userStore = useUserStore();
+const authStore = useAuthStore();
 const email = ref('');
 const password = ref('');
 const errorMessage = ref('');
@@ -33,7 +33,7 @@ const handleLogin = async () => {
     const result = await loginUser(email.value, password.value);
 
     if (result.success && result.data.token) {
-      userStore.setToken(result.data.token);
+      authStore.setToken(result.data.token);
       router.push('/');
     } else {
       errorMessage.value = result.error;
@@ -44,10 +44,10 @@ const handleLogin = async () => {
 };
 
 onMounted(() => {
-  if (userStore.isAuthenticated()) {
+  if (authStore.isAuthenticated()) {
     router.push('/');
   } else {
-    userStore.clearUser();
+    authStore.clearUser();
   }
 });
 </script>

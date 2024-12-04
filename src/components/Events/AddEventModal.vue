@@ -1,9 +1,9 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { addEvent } from '../../utils/apiEvents'; // Certifique-se de que esta função está corretamente implementada
-import { useUserStore } from '../../stores/userStore';
+import { useAuthStore } from '../../stores/authStore';
 
-const userStore = useUserStore();
+const authStore = useAuthStore();
 
 const emit = defineEmits(['close']); // Para fechar o modal
 
@@ -21,7 +21,7 @@ const newEvent = ref({
         state: '',
         zip_code: ''
     },
-    created_by: userStore.user.username
+    created_by: authStore.user.username
 });
 
 // Defina as variáveis para tags e imagens
@@ -61,8 +61,8 @@ const removeImage = (index) => {
 };
 
 onMounted(async () => {
-    if (!userStore.user) {
-        await userStore.fetchUserInfo(); 
+    if (!authStore.user) {
+        await authStore.fetchUserInfo(); 
     }
 });
 

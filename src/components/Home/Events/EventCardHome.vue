@@ -19,7 +19,7 @@ const formatDate = (dateString) => {
 </script>
 
 <template>
-    <div class="relative rounded-xl overflow-hidden h-[400px]" @click="showEventDetails">
+    <div class="relative rounded-xl overflow-hidden h-[350px]" @click="showEventDetails">
         <!-- Define altura do Card -->
 
         <img :src="(event.images && event.images.length > 0) ? event.images[0] : '/noimg.jpg'"
