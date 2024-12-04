@@ -7,7 +7,7 @@
             style="width: calc(100% - 4rem);">
 
             <div class="pl-2 md:pl-4">
-                <img src="/Meninger-logo.png" class="h-14 md:h-16 object-cover filter drop-shadow invert dark:invert-0" alt="Logo" />
+                <img src="/Meninger-logo.png" class="h-14 md:h-16 object-cover filter opacity-80 drop-shadow invert dark:invert-0" alt="Logo" />
             </div>
 
             <div class="relative flex">
@@ -69,9 +69,9 @@
                                         <input class="peer sr-only" id="themeToggle" type="checkbox" v-model="darkMode"
                                             @change="toggleTheme" />
                                         <i :class="{
-                                            'far fa-sun text-gray-800 translate-x-0': !darkMode,
-                                            'far fa-moon text-gray-300 translate-x-24': darkMode
-                                        }" class="transition-transform duration-400"></i>
+                                            'far fa-sun translate-x-0': !darkMode,
+                                            'far fa-moon translate-x-24': darkMode
+                                        }" class="transition-transform text-gray-800 dark:text-gray-300 duration-400"></i>
                                     </label>
                                 </div>
 
@@ -148,9 +148,9 @@
                         <input class="peer sr-only" id="themeToggle" type="checkbox" v-model="darkMode"
                             @change="toggleTheme" />
                         <i :class="{
-                            'far fa-sun text-gray-700 mx-2 my-2': !darkMode,
-                            'far fa-moon text-gray-300 mx-3 my-2': darkMode
-                        }" class="m-auto text-3xl transition-transform duration-300"></i>
+                            'far fa-sun mx-2 my-2': !darkMode,
+                            'far fa-moon mx-3 my-2': darkMode
+                        }" class="m-auto text-3xl text-gray-700 dark:text-gray-300 transition-transform duration-300"></i>
                     </label>
                 </div>
                 <div class="sticky inset-x-0 bottom-0 border-t border-gray-400 dark:border-gray-800 p-2 text-2xl">
@@ -404,11 +404,7 @@ const toggleTheme = () => {
 onMounted(async () => {
     const prefersDarkScheme = window.matchMedia('(prefers-color-scheme: dark)').matches;
     darkMode.value = prefersDarkScheme;
-    if (prefersDarkScheme) {
-        document.documentElement.classList.add('dark');
-    }
     document.addEventListener('click', closeMenu);
-
     if (!authStore.user) {
         await authStore.fetchUserInfo(); 
     }

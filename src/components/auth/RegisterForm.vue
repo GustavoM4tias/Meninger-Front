@@ -2,19 +2,19 @@
 <template>
   <div>
     <form @submit.prevent="handleRegister">
-      <p class="text-xl font-light uppercase my-2 text-gray-500">Crie sua conta </p>
-      <hr class="border-t border-gray-400 mb-10">
+      <p class="text-xl font-light uppercase my-2 text-gray-500 dark:text-gray-200">Crie sua conta </p>
+      <hr class="border-t border-gray-400 dark:border-gray-100 mb-10">
       </hr>
-      <Input v-model="username" type="text" placeholder="Nome e sobrenome" required />
-      <div class="flex gap-5">
-        <Select v-model="city" :options="optionsCity" placeholder="Cidade de Atuação" required />
-        <Select v-model="position" :options="optionsPosition" placeholder="Cargo de Atuação" required />
+      <Input class="my-3" v-model="username" type="text" placeholder="Nome e sobrenome" required />
+      <div class="flex gap-2 my-3">
+        <Select v-model="city" :options="optionsCity" placeholder="Cidade" required />
+        <Select v-model="position" :options="optionsPosition" placeholder="Cargo" required />
       </div>
-      <Input v-model="email" type="email" placeholder="Email" required />
-      <Input v-model="password" type="password" placeholder="Senha" required />
+      <Input class="my-3" v-model="email" type="email" placeholder="Email" required />
+      <Input class="my-3" v-model="password" type="password" placeholder="Senha" required />
       <div class="text-red-500" v-if="errorMessage">{{ errorMessage }}</div>
       <Button type="submit">Criar Conta</Button>
-      <hr class="border-t border-gray-400 mt-6">
+      <hr class="border-t border-gray-400 dark:border-gray-100 mt-6">
       </hr>
       <RouterLink to="/login" class="text-sm mt-1 text-blue-500 cursor-pointer hover:text-blue-600">Já tem uma conta?
         Entrar. </RouterLink>

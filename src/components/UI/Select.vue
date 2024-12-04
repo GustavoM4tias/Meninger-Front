@@ -1,6 +1,6 @@
 <template>
     <div class="select-field w-full">
-        <select class="p-3 border border-gray-100 rounded-lg focus:outline-none shadow-sm w-full text-gray-400" :value="modelValue" @change="updateValue"
+        <select class="py-3 px-2 border text-lg md:text-2xl text-gray-700 dark:text-gray-300 dark:bg-gray-500 border-gray-100 dark:border-gray-600 rounded-lg focus:outline-none shadow-sm w-full" :value="modelValue" @change="updateValue"
             :required="required">
             <option value="" disabled hidden>{{ placeholder }}</option>
             <option v-for="option in options" :key="option.value" :value="option.value">

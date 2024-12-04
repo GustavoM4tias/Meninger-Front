@@ -1,7 +1,7 @@
 <template>
   <div class="input-field w-full mt-2 text-lg">
     <label v-if="label" for="input-field" class="block text-gray-700 dark:text-gray-200 font-semibold mb-1">{{ label }}</label>
-    <input class="p-3 border border-gray-100 text-gray-800 rounded-lg shadow-sm w-full" :type="type"
+    <input class="p-3 text-lg md:text-2xl border text-gray-700 dark:text-gray-200 placeholder:text-gray-200 dark:bg-gray-500 border-gray-100 dark:border-gray-600 rounded-lg shadow-sm w-full" :type="type"
       :placeholder="placeholder" :value="modelValue" @input="updateValue" :required="required" />
   </div>
 </template>
@@ -17,6 +17,6 @@ const props = defineProps({
 
 const emit = defineEmits();
 const updateValue = (event) => {
-  emit('update:modelValue', event.target.value); // Emite o evento de atualização
+  emit('update:modelValue', event.target.value);
 };
 </script>
