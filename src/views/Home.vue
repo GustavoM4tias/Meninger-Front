@@ -23,7 +23,7 @@ import EventCarrossel from '../components/Home/Events/EventCarrossel.vue';
     <!-- Segunda coluna -->
     <div class="w-full md:w-1/3 f-full flex flex-col order-1 md:order-2">
 
-      <EventNotification class="flex-1 p-4 h-4/6 filter drop-shadow-xl" />
+      <EventNotification class="flex-1 p-4 md:h-4/6 filter drop-shadow-xl" />
 
       <div class="enterprise bg-yellow-200 h-2/6 flex-1">
         Empreendimentos
