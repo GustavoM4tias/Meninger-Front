@@ -22,6 +22,7 @@ const openEventModal = (event) => {
 
 const closeEventModal = () => {
     selectedEvent.value = null;
+    eventStore.fetchEvents(); // Atualiza eventos após adicionar
 };
 
 const openAddEventModal = () => {
