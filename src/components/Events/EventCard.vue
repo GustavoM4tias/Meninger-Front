@@ -49,7 +49,7 @@ const formatDate = (dateString) => {
                 <p class="text-md md:text-lg text-gray-300 cursor-pointer duration-200 hover:text-gray-100 -mt-1">
                     <!-- Cidade  -->
                 </p>
-                <button @click="$emit('abrir-modal')"
+                <button
                     class="border rounded-md md:rounded-lg text-white text-lg text-wrap hover:bg-gray-100 hover:text-gray-800 duration-300 py-1 px-2 md:py-2 md:px-4 ml-4">
                     Ver Mais
                 </button>
