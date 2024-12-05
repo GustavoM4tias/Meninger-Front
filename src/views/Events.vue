@@ -2,7 +2,6 @@
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { getEvents } from '../utils/apiEvents';
 import { useEventStore } from '../stores/eventStore';
 import EventCard from '../components/Events/EventCard.vue';
 import EventModal from '../components/Events/EventModal.vue';
@@ -37,10 +36,8 @@ const closeAddEventModal = () => {
 // Centraliza o fechamento e atualização após a exclusão
 const handleEventDeleted = () => {
     closeEventModal(); // Fecha o modal de visualização
-    fetchEvents(); // Atualiza a lista de eventos
+    eventStore.fetchEvents(); // Atualiza a lista de eventos
 };
-
-
 
 // Atualiza a busca ao alterar a query
 watch(
@@ -63,21 +60,21 @@ const eventosFiltrados = computed(() => {
 // Computed para determinar qual seção mostrar
 const currentSection = computed(() => route.query.section || 'geral');
 
-const eventosExibidos = computed(() => {
-    switch (currentSection.value) {
-        case 'proximos':
-            return eventStore.eventosEmAndamento.filter(event =>
-                eventosFiltrados.value.includes(event)
-            );
-        case 'finalizados':
-            return eventStore.eventosFinalizados.filter(event =>
-                eventosFiltrados.value.includes(event)
-            );
-        case 'geral':
-        default:
-            return eventosFiltrados.value;
-    }
-});
+// const eventosExibidos = computed(() => {
+//     switch (currentSection.value) {
+//         case 'proximos':
+//             return eventStore.eventosEmAndamento.filter(event =>
+//                 eventosFiltrados.value.includes(event)
+//             );
+//         case 'finalizados':
+//             return eventStore.eventosFinalizados.filter(event =>
+//                 eventosFiltrados.value.includes(event)
+//             );
+//         case 'geral':
+//         default:
+//             return eventosFiltrados.value;
+//     }
+// });
 
 const eventosEmAndamento = computed(() => eventosFiltrados.value.filter(event => new Date(event.event_date) >= dataAtual));
 const eventosFinalizados = computed(() => eventosFiltrados.value
@@ -96,6 +93,7 @@ const atualizarBusca = () => {
 
 // Inicializa os eventos
 onMounted(() => eventStore.fetchEvents());
+
 </script>
 
 <template>

@@ -11,10 +11,24 @@ const routes = [
     meta: { requiresAuth: true },
   },
   {
+    path: '/buildings',
+    name: 'Buildings',
+    component: () => import('../views/Buildings.vue'),
+    meta: { requiresAuth: true },
+    meta: {
+      requiresAuth: true,
+      allowedPosition: ''
+    },
+  },
+  {
     path: '/events',
     name: 'Events',
     component: () => import('../views/Events.vue'),
     meta: { requiresAuth: true },
+    meta: {
+      requiresAuth: true,
+      allowedPosition: ''
+    },
   },
   {
     path: '/teste',

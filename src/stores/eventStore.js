@@ -5,8 +5,7 @@ import { getEvents } from '../utils/apiEvents';
 export const useEventStore = defineStore('eventStore', {
     state: () => ({
         events: [],
-        errorMessage: '',
-        loading: false,
+        errorMessage: ''
     }),
     getters: {
         eventosEmAndamento: (state) => {
@@ -27,7 +26,6 @@ export const useEventStore = defineStore('eventStore', {
     },
     actions: {
         async fetchEvents() {
-            this.loading = true;
             this.errorMessage = '';
             try {
                 const result = await getEvents();
@@ -35,8 +33,6 @@ export const useEventStore = defineStore('eventStore', {
             } catch (error) {
                 console.error('Erro ao obter eventos:', error);
                 this.errorMessage = 'Erro ao carregar eventos.';
-            } finally {
-                this.loading = false;
             }
         },
     },

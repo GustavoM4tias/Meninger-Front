@@ -207,9 +207,9 @@
                         </button>
                         <ul v-if="dropdowns.enterprise" class="mt-2 text-gray-600 dark:text-gray-300">
                             <li>
-                                <RouterLink to=""
+                                <RouterLink to="/buildings"
                                     class="block px-4 py-1.5 my-1.5 bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 rounded-md">
-                                    Submenu 1
+                                    Empreendimentos
                                 </RouterLink>
                             </li>
                             <li>
