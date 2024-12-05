@@ -9,7 +9,7 @@
     type: { type: String, default: 'button' }
   });
 
-  const emit = defineEmits();
+  const emit = defineEmits('click');
   
   const handleClick = () => {
     emit('click');
