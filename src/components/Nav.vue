@@ -209,19 +209,25 @@
                             <li>
                                 <RouterLink to="/buildings"
                                     class="block px-4 py-1.5 my-1.5 bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 rounded-md">
-                                    Empreendimentos
+                                    Geral
                                 </RouterLink>
                             </li>
                             <li>
                                 <RouterLink to=""
                                     class="block px-4 py-1.5 my-1.5 bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 rounded-md">
-                                    Submenu 2
+                                    MCMV
                                 </RouterLink>
                             </li>
                             <li>
                                 <RouterLink to=""
                                     class="block px-4 py-1.5 my-1.5 bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 rounded-md">
-                                    Submenu 3
+                                    SBPE
+                                </RouterLink>
+                            </li>
+                            <li>
+                                <RouterLink to=""
+                                    class="block px-4 py-1.5 my-1.5 bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 rounded-md">
+                                    LOTES
                                 </RouterLink>
                             </li>
                         </ul>

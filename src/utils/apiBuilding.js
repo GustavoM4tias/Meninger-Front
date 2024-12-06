@@ -18,7 +18,7 @@ export const getAddress = async (cep) => {
 export const getWeatherByCity = async (city) => {
     try {
         // 1. Requisição para OpenStreetMap para obter a latitude e longitude
-        const addressResponse = await fetchCarregamento(`https://nominatim.openstreetmap.org/search?city=${city}&format=json`, {
+        const addressResponse = await fetch(`https://nominatim.openstreetmap.org/search?city=${city}&format=json`, {
             method: 'GET',
         });
 
@@ -28,16 +28,15 @@ export const getWeatherByCity = async (city) => {
         }
 
         const addressData = await addressResponse.json();
-        if (addressData.length === 0) {
-            throw new Error('cidade não encontrada');
+        if (!addressData.length) {
+            throw new Error('Cidade não encontrada.');
         }
 
-        // 2. Pega a latitude e longitude da cidade
+        // 2. Pegar latitude e longitude
         const { lat, lon } = addressData[0];
-        console.log(`Latitude: ${lat}, Longitude: ${lon}`);
 
         // 3. Requisição para Open-Meteo para obter o clima com a latitude e longitude
-        const weatherResponse = await fetchCarregamento(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`, {
+        const weatherResponse = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=precipitation_probability&current_weather=true`, {
             method: 'GET',
         });
 
@@ -48,17 +47,13 @@ export const getWeatherByCity = async (city) => {
 
         // 4. Pega as informações do clima
         const weatherData = await weatherResponse.json();
-        console.log('Dados do clima:', weatherData.current_weather);
+        // console.log('Dados do clima:', weatherData.current_weather);
 
         return weatherData.current_weather;
     } catch (error) {
         console.error('Erro:', error.message);
     }
 };
-
-// Exemplo de uso:
-getWeatherByCity('Marília'); // Você pode substituir "Marília" por outra cidade
-
 
 export const getBuildings = async () => {
     const response = await fetchCarregamento(`${EVENT_URL}/buildings`, {
