@@ -1,10 +1,11 @@
 // src/stores/buildingStore.js
 import { defineStore } from 'pinia';
-import { getBuildings } from '../utils/apiBuilding';
+import { getBuildings, getWeatherByCity } from '../utils/apiBuilding';
 
 export const useBuildingStore = defineStore('buildingStore', {
     state: () => ({
         buildings: [],
+        weather: null, // Estado para armazenar o clima
         errorMessage: '',
     }),
     actions: {
@@ -38,13 +39,21 @@ export const useBuildingStore = defineStore('buildingStore', {
                 console.error("Erro ao atualizar empreendimento:", error);
             }
         },
-
         async deleteBuilding(buildingId) {
             try {
                 await deleteBuilding(buildingId);
                 this.buildings = this.buildings.filter(b => b.id !== buildingId);
             } catch (error) {
                 console.error("Erro ao excluir empreendimento:", error);
+            }
+        },
+        async getWeather(city) {
+            try {
+                const weatherData = await getWeatherByCity(city);
+                this.weather = weatherData; 
+            } catch (error) {
+                console.error('Erro ao buscar o clima:', error.message);
+                this.errorMessage = 'Erro ao buscar informações do clima.';
             }
         },
     },

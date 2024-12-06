@@ -8,16 +8,16 @@ import AddBuildingModal from '../components/Buildings/AddBuildingModal.vue';
 
 const buildingStore = useBuildingStore();
 
-const selectedBuildings = ref(null);
+const selectedBuilding = ref(null);
 const addBuilding = ref(false);
 
 
 const openBuildingModal = (building) => {
-    selectedBuildings.value = building;
+    selectedBuilding.value = building;
 };
 
 const closeBuildingModal = () => {
-    selectedBuildings.value = null;
+    selectedBuilding.value = null;
     buildingStore.fetchBuildings(); // Atualiza empreendimentos após adicionar
 };
 
@@ -52,11 +52,11 @@ onMounted(() => buildingStore.fetchBuildings());
         <div class="container md:mx-auto my-5 relative z-10">
 
             <div class="search items-center -mb-3">
-                <h1 class="text-2xl md:text-4xl text-center font-bold mb-2">Eventos</h1>
+                <h1 class="text-2xl md:text-4xl text-center font-bold mb-2">Empreendimentos</h1>
                 <div class="nav bg-gray-400 rounded-full mx-auto p-2 filter w-2/5">
                     <!-- <input type="text" v-model="busca" @input="atualizarBusca"
                         class="busca bg-gray-200 w-full rounded-full px-5 py-3 text-gray-700 outline-none font-semibold placeholder-gray-600"
-                        placeholder="Buscar eventos..." /> -->
+                        placeholder="Buscar empreendimentos..." /> -->
                 </div>
             </div>
 
@@ -69,8 +69,8 @@ onMounted(() => buildingStore.fetchBuildings());
             </div>
         </div>
 
-        <BuildingModal v-if="selectedBuildings" :building="selectedBuildings" @close="closeBuildingModal"
-            @building-deleted="handleBuildingDeleted" />
+        <BuildingModal v-if="selectedBuilding" :building="selectedBuilding" @close="closeBuildingModal"/> 
+
 
         <AddBuildingModal v-if="addBuilding" @close="closeAddBuildingModal"
             @openAddBuildingModal="openAddBuildingModal" />

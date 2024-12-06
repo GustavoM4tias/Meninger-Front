@@ -1,17 +1,16 @@
-<!-- src/components/Events/EditBuildingModal.vue -->
+<!-- src/components/Buildings/EditBuildingModal.vue -->
 <script setup>
 import { ref, watch  } from 'vue';
-import { updateEvent } from '../../utils/apiEvents';
-import { getAddress } from '../../utils/apiBuilding';
+import { updateBuilding, getAddress } from '../../utils/apiBuilding';
 
-const props = defineProps({ event: Object });
-const emit = defineEmits(['close', 'event-deleted']);
+const props = defineProps({ building: Object });
+const emit = defineEmits(['close']);
 
-const editedEvent = ref({ ...props.event });
+const editedBuilding = ref({ ...props.building });
 
-// Garantir que o endereço exista como um objeto dentro de editedEvent
-if (!editedEvent.value.address) {
-    editedEvent.value.address = {
+// Garantir que o endereço exista como um objeto dentro de editedBuilding
+if (!editedBuilding.value.address) {
+    editedBuilding.value.address = {
         street: '',
         number: '',
         neighborhood: '',
@@ -22,18 +21,16 @@ if (!editedEvent.value.address) {
 }
 
 // Formatar a data para o HTML
-editedEvent.value.eventDate = new Date(editedEvent.value.event_date).toISOString().split('T')[0];
-
-
+editedBuilding.value.buildingDate = new Date(editedBuilding.value.building_date).toISOString().split('T')[0];
 
 // Função para buscar e preencher o endereço automaticamente
 const fetchAddress = async (cep) => {
     try {
         const data = await getAddress(cep);
-        editedEvent.value.address.street = data.logradouro || '';
-        editedEvent.value.address.neighborhood = data.bairro || '';
-        editedEvent.value.address.city = data.localidade || '';
-        editedEvent.value.address.state = data.uf || '';
+        editedBuilding.value.address.street = data.logradouro || '';
+        editedBuilding.value.address.neighborhood = data.bairro || '';
+        editedBuilding.value.address.city = data.localidade || '';
+        editedBuilding.value.address.state = data.uf || '';
     } catch (error) {
         console.error('Erro ao buscar endereço:', error);
     }
@@ -41,12 +38,12 @@ const fetchAddress = async (cep) => {
 
 // Watch para monitorar alterações no CEP e buscar o endereço
 watch(
-    () => editedEvent.value.address.zip_code,
+    () => editedBuilding.value.address.zip_code,
     (newCep) => {
         if (newCep.length === 8) {  // Verifica se o CEP tem 8 dígitos
             fetchAddress(newCep);  // Chama a função para buscar o endereço
         } else if (newCep.length === 0) {  // Se o CEP for apagado, limpa o endereço
-            editedEvent.value.address = {
+            editedBuilding.value.address = {
                 street: '',
                 number: '',
                 neighborhood: '',
@@ -62,10 +59,10 @@ watch(
 
 const submitEdit = async () => {
     try {
-        await updateEvent(editedEvent.value);
+        await updateBuilding(editedBuilding.value);
         emit('close'); // Fecha o modal após salvar as mudanças
     } catch (error) {
-        console.error('Erro ao atualizar o evento:', error);
+        console.error('Erro ao atualizar o Empreendimento:', error);
     }
 };
 
@@ -75,24 +72,24 @@ const newImageUrl = ref('');
 
 const addTag = () => {
     if (newTag.value) {
-        editedEvent.value.tags.push(newTag.value);
+        editedBuilding.value.tags.push(newTag.value);
         newTag.value = '';
     }
 };
 
 const removeTag = (index) => {
-    editedEvent.value.tags.splice(index, 1);
+    editedBuilding.value.tags.splice(index, 1);
 };
 
 const addImage = () => {
     if (newImageUrl.value) {
-        editedEvent.value.images.push(newImageUrl.value);
+        editedBuilding.value.images.push(newImageUrl.value);
         newImageUrl.value = '';
     }
 };
 
 const removeImage = (index) => {
-    editedEvent.value.images.splice(index, 1);
+    editedBuilding.value.images.splice(index, 1);
 };
 
 
@@ -102,28 +99,28 @@ const removeImage = (index) => {
     <div class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center z-50">
         <div
             class="bg-gray-100 dark:bg-gray-700 rounded-2xl shadow-xl p-6 h-[90%] w-5/6 md:w-3/6 lg:w-2/6 text-gray-700 dark:text-gray-100 overflow-y-auto">
-            <h3 class="text-xl font-semibold text-center">Editar Evento</h3>
+            <h3 class="text-xl font-semibold text-center">Editar Empreendimento</h3>
             <form class="text-gray-100 font-semibold text-lg">
 
                 <div class="relative my-2 border border-gray-500 rounded-xl p-2">
-                    <label class="absolute -top-5">Info Evento</label>
+                    <label class="absolute -top-5">Info Empreendimento</label>
                     <div class="grid grid-cols-3 gap-x-3">
 
                         <div class="col-span-2">
                             <label class="text-gray-300">Título</label>
-                            <input v-model="editedEvent.title" type="text" required
+                            <input v-model="editedBuilding.title" type="text" required
                                 class="w-full font-normal text-gray-700 py-1 px-2 border rounded-md" />
                         </div>
 
                         <div class="">
-                            <label class="text-gray-300">Data do Evento</label>
-                            <input v-model="editedEvent.eventDate" type="date" required
+                            <label class="text-gray-300">Data</label>
+                            <input v-model="editedBuilding.buildingDate" type="date" required
                                 class="w-full font-normal text-gray-700 py-1 px-2 border rounded-md" />
                         </div>
 
                         <div class="col-span-3">
                             <label class="text-gray-300">Descrição</label>
-                            <textarea v-model="editedEvent.description" required
+                            <textarea v-model="editedBuilding.description" required
                                 class="w-full font-normal text-gray-700 py-1 px-2 border rounded-md"></textarea>
                         </div>
 
@@ -134,17 +131,17 @@ const removeImage = (index) => {
                 <div class="relative mb-2 mt-5 border border-gray-500 rounded-xl p-2">
                     <label class="absolute -top-5">Endereço</label>
                     <div class="grid grid-cols-2 gap-3">
-                        <input v-model="editedEvent.address.zip_code" placeholder="CEP"
+                        <input v-model="editedBuilding.address.zip_code" placeholder="CEP"
                             class="font-normal text-gray-700 py-1 px-2 border rounded-md" />
-                        <input v-model="editedEvent.address.state" placeholder="Estado"
+                        <input v-model="editedBuilding.address.state" placeholder="Estado"
                             class="font-normal text-gray-700 py-1 px-2 border rounded-md" />
-                        <input v-model="editedEvent.address.city" placeholder="Cidade"
+                        <input v-model="editedBuilding.address.city" placeholder="Cidade"
                             class="font-normal text-gray-700 py-1 px-2 border rounded-md" />
-                        <input v-model="editedEvent.address.neighborhood" placeholder="Bairro"
+                        <input v-model="editedBuilding.address.neighborhood" placeholder="Bairro"
                             class="font-normal text-gray-700 py-1 px-2 border rounded-md" />
-                        <input v-model="editedEvent.address.street" placeholder="Rua"
+                        <input v-model="editedBuilding.address.street" placeholder="Rua"
                             class="font-normal text-gray-700 py-1 px-2 border rounded-md" />
-                        <input v-model="editedEvent.address.number" type="number" placeholder="Número"
+                        <input v-model="editedBuilding.address.number" type="number" placeholder="Número"
                             class="font-normal text-gray-700 py-1 px-2 border rounded-md" />
                     </div>
                 </div>
@@ -161,7 +158,7 @@ const removeImage = (index) => {
                         </button>
                     </div>
                     <div class="flex gap-3 mt-2 overflow-x-auto">
-                        <div v-for="(tag, index) in editedEvent.tags" :key="index"
+                        <div v-for="(tag, index) in editedBuilding.tags" :key="index"
                             class="flex w-auto relative flex-shrink-0 items-center justify-between bg-gray-200 text-gray-800 px-2 py-1 my-1 rounded-md">
                             {{ tag }}
                             <i class="fas fa-xmark cursor-pointer text-xl ms-2" @click="removeTag(index)"></i>
@@ -183,7 +180,7 @@ const removeImage = (index) => {
 
                     <!-- Contêiner para imagens com rolagem lateral -->
                     <div class="flex gap-3 mt-2 overflow-x-auto">
-                        <div v-for="(image, index) in editedEvent.images" :key="index"
+                        <div v-for="(image, index) in editedBuilding.images" :key="index"
                             class="relative flex-shrink-0 my-1">
                             <img :src="image" class="w-full h-40 object-cover rounded-md" />
                             <button @click="removeImage(index)"

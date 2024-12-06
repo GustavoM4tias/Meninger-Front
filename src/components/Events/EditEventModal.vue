@@ -1,11 +1,11 @@
 <!-- src/components/Events/EditEventModal.vue -->
 <script setup>
-import { ref, watch  } from 'vue';
+import { ref, watch } from 'vue';
 import { updateEvent } from '../../utils/apiEvents';
 import { getAddress } from '../../utils/apiBuilding';
 
 const props = defineProps({ event: Object });
-const emit = defineEmits(['close', 'event-deleted']);
+const emit = defineEmits(['close']);
 
 const editedEvent = ref({ ...props.event });
 
@@ -23,8 +23,6 @@ if (!editedEvent.value.address) {
 
 // Formatar a data para o HTML
 editedEvent.value.eventDate = new Date(editedEvent.value.event_date).toISOString().split('T')[0];
-
-
 
 // Função para buscar e preencher o endereço automaticamente
 const fetchAddress = async (cep) => {

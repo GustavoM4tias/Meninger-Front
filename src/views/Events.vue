@@ -169,8 +169,7 @@ onMounted(() => eventStore.fetchEvents());
 
         </div>
 
-        <EventModal v-if="selectedEvent" :event="selectedEvent" @close="closeEventModal"
-            @event-deleted="handleEventDeleted" />
+        <EventModal v-if="selectedEvent" :event="selectedEvent" @close="closeEventModal" />
 
         <AddEventModal v-if="addEvent" @close="closeAddEventModal" @openAddEventModal="openAddEventModal" />
         <div v-if="eventStore.errorMessage">{{ eventStore.errorMessage }}</div>

@@ -11,7 +11,7 @@ const props = defineProps({
     },
 });
 
-const emit = defineEmits(['close', 'event-deleted']);
+const emit = defineEmits(['close']);
 
 const closeModal = () => {
     emit('close');
@@ -23,17 +23,11 @@ const openEditModal = () => {
     isEditModalOpen.value = true;
 };
 
-// Função para gerenciar a exclusão e emitir evento
-const handleEventDeleted = () => {
-    emit('event-deleted'); // Emite o evento para `Events.vue`
-};
-
 const excluirEmpreendimento = async () => {
     const confirmar = confirm('Você tem certeza que deseja excluir este evento?');
     if (confirmar === true) {
         try {
             await deleteEvent(props.event.id); // Chama a API de exclusão com o ID do evento
-            emit('event-deleted'); // Emite o evento de exclusão
             closeModal(); // Fecha o modal
         } catch (error) {
             console.error("Erro ao excluir evento:", error);
@@ -164,7 +158,6 @@ const anterior = () => {
             </div>
         </div>
         <!-- Modal de Edição do Evento -->
-        <EditEventModal v-if="isEditModalOpen" :event="event" @close="isEditModalOpen = false"
-            @event-deleted="handleEventDeleted" />
+        <EditEventModal v-if="isEditModalOpen" :event="event" @close="isEditModalOpen = false" />
     </div>
 </template>
