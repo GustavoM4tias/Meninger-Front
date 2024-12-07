@@ -1,5 +1,5 @@
 <script setup>
-import { ref, defineProps, defineEmits } from 'vue';
+import { ref } from 'vue';
 import { updateUserInfo } from '../../utils/apiAuth';
 import Input from '../../components/UI/Input.vue';
 import Button from '../../components/UI/Button.vue';
