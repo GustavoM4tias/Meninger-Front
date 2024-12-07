@@ -1,32 +1,35 @@
 <script setup>
-import EventNotification from '../components/Home/Events/EventNotification.vue';
+import EventNotification from '../components/Home/Notifications/EventNotification.vue';
 import EventCarrossel from '../components/Home/Events/EventCarrossel.vue';
+import BuildingCarrossel from '../components/Home/Buildings/BuildingCarrossel.vue';
 
+import { useAuthStore } from '../stores/authStore';
+const authStore = useAuthStore();
 </script>
 
 <template>
-  <div class="h-auto md:h-[calc(100vh-4rem)] flex flex-col md:flex-row">
+  <div class="h-auto md:h-[calc(100vh-4rem)] flex flex-col md:flex-row bg-gray-100 dark:bg-gray-800">
 
     <!-- Primeira coluna -->
-    <div class="w-full md:w-2/3 flex flex-col order-2 md:order-1">
+    <div class="w-full md:w-2/3 flex flex-col">
 
       <div class="w-full ">
         <EventCarrossel class="flex-1 filter drop-shadow-xl" />
       </div>
 
-      <div class="others bg-purple-200 flex-1">
+      <div class="others flex-1">
         Others
       </div>
 
     </div>
 
     <!-- Segunda coluna -->
-    <div class="w-full md:w-1/3 f-full flex flex-col order-1 md:order-2">
+    <div class="w-full md:w-1/3 f-full flex flex-col">
 
-      <EventNotification class="flex-1 p-4 md:h-4/6 filter drop-shadow-xl" />
+      <EventNotification class="flex-1 p-4 md:h-[60%] filter drop-shadow-xl order-2 md:order-1" />
 
-      <div class="enterprise bg-yellow-200 h-2/6 flex-1">
-        Empreendimentos
+      <div class="enterprise h-[40%] flex-1 order-1 md:order-2">
+        <BuildingCarrossel class="flex-1 filter drop-shadow-xl h-full m-auto" />
       </div>
 
     </div>
