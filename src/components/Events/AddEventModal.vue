@@ -119,7 +119,7 @@ onMounted(async () => {
                         </div>
 
                         <div class="">
-                            <label class="text-gray-300">Data do Evento</label>
+                            <label class="text-gray-300">Data</label>
                             <input v-model="newEvent.eventDate" type="date" required
                                 class="w-full font-normal text-gray-600 py-1 px-2 border rounded-md" />
                         </div>
