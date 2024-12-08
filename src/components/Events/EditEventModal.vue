@@ -114,7 +114,7 @@ const removeImage = (index) => {
                         </div>
 
                         <div class="">
-                            <label class="text-gray-300">Data do Evento</label>
+                            <label class="text-gray-300">Data</label>
                             <input v-model="editedEvent.eventDate" type="date" required
                                 class="w-full font-normal text-gray-700 py-1 px-2 border rounded-md" />
                         </div>

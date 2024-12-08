@@ -102,8 +102,7 @@ onMounted(() => eventStore.fetchEvents());
 
         <img class="absolute invert dark:invert-0 z-0 left-72 top-0 opacity-25" src="/traçado.png">
 
-        <i @click="openAddEventModal"
-            class="far fa-calendar-plus absolute text-gray-400 hover:text-gray-500 cursor-pointer top-0 right-0 m-4 md:m-8 text-4xl"></i>
+        <i @click="openAddEventModal" class="far fa-calendar-plus absolute text-gray-400 hover:text-gray-500 cursor-pointer top-0 right-0 m-4 md:m-8 text-4xl z-20"></i>
         <!-- Verificar se usuario é admin/mkt  -->
 
         <div class="container md:mx-auto my-5 relative z-10">
