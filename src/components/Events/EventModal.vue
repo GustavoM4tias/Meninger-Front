@@ -79,7 +79,7 @@ const anterior = () => {
                     </div>
 
                     <!-- Botões de navegação -->
-                    <div class="nav" v-if="event.images.length > 0">
+                    <div class="nav" v-if="event.images.length > 1">
                         <div class="absolute top-1/2 left-4 transform -translate-y-1/2">
                             <i class="fas fa-chevron-left cursor-pointer text-2xl text-gray-100 hover:text-gray-200 duration-200"
                                 @click="anterior"></i>
@@ -91,7 +91,7 @@ const anterior = () => {
                     </div>
 
                     <!-- Indicadores de posição -->
-                    <div class="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex space-x-2">
+                    <div class="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex space-x-2" v-if="event.images.length > 1">
                         <span v-for="(img, index) in event.images" :key="index" class="h-2 w-2 rounded-full"
                             :class="{ 'bg-gray-50': imagemAtual === index, 'bg-gray-300': imagemAtual !== index }"></span>
                     </div>

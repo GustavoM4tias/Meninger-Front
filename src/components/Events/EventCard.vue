@@ -22,7 +22,7 @@ const formatDate = (dateString) => {
 </script>
 
 <template>
-    <div class="shadow-md dark:shadow-2xl relative filter drop-shadow-lg rounded-xl overflow-hidden duration-300 transform hover:scale-105 h-full"
+    <div class="shadow-md dark:shadow-lg relative filter drop-shadow-lg rounded-xl overflow-hidden duration-300 transform hover:scale-105 h-full"
         @click="showEventDetails">
 
         <img :src="(event.images && event.images.length > 0) ? event.images[0] : '/noimg.jpg'"
