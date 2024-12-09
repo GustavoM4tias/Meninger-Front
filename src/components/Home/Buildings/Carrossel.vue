@@ -58,9 +58,9 @@ const goToSlide = (index) => {
     <!-- Marcadores de Páginas -->
     <div class="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
       <div v-for="(building, index) in props.buildings" :key="building.id" @click="goToSlide(index)" :class="{
-        'w-3 h-3 rounded-full': true,
+        'w-5 h-1 rounded-full': true,
         'bg-gray-100': currentIndex !== index,
-        'bg-gray-300': currentIndex === index,
+        'bg-gray-400': currentIndex === index,
         'cursor-pointer': true
       }"></div>
     </div>
