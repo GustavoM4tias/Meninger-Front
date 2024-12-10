@@ -10,6 +10,7 @@
         <Select v-model="city" :options="optionsCity" placeholder="Cidade" required />
         <Select v-model="position" :options="optionsPosition" placeholder="Cargo" required />
       </div>
+      <Input v-model="birth_date" type="date" placeholder="Data de Nascimento" required />
       <Input class="my-3" v-model="email" type="email" placeholder="Email" required />
       <Input class="my-3" v-model="password" type="password" placeholder="Senha" required />
       <div class="text-red-500" v-if="errorMessage">{{ errorMessage }}</div>
@@ -37,6 +38,7 @@ const username = ref('');
 const city = ref('');
 const position = ref('');
 const email = ref('');
+const birth_date = ref('');
 const password = ref('');
 const errorMessage = ref('');
 
@@ -63,7 +65,7 @@ const handleRegister = async () => {
   errorMessage.value = ''; // Limpa a mensagem de erro antes de tentar o login
 
   try {
-    const result = await registerUser(username.value, password.value, email.value, position.value, city.value);
+    const result = await registerUser(username.value, password.value, email.value, position.value, city.value, birth_date.value);
 
     // console.log('Register result:', result); // Adiciona log do resultado
 
@@ -76,7 +78,7 @@ const handleRegister = async () => {
     }
   } catch (error) {
     console.error('Register error:', error); // Adiciona log do erro
-    errorMessage.value = 'Erro ao tentar registrar. Tente novamente.'; // Mensagem genérica
+    errorMessage.value = 'Erro ao tentar registrar, tente novamente mais tarde.'; // Mensagem genérica
   }
 };
 
