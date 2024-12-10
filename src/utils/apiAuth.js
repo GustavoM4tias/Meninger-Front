@@ -2,13 +2,13 @@
 import { fetchCarregamento } from './fetchCarregamento';
 import AUTH_URL from '../config/apiAuthUrl';
 
-export const registerUser = async (username, password, email, position, city) => {
+export const registerUser = async (username, password, email, position, city, birth_date) => {
   const response = await fetchCarregamento(`${AUTH_URL}/register`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ username, password, email, position, city }),
+    body: JSON.stringify({ username, password, email, position, city, birth_date}),
   });
   return response.json();
 };
@@ -45,14 +45,14 @@ export const getUserInfo = async () => {
   return response.json();
 };
 
-export const updateMeInfo = async (username, email, position, city) => {
+export const updateMeInfo = async (username, email, position, city, birth_date, status) => {
   const response = await fetchCarregamento(`${AUTH_URL}/user`, {
     method: 'PUT',
     headers: {
       'Authorization': `Bearer ${localStorage.getItem('token')}`, 
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ username, email, position, city }),
+    body: JSON.stringify({ username, email, position, city, birth_date, status }),
   });
 
   if (!response.ok) {
