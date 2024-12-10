@@ -63,7 +63,7 @@ export const updateMeInfo = async (username, email, position, city) => {
   return response.json();
 };
 
-export const updateUserInfo = async (id, username, email, position, city, status) => {
+export const updateUserInfo = async (id, username, email, position, city, birth_date, status) => {
 
   const response = await fetchCarregamento(`${AUTH_URL}/users`, {
     method: 'PUT',
@@ -71,7 +71,7 @@ export const updateUserInfo = async (id, username, email, position, city, status
       'Authorization': `Bearer ${localStorage.getItem('token')}`, 
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({id, username, email, position, city, status }),
+    body: JSON.stringify({id, username, email, position, city, birth_date, status}),
   });
 
   if (!response.ok) {

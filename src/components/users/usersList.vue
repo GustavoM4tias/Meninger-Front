@@ -4,7 +4,7 @@ import { useAuthStore } from '../../stores/authStore';
 import UserModal from './userModal.vue';
 import UserList from './userList.vue';
 
-const store = useAuthStore();
+const userStore = useAuthStore();
 const users = ref([]);
 const searchQuery = ref(''); // Campo para armazenar o texto de busca
 const searchField = ref('username'); // Campo de busca (name ou email)
@@ -15,7 +15,7 @@ const editableUser = ref(null);
 
 const fetchUsers = async () => {
     try {
-        const fetchedUsers = await store.getAllUsers();
+        const fetchedUsers = await userStore.getAllUsers();
         users.value = fetchedUsers.data;
     } catch (error) {
         console.error('Erro ao carregar os usuários:', error);
