@@ -31,7 +31,7 @@ const formatDate = (dateString) => {
             <p class="month -mt-2">{{ formatDate(event.event_date).month }}</p>
         </div>
         <div class="text w-full truncate flex flex-col justify-center">
-            <div class="title text-xl font-medium text-gray-700 dark:text-gray-100">{{ event.title }}</div>
+            <p class="title text-xl font-medium text-gray-700 dark:text-gray-100">{{ event.title }}</p>
             <p class="hour text-xs md:text-sm text-gray-700 dark:text-gray-300">Hora: {{ formatDate(event.event_date).hours }}:{{
                 formatDate(event.event_date).minutes }}</p>
         </div>

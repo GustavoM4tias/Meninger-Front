@@ -4,9 +4,27 @@ import { getUserInfo, getAllUsers } from '../utils/apiAuth';
 
 export const useAuthStore = defineStore('user', {
   state: () => ({
+    users: [],
     user: null,
     token: localStorage.getItem('token') || null, // Inicializa o token do localStorage
   }),
+  getters: {
+    usuariosComAniversarioValido: (state) => {
+      return state.users.filter(user => user.birth_date && !isNaN(new Date(user.birth_date)));
+    },
+    aniversariosEmAndamento: (state) => {
+      const dataAtual = new Date();
+      return state.usuariosComAniversarioValido
+        .filter(user => new Date(user.birth_date) >= dataAtual) // Filtra aniversários futuros
+        .sort((a, b) => new Date(a.birth_date) - new Date(b.birth_date)); // Ordena do mais próximo
+    },
+    aniversariosFinalizados: (state) => {
+      const dataAtual = new Date();
+      return state.usuariosComAniversarioValido
+        .filter(user => new Date(user.birth_date) < dataAtual) // Filtra aniversários passados
+        .sort((a, b) => new Date(b.birth_date) - new Date(a.birth_date)); // Ordena do mais recente
+    },
+  },  
   actions: {
     setUser(user) {
       this.user = user;
@@ -36,8 +54,9 @@ export const useAuthStore = defineStore('user', {
     },
     async getAllUsers() {
       try {
-        const users = await getAllUsers();
-        return users;
+        const result = await getAllUsers(); // Supondo que getAllUsers retorne um array de usuários
+        this.users = result.data; // Atualiza a lista de usuários
+        return result;
       } catch (error) {
         throw new Error(error.message);
       }

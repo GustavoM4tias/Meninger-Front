@@ -8,11 +8,5 @@
   const props = defineProps({
     type: { type: String, default: 'button' }
   });
-
-  const emit = defineEmits('click');
-  
-  const handleClick = () => {
-    emit('click');
-  };
   </script>
   
