@@ -1,4 +1,5 @@
 <script setup>
+import Flag from './UI/Flag.vue';
 const props = defineProps({
     building: {
         type: Object,
@@ -35,11 +36,7 @@ const formatDate = (dateString) => {
                     <!-- <p class="text-gray-200 font-semibold filter drop-shadow cursor-pointer duration-200 hover:text-gray-100 text-wrap text-sm bottom-0 right-0 m-1 md:m-2">
                         {{ formatDate(building.building_date) }}
                     </p> -->
-
-                    <div class="flag absolute bg-emerald-500 top-3 right-0 z-50 ps-6 pe-3 py-1 text- shadow-lg">
-                        Pré Lançamento
-                    </div> <!-- Local Para Flag de Estagio empreendimento -->
-
+                    <Flag :stage="building.stage" />
                 </div>
                 <ul class="flex flex-wrap">
                     <li class="hover:bg-gray-100 hover:text-gray-800 text-gray-200 border border-gray-300 cursor-pointer filter drop-shadow duration-300 shadow px-2 py- m-1 rounded-lg"
@@ -59,9 +56,4 @@ const formatDate = (dateString) => {
         </div>
     </div>
 </template>
-
-<style scoped>
-.flag {
-    clip-path: polygon(0 0, 100% 0, 100% 100%, 100% 100%, 12% 100%);
-}
-</style>
+ 

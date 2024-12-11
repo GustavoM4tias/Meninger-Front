@@ -2,6 +2,7 @@
 import { ref, onMounted, watch } from 'vue';
 import { addBuilding, getAddress } from '../../utils/apiBuilding';  // Função para buscar endereço
 import { useAuthStore } from '../../stores/authStore';
+import Select from '../UI/Select.vue';
 
 const authStore = useAuthStore();
 
@@ -21,8 +22,16 @@ const newBuilding = ref({
         state: '',
         zip_code: ''
     },
-    created_by: authStore.user.username
+    created_by: authStore.user.username,
+    stage: ''
 });
+
+const optionsStage = [
+    { value: 'Pré Lançamento', label: 'Pré Lançamento' },
+    { value: 'Lançamento', label: 'Lançamento' },
+    { value: 'Em Obras', label: 'Em Obras' },
+    { value: 'Finalizado', label: 'Finalizado' }
+];
 
 // Função para buscar o endereço usando o CEP
 const fetchAddress = async (cep) => {
@@ -110,7 +119,7 @@ onMounted(async () => {
 <template>
     <div class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center z-50">
         <div
-            class="bg-gray-100 dark:bg-gray-700 rounded-2xl shadow-xl p-6 h-[90%] w-5/6 md:w-3/6 lg:w-2/6 text-gray-700 dark:text-gray-100 overflow-y-auto">
+            class="bg-gray-100 dark:bg-gray-700 rounded-2xl shadow-xl p-3 lg:p-6 h-[90%] w-5/6 md:w-3/6 lg:w-2/6 text-gray-700 dark:text-gray-100 overflow-y-auto">
             <h3 class="text-xl font-semibold text-center">Adicionar Empreendimento</h3>
 
             <form @submit.prevent="submitAdd" class="text-gray-100 font-semibold text-lg">
@@ -159,6 +168,13 @@ onMounted(async () => {
                         <input v-model="newBuilding.address.number" placeholder="Número"
                             class="font-normal text-gray-700 py-1 px-2 border rounded-md" />
                     </div>
+                </div>
+
+                <!-- Campo para Estádgio de Obra -->
+                <div class="relative mb-2 mt-5 border border-gray-500 rounded-xl p-2">
+                    <label class="absolute -top-5">Estágio de Obra</label>
+                    <Select v-model="newBuilding.stage" :options="optionsStage" placeholder="Estágio de Obra"
+                        required />
                 </div>
 
                 <!-- Campo para Tags -->

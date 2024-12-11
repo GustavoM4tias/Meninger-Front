@@ -11,7 +11,6 @@ const buildingStore = useBuildingStore();
 const selectedBuilding = ref(null);
 const addBuilding = ref(false);
 
-
 const openBuildingModal = (building) => {
     selectedBuilding.value = building;
 };
@@ -30,19 +29,13 @@ const closeAddBuildingModal = () => {
     buildingStore.fetchBuildings(); // Atualiza empreendimentos após adicionar
 };
 
-// Centraliza o fechamento e atualização após a exclusão
-const handleBuildingDeleted = () => {
-    closeBuildingModal(); // Fecha o modal de visualização
-    buildingStore.fetchBuildings(); // Atualiza a lista de empreendimentos
-};
-
 // Inicializa os empreendimentos
 onMounted(() => buildingStore.fetchBuildings());
 
 </script>
 
 <template>
-    <div class="bg-gray-300 dark:bg-gray-800 ms-4 md:ms-16 px-4 md:px-8 text-gray-800 dark:text-gray-200 min-h-screen relative overflow-hidden">
+    <div class="bg-gray-300 dark:bg-gray-800 ms-4 md:ms-16 px-4 md:px-8 text-gray-800 dark:text-gray-200 h-[calc(100%-4rem)] relative overflow-hidden">
 
         <img class="absolute invert dark:invert-0 z-0 left-72 top-0 w-full opacity-25" src="/traçado.png">
 

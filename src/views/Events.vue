@@ -33,12 +33,6 @@ const closeAddEventModal = () => {
     eventStore.fetchEvents(); // Atualiza eventos após adicionar
 };
 
-// Centraliza o fechamento e atualização após a exclusão
-const handleEventDeleted = () => {
-    closeEventModal(); // Fecha o modal de visualização
-    eventStore.fetchEvents(); // Atualiza a lista de eventos
-};
-
 // Atualiza a busca ao alterar a query
 watch(
     () => route.query.busca,
@@ -93,13 +87,12 @@ const atualizarBusca = () => {
 
 // Inicializa os eventos
 onMounted(() => eventStore.fetchEvents());
-
 </script>
 
 <template>
 
     <div
-        class="bg-gray-300 dark:bg-gray-800 ms-4 md:ms-16 px-4 md:px-8 text-gray-800 dark:text-gray-200 max-h-screen relative overflow-hidden">
+        class="bg-gray-300 dark:bg-gray-800 ms-4 md:ms-16 px-4 md:px-8 text-gray-800 dark:text-gray-200 h-[calc(100%-4rem)] relative overflow-hidden">
 
         <img class="absolute invert dark:invert-0 z-0 left-72 top-0 opacity-25" src="/traçado.png">
 

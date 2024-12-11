@@ -2,11 +2,19 @@
 <script setup>
 import { ref, watch  } from 'vue';
 import { updateBuilding, getAddress } from '../../utils/apiBuilding';
+import Select from '../UI/Select.vue';
 
 const props = defineProps({ building: Object });
 const emit = defineEmits(['close']);
 
 const editedBuilding = ref({ ...props.building });
+
+const optionsStage = [
+    { value: 'Pré Lançamento', label: 'Pré Lançamento' },
+    { value: 'Lançamento', label: 'Lançamento' },
+    { value: 'Em Obras', label: 'Em Obras' },
+    { value: 'Finalizado', label: 'Finalizado' }
+];
 
 // Garantir que o endereço exista como um objeto dentro de editedBuilding
 if (!editedBuilding.value.address) {
@@ -98,7 +106,7 @@ const removeImage = (index) => {
 <template>
     <div class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center z-50">
         <div
-            class="bg-gray-100 dark:bg-gray-700 rounded-2xl shadow-xl p-6 h-[90%] w-5/6 md:w-3/6 lg:w-2/6 text-gray-700 dark:text-gray-100 overflow-y-auto">
+            class="bg-gray-100 dark:bg-gray-700 rounded-2xl shadow-xl p-3 lg:p-6 h-[90%] w-5/6 md:w-3/6 lg:w-2/6 text-gray-700 dark:text-gray-100 overflow-y-auto">
             <h3 class="text-xl font-semibold text-center">Editar Empreendimento</h3>
             <form class="text-gray-100 font-semibold text-lg">
 
@@ -144,6 +152,13 @@ const removeImage = (index) => {
                         <input v-model="editedBuilding.address.number" type="number" placeholder="Número"
                             class="font-normal text-gray-700 py-1 px-2 border rounded-md" />
                     </div>
+                </div>
+                
+                <!-- Campo para Estádgio de Obra -->
+                <div class="relative mb-2 mt-5 border border-gray-500 rounded-xl p-2">
+                    <label class="absolute -top-5">Estágio de Obra</label>
+                    <Select v-model="editedBuilding.stage" :options="optionsStage" placeholder="Estágio de Obra"
+                        required />
                 </div>
 
                 <!-- Campo para Tags -->
