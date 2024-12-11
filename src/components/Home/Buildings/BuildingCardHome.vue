@@ -1,4 +1,5 @@
 <script setup>
+import Flag from '../../Buildings/UI/Flag.vue';
 const props = defineProps({
     building: {
         type: Object,
@@ -24,7 +25,7 @@ const formatDate = (dateString) => {
 
         <img :src="(building.images && building.images.length > 0) ? building.images[0] : '/noimg.jpg'"
             class="w-full h-full object-cover bg-center absolute z-0" /> <!-- Ajuste imagem -->
-            
+
         <div class="absolute inset-0 h-[300px] rounded-lg bg-gradient-to-b from-gray-900 to-transparent opacity-75">
         </div>
 
@@ -32,7 +33,8 @@ const formatDate = (dateString) => {
 
             <div class="titulo">
                 <div class="flex justify-between">
-                    <h1 class="text-xl truncate filter md:text-2xl font-semibold drop-shadow-md w-4/6">{{ building.title }}
+                    <h1 class="text-xl truncate filter md:text-2xl font-semibold drop-shadow-md w-4/6">{{ building.title
+                        }}
                     </h1>
                     <p
                         class="text-gray-200 font-semibold filter drop-shadow cursor-pointer duration-200 hover:text-gray-100 text-wrap text-sm bottom-0 right-0 m-1 md:m-2">
@@ -40,10 +42,7 @@ const formatDate = (dateString) => {
                     </p>
                 </div>
 
-                
-                <div class="flag absolute bg-emerald-500 top-3 right-0 z-50 ps-6 pe-3 py-1 text- shadow-lg">
-                        Pré Lançamento
-                    </div> <!-- Local Para Flag de Estagio empreendimento -->
+                <Flag :stage="building.stage" />
 
 
                 <!-- 
@@ -55,7 +54,8 @@ const formatDate = (dateString) => {
 
             <!-- Descrição do evento -->
             <div class="descricao flex-1 flex items-end justify-between">
-                <p class="text-lg md:text-xl text-gray-100 cursor-pointer duration-200 filter drop-shadow hover:text-gray-200 -mt-1">
+                <p
+                    class="text-lg md:text-xl text-gray-100 cursor-pointer duration-200 filter drop-shadow hover:text-gray-200 -mt-1">
                     {{ building.address.city }}/{{ building.address.state }}
                 </p>
                 <RouterLink :to="{

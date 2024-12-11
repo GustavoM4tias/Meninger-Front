@@ -3,10 +3,17 @@ import { ref, onMounted, watch } from 'vue';
 import { addEvent } from '../../utils/apiEvents';
 import { getAddress } from '../../utils/apiBuilding';
 import { useAuthStore } from '../../stores/authStore';
+import Notification from '../Navigation/components/Notification.vue';
 
 const authStore = useAuthStore();
 
 const emit = defineEmits(['close']); // Para fechar o modal
+
+const notification = ref(false);
+ 
+const handleNotification = () => {
+    notification.value = !notification.value;
+};
 
 const newEvent = ref({
     title: '',
@@ -22,7 +29,8 @@ const newEvent = ref({
         state: '',
         zip_code: ''
     },
-    created_by: authStore.user.username
+    created_by: authStore.user.username,
+    notification: notification
 });
 
 // Função para buscar e preencher o endereço automaticamente
@@ -62,6 +70,7 @@ const newTag = ref('');
 const newImageUrl = ref('');
 
 const submitAdd = async () => {
+    console.log(newEvent.value)
     try {
         await addEvent(newEvent.value);
         emit('close'); // Fecha o modal após adicionar o evento
@@ -103,7 +112,8 @@ onMounted(async () => {
 
 <template>
     <div class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center z-50">
-        <div class="bg-gray-100 dark:bg-gray-700 rounded-2xl shadow-xl p-6 h-[90%] w-5/6 md:w-3/6 lg:w-2/6 text-gray-700 dark:text-gray-100 overflow-y-auto">
+        <div
+            class="bg-gray-100 dark:bg-gray-700 rounded-2xl shadow-xl p-6 h-[90%] w-5/6 md:w-3/6 lg:w-2/6 text-gray-700 dark:text-gray-100 overflow-y-auto">
             <h3 class="text-xl font-semibold text-center">Adicionar Evento</h3>
 
             <form @submit.prevent="submitAdd" class="text-gray-100 font-semibold text-lg">
@@ -151,6 +161,18 @@ onMounted(async () => {
                             class="font-normal text-gray-700 py-1 px-2 border rounded-md" />
                     </div>
                 </div>
+
+
+                <!-- Campo para Endereço -->
+                <div class="relative mb-2 mt-5 border border-gray-500 rounded-xl p-2">
+                    <label class="absolute -top-5">Notificação</label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <input v-model="newEvent.notification" placeholder="CEP"
+                            class="font-normal text-gray-700 py-1 px-2 border rounded-md" />
+                            <p @click="handleNotification">teste</p>
+                    </div>
+                </div>
+
 
                 <!-- Campo para Tags -->
                 <div class="relative mb-2 mt-5 border border-gray-500 rounded-xl p-2">
