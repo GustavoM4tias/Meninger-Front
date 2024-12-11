@@ -75,7 +75,7 @@ const todosEventosEmAndamento = computed(() => {
 // Pega os eventos e aniversários finalizados, combinando e ordenando-os
 const todosEventosFinalizados = computed(() => {
     const eventosFinalizados = [...eventStore.eventosFinalizados, ...userStore.aniversariosFinalizados];
-    return eventosFinalizados.sort((a, b) => new Date(a.event_date || a.birth_date) - new Date(b.event_date || b.birth_date));
+    return eventosFinalizados.sort((b, a) => new Date(a.event_date || a.birth_date) - new Date(b.event_date || b.birth_date));
 });
 
 onMounted(() => {

@@ -1,6 +1,6 @@
 <script setup>
-import LoginForm from '../components/auth/LoginForm.vue'
-import LinkAuth from '../components/auth/LinkAuth.vue'
+import LoginForm from '../components/Auth/LoginForm.vue'
+import LinkAuth from '../components/Auth/LinkAuth.vue'
 </script>
 <!-- src/views/Login.vue -->
 <template>
