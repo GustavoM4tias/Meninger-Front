@@ -7,7 +7,8 @@
             style="width: calc(100% - 4rem);">
 
             <div class="pl-2 md:pl-4">
-                <img src="/Meninger-logo.png" class="h-14 md:h-16 object-cover filter opacity-80 drop-shadow invert dark:invert-0" alt="Logo" />
+                <img src="/Meninger-logo.png"
+                    class="h-14 md:h-16 object-cover filter opacity-80 drop-shadow invert dark:invert-0" alt="Logo" />
             </div>
 
             <div class="relative flex">
@@ -20,11 +21,25 @@
                     </div>
                 </div>
 
-                <div class="notification hidden md:flex mx-3 md:mx-5">
-                    <div class="text-3xl flex text-gray-6   00 dark:text-gray-200 m-auto">
+                <div x-data="{ isActive: false }" class="notification flex mx-3 md:mx-5">
+                    <!-- Botão de notificações -->
+                    <div x-on:click="isActive = !isActive"
+                        class="text-3xl flex text-gray-600 dark:text-gray-200 m-auto cursor-pointer">
                         <i class="far fa-bell"></i>
-                        <i class="fas fa-circle text-sm text-red-500 -ml-2.5 fa-bounce slow-animation"></i>
-                        <!-- Adicionar condicional para notificar eventos -->
+                        <i v-if="notificationStore.notifications.length > 0"
+                            class="fas fa-circle text-sm text-red-500 -ml-2.5 fa-bounce slow-animation"></i>
+                    </div>
+
+                    <!-- Menu de notificações -->
+                    <div class="absolute right-4 md:right-14 top-12 z-10 w-64 max-h-72 overflow-y-auto rounded-md border dark:border-gray-600 border-gray-400 dark:bg-gray-500 bg-gray-300 shadow-lg"
+                        role="menu" x-cloak x-transition x-show="isActive" x-on:click.away="isActive = false"
+                        x-on:keydown.escape.window="isActive = false">
+                        <!-- Lista de notificações -->
+                        <div v-for="(notification, index) in notificationStore.notifications" :key="index"
+                            class="notification text-xl flex flex-col text-gray-700 dark:text-gray-300">
+                            <Notification :title="notification.title" :type="notification.type"
+                                :image="notification.image" :link="notification.link" />
+                        </div>
                     </div>
                 </div>
 
@@ -35,9 +50,9 @@
                         <div class="flex cursor-pointer">
                             <div x-on:click="isActive = !isActive"
                                 class="profile-img flex bg-gray-400 rounded-full w-10 h-10 overflow-hidden">
-                                <p class="text-gray-100 m-auto font-semibold"> {{ authStore.user?.username?.split(" ").slice(0,
-                                    2).map(name =>
-                                        name[0].toUpperCase()).join("") }}
+                                <p class="text-gray-100 m-auto font-semibold">
+                                    {{ authStore.user?.username?.split(" ").slice
+                                        (0, 2).map(name => name[0].toUpperCase()).join("") }}
                                 </p>
                             </div>
                         </div>
@@ -51,14 +66,16 @@
 
                                 <div
                                     class="profile-img relative flex bg-gray-400 rounded-full w-16 h-16 m-auto mt-3 overflow-hidden shadow">
-                                    <p class="text-gray-100 m-auto text-3xl">{{ authStore.user?.username?.split(" ").slice(0,
-                                        2).map(name =>
-                                            name[0].toUpperCase()).join("") }}</p>
+                                    <p class="text-gray-100 m-auto text-3xl">
+                                        {{ authStore.user?.username?.split(" ").slice(0, 2).map(name =>
+                                            name[0].toUpperCase()).join("") }}
+                                    </p>
                                 </div>
 
-                                <p class="font-semibold text-center my-1 px-3 truncate">{{
-                                    authStore.user?.username?.split(" ").filter(name => !["de", "da", "do", "dos", "das",
-                                        "e"].includes(name.toLowerCase())).slice(0, 2).join(" ") }}</p>
+                                <p class="font-semibold text-center my-1 px-3 truncate">
+                                    {{ authStore.user?.username?.split(" ").filter(name => !["de", "da", "do", "dos",
+                                        "das", "e"].includes(name.toLowerCase())).slice(0, 2).join(" ") }}
+                                </p>
 
 
                                 <hr class="border-gray-400 dark:border-gray-600">
@@ -71,7 +88,8 @@
                                         <i :class="{
                                             'far fa-sun translate-x-0': !darkMode,
                                             'far fa-moon translate-x-24': darkMode
-                                        }" class="transition-transform text-gray-800 dark:text-gray-300 duration-400"></i>
+                                        }"
+                                            class="transition-transform text-gray-800 dark:text-gray-300 duration-400"></i>
                                     </label>
                                 </div>
 
@@ -107,9 +125,9 @@
         <div
             class="menu vertical fixed top-0 left-0 h-full w-16 flex flex-col justify-between border-r dark:border-gray-800 dark:bg-gray-700 border-gray-400 bg-gray-200 z-30">
             <div>
-                <div class="flex size-16 items-center justify-center py-4 text-3xl dark:text-gray-300 dark:hover:text-gray-100 text-gray-800 hover:text-gray-900">
-                    <div
-                        class="group relative flex justify-center rounded cursor-pointer pl-1">
+                <div
+                    class="flex size-16 items-center justify-center py-4 text-3xl dark:text-gray-300 dark:hover:text-gray-100 text-gray-800 hover:text-gray-900">
+                    <div class="group relative flex justify-center rounded cursor-pointer pl-1">
                         <RouterLink to="/">
                             <i class="fas fa-house"></i>
                         </RouterLink>
@@ -117,23 +135,28 @@
                 </div>
                 <div class="px-2 text-2xl">
                     <ul class="space-y-3 border-t border-gray-400 pt-3">
-                        <div @click="openEvents" :class="{ 'bg-gray-300 dark:bg-gray-500 text-gray-50': dropdowns.events }"
+                        <div @click="openEvents"
+                            :class="{ 'bg-gray-300 dark:bg-gray-500 text-gray-50': dropdowns.events }"
                             class="group relative flex justify-center rounded cursor-pointer px-2 py-2.5 text-gray-700 hover:text-gray-600 hover:bg-gray-300 dark:text-gray-300 dark:hover:bg-gray-400 dark:hover:text-gray-200 duration-200">
                             <i class="fas fa-calendar-days"></i>
                         </div>
-                        <div @click="openEnterprise" :class="{ 'bg-gray-300 dark:bg-gray-500 text-gray-50': dropdowns.enterprise }"
+                        <div @click="openEnterprise"
+                            :class="{ 'bg-gray-300 dark:bg-gray-500 text-gray-50': dropdowns.enterprise }"
                             class="group relative flex justify-center rounded cursor-pointer px-2 py-2.5 text-gray-700 hover:text-gray-600 hover:bg-gray-300 dark:text-gray-300 dark:hover:bg-gray-400 dark:hover:text-gray-200 duration-200">
                             <i class="fas fa-helmet-safety"></i>
                         </div>
-                        <div @click="openReports" :class="{ 'bg-gray-300 dark:bg-gray-500 text-gray-50': dropdowns.reports }"
+                        <div @click="openReports"
+                            :class="{ 'bg-gray-300 dark:bg-gray-500 text-gray-50': dropdowns.reports }"
                             class="group relative flex justify-center rounded cursor-pointer px-2 py-2.5 text-gray-700 hover:text-gray-600 hover:bg-gray-300 dark:text-gray-300 dark:hover:bg-gray-400 dark:hover:text-gray-200 duration-200">
                             <i class="fas fa-chart-line"></i>
                         </div>
-                        <div @click="openFinance" :class="{ 'bg-gray-300 dark:bg-gray-500 text-gray-50': dropdowns.finance }"
+                        <div @click="openFinance"
+                            :class="{ 'bg-gray-300 dark:bg-gray-500 text-gray-50': dropdowns.finance }"
                             class="group relative flex justify-center rounded cursor-pointer px-2 py-2.5 text-gray-700 hover:text-gray-600 hover:bg-gray-300 dark:text-gray-300 dark:hover:bg-gray-400 dark:hover:text-gray-200 duration-200">
                             <i class="fas fa-money-bills"></i>
                         </div>
-                        <div @click="openSettings" :class="{ 'bg-gray-300 dark:bg-gray-500 text-gray-50': dropdowns.settings }"
+                        <div @click="openSettings"
+                            :class="{ 'bg-gray-300 dark:bg-gray-500 text-gray-50': dropdowns.settings }"
                             class="group relative flex justify-center rounded cursor-pointer px-2 py-2.5 text-gray-700 hover:text-gray-600 hover:bg-gray-300 dark:text-gray-300 dark:hover:bg-gray-400 dark:hover:text-gray-200 duration-200">
                             <i class="fas fa-gear"></i>
                         </div>
@@ -150,7 +173,8 @@
                         <i :class="{
                             'far fa-sun mx-2 my-2': !darkMode,
                             'far fa-moon mx-3 my-2': darkMode
-                        }" class="m-auto text-3xl text-gray-700 dark:text-gray-300 transition-transform duration-300"></i>
+                        }"
+                            class="m-auto text-3xl text-gray-700 dark:text-gray-300 transition-transform duration-300"></i>
                     </label>
                 </div>
                 <div class="sticky inset-x-0 bottom-0 border-t border-gray-400 dark:border-gray-800 p-2 text-2xl">
@@ -330,12 +354,38 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { useAuthStore } from '../stores/authStore';
+import { useAuthStore } from '../../stores/authStore';
+import Notification from './components/Notification.vue'
+import { useNotificationStore } from '../../stores/notificationStore';
+
+// const notifications = [
+//     {
+//         title: 'Empreendimento Titulo 1',
+//         type: 'Empreendimento',
+//         image: '',
+//         link: '/buildings'
+//     },
+//     {
+//         title: 'Evento Titulo 2',
+//         type: 'Evento',
+//         image: '/Mlogo.png',
+//         link: '/events'
+//     },
+//     {
+//         title: 'Campanha Titulo 3',
+//         type: 'Campanha',
+//         image: '',
+//         link: '/campanhas'
+//     }
+// ];
 
 const menuOpen = ref(false);
 const menuRef = ref(null);
+const notificationStore = useNotificationStore();
 const authStore = useAuthStore();
 const router = useRouter();
+
+notificationStore.fetchNotifications(); // Buscar notificações recentes
 
 const toggleMenu = () => {
     menuOpen.value = !menuOpen.value;
@@ -412,7 +462,7 @@ onMounted(async () => {
     darkMode.value = prefersDarkScheme;
     document.addEventListener('click', closeMenu);
     if (!authStore.user) {
-        await authStore.fetchUserInfo(); 
+        await authStore.fetchUserInfo();
     }
 });
 

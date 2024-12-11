@@ -1,6 +1,6 @@
 <script setup>
-import RegisterForm from '../components/auth/RegisterForm.vue'
-import LinkAuth from '../components/auth/LinkAuth.vue'
+import RegisterForm from '../components/Auth/RegisterForm.vue'
+import LinkAuth from '../components/Auth/LinkAuth.vue'
 </script>
 <!-- src/views/Register.vue -->
 <template>

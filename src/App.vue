@@ -1,7 +1,7 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue';
-import Carregamento from './components/Carregamento.vue';
-import Nav from './components/Nav.vue';
+import { onMounted, computed } from 'vue';
+import Carregamento from './components/Loading/Carregamento.vue';
+import Nav from './components/Navigation/Nav.vue';
 import { useAuthStore } from './stores/authStore'; // Importando o authStore
 const authStore = useAuthStore();
 
