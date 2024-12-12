@@ -20,7 +20,7 @@ export const useEventStore = defineStore('eventStore', {
         },
         eventosRecentes: (state) => {
             return state.events
-                .sort((a, b) => new Date(b.dataHoraPostagem) - new Date(a.dataHoraPostagem))
+                .sort((a, b) => new Date(b.post_date) - new Date(a.post_date))
                 .slice(0, 3);
         },
     },

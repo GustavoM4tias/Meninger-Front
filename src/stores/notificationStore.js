@@ -33,8 +33,8 @@ export const useNotificationStore = defineStore('notificationStore', {
                     type: 'Empreendimento',
                     date: new Date(building.post_date),
                     importance: Math.max(0, 7 - Math.floor((currentDate - new Date(building.post_date)) / (1000 * 60 * 60 * 24))), // Mais importante no dia do cadastro
-                    image: building.images[0] || '/noimg.jpg', // Imagem ou fallback
-                    link: `/`, // Link para o empreendimento
+                    image: building.images[0] || '/noimg.jpg', // Imagem ou fallback 
+                    link: `/buildings?search=${building.title}`, // Link para o evento
                 }));
 
                 // Buscar aniversários
@@ -77,7 +77,7 @@ export const useNotificationStore = defineStore('notificationStore', {
                     date: new Date(event.event_date),
                     importance: event.event_date === currentDate.toISOString().split('T')[0] ? 10 : 5, // Prioridade máxima no dia do evento
                     image: event.images[0] || '/noimg.jpg', // Imagem ou fallback
-                    link: `/events?busca=${event.title}`, // Link para o evento
+                    link: `/events?search=${event.title}`, // Link para o evento
                 }));
 
                 // Combinar notificações

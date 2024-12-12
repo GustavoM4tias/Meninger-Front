@@ -125,7 +125,7 @@ const formattedTime = computed(() => {
         </div>
   
         <!-- Tooltip/modal -->
-        <div class="absolute -translate-x-1/2 bottom-full mb-2 hidden group-hover:block dark:bg-gray-800 dark:text-gray-500 bg-gray-200 text-gray-800 text-sm rounded-xl px-4 py-3 shadow-lg z-60" >
+        <div class="absolute -translate-x-1/2 bottom-full mb-2 hidden group-hover:block dark:bg-gray-800 dark:text-gray-200 bg-gray-200 text-gray-600 text-sm rounded-xl px-4 py-3 shadow-lg z-60" >
           <div v-if="weatherIcon" class="icon flex items-end">
             <i class="text-5xl" :class="weatherIcon"></i>
             <p class="text-xl ms-2">{{ weatherText }}</p>
