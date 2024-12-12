@@ -134,6 +134,11 @@
                 </div>
                 <div class="px-2 text-2xl">
                     <ul class="space-y-3 border-t border-gray-400 pt-3">
+                        <div @click="openFavorites"
+                            :class="{ 'bg-gray-300 dark:bg-gray-500 text-gray-50': dropdowns.favorites }"
+                            class="group relative flex justify-center rounded cursor-pointer px-2 py-2.5 text-gray-700 hover:text-gray-600 hover:bg-gray-300 dark:text-gray-300 dark:hover:bg-gray-400 dark:hover:text-gray-200 duration-200">
+                            <i class="fa fa-star"></i>
+                        </div>
                         <div @click="openEvents"
                             :class="{ 'bg-gray-300 dark:bg-gray-500 text-gray-50': dropdowns.events }"
                             class="group relative flex justify-center rounded cursor-pointer px-2 py-2.5 text-gray-700 hover:text-gray-600 hover:bg-gray-300 dark:text-gray-300 dark:hover:bg-gray-400 dark:hover:text-gray-200 duration-200">
@@ -192,6 +197,26 @@
             <div class="px-4 pb-6 text-xl min-w-64 w-64 max-w-64">
 
                 <ul class="space-y-1">
+                    <li :class="{ '': dropdowns.favorites }">
+                        <button @click="toggleDropdown('favorites')"
+                            class="flex justify-between truncate w-full rounded-md bg-gray-300 text-gray-700 hover:bg-gray-400 hover:text-gray-600 dark:bg-gray-500 dark:text-gray-300 dark:hover:bg-gray-400 dark:hover:text-gray-200 px-4 my-3 py-2 font-medium">
+                            Favoritos
+                            <i class="my-auto"
+                                :class="dropdowns.favorites ? 'fas fa-chevron-up' : 'fas fa-chevron-down'"></i>
+                        </button>
+
+                        <ul v-if="dropdowns.favorites" class="mt-2 text-gray-600 dark:text-gray-300">
+                            <li v-for="(favoritesGroup, router) in groupedFavorites" :key="router">
+                                <p class="font-semibold text-xl -mb-1">{{ getTitleByRouter(router) }}</p>
+                                <ul>
+                                    <MenuLink v-for="favorite in favoritesGroup" :key="favorite.id"
+                                        :router="favorite.router" :section="favorite.section" :name="favorite.section"
+                                        :isFavorited="true" />
+                                </ul>
+                            </li>
+                        </ul>
+
+                    </li>
                     <li :class="{ '': dropdowns.events }">
                         <button @click="toggleDropdown('events')"
                             class="flex justify-between truncate w-full rounded-md bg-gray-300 text-gray-700 hover:bg-gray-400 hover:text-gray-600 dark:bg-gray-500 dark:text-gray-300 dark:hover:bg-gray-400 dark:hover:text-gray-200 px-4 my-3 py-2 font-medium">
@@ -200,24 +225,11 @@
                                 :class="dropdowns.events ? 'fas fa-chevron-up' : 'fas fa-chevron-down'"></i>
                         </button>
                         <ul v-if="dropdowns.events" class="mt-2 text-gray-600 dark:text-gray-300">
-                            <li>
-                                <RouterLink :to="{ path: '/events', query: { section: 'geral' } }"
-                                    class="block px-4 py-1.5 my-1.5 bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 rounded-md">
-                                    Eventos Geral
-                                </RouterLink>
-                            </li>
-                            <li>
-                                <RouterLink :to="{ path: '/events', query: { section: 'proximos' } }"
-                                    class="block px-4 py-1.5 my-1.5 bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 rounded-md">
-                                    Eventos Próximos
-                                </RouterLink>
-                            </li>
-                            <li>
-                                <RouterLink :to="{ path: '/events', query: { section: 'finalizados' } }"
-                                    class="block px-4 py-1.5 my-1.5 bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 rounded-md">
-                                    Eventos Finalizados
-                                </RouterLink>
-                            </li>
+                            <MenuLink :router="'/events'" :section="'geral'" :name="'Geral'" :isFavorited="false" />
+                            <MenuLink :router="'/events'" :section="'proximos'" :name="'Próximos'"
+                                :isFavorited="false" />
+                            <MenuLink :router="'/events'" :section="'finalizados'" :name="'Finalizados'"
+                                :isFavorited="false" />
                         </ul>
                     </li>
 
@@ -229,36 +241,15 @@
                                 :class="dropdowns.enterprise ? 'fas fa-chevron-up' : 'fas fa-chevron-down'"></i>
                         </button>
                         <ul v-if="dropdowns.enterprise" class="mt-2 text-gray-600 dark:text-gray-300">
-                            <li>
-                                <RouterLink :to="{ path: '/buildings', query: { section: 'geral' } }"
-                                    class="block px-4 py-1.5 my-1.5 bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 rounded-md">
-                                    Geral
-                                </RouterLink>
-                            </li>
-                            <li>
-                                <RouterLink :to="{ path: '/buildings', query: { section: 'Pré Lançamentos' } }"
-                                    class="block px-4 py-1.5 my-1.5 bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 rounded-md">
-                                    Pré Lançamentos
-                                </RouterLink>
-                            </li>
-                            <li>
-                                <RouterLink :to="{ path: '/buildings', query: { section: 'Lançamentos' } }"
-                                    class="block px-4 py-1.5 my-1.5 bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 rounded-md">
-                                    Lançamentos
-                                </RouterLink>
-                            </li>
-                            <li>
-                                <RouterLink :to="{ path: '/buildings', query: { section: 'Em Obras' } }"
-                                    class="block px-4 py-1.5 my-1.5 bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 rounded-md">
-                                    Em Obras
-                                </RouterLink>
-                            </li>
-                            <li>
-                                <RouterLink :to="{ path: '/buildings', query: { section: 'Finalizados' } }"
-                                    class="block px-4 py-1.5 my-1.5 bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 rounded-md">
-                                    Finalizados
-                                </RouterLink>
-                            </li>
+                            <MenuLink :router="'/buildings'" :section="'geral'" :name="'Geral'" :isFavorited="false" />
+                            <MenuLink :router="'/buildings'" :section="'Pré Lançamentos'" :name="'Pré Lançamentos'"
+                                :isFavorited="false" />
+                            <MenuLink :router="'/buildings'" :section="'Lançamentos'" :name="'Lançamentos'"
+                                :isFavorited="false" />
+                            <MenuLink :router="'/buildings'" :section="'Em Obras'" :name="'Em Obras'"
+                                :isFavorited="false" />
+                            <MenuLink :router="'/buildings'" :section="'Finalizados'" :name="'Finalizados'"
+                                :isFavorited="false" />
                         </ul>
                     </li>
 
@@ -357,19 +348,42 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../../stores/authStore';
-import Notification from './components/Notification.vue'
 import { useNotificationStore } from '../../stores/notificationStore';
- 
+import { useFavoritesStore } from '../../stores/favoriteStore';
+import Notification from './components/Notification.vue'
+import MenuLink from './components/MenuLink.vue'
+
 const menuOpen = ref(false);
 const menuRef = ref(null);
-const notificationStore = useNotificationStore();
 const authStore = useAuthStore();
 const router = useRouter();
+const favoritesStore = useFavoritesStore();
+const notificationStore = useNotificationStore();
 
-notificationStore.fetchNotifications(); // Buscar notificações recentes
+// Agrupar favoritos por 'router'
+const groupedFavorites = computed(() => {
+    return favoritesStore.favorites.reduce((groups, favorite) => {
+        if (!groups[favorite.router]) {
+            groups[favorite.router] = [];
+        }
+        groups[favorite.router].push(favorite);
+        return groups;
+    }, {});
+});
+
+// Função para retornar o título baseado no router
+const getTitleByRouter = (router) => {
+    if (router === '/events') {
+        return 'Eventos';
+    } else if (router === '/buildings') {
+        return 'Empreendimentos';
+    }
+    // Retorne o próprio router se não houver correspondência
+    return router.charAt(0).toUpperCase() + router.slice(1).replace('/', ' ');
+};
 
 const toggleMenu = () => {
     menuOpen.value = !menuOpen.value;
@@ -387,6 +401,7 @@ const logout = () => {
 };
 
 const dropdowns = ref({
+    favorites: false,
     events: false,
     enterprise: false,
     reports: false,
@@ -407,6 +422,10 @@ function toggleDropdown(menu) {
     }
 }
 
+function openFavorites() {
+    toggleMenu()
+    toggleDropdown('favorites')
+}
 function openEvents() {
     toggleMenu()
     toggleDropdown('events')
@@ -448,6 +467,8 @@ onMounted(async () => {
     if (!authStore.user) {
         await authStore.fetchUserInfo();
     }
+    favoritesStore.loadFavorites();
+    notificationStore.fetchNotifications();
 });
 
 </script>
