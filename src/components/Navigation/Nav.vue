@@ -37,8 +37,7 @@
                         <!-- Lista de notificações -->
                         <div v-for="(notification, index) in notificationStore.notifications" :key="index"
                             class="notification text-xl flex flex-col text-gray-700 dark:text-gray-300">
-                            <Notification :title="notification.title" :type="notification.type"
-                                :image="notification.image" :link="notification.link" />
+                            <Notification :notification="notification" />
                         </div>
                     </div>
                 </div>
@@ -357,28 +356,7 @@ import { useRouter } from 'vue-router';
 import { useAuthStore } from '../../stores/authStore';
 import Notification from './components/Notification.vue'
 import { useNotificationStore } from '../../stores/notificationStore';
-
-// const notifications = [
-//     {
-//         title: 'Empreendimento Titulo 1',
-//         type: 'Empreendimento',
-//         image: '',
-//         link: '/buildings'
-//     },
-//     {
-//         title: 'Evento Titulo 2',
-//         type: 'Evento',
-//         image: '/Mlogo.png',
-//         link: '/events'
-//     },
-//     {
-//         title: 'Campanha Titulo 3',
-//         type: 'Campanha',
-//         image: '',
-//         link: '/campanhas'
-//     }
-// ];
-
+ 
 const menuOpen = ref(false);
 const menuRef = ref(null);
 const notificationStore = useNotificationStore();

@@ -23,7 +23,7 @@ onMounted(async () => {
     <div class="top-0 left-0" v-if="isAuthenticated">
       <Nav />
     </div>
-    <div class="flex-1 h-screen max-h-screen w-screen">
+    <div class="flex-1 h-screen w-screen">
       <div class="mt-16" v-if="isAuthenticated"></div>
       <router-view :class="{ 'ps-16': isAuthenticated }"/>
     </div>

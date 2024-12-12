@@ -12,7 +12,7 @@
 
 <script setup>
 const props = defineProps({
-    modelValue: String, // Valor selecionado
+    modelValue: [String, Number], // Valor selecionado
     options: { // Array de opções de seleção
         type: Array,
         required: true,

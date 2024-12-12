@@ -2,9 +2,6 @@
 import EventNotification from '../components/Home/Notifications/EventNotification.vue';
 import EventCarrossel from '../components/Home/Events/EventCarrossel.vue';
 import BuildingCarrossel from '../components/Home/Buildings/BuildingCarrossel.vue';
-
-import { useAuthStore } from '../stores/authStore';
-const authStore = useAuthStore();
 </script>
 
 <template>
@@ -26,7 +23,7 @@ const authStore = useAuthStore();
     <!-- Segunda coluna -->
     <div class="w-full md:w-1/3 f-full flex flex-col">
 
-      <EventNotification class="flex-1 p-4 md:h-[60%] filter drop-shadow-xl order-2 md:order-1" />
+      <EventNotification class="flex-1 p-4 md:h-[60%] md:min-h-[60%] filter drop-shadow-xl order-2 md:order-1" />
 
       <div class="enterprise h-[40%] flex-1 order-1 md:order-2">
         <BuildingCarrossel class="flex-1 filter drop-shadow-xl h-full m-auto" />

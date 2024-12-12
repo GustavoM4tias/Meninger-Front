@@ -15,7 +15,7 @@ onMounted(() => {
 const filteredBuildings = computed(() => {
     return buildingStore.buildings
         .filter(building => ['Pré Lançamento', 'Lançamento'].includes(building.stage))
-        .slice(0, 4); // Limita a 3 itens
+        .slice(0, 3); // Limita a 3 itens
 });
 </script>
 
