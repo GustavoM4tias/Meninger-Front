@@ -76,7 +76,7 @@ watch(mesSelecionado, () => {
                 </RouterLink>
                 <div class="text-md">
                     <select v-model="mesSelecionado"
-                        class="py-1 border text-sm text-center md:text-lg text-gray-700 dark:text-gray-300 dark:bg-gray-500 border-gray-100 dark:border-gray-600 rounded-lg focus:outline-none shadow-sm w-full">
+                        class="py-1 border text-sm text-center md:text-lg text-gray-700 bg-gray-100 dark:text-gray-300 dark:bg-gray-500 dark:border-gray-600 rounded-lg focus:outline-none shadow-sm w-full">
                         <option value="">Todos</option>
                         <option v-for="(mes, index) in mounth" :key="index" :value="index">
                             {{ mes }}
