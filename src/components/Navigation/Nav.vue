@@ -230,27 +230,33 @@
                         </button>
                         <ul v-if="dropdowns.enterprise" class="mt-2 text-gray-600 dark:text-gray-300">
                             <li>
-                                <RouterLink to="/buildings"
+                                <RouterLink :to="{ path: '/buildings', query: { section: 'geral' } }"
                                     class="block px-4 py-1.5 my-1.5 bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 rounded-md">
                                     Geral
                                 </RouterLink>
                             </li>
                             <li>
-                                <RouterLink to=""
+                                <RouterLink :to="{ path: '/buildings', query: { section: 'Pré Lançamentos' } }"
                                     class="block px-4 py-1.5 my-1.5 bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 rounded-md">
-                                    MCMV
+                                    Pré Lançamentos
                                 </RouterLink>
                             </li>
                             <li>
-                                <RouterLink to=""
+                                <RouterLink :to="{ path: '/buildings', query: { section: 'Lançamentos' } }"
                                     class="block px-4 py-1.5 my-1.5 bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 rounded-md">
-                                    SBPE
+                                    Lançamentos
                                 </RouterLink>
                             </li>
                             <li>
-                                <RouterLink to=""
+                                <RouterLink :to="{ path: '/buildings', query: { section: 'Em Obras' } }"
                                     class="block px-4 py-1.5 my-1.5 bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 rounded-md">
-                                    LOTES
+                                    Em Obras
+                                </RouterLink>
+                            </li>
+                            <li>
+                                <RouterLink :to="{ path: '/buildings', query: { section: 'Finalizados' } }"
+                                    class="block px-4 py-1.5 my-1.5 bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 rounded-md">
+                                    Finalizados
                                 </RouterLink>
                             </li>
                         </ul>
