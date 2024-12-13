@@ -31,7 +31,7 @@
                     </div>
 
                     <!-- Menu de notificações -->
-                    <div class="absolute right-4 md:right-14 top-12 z-10 w-64 max-h-72 overflow-y-auto rounded-md border dark:border-gray-600 border-gray-400 dark:bg-gray-500 bg-gray-300 shadow-lg"
+                    <div class="absolute right-4 md:right-14 top-12 z-10 w-64 max-h-72 overflow-y-auto rounded-md dark:bg-gray-500 bg-gray-300 shadow-lg"
                         role="menu" x-cloak x-transition x-show="isActive" x-on:click.away="isActive = false"
                         x-on:keydown.escape.window="isActive = false">
                         <!-- Lista de notificações -->
@@ -207,7 +207,7 @@
 
                         <ul v-if="dropdowns.favorites" class="mt-2 text-gray-600 dark:text-gray-300">
                             <li v-for="(favoritesGroup, router) in groupedFavorites" :key="router">
-                                <p class="font-semibold text-xl -mb-1">{{ getTitleByRouter(router) }}</p>
+                                <p class="font-semibold text-xl -my-1">{{ getTitleByRouter(router) }}</p>
                                 <ul>
                                     <MenuLink v-for="favorite in favoritesGroup" :key="favorite.id"
                                         :router="favorite.router" :section="favorite.section" :name="favorite.section"
@@ -261,12 +261,8 @@
                                 :class="dropdowns.reports ? 'fas fa-chevron-up' : 'fas fa-chevron-down'"></i>
                         </button>
                         <ul v-if="dropdowns.reports" class="mt-2 text-gray-600 dark:text-gray-300">
-                            <li>
-                                <RouterLink to=""
-                                    class="block px-4 py-1.5 my-1.5 bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 rounded-md">
-                                    Submenu 1
-                                </RouterLink>
-                            </li>
+                            <MenuLink :router="'/reports'" :section="'Leads'" :name="'Leads'"
+                                :isFavorited="false" />
                             <li>
                                 <RouterLink to=""
                                     class="block px-4 py-1.5 my-1.5 bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 rounded-md">
@@ -319,24 +315,8 @@
                                 :class="dropdowns.settings ? 'fas fa-chevron-up' : 'fas fa-chevron-down'"></i>
                         </button>
                         <ul v-if="dropdowns.settings" class="mt-2 text-gray-600 dark:text-gray-300">
-                            <li>
-                                <RouterLink to="/users"
-                                    class="block px-4 py-1.5 my-1.5 bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 rounded-md">
-                                    Usuários
-                                </RouterLink>
-                            </li>
-                            <li>
-                                <RouterLink to=""
-                                    class="block px-4 py-1.5 my-1.5 bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 rounded-md">
-                                    Submenu 2
-                                </RouterLink>
-                            </li>
-                            <li>
-                                <RouterLink to=""
-                                    class="block px-4 py-1.5 my-1.5 bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 rounded-md">
-                                    Submenu 3
-                                </RouterLink>
-                            </li>
+                            <MenuLink :router="'/users'" :section="'Usuários'" :name="'Usuários'"
+                                :isFavorited="false" />
                         </ul>
                     </li>
                 </ul>
@@ -380,6 +360,8 @@ const getTitleByRouter = (router) => {
         return 'Eventos';
     } else if (router === '/buildings') {
         return 'Empreendimentos';
+    } else if (router === '/users') {
+        return 'Configurações';
     }
     // Retorne o próprio router se não houver correspondência
     return router.charAt(0).toUpperCase() + router.slice(1).replace('/', ' ');

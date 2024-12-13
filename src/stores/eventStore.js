@@ -20,6 +20,7 @@ export const useEventStore = defineStore('eventStore', {
         },
         eventosRecentes: (state) => {
             return state.events
+                .filter(event => event.images && event.images.length > 0)
                 .sort((a, b) => new Date(b.post_date) - new Date(a.post_date))
                 .slice(0, 3);
         },

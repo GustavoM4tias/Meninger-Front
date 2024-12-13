@@ -49,7 +49,7 @@ const closeModal = () => {
 </script>
 
 <template>
-    <div class="bg-gray-300 dark:bg-gray-800 pt-5">
+    <div class="pt-5">
 
         <!-- Campo de busca e seleção de campo -->
         <div class="mx-4 lg:mx-36 mb-5 bg-gray-200 dark:bg-gray-500 shadow-sm px-8 py-2 md:px-20 md:py-4 rounded-3xl md:rounded-full">
