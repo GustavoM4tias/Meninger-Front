@@ -19,7 +19,7 @@ const editableUser = ref({
 });
 
 const message = ref('');
-const isDisabled = ref(true); // Estado para controlar o atributo disabled
+const isDisabled = ref(true);
 
 const preencherEditableUser = () => {
     if (authStore.user) {
@@ -70,8 +70,7 @@ const toggleDisabled = () => {
 <template>
     <form @submit.prevent="updateUser">
         <div :class="{ 'hidden bg-red-400': !isDisabled }" class="absolute">
-
-            <i class="fas fa-pen text-3xl ps-2 cursor-pointer hover:text-gray-300" @click="toggleDisabled"></i>
+            <i class="fas fa-pen text-3xl ps-2 cursor-pointer hover:text-gray-700 dark:hover:text-gray-300" @click="toggleDisabled"></i>
         </div>
 
         <div
@@ -84,7 +83,7 @@ const toggleDisabled = () => {
                 {{ authStore.user?.username?.split(" ").slice(0, 2).map(name => name[0].toUpperCase()).join("") }}
             </p>
         </div>
-        <p class="text-center text-sm text-gray-200 font-semibold my-2">
+        <p class="text-center text-sm text-gray-700 dark:text-gray-200 font-semibold my-2">
             Criado em {{ new Date(authStore.user?.created_at).toLocaleDateString("pt-BR") }}
         </p>
         <Input v-model="editableUser.username" :disabled="isDisabled" type="text" placeholder="Nome" required />

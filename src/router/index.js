@@ -9,6 +9,15 @@ const routes = [
     name: 'Home',
     component: Home,
     meta: { requiresAuth: true },
+  },  {
+    path: '/reports',
+    name: 'reports',
+    component: () => import('../views/reports.vue'),
+    meta: { requiresAuth: true },
+    meta: {
+      requiresAuth: true,
+      allowedPosition: ''
+    },
   },
   {
     path: '/buildings',

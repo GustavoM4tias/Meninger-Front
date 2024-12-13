@@ -37,12 +37,13 @@ onMounted(() => { favoritesStore.loadFavorites(); });
 </script>
 
 <template>
-    <li>
-        <RouterLink :to="{ path: router, query: { section: section } }"
-            class="flex items-center justify-between ps-3 pe-2.5 py-1.5 my-1.5 bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 rounded-md truncate">
-            <p class="w-[90%] truncate">{{ name }}</p>
-            <i @click="toggleFavorite" :class="isFavorited ? 'fas fa-star text-amber-300' : 'far fa-star'"
-                class="cursor-pointer"></i>
+    <li
+        class="flex items-center justify-between ps-3 pe-2.5 py-1.5 my-1.5 bg-gray-300 hover:bg-gray-400 hover:text-gray-100 dark:bg-gray-600 dark:hover:bg-gray-500 rounded-md group">
+        <RouterLink :to="{ path: router, query: { section: section } }" class="w-[90%] truncate">
+            <p class="truncate">{{ name }}</p>
         </RouterLink>
+        <i @click="toggleFavorite"
+            :class="isFavorited ? 'fas fa-star text-amber-200 dark:text-amber-300' : 'far fa-star group-hover:text-gray-200'"
+            class="cursor-pointer dilter drop-shadow-sm hidden text-gray-400"></i>
     </li>
 </template>
