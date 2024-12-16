@@ -1,7 +1,8 @@
 <template>
     <div class="select-field w-full">
-        <select class="py-3 px-2 border text-lg md:text-2xl text-gray-700 dark:text-gray-300 dark:bg-gray-500 border-gray-100 dark:border-gray-600 rounded-lg focus:outline-none shadow-sm w-full" :value="modelValue" @change="updateValue"
-            :required="required">
+        <select
+            class="py-3 px-2 border text-lg md:text-xl text-gray-700 dark:text-gray-300 dark:bg-gray-500 border-gray-100 dark:border-gray-600 rounded-lg focus:outline-none shadow-sm w-full"
+            :value="modelValue" @change="updateValue" :class="classes" :required="required">
             <option value="" disabled hidden>{{ placeholder }}</option>
             <option v-for="option in options" :key="option.value" :value="option.value">
                 {{ option.label }}
@@ -19,7 +20,8 @@ const props = defineProps({
         default: () => []
     },
     placeholder: { type: String, default: 'Selecione uma opção' },
-    required: { type: Boolean, default: false }
+    required: { type: Boolean, default: false },
+    classes: { type: String, default: '' }
 });
 
 const emit = defineEmits();

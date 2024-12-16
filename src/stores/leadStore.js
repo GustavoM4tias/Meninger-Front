@@ -9,93 +9,126 @@ export const useLeadsStore = defineStore('leads', () => {
   const headers = {
     'Accept': 'application/json',
     'email': 'gustavo.diniz@menin.com.br',
-    'token': 'e857a8b83b6c7172c224babdb75175b3b8ecd565'
+    'token': 'e857a8b83b6c7172c224babdb75175b3b8ecd565',
   };
 
-  const buscarLeadsDiario = async () => {
-    erro.value = null;
+  const carregarLeads = async (limit, offset) => {
     try {
-      const hoje = new Date();
-      const dataInicio = new Date(hoje);
-      dataInicio.setDate(hoje.getDate() - 2);  // Data de 1 dia atrás
-
-      const response = await fetch(`https://menin.cvcrm.com.br/api/cvio/lead?limit=120&offset=0&`, {
-        method: 'GET',
-        headers: headers
-      });
+      const response = await fetch(
+        `https://menin.cvcrm.com.br/api/cvio/lead?limit=${limit}&offset=${offset}`,
+        {
+          method: 'GET',
+          headers: headers,
+        }
+      );
 
       const data = await response.json();
-      console.log("Leads diários recebidos:", data);
-
-      if (data.leads) {
-        const leadsFiltrados = data.leads.filter((lead) => {
-          const dataCad = new Date(lead.data_cad);
-          return dataCad >= dataInicio && dataCad <= hoje;
-        });
-
-        // Em vez de substituir diretamente, você pode usar uma mutação reativa
-        leads.value.splice(0, leads.value.length, ...leadsFiltrados); // Atualiza reativamente
-        total.value = data.total; // Atualize o total
-        console.log("Leads filtrados diários:", leadsFiltrados);
-      }
+      total.value = data.total;
+      return data.leads || [];
     } catch (e) {
-      erro.value = 'Erro ao buscar dados dos leads';
-      console.error(erro.value, e);
+      console.error('Erro ao buscar leads:', e);
+      throw new Error('Erro ao carregar dados dos leads');
     }
   };
 
-  const buscarLeadsSemanal = async () => {
+  const buscarLeads = async () => {
     erro.value = null;
     try {
-      const hoje = new Date();
-      const dataInicio = new Date(hoje);
-      dataInicio.setDate(hoje.getDate() - 14); // Data de 14 dias atrás
+      // Carregamento em etapas
+      let leadsCompletos = [];
 
-      // Primeira requisição com offset 0
-      const response1 = await fetch(`https://menin.cvcrm.com.br/api/cvio/lead?limit=300&offset=0`, {
-        method: 'GET',
-        headers: headers
-      });
+      // Primeira etapa: Carregar 150 leads
+      const leads1 = await carregarLeads(150, 0);
+      leadsCompletos = [...leadsCompletos, ...leads1];
+      leads.value = leadsCompletos; // Atualiza para o BarChart
+      console.log('Dados atualizados para o BarChart:', leadsCompletos);
 
-      const data1 = await response1.json();
-      console.log("Leads semanais recebidos - Parte 1:", data1);
+      // Segunda etapa: Carregar mais 300 leads
+      const leads2 = await carregarLeads(300, 150);
+      leadsCompletos = [...leadsCompletos, ...leads2];
+      leads.value = leadsCompletos; // Atualiza para o LineChart
+      console.log('Dados atualizados para o LineChart:', leadsCompletos);
 
-      // Segunda requisição com offset 300
-      const response2 = await fetch(`https://menin.cvcrm.com.br/api/cvio/lead?limit=200&offset=300`, {
-        method: 'GET',
-        headers: headers
-      });
+      // Terceira etapa: Carregar mais 300 leads
+      const leads3 = await carregarLeads(300, 450);
+      leads.value = leadsCompletos; // Atualiza para o LineChart
+      leadsCompletos = [...leadsCompletos, ...leads3];
 
-      const data2 = await response2.json();
-      console.log("Leads semanais recebidos - Parte 2:", data2);
+      // Quarta etapa: Carregar mais 300 leads
+      const leads4 = await carregarLeads(300, 750);
+      leads.value = leadsCompletos; // Atualiza para o LineChart
+      leadsCompletos = [...leadsCompletos, ...leads4];
 
-      if (data1.leads && data2.leads) {
-        // Junta os leads das duas requisições
-        const leadsCompletos = [...data1.leads, ...data2.leads];
+      // Quarta etapa: Carregar mais 300 leads
+      const leads5 = await carregarLeads(150, 1050);
+      leadsCompletos = [...leadsCompletos, ...leads5];
 
-        // Filtra os leads pelas últimas 2 semanas
-        const leadsFiltrados = leadsCompletos.filter((lead) => {
-          const dataCad = new Date(lead.data_cad);
-          return dataCad >= dataInicio && dataCad <= hoje;
-        });
-
-        // Atualiza os leads na store
-        leads.value.splice(0, leads.value.length, ...leadsFiltrados);
-        total.value = data1.total; // Atualiza o total
-        console.log("Leads filtrados semanais:", leadsFiltrados);
-      }
+      // Finaliza com todos os leads carregados
+      leads.value = leadsCompletos;
+      console.log('Todos os leads carregados:', leadsCompletos);
     } catch (e) {
       erro.value = 'Erro ao buscar dados dos leads';
       console.error(erro.value, e);
     }
   };
 
+  const filtrarLeadsPorData = (leadsList, periodo) => {
+    const hoje = new Date();
+    const hojeInicio = new Date(hoje.setHours(0, 0, 0, 0)); // Início de hoje
+  
+    // Copiar e ajustar a data para evitar mutações indesejadas
+    const ontemInicio = new Date(hoje);
+    ontemInicio.setDate(hoje.getDate() - 1); // Início de ontem
+  
+    // Cálculo para "semana" (últimos 7 dias, incluindo hoje)
+    const inicioSemana = new Date(hoje);
+    inicioSemana.setDate(hoje.getDate() - 7); // Início dos últimos 7 dias (semana atual)
+  
+    // Semana anterior (últimos 7 dias antes da semana atual)
+    const inicioSemanaAnterior = new Date(hoje);
+    inicioSemanaAnterior.setDate(hoje.getDate() - 14); // Início dos 7 dias da semana passada
+    const fimSemanaAnterior = new Date(hoje);
+    fimSemanaAnterior.setDate(hoje.getDate() - 7); // Fim da semana anterior (7 dias antes de hoje)
+  
+    const inicioMes = new Date(hoje);
+    inicioMes.setDate(1);  // 1º dia do mês atual
+  
+    const inicioMesAnterior = new Date(hoje);
+    inicioMesAnterior.setMonth(hoje.getMonth() - 1); // Mês anterior
+    inicioMesAnterior.setDate(1);  // 1º dia do mês anterior
+  
+    return leadsList.filter((lead) => {
+      const dataCriacao = new Date(lead.data_cad); // Converte a string de data para Date
+  
+      switch (periodo) {
+        case 'hoje':
+          return dataCriacao >= hojeInicio;
+        case 'ontem':
+          return dataCriacao >= ontemInicio && dataCriacao < hojeInicio;
+        case 'semana':
+          return dataCriacao >= inicioSemana && dataCriacao < hojeInicio; // Últimos 7 dias
+        case 'semanaAnterior':
+          return dataCriacao >= inicioSemanaAnterior && dataCriacao < fimSemanaAnterior; // Semana anterior
+        case 'mes':
+          return dataCriacao >= inicioMes && dataCriacao < hojeInicio;
+        case 'mesAnterior':
+          return dataCriacao >= inicioMesAnterior && dataCriacao < inicioMes;
+        default:
+          return false;
+      }
+    });
+  };
+  
+  // Função que retorna a quantidade de leads por período
+  const getLeadsPorPeriodo = (periodo) => {
+    return filtrarLeadsPorData(leads.value, periodo).length;
+  };
 
   return {
     leads,
     erro,
     total,
-    buscarLeadsDiario,
-    buscarLeadsSemanal,
+    buscarLeads,
+    getLeadsPorPeriodo, // Função que retorna a quantidade de leads para o período
   };
 });

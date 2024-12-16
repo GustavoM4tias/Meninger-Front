@@ -1,40 +1,67 @@
 <template>
-  <div class="">
-    <h1 class="text-3xl font-bold text-center mb-8">Relatório de Leads - Últimas 2 Semanas</h1>
+  <div>
+    <h1 class="text-2xl font-bold text-center">Relatório Semanal de Leads</h1>
 
-    <div class="mb-8">
-      <LineChart :chart-data="chartData" :options="chartOptions" />
+    <div class="my-2 w-72 mx-auto">
+      <Select classes="!text:sm md:!text-lg !py-2 text-center" v-model="empreendimentoSelecionado"
+        :options="empreendimentosUnicosComTodos" placeholder="Selecionar Empreendimento" required />
     </div>
 
-    <div class="flex justify-center gap-4">
-      <button class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-green-500 transition" @click="salvarComoImagem">
-        Exportar como Imagem
-      </button>
-      <button class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-green-500 transition" @click="salvarComoPDF">
-        Exportar como PDF
-      </button>
+    <div class="relative">
+      <div class="text-3xl absolute right-0 -top-5">
+        <i class="far fa-file-image cursor-pointer hover:scale-[103%] text-gray-700 hover:text-gray-800 dark:text-gray-50 dark:hover:text-gray-100"
+          @click="salvarComoImagem"></i>
+        <i class="far fa-file-pdf mx-2 cursor-pointer hover:scale-[103%] text-gray-700 hover:text-gray-800 dark:text-gray-50 dark:hover:text-gray-100"
+          @click="salvarComoPDF"></i>
+      </div>
+      <LoadingComponents v-if="carregando" />
+      <LineChart class="h-[32vh]" :chart-data="chartData" :options="chartOptions" />
     </div>
+
   </div>
 </template>
 
 <script setup>
+import { ref, computed, watchEffect } from 'vue';
 import { LineChart } from 'vue-chart-3';
 import { Chart as ChartJS, registerables } from 'chart.js';
-import { ref, computed } from 'vue';
 import jsPDF from 'jspdf';
+import LoadingComponents from '../../../Loading/LoadingComponents.vue';
+import Select from '../../../../components/UI/Select.vue';
+import { useLeadsStore } from '../../../../stores/leadStore';
 
-// Registra os componentes do ChartJS
-ChartJS.register(...registerables);
+const leadsStore = useLeadsStore();
+const carregando = ref(true);
 
-// Props para receber os dados de leads
-const props = defineProps({
-  leads: {
-    type: Array,
-    required: true
+// Controle de carregamento
+watchEffect(() => {
+  if (leadsStore.leads.length >= 450) {
+    carregando.value = false;
   }
 });
 
-// Computed para dados do gráfico (leads nas últimas 2 semanas)
+// Estado para o empreendimento selecionado
+const empreendimentoSelecionado = ref('');
+
+// Computed para obter os empreendimentos únicos com a opção "Todos"
+const empreendimentosUnicosComTodos = computed(() => {
+  const nomesUnicos = new Map();
+  leadsStore.leads.forEach((lead) => {
+    lead.empreendimento.forEach((emp) => {
+      if (!nomesUnicos.has(emp.id)) {
+        nomesUnicos.set(emp.id, emp);
+      }
+    });
+  });
+  // Adicionando a opção "Todos"
+  const todosOption = { value: '', label: 'Todos' };
+  return [todosOption, ...Array.from(nomesUnicos.values()).map(emp => ({
+    value: emp.nome,
+    label: emp.nome
+  }))];
+});
+
+// Computed para dados do gráfico (filtrados por empreendimento)
 const chartData = computed(() => {
   const diasSemanaAtual = [];
   const diasSemanaAnterior = [];
@@ -42,67 +69,104 @@ const chartData = computed(() => {
   const quantidadeLeadsSemanaAnterior = [];
   const hoje = new Date();
 
-  // Calculando os dados da semana atual (últimos 7 dias)
+  const leadsFiltrados = empreendimentoSelecionado.value
+    ? leadsStore.leads.filter((lead) => lead.empreendimento.some(emp => emp.nome === empreendimentoSelecionado.value))
+    : leadsStore.leads;
+
   for (let i = 6; i >= 0; i--) {
     const dataDia = new Date(hoje);
     dataDia.setDate(hoje.getDate() - i);
     diasSemanaAtual.push(dataDia.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }));
 
-    const leadsDoDia = props.leads.filter((lead) => {
+    const leadsDoDia = leadsFiltrados.filter((lead) => {
       const dataCad = new Date(lead.data_cad);
       return dataCad.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) === dataDia.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
     });
     quantidadeLeadsSemanaAtual.push(leadsDoDia.length);
   }
 
-  // Calculando os dados da semana anterior (7 dias antes da semana atual)
   for (let i = 13; i >= 7; i--) {
     const dataDia = new Date(hoje);
     dataDia.setDate(hoje.getDate() - i);
     diasSemanaAnterior.push(dataDia.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }));
 
-    const leadsDoDia = props.leads.filter((lead) => {
+    const leadsDoDia = leadsFiltrados.filter((lead) => {
       const dataCad = new Date(lead.data_cad);
       return dataCad.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) === dataDia.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
     });
     quantidadeLeadsSemanaAnterior.push(leadsDoDia.length);
   }
 
-  // Retorna os dados do gráfico
   return {
-  
-    labels: [...diasSemanaAtual],  // Exibe apenas os dias das duas semanas
+    labels: [...diasSemanaAtual],
     datasets: [
       {
         label: 'Semana Atual',
         fill: false,
-        borderColor: '#3498db',  // Cor para a semana atual
+        borderColor: '#3498db',
+        borderWidth: 4, // Largura da borda
         tension: 0.1,
-        data: quantidadeLeadsSemanaAtual,  // Dados da semana atual
+        data: quantidadeLeadsSemanaAtual,
       },
       {
         label: 'Semana Anterior',
         fill: false,
-        borderColor: '#e74c3c',  // Cor para a semana anterior
+        borderColor: '#e74c3c',
+        borderWidth: 4, // Largura da borda
         tension: 0.1,
-        data: quantidadeLeadsSemanaAnterior.reverse(),  // Inverte a semana anterior para o gráfico
+        data: quantidadeLeadsSemanaAnterior.reverse(),
       },
     ],
   };
 });
 
-// Opções do gráfico
-const chartOptions = ref({
+// Adicionando as opções do gráfico
+const chartOptions = {
   responsive: true,
-  maintainAspectRatio: false,
   plugins: {
     legend: {
+      position: 'top',
       display: true,
+      labels: {
+        color: '#999', // Cor das labels
+        font: {
+          size: 16, // Tamanho das labels
+        },
+      },
+    }, 
+    tooltip: {
+      callbacks: {
+        label: (tooltipItem) => {
+          return `${tooltipItem.raw} Leads`;
+        },
+      },
     },
   },
-});
+  scales: {
+    x: {
+      title: {
+        display: true,
+        text: 'Período',
+      },
+      ticks: {
+        color: '#999', // Cor dos ticks no eixo X
+      },
+    },
+    y: {
+      title: {
+        display: false,
+        text: 'Quantidade de Leads',
+      },
+      ticks: {
+        color: '#999', // Cor dos ticks no eixo Y
+      },
+    },
+  },
+};
 
-// Funções de exportação
+ChartJS.register(...registerables);
+
+// Exportação de imagens e PDF
 const salvarComoImagem = () => {
   const canvas = document.querySelector('canvas');
   const link = document.createElement('a');
@@ -118,4 +182,5 @@ const salvarComoPDF = () => {
   pdf.addImage(imagem, 'PNG', 10, 10, 180, 90);
   pdf.save('relatorio_leads.pdf');
 };
+
 </script>
