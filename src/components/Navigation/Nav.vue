@@ -35,9 +35,12 @@
                         role="menu" x-cloak x-transition x-show="isActive" x-on:click.away="isActive = false"
                         x-on:keydown.escape.window="isActive = false">
                         <!-- Lista de notificações -->
-                        <div v-for="(notification, index) in notificationStore.notifications" :key="index"
-                            class="notification text-xl flex flex-col text-gray-700 dark:text-gray-300">
+                        <div v-if="notification" v-for="(notification, index) in notificationStore.notifications"
+                            :key="index" class="notification text-xl flex flex-col text-gray-700 dark:text-gray-300">
                             <Notification :notification="notification" />
+                        </div>
+                        <div v-else class="notification text-xl flex flex-col text-gray-700 dark:text-gray-300 text-center">
+                            <p class="py-4 px-4">Sem Notificações</p>
                         </div>
                     </div>
                 </div>
@@ -261,8 +264,7 @@
                                 :class="dropdowns.reports ? 'fas fa-chevron-up' : 'fas fa-chevron-down'"></i>
                         </button>
                         <ul v-if="dropdowns.reports" class="mt-2 text-gray-600 dark:text-gray-300">
-                            <MenuLink :router="'/reports'" :section="'Leads'" :name="'Leads'"
-                                :isFavorited="false" />
+                            <MenuLink :router="'/reports'" :section="'Leads'" :name="'Leads'" :isFavorited="false" />
                             <li>
                                 <RouterLink to=""
                                     class="block px-4 py-1.5 my-1.5 bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 rounded-md">
