@@ -1,5 +1,5 @@
 <script setup>
-import RegisterForm from '../components/auth/Register.vue'
+import Register from '../components/auth/Register.vue'
 import Link from '../components/auth/Link.vue'
 </script>
 <!-- src/views/Register.vue -->
@@ -9,7 +9,7 @@ import Link from '../components/auth/Link.vue'
     <div class="h-screen relative flex col-span-12 lg:col-span-5 bg-gray-100 dark:bg-gray-800 shadow-2xl z-20">
       <div class="form m-auto w-4/6 pb-8">
         <img src="/Mlogotext.png" class="filter invert dark:invert-0 m-auto w-4/6">
-        <RegisterForm />
+        <Register />
       </div>
       <Link />
     </div>

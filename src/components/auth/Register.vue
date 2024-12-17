@@ -1,4 +1,4 @@
-<!-- src/components/Auth/RegisterForm.vue -->
+<!-- src/components/Auth/Register.vue -->
 <template>
   <div>
     <form @submit.prevent="handleRegister">
