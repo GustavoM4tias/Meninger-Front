@@ -12,7 +12,7 @@ const routes = [
   },  {
     path: '/reports',
     name: 'reports',
-    component: () => import('../views/reports.vue'),
+    component: () => import('../views/Reports.vue'),
     meta: { requiresAuth: true },
     meta: {
       requiresAuth: true,
