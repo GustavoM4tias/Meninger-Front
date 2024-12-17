@@ -1,6 +1,6 @@
 <script setup>
-import LoginForm from '../components/Auth/LoginForm.vue'
-import LinkAuth from '../components/Auth/LinkAuth.vue'
+import Login from '../components/auth/Login.vue'
+import Link from '../components/auth/Link.vue'
 </script>
 <!-- src/views/Login.vue -->
 <template>
@@ -21,9 +21,9 @@ import LinkAuth from '../components/Auth/LinkAuth.vue'
       </div>
       <div class="form m-auto w-4/6">
         <img src="/Mlogotext.png" class="filter invert dark:invert-0 m-auto w-4/6">
-        <LoginForm />
+        <Login />
       </div>
-      <LinkAuth />
+      <Link />
     </div>
 
     <div class="h-screen hidden lg:block md:col-span-7 bg-gray-50 dark:bg-gray-900 relative">

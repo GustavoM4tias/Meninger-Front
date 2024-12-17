@@ -1,6 +1,6 @@
 <script setup>
-import RegisterForm from '../components/Auth/RegisterForm.vue'
-import LinkAuth from '../components/Auth/LinkAuth.vue'
+import RegisterForm from '../components/auth/Register.vue'
+import Link from '../components/auth/Link.vue'
 </script>
 <!-- src/views/Register.vue -->
 <template>
@@ -11,7 +11,7 @@ import LinkAuth from '../components/Auth/LinkAuth.vue'
         <img src="/Mlogotext.png" class="filter invert dark:invert-0 m-auto w-4/6">
         <RegisterForm />
       </div>
-      <LinkAuth />
+      <Link />
     </div>
 
     <div class="h-screen hidden lg:block md:col-span-7 bg-gray-50 dark:bg-gray-900 relative">
