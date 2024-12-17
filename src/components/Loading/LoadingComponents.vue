@@ -1,7 +1,6 @@
 <template>
-<!-- src/components/Loading/Carregamento.vue -->
-    <div class="fixed top-0 left-0 h-full w-full bg-gray-800 bg-opacity-25 flex justify-center items-center z-50">
-        <img class="animate-bounce w-28" src="/logo.png"></img>
+    <div class="absolute inset-0 bg-gray-800 bg-opacity-25 flex justify-center items-center z-10">
+        <img class="animate-bounce w-28" src="/logo.png" alt="Carregando...">
     </div>
-
 </template>
+ 

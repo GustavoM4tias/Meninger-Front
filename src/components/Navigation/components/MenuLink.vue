@@ -44,6 +44,6 @@ onMounted(() => { favoritesStore.loadFavorites(); });
         </RouterLink>
         <i @click="toggleFavorite"
             :class="isFavorited ? 'fas fa-star text-amber-200 dark:text-amber-300' : 'far fa-star group-hover:text-gray-200'"
-            class="cursor-pointer dilter drop-shadow-sm hidden text-gray-400"></i>
+            class="cursor-pointer dilter drop-shadow-sm hidden"></i>
     </li>
 </template>

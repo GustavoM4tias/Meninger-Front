@@ -1,23 +1,22 @@
 <template>
-  <div>
-    <h1 class="text-2xl font-bold text-center">Relatório Semanal de Leads</h1>
+  <div class="bg-gray-200 dark:bg-gray-700 rounded-xl shadow-md px-2 md:px-8 py-2 md:py-4 m-2 h-full">
+    <h1 class="text-lg md:text-2xl font-bold text-center">Relatório Semanal de Leads</h1>
 
-    <div class="my-2 w-72 mx-auto">
-      <Select classes="!text:sm md:!text-lg !py-2 text-center" v-model="empreendimentoSelecionado"
+    <div class="my-1 w-60 mx-auto">
+      <Select classes="!text-sm md:!text-md !py-1 text-center" v-model="empreendimentoSelecionado"
         :options="empreendimentosUnicosComTodos" placeholder="Selecionar Empreendimento" required />
     </div>
 
     <div class="relative">
-      <div class="text-3xl absolute right-0 -top-5">
+      <div class="text-3xl absolute right-0 -top-5 z-10">
         <i class="far fa-file-image cursor-pointer hover:scale-[103%] text-gray-700 hover:text-gray-800 dark:text-gray-50 dark:hover:text-gray-100"
           @click="salvarComoImagem"></i>
         <i class="far fa-file-pdf mx-2 cursor-pointer hover:scale-[103%] text-gray-700 hover:text-gray-800 dark:text-gray-50 dark:hover:text-gray-100"
           @click="salvarComoPDF"></i>
       </div>
-      <LoadingComponents v-if="carregando" />
-      <LineChart class="h-[32vh]" :chart-data="chartData" :options="chartOptions" />
-    </div>
-
+      <LineChart ref="chartSemanal" class="h-[30vh]" :chart-data="chartData" :options="chartOptions" />
+    </div> 
+    <LoadingComponents v-if="carregando" />
   </div>
 </template>
 
@@ -32,6 +31,7 @@ import { useLeadsStore } from '../../../../stores/leadStore';
 
 const leadsStore = useLeadsStore();
 const carregando = ref(true);
+const chartSemanal = ref(null);
 
 // Controle de carregamento
 watchEffect(() => {
@@ -133,7 +133,7 @@ const chartOptions = {
           size: 16, // Tamanho das labels
         },
       },
-    }, 
+    },
     tooltip: {
       callbacks: {
         label: (tooltipItem) => {
@@ -166,21 +166,20 @@ const chartOptions = {
 
 ChartJS.register(...registerables);
 
-// Exportação de imagens e PDF
 const salvarComoImagem = () => {
-  const canvas = document.querySelector('canvas');
+  const canvas = chartSemanal.value.$el.querySelector('canvas'); // Captura o canvas do gráfico semanal
   const link = document.createElement('a');
-  link.download = 'relatorio_leads.png';
+  link.download = 'relatorio_semanal.png';
   link.href = canvas.toDataURL();
   link.click();
 };
 
 const salvarComoPDF = () => {
   const pdf = new jsPDF();
-  const canvas = document.querySelector('canvas');
+  const canvas = chartSemanal.value.$el.querySelector('canvas'); // Captura o canvas do gráfico semanal
   const imagem = canvas.toDataURL('image/png');
   pdf.addImage(imagem, 'PNG', 10, 10, 180, 90);
-  pdf.save('relatorio_leads.pdf');
+  pdf.save('relatorio_semanal.pdf');
 };
 
 </script>
