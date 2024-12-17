@@ -41,13 +41,13 @@ export const useLeadsStore = defineStore('leads', () => {
       const leads1 = await carregarLeads(150, 0);
       leadsCompletos = [...leadsCompletos, ...leads1];
       leads.value = leadsCompletos; // Atualiza para o BarChart
-      console.log('Dados atualizados para o BarChart:', leadsCompletos);
+      // console.log('Dados atualizados para o BarChart:', leadsCompletos);
 
       // Segunda etapa: Carregar mais 300 leads
       const leads2 = await carregarLeads(300, 150);
       leadsCompletos = [...leadsCompletos, ...leads2];
       leads.value = leadsCompletos; // Atualiza para o LineChart
-      console.log('Dados atualizados para o LineChart:', leadsCompletos);
+      // console.log('Dados atualizados para o LineChart:', leadsCompletos);
 
       // Terceira etapa: Carregar mais 300 leads
       const leads3 = await carregarLeads(300, 450);
@@ -65,7 +65,7 @@ export const useLeadsStore = defineStore('leads', () => {
 
       // Finaliza com todos os leads carregados
       leads.value = leadsCompletos;
-      console.log('Todos os leads carregados:', leadsCompletos);
+      // console.log('Todos os leads carregados:', leadsCompletos);
     } catch (e) {
       erro.value = 'Erro ao buscar dados dos leads';
       console.error(erro.value, e);

@@ -1,21 +1,21 @@
 <template>
-    <div>
-        <h1 class="text-2xl font-bold text-center">Relatório Mensal de Leads</h1>
-        <div class="my-2 w-72 mx-auto">
-            <Select classes="!text-sm md:!text-lg !py-2 text-center" v-model="empreendimentoSelecionado"
+    <div class="bg-gray-200 dark:bg-gray-700 rounded-xl shadow-md px-2 md:px-8 py-2 md:py-4 m-2 h-full">
+        <h1 class="text-lg md:text-2xl font-bold text-center">Relatório Mensal de Leads</h1>
+
+        <div class="my-1 w-60 mx-auto">
+            <Select classes="!text-sm md:!text-md !py-1 text-center" v-model="empreendimentoSelecionado"
                 :options="empreendimentosUnicos" placeholder="Selecionar Empreendimento" required />
         </div>
 
         <div class="relative">
             <!-- Botões para exportação -->
-            <div class="text-3xl absolute right-0 -top-5">
+            <div class="text-3xl absolute right-0 -top-5 z-10">
                 <i class="far fa-file-image cursor-pointer hover:scale-[103%] text-gray-700 hover:text-gray-800 dark:text-gray-50 dark:hover:text-gray-100"
                     @click="salvarComoImagem"></i>
                 <i class="far fa-file-pdf mx-2 cursor-pointer hover:scale-[103%] h- text-gray-700 hover:text-gray-800 dark:text-gray-50 dark:hover:text-gray-100"
                     @click="salvarComoPDF"></i>
             </div>
-            <LoadingComponents v-if="carregando" />
-            <BarChart class="h-[40vh]" :chart-data="chartData" :options="chartOptions" />
+            <BarChart ref="chartMensal" class="h-[30vh]" :chart-data="chartData" :options="chartOptions" />
             <!-- Tabela detalhada -->
             <!-- <div class="mt-8 overflow-x-auto">
                 <table class="min-w-full border border-gray-300">
@@ -38,6 +38,7 @@
                 </table>
             </div> -->
         </div>
+        <LoadingComponents v-if="carregando" />
     </div>
 </template>
 
@@ -56,6 +57,7 @@ ChartJS.register(...registerables);
 const leadsStore = useLeadsStore();
 const carregando = ref(true);
 const empreendimentoSelecionado = ref('');
+const chartMensal = ref(null);
 
 // Computed para empreendimentos únicos
 const empreendimentosUnicos = computed(() => {
@@ -202,7 +204,7 @@ const chartOptions = {
         },
         y: {
             title: {
-                display: true,
+                display: false,
                 text: 'Quantidade de Leads',
                 color: '#666',
                 font: {
@@ -219,28 +221,27 @@ const chartOptions = {
     },
 };
 
-
-// Funções para exportação
-const salvarComoImagem = () => {
-    const canvas = document.querySelector('canvas');
-    const link = document.createElement('a');
-    link.download = 'relatorio_mensal.png';
-    link.href = canvas.toDataURL();
-    link.click();
-};
-
-const salvarComoPDF = () => {
-    const pdf = new jsPDF();
-    const canvas = document.querySelector('canvas');
-    const imagem = canvas.toDataURL('image/png');
-    pdf.addImage(imagem, 'PNG', 10, 10, 180, 90);
-    pdf.save('relatorio_mensal.pdf');
-};
-
 // Controle de carregamento
 watchEffect(() => {
     if (leadsStore.leads.length >= 1200) {
         carregando.value = false;
     }
 });
+
+const salvarComoImagem = () => {
+  const canvas = chartMensal.value.$el.querySelector('canvas'); // Captura o canvas do gráfico mensal
+  const link = document.createElement('a');
+  link.download = 'relatorio_mensal.png';
+  link.href = canvas.toDataURL();
+  link.click();
+};
+
+const salvarComoPDF = () => {
+  const pdf = new jsPDF();
+  const canvas = chartMensal.value.$el.querySelector('canvas'); // Captura o canvas do gráfico mensal
+  const imagem = canvas.toDataURL('image/png');
+  pdf.addImage(imagem, 'PNG', 10, 10, 180, 90);
+  pdf.save('relatorio_mensal.pdf');
+};
+
 </script>

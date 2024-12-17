@@ -1,6 +1,9 @@
 import './assets/main.css'
 import 'vue-toastification/dist/index.css';
 
+import tippy from 'tippy.js'; // Importando o Tippy.js
+import 'tippy.js/dist/tippy.css'; // Importando o estilo do Tippy
+
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 
@@ -31,6 +34,15 @@ const options = {
 //   };
 
 const app = createApp(App)
+
+// Registrando a diretiva globalmente
+app.directive('tippy', {
+    mounted(el, binding) {
+      tippy(el, {
+        content: binding.value, // O conteúdo do tooltip será passado através do binding
+      });
+    },
+  });
 
 // Registrar o Vue Toastification
 app.use(Toast, options);

@@ -35,7 +35,7 @@
                         role="menu" x-cloak x-transition x-show="isActive" x-on:click.away="isActive = false"
                         x-on:keydown.escape.window="isActive = false">
                         <!-- Lista de notificações -->
-                        <div v-if="notification" v-for="(notification, index) in notificationStore.notifications"
+                        <div v-if="notificationStore.notification" v-for="(notification, index) in notificationStore.notifications"
                             :key="index" class="notification text-xl flex flex-col text-gray-700 dark:text-gray-300">
                             <Notification :notification="notification" />
                         </div>
@@ -136,7 +136,7 @@
                     </div>
                 </div>
                 <div class="px-2 text-2xl">
-                    <ul class="space-y-3 border-t border-gray-400 pt-3">
+                    <ul class="space-y-3 border- border-gray-400 pt-3">
                         <div @click="openFavorites"
                             :class="{ 'bg-gray-300 dark:bg-gray-500 text-gray-50': dropdowns.favorites }"
                             class="group relative flex justify-center rounded cursor-pointer px-2 py-2.5 text-gray-700 hover:text-gray-600 hover:bg-gray-300 dark:text-gray-300 dark:hover:bg-gray-400 dark:hover:text-gray-200 duration-200">
@@ -195,7 +195,7 @@
         </div>
 
         <div ref="menu" :class="{ 'translate-x-0': menuOpen, '-translate-x-full': !menuOpen }"
-            class="menu-hover fixed flex h-full top-16 flex-1 flex-col justify-between bg-gray-200 dark:bg-gray-700 z-20 transform transition-transform duration-300 ease-in-out">
+            class="menu-hover fixed flex h-full top-16 flex-1 flex-col justify-between border-r filter drop-shadow-xl border-gray-300 dark:border-gray-800 bg-gray-200 dark:bg-gray-700 z-20 transform transition-transform duration-300 ease-in-out">
 
             <div class="px-4 pb-6 text-xl min-w-64 w-64 max-w-64">
 
@@ -364,6 +364,8 @@ const getTitleByRouter = (router) => {
         return 'Empreendimentos';
     } else if (router === '/users') {
         return 'Configurações';
+    } else if (router === '/reports') {
+        return 'Relatórios';
     }
     // Retorne o próprio router se não houver correspondência
     return router.charAt(0).toUpperCase() + router.slice(1).replace('/', ' ');
