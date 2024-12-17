@@ -9,6 +9,6 @@
 </template>
 
 <script setup>
-import AccountForm from '../components/Auth/AccountForm.vue';
+import AccountForm from '../components/auth/AccountForm.vue'
 
 </script>
