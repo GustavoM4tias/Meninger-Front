@@ -9,10 +9,11 @@ const routes = [
     name: 'Home',
     component: Home,
     meta: { requiresAuth: true },
-  },  {
-    path: '/reports',
-    name: 'reports',
-    component: () => import('../views/Reports.vue'),
+  },  
+  {
+    path: '/leads',
+    name: 'leads',
+    component: () => import('../views/Reports/Leads.vue'),
     meta: { requiresAuth: true },
     meta: {
       requiresAuth: true,

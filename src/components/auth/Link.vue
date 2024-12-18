@@ -22,11 +22,11 @@
             </button>
         </div>
         <div class="credits m-auto mr-0">
-            <a class="flex" href="https://gdmd.digital" target="_blank">
+            <!-- <a class="flex" href="https://gdmd.digital" target="_blank">
                 <p class="hidden md:block mt-5 mr-1 text-lg text-gray-900 dark:text-gray-300 font-semibold">Feito por
                 </p>
                 <img src="https://www.gdmd.digital/icondark.png" class="filter invert dark:invert-0 h-10 md:h-14">
-            </a>
+            </a> -->
             <!-- <p class="text-white mt-6">Marketing Digital</p> -->
         </div>
     </div>
