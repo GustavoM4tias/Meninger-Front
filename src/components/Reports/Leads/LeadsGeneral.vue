@@ -71,8 +71,8 @@
 
 <script setup>
 import { ref, computed, onMounted, watchEffect } from 'vue';
-import { useLeadsStore } from '../../stores/leadStore';
-import LoadingComponents from '../Loading/LoadingComponents.vue';
+import { useLeadsStore } from '../../../stores/leadStore';
+import LoadingComponents from '../../Loading/LoadingComponents.vue';
 
 const leadsStore = useLeadsStore();
 const hoje = new Date();

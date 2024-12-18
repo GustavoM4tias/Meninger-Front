@@ -3,6 +3,7 @@ import { ref } from 'vue';
 
 export const useLeadsStore = defineStore('leads', () => {
   const leads = ref([]);
+  const filas = ref([]);
   const erro = ref(null);
   const total = ref(0);
 
@@ -28,6 +29,24 @@ export const useLeadsStore = defineStore('leads', () => {
     } catch (e) {
       console.error('Erro ao buscar leads:', e);
       throw new Error('Erro ao carregar dados dos leads');
+    }
+  };
+
+  const carregarFilas = async () => {
+    try {
+      const response = await fetch(
+        `https://menin.cvcrm.com.br/api/cvio/filas_distribuicao_leads`,
+        {
+          method: 'GET',
+          headers: headers,
+        }
+      );
+
+      const data = await response.json();
+      return data.filas || [];
+    } catch (e) {
+      console.error('Erro ao buscar filas:', e);
+      throw new Error('Erro ao carregar dados dos filas');
     }
   };
 
@@ -126,8 +145,10 @@ export const useLeadsStore = defineStore('leads', () => {
 
   return {
     leads,
+    filas,
     erro,
     total,
+    carregarFilas,
     buscarLeads,
     getLeadsPorPeriodo, // Função que retorna a quantidade de leads para o período
   };
