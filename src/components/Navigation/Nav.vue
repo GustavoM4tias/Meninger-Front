@@ -265,7 +265,7 @@
                         </button>
                         <ul v-if="dropdowns.reports" class="mt-2 text-gray-600 dark:text-gray-300">
                             <MenuLink :router="'/leads'" :section="'Leads'" :name="'Leads'" :isFavorited="false" />
-                            <li>
+                            <!-- <li>
                                 <RouterLink to=""
                                     class="block px-4 py-1.5 my-1.5 bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 rounded-md">
                                     Submenu 2
@@ -276,7 +276,7 @@
                                     class="block px-4 py-1.5 my-1.5 bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 rounded-md">
                                     Submenu 3
                                 </RouterLink>
-                            </li>
+                            </li> -->
                         </ul>
                     </li>
 
@@ -288,7 +288,7 @@
                                 :class="dropdowns.finance ? 'fas fa-chevron-up' : 'fas fa-chevron-down'"></i>
                         </button>
                         <ul v-if="dropdowns.finance" class="mt-2 text-gray-600 dark:text-gray-300">
-                            <li>
+                            <!-- <li>
                                 <RouterLink to=""
                                     class="block px-4 py-1.5 my-1.5 bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 rounded-md">
                                     Submenu 1
@@ -305,7 +305,7 @@
                                     class="block px-4 py-1.5 my-1.5 bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 rounded-md">
                                     Submenu 3
                                 </RouterLink>
-                            </li>
+                            </li> -->
                         </ul>
                     </li>
 
