@@ -1,29 +1,27 @@
 <script setup>
-import { computed, onMounted } from 'vue';
-import { useLeadsStore } from '../../../stores/leadStore';
+import { ref, computed, onMounted } from 'vue';
+import { useLeadsStore } from '../../../stores/leadStore'; // Importando a store de leads
 import BarChart from './Daily/BarChart.vue';
 import BarChart2 from './Monthly/BarChart.vue';
 import LineChart from './weekly/LineChart.vue';
 import LeadsGeneral from './LeadsGeneral.vue';
+import Filas from './components/Filas.vue'; // Importando o novo componente
 
 const leadsStore = useLeadsStore();
 
+// Chama a função de busca dos leads ao carregar o componente
 onMounted(async () => {
     if (leadsStore.leads.length === 0) {
         await leadsStore.buscarLeads();
     }
 });
 
-// Usando computed para garantir a reatividade
+// Computed para pegar os leads da store
 const leads = computed(() => leadsStore.leads);
-const filas = computed(() => filasData.filas);
 
-// Mock do JSON fornecido
-const filasData = {
-    "total_filas": 6,
-    "pagina": 1,
-    "limite": 50,
-    "filas": [
+const filas = computed(() => {
+    // Agrupando leads por fila
+    const filasData = [
         {
             "idfila_distribuicao_leads": 1,
             "nome": "Fila Marília",
@@ -109,57 +107,73 @@ const filasData = {
             ]
         },
         // Outras filas omitidas para brevidade...
-    ]
-};
+    ];
+    // Função para calcular a data de 7 dias atrás
+    const obterDataLimite = () => {
+        const hoje = new Date();
+        hoje.setDate(hoje.getDate() - 7); // Subtrai 7 dias
+        return hoje;
+    };
+
+    // Atribuindo leads às filas com base no corretor
+    return filasData.map(fila => {
+        const dataLimite = obterDataLimite(); // Data limite de 7 dias atrás
+
+        const leadsForFila = leads.value.filter(lead => {
+            // Verifica se o corretor está na fila e se a data_dac está dentro dos últimos 7 dias
+            const dataDac = new Date(lead.data_cad); // Ajuste para o campo correto, se necessário
+            return fila.corretores_e_imobiliarias.some(corretor => corretor.idcorretor === lead.corretor.id) &&
+                dataDac >= dataLimite; // Filtra com base na data
+        });
+
+
+        // Filtra os leads com a situação "Aguardando Atendimento Corretor"
+        const LeadsWaiting = leadsForFila.filter(lead => {
+            return lead.situacao.nome === "Aguardando Atendimento Corretor"; // Filtra pelos leads com a situação correta
+        });
+
+        return {
+            ...fila,
+            leads: leadsForFila,  // Adicionando os leads filtrados para a fila
+            leadsWaitingCount: LeadsWaiting.length, // Contando os leads "Aguardando Atendimento Corretor"
+            leadsCount: leadsForFila.length  // Contando os leads da fila
+        };
+    });
+});
 
 </script>
+
 
 <template>
     <div class="bg-gray-800 w-full relative overflow-hidden">
         <div class="h-auto md:h-[calc(100vh-4rem)] flex flex-col md:flex-row bg-gray-100 dark:bg-gray-800 relative">
-
-            <!-- Primeira coluna -->
             <div class="w-full md:w-2/3 flex flex-col">
                 <LineChart :leads="leads" class="drop-shadow-none" />
                 <BarChart2 :leads="leads" class="filter drop-shadow-none" />
             </div>
-
-            <!-- Segunda coluna -->
             <div class="w-full md:w-1/3 flex flex-col">
                 <BarChart :leads="leads" class="flex-1 filter drop-shadow-none order-2 md:order-1" />
                 <LeadsGeneral class="enterprise flex flex-1 order-1 md:order-2" />
             </div>
         </div>
 
-        <!-- Ajustar Posteriormente -->
         <div
-            class="group bg-gray-600 cursor-pointer absolute right-[-15rem] top-32 rounded-bl-lg transform transition-transform duration-300">
+            class="group bg-gray-600 cursor-pointer absolute right-[15rem] top-32 rounded-bl-lg transform transition-transform duration-300">
             <div class="button absolute -left-7 bg-gray-600 cursor-pointer rounded-l-lg py-3 px-2.5">
                 <i class="fas fa-chevron-left"></i>
             </div>
             <div class="content w-60 h-auto p-2 gap-2 flex flex-col justify-between">
                 <h2 class="text-2xl font-semibold text-white px-1">Corretores</h2>
-                <!-- Exibindo as filas (cidades) -->
-                <div v-for="fila in filas" :key="fila.idfila_distribuicao_leads" class="bg-gray-700 p-1 rounded-lg">
-                    <h2 class="text-xl font-semibold text-white px-1">{{ fila.nome }}</h2>
-
-                    <!-- Exibindo os atendentes -->
-                    <div class="bg-gray-600 rounded-md" v-tippy="`${fila.corretores_e_imobiliarias.map(corretor => corretor.nome_corretor).join(' - ')}`">
-                        <div class="flex items-center px-1">
-                            <div class="bg-green-400 w-4 h-4 rounded-full"></div>
-                            <p class="ms-1.5">
-                                {{ fila.corretores_e_imobiliarias.length }} Corretor{{ fila.corretores_e_imobiliarias.length > 1 ? 'es' : '' }}
-                            </p>
-                        </div>
-                    </div>
-                </div>
+                <!-- Exibindo as filas usando o componente Filas -->
+                <Filas v-for="fila in filas" :key="fila.idfila_distribuicao_leads" :fila="fila" />
+                <p class="text-center text-gray-400 text-xs -mt-0.5">Relatório dos últimos 7 dias.</p>
             </div>
-        </div> 
+        </div>
     </div>
 </template>
 
 <style scoped>
-.group:hover {
+/* .group:hover {
     transform: translateX(-15rem);
-}
+} */
 </style>

@@ -228,10 +228,10 @@
                                 :class="dropdowns.events ? 'fas fa-chevron-up' : 'fas fa-chevron-down'"></i>
                         </button>
                         <ul v-if="dropdowns.events" class="mt-2 text-gray-600 dark:text-gray-300">
-                            <MenuLink :router="'/events'" :section="'geral'" :name="'Geral'" :isFavorited="false" />
-                            <MenuLink :router="'/events'" :section="'proximos'" :name="'Próximos'"
+                            <MenuLink :router="'/events'" :section="'Geral'" :name="'Geral'" :isFavorited="false" />
+                            <MenuLink :router="'/events'" :section="'Próximos'" :name="'Próximos'"
                                 :isFavorited="false" />
-                            <MenuLink :router="'/events'" :section="'finalizados'" :name="'Finalizados'"
+                            <MenuLink :router="'/events'" :section="'Finalizados'" :name="'Finalizados'"
                                 :isFavorited="false" />
                         </ul>
                     </li>
@@ -244,7 +244,7 @@
                                 :class="dropdowns.enterprise ? 'fas fa-chevron-up' : 'fas fa-chevron-down'"></i>
                         </button>
                         <ul v-if="dropdowns.enterprise" class="mt-2 text-gray-600 dark:text-gray-300">
-                            <MenuLink :router="'/buildings'" :section="'geral'" :name="'Geral'" :isFavorited="false" />
+                            <MenuLink :router="'/buildings'" :section="'Geral'" :name="'Geral'" :isFavorited="false" />
                             <MenuLink :router="'/buildings'" :section="'Pré Lançamentos'" :name="'Pré Lançamentos'"
                                 :isFavorited="false" />
                             <MenuLink :router="'/buildings'" :section="'Lançamentos'" :name="'Lançamentos'"
@@ -364,7 +364,7 @@ const getTitleByRouter = (router) => {
         return 'Empreendimentos';
     } else if (router === '/users') {
         return 'Configurações';
-    } else if (router === '/reports') {
+    } else if (router === '/leads') {
         return 'Relatórios';
     }
     // Retorne o próprio router se não houver correspondência
