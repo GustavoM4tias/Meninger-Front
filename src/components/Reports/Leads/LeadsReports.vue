@@ -1,11 +1,11 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
-import { useLeadsStore } from '../../../stores/leadStore'; // Importando a store de leads
+import { useLeadsStore } from '../../../stores/leadStore';
 import BarChart from './Daily/BarChart.vue';
 import BarChart2 from './Monthly/BarChart.vue';
 import LineChart from './weekly/LineChart.vue';
 import LeadsGeneral from './LeadsGeneral.vue';
-import Filas from './components/Filas.vue'; // Importando o novo componente
+import Filas from './components/Filas.vue'; 
 
 const leadsStore = useLeadsStore();
 
@@ -157,12 +157,11 @@ const filas = computed(() => {
             </div>
         </div>
 
-        <div
-            class="group bg-gray-600 cursor-pointer absolute right-[15rem] top-32 rounded-bl-lg transform transition-transform duration-300">
+        <div class="group bg-gray-600 cursor-pointer absolute right-[-18rem] top-32 rounded-bl-lg transform transition-transform duration-300">
             <div class="button absolute -left-7 bg-gray-600 cursor-pointer rounded-l-lg py-3 px-2.5">
                 <i class="fas fa-chevron-left"></i>
             </div>
-            <div class="content w-60 h-auto p-2 gap-2 flex flex-col justify-between">
+            <div class="content w-72 h-auto p-2 gap-2 flex flex-col justify-between">
                 <h2 class="text-2xl font-semibold text-white px-1">Corretores</h2>
                 <!-- Exibindo as filas usando o componente Filas -->
                 <Filas v-for="fila in filas" :key="fila.idfila_distribuicao_leads" :fila="fila" />
@@ -173,7 +172,7 @@ const filas = computed(() => {
 </template>
 
 <style scoped>
-/* .group:hover {
-    transform: translateX(-15rem);
-} */
+.group:hover {
+    transform: translateX(-18rem);
+} 
 </style>

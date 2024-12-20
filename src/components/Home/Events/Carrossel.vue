@@ -39,7 +39,7 @@ const goToSlide = (index) => {
 </script>
 
 <template>
-  <div class="relative overflow-hidden rounded-xl">
+  <div v-if="props.eventos.length > 0" class="relative overflow-hidden rounded-xl">
 
     <div class="flex transition-transform duration-700 ease-in-out"
       :style="{ transform: `translateX(-${currentIndex * 100}%)` }">
@@ -64,6 +64,8 @@ const goToSlide = (index) => {
         'cursor-pointer': true
       }"></div>
     </div>
-
+  </div> 
+  <div class="relative rounded-xl overflow-hidden h-[350px] bg-gray-700 flex" v-else> 
+    <p class="m-auto text-xl md:text-3xl text-gray-500">Nenhum evento em andamento.</p>
   </div>
 </template>

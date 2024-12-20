@@ -7,7 +7,7 @@ const buildingStore = useBuildingStore();
 
 onMounted(() => {
     if (buildingStore.buildings.length === 0) {
-        buildingStore.fetchBuildings(); 
+        buildingStore.fetchBuildings();
     }
 });
 
@@ -20,7 +20,11 @@ const filteredBuildings = computed(() => {
 </script>
 
 <template>
-    <div class="events-preview flex flex-col p-4 md:py-0">
-        <Carrossel class="duration-300 transform hover:scale-[102%] my-auto" :buildings="filteredBuildings" />
+    <div class="events-preview flex flex-col p-4">
+        <Carrossel v-if="buildingStore.buildings.length > 0" class="duration-300 transform hover:scale-[102%] my-auto"
+            :buildings="filteredBuildings" />
+        <div v-else class="relative rounded-xl flex overflow-hidden h-[30vh] max-h-[100%] bg-gray-700 text-xl text-gray-500">
+            <p class="m-auto">Nenhum empreendimento encontrado.</p>
+        </div>
     </div>
 </template>
