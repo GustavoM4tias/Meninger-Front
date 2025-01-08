@@ -1,5 +1,5 @@
 <template>
-    <div class="bg-gray-200 dark:bg-gray-700 rounded-xl shadow-md px-2 md:px-8 py-2 md:py-4 m-2 h-full">
+    <div class="bg-gray-200 dark:bg-gray-700 rounded-xl shadow-md px-2 md:px-8 py-2 m-2 h-full">
         <h1 class="text-lg md:text-2xl font-bold text-center">Relatório Mensal de Leads</h1>
 
         <div class="my-1 w-60 mx-auto">
@@ -12,10 +12,10 @@
             <div class="text-3xl absolute right-0 -top-5 z-10">
                 <i class="far fa-file-image cursor-pointer hover:scale-[103%] text-gray-700 hover:text-gray-800 dark:text-gray-50 dark:hover:text-gray-100"
                     @click="salvarComoImagem"></i>
-                <i class="far fa-file-pdf mx-2 cursor-pointer hover:scale-[103%] h- text-gray-700 hover:text-gray-800 dark:text-gray-50 dark:hover:text-gray-100"
-                    @click="salvarComoPDF"></i>
+                <!-- <i class="far fa-file-pdf mx-2 cursor-pointer hover:scale-[103%] h- text-gray-700 hover:text-gray-800 dark:text-gray-50 dark:hover:text-gray-100"
+                    @click="salvarComoPDF"></i> -->
             </div>
-            <BarChart ref="chartMensal" class="h-[30vh]" :chart-data="chartData" :options="chartOptions" />
+            <BarChart ref="chartMensal" class="h-[34vh]" :chart-data="chartData" :options="chartOptions" />
             <!-- Tabela detalhada -->
             <!-- <div class="mt-8 overflow-x-auto">
                 <table class="min-w-full border border-gray-300">
@@ -46,7 +46,7 @@
 import { ref, computed, watchEffect } from 'vue';
 import { BarChart } from 'vue-chart-3';
 import { Chart as ChartJS, registerables } from 'chart.js';
-import jsPDF from 'jspdf';
+// import jsPDF from 'jspdf';
 import LoadingComponents from '../../../Loading/LoadingComponents.vue';
 import Select from '../../../../components/UI/Select.vue';
 import { useLeadsStore } from '../../../../stores/leadStore';
@@ -236,12 +236,12 @@ const salvarComoImagem = () => {
   link.click();
 };
 
-const salvarComoPDF = () => {
-  const pdf = new jsPDF();
-  const canvas = chartMensal.value.$el.querySelector('canvas'); // Captura o canvas do gráfico mensal
-  const imagem = canvas.toDataURL('image/png');
-  pdf.addImage(imagem, 'PNG', 10, 10, 180, 90);
-  pdf.save('relatorio_mensal.pdf');
-};
+// const salvarComoPDF = () => {
+//   const pdf = new jsPDF();
+//   const canvas = chartMensal.value.$el.querySelector('canvas'); // Captura o canvas do gráfico mensal
+//   const imagem = canvas.toDataURL('image/png');
+//   pdf.addImage(imagem, 'PNG', 10, 10, 180, 90);
+//   pdf.save('relatorio_mensal.pdf');
+// };
 
 </script>

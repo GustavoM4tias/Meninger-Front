@@ -1,5 +1,6 @@
 <template>
-    <div class="bg-gray-200 dark:bg-gray-700 flex flex-col rounded-xl shadow-md px-2 md:px-8 py-2 md:py-4 m-2 h-full relative">
+    <div
+        class="bg-gray-200 dark:bg-gray-700 flex flex-col rounded-xl shadow-md px-2 md:px-8 py-2 m-2 h-full relative">
         <!-- <iframe title="report" src="https://app.reportei.com/embed/YYJMtclpNtn7w5pnGeAyukXVrcqIYcfJ" width="500" height="300"></iframe> Instagram Pages -->
         <LoadingComponents v-if="carregando" />
         <div class="flex flex-col justify-between h-full" v-if="leads.length > 0">
@@ -13,25 +14,29 @@
                                     <span>{{ leads.length }}</span>
                                 </div>
                             </div> -->
-            <h1 class="text-lg md:text-2xl font-bold text-center py-3">Relatório de Leads</h1>
-            <div class="text-md md:text-2xl ">
+                <h1 class="text-lg md:text-2xl font-bold text-center mt-2">Relatório de Leads</h1>
+            <div class="text-[2.7vh]">
                 <div class="text-center">
                     <div class="flex items-center justify-center">
-                        <p class="me-1.5">Leads de Hoje: <strong>{{ getLeadsPorPeriodo('hoje') }}</strong></p>
-                        <span :class="percentualCrescimentoHoje >= 0 ? 'text-green-500' : 'text-red-500'">
+                        <p class="me-1.5">Hoje: <strong>{{ getLeadsPorPeriodo('hoje') }}</strong></p>
+                    </div>
+
+                    <p class="text-xs text-gray-400"> <span
+                            :class="percentualCrescimentoHoje >= 0 ? 'text-green-500' : 'text-red-500'">
                             <strong>{{ percentualCrescimentoHoje.toFixed(1) }}%</strong>
                             <span :class="percentualCrescimentoHoje >= 0 ? 'text-green-500' : 'text-red-500'">
                                 <i
                                     :class="percentualCrescimentoHoje >= 0 ? 'fas fa-arrow-up' : 'fas fa-arrow-down'"></i>
                             </span>
-                        </span>
-                    </div>
-                    <p class="ms-1.5 text-xs md:text-sm  text-gray-400">em comparação ao dia anterior ({{
-                        getLeadsPorPeriodo('ontem') }}).</p>
+                        </span> em comparação ao dia anterior ({{
+                            getLeadsPorPeriodo('ontem') }}).</p>
                 </div>
+
                 <div class="text-center">
                     <div class="flex items-center justify-center">
-                        <p class="me-1.5">Leads da Semana: <strong>{{ getLeadsPorPeriodo('semana') }}</strong></p>
+                        <p class="me-1.5">Semana: <strong>{{ getLeadsPorPeriodo('semana') }}</strong></p>
+                    </div>
+                    <p class="text-xs text-gray-400">
                         <span :class="percentualCrescimentoSemana >= 0 ? 'text-green-500' : 'text-red-500'">
                             <strong>{{ percentualCrescimentoSemana.toFixed(1) }}%</strong>
                             <span :class="percentualCrescimentoSemana >= 0 ? 'text-green-500' : 'text-red-500'">
@@ -39,25 +44,30 @@
                                     :class="percentualCrescimentoSemana >= 0 ? 'fas fa-arrow-up' : 'fas fa-arrow-down'"></i>
                             </span>
                         </span>
-                    </div>
-                    <p class="ms-1.5 text-xs md:text-sm  text-gray-400">em comparação a semana anterior ({{
-                        getLeadsPorPeriodo('semanaAnterior') }}).</p>
+                        em comparação a semana anterior ({{
+                            getLeadsPorPeriodo('semanaAnterior') }}).
+                    </p>
                 </div>
+
                 <div class="text-center">
                     <div class="flex items-center justify-center">
-                        <p class="me-1.5">Leads do Mês: <strong>{{ getLeadsPorPeriodo('mes') }}</strong></p>
+                        <p class="me-1.5">Mês: <strong>{{ getLeadsPorPeriodo('mes') }}</strong></p>
+
+                    </div>
+                    <p class="text-xs text-gray-400">
                         <span :class="percentualCrescimentoMes >= 0 ? 'text-green-500' : 'text-red-500'">
                             <strong>{{ percentualCrescimentoMes.toFixed(1) }}%</strong>
                             <span :class="percentualCrescimentoMes >= 0 ? 'text-green-500' : 'text-red-500'">
                                 <i :class="percentualCrescimentoMes >= 0 ? 'fas fa-arrow-up' : 'fas fa-arrow-down'"></i>
                             </span>
                         </span>
-                    </div>
-                    <p class="ms-1.5 text-xs md:text-sm  text-gray-400">em comparação ao mês anterior ({{
-                        getLeadsPorPeriodo('mesAnterior') }}).</p>
+                        em comparação ao mês anterior ({{
+                            getLeadsPorPeriodo('mesAnterior') }}).
+                    </p>
                 </div>
+
             </div>
-            <p class="text-gray-400 bottom-0 w-full text-center py-2 text-xs md:text-sm">Relatório com
+            <p class="text-gray-400 bottom-0 w-full text-center py-2 text-xs">Relatório com
                 valores aproximados!</p>
         </div>
         <div v-else class="m-auto text-center">
