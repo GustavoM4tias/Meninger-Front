@@ -6,13 +6,20 @@
       <Select classes="!text-sm md:!text-md !py-1 text-center" v-model="empreendimentoSelecionado"
         :options="empreendimentosUnicos" placeholder="Selecionar Empreendimento" required />
     </div>
+    <div class="my-2 w-60 mx-auto flex flex-col">
+      <!-- <label class="block text-sm font-medium text-center mb-1">Selecionar Data</label> -->
+      <input
+        type="date"
+        v-model="dataSelecionada"
+        :max="dataHoje"
+        class="px-2 py-1 text-sm text-center border mx-auto text-gray-700 dark:text-gray-300 placeholder:text-gray-200 dark:bg-gray-500 border-gray-100 dark:border-gray-600 rounded-lg shadow-sm w-3/6"
+      />
+    </div>
 
     <div class="relative">
       <div class="text-3xl absolute right-0 -top-5 z-10">
         <i class="far fa-file-image cursor-pointer hover:scale-[103%] text-gray-700 hover:text-gray-800 dark:text-gray-50 dark:hover:text-gray-100"
           @click="salvarComoImagem"></i>
-        <i class="far fa-file-pdf mx-2 cursor-pointer hover:scale-[103%] text-gray-700 hover:text-gray-800 dark:text-gray-50 dark:hover:text-gray-100"
-          @click="salvarComoPDF"></i>
       </div>
       <BarChart ref="chartDiario" class="h-[36vh]" :chart-data="chartData" :options="chartOptions" />
     </div>
@@ -24,7 +31,6 @@
 import { ref, computed, watchEffect } from 'vue';
 import { BarChart } from 'vue-chart-3';
 import { Chart as ChartJS, registerables } from 'chart.js';
-import jsPDF from 'jspdf';
 import LoadingComponents from '../../../Loading/LoadingComponents.vue';
 import Select from '../../../../components/UI/Select.vue';
 import { useLeadsStore } from '../../../../stores/leadStore';
@@ -32,6 +38,8 @@ import { useLeadsStore } from '../../../../stores/leadStore';
 const leadsStore = useLeadsStore();
 const carregando = ref(true);
 const chartDiario = ref(null);
+const dataHoje = new Date().toISOString().split('T')[0]; // Data atual formatada
+const dataSelecionada = ref(dataHoje); // Inicializa com a data de hoje 
 
 watchEffect(() => {
   if (leadsStore.leads.length > 0) {
@@ -58,33 +66,40 @@ const empreendimentosUnicos = computed(() => {
   }))];
 });
 
-const obterResumoLeads = (leads) => {
-  const hoje = new Date();
-  const inicioHoje = new Date(hoje.setHours(0, 0, 0, 0));
-  const fimHoje = new Date(hoje.setHours(23, 59, 59, 999));
+const obterResumoLeads = (leads, data) => {
+  const ajustarParaFusoLocal = (date) => {
+    const localDate = new Date(date);
+    localDate.setMinutes(localDate.getMinutes() - localDate.getTimezoneOffset());
+    return localDate;
+  };
 
-  const ontem = new Date(hoje);
-  ontem.setDate(hoje.getDate() - 1);
-  const inicioOntem = new Date(ontem.setHours(0, 0, 0, 0));
-  const fimOntem = new Date(ontem.setHours(23, 59, 59, 999));
+  const inicioSelecionado = ajustarParaFusoLocal(`${data}T00:00:00`);
+  const fimSelecionado = ajustarParaFusoLocal(`${data}T23:59:59`);
 
-  const leadsHoje = leads.filter((lead) => {
-    const dataLead = new Date(lead.data_cad);
-    return dataLead >= inicioHoje && dataLead <= fimHoje;
+  const diaAnterior = new Date(inicioSelecionado);
+  diaAnterior.setDate(diaAnterior.getDate() - 1);
+  const inicioAnterior = ajustarParaFusoLocal(`${diaAnterior.toISOString().split('T')[0]}T00:00:00`);
+  const fimAnterior = ajustarParaFusoLocal(`${diaAnterior.toISOString().split('T')[0]}T23:59:59`);
+
+  const leadsDiaSelecionado = leads.filter((lead) => {
+    const dataLead = ajustarParaFusoLocal(lead.data_cad);
+    return dataLead >= inicioSelecionado && dataLead <= fimSelecionado;
   });
 
-  const leadsOntem = leads.filter((lead) => {
-    const dataLead = new Date(lead.data_cad);
-    return dataLead >= inicioOntem && dataLead <= fimOntem;
+  const leadsDiaAnterior = leads.filter((lead) => {
+    const dataLead = ajustarParaFusoLocal(lead.data_cad);
+    return dataLead >= inicioAnterior && dataLead <= fimAnterior;
   });
 
   return {
-    hoje: leadsHoje.length,
-    ontem: leadsOntem.length,
+    diaSelecionado: leadsDiaSelecionado.length,
+    diaAnterior: leadsDiaAnterior.length,
   };
 };
 
-const resumoLeads = computed(() => obterResumoLeads(filtrarLeadsPorEmpreendimento(leadsStore.leads)));
+const resumoLeads = computed(() =>
+  obterResumoLeads(filtrarLeadsPorEmpreendimento(leadsStore.leads), dataSelecionada.value)
+);
 
 const filtrarLeadsPorEmpreendimento = (leads) => {
   if (empreendimentoSelecionado.value) {
@@ -97,15 +112,14 @@ const filtrarLeadsPorEmpreendimento = (leads) => {
 
 const chartData = computed(() => {
   return {
-    labels: ['Ontem', 'Hoje'],
+    labels: ['Dia Anterior', 'Dia Selecionado'],
     datasets: [
       {
         label: 'Leads',
-        borderColor: ['#e74c3c', '#3498db'], // Cor da borda
-        borderWidth: 4, // Largura da borda
-        backgroundColor: 'transparent', // Fundo transparente
-        //fill: false, // Sem preenchimento
-        data: [resumoLeads.value.ontem, resumoLeads.value.hoje],
+        borderColor: ['#e74c3c', '#3498db'],
+        borderWidth: 4,
+        backgroundColor: 'transparent',
+        data: [resumoLeads.value.diaAnterior, resumoLeads.value.diaSelecionado],
       },
     ],
   };
@@ -119,9 +133,9 @@ const chartOptions = ref({
       position: 'top',
       display: true,
       labels: {
-        color: '#999', // Cor das labels
+        color: '#999',
         font: {
-          size: 16, // Tamanho das labels
+          size: 16,
         },
       },
     },
@@ -129,31 +143,22 @@ const chartOptions = ref({
   scales: {
     x: {
       ticks: {
-        color: '#999', // Cor dos ticks no eixo X
+        color: '#999',
       },
     },
     y: {
       ticks: {
-        color: '#999', // Cor dos ticks no eixo Y
+        color: '#999',
       },
     },
   },
 });
 
 const salvarComoImagem = () => {
-  const canvas = chartDiario.value.$el.querySelector('canvas'); // Captura o canvas do gráfico diário
+  const canvas = chartDiario.value.$el.querySelector('canvas');
   const link = document.createElement('a');
   link.download = 'relatorio_diario.png';
   link.href = canvas.toDataURL();
   link.click();
 };
-
-const salvarComoPDF = () => {
-  const pdf = new jsPDF();
-  const canvas = chartDiario.value.$el.querySelector('canvas'); // Captura o canvas do gráfico diário
-  const imagem = canvas.toDataURL('image/png');
-  pdf.addImage(imagem, 'PNG', 10, 10, 180, 90);
-  pdf.save('relatorio_diario.pdf');
-};
-
 </script>

@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-gray-200 dark:bg-gray-700 rounded-xl shadow-md px-2 md:px-8 py-2 md:py-4 m-2 h-full">
+  <div class="bg-gray-200 dark:bg-gray-700 rounded-xl shadow-md px-2 md:px-8 py-2 m-2 h-full">
     <h1 class="text-lg md:text-2xl font-bold text-center">Relatório Semanal de Leads</h1>
 
     <div class="my-1 w-60 mx-auto">
@@ -7,14 +7,14 @@
         :options="empreendimentosUnicosComTodos" placeholder="Selecionar Empreendimento" required />
     </div>
 
-    <div class="relative">
+    <div class="relative flex h-[80%] w-full">
       <div class="text-3xl absolute right-0 -top-5 z-10">
         <i class="far fa-file-image cursor-pointer hover:scale-[103%] text-gray-700 hover:text-gray-800 dark:text-gray-50 dark:hover:text-gray-100"
           @click="salvarComoImagem"></i>
-        <i class="far fa-file-pdf mx-2 cursor-pointer hover:scale-[103%] text-gray-700 hover:text-gray-800 dark:text-gray-50 dark:hover:text-gray-100"
-          @click="salvarComoPDF"></i>
+        <!-- <i class="far fa-file-pdf mx-2 cursor-pointer hover:scale-[103%] text-gray-700 hover:text-gray-800 dark:text-gray-50 dark:hover:text-gray-100"
+          @click="salvarComoPDF"></i> -->
       </div>
-      <LineChart ref="chartSemanal" class="h-[30vh]" :chart-data="chartData" :options="chartOptions" />
+      <LineChart ref="chartSemanal" class="h-[30vh] w-full m-auto" :chart-data="chartData" :options="chartOptions" />
     </div> 
     <LoadingComponents v-if="carregando" />
   </div>
@@ -24,7 +24,7 @@
 import { ref, computed, watchEffect } from 'vue';
 import { LineChart } from 'vue-chart-3';
 import { Chart as ChartJS, registerables } from 'chart.js';
-import jsPDF from 'jspdf';
+// import jsPDF from 'jspdf';
 import LoadingComponents from '../../../Loading/LoadingComponents.vue';
 import Select from '../../../../components/UI/Select.vue';
 import { useLeadsStore } from '../../../../stores/leadStore';
@@ -146,7 +146,7 @@ const chartOptions = {
     x: {
       title: {
         display: true,
-        text: 'Período',
+        text: 'Últimos 7 dias',
       },
       ticks: {
         color: '#999', // Cor dos ticks no eixo X
@@ -174,12 +174,12 @@ const salvarComoImagem = () => {
   link.click();
 };
 
-const salvarComoPDF = () => {
-  const pdf = new jsPDF();
-  const canvas = chartSemanal.value.$el.querySelector('canvas'); // Captura o canvas do gráfico semanal
-  const imagem = canvas.toDataURL('image/png');
-  pdf.addImage(imagem, 'PNG', 10, 10, 180, 90);
-  pdf.save('relatorio_semanal.pdf');
-};
+// const salvarComoPDF = () => {
+//   const pdf = new jsPDF();
+//   const canvas = chartSemanal.value.$el.querySelector('canvas'); // Captura o canvas do gráfico semanal
+//   const imagem = canvas.toDataURL('image/png');
+//   pdf.addImage(imagem, 'PNG', 10, 10, 180, 90);
+//   pdf.save('relatorio_semanal.pdf');
+// };
 
 </script>
