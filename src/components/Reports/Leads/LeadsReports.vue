@@ -157,15 +157,15 @@ const filas = computed(() => {
             </div>
         </div>
 
-        <div class="group bg-gray-600 cursor-pointer absolute right-[-18rem] top-32 rounded-bl-lg transform transition-transform duration-300">
-            <div class="button absolute -left-7 bg-gray-600 cursor-pointer rounded-l-lg py-3 px-2.5">
+        <div class="group bg-gray-100 dark:bg-gray-600 cursor-pointer shadow absolute right-[-18rem] top-32 rounded-bl-lg transform transition-transform duration-300">
+            <div class="button absolute -left-7 bg-gray-100 dark:bg-gray-600 shadow-[-3px_0_5px_rgba(0,0,0,.05)] cursor-pointer rounded-l-lg py-3 px-2.5">
                 <i class="fas fa-chevron-left"></i>
             </div>
             <div class="content w-72 h-auto p-2 gap-2 flex flex-col justify-between">
-                <h2 class="text-2xl font-semibold text-white px-1">Corretores</h2>
+                <h2 class="text-2xl font-semibold text-gray-800 dark:text-gray-100 px-1">Corretores</h2>
                 <!-- Exibindo as filas usando o componente Filas -->
                 <Filas v-for="fila in filas" :key="fila.idfila_distribuicao_leads" :fila="fila" />
-                <p class="text-center text-gray-400 text-xs -mt-0.5">Relatório dos últimos 7 dias.</p>
+                <p class="text-center text-gray-600 dark:text-gray-400 text-xs -mt-0.5">Relatório dos últimos 7 dias.</p>
             </div>
         </div>
     </div>
