@@ -5,12 +5,33 @@ export const useLeadsStore = defineStore('leads', () => {
   const leads = ref([]);
   const erro = ref(null);
   const total = ref(0);
+  // const filasData = ref([]);
 
   const headers = {
     'Accept': 'application/json',
     'email': 'gustavo.diniz@menin.com.br',
     'token': 'e857a8b83b6c7172c224babdb75175b3b8ecd565',
   };
+
+  // const carregarFilas = async () => {
+  //   try {
+  //     const response = await fetch(
+  //       `https://menin.cvcrm.com.br/api/cvio/filas_distribuicao_leads`,
+  //       {
+  //         method: 'GET',
+  //         headers: headers,
+  //       }
+  //     );
+
+  //     const data = await response.json(); 
+  //     console.log(data)
+  //     console.log(data.value)
+  //     return data.filasData || []; 
+  //   } catch (e) {
+  //     console.error('Erro ao buscar fila de leads:', e);
+  //     throw new Error('Erro ao carregar dados da fila de leads');
+  //   }
+  // }; // BLOCKED BY CORS 
 
   const carregarLeads = async (limit, offset) => {
     try {
@@ -128,7 +149,9 @@ export const useLeadsStore = defineStore('leads', () => {
     leads,
     erro,
     total,
+    // filasData,
     buscarLeads,
     getLeadsPorPeriodo, // Função que retorna a quantidade de leads para o período
+    // carregarFilas,
   };
 });
