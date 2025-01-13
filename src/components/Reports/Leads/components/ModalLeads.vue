@@ -2,20 +2,20 @@
     <div v-if="modalVisivel"
         class="absolute left-0 top-0 w-full h-full bg-gray-900/25 flex justify-center md:items-center z-20">
         <div
-            class="bg-gray-200 dark:bg-gray-600 relative p-4 rounded-lg w-11/12 md:w-1/2 mt-[6vh] md:mt-0 h-[80vh] overflow-y-auto">
+            class="bg-gray-200 dark:bg-gray-600 relative m-2 p-2 md:p-4 rounded-lg w-full md:w-1/2 mt-[6vh] md:mt-0 h-[80vh] overflow-y-auto">
             <i class="fas fa-xmark text-3xl absolute right-3 cursor-pointer" @click="fecharModal"></i>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mb-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mb-3">
                 <!-- Coluna de Empreendimentos -->
                 <div>
                     <h3 class="text-lg font-semibold my-2 text-gray-800 dark:text-gray-200">
                         <i class="fas fa-building mx-2"></i> Empreendimentos
                     </h3>
-                    <ul class="space-y-2">
+                    <ul class="space-y-1.5">
                         <li v-for="(count, nome) in agruparPor(leads, 'empreendimento[0].nome')" :key="nome"
                             @click="aplicarFiltro(nome, 'empreendimento')"
                             :class="{ 'bg-sky-200': filtrosAtivos.empreendimento.includes(nome) }"
-                            class="flex justify-between items-center bg-gray-100 dark:bg-gray-700 hover:dark:bg-gray-800 hover:bg-gray-50 duration-150 cursor-pointer p-2 md:p-3 rounded-lg">
+                            class="flex justify-between items-center bg-gray-100 dark:bg-gray-700 hover:dark:bg-gray-800 hover:bg-gray-50 duration-150 cursor-pointer py-2 px-3 rounded-lg">
                             <span class="text-sm md:text-lg truncate" :title="nome">
                                 {{ nome }}
                             </span>
@@ -31,12 +31,12 @@
                     <h3 class="text-lg font-semibold mb-4 mt-2 md:my-2 text-gray-800 dark:text-gray-200">
                         <i class="fas fa-photo-film mx-2"></i> Mídias
                     </h3>
-                    <div class="md:mb-4">
-                        <ul class="space-y-2">
+                    <div>
+                        <ul class="space-y-1.5">
                             <li v-for="(count, midia) in agruparPor(leads, 'midia_principal')" :key="midia"
                                 @click="aplicarFiltro(midia, 'midia_principal')"
                                 :class="{ 'bg-sky-200': filtrosAtivos.midia_principal.includes(midia) }"
-                                class="flex justify-between items-center bg-gray-100 dark:bg-gray-700 hover:dark:bg-gray-800 hover:bg-gray-50 duration-150 cursor-pointer p-2 md:p-3 rounded-lg">
+                                class="flex justify-between items-center bg-gray-100 dark:bg-gray-700 hover:dark:bg-gray-800 hover:bg-gray-50 duration-150 cursor-pointer py-2 px-3 rounded-lg">
                                 <span class="text-sm md:text-lg truncate" :title="midia">
                                     {{ midia }}
                                 </span>
@@ -47,14 +47,14 @@
                         </ul>
                     </div>
 
-                    <h3 class="text-lg font-semibold my-5 text-gray-800 dark:text-gray-200">
+                    <h3 class="text-lg font-semibold my-3.5 text-gray-800 dark:text-gray-200">
                         <i class="fas fa-chart-pie mx-2"></i> Situações
                     </h3>
-                    <ul class="space-y-2">
+                    <ul class="space-y-1.5">
                         <li v-for="(count, situacao) in agruparPor(leads, 'situacao.nome')" :key="situacao"
                             @click="aplicarFiltro(situacao, 'situacao')"
                             :class="{ 'bg-sky-200': filtrosAtivos.situacao.includes(situacao) }"
-                            class="flex justify-between items-center bg-gray-100 dark:bg-gray-700 hover:dark:bg-gray-800 hover:bg-gray-50 duration-150 cursor-pointer p-2 md:p-3 rounded-lg">
+                            class="flex justify-between items-center bg-gray-100 dark:bg-gray-700 hover:dark:bg-gray-800 hover:bg-gray-50 duration-150 cursor-pointer py-2 px-3 rounded-lg">
                             <span class="text-sm md:text-lg truncate" :title="situacao">
                                 {{ situacao }}
                             </span>
