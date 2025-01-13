@@ -225,6 +225,14 @@ const filtrosAtivos = ref({
     situacao: []
 });
 
+const limparFiltros = () => {
+    filtrosAtivos.value = {
+        empreendimento: [],  // ou valores iniciais desejados
+        midia_principal: [],
+        situacao: [],
+    };
+};
+
 // Função para aplicar filtro (modificada para permitir apenas um filtro por categoria)
 const aplicarFiltro = (filtro, categoria) => {
     filtrosAtivos.value[categoria] = [filtro]; // Substitui o filtro anterior pela seleção atual
@@ -234,8 +242,7 @@ const aplicarFiltro = (filtro, categoria) => {
 const removerFiltro = (filtro, categoria) => {
     filtrosAtivos.value[categoria] = []; // Limpa o filtro da categoria específica
 };
-
-
+ 
 // Função de agrupamento
 function agruparPor(array, propriedade) {
     return array.reduce((acc, item) => {
@@ -254,19 +261,29 @@ function agruparPor(array, propriedade) {
     }, {});
 }
 
-// Função para filtrar os leads com base nos filtros ativos
 const filtrarLeads = (leads) => {
     return leads.filter(lead => {
-        return filtrosAtivos.value.empreendimento.every(filtro => lead.empreendimento[0].nome === filtro) &&
+        // Log para ver os dados do lead
+        // console.log('Lead:', lead);
+        
+        const empreendimentoNome = lead.empreendimento && lead.empreendimento[0] ? lead.empreendimento[0].nome : null;
+        const situacaoNome = lead.situacao ? lead.situacao.nome : null;
+
+        // console.log('Empreendimento Nome:', empreendimentoNome);
+        // console.log('Situação Nome:', situacaoNome);
+
+        return filtrosAtivos.value.empreendimento.every(filtro => empreendimentoNome === filtro) &&
             filtrosAtivos.value.midia_principal.every(filtro => lead.midia_principal === filtro) &&
-            filtrosAtivos.value.situacao.every(filtro => lead.situacao.nome === filtro);
+            filtrosAtivos.value.situacao.every(filtro => situacaoNome === filtro);
     });
 };
+
 
 const emit = defineEmits(['update:modalVisivel']);
 
 const fecharModal = () => {
-    emit('update:modalVisivel', false);
+    emit('update:modalVisivel', false); 
+    limparFiltros(); // Limpa os filtros
 };
 
 const toggleDetalhes = (idlead) => {
