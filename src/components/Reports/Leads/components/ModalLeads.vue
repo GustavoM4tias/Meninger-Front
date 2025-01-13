@@ -9,12 +9,13 @@
                 <!-- Coluna de Empreendimentos -->
                 <div>
                     <h3 class="text-lg font-semibold my-2 text-gray-800 dark:text-gray-200">
-                        <i class="fas fa-building mr-2"></i> Empreendimentos
+                        <i class="fas fa-building mx-2"></i> Empreendimentos
                     </h3>
                     <ul class="space-y-2">
                         <li v-for="(count, nome) in agruparPor(leads, 'empreendimento[0].nome')" :key="nome"
-                            @click="aplicarFiltro(nome)" :class="{ 'bg-sky-200': filtrosAtivos.includes(nome) }"
-                            class="flex justify-between items-center bg-gray-100 dark:bg-gray-700 p-2 md:p-3 rounded-lg">
+                            @click="aplicarFiltro(nome, 'empreendimento')"
+                            :class="{ 'bg-sky-200': filtrosAtivos.empreendimento.includes(nome) }"
+                            class="flex justify-between items-center bg-gray-100 dark:bg-gray-700 hover:dark:bg-gray-800 hover:bg-gray-50 duration-150 cursor-pointer p-2 md:p-3 rounded-lg">
                             <span class="text-sm md:text-lg truncate" :title="nome">
                                 {{ nome }}
                             </span>
@@ -27,31 +28,15 @@
 
                 <!-- Coluna de Mídias e Situações -->
                 <div>
-                    <h3 class="text-lg font-semibold my-2 text-gray-800 dark:text-gray-200">
-                        <i class="fas fa-chart-pie mr-2"></i> Situações
-                    </h3>
-                    <ul class="space-y-2">
-                        <li v-for="(count, situacao) in agruparPor(leads, 'situacao.nome')" :key="situacao"
-                            @click="aplicarFiltro(situacao)"
-                            :class="{ 'bg-sky-200': filtrosAtivos.includes(situacao) }"
-                            class="flex justify-between items-center bg-gray-100 dark:bg-gray-700 p-2 md:p-3 rounded-lg">
-                            <span class="text-sm md:text-lg truncate" :title="situacao">
-                                {{ situacao }}
-                            </span>
-                            <span class="bg-amber-400 text-white text-sm font-medium px-2 py-1 rounded">
-                                {{ count }}
-                            </span>
-                        </li>
-                    </ul>
-
-                    <h3 class="text-lg font-semibold my-4 text-gray-800 dark:text-gray-200">
-                        <i class="fas fa-photo-film mr-2"></i> Mídias
+                    <h3 class="text-lg font-semibold mb-4 mt-2 md:my-2 text-gray-800 dark:text-gray-200">
+                        <i class="fas fa-photo-film mx-2"></i> Mídias
                     </h3>
                     <div class="md:mb-4">
                         <ul class="space-y-2">
                             <li v-for="(count, midia) in agruparPor(leads, 'midia_principal')" :key="midia"
-                                @click="aplicarFiltro(midia)" :class="{ 'bg-sky-200': filtrosAtivos.includes(midia) }"
-                                class="flex justify-between items-center bg-gray-100 dark:bg-gray-700 p-2 md:p-3 rounded-lg">
+                                @click="aplicarFiltro(midia, 'midia_principal')"
+                                :class="{ 'bg-sky-200': filtrosAtivos.midia_principal.includes(midia) }"
+                                class="flex justify-between items-center bg-gray-100 dark:bg-gray-700 hover:dark:bg-gray-800 hover:bg-gray-50 duration-150 cursor-pointer p-2 md:p-3 rounded-lg">
                                 <span class="text-sm md:text-lg truncate" :title="midia">
                                     {{ midia }}
                                 </span>
@@ -61,20 +46,52 @@
                             </li>
                         </ul>
                     </div>
+
+                    <h3 class="text-lg font-semibold my-5 text-gray-800 dark:text-gray-200">
+                        <i class="fas fa-chart-pie mx-2"></i> Situações
+                    </h3>
+                    <ul class="space-y-2">
+                        <li v-for="(count, situacao) in agruparPor(leads, 'situacao.nome')" :key="situacao"
+                            @click="aplicarFiltro(situacao, 'situacao')"
+                            :class="{ 'bg-sky-200': filtrosAtivos.situacao.includes(situacao) }"
+                            class="flex justify-between items-center bg-gray-100 dark:bg-gray-700 hover:dark:bg-gray-800 hover:bg-gray-50 duration-150 cursor-pointer p-2 md:p-3 rounded-lg">
+                            <span class="text-sm md:text-lg truncate" :title="situacao">
+                                {{ situacao }}
+                            </span>
+                            <span class="bg-amber-400 text-white text-sm font-medium px-2 py-1 rounded">
+                                {{ count }}
+                            </span>
+                        </li>
+                    </ul>
                 </div>
             </div>
 
-            <div class="mb-4" v-if="filtrosAtivos.length > 0"> 
+
+            <div class="mb-4"
+                v-if="filtrosAtivos.empreendimento.length > 0 || filtrosAtivos.midia_principal.length > 0 || filtrosAtivos.situacao.length > 0">
                 <div class="flex flex-wrap gap-2">
-                    <div v-for="(filtro, index) in filtrosAtivos" :key="index"
+                    <div v-for="(filtro, index) in filtrosAtivos.empreendimento" :key="index"
                         class="bg-gray-50 dark:bg-gray-500 text-sm font-medium px-2 py-1 rounded-lg flex items-center">
                         {{ filtro }}
-                        <i @click="removerFiltro(filtro)" class="fas fa-xmark ml-2 cursor-pointer"></i>
+                        <i @click="removerFiltro(filtro, 'empreendimento')"
+                            class="fas fa-xmark ml-2 cursor-pointer"></i>
+                    </div>
+                    <div v-for="(filtro, index) in filtrosAtivos.midia_principal" :key="index"
+                        class="bg-gray-50 dark:bg-gray-500 text-sm font-medium px-2 py-1 rounded-lg flex items-center">
+                        {{ filtro }}
+                        <i @click="removerFiltro(filtro, 'midia_principal')"
+                            class="fas fa-xmark ml-2 cursor-pointer"></i>
+                    </div>
+                    <div v-for="(filtro, index) in filtrosAtivos.situacao" :key="index"
+                        class="bg-gray-50 dark:bg-gray-500 text-sm font-medium px-2 py-1 rounded-lg flex items-center">
+                        {{ filtro }}
+                        <i @click="removerFiltro(filtro, 'situacao')" class="fas fa-xmark ml-2 cursor-pointer"></i>
                     </div>
                 </div>
             </div>
 
             <ul>
+                <p class="text-gray-500 dark:text-gray-300">Leads: {{ filtrarLeads(leads).length }}</p>
                 <li v-for="lead in filtrarLeads(leads)" :key="lead.idlead"
                     class="bg-gray-100 dark:bg-gray-700 my-2 p-2 rounded-lg relative shadow-sm">
                     <!-- Conteúdo do Lead -->
@@ -134,8 +151,7 @@
                     <div v-if="detalhesVisiveis[lead.idlead]" class="mt-2">
                         <div
                             class="bg-gray-200 dark:bg-gray-600 px-1 sm:px-2 pb-1 md:pb-2 pt-2 md:pt-3 rounded-xl flex text-center my-3">
-                            <label
-                                class="absolute ms-2 md:ms-3 -mt-6 font-semibold text-md md:text-lg">Dados
+                            <label class="absolute ms-2 md:ms-3 -mt-6 font-semibold text-md md:text-lg">Dados
                                 Cliente</label>
                             <button v-tippy="'Email'" class="flex-1 truncate">
                                 <a class="text-sm md:text-md truncate" :href="'mailto:' + lead.email"><i
@@ -148,8 +164,7 @@
                         </div>
                         <div v-if="lead.imobiliaria.nome"
                             class="bg-gray-200 dark:bg-gray-600 px-0.5 md:px-2 pb-0.5 md:pb-2 pt-3 rounded-xl flex text-center my-1 md:my-3">
-                            <label
-                                class="absolute ms-2 md:ms-3 -mt-6 font-semibold text-md md:text-lg">Dados
+                            <label class="absolute ms-2 md:ms-3 -mt-6 font-semibold text-md md:text-lg">Dados
                                 imobiliária</label>
                             <button v-tippy="'CV Imobiliária'" class="flex-1 truncate">
                                 <a class="text-sm md:text-md truncate" target="_blank"
@@ -167,7 +182,8 @@
                     </div>
 
                     <div class="w-full justify-between flex gap-1.5 overflow-x-auto mt-2 text-xs md:text-lg">
-                        <div class="bg-gray-200 dark:bg-gray-600 rounded-md px-2 truncate" v-if="lead.empreendimento.length > 0">
+                        <div class="bg-gray-200 dark:bg-gray-600 rounded-md px-2 truncate"
+                            v-if="lead.empreendimento.length > 0">
                             {{ lead.empreendimento[0].nome }}
                         </div>
                         <div v-else class="bg-gray-600 rounded-md px-2">SEM EMPREENDIMENTO</div>
@@ -183,7 +199,6 @@
                     </div>
 
                 </li>
-                <p class="text-gray-500 dark:text-gray-300">Leads Filtrados: {{ filtrarLeads(leads).length }}</p>
             </ul>
         </div>
     </div>
@@ -204,17 +219,22 @@ const props = defineProps({
 });
 
 const detalhesVisiveis = ref({});
-const filtrosAtivos = ref([]);
+const filtrosAtivos = ref({
+    empreendimento: [],
+    midia_principal: [],
+    situacao: []
+});
 
-// Função para aplicar filtro
-const aplicarFiltro = (filtro) => {
-    filtrosAtivos.value = [filtro]; // Limpa a lista e adiciona o novo filtro
+// Função para aplicar filtro (modificada para permitir apenas um filtro por categoria)
+const aplicarFiltro = (filtro, categoria) => {
+    filtrosAtivos.value[categoria] = [filtro]; // Substitui o filtro anterior pela seleção atual
 };
 
 // Função para remover filtro
-const removerFiltro = (filtro) => {
-    filtrosAtivos.value = filtrosAtivos.value.filter(f => f !== filtro);
+const removerFiltro = (filtro, categoria) => {
+    filtrosAtivos.value[categoria] = []; // Limpa o filtro da categoria específica
 };
+
 
 // Função de agrupamento
 function agruparPor(array, propriedade) {
@@ -237,9 +257,9 @@ function agruparPor(array, propriedade) {
 // Função para filtrar os leads com base nos filtros ativos
 const filtrarLeads = (leads) => {
     return leads.filter(lead => {
-        return filtrosAtivos.value.every(filtro => {
-            return lead.empreendimento[0].nome === filtro || lead.situacao.nome === filtro || lead.midia_principal === filtro;
-        });
+        return filtrosAtivos.value.empreendimento.every(filtro => lead.empreendimento[0].nome === filtro) &&
+            filtrosAtivos.value.midia_principal.every(filtro => lead.midia_principal === filtro) &&
+            filtrosAtivos.value.situacao.every(filtro => lead.situacao.nome === filtro);
     });
 };
 
