@@ -1,29 +1,102 @@
 <template>
-    <div v-if="modalVisivel" class="absolute left-0 w-full h-full bg-gray-900/25 flex justify-center items-center z-20">
-        <div class="bg-gray-200 dark:bg-gray-600 relative p-4 rounded-lg w-1/2 h-[80vh] overflow-auto">
+    <div v-if="modalVisivel"
+        class="absolute left-0 top-0 w-full h-full bg-gray-900/25 flex justify-center md:items-center z-20">
+        <div
+            class="bg-gray-200 dark:bg-gray-600 relative p-4 rounded-lg w-11/12 md:w-1/2 mt-[6vh] md:mt-0 h-[80vh] overflow-y-auto">
             <i class="fas fa-xmark text-3xl absolute right-3 cursor-pointer" @click="fecharModal"></i>
-            <h2 class="text-lg font-semibold mb-4">Leads do Dia</h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mb-4">
+                <!-- Coluna de Empreendimentos -->
+                <div>
+                    <h3 class="text-lg font-semibold my-2 text-gray-800 dark:text-gray-200">
+                        <i class="fas fa-building mr-2"></i> Empreendimentos
+                    </h3>
+                    <ul class="space-y-2">
+                        <li v-for="(count, nome) in agruparPor(leads, 'empreendimento[0].nome')" :key="nome"
+                            @click="aplicarFiltro(nome)" :class="{ 'bg-sky-200': filtrosAtivos.includes(nome) }"
+                            class="flex justify-between items-center bg-gray-100 dark:bg-gray-700 p-2 md:p-3 rounded-lg">
+                            <span class="text-sm md:text-lg truncate" :title="nome">
+                                {{ nome }}
+                            </span>
+                            <span class="bg-sky-400 text-white text-sm font-medium px-2 py-1 rounded">
+                                {{ count }}
+                            </span>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Coluna de Mídias e Situações -->
+                <div>
+                    <h3 class="text-lg font-semibold my-2 text-gray-800 dark:text-gray-200">
+                        <i class="fas fa-chart-pie mr-2"></i> Situações
+                    </h3>
+                    <ul class="space-y-2">
+                        <li v-for="(count, situacao) in agruparPor(leads, 'situacao.nome')" :key="situacao"
+                            @click="aplicarFiltro(situacao)"
+                            :class="{ 'bg-sky-200': filtrosAtivos.includes(situacao) }"
+                            class="flex justify-between items-center bg-gray-100 dark:bg-gray-700 p-2 md:p-3 rounded-lg">
+                            <span class="text-sm md:text-lg truncate" :title="situacao">
+                                {{ situacao }}
+                            </span>
+                            <span class="bg-amber-400 text-white text-sm font-medium px-2 py-1 rounded">
+                                {{ count }}
+                            </span>
+                        </li>
+                    </ul>
+
+                    <h3 class="text-lg font-semibold my-4 text-gray-800 dark:text-gray-200">
+                        <i class="fas fa-photo-film mr-2"></i> Mídias
+                    </h3>
+                    <div class="md:mb-4">
+                        <ul class="space-y-2">
+                            <li v-for="(count, midia) in agruparPor(leads, 'midia_principal')" :key="midia"
+                                @click="aplicarFiltro(midia)" :class="{ 'bg-sky-200': filtrosAtivos.includes(midia) }"
+                                class="flex justify-between items-center bg-gray-100 dark:bg-gray-700 p-2 md:p-3 rounded-lg">
+                                <span class="text-sm md:text-lg truncate" :title="midia">
+                                    {{ midia }}
+                                </span>
+                                <span class="bg-emerald-500 text-white text-sm font-medium px-2 py-1 rounded">
+                                    {{ count }}
+                                </span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-4" v-if="filtrosAtivos.length > 0"> 
+                <div class="flex flex-wrap gap-2">
+                    <div v-for="(filtro, index) in filtrosAtivos" :key="index"
+                        class="bg-gray-50 dark:bg-gray-500 text-sm font-medium px-2 py-1 rounded-lg flex items-center">
+                        {{ filtro }}
+                        <i @click="removerFiltro(filtro)" class="fas fa-xmark ml-2 cursor-pointer"></i>
+                    </div>
+                </div>
+            </div>
 
             <ul>
-                <li v-for="lead in leads" :key="lead.idlead"
-                    class="bg-gray-300 dark:bg-gray-700 m-2 p-2 rounded-lg relative shadow">
+                <li v-for="lead in filtrarLeads(leads)" :key="lead.idlead"
+                    class="bg-gray-100 dark:bg-gray-700 my-2 p-2 rounded-lg relative shadow-sm">
+                    <!-- Conteúdo do Lead -->
                     <div class="line flex justify-between">
                         <div class="name flex truncate">
-                            <p @click="toggleDetalhes(lead.idlead)" class="truncate flex-1 text-xl cursor-pointer">{{ lead.nome }}<i class="fas m-auto ms-1.5"
+                            <p @click="toggleDetalhes(lead.idlead)"
+                                class="truncate flex-1 text-md md:text-xl cursor-pointer">{{ lead.nome }}<i
+                                    class="fas m-auto ms-1.5"
                                     :class="detalhesVisiveis[lead.idlead] ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
                             </p>
 
                         </div>
-                        <div class="flex"> 
-                            <div class="flex m-1 gap-1.5 text-sm truncate"> 
+                        <div class="flex">
+                            <div class="hidden md:flex m-1 gap-1.5 text-sm truncate">
                                 <button v-tippy="'Mídia de Visita'">
                                     <p v-if="lead.midia_principal"
-                                        class="py-0.5 px-1.5 rounded-lg bg-gray-500 truncate">
+                                        class="py-0.5 px-1.5 rounded-lg bg-gray-200 dark:bg-gray-500 truncate">
                                         {{ lead.midia_principal }}
                                     </p>
-                                </button> 
+                                </button>
                                 <button v-tippy="'Situação'" class="truncate">
-                                    <p class="py-0.5 px-1.5 rounded-lg bg-gray-500 truncate">
+                                    <p class="py-0.5 px-1.5 rounded-lg bg-gray-200 dark:bg-gray-500 truncate">
                                         {{ lead.situacao.nome }}
                                     </p>
                                 </button>
@@ -33,39 +106,59 @@
                                 <button v-tippy="'CV CRM'">
                                     <a :href="'https://menin.cvcrm.com.br/gestor/comercial/leads/' + lead.idlead + '/administrar?lido=true'"
                                         target="_blank">
-                                        <img src="/CVLogo.png" alt="CV CRM" class="h-4 drop-shadow">
+                                        <img src="/CVLogo.png" alt="CV CRM" class="h-4 min-w-4 drop-shadow">
                                     </a>
                                 </button>
                                 <button v-tippy="'RD Station'">
                                     <a :href="lead.link_rdstation" target="_blank">
-                                        <img src="/RDLogo.png" alt="RD Station" class="h-4 drop-shadow">
+                                        <img src="/RDLogo.png" alt="RD Station" class="h-4 min-w-4 drop-shadow">
                                     </a>
                                 </button>
                             </div>
                         </div>
                     </div>
 
+                    <div class="flex md:hidden gap-1.5 text-xs md:text-sm truncate">
+                        <button v-tippy="'Mídia de Visita'">
+                            <p v-if="lead.midia_principal" class="py-0.5 px-1.5 rounded-lg bg-gray-500 truncate">
+                                {{ lead.midia_principal }}
+                            </p>
+                        </button>
+                        <button v-tippy="'Situação'" class="truncate">
+                            <p class="py-0.5 px-1.5 rounded-lg bg-gray-500 truncate">
+                                {{ lead.situacao.nome }}
+                            </p>
+                        </button>
+                    </div>
+
                     <div v-if="detalhesVisiveis[lead.idlead]" class="mt-2">
-                        <div class="bg-gray-600 px-2 pb-2 pt-3 rounded-xl flex text-center my-3 text-gray-200/80">
-                            <label class="absolute ms-3 -mt-6 font-semibold text-lg text-gray-200">Dados Cliente</label>
-                            <button v-tippy="'Email'" class="flex-1">
-                                <a :href="'mailto:' + lead.email"><i class="fas fa-envelope"></i> {{ lead.email
+                        <div
+                            class="bg-gray-200 dark:bg-gray-600 px-1 sm:px-2 pb-1 md:pb-2 pt-2 md:pt-3 rounded-xl flex text-center my-3">
+                            <label
+                                class="absolute ms-2 md:ms-3 -mt-6 font-semibold text-md md:text-lg">Dados
+                                Cliente</label>
+                            <button v-tippy="'Email'" class="flex-1 truncate">
+                                <a class="text-sm md:text-md truncate" :href="'mailto:' + lead.email"><i
+                                        class="fas fa-envelope"></i> {{ lead.email
                                     }}</a></button>
-                            <button v-tippy="'WhatsApp'" class="flex-1">
-                                <a :href="'https://wa.me/' + lead.telefone.replace(/\D/g, '')" target="_blank"><i
+                            <button v-tippy="'WhatsApp'" class="flex-1 truncate">
+                                <a class="text-sm md:text-md truncate"
+                                    :href="'https://wa.me/' + lead.telefone.replace(/\D/g, '')" target="_blank"><i
                                         class="fab fa-whatsapp"></i> {{ lead.telefone }}</a></button>
                         </div>
-                        <div v-if="lead.imobiliaria.nome" class="bg-gray-600 px-2 pb-2 pt-3 rounded-xl flex text-center my-3 text-gray-200/80">
-                            <label class="absolute ms-3 -mt-6 font-semibold text-lg text-gray-200">Dados
+                        <div v-if="lead.imobiliaria.nome"
+                            class="bg-gray-200 dark:bg-gray-600 px-0.5 md:px-2 pb-0.5 md:pb-2 pt-3 rounded-xl flex text-center my-1 md:my-3">
+                            <label
+                                class="absolute ms-2 md:ms-3 -mt-6 font-semibold text-md md:text-lg">Dados
                                 imobiliária</label>
-                            <button v-tippy="'CV Imobiliária'" class="flex-1">
-                                <a target="_blank"
+                            <button v-tippy="'CV Imobiliária'" class="flex-1 truncate">
+                                <a class="text-sm md:text-md truncate" target="_blank"
                                     :href="'https://menin.cvcrm.com.br/gestor/cadastros/imobiliarias?q%5B1%7Cimobiliarias.idimobiliaria%5D=&q%5B2%7Cimobiliarias.nome%5D=' + lead.imobiliaria.nome">
                                     <i class="fas fa-trowel-bricks"></i> {{ lead.imobiliaria.nome }}
                                 </a>
                             </button>
-                            <button v-tippy="'CV Corretor'" class="flex-1">
-                                <a target="_blank"
+                            <button v-tippy="'CV Corretor'" class="flex-1 truncate">
+                                <a class="text-sm md:text-md truncate" target="_blank"
                                     :href="'https://menin.cvcrm.com.br/gestor/cadastros/corretores?q%5B1%7Cc.idcorretor%5D=&q%5B2%7Cc.nome%5D=' + lead.corretor.nome">
                                     <i class="fas fa-clipboard"></i> {{ lead.corretor.nome }}
                                 </a>
@@ -73,12 +166,12 @@
                         </div>
                     </div>
 
-                    <div class="w-full justify-between flex gap-1.5 overflow-x-auto mt-2">
-                        <div class="bg-gray-600 rounded-md px-2" v-if="lead.empreendimento.length > 0">
+                    <div class="w-full justify-between flex gap-1.5 overflow-x-auto mt-2 text-xs md:text-lg">
+                        <div class="bg-gray-200 dark:bg-gray-600 rounded-md px-2 truncate" v-if="lead.empreendimento.length > 0">
                             {{ lead.empreendimento[0].nome }}
                         </div>
                         <div v-else class="bg-gray-600 rounded-md px-2">SEM EMPREENDIMENTO</div>
-                        <div class="text-gray-500 pe-1.5">
+                        <div class="text-gray-500 pe-1.5 truncate">
                             {{ new Date(lead.data_cad).toLocaleString('pt-BR', {
                                 year: 'numeric',
                                 month: '2-digit',
@@ -88,7 +181,9 @@
                             }).replace(',', '') }}
                         </div>
                     </div>
+
                 </li>
+                <p class="text-gray-500 dark:text-gray-300">Leads Filtrados: {{ filtrarLeads(leads).length }}</p>
             </ul>
         </div>
     </div>
@@ -109,14 +204,52 @@ const props = defineProps({
 });
 
 const detalhesVisiveis = ref({});
+const filtrosAtivos = ref([]);
 
-const toggleDetalhes = (idlead) => {
-    detalhesVisiveis.value[idlead] = !detalhesVisiveis.value[idlead];
+// Função para aplicar filtro
+const aplicarFiltro = (filtro) => {
+    filtrosAtivos.value = [filtro]; // Limpa a lista e adiciona o novo filtro
+};
+
+// Função para remover filtro
+const removerFiltro = (filtro) => {
+    filtrosAtivos.value = filtrosAtivos.value.filter(f => f !== filtro);
+};
+
+// Função de agrupamento
+function agruparPor(array, propriedade) {
+    return array.reduce((acc, item) => {
+        const valor = propriedade.split('.').reduce((obj, chave) => {
+            if (chave.endsWith(']')) {
+                const [base, index] = chave.replace(']', '').split('[');
+                return obj?.[base]?.[parseInt(index)] ?? null;
+            }
+            return obj?.[chave];
+        }, item);
+
+        if (valor) {
+            acc[valor] = (acc[valor] || 0) + 1;
+        }
+        return acc;
+    }, {});
+}
+
+// Função para filtrar os leads com base nos filtros ativos
+const filtrarLeads = (leads) => {
+    return leads.filter(lead => {
+        return filtrosAtivos.value.every(filtro => {
+            return lead.empreendimento[0].nome === filtro || lead.situacao.nome === filtro || lead.midia_principal === filtro;
+        });
+    });
 };
 
 const emit = defineEmits(['update:modalVisivel']);
 
 const fecharModal = () => {
     emit('update:modalVisivel', false);
+};
+
+const toggleDetalhes = (idlead) => {
+    detalhesVisiveis.value[idlead] = !detalhesVisiveis.value[idlead];
 };
 </script>

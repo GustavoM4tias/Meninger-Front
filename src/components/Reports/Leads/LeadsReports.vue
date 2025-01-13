@@ -147,11 +147,11 @@ const filas = computed(() => {
 <template>
     <div class="bg-gray-800 w-full relative overflow-hidden">
         <div class="h-auto md:h-[calc(100vh-4rem)] flex flex-col md:flex-row bg-gray-100 dark:bg-gray-800 relative">
-            <div class="w-full md:w-2/3 flex flex-col">
+            <div class="w-full md:w-2/3 flex flex-col order-2 md:order-1">
                 <LineChart :leads="leads" class="drop-shadow-none" />
                 <BarChart2 :leads="leads" class="filter drop-shadow-none" />
             </div>
-            <div class="w-full md:w-1/3 flex flex-col">
+            <div class="w-full md:w-1/3 flex flex-col order-1 md:order-2">
                 <BarChart :leads="leads" class="flex-1 filter drop-shadow-none order-2 md:order-1" />
                 <LeadsGeneral class="enterprise flex flex-1 order-1 md:order-2" />
             </div>
