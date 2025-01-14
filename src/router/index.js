@@ -19,6 +19,26 @@ const routes = [
       requiresAuth: true,
       allowedPosition: ''
     },
+  },  
+  {
+    path: '/imobiliarias',
+    name: 'Imobiliarias',
+    component: () => import('../views/Reports/Imobiliarias.vue'),
+    meta: { requiresAuth: true },
+    meta: {
+      requiresAuth: true,
+      allowedPosition: ''
+    },
+  },  
+  {
+    path: '/vendas',
+    name: 'Vendas',
+    component: () => import('../views/Reports/Vendas.vue'),
+    meta: { requiresAuth: true },
+    meta: {
+      requiresAuth: true,
+      allowedPosition: ''
+    },
   },
   {
     path: '/buildings',
