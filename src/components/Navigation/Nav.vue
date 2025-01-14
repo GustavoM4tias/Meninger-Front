@@ -265,6 +265,8 @@
                         </button>
                         <ul v-if="dropdowns.reports" class="mt-2 text-gray-600 dark:text-gray-300">
                             <MenuLink :router="'/leads'" :section="'Leads'" :name="'Leads'" :isFavorited="false" />
+                            <MenuLink :router="'/imobiliarias'" :section="'Imobiliárias'" :name="'Imobiliárias'" :isFavorited="false" />
+                            <MenuLink :router="'/vendas'" :section="'Vendas'" :name="'Vendas'" :isFavorited="false" />
                             <!-- <li>
                                 <RouterLink to=""
                                     class="block px-4 py-1.5 my-1.5 bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 rounded-md">
@@ -366,6 +368,10 @@ const getTitleByRouter = (router) => {
         return 'Configurações';
     } else if (router === '/leads') {
         return 'Relatórios';
+    } else if (router === '/imobiliarias') {
+        return 'Imobiliárias';
+    } else if (router === '/vendas') {
+        return 'Vendas';
     }
     // Retorne o próprio router se não houver correspondência
     return router.charAt(0).toUpperCase() + router.slice(1).replace('/', ' ');

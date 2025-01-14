@@ -48,7 +48,7 @@ const filas = computed(() => {
                     "nome_corretor": "Georgia Haddad Cherri Thomaz",
                     "email_corretor": "georgiacherri@icloud.com",
                     "telefone": "+5514998644478",
-                    "posicao": "Último"
+                    "posicao": "Próximo"
                 },
                 {
                     "idimobiliaria": 23,
@@ -57,7 +57,7 @@ const filas = computed(() => {
                     "nome_corretor": "FLAVIA REGINA DOS REIS QUINAIA",
                     "email_corretor": "flaviarmreis@hotmail.com",
                     "telefone": "+5514988031619",
-                    "posicao": "Próximo"
+                    "posicao": "Último"
                 }
             ]
         },
@@ -105,8 +105,7 @@ const filas = computed(() => {
                     "posicao": "Próximo"
                 }
             ]
-        },
-        // Outras filas omitidas para brevidade...
+        }, 
     ];
     // Função para calcular a data de 7 dias atrás
     const obterDataLimite = () => {
