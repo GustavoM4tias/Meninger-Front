@@ -59,29 +59,29 @@ export const useLeadsStore = defineStore('leads', () => {
       let leadsCompletos = [];
 
       // Primeira etapa: Carregar 150 leads
-      const leads1 = await carregarLeads(150, 0);
+      const leads1 = await carregarLeads(300, 0);
       leadsCompletos = [...leadsCompletos, ...leads1];
       leads.value = leadsCompletos; // Atualiza para o BarChart
       // console.log('Dados atualizados para o BarChart:', leadsCompletos);
 
       // Segunda etapa: Carregar mais 300 leads
-      const leads2 = await carregarLeads(300, 150);
+      const leads2 = await carregarLeads(300, 300);
       leadsCompletos = [...leadsCompletos, ...leads2];
       leads.value = leadsCompletos; // Atualiza para o LineChart
       // console.log('Dados atualizados para o LineChart:', leadsCompletos);
 
       // Terceira etapa: Carregar mais 300 leads
-      const leads3 = await carregarLeads(300, 450);
+      const leads3 = await carregarLeads(300, 600);
       leads.value = leadsCompletos; // Atualiza para o LineChart
       leadsCompletos = [...leadsCompletos, ...leads3];
 
       // Quarta etapa: Carregar mais 300 leads
-      const leads4 = await carregarLeads(300, 750);
+      const leads4 = await carregarLeads(300, 900);
       leads.value = leadsCompletos; // Atualiza para o LineChart
       leadsCompletos = [...leadsCompletos, ...leads4];
 
       // Quarta etapa: Carregar mais 300 leads
-      const leads5 = await carregarLeads(300, 1050);
+      const leads5 = await carregarLeads(300, 1200);
       leadsCompletos = [...leadsCompletos, ...leads5];
 
       // Finaliza com todos os leads carregados
