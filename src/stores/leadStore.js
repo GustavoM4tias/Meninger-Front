@@ -81,7 +81,7 @@ export const useLeadsStore = defineStore('leads', () => {
       leadsCompletos = [...leadsCompletos, ...leads4];
 
       // Quarta etapa: Carregar mais 300 leads
-      const leads5 = await carregarLeads(150, 1050);
+      const leads5 = await carregarLeads(300, 1050);
       leadsCompletos = [...leadsCompletos, ...leads5];
 
       // Finaliza com todos os leads carregados
