@@ -1,9 +1,9 @@
 <script setup>
-import InProgress from '../../components/UI/InProgress.vue';
+import ReservasGeneral from '../../components/Reports/Reservas/ReservasGeneral.vue';
 </script>
 
 <template>
 
-    <InProgress />
+    <ReservasGeneral />
 
 </template>
