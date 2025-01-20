@@ -7,17 +7,33 @@
         :options="empreendimentosUnicosComTodos" placeholder="Selecionar Empreendimento" required />
     </div>
 
-    <div class="relative flex h-[80%] w-full">
+    <div class="relative flex flex-col h-[80%] w-full">
       <div class="text-3xl absolute right-0 -top-5 z-10">
         <i class="far fa-file-image cursor-pointer hover:scale-[103%] text-gray-700 hover:text-gray-800 dark:text-gray-50 dark:hover:text-gray-100"
           @click="salvarComoImagem"></i>
         <!-- <i class="far fa-file-pdf mx-2 cursor-pointer hover:scale-[103%] text-gray-700 hover:text-gray-800 dark:text-gray-50 dark:hover:text-gray-100"
           @click="salvarComoPDF"></i> -->
       </div>
-      <LineChart ref="chartSemanal" class="h-[30vh] w-full m-auto" :chart-data="chartData" :options="chartOptions" />
-    </div> 
+      <LineChart ref="chartSemanal" class="h-[30vh] w-full m-auto" :chart-data="chartData" :options="chartOptions"
+        @click="abrirModalLeads" />
+
+      <div class="flex justify-between items-center m-2 text-2xl gap-4 absolute">
+        <button v-tippy="'Semana Anterior'" class="text-red-600 hover:underline dark:text-red-500"
+          @click="abrirModalPorPeriodo('Semana Anterior')">
+          <i class="fas fa-chart-column"></i>
+        </button>
+        <button v-tippy="'Semana Atual'" class="text-blue-600 hover:underline dark:text-blue-400"
+          @click="abrirModalPorPeriodo('Semana Atual')">
+          <i class="fas fa-chart-column"></i>
+        </button>
+      </div>
+    </div>
+
+
     <LoadingComponents v-if="carregando" />
   </div>
+  <ModalLeads :leads="leadsDoDia" :modalVisivel="modalVisivel"
+    @update:modalVisivel="(visivel) => modalVisivel = visivel" />
 </template>
 
 <script setup>
@@ -27,11 +43,14 @@ import { Chart as ChartJS, registerables } from 'chart.js';
 // import jsPDF from 'jspdf';
 import LoadingComponents from '../../../Loading/LoadingComponents.vue';
 import Select from '../../../../components/UI/Select.vue';
+import ModalLeads from '../components/ModalLeads.vue';
 import { useLeadsStore } from '../../../../stores/leadStore';
 
 const leadsStore = useLeadsStore();
 const carregando = ref(true);
 const chartSemanal = ref(null);
+const modalVisivel = ref(false); // Controle de visibilidade do modal
+const leadsDoDia = ref([]); // Lista de leads que será exibida no modal
 
 // Controle de carregamento
 watchEffect(() => {
@@ -39,6 +58,8 @@ watchEffect(() => {
     carregando.value = false;
   }
 });
+
+ChartJS.register(...registerables);
 
 // Estado para o empreendimento selecionado
 const empreendimentoSelecionado = ref('');
@@ -101,11 +122,11 @@ const chartData = computed(() => {
     labels: [...diasSemanaAtual],
     datasets: [
       {
-        label: 'Semana Atual',
+        label: `Semana Atual`,
         fill: false,
         borderColor: '#3498db',
-        borderWidth: 4, // Largura da borda
-        tension: 0.1,
+        borderWidth: 4,
+        tension: 0.4,
         data: quantidadeLeadsSemanaAtual,
       },
       {
@@ -113,7 +134,7 @@ const chartData = computed(() => {
         fill: false,
         borderColor: '#e74c3c',
         borderWidth: 4, // Largura da borda
-        tension: 0.1,
+        tension: 0.4,
         data: quantidadeLeadsSemanaAnterior.reverse(),
       },
     ],
@@ -164,8 +185,6 @@ const chartOptions = {
   },
 };
 
-ChartJS.register(...registerables);
-
 const salvarComoImagem = () => {
   const canvas = chartSemanal.value.$el.querySelector('canvas'); // Captura o canvas do gráfico semanal
   const link = document.createElement('a');
@@ -173,6 +192,47 @@ const salvarComoImagem = () => {
   link.href = canvas.toDataURL();
   link.click();
 };
+
+const abrirModalLeads = (event) => {
+  const chart = chartSemanal.value.chartInstance;
+  const pontosClicados = chart.getElementsAtEventForMode(event, 'nearest', { intersect: true }, false);
+
+  if (pontosClicados.length) {
+    const index = pontosClicados[0].index;
+    const dataSelecionada = chartData.value.labels[index];
+    leadsDoDia.value = leadsStore.leads.filter((lead) => {
+      const dataCad = new Date(lead.data_cad);
+      return dataCad.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) === dataSelecionada;
+    });
+    modalVisivel.value = true;
+  }
+};
+
+const abrirModalPorPeriodo = (periodo) => {
+  let dataInicio, dataFim;
+
+  if (periodo === 'Semana Atual') {
+    dataInicio = new Date();
+    dataInicio.setDate(dataInicio.getDate() - 6);
+    dataFim = new Date();
+  } else if (periodo === 'Semana Anterior') {
+    dataInicio = new Date();
+    dataInicio.setDate(dataInicio.getDate() - 13);
+    dataFim = new Date();
+    dataFim.setDate(dataFim.getDate() - 7);
+  }
+
+  // Filtrar os leads no período selecionado
+  leadsDoDia.value = leadsStore.leads.filter((lead) => {
+    const dataCad = new Date(lead.data_cad);
+    return dataCad >= dataInicio && dataCad <= dataFim;
+  });
+
+  // Abrir o modal
+  modalVisivel.value = true;
+};
+
+
 
 // const salvarComoPDF = () => {
 //   const pdf = new jsPDF();
