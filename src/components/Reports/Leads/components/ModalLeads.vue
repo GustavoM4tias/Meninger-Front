@@ -91,7 +91,10 @@
             </div>
 
             <ul>
-                <p class="text-gray-500 dark:text-gray-300">Leads: {{ filtrarLeads(leads).length }}</p>
+                <div class="flex justify-between">
+                    <p class="text-gray-500 dark:text-gray-300">Leads: {{ filtrarLeads(leads).length }}</p>
+                    <p class="text-gray-500 dark:text-gray-300">{{ obterIntervaloDeDatas(leads) }}</p>
+                </div>
                 <li v-for="lead in filtrarLeads(leads)" :key="lead.idlead"
                     class="bg-gray-100 dark:bg-gray-700 my-2 p-2 rounded-lg relative shadow-sm">
                     <!-- Conteúdo do Lead -->
@@ -242,7 +245,7 @@ const aplicarFiltro = (filtro, categoria) => {
 const removerFiltro = (filtro, categoria) => {
     filtrosAtivos.value[categoria] = []; // Limpa o filtro da categoria específica
 };
- 
+
 // Função de agrupamento
 function agruparPor(array, propriedade) {
     return array.reduce((acc, item) => {
@@ -265,7 +268,7 @@ const filtrarLeads = (leads) => {
     return leads.filter(lead => {
         // Log para ver os dados do lead
         // console.log('Lead:', lead);
-        
+
         const empreendimentoNome = lead.empreendimento && lead.empreendimento[0] ? lead.empreendimento[0].nome : null;
         const situacaoNome = lead.situacao ? lead.situacao.nome : null;
 
@@ -278,11 +281,30 @@ const filtrarLeads = (leads) => {
     });
 };
 
+function obterIntervaloDeDatas(leads) {
+    const datas = leads.map(lead => {
+        const data = new Date(lead.data_cad);
+        return new Date(data.getFullYear(), data.getMonth(), data.getDate());
+    });
+
+    datas.sort((a, b) => a - b);
+    const todasIguais = datas.every(data => data.getTime() === datas[0].getTime());
+
+    if (todasIguais) {
+        const dataLeads = datas[0].toLocaleDateString('pt-BR');
+        return `${dataLeads}`;
+    } else {
+        const dataAntiga = datas[0].toLocaleDateString('pt-BR');
+        const dataRecente = datas[datas.length - 1].toLocaleDateString('pt-BR');
+        return `${dataAntiga} - ${dataRecente}`;
+    }
+}
+
 
 const emit = defineEmits(['update:modalVisivel']);
 
 const fecharModal = () => {
-    emit('update:modalVisivel', false); 
+    emit('update:modalVisivel', false);
     limparFiltros(); // Limpa os filtros
 };
 
