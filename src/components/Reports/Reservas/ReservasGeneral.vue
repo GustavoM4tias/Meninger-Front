@@ -9,12 +9,12 @@
                 <p v-if="situacao.length > 0" :class="{
                     'bg-blue-400': key === '1',
                     'bg-emerald-400': key === '12',
-                    'bg-red-400': key === '20', // sem retorno
+                    'bg-red-400': key === '20', 
                     'bg-orange-400': key === '15',
                     'bg-yellow-400': key === '16',
                     'bg-green-400': key === '21',
                     'bg-sky-400': key === '22'
-                }" class="text-black font-bold text-center py-14 truncate clip scale-[110%]">
+                }" class="text-black font-bold text-center py-6 mx-1 truncate clip scale-[110%]">
                     {{ situacao[0].situacao_nome }} - {{ key }}
                 </p>
 
@@ -65,6 +65,6 @@ const erro = computed(() => reservaStore.erro);
 
 <style scoped>
 .clip {
-    clip-path: polygon(95% 50%, 90% 70%, 0% 70%, 5% 50%, 0% 28%, 90% 28%); 
+    clip-path: polygon(95% 50%, 90% 90%, 0% 90%, 5% 50%, 0% 10%, 90% 10%); 
 }
 </style>
