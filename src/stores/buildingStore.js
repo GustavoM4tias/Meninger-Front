@@ -1,10 +1,11 @@
 // src/stores/buildingStore.js
 import { defineStore } from 'pinia';
-import { getBuildings, getWeatherByCity } from '../utils/apiBuilding';
+import { getBuildings, getWeather , getWeatherByCity, getBuildingById } from '../utils/apiBuilding';
 
 export const useBuildingStore = defineStore('buildingStore', {
     state: () => ({
         buildings: [],
+        selectedBuilding: null, // Add this line
         weather: null, // Estado para armazenar o clima
         errorMessage: '',
     }),
@@ -12,42 +13,33 @@ export const useBuildingStore = defineStore('buildingStore', {
         async fetchBuildings() {
             try {
                 const result = await getBuildings();
-                this.buildings = result.data.buildings || []; // Certifique-se de que sempre será um array
-                // console.log('Dados retornados pela API:', result);
+                this.buildings = result.buildings || result || [];
+                // console.log('Dados retornados pela API:', this.buildings);
             } catch (error) {
                 console.error('Erro ao carregar empreendimentos:', error);
                 this.errorMessage = 'Erro ao carregar empreendimentos.';
             }
         },
-        async addBuilding(building) {
+        async fetchBuildingById(id) {
             try {
-                const newBuilding = await addBuilding(building);
-                this.buildings.push(newBuilding);
+                const result = await getBuildingById(id);
+                this.selectedBuilding = result || null;
+                // console.log(`Empreendimento ${id} carregado:`, this.selectedBuilding);
             } catch (error) {
-                console.error("Erro ao adicionar empreendimento:", error);
+                console.error('Erro ao carregar empreendimento:', error);
+                this.errorMessage = 'Erro ao carregar empreendimento.';
             }
         },
-
-        async updateBuilding(building) {
+        async getWeather(lat, lon) {
             try {
-                const updatedBuilding = await updateBuilding(building);
-                const index = this.buildings.findIndex(b => b.id === building.id);
-                if (index !== -1) {
-                    this.buildings[index] = updatedBuilding;
-                }
+                const weatherData = await getWeather(lat, lon); // Use the new function
+                this.weather = weatherData;
             } catch (error) {
-                console.error("Erro ao atualizar empreendimento:", error);
+                console.error('Erro ao buscar o clima:', error.message);
+                this.errorMessage = 'Erro ao buscar informações do clima.';
             }
         },
-        async deleteBuilding(buildingId) {
-            try {
-                await deleteBuilding(buildingId);
-                this.buildings = this.buildings.filter(b => b.id !== buildingId);
-            } catch (error) {
-                console.error("Erro ao excluir empreendimento:", error);
-            }
-        },
-        async getWeather(city) {
+        async getWeatherByCity(city) {
             try {
                 const weatherData = await getWeatherByCity(city);
                 this.weather = weatherData; 

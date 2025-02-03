@@ -2,7 +2,7 @@
 <script setup>
 import { ref, watch } from 'vue';
 import { updateEvent } from '../../utils/apiEvents';
-import { getAddress } from '../../utils/apiBuilding';
+import { getAddress } from '../../utils/_OLDapiBuilding';
 
 const props = defineProps({ event: Object });
 const emit = defineEmits(['close']);

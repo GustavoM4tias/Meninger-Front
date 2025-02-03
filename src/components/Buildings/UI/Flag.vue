@@ -8,10 +8,11 @@ const props = defineProps({
 
 // Objeto que mapeia os valores de `stage` para classes CSS
 const stageClasses = {
-    'Pré Lançamento': 'bg-emerald-500',
+    'Pré-Lançamento': 'bg-emerald-500',
     'Lançamento': 'bg-sky-500',
-    'Em Obras': 'bg-amber-400',
+    'Em construção': 'bg-amber-400',
     'Finalizado': 'bg-red-500',
+    'Portal do Cliente': 'bg-purple-600'
 };
 </script>
 

@@ -7,8 +7,8 @@
             style="width: calc(100% - 4rem);">
 
             <div class="pl-2 md:pl-4">
-                <img src="/Meninger-logo.png"
-                    class="h-14 md:h-16 object-cover filter opacity-80 drop-shadow invert dark:invert-0" alt="Logo" />
+                <img src="/Mlogo.png"
+                    class="h-12 md:h-14 object-cover filter opacity-80 drop-shadow invert dark:invert-0" alt="Logo" />
             </div>
 
             <div class="relative flex">
@@ -228,7 +228,7 @@
                                 :class="dropdowns.events ? 'fas fa-chevron-up' : 'fas fa-chevron-down'"></i>
                         </button>
                         <ul v-if="dropdowns.events" class="mt-2 text-gray-600 dark:text-gray-300">
-                            <MenuLink :router="'/events'" :section="'Geral'" :name="'Geral'" :isFavorited="false" />
+                            <MenuLink :router="'/events'" :section="'geral'" :name="'Geral'" :isFavorited="false" />
                             <MenuLink :router="'/events'" :section="'Próximos'" :name="'Próximos'"
                                 :isFavorited="false" />
                             <MenuLink :router="'/events'" :section="'Finalizados'" :name="'Finalizados'"
@@ -244,7 +244,7 @@
                                 :class="dropdowns.enterprise ? 'fas fa-chevron-up' : 'fas fa-chevron-down'"></i>
                         </button>
                         <ul v-if="dropdowns.enterprise" class="mt-2 text-gray-600 dark:text-gray-300">
-                            <MenuLink :router="'/buildings'" :section="'Geral'" :name="'Geral'" :isFavorited="false" />
+                            <MenuLink :router="'/buildings'" :section="'geral'" :name="'Geral'" :isFavorited="false" />
                             <MenuLink :router="'/buildings'" :section="'Pré Lançamentos'" :name="'Pré Lançamentos'"
                                 :isFavorited="false" />
                             <MenuLink :router="'/buildings'" :section="'Lançamentos'" :name="'Lançamentos'"
@@ -252,6 +252,8 @@
                             <MenuLink :router="'/buildings'" :section="'Em Obras'" :name="'Em Obras'"
                                 :isFavorited="false" />
                             <MenuLink :router="'/buildings'" :section="'Finalizados'" :name="'Finalizados'"
+                                :isFavorited="false" />
+                            <MenuLink :router="'/buildings'" :section="'Portal do Cliente'" :name="'Portal do Cliente'"
                                 :isFavorited="false" />
                         </ul>
                     </li>
@@ -320,6 +322,10 @@
                         </button>
                         <ul v-if="dropdowns.settings" class="mt-2 text-gray-600 dark:text-gray-300">
                             <MenuLink :router="'/users'" :section="'Usuários'" :name="'Usuários'"
+                                :isFavorited="false" />
+                        </ul>
+                        <ul v-if="dropdowns.settings" class="mt-2 text-gray-600 dark:text-gray-300">
+                            <MenuLink :router="'/hierarchy'" :section="'Hierarquia'" :name="'Hierarquia'"
                                 :isFavorited="false" />
                         </ul>
                     </li>
