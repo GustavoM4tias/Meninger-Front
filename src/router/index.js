@@ -85,6 +85,12 @@ const routes = [
     meta: { requiresAuth: true },
   },
   {
+    path: '/hierarchy',
+    name: 'Hierarchy',
+    component: () => import('../views/Hierarchy.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
     path: '/error',
     name: 'Error',
     component: () => import('../views/ErrorPage.vue'),

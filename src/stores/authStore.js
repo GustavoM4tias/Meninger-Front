@@ -1,6 +1,6 @@
 // src/store/authStore.js
 import { defineStore } from 'pinia';
-import { getUserInfo, getAllUsers } from '../utils/apiAuth';
+import { getUserInfo, getAllUsers, getUserById } from '../utils/apiAuth';
 
 export const useAuthStore = defineStore('user', {
   state: () => ({
@@ -52,10 +52,20 @@ export const useAuthStore = defineStore('user', {
         this.clearUser(); // Limpa usuário caso não consiga obter dados
       }
     },
+    async fetchUserById(id) { // ajustar
+      try {
+        const result = await getUserById(id);
+        this.setUser(result.data); // Chama setUser para sincronizar o localStorage
+      } catch (error) {
+        console.error(error);
+        this.clearUser(); // Limpa usuário caso não consiga obter dados
+      }
+    },
     async getAllUsers() {
       try {
         const result = await getAllUsers(); // Supondo que getAllUsers retorne um array de usuários
         this.users = result.data; // Atualiza a lista de usuários
+        console.log(result.data)
         return result;
       } catch (error) {
         throw new Error(error.message);

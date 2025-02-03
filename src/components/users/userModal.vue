@@ -1,16 +1,19 @@
 <script setup>
-import { ref, watchEffect } from 'vue';
+import { ref, watchEffect, onMounted } from 'vue';
 import { updateUserInfo } from '../../utils/apiAuth';
+import { useAuthStore } from '../../stores/authStore';
 import Input from '../../components/UI/Input.vue';
 import Button from '../../components/UI/Button.vue';
 import { useToast } from 'vue-toastification';
 
+const authStore = useAuthStore();
 const toast = useToast();
 const props = defineProps({
   user: Object
 });
 const emit = defineEmits(['close', 'reload']);
 const editableUser = ref({ ...props.user });
+// console.log(editableUser)
 
 watchEffect(() => {
   if (editableUser.value.birth_date) {
@@ -25,6 +28,7 @@ const saveUser = async () => {
       editableUser.value.username,
       editableUser.value.email,
       editableUser.value.position,
+      editableUser.value.manager,
       editableUser.value.city,
       editableUser.value.birth_date,
       editableUser.value.status
@@ -41,6 +45,16 @@ const cancelEditing = () => {
   emit('close');
 };
 
+// Buscar informações do gerente e logar no console:
+onMounted(async () => {
+  if (editableUser.value.manager) {
+    // Chama a action passando o ID do gerente (acessado corretamente via editableUser.value.manager)
+    await authStore.fetchUserById(editableUser.value.manager);
+    // Exibe a informação do gerente no console
+    // console.log("Informações do Gerente:", authStore.user);
+  }
+});
+
 </script>
 
 <template>
@@ -54,6 +68,9 @@ const cancelEditing = () => {
         <div class="flex gap-3">
           <Input v-model="editableUser.position" label="Cargo" type="text" placeholder="Cargo" required />
           <Input v-model="editableUser.city" label="Cidade" type="text" placeholder="Cidade" required />
+        </div>
+        <div class="flex gap-3">
+          <Input v-model="authStore.user.username" label="Superior" type="text" placeholder="Superior" required disabled />
         </div>
         <Input v-model="editableUser.birth_date" label="Data de Nascimento" type="date" placeholder="Data de Nascimento"
           required />
