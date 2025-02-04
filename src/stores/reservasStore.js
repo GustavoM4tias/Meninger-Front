@@ -2,61 +2,58 @@ import { defineStore } from 'pinia';
 import { ref } from 'vue';
 
 export const useReservaStore = defineStore('reserva', () => {
-    const reservas = ref({
-        '1': [], // Nova Reserva
-        '12': [], // Analise Comercial
-        '20': [], // Validação de Dados/Docs
-        '15': [], // Geração de Contratos
-        '16': [], // Em Assinatura
-        '21': [], // Assinado
-        '22': [], // Em Contratação Caixa
-    });
-    const erro = ref(null);
-    const total = ref(0);
-    const carregando = ref(false);  // Controle de carregamento
+  // Inicia como objeto vazio; as chaves serão criadas dinamicamente
+  const reservas = ref({});
+  const erro = ref(null);
+  const total = ref(0);
+  const carregando = ref(false); // Controle de carregamento
 
-    const carregarReservas = async (situacao) => {
-        try {
-            carregando.value = true;  // Marca como carregando
+  const carregarReservas = async (idempreendimento) => {
+    try {
+      carregando.value = true; // Marca como carregando
 
-            const response = await fetch(
-                `https://node-back-eight.vercel.app/api/external/reservas?situacao=${situacao}`
-            );
+      // URL com parâmetros para trazer todos os registros
+      const url = `http://localhost:5000/api/external/reservas?situacao=todas&idempreendimento=${idempreendimento}&registros_por_pagina=500&pagina=1`;
+      const response = await fetch(url);
 
-            if (!response.ok) {
-                throw new Error(`Erro na requisição: ${response.statusText}`);
-            }
+      if (!response.ok) {
+        throw new Error(`Erro na requisição: ${response.statusText}`);
+      }
 
-            const data = await response.json();
-            console.log('Resposta da API:', data);
+      const data = await response.json();
+      console.log('Resposta da API:', data);
 
-            // Adiciona as reservas da situação
-            reservas.value[situacao] = reservas.value[situacao].concat(Object.values(data));
-            erro.value = null;
+      // Salva os registros retornados (substituindo os anteriores, se houver)
+      reservas.value[idempreendimento] = Object.values(data);
+      erro.value = null;
 
-            // Atualiza o total de reservas com base no número total de reservas
-            total.value = Object.values(reservas.value).reduce((acc, situacao) => acc + situacao.length, 0);
-            console.log('Total de reservas:', total.value);
-        } catch (e) {
-            console.error('Erro ao carregar reservas:', e.message);
-            erro.value = e.message;
-        } finally {
-            carregando.value = false;  // Marca como não carregando
-        }
-    };
+      // Atualiza o total de reservas (soma todas as reservas de todas as chaves)
+      total.value = Object.values(reservas.value).reduce(
+        (acc, arr) => acc + arr.length,
+        0
+      );
+      console.log('Total de reservas:', total.value);
+    } catch (e) {
+      console.error('Erro ao carregar reservas:', e.message);
+      erro.value = e.message;
+    } finally {
+      carregando.value = false; // Marca como não carregando
+    }
+  };
 
-    const carregarTodasReservas = async () => {
-        for (const situacao in reservas.value) {
-            await carregarReservas(situacao);
-        }
-    };
+  const carregarTodasReservas = async () => {
+    // Caso deseje carregar para todos os empreendimentos já cadastrados na store:
+    for (const idempreendimento in reservas.value) {
+      await carregarReservas(idempreendimento);
+    }
+  };
 
-    return {
-        reservas,
-        erro,
-        total,
-        carregando,
-        carregarReservas,
-        carregarTodasReservas
-    };
+  return {
+    reservas,
+    erro,
+    total,
+    carregando,
+    carregarReservas,
+    carregarTodasReservas
+  };
 });
