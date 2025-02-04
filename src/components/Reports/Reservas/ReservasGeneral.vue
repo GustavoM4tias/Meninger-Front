@@ -1,70 +1,147 @@
-<template>
-    <div>
-        <p>Reservas: {{ reservaStore.total }}</p>
-        <p v-if="erro">Erro: {{ erro }}</p>
-        <LoadingComponents v-if="carregando" />
-        <div v-else class="w-full grid px-5" :style="{ gridTemplateColumns: `repeat(${numeroDeColunas}, 1fr)` }">
-            <!-- Filtra as chaves com reservas -->
-            <ul v-for="(situacao, key) in reservasFiltradas" :key="key">
-                <p v-if="situacao.length > 0" :class="{
-                    'bg-blue-400': key === '1',
-                    'bg-emerald-400': key === '12',
-                    'bg-red-400': key === '20', 
-                    'bg-orange-400': key === '15',
-                    'bg-yellow-400': key === '16',
-                    'bg-green-400': key === '21',
-                    'bg-sky-400': key === '22'
-                }" class="text-black font-bold text-center py-6 mx-1 truncate clip scale-[110%]">
-                    {{ situacao[0].situacao_nome }} - {{ key }}
-                </p>
-
-                <!-- Exibe as reservas dentro da situação -->
-                <li class="mb-5 bg-gray-700 m-1" v-for="(reserva, index) in situacao" :key="index">
-                    Nome: {{ reserva.titular.nome }}<br>
-                    Empreendimento: {{ reserva.unidade.empreendimento }} | {{ reserva.unidade.etapa }} | {{
-                        reserva.unidade.unidade }}<br>
-                </li>
-            </ul>
-        </div>
-    </div>
-</template>
-
 <script setup>
-import { ref, computed, onMounted, watchEffect } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { useReservaStore } from '../../../stores/reservasStore';
 import LoadingComponents from '../../Loading/LoadingComponents.vue';
 
 const reservaStore = useReservaStore();
 const carregando = computed(() => reservaStore.carregando);
-
-onMounted(async () => {
-    if (Object.values(reservaStore.reservas).every(situacao => situacao.length === 0)) {
-        await reservaStore.carregarTodasReservas();
-    }
-});
-
-// Filtra as chaves com reservas não vazias
-const reservasFiltradas = computed(() => {
-    return Object.fromEntries(
-        Object.entries(reservaStore.reservas).filter(([key, situacao]) => situacao.length > 0)
-    );
-});
-// Define o número de colunas para o grid
-const numeroDeColunas = computed(() => {
-    return Math.max(Object.keys(reservasFiltradas.value).length, 1); // Garantir pelo menos 1 coluna
-});
-
-
-watchEffect(() => {
-    console.log('Reservas carregadas:', reservaStore.reservas);
-});
-
-const reservas = computed(() => reservaStore.reservas);
 const erro = computed(() => reservaStore.erro);
+
+// Lista de empreendimentos conforme sua lista:
+const empreendimentos = ref([
+  { id: '', nome: 'Selecione um empreendimento' },
+  { id: '31', nome: 'RESIDENCIAL JARDIM DAS ROSAS' },
+  { id: '30', nome: 'MOOV ESMERALDAS' },
+  { id: '29', nome: 'TERRAS DE SÃO PAULO 5' },
+  { id: '26', nome: 'RESIDENCIAL JARDIM MONACO' },
+  { id: '25', nome: 'JARDIM DOS BURITIS MOD III - IV' },
+  { id: '24', nome: 'JARDIM MARINA FASE 3' },
+  { id: '23', nome: 'RESIDENCIAL TRES MARIAS' },
+  { id: '22', nome: 'RESIDENCIAL PARQUE DOS IPÊS' },
+  { id: '21', nome: 'RESIDENCIAL URBAN ESMERALDAS' },
+  { id: '20', nome: 'RESIDENCIAL ADHARA STAR CLUB' },
+  { id: '19', nome: 'RESIDENCIAL RESERVA ALTOS DO BOSQUE' },
+  { id: '18', nome: 'JARDIM DOS BURITIS MOD I - II' },
+  { id: '17', nome: 'EDIFÍCIO CONCEPT' },
+  { id: '16', nome: 'TERRAS DE SÃO PAULO' },
+  { id: '14', nome: 'EDIFICIO LONDON RESIDENCE' },
+  { id: '13', nome: 'EDIFICIO SOUL' },
+  { id: '12', nome: 'RESIDENCIAL MAIA STAR CLUB' },
+  { id: '11', nome: 'RESIDENCIAL WISH' },
+  { id: '10', nome: 'RESIDENCIAL MOND' },
+  { id: '9',  nome: 'RESIDENCIAL DRUMOND' },
+  { id: '2',  nome: 'BOULEVARD PARK & RESORT LTDA' },
+]);
+
+// Inicialmente, nenhuma opção é selecionada (valor vazio)
+const selectedEmpreendimento = ref('');
+
+// Sempre que o empreendimento selecionado mudar (e não for vazio), carrega as reservas
+watch(selectedEmpreendimento, async (novoId) => {
+  if (novoId) {
+    // Se ainda não houver reservas para esse empreendimento, carrega-as
+    if (!reservaStore.reservas[novoId] || reservaStore.reservas[novoId].length === 0) {
+      await reservaStore.carregarReservas(novoId);
+    }
+  }
+});
+
+// Computa as reservas do empreendimento selecionado
+const reservasSelecionadas = computed(() => {
+  return reservaStore.reservas[selectedEmpreendimento.value] || [];
+});
+
+// Agrupa as reservas por situação (usando o campo "idsituacao")
+const reservasPorSituacao = computed(() => {
+  const groups = {};
+  reservasSelecionadas.value.forEach((reserva) => {
+    const key = reserva.situacao.idsituacao;
+    if (!groups[key]) {
+      groups[key] = {
+        situacao: reserva.situacao.situacao,
+        reservas: []
+      };
+    }
+    groups[key].reservas.push(reserva);
+  });
+  return groups;
+});
+
+// Número de colunas baseadas nas situações distintas
+const numeroDeColunas = computed(() => {
+  return Object.keys(reservasPorSituacao.value).length || 1;
+});
 </script>
+
+<template>
+  <div class="container mx-auto p-4">
+    <!-- Select para escolher o empreendimento -->
+    <div class="mb-4">
+      <label for="empreendimentoSelect" class="block font-bold mb-2">
+        Selecione o Empreendimento:
+      </label>
+      <select
+        id="empreendimentoSelect"
+        v-model="selectedEmpreendimento"
+        class="border p-2 rounded w-full md:w-1/2"
+      >
+        <option
+          v-for="option in empreendimentos"
+          :key="option.id"
+          :value="option.id"
+        >
+          {{ option.nome }} <span v-if="option.id"> (ID: {{ option.id }})</span>
+        </option>
+      </select>
+    </div>
+
+    <!-- Exibe total de reservas e mensagem de erro -->
+    <p class="mb-2">Total de Reservas: {{ reservaStore.total }}</p>
+    <p v-if="erro" class="text-red-500">Erro: {{ erro }}</p>
+    <LoadingComponents v-if="carregando" />
+
+    <!-- Grid: uma coluna para cada situação -->
+    <div
+      v-if="selectedEmpreendimento"
+      class="w-full grid gap-4 px-5"
+      :style="{ gridTemplateColumns: `repeat(${numeroDeColunas}, 1fr)` }"
+    >
+      <template v-if="Object.keys(reservasPorSituacao).length > 0">
+        <div
+          v-for="(group, key) in reservasPorSituacao"
+          :key="key"
+          class="bg-gray-800 p-4 rounded"
+        >
+          <div class="bg-blue-400 text-black font-bold text-center py-3 mb-2 rounded">
+            Situação: {{ group.situacao }} ({{ group.reservas.length }})
+          </div>
+          <ul>
+            <li
+              v-for="(reserva, index) in group.reservas"
+              :key="index"
+              class="mb-3 bg-gray-700 p-3 rounded"
+            >
+              <p><strong>Nome:</strong> {{ reserva.titular.nome }}</p>
+              <p>
+                <strong>Empreendimento:</strong>
+                {{ reserva.unidade.empreendimento }} |
+                {{ reserva.unidade.etapa }} |
+                {{ reserva.unidade.unidade }} |
+                {{ reserva.data }}
+              </p>
+            </li>
+          </ul>
+        </div>
+      </template>
+      <p v-else>
+        Nenhuma reserva encontrada para este empreendimento.
+      </p>
+    </div>
+  </div>
+</template>
 
 <style scoped>
 .clip {
-    clip-path: polygon(95% 50%, 90% 90%, 0% 90%, 5% 50%, 0% 10%, 90% 10%); 
+  clip-path: polygon(95% 50%, 90% 90%, 0% 90%, 5% 50%, 0% 10%, 90% 10%);
 }
 </style>
