@@ -1,7 +1,7 @@
 <script setup>
 import { ref, watchEffect, onMounted } from 'vue';
-import { useFavoritesStore } from '../../../stores/favoriteStore';
-import { addFavorite, removeFavorite } from '../../../utils/apiFavorite';
+import { useFavoritesStore } from '../../../stores/Config/favoriteStore';
+import { addFavorite, removeFavorite } from '../../../utils/Config/apiFavorite';
 
 const props = defineProps({
     router: String,

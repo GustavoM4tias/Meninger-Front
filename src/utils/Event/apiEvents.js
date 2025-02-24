@@ -1,6 +1,6 @@
 // src/utils/apiEvents.js
-import { fetchCarregamento } from './fetchCarregamento';
-import EVENT_URL from '../config/apiEventUrl'; // Define a URL base da sua API
+import { fetchCarregamento } from '../Config/fetchCarregamento';
+import EVENT_URL from '../../config/apiEventUrl'; // Define a URL base da sua API
 
 export const getEvents = async () => {
     const response = await fetchCarregamento(`${EVENT_URL}/events`, {

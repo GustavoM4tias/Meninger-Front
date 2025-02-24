@@ -1,5 +1,5 @@
 // src/utils/fetchCarregamento.js
-import { useCarregamentoStore } from '../stores/carregamento';
+import { useCarregamentoStore } from '../../stores/Config/carregamento';
  
 export async function fetchCarregamento(url, options = {}) {
   const carregamentoStore = useCarregamentoStore();

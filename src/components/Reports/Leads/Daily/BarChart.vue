@@ -33,7 +33,7 @@ import { Chart as ChartJS, registerables } from 'chart.js';
 import LoadingComponents from '../../../Loading/LoadingComponents.vue';
 import Select from '../../../../components/UI/Select.vue';
 import ModalLeads from '../components/ModalLeads.vue';
-import { useLeadsStore } from '../../../../stores/leadStore';
+import { useLeadsStore } from '../../../../stores/Lead/leadStore';
 
 const leadsStore = useLeadsStore();
 const carregando = ref(true);

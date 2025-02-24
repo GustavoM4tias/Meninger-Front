@@ -2,7 +2,7 @@
 import { onMounted, computed } from 'vue';
 import Carregamento from './components/Loading/Carregamento.vue';
 import Nav from './components/Navigation/Nav.vue';
-import { useAuthStore } from './stores/authStore'; // Importando o authStore
+import { useAuthStore } from './stores/Auth/authStore'; // Importando o authStore
 const authStore = useAuthStore();
 
 const isAuthenticated = computed(() => authStore.isAuthenticated());

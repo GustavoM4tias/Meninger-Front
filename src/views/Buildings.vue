@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { useBuildingStore } from '../stores/buildingStore';
+import { useBuildingStore } from '../stores/Building/buildingStore';
 import BuildingCard from '../components/Buildings/BuildingCard.vue';
 import BuildingModal from '../components/Buildings/BuildingModal.vue';
 
@@ -50,8 +50,6 @@ const buildingsLaunch = computed(() =>
         building.situacao_comercial.length > 0 && building.situacao_comercial[0].nome === 'Lançamento'
     )
 );
-
-console.log(buildingsLaunch.value)
 
 const buildingsUnderConstruction = computed(() =>
     buildingsFiltered.value.filter(building =>

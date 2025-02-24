@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, watch } from 'vue';
-import { useReservaStore } from '../../../stores/reservasStore';
+import { useReservaStore } from '../../../stores/Reservation/reservationStore';
 import LoadingComponents from '../../Loading/LoadingComponents.vue';
 
 const reservaStore = useReservaStore();

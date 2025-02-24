@@ -1,5 +1,5 @@
 // utils/apiFavorite.js
-import EVENT_URL from '../config/apiEventUrl'; // Define a URL base da sua API
+import EVENT_URL from '../../config/apiEventUrl'; // Define a URL base da sua API
 
 export const addFavorite = async (router, section) => {
     try {

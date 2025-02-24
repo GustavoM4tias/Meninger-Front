@@ -1,6 +1,6 @@
 // src/router/index.js
 import { createRouter, createWebHistory } from 'vue-router';
-import { useAuthStore } from '../stores/authStore';
+import { useAuthStore } from '../stores/Auth/authStore';
 import Home from '../views/Home.vue'
 
 const routes = [
@@ -13,7 +13,7 @@ const routes = [
   {
     path: '/leads',
     name: 'leads',
-    component: () => import('../views/Reports/Leads.vue'),
+    component: () => import('../views/Leads/Leads.vue'),
     meta: { requiresAuth: true },
     meta: {
       requiresAuth: true,
