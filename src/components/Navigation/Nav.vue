@@ -340,9 +340,9 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
-import { useAuthStore } from '../../stores/authStore';
-import { useNotificationStore } from '../../stores/notificationStore';
-import { useFavoritesStore } from '../../stores/favoriteStore';
+import { useAuthStore } from '../../stores/Auth/authStore';
+import { useNotificationStore } from '../../stores/Config/notificationStore';
+import { useFavoritesStore } from '../../stores/Config/favoriteStore';
 import Notification from './components/Notification.vue'
 import MenuLink from './components/MenuLink.vue'
 

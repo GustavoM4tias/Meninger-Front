@@ -1,8 +1,8 @@
 // src/stores/notificationStore.js
 import { defineStore } from 'pinia';
-import { getBuildings } from '../utils/apiBuilding';
-import { useAuthStore } from './authStore'; // Importa a store de autenticação para acessar os usuários
-import { useEventStore } from './eventStore';
+import { getBuildings } from '../../utils/Building/apiBuilding';
+import { useAuthStore } from '../Auth/authStore'; // Importa a store de autenticação para acessar os usuários
+import { useEventStore } from '../Event/eventStore';
 
 
 export const useNotificationStore = defineStore('notificationStore', {

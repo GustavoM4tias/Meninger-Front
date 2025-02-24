@@ -1,8 +1,8 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue';
 import { addEvent } from '../../utils/apiEvents';
-import { getAddress } from '../../utils/apiBuilding';
-import { useAuthStore } from '../../stores/authStore';
+import { getAddress } from '../../../utils/apiBuilding';
+import { useAuthStore } from '../../stores/Auth/authStore';
 import Notification from '../Navigation/components/Notification.vue';
 
 const authStore = useAuthStore();

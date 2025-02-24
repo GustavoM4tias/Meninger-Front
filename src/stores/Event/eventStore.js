@@ -1,6 +1,6 @@
 // src/stores/eventStore.js
 import { defineStore } from 'pinia';
-import { getEvents } from '../utils/apiEvents';
+import { getEvents } from '../../utils/Event/apiEvents';
 
 export const useEventStore = defineStore('eventStore', {
     state: () => ({

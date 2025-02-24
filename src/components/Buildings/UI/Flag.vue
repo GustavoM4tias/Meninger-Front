@@ -5,7 +5,7 @@ const props = defineProps({
         required: true,
     },
 });
-
+ 
 // Objeto que mapeia os valores de `stage` para classes CSS
 const stageClasses = {
     'Pré-Lançamento': 'bg-emerald-500',

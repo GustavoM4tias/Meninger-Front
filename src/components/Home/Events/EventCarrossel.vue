@@ -1,8 +1,8 @@
 <script setup>
 import { onMounted } from 'vue';
 import Carrossel from "./Carrossel.vue";
-import { useEventStore } from '../../../stores/eventStore';
-import { useAuthStore } from '../../../stores/authStore'; // Importando o authStore
+import { useEventStore } from '../../../stores/Event/eventStore';
+import { useAuthStore } from '../../../stores/Auth/authStore'; // Importando o authStore
 
 const eventStore = useEventStore();
 const authStore = useAuthStore();

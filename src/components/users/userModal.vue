@@ -1,7 +1,7 @@
 <script setup>
 import { ref, watchEffect, onMounted } from 'vue';
 import { updateUserInfo } from '../../utils/apiAuth';
-import { useAuthStore } from '../../stores/authStore';
+import { useAuthStore } from '../../stores/Auth/authStore';
 import Input from '../../components/UI/Input.vue';
 import Button from '../../components/UI/Button.vue';
 import { useToast } from 'vue-toastification';

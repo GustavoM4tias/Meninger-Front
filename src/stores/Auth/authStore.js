@@ -1,6 +1,6 @@
 // src/store/authStore.js
 import { defineStore } from 'pinia';
-import { getUserInfo, getAllUsers, getUserById } from '../utils/apiAuth';
+import { getUserInfo, getAllUsers, getUserById } from '../../utils/Auth/apiAuth';
 
 export const useAuthStore = defineStore('user', {
   state: () => ({
