@@ -2,7 +2,7 @@
 <script setup>
 import { ref, computed } from 'vue';
 import EditEventModal from './EditEventModal.vue';
-import { deleteEvent } from '../../utils/apiEvents';
+import { deleteEvent } from '../../utils/Event/apiEvents';
 
 const props = defineProps({
     event: {

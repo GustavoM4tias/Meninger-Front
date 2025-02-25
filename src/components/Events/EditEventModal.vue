@@ -1,8 +1,8 @@
 <!-- src/components/Events/EditEventModal.vue -->
 <script setup>
 import { ref, watch } from 'vue';
-import { updateEvent } from '../../utils/apiEvents';
-import { getAddress } from '../../utils/_OLDapiBuilding';
+import { updateEvent } from '../../utils/Event/apiEvents';
+import { getAddress } from '../../utils/Building/apiBuilding';
 
 const props = defineProps({ event: Object });
 const emit = defineEmits(['close']);

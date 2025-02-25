@@ -1,6 +1,6 @@
 <script setup>
 import { ref, watchEffect, onMounted } from 'vue';
-import { updateUserInfo } from '../../utils/apiAuth';
+import { updateUserInfo } from '../../utils/Auth/apiAuth';
 import { useAuthStore } from '../../stores/Auth/authStore';
 import Input from '../../components/UI/Input.vue';
 import Button from '../../components/UI/Button.vue';
