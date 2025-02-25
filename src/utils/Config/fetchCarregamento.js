@@ -1,6 +1,6 @@
 // src/utils/fetchCarregamento.js
 import { useCarregamentoStore } from '../../stores/Config/carregamento';
- 
+
 export async function fetchCarregamento(url, options = {}) {
   const carregamentoStore = useCarregamentoStore();
   carregamentoStore.iniciarCarregamento();
@@ -8,7 +8,14 @@ export async function fetchCarregamento(url, options = {}) {
   try {
     const response = await fetch(url, options);
     if (!response.ok) {
-      throw new Error('Falha na requisição. Tente novamente mais tarde.');
+      let errorMessage = 'Falha na requisição. Tente novamente mais tarde.';
+
+      try { 
+        const errorData = await response.json(); 
+        errorMessage = errorData.message || errorData.error || errorMessage;
+      } catch (jsonError) { 
+      } 
+      throw new Error(errorMessage);
     }
     return response;
   } catch (error) {

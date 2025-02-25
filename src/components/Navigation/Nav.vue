@@ -35,13 +35,15 @@
                         role="menu" x-cloak x-transition x-show="isActive" x-on:click.away="isActive = false"
                         x-on:keydown.escape.window="isActive = false">
                         <!-- Lista de notificações -->
-                        <div v-if="notificationStore.notifications.length > 0" v-for="(notification, index) in notificationStore.notifications"
-                            :key="index" class="notification text-xl flex flex-col text-gray-700 dark:text-gray-300">
+                        <div v-if="notificationStore.notifications.length > 0"
+                            v-for="(notification, index) in notificationStore.notifications" :key="index"
+                            class="notification text-xl flex flex-col text-gray-700 dark:text-gray-300">
                             <Notification :notification="notification" />
                         </div>
-                        <div v-else class="notification text-xl flex flex-col text-gray-700 dark:text-gray-300 text-center">
+                        <div v-else
+                            class="notification text-xl flex flex-col text-gray-700 dark:text-gray-300 text-center">
                             <p class="py-4 px-4">Sem Notificações</p>
-                        </div> 
+                        </div>
                     </div>
                 </div>
 
@@ -53,8 +55,8 @@
                             <div x-on:click="isActive = !isActive"
                                 class="profile-img flex bg-gray-400 rounded-full w-10 h-10 overflow-hidden">
                                 <p class="text-gray-100 m-auto font-semibold">
-                                    {{ authStore.user?.username?.split(" ").slice
-                                        (0, 2).map(name => name[0].toUpperCase()).join("") }}
+                                    {{authStore.user?.username?.split(" ").slice
+                                        (0, 2).map(name => name[0].toUpperCase()).join("")}}
                                 </p>
                             </div>
                         </div>
@@ -69,14 +71,14 @@
                                 <div
                                     class="profile-img relative flex bg-gray-400 rounded-full w-16 h-16 m-auto mt-3 overflow-hidden shadow">
                                     <p class="text-gray-100 m-auto text-3xl">
-                                        {{ authStore.user?.username?.split(" ").slice(0, 2).map(name =>
-                                            name[0].toUpperCase()).join("") }}
+                                        {{authStore.user?.username?.split(" ").slice(0, 2).map(name =>
+                                            name[0].toUpperCase()).join("")}}
                                     </p>
                                 </div>
 
                                 <p class="font-semibold text-center my-1 px-3 truncate">
-                                    {{ authStore.user?.username?.split(" ").filter(name => !["de", "da", "do", "dos",
-                                        "das", "e"].includes(name.toLowerCase())).slice(0, 2).join(" ") }}
+                                    {{authStore.user?.username?.split(" ").filter(name => !["de", "da", "do", "dos",
+                                        "das", "e"].includes(name.toLowerCase())).slice(0, 2).join(" ")}}
                                 </p>
 
 
@@ -267,7 +269,8 @@
                         </button>
                         <ul v-if="dropdowns.reports" class="mt-2 text-gray-600 dark:text-gray-300">
                             <MenuLink :router="'/leads'" :section="'Leads'" :name="'Leads'" :isFavorited="false" />
-                            <MenuLink :router="'/imobiliarias'" :section="'Imobiliárias'" :name="'Imobiliárias'" :isFavorited="false" />
+                            <MenuLink :router="'/imobiliarias'" :section="'Imobiliárias'" :name="'Imobiliárias'"
+                                :isFavorited="false" />
                             <MenuLink :router="'/vendas'" :section="'Vendas'" :name="'Vendas'" :isFavorited="false" />
                             <!-- <li>
                                 <RouterLink to=""
@@ -331,6 +334,11 @@
                     </li>
                 </ul>
             </div>
+
+            <div class="">
+                ted
+            </div>
+
         </div>
 
     </div>

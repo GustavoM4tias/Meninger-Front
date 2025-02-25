@@ -64,8 +64,7 @@ export const useAuthStore = defineStore('user', {
     async getAllUsers() {
       try {
         const result = await getAllUsers(); // Supondo que getAllUsers retorne um array de usuários
-        this.users = result.data; // Atualiza a lista de usuários
-        console.log(result.data)
+        this.users = result.data; // Atualiza a lista de usuários 
         return result;
       } catch (error) {
         throw new Error(error.message);
