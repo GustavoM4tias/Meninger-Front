@@ -6,18 +6,21 @@
         </div>
         <!-- Exibindo os atendentes -->
         <div class="bg-gray-100 dark:bg-gray-600 rounded-md flex justify-between py-0.5 px-2">
-            <div class="flex items-center"
-                v-tippy="`${fila.corretores_e_imobiliarias?.map(corretor => corretor.nome_corretor).join(' - ')}`">
-                <div v-if="fila.corretores_e_imobiliarias" class="bg-green-400 w-4 h-4 rounded-full"></div>
-                <div v-else class="bg-gray-400 w-4 h-4 rounded-full"></div>
-                <p v-if="fila.corretores_e_imobiliarias" class="ms-1.5">
-                    {{ fila.corretores_e_imobiliarias?.length }} Corretor{{
-                        fila.corretores_e_imobiliarias?.length > 1 ? 'es' : '' }}
-                </p>
-                <p v-else class="ms-1.5">
-                    Sem Corretor
+            <div class="flex items-center" v-if="fila.corretores_e_imobiliarias?.length"
+                v-tippy="fila.corretores_e_imobiliarias.map(corretor => corretor.nome_corretor).join('<br>')">
+                <div class="bg-green-400 w-4 h-4 rounded-full"></div>
+                <p class="ms-1.5">
+                    {{ fila.corretores_e_imobiliarias.length }} Corretor{{ fila.corretores_e_imobiliarias.length > 1 ?
+                        'es' : '' }}
                 </p>
             </div>
+
+            <div v-else class="flex items-center">
+                <div class="bg-gray-400 w-4 h-4 rounded-full"></div>
+                <p class="ms-1.5">Sem Corretor</p>
+            </div>
+
+
             <!-- <div class="flex items-center relative">
                 <i @click="handleInfo()" class="fas cursor-pointer"
                     :class="{ 'fa-chevron-up': moreInfo, 'fa-chevron-down': !moreInfo }"></i>

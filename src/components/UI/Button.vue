@@ -1,13 +1,19 @@
 <template>
-    <button class="btn bg-blue-700 hover:bg-blue-800 w-full text-gray-50 text-2xl py-2.5 px-3 my-5 border-0 rounded-lg cursor-pointer duration-200" :type="type" :disabled="disabled" @click="handleClick">
+  <div class="input-field w-full mt-2 text-lg">
+    <label v-if="label" for="input-field" class="block text-gray-700 dark:text-gray-200 font-semibold mb-1">{{ label
+      }}</label>
+    <button
+      class="btn bg-blue-700 hover:bg-blue-800 w-full text-gray-50 text-lg md:text-xl p-3 border-0 rounded-lg cursor-pointer duration-200"
+      :type="type" :disabled="disabled" @click="handleClick">
       <slot></slot>
     </button>
-  </template>
-  
-  <script setup>
-  const props = defineProps({
-    type: { type: String, default: 'button' },
-    disabled: { type: Boolean, default: false }
-  });
-  </script>
-  
+  </div>
+</template>
+
+<script setup>
+const props = defineProps({
+  type: { type: String, default: 'button' },
+  label: { type: String, default: '' },
+  disabled: { type: Boolean, default: false }
+});
+</script>
