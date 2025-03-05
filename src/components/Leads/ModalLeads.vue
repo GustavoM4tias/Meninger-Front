@@ -13,7 +13,7 @@
                         <i class="fas fa-building mx-2"></i> Empreendimentos
                     </h3>
                     <ul class="space-y-1.5">
-                        <li v-for="(count, nome) in agruparPor(leads, 'empreendimento[0].nome')" :key="nome"
+                        <li v-for="(count, nome) in agruparPor(filtrarLeads(leads), 'empreendimento[0].nome')" :key="nome"
                             @click="aplicarFiltro(nome, 'empreendimento')"
                             :class="{ 'bg-sky-200': filtrosAtivos.empreendimento.includes(nome) }"
                             class="flex justify-between items-center bg-gray-100 dark:bg-gray-700 hover:dark:bg-gray-800 hover:bg-gray-50 duration-150 cursor-pointer py-2 px-3 rounded-lg">
@@ -177,7 +177,7 @@
                                     <i class="fas fa-trowel-bricks"></i> {{ lead.imobiliaria.nome }}
                                 </a>
                             </button>
-                            <button v-tippy="'CV Corretor'" class="flex-1 truncate">
+                            <button v-if="lead.corretor?.nome" v-tippy="'CV Corretor'" class="flex-1 truncate">
                                 <a class="text-sm md:text-md truncate" target="_blank"
                                     :href="'https://menin.cvcrm.com.br/gestor/cadastros/corretores?q%5B1%7Cc.idcorretor%5D=&q%5B2%7Cc.nome%5D=' + lead.corretor.nome">
                                     <i class="fas fa-clipboard"></i> {{ lead.corretor.nome }}
@@ -187,7 +187,7 @@
                     </div>
 
                     <div class="w-full justify-between flex gap-1.5 overflow-x-auto mt-2 text-xs md:text-lg">
-                        <a :href="'/buildings?search=' + lead.empreendimento[0].nome" target="_blank"
+                        <a v-tippy="'Visualizar Empreendimento'" :href="'/buildings?search=' + lead.empreendimento[0].nome" target="_blank"
                             class="bg-gray-200 dark:bg-gray-600 rounded-md px-2 truncate"
                             v-if="lead.empreendimento.length > 0">
                             {{ lead.empreendimento[0].nome }}
