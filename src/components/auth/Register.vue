@@ -26,7 +26,7 @@
 <script setup>
 import { onMounted, ref } from 'vue';
 import { useAuthStore } from '../../stores/Auth/authStore';
-import { registerUser } from '../../utils/apiAuth';
+import { registerUser } from '../../utils/Auth/apiAuth';
 import { useRouter } from 'vue-router';
 import Input from '../UI/Input.vue';
 import Button from '../UI/Button.vue';

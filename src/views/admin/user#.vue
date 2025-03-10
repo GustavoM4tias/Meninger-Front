@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useAuthStore } from '../../stores/Auth/authStore';
-import { updateUserInfo } from '../../utils/apiAuth';
+import { updateUserInfo } from '../../utils/Auth/apiAuth';
 import { useToast } from 'vue-toastification';
 import Input from '../../components/UI/Input.vue';
 import Button from '../../components/UI/Button.vue';
