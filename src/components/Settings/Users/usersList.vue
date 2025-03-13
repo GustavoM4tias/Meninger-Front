@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
-import { useAuthStore } from '../../stores/Auth/authStore';
+import { useAuthStore } from '../../../stores/Auth/authStore';
 import UserModal from './userModal.vue';
 import UserList from './userList.vue';
 
@@ -17,6 +17,7 @@ const fetchUsers = async () => {
     try {
         const fetchedUsers = await userStore.getAllUsers();
         users.value = fetchedUsers.data;
+        console.log(users.value) // console usuarios
     } catch (error) {
         console.error('Erro ao carregar os usuários:', error);
     }
