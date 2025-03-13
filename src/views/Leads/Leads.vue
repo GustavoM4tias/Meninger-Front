@@ -2,7 +2,7 @@
     <div class="p-4 w-full min-h-[calc(100%-4rem)] relative overflow-x-hidden flex flex-col">
 
 
-        <div class="bg-gray-700 m-auto p-4 rounded-lg filter shadow-xl">
+        <div class="bg-gray-700 m-auto ms-3 md:ms-0 p-4 rounded-lg filter shadow-xl">
             <h1 class="text-2xl font-bold mb-6">Leads</h1>
             <!-- Filtros -->
             <div class="mb-6 flex flex-wrap gap-4 items-center">
