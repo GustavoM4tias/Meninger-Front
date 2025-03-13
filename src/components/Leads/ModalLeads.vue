@@ -1,8 +1,10 @@
 <template>
     <div v-if="modalVisivel"
-        class="absolute left-0 top-0 w-full h-full bg-gray-900/25 flex justify-center md:items-center z-20">
-        <div
-            class="bg-gray-200 dark:bg-gray-600 relative m-2 p-2 md:p-4 rounded-lg w-full md:w-1/2 mt-[6vh] md:mt-0 h-[80vh] overflow-y-auto">
+        class="absolute left-0 top-0 w-full h-full bg-gray-900/25 flex justify-center md:items-center"
+        @click="fecharModal">
+
+        <div @click.stop
+            class="bg-gray-200 dark:bg-gray-600 relative m-4 ms-20 p-2 md:p-4 rounded-lg w-full md:w-1/2 mt-[6vh] md:mt-0 h-[80vh] overflow-y-auto">
             <i class="fas fa-xmark text-3xl absolute right-3 cursor-pointer" @click="fecharModal"></i>
 
             <div :class="{ '!grid-cols-1': filtrosAtivos.empreendimento.length === 1 }"
@@ -13,8 +15,8 @@
                         <i class="fas fa-building mx-2"></i> Empreendimentos
                     </h3>
                     <ul class="space-y-1.5">
-                        <li v-for="(count, nome) in agruparPor(filtrarLeads(leads), 'empreendimento[0].nome')" :key="nome"
-                            @click="aplicarFiltro(nome, 'empreendimento')"
+                        <li v-for="(count, nome) in agruparPor(filtrarLeads(leads), 'empreendimento[0].nome')"
+                            :key="nome" @click="aplicarFiltro(nome, 'empreendimento')"
                             :class="{ 'bg-sky-200': filtrosAtivos.empreendimento.includes(nome) }"
                             class="flex justify-between items-center bg-gray-100 dark:bg-gray-700 hover:dark:bg-gray-800 hover:bg-gray-50 duration-150 cursor-pointer py-2 px-3 rounded-lg">
                             <span class="text-sm md:text-lg truncate" :title="nome">
@@ -187,7 +189,8 @@
                     </div>
 
                     <div class="w-full justify-between flex gap-1.5 overflow-x-auto mt-2 text-xs md:text-lg">
-                        <a v-tippy="'Visualizar Empreendimento'" :href="'/buildings?search=' + lead.empreendimento[0].nome" target="_blank"
+                        <a v-tippy="'Visualizar Empreendimento'"
+                            :href="'/buildings?search=' + lead.empreendimento[0].nome" target="_blank"
                             class="bg-gray-200 dark:bg-gray-600 rounded-md px-2 truncate"
                             v-if="lead.empreendimento.length > 0">
                             {{ lead.empreendimento[0].nome }}
