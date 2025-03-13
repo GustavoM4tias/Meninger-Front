@@ -1,5 +1,5 @@
 <script setup>
-import UsersList from '../../components/users/usersList.vue'; 
+import UsersList from '../../components/Settings/users/usersList.vue'; 
 </script>
 
 <template>

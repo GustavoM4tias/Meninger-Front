@@ -1,9 +1,9 @@
 <script setup>
 import { ref, watchEffect, onMounted } from 'vue';
-import { updateUserInfo } from '../../utils/Auth/apiAuth';
-import { useAuthStore } from '../../stores/Auth/authStore';
-import Input from '../../components/UI/Input.vue';
-import Button from '../../components/UI/Button.vue';
+import { updateUserInfo } from '../../../utils/Auth/apiAuth';
+import { useAuthStore } from '../../../stores/Auth/authStore';
+import Input from '../../../components/UI/Input.vue';
+import Button from '../../../components/UI/Button.vue';
 import { useToast } from 'vue-toastification';
 
 const authStore = useAuthStore();
@@ -59,18 +59,18 @@ onMounted(async () => {
 
 <template>
   <div class="fixed top-0 left-0 w-full h-screen bg-gray-800 bg-opacity-75 flex justify-center items-center z-50">
-    <div class="relative w-[300px] sm:w-[600px] bg-gray-200 dark:bg-gray-700 pt-10 px-4 m-3 rounded-2xl">
+    <div class="relative w-[300px] sm:w-[600px] bg-gray-200 dark:bg-gray-700 pt-10 pb-5 px-4 m-3 rounded-2xl">
       <i class="fas fa-xmark absolute top-0 left-0 p-3 text-4xl cursor-pointer hover:text-gray-600 dark:hover:text-gray-400"
         @click="cancelEditing"></i>
       <form @submit.prevent="saveUser">
-        <Input v-model="editableUser.username" label="Nome de Usuário" type="text" placeholder="Nome" required />
-        <Input v-model="editableUser.email" label="Email" type="email" placeholder="Email" required />
+        <Input v-model="editableUser.username" label="Nome de Usuário" type="text" placeholder="Nome" />
+        <Input v-model="editableUser.email" label="Email" type="email" placeholder="Email" />
         <div class="flex gap-3">
-          <Input v-model="editableUser.position" label="Cargo" type="text" placeholder="Cargo" required />
-          <Input v-model="editableUser.city" label="Cidade" type="text" placeholder="Cidade" required />
+          <Input v-model="editableUser.position" label="Cargo" type="text" placeholder="Cargo" />
+          <Input v-model="editableUser.city" label="Cidade" type="text" placeholder="Cidade" />
         </div>
         <div class="flex gap-3">
-          <Input v-model="authStore.user.username" label="Superior" type="text" placeholder="Superior" required disabled />
+          <Input v-model="editableUser.manager" label="Superior" type="number" placeholder="Superior" />
         </div>
         <Input v-model="editableUser.birth_date" label="Data de Nascimento" type="date" placeholder="Data de Nascimento"
           required />
@@ -89,7 +89,7 @@ onMounted(async () => {
         {{ editableUser.status === 1 ? 'Ativo' : 'Inativo' }} -->
         <div class="flex gap-3">
           <Button type="submit"
-            class="bg-emerald-400 hover:bg-emerald-500 dark:bg-emerald-500 dark:hover:bg-emerald-600">Salvar</Button>
+          customClass="bg-emerald-400 hover:bg-emerald-500 dark:bg-emerald-500 dark:hover:bg-emerald-600">Salvar</Button>
         </div>
       </form>
     </div>

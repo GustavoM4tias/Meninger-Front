@@ -9,8 +9,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@vue-flow/core": "^1.42.2",
     "chart.js": "^3.1.0",
     "daisyui": "^4.12.14",
+    "gojs": "^3.0.19",
     "jspdf": "^2.5.2",
     "pinia": "^2.2.4",
     "tippy.js": "^6.3.7",
