@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { fetchCarregamento } from '../../utils/Config/fetchCarregamento';
+import API_URL from '../../config/apiUrl'; // Define a URL base da sua API
 
 export const useLeadsStore = defineStore('leads', () => {
     const leads = ref([]);
@@ -20,7 +21,7 @@ export const useLeadsStore = defineStore('leads', () => {
         carregando.value = true;
         error.value = null;
         try {
-            const url = 'http://localhost:5000/api/external/leads';
+            const url = `${API_URL}/external/leads`;
             const params = new URLSearchParams(); 
 
             if (data_inicio) params.append('data_inicio', data_inicio);
@@ -50,7 +51,7 @@ export const useLeadsStore = defineStore('leads', () => {
             carregando.value = true; // Marca como carregando
 
             // URL com parâmetros para trazer todos os registros
-            const url = `http://localhost:5000/api/external/filas`;
+            const url = `${API_URL}/external/filas`;
             const response = await fetch(url);
 
             if (!response.ok) {

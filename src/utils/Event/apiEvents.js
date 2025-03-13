@@ -1,9 +1,9 @@
 // src/utils/apiEvents.js
 import { fetchCarregamento } from '../Config/fetchCarregamento';
-import EVENT_URL from '../../config/apiEventUrl'; // Define a URL base da sua API
+import API_URL from '../../config/apiUrl'; // Define a URL base da sua API
 
 export const getEvents = async () => {
-    const response = await fetchCarregamento(`${EVENT_URL}/events`, {
+    const response = await fetchCarregamento(`${API_URL}/events`, {
         method: 'GET',
         headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`, // Verifique se o token está sendo recuperado corretamente
@@ -20,7 +20,7 @@ export const getEvents = async () => {
 };
 
 export const addEvent = async (event) => {
-    const response = await fetchCarregamento(`${EVENT_URL}/events/add`, {
+    const response = await fetchCarregamento(`${API_URL}/events/add`, {
         method: 'POST',
         headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`, // Verifique se o token está sendo recuperado corretamente
@@ -38,7 +38,7 @@ export const addEvent = async (event) => {
 
 export const updateEvent = async (event) => {
     // console.log(`id passado é: ${event.id}`)
-    const response = await fetchCarregamento(`${EVENT_URL}/events/edit/${event.id}`, {
+    const response = await fetchCarregamento(`${API_URL}/events/edit/${event.id}`, {
         method: 'PUT',
         headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`, // Verifique se o token está sendo recuperado corretamente
@@ -56,7 +56,7 @@ export const updateEvent = async (event) => {
 
 export const deleteEvent = async (eventId) => {
     try {
-        const response = await fetchCarregamento(`${EVENT_URL}/events/delete/${eventId}`, {
+        const response = await fetchCarregamento(`${API_URL}/events/delete/${eventId}`, {
             method: 'DELETE',
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`, // Verifique se o token está sendo recuperado corretamente

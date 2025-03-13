@@ -1,9 +1,9 @@
 // utils/apiFavorite.js
-import EVENT_URL from '../../config/apiEventUrl'; // Define a URL base da sua API
+import API_URL from '../../config/apiUrl'; // Define a URL base da sua API
 
 export const addFavorite = async (router, section) => {
     try {
-        await fetch(`${EVENT_URL}/favorite`, {
+        await fetch(`${API_URL}/favorite`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -18,7 +18,7 @@ export const addFavorite = async (router, section) => {
 
 export const removeFavorite = async (router, section) => {
     try {
-        const response = await fetch(`${EVENT_URL}/favorite/${encodeURIComponent(router)}/${encodeURIComponent(section)}`, {
+        const response = await fetch(`${API_URL}/favorite/${encodeURIComponent(router)}/${encodeURIComponent(section)}`, {
             method: 'DELETE',
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -34,7 +34,7 @@ export const removeFavorite = async (router, section) => {
 
 export const getFavorites = async () => {
     try {
-        const response = await fetch(`${EVENT_URL}/favorite`, {
+        const response = await fetch(`${API_URL}/favorite`, {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`,
