@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
+import API_URL from '../../config/apiUrl'; // Define a URL base da sua API
 
 export const useReservaStore = defineStore('reserva', () => {
   // Inicia como objeto vazio; as chaves serão criadas dinamicamente
@@ -13,7 +14,7 @@ export const useReservaStore = defineStore('reserva', () => {
       carregando.value = true; // Marca como carregando
 
       // URL com parâmetros para trazer todos os registros
-      const url = `http://localhost:5000/api/external/reservas?situacao=todas&idempreendimento=${idempreendimento}&registros_por_pagina=500&pagina=1`;
+      const url = `${API_URL}/external/reservas?situacao=todas&idempreendimento=${idempreendimento}&registros_por_pagina=500&pagina=1`;
       const response = await fetch(url);
 
       if (!response.ok) {

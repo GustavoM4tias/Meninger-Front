@@ -1,6 +1,6 @@
 // src/utils/apiBuilding.js
 import { fetchCarregamento } from '../Config/fetchCarregamento';
-import EVENT_URL from '../../config/apiEventUrl'; // Define a URL base da sua API
+import API_URL from '../../config/apiUrl'; // Define a URL base da sua API
 
 export const getAddress = async (cep) => {
     const response = await fetchCarregamento(`https://viacep.com.br/ws/${cep}/json/`, {
@@ -56,7 +56,7 @@ export const getWeatherByCity = async (city) => {
 };
 
 export const getBuildings = async () => {
-    const response = await fetchCarregamento(`${EVENT_URL}/buildings`, {
+    const response = await fetchCarregamento(`${API_URL}/buildings`, {
         method: 'GET',
         headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`, // Verifique se o token está sendo recuperado corretamente
@@ -73,7 +73,7 @@ export const getBuildings = async () => {
 };
 
 export const addBuilding = async (building) => {
-    const response = await fetchCarregamento(`${EVENT_URL}/buildings/add`, {
+    const response = await fetchCarregamento(`${API_URL}/buildings/add`, {
         method: 'POST',
         headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`, // Verifique se o token está sendo recuperado corretamente
@@ -91,7 +91,7 @@ export const addBuilding = async (building) => {
 
 export const updateBuilding = async (building) => {
     // console.log(`id passado é: ${building.id}`)
-    const response = await fetchCarregamento(`${EVENT_URL}/buildings/edit/${building.id}`, {
+    const response = await fetchCarregamento(`${API_URL}/buildings/edit/${building.id}`, {
         method: 'PUT',
         headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`, // Verifique se o token está sendo recuperado corretamente
@@ -109,7 +109,7 @@ export const updateBuilding = async (building) => {
 
 export const deleteBuilding = async (buildingId) => {
     try {
-        const response = await fetchCarregamento(`${EVENT_URL}/buildings/delete/${buildingId}`, {
+        const response = await fetchCarregamento(`${API_URL}/buildings/delete/${buildingId}`, {
             method: 'DELETE',
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`, // Verifique se o token está sendo recuperado corretamente

@@ -1,6 +1,6 @@
 // src/utils/apiBuilding.js
 import { fetchCarregamento } from '../Config/fetchCarregamento';
-import EVENT_URL from '../../config/apiEventUrl'; // Define a URL base da sua API
+import API_URL from '../../config/apiUrl'; // Define a URL base da sua API
 
 export const getAddress = async (cep) => {
     const response = await fetchCarregamento(`https://viacep.com.br/ws/${cep}/json/`, {
@@ -81,7 +81,7 @@ export const getWeatherByCity = async (city) => {
 };
 
 export const getBuildings = async () => {
-    const response = await fetchCarregamento(`http://localhost:5000/api/external/empreendimentos`, {
+    const response = await fetchCarregamento(`${API_URL}/external/empreendimentos`, {
         method: 'GET',
         headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -99,7 +99,7 @@ export const getBuildings = async () => {
 };
 
 export const getBuildingById = async (id) => {
-    const response = await fetchCarregamento(`http://localhost:5000/api/external/empreendimento/${id}`, {
+    const response = await fetchCarregamento(`${API_URL}/external/empreendimento/${id}`, {
         method: 'GET',
         headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`,
