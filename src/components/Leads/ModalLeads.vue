@@ -14,15 +14,15 @@
                     <h3 class="text-lg font-semibold my-2 text-gray-800 dark:text-gray-200">
                         <i class="fas fa-building mx-2"></i> Empreendimentos
                     </h3>
-                    <ul class="space-y-1.5">
+                    <ul class="space-y-1">
                         <li v-for="(count, nome) in agruparPor(filtrarLeads(leads), 'empreendimento[0].nome')"
                             :key="nome" @click="aplicarFiltro(nome, 'empreendimento')"
                             :class="{ 'bg-sky-200': filtrosAtivos.empreendimento.includes(nome) }"
-                            class="flex justify-between items-center bg-gray-100 dark:bg-gray-700 hover:dark:bg-gray-800 hover:bg-gray-50 duration-150 cursor-pointer py-2 px-3 rounded-lg">
+                            class="flex justify-between items-center bg-gray-100 dark:bg-gray-700 hover:dark:bg-gray-800 hover:bg-gray-50 duration-150 cursor-pointer py-1.5 px-3 rounded-lg">
                             <span class="text-sm md:text-lg truncate" :title="nome">
                                 {{ nome }}
                             </span>
-                            <span class="bg-sky-400 text-white text-sm font-medium px-2 py-1 rounded">
+                            <span class="bg-sky-400 text-white text-sm font-medium px-2 py-0.5 rounded">
                                 {{ count }}
                             </span>
                         </li>
@@ -35,15 +35,15 @@
                         <h3 class="text-lg font-semibold py-2 text-gray-800 dark:text-gray-200">
                             <i class="fas fa-photo-film mx-2"></i> Mídias
                         </h3>
-                        <ul class="space-y-1.5">
+                        <ul class="space-y-1">
                             <li v-for="(count, midia) in agruparPor(filtrarLeads(leads), 'midia_principal')"
                                 :key="midia" @click="aplicarFiltro(midia, 'midia_principal')"
                                 :class="{ 'bg-sky-200': filtrosAtivos.midia_principal.includes(midia) }"
-                                class="flex justify-between items-center bg-gray-100 dark:bg-gray-700 hover:dark:bg-gray-800 hover:bg-gray-50 duration-150 cursor-pointer py-2 px-3 rounded-lg">
+                                class="flex justify-between items-center bg-gray-100 dark:bg-gray-700 hover:dark:bg-gray-800 hover:bg-gray-50 duration-150 cursor-pointer py-1.5 px-3 rounded-lg">
                                 <span class="text-sm md:text-lg truncate" :title="midia">
                                     {{ midia }}
                                 </span>
-                                <span class="bg-emerald-500 text-white text-sm font-medium px-2 py-1 rounded">
+                                <span class="bg-emerald-500 text-white text-sm font-medium px-2 py-0.5 rounded">
                                     {{ count }}
                                 </span>
                             </li>
@@ -54,14 +54,14 @@
                         <h3 class="text-lg font-semibold py-2 text-gray-800 dark:text-gray-200">
                             <i class="fas fa-chart-pie mx-2"></i> Situações
                         </h3>
-                        <ul class="space-y-1.5">
+                        <ul class="space-y-1">
                             <li v-for="(count, situacao) in agruparPor(filtrarLeads(leads), 'situacao.nome')"
                                 :key="situacao" @click="aplicarFiltro(situacao, 'situacao')"
-                                class="flex justify-between items-center bg-gray-100 dark:bg-gray-700 hover:dark:bg-gray-800 hover:bg-gray-50 duration-150 cursor-pointer py-2 px-3 rounded-lg">
+                                class="flex justify-between items-center bg-gray-100 dark:bg-gray-700 hover:dark:bg-gray-800 hover:bg-gray-50 duration-150 cursor-pointer py-1.5 px-3 rounded-lg">
                                 <span class="text-sm md:text-lg truncate" :title="situacao">
                                     {{ situacao }}
                                 </span>
-                                <span class="bg-amber-400 text-white text-sm font-medium px-2 py-1 rounded">
+                                <span class="bg-amber-400 text-white text-sm font-medium px-2 py-0.5 rounded">
                                     {{ count }}
                                 </span>
                             </li>
@@ -75,19 +75,19 @@
                 v-if="filtrosAtivos.empreendimento.length > 0 || filtrosAtivos.midia_principal.length > 0 || filtrosAtivos.situacao.length > 0">
                 <div class="flex flex-wrap gap-2">
                     <div v-for="(filtro, index) in filtrosAtivos.empreendimento" :key="index"
-                        class="bg-gray-50 dark:bg-gray-500 text-sm font-medium px-2 py-1 rounded-lg flex items-center">
+                        class="bg-gray-50 dark:bg-gray-500 text-sm font-medium px-2 py-0.5 rounded-lg flex items-center">
                         {{ filtro }}
                         <i @click="removerFiltro(filtro, 'empreendimento')"
                             class="fas fa-xmark ml-2 cursor-pointer"></i>
                     </div>
                     <div v-for="(filtro, index) in filtrosAtivos.midia_principal" :key="index"
-                        class="bg-gray-50 dark:bg-gray-500 text-sm font-medium px-2 py-1 rounded-lg flex items-center">
+                        class="bg-gray-50 dark:bg-gray-500 text-sm font-medium px-2 py-0.5 rounded-lg flex items-center">
                         {{ filtro }}
                         <i @click="removerFiltro(filtro, 'midia_principal')"
                             class="fas fa-xmark ml-2 cursor-pointer"></i>
                     </div>
                     <div v-for="(filtro, index) in filtrosAtivos.situacao" :key="index"
-                        class="bg-gray-50 dark:bg-gray-500 text-sm font-medium px-2 py-1 rounded-lg flex items-center">
+                        class="bg-gray-50 dark:bg-gray-500 text-sm font-medium px-2 py-0.5 rounded-lg flex items-center">
                         {{ filtro }}
                         <i @click="removerFiltro(filtro, 'situacao')" class="fas fa-xmark ml-2 cursor-pointer"></i>
                     </div>
