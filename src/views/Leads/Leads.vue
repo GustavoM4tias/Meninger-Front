@@ -2,9 +2,7 @@
   <div class="w-full h-[calc(100%-4rem)] relative overflow-hidden flex">
     <!-- Área principal -->
     <div class="w-9/12 bg-red-400 p-4">
-      <div
-        class="bg-gray-300 dark:bg-gray-700 m-auto ms-3.5 md:ms-auto p-4 rounded-lg shadow-xl"
-      >
+      <div class="bg-gray-300 dark:bg-gray-700 m-auto ms-3.5 md:ms-auto p-4 rounded-lg shadow-xl">
         <h1 class="text-2xl font-bold mb-6">Leads</h1>
         <!-- Filtros -->
         <div class="mb-6 flex flex-wrap gap-4 items-center">
@@ -24,10 +22,7 @@
         <div v-if="error" class="text-red-500 my-4">{{ error }}</div>
 
         <!-- Exibição do período retornado -->
-        <div
-          v-if="periodo.data_inicio && periodo.data_fim"
-          class="mt-6 p-4 dark:bg-gray-800 rounded"
-        >
+        <div v-if="periodo.data_inicio && periodo.data_fim" class="mt-6 p-4 dark:bg-gray-800 rounded">
           <p class="font-semibold">Período:</p>
           <p class="text-sm">Início: {{ dataInicio }}</p>
           <p class="text-sm">Fim: {{ dataFim }}</p>
@@ -35,41 +30,25 @@
         </div>
 
         <!-- Ver relatório detalhado -->
-        <p
-          @click="toggleModal"
-          class="text-blue-500 underline cursor-pointer hover:text-blue-400 text-end pt-2"
-        >
+        <p @click="toggleModal" class="text-blue-500 underline cursor-pointer hover:text-blue-400 text-end pt-2">
           Ver relatório detalhado
         </p>
 
-        <ModalLeads
-          :leads="leads"
-          :modalVisivel="modalVisivel"
-          @update:modalVisivel="(visivel) => (modalVisivel = visivel)"
-        />
+        <ModalLeads :leads="leads" :modalVisivel="modalVisivel"
+          @update:modalVisivel="(visivel) => (modalVisivel = visivel)" />
 
         <div
-          class="group bg-gray-100 dark:bg-gray-600 cursor-pointer shadow absolute right-[-18rem] top-32 rounded-bl-lg transform transition-transform duration-300"
-        >
+          class="group bg-gray-100 dark:bg-gray-600 cursor-pointer shadow absolute right-[-18rem] top-32 rounded-bl-lg transform transition-transform duration-300">
           <div
-            class="button absolute -left-6 bg-gray-100 dark:bg-gray-600 shadow-[-3px_0_5px_rgba(0,0,0,.05)] cursor-pointer rounded-l-lg py-3 ps-2.5 pe-3.5"
-          >
+            class="button absolute -left-6 bg-gray-100 dark:bg-gray-600 shadow-[-3px_0_5px_rgba(0,0,0,.05)] cursor-pointer rounded-l-lg py-3 ps-2.5 pe-3.5">
             <i class="fas fa-chevron-left"></i>
           </div>
-          <div
-            class="content w-72 h-auto max-h-[60vh] overflow-auto p-2 gap-2 flex flex-col justify-between"
-          >
-            <h2
-              class="text-2xl text-center font-semibold text-gray-800 dark:text-gray-100 px-1"
-            >
+          <div class="content w-72 h-auto max-h-[60vh] overflow-auto p-2 gap-2 flex flex-col justify-between">
+            <h2 class="text-2xl text-center font-semibold text-gray-800 dark:text-gray-100 px-1">
               Filas de Distribuição
             </h2>
             <!-- Exibindo as filas usando o componente Filas -->
-            <Filas
-              v-for="fila in filas"
-              :key="fila.idfila_distribuicao_leads"
-              :fila="fila"
-            />
+            <Filas v-for="fila in filas" :key="fila.idfila_distribuicao_leads" :fila="fila" />
           </div>
         </div>
       </div>
@@ -79,68 +58,45 @@
     <aside class="Recents w-4/12 h-full bg-gray-100 dark:bg-gray-800 p-4">
       <div class="flex flex-col h-full justify-around">
         <h2 class="text-2xl">Últimos Leads</h2>
-        <div
-          v-for="lead in ultimosLeads"
-          :key="lead.idlead"
-          class="bg-gray-200 dark:bg-gray-900 rounded-lg shadow hover:-translate-x-2 filter transition-transform duration-100 ease-in-out p-3 w-full"
-        >
-          <div class="flex justify-between">
-            <div class="flex-1 whitespace-nowrap">
-              <p
-                @click="toggleDetails(lead.idlead)"
-                class="text-lg font-semibold cursor-pointer"
-              >
+        <div v-for="lead in ultimosLeads" :key="lead.idlead"
+          class="bg-gray-200 dark:bg-gray-900 rounded-lg shadow hover:-translate-x-2 filter transition-transform duration-100 ease-in-out p-3 w-full">
+          <div class="flex">
+            <!-- Nome e Ícone de Expansão -->
+            <div @click="toggleDetails(lead.idlead)" class="flex w-auto max-w-[60%] min-w-[30%] overflow-hidden cursor-pointer">
+              <p class="text-lg font-semibold truncate">
                 {{ lead.nome }}
-                <i
-                  class="fas m-auto ms-1.5"
-                  :class="
-                    detailsOpened(lead.idlead)
-                      ? 'fa-chevron-up'
-                      : 'fa-chevron-down'
-                  "
-                ></i>
               </p>
+              <i class="fas m-auto ms-1.5 shrink-0 min-w-5" 
+                :class="detailsOpened(lead.idlead) ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
             </div>
-            <div class="flex gap-2">
-              <div
-                class="hidden md:flex rounded-md px-2 w-auto justify-end text-xs m-auto mt-0 gap-2"
-              >
-                <button v-tippy="'Mídia de Visita'">
-                  <p
-                    v-if="lead.midia_principal"
-                    class="py-0.5 px-1.5 rounded-lg bg-gray-50 dark:bg-gray-700 truncate"
-                  >
+
+            <!-- Parte Direita com Botões e Ícones -->
+            <div class="flex flex-1 overflow-hidden">
+              <!-- Mídia e Situação -->
+              <div class="hidden md:flex px-2 text-xs m-auto mt-0 me-0 gap-2 min-w-0 overflow-hidden">
+                <button v-tippy="'Mídia de Visita'" class="shrink-0">
+                  <p v-if="lead.midia_principal" class="py-0.5 px-1.5 rounded-lg bg-gray-50 dark:bg-gray-700 truncate">
                     {{ lead.midia_principal }}
                   </p>
                 </button>
-                <button
-                  v-tippy="'Situação'"
-                  class="truncate"
-                  :class="lead.midia_principal ? 'w-6/12' : 'w-full'"
-                >
-                  <p
-                    class="py-0.5 px-1.5 rounded-lg bg-gray-50 dark:bg-gray-700 truncate"
-                  >
+                <button v-tippy="'Situação'" class="flex-grow min-w-0 overflow-hidden">
+                  <p class="py-0.5 px-1.5 rounded-lg bg-gray-50 dark:bg-gray-700 truncate">
                     {{ lead.situacao.nome }}
                   </p>
                 </button>
               </div>
-              <a
-                :href="`https://menin.cvcrm.com.br/gestor/comercial/leads/${lead.idlead}/administrar?lido=true`"
-                target="_blank"
-                class="cursor-pointer"
-                v-tippy="'CV CRM'"
-              >
-                <img src="/CVLogo.png" alt="CV CRM" class="h-5 w-auto" />
-              </a>
-              <a v-if="lead.link_rdstation"
-                :href="lead.link_rdstation"
-                target="_blank"
-                class="cursor-pointer"
-                v-tippy="'RD Station'"
-              >
-                <img src="/RDLogo.png" alt="RD Station" class="h-5 w-auto" />
-              </a>
+
+              <!-- Ícones -->
+              <div class="flex gap-2 shrink-0">
+                <a :href="`https://menin.cvcrm.com.br/gestor/comercial/leads/${lead.idlead}/administrar?lido=true`"
+                  target="_blank" class="cursor-pointer" v-tippy="'CV CRM'">
+                  <img src="/CVLogo.png" alt="CV CRM" class="w-5 min-w-5" />
+                </a>
+                <a v-if="lead.link_rdstation" :href="lead.link_rdstation" target="_blank" class="cursor-pointer"
+                  v-tippy="'RD Station'">
+                  <img src="/RDLogo.png" alt="RD Station" class="w-5 min-w-5" />
+                </a>
+              </div>
             </div>
           </div>
 
@@ -151,22 +107,19 @@
             <p class="text-sm text-gray-600">Endereço: {{ lead.endereco }}</p>
           </div>
 
-          <div class="flex w-full">
-            <a
-              v-tippy="lead.empreendimento[0].nome"
-              :href="'/buildings?search=' + lead.empreendimento[0].nome"
-              target="_blank"
-              class="bg-gray-50 dark:bg-gray-700 rounded-md px-2 w-auto truncate w-7/12 text-sm ms-0 m-auto"
-              v-if="lead.empreendimento.length > 0"
-            >
+          <div class="flex w-full justify-between">
+            <a v-tippy="lead.empreendimento[0].nome" :href="'/buildings?search=' + lead.empreendimento[0].nome"
+              target="_blank" class="bg-gray-50 dark:bg-gray-700 rounded-md px-2 w-auto truncate text-sm ms-0 m-auto"
+              v-if="lead.empreendimento.length > 0">
               {{ lead.empreendimento[0].nome }}
             </a>
-            <div class="text-gray-500 text-end w-5/12">
+            <div v-else class="bg-gray-600 rounded-md px-2">SEM EMPREENDIMENTO</div>
+            <div class="text-gray-500">
               {{
                 new Date(lead.data_cad)
                   .toLocaleString("pt-BR", {
                     hour: "2-digit",
-                    minute: "2-digit",
+                    minute: "2-digit"
                   })
                   .replace(",", "")
               }}
@@ -175,6 +128,7 @@
         </div>
       </div>
     </aside>
+
   </div>
 </template>
 
