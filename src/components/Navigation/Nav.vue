@@ -336,9 +336,9 @@
             </div>
 
         </div>
-
+ 
         <!-- Container que fecha menu ao clicar fora -->
-        <div @click="toggleMenu()" class="closeOnClick absolute bg-transparent z-20 w-[calc(100vw-4rem)] h-[calc(100vh-4rem)] bottom-0 left-[4rem]" :class="{ 'w-[calc(100vw-20rem)] left-[20rem]': menuOpen, 'w-[calc(100vw-4rem)] hidden': !menuOpen }">
+        <div @click="toggleMenu()" class="closeOnClick absolute bg-red-500 z-20 w-[calc(100vw-4rem)] h-[calc(100vh-4rem)] bottom-0 left-[4rem]" :class="{ 'w-[calc(100vw-20rem)] left-[20rem]': menuOpen, 'hidden': !menuOpen }">
         </div>
 
     </div>
