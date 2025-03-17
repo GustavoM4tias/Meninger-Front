@@ -99,12 +99,12 @@ watch(users, () => {
 </script>
 
 <template>
-    <div class="flex flex-col items-center justify-center min-h-screen bg-gray-50 p-6">
-        <h1 class="text-4xl font-semibold text-gray-900 mb-6 tracking-tight">
+    <div class="flex flex-col items-center justify-center min-h-[calc(100vh-4rem)]  bg-gray-50 p-6">
+        <h1 class="text-4xl font-semibold text-gray-900 mb-6">
             Organograma Empresarial
         </h1>
 
-        <div class="w-full max-w-5xl bg-white rounded-2xl shadow-xl border border-gray-200 p-4">
+        <div class="w-full max-w-6xl bg-white rounded-2xl shadow-xl border border-gray-200 p-4">
             <div ref="diagramDiv"
                 class="w-full h-[600px] border border-gray-300 rounded-lg shadow-md transition-all duration-300 hover:shadow-lg">
             </div>
