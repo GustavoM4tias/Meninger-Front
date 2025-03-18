@@ -1,9 +1,10 @@
-<script setup>
-import InProgress from '../../components/UI/InProgress.vue';
+<script setup> 
 </script>
 
 <template>
-
-    <InProgress />
+    <div class="w-full min-h-[calc(100%-4rem)] flex">
+        imobiliaria
+    </div>
 
 </template>
+

@@ -49,7 +49,7 @@ import { Chart as ChartJS, registerables } from 'chart.js';
 // import jsPDF from 'jspdf';
 import LoadingComponents from '../../../Loading/LoadingComponents.vue';
 import Select from '../../../../components/UI/Select.vue';
-import { useLeadsStore } from '../../../../stores/Lead/leadStore';
+import { useLeadsStore } from '../../../../stores/Reports/Lead/leadStore';
 
 // Registrar plugins do Chart.js
 ChartJS.register(...registerables);

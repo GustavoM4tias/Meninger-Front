@@ -1,7 +1,6 @@
 <script setup>
 import { ref, watchEffect, onMounted } from 'vue';
-import { useFavoritesStore } from '../../../stores/Config/favoriteStore';
-import { addFavorite, removeFavorite } from '../../../utils/Config/apiFavorite';
+import { useFavoritesStore } from '../../../stores/Config/favoriteStore'; 
 
 const props = defineProps({
     router: String,
@@ -22,9 +21,9 @@ watchEffect(() => {
 const toggleFavorite = async () => {
     try {
         if (isFavorited.value) {
-            await removeFavorite(props.router, props.section); // favorite id
+            await favoritesStore.removeFavorite(props.router, props.section); // favorite id
         } else {
-            await addFavorite(props.router, props.section);
+            await favoritesStore.addFavorite(props.router, props.section);
         }
         // Atualiza o estado de favoritos na store
         await favoritesStore.loadFavorites();
@@ -44,6 +43,6 @@ onMounted(() => { favoritesStore.loadFavorites(); });
         </RouterLink>
         <i @click="toggleFavorite"
             :class="isFavorited ? 'fas fa-star text-amber-200 dark:text-amber-300' : 'far fa-star group-hover:text-gray-200'"
-            class="cursor-pointer dilter drop-shadow-sm hidden"></i>
+            class="cursor-pointer filter drop-shadow-sm hidden"></i>
     </li>
 </template>
