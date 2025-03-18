@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
-import { useLeadsStore } from '../../../stores/Lead/leadStore';
+import { useLeadsStore } from '../../../stores/Reports/Lead/leadStore';
 import BarChart from './Daily/BarChart.vue';
 import BarChart2 from './Monthly/BarChart.vue';
 import LineChart from './weekly/LineChart.vue';

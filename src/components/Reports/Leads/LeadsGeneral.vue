@@ -81,7 +81,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watchEffect } from 'vue';
-import { useLeadsStore } from '../../../stores/Lead/leadStore';
+import { useLeadsStore } from '../../../stores/Reports/Lead/leadStore';
 import LoadingComponents from '../../Loading/LoadingComponents.vue';
 
 const leadsStore = useLeadsStore();
