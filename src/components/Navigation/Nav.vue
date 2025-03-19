@@ -30,8 +30,8 @@
                             class="fas fa-circle text-sm text-red-500 -ml-2.5 fa-bounce slow-animation"></i>
                     </div>
 
-                    <!-- Menu de notificações -->
-                    <div class="absolute right-4 md:right-14 top-12 z-10 w-64 max-h-72 overflow-y-auto rounded-md dark:bg-gray-500 bg-gray-300 shadow-lg"
+                    <!-- Menu de notificações --> <!-- AJUSTAR JS IMPORT -->
+                    <div class="absolute right-4 md:right-14 top-12 z-10 w-64 max-h-72 overflow-y-auto rounded-md dark:bg-gray-500 bg-gray-300 shadow-lg hidden"
                         role="menu" x-cloak x-transition x-show="isActive" x-on:click.away="isActive = false"
                         x-on:keydown.escape.window="isActive = false">
                         <!-- Lista de notificações -->
@@ -47,7 +47,7 @@
                     </div>
                 </div>
 
-                <div class="profile flex mr-4 md:mr-6">
+                <div class="profile flex mr-4 md:mr-6 hidden"><!-- AJUSTAR JS IMPORT -->
 
                     <div x-data="{ isActive: false }" class="relative dropdown m-auto">
 
@@ -272,12 +272,13 @@
                             <MenuLink :router="'/imobiliarias'" :section="'Imobiliárias'" :name="'Imobiliárias'"
                                 :isFavorited="false" />
                             <MenuLink :router="'/vendas'" :section="'Vendas'" :name="'Vendas'" :isFavorited="false" />
+                            <MenuLink :router="'/repasses'" :section="'Repasses'" :name="'Repasses'" :isFavorited="false" />
                             <!-- <li>
                                 <RouterLink to=""
                                     class="block px-4 py-1.5 my-1.5 bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 rounded-md">
                                     Submenu 2
                                 </RouterLink>
-                            </li>   
+                            </li>
                             <li>
                                 <RouterLink to=""
                                     class="block px-4 py-1.5 my-1.5 bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 rounded-md">

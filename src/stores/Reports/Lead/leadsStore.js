@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
-import { fetchCarregamento } from '../../../utils/Config/fetchCarregamento';
-import API_URL from '../../../config/apiUrl'; // Define a URL base da sua API
+import { fetchCarregamento } from '@/utils/Config/fetchCarregamento';
+import API_URL from '@/config/apiUrl'; // Define a URL base da sua API
 
 export const useLeadsStore = defineStore('leads', () => {
     const leads = ref([]);
