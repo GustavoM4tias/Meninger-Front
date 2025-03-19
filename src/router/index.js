@@ -31,6 +31,16 @@ const routes = [
     },
   },  
   {
+    path: '/repasses',
+    name: 'Repasses',
+    component: () => import('../views/Reports/Repasses.vue'),
+    meta: { requiresAuth: true },
+    meta: {
+      requiresAuth: true,
+      allowedPosition: ''
+    },
+  },  
+  {
     path: '/vendas',
     name: 'Vendas',
     component: () => import('../views/Reports/Vendas.vue'),
