@@ -1,6 +1,6 @@
 // Modificação no useRepassesStore em paste-2.txt
 import { defineStore } from 'pinia';
-import { fetchCarregamento } from '@/utils/Config/fetchCarregamento';
+import { fetchCarregamento } from '@/utils/Config/fetchCarregamento'; 
 import API_URL from '@/config/apiUrl';
 
 export const useRepassesStore = defineStore('repasses', {
@@ -9,30 +9,27 @@ export const useRepassesStore = defineStore('repasses', {
         empreendimentos: [],
         total: 0,
         limit: "5000",
-        offset: 0,
-        totalConteudo: 0,
-        carregando: false,
+        offset: 0, 
         filtroEmpreendimento: '',
         mostrarCancelados: false,
         mostrarDistratos: false,
         mostrarCessoes: false,
-        carregandoEmpreendimentos: false,
         statusConfig: [],
         grupos: [],
         contagemSituacoes: {},
         contagemGrupos: {}
     }),
     actions: {
-        async fetchRepasses(empreendimento = '', opcoesFiltro = {}) {
-            this.carregando = true;
+        async fetchRepasses(empreendimento = '', opcoesFiltro = {}) { 
             try {
                 // Constrói a URL com os filtros
                 let url = `${API_URL}/external/repasses`;
                 const params = new URLSearchParams();
 
-                // Adiciona o filtro de empreendimento
+                // Remove acentos do texto de empreendimento, se houver
                 if (empreendimento) {
-                    params.append('empreendimento', empreendimento);
+                    const empreendimentoSemAcentos = empreendimento.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                    params.append('empreendimento', empreendimentoSemAcentos);
                 }
 
                 // Adiciona os filtros de status
@@ -59,8 +56,7 @@ export const useRepassesStore = defineStore('repasses', {
                 // Armazena os dados na store
                 this.repasses = data.repasses;
                 this.empreendimentos = data.empreendimentos || [];
-                this.total = data.total;
-                this.totalConteudo = data.totalConteudo;
+                this.total = data.total; 
                 this.filtroEmpreendimento = data.filtroAplicado || '';
                 this.statusConfig = data.statusConfig || [];
                 this.grupos = data.grupos || [];
@@ -77,8 +73,6 @@ export const useRepassesStore = defineStore('repasses', {
                 console.log('Repasses carregados:', data);
             } catch (error) {
                 console.error('Erro ao buscar repasses:', error.message);
-            } finally {
-                this.carregando = false;
             }
         },
 
@@ -100,9 +94,8 @@ export const useRepassesStore = defineStore('repasses', {
                 return this.empreendimentos;
             }
 
-            this.carregandoEmpreendimentos = true;
             try {
-                const response = await fetchCarregamento(`${API_URL}/external/listagem-empreendimentos`);
+                const response = await fetch(`${API_URL}/external/listagem-empreendimentos`);
                 if (!response.ok) {
                     console.error('Erro ao buscar empreendimentos:', response.status);
                     return;
@@ -115,14 +108,12 @@ export const useRepassesStore = defineStore('repasses', {
                 return this.empreendimentos;
             } catch (error) {
                 console.error('Erro ao buscar empreendimentos:', error.message);
-            } finally {
-                this.carregandoEmpreendimentos = false;
             }
         },
 
         async fetchRepasseWorkflow() {
             try {
-                const response = await fetchCarregamento(`${API_URL}/external/repasse-workflow`);
+                const response = await fetch(`${API_URL}/external/repasse-workflow`);
                 if (!response.ok) {
                     console.error('Erro ao buscar workflow de repasses:', response.status);
                     return;
