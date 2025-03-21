@@ -1,12 +1,13 @@
 // src/store/authStore.js
 import { defineStore } from 'pinia';
-import { getUserInfo, getAllUsers, getUserById } from '../../utils/Auth/apiAuth';
+import { getUserInfo, getAllUsers, getUserById, fetchBanners } from '@/utils/Auth/apiAuth';
 
 export const useAuthStore = defineStore('user', {
   state: () => ({
     users: [],
     user: null,
     token: localStorage.getItem('token') || null, // Inicializa o token do localStorage
+    banners: [], // novo estado para os banners
   }),
   getters: {
     usuariosComAniversarioValido: (state) => {
@@ -24,7 +25,7 @@ export const useAuthStore = defineStore('user', {
         .filter(user => new Date(user.birth_date) < dataAtual) // Filtra aniversários passados
         .sort((a, b) => new Date(b.birth_date) - new Date(a.birth_date)); // Ordena do mais recente
     },
-  },  
+  },
   actions: {
     setUser(user) {
       this.user = user;
@@ -68,6 +69,14 @@ export const useAuthStore = defineStore('user', {
         return result;
       } catch (error) {
         throw new Error(error.message);
+      }
+    },
+    async getBanners() {
+      try {
+        const result = await fetchBanners();
+        this.banners = result.data;
+      } catch (error) {
+        console.error('Erro ao buscar banners:', error);
       }
     },
     hasPosition(position) {
