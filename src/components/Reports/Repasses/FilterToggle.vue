@@ -1,13 +1,19 @@
 <template>
-    <label class="flex items-center gap-2 cursor-pointer">
-        <div class="relative inline-block w-10 align-middle select-none">
-            <input type="checkbox" :id="id" v-model="checked" @change="onChange" class="peer sr-only" />
-            <div
-                class="h-6 w-10 bg-gray-700 dark:bg-gray-200 rounded-full peer-checked:bg-indigo-600 after:content-[''] after:absolute after:top-1 after:left-0.5 after:bg-white after:border-gray-300 after:border after:h-4 after:w-4 after:rounded-full after:transition-all peer-checked:after:translate-x-5">
-            </div>
-        </div>
-        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ label }}</span>
-    </label>
+    <div class="flex gap-1.5">
+        <label data-ripple-dark="true" for="checkbox"
+            class="relative cursor-pointer h-4 w-4 items-center rounded-full">
+            <input id="checkbox"
+                class="before:content[''] peer relative h-4 w-4 cursor-pointer appearance-none rounded-md border border-gray-00 dark:border-blue-gray-200 transition-all checked:border-cyan-500 checked:bg-cyan-500 checked:before:bg-cyan-500 hover:before:opacity-10"
+                type="checkbox" :id="id" v-model="checked" @change="onChange" />
+            <span
+                class="pointer-events-none absolute top-2/4 left-2/4 -translate-y-2/4 -translate-x-2/4 text-white opacity-0 transition-opacity peer-checked:opacity-100">
+                <i class="fas fa-check text-[10px]"></i>
+            </span>
+        </label>
+        <label for="checkbox" class="select-none text-xs font-light my-auto">
+            {{ label }}
+        </label>
+    </div>
 </template>
 
 <script setup>

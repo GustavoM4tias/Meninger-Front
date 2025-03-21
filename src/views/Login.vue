@@ -1,6 +1,7 @@
 <script setup>
 import Login from '../components/auth/Login.vue'
 import Link from '../components/auth/Link.vue'
+import Banner from '../components/auth/Banner.vue'
 </script>
 <!-- src/views/Login.vue -->
 <template>
@@ -27,9 +28,9 @@ import Link from '../components/auth/Link.vue'
     </div>
 
     <div class="h-full hidden lg:block md:col-span-7 bg-gray-50 dark:bg-gray-900 relative">
-      <div class="z-10 relative">
+      <div class="z-10 relative h-full w-full flex">
 
-        <!-- insira o conteudo adicional de visualizaçao aqui -->
+        <Banner class="m-auto !h-[43rem] !w-[27rem]" :interval="4000" :autoplay="true" :navigationButton="false" />
 
       </div>
       <div class="bg-img dark:invert dark:opacity-15 h-full w-full absolute top-0 left-0 z-0"></div>

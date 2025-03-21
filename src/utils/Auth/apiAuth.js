@@ -1,20 +1,20 @@
 // src/utils/apiAuth.js
 import { fetchCarregamento } from '../Config/fetchCarregamento';
-import AUTH_URL from '../../config/apiAuthUrl';
+import API_URL from '../../config/apiUrl';
 
 export const registerUser = async (username, password, email, position, city, birth_date) => {
-  const response = await fetchCarregamento(`${AUTH_URL}/register`, {
+  const response = await fetchCarregamento(`${API_URL}/auth/register`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ username, password, email, position, city, birth_date}),
+    body: JSON.stringify({ username, password, email, position, city, birth_date }),
   });
   return response.json();
 };
 
 export const loginUser = async (email, password) => {
-  const response = await fetchCarregamento(`${AUTH_URL}/login`, {
+  const response = await fetchCarregamento(`${API_URL}/auth/login`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -30,7 +30,7 @@ export const loginUser = async (email, password) => {
 };
 
 export const getUserInfo = async () => {
-  const response = await fetch(`${AUTH_URL}/user`, {
+  const response = await fetch(`${API_URL}/auth/user`, {
     method: 'GET',
     headers: {
       'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -46,7 +46,7 @@ export const getUserInfo = async () => {
 };
 
 export const getUserById = async (id) => {
-  const response = await fetchCarregamento(`${AUTH_URL}/user/${id}`, {
+  const response = await fetchCarregamento(`${API_URL}/auth/user/${id}`, {
     method: 'GET',
     headers: {
       'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -62,10 +62,10 @@ export const getUserById = async (id) => {
 };
 
 export const updateMeInfo = async (username, email, position, city, birth_date, status) => {
-  const response = await fetchCarregamento(`${AUTH_URL}/user`, {
+  const response = await fetchCarregamento(`${API_URL}/auth/user`, {
     method: 'PUT',
     headers: {
-      'Authorization': `Bearer ${localStorage.getItem('token')}`, 
+      'Authorization': `Bearer ${localStorage.getItem('token')}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({ username, email, position, city, birth_date, status }),
@@ -81,13 +81,13 @@ export const updateMeInfo = async (username, email, position, city, birth_date, 
 
 export const updateUserInfo = async (id, username, email, position, manager, city, birth_date, status) => {
 
-  const response = await fetchCarregamento(`${AUTH_URL}/users`, {
+  const response = await fetchCarregamento(`${API_URL}/auth/users`, {
     method: 'PUT',
     headers: {
-      'Authorization': `Bearer ${localStorage.getItem('token')}`, 
+      'Authorization': `Bearer ${localStorage.getItem('token')}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({id, username, email, position, manager, city, birth_date, status}),
+    body: JSON.stringify({ id, username, email, position, manager, city, birth_date, status }),
   });
 
   if (!response.ok) {
@@ -99,7 +99,7 @@ export const updateUserInfo = async (id, username, email, position, manager, cit
 };
 
 export const getAllUsers = async () => {
-  const response = await fetch(`${AUTH_URL}/users`, {
+  const response = await fetch(`${API_URL}/auth/users`, {
     method: 'GET',
     headers: {
       'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -107,6 +107,20 @@ export const getAllUsers = async () => {
     },
   });
 
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message);
+  }
+  return response.json();
+};
+
+export const fetchBanners = async () => {
+  const response = await fetch(`${API_URL}/external/banners`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
   if (!response.ok) {
     const errorData = await response.json();
     throw new Error(errorData.message);

@@ -13,7 +13,10 @@
 
 <script setup>
 const props = defineProps({
-    modelValue: [String, Number], // Valor selecionado
+    modelValue: {
+        type: [String, Number, Array],
+        default: ''
+    },
     options: { // Array de opções de seleção
         type: Array,
         required: true,

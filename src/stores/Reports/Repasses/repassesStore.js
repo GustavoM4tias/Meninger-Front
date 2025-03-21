@@ -1,5 +1,4 @@
-// Modificação no useRepassesStore em paste-2.txt
-import { defineStore } from 'pinia'; 
+import { defineStore } from 'pinia';
 import { useCarregamentoStore } from '@/stores/Config/carregamento';
 import API_URL from '@/config/apiUrl';
 
@@ -10,7 +9,7 @@ export const useRepassesStore = defineStore('repasses', {
         total: 0,
         limit: "5000",
         offset: 0,
-        filtroEmpreendimento: '',
+        filtroEmpreendimento: [], // Changed to array to support multiple empreendimentos
         mostrarCancelados: false,
         mostrarDistratos: false,
         mostrarCessoes: false,
@@ -20,7 +19,7 @@ export const useRepassesStore = defineStore('repasses', {
         contagemGrupos: {}
     }),
     actions: {
-        async fetchRepasses(empreendimento = '', opcoesFiltro = {}) {
+        async fetchRepasses(empreendimento = [], opcoesFiltro = {}) {
             const carregamentoStore = useCarregamentoStore();
             try {
                 carregamentoStore.iniciarCarregamento();
@@ -28,10 +27,13 @@ export const useRepassesStore = defineStore('repasses', {
                 let url = `${API_URL}/external/repasses`;
                 const params = new URLSearchParams();
 
-                // Remove acentos do texto de empreendimento, se houver
-                if (empreendimento) {
-                    const empreendimentoSemAcentos = empreendimento.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-                    params.append('empreendimento', empreendimentoSemAcentos);
+                // Se empreendimento for um array não vazio, envie como lista separada por vírgula
+                if (Array.isArray(empreendimento) && empreendimento.length > 0) {
+                    // Normalize e junte os empreendimentos em uma string
+                    const empreendimentosSemAcentos = empreendimento.map(emp =>
+                        emp.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                    );
+                    params.append('empreendimento', empreendimentosSemAcentos.join(','));
                 }
 
                 // Adiciona os filtros de status
@@ -59,7 +61,16 @@ export const useRepassesStore = defineStore('repasses', {
                 this.repasses = data.repasses;
                 this.empreendimentos = data.empreendimentos || [];
                 this.total = data.total;
-                this.filtroEmpreendimento = data.filtroAplicado || '';
+
+                // Handle filtroAplicado as an array
+                if (data.filtroAplicado) {
+                    this.filtroEmpreendimento = Array.isArray(data.filtroAplicado)
+                        ? data.filtroAplicado
+                        : data.filtroAplicado.split(',');
+                } else {
+                    this.filtroEmpreendimento = [];
+                }
+
                 this.statusConfig = data.statusConfig || [];
                 this.grupos = data.grupos || [];
                 this.contagemSituacoes = data.contagemSituacoes || {};
@@ -79,10 +90,12 @@ export const useRepassesStore = defineStore('repasses', {
             }
         },
 
+        // Método atualizado para aceitar array de empreendimentos
         async setFiltroEmpreendimento(empreendimento) {
-            this.filtroEmpreendimento = empreendimento;
+            // Garantir que filtroEmpreendimento seja sempre um array
+            this.filtroEmpreendimento = Array.isArray(empreendimento) ? empreendimento : [empreendimento];
             // Recarrega os dados com o novo filtro
-            await this.fetchRepasses(empreendimento);
+            await this.fetchRepasses(this.filtroEmpreendimento);
         },
 
         async setFiltroStatus(filtros) {
@@ -91,7 +104,7 @@ export const useRepassesStore = defineStore('repasses', {
             await this.fetchRepasses(this.filtroEmpreendimento, filtros);
         },
 
-        // Outros métodos existentes...
+
         async fetchEmpreendimentos() {
             if (this.empreendimentos.length > 0) {
                 return this.empreendimentos;

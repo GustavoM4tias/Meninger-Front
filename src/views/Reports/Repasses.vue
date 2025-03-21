@@ -1,18 +1,20 @@
 <template>
-  <div class="min-h-[calc(100%-4rem)] flex flex-col">
+  <div class="min-h-[calc(100%-4rem)] md:max-h-[90%] flex flex-col">
     <div class="relative bg-gray-200 dark:bg-gray-600 m-2 md:m-auto p-3 md:p-4 rounded-xl drop-shadow-md">
       <h1 class="text-2xl font-bold">Relatório de Repasses</h1>
       <!-- Container principal com espaçamento mais equilibrado -->
-      <div class="flex justify-between me-2">
+      <div class="flex justify-between pb-2">
         <!-- Primeira linha: botão expandir e filtro de empreendimentos -->
         <filter-bar :initial-selected-empreendimento="selectedEmpreendimento" :initial-all-expanded="allExpanded"
           :initial-filtros="filtros" :empreendimentos="store.empreendimentos"
           @update:empreendimento="filtrarPorEmpreendimento" @update:all-expanded="toggleAllDetails"
-          @update:filtros="aplicarFiltros" />
+          @update:filtros="aplicarFiltros" :maxSelection="2" />
 
         <!-- Terceira linha: cards de grupos renovados -->
         <grupos-summary :grupos-sumarizados="gruposSumarizados" :get-grupo-color="getGrupoColor"
           :get-grupo-text-color="getGrupoTextColor" :adjust-color="adjustColor" :format-money="formatMoney" />
+        <!-- Novo botão para modal de repasses mensais -->
+        <Modal />
       </div>
 
       <div v-if="store.repasses.length > 0" class="relative max-h-[70vh] w-[90vw] m-auto rounded-lg overflow-y-auto">
@@ -32,9 +34,12 @@ import { useRepassesStore } from '@/stores/Reports/Repasses/repassesStore';
 import FilterBar from '@/components/Reports/Repasses/FilterBar.vue';
 import GruposSummary from '@/components/Reports/Repasses/GruposSummary.vue';
 import ScrollContainer from '@/components/Reports/Repasses/ScrollContainer.vue';
+import Modal from '@/components/Reports/Repasses/Modal.vue';
 
 const store = useRepassesStore();
-const selectedEmpreendimento = ref('');
+// Changed from string to array to support multiple selections
+const selectedEmpreendimento = ref([]);
+const isLoading = ref(false);
 
 // Filtros reativos
 const filtros = reactive({
@@ -224,25 +229,33 @@ const adjustColor = (color, amount) => {
 }
 
 onMounted(async () => {
-  // Carrega o workflow de repasses (situações/status)
-  await store.fetchRepasseWorkflow();
+  isLoading.value = true;
+  try {
+    // Carrega o workflow de repasses (situações/status)
+    await store.fetchRepasseWorkflow();
 
-  // Carrega os empreendimentos
-  await store.fetchEmpreendimentos();
+    // Carrega os empreendimentos
+    await store.fetchEmpreendimentos();
 
-  // Carrega os repasses
-  await store.fetchRepasses();
+    // Carrega os repasses
+    await store.fetchRepasses();
 
-  // Sincroniza o valor do select com o filtro atual
-  selectedEmpreendimento.value = store.filtroEmpreendimento;
+    // Sincroniza o valor do select com o filtro atual
+    // Convert to array if it's a string
+    selectedEmpreendimento.value = Array.isArray(store.filtroEmpreendimento)
+      ? store.filtroEmpreendimento
+      : store.filtroEmpreendimento ? [store.filtroEmpreendimento] : [];
 
-  // Sincroniza os filtros com os valores do store
-  filtros.mostrarCancelados = store.mostrarCancelados;
-  filtros.mostrarDistratos = store.mostrarDistratos;
-  filtros.mostrarCessoes = store.mostrarCessoes;
+    // Sincroniza os filtros com os valores do store
+    filtros.mostrarCancelados = store.mostrarCancelados;
+    filtros.mostrarDistratos = store.mostrarDistratos;
+    filtros.mostrarCessoes = store.mostrarCessoes;
 
-  // Inicializa o estado de paginação
-  initPaginationState();
+    // Inicializa o estado de paginação
+    initPaginationState();
+  } finally {
+    isLoading.value = false;
+  }
 });
 
 // Observar mudanças nos repasses para reiniciar a paginação quando necessário
@@ -250,24 +263,34 @@ watch(() => store.repasses, () => {
   initPaginationState();
 }, { deep: true });
 
-// Filtro por empreendimento
-const filtrarPorEmpreendimento = async (novoEmpreendimento) => {
-  selectedEmpreendimento.value = novoEmpreendimento;
-  await store.setFiltroEmpreendimento(novoEmpreendimento);
-  // Reinicia a paginação ao filtrar
-  initPaginationState();
+// Filtro por empreendimento - modificado para aceitar array
+const filtrarPorEmpreendimento = async (novosEmpreendimentos) => {
+  isLoading.value = true;
+  try {
+    selectedEmpreendimento.value = novosEmpreendimentos;
+    await store.setFiltroEmpreendimento(novosEmpreendimentos);
+    // Reinicia a paginação ao filtrar
+    initPaginationState();
+  } finally {
+    isLoading.value = false;
+  }
 };
 
 // Aplicar filtros de status
 const aplicarFiltros = async (novosFiltros) => {
-  Object.assign(filtros, novosFiltros);
-  await store.setFiltroStatus({
-    mostrarCancelados: filtros.mostrarCancelados,
-    mostrarDistratos: filtros.mostrarDistratos,
-    mostrarCessoes: filtros.mostrarCessoes
-  });
-  // Reinicia a paginação ao filtrar
-  initPaginationState();
+  isLoading.value = true;
+  try {
+    Object.assign(filtros, novosFiltros);
+    await store.setFiltroStatus({
+      mostrarCancelados: filtros.mostrarCancelados,
+      mostrarDistratos: filtros.mostrarDistratos,
+      mostrarCessoes: filtros.mostrarCessoes
+    });
+    // Reinicia a paginação ao filtrar
+    initPaginationState();
+  } finally {
+    isLoading.value = false;
+  }
 };
 
 // Funções auxiliares
@@ -314,5 +337,4 @@ const toggleAllDetails = () => {
     }
   }
 };
-
 </script>
