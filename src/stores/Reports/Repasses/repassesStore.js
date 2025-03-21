@@ -1,6 +1,6 @@
 // Modificação no useRepassesStore em paste-2.txt
-import { defineStore } from 'pinia';
-import { fetchCarregamento } from '@/utils/Config/fetchCarregamento'; 
+import { defineStore } from 'pinia'; 
+import { useCarregamentoStore } from '@/stores/Config/carregamento';
 import API_URL from '@/config/apiUrl';
 
 export const useRepassesStore = defineStore('repasses', {
@@ -9,7 +9,7 @@ export const useRepassesStore = defineStore('repasses', {
         empreendimentos: [],
         total: 0,
         limit: "5000",
-        offset: 0, 
+        offset: 0,
         filtroEmpreendimento: '',
         mostrarCancelados: false,
         mostrarDistratos: false,
@@ -20,8 +20,10 @@ export const useRepassesStore = defineStore('repasses', {
         contagemGrupos: {}
     }),
     actions: {
-        async fetchRepasses(empreendimento = '', opcoesFiltro = {}) { 
+        async fetchRepasses(empreendimento = '', opcoesFiltro = {}) {
+            const carregamentoStore = useCarregamentoStore();
             try {
+                carregamentoStore.iniciarCarregamento();
                 // Constrói a URL com os filtros
                 let url = `${API_URL}/external/repasses`;
                 const params = new URLSearchParams();
@@ -45,7 +47,7 @@ export const useRepassesStore = defineStore('repasses', {
                     url += `?${params.toString()}`;
                 }
 
-                const response = await fetchCarregamento(url);
+                const response = await fetch(url);
                 if (!response.ok) {
                     console.error('Erro ao buscar repasses:', response.status);
                     return;
@@ -56,7 +58,7 @@ export const useRepassesStore = defineStore('repasses', {
                 // Armazena os dados na store
                 this.repasses = data.repasses;
                 this.empreendimentos = data.empreendimentos || [];
-                this.total = data.total; 
+                this.total = data.total;
                 this.filtroEmpreendimento = data.filtroAplicado || '';
                 this.statusConfig = data.statusConfig || [];
                 this.grupos = data.grupos || [];
@@ -69,10 +71,11 @@ export const useRepassesStore = defineStore('repasses', {
                     this.mostrarDistratos = data.filtros.mostrarDistratos;
                     this.mostrarCessoes = data.filtros.mostrarCessoes;
                 }
-
                 console.log('Repasses carregados:', data);
             } catch (error) {
                 console.error('Erro ao buscar repasses:', error.message);
+            } finally {
+                carregamentoStore.finalizarCarregamento();
             }
         },
 
