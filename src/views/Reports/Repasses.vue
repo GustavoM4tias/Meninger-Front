@@ -1,198 +1,37 @@
 <template>
   <div class="min-h-[calc(100%-4rem)] flex flex-col">
-
     <div class="relative bg-gray-200 dark:bg-gray-600 m-2 md:m-auto p-3 md:p-4 rounded-xl drop-shadow-md">
       <h1 class="text-2xl font-bold">Relatório de Repasses</h1>
       <!-- Container principal com espaçamento mais equilibrado -->
       <div class="flex justify-between me-2">
         <!-- Primeira linha: botão expandir e filtro de empreendimentos -->
-        <div class="flex flex-wrap items-center gap-2">
-          <div class="relative">
-            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-              <i class="fas fa-chevron-down"></i>
-            </div>
-            <select v-model="selectedEmpreendimento" @change="filtrarPorEmpreendimento"
-              class="block w-full pl-10 pr-4 py-2 text-sm text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md appearance-none">
-              <option value="">Todos os Empreendimentos</option>
-              <option v-for="empreendimento in store.empreendimentos" :key="empreendimento" :value="empreendimento">
-                {{ empreendimento }}
-              </option>
-            </select>
-          </div>
-          <button @click="toggleAllDetails"
-            class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md transition-colors duration-150 shadow-sm">
-            <i v-if="allExpanded" class="fas fa-chevron-up w-4 h-4"></i>
-            <i v-else class="fas fa-chevron-down w-4 h-4"></i>
-            {{ allExpanded ? 'Recolher Todos' : 'Expandir Todos' }}
-          </button>
-          <!-- Segunda linha: checkboxes com estilo moderno -->
-          <div class="flex flex-wrap items-center gap-4">
-            <label class="flex items-center gap-2 cursor-pointer">
-              <div class="relative inline-block w-10 align-middle select-none">
-                <input type="checkbox" id="mostrarCancelados" v-model="filtros.mostrarCancelados"
-                  @change="aplicarFiltros" class="peer sr-only" />
-                <div
-                  class="h-5 w-10 bg-gray-200 rounded-full peer-checked:bg-indigo-600 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-gray-300 after:border after:h-4 after:w-4 after:rounded-full after:transition-all peer-checked:after:translate-x-5">
-                </div>
-              </div>
-              <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Mostrar Cancelados</span>
-            </label>
-
-            <label class="flex items-center gap-2 cursor-pointer">
-              <div class="relative inline-block w-10 align-middle select-none">
-                <input type="checkbox" id="mostrarDistratos" v-model="filtros.mostrarDistratos" @change="aplicarFiltros"
-                  class="peer sr-only" />
-                <div
-                  class="h-5 w-10 bg-gray-200 rounded-full peer-checked:bg-indigo-600 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-gray-300 after:border after:h-4 after:w-4 after:rounded-full after:transition-all peer-checked:after:translate-x-5">
-                </div>
-              </div>
-              <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Mostrar Distratos</span>
-            </label>
-
-            <label class="flex items-center gap-2 cursor-pointer">
-              <div class="relative inline-block w-10 align-middle select-none">
-                <input type="checkbox" id="mostrarCessoes" v-model="filtros.mostrarCessoes" @change="aplicarFiltros"
-                  class="peer sr-only" />
-                <div
-                  class="h-5 w-10 bg-gray-200 rounded-full peer-checked:bg-indigo-600 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-gray-300 after:border after:h-4 after:w-4 after:rounded-full after:transition-all peer-checked:after:translate-x-5">
-                </div>
-              </div>
-              <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Mostrar Cessões</span>
-            </label>
-          </div>
-        </div>
-
+        <filter-bar :initial-selected-empreendimento="selectedEmpreendimento" :initial-all-expanded="allExpanded"
+          :initial-filtros="filtros" :empreendimentos="store.empreendimentos"
+          @update:empreendimento="filtrarPorEmpreendimento" @update:all-expanded="toggleAllDetails"
+          @update:filtros="aplicarFiltros" />
 
         <!-- Terceira linha: cards de grupos renovados -->
-        <div class="flex flex-wrap gap-3 mb-4">
-          <div v-for="grupoInfo in gruposSumarizados" :key="grupoInfo.id"
-            class="rounded-lg overflow-hidden shadow hover:shadow-md transition-shadow duration-150 flex flex-col"
-            :style="{
-              backgroundColor: getGrupoColor(grupoInfo.id),
-              color: getGrupoTextColor(grupoInfo.id)
-            }">
-            <div class="px-4 py-1.5 flex items-center justify-between">
-              <span class="font-medium">{{ grupoInfo.nome }}</span>
-              <span class="ml-2 px-2 py-0.5 text-sm font-bold rounded-full" :style="{
-                backgroundColor: adjustColor(getGrupoColor(grupoInfo.id), 0.2),
-                color: getGrupoTextColor(grupoInfo.id)
-              }">
-                {{ grupoInfo.total }}
-              </span>
-            </div>
-            <div class="px-4 py-1 text-sm font-semibold bg-opacity-10 bg-black dark:bg-opacity-25 dark:bg-white">
-              {{ formatMoney(grupoInfo.valorTotal) }}
-            </div>
-          </div>
-        </div>
+        <grupos-summary :grupos-sumarizados="gruposSumarizados" :get-grupo-color="getGrupoColor"
+          :get-grupo-text-color="getGrupoTextColor" :adjust-color="adjustColor" :format-money="formatMoney" />
       </div>
 
-
-      <div v-if="store.repasses.length > 0" class="relative max-h-[70vh] w-[90vw] m-auto rounded-lg overflow-y-auto ">
+      <div v-if="store.repasses.length > 0" class="relative max-h-[70vh] w-[90vw] m-auto rounded-lg overflow-y-auto">
         <!-- SCROLL HORIZONTAL -->
-        <div ref="scrollContainer" class="overflow-auto flex flex-nowrap gap-4 select-none" @mousedown="startDrag"
-          @mousemove="onDrag" @mouseup="stopDrag" @mouseleave="stopDrag">
-          <div v-for="status in orderedStatuses" :key="status.idsituacao || status.nome"
-            class="min-w-[300px] shadow-md rounded-lg p-4 filter drop-shadow-md mb-8"
-            :style="{ backgroundColor: status.cor_bg || '#ffffff' }">
-            <div class="title mb-2">
-              <h2 class="text-xl font-semibold text-center truncate" :style="{ color: status.cor_nome || '#000000' }">
-                {{ status.nome }}
-              </h2>
-              <p class="text-xs text-center" :style="{ color: status.cor_nome || '#000000' }">
-                {{ repassesByStatus[status.nome]?.length || 0 }} Contratos
-              </p>
-            </div>
-            <!-- SE NÃO HÁ REPASSES NESSE STATUS -->
-            <div v-if="!repassesByStatus[status.nome] || repassesByStatus[status.nome].length === 0"
-              class="text-sm text-gray-500 dark:text-gray-400 text-center">
-              Nenhum repasse neste status
-            </div>
-
-            <!-- LISTA DE REPASSES -->
-            <div v-else>
-              <div v-for="repasse in repassesByStatus[status.nome]" :key="repasse.ID"
-                class="relative mb-2 p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-800">
-                <!-- Conteúdo do repasse (sem alterações) -->
-                <div class="flex flex-col">
-                  <div class="flex justify-between items-center">
-                    <div class="flex gap-2 items-center text-sm font-semibold text-gray-700 dark:text-gray-300">
-                      <span>#{{ repasse.ID }}</span>
-                      <a :href="'https://menin.cvcrm.com.br/gestor/comercial/reservas/' + repasse.idreserva + '/administrar'"
-                        target="_blank" v-tippy="repasse.status_reserva" @mousedown.stop
-                        class="text-white px-2 py-0.5 rounded-md shadow cursor-pointer"
-                        :class="repasse.status_reserva === 'Vendida' ? 'bg-green-600' : 'bg-red-500'">
-                        {{ repasse.status_reserva }}
-                      </a>
-                    </div>
-                    <button v-tippy="'CV CRM'">
-                      <a :href="'https://menin.cvcrm.com.br/gestor/financeiro/repasses/' + repasse.ID + '/administrar'"
-                        target="_blank">
-                        <img src="/CVLogo.png" alt="CV CRM" class="h-5 min-w-5 drop-shadow">
-                      </a>
-                    </button>
-                  </div>
-                  <div class="border-b mt-2 border-gray-300 dark:border-gray-700 w-full"></div>
-                </div>
-
-                <div class="text-sm mt-3 mx-1">
-                  <p class="truncate">
-                    <i class="fas text-lg fa-building"></i> {{ repasse.empreendimento }}<br>
-                  </p>
-                  <p class="text-xs my-0.5 text-gray-400 truncate">
-                    {{ repasse.etapa }} | {{ repasse.bloco }} | {{ repasse.unidade }}
-                  </p>
-                  <p class="truncate text-lg">
-                    <i class="fas fa-money-bill"></i> {{ formatMoney(repasse.valor_contrato) }}
-                  </p>
-                </div>
-
-                <div class="relative flex items-center w-full">
-                  <!-- Linha central -->
-                  <div class="absolute left-0 right-0 h-[1px] bg-gray-300 dark:bg-gray-700"></div>
-                  <!-- Botão sobreposto -->
-                  <button @click.stop="toggleDetails(repasse.ID)" @mousedown.stop
-                    class="relative m-auto z-10 px-3 py-0.5 text-xs dark:bg-gray-800 dark:hover:bg-gray-900 bg-gray-100 hover:bg-gray-100 border-gray-300 border dark:border-gray-700 dark:text-gray-300 text-gray-400 rounded-md">
-                    {{ expandedDetails[repasse.ID] ? '- Detalhes' : '+ Detalhes' }}
-                  </button>
-                </div>
-
-                <!-- Informações Extras (Exibidas se expandido) -->
-                <div v-if="expandedDetails[repasse.ID]"
-                  class="text-gray-700 dark:text-gray-400 flex text-center text-sm">
-                  <div class="flex-1">
-                    <span class="font-semibold text-xs text-gray-800 dark:text-gray-200">Criado há:</span>
-                    <br> {{ timeDifference(repasse.data_contrato_contab) }}<br>
-                  </div>
-                  <div class="border-[0.5px] mt-2 border-gray-300 dark:border-gray-700"></div>
-                  <div v-if="status.nome === 'Em espera'" class="flex-1">
-                    <span class="font-semibold text-xs text-gray-800 dark:text-gray-200">Na situação há:</span>
-                    <br> {{ timeDifference(repasse.data_contrato_contab) }}<br>
-                  </div>
-                  <div v-else class="flex-1">
-                    <span class="font-semibold text-xs text-gray-800 dark:text-gray-200">Na situação há:</span>
-                    <br> {{ timeDifference(repasse.data_status_repasse) }}<br>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <scroll-container :ordered-statuses="orderedStatuses" :repasses-by-status="repassesByStatus"
+          :paginated-repasses="paginatedRepasses" :has-more-repasses="hasMoreRepasses"
+          :load-more-repasses="loadMoreRepasses" :expanded-details="expandedDetails" :toggle-details="toggleDetails"
+          :time-difference="timeDifference" :format-money="formatMoney" />
       </div>
-
     </div>
-
-
-    <!-- <div class="content-2 h-screen">
-    </div> -->
-
-
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, computed, watch, reactive } from 'vue';
 import { useRepassesStore } from '@/stores/Reports/Repasses/repassesStore';
+import FilterBar from '@/components/Reports/Repasses/FilterBar.vue';
+import GruposSummary from '@/components/Reports/Repasses/GruposSummary.vue';
+import ScrollContainer from '@/components/Reports/Repasses/ScrollContainer.vue';
 
 const store = useRepassesStore();
 const selectedEmpreendimento = ref('');
@@ -203,6 +42,51 @@ const filtros = reactive({
   mostrarDistratos: false,
   mostrarCessoes: false
 });
+
+// Paginação por coluna (status)
+const paginationLimit = ref(10);
+const paginationState = reactive({});
+
+// Inicializar o estado de paginação para cada status
+const initPaginationState = () => {
+  if (store.statusConfig && store.statusConfig.length > 0) {
+    store.statusConfig.forEach(status => {
+      if (!paginationState[status.nome]) {
+        paginationState[status.nome] = {
+          page: 1,
+          limit: paginationLimit.value
+        };
+      }
+    });
+  }
+};
+
+// Carregar mais itens para um status específico
+const loadMoreRepasses = (statusName) => {
+  if (paginationState[statusName]) {
+    paginationState[statusName].page += 1;
+  }
+};
+
+// Verificar se há mais repasses para carregar para um status específico
+const hasMoreRepasses = (statusName) => {
+  if (!repassesByStatus.value[statusName]) return false;
+
+  const total = repassesByStatus.value[statusName].length;
+  const current = paginationState[statusName]?.page * paginationState[statusName]?.limit || 0;
+
+  return current < total;
+};
+
+// Obter repasses paginados para um status específico
+const paginatedRepasses = (statusName) => {
+  if (!repassesByStatus.value[statusName]) return [];
+
+  const page = paginationState[statusName]?.page || 1;
+  const limit = paginationState[statusName]?.limit || paginationLimit.value;
+
+  return repassesByStatus.value[statusName].slice(0, page * limit);
+};
 
 // Referência para os status ordenados
 const orderedStatuses = computed(() => {
@@ -356,20 +240,34 @@ onMounted(async () => {
   filtros.mostrarCancelados = store.mostrarCancelados;
   filtros.mostrarDistratos = store.mostrarDistratos;
   filtros.mostrarCessoes = store.mostrarCessoes;
+
+  // Inicializa o estado de paginação
+  initPaginationState();
 });
 
+// Observar mudanças nos repasses para reiniciar a paginação quando necessário
+watch(() => store.repasses, () => {
+  initPaginationState();
+}, { deep: true });
+
 // Filtro por empreendimento
-const filtrarPorEmpreendimento = async () => {
-  await store.setFiltroEmpreendimento(selectedEmpreendimento.value);
+const filtrarPorEmpreendimento = async (novoEmpreendimento) => {
+  selectedEmpreendimento.value = novoEmpreendimento;
+  await store.setFiltroEmpreendimento(novoEmpreendimento);
+  // Reinicia a paginação ao filtrar
+  initPaginationState();
 };
 
 // Aplicar filtros de status
-const aplicarFiltros = async () => {
+const aplicarFiltros = async (novosFiltros) => {
+  Object.assign(filtros, novosFiltros);
   await store.setFiltroStatus({
     mostrarCancelados: filtros.mostrarCancelados,
     mostrarDistratos: filtros.mostrarDistratos,
     mostrarCessoes: filtros.mostrarCessoes
   });
+  // Reinicia a paginação ao filtrar
+  initPaginationState();
 };
 
 // Funções auxiliares
@@ -388,7 +286,6 @@ const timeDifference = (dateStr) => {
 
   const days = Math.floor(diffInSeconds / (3600 * 24));
   const hours = Math.floor((diffInSeconds % (3600 * 24)) / 3600);
-
   return `${days} dias, ${hours} horas`;
 };
 
@@ -418,32 +315,4 @@ const toggleAllDetails = () => {
   }
 };
 
-// Funções para scroll "PRESS AND PUSH"
-const isDragging = ref(false);
-const startX = ref(0);
-const scrollLeft = ref(0);
-const scrollContainer = ref(null);
-
-const startDrag = (e) => {
-  // Verificar se o clique foi em um botão
-  if (e.target.tagName === 'BUTTON') {
-    return;
-  }
-
-  isDragging.value = true;
-  startX.value = e.pageX - scrollContainer.value.offsetLeft;
-  scrollLeft.value = scrollContainer.value.scrollLeft;
-};
-
-const onDrag = (e) => {
-  if (!isDragging.value) return;
-  e.preventDefault();
-  const x = e.pageX - scrollContainer.value.offsetLeft;
-  const walk = (x - startX.value) * 2;
-  scrollContainer.value.scrollLeft = scrollLeft.value - walk;
-};
-
-const stopDrag = () => {
-  isDragging.value = false;
-};
 </script>

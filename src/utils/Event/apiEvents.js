@@ -3,7 +3,7 @@ import { fetchCarregamento } from '../Config/fetchCarregamento';
 import API_URL from '../../config/apiUrl'; // Define a URL base da sua API
 
 export const getEvents = async () => {
-    const response = await fetchCarregamento(`${API_URL}/events`, {
+    const response = await fetch(`${API_URL}/events`, {
         method: 'GET',
         headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`, // Verifique se o token está sendo recuperado corretamente

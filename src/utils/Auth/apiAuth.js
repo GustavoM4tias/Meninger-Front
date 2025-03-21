@@ -30,7 +30,7 @@ export const loginUser = async (email, password) => {
 };
 
 export const getUserInfo = async () => {
-  const response = await fetchCarregamento(`${AUTH_URL}/user`, {
+  const response = await fetch(`${AUTH_URL}/user`, {
     method: 'GET',
     headers: {
       'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -99,7 +99,7 @@ export const updateUserInfo = async (id, username, email, position, manager, cit
 };
 
 export const getAllUsers = async () => {
-  const response = await fetchCarregamento(`${AUTH_URL}/users`, {
+  const response = await fetch(`${AUTH_URL}/users`, {
     method: 'GET',
     headers: {
       'Authorization': `Bearer ${localStorage.getItem('token')}`,
