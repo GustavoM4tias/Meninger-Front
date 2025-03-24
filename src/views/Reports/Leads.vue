@@ -2,10 +2,10 @@
   <div class="w-full h-[calc(100%-4rem)] relative overflow-hidden flex">
     <!-- Área principal -->
     <div class="w-9/12 p-4">
-      <div class="flex items-center">
-          <h1 class="text-xl md:text-2xl font-bold">Leads</h1>
-          <Favorite :router="'/leads'" :section="'Leads'" />
-        </div>
+      <div class="flex items-center pb-2">
+        <h1 class="text-xl md:text-2xl font-bold">Leads</h1>
+        <Favorite :router="'/reports/leads'" :section="'Leads'" />
+      </div>
       <div class="bg-gray-300 dark:bg-gray-700 m-auto ms-3.5 md:ms-auto p-4 rounded-lg shadow-xl">
 
         <!-- Filtros -->
@@ -74,7 +74,7 @@ const { leads, carregando, error, periodo, total, filas } = storeToRefs(store);
 const dataInicio = ref("");
 const dataFim = ref("");
 const mostrarTodos = ref(false);
- 
+
 const buscarLeads = () => {
   fetchLeads({
     data_inicio: dataInicio.value,
@@ -97,7 +97,7 @@ watch(periodo, (novoPeriodo) => {
     const dataInicioObj = new Date(novoPeriodo.data_inicio);
     dataInicio.value = dataInicioObj.toISOString().split('T')[0];
   }
-  
+
   if (novoPeriodo.data_fim) {
     const dataFimObj = new Date(novoPeriodo.data_fim);
     dataFim.value = dataFimObj.toISOString().split('T')[0];
@@ -110,7 +110,7 @@ const toggleModal = () => {
 
 onMounted(() => {
   fetchFilas();
-  buscarLeads(); 
+  buscarLeads();
 });
 </script>
 
