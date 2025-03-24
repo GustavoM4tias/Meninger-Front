@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue';
 import * as go from 'gojs';
-import { useAuthStore } from '../stores/Auth/authStore';
+import { useAuthStore } from '@/stores/Auth/authStore';
 
 const userStore = useAuthStore();
 const users = ref([]);

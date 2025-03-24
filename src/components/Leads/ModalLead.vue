@@ -1,7 +1,7 @@
 <template>
     <aside class="Recents w-full h-full bg-gray-100 dark:bg-gray-800 p-4" ref="scrollContainer">
         <div class="flex flex-col h-full">
-            <h2 class="text-2xl font-semibold ps-2">Últimos Leads</h2>
+            <h2 class="text-2xl font-semibold ps-2 pb-2">Últimos Leads</h2>
             <div class="overflow-y-auto overflow-hidden h-[calc(100%-2rem)] px-2" ref="leadsList"
                 @scroll="handleScroll">
                 <div v-for="lead in visibleLeads" :key="lead.idlead"

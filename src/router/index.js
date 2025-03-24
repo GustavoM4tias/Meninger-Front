@@ -9,41 +9,11 @@ const routes = [
     name: 'Home',
     component: Home,
     meta: { requiresAuth: true },
-  },  
+  },
   {
-    path: '/leads',
-    name: 'leads',
-    component: () => import('../views/Leads/Leads.vue'),
-    meta: { requiresAuth: true },
-    meta: {
-      requiresAuth: true,
-      allowedPosition: ''
-    },
-  },  
-  {
-    path: '/imobiliarias',
-    name: 'Imobiliarias',
-    component: () => import('../views/Reports/Imobiliarias.vue'),
-    meta: { requiresAuth: true },
-    meta: {
-      requiresAuth: true,
-      allowedPosition: ''
-    },
-  },  
-  {
-    path: '/repasses',
-    name: 'Repasses',
-    component: () => import('../views/Reports/Repasses.vue'),
-    meta: { requiresAuth: true },
-    meta: {
-      requiresAuth: true,
-      allowedPosition: ''
-    },
-  },  
-  {
-    path: '/vendas',
-    name: 'Vendas',
-    component: () => import('../views/Reports/Vendas.vue'),
+    path: '/events',
+    name: 'Events',
+    component: () => import('../views/Events.vue'),
     meta: { requiresAuth: true },
     meta: {
       requiresAuth: true,
@@ -61,14 +31,81 @@ const routes = [
     },
   },
   {
-    path: '/events',
-    name: 'Events',
-    component: () => import('../views/Events.vue'),
+    path: '/reports',
+    name: 'reports',
+    children: [
+      {
+        path: 'leads', name: 'Leads', component: () => import('../views/Reports/Leads.vue'), meta: { requiresAuth: true },
+        meta: {
+          requiresAuth: true,
+          allowedPosition: ''
+        },
+      },
+      {
+        path: 'imobiliarias', name: 'Imobiliarias', component: () => import('../views/Reports/Imobiliarias.vue'), meta: { requiresAuth: true },
+        meta: {
+          requiresAuth: true,
+          allowedPosition: ''
+        },
+      },
+      {
+        path: 'vendas', name: 'Vendas', component: () => import('../views/Reports/Vendas.vue'), meta: { requiresAuth: true },
+        meta: {
+          requiresAuth: true,
+          allowedPosition: ''
+        },
+      },
+      {
+        path: 'repasses', name: 'Repasses', component: () => import('../views/Reports/Repasses.vue'), meta: { requiresAuth: true },
+        meta: {
+          requiresAuth: true,
+          allowedPosition: ''
+        },
+      },
+    ],
     meta: { requiresAuth: true },
     meta: {
       requiresAuth: true,
       allowedPosition: ''
     },
+  }, 
+  {
+    path: '/settings',
+    name: 'settings',
+    children: [
+      {
+        path: 'Users', name: 'Users', component: () => import('../views/Settings/Users.vue'), meta: { requiresAuth: true },
+        meta: {
+          requiresAuth: true,
+          allowedPosition: ''
+        },
+      },
+      {
+        path: 'Account', name: 'Account', component: () => import('../views/Settings/Account.vue'), meta: { requiresAuth: true },
+        meta: {
+          requiresAuth: true,
+          allowedPosition: ''
+        },
+      },
+      {
+        path: 'Hierarchy', name: 'Hierarchy', component: () => import('../views/Settings/Hierarchy.vue'), meta: { requiresAuth: true },
+        meta: {
+          requiresAuth: true,
+          allowedPosition: ''
+        },
+      }, 
+    ],
+    meta: { requiresAuth: true },
+    meta: {
+      requiresAuth: true,
+      allowedPosition: ''
+    },
+  },    
+  {
+    path: '/error',
+    name: 'Error',
+    component: () => import('../views/ErrorPage.vue'),
+    meta: { requiresAuth: false },
   },
   {
     path: '/teste',
@@ -78,33 +115,6 @@ const routes = [
       requiresAuth: true,
       allowedPosition: 'admin'
     },
-  },
-  {
-    path: '/users',
-    name: 'Users',
-    component: () => import('../views/admin/Users.vue'),
-    meta: {
-      requiresAuth: true,
-      allowedPosition: ''
-    },
-  },
-  {
-    path: '/account',
-    name: 'Account',
-    component: () => import('../views/Account.vue'),
-    meta: { requiresAuth: true },
-  },
-  {
-    path: '/hierarchy',
-    name: 'Hierarchy',
-    component: () => import('../views/Hierarchy.vue'),
-    meta: { requiresAuth: true },
-  },
-  {
-    path: '/error',
-    name: 'Error',
-    component: () => import('../views/ErrorPage.vue'),
-    meta: { requiresAuth: false },
   },
   {
     path: '/register',

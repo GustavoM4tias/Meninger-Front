@@ -9,6 +9,6 @@
 </template>
 
 <script setup>
-import Form from '../components/auth/Form.vue'
+import Form from '@/components/auth/Form.vue'
 
 </script>

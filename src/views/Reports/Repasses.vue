@@ -1,7 +1,10 @@
 <template>
   <div class="min-h-[calc(100%-4rem)] md:max-h-[90%] flex flex-col">
-    <div class="relative bg-gray-200 dark:bg-gray-600 m-2 md:m-auto p-3 md:p-4 rounded-xl drop-shadow-md">
-      <h1 class="text-2xl font-bold">Relatório de Repasses</h1>
+    <div class="relative bg-gray-200 dark:bg-gray-600 m-2 md:m-auto p-3 md:p-4 rounded-xl drop-shadow-md"> 
+      <div class="flex items-center">
+        <h1 class="text-xl md:text-2xl font-bold">Repasses</h1>
+        <Favorite :router="'/reports/repasses'" :section="'Repasses'" />
+      </div>
       <!-- Container principal com espaçamento mais equilibrado -->
       <div class="flex justify-between pb-2">
         <!-- Primeira linha: botão expandir e filtro de empreendimentos -->
@@ -31,6 +34,7 @@
 <script setup>
 import { ref, onMounted, computed, watch, reactive } from 'vue';
 import { useRepassesStore } from '@/stores/Reports/Repasses/repassesStore';
+import Favorite from "@/components/config/Favorite.vue";
 import FilterBar from '@/components/Reports/Repasses/FilterBar.vue';
 import GruposSummary from '@/components/Reports/Repasses/GruposSummary.vue';
 import ScrollContainer from '@/components/Reports/Repasses/ScrollContainer.vue';

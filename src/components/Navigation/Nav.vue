@@ -139,32 +139,37 @@
                 </div>
                 <div class="px-2 text-2xl">
                     <ul class="space-y-3 border-t border-gray-400 dark:border-gray-800 pt-3">
-                        <div @click="openFavorites"
+                        <div @click="openFavorites" v-tippy="'Favoritos'"
                             :class="{ 'bg-gray-300 dark:bg-gray-500 text-gray-50': dropdowns.favorites }"
                             class="group relative flex justify-center rounded cursor-pointer px-2 py-2.5 text-gray-700 hover:text-gray-600 hover:bg-gray-300 dark:text-gray-300 dark:hover:bg-gray-400 dark:hover:text-gray-200 duration-200">
                             <i class="fa fa-star"></i>
                         </div>
-                        <div @click="openEvents"
+                        <div @click="openEvents" v-tippy="'Eventos'"
                             :class="{ 'bg-gray-300 dark:bg-gray-500 text-gray-50': dropdowns.events }"
                             class="group relative flex justify-center rounded cursor-pointer px-2 py-2.5 text-gray-700 hover:text-gray-600 hover:bg-gray-300 dark:text-gray-300 dark:hover:bg-gray-400 dark:hover:text-gray-200 duration-200">
                             <i class="fas fa-calendar-days"></i>
                         </div>
-                        <div @click="openEnterprise"
+                        <div @click="openEnterprise" v-tippy="'Empreendimentos'"
                             :class="{ 'bg-gray-300 dark:bg-gray-500 text-gray-50': dropdowns.enterprise }"
+                            class="group relative flex justify-center rounded cursor-pointer px-2 py-2.5 text-gray-700 hover:text-gray-600 hover:bg-gray-300 dark:text-gray-300 dark:hover:bg-gray-400 dark:hover:text-gray-200 duration-200">
+                            <i class="fas fa-building"></i>
+                        </div>
+                        <div @click="openEngineering" v-tippy="'Engenharia'"
+                            :class="{ 'bg-gray-300 dark:bg-gray-500 text-gray-50': dropdowns.engineering }"
                             class="group relative flex justify-center rounded cursor-pointer px-2 py-2.5 text-gray-700 hover:text-gray-600 hover:bg-gray-300 dark:text-gray-300 dark:hover:bg-gray-400 dark:hover:text-gray-200 duration-200">
                             <i class="fas fa-helmet-safety"></i>
                         </div>
-                        <div @click="openReports"
+                        <div @click="openReports" v-tippy="'Relatórios'"
                             :class="{ 'bg-gray-300 dark:bg-gray-500 text-gray-50': dropdowns.reports }"
                             class="group relative flex justify-center rounded cursor-pointer px-2 py-2.5 text-gray-700 hover:text-gray-600 hover:bg-gray-300 dark:text-gray-300 dark:hover:bg-gray-400 dark:hover:text-gray-200 duration-200">
                             <i class="fas fa-chart-line"></i>
                         </div>
-                        <div @click="openFinance"
+                        <div @click="openFinance" v-tippy="'Financeiro'"
                             :class="{ 'bg-gray-300 dark:bg-gray-500 text-gray-50': dropdowns.finance }"
                             class="group relative flex justify-center rounded cursor-pointer px-2 py-2.5 text-gray-700 hover:text-gray-600 hover:bg-gray-300 dark:text-gray-300 dark:hover:bg-gray-400 dark:hover:text-gray-200 duration-200">
                             <i class="fas fa-money-bills"></i>
                         </div>
-                        <div @click="openSettings"
+                        <div @click="openSettings" v-tippy="'Configurações'"
                             :class="{ 'bg-gray-300 dark:bg-gray-500 text-gray-50': dropdowns.settings }"
                             class="group relative flex justify-center rounded cursor-pointer px-2 py-2.5 text-gray-700 hover:text-gray-600 hover:bg-gray-300 dark:text-gray-300 dark:hover:bg-gray-400 dark:hover:text-gray-200 duration-200">
                             <i class="fas fa-gear"></i>
@@ -199,20 +204,20 @@
         <div ref="menu" :class="{ 'translate-x-0': menuOpen, '-translate-x-full': !menuOpen }"
             class="menu-hover fixed flex h-full top-16 flex-1 flex-col justify-between border-r filter drop-shadow-xl border-gray-300 dark:border-gray-800 bg-gray-200 dark:bg-gray-700 z-20 transform transition-transform duration-300 ease-in-out">
 
-            <div class="px-4 pb-6 text-xl min-w-64 w-64 max-w-64">
+            <div class="px-4 pt-4 pb-32 text-xl w-64 overflow-y-scroll">
 
-                <ul class="space-y-1">
+                <ul class="space-y-[12px]">
                     <li :class="{ '': dropdowns.favorites }">
                         <button @click="toggleDropdown('favorites')"
-                            class="flex justify-between truncate w-full rounded-md bg-gray-300 text-gray-700 hover:bg-gray-400 hover:text-gray-600 dark:bg-gray-500 dark:text-gray-300 dark:hover:bg-gray-400 dark:hover:text-gray-200 px-4 my-3 py-2 font-medium">
+                            class="flex justify-between truncate w-full rounded-md bg-gray-300 text-gray-700 hover:bg-gray-400 hover:text-gray-600 dark:bg-gray-500 dark:text-gray-300 dark:hover:bg-gray-400 dark:hover:text-gray-200 px-4 py-2 font-medium">
                             Favoritos
                             <i class="my-auto"
                                 :class="dropdowns.favorites ? 'fas fa-chevron-up' : 'fas fa-chevron-down'"></i>
                         </button>
 
                         <ul v-if="dropdowns.favorites" class="mt-2 text-gray-600 dark:text-gray-300">
-                            <li v-for="(favoritesGroup, router) in groupedFavorites" :key="router">
-                                <p class="font-semibold text-xl -my-1">{{ getTitleByRouter(router) }}</p>
+                            <li v-for="(favoritesGroup, category) in groupedFavorites" :key="category">
+                                <p class="font-semibold text-xl -my-1">{{ category }}</p>
                                 <ul>
                                     <MenuLink v-for="favorite in favoritesGroup" :key="favorite.id"
                                         :router="favorite.router" :section="favorite.section" :name="favorite.section"
@@ -224,13 +229,13 @@
                     </li>
                     <li :class="{ '': dropdowns.events }">
                         <button @click="toggleDropdown('events')"
-                            class="flex justify-between truncate w-full rounded-md bg-gray-300 text-gray-700 hover:bg-gray-400 hover:text-gray-600 dark:bg-gray-500 dark:text-gray-300 dark:hover:bg-gray-400 dark:hover:text-gray-200 px-4 my-3 py-2 font-medium">
+                            class="flex justify-between truncate w-full rounded-md bg-gray-300 text-gray-700 hover:bg-gray-400 hover:text-gray-600 dark:bg-gray-500 dark:text-gray-300 dark:hover:bg-gray-400 dark:hover:text-gray-200 px-4 py-2 font-medium">
                             Eventos
                             <i class="my-auto"
                                 :class="dropdowns.events ? 'fas fa-chevron-up' : 'fas fa-chevron-down'"></i>
                         </button>
                         <ul v-if="dropdowns.events" class="mt-2 text-gray-600 dark:text-gray-300">
-                            <MenuLink :router="'/events'" :section="'geral'" :name="'Geral'" :isFavorited="false" />
+                            <MenuLink :router="'/events'" :section="'Geral'" :name="'Geral'" :isFavorited="false" />
                             <MenuLink :router="'/events'" :section="'Próximos'" :name="'Próximos'"
                                 :isFavorited="false" />
                             <MenuLink :router="'/events'" :section="'Finalizados'" :name="'Finalizados'"
@@ -240,13 +245,13 @@
 
                     <li :class="{ 'mt-10': dropdowns.enterprise }">
                         <button @click="toggleDropdown('enterprise')"
-                            class="flex justify-between truncate w-full rounded-md bg-gray-300 text-gray-700 hover:bg-gray-400 hover:text-gray-600 dark:bg-gray-500 dark:text-gray-300 dark:hover:bg-gray-400 dark:hover:text-gray-200 px-4 my-3 py-2 font-medium">
+                            class="flex justify-between truncate w-full rounded-md bg-gray-300 text-gray-700 hover:bg-gray-400 hover:text-gray-600 dark:bg-gray-500 dark:text-gray-300 dark:hover:bg-gray-400 dark:hover:text-gray-200 px-4 py-2 font-medium">
                             Empreendimentos
                             <i class="my-auto"
                                 :class="dropdowns.enterprise ? 'fas fa-chevron-up' : 'fas fa-chevron-down'"></i>
                         </button>
                         <ul v-if="dropdowns.enterprise" class="mt-2 text-gray-600 dark:text-gray-300">
-                            <MenuLink :router="'/buildings'" :section="'geral'" :name="'Geral'" :isFavorited="false" />
+                            <MenuLink :router="'/buildings'" :section="'Geral'" :name="'Geral'" :isFavorited="false" />
                             <MenuLink :router="'/buildings'" :section="'Pré Lançamentos'" :name="'Pré Lançamentos'"
                                 :isFavorited="false" />
                             <MenuLink :router="'/buildings'" :section="'Lançamentos'" :name="'Lançamentos'"
@@ -260,76 +265,63 @@
                         </ul>
                     </li>
 
+                    <li :class="{ 'mt-10': dropdowns.engineering }">
+                        <button @click="toggleDropdown('engineering')"
+                            class="flex justify-between truncate w-full rounded-md bg-gray-300 text-gray-700 hover:bg-gray-400 hover:text-gray-600 dark:bg-gray-500 dark:text-gray-300 dark:hover:bg-gray-400 dark:hover:text-gray-200 px-4 py-2 font-medium">
+                            Engenharia
+                            <i class="my-auto"
+                                :class="dropdowns.engineering ? 'fas fa-chevron-up' : 'fas fa-chevron-down'"></i>
+                        </button>
+                        <ul v-if="dropdowns.engineering" class="mt-2 text-gray-600 dark:text-gray-300">
+                            <!-- <MenuLink :router="'/buildings'" :section="'Geral'" :name="'Geral'" :isFavorited="false" />
+                            <MenuLink :router="'/buildings'" :section="'Pré Lançamentos'" :name="'Pré Lançamentos'"
+                                :isFavorited="false" />  -->
+                        </ul>
+                    </li>
+
                     <li :class="{ 'mt-10': dropdowns.reports }">
                         <button @click="toggleDropdown('reports')"
-                            class="flex justify-between truncate w-full rounded-md bg-gray-300 text-gray-700 hover:bg-gray-400 hover:text-gray-600 dark:bg-gray-500 dark:text-gray-300 dark:hover:bg-gray-400 dark:hover:text-gray-200 px-4 my-3 py-2 font-medium">
+                            class="flex justify-between truncate w-full rounded-md bg-gray-300 text-gray-700 hover:bg-gray-400 hover:text-gray-600 dark:bg-gray-500 dark:text-gray-300 dark:hover:bg-gray-400 dark:hover:text-gray-200 px-4 py-2 font-medium">
                             Relatórios
                             <i class="my-auto"
                                 :class="dropdowns.reports ? 'fas fa-chevron-up' : 'fas fa-chevron-down'"></i>
                         </button>
                         <ul v-if="dropdowns.reports" class="mt-2 text-gray-600 dark:text-gray-300">
-                            <MenuLink :router="'/leads'" :section="'Leads'" :name="'Leads'" :isFavorited="false" />
-                            <MenuLink :router="'/imobiliarias'" :section="'Imobiliárias'" :name="'Imobiliárias'"
+                            <MenuLink :router="'/reports/leads'" :section="'Leads'" :name="'Leads'"
                                 :isFavorited="false" />
-                            <MenuLink :router="'/vendas'" :section="'Vendas'" :name="'Vendas'" :isFavorited="false" />
-                            <MenuLink :router="'/repasses'" :section="'Repasses'" :name="'Repasses'" :isFavorited="false" />
-                            <!-- <li>
-                                <RouterLink to=""
-                                    class="block px-4 py-1.5 my-1.5 bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 rounded-md">
-                                    Submenu 2
-                                </RouterLink>
-                            </li>
-                            <li>
-                                <RouterLink to=""
-                                    class="block px-4 py-1.5 my-1.5 bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 rounded-md">
-                                    Submenu 3
-                                </RouterLink>
-                            </li> -->
+                            <MenuLink :router="'/reports/imobiliarias'" :section="'Imobiliárias'" :name="'Imobiliárias'"
+                                :isFavorited="false" />
+                            <MenuLink :router="'/reports/vendas'" :section="'Vendas'" :name="'Vendas'"
+                                :isFavorited="false" />
+                            <MenuLink :router="'/reports/repasses'" :section="'Repasses'" :name="'Repasses'"
+                                :isFavorited="false" />
                         </ul>
                     </li>
 
                     <li :class="{ 'mt-10': dropdowns.finance }">
                         <button @click="toggleDropdown('finance')"
-                            class="flex justify-between truncate w-full rounded-md bg-gray-300 text-gray-700 hover:bg-gray-400 hover:text-gray-600 dark:bg-gray-500 dark:text-gray-300 dark:hover:bg-gray-400 dark:hover:text-gray-200 px-4 my-3 py-2 font-medium">
+                            class="flex justify-between truncate w-full rounded-md bg-gray-300 text-gray-700 hover:bg-gray-400 hover:text-gray-600 dark:bg-gray-500 dark:text-gray-300 dark:hover:bg-gray-400 dark:hover:text-gray-200 px-4 py-2 font-medium">
                             Financeiro
                             <i class="my-auto"
                                 :class="dropdowns.finance ? 'fas fa-chevron-up' : 'fas fa-chevron-down'"></i>
                         </button>
                         <ul v-if="dropdowns.finance" class="mt-2 text-gray-600 dark:text-gray-300">
-                            <!-- <li>
-                                <RouterLink to=""
-                                    class="block px-4 py-1.5 my-1.5 bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 rounded-md">
-                                    Submenu 1
-                                </RouterLink>
-                            </li>
-                            <li>
-                                <RouterLink to=""
-                                    class="block px-4 py-1.5 my-1.5 bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 rounded-md">
-                                    Submenu 2
-                                </RouterLink>
-                            </li>
-                            <li>
-                                <RouterLink to=""
-                                    class="block px-4 py-1.5 my-1.5 bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 rounded-md">
-                                    Submenu 3
-                                </RouterLink>
-                            </li> -->
                         </ul>
                     </li>
 
                     <li :class="{ 'mt-10': dropdowns.settings }">
                         <button @click="toggleDropdown('settings')"
-                            class="flex justify-between truncate w-full rounded-md bg-gray-300 text-gray-700 hover:bg-gray-400 hover:text-gray-600 dark:bg-gray-500 dark:text-gray-300 dark:hover:bg-gray-400 dark:hover:text-gray-200 px-4 my-3 py-2 font-medium">
+                            class="flex justify-between truncate w-full rounded-md bg-gray-300 text-gray-700 hover:bg-gray-400 hover:text-gray-600 dark:bg-gray-500 dark:text-gray-300 dark:hover:bg-gray-400 dark:hover:text-gray-200 px-4 py-2 font-medium">
                             Configurações
                             <i class="my-auto"
                                 :class="dropdowns.settings ? 'fas fa-chevron-up' : 'fas fa-chevron-down'"></i>
                         </button>
                         <ul v-if="dropdowns.settings" class="mt-2 text-gray-600 dark:text-gray-300">
-                            <MenuLink :router="'/users'" :section="'Usuários'" :name="'Usuários'"
+                            <MenuLink :router="'/settings/users'" :section="'Usuários'" :name="'Usuários'"
                                 :isFavorited="false" />
-                        </ul>
-                        <ul v-if="dropdowns.settings" class="mt-2 text-gray-600 dark:text-gray-300">
-                            <MenuLink :router="'/hierarchy'" :section="'Hierarquia'" :name="'Hierarquia'"
+                            <MenuLink :router="'/settings/hierarchy'" :section="'Hierarquia'" :name="'Hierarquia'"
+                                :isFavorited="false" />
+                            <MenuLink :router="'/settings/account'" :section="'Account'" :name="'Sua Conta'"
                                 :isFavorited="false" />
                         </ul>
                     </li>
@@ -370,30 +362,26 @@ const notificationStore = useNotificationStore();
 // Agrupar favoritos por 'router'
 const groupedFavorites = computed(() => {
     return favoritesStore.favorites.reduce((groups, favorite) => {
-        if (!groups[favorite.router]) {
-            groups[favorite.router] = [];
+        const category = getCategoryByRouter(favorite.router);
+        if (!groups[category]) {
+            groups[category] = [];
         }
-        groups[favorite.router].push(favorite);
+        groups[category].push(favorite);
         return groups;
     }, {});
 });
 
-// Função para retornar o título baseado no router
-const getTitleByRouter = (router) => {
-    if (router === '/events') {
-        return 'Eventos';
-    } else if (router === '/buildings') {
-        return 'Empreendimentos';
-    } else if (router === '/users') {
-        return 'Configurações';
-    } else if (router === '/leads') {
+// Function to determine category based on router
+const getCategoryByRouter = (router) => {
+    if (router.startsWith('/reports')) {
         return 'Relatórios';
-    } else if (router === '/imobiliarias') {
-        return 'Imobiliárias';
-    } else if (router === '/vendas') {
-        return 'Vendas';
+    } else if (router.startsWith('/events')) {
+        return 'Eventos';
+    } else if (router.startsWith('/buildings')) {
+        return 'Empreendimentos';
+    } else if (router.startsWith('/settings')) {
+        return 'Configurações';
     }
-    // Retorne o próprio router se não houver correspondência
     return router.charAt(0).toUpperCase() + router.slice(1).replace('/', ' ');
 };
 
@@ -416,6 +404,7 @@ const dropdowns = ref({
     favorites: false,
     events: false,
     enterprise: false,
+    engineering: false,
     reports: false,
     finance: false,
     settings: false,
@@ -445,6 +434,10 @@ function openEvents() {
 function openEnterprise() {
     toggleMenu()
     toggleDropdown('enterprise')
+}
+function openEngineering() {
+    toggleMenu()
+    toggleDropdown('engineering')
 }
 function openReports() {
     toggleMenu()

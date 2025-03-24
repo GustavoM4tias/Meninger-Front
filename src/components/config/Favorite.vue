@@ -1,9 +1,9 @@
 <script setup>
 import { ref, watchEffect, onMounted } from 'vue';
-import { useFavoritesStore } from "@/stores/Config/favoriteStore"; 
+import { useFavoritesStore } from "@/stores/Config/favoriteStore";
 
 const props = defineProps({
-  router:{
+  router: {
     type: String,
     required: true
   },
@@ -29,19 +29,19 @@ const toggleFavorite = async () => {
     } else {
       await favoritesStore.addFavorite(props.router, props.section);
     }
-        // Atualiza o estado de favoritos na store
-        await favoritesStore.loadFavorites();
+    // Atualiza o estado de favoritos na store
+    await favoritesStore.loadFavorites();
   } catch (error) {
     console.error("Erro ao atualizar favorito", error);
   }
-}; 
+};
 
 onMounted(() => { favoritesStore.loadFavorites(); });
 </script>
 
 <template>
-        <!-- Componente somente de texto para mostrar o favorito na pagina -->
-        <i @click="toggleFavorite"
-          :class="isFavorited ? 'fas fa-star text-amber-200 dark:text-amber-300' : 'far fa-star text-gray-500 dark:text-gray-400'"
-          class="cursor-pointer ml-2 text-lg md:text-2xl"></i>
+  <!-- Componente somente de texto para mostrar o favorito na pagina -->
+  <i @click="toggleFavorite"
+    :class="isFavorited ? 'fas fa-star text-amber-200 dark:text-amber-300' : 'far fa-star text-gray-500 dark:text-gray-400'"
+    class="cursor-pointer ml-2 text-lg md:text-2xl"></i>
 </template>
