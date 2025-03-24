@@ -1,10 +1,6 @@
 <template>
-    <div>
-        <!-- Botão para abrir o modal -->
-        <button @click="openModal"
-            class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors">
-            Visualizar Repasses Mensais
-        </button>
+    <div class="absolute top-0 right-0"> 
+        <i @click="openModal" v-tippy="`Tabela Mensal`" class="fas fa-table text-white px-4 py-3 text-3xl cursor-pointer"></i>
 
         <!-- Modal de Repasses Mensais -->
         <div v-if="isModalOpen" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
