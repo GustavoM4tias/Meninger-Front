@@ -10,53 +10,11 @@
       <!-- https://preview--demo-data-analytics.lovable.app/
       https://lovable.dev/projects/01805fd4-daec-4cf7-a1e3-966d649fa0e9 -->
 
-      <div class="cards flex w-full gap-4 mb-3">
-        <div class="card flex flex-col h-28 w-full p-4 rounded-xl border border-gray-300/70 dark:border-gray-600/50 shadow shadow-black/5 hover:shadow-black/10 dark:shadow-white/5 dark:hover:shadow-white/10 transition-colors duration-150">
-          <div class="flex justify-between text-xl">
-            <h3>Novos Leads</h3>
-            <i class="fas fa-person"></i>
-          </div>
-          <h1 class="text-3xl flex-1 flex items-center font-bold">
-            15
-          </h1>
-        </div>
-        <div class="card flex flex-col h-28 w-full p-4 rounded-xl border border-gray-300/70 dark:border-gray-600/50 shadow shadow-black/5 hover:shadow-black/10 dark:shadow-white/5 dark:hover:shadow-white/10 transition-colors duration-150">
-          <div class="flex justify-between text-xl">
-            <h3>Novos Leads</h3>
-            <i class="fas fa-person"></i>
-          </div>
-          <h1 class="text-3xl flex-1 flex items-center font-bold">
-            15
-          </h1>
-        </div>
-        <div class="card flex flex-col h-28 w-full p-4 rounded-xl border border-gray-300/70 dark:border-gray-600/50 shadow shadow-black/5 hover:shadow-black/10 dark:shadow-white/5 dark:hover:shadow-white/10 transition-colors duration-150">
-          <div class="flex justify-between text-xl">
-            <h3>Novos Leads</h3>
-            <i class="fas fa-person"></i>
-          </div>
-          <h1 class="text-3xl flex-1 flex items-center font-bold">
-            15
-          </h1>
-        </div>
-        <div class="card flex flex-col h-28 w-full p-4 rounded-xl border border-gray-300/70 dark:border-gray-600/50 shadow shadow-black/5 hover:shadow-black/10 dark:shadow-white/5 dark:hover:shadow-white/10 transition-colors duration-150">
-          <div class="flex justify-between text-xl">
-            <h3>Novos Leads</h3>
-            <i class="fas fa-person"></i>
-          </div>
-          <h1 class="text-3xl flex-1 flex items-center font-bold">
-            15
-          </h1>
-        </div>
-        <div class="card flex flex-col h-28 w-full p-4 rounded-xl border border-gray-300/70 dark:border-gray-600/50 shadow shadow-black/5 hover:shadow-black/10 dark:shadow-white/5 dark:hover:shadow-white/10 transition-colors duration-150">
-          <div class="flex justify-between text-xl">
-            <h3>Novos Leads</h3>
-            <i class="fas fa-person"></i>
-          </div>
-          <h1 class="text-3xl flex-1 flex items-center font-bold">
-            15
-          </h1>
-        </div>
-
+      <div class="cards flex w-full gap-4 mb-3"> 
+        <Card :title="'Todos os leads'" :icon="'fas fa-user'" :value="total" :label="'Dentro do periodo'" />
+        <Card :title="'Todos os leads'" :icon="'fas fa-user'" :value="total" :label="'Dentro do periodo'" />
+        <Card :title="'Todos os leads'" :icon="'fas fa-user'" :value="total" :label="'Dentro do periodo'" />
+        <Card :title="'Todos os leads'" :icon="'fas fa-user'" :value="total" :label="'Dentro do periodo'" />
       </div>
 
 
@@ -82,8 +40,8 @@
         <!-- Exibição do período retornado -->
         <div v-if="periodo.data_inicio && periodo.data_fim" class="mt-6 p-4 dark:bg-gray-800 rounded">
           <p class="font-semibold">Período:</p>
-          <p class="text-sm">Início: {{ formatarData(periodo.data_inicio) }}</p>
-          <p class="text-sm">Fim: {{ formatarData(periodo.data_fim) }}</p>
+          <!-- <p class="text-sm">Início: {{ formatarData(periodo.data_inicio) }}</p>
+          <p class="text-sm">Fim: {{ formatarData(periodo.data_fim) }}</p> -->
           <p class="text-sm mt-2">Total de Leads: {{ total }}</p>
         </div>
 
@@ -112,13 +70,14 @@
 import { ref, onMounted, watch } from "vue";
 import { useLeadsStore } from "@/stores/Reports/Lead/leadsStore";
 import { storeToRefs } from "pinia";
-import ModalLeads from "@/components/Leads/ModalLeads.vue";
 import Filas from "@/components/Leads/Filas.vue";
 import Favorite from "@/components/config/Favorite.vue";
 import Carregamento from "@/components/Loading/Carregamento.vue";
 import Input from "@/components/UI/Input.vue";
 import Button from "@/components/UI/Button.vue";
+import ModalLeads from "@/components/Leads/ModalLeads.vue";
 import ModalLead from "@/components/Leads/ModalLead.vue"; // Importando o novo componente
+import Card from "@/components/Leads/Card.vue"; 
 
 const modalVisivel = ref(false);
 const store = useLeadsStore();
