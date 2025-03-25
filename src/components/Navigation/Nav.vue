@@ -104,7 +104,7 @@
                                         class="flex w-full truncate justify-center rounded-lg cursor-pointer px-2 py-1 duration-100 hover:bg-gray-400 hover:text-gray-200">
                                         <div class="m-auto flex truncate">
                                             <i class="fas fa-pen m-auto mr-3"></i>
-                                            <RouterLink to="/account">Editar Conta</RouterLink>
+                                            <RouterLink to="/settings/Account">Editar Conta</RouterLink>
                                         </div>
                                     </button>
                                 </div>
@@ -321,7 +321,7 @@
                                 :isFavorited="false" />
                             <MenuLink :router="'/settings/hierarchy'" :section="'Hierarquia'" :name="'Hierarquia'"
                                 :isFavorited="false" />
-                            <MenuLink :router="'/settings/account'" :section="'Account'" :name="'Sua Conta'"
+                            <MenuLink :router="'/settings/Account'" :section="'Account'" :name="'Sua Conta'"
                                 :isFavorited="false" />
                         </ul>
                     </li>
