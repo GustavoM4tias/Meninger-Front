@@ -31,8 +31,8 @@ const routes = [
     },
   },
   {
-    path: '/reports',
-    name: 'reports',
+    path: '/comercial',
+    name: 'comercial',
     children: [
       {
         path: 'leads', name: 'Leads', component: () => import('../views/Reports/Leads.vue'), meta: { requiresAuth: true },
