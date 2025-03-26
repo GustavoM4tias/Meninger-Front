@@ -147,17 +147,27 @@
                         <div @click="openEvents" v-tippy="'Eventos'"
                             :class="{ 'bg-gray-300 dark:bg-gray-500 text-gray-50': dropdowns.events }"
                             class="group relative flex justify-center rounded cursor-pointer px-2 py-2.5 text-gray-700 hover:text-gray-600 hover:bg-gray-300 dark:text-gray-300 dark:hover:bg-gray-400 dark:hover:text-gray-200 duration-200">
-                            <i class="fas fa-calendar-days"></i>
+                            <i class="fas fa-newspaper"></i>
                         </div>
                         <div @click="openEnterprise" v-tippy="'Empreendimentos'"
                             :class="{ 'bg-gray-300 dark:bg-gray-500 text-gray-50': dropdowns.enterprise }"
                             class="group relative flex justify-center rounded cursor-pointer px-2 py-2.5 text-gray-700 hover:text-gray-600 hover:bg-gray-300 dark:text-gray-300 dark:hover:bg-gray-400 dark:hover:text-gray-200 duration-200">
                             <i class="fas fa-building"></i>
                         </div>
+                        <div @click="openComercial" v-tippy="'Comercial'"
+                            :class="{ 'bg-gray-300 dark:bg-gray-500 text-gray-50': dropdowns.comercial }"
+                            class="group relative flex justify-center rounded cursor-pointer px-2 py-2.5 text-gray-700 hover:text-gray-600 hover:bg-gray-300 dark:text-gray-300 dark:hover:bg-gray-400 dark:hover:text-gray-200 duration-200">
+                            <i class="fas fa-briefcase"></i>
+                        </div>
                         <div @click="openEngineering" v-tippy="'Engenharia'"
                             :class="{ 'bg-gray-300 dark:bg-gray-500 text-gray-50': dropdowns.engineering }"
                             class="group relative flex justify-center rounded cursor-pointer px-2 py-2.5 text-gray-700 hover:text-gray-600 hover:bg-gray-300 dark:text-gray-300 dark:hover:bg-gray-400 dark:hover:text-gray-200 duration-200">
                             <i class="fas fa-helmet-safety"></i>
+                        </div>
+                        <div @click="openMarketing" v-tippy="'Marketing'"
+                            :class="{ 'bg-gray-300 dark:bg-gray-500 text-gray-50': dropdowns.marketing }"
+                            class="group relative flex justify-center rounded cursor-pointer px-2 py-2.5 text-gray-700 hover:text-gray-600 hover:bg-gray-300 dark:text-gray-300 dark:hover:bg-gray-400 dark:hover:text-gray-200 duration-200">
+                            <i class="fas fa-bullhorn"></i>
                         </div>
                         <div @click="openReports" v-tippy="'Relatórios'"
                             :class="{ 'bg-gray-300 dark:bg-gray-500 text-gray-50': dropdowns.reports }"
@@ -265,6 +275,25 @@
                         </ul>
                     </li>
 
+                    <li :class="{ 'mt-10': dropdowns.comercial }">
+                        <button @click="toggleDropdown('comercial')"
+                            class="flex justify-between truncate w-full rounded-md bg-gray-300 text-gray-700 hover:bg-gray-400 hover:text-gray-600 dark:bg-gray-500 dark:text-gray-300 dark:hover:bg-gray-400 dark:hover:text-gray-200 px-4 py-2 font-medium">
+                            Comercial
+                            <i class="my-auto"
+                                :class="dropdowns.comercial ? 'fas fa-chevron-up' : 'fas fa-chevron-down'"></i>
+                        </button>
+                        <ul v-if="dropdowns.comercial" class="mt-2 text-gray-600 dark:text-gray-300">
+                            <MenuLink :router="'/comercial/leads'" :section="'Leads'" :name="'Leads'"
+                                :isFavorited="false" />
+                            <MenuLink :router="'/comercial/imobiliarias'" :section="'Imobiliárias'"
+                                :name="'Imobiliárias'" :isFavorited="false" />
+                            <MenuLink :router="'/comercial/vendas'" :section="'Vendas'" :name="'Vendas'"
+                                :isFavorited="false" />
+                            <MenuLink :router="'/comercial/repasses'" :section="'Repasses'" :name="'Repasses'"
+                                :isFavorited="false" />
+                        </ul>
+                    </li>
+
                     <li :class="{ 'mt-10': dropdowns.engineering }">
                         <button @click="toggleDropdown('engineering')"
                             class="flex justify-between truncate w-full rounded-md bg-gray-300 text-gray-700 hover:bg-gray-400 hover:text-gray-600 dark:bg-gray-500 dark:text-gray-300 dark:hover:bg-gray-400 dark:hover:text-gray-200 px-4 py-2 font-medium">
@@ -273,6 +302,20 @@
                                 :class="dropdowns.engineering ? 'fas fa-chevron-up' : 'fas fa-chevron-down'"></i>
                         </button>
                         <ul v-if="dropdowns.engineering" class="mt-2 text-gray-600 dark:text-gray-300">
+                            <!-- <MenuLink :router="'/buildings'" :section="'Geral'" :name="'Geral'" :isFavorited="false" />
+                            <MenuLink :router="'/buildings'" :section="'Pré Lançamentos'" :name="'Pré Lançamentos'"
+                                :isFavorited="false" />  -->
+                        </ul>
+                    </li>
+                    
+                    <li :class="{ 'mt-10': dropdowns.marketing }">
+                        <button @click="toggleDropdown('marketing')"
+                            class="flex justify-between truncate w-full rounded-md bg-gray-300 text-gray-700 hover:bg-gray-400 hover:text-gray-600 dark:bg-gray-500 dark:text-gray-300 dark:hover:bg-gray-400 dark:hover:text-gray-200 px-4 py-2 font-medium">
+                            Marketing
+                            <i class="my-auto"
+                                :class="dropdowns.marketing ? 'fas fa-chevron-up' : 'fas fa-chevron-down'"></i>
+                        </button>
+                        <ul v-if="dropdowns.marketing" class="mt-2 text-gray-600 dark:text-gray-300">
                             <!-- <MenuLink :router="'/buildings'" :section="'Geral'" :name="'Geral'" :isFavorited="false" />
                             <MenuLink :router="'/buildings'" :section="'Pré Lançamentos'" :name="'Pré Lançamentos'"
                                 :isFavorited="false" />  -->
@@ -287,14 +330,14 @@
                                 :class="dropdowns.reports ? 'fas fa-chevron-up' : 'fas fa-chevron-down'"></i>
                         </button>
                         <ul v-if="dropdowns.reports" class="mt-2 text-gray-600 dark:text-gray-300">
-                            <MenuLink :router="'/reports/leads'" :section="'Leads'" :name="'Leads'"
+                            <!-- <MenuLink :router="'/reports/leads'" :section="'Leads'" :name="'Leads'"
                                 :isFavorited="false" />
                             <MenuLink :router="'/reports/imobiliarias'" :section="'Imobiliárias'" :name="'Imobiliárias'"
                                 :isFavorited="false" />
                             <MenuLink :router="'/reports/vendas'" :section="'Vendas'" :name="'Vendas'"
                                 :isFavorited="false" />
                             <MenuLink :router="'/reports/repasses'" :section="'Repasses'" :name="'Repasses'"
-                                :isFavorited="false" />
+                                :isFavorited="false" /> -->
                         </ul>
                     </li>
 
@@ -373,7 +416,9 @@ const groupedFavorites = computed(() => {
 
 // Function to determine category based on router
 const getCategoryByRouter = (router) => {
-    if (router.startsWith('/reports')) {
+    if (router.startsWith('/comercial')) {
+        return 'Comercial';
+    } else if (router.startsWith('/reports')) {
         return 'Relatórios';
     } else if (router.startsWith('/events')) {
         return 'Eventos';
@@ -404,7 +449,9 @@ const dropdowns = ref({
     favorites: false,
     events: false,
     enterprise: false,
+    comercial: false,
     engineering: false,
+    marketing: false,
     reports: false,
     finance: false,
     settings: false,
@@ -435,9 +482,17 @@ function openEnterprise() {
     toggleMenu()
     toggleDropdown('enterprise')
 }
+function openComercial() {
+    toggleMenu()
+    toggleDropdown('comercial')
+}
 function openEngineering() {
     toggleMenu()
     toggleDropdown('engineering')
+}
+function openMarketing() {
+    toggleMenu()
+    toggleDropdown('marketing')
 }
 function openReports() {
     toggleMenu()

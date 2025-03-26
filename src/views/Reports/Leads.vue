@@ -10,11 +10,14 @@
       <!-- https://preview--demo-data-analytics.lovable.app/
       https://lovable.dev/projects/01805fd4-daec-4cf7-a1e3-966d649fa0e9 -->
 
-      <div class="cards flex w-full gap-4 mb-3"> 
-        <Card :title="'Todos os leads'" :icon="'fas fa-user'" :value="total" :label="'Dentro do periodo'" />
-        <Card :title="'Todos os leads'" :icon="'fas fa-user'" :value="total" :label="'Dentro do periodo'" />
-        <Card :title="'Todos os leads'" :icon="'fas fa-user'" :value="total" :label="'Dentro do periodo'" />
-        <Card :title="'Todos os leads'" :icon="'fas fa-user'" :value="total" :label="'Dentro do periodo'" />
+      <div class="cards flex w-full gap-4 mb-3">
+        <Card :title="'Todos os leads'" :icon="'fas fa-user'" :value="leads.length" :label="'Dentro do periodo'" />
+        <Card :title="'Aguardando Atendimento'" :icon="'fas fa-user'" :value="aguardando.length"
+          :label="'Dentro do periodo'" />
+        <Card :title="'Em Atendimento'" :icon="'fas fa-user'" :value="atendimentos.length"
+          :label="'Dentro do periodo'" />
+          <Card :title="'Qualificados'" :icon="'fas fa-user'" :value="qualificado.length" :label="'Dentro do periodo'" />
+          <Card :title="'Em Análise de Crédito'" :icon="'fas fa-user'" :value="analise.length" :label="'Dentro do periodo'" />
       </div>
 
 
@@ -67,7 +70,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from "vue";
+import { ref, onMounted, watch, computed } from "vue";
 import { useLeadsStore } from "@/stores/Reports/Lead/leadsStore";
 import { storeToRefs } from "pinia";
 import Filas from "@/components/Leads/Filas.vue";
@@ -77,12 +80,31 @@ import Input from "@/components/UI/Input.vue";
 import Button from "@/components/UI/Button.vue";
 import ModalLeads from "@/components/Leads/ModalLeads.vue";
 import ModalLead from "@/components/Leads/ModalLead.vue"; // Importando o novo componente
-import Card from "@/components/Leads/Card.vue"; 
+import Card from "@/components/Leads/Card.vue";
 
 const modalVisivel = ref(false);
 const store = useLeadsStore();
 const { fetchLeads, fetchFilas } = store;
 const { leads, carregando, error, periodo, total, filas } = storeToRefs(store);
+
+// Supondo que 'leads' já esteja definido como um ref ou importado de algum lugar
+const aguardando = computed(() =>
+  leads.value.filter(lead => lead.situacao.nome === 'Aguardando Atendimento Corretor')
+)
+// Supondo que 'leads' já esteja definido como um ref ou importado de algum lugar
+const atendimentos = computed(() =>
+  leads.value.filter(lead => lead.situacao.nome === 'Em Atendimento')
+)
+// Supondo que 'leads' já esteja definido como um ref ou importado de algum lugar
+const qualificado = computed(() =>
+  leads.value.filter(lead =>
+    lead.situacao.nome === 'Lead Qualificado' || lead.situacao.nome === 'Em Negociação'
+  )
+)
+// Supondo que 'leads' já esteja definido como um ref ou importado de algum lugar
+const analise = computed(() =>
+leads.value.filter(lead => lead.situacao.nome === 'Em Análise de Crédito')
+)
 
 const dataInicio = ref("");
 const dataFim = ref("");
