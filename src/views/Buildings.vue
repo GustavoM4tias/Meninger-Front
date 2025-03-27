@@ -70,7 +70,7 @@ const buildingsPortal = computed(() =>
 );
 
 // Computed para determinar qual seção mostrar
-const currentSection = computed(() => route.query.section || 'geral');
+const currentSection = computed(() => route.query.section || 'Geral');
 
 const updateQuery = () => {
     router.push({ query: { search: search.value, section: currentSection.value } });
@@ -114,7 +114,7 @@ onMounted(() => buildingStore.fetchBuildings());
             <!-- Se não houver busca ativa, mostrar as seções normais -->
             <div v-else class="divide-y divide-gray-500">
                 <div class="overflow-x-auto pb-5"
-                    v-if="buildingsPreLaunch.length > 0 && (currentSection === 'geral' || currentSection === 'Pré Lançamentos')">
+                    v-if="buildingsPreLaunch.length > 0 && (currentSection === 'Geral' || currentSection === 'Pré Lançamentos')">
                     <h2 class="text-2xl font-semibold mt-2 mb-1">Pré Lançamentos</h2>
                     <div class="grid grid-flow-col auto-cols-[100%] md:auto-cols-[32.6%] gap-4 mx-3">
                         <BuildingCard v-for="building in buildingsPreLaunch" :key="building.idempreendimento"
@@ -127,7 +127,7 @@ onMounted(() => buildingStore.fetchBuildings());
                 </div>
 
                 <div class="overflow-x-auto pb-5"
-                    v-if="buildingsLaunch.length > 0 && (currentSection === 'geral' || currentSection === 'Lançamentos')">
+                    v-if="buildingsLaunch.length > 0 && (currentSection === 'Geral' || currentSection === 'Lançamentos')">
                     <h2 class="text-2xl font-semibold mt-2 mb-1">Lançamentos</h2>
                     <div class="grid grid-flow-col auto-cols-[100%] md:auto-cols-[32.6%] gap-4 mx-3">
                         <BuildingCard v-for="building in buildingsLaunch" :key="building.idempreendimento"
@@ -140,7 +140,7 @@ onMounted(() => buildingStore.fetchBuildings());
                 </div>
 
                 <div class="overflow-x-auto pb-5"
-                    v-if="buildingsUnderConstruction.length > 0 && (currentSection === 'geral' || currentSection === 'Em Obras')">
+                    v-if="buildingsUnderConstruction.length > 0 && (currentSection === 'Geral' || currentSection === 'Em Obras')">
                     <h2 class="text-2xl font-semibold mt-2 mb-1">Em Obras</h2>
                     <div class="grid grid-flow-col auto-cols-[100%] md:auto-cols-[32.6%] gap-4 mx-3">
                         <BuildingCard v-for="building in buildingsUnderConstruction" :key="building.idempreendimento"
@@ -153,7 +153,7 @@ onMounted(() => buildingStore.fetchBuildings());
                 </div>
 
                 <div class="overflow-x-auto pb-5"
-                    v-if="buildingsFinished.length > 0 && (currentSection === 'geral' || currentSection === 'Finalizados')">
+                    v-if="buildingsFinished.length > 0 && (currentSection === 'Geral' || currentSection === 'Finalizados')">
                     <h2 class="text-2xl font-semibold mt-2 mb-1">Finalizados</h2>
                     <div class="grid grid-flow-col auto-cols-[100%] md:auto-cols-[32.6%] gap-4 mx-3">
                         <BuildingCard v-for="building in buildingsFinished" :key="building.idempreendimento"
@@ -166,7 +166,7 @@ onMounted(() => buildingStore.fetchBuildings());
                 </div>
 
                 <div class="overflow-x-auto pb-5"
-                    v-if="buildingsPortal.length > 0 && (currentSection === 'geral' || currentSection === 'Portal do Cliente')">
+                    v-if="buildingsPortal.length > 0 && (currentSection === 'Geral' || currentSection === 'Portal do Cliente')">
                     <h2 class="text-2xl font-semibold mt-2 mb-1">Finalizados</h2>
                     <div class="grid grid-flow-col auto-cols-[100%] md:auto-cols-[32.6%] gap-4 mx-3">
                         <BuildingCard v-for="building in buildingsPortal" :key="building.idempreendimento"
