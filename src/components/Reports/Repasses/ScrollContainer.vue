@@ -2,7 +2,7 @@
     <div ref="scrollContainer" class="overflow-auto flex flex-nowrap gap-4 select-none" @mousedown="startDrag"
         @mousemove="onDrag" @mouseup="stopDrag" @mouseleave="stopDrag">
         <div v-for="status in orderedStatuses" :key="status.idsituacao || status.nome"
-            class="min-w-[300px] shadow-md rounded-lg p-4 filter drop-shadow-md mb-8"
+            class="min-w-[300px] rounded-lg p-4 shadow-md mb-8"
             :style="{ backgroundColor: status.cor_bg || '#ffffff' }">
             <div class="title mb-2">
                 <h2 class="text-xl font-semibold text-center truncate" :style="{ color: status.cor_nome || '#000000' }">

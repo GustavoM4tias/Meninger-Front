@@ -1,6 +1,6 @@
 <template>
   <div class="min-h-[calc(100%-4rem)] md:max-h-[90%] flex flex-col">
-    <div class="relative bg-gray-200 dark:bg-gray-600 m-2 md:m-auto p-3 md:p-4 rounded-xl drop-shadow-md"> 
+    <div class="relative bg-gray-200 dark:bg-gray-600 m-2 md:m-auto p-3 md:p-4 rounded-xl shadow-md shadow-black/20"> 
       <div class="flex items-center">
         <h1 class="text-xl md:text-2xl font-bold">Repasses</h1>
         <Favorite :router="'/reports/repasses'" :section="'Repasses'" />

@@ -3,7 +3,7 @@
         <label data-ripple-dark="true" for="checkbox"
             class="relative cursor-pointer h-4 w-4 items-center rounded-full">
             <input id="checkbox"
-                class="before:content[''] peer relative h-4 w-4 cursor-pointer appearance-none rounded-md border border-gray-00 dark:border-blue-gray-200 transition-all checked:border-cyan-500 checked:bg-cyan-500 checked:before:bg-cyan-500 hover:before:opacity-10"
+                class="before:content[''] peer relative h-4 w-4 cursor-pointer appearance-none rounded-md border border-gray-400 dark:border-blue-gray-200 transition-all checked:border-cyan-500 checked:bg-cyan-500 checked:before:bg-cyan-500 hover:before:opacity-10"
                 type="checkbox" :id="id" v-model="checked" @change="onChange" />
             <span
                 class="pointer-events-none absolute top-2/4 left-2/4 -translate-y-2/4 -translate-x-2/4 text-white opacity-0 transition-opacity peer-checked:opacity-100">

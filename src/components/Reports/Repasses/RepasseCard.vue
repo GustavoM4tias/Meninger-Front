@@ -1,5 +1,5 @@
 <template>
-    <div class="relative mb-2 p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-800">
+    <div class="relative mb-2 p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-800 filter shadow-md hover:shadow-black/30 shadow-black/20 duration-200">
         <!-- Conteúdo do repasse -->
         <div class="flex flex-col">
             <div class="flex justify-between items-center">
@@ -13,7 +13,7 @@
                     </a>
                 </div>
                 <button v-tippy="'CV CRM'">
-                    <a :href="'https://menin.cvcrm.com.br/gestor/financeiro/repasses/' + repasse.ID + '/administrar'"
+                    <a :href="'https://menin.cvcrm.com.br/gestor/financeiro/repasses/' + repasse.ID + '/documentos'"
                         target="_blank">
                         <img src="/CVLogo.png" alt="CV CRM" class="h-5 min-w-5 drop-shadow">
                     </a>
@@ -87,5 +87,4 @@ const props = defineProps({
     }
 });
 
-defineEmits(['toggle-details']);
 </script>
