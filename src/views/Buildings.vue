@@ -70,7 +70,7 @@ const buildingsPortal = computed(() =>
 );
 
 // Computed para determinar qual seção mostrar
-const currentSection = computed(() => route.query.section || 'geral');
+const currentSection = computed(() => route.query.section || 'Geral');
 
 const updateQuery = () => {
     router.push({ query: { search: search.value, section: currentSection.value } });
