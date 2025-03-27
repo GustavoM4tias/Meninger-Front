@@ -115,17 +115,11 @@ const routes = [
       requiresAuth: true,
       allowedPosition: 'admin'
     },
-  },
-  {
-    path: '/register',
-    name: 'register',
-    component: () => import('../views/Register.vue'),
-    meta: { requiresAuth: false },
-  },
+  }, 
   {
     path: '/login',
     name: 'login',
-    component: () => import('../views/Login.vue'),
+    component: () => import('../views/Auth.vue'),
     meta: { requiresAuth: false },
   },
 ];

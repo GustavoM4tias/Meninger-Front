@@ -17,8 +17,8 @@
       <Button type="submit">Criar Conta</Button>
       <hr class="border-t border-gray-400 dark:border-gray-100 mt-6">
       </hr>
-      <RouterLink to="/login" class="text-sm mt-1 text-blue-500 cursor-pointer hover:text-blue-600">Já tem uma conta?
-        Entrar. </RouterLink>
+      <a @click="$emit('changeLogin')" class="text-sm mt-1 text-blue-500 cursor-pointer hover:text-blue-600">Já tem uma conta?
+        Entrar. </a>
     </form>
   </div>
 </template>
