@@ -12,12 +12,20 @@
                         {{ repasse.status_reserva }}
                     </a>
                 </div>
-                <button v-tippy="'CV CRM'">
-                    <a :href="'https://menin.cvcrm.com.br/gestor/financeiro/repasses/' + repasse.ID + '/documentos'"
-                        target="_blank">
-                        <img src="/CVLogo.png" alt="CV CRM" class="h-5 min-w-5 drop-shadow">
-                    </a>
-                </button>
+                <div class="flex items-center gap-2">
+                    <!-- Novo botão para abrir o modal de pagamentos -->
+                    <reserva-pagamentos-modal 
+                        :idreserva="repasse.idreserva" 
+                        :formatMoney="formatMoney" 
+                    />
+                    
+                    <button v-tippy="'CV CRM'">
+                        <a :href="'https://menin.cvcrm.com.br/gestor/financeiro/repasses/' + repasse.ID + '/documentos'"
+                            target="_blank">
+                            <img src="/CVLogo.png" alt="CV CRM" class="h-5 min-w-5 drop-shadow">
+                        </a>
+                    </button>
+                </div>
             </div>
             <div class="border-b mt-2 border-gray-300 dark:border-gray-700 w-full"></div>
         </div>
@@ -64,6 +72,8 @@
 </template>
 
 <script setup>
+import ReservaPagamentosModal from './ReservaPagamentosModal.vue';
+
 const props = defineProps({
     repasse: {
         type: Object,
@@ -86,5 +96,4 @@ const props = defineProps({
         required: true
     }
 });
-
 </script>
