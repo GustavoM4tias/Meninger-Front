@@ -13,9 +13,17 @@
             <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-11/12 max-w-4xl max-h-[90vh] overflow-hidden">
                 <!-- Cabeçalho do modal -->
                 <div class="border-b border-gray-200 dark:border-gray-700 p-4 flex justify-between items-center">
-                    <h2 class="text-xl font-semibold text-gray-800 dark:text-white">
-                        Condições de Pagamento - Reserva #{{ idreserva }}
-                    </h2>
+                    <div class="flex space-x-3">
+                        <h2 class="text-xl font-semibold text-gray-800 dark:text-white">
+                            Condições de Pagamento - Reserva #{{ idreserva }}
+                        </h2> <a
+                            :href="'https://menin.cvcrm.com.br/gestor/comercial/reservas/' + repasse.idreserva + '/administrar'"
+                            target="_blank" v-tippy="repasse.status_reserva" @mousedown.stop
+                            class="text-white px-2 py-0.5 rounded-md shadow cursor-pointer"
+                            :class="repasse.status_reserva === 'Vendida' ? 'bg-green-600' : 'bg-red-500'">
+                            {{ repasse.status_reserva }}
+                        </a>
+                    </div>
                     <button @click="closeModal" class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
                         <i class="fas fa-times text-xl"></i>
                     </button>
@@ -37,9 +45,11 @@
                             <div class="flex items-center pb-2">
                                 <div class="flex border-blue-500 border-l-4 pl-3 h-12 items-center text-xl"></div>
                                 <div>
-                                    <h3 class="text-xl font-semibold text-gray-800 dark:text-white">Resumo do Contrato
+                                    <h3 class="text-xl font-semibold text-gray-800 dark:text-white">{{
+                                        repasse.empreendimento }}
                                     </h3>
-                                    <p class="text-sm text-gray-600 dark:text-gray-400">Valores</p>
+                                    <p class="text-sm text-gray-600 dark:text-gray-400">{{ repasse.etapa }} | {{
+                                        repasse.bloco }} | {{ repasse.unidade }}</p>
                                 </div>
                             </div>
 
@@ -122,7 +132,8 @@
                                     </div>
                                     <div class="bg-gray-50 dark:bg-gray-800 rounded p-2 text-center">
                                         <p class="text-sm text-gray-500 dark:text-gray-400">Valor com Juros</p>
-                                        <p class="font-medium text-lg">{{ formatMoney(condicao.valor_total_com_juros) }}</p>
+                                        <p class="font-medium text-lg">{{ formatMoney(condicao.valor_total_com_juros) }}
+                                        </p>
                                     </div>
                                     <div class="bg-gray-50 dark:bg-gray-800 rounded p-2 text-center">
                                         <p class="text-sm text-gray-500 dark:text-gray-400">Indexador</p>
@@ -225,7 +236,7 @@
                         <p>Nenhuma informação de pagamento disponível.</p>
                     </div>
                 </div>
- 
+
             </div>
         </div>
     </div>
@@ -240,6 +251,10 @@ import API_URL from '@/config/apiUrl';
 const carregamentoStore = useCarregamentoStore()
 
 const props = defineProps({
+    repasse: {
+        type: Object,
+        required: true
+    },
     idreserva: {
         type: [Number, String],
         required: true
@@ -249,6 +264,7 @@ const props = defineProps({
         required: true
     }
 });
+
 
 const isModalOpen = ref(false);
 const error = ref(null);
@@ -384,7 +400,8 @@ const fetchPagamentosData = async () => {
 
         const data = await response.json();
         pagamentosData.value = data;
-        console.log(pagamentosData.value);
+        // console.log(props.repasse)
+        // console.log(pagamentosData.value);
     } catch (err) {
         console.error('Erro ao buscar condições de pagamento:', err);
         error.value = `Falha ao carregar dados: ${err.message}`;

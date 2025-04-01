@@ -1,5 +1,6 @@
 <template>
-    <div class="relative mb-2 p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-800 filter shadow-md hover:shadow-black/30 shadow-black/20 duration-200">
+    <div
+        class="relative mb-2 p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-800 filter shadow-md hover:shadow-black/30 shadow-black/20 duration-200">
         <!-- Conteúdo do repasse -->
         <div class="flex flex-col">
             <div class="flex justify-between items-center">
@@ -14,11 +15,9 @@
                 </div>
                 <div class="flex items-center gap-2">
                     <!-- Novo botão para abrir o modal de pagamentos -->
-                    <reserva-pagamentos-modal 
-                        :idreserva="repasse.idreserva" 
-                        :formatMoney="formatMoney" 
-                    />
-                    
+                    <reserva-pagamentos-modal :repasse="props.repasse" :idreserva="repasse.idreserva"
+                        :formatMoney="formatMoney" />
+
                     <button v-tippy="'CV CRM'">
                         <a :href="'https://menin.cvcrm.com.br/gestor/financeiro/repasses/' + repasse.ID + '/documentos'"
                             target="_blank">
