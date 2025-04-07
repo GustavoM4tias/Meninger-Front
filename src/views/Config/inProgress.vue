@@ -1,5 +1,5 @@
 <script setup>
-import InProgress from '../../components/UI/InProgress.vue';
+import InProgress from '@/components/UI/InProgress.vue';
 </script>
 
 <template>

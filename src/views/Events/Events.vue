@@ -2,10 +2,10 @@
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { useEventStore } from '../stores/Event/eventStore';
-import EventCard from '../components/Events/EventCard.vue';
-import EventModal from '../components/Events/EventModal.vue';
-import AddEventModal from '../components/Events/AddEventModal.vue';
+import { useEventStore } from '@/stores/Event/eventStore';
+import EventCard from '@/components/Events/EventCard.vue';
+import EventModal from '@/components/Events/EventModal.vue';
+import AddEventModal from '@/components/Events/AddEventModal.vue';
 
 const route = useRoute();
 const router = useRouter();

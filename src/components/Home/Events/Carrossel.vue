@@ -65,7 +65,7 @@ const goToSlide = (index) => {
       }"></div>
     </div>
   </div> 
-  <div class="relative rounded-xl overflow-hidden h-[350px] bg-gray-700 flex" v-else> 
+  <div class="relative rounded-xl overflow-hidden h-[350px] bg-gray-200 dark:bg-gray-700 flex" v-else> 
     <p class="m-auto text-xl md:text-3xl text-gray-500">Nenhum evento em andamento.</p>
   </div>
 </template>

@@ -16,7 +16,7 @@
 </template>
 
 <script setup>
-import Fila from "@/components/Leads/Fila.vue";
+import Fila from "./Fila.vue";
 
 const props = defineProps({
     filas: {

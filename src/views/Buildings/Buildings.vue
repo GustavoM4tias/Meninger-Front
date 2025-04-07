@@ -1,9 +1,9 @@
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { useBuildingStore } from '../stores/Building/buildingStore';
-import BuildingCard from '../components/Buildings/BuildingCard.vue';
-import BuildingModal from '../components/Buildings/BuildingModal.vue';
+import { useBuildingStore } from '@/stores/Building/buildingStore';
+import BuildingCard from '@/components/Buildings/BuildingCard.vue';
+import BuildingModal from '@/components/Buildings/BuildingModal.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -91,7 +91,7 @@ onMounted(() => buildingStore.fetchBuildings());
                 <div class="nav bg-gray-400 rounded-full mx-auto p-1 md:p-2 filter w-full md:w-2/5">
                     <input type="text" v-model="search" @input="updateQuery"
                         class="busca bg-gray-200 w-full rounded-full px-3 py-1.5 md:px-5 md:py-3 text-gray-700 outline-none font-semibold placeholder-gray-600"
-                        placeholder="Buscar eventos..." />
+                        placeholder="Buscar empreendimentos..." />
                 </div>
             </div>
 

@@ -1,9 +1,9 @@
 <script setup>
 import { ref } from 'vue'
-import Login from '../components/auth/Login.vue'
-import Register from '../components/auth/Register.vue'
-import Link from '../components/auth/Link.vue'
-import Banner from '../components/auth/Banner.vue'
+import Login from '@/components/auth/Login.vue'
+import Register from '@/components/auth/Register.vue'
+import Link from '@/components/auth/Link.vue'
+import Banner from '@/components/auth/Banner.vue'
 
 const login = ref(true)
 

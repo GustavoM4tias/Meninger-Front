@@ -157,7 +157,7 @@
 
                     <div v-if="detalhesVisiveis[lead.idlead]" class="mt-2">
                         <div
-                            class="bg-gray-200 dark:bg-gray-600 px-1 sm:px-2 pb-1 md:pb-2 pt-2 md:pt-3 rounded-xl flex text-center my-3">
+                            class="bg-gray-200 dark:bg-gray-600 relative px-1 sm:px-2 pb-1 md:pb-2 pt-2 md:pt-3 rounded-xl flex text-center my-3">
                             <label class="absolute ms-2 md:ms-3 -mt-6 font-semibold text-md md:text-lg">Dados
                                 Cliente</label>
                             <button v-tippy="'Email'" class="flex-1 truncate">
@@ -170,7 +170,7 @@
                                         class="fab fa-whatsapp"></i> {{ lead.telefone }}</a></button>
                         </div>
                         <div v-if="lead.imobiliaria.nome"
-                            class="bg-gray-200 dark:bg-gray-600 px-0.5 md:px-2 pb-0.5 md:pb-2 pt-3 rounded-xl flex text-center my-1 md:my-3">
+                            class="bg-gray-200 dark:bg-gray-600 relative px-0.5 md:px-2 pb-0.5 md:pb-2 pt-3 rounded-xl flex text-center my-1 md:my-3">
                             <label class="absolute ms-2 md:ms-3 -mt-6 font-semibold text-md md:text-lg">Dados
                                 imobiliária</label>
                             <button v-tippy="'CV Imobiliária'" class="flex-1 truncate">
@@ -195,7 +195,7 @@
                             v-if="lead.empreendimento.length > 0">
                             {{ lead.empreendimento[0].nome }}
                         </a>
-                        <div v-else class="bg-gray-600 rounded-md px-2">SEM EMPREENDIMENTO</div>
+                        <div v-else class="bg-gray-200 dark:bg-gray-600 rounded-md px-2 truncate">SEM EMPREENDIMENTO</div>
                         <div class="text-gray-500 pe-1.5 truncate">
                             {{ new Date(lead.data_cad).toLocaleString('pt-BR', {
                                 year: 'numeric',

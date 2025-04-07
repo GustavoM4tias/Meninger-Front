@@ -43,7 +43,7 @@
                 class="overflow-y-auto overflow-x-hidden flex-1 bg-gray-400 rounded-lg p-1 max-w-48 max-h-14">
                 <div class="flex flex-wrap gap-[2px] whitespace-nowrap">
                     <div @click="removeItem(index)" v-for="(item, index) in selectedEmpreendimento" :key="index"
-                        class="flex items-center bg-gray-500 text-[10px] text-gray-200 px-2 py-1 rounded-lg cursor-pointer truncate">
+                        class="flex items-center bg-gray-100 dark:bg-gray-500 text-[10px] dark:text-gray-200 px-2 py-1 rounded-lg cursor-pointer truncate">
                         <i class="mr-1 fas fa-xmark mt-0.5"></i>
                         <span>{{ item }}</span>
                     </div>
