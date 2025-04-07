@@ -83,8 +83,8 @@ const toggleDisabled = () => {
                 {{ authStore.user?.username?.split(" ").slice(0, 2).map(name => name[0].toUpperCase()).join("") }}
             </p>
         </div>
-        <p class="text-center text-sm text-gray-700 dark:text-gray-200 font-semibold my-2">
-            Criado em {{ new Date(authStore.user?.created_at).toLocaleDateString("pt-BR") }}
+        <p class="text-center text-xs text-gray-700 dark:text-gray-200 pt-2 pb-4 font-light">
+            No Office desde {{ new Date(authStore.user?.created_at).toLocaleDateString("pt-BR") }}
         </p>
         <Input v-model="editableUser.username" :disabled="isDisabled" type="text" placeholder="Nome" required />
         <Input v-model="editableUser.email" :disabled="isDisabled" type="email" placeholder="Email" required />

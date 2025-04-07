@@ -83,14 +83,14 @@
 import { ref, onMounted, watch, computed } from "vue";
 import { useLeadsStore } from "@/stores/Reports/Lead/leadsStore";
 import { storeToRefs } from "pinia";
-import Filas from "@/components/Leads/Filas.vue";
+import Filas from "@/components/Reports/Leads/Filas.vue";
 import Favorite from "@/components/config/Favorite.vue";
 import Carregamento from "@/components/Loading/Carregamento.vue";
 import Input from "@/components/UI/Input.vue";
 import Button from "@/components/UI/Button.vue";
-import ModalLeads from "@/components/Leads/ModalLeads.vue";
-import ModalLead from "@/components/Leads/ModalLead.vue"; // Importando o novo componente
-import Card from "@/components/Leads/Card.vue";
+import ModalLeads from "@/components/Reports/Leads/ModalLeads.vue";
+import ModalLead from "@/components/Reports/Leads/ModalLead.vue"; // Importando o novo componente
+import Card from "@/components/Reports/Leads/Card.vue";
 
 const modalVisivel = ref(false);
 const modalLeadsData = ref([]); // Armazena os leads a serem mostrados no modal

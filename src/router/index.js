@@ -13,8 +13,7 @@ const routes = [
   {
     path: '/events',
     name: 'Events',
-    component: () => import('../views/Events.vue'),
-    meta: { requiresAuth: true },
+    component: () => import('../views/Events/Events.vue'),
     meta: {
       requiresAuth: true,
       allowedPosition: ''
@@ -23,8 +22,7 @@ const routes = [
   {
     path: '/buildings',
     name: 'Buildings',
-    component: () => import('../views/Buildings.vue'),
-    meta: { requiresAuth: true },
+    component: () => import('../views/Buildings/Buildings.vue'),
     meta: {
       requiresAuth: true,
       allowedPosition: ''
@@ -35,35 +33,34 @@ const routes = [
     name: 'comercial',
     children: [
       {
-        path: 'leads', name: 'Leads', component: () => import('../views/Reports/Leads.vue'), meta: { requiresAuth: true },
+        path: 'leads', name: 'Leads', component: () => import('../views/Reports/Leads.vue'),
         meta: {
           requiresAuth: true,
           allowedPosition: ''
         },
       },
       {
-        path: 'imobiliarias', name: 'Imobiliarias', component: () => import('../views/Reports/Imobiliarias.vue'), meta: { requiresAuth: true },
+        path: 'imobiliarias', name: 'Imobiliarias', component: () => import('../views/Reports/Imobiliarias.vue'), 
         meta: {
           requiresAuth: true,
           allowedPosition: ''
         },
       },
       {
-        path: 'vendas', name: 'Vendas', component: () => import('../views/Reports/Vendas.vue'), meta: { requiresAuth: true },
+        path: 'vendas', name: 'Vendas', component: () => import('../views/Reports/Vendas.vue'),
         meta: {
           requiresAuth: true,
           allowedPosition: ''
         },
       },
       {
-        path: 'repasses', name: 'Repasses', component: () => import('../views/Reports/Repasses.vue'), meta: { requiresAuth: true },
+        path: 'repasses', name: 'Repasses', component: () => import('../views/Reports/Repasses.vue'),
         meta: {
           requiresAuth: true,
           allowedPosition: ''
         },
       },
-    ],
-    meta: { requiresAuth: true },
+    ], 
     meta: {
       requiresAuth: true,
       allowedPosition: ''
@@ -73,29 +70,10 @@ const routes = [
     path: '/settings',
     name: 'settings',
     children: [
-      {
-        path: 'Users', name: 'Users', component: () => import('../views/Settings/Users.vue'), meta: { requiresAuth: true },
-        meta: {
-          requiresAuth: true,
-          allowedPosition: ''
-        },
-      },
-      {
-        path: 'Account', name: 'Account', component: () => import('../views/Settings/Account.vue'), meta: { requiresAuth: true },
-        meta: {
-          requiresAuth: true,
-          allowedPosition: ''
-        },
-      },
-      {
-        path: 'Hierarchy', name: 'Hierarchy', component: () => import('../views/Settings/Hierarchy.vue'), meta: { requiresAuth: true },
-        meta: {
-          requiresAuth: true,
-          allowedPosition: ''
-        },
-      }, 
+      { path: 'Users', name: 'Users', component: () => import('../views/Settings/Users.vue'), },
+      { path: 'Account', name: 'Account', component: () => import('../views/Settings/Account.vue'),},
+      { path: 'Hierarchy', name: 'Hierarchy', component: () => import('../views/Settings/Hierarchy.vue'), }, 
     ],
-    meta: { requiresAuth: true },
     meta: {
       requiresAuth: true,
       allowedPosition: ''
@@ -104,13 +82,13 @@ const routes = [
   {
     path: '/error',
     name: 'Error',
-    component: () => import('../views/ErrorPage.vue'),
+    component: () => import('../views/Config/ErrorPage.vue'),
     meta: { requiresAuth: false },
   },
   {
     path: '/teste',
     name: 'Teste',
-    component: () => import('../views/teste.vue'),
+    component: () => import('../views/Config/teste.vue'),
     meta: {
       requiresAuth: true,
       allowedPosition: 'admin'
@@ -119,9 +97,24 @@ const routes = [
   {
     path: '/login',
     name: 'login',
-    component: () => import('../views/Auth.vue'),
+    component: () => import('../views/Auth/Auth.vue'),
     meta: { requiresAuth: false },
   },
+  {
+    path: '/academy',
+    name: 'academy', 
+    component: () => import('../views/Academy/Academy.vue'),
+    children: [    
+      { path: '', redirect: { name: 'Home' } },
+      { path: 'home', name: 'Home', component: () => import('../views/Academy/Home.vue'), }, 
+      { path: 'corretor', name: 'Corretor', component: () => import('../views/Academy/Courses/Corretor.vue'), }, 
+      { path: 'imobiliaria', name: 'Imobiliaria', component: () => import('../views/Academy/Courses/Imobiliaria.vue'), }, 
+    ], 
+    meta: {
+      requiresAuth: false,
+      allowedPosition: ''
+    },
+  }, 
 ];
 
 const router = createRouter({

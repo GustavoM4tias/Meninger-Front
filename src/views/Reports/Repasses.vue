@@ -17,7 +17,7 @@
         <grupos-summary :grupos-sumarizados="gruposSumarizados" :get-grupo-color="getGrupoColor"
           :get-grupo-text-color="getGrupoTextColor" :adjust-color="adjustColor" :format-money="formatMoney" />
         <!-- Novo botão para modal de repasses mensais -->
-        <Modal />
+        <!-- <Modal /> Teste de visualização em tabela -->
       </div>
 
       <div v-if="store.repasses.length > 0" class="relative max-h-[70vh] w-[90vw] m-auto rounded-lg overflow-y-auto">
