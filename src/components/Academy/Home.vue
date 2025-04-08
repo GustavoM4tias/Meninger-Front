@@ -129,10 +129,10 @@ import DataCounter from './dataCounter.vue';
                 <p class="text-gray-500 w-5/6 sm:w-3/6 sm:text-lg">Especialistas em construir sonhos</p>
             </section>
 
-            <section class="w-full flex flex-col sm:flex-row gap-4 container m-auto">
-                <div class="flex flex-col sm:flex-row justify-end space-y-6 sm:space-x-6 w-full sm:w-6/12 sm:p-5">
+            <section class="w-full flex flex-col lg:flex-row gap-4 container m-auto">
+                <div class="flex flex-col lg:flex-row justify-end space-y-6 lg:space-x-6 w-full lg:w-6/12 lg:p-5">
                     <div
-                        class="card group relative h-96 w-72 rounded-2xl overflow-hidden shadow-[5px_5px_15px_rgba(0,0,0,.3)] hover:shadow-[6px_6px_12px_rgba(0,0,0,.4)] duration-300 m-auto sm:m-0">
+                        class="card group relative h-96 w-72 rounded-2xl overflow-hidden shadow-[5px_5px_15px_rgba(0,0,0,.3)] hover:shadow-[6px_6px_12px_rgba(0,0,0,.4)] duration-300 m-auto lg:m-0">
                         <img class="absolute inset-0 h-full w-full object-cover"
                             src="https://www.menin.com.br/wp-content/uploads/2024/02/menin.jpeg">
                         <div class="absolute inset-0 pointer-events-none">
@@ -146,17 +146,17 @@ import DataCounter from './dataCounter.vue';
 
                         <!-- Conteúdo (header) com z-index maior -->
                         <section class="absolute flex flex-col justify-between top-0 left-0 w-full h-full z-10 p-5">
-                            <h2 class="text-2xl sm:text-4xl font-semibold"></h2> <!-- Texto topo -->
+                            <h2 class="text-2xl lg:text-4xl font-semibold"></h2> <!-- Texto topo -->
                             <div class="flex flex-col w-full">
                                 <p class="text-xl font-semibold pb-1"><i class="fas fa-location-dot pe-2"></i>Marília -
                                     SP</p>
-                                <p class="relative text-xs sm:text-sm text-justify">Ponto estratégico no interior de São
+                                <p class="relative text-xs lg:text-sm text-justify">Ponto estratégico no interior de São
                                     Paulo, refletindo nossa capacidade de atuação diversificada e abrangente.</p>
                             </div>
                         </section>
                     </div>
                     <div
-                        class="card group relative h-96 w-72 rounded-2xl overflow-hidden shadow-[5px_5px_15px_rgba(0,0,0,.3)] hover:shadow-[6px_6px_12px_rgba(0,0,0,.4)] duration-300 m-auto sm:m-0">
+                        class="card group relative h-96 w-72 rounded-2xl overflow-hidden shadow-[5px_5px_15px_rgba(0,0,0,.3)] hover:shadow-[6px_6px_12px_rgba(0,0,0,.4)] duration-300 m-auto lg:m-0">
                         <img class="absolute inset-0 h-full w-full object-cover"
                             src="https://ryazbek.com.br/wp-content/uploads/2020/01/004.jpg">
                         <div class="absolute inset-0 pointer-events-none">
@@ -170,22 +170,22 @@ import DataCounter from './dataCounter.vue';
 
                         <!-- Conteúdo (header) com z-index maior -->
                         <section class="absolute flex flex-col justify-between top-0 left-0 w-full h-full z-10 p-5">
-                            <h2 class="text-2xl sm:text-4xl font-semibold"></h2> <!-- Texto topo -->
+                            <h2 class="text-2xl lg:text-4xl font-semibold"></h2> <!-- Texto topo -->
                             <div class="flex flex-col w-full">
                                 <p class="text-xl font-semibold pb-1"><i class="fas fa-location-dot pe-2"></i>São Paulo
                                     - SP</p>
-                                <p class="relative text-xs sm:text-sm text-justify">Coração financeiro e cultural do
+                                <p class="relative text-xs lg:text-sm text-justify">Coração financeiro e cultural do
                                     Brasil, onde planejamos e gerenciamos nossos projetos mais ambiciosos.</p>
                             </div>
                         </section>
                     </div>
                 </div>
-                <div class="w-full sm:w-6/12 p-5">
+                <div class="w-full lg:w-6/12 p-5">
                     <div class="text space-y-3">
                         <h3 class="text-3xl text-gray-900 font-semibold">Desde 1986, a Menin se destaca no mercado da
                             construção
                             civil, entregando mais do que apenas obras: entregamos sonhos.</h3>
-                        <p class="text-gray-500 sm:text-lg">Com mais de 3.000.000m² construídos e 80.000 unidades
+                        <p class="text-gray-500 lg:text-lg">Com mais de 3.000.000m² construídos e 80.000 unidades
                             entregues, nossa jornada é marcada pela dedicação à excelência, inovação e um compromisso
                             inabalável com a qualidade.</p>
                     </div>
@@ -196,9 +196,13 @@ import DataCounter from './dataCounter.vue';
             </section>
         </main>
 
-        <main class="bg-gray-100 pt-10 pb-14" id="institucional">
-            <section class="flex flex-col items-center justify-center">
-                <iframe class="rounded-xl shadow-lg h-[10.1rem] w-72 sm:h-96 sm:w-[682px]" 
+        <main class="bg-gray-100 py-12 w-full flex flex-col sm:flex-row sm:gap-8" id="institucional">
+            <section class="flex flex-col items-center sm:items-end justify-center w-full sm:w-6/12 my-4">
+                <h2 class="text-4xl sm:text-5xl w-5/6 lg:w-4/6 text-blue-900 font-bold py-2">Descubra o que nos torna únicos no setor...</h2>
+                <p class="text-gray-500 w-5/6 lg:w-4/6 sm:text-lg">E como continuamos a moldar o futuro da construção civil com integridade, inovação e um compromisso inabalável com a qualidade.</p>
+            </section>
+            <section class="flex flex-col items-center sm:items-start justify-center w-full sm:w-6/12 mt-5 sm:m-0">
+                <iframe class="rounded-xl shadow-lg h-[12.5rem] w-[22rem] sm:h-96 sm:w-[682px]" 
                     src="https://www.youtube.com/embed/xOzLAuwffHc?start=1&rel=0&modestbranding=1&showinfo=0&controls=1"
                     title="YouTube video player" frameborder="0"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"

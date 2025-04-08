@@ -1,7 +1,7 @@
 // src/router/index.js
 import { createRouter, createWebHistory } from 'vue-router';
 import { useAuthStore } from '../stores/Auth/authStore';
-import Home from '../views/Home.vue'
+import Home from '../views/Home.vue';
 
 const routes = [
   {
@@ -14,71 +14,55 @@ const routes = [
     path: '/events',
     name: 'Events',
     component: () => import('../views/Events/Events.vue'),
-    meta: {
-      requiresAuth: true,
-      allowedPosition: ''
-    },
+    meta: { requiresAuth: true, allowedPosition: '' },
   },
   {
     path: '/buildings',
     name: 'Buildings',
     component: () => import('../views/Buildings/Buildings.vue'),
-    meta: {
-      requiresAuth: true,
-      allowedPosition: ''
-    },
+    meta: { requiresAuth: true, allowedPosition: '' },
   },
   {
     path: '/comercial',
     name: 'comercial',
     children: [
       {
-        path: 'leads', name: 'Leads', component: () => import('../views/Reports/Leads.vue'),
-        meta: {
-          requiresAuth: true,
-          allowedPosition: ''
-        },
+        path: 'leads',
+        name: 'Leads',
+        component: () => import('../views/Reports/Leads.vue'),
+        meta: { requiresAuth: true, allowedPosition: '' },
       },
       {
-        path: 'imobiliarias', name: 'Imobiliarias', component: () => import('../views/Reports/Imobiliarias.vue'), 
-        meta: {
-          requiresAuth: true,
-          allowedPosition: ''
-        },
+        path: 'imobiliarias',
+        name: 'Imobiliarias',
+        component: () => import('../views/Reports/Imobiliarias.vue'),
+        meta: { requiresAuth: true, allowedPosition: '' },
       },
       {
-        path: 'vendas', name: 'Vendas', component: () => import('../views/Reports/Vendas.vue'),
-        meta: {
-          requiresAuth: true,
-          allowedPosition: ''
-        },
+        path: 'vendas',
+        name: 'Vendas',
+        component: () => import('../views/Reports/Vendas.vue'),
+        meta: { requiresAuth: true, allowedPosition: '' },
       },
       {
-        path: 'repasses', name: 'Repasses', component: () => import('../views/Reports/Repasses.vue'),
-        meta: {
-          requiresAuth: true,
-          allowedPosition: ''
-        },
+        path: 'repasses',
+        name: 'Repasses',
+        component: () => import('../views/Reports/Repasses.vue'),
+        meta: { requiresAuth: true, allowedPosition: '' },
       },
-    ], 
-    meta: {
-      requiresAuth: true,
-      allowedPosition: ''
-    },
-  }, 
+    ],
+    meta: { requiresAuth: true, allowedPosition: '' },
+  },
   {
     path: '/settings',
     name: 'settings',
     children: [
-      { path: 'Users', name: 'Users', component: () => import('../views/Settings/Users.vue'), },
-      { path: 'Account', name: 'Account', component: () => import('../views/Settings/Account.vue'),},
-      { path: 'Hierarchy', name: 'Hierarchy', component: () => import('../views/Settings/Hierarchy.vue'), }, 
+      { path: 'Users', name: 'Users', component: () => import('../views/Settings/Users.vue') },
+      { path: 'Account', name: 'Account', component: () => import('../views/Settings/Account.vue') },
+      { path: 'Hierarchy', name: 'Hierarchy', component: () => import('../views/Settings/Hierarchy.vue') },
     ],
-    meta: {
-      requiresAuth: true,
-      allowedPosition: ''
-    },
-  },    
+    meta: { requiresAuth: true, allowedPosition: '' },
+  },
   {
     path: '/error',
     name: 'Error',
@@ -89,11 +73,8 @@ const routes = [
     path: '/teste',
     name: 'Teste',
     component: () => import('../views/Config/teste.vue'),
-    meta: {
-      requiresAuth: true,
-      allowedPosition: 'admin'
-    },
-  }, 
+    meta: { requiresAuth: true, allowedPosition: 'admin' },
+  },
   {
     path: '/login',
     name: 'login',
@@ -102,19 +83,32 @@ const routes = [
   },
   {
     path: '/academy',
-    name: 'academy', 
+    // Removemos o "name" do container pai para evitar conflito com a rota default
     component: () => import('../views/Academy/Academy.vue'),
-    children: [    
-      { path: '', redirect: { name: 'Home' } },
-      { path: 'home', name: 'Home', component: () => import('../views/Academy/Home.vue'), }, 
-      { path: 'corretor', name: 'Corretor', component: () => import('../views/Academy/Courses/Corretor.vue'), }, 
-      { path: 'imobiliaria', name: 'Imobiliaria', component: () => import('../views/Academy/Courses/Imobiliaria.vue'), }, 
-    ], 
-    meta: {
-      requiresAuth: false,
-      allowedPosition: ''
-    },
-  }, 
+    children: [
+      {
+        path: '',
+        name: 'AcademyDefault', // Rota default com nome definido
+        redirect: { name: 'AcademyHome' }
+      },
+      {
+        path: 'home',
+        name: 'AcademyHome', // Renomeado para não conflitar com a rota "/" Home
+        component: () => import('../views/Academy/Home.vue')
+      },
+      {
+        path: 'corretor',
+        name: 'Corretor',
+        component: () => import('../views/Academy/Courses/Corretor.vue')
+      },
+      {
+        path: 'imobiliaria',
+        name: 'Imobiliaria',
+        component: () => import('../views/Academy/Courses/Imobiliaria.vue')
+      },
+    ],
+    meta: { requiresAuth: false, allowedPosition: '' },
+  },
 ];
 
 const router = createRouter({
@@ -122,20 +116,23 @@ const router = createRouter({
   routes,
 });
 
+// Guard global para validação de autenticação e autorização
 router.beforeEach((to, from, next) => {
   const authStore = useAuthStore();
   const requiresAuth = to.meta.requiresAuth;
   const allowedPosition = to.meta.allowedPosition;
-  // Verifica autenticação
+
+  // Se a rota exigir autenticação e não estiver autenticado, redireciona para "/login"
   if (requiresAuth && !authStore.isAuthenticated()) {
     return next('/login');
   }
-  // Verifica posição para rotas específicas
+
+  // Se a rota tiver restrição de posição e o usuário não possuir, redireciona para a página de erro
   if (allowedPosition && !authStore.hasPosition(allowedPosition)) {
-    const errorMessage = `Você não tem permissão para acessar esta página!`;
+    const errorMessage = 'Você não tem permissão para acessar esta página!';
     return next({
       path: '/error',
-      query: { message: errorMessage },
+      query: { message: errorMessage }
     });
   }
   next();

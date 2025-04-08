@@ -83,5 +83,14 @@ export const useAuthStore = defineStore('user', {
       // Verifica a posição pelo estado ou pelo localStorage
       return this.user?.position === position || localStorage.getItem('position') === position;
     },
+    async initializeAuth() {
+      if (this.token && !this.user) {
+        try {
+          await this.fetchUserInfo();
+        } catch (error) {
+          this.clearUser();
+        }
+      }
+    }
   },
 });
