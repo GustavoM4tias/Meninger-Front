@@ -1,17 +1,24 @@
+// main.js
 import './assets/main.css'
 import 'vue-toastification/dist/index.css';
 
-import tippy from 'tippy.js'; // Importando o Tippy.js
-import 'tippy.js/dist/tippy.css'; // Importando o estilo do Tippy
+import tippy from 'tippy.js';
+import 'tippy.js/dist/tippy.css';
 
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
-
 import App from './App.vue'
 import router from './router'
 import Toast from 'vue-toastification';
 
-const options = {
+const app = createApp(App)
+
+// Instalar o Pinia antes de acessar as stores
+const pinia = createPinia();
+app.use(pinia);
+
+// Registrar o Vue Toastification
+const toastOptions = {
   position: "top-right",
   timeout: 4000,
   closeOnClick: true,
@@ -24,36 +31,28 @@ const options = {
   closeButton: "button",
   icon: true,
 };
+app.use(Toast, toastOptions);
 
-// Configurações opcionais para o Toast
-// const options = {
-//     position: 'top-right',
-//     timeout: 3000,
-//     closeOnClick: true,
-//     pauseOnHover: true,
-//   };
-
-const app = createApp(App)
-
-// Registrando a diretiva globalmente
+// Diretiva para Tippy.js
 app.directive('tippy', {
   mounted(el, binding) {
     tippy(el, {
-      content: binding.value, // O conteúdo do tooltip será passado através do binding
-      allowHTML: true, // Permite interpretar HTML dentro do tooltip
-    })
+      content: binding.value,
+      allowHTML: true,
+    });
   },
   updated(el, binding) {
     if (el._tippy) {
-      el._tippy.setContent(binding.value) // Atualiza o conteúdo do tooltip caso a prop mude
+      el._tippy.setContent(binding.value);
     }
   }
-})
+});
 
-// Registrar o Vue Toastification
-app.use(Toast, options);
+app.use(router);
 
-app.use(createPinia())
-app.use(router)
+// Agora que o Pinia está instalado, é seguro acessar a store e inicializar a autenticação
+import { useAuthStore } from './stores/Auth/authStore';
+const authStore = useAuthStore();
+authStore.initializeAuth();
 
 app.mount('#app')

@@ -69,25 +69,25 @@ onMounted(() => {
     <div class="data grid grid-cols-1 sm:grid-cols-2 gap-8">
         <!-- Unidades entregues -->
         <div ref="targetUnidades" class="text-center">
-            <p class="text-5xl font-black text-blue-900">+ {{ countUnidades }} MIL</p>
+            <p class="text-4xl font-black text-blue-900">+ {{ countUnidades }} MIL</p>
             <span class="text-gray-600">unidades entregues</span>
         </div>
 
         <!-- Anos de experiência -->
         <div ref="targetAnos" class="text-center">
-            <p class="text-5xl font-black text-blue-900">+ {{ countAnos }} anos</p>
+            <p class="text-4xl font-black text-blue-900">+ {{ countAnos }} anos</p>
             <span class="text-gray-600">de experiência</span>
         </div>
 
         <!-- M² construídos -->
         <div ref="targetM2" class="text-center">
-            <p class="text-5xl font-black text-blue-900">+ {{ countM2.toLocaleString() }}</p>
+            <p class="text-4xl font-black text-blue-900">+ {{ countM2.toLocaleString() }}</p>
             <span class="text-gray-600">m² construídos</span>
         </div>
 
         <!-- Cidades de atuação -->
         <div ref="targetCidades" class="text-center">
-            <p class="text-5xl font-black text-blue-900">+ {{ countCidades }}</p>
+            <p class="text-4xl font-black text-blue-900">+ {{ countCidades }}</p>
             <span class="text-gray-600">cidades de atuação</span>
         </div>
     </div>
