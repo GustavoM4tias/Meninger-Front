@@ -82,18 +82,17 @@ const routes = [
     meta: { requiresAuth: false },
   },
   {
-    path: '/academy',
-    // Removemos o "name" do container pai para evitar conflito com a rota default
+    path: '/academy', 
     component: () => import('../views/Academy/Academy.vue'),
     children: [
       {
         path: '',
-        name: 'AcademyDefault', // Rota default com nome definido
+        name: 'AcademyDefault',  
         redirect: { name: 'AcademyHome' }
       },
       {
         path: 'home',
-        name: 'AcademyHome', // Renomeado para não conflitar com a rota "/" Home
+        name: 'AcademyHome',  
         component: () => import('../views/Academy/Home.vue')
       },
       {
