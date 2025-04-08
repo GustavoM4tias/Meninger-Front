@@ -3,11 +3,14 @@
 @tailwind components;
 @tailwind utilities;
 
-html {
+html,
+body,
+#app {
     scroll-behavior: smooth;
 }
 
 #academy { 
+    scroll-behavior: smooth;
     font-family: "Inter", sans-serif;
 }
 
