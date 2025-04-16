@@ -4,12 +4,8 @@
     <div class="w-9/12 ps-4 py-4">
       <div class="flex items-center pb-2">
         <h1 class="text-xl md:text-2xl font-bold">Leads</h1>
-        <Favorite :router="'/reports/leads'" :section="'Leads'" />
-      </div> 
-
-      <!-- https://preview--demo-data-analytics.lovable.app/
-      https://lovable.dev/projects/01805fd4-daec-4cf7-a1e3-966d649fa0e9 -->
-
+        <Favorite :router="'/comercial/leads'" :section="'Leads'" />
+      </div>  
       <div class="cards flex w-full gap-4 mb-3">
         <Card @click="openModal(leads)" v-if="leads.length > 0" :title="'Todos os leads'" :icon="'fas fa-people-group'"
           :class="'!bg-gray-500/15 !border-gray-500/30'" :value="leads.length"
