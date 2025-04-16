@@ -285,6 +285,8 @@
                         <ul v-if="dropdowns.comercial" class="mt-2 text-gray-600 dark:text-gray-300">
                             <MenuLink :router="'/comercial/leads'" :section="'Leads'" :name="'Leads'"
                                 :isFavorited="false" />
+                            <MenuLink :router="'/comercial/reservas'" :section="'Reservas'" :name="'Reservas'"
+                                :isFavorited="false" />
                             <MenuLink :router="'/comercial/imobiliarias'" :section="'Imobiliárias'"
                                 :name="'Imobiliárias'" :isFavorited="false" />
                             <MenuLink :router="'/comercial/vendas'" :section="'Vendas'" :name="'Vendas'"
