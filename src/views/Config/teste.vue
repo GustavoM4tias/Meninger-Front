@@ -1,5 +1,5 @@
 <script setup>
-import EventCarrossel from '../components/Home/Events/EventCarrossel.vue';
+import EventCarrossel from '@/components/Home/Events/EventCarrossel.vue';
 </script>
 
 <template>
