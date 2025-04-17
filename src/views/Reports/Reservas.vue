@@ -1,7 +1,7 @@
 <template>
     <div class="w-full h-[calc(100%-4rem)] relative overflow-hidden flex">
         <!-- Área principal -->
-        <div class="w-10/12 ps-4 pe-2 py-4 h-full flex flex-col">
+        <div class="w-10/12 ps-4 pe-2 py-4 h-full flex flex-col overflow-hidden">
             <div class="flex items-center pb-2">
                 <h1 class="text-xl md:text-2xl font-bold">Reservas</h1>
                 <Favorite :router="'/comercial/reservas'" :section="'Reservas'" />
@@ -33,7 +33,7 @@
                 @applyFilters="aplicarFiltros" @update:selectedEmpreendimentos="updateEmpreendimentos"
                 @update:dataFiltro="updateDataFiltro" />
 
-            <!-- Tabela de Reservas: container flex-grow para ocupar o restante -->
+            <!-- Tabela de Reservas -->
             <div class="flex-grow overflow-auto overflow-x-auto mt-4 rounded-lg border border-gray-600">
                 <table class="table-fixed w-full">
                     <colgroup>
@@ -47,46 +47,70 @@
                         <col style="width: 150px;" />
                         <col style="width: 100px;" />
                     </colgroup>
-                    <thead class="bg-gray-700">
+                    <thead class="bg-gray-700 text-white">
                         <tr class="text-start">
-                            <th class="py-3">ID</th>
-                            <th class="py-3">Empreendimento</th>
-                            <th class="py-3">Cliente</th>
-                            <th class="py-3">Etapa</th>
-                            <th class="py-3">Unidade</th>
-                            <th class="py-3">Data</th>
-                            <th class="py-3">Valor Contrato</th>
-                            <th class="py-3">Situação</th>
+                            <th class="py-3 cursor-pointer" @click="changeSort('idproposta_cv')">
+                                ID
+                                <span v-if="sortColumn === 'idproposta_cv'">
+                                    {{ sortOrder === 'asc' ? '▴' : sortOrder === 'desc' ? '▾' : '' }}
+                                </span>
+                            </th>
+                            <th class="py-3 cursor-pointer" @click="changeSort('unidade.empreendimento')">
+                                Empreendimento
+                                <span v-if="sortColumn === 'unidade.empreendimento'">
+                                    {{ sortOrder === 'asc' ? '▴' : sortOrder === 'desc' ? '▾' : '' }}
+                                </span>
+                            </th>
+                            <th class="py-3 cursor-pointer" @click="changeSort('titular.nome')">
+                                Cliente
+                                <span v-if="sortColumn === 'titular.nome'">
+                                    {{ sortOrder === 'asc' ? '▴' : sortOrder === 'desc' ? '▾' : '' }}
+                                </span>
+                            </th>
+                            <th class="py-3 cursor-pointer" @click="changeSort('unidade.etapa')">
+                                Etapa
+                                <span v-if="sortColumn === 'unidade.etapa'">
+                                    {{ sortOrder === 'asc' ? '▴' : sortOrder === 'desc' ? '▾' : '' }}
+                                </span>
+                            </th>
+                            <th class="py-3 cursor-pointer" @click="changeSort('unidade.unidade')">
+                                Unidade
+                                <span v-if="sortColumn === 'unidade.unidade'">
+                                    {{ sortOrder === 'asc' ? '▴' : sortOrder === 'desc' ? '▾' : '' }}
+                                </span>
+                            </th>
+                            <th class="py-3 cursor-pointer" @click="changeSort('data')">
+                                Data
+                                <span v-if="sortColumn === 'data'">
+                                    {{ sortOrder === 'asc' ? '▴' : sortOrder === 'desc' ? '▾' : '' }}
+                                </span>
+                            </th>
+                            <th class="py-3 cursor-pointer" @click="changeSort('condicoes.valor_contrato')">
+                                Valor Contrato
+                                <span v-if="sortColumn === 'condicoes.valor_contrato'">
+                                    {{ sortOrder === 'asc' ? '▴' : sortOrder === 'desc' ? '▾' : '' }}
+                                </span>
+                            </th>
+                            <th class="py-3 cursor-pointer" @click="changeSort('situacao.situacao')">
+                                Situação
+                                <span v-if="sortColumn === 'situacao.situacao'">
+                                    {{ sortOrder === 'asc' ? '▴' : sortOrder === 'desc' ? '▾' : '' }}
+                                </span>
+                            </th>
                             <th class="py-3">Ações</th>
                         </tr>
                     </thead>
-                    <tbody v-if="store.reservas.length > 0">
-                        <tr v-for="reserva in store.reservas" :key="reserva.ID"
+                    <tbody v-if="sortedReservas.length">
+                        <tr v-for="reserva in sortedReservas" :key="reserva.ID"
                             class="border-b border-gray-600 text-sm">
-                            <td class="p-3 min-w-0 truncate font-semibold">
-                                #{{ reserva.idproposta_cv }}
-                            </td>
-                            <td class="p-3 min-w-0 truncate cursor-pointer" v-tippy="reserva.unidade.empreendimento">
-                                {{ reserva.unidade.empreendimento }}
-                            </td>
-                            <td class="p-3 min-w-0 truncate cursor-pointer" v-tippy="reserva.titular.nome">
-                                {{ reserva.titular.nome }}
-                            </td>
-                            <td class="p-3 min-w-0 truncate cursor-pointer"
-                                v-tippy="`${reserva.unidade.etapa} | ${reserva.unidade.bloco}`">
-                                {{ reserva.unidade.etapa }} - {{ reserva.unidade.bloco }}
-                            </td>
-                            <td class="p-3 min-w-0 truncate cursor-pointer" v-tippy="reserva.unidade.unidade">
-                                {{ reserva.unidade.unidade }}
-                            </td>
-                            <td class="p-3 min-w-0 truncate cursor-pointer" v-tippy="formatDate(reserva.data)">
-                                {{ formatDate(reserva.data) }}
-                            </td>
-                            <td class="p-3 min-w-0 truncate cursor-pointer font-semibold"
-                                v-tippy="formatMoney(reserva.condicoes.valor_contrato)">
-                                {{ formatMoney(reserva.condicoes.valor_contrato) }}
-                            </td>
-                            <td class="p-3 min-w-0" v-tippy="reserva.situacao?.situacao">
+                            <td class="p-3 truncate font-semibold">#{{ reserva.idproposta_cv }}</td>
+                            <td class="p-3 truncate">{{ reserva.unidade.empreendimento }}</td>
+                            <td class="p-3 truncate">{{ reserva.titular.nome }}</td>
+                            <td class="p-3 truncate">{{ reserva.unidade.etapa }}</td>
+                            <td class="p-3 truncate">{{ reserva.unidade.unidade }}</td>
+                            <td class="p-3 truncate">{{ formatDate(reserva.data) }}</td>
+                            <td class="p-3 truncate">{{ formatMoney(reserva.condicoes.valor_contrato) }}</td>
+                            <td class="p-3">
                                 <p class="text-white font-bold text-center px-2 py-0.5 rounded-xl truncate cursor-pointer"
                                     :class="{
                                         'bg-sky-500': reserva.situacao?.situacao === 'Nova Reserva',
@@ -101,7 +125,6 @@
                                     {{ reserva.situacao?.situacao || 'N/A' }}
                                 </p>
                             </td>
-
                             <td class="p-3 min-w-0 truncate flex">
                                 <a :href="`https://menin.cvcrm.com.br/gestor/comercial/reservas/${reserva.idproposta_cv}/administrar?lido=true`"
                                     target="_blank" class="cursor-pointer mx-auto" v-tippy="'CV CRM'">
@@ -110,7 +133,6 @@
                                 <i class="fas fa-eye text-xl mt-0.5 mx-auto cursor-pointer text-gray-400"
                                     v-tippy="'Detalhes'"></i>
                             </td>
-
                             <!-- <td class="p-3 min-w-0 truncate">
                                 {{ reserva.empresaCorrespondente.nome }}
                             </td>
@@ -122,11 +144,9 @@
                             </td> -->
                         </tr>
                     </tbody>
-                    <tbody v-else class="text-center">
+                    <tbody v-else>
                         <tr>
-                            <td colspan="11" class="p-3">
-                                Nenhuma reserva encontrada para os filtros aplicados.
-                            </td>
+                            <td colspan="9" class="p-3 text-center">Nenhuma reserva encontrada.</td>
                         </tr>
                     </tbody>
                 </table>
@@ -267,4 +287,59 @@ const totalEmpreendimentosComReserva = computed(() => {
         .filter(key => key !== 'N/A') // remova esta linha se quiser contar até as chaves 'N/A'
         .length;
 });
+
+
+
+// Estado de ordenação
+const sortColumn = ref(null);        // e.g. 'data', 'idproposta_cv', 'unidade.empreendimento', etc.
+const sortOrder = ref(null);         // 'asc' | 'desc' | null
+
+// Função para alternar o estado de ordenação
+function changeSort(column) {
+    if (sortColumn.value !== column) {
+        sortColumn.value = column;
+        sortOrder.value = 'asc';
+    } else if (sortOrder.value === 'asc') {
+        sortOrder.value = 'desc';
+    } else {
+        sortColumn.value = null;
+        sortOrder.value = null;
+    }
+}
+
+// Computed que retorna o array ordenado
+const sortedReservas = computed(() => {
+    const data = [...store.reservas];
+    if (!sortColumn.value || !sortOrder.value) {
+        return data;
+    }
+    // Extrai o valor do campo, suportando keys aninhadas
+    const getValue = (obj, path) => path.split('.').reduce((o, k) => o?.[k], obj);
+    return data.sort((a, b) => {
+        let va = getValue(a, sortColumn.value);
+        let vb = getValue(b, sortColumn.value);
+
+        // Converte datas
+        if (sortColumn.value === 'data') {
+            va = new Date(va);
+            vb = new Date(vb);
+        }
+        // Converte números
+        else if (sortColumn.value === 'idproposta_cv' || sortColumn.value.includes('valor')) {
+            va = parseFloat(va) || 0;
+            vb = parseFloat(vb) || 0;
+        }
+        // Strings
+        else {
+            va = String(va || '').toLowerCase();
+            vb = String(vb || '').toLowerCase();
+        }
+
+        if (va < vb) return sortOrder.value === 'asc' ? -1 : 1;
+        if (va > vb) return sortOrder.value === 'asc' ? 1 : -1;
+        return 0;
+    });
+});
+
+
 </script>
