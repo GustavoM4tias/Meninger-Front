@@ -140,22 +140,12 @@ const buscarLeads = () => {
   });
 };
 
-// Função para formatar a data para exibição
-const formatarData = (dataString) => {
-  if (!dataString) return "";
-  // Converte a string de data para objeto Date
-  const data = new Date(dataString);
-  // Formata a data para o formato DD/MM/YYYY
-  return data.toLocaleDateString('pt-BR');
-};
-
 const formatLocalDate = (date) => {
   const year = date.getUTCFullYear();
   const month = (date.getUTCMonth() + 1).toString().padStart(2, '0');
   const day = date.getUTCDate().toString().padStart(2, '0');
   return `${year}-${month}-${day}`;
 };
-
 
 watch(periodo, (novoPeriodo) => {
   if (novoPeriodo.data_inicio) {

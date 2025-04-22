@@ -287,10 +287,8 @@
                                 :isFavorited="false" />
                             <MenuLink :router="'/comercial/reservas'" :section="'Reservas'" :name="'Reservas'"
                                 :isFavorited="false" />
-                            <MenuLink :router="'/comercial/imobiliarias'" :section="'Imobiliárias'"
-                                :name="'Imobiliárias'" :isFavorited="false" />
-                            <MenuLink :router="'/comercial/vendas'" :section="'Vendas'" :name="'Vendas'"
-                                :isFavorited="false" />
+                            <MenuLink :router="'/comercial/reservas'" :section="'Imobiliarias'" :name="'Imobiliarias'"
+                                :isFavorited="false" />  
                             <MenuLink :router="'/comercial/repasses'" :section="'Repasses'" :name="'Repasses'"
                                 :isFavorited="false" />
                         </ul>

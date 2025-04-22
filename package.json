@@ -10,14 +10,16 @@
   },
   "dependencies": {
     "@vue-flow/core": "^1.42.2",
-    "chart.js": "^3.1.0",
+    "chart.js": "^3.9.1",
     "daisyui": "^4.12.14",
+    "echarts": "^5.6.0",
     "gojs": "^3.0.19",
     "jspdf": "^2.5.2",
     "pinia": "^2.2.4",
     "tippy.js": "^6.3.7",
     "vue": "^3.5.12",
     "vue-chart-3": "^3.1.8",
+    "vue-echarts": "^7.0.3",
     "vue-router": "^4.4.5",
     "vue-tippy": "^6.6.0",
     "vue-toastification": "^2.0.0-rc.5"

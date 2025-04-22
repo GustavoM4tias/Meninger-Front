@@ -274,9 +274,11 @@ const removerFiltro = (filtro, categoria) => {
         filtrosAtivos.value[categoria] = [];
     }
 };
-// Função de agrupamento
+
+// Função de agrupamento com ordenação por quantidade (maior para menor)
 function agruparPor(array, propriedade) {
-    return array.reduce((acc, item) => {
+    // Primeiro, criamos o objeto não ordenado como antes
+    const agrupado = array.reduce((acc, item) => {
         const valor = propriedade.split('.').reduce((obj, chave) => {
             if (chave.endsWith(']')) {
                 const [base, index] = chave.replace(']', '').split('[');
@@ -290,6 +292,13 @@ function agruparPor(array, propriedade) {
         }
         return acc;
     }, {});
+    
+    // Agora, convertemos para array, ordenamos por contagem (decrescente) e convertemos de volta para objeto
+    const pares = Object.entries(agrupado);
+    pares.sort((a, b) => b[1] - a[1]); // Ordena pelo valor (count) de forma decrescente
+    
+    // Convertemos de volta para objeto mantendo a ordem de inserção (ES2015+)
+    return Object.fromEntries(pares);
 }
 
 const filtrarLeads = (leads) => {

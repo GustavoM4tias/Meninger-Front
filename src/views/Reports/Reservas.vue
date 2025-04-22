@@ -3,15 +3,19 @@
         <!-- Área principal -->
         <div class="w-10/12 ps-4 pe-2 py-4 h-full flex flex-col overflow-hidden">
             <div class="flex items-center pb-2">
-                <h1 class="text-xl md:text-2xl font-bold">Reservas</h1>
-                <Favorite :router="'/comercial/reservas'" :section="'Reservas'" />
+                <h1 v-if="currentSection === 'Imobiliarias'" class="text-xl md:text-2xl font-bold">Reservas x
+                    Imobiliarias</h1>
+                <h1 v-else class="text-xl md:text-2xl font-bold">Reservas</h1>
+                <Favorite v-if="currentSection === 'Imobiliarias'" :router="'/comercial/reservas'"
+                    :section="'Imobiliarias'" />
+                <Favorite v-else :router="'/comercial/reservas'" :section="'Reservas'" />
             </div>
 
             <div class="cards flex w-full gap-4 mb-3">
                 <!-- Card para o total de reservas -->
                 <Card v-if="store.total > 0" :title="'Todas as Reservas'" :icon="'fas fa-tent'"
                     :class="'!bg-blue-500/15 !border-blue-500/30'" :value="store.total"
-                    :label="`Desde ${formatDate(dataFiltro)}`" />
+                    :label="`Desde ${formatDate(dataFiltro)}`" @click="showAllReservas()" />
                 <Card v-if="totalEmpreendimentosComReserva > 0" :title="'Empreendimentos com Reserva'"
                     :icon="'fas fa-building'" :class="'!bg-purple-500/15 !border-purple-500/30'"
                     :value="totalEmpreendimentosComReserva" :label="'Total de empreendimentos com reservas ativas'" />
@@ -24,7 +28,7 @@
             <div class="cards flex w-full gap-4 mb-3">
                 <Card v-for="(count, situacao) in aggregatedInfo.porSituacao" :key="situacao" :title="situacao"
                     :icon="'fas fa-sitemap'" :class="'!bg-indigo-500/15 !border-indigo-500/30'" :value="count"
-                    :label="`Reservas em ${situacao}`" />
+                    :label="`Reservas em ${situacao}`" @click="showReservasBySituacao(situacao)" />
             </div>
 
             <!-- Filtros do Relatório -->
@@ -33,150 +37,83 @@
                 @applyFilters="aplicarFiltros" @update:selectedEmpreendimentos="updateEmpreendimentos"
                 @update:dataFiltro="updateDataFiltro" />
 
-            <!-- Tabela de Reservas -->
-            <div class="flex-grow overflow-auto overflow-x-auto mt-4 rounded-lg border border-gray-600">
-                <table class="table-fixed w-full">
-                    <colgroup>
-                        <col style="width: 70px;" />
-                        <col style="width: 200px;" />
-                        <col style="width: 240px;" />
-                        <col style="width: 160px;" />
-                        <col style="width: 120px;" />
-                        <col style="width: 100px;" />
-                        <col style="width: 120px;" />
-                        <col style="width: 150px;" />
-                        <col style="width: 100px;" />
-                    </colgroup>
-                    <thead class="bg-gray-700 text-white">
-                        <tr class="text-start">
-                            <th class="py-3 cursor-pointer" @click="changeSort('idproposta_cv')">
-                                ID
-                                <span v-if="sortColumn === 'idproposta_cv'">
-                                    {{ sortOrder === 'asc' ? '▴' : sortOrder === 'desc' ? '▾' : '' }}
-                                </span>
-                            </th>
-                            <th class="py-3 cursor-pointer" @click="changeSort('unidade.empreendimento')">
-                                Empreendimento
-                                <span v-if="sortColumn === 'unidade.empreendimento'">
-                                    {{ sortOrder === 'asc' ? '▴' : sortOrder === 'desc' ? '▾' : '' }}
-                                </span>
-                            </th>
-                            <th class="py-3 cursor-pointer" @click="changeSort('titular.nome')">
-                                Cliente
-                                <span v-if="sortColumn === 'titular.nome'">
-                                    {{ sortOrder === 'asc' ? '▴' : sortOrder === 'desc' ? '▾' : '' }}
-                                </span>
-                            </th>
-                            <th class="py-3 cursor-pointer" @click="changeSort('unidade.etapa')">
-                                Etapa
-                                <span v-if="sortColumn === 'unidade.etapa'">
-                                    {{ sortOrder === 'asc' ? '▴' : sortOrder === 'desc' ? '▾' : '' }}
-                                </span>
-                            </th>
-                            <th class="py-3 cursor-pointer" @click="changeSort('unidade.unidade')">
-                                Unidade
-                                <span v-if="sortColumn === 'unidade.unidade'">
-                                    {{ sortOrder === 'asc' ? '▴' : sortOrder === 'desc' ? '▾' : '' }}
-                                </span>
-                            </th>
-                            <th class="py-3 cursor-pointer" @click="changeSort('data')">
-                                Data
-                                <span v-if="sortColumn === 'data'">
-                                    {{ sortOrder === 'asc' ? '▴' : sortOrder === 'desc' ? '▾' : '' }}
-                                </span>
-                            </th>
-                            <th class="py-3 cursor-pointer" @click="changeSort('condicoes.valor_contrato')">
-                                Valor Contrato
-                                <span v-if="sortColumn === 'condicoes.valor_contrato'">
-                                    {{ sortOrder === 'asc' ? '▴' : sortOrder === 'desc' ? '▾' : '' }}
-                                </span>
-                            </th>
-                            <th class="py-3 cursor-pointer" @click="changeSort('situacao.situacao')">
-                                Situação
-                                <span v-if="sortColumn === 'situacao.situacao'">
-                                    {{ sortOrder === 'asc' ? '▴' : sortOrder === 'desc' ? '▾' : '' }}
-                                </span>
-                            </th>
-                            <th class="py-3">Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody v-if="sortedReservas.length">
-                        <tr v-for="reserva in sortedReservas" :key="reserva.ID"
-                            class="border-b border-gray-600 text-sm">
-                            <td class="p-3 truncate font-semibold">#{{ reserva.idproposta_cv }}</td>
-                            <td class="p-3 truncate">{{ reserva.unidade.empreendimento }}</td>
-                            <td class="p-3 truncate">{{ reserva.titular.nome }}</td>
-                            <td class="p-3 truncate">{{ reserva.unidade.etapa }}</td>
-                            <td class="p-3 truncate">{{ reserva.unidade.unidade }}</td>
-                            <td class="p-3 truncate">{{ formatDate(reserva.data) }}</td>
-                            <td class="p-3 truncate">{{ formatMoney(reserva.condicoes.valor_contrato) }}</td>
-                            <td class="p-3">
-                                <p class="text-white font-bold text-center px-2 py-0.5 rounded-xl truncate cursor-pointer"
-                                    :class="{
-                                        'bg-sky-500': reserva.situacao?.situacao === 'Nova Reserva',
-                                        'bg-purple-500': reserva.situacao?.situacao === 'Ajustes',
-                                        'bg-green-500': reserva.situacao?.situacao === 'Análise Comercial',
-                                        'bg-emerald-600': reserva.situacao?.situacao === 'Geração de contratos',
-                                        'bg-amber-400': reserva.situacao?.situacao === 'Em Assinatura',
-                                        'bg-red-500': reserva.situacao?.situacao === 'Envio Sienge',
-                                        'bg-green-600': reserva.situacao?.situacao === 'Vendida',
-                                        'bg-gray-300': !(['Ajustes', 'Em Assinatura', 'Envio Sienge', 'Vendida'].includes(reserva.situacao?.situacao))
-                                    }">
-                                    {{ reserva.situacao?.situacao || 'N/A' }}
-                                </p>
-                            </td>
-                            <td class="p-3 min-w-0 truncate flex">
-                                <a :href="`https://menin.cvcrm.com.br/gestor/comercial/reservas/${reserva.idproposta_cv}/administrar?lido=true`"
-                                    target="_blank" class="cursor-pointer mx-auto" v-tippy="'CV CRM'">
-                                    <img src="/CVLogo.png" alt="CV CRM" class="w-5 min-w-5" />
-                                </a>
-                                <i class="fas fa-eye text-xl mt-0.5 mx-auto cursor-pointer text-gray-400"
-                                    v-tippy="'Detalhes'"></i>
-                            </td>
-                            <!-- <td class="p-3 min-w-0 truncate">
-                                {{ reserva.empresaCorrespondente.nome }}
-                            </td>
-                            <td class="p-3 min-w-0 truncate">
-                                {{ reserva.corretor.imobiliaria }}
-                            </td>
-                            <td class="p-3 min-w-0 truncate">
-                                {{ reserva.corretor.corretor }}
-                            </td> -->
-                        </tr>
-                    </tbody>
-                    <tbody v-else>
-                        <tr>
-                            <td colspan="9" class="p-3 text-center">Nenhuma reserva encontrada.</td>
-                        </tr>
-                    </tbody>
-                </table>
+            <!-- Tabela de Reservas Componentizada -->
+
+            <div v-if="currentSection === 'Imobiliarias'">
+                <ImobiliariasPerformance :reservas="store.reservas" />
             </div>
+
+            <ReservasTable v-else :reservas="store.reservas" @show-reserva-details="handleShowReservaDetails" />
 
         </div>
 
         <!-- Aside componentizado -->
-        <div class="w-3/12 h-full overflow-hidden py-4">
-            <!-- Cards para mostrar a quantidade de reservas por empreendimento -->
-            <div class="cards w-full h-full">
-                <h2 class="text-2xl font-semibold ps-2">Reservas X Empreendimentos</h2>
-                <div class="overflow-y-auto h-[calc(100%-2rem)] px-2 pt-2 flex flex-col gap-4">
-                    <div v-for="(count, empreendimento) in aggregatedInfo.porEmpreendimento" :key="empreendimento">
-                        <Card :title="empreendimento" :icon="'fas fa-building'"
-                            :class="'!bg-gray-500/15 !border-gray-500/30'" :value="count"
-                            :label="`Reservas em ${empreendimento}`" />
-                    </div>
-                </div>
-            </div>
-        </div>
+        <ReservasAside :porEmpreendimento="aggregatedInfo.porEmpreendimento"
+            @show-reservas-by-empreendimento="showReservasByEmpreendimento" />
+
+        <!-- Modal de detalhes centralizado na View -->
+        <ReservasModal :reservas="reservasToShow" :modalVisivel="modalVisivel"
+            @update:modalVisivel="modalVisivel = $event" />
+
     </div>
 </template>
 
 <script setup>
 import { ref, onMounted, computed } from 'vue';
+import { useRoute } from 'vue-router';
 import { useReservasStore } from '@/stores/Reports/Reservas/reservasStore';
 import Favorite from "@/components/config/Favorite.vue";
 import ReservaFilterBar from '@/components/Reports/Reservas/ReservaFilterBar.vue';
 import Card from '@/components/Reports/Reservas/Card.vue';
+import ReservasTable from '@/components/Reports/Reservas/Reservas/ReservasTable.vue';
+import ReservasAside from '@/components/Reports/Reservas/Reservas/ReservasAside.vue';
+import ReservasModal from '@/components/Reports/Reservas/ReservasModal.vue';
+import ImobiliariasPerformance from '@/components/Reports/Reservas/Imobiliarias/ImobiliariasPerformance.vue'
+
+const route = useRoute();
+
+const currentSection = computed(() => route.query.section);
+
+const modalVisivel = ref(false);
+const reservasToShow = ref([]);
+
+// Função para receber o evento de exibição de detalhes de uma única reserva
+const handleShowReservaDetails = (reserva) => {
+    // Exibe o modal com apenas a reserva selecionada
+    reservasToShow.value = [reserva];
+    modalVisivel.value = true;
+};
+
+// Função para mostrar reservas por situação
+const showReservasBySituacao = (situacao) => {
+    // Filtra as reservas pela situação selecionada
+    const reservasFiltradas = store.reservas.filter(
+        reserva => (reserva.situacao?.situacao || 'N/A') === situacao
+    );
+
+    // Exibe o modal com as reservas filtradas
+    reservasToShow.value = reservasFiltradas;
+    modalVisivel.value = true;
+};
+
+// Função para mostrar reservas por empreendimento
+const showReservasByEmpreendimento = (empreendimento) => {
+    // Filtra as reservas pelo empreendimento selecionado
+    const reservasFiltradas = store.reservas.filter(
+        reserva => (reserva.unidade?.empreendimento || 'N/A') === empreendimento
+    );
+
+    // Exibe o modal com as reservas filtradas
+    reservasToShow.value = reservasFiltradas;
+    modalVisivel.value = true;
+};
+
+// Função para mostrar todas as reservas
+const showAllReservas = () => {
+    reservasToShow.value = store.reservas;
+    console.log(store.reservas)
+    modalVisivel.value = true;
+};
 
 const store = useReservasStore();
 
@@ -200,7 +137,6 @@ const aplicarFiltros = async (filters) => {
         idempreendimento: selectedEmpreendimentos.value.join(','),
         faturar: filters.faturar === 'ambas' ? 'ambos' : (filters.faturar || 'false')
     });
-
 };
 
 // Funções para atualizar os filtros conforme os eventos do componente ReservaFilterBar
@@ -224,7 +160,7 @@ const formatMoney = (value) =>
         currency: 'BRL'
     }).format(value || 0);
 
-// Carregamento inicial dos dadosblu
+// Carregamento inicial dos dados
 onMounted(async () => {
     await store.fetchEmpreendimentos();
     const hoje = new Date();
@@ -287,59 +223,4 @@ const totalEmpreendimentosComReserva = computed(() => {
         .filter(key => key !== 'N/A') // remova esta linha se quiser contar até as chaves 'N/A'
         .length;
 });
-
-
-
-// Estado de ordenação
-const sortColumn = ref(null);        // e.g. 'data', 'idproposta_cv', 'unidade.empreendimento', etc.
-const sortOrder = ref(null);         // 'asc' | 'desc' | null
-
-// Função para alternar o estado de ordenação
-function changeSort(column) {
-    if (sortColumn.value !== column) {
-        sortColumn.value = column;
-        sortOrder.value = 'asc';
-    } else if (sortOrder.value === 'asc') {
-        sortOrder.value = 'desc';
-    } else {
-        sortColumn.value = null;
-        sortOrder.value = null;
-    }
-}
-
-// Computed que retorna o array ordenado
-const sortedReservas = computed(() => {
-    const data = [...store.reservas];
-    if (!sortColumn.value || !sortOrder.value) {
-        return data;
-    }
-    // Extrai o valor do campo, suportando keys aninhadas
-    const getValue = (obj, path) => path.split('.').reduce((o, k) => o?.[k], obj);
-    return data.sort((a, b) => {
-        let va = getValue(a, sortColumn.value);
-        let vb = getValue(b, sortColumn.value);
-
-        // Converte datas
-        if (sortColumn.value === 'data') {
-            va = new Date(va);
-            vb = new Date(vb);
-        }
-        // Converte números
-        else if (sortColumn.value === 'idproposta_cv' || sortColumn.value.includes('valor')) {
-            va = parseFloat(va) || 0;
-            vb = parseFloat(vb) || 0;
-        }
-        // Strings
-        else {
-            va = String(va || '').toLowerCase();
-            vb = String(vb || '').toLowerCase();
-        }
-
-        if (va < vb) return sortOrder.value === 'asc' ? -1 : 1;
-        if (va > vb) return sortOrder.value === 'asc' ? 1 : -1;
-        return 0;
-    });
-});
-
-
 </script>
