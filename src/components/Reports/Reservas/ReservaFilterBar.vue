@@ -39,8 +39,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
-import FilterToggle from '@/components/Reports/Reservas/FilterToggle.vue';
+import { ref, computed } from 'vue'; 
 
 // Propriedades recebidas do componente pai
 const props = defineProps({

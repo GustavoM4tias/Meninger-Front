@@ -6,8 +6,8 @@
                 <select v-model="selectedValue" @change="onSelectChange"
                     class="py-3 px-2 border text-md md:text-lg text-gray-700 dark:text-gray-300 dark:bg-gray-500 border-gray-100 dark:border-gray-600 rounded-lg focus:outline-none shadow-sm w-full appearance-none">
                     <option disabled value="">Todos os Empreendimentos</option>
-                    <option v-for="option in empreendimentosOptions" :key="option.value" :value="option.value">
-                        {{ option.label }}
+                    <option v-for="option in empreendimentosOptions" :key="option.id" :value="option.nome">
+                        {{ option.nome }}
                     </option>
                 </select>
                 <div class="absolute inset-y-0 right-0 flex items-center pe-3 pointer-events-none">
@@ -100,12 +100,9 @@ const filtros = reactive({
 });
 
 // Gera as opções para o select a partir do array recebido
-const empreendimentosOptions = computed(() =>
-    props.empreendimentos.map(empreendimento => ({
-        value: empreendimento,
-        label: empreendimento
-    }))
-);
+const empreendimentosOptions = computed(() => {
+    return props.empreendimentos || [];
+});
 
 // Quando o usuário seleciona um empreendimento, adiciona-o à lista se não estiver duplicado
 const onSelectChange = () => {
