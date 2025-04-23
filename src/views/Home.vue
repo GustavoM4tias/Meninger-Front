@@ -10,12 +10,14 @@ import BuildingCarrossel from '../components/Home/Buildings/BuildingCarrossel.vu
     <!-- Primeira coluna -->
     <div class="w-full md:w-2/3 flex flex-col">
 
-      <div class="w-full ">
+      <div class="w-full">
         <EventCarrossel class="flex-1 filter drop-shadow-xl" />
       </div>
 
       <div class="others flex-1">
-        Others
+        <div class="h-full flex flex-col justify-between p-4">  
+          <div class="bg-gray-700/30 h-full rounded-2xl animate-pulse flex"><p class="m-auto text-2xl text-gray-400">Em Andamento</p></div> 
+        </div>
       </div>
 
     </div>
