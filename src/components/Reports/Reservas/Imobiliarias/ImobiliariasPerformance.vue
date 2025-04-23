@@ -65,14 +65,14 @@ const chartOptions = computed(() => ({
       return html
     }
   },
-  grid: { left: '1%', right: '1%', bottom: '1%', top: '1%', containLabel: true },
+  grid: { left: '1%', right: '1%', bottom: '0', top: '0', containLabel: true },
   xAxis: { type: 'value', minInterval: 1, boundaryGap: [0, 0.01] },
   yAxis: {
     type: 'category',
     data: labels.value,
     axisLine: { show: false },
     axisTick: { show: false },
-    axisLabel: { overflow: 'truncate', width: 120 }
+    axisLabel: {  fontSize: '12px', overflow: 'truncate', width: 120 }
   },
   series: [{
     name: 'Reservas',
@@ -89,7 +89,7 @@ const formatMoney = val =>
 </script>
 
 <template>
-  <div class="h-[95%] w-full mt-4 rounded-lg p-6">
+  <div class="h-full w-full rounded-lg p-4">
     <v-chart
       :option="chartOptions"
       autoresize

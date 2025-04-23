@@ -52,7 +52,7 @@ const eventsFiltereds = computed(() => {
 });
 
 // Computed para determinar qual seção mostrar
-const currentSection = computed(() => route.query.section || 'geral');
+const currentSection = computed(() => route.query.section || 'Geral');
 
 const eventsInProgress = computed(() => eventsFiltereds.value.filter(event => new Date(event.event_date) >= currentDate));
 const eventsFinisheds = computed(() => eventsFiltereds.value
@@ -110,7 +110,7 @@ onMounted(() => eventStore.fetchEvents());
             <div v-else class="divide-y divide-gray-500">
 
                 <div class="overflow-x-auto pb-5"
-                    v-if="eventsInProgress.length > 0 && (currentSection === 'geral' || currentSection === 'proximos')">
+                    v-if="eventsInProgress.length > 0 && (currentSection === 'Geral' || currentSection === 'Próximos')">
                     <h2 class="text-2xl font-semibold mt-2 mb-1">Próximos Eventos</h2>
                     <div class="grid grid-flow-col auto-cols-[100%] md:auto-cols-[32.6%] gap-4 mx-3">
                         <EventCard v-for="event in eventsInProgress" :key="event.id"
@@ -118,12 +118,12 @@ onMounted(() => eventStore.fetchEvents());
                     </div>
                 </div>
 
-                <div v-if="eventsInProgress >= 0 && (currentSection === 'proximos')">
+                <div v-if="eventsInProgress >= 0 && (currentSection === 'Próximos')">
                     <p class="text-gray-500 text-5xl text-center mt-64">Sem Próximos Eventos</p>
                 </div>
 
                 <div class="overflow-x-auto pb-5"
-                    v-if="eventsFinisheds.length > 0 && (currentSection === 'geral' || currentSection === 'finalizados')">
+                    v-if="eventsFinisheds.length > 0 && (currentSection === 'Geral' || currentSection === 'Finalizados')">
                     <h2 class="text-2xl font-semibold mt-2 mb-1">Eventos Finalizados</h2>
                     <div class="grid grid-flow-col auto-cols-[100%] md:auto-cols-[32.6%] gap-4 mx-3">
                         <EventCard v-for="event in eventsFinisheds" :key="event.id"
