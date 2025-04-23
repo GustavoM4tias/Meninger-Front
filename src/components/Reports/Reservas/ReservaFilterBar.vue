@@ -3,8 +3,13 @@
         class="flex flex-wrap items-center h-auto justify-between p-4 rounded-xl shadow bg-gray-200 dark:bg-gray-700">
         <!-- Filtro por Data -->
         <div class="flex gap-4 text-xl">
-            <input type="date" id="dataFiltro" v-model="dataFiltroInput" @change="onDataChange"
-                class="px-2 py-1 border rounded-lg focus:outline-none bg-transparent border-gray-500 text-center" />
+            <div class="flex items-center gap-2">
+                <input type="date" id="dataFiltroInicio" v-model="dataFiltroInput" @change="onDataChange"
+                    class="px-2 py-1 border rounded-lg focus:outline-none bg-transparent border-gray-500 text-center" />
+                <span class="text-sm">até</span>
+                <input type="date" id="dataFiltroFim" v-model="dataFiltroFimInput" @change="onDataFimChange"
+                    class="px-2 py-1 border rounded-lg focus:outline-none bg-transparent border-gray-500 text-center" />
+            </div>
             <div class="select flex relative">
                 <select v-model="selectedValue" @change="onSelectChange"
                     class="w-full py-2 px-3 border rounded-lg appearance-none focus:outline-none z-10 bg-transparent border-gray-500 text-center">
@@ -15,8 +20,8 @@
                 </select>
                 <i class="fas fa-chevron-down top-[28%] absolute right-3 inset-y-0 pointer-events-none"></i>
             </div>
-            
-            <div class="flex flex-col items-center relative"> 
+
+            <div class="flex flex-col items-center relative">
                 <select v-model="faturarInput"
                     class="w-full py-2 px-3 border rounded-lg appearance-none focus:outline-none z-10 bg-transparent border-gray-500 pe-10 text-center">
                     <option value="false">Em Processo</option>
@@ -39,7 +44,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'; 
+import { ref, computed } from 'vue';
 
 // Propriedades recebidas do componente pai
 const props = defineProps({
@@ -48,6 +53,10 @@ const props = defineProps({
         required: true
     },
     initialDataFiltro: {
+        type: String,
+        default: ''
+    },
+    initialDataFiltroFim: {
         type: String,
         default: ''
     },
@@ -61,9 +70,11 @@ const props = defineProps({
 const today = new Date();
 const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 const defaultDate = firstDayOfMonth.toISOString().slice(0, 10);
+const defaultEndDate = today.toISOString().slice(0, 10); // Data atual como data final padrão
 
 // Se a prop initialDataFiltro não for enviada, usa o default calculado
 const dataFiltroInput = ref(props.initialDataFiltro || defaultDate);
+const dataFiltroFimInput = ref(props.initialDataFiltroFim || defaultEndDate);
 
 const selectedValue = ref('');
 const faturarInput = ref(false);
@@ -88,11 +99,16 @@ const onDataChange = () => {
     emit('update:dataFiltro', dataFiltroInput.value);
 };
 
+// Quando o campo data fim mudar, emite a nova data para o componente pai.
+const onDataFimChange = () => {
+    emit('update:dataFiltroFim', dataFiltroFimInput.value);
+};
+
 // Ao clicar no botão Filtrar, monta os filtros para a busca.
-// Note que passamos a data usando o nome "a_partir_de" para que a store o interprete corretamente.
 const onSearch = () => {
     const filters = {
         a_partir_de: dataFiltroInput.value,
+        ate: dataFiltroFimInput.value,
         selectedEmpreendimentos: selectedValue.value ? [selectedValue.value] : [],
         faturar: faturarInput.value // já pode ser 'false', 'true' ou 'ambas'
     };
@@ -103,6 +119,7 @@ const onSearch = () => {
 const emit = defineEmits([
     'applyFilters',
     'update:selectedEmpreendimentos',
-    'update:dataFiltro'
+    'update:dataFiltro',
+    'update:dataFiltroFim'
 ]);
 </script>
