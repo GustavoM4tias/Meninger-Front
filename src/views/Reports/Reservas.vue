@@ -34,12 +34,14 @@
             <!-- Filtros do Relatório -->
             <ReservaFilterBar :empreendimentos="store.empreendimentos"
                 :initialSelectedEmpreendimentos="selectedEmpreendimentos" :initialDataFiltro="dataFiltro"
-                @applyFilters="aplicarFiltros" @update:selectedEmpreendimentos="updateEmpreendimentos"
-                @update:dataFiltro="updateDataFiltro" />
+                :initialDataFiltroFim="dataFiltroFim" @applyFilters="aplicarFiltros"
+                @update:selectedEmpreendimentos="updateEmpreendimentos" @update:dataFiltro="updateDataFiltro"
+                @update:dataFiltroFim="updateDataFiltroFim" />
 
             <!-- Tabela de Reservas Componentizada -->
 
-            <div v-if="currentSection === 'Imobiliarias'">
+            <div v-if="currentSection === 'Imobiliarias'"
+                class="flex-grow overflow-auto overflow-x-auto mt-4 rounded-lg border border-gray-600">
                 <ImobiliariasPerformance :reservas="store.reservas" />
             </div>
 
@@ -69,6 +71,11 @@ import ReservasTable from '@/components/Reports/Reservas/Reservas/ReservasTable.
 import ReservasAside from '@/components/Reports/Reservas/Reservas/ReservasAside.vue';
 import ReservasModal from '@/components/Reports/Reservas/ReservasModal.vue';
 import ImobiliariasPerformance from '@/components/Reports/Reservas/Imobiliarias/ImobiliariasPerformance.vue'
+
+// Toast de notificação
+import { useToast } from 'vue-toastification';
+const toast = useToast();
+
 
 const route = useRoute();
 
@@ -120,24 +127,8 @@ const store = useReservasStore();
 // Estados reativos para os filtros
 const selectedEmpreendimentos = ref([]);
 const dataFiltro = ref('');
-
-// Função para atualizar os filtros e recarregar os dados
-const aplicarFiltros = async (filters) => {
-    // Atualiza o filtro de data se informado
-    if (filters.dataFiltro) {
-        dataFiltro.value = filters.dataFiltro;
-    }
-    // Atualiza os empreendimentos selecionados
-    if (filters.selectedEmpreendimentos) {
-        selectedEmpreendimentos.value = filters.selectedEmpreendimentos;
-    }
-    // Chama o método do store para buscar reservas com os parâmetros de filtro
-    await store.fetchReservas({
-        a_partir_de: dataFiltro.value,
-        idempreendimento: selectedEmpreendimentos.value.join(','),
-        faturar: filters.faturar === 'ambas' ? 'ambos' : (filters.faturar || 'false')
-    });
-};
+// Na view, adicionar um novo estado reativo para o filtro de data final
+const dataFiltroFim = ref('');
 
 // Funções para atualizar os filtros conforme os eventos do componente ReservaFilterBar
 const updateEmpreendimentos = (empreendimentos) => {
@@ -146,6 +137,43 @@ const updateEmpreendimentos = (empreendimentos) => {
 
 const updateDataFiltro = (data) => {
     dataFiltro.value = data;
+};
+
+const updateDataFiltroFim = (data) => {
+    dataFiltroFim.value = data;
+};
+
+// Função para atualizar os filtros e recarregar os dados
+const aplicarFiltros = async (filters) => {
+    // Atualiza o filtro de data se informado
+    if (filters.a_partir_de) {
+        dataFiltro.value = filters.a_partir_de;
+    }
+    // Atualiza a data final se informada
+    if (filters.ate) {
+        dataFiltroFim.value = filters.ate;
+    }
+    // Atualiza os empreendimentos selecionados
+    if (filters.selectedEmpreendimentos) {
+        selectedEmpreendimentos.value = filters.selectedEmpreendimentos;
+    }
+    // Chama o método do store para buscar reservas com os parâmetros de filtro
+    // await store.fetchReservas({
+    //     a_partir_de: dataFiltro.value,
+    //     ate: dataFiltroFim.value,
+    //     idempreendimento: selectedEmpreendimentos.value.join(','),
+    //     faturar: filters.faturar === 'ambas' ? 'ambos' : (filters.faturar || 'false')
+    // });
+    try {
+        await store.fetchReservas({
+            a_partir_de: dataFiltro.value,
+            ate: dataFiltroFim.value,
+            idempreendimento: selectedEmpreendimentos.value.join(','),
+            faturar: filters.faturar === 'ambas' ? 'ambos' : (filters.faturar || 'false')
+        });
+    } catch (error) {
+        toast.error('Sem retorno para os parâmetros fornecidos'); 
+    }
 };
 
 // Funções utilitárias
@@ -166,7 +194,12 @@ onMounted(async () => {
     const hoje = new Date();
     const dataInicial = `01/${(hoje.getMonth() + 1).toString().padStart(2, '0')}/${hoje.getFullYear()}`;
     dataFiltro.value = dataInicial;
-    await store.fetchReservas({ a_partir_de: dataInicial, faturar: 'false' });
+    dataFiltroFim.value = hoje.toISOString().slice(0, 10); // Data atual como data final
+    await store.fetchReservas({
+        a_partir_de: dataInicial,
+        ate: dataFiltroFim.value,
+        faturar: 'false'
+    });
 });
 
 

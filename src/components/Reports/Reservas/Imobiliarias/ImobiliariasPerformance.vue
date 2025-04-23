@@ -93,7 +93,7 @@ const formatMoney = val =>
 </script>
 
 <template> 
-  <div class="h-[48vh] w-full mt-4 rounded-lg border border-gray-600 p-6">
+  <div class="h-[95%] w-full mt-4 rounded-lgp-6">
     <v-chart :option="chartOptions" autoresize class="h-full w-full" />
   </div>
 </template>
