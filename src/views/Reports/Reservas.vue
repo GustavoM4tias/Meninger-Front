@@ -18,10 +18,12 @@
                     :label="`Desde ${formatDate(dataFiltro)}`" @click="showAllReservas()" />
                 <Card v-if="totalEmpreendimentosComReserva > 0" :title="'Empreendimentos com Reserva'"
                     :icon="'fas fa-building'" :class="'!bg-purple-500/15 !border-purple-500/30'"
-                    :value="totalEmpreendimentosComReserva" :label="'Total de empreendimentos com reservas ativas'" />
+                    :value="totalEmpreendimentosComReserva" :label="'Total de empreendimentos com reservas ativas'"
+                    @click="showAllReservas()" />
                 <Card v-if="aggregatedInfo.totalValorContrato > 0" :title="'Valor Total dos Contratos'"
                     :icon="'fas fa-dollar-sign'" :class="'!bg-green-500/15 !border-green-500/30'"
-                    :value="formatMoney(aggregatedInfo.totalValorContrato)" :label="'Soma dos valores dos contratos'" />
+                    :value="formatMoney(aggregatedInfo.totalValorContrato)" :label="'Soma dos valores dos contratos'"
+                    @click="showAllReservas()" />
             </div>
 
             <!-- Cards para reservas por situação -->
@@ -42,7 +44,10 @@
 
             <div v-if="currentSection === 'Imobiliarias'"
                 class="flex-grow overflow-auto overflow-x-auto mt-4 rounded-lg border border-gray-600">
-                <ImobiliariasPerformance :reservas="store.reservas" />
+                <ImobiliariasPerformance :reservas="store.reservas"
+                    @show-imobiliaria-click="showReservasByImobiliaria" />
+
+
             </div>
 
             <ReservasTable v-else :reservas="store.reservas" @show-reserva-details="handleShowReservaDetails" />
@@ -115,6 +120,11 @@ const showReservasByEmpreendimento = (empreendimento) => {
     modalVisivel.value = true;
 };
 
+const showReservasByImobiliaria = (reservasFiltradas) => {
+    reservasToShow.value = reservasFiltradas
+    modalVisivel.value = true
+}
+
 // Função para mostrar todas as reservas
 const showAllReservas = () => {
     reservasToShow.value = store.reservas;
@@ -172,7 +182,7 @@ const aplicarFiltros = async (filters) => {
             faturar: filters.faturar === 'ambas' ? 'ambos' : (filters.faturar || 'false')
         });
     } catch (error) {
-        toast.error('Sem retorno para os parâmetros fornecidos'); 
+        toast.error('Sem retorno para os parâmetros fornecidos');
     }
 };
 
