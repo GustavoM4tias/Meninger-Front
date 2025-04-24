@@ -16,7 +16,7 @@
                 <select v-model="currentEmpreendimento" @change="addEmpreendimento"
                     class="w-full py-2 px-1 border rounded-lg appearance-none focus:outline-none z-10 bg-transparent border-gray-500 pe-4 text-center">
                     <option value="">Selecionar Empreendimentos</option>
-                    <option v-for="option in availableEmpreendimentos" :key="option.value" :value="option.value">
+                    <option class="text-gray-800" v-for="option in availableEmpreendimentos" :key="option.value" :value="option.value">
                         {{ option.label }}
                     </option>
                 </select>
@@ -26,9 +26,9 @@
             <div class="flex flex-col items-center relative">
                 <select v-model="faturarInput"
                     class="w-full py-2.5 px-3 border rounded-lg appearance-none focus:outline-none z-10 bg-transparent border-gray-500 pe-10 text-center">
-                    <option value="false">Em Processo</option>
-                    <option value="true">Integradas Sienge</option>
-                    <option value="ambas">Ambas</option>
+                    <option class="text-gray-800" value="false">Em Processo</option>
+                    <option class="text-gray-800" value="true">Integradas Sienge</option>
+                    <option class="text-gray-800" value="ambas">Ambas</option>
                 </select>
                 <i class="fas fa-chevron-down top-[32%] absolute right-3 inset-y-0 pointer-events-none"></i>
             </div>
