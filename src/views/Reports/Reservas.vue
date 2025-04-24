@@ -46,8 +46,6 @@
                 class="flex-grow overflow-auto overflow-x-auto mt-4 rounded-lg border border-gray-600">
                 <ImobiliariasPerformance :reservas="store.reservas"
                     @show-imobiliaria-click="showReservasByImobiliaria" />
-
-
             </div>
 
             <ReservasTable v-else :reservas="store.reservas" @show-reserva-details="handleShowReservaDetails" />
@@ -128,7 +126,7 @@ const showReservasByImobiliaria = (reservasFiltradas) => {
 // Função para mostrar todas as reservas
 const showAllReservas = () => {
     reservasToShow.value = store.reservas;
-    console.log(store.reservas)
+    // console.log(store.reservas)
     modalVisivel.value = true;
 };
 
