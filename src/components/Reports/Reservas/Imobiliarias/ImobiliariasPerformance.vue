@@ -2,11 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import { use } from 'echarts/core'
 import { PieChart } from 'echarts/charts'
-use([PieChart])
-import { useDark } from '@vueuse/core'
-
-const isDark = useDark()
-
+use([PieChart]) 
 // Props e eventos
 const props = defineProps({ reservas: Array })
 const emit = defineEmits(['show-imobiliaria-click'])
@@ -78,21 +74,35 @@ const breakdown = computed(() => {
   return data
 })
 
+// soma o valor do contrato por empreendimento, só para a imobiliária única
+const valoresPorEmpreendimento = computed(() => {
+  if (!singleImobiliaria.value) return {}
+
+  return props.reservas
+    .filter(r => (r.corretor?.imobiliaria || 'N/A') === singleImobiliaria.value)
+    .reduce((acc, r) => {
+      const emp = r.unidade?.empreendimento || 'N/A'
+      const valor = parseFloat(r.condicoes?.valor_contrato) || 0
+      acc[emp] = (acc[emp] || 0) + valor
+      return acc
+    }, {})
+})
+
 // Dados para o gráfico de uma única imobiliária (agrupados por empreendimento)
 const singleImobiliariaData = computed(() => {
   if (!singleImobiliaria.value) return []
 
-  // Obtém os dados da única imobiliária
-  const imobData = breakdown.value[singleImobiliaria.value] || {}
+  const contagens = breakdown.value[singleImobiliaria.value] || {}
+  const valoresTotais = valoresPorEmpreendimento.value
 
-  // Transforma em array para o gráfico
-  return Object.entries(imobData)
+  return Object.entries(contagens)
     .map(([empreendimento, count]) => ({
       name: empreendimento,
-      value: count
+      value: count,
+      total: valoresTotais[empreendimento] || 0
     }))
-    .sort((a, b) => b.value - a.value) // Ordena pelo maior número de reservas
-})
+    .sort((a, b) => b.value - a.value)
+}) 
 
 // Labels e valores para barras do gráfico principal
 const labels = computed(() => sortedData.value.map(([k]) => k))
@@ -126,18 +136,7 @@ const onPieChartClick = (params) => {
 const resetFiltro = () => {
   selectedImobiliaria.value = ''
 }
-
-// Quando seleciona uma imobiliária no dropdown
-const onImobiliariaChange = () => {
-  if (selectedImobiliaria.value) {
-    // Se desejamos mostrar detalhes automaticamente ao selecionar
-    const filtradas = props.reservas.filter(
-      r => (r.corretor?.imobiliaria || 'N/A') === selectedImobiliaria.value
-    )
-    emit('show-imobiliaria-click', filtradas)
-  }
-}
-
+ 
 // Opções do gráfico de barras (múltiplas imobiliárias)
 const chartOptions = computed(() => ({
   tooltip: {
@@ -173,9 +172,7 @@ const chartOptions = computed(() => ({
     itemStyle: { color: '#2563EB', borderRadius: [0, 5, 5, 0] },
     emphasis: { itemStyle: { color: '#1D4ED8' } }
   }]
-}))
-  
-const valoresPie = valores.value 
+})) 
 
 const pieChartOptions = computed(() => {
   const data = singleImobiliariaData.value
@@ -196,18 +193,13 @@ const pieChartOptions = computed(() => {
       trigger: 'item',
       backgroundColor: '#F9FAFB',
       borderWidth: 1,
-      textStyle: {
-        color: '#9CA3AF'
-      },
-      formatter: (params) => {
-        const nome = params.name
-        const qtd = params.value
-        const pct = params.percent
-        const valor = valoresPie[params.dataIndex] || 0
-        return `<strong>${nome}</strong><br/><br/>
+      textStyle: { color: '#9CA3AF' },
+      formatter: params => {
+        const { name, value: qtd, percent: pct, data: { total } } = params
+        return `<strong>${name}</strong><br/><br/>
                 Reservas: <strong>${qtd}</strong><br/>
                 Percentual: <strong>${pct}%</strong><br/>
-                Valor Total: <strong>${formatMoney(valor)}</strong>`
+                Valor Total: <strong>${formatMoney(total)}</strong>`
       }
     },
     legend: {
@@ -219,56 +211,45 @@ const pieChartOptions = computed(() => {
       pageButtonItemGap: 5,
       pageButtonGap: 5,
       pageButtonPosition: 'end',
-      textStyle: {
-        fontSize: 12,
-        color: '#9CA3AF'
-      }
+      textStyle: { fontSize: 12, color: '#9CA3AF' }
     },
-    series: [
-      {
-        name: 'Empreendimentos',
-        type: 'pie',
-        radius: ['30%', '70%'],
-        center: ['50%', '55%'],
-        avoidLabelOverlap: false,
-        itemStyle: {
-          borderRadius: 4
+    series: [{
+      name: 'Empreendimentos',
+      type: 'pie',
+      radius: ['30%', '70%'],
+      // centrar horizontalmente em 50%, mas verticalmente em 60%
+      center: ['50%', '60%'],
+      // 1) não esconde rótulos sobrepostos
+      avoidLabelOverlap: false,
+
+      // 2) reposiciona rótulos para não se sobreporem
+      labelLayout: {
+        hideOverlap: false,
+        moveOverlap: 'shiftY'
+      }, 
+      itemStyle: { borderRadius: 4 },
+      label: {
+        show: true,
+        fontSize: 14,
+        position: 'outside',
+        formatter: params => {
+          const { name, value: qtd, percent: pct, data: { total } } = params
+          return `${name}\n` +
+                 `${qtd} reservas • ${pct}%\n`
+                //   +
+                //  `${formatMoney(total)}`
         },
-        label: {
-          show: true,
-          fontSize: 14,
-          position: 'outside',
-          fontWeight: 'normal',
-          formatter: (params) => {
-            const nome = params.name
-            const qtd = params.value
-            const pct = params.percent
-            const valor = valoresPie[params.dataIndex] || 0
-            return `${nome}\n` +
-                   `${qtd} reservas • ${pct}%\n`
-                  //   +
-                  //  `${formatMoney(valor)}`
-          },
-          color: '#9CA3AF'
-        },
-        emphasis: {
-          label: {
-            fontWeight: 'bold',
-            fontSize: 16,
-            color: '#9CA3AF'
-          }
-        },
-        labelLine: {
-          show: true,
-          length: 20,
-          length2: 10,
-          lineStyle: {
-            color: '#9CA3AF'
-          }
-        },
-        data
-      }
-    ]
+        color: '#9CA3AF'
+      },
+      emphasis: {
+        label: { fontWeight: 'bold', fontSize: 16, color: '#9CA3AF' }
+      },
+      labelLine: {
+        show: true, length: 20, length2: 10,
+        lineStyle: { color: '#9CA3AF' }
+      },
+      data
+    }]
   }
 })
 
