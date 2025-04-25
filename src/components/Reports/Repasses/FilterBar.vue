@@ -6,7 +6,7 @@
                 <select v-model="selectedValue" @change="onSelectChange"
                     class="py-3 px-2 border text-md md:text-lg text-gray-700 dark:text-gray-300 dark:bg-gray-500 border-gray-100 dark:border-gray-600 rounded-lg focus:outline-none shadow-sm w-full appearance-none">
                     <option disabled value="">Todos os Empreendimentos</option>
-                    <option class="text-gray-800" v-for="option in empreendimentosOptions" :key="option.id" :value="option.nome">
+                    <option v-for="option in empreendimentosOptions" :key="option.id" :value="option.nome">
                         {{ option.nome }}
                     </option>
                 </select>
