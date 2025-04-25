@@ -1,5 +1,11 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
+import { use } from 'echarts/core'
+import { PieChart } from 'echarts/charts'
+use([PieChart])
+import { useDark } from '@vueuse/core'
+
+const isDark = useDark()
 
 // Props e eventos
 const props = defineProps({ reservas: Array })
@@ -22,10 +28,26 @@ const agrupamentoImobiliarias = computed(() => {
 
 // Lista de todas as imobiliárias para o select
 const imobiliariaOptions = computed(() => {
-  return Object.keys(agrupamentoImobiliarias.value).map(imob => ({
-    value: imob,
-    label: imob
-  }))
+  return Object.keys(agrupamentoImobiliarias.value)
+    .sort((a, b) => a.localeCompare(b)) // ordenação alfabética
+    .map(imob => ({
+      value: imob,
+      label: imob
+    }));
+});
+
+// Verifica se há apenas uma imobiliária disponível ou filtrada
+const isSingleImobiliaria = computed(() => {
+  return selectedImobiliaria.value || Object.keys(agrupamentoImobiliarias.value).length === 1
+})
+
+// A imobiliária única (se houver apenas uma)
+const singleImobiliaria = computed(() => {
+  if (selectedImobiliaria.value) return selectedImobiliaria.value
+  if (Object.keys(agrupamentoImobiliarias.value).length === 1) {
+    return Object.keys(agrupamentoImobiliarias.value)[0]
+  }
+  return null
 })
 
 // Dados filtrados baseados na seleção (se houver)
@@ -56,7 +78,23 @@ const breakdown = computed(() => {
   return data
 })
 
-// Labels e valores para barras
+// Dados para o gráfico de uma única imobiliária (agrupados por empreendimento)
+const singleImobiliariaData = computed(() => {
+  if (!singleImobiliaria.value) return []
+
+  // Obtém os dados da única imobiliária
+  const imobData = breakdown.value[singleImobiliaria.value] || {}
+
+  // Transforma em array para o gráfico
+  return Object.entries(imobData)
+    .map(([empreendimento, count]) => ({
+      name: empreendimento,
+      value: count
+    }))
+    .sort((a, b) => b.value - a.value) // Ordena pelo maior número de reservas
+})
+
+// Labels e valores para barras do gráfico principal
 const labels = computed(() => sortedData.value.map(([k]) => k))
 const reservasCount = computed(() => sortedData.value.map(([, v]) => v.count))
 const valores = computed(() => sortedData.value.map(([, v]) => v.total))
@@ -67,6 +105,20 @@ const onChartClick = (params) => {
   const filtradas = props.reservas.filter(
     r => (r.corretor?.imobiliaria || 'N/A') === imob
   )
+  emit('show-imobiliaria-click', filtradas)
+}
+
+// Clique no gráfico de pizza: filtra por empreendimento
+const onPieChartClick = (params) => {
+  const empreendimento = params.name
+  const imobiliaria = singleImobiliaria.value
+
+  // Filtra por imobiliária e empreendimento
+  const filtradas = props.reservas.filter(r =>
+    (r.corretor?.imobiliaria || 'N/A') === imobiliaria &&
+    (r.unidade?.empreendimento || 'N/A') === empreendimento
+  )
+
   emit('show-imobiliaria-click', filtradas)
 }
 
@@ -86,7 +138,7 @@ const onImobiliariaChange = () => {
   }
 }
 
-// Opções do gráfico com tooltip customizado
+// Opções do gráfico de barras (múltiplas imobiliárias)
 const chartOptions = computed(() => ({
   tooltip: {
     trigger: 'axis',
@@ -122,6 +174,103 @@ const chartOptions = computed(() => ({
     emphasis: { itemStyle: { color: '#1D4ED8' } }
   }]
 }))
+  
+const valoresPie = valores.value 
+
+const pieChartOptions = computed(() => {
+  const data = singleImobiliariaData.value
+
+  return {
+    backgroundColor: 'transparent',
+    title: {
+      text: `${singleImobiliaria.value}`,
+      left: 'center',
+      top: 0,
+      textStyle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: '#9CA3AF'
+      }
+    },
+    tooltip: {
+      trigger: 'item',
+      backgroundColor: '#F9FAFB',
+      borderWidth: 1,
+      textStyle: {
+        color: '#9CA3AF'
+      },
+      formatter: (params) => {
+        const nome = params.name
+        const qtd = params.value
+        const pct = params.percent
+        const valor = valoresPie[params.dataIndex] || 0
+        return `<strong>${nome}</strong><br/><br/>
+                Reservas: <strong>${qtd}</strong><br/>
+                Percentual: <strong>${pct}%</strong><br/>
+                Valor Total: <strong>${formatMoney(valor)}</strong>`
+      }
+    },
+    legend: {
+      orient: 'vertical',
+      left: 'left',
+      top: 'middle',
+      type: 'scroll',
+      pageIconSize: 10,
+      pageButtonItemGap: 5,
+      pageButtonGap: 5,
+      pageButtonPosition: 'end',
+      textStyle: {
+        fontSize: 12,
+        color: '#9CA3AF'
+      }
+    },
+    series: [
+      {
+        name: 'Empreendimentos',
+        type: 'pie',
+        radius: ['30%', '70%'],
+        center: ['50%', '55%'],
+        avoidLabelOverlap: false,
+        itemStyle: {
+          borderRadius: 4
+        },
+        label: {
+          show: true,
+          fontSize: 14,
+          position: 'outside',
+          fontWeight: 'normal',
+          formatter: (params) => {
+            const nome = params.name
+            const qtd = params.value
+            const pct = params.percent
+            const valor = valoresPie[params.dataIndex] || 0
+            return `${nome}\n` +
+                   `${qtd} reservas • ${pct}%\n`
+                  //   +
+                  //  `${formatMoney(valor)}`
+          },
+          color: '#9CA3AF'
+        },
+        emphasis: {
+          label: {
+            fontWeight: 'bold',
+            fontSize: 16,
+            color: '#9CA3AF'
+          }
+        },
+        labelLine: {
+          show: true,
+          length: 20,
+          length2: 10,
+          lineStyle: {
+            color: '#9CA3AF'
+          }
+        },
+        data
+      }
+    ]
+  }
+})
 
 // Formatação de moeda
 const formatMoney = val =>
@@ -131,7 +280,7 @@ const formatMoney = val =>
 <template>
   <div class="h-full w-full rounded-lg p-4 relative">
     <!-- Filtro de imobiliária -->
-    <div class="mb-4 flex items-center justify-end gap-2 absolute right-0 pe-5 z-10">
+    <div class="flex items-center justify-end gap-2 absolute right-0 pe-5 z-10">
       <button v-if="selectedImobiliaria" @click="resetFiltro"
         class="px-3 py-2 bg-gray-200 dark:bg-gray-600 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-500"
         title="Limpar filtro">
@@ -139,8 +288,9 @@ const formatMoney = val =>
       </button>
 
       <div class="select flex relative w-64 bg-gray-100 dark:bg-gray-700 rounded-lg">
-        <select v-model="selectedImobiliaria" @change="onImobiliariaChange"
+        <select v-model="selectedImobiliaria"
           class="w-full py-2 px-3 border rounded-lg appearance-none focus:outline-none z-10 bg-transparent border-gray-500 pe-10 text-center">
+          <!-- @change="onImobiliariaChange" -->
           <option value="">Todas as Imobiliárias</option>
           <option class="text-gray-800" v-for="option in imobiliariaOptions" :key="option.value" :value="option.value">
             {{ option.label }}
@@ -148,10 +298,13 @@ const formatMoney = val =>
         </select>
         <i class="fas fa-chevron-down top-[32%] absolute right-3 inset-y-0 pointer-events-none"></i>
       </div>
-
     </div>
 
-    <!-- Gráfico -->
-    <v-chart :option="chartOptions" autoresize class="h-[calc(100%-3rem)] w-full" @click="onChartClick" />
+    <!-- Gráfico de barras (múltiplas imobiliárias) -->
+    <v-chart v-if="!isSingleImobiliaria" :option="chartOptions" autoresize class="h-full w-full"
+      @click="onChartClick" />
+
+    <!-- Gráfico de pizza (única imobiliária) -->
+    <v-chart v-else :option="pieChartOptions" autoresize class="h-full w-full" @click="onPieChartClick" />
   </div>
 </template>

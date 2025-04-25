@@ -171,16 +171,19 @@ const aplicarFiltros = async (filters) => {
     //     ate: dataFiltroFim.value,
     //     idempreendimento: selectedEmpreendimentos.value.join(','),
     //     faturar: filters.faturar === 'ambas' ? 'ambos' : (filters.faturar || 'false')
-    // });
+    // }); 
     try {
         await store.fetchReservas({
             a_partir_de: dataFiltro.value,
             ate: dataFiltroFim.value,
             idempreendimento: selectedEmpreendimentos.value.join(','),
             faturar: filters.faturar === 'ambas' ? 'ambos' : (filters.faturar || 'false')
-        });
-    } catch (error) {
-        toast.error('Sem retorno para os parâmetros fornecidos');
+        })
+        if (store.total <= 0) {
+            toast.error('Sem retorno para os parâmetros fornecidos'); 
+        };  
+    } catch(error) {
+        console.error(error);
     }
 };
 
@@ -209,7 +212,6 @@ onMounted(async () => {
         faturar: 'false'
     });
 });
-
 
 const aggregatedInfo = computed(() => {
     const info = {
