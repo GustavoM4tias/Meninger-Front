@@ -100,7 +100,6 @@ const showReservasBySituacao = (situacao) => {
     const reservasFiltradas = store.reservas.filter(
         reserva => (reserva.situacao?.situacao || 'N/A') === situacao
     );
-
     // Exibe o modal com as reservas filtradas
     reservasToShow.value = reservasFiltradas;
     modalVisivel.value = true;
@@ -125,8 +124,7 @@ const showReservasByImobiliaria = (reservasFiltradas) => {
 
 // Função para mostrar todas as reservas
 const showAllReservas = () => {
-    reservasToShow.value = store.reservas;
-    // console.log(store.reservas)
+    reservasToShow.value = store.reservas; 
     modalVisivel.value = true;
 };
 
@@ -180,9 +178,9 @@ const aplicarFiltros = async (filters) => {
             faturar: filters.faturar === 'ambas' ? 'ambos' : (filters.faturar || 'false')
         })
         if (store.total <= 0) {
-            toast.error('Sem retorno para os parâmetros fornecidos'); 
-        };  
-    } catch(error) {
+            toast.error('Sem retorno para os parâmetros fornecidos');
+        };
+    } catch (error) {
         console.error(error);
     }
 };
@@ -211,6 +209,7 @@ onMounted(async () => {
         ate: dataFiltroFim.value,
         faturar: 'false'
     });
+    console.log(store.reservas)
 });
 
 const aggregatedInfo = computed(() => {

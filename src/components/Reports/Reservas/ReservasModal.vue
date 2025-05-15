@@ -1,11 +1,12 @@
 <template>
     <div v-if="modalVisivel"
-        class="absolute left-0 top-0 w-full h-full bg-gray-900/25 flex justify-center md:items-center z-20"
-        @click="fecharModal">
+        class="absolute left-0 top-0 w-full h-full bg-gray-900/25 flex justify-center md:items-center z-10"
+        @click.self="fecharModal">
 
         <div @click.stop
             class="bg-gray-200 dark:bg-gray-600 relative m-4 ms-20 p-2 md:p-4 rounded-lg w-full md:w-1/2 mt-[6vh] md:mt-0 h-[80vh] overflow-y-auto">
             <i class="fas fa-xmark text-3xl absolute right-3 cursor-pointer" @click="fecharModal"></i>
+            <i v-tippy="'Exportar relatório'" class="fas fa-table text-2xl cursor-pointer" @click="excelModal = true"></i>
 
             <div :class="{ '!grid-cols-1': filtrosAtivos.empreendimento.length === 1 }"
                 class="grid grid-cols-1 md:grid-cols-2 gap-2 mb-3">
@@ -133,7 +134,7 @@
 
                             <div class="redirects flex gap-2 p-2">
                                 <button v-tippy="'CV CRM'">
-                                    <a :href="'https://menin.cvcrm.com.br/gestor/comercial/contratos/' + (reserva.idproposta_cv || reserva.idcontrato) + '/administrar'"
+                                    <a :href="'https://menin.cvcrm.com.br/gestor/comercial/reservas/' + (reserva.idproposta_cv || reserva.idcontrato) + '/administrar#index_informacoes'"
                                         target="_blank">
                                         <img src="/CVLogo.png" alt="CV CRM" class="h-4 min-w-4 drop-shadow">
                                     </a>
@@ -259,11 +260,14 @@
                 </li>
             </ul>
         </div>
+        <ExportExcel :reservas="props.reservas" :showExcel="excelModal" @closeExcel="excelModal = false" />
     </div>
 </template>
 
 <script setup>
 import { ref } from 'vue';
+import ExportExcel from './ExportExcel.vue';
+const excelModal = ref(false)
 
 const props = defineProps({
     reservas: {
