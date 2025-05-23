@@ -53,7 +53,7 @@ const routes = [
     children: [
       { path: 'Users', name: 'Users', component: () => import('../views/Settings/Users.vue') },
       { path: 'Account', name: 'Account', component: () => import('../views/Settings/Account.vue') },
-      { path: 'Hierarchy', name: 'Hierarchy', component: () => import('../views/Settings/Hierarchy.vue') },
+      { path: 'Organograma', name: 'Organograma', component: () => import('../views/Settings/Organograma.vue') },
     ],
     meta: { requiresAuth: true, allowedPosition: '' },
   },

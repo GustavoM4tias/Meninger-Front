@@ -28,7 +28,7 @@ const saveUser = async () => {
       editableUser.value.username,
       editableUser.value.email,
       editableUser.value.position,
-      editableUser.value.manager,
+      editableUser.value.manager_id,
       editableUser.value.city,
       editableUser.value.birth_date,
       editableUser.value.status
@@ -47,11 +47,8 @@ const cancelEditing = () => {
 
 // Buscar informações do gerente e logar no console:
 onMounted(async () => {
-  if (editableUser.value.manager) {
-    // Chama a action passando o ID do gerente (acessado corretamente via editableUser.value.manager)
-    await authStore.fetchUserById(editableUser.value.manager);
-    // Exibe a informação do gerente no console
-    // console.log("Informações do Gerente:", authStore.user);
+  if (editableUser.value.manager_id) { 
+    await authStore.fetchUserById(editableUser.value.manager_id); 
   }
 });
 
@@ -70,13 +67,13 @@ onMounted(async () => {
           <Input v-model="editableUser.city" label="Cidade" type="text" placeholder="Cidade" />
         </div>
         <div class="flex gap-3">
-          <Input v-model="editableUser.manager" label="Superior" type="number" placeholder="Superior" />
+          <Input v-if="editableUser.manager" v-model="editableUser.manager.username" label="Superior" type="text" placeholder="Superior" />
         </div>
         <Input v-model="editableUser.birth_date" label="Data de Nascimento" type="date" placeholder="Data de Nascimento"
           required />
         <label class="block text-lg text-gray-700 dark:text-gray-200 font-semibold mt-2 mb-1">Login</label>
         <label class="relative inline-flex items-center cursor-pointer w-full">
-          <input type="checkbox" v-model="editableUser.status" :true-value="1" :false-value="0" class="sr-only peer" />
+          <input type="checkbox" v-model="editableUser.status" class="sr-only peer" />
           <div
             class="group text-xl md:text-2xl bg-rose-400 rounded-full after:duration-300 w-[300px] sm:w-full h-12 peer-checked:bg-emerald-500 after:rounded-full after:absolute after:bg-gray-50 after:h-10 after:w-36 after:top-1 after:left-1 peer-checked:after:translate-x-[115px] sm:peer-checked:after:translate-x-[26rem]">
             <i class="fas fa-lock-open absolute left-3.5 top-3"></i>

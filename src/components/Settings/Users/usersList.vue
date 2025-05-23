@@ -1,10 +1,12 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
-import { useAuthStore } from '../../../stores/Auth/authStore';
+import { useAuthStore } from '@/stores/Auth/authStore';
+import { useCarregamentoStore } from '@/stores/Config/carregamento';
 import UserModal from './userModal.vue';
 import UserList from './userList.vue';
 
 const userStore = useAuthStore();
+const carregamento = useCarregamentoStore()
 const users = ref([]);
 const searchQuery = ref(''); // Campo para armazenar o texto de busca
 const searchField = ref('username'); // Campo de busca (name ou email)
@@ -15,11 +17,14 @@ const editableUser = ref(null);
 
 const fetchUsers = async () => {
     try {
+        carregamento.iniciarCarregamento()
         const fetchedUsers = await userStore.getAllUsers();
         users.value = fetchedUsers.data;
         console.log(users.value) // console usuarios
+        carregamento.finalizarCarregamento()
     } catch (error) {
         console.error('Erro ao carregar os usuários:', error);
+        carregamento.finalizarCarregamento()
     }
 };
 
@@ -32,7 +37,8 @@ const filteredUsers = computed(() => {
         const matchesSearch = user[field]?.toLowerCase().includes(query);
         const matchesCity = !filterCity.value || user.city === filterCity.value;
         const matchesPosition = !filterPosition.value || user.position === filterPosition.value;
-        const matchesStatus = filterStatus.value === '' || user.status === parseInt(filterStatus.value);
+        const matchesStatus = filterStatus.value === '' || user.status === filterStatus.value;
+
 
         return matchesSearch && matchesCity && matchesPosition && matchesStatus;
     });
@@ -53,7 +59,8 @@ const closeModal = () => {
     <div class="pt-5">
 
         <!-- Campo de busca e seleção de campo -->
-        <div class="mx-4 lg:mx-36 mb-5 bg-gray-200 dark:bg-gray-500 shadow-sm px-8 py-2 md:px-20 md:py-4 rounded-3xl md:rounded-full">
+        <div
+            class="mx-4 lg:mx-36 mb-5 bg-gray-200 dark:bg-gray-500 shadow-sm px-8 py-2 md:px-20 md:py-4 rounded-3xl md:rounded-full">
             <!-- Campo de busca -->
             <div class="flex items-center">
                 <input v-model="searchQuery" type="text" placeholder="Buscar usuário"
@@ -121,15 +128,15 @@ const closeModal = () => {
                 <div class="relative">
                     <select v-model="filterStatus"
                         class="w-full bg-transparent text-md md:text-lg border-b border-gray-400 focus:outline-none text-gray-600 dark:text-gray-100 dark:placeholder-gray-300 cursor-pointer appearance-none">
-                        <option value=""
+                        <option :value="''"
                             class="text-gray-900 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700">
                             Status
                         </option>
-                        <option value="1"
+                        <option :value="true"
                             class="text-gray-900 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700">
                             Ativo
                         </option>
-                        <option value="0"
+                        <option :value="false"
                             class="text-gray-900 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700">
                             Inativo
                         </option>
