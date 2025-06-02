@@ -214,9 +214,9 @@
         <div ref="menu" :class="{ 'translate-x-0': menuOpen, '-translate-x-full': !menuOpen }"
             class="menu-hover fixed flex h-full top-16 flex-1 flex-col justify-between border-r filter drop-shadow-xl border-gray-300 dark:border-gray-800 bg-gray-200 dark:bg-gray-700 z-20 transform transition-transform duration-300 ease-in-out">
 
-            <div class="px-4 pt-4 pb-32 text-xl w-64 overflow-y-scroll">
+            <div class="flex pt-4 pb-32 text-xl overflow-y-scroll">
 
-                <ul class="space-y-[12px]">
+                <ul class="space-y-[12px] ps-3 mx-auto">
                     <li :class="{ '': dropdowns.favorites }">
                         <button @click="toggleDropdown('favorites')"
                             class="flex justify-between truncate w-full rounded-md bg-gray-300 text-gray-700 hover:bg-gray-400 hover:text-gray-600 dark:bg-gray-500 dark:text-gray-300 dark:hover:bg-gray-400 dark:hover:text-gray-200 px-4 py-2 font-medium">
@@ -362,7 +362,7 @@
                         <ul v-if="dropdowns.settings" class="mt-2 text-gray-600 dark:text-gray-300">
                             <MenuLink :router="'/settings/users'" :section="'Usuários'" :name="'Usuários'"
                                 :isFavorited="false" />
-                            <MenuLink :router="'/settings/hierarchy'" :section="'Hierarquia'" :name="'Hierarquia'"
+                            <MenuLink :router="'/settings/organograma'" :section="'Organograma'" :name="'Organograma'"
                                 :isFavorited="false" />
                             <MenuLink :router="'/settings/Account'" :section="'Account'" :name="'Sua Conta'"
                                 :isFavorited="false" />
@@ -524,9 +524,6 @@ onMounted(async () => {
     const prefersDarkScheme = window.matchMedia('(prefers-color-scheme: dark)').matches;
     darkMode.value = prefersDarkScheme;
     document.addEventListener('click', closeMenu);
-    if (!authStore.user) {
-        await authStore.fetchUserInfo();
-    }
     favoritesStore.loadFavorites();
     notificationStore.fetchNotifications();
 });

@@ -5,6 +5,9 @@ import 'vue-toastification/dist/index.css';
 import tippy from 'tippy.js';
 import 'tippy.js/dist/tippy.css';
 
+import PrimeVue from 'primevue/config';
+import Aura from '@primeuix/themes/aura';
+
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import App from './App.vue'
@@ -32,7 +35,11 @@ const toastOptions = {
   icon: true,
 };
 app.use(Toast, toastOptions);
-
+app.use(PrimeVue, {
+  theme: {
+    preset: Aura
+  }
+});
 // Diretiva para Tippy.js
 app.directive('tippy', {
   mounted(el, binding) {
@@ -49,6 +56,12 @@ app.directive('tippy', {
 });
 
 app.use(router);
+
+
+
+
+
+
 
 // Agora que o Pinia está instalado, é seguro acessar a store e inicializar a autenticação
 import { useAuthStore } from './stores/Auth/authStore';
