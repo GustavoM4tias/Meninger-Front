@@ -79,7 +79,7 @@ export const updateMeInfo = async (username, email, position, city, birth_date, 
   return response.json();
 };
 
-export const updateUserInfo = async (id, username, email, position, manager, city, birth_date, status) => {
+export const updateUserInfo = async (id, username, email, position, manager_id, city, birth_date, status) => {
 
   const response = await fetchCarregamento(`${API_URL}/auth/users`, {
     method: 'PUT',
@@ -87,7 +87,7 @@ export const updateUserInfo = async (id, username, email, position, manager, cit
       'Authorization': `Bearer ${localStorage.getItem('token')}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ id, username, email, position, manager, city, birth_date, status }),
+    body: JSON.stringify({ id, username, email, position, manager_id, city, birth_date, status }),
   });
 
   if (!response.ok) {

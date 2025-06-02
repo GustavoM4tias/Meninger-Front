@@ -102,11 +102,11 @@ const removeImage = (index) => {
     newEvent.value.images.splice(index, 1); // Remove a imagem pelo índice
 };
 
-onMounted(async () => {
-    if (!authStore.user) {
-        await authStore.fetchUserInfo();
-    }
-});
+// onMounted(async () => {
+//     if (!authStore.user) {
+//         await authStore.fetchUserInfo();
+//     }
+// });
 
 </script>
 

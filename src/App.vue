@@ -13,12 +13,15 @@ const route = useRoute();
 
 // Propriedade computada que verifica se a URL atual inicia com '/academy'
 const isAcademyRoute = computed(() => route.path.startsWith('/academy'));
-
+ 
 // Verifica a preferência inicial do sistema e aplica o tema
 onMounted(async () => {
     const darkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
     if (darkMode) {
         document.documentElement.classList.add('dark');
+    }
+    if (!authStore.user) {
+        await authStore.fetchUserInfo();
     }
 });
 </script>
