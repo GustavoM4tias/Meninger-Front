@@ -81,7 +81,7 @@ export const getWeatherByCity = async (city) => {
 };
 
 export const getBuildings = async () => {
-    const response = await fetch(`${API_URL}/external/empreendimentos`, {
+    const response = await fetch(`${API_URL}/cv/empreendimentos`, {
         method: 'GET',
         headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -99,7 +99,7 @@ export const getBuildings = async () => {
 };
 
 export const getBuildingById = async (id) => {
-    const response = await fetchCarregamento(`${API_URL}/external/empreendimento/${id}`, {
+    const response = await fetchCarregamento(`${API_URL}/cv/empreendimento/${id}`, {
         method: 'GET',
         headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`,

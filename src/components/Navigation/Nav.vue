@@ -11,17 +11,11 @@
                     class="h-12 md:h-14 object-cover filter opacity-80 drop-shadow invert dark:invert-0" alt="Logo" />
             </div>
 
-            <div class="relative flex">
+            <div class="relative w-full flex justify-end">
 
-                <div class="search flex">
-                    <div class="hidden md:block">
-                        <input type="search" placeholder="Buscar..."
-                            class="w-full h-10 pl-10 pr-4 text-md bg-gray-50 dark:bg-gray-300 text-gray-700 placeholder-gray-500 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-gray-500 transition duration-200" />
-                        <i class="fas fa-search absolute left-3 my-3 text-gray-500"></i>
-                    </div>
-                </div>
+                <Search />
 
-                <div x-data="{ isActive: false }" class="notification flex mx-3 md:mx-5">
+                <div x-data="{ isActive: false }" class="notification flex px-3 md:px-5">
                     <!-- Botão de notificações -->
                     <div x-on:click="isActive = !isActive"
                         class="text-3xl flex text-gray-600 dark:text-gray-200 m-auto cursor-pointer">
@@ -47,7 +41,7 @@
                     </div>
                 </div>
 
-                <div class="profile flex mr-4 md:mr-6"><!-- AJUSTAR JS IMPORT -->
+                <div class="profile flex pe-4 md:pe-6"><!-- AJUSTAR JS IMPORT -->
 
                     <div x-data="{ isActive: false }" class="relative dropdown m-auto">
 
@@ -159,7 +153,7 @@
                             class="group relative flex justify-center rounded cursor-pointer px-2 py-2.5 text-gray-700 hover:text-gray-600 hover:bg-gray-300 dark:text-gray-300 dark:hover:bg-gray-400 dark:hover:text-gray-200 duration-200">
                             <i class="fas fa-briefcase"></i>
                         </div>
-                        <div @click="openEngineering" v-tippy="'Engenharia'"
+                        <!-- <div @click="openEngineering" v-tippy="'Engenharia'"
                             :class="{ 'bg-gray-300 dark:bg-gray-500 text-gray-50': dropdowns.engineering }"
                             class="group relative flex justify-center rounded cursor-pointer px-2 py-2.5 text-gray-700 hover:text-gray-600 hover:bg-gray-300 dark:text-gray-300 dark:hover:bg-gray-400 dark:hover:text-gray-200 duration-200">
                             <i class="fas fa-helmet-safety"></i>
@@ -173,12 +167,12 @@
                             :class="{ 'bg-gray-300 dark:bg-gray-500 text-gray-50': dropdowns.reports }"
                             class="group relative flex justify-center rounded cursor-pointer px-2 py-2.5 text-gray-700 hover:text-gray-600 hover:bg-gray-300 dark:text-gray-300 dark:hover:bg-gray-400 dark:hover:text-gray-200 duration-200">
                             <i class="fas fa-chart-line"></i>
-                        </div>
+                        </div> 
                         <div @click="openFinance" v-tippy="'Financeiro'"
                             :class="{ 'bg-gray-300 dark:bg-gray-500 text-gray-50': dropdowns.finance }"
                             class="group relative flex justify-center rounded cursor-pointer px-2 py-2.5 text-gray-700 hover:text-gray-600 hover:bg-gray-300 dark:text-gray-300 dark:hover:bg-gray-400 dark:hover:text-gray-200 duration-200">
                             <i class="fas fa-money-bills"></i>
-                        </div>
+                        </div> -->
                         <div @click="openSettings" v-tippy="'Configurações'"
                             :class="{ 'bg-gray-300 dark:bg-gray-500 text-gray-50': dropdowns.settings }"
                             class="group relative flex justify-center rounded cursor-pointer px-2 py-2.5 text-gray-700 hover:text-gray-600 hover:bg-gray-300 dark:text-gray-300 dark:hover:bg-gray-400 dark:hover:text-gray-200 duration-200">
@@ -288,26 +282,25 @@
                             <MenuLink :router="'/comercial/reservas'" :section="'Reservas'" :name="'Reservas'"
                                 :isFavorited="false" />
                             <MenuLink :router="'/comercial/reservas'" :section="'Imobiliarias'" :name="'Imobiliarias'"
-                                :isFavorited="false" />  
+                                :isFavorited="false" />
                             <MenuLink :router="'/comercial/repasses'" :section="'Repasses'" :name="'Repasses'"
+                                :isFavorited="false" />
+                            <MenuLink :router="'/comercial/faturamento'" :section="'Faturamento'" :name="'Faturamento'"
                                 :isFavorited="false" />
                         </ul>
                     </li>
 
-                    <li :class="{ 'mt-10': dropdowns.engineering }">
+                    <!-- <li :class="{ 'mt-10': dropdowns.engineering }">
                         <button @click="toggleDropdown('engineering')"
                             class="flex justify-between truncate w-full rounded-md bg-gray-300 text-gray-700 hover:bg-gray-400 hover:text-gray-600 dark:bg-gray-500 dark:text-gray-300 dark:hover:bg-gray-400 dark:hover:text-gray-200 px-4 py-2 font-medium">
                             Engenharia
                             <i class="my-auto"
                                 :class="dropdowns.engineering ? 'fas fa-chevron-up' : 'fas fa-chevron-down'"></i>
                         </button>
-                        <ul v-if="dropdowns.engineering" class="mt-2 text-gray-600 dark:text-gray-300">
-                            <!-- <MenuLink :router="'/buildings'" :section="'Geral'" :name="'Geral'" :isFavorited="false" />
-                            <MenuLink :router="'/buildings'" :section="'Pré Lançamentos'" :name="'Pré Lançamentos'"
-                                :isFavorited="false" />  -->
+                        <ul v-if="dropdowns.engineering" class="mt-2 text-gray-600 dark:text-gray-300"> 
                         </ul>
                     </li>
-                    
+
                     <li :class="{ 'mt-10': dropdowns.marketing }">
                         <button @click="toggleDropdown('marketing')"
                             class="flex justify-between truncate w-full rounded-md bg-gray-300 text-gray-700 hover:bg-gray-400 hover:text-gray-600 dark:bg-gray-500 dark:text-gray-300 dark:hover:bg-gray-400 dark:hover:text-gray-200 px-4 py-2 font-medium">
@@ -315,10 +308,7 @@
                             <i class="my-auto"
                                 :class="dropdowns.marketing ? 'fas fa-chevron-up' : 'fas fa-chevron-down'"></i>
                         </button>
-                        <ul v-if="dropdowns.marketing" class="mt-2 text-gray-600 dark:text-gray-300">
-                            <!-- <MenuLink :router="'/buildings'" :section="'Geral'" :name="'Geral'" :isFavorited="false" />
-                            <MenuLink :router="'/buildings'" :section="'Pré Lançamentos'" :name="'Pré Lançamentos'"
-                                :isFavorited="false" />  -->
+                        <ul v-if="dropdowns.marketing" class="mt-2 text-gray-600 dark:text-gray-300"> 
                         </ul>
                     </li>
 
@@ -329,15 +319,7 @@
                             <i class="my-auto"
                                 :class="dropdowns.reports ? 'fas fa-chevron-up' : 'fas fa-chevron-down'"></i>
                         </button>
-                        <ul v-if="dropdowns.reports" class="mt-2 text-gray-600 dark:text-gray-300">
-                            <!-- <MenuLink :router="'/reports/leads'" :section="'Leads'" :name="'Leads'"
-                                :isFavorited="false" />
-                            <MenuLink :router="'/reports/imobiliarias'" :section="'Imobiliárias'" :name="'Imobiliárias'"
-                                :isFavorited="false" />
-                            <MenuLink :router="'/reports/vendas'" :section="'Vendas'" :name="'Vendas'"
-                                :isFavorited="false" />
-                            <MenuLink :router="'/reports/repasses'" :section="'Repasses'" :name="'Repasses'"
-                                :isFavorited="false" /> -->
+                        <ul v-if="dropdowns.reports" class="mt-2 text-gray-600 dark:text-gray-300"> 
                         </ul>
                     </li>
 
@@ -350,7 +332,7 @@
                         </button>
                         <ul v-if="dropdowns.finance" class="mt-2 text-gray-600 dark:text-gray-300">
                         </ul>
-                    </li>
+                    </li> -->
 
                     <li :class="{ 'mt-10': dropdowns.settings }">
                         <button @click="toggleDropdown('settings')"
@@ -394,6 +376,7 @@ import { useNotificationStore } from '../../stores/Config/notificationStore';
 import { useFavoritesStore } from '../../stores/Config/favoriteStore';
 import Notification from './components/Notification.vue'
 import MenuLink from './components/MenuLink.vue'
+import Search from './components/Search.vue'
 
 const menuOpen = ref(false);
 const menuRef = ref(null);
