@@ -14,7 +14,7 @@ export const useReservaStore = defineStore('reserva', () => {
       carregando.value = true; // Marca como carregando
 
       // URL com parâmetros para trazer todos os registros
-      const url = `${API_URL}/external/reservas?situacao=todas&idempreendimento=${idempreendimento}&registros_por_pagina=500&pagina=1`;
+      const url = `${API_URL}/cv/reservas?situacao=todas&idempreendimento=${idempreendimento}&registros_por_pagina=500&pagina=1`;
       const response = await fetch(url);
 
       if (!response.ok) {

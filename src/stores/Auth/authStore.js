@@ -1,11 +1,13 @@
 // src/store/authStore.js
 import { defineStore } from 'pinia';
+import router from '@/router';
 import { getUserInfo, getAllUsers, getUserById, fetchBanners } from '@/utils/Auth/apiAuth';
 
 export const useAuthStore = defineStore('user', {
   state: () => ({
     users: [],
     user: null,
+    userById: null,
     token: localStorage.getItem('token') || null, // Inicializa o token do localStorage
     banners: [], // novo estado para os banners
   }),
@@ -31,6 +33,10 @@ export const useAuthStore = defineStore('user', {
       this.user = user;
       localStorage.setItem('position', user.position); // Salva o position no localStorage
     },
+    setUserById(userById) {
+      this.userById = userById;
+      localStorage.setItem('position', userById.position); // Salva o position no localStorage
+    },
     setToken(token) {
       this.token = token;
       localStorage.setItem('token', token); // Salva o token no localStorage
@@ -51,15 +57,15 @@ export const useAuthStore = defineStore('user', {
       } catch (error) {
         console.error(error);
         this.clearUser(); // Limpa usuário caso não consiga obter dados
+        router.push('/login'); // Redireciona para a rota de login
       }
     },
     async fetchUserById(id) { // ajustar
       try {
         const result = await getUserById(id);
-        this.setUser(result.data); // Chama setUser para sincronizar o localStorage
+        this.setUserById(result.data); // Chama setUser para sincronizar o localStorage
       } catch (error) {
-        console.error(error);
-        this.clearUser(); // Limpa usuário caso não consiga obter dados
+        console.error(error); 
       }
     },
     async getAllUsers() {

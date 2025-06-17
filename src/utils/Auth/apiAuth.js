@@ -115,7 +115,7 @@ export const getAllUsers = async () => {
 };
 
 export const fetchBanners = async () => {
-  const response = await fetch(`${API_URL}/external/banners`, {
+  const response = await fetch(`${API_URL}/cv/banners`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',

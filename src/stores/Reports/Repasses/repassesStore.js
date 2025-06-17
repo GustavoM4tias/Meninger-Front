@@ -24,7 +24,7 @@ export const useRepassesStore = defineStore('repasses', {
             try {
                 carregamentoStore.iniciarCarregamento();
                 // Constrói a URL com os filtros
-                let url = `${API_URL}/external/repasses`;
+                let url = `${API_URL}/cv/repasses`;
                 const params = new URLSearchParams();
 
                 // Se empreendimento for um array não vazio, envie como lista separada por vírgula
@@ -111,7 +111,7 @@ export const useRepassesStore = defineStore('repasses', {
             }
 
             try {
-                const response = await fetch(`${API_URL}/external/listagem-empreendimentos`);
+                const response = await fetch(`${API_URL}/cv/listagem-empreendimentos`);
                 if (!response.ok) {
                     console.error('Erro ao buscar empreendimentos:', response.status);
                     return;
@@ -129,7 +129,7 @@ export const useRepassesStore = defineStore('repasses', {
 
         async fetchRepasseWorkflow() {
             try {
-                const response = await fetch(`${API_URL}/external/repasse-workflow`);
+                const response = await fetch(`${API_URL}/cv/repasse-workflow`);
                 if (!response.ok) {
                     console.error('Erro ao buscar workflow de repasses:', response.status);
                     return;

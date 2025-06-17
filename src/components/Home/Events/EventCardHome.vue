@@ -49,7 +49,7 @@ const formatDate = (dateString) => {
                 </p>
                 <RouterLink :to="{
                     path: '/events',
-                    query: { busca: event.title, section: 'geral' }
+                    query: { busca: event.title, section: 'Geral' }
                 }"
                     class="border rounded-md md:rounded-lg text-white text-md md:text-lg text-wrap hover:bg-gray-100 hover:text-gray-800 duration-300 py-1 px-2 md:py-2 md:px-4 ml-4">
                     Ver Mais
