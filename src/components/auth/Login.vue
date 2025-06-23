@@ -38,6 +38,7 @@ const handleLogin = async () => {
 
     if (result.success && result.data.token) {
       authStore.setToken(result.data.token);
+      authStore.fetchUserInfo()
       router.push('/');
     } else {
       errorMessage.value = result.error;
