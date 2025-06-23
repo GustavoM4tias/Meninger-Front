@@ -20,7 +20,7 @@ const routes = [
     path: '/buildings',
     name: 'Empreendimentos',
     component: () => import('../views/Buildings/Buildings.vue'),
-    meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Listagem de empreendimentos' },
+    meta: { requiresAuth: true, allowedPosition: '', searchable: false, content: 'Listagem de empreendimentos' },
   },
   {
     path: '/comercial',
@@ -37,12 +37,6 @@ const routes = [
         name: 'Reservas',
         component: () => import('../views/Reports/Reservas.vue'),
         meta: { requiresAuth: true, allowedPosition: '', searchable: false, content: 'Dashboard de reservas' },
-      },
-      {
-        path: 'reservas?section=Imobiliarias',
-        name: 'Reservas',
-        component: () => import('../views/Reports/Reservas.vue'),
-        meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Dashboard de imobiliarias por reservas' },
       },
       {
         path: 'repasses',

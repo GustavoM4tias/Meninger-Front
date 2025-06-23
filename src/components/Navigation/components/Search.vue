@@ -27,7 +27,8 @@
                 placeholder="Pesquisar uma funcionalidade" />
 
             <ul class="max-h-64 overflow-auto gap-2 px-1 flex flex-col">
-                <li v-for="item in results" :key="item.path + item.name" @click="goTo(item.path)"
+                <li v-for="item in results" :key="item.path + item.name + (item.query?.section || '')"
+                    @click="goTo(item)"
                     class="cursor-pointer p-3 rounded-lg bg-white hover:bg-gray-50 dark:bg-gray-700 dark:hover:bg-gray-600 flex justify-between items-center">
                     <div>
                         <div class="font-medium">{{ item.name }}</div>
@@ -46,10 +47,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount, nextTick, watch } from 'vue';
+import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import Fuse from 'fuse.js';
+
 import { useFavoritesStore } from '@/stores/Config/favoriteStore';
+import { customSearchableRoutes } from '@/router/searchableRoutes'; // <-- IMPORTANTE
 
 const open = ref(false);
 const query = ref('');
@@ -58,82 +61,110 @@ const searchInput = ref(null);
 const router = useRouter();
 const favoritesStore = useFavoritesStore();
 
-// Carrega favoritos e rotas ao montar
+let allRoutes = [];
+let fuse;
+
+function buildIndex() {
+    const baseRoutes = router.getRoutes()
+        .filter(r => r.meta.searchable)
+        .map(r => ({
+            name: r.name,
+            path: r.path,
+            content: r.meta.content,
+            query: {},
+        }));
+
+    // Junta rotas reais com personalizadas
+    allRoutes = [...baseRoutes, ...customSearchableRoutes];
+
+    fuse = new Fuse(allRoutes, {
+        keys: ['name', 'content'],
+        threshold: 0.3,
+    });
+}
+
 onMounted(async () => {
     await favoritesStore.loadFavorites();
     buildIndex();
 });
 
-// Rotas pesquisáveis e Fuse index
-let routes = [];
-let fuse;
-
-function buildIndex() {
-    routes = router.getRoutes().filter(r => r.meta.searchable);
-    fuse = new Fuse(
-        routes.map(r => ({ name: r.name, path: r.path, content: r.meta.content })),
-        { keys: ['name', 'content'], threshold: 0.3 }
-    );
-}
-
-// Abre modal e exibe favoritos
 function openModal() {
-  open.value = true;
-  query.value = '';
+    open.value = true;
+    query.value = '';
 
-  const favoriteRoutes = favoritesStore.favorites.map(fav => {
-    const route = routes.find(r => r.path === fav.router);
-    return route
-      ? {
-          name: fav.section,
-          path: route.path,
-          content: route.section || route.meta.content,
-          favorited: true
-        }
-      : null;
-  }).filter(Boolean);
-
-  const nonFavoriteRoutes = routes
-    .filter(r => !favoriteRoutes.find(f => f.path === r.path))
-    .map(r => ({
-      name: r.name,
-      path: r.path,
-      content: r.meta.content,
-      favorited: false
+    const favoriteRoutes = favoritesStore.favorites.map(fav => {
+        return allRoutes.find(r =>
+            r.path === fav.router &&
+            (r.query?.section === fav.section || r.name === fav.section)
+        );
+    }).filter(Boolean).map(route => ({
+        ...route,
+        favorited: true,
     }));
 
-  results.value = [...favoriteRoutes, ...nonFavoriteRoutes];
+    const favoriteKeys = favoriteRoutes.map(f =>
+        f.path + (f.query?.section || '') + f.name
+    );
 
-  nextTick(() => {
-    searchInput.value?.focus();
-  });
+    const nonFavoriteRoutes = allRoutes
+        .filter(r => !favoriteKeys.includes(r.path + (r.query?.section || '') + r.name))
+        .map(r => ({
+            ...r,
+            favorited: false,
+        }));
+
+    results.value = [...favoriteRoutes, ...nonFavoriteRoutes];
+
+    nextTick(() => {
+        searchInput.value?.focus();
+    });
 }
-
 
 function closeModal() {
     open.value = false;
     results.value = [];
 }
 
-// Busca com Fuse + fallback a todas rotas
 function onSearch() {
     if (!query.value) {
         openModal();
         return;
     }
+
     const found = fuse.search(query.value).map(r => r.item).map(item => ({
         ...item,
         favorited: favoritesStore.isFavorited(item.path, item.name)
     }));
+
     results.value = found.sort((a, b) => b.favorited - a.favorited);
 }
 
-function goTo(path) {
+function goTo(pathOrItem) {
     closeModal();
-    router.push(path);
+
+    // Suporte a item (com query) ou string
+    if (typeof pathOrItem === 'string') {
+        router.push(pathOrItem);
+    } else {
+        router.push({
+            path: pathOrItem.path,
+            query: pathOrItem.query || {},
+        });
+    }
 }
 
-// Atalho Ctrl+K / ⌘+K
+function toggleFavorite(item) {
+    const isNowFav = favoritesStore.isFavorited(item.path, item.name);
+    if (isNowFav) {
+        favoritesStore.removeFavorite(item.path, item.name);
+    } else {
+        favoritesStore.addFavorite(item.path, item.name);
+    }
+
+    favoritesStore.loadFavorites();
+    item.favorited = !isNowFav;
+}
+
 const toggleSearch = (e) => {
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
@@ -141,23 +172,6 @@ const toggleSearch = (e) => {
     }
 };
 
-function toggleFavorite(item) {
-  const isNowFav = favoritesStore.isFavorited(item.path, item.name);
-  if (isNowFav) {
-    favoritesStore.removeFavorite(item.path, item.name);
-  } else {
-    favoritesStore.addFavorite(item.path, item.name);
-  }
-
-  // Recarrega favoritos e atualiza visual
-  favoritesStore.loadFavorites();
-  item.favorited = !isNowFav;
-}
-
 onMounted(() => window.addEventListener('keydown', toggleSearch));
 onBeforeUnmount(() => window.removeEventListener('keydown', toggleSearch));
 </script>
-
-<style scoped>
-/* Estilos se necessário */
-</style>
