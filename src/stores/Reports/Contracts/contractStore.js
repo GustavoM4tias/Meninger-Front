@@ -1,47 +1,51 @@
-import { defineStore } from 'pinia'
-import API_URL from '@/config/apiUrl'
-import { ref } from 'vue'
+// src/stores/Reports/Contracts/contractStore.js
+import { defineStore } from 'pinia';
+import API_URL from '@/config/apiUrl';
+import { useCarregamentoStore } from '@/stores/Config/carregamento';
+import { ref } from 'vue';
 
 export const useContratosStore = defineStore('contratos', () => {
-    const contratos = ref([])
-    const loading = ref(false)
-    const error = ref(null)
-    const count = ref(0)
+    const contratos = ref([]);
+    const error = ref(null);
+    const count = ref(0);
 
-    const fetchContratos = async (filtros = {}) => {
-        loading.value = true
-        error.value = null
+    const fetchContratos = async ({
+        companyId = '',
+        enterpriseId = '',
+        enterpriseName = '',
+        startDate = '',
+        endDate = '', 
+        linkedEnterprises = '' 
+    } = {}) => {
+        const loading = useCarregamentoStore();
+        error.value = null;
 
         try {
-            const url = new URL(`${API_URL}/sienge/contratos`)
-            Object.entries(filtros).forEach(([key, value]) => {
-                if (Array.isArray(value)) {
-                    value.forEach(v => url.searchParams.append(key, v))
-                } else {
-                    url.searchParams.append(key, value)
-                }
-            })
+            loading.iniciarCarregamento();
+            const url = new URL(`${API_URL}/sienge/contratos`);
+            if (companyId) url.searchParams.append('companyId', companyId);
+            if (enterpriseId) url.searchParams.append('enterpriseId', enterpriseId);
+            if (enterpriseName) url.searchParams.append('enterpriseName', enterpriseName);
+            if (startDate) url.searchParams.append('startDate', startDate);
+            if (endDate) url.searchParams.append('endDate', endDate);
+            if (linkedEnterprises) {
+                // Expect linkedEnterprises as a comma-separated string
+                url.searchParams.append('linkedEnterprises', linkedEnterprises);
+            }
 
-            const response = await fetch(url)
-            if (!response.ok) throw new Error('Erro na resposta da API')
+            const res = await fetch(url);
+            if (!res.ok) throw new Error('Resposta inválida da API');
+            const data = await res.json();
 
-            const data = await response.json()
-
-            contratos.value = data.results || []
-            count.value = data.count || 0
-        } catch (err) {
-            error.value = 'Erro ao buscar contratos'
-            console.error(err)
+            contratos.value = data.results;
+            count.value = data.count;
+        } catch (e) {
+            error.value = 'Erro ao buscar contratos';
+            console.error(e);
         } finally {
-            loading.value = false
+            loading.finalizarCarregamento();
         }
-    }
+    };
 
-    return {
-        contratos,
-        loading,
-        error,
-        count,
-        fetchContratos,
-    }
-})
+    return { contratos, count, error, fetchContratos };
+});
