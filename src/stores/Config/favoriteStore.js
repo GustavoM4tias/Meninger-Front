@@ -19,7 +19,7 @@ export const useFavoritesStore = defineStore('favorites', {
             this.errorMessage = '';
             try {
                 const result = await getFavorites();
-                this.favorites = result;  // Atualiza os favoritos
+                this.favorites = result;  // Atualiza os favoritos 
             } catch (error) {
                 console.error('Erro ao carregar favoritos:', error);
                 this.errorMessage = 'Erro ao carregar favoritos.';

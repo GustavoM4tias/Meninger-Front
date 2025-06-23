@@ -21,7 +21,7 @@ export const useLeadsStore = defineStore('leads', () => {
         carregando.value = true;
         error.value = null;
         try {
-            const url = `${API_URL}/external/leads`;
+            const url = `${API_URL}/cv/leads`;
             const params = new URLSearchParams(); 
 
             if (data_inicio) params.append('data_inicio', data_inicio);
@@ -49,7 +49,7 @@ export const useLeadsStore = defineStore('leads', () => {
     const fetchFilas = async () => {
         try {
             // URL com parâmetros para trazer todos os registros
-            const url = `${API_URL}/external/filas`;
+            const url = `${API_URL}/cv/filas`;
             const response = await fetch(url);
 
             if (!response.ok) {
