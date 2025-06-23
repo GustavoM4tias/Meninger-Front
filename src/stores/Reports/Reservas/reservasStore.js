@@ -37,7 +37,7 @@ export const useReservasStore = defineStore('reservas', {
           if (params.ate) query.append('ate', params.ate); // Adiciona parâmetro 'ate'
           query.append('faturar', faturarValue);
 
-          const url = `${API_URL}/external/reservas?${query.toString()}`;
+          const url = `${API_URL}/cv/reservas?${query.toString()}`;
 
           console.time(`TempoFaturar-${faturarValue}`);
           const response = await fetch(url);
@@ -82,7 +82,7 @@ export const useReservasStore = defineStore('reservas', {
     // Busca os empreendimentos para preencher o filtro
     async fetchEmpreendimentos() {
       try {
-        const response = await fetch(`${API_URL}/external/listagem-empreendimentos`);
+        const response = await fetch(`${API_URL}/cv/listagem-empreendimentos`);
         if (!response.ok) {
           console.error('Erro ao buscar empreendimentos:', response.status);
           return;

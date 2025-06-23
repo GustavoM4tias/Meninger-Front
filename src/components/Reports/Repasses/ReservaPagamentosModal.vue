@@ -392,7 +392,7 @@ const fetchPagamentosData = async () => {
 
     try {
         carregamentoStore.iniciarCarregamento();
-        const response = await fetch(`${API_URL}/external/reserva-pagamentos?idreserva=${props.idreserva}`);
+        const response = await fetch(`${API_URL}/cv/reserva-pagamentos?idreserva=${props.idreserva}`);
 
         if (!response.ok) {
             throw new Error(`Erro ao buscar dados: ${response.status}`);

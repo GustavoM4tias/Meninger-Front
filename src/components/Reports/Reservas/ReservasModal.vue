@@ -260,6 +260,7 @@
                 </li>
             </ul>
         </div>
+
         <ExportExcel :reservas="props.reservas" :showExcel="excelModal" @closeExcel="excelModal = false" />
     </div>
 </template>
