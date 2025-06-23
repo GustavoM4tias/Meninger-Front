@@ -36,7 +36,13 @@ const routes = [
         path: 'reservas',
         name: 'Reservas',
         component: () => import('../views/Reports/Reservas.vue'),
-        meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Dashboard de reservas' },
+        meta: { requiresAuth: true, allowedPosition: '', searchable: false, content: 'Dashboard de reservas' },
+      },
+      {
+        path: 'reservas?section=Imobiliarias',
+        name: 'Reservas',
+        component: () => import('../views/Reports/Reservas.vue'),
+        meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Dashboard de imobiliarias por reservas' },
       },
       {
         path: 'repasses',

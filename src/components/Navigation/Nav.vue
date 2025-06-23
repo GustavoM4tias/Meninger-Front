@@ -48,7 +48,7 @@
                         <div class="flex cursor-pointer">
                             <div x-on:click="isActive = !isActive"
                                 class="profile-img flex bg-gray-400 rounded-full w-10 h-10 overflow-hidden">
-                                <p class="text-gray-100 m-auto font-semibold">
+                                <p v-if="authStore.user" class="text-gray-100 m-auto font-semibold">
                                     {{authStore.user?.username?.split(" ").slice
                                         (0, 2).map(name => name[0].toUpperCase()).join("")}}
                                 </p>

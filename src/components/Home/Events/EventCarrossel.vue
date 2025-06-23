@@ -18,7 +18,7 @@ onMounted(async () => {
 <template>
     <div class="events-preview flex flex-col p-4">
         <p class="text-lg md:text-2xl font-semibold py-1 truncate">
-            Olá<span v-if="authStore.user">, {{ authStore.user.username }}</span>!
+            Olá<span v-if="authStore.user">, {{ authStore.user?.username }}</span>!
         </p>
         <Carrossel class="duration-300 transform hover:scale-[102%]" :eventos="eventStore.eventosRecentes" />
     </div>

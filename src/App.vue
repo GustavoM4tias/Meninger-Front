@@ -36,7 +36,7 @@ onMounted(async () => {
     <div class="flex-1 h-screen w-screen">
       <div class="mt-16" v-if="isAuthenticated"></div>
       <router-view :class="{ 'ps-16': isAuthenticated }" />
-      <ChatBot />
+      <ChatBot v-if="isAuthenticated" />
     </div>
     <Carregamento />
   </body>
