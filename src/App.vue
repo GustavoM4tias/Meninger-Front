@@ -29,7 +29,11 @@ onMounted(async () => {
 
 <template>
 
-  <body id="app" :class="['flex', { 'overflow-x-hidden': isAcademyRoute }]">
+  <body v-if="isAcademyRoute" id="app" class="overflow-x-hidden">
+      <router-view />
+  </body>
+
+  <body v-else id="app" class="flex">
     <div class="top-0 left-0" v-if="isAuthenticated">
       <Nav />
     </div>

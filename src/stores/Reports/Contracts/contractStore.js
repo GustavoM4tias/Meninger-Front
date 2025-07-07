@@ -10,12 +10,12 @@ export const useContratosStore = defineStore('contratos', () => {
     const count = ref(0);
 
     const fetchContratos = async ({
-        companyId = '',
-        enterpriseId = '',
-        enterpriseName = '',
+        companyIds = [],
+        enterpriseIds = [],
+        enterpriseNames = [],
         startDate = '',
-        endDate = '', 
-        linkedEnterprises = '' 
+        endDate = '',
+        linkedEnterprises = [] // array de pares "id1:id2"
     } = {}) => {
         const loading = useCarregamentoStore();
         error.value = null;
@@ -23,15 +23,15 @@ export const useContratosStore = defineStore('contratos', () => {
         try {
             loading.iniciarCarregamento();
             const url = new URL(`${API_URL}/sienge/contratos`);
-            if (companyId) url.searchParams.append('companyId', companyId);
-            if (enterpriseId) url.searchParams.append('enterpriseId', enterpriseId);
-            if (enterpriseName) url.searchParams.append('enterpriseName', enterpriseName);
+
+            companyIds.forEach(id => url.searchParams.append('companyId', id));
+            enterpriseIds.forEach(id => url.searchParams.append('enterpriseId', id));
+            enterpriseNames.forEach(n => url.searchParams.append('enterpriseName', n));
             if (startDate) url.searchParams.append('startDate', startDate);
             if (endDate) url.searchParams.append('endDate', endDate);
-            if (linkedEnterprises) {
-                // Expect linkedEnterprises as a comma-separated string
-                url.searchParams.append('linkedEnterprises', linkedEnterprises);
-            }
+
+            if (linkedEnterprises.length)
+                url.searchParams.append('linkedEnterprises', linkedEnterprises.join(','));
 
             const res = await fetch(url);
             if (!res.ok) throw new Error('Resposta inválida da API');
@@ -49,3 +49,4 @@ export const useContratosStore = defineStore('contratos', () => {
 
     return { contratos, count, error, fetchContratos };
 });
+

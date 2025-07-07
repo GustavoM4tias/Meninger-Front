@@ -3,7 +3,7 @@
 
     <div class="h-full w-full relative">
 
-        <div class="menu horizontal fixed top-0 left-16 h-16 flex items-center justify-between border-b border-gray-400 bg-gray-200 dark:border-gray-800 dark:bg-gray-700 z-20"
+        <div class="menu horizontal fixed top-0 left-16 h-16 flex items-center justify-between border-b border-gray-300 bg-gray-100 dark:border-gray-800 dark:bg-gray-700 z-20"
             style="width: calc(100% - 4rem);">
 
             <div class="pl-2 md:pl-4">
@@ -121,7 +121,7 @@
         </div>
 
         <div
-            class="menu vertical fixed top-0 left-0 h-full w-16 flex flex-col justify-between border-r dark:border-gray-800 dark:bg-gray-700 border-gray-400 bg-gray-200 z-30">
+            class="menu vertical fixed top-0 left-0 h-full w-16 flex flex-col justify-between border-r dark:border-gray-800 dark:bg-gray-700 border-gray-300 bg-gray-100 z-30">
             <div>
                 <div
                     class="flex size-16 items-center justify-center py-4 text-3xl dark:text-gray-300 dark:hover:text-gray-100 text-gray-800 hover:text-gray-900">
@@ -173,6 +173,11 @@
                             class="group relative flex justify-center rounded cursor-pointer px-2 py-2.5 text-gray-700 hover:text-gray-600 hover:bg-gray-300 dark:text-gray-300 dark:hover:bg-gray-400 dark:hover:text-gray-200 duration-200">
                             <i class="fas fa-money-bills"></i>
                         </div> -->
+                        <div @click="openTools" v-tippy="'Ferramentas'"
+                            :class="{ 'bg-gray-300 dark:bg-gray-500 text-gray-50': dropdowns.tools }"
+                            class="group relative flex justify-center rounded cursor-pointer px-2 py-2.5 text-gray-700 hover:text-gray-600 hover:bg-gray-300 dark:text-gray-300 dark:hover:bg-gray-400 dark:hover:text-gray-200 duration-200">
+                            <i class="fas fa-wrench"></i>
+                        </div>
                         <div @click="openSettings" v-tippy="'Configurações'"
                             :class="{ 'bg-gray-300 dark:bg-gray-500 text-gray-50': dropdowns.settings }"
                             class="group relative flex justify-center rounded cursor-pointer px-2 py-2.5 text-gray-700 hover:text-gray-600 hover:bg-gray-300 dark:text-gray-300 dark:hover:bg-gray-400 dark:hover:text-gray-200 duration-200">
@@ -195,7 +200,7 @@
                             class="m-auto text-3xl text-gray-700 dark:text-gray-300 transition-transform duration-300"></i>
                     </label>
                 </div>
-                <div class="sticky inset-x-0 bottom-0 border-t border-gray-400 dark:border-gray-800 p-2 text-2xl">
+                <div class="sticky inset-x-0 bottom-0 border-t border-gray-200 dark:border-gray-800 p-2 text-2xl">
                     <button
                         class="flex w-full justify-center rounded-lg cursor-pointer px-2 py-2 text-gray-700 hover:text-gray-600 hover:bg-gray-300 dark:text-gray-300 dark:hover:bg-gray-400 dark:hover:text-gray-200 duration-200">
                         <i class="fas fa-circle-info"></i>
@@ -334,6 +339,18 @@
                         </ul>
                     </li> -->
 
+                    <li :class="{ 'mt-10': dropdowns.tools }">
+                        <button @click="toggleDropdown('tools')"
+                            class="flex justify-between truncate w-full rounded-md bg-gray-300 text-gray-700 hover:bg-gray-400 hover:text-gray-600 dark:bg-gray-500 dark:text-gray-300 dark:hover:bg-gray-400 dark:hover:text-gray-200 px-4 py-2 font-medium">
+                            Ferramentas
+                            <i class="my-auto"
+                                :class="dropdowns.tools ? 'fas fa-chevron-up' : 'fas fa-chevron-down'"></i>
+                        </button>
+                        <ul v-if="dropdowns.tools" class="mt-2 text-gray-600 dark:text-gray-300">
+                            <MenuLink :router="'/tools/validator'" :section="'Validador'" :name="'Validador'" :isFavorited="false" /> 
+                        </ul>
+                    </li>
+
                     <li :class="{ 'mt-10': dropdowns.settings }">
                         <button @click="toggleDropdown('settings')"
                             class="flex justify-between truncate w-full rounded-md bg-gray-300 text-gray-700 hover:bg-gray-400 hover:text-gray-600 dark:bg-gray-500 dark:text-gray-300 dark:hover:bg-gray-400 dark:hover:text-gray-200 px-4 py-2 font-medium">
@@ -407,6 +424,8 @@ const getCategoryByRouter = (router) => {
         return 'Eventos';
     } else if (router.startsWith('/buildings')) {
         return 'Empreendimentos';
+    } else if (router.startsWith('/tools')) {
+        return 'Ferramentas';
     } else if (router.startsWith('/settings')) {
         return 'Configurações';
     }
@@ -437,6 +456,7 @@ const dropdowns = ref({
     marketing: false,
     reports: false,
     finance: false,
+    tools: false,
     settings: false,
 });
 
@@ -484,6 +504,11 @@ function openReports() {
 function openFinance() {
     toggleMenu()
     toggleDropdown('finance')
+}
+
+function openTools() {
+    toggleMenu()
+    toggleDropdown('tools')
 }
 
 function openSettings() {

@@ -1,8 +1,8 @@
 <template>
     <!-- Botão de busca sempre visível -->
-    <form class="w-80">
+    <form class="md:w-80">
         <label class="mb-2 text-sm font-medium text-gray-900 sr-only dark:text-white">Search</label>
-        <div class="relative" @click="openModal()">
+        <div class="hidden md:block relative" @click="openModal()">
             <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
                 <i class="fas fa-magnifying-glass"></i>
             </div>
@@ -14,10 +14,15 @@
                 CTRL<span class="p-[0.05rem]"></span>+<span class="p-[0.1rem]"></span>K
             </span>
         </div>
+        <div class="relative md:hidden" @click="openModal()">
+            <div class="absolute right-1 text-3xl">
+                <i class="fas fa-magnifying-glass"></i>
+            </div> 
+        </div>
     </form>
 
     <!-- Modal de busca -->
-    <div v-show="open" class="fixed inset-0 bg-black/20 flex items-center justify-center z-40"
+    <div v-show="open" class="fixed inset-0 bg-black/20 ms-[4rem] ps-3 flex items-center justify-center z-40"
         @click.self="closeModal()">
         <div
             class="bg-gray-100 shadow-dark dark:bg-gray-800 dark:shadow-black/40  rounded-xl shadow-lg w-full max-w-lg p-6 relative">
