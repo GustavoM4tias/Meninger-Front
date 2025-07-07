@@ -39,7 +39,7 @@ const buildingStore = useBuildingStore();
 onMounted(() => {
     if (buildingStore.buildings.length === 0) {
         buildingStore.fetchBuildings();
-    }
+    } 
 });
 
 // Filtrar e limitar os buildings para "Pré-Lançamento" e "Lançamento"
@@ -49,6 +49,7 @@ const filteredBuildings = computed(() => {
             building.situacao_comercial.length > 0 &&
             ['Pré-Lançamento'].includes(building.situacao_comercial[0].nome) // , 'Lançamento'
         ) 
+        .reverse()
         .slice(0, 3);
 });
 

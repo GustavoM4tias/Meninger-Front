@@ -116,7 +116,7 @@
 import { ref, nextTick } from 'vue';
 
 const open = ref(false);
-const collapsed = ref(false);
+const collapsed = ref(true);
 const chatContainer = ref(null)
 
 const toggleChat = () => {
