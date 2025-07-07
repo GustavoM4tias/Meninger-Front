@@ -72,6 +72,7 @@ const handleRegister = async () => {
     // Acessa o token na estrutura correta da resposta
     if (result.success) {
       authStore.setToken(result.data.token); // Armazena o token na store
+      authStore.fetchUserInfo()
       router.push('/'); // Redireciona após o login
     } else {
       errorMessage.value = result.error; // Exibe mensagem de erro
