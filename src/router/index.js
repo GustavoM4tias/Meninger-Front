@@ -54,6 +54,14 @@ const routes = [
     meta: { requiresAuth: true, allowedPosition: '' },
   },
   {
+    path: '/tools',
+    name: 'tools',
+    children: [
+      { path: 'validator', name: 'Validador', component: () => import('../views/tools/Validador.vue'), meta: { searchable: true, content: 'Validador de Contratos de Venda.' } }, 
+    ],
+    meta: { requiresAuth: true, allowedPosition: '' },
+  },
+  {
     path: '/settings',
     name: 'settings',
     children: [
