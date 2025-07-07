@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted } from 'vue';
-import { useAIStore } from '@/stores/config/aiStore';
+import { useAIStore } from '@/stores/Config/aiStore.js';
 import AIHistoryItem from './HistoryItem.vue';
 import ModalDetalhes from './HistoryModal.vue';
 
