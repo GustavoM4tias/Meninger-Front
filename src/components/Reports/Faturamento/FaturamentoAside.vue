@@ -1,5 +1,5 @@
 <template>
-    <aside class="w-3/12 h-full overflow-hidden py-4">
+    <aside class="w-3/12 h-full overflow-hidden py-4 pe-4">
         <div class="cards w-full h-full">
             <h2 class="text-2xl font-semibold ps-2">Faturados X Empreendimentos</h2>
             <div class="overflow-y-auto h-[calc(100%-2rem)] px-2 pt-2 flex flex-col gap-3">

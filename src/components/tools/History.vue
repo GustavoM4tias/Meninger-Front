@@ -31,10 +31,19 @@ onMounted(() => {
       </h2>
 
       <div class="flex flex-col overflow-auto gap-2 p-1 flex-1">
-        <AIHistoryItem v-for="item in aiStore.validatorHistory" :key="item.id" :item="item" @open="openModal" />  
+        <AIHistoryItem v-for="item in aiStore.validatorHistory" :key="item.id" :item="item" @open="openModal" />
+        <span class="text-center text-xs">
+          Aprovados: {{
+            aiStore.validatorHistory.filter(({ status }) => status === 'APROVADO').length
+          }} |
+          Reprovados: {{
+            aiStore.validatorHistory.filter(({ status }) => status === 'REPROVADO').length
+          }}
+        </span>
+        <p class="text-center text-xs">Total de validações: {{ aiStore.validatorHistory.length }}</p>
       </div>
     </div>
 
     <ModalDetalhes v-if="selectedItem" :show="showModal" :item="selectedItem" @close="showModal = false" />
   </div>
-</template> 
+</template>

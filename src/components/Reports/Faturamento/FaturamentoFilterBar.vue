@@ -1,6 +1,26 @@
 <script setup>
 import { reactive, ref } from 'vue';
 import dayjs from 'dayjs';
+import { useContratosStore } from '@/stores/Reports/Contracts/contractStore';
+import { useToast } from 'vue-toastification';
+
+const toast = useToast();
+
+// logo após os seus imports
+const contratoStore = useContratosStore();
+
+// função que chama a action clearCache e então refaz a busca
+const clearCache = async () => {
+    const ok = await contratoStore.clearCache();
+    if (ok) {
+        // feedback pro usuário (pode trocar por toast, snackbar etc) 
+        toast.success('Cache limpo com sucesso!');
+        // refaz a busca usando os filtros atuais
+        await contratoStore.fetchContratos(filtros);
+    } else {
+        toast.error('Falha ao limpar o cache');
+    }
+};
 
 const props = defineProps({
     availableCompanies: Array,
@@ -53,7 +73,18 @@ const aplicarFiltros = () => {
 
 
 <template>
-    <section class="flex items-center h-auto justify-between p-4 rounded-xl shadow bg-gray-200 dark:bg-gray-700">
+    <section
+        class="flex items-center relative h-auto justify-between p-4 rounded-xl shadow bg-gray-200 dark:bg-gray-700">
+
+        <i class="fa fa-circle-info text-xl absolute right-2 top-2 cursor-pointer" @click.stop="clearCache"
+            v-tippy.html="`
+            <p class='text-xs text-center px-2'>
+            Cache: 20 min para evitar reloads.<br>
+            Clique para limpar!
+            </p>
+            `" data-tippy-placement="bottom"></i>
+
+
         <!-- Filtro por Data -->
         <div class="flex gap-4">
             <!-- Datas -->
