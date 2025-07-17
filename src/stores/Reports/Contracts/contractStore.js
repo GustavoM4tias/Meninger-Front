@@ -47,6 +47,28 @@ export const useContratosStore = defineStore('contratos', () => {
         }
     };
 
-    return { contratos, count, error, fetchContratos };
+    // nova action para limpar cache
+    const clearCache = async () => { 
+        try { 
+            const res = await fetch(`${API_URL}/sienge/contratos/cache/clear`, {
+                method: 'POST'
+            });
+            if (!res.ok) throw new Error('Falha ao limpar cache');
+            // opcional: você pode recarregar contratos imediatamente
+            // await fetchContratos();
+            return true;
+        } catch (e) {
+            console.error(e);
+            return false;
+        } 
+    };
+
+    return {
+        contratos,
+        count,
+        error,
+        fetchContratos,
+        clearCache
+    };
 });
 
