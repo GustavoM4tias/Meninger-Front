@@ -61,8 +61,8 @@ const mostrarContratosPorEmpreendimento = (empreendimento) => {
 
 onMounted(() => {
     aplicar(filtros.value);
-    console.log(store.contratos)
 });
+    console.log(store.contratos)
 </script>
 
 <template>
@@ -80,20 +80,76 @@ onMounted(() => {
 
             <main v-else class="mt-4 px-4 overflow-auto max-h-full">
                 <p>Total de grupos: {{ store.count }}</p>
+
+                <p>
+                    Total Geral (sem desconto):
+                    {{
+                        store.contratos
+                            .flatMap(grp => grp.contracts || [])
+                            .reduce((acc, c) => acc + (c.totalSellingValue || 0), 0)
+                            .toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+                    }}
+                </p>
+
+                <p>
+                    Total Geral (com desconto):
+                    {{
+                        store.contratos
+                            .flatMap(grp => grp.contracts || [])
+                            .reduce((acc, c) => {
+                                const dc = c.paymentConditions?.find(p => p.conditionTypeId === 'DC')?.totalValue || 0;
+                                return acc + (c.totalSellingValue - dc);
+                            }, 0)
+                    .toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+                    }}
+                </p>
+                <p>
+                    Total de RP :
+                    {{
+                        store.contratos
+                            .flatMap(grp => grp.contracts || [])
+                            .reduce((acc, c) => {
+                                const dc = c.paymentConditions?.find(p => p.conditionTypeId === 'RP')?.totalValue || 0;
+                                return acc + (dc);
+                            }, 0)
+                    .toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+                    }}
+                </p>
+
+                <p>
+                </p>
+                <br>
+
                 <ul>
                     <li v-for="grp in store.contratos" :key="grp.customerId + '-' + grp.groupEnterprise" class="mb-4">
                         <strong>{{ grp.customerName }}</strong>
-                        (grc: {{ grp.groupEnterprise }}  | contratos: {{
+                        (grc: {{ grp.groupEnterprise }} | contratos: {{
                             Array.isArray(grp.contracts) ? grp.contracts.length : 0
                         }})
                         <ul>
                             <li v-for="c in grp.contracts" :key="c.id">
                                 #{{ c.enterpriseId }} – {{ c.cost }}
+
                                 <span v-if="c.__usouDataContrato" class="text-yellow-600 font-semibold">
                                     (Data Contrato usada)
                                 </span>
+
                                 {{ c.financialInstitutionDate || c.contractDate }} – {{ c.enterpriseName }} – {{
                                     c.totalSellingValue }}
+
+                                <!-- Se existir condição DC, mostra o valor e o total com desconto -->
+                                <div v-if="c.paymentConditions.find(p => p.conditionTypeId === 'DC')">
+                                    Desconto Construtora (DC):
+                                    {{c.paymentConditions.find(p => p.conditionTypeId === 'DC').totalValue}}
+
+                                    <br>
+
+                                    Total com Desconto:
+                                    {{
+                                        c.totalSellingValue -
+                                        c.paymentConditions.find(p => p.conditionTypeId === 'DC').totalValue
+                                    }}
+                                </div>
                             </li>
 
                         </ul>
