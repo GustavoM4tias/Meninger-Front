@@ -37,7 +37,7 @@ const showBuildingDetails = () => {
                     </p> -->
                 </div>
 
-                <Flag :stage="building.situacao_comercial[0]?.nome" />
+                <Flag class="top-3 right-0" :stage="building.situacao_comercial[0]?.nome" />
 
                 <!-- <ul class="flex flex-wrap">
                     <li class="hover:bg-gray-100 hover:text-gray-800 text-gray-200 border border-gray-300 cursor-pointer filter drop-shadow duration-300 shadow px-2 py- m-1 rounded-lg"

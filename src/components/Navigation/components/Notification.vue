@@ -1,48 +1,39 @@
 <template>
-    <hr class="border-gray-400 dark:border-gray-600" />
-
-    <div class="m-auto p-1 w-full flex group">
-        <button
-            class="flex w-full truncate justify-center rounded-lg cursor-pointer px-1 py-0.5 duration-100 hover:bg-gray-200 dark:hover:bg-gray-400 hover:text-gray-200">
-            <RouterLink :to="notification?.link" class="m-auto flex justify-between w-full truncate">
-                <img v-if="notification.image" :src="notification?.image" alt=""
-                    class="w-14 h-14 my-auto rounded-md object-cover" />
-                <div v-if="notification.birth"
-                    class="date min-w-14 h-14 my-auto text-center flex flex-col justify-center text-md md:text-xl rounded-md font-semibold bg-gray-100 group-hover:bg-gray-200 dark:bg-gray-400 dark:hover:bg-gray-600 dark:group-hover:bg-gray-500 text-gray-700 dark:text-gray-100">
-                    <p class="day">{{ formatDate(notification.birth).day }}</p>
-                    <p class="month -mt-2">{{ formatDate(notification.birth).month }}</p>
-                </div>
-                <div class="flex flex-col w-full text-start ps-2 truncate">
-                    <h4 class="text-gray-800 dark:text-gray-100 -mb-1 font-semibold truncate">{{ notification?.title }}
-                    </h4>
-                    <p class="text-md truncate text-gray-500 dark:text-gray-300">{{ notification?.type }}</p>
-                    <!-- <p class="text-sm">{{ notification.date }}</p> -->
-                </div>
-            </RouterLink>
+    <div class="relative px-3 md:px-5">
+        <!-- Botão de notificações -->
+        <button id="notificationDropdownButton" data-dropdown-toggle="notificationDropdown"
+            class="relative text-3xl text-gray-600 dark:text-gray-200 focus:outline-none" type="button">
+            <i class="far fa-bell"></i>
+            <i v-if="notificationStore.notifications.length > 0"
+                class="fas fa-circle text-sm text-red-500 absolute -top-1 -right-1 fa-bounce slow-animation"></i>
         </button>
+
+        <!-- Dropdown de notificações -->
+        <div id="notificationDropdown"
+            class="z-20 hidden w-72 max-h-72 overflow-y-auto bg-white dark:bg-gray-700 divide-y divide-gray-100 rounded-lg shadow">
+            <div v-if="notificationStore.notifications.length > 0"
+                class="py-2 text-sm text-gray-700 dark:text-gray-200">
+                <div v-for="(notification, index) in notificationStore.notifications" :key="index"
+                    class="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600">
+                    <NotificationItem :notification="notification" />
+                </div>
+            </div>
+            <div v-else class="px-4 py-4 text-center text-gray-700 dark:text-gray-300 text-sm">
+                Sem Notificações
+            </div>
+        </div>
     </div>
 </template>
 
+
 <script setup>
-import { RouterLink } from 'vue-router';
+import { onMounted } from 'vue';
+import NotificationItem from './NotificationItem.vue';
+import { useNotificationStore } from '@/stores/Config/notificationStore';
 
-defineProps({
-    notification: {
-        type: Object,
-        required: true
-    }
+const notificationStore = useNotificationStore();
+
+onMounted(() => {
+    notificationStore.fetchNotifications();
 });
-
-const formatDate = (dateString) => {
-    const date = new Date(dateString);
-
-    const months = [
-        'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'
-    ];
-
-    const day = date.getDate();
-    const month = months[date.getMonth()];  
-
-    return { day, month };
-};
 </script>

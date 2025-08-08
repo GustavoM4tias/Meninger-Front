@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useBuildingStore } from '@/stores/Building/buildingStore';
 import BuildingCard from '@/components/Buildings/BuildingCard.vue';
 import BuildingModal from '@/components/Buildings/BuildingModal.vue';
+import Favorite from "@/components/config/Favorite.vue";
 
 const route = useRoute();
 const router = useRouter();
@@ -34,9 +35,9 @@ watch(
 // Computed para acessar o estado da store
 const buildingsFiltered = computed(() => {
     const filter = search.value.toLowerCase();
-    return buildingStore.buildings.filter(building =>
-        building.nome.toLowerCase().includes(filter)
-    );
+    return buildingStore.buildings
+        .filter(building => building.nome.toLowerCase().includes(filter))
+        .reverse();
 });
 
 const buildingsPreLaunch = computed(() =>
@@ -81,13 +82,14 @@ onMounted(() => buildingStore.fetchBuildings());
 </script>
 
 <template>
-    <div
-        class="bg-gray-300 dark:bg-gray-800 ms-4 md:ms-16 px-4 md:px-8 text-gray-800 dark:text-gray-200 h-[calc(100%-4rem)] relative overflow-x-hidden overflow-y-auto">
+    <div class="h-full relative overflow-y-auto overflow-x-hidden">
         <img class="absolute invert dark:invert-0 z-0 left-72 top-0 w-full opacity-25" src="/traçado.png">
 
         <div class="container md:mx-auto mb-16 relative z-10">
             <div class="busca items-center md:-mb-3 my-7">
-                <h1 class="text-2xl md:text-4xl text-center font-bold mb-2">Empreendimentos</h1>
+                <h1 class="text-2xl md:text-4xl text-center font-bold mb-2">Empreendimentos
+                    <Favorite :router="'/buildings'" :section="currentSection" />
+                </h1>
                 <div class="nav bg-gray-400 rounded-full mx-auto p-1 md:p-2 filter w-full md:w-2/5">
                     <input type="text" v-model="search" @input="updateQuery"
                         class="busca bg-gray-200 w-full rounded-full px-3 py-1.5 md:px-5 md:py-3 text-gray-700 outline-none font-semibold placeholder-gray-600"

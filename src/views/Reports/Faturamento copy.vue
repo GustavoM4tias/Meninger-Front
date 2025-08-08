@@ -198,7 +198,7 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue';
-import { useContratosStore } from '@/stores/Reports/Contracts/contractStore';
+import { useContratosStore } from '@/stores/Reports/Contracts/#contractStore';
 import Favorite from "@/components/config/Favorite.vue";
 // Toast de notificação
 import { useToast } from 'vue-toastification';

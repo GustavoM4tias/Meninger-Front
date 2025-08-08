@@ -13,30 +13,6 @@ export const useNotificationStore = defineStore('notificationStore', {
         async fetchNotifications() {
             try {
                 const currentDate = new Date();
-
-                // Buscar empreendimentos
-                // const result = await getBuildings();
-                // const buildings = result.data.buildings || [];
-
-                // // Filtrar empreendimentos criados na última semana
-                // const oneWeekAgo = new Date();
-                // oneWeekAgo.setDate(oneWeekAgo.getDate() - 6);
-
-                // const recentBuildings = buildings.filter(building => {
-                //     const createdAt = new Date(building.post_date);
-                //     return createdAt >= oneWeekAgo;
-                // });
-
-                // // Adicionar notificações baseadas nos empreendimentos recentes
-                // const buildingNotifications = recentBuildings.map(building => ({
-                //     title: building.title, // Nome do empreendimento
-                //     type: 'Empreendimento',
-                //     date: new Date(building.post_date),
-                //     importance: Math.max(0, 7 - Math.floor((currentDate - new Date(building.post_date)) / (1000 * 60 * 60 * 24))), // Mais importante no dia do cadastro
-                //     image: building.images[0] || '/noimg.jpg', // Imagem ou fallback 
-                //     link: `/buildings?search=${building.title}`, // Link para o evento
-                // }));
-
                 // Buscar aniversários
                 const authStore = useAuthStore(); // Usa a store de autenticação
                 if (authStore.users.length === 0) {

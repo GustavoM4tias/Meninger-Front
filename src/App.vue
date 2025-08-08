@@ -30,10 +30,31 @@ onMounted(async () => {
 <template>
 
   <body v-if="isAcademyRoute" id="app" class="overflow-x-hidden">
-      <router-view />
+    <router-view />
   </body>
 
-  <body v-else id="app" class="flex">
+  <body v-else-if="!isAcademyRoute && !isAuthenticated" id="app" class="flex">
+    <router-view />
+    <Carregamento />
+  </body>
+
+  <body v-else-if="!isAcademyRoute && isAuthenticated" id="app" class="flex">
+    <main class="flex flex-col h-screen w-full">
+      <div class="flex">
+        <Nav />
+        <div class="flex flex-1 mt-16 sm:mt-14 w-full h-auto min-h-[calc(100vh-3.5rem)] break-words overflow-auto">
+          <div class="w-full max-w-full bg-gray-50 dark:bg-gray-900">
+            <!-- <h2 class="text-xl truncate">Título muito longo aqui</h2>
+            <p class="break-words">Texto longo ou com palavras grandes...</p> -->
+            <router-view />
+          </div>
+        </div>
+      </div>
+    </main>
+    <ChatBot v-if="isAuthenticated" />
+    <Carregamento />
+  </body>
+  <!-- <body v-else id="app" class="flex">
     <div class="top-0 left-0" v-if="isAuthenticated">
       <Nav />
     </div>
@@ -43,5 +64,5 @@ onMounted(async () => {
       <ChatBot v-if="isAuthenticated" />
     </div>
     <Carregamento />
-  </body>
+  </body> -->
 </template>

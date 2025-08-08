@@ -6,7 +6,7 @@
     </hr>
     <Input class="my-6" v-model="email" type="email" placeholder="Email" required />
     <Input class="my-6" v-model="password" type="password" placeholder="Senha" required />
-    <p class="text-sm -mt-3 text-blue-500 underline cursor-pointer hover:text-blue-600">Esquecer a Senha? </p>
+    <p class="text-sm -mt-3 mb-2 text-blue-500 underline cursor-pointer hover:text-blue-600">Esqueceu a Senha? </p>
     <Button type="submit">Login</Button>
     <div v-if="errorMessage" class="text-red-500">{{ errorMessage }}</div>
     <hr class="border-t border-gray-400 dark:border-gray-100 mt-6">
