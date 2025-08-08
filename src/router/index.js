@@ -72,6 +72,18 @@ const routes = [
     meta: { requiresAuth: true, allowedPosition: '' },
   },
   {
+    path: '/report',
+    name: 'Reportar',
+    component: () => import('../views/Config/Report.vue'),
+    meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Reportar Problema' },
+  },
+  {
+    path: '/docs',
+    name: 'Documentação',
+    component: () => import('../views/Docs/Docs.vue'),
+    meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Documentação do sistema' },
+  },
+  {
     path: '/error',
     name: 'Error',
     component: () => import('../views/Config/ErrorPage.vue'),
