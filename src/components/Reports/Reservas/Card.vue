@@ -31,7 +31,7 @@ const props = defineProps({
             <h3 v-tippy="`${props.title}`" class="truncate font-semibold">{{ props.title }}</h3>
             <i class="text-end w-1/6" :class="icon"></i>
         </div>
-        <h1 class="text-3xl flex-1 flex items-center font-bold">
+        <h1 class="text-2xl lg:text-3xl flex-1 flex items-center font-bold truncate">
             {{ props.value }}
         </h1>
         <span class="text-xs text-gray-400 truncate">{{ props.label }}</span>

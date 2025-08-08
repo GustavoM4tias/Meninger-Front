@@ -5,9 +5,8 @@ import BuildingCarrossel from '../components/Home/Buildings/BuildingCarrossel.vu
 </script>
 
 <template>
-  <div class="h-auto md:h-[calc(100vh-4rem)] flex flex-col md:flex-row bg-gray-100 dark:bg-gray-800">
-
-    <!-- Primeira coluna -->
+  <div class="h-auto md:h-[calc(100vh-3.5rem)] flex flex-col md:flex-row">
+ 
     <div class="w-full md:w-2/3 flex flex-col">
 
       <div class="w-full">
@@ -21,8 +20,7 @@ import BuildingCarrossel from '../components/Home/Buildings/BuildingCarrossel.vu
       </div>
 
     </div>
-
-    <!-- Segunda coluna -->
+ 
     <div class="w-full md:w-1/3 f-full flex flex-col">
 
       <EventNotification class="flex-1 p-4 md:h-[60%] md:min-h-[60%] filter drop-shadow-xl order-2 md:order-1" />

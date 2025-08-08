@@ -32,7 +32,7 @@ const showBuildingDetails = () => {
                     <!-- <p class="text-gray-200 font-semibold filter drop-shadow cursor-pointer duration-200 hover:text-gray-100 text-wrap text-sm bottom-0 right-0 m-1 md:m-2">
                         {{ formatDate(building.building_date) }}
                     </p> -->
-                    <Flag :stage="props.building.situacao_comercial[0].nome" />
+                    <Flag class="top-3 right-0" :stage="props.building.situacao_comercial[0].nome" />
                 </div>
                 <ul class="flex flex-wrap">
                     <li

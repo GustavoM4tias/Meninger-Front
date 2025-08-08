@@ -117,34 +117,32 @@ const formattedTime = computed(() => {
 </script>
 
 <template>
-    <div class="w-16">
-      <div v-if="weather" class="relative group inline-block">
-        <!-- Elemento que ativa o tooltip -->
-        <div v-if="weatherIcon" class="icon flex items-end cursor-pointer">
-          <i class="text-6xl filter drop-shadow-sm text-gray-50" :class="weatherIcon"></i>
+  <div class="w-fit">
+    <div v-if="weather" class="relative group">
+      <!-- Ícone do tempo -->
+      <div v-if="weatherIcon" class="flex justify-center items-center cursor-pointer">
+        <i :class="weatherIcon" class="text-6xl text-blue-50 drop-shadow"></i>
+      </div>
+
+      <!-- Tooltip bonito e clean -->
+      <div class="absolute -left-12 bottom-full -translate-x-1/2 mb-3 hidden group-hover:flex flex-col items-center gap-2 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 shadow-lg rounded-lg px-4 py-3 w-52 text-sm z-50">
+        <p class="text-xl font-semibold text-center">{{ weatherText }}</p>
+
+        <div class="flex items-center justify-center gap-2 text-lg">
+          <i :class="weatherTemperature" class="text-xl"></i>
+          <span>{{ city }}, <strong>{{ weather.temperature }}°C</strong></span>
         </div>
-  
-        <!-- Tooltip/modal -->
-        <div class="absolute -translate-x-1/2 bottom-full mb-2 hidden group-hover:block dark:bg-gray-800 dark:text-gray-200 bg-gray-200 text-gray-600 text-sm rounded-xl px-4 py-3 shadow-lg z-60" >
-          <div v-if="weatherIcon" class="icon flex items-end">
-            <i class="text-5xl" :class="weatherIcon"></i>
-            <p class="text-xl ms-2">{{ weatherText }}</p>
-          </div>
-  
-          <div class="flex flex-col text-center mt-2">
-            <div class="flex items-center">
-              <i class="me-1 text-3xl" :class="weatherTemperature"></i>
-              <p class="text-xl">
-                {{ city }}, <strong>{{ weather.temperature }}°C</strong>
-              </p>
-            </div>
-            <p class="text-lg">
-              {{ formattedTime.charAt(0).toUpperCase() + formattedTime.slice(1) }}.
-            </p>
-            <p class="text-sm">Ventos de <strong>{{ weather?.windspeed.toFixed(0) }}Km/h.</strong></p>
-          </div>
-        </div>
+
+        <p class="text-center text-sm">
+          {{ formattedTime.charAt(0).toUpperCase() + formattedTime.slice(1) }}.
+        </p>
+
+        <p class="text-center text-sm">
+          Ventos de <strong>{{ weather?.windspeed.toFixed(0) }}Km/h</strong>.
+        </p>
       </div>
     </div>
-  </template>
+  </div>
+</template>
+
   

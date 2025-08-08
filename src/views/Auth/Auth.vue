@@ -13,21 +13,19 @@ const chanceLogin = () => {
 </script>
 <!-- src/views/Auth.vue -->
 <template>
-  <div class="grid grid-cols-12 h-full">
+  <div class="grid grid-cols-12 h-full min-h-screen">
 
     <div class="h-full relative flex col-span-12 lg:col-span-5 bg-gray-100 dark:bg-gray-800 shadow-2xl z-20">
-      <div class="acesso absolute m-8">
+      <!-- <div class="acesso absolute m-8">
         <select v-if="login"
           class="py-2 px-2 rounded-lg text-gray-50 hover:text-white bg-blue-500 hover:bg-blue-600 cursor-pointer duration-200"
-          name="" id="">
-          <option value="gestor">Gestor</option>
-          <option value="financeiro">Financeiro</option>
-          <option value="marketing">Marketing</option>
-          <option value="comercial">Comercial</option>
-          <option value="usuario">Usuário</option>
-          <option value="diretoria">Diretoria</option>
+          name="" id=""> 
+          <option value="Financeiro">Financeiro</option>
+          <option value="Marketing">Marketing</option>
+          <option value="Comercial">Comercial</option> 
+          <option value="Diretor">Diretor</option>
         </select>
-      </div>
+      </div> -->
       <div class="form m-auto w-4/6">
         <img src="/Mlogotext.png" class="filter invert dark:invert-0 m-auto w-4/6">
         <Login v-if="login" @changeLogin="chanceLogin" />
