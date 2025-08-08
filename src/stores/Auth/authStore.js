@@ -50,6 +50,10 @@ export const useAuthStore = defineStore('user', {
     isAuthenticated() {
       return !!this.token;
     },
+    logout() {
+      this.clearUser()
+      router.push('/login');
+    },
     async fetchUserInfo() {
       try {
         const result = await getUserInfo();
@@ -65,7 +69,7 @@ export const useAuthStore = defineStore('user', {
         const result = await getUserById(id);
         this.setUserById(result.data); // Chama setUser para sincronizar o localStorage
       } catch (error) {
-        console.error(error); 
+        console.error(error);
       }
     },
     async getAllUsers() {

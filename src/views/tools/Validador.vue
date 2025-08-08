@@ -1,5 +1,5 @@
 <template>
-    <div class="flex-1 min-h-[calc(100%-4rem)] bg-gray-50 dark:bg-gray-800 relative overflow-x-hidden flex ms-4 md:ms-16 p-3 md:p-6">
+    <div class="flex flex-1 h-full relative overflow-y-auto overflow-x-hidden">
         <div class="w-full justify-center flex items-center">
             <div class="bg-white dark:bg-gray-700 rounded-2xl shadow-xl p-8 w-full max-w-4xl">
                 <div class="text-center mb-6">

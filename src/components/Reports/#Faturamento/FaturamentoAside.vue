@@ -16,7 +16,7 @@
 
 <script setup>
 import { computed } from 'vue'
-import { useContratosStore } from '@/stores/Reports/Contracts/contractStore'
+import { useContratosStore } from '@/stores/Reports/Contracts/#contractStore'
 import Card from '@/components/Reports/Reservas/Card.vue'
 
 const props = defineProps({

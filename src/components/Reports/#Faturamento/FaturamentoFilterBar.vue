@@ -1,7 +1,7 @@
 <script setup>
 import { reactive, ref } from 'vue';
 import dayjs from 'dayjs';
-import { useContratosStore } from '@/stores/Reports/Contracts/contractStore';
+import { useContratosStore } from '@/stores/Reports/Contracts/#contractStore';
 import { useToast } from 'vue-toastification';
 
 const toast = useToast();

@@ -1,5 +1,5 @@
 <template>
-  <div class="input-field w-full mt-2 text-lg">
+  <div class="input-field w-full text-lg">
     <label v-if="label" class="block text-gray-700 dark:text-gray-200 font-semibold mb-1">
       {{ label }}
     </label>

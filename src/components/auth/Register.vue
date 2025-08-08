@@ -44,21 +44,19 @@ const errorMessage = ref('');
 
 
 const optionsCity = [
-  { value: 'marilia', label: 'Marília' },
-  { value: 'garca', label: 'Garça' },
-  { value: 'bauru', label: 'Bauru' },
-  { value: 'jacarezinho', label: 'Jacarezinho' },
-  { value: 'bady bassitt', label: 'Bady Bassitt' },
-  { value: 'dourados', label: 'Dourados' }
+  { value: 'Marília', label: 'Marília' },
+  { value: 'Garça', label: 'Garça' },
+  { value: 'Bauru', label: 'Bauru' },
+  { value: 'Jacarezinho', label: 'Jacarezinho' },
+  { value: 'Bady Bassitt', label: 'Bady Bassitt' },
+  { value: 'Dourados', label: 'Dourados' }
 ];
 
-const optionsPosition = [
-  { value: 'gestor', label: 'Gestor' },
-  { value: 'financeiro', label: 'Financeiro' },
-  { value: 'marketing', label: 'Marketing' },
-  { value: 'comercial', label: 'Comercial' },
-  { value: 'usuario', label: 'Usuário' },
-  { value: 'diretoria', label: 'Diretoria' }
+const optionsPosition = [ 
+  { value: 'Financeiro', label: 'Financeiro' },
+  { value: 'Marketing', label: 'Marketing' },
+  { value: 'Comercial', label: 'Comercial' }, 
+  { value: 'Diretor', label: 'Diretor' }
 ];
 
 const handleRegister = async () => {

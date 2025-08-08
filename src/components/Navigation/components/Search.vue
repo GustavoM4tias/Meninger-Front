@@ -7,22 +7,17 @@
                 <i class="fas fa-magnifying-glass"></i>
             </div>
             <input type="search"
-                class="block w-full p-3 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                class="block w-full px-3 py-2 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                 placeholder="Pesquisar uma funcionalidade" @focus="openModal" readonly />
             <span
                 class="absolute inset-y-0 end-0 flex items-center pe-3 pointer-events-none text-xs font-mono tracking-tighter uppercase text-gray-500 dark:text-gray-300">
                 CTRL<span class="p-[0.05rem]"></span>+<span class="p-[0.1rem]"></span>K
             </span>
-        </div>
-        <div class="relative md:hidden" @click="openModal()">
-            <div class="absolute right-1 text-3xl">
-                <i class="fas fa-magnifying-glass"></i>
-            </div> 
-        </div>
+        </div> 
     </form>
 
     <!-- Modal de busca -->
-    <div v-show="open" class="fixed inset-0 bg-black/20 ms-[4rem] ps-3 flex items-center justify-center z-40"
+    <div v-show="open" class="fixed inset-0 bg-black/20 ps-3 flex items-center justify-center z-40"
         @click.self="closeModal()">
         <div
             class="bg-gray-100 shadow-dark dark:bg-gray-800 dark:shadow-black/40  rounded-xl shadow-lg w-full max-w-lg p-6 relative">

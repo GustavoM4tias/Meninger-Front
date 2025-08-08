@@ -3,7 +3,7 @@ import { ref, onMounted, watch } from 'vue';
 import { addEvent } from '../../utils/Event/apiEvents';
 import { getAddress } from '../../utils/Config/apiExternalBuilding';
 import { useAuthStore } from '../../stores/Auth/authStore';
-import Notification from '../Navigation/components/Notification.vue';
+import Notification from '../Navigation/components/NotificationItem.vue';
 
 const authStore = useAuthStore();
 

@@ -1,554 +1,475 @@
-<!-- src/components/Nav.vue -->
-<template>
-
-    <div class="h-full w-full relative">
-
-        <div class="menu horizontal fixed top-0 left-16 h-16 flex items-center justify-between border-b border-gray-300 bg-gray-100 dark:border-gray-800 dark:bg-gray-700 z-20"
-            style="width: calc(100% - 4rem);">
-
-            <div class="pl-2 md:pl-4">
-                <img src="/Mlogo.png"
-                    class="h-12 md:h-14 object-cover filter opacity-80 drop-shadow invert dark:invert-0" alt="Logo" />
-            </div>
-
-            <div class="relative w-full flex justify-end">
-
-                <Search />
-
-                <div x-data="{ isActive: false }" class="notification flex px-3 md:px-5">
-                    <!-- Botão de notificações -->
-                    <div x-on:click="isActive = !isActive"
-                        class="text-3xl flex text-gray-600 dark:text-gray-200 m-auto cursor-pointer">
-                        <i class="far fa-bell"></i>
-                        <i v-if="notificationStore.notifications.length > 0"
-                            class="fas fa-circle text-sm text-red-500 -ml-2.5 fa-bounce slow-animation"></i>
-                    </div>
-
-                    <!-- Menu de notificações --> <!-- AJUSTAR JS IMPORT -->
-                    <div class="absolute right-4 md:right-14 top-12 z-10 w-64 max-h-72 overflow-y-auto rounded-md dark:bg-gray-500 bg-gray-300 shadow-lg"
-                        role="menu" x-cloak x-transition x-show="isActive" x-on:click.away="isActive = false"
-                        x-on:keydown.escape.window="isActive = false">
-                        <!-- Lista de notificações -->
-                        <div v-if="notificationStore.notifications.length > 0"
-                            v-for="(notification, index) in notificationStore.notifications" :key="index"
-                            class="notification text-xl flex flex-col text-gray-700 dark:text-gray-300">
-                            <Notification :notification="notification" />
-                        </div>
-                        <div v-else
-                            class="notification text-xl flex flex-col text-gray-700 dark:text-gray-300 text-center">
-                            <p class="py-4 px-4">Sem Notificações</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="profile flex pe-4 md:pe-6"><!-- AJUSTAR JS IMPORT -->
-
-                    <div x-data="{ isActive: false }" class="relative dropdown m-auto">
-
-                        <div class="flex cursor-pointer">
-                            <div x-on:click="isActive = !isActive"
-                                class="profile-img flex bg-gray-400 rounded-full w-10 h-10 overflow-hidden">
-                                <p v-if="authStore.user" class="text-gray-100 m-auto font-semibold">
-                                    {{authStore.user?.username?.split(" ").slice
-                                        (0, 2).map(name => name[0].toUpperCase()).join("")}}
-                                </p>
-                            </div>
-                        </div>
-
-                        <div class="absolute right-0 z-10 w-48 rounded-md border dark:border-gray-600 border-gray-400 dark:bg-gray-500 bg-gray-300 shadow-lg"
-                            role="menu" x-cloak x-transition x-show="isActive" x-on:click.away="isActive = false"
-                            x-on:keydown.escape.window="isActive = false">
-
-                            <div class="account text-xl flex flex-col text-gray-700 dark:text-gray-300">
-
-
-                                <div
-                                    class="profile-img relative flex bg-gray-400 rounded-full w-16 h-16 m-auto mt-3 overflow-hidden shadow">
-                                    <p class="text-gray-100 m-auto text-3xl">
-                                        {{authStore.user?.username?.split(" ").slice(0, 2).map(name =>
-                                            name[0].toUpperCase()).join("")}}
-                                    </p>
-                                </div>
-
-                                <p class="font-semibold text-center my-1 px-3 truncate">
-                                    {{authStore.user?.username?.split(" ").filter(name => !["de", "da", "do", "dos",
-                                        "das", "e"].includes(name.toLowerCase())).slice(0, 2).join(" ")}}
-                                </p>
-
-
-                                <hr class="border-gray-400 dark:border-gray-600">
-
-                                <div class="m-auto w-full flex truncate py-2 px-8">
-                                    <label
-                                        class="flex m-auto p-2 w-full cursor-pointer rounded-full bg-gray-100 dark:bg-gray-800 hover:shadow transition-all ease-in-out">
-                                        <input class="peer sr-only" id="themeToggle" type="checkbox" v-model="darkMode"
-                                            @change="toggleTheme" />
-                                        <i :class="{
-                                            'far fa-sun translate-x-0': !darkMode,
-                                            'far fa-moon translate-x-24': darkMode
-                                        }"
-                                            class="transition-transform text-gray-800 dark:text-gray-300 duration-400"></i>
-                                    </label>
-                                </div>
-
-                                <hr class="border-gray-400 dark:border-gray-600">
-
-                                <div class="m-auto p-2 w-full flex">
-                                    <button @click="editProfile"
-                                        class="flex w-full truncate justify-center rounded-lg cursor-pointer px-2 py-1 duration-100 hover:bg-gray-400 hover:text-gray-200">
-                                        <div class="m-auto flex truncate">
-                                            <i class="fas fa-pen m-auto mr-3"></i>
-                                            <RouterLink to="/settings/Account">Editar Conta</RouterLink>
-                                        </div>
-                                    </button>
-                                </div>
-
-                                <hr class="border-gray-400 dark:border-gray-600">
-                                <div class="m-auto p-2 w-full flex">
-                                    <button @click="logout"
-                                        class="flex w-full justify-center rounded-lg cursor-pointer px-2 py-1 duration-100 hover:bg-gray-400 hover:text-gray-200">
-                                        <div class="m-auto flex truncate">
-                                            <i class="fas fa-arrow-right-from-bracket m-auto mr-3"></i>
-                                            <p>Logout</p>
-                                        </div>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div
-            class="menu vertical fixed top-0 left-0 h-full w-16 flex flex-col justify-between border-r dark:border-gray-800 dark:bg-gray-700 border-gray-300 bg-gray-100 z-30">
-            <div>
-                <div
-                    class="flex size-16 items-center justify-center py-4 text-3xl dark:text-gray-300 dark:hover:text-gray-100 text-gray-800 hover:text-gray-900">
-                    <div class="group relative flex justify-center rounded cursor-pointer pl-1">
-                        <RouterLink to="/">
-                            <i class="fas fa-house"></i>
-                        </RouterLink>
-                    </div>
-                </div>
-                <div class="px-2 text-2xl">
-                    <ul class="space-y-3 border-t border-gray-400 dark:border-gray-800 pt-3">
-                        <div @click="openFavorites" v-tippy="'Favoritos'"
-                            :class="{ 'bg-gray-300 dark:bg-gray-500 text-gray-50': dropdowns.favorites }"
-                            class="group relative flex justify-center rounded cursor-pointer px-2 py-2.5 text-gray-700 hover:text-gray-600 hover:bg-gray-300 dark:text-gray-300 dark:hover:bg-gray-400 dark:hover:text-gray-200 duration-200">
-                            <i class="fa fa-star"></i>
-                        </div>
-                        <div @click="openEvents" v-tippy="'Eventos'"
-                            :class="{ 'bg-gray-300 dark:bg-gray-500 text-gray-50': dropdowns.events }"
-                            class="group relative flex justify-center rounded cursor-pointer px-2 py-2.5 text-gray-700 hover:text-gray-600 hover:bg-gray-300 dark:text-gray-300 dark:hover:bg-gray-400 dark:hover:text-gray-200 duration-200">
-                            <i class="fas fa-newspaper"></i>
-                        </div>
-                        <div @click="openEnterprise" v-tippy="'Empreendimentos'"
-                            :class="{ 'bg-gray-300 dark:bg-gray-500 text-gray-50': dropdowns.enterprise }"
-                            class="group relative flex justify-center rounded cursor-pointer px-2 py-2.5 text-gray-700 hover:text-gray-600 hover:bg-gray-300 dark:text-gray-300 dark:hover:bg-gray-400 dark:hover:text-gray-200 duration-200">
-                            <i class="fas fa-building"></i>
-                        </div>
-                        <div @click="openComercial" v-tippy="'Comercial'"
-                            :class="{ 'bg-gray-300 dark:bg-gray-500 text-gray-50': dropdowns.comercial }"
-                            class="group relative flex justify-center rounded cursor-pointer px-2 py-2.5 text-gray-700 hover:text-gray-600 hover:bg-gray-300 dark:text-gray-300 dark:hover:bg-gray-400 dark:hover:text-gray-200 duration-200">
-                            <i class="fas fa-briefcase"></i>
-                        </div>
-                        <!-- <div @click="openEngineering" v-tippy="'Engenharia'"
-                            :class="{ 'bg-gray-300 dark:bg-gray-500 text-gray-50': dropdowns.engineering }"
-                            class="group relative flex justify-center rounded cursor-pointer px-2 py-2.5 text-gray-700 hover:text-gray-600 hover:bg-gray-300 dark:text-gray-300 dark:hover:bg-gray-400 dark:hover:text-gray-200 duration-200">
-                            <i class="fas fa-helmet-safety"></i>
-                        </div>
-                        <div @click="openMarketing" v-tippy="'Marketing'"
-                            :class="{ 'bg-gray-300 dark:bg-gray-500 text-gray-50': dropdowns.marketing }"
-                            class="group relative flex justify-center rounded cursor-pointer px-2 py-2.5 text-gray-700 hover:text-gray-600 hover:bg-gray-300 dark:text-gray-300 dark:hover:bg-gray-400 dark:hover:text-gray-200 duration-200">
-                            <i class="fas fa-bullhorn"></i>
-                        </div>
-                        <div @click="openReports" v-tippy="'Relatórios'"
-                            :class="{ 'bg-gray-300 dark:bg-gray-500 text-gray-50': dropdowns.reports }"
-                            class="group relative flex justify-center rounded cursor-pointer px-2 py-2.5 text-gray-700 hover:text-gray-600 hover:bg-gray-300 dark:text-gray-300 dark:hover:bg-gray-400 dark:hover:text-gray-200 duration-200">
-                            <i class="fas fa-chart-line"></i>
-                        </div> 
-                        <div @click="openFinance" v-tippy="'Financeiro'"
-                            :class="{ 'bg-gray-300 dark:bg-gray-500 text-gray-50': dropdowns.finance }"
-                            class="group relative flex justify-center rounded cursor-pointer px-2 py-2.5 text-gray-700 hover:text-gray-600 hover:bg-gray-300 dark:text-gray-300 dark:hover:bg-gray-400 dark:hover:text-gray-200 duration-200">
-                            <i class="fas fa-money-bills"></i>
-                        </div> -->
-                        <div @click="openTools" v-tippy="'Ferramentas'"
-                            :class="{ 'bg-gray-300 dark:bg-gray-500 text-gray-50': dropdowns.tools }"
-                            class="group relative flex justify-center rounded cursor-pointer px-2 py-2.5 text-gray-700 hover:text-gray-600 hover:bg-gray-300 dark:text-gray-300 dark:hover:bg-gray-400 dark:hover:text-gray-200 duration-200">
-                            <i class="fas fa-wrench"></i>
-                        </div>
-                        <div @click="openSettings" v-tippy="'Configurações'"
-                            :class="{ 'bg-gray-300 dark:bg-gray-500 text-gray-50': dropdowns.settings }"
-                            class="group relative flex justify-center rounded cursor-pointer px-2 py-2.5 text-gray-700 hover:text-gray-600 hover:bg-gray-300 dark:text-gray-300 dark:hover:bg-gray-400 dark:hover:text-gray-200 duration-200">
-                            <i class="fas fa-gear"></i>
-                        </div>
-                    </ul>
-                </div>
-            </div>
-
-            <div>
-                <div class="w-full flex p-2">
-                    <label
-                        class="flex m-auto cursor-pointer rounded-full bg-gray-300 dark:bg-gray-800 transition-all ease-in-out">
-                        <input class="peer sr-only" id="themeToggle" type="checkbox" v-model="darkMode"
-                            @change="toggleTheme" />
-                        <i :class="{
-                            'far fa-sun mx-2 my-2': !darkMode,
-                            'far fa-moon mx-3 my-2': darkMode
-                        }"
-                            class="m-auto text-3xl text-gray-700 dark:text-gray-300 transition-transform duration-300"></i>
-                    </label>
-                </div>
-                <div class="sticky inset-x-0 bottom-0 border-t border-gray-200 dark:border-gray-800 p-2 text-2xl">
-                    <button
-                        class="flex w-full justify-center rounded-lg cursor-pointer px-2 py-2 text-gray-700 hover:text-gray-600 hover:bg-gray-300 dark:text-gray-300 dark:hover:bg-gray-400 dark:hover:text-gray-200 duration-200">
-                        <i class="fas fa-circle-info"></i>
-                    </button>
-                </div>
-
-            </div>
-        </div>
-
-        <div ref="menu" :class="{ 'translate-x-0': menuOpen, '-translate-x-full': !menuOpen }"
-            class="menu-hover fixed flex h-full top-16 flex-1 flex-col justify-between border-r filter drop-shadow-xl border-gray-300 dark:border-gray-800 bg-gray-200 dark:bg-gray-700 z-20 transform transition-transform duration-300 ease-in-out">
-
-            <div class="flex pt-4 pb-32 text-xl overflow-y-scroll">
-
-                <ul class="space-y-[12px] ps-3 mx-auto">
-                    <li :class="{ '': dropdowns.favorites }">
-                        <button @click="toggleDropdown('favorites')"
-                            class="flex justify-between truncate w-full rounded-md bg-gray-300 text-gray-700 hover:bg-gray-400 hover:text-gray-600 dark:bg-gray-500 dark:text-gray-300 dark:hover:bg-gray-400 dark:hover:text-gray-200 px-4 py-2 font-medium">
-                            Favoritos
-                            <i class="my-auto"
-                                :class="dropdowns.favorites ? 'fas fa-chevron-up' : 'fas fa-chevron-down'"></i>
-                        </button>
-
-                        <ul v-if="dropdowns.favorites" class="mt-2 text-gray-600 dark:text-gray-300">
-                            <li v-for="(favoritesGroup, category) in groupedFavorites" :key="category">
-                                <p class="font-semibold text-xl -my-1">{{ category }}</p>
-                                <ul>
-                                    <MenuLink v-for="favorite in favoritesGroup" :key="favorite.id"
-                                        :router="favorite.router" :section="favorite.section" :name="favorite.section"
-                                        :isFavorited="true" />
-                                </ul>
-                            </li>
-                        </ul>
-
-                    </li>
-                    <li :class="{ '': dropdowns.events }">
-                        <button @click="toggleDropdown('events')"
-                            class="flex justify-between truncate w-full rounded-md bg-gray-300 text-gray-700 hover:bg-gray-400 hover:text-gray-600 dark:bg-gray-500 dark:text-gray-300 dark:hover:bg-gray-400 dark:hover:text-gray-200 px-4 py-2 font-medium">
-                            Eventos
-                            <i class="my-auto"
-                                :class="dropdowns.events ? 'fas fa-chevron-up' : 'fas fa-chevron-down'"></i>
-                        </button>
-                        <ul v-if="dropdowns.events" class="mt-2 text-gray-600 dark:text-gray-300">
-                            <MenuLink :router="'/events'" :section="'Geral'" :name="'Geral'" :isFavorited="false" />
-                            <MenuLink :router="'/events'" :section="'Próximos'" :name="'Próximos'"
-                                :isFavorited="false" />
-                            <MenuLink :router="'/events'" :section="'Finalizados'" :name="'Finalizados'"
-                                :isFavorited="false" />
-                        </ul>
-                    </li>
-
-                    <li :class="{ 'mt-10': dropdowns.enterprise }">
-                        <button @click="toggleDropdown('enterprise')"
-                            class="flex justify-between truncate w-full rounded-md bg-gray-300 text-gray-700 hover:bg-gray-400 hover:text-gray-600 dark:bg-gray-500 dark:text-gray-300 dark:hover:bg-gray-400 dark:hover:text-gray-200 px-4 py-2 font-medium">
-                            Empreendimentos
-                            <i class="my-auto"
-                                :class="dropdowns.enterprise ? 'fas fa-chevron-up' : 'fas fa-chevron-down'"></i>
-                        </button>
-                        <ul v-if="dropdowns.enterprise" class="mt-2 text-gray-600 dark:text-gray-300">
-                            <MenuLink :router="'/buildings'" :section="'Geral'" :name="'Geral'" :isFavorited="false" />
-                            <MenuLink :router="'/buildings'" :section="'Pré Lançamentos'" :name="'Pré Lançamentos'"
-                                :isFavorited="false" />
-                            <MenuLink :router="'/buildings'" :section="'Lançamentos'" :name="'Lançamentos'"
-                                :isFavorited="false" />
-                            <MenuLink :router="'/buildings'" :section="'Em Obras'" :name="'Em Obras'"
-                                :isFavorited="false" />
-                            <MenuLink :router="'/buildings'" :section="'Finalizados'" :name="'Finalizados'"
-                                :isFavorited="false" />
-                            <MenuLink :router="'/buildings'" :section="'Portal do Cliente'" :name="'Portal do Cliente'"
-                                :isFavorited="false" />
-                        </ul>
-                    </li>
-
-                    <li :class="{ 'mt-10': dropdowns.comercial }">
-                        <button @click="toggleDropdown('comercial')"
-                            class="flex justify-between truncate w-full rounded-md bg-gray-300 text-gray-700 hover:bg-gray-400 hover:text-gray-600 dark:bg-gray-500 dark:text-gray-300 dark:hover:bg-gray-400 dark:hover:text-gray-200 px-4 py-2 font-medium">
-                            Comercial
-                            <i class="my-auto"
-                                :class="dropdowns.comercial ? 'fas fa-chevron-up' : 'fas fa-chevron-down'"></i>
-                        </button>
-                        <ul v-if="dropdowns.comercial" class="mt-2 text-gray-600 dark:text-gray-300">
-                            <MenuLink :router="'/comercial/leads'" :section="'Leads'" :name="'Leads'"
-                                :isFavorited="false" />
-                            <MenuLink :router="'/comercial/reservas'" :section="'Reservas'" :name="'Reservas'"
-                                :isFavorited="false" />
-                            <MenuLink :router="'/comercial/reservas'" :section="'Imobiliarias'" :name="'Imobiliarias'"
-                                :isFavorited="false" />
-                            <MenuLink :router="'/comercial/repasses'" :section="'Repasses'" :name="'Repasses'"
-                                :isFavorited="false" />
-                            <MenuLink :router="'/comercial/faturamento'" :section="'Faturamento'" :name="'Faturamento'"
-                                :isFavorited="false" />
-                        </ul>
-                    </li>
-
-                    <!-- <li :class="{ 'mt-10': dropdowns.engineering }">
-                        <button @click="toggleDropdown('engineering')"
-                            class="flex justify-between truncate w-full rounded-md bg-gray-300 text-gray-700 hover:bg-gray-400 hover:text-gray-600 dark:bg-gray-500 dark:text-gray-300 dark:hover:bg-gray-400 dark:hover:text-gray-200 px-4 py-2 font-medium">
-                            Engenharia
-                            <i class="my-auto"
-                                :class="dropdowns.engineering ? 'fas fa-chevron-up' : 'fas fa-chevron-down'"></i>
-                        </button>
-                        <ul v-if="dropdowns.engineering" class="mt-2 text-gray-600 dark:text-gray-300"> 
-                        </ul>
-                    </li>
-
-                    <li :class="{ 'mt-10': dropdowns.marketing }">
-                        <button @click="toggleDropdown('marketing')"
-                            class="flex justify-between truncate w-full rounded-md bg-gray-300 text-gray-700 hover:bg-gray-400 hover:text-gray-600 dark:bg-gray-500 dark:text-gray-300 dark:hover:bg-gray-400 dark:hover:text-gray-200 px-4 py-2 font-medium">
-                            Marketing
-                            <i class="my-auto"
-                                :class="dropdowns.marketing ? 'fas fa-chevron-up' : 'fas fa-chevron-down'"></i>
-                        </button>
-                        <ul v-if="dropdowns.marketing" class="mt-2 text-gray-600 dark:text-gray-300"> 
-                        </ul>
-                    </li>
-
-                    <li :class="{ 'mt-10': dropdowns.reports }">
-                        <button @click="toggleDropdown('reports')"
-                            class="flex justify-between truncate w-full rounded-md bg-gray-300 text-gray-700 hover:bg-gray-400 hover:text-gray-600 dark:bg-gray-500 dark:text-gray-300 dark:hover:bg-gray-400 dark:hover:text-gray-200 px-4 py-2 font-medium">
-                            Relatórios
-                            <i class="my-auto"
-                                :class="dropdowns.reports ? 'fas fa-chevron-up' : 'fas fa-chevron-down'"></i>
-                        </button>
-                        <ul v-if="dropdowns.reports" class="mt-2 text-gray-600 dark:text-gray-300"> 
-                        </ul>
-                    </li>
-
-                    <li :class="{ 'mt-10': dropdowns.finance }">
-                        <button @click="toggleDropdown('finance')"
-                            class="flex justify-between truncate w-full rounded-md bg-gray-300 text-gray-700 hover:bg-gray-400 hover:text-gray-600 dark:bg-gray-500 dark:text-gray-300 dark:hover:bg-gray-400 dark:hover:text-gray-200 px-4 py-2 font-medium">
-                            Financeiro
-                            <i class="my-auto"
-                                :class="dropdowns.finance ? 'fas fa-chevron-up' : 'fas fa-chevron-down'"></i>
-                        </button>
-                        <ul v-if="dropdowns.finance" class="mt-2 text-gray-600 dark:text-gray-300">
-                        </ul>
-                    </li> -->
-
-                    <li :class="{ 'mt-10': dropdowns.tools }">
-                        <button @click="toggleDropdown('tools')"
-                            class="flex justify-between truncate w-full rounded-md bg-gray-300 text-gray-700 hover:bg-gray-400 hover:text-gray-600 dark:bg-gray-500 dark:text-gray-300 dark:hover:bg-gray-400 dark:hover:text-gray-200 px-4 py-2 font-medium">
-                            Ferramentas
-                            <i class="my-auto"
-                                :class="dropdowns.tools ? 'fas fa-chevron-up' : 'fas fa-chevron-down'"></i>
-                        </button>
-                        <ul v-if="dropdowns.tools" class="mt-2 text-gray-600 dark:text-gray-300">
-                            <MenuLink :router="'/tools/validator'" :section="'Validador'" :name="'Validador'" :isFavorited="false" /> 
-                        </ul>
-                    </li>
-
-                    <li :class="{ 'mt-10': dropdowns.settings }">
-                        <button @click="toggleDropdown('settings')"
-                            class="flex justify-between truncate w-full rounded-md bg-gray-300 text-gray-700 hover:bg-gray-400 hover:text-gray-600 dark:bg-gray-500 dark:text-gray-300 dark:hover:bg-gray-400 dark:hover:text-gray-200 px-4 py-2 font-medium">
-                            Configurações
-                            <i class="my-auto"
-                                :class="dropdowns.settings ? 'fas fa-chevron-up' : 'fas fa-chevron-down'"></i>
-                        </button>
-                        <ul v-if="dropdowns.settings" class="mt-2 text-gray-600 dark:text-gray-300">
-                            <MenuLink :router="'/settings/users'" :section="'Usuários'" :name="'Usuários'"
-                                :isFavorited="false" />
-                            <MenuLink :router="'/settings/organograma'" :section="'Organograma'" :name="'Organograma'"
-                                :isFavorited="false" />
-                            <MenuLink :router="'/settings/Account'" :section="'Account'" :name="'Sua Conta'"
-                                :isFavorited="false" />
-                        </ul>
-                    </li>
-                </ul>
-            </div>
-
-        </div>
-
-        <div @click="toggleMenu()"
-            class="closeOnClick absolute bg-transparent z-20 w-[calc(100vw-4rem)] h-[calc(100vh-4rem)] bottom-0 transition-all duration-300"
-            :class="{
-                'closeMenuTrue': menuOpen,
-                'left-[4rem] hidden': !menuOpen
-            }">
-        </div>
-
-
-    </div>
-
-</template>
-
 <script setup>
-import { ref, onMounted, computed } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, onMounted, computed } from 'vue'; 
 import { useAuthStore } from '../../stores/Auth/authStore';
 import { useNotificationStore } from '../../stores/Config/notificationStore';
 import { useFavoritesStore } from '../../stores/Config/favoriteStore';
-import Notification from './components/Notification.vue'
-import MenuLink from './components/MenuLink.vue'
-import Search from './components/Search.vue'
+import Search from '@/components/Navigation/components/Search.vue';
+import Notification from '@/components/Navigation/components/Notification.vue';
+import Profile from '@/components/Navigation/components/Profile.vue'; 
+import { RouterLink } from 'vue-router';
 
-const menuOpen = ref(false);
-const menuRef = ref(null);
+// Stores
 const authStore = useAuthStore();
-const router = useRouter();
 const favoritesStore = useFavoritesStore();
 const notificationStore = useNotificationStore();
 
-// Agrupar favoritos por 'router'
+// Estado dos dropdowns principais
+const dropdowns = ref({
+    favorites: false,
+    marketing: false,
+    comercial: false,
+    tools: false,
+    settings: false
+});
+
+// Estado dos subdropdowns
+const subDropdowns = ref({
+    events: false,
+    buildings: false
+});
+
+// Configuração dos menus com subcategorias
+const menuItems = {
+    marketing: {
+        events: {
+            name: 'Eventos',
+            icon: 'fas fa-newspaper',
+            items: [
+                { router: '/events', section: 'Geral', name: 'Geral', icon: 'fas fa-list' },
+                { router: '/events', section: 'Próximos', name: 'Próximos', icon: 'fas fa-calendar-plus' },
+                { router: '/events', section: 'Finalizados', name: 'Finalizados', icon: 'fas fa-calendar-check' }
+            ]
+        },
+        buildings: {
+            name: 'Empreendimentos',
+            icon: 'fas fa-building',
+            items: [
+                { router: '/buildings', section: 'Geral', name: 'Geral', icon: 'fas fa-list' },
+                { router: '/buildings', section: 'Pré Lançamentos', name: 'Pré Lançamentos', icon: 'fas fa-rocket' },
+                { router: '/buildings', section: 'Lançamentos', name: 'Lançamentos', icon: 'fas fa-play' },
+                { router: '/buildings', section: 'Em Obras', name: 'Em Obras', icon: 'fas fa-hammer' },
+                { router: '/buildings', section: 'Finalizados', name: 'Finalizados', icon: 'fas fa-check-circle' },
+                { router: '/buildings', section: 'Portal do Cliente', name: 'Portal do Cliente', icon: 'fas fa-user-circle' }
+            ]
+        }
+    },
+    comercial: [
+        { router: '/comercial/leads', section: 'Leads', name: 'Leads', icon: 'fas fa-user-plus' },
+        { router: '/comercial/reservas', section: 'Reservas', name: 'Reservas', icon: 'fas fa-bookmark' },
+        { router: '/comercial/reservas', section: 'Imobiliarias', name: 'Imobiliárias', icon: 'fas fa-building-user' },
+        { router: '/comercial/repasses', section: 'Repasses', name: 'Repasses', icon: 'fas fa-exchange-alt' },
+        { router: '/comercial/faturamento', section: 'Faturamento', name: 'Faturamento', icon: 'fas fa-file-invoice-dollar' }
+    ],
+    tools: [
+        { router: '/tools/validator', section: 'Validador', name: 'Validador', icon: 'fas fa-check-double' }
+    ],
+    settings: [
+        { router: '/settings/Account', section: 'Account', name: 'Sua Conta', icon: 'fas fa-user-cog' }, 
+        { router: '/settings/users', section: 'Usuários', name: 'Usuários', icon: 'fas fa-users' },
+        { router: '/settings/organograma', section: 'Organograma', name: 'Organograma', icon: 'fas fa-sitemap' },
+    ]
+};
+
+// Agrupar favoritos por categoria
 const groupedFavorites = computed(() => {
     return favoritesStore.favorites.reduce((groups, favorite) => {
         const category = getCategoryByRouter(favorite.router);
+        const subcategory = getSubcategoryByRouterAndSection(favorite.router, favorite.section);
+
         if (!groups[category]) {
-            groups[category] = [];
+            groups[category] = {};
         }
-        groups[category].push(favorite);
+
+        const key = subcategory || '__sem_subcategoria__';
+
+        if (!groups[category][key]) {
+            groups[category][key] = [];
+        }
+
+        groups[category][key].push(favorite);
         return groups;
     }, {});
 });
 
-// Function to determine category based on router
+
+// Função para determinar categoria baseada no router
 const getCategoryByRouter = (router) => {
-    if (router.startsWith('/comercial')) {
-        return 'Comercial';
-    } else if (router.startsWith('/reports')) {
-        return 'Relatórios';
-    } else if (router.startsWith('/events')) {
-        return 'Eventos';
-    } else if (router.startsWith('/buildings')) {
-        return 'Empreendimentos';
-    } else if (router.startsWith('/tools')) {
-        return 'Ferramentas';
-    } else if (router.startsWith('/settings')) {
-        return 'Configurações';
-    }
-    return router.charAt(0).toUpperCase() + router.slice(1).replace('/', ' ');
+    if (router.startsWith('/comercial')) return 'Comercial';
+    if (router.startsWith('/events') || router.startsWith('/buildings')) return 'Marketing';
+    if (router.startsWith('/tools')) return 'Ferramentas';
+    if (router.startsWith('/settings')) return 'Configurações';
+    return 'Outros';
 };
 
-const toggleMenu = () => {
-    menuOpen.value = !menuOpen.value;
-};
+const getSubcategoryByRouterAndSection = (router, section) => {
+    const marketing = menuItems.marketing;
 
-const closeMenu = (event) => {
-    if (menuRef.value && !menuRef.value.contains(event.target)) {
-        menuOpen.value = false;
-    }
-};
-
-const logout = () => {
-    authStore.clearUser();
-    router.push('/login');
-};
-
-const dropdowns = ref({
-    favorites: false,
-    events: false,
-    enterprise: false,
-    comercial: false,
-    engineering: false,
-    marketing: false,
-    reports: false,
-    finance: false,
-    tools: false,
-    settings: false,
-});
-
-function toggleDropdown(menu) {
-    if (dropdowns.value[menu]) {
-        dropdowns.value[menu] = false;
-    } else {
-        for (const key in dropdowns.value) {
-            if (dropdowns.value.hasOwnProperty(key)) {
-                dropdowns.value[key] = false;
-            }
+    for (const subKey in marketing) {
+        const subcategory = marketing[subKey];
+        if (subcategory.items.some(item => item.router === router && item.section === section)) {
+            return subcategory.name;
         }
-        dropdowns.value[menu] = true;
     }
-}
 
-function openFavorites() {
-    toggleMenu()
-    toggleDropdown('favorites')
-}
-function openEvents() {
-    toggleMenu()
-    toggleDropdown('events')
-}
-function openEnterprise() {
-    toggleMenu()
-    toggleDropdown('enterprise')
-}
-function openComercial() {
-    toggleMenu()
-    toggleDropdown('comercial')
-}
-function openEngineering() {
-    toggleMenu()
-    toggleDropdown('engineering')
-}
-function openMarketing() {
-    toggleMenu()
-    toggleDropdown('marketing')
-}
-function openReports() {
-    toggleMenu()
-    toggleDropdown('reports')
-}
-function openFinance() {
-    toggleMenu()
-    toggleDropdown('finance')
-}
+    return null;
+};
 
-function openTools() {
-    toggleMenu()
-    toggleDropdown('tools')
-}
+// Função para alternar dropdown principal
+const toggleDropdown = (dropdownName) => {
+    // Fechar todos os outros dropdowns principais
+    Object.keys(dropdowns.value).forEach(key => {
+        if (key !== dropdownName) {
+            dropdowns.value[key] = false;
+        }
+    });
+    // Fechar todos os subdropdowns quando um dropdown principal é fechado
+    if (!dropdowns.value[dropdownName]) {
+        Object.keys(subDropdowns.value).forEach(key => {
+            subDropdowns.value[key] = false;
+        });
+    }
+    // Alternar o dropdown atual
+    dropdowns.value[dropdownName] = !dropdowns.value[dropdownName];
+};
 
-function openSettings() {
-    toggleMenu()
-    toggleDropdown('settings')
-}
+// Função para alternar subdropdown
+const toggleSubDropdown = (subDropdownName) => {
+    subDropdowns.value[subDropdownName] = !subDropdowns.value[subDropdownName];
+};
 
-const darkMode = ref(false);
+// Função para verificar se item está favoritado
+const isFavorited = (router, section) => {
+    return favoritesStore.isFavorited(router, section);
+};
 
-// Função para alternar o tema
-const toggleTheme = () => {
-    if (darkMode.value) {
-        document.documentElement.classList.add('dark');
-    } else {
-        document.documentElement.classList.remove('dark');
+// Função para alternar favorito
+const toggleFavorite = async (router, section) => {
+    try {
+        if (isFavorited(router, section)) {
+            await favoritesStore.removeFavorite(router, section);
+        } else {
+            await favoritesStore.addFavorite(router, section);
+        }
+        await favoritesStore.loadFavorites();
+    } catch (error) {
+        console.error("Erro ao atualizar favorito", error);
     }
 };
 
-// Verifica a preferência inicial do sistema e aplica o tema
+// Inicialização
 onMounted(async () => {
-    const prefersDarkScheme = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    darkMode.value = prefersDarkScheme;
-    document.addEventListener('click', closeMenu);
-    favoritesStore.loadFavorites();
-    notificationStore.fetchNotifications();
-});
+    await favoritesStore.loadFavorites();
+    await notificationStore.fetchNotifications();
 
+    // Inicializar Flowbite dropdowns
+    if (typeof initFlowbite !== 'undefined') {
+        initFlowbite();
+    }
+});
 </script>
 
-<style scoped>
-.menu-hover {
-    transform: translateX(-10);
-}
+<template>
+    <div class="sm:w-64">
+        <!-- Top Navigation Bar -->
+        <nav class="fixed top-0 z-50 w-full bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+            <div class="px-3 py-3 lg:px-5 lg:pl-3">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center justify-start rtl:justify-end">
+                        <button data-drawer-target="logo-sidebar" data-drawer-toggle="logo-sidebar"
+                            aria-controls="logo-sidebar" type="button"
+                            class="inline-flex items-center p-2 text-sm text-gray-500 rounded-lg sm:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:text-gray-400 dark:hover:bg-gray-700 dark:focus:ring-gray-600">
+                            <span class="sr-only">Open sidebar</span>
+                            <svg class="w-6 h-6" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20">
+                                <path clip-rule="evenodd" fill-rule="evenodd"
+                                    d="M2 4.75A.75.75 0 012.75 4h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 4.75zm0 10.5a.75.75 0 01.75-.75h7.5a.75.75 0 010 1.5h-7.5a.75.75 0 01-.75-.75zM2 10a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 10z">
+                                </path>
+                            </svg>
+                        </button>
+                        <a href="https://menin.com.br" target="_blank" class="flex ms-2 md:me-24">
+                            <img src="/Mlogotext.png" class="h-10 sm:h-12 -my-4 dark:invert-0 invert" alt="Menin Logo" />
+                        </a>
+                    </div>
+                    <div class="flex items-center">
+                        <Search />
+                        <Notification />
+                        <Profile />
+                    </div>
+                </div>
+            </div>
+        </nav>
 
-.menu-hover.translate-x-0 {
-    transform: translateX(63px);
-}
+        <!-- Sidebar -->
+        <aside id="logo-sidebar"
+            class="fixed top-0 left-0 z-40 w-64 h-screen pt-20 transition-transform -translate-x-full bg-white border-r border-gray-200 sm:translate-x-0 dark:bg-gray-800 dark:border-gray-700"
+            aria-label="Sidebar">
+            <div class="flex flex-col justify-between h-full px-3 pb-4 overflow-y-auto bg-white dark:bg-gray-800">
+                <ul class="space-y-2 font-medium overflow-auto">
+                    <!-- Dashboard -->
+                    <li>
+                        <RouterLink to="/"
+                            class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                            <i
+                                class="fas fa-house text-gray-500 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white"></i>
+                            <span class="ms-3">Dashboard</span>
+                        </RouterLink>
+                    </li>
 
-.closeMenuTrue {
-    width: calc(100vw - 20rem);
-    left: 20rem;
-}
-</style>
+                    <!-- Favoritos -->
+                    <li>
+                        <button type="button" @click="toggleDropdown('favorites')"
+                            class="flex items-center w-full p-2 text-base text-gray-900 transition duration-75 rounded-lg group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700"
+                            :aria-expanded="dropdowns.favorites">
+                            <i
+                                class="fa fa-star text-gray-500 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white"></i>
+                            <span class="flex-1 ms-3 text-left rtl:text-right whitespace-nowrap">Favoritos</span>
+                            <i :class="dropdowns.favorites ? 'fas fa-chevron-up' : 'fas fa-chevron-down'"
+                                class="text-gray-500 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white"></i>
+                        </button>
+                        <ul v-show="dropdowns.favorites" class="py-2 space-y-2">
+                            <template v-if="Object.keys(groupedFavorites).length > 0">
+                                <li v-for="(subGroups, category) in groupedFavorites" :key="category" class="ml-4">
+                                    <p class="font-semibold text-gray-600 dark:text-gray-400 mb-1">{{ category }}</p>
+                                    <ul>
+                                        <li v-for="(favorites, subcategory) in subGroups" :key="subcategory"
+                                            class="ml-2">
+                                            <!-- Exibe nome da subcategoria, exceto se for sem subcategoria -->
+                                            <p v-if="subcategory !== '__sem_subcategoria__'"
+                                                class="text-sm text-gray-500 dark:text-gray-400 mb-1">
+                                                {{ subcategory }}
+                                            </p>
+                                            <ul class="space-y-1">
+                                                <li v-for="favorite in favorites"
+                                                    :key="`${favorite.router}-${favorite.section}`">
+                                                    <div
+                                                        class="flex items-center justify-between group/item hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg px-2 py-1">
+                                                        <RouterLink
+                                                            :to="{ path: favorite.router, query: { section: favorite.section } }"
+                                                            class="flex-1 flex items-center text-gray-900 dark:text-white">
+                                                            <span class="truncate">{{ favorite.section }}</span>
+                                                        </RouterLink>
+                                                        <button
+                                                            @click="toggleFavorite(favorite.router, favorite.section)"
+                                                            class="ml-2 p-1 transition-opacity duration-200 text-amber-400 hover:text-amber-400">
+                                                            <i class="fas fa-star"></i>
+                                                        </button>
+                                                    </div>
+                                                </li>
+                                            </ul>
+                                        </li>
+                                    </ul>
+                                </li>
+                            </template>
+                            <li v-else class="ml-4">
+                                <p class="text-sm text-gray-500 dark:text-gray-400 p-2">Nenhum favorito adicionado</p>
+                            </li>
+                        </ul>
+                    </li>
+
+
+                    <!-- Marketing -->
+                    <li>
+                        <button type="button" @click="toggleDropdown('marketing')"
+                            class="flex items-center w-full p-2 text-base text-gray-900 transition duration-75 rounded-lg group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700"
+                            :aria-expanded="dropdowns.marketing">
+                            <i
+                                class="fa fa-bullhorn text-gray-500 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white"></i>
+                            <span class="flex-1 ms-3 text-left rtl:text-right whitespace-nowrap">Marketing</span>
+                            <i :class="dropdowns.marketing ? 'fas fa-chevron-up' : 'fas fa-chevron-down'"
+                                class="text-gray-500 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white"></i>
+                        </button>
+                        <ul v-show="dropdowns.marketing" class="py-2 space-y-2 ml-4">
+                            <!-- Eventos Subcategoria -->
+                            <li>
+                                <button type="button" @click="toggleSubDropdown('events')"
+                                    class="flex items-center w-full p-2 text-gray-700 transition duration-75 rounded-lg group hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600"
+                                    :aria-expanded="subDropdowns.events">
+                                    <i :class="menuItems.marketing.events.icon"
+                                        class="text-gray-500 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white"></i>
+                                    <span class="flex-1 ms-3 text-left rtl:text-right whitespace-nowrap">{{
+                                        menuItems.marketing.events.name
+                                        }}</span>
+                                    <i :class="subDropdowns.events ? 'fas fa-chevron-up' : 'fas fa-chevron-down'"
+                                        class="text-gray-500 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white"></i>
+                                </button>
+                                <ul v-show="subDropdowns.events" class="py-1 space-y-1 ml-4">
+                                    <li v-for="item in menuItems.marketing.events.items"
+                                        :key="`${item.router}-${item.section}`">
+                                        <div
+                                            class="flex items-center justify-between group/item hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg px-2 py-1">
+                                            <RouterLink :to="{ path: item.router, query: { section: item.section } }"
+                                                class="flex-1 flex items-center text-gray-900 dark:text-white">
+                                                <i :class="item.icon" class="text-gray-500"></i>
+                                                <span class="ms-3">{{ item.name }}</span>
+                                            </RouterLink>
+                                            <button @click="toggleFavorite(item.router, item.section)"
+                                                class="ml-2 p-1 transition-opacity duration-200"
+                                                :class="isFavorited(item.router, item.section) ? 'text-amber-400 hover:text-amber-400' : 'text-gray-400 hover:text-amber-400'">
+                                                <i :class="isFavorited(item.router, item.section) ? 'fas fa-star' : 'far fa-star'"
+                                                    class="text-lg"></i>
+                                            </button>
+                                        </div>
+                                    </li>
+                                </ul>
+                            </li>
+
+                            <!-- Empreendimentos Subcategoria -->
+                            <li>
+                                <button type="button" @click="toggleSubDropdown('buildings')"
+                                    class="flex items-center w-full p-2 text-gray-700 transition duration-75 rounded-lg group hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600"
+                                    :aria-expanded="subDropdowns.buildings">
+                                    <i :class="menuItems.marketing.buildings.icon"
+                                        class="text-gray-500 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white"></i>
+                                    <span class="flex-1 ms-3 text-left rtl:text-right whitespace-nowrap">{{
+                                        menuItems.marketing.buildings.name }}</span>
+                                    <i :class="subDropdowns.buildings ? 'fas fa-chevron-up' : 'fas fa-chevron-down'"
+                                        class="text-gray-500 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white"></i>
+                                </button>
+                                <ul v-show="subDropdowns.buildings" class="py-1 space-y-1 ml-4">
+                                    <li v-for="item in menuItems.marketing.buildings.items"
+                                        :key="`${item.router}-${item.section}`">
+                                        <div
+                                            class="flex items-center justify-between group/item hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg px-2 py-1">
+                                            <RouterLink :to="{ path: item.router, query: { section: item.section } }"
+                                                class="flex-1 flex items-center text-gray-900 dark:text-white">
+                                                <i :class="item.icon" class="text-gray-500"></i>
+                                                <span class="ms-3">{{ item.name }}</span>
+                                            </RouterLink>
+                                            <button @click="toggleFavorite(item.router, item.section)"
+                                                class="ml-2 p-1 transition-opacity duration-200"
+                                                :class="isFavorited(item.router, item.section) ? 'text-amber-400 hover:text-amber-400' : 'text-gray-400 hover:text-amber-400'">
+                                                <i :class="isFavorited(item.router, item.section) ? 'fas fa-star' : 'far fa-star'"
+                                                    class="text-lg"></i>
+                                            </button>
+                                        </div>
+                                    </li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+
+                    <!-- Comercial -->
+                    <li>
+                        <button type="button" @click="toggleDropdown('comercial')"
+                            class="flex items-center w-full p-2 text-base text-gray-900 transition duration-75 rounded-lg group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700"
+                            :aria-expanded="dropdowns.comercial">
+                            <i
+                                class="fas fa-briefcase text-gray-500 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white"></i>
+                            <span class="flex-1 ms-3 text-left rtl:text-right whitespace-nowrap">Comercial</span>
+                            <i :class="dropdowns.comercial ? 'fas fa-chevron-up' : 'fas fa-chevron-down'"
+                                class="text-gray-500 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white"></i>
+                        </button>
+                        <ul v-show="dropdowns.comercial" class="py-2 space-y-2 ml-4">
+                            <li v-for="item in menuItems.comercial" :key="`${item.router}-${item.section}`">
+                                <div
+                                    class="flex items-center justify-between group/item hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg px-2 py-1">
+                                    <RouterLink :to="{ path: item.router, query: { section: item.section } }"
+                                        class="flex-1 flex items-center text-gray-900 dark:text-white">
+                                        <i :class="item.icon" class="text-gray-500"></i>
+                                        <span class="ms-3">{{ item.name }}</span>
+                                    </RouterLink>
+                                    <button @click="toggleFavorite(item.router, item.section)"
+                                        class="ml-2 p-1 transition-opacity duration-200"
+                                        :class="isFavorited(item.router, item.section) ? 'text-amber-400 hover:text-amber-400' : 'text-gray-400 hover:text-amber-400'">
+                                        <i :class="isFavorited(item.router, item.section) ? 'fas fa-star' : 'far fa-star'"
+                                            class="text-lg"></i>
+                                    </button>
+                                </div>
+                            </li>
+                        </ul>
+                    </li>
+
+                    <!-- Ferramentas -->
+                    <li>
+                        <button type="button" @click="toggleDropdown('tools')"
+                            class="flex items-center w-full p-2 text-base text-gray-900 transition duration-75 rounded-lg group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700"
+                            :aria-expanded="dropdowns.tools">
+                            <i
+                                class="fas fa-wrench text-gray-500 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white"></i>
+                            <span class="flex-1 ms-3 text-left rtl:text-right whitespace-nowrap">Ferramentas</span>
+                            <i :class="dropdowns.tools ? 'fas fa-chevron-up' : 'fas fa-chevron-down'"
+                                class="text-gray-500 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white"></i>
+                        </button>
+                        <ul v-show="dropdowns.tools" class="py-2 space-y-2 ml-4">
+                            <li v-for="item in menuItems.tools" :key="`${item.router}-${item.section}`">
+                                <div
+                                    class="flex items-center justify-between group/item hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg px-2 py-1">
+                                    <RouterLink :to="{ path: item.router, query: { section: item.section } }"
+                                        class="flex-1 flex items-center text-gray-900 dark:text-white">
+                                        <i :class="item.icon" class="text-gray-500"></i>
+                                        <span class="ms-3">{{ item.name }}</span>
+                                    </RouterLink>
+                                    <button @click="toggleFavorite(item.router, item.section)"
+                                        class="ml-2 p-1 transition-opacity duration-200"
+                                        :class="isFavorited(item.router, item.section) ? 'text-amber-400 hover:text-amber-400' : 'text-gray-400 hover:text-amber-400'">
+                                        <i :class="isFavorited(item.router, item.section) ? 'fas fa-star' : 'far fa-star'"
+                                            class="text-lg"></i>
+                                    </button>
+                                </div>
+                            </li>
+                        </ul>
+                    </li>
+
+                    <!-- Configurações -->
+                    <li>
+                        <button type="button" @click="toggleDropdown('settings')"
+                            class="flex items-center w-full p-2 text-base text-gray-900 transition duration-75 rounded-lg group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700"
+                            :aria-expanded="dropdowns.settings">
+                            <i
+                                class="fas fa-gear text-gray-500 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white"></i>
+                            <span class="flex-1 ms-3 text-left rtl:text-right whitespace-nowrap">Configurações</span>
+                            <i :class="dropdowns.settings ? 'fas fa-chevron-up' : 'fas fa-chevron-down'"
+                                class="text-gray-500 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white"></i>
+                        </button>
+                        <ul v-show="dropdowns.settings" class="py-2 space-y-2 ml-4">
+                            <li v-for="item in menuItems.settings" :key="`${item.router}-${item.section}`">
+                                <div
+                                    class="flex items-center justify-between group/item hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg px-2 py-1">
+                                    <RouterLink :to="{ path: item.router, query: { section: item.section } }"
+                                        class="flex-1 flex items-center text-gray-900 dark:text-white">
+                                        <i :class="item.icon" class="text-gray-500"></i>
+                                        <span class="ms-3">{{ item.name }}</span>
+                                    </RouterLink>
+                                    <button @click="toggleFavorite(item.router, item.section)"
+                                        class="ml-2 p-1 transition-opacity duration-200"
+                                        :class="isFavorited(item.router, item.section) ? 'text-amber-400 hover:text-amber-400' : 'text-gray-400 hover:text-amber-400'">
+                                        <i :class="isFavorited(item.router, item.section) ? 'fas fa-star' : 'far fa-star'"
+                                            class="text-lg"></i>
+                                    </button>
+                                </div>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+
+                <!-- Bottom Section -->
+                <ul class="pt-4 mt-4 space-y-2 font-medium border-t border-gray-200 dark:border-gray-700">
+
+                    <li>
+                        <RouterLink to="/report"
+                            class="flex items-center p-2 text-gray-900 transition duration-75 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white group">
+                            <i
+                                class="fas fa-bug text-gray-500 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white"></i>
+                            <span class="ms-3">Reportar Problema</span>
+                        </RouterLink>
+                    </li>
+                    <li>
+                        <RouterLink to="/docs"
+                            class="flex items-center p-2 text-gray-900 transition duration-75 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white group">
+                            <i
+                                class="fas fa-book text-gray-500 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white"></i>
+                            <span class="ms-3">Documentação</span>
+                        </RouterLink>
+                    </li>
+                    <li>
+                        <button @click="authStore.logout()"
+                            class="flex items-center w-full p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                            <i
+                                class="fas fa-arrow-right-from-bracket text-gray-500 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white"></i>
+                            <span class="flex-1 ms-3 whitespace-nowrap text-left">Sair</span>
+                        </button>
+                    </li>
+                </ul>
+            </div>
+        </aside>
+    </div>
+</template>
