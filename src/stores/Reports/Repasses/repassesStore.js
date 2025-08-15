@@ -24,7 +24,7 @@ export const useRepassesStore = defineStore('repasses', {
             try {
                 carregamentoStore.iniciarCarregamento();
                 // Constrói a URL com os filtros
-                let url = `${API_URL}/cv/repasses`;
+                let url = `${API_URL}/financeiro/repasses`;
                 const params = new URLSearchParams();
 
                 // Se empreendimento for um array não vazio, envie como lista separada por vírgula
