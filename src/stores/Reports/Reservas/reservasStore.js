@@ -37,7 +37,7 @@ export const useReservasStore = defineStore('reservas', {
           if (params.ate) query.append('ate', params.ate); // Adiciona parâmetro 'ate'
           query.append('faturar', faturarValue);
 
-          const url = `${API_URL}/cv/reservas?${query.toString()}`;
+          const url = `${API_URL}/comercial/reservas?${query.toString()}`;
 
           console.time(`TempoFaturar-${faturarValue}`);
           const response = await fetch(url);
