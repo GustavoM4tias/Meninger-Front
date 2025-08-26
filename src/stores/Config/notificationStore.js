@@ -17,6 +17,7 @@ export const useNotificationStore = defineStore('notificationStore', {
                 const authStore = useAuthStore(); // Usa a store de autenticação
                 if (authStore.users.length === 0) {
                     await authStore.getAllUsers(); // Busca todos os usuários se ainda não carregados
+                    console.log('busca de usuarios para notifications')
                 }
 
                 const birthdayNotifications = authStore.usuariosComAniversarioValido
@@ -30,7 +31,7 @@ export const useNotificationStore = defineStore('notificationStore', {
                         title: `${user.username}`, // Nome do usuário
                         type: 'Aniversário',
                         date: new Date(user.birth_date),
-                        importance: user.birth_date === currentDate.toISOString().split('T')[0] ? 10 : 5, // Prioridade máxima no dia do aniversário
+                        importance: user.birth_date,
                         birth: user.birth_date, // Imagem do perfil ou fallback
                         link: `/`, // Link para o perfil do usuário
                     }));

@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-white dark:bg-gray-600 p-3 rounded-xl shadow hover:shadow-lg hover:shadow-black/20 hover:scale-[101%] transition-all cursor-pointer"
+  <div class="bg-white dark:bg-gray-700 p-3 rounded-xl shadow hover:shadow-lg hover:shadow-black/20 hover:scale-[101%] transition-all cursor-pointer"
     @click="emit('open', item)">
     <div class="flex flex-col justify-between gap-1">
       <div class="text-xs text-gray-400 dark:text-gray-300 flex justify-between">
@@ -38,3 +38,4 @@ const statusBadge = (status) => {
   }
 };
 </script>
+
