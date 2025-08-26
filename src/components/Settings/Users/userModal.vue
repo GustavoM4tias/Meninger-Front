@@ -77,7 +77,7 @@ onMounted(async () => {
           <Input v-if="editableUser.manager" v-model="editableUser.manager.username" label="Superior" type="text"
             placeholder="Superior" />
         </div>
-        <Input v-model="editableUser.birth_date" label="Data de Nascimento" type="date" placeholder="Data de Nascimento"
+        <Input v-model="editable" label="Data de Nascimento" type="date" placeholder="Data de Nascimento"
           required />
 
         <label class="block text-lg text-gray-700 dark:text-gray-200 font-semibold mt-2 mb-1">Login</label>
