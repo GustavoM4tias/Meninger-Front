@@ -13,48 +13,53 @@ export const useContractsStore = defineStore('contracts', {
             startDate: '',
             endDate: '',
             situation: 'Emitido',
-            enterpriseName: []
+            enterpriseName: [] // nomes (CSV no request)
         }
     }),
 
     getters: {
-        // Códigos que representam DESCONTO (entram NEGATIVO no VGV)
-        discountCodes: () => new Set(['DC', 'DESCONTO_CONSTRUTORA']),
+        // ---- helpers visíveis aos getters ----
+        // códigos de desconto que entram como negativos no VGV
+        discountCodes: () => new Set(['DC', 'DESCONTO_CONSTRUTORA']), // ajuste se precisar
 
-        // Função que calcula o VGV líquido de UM contrato:
-        // soma todas as condições - (descontos DC como negativo)
-        _contractNetValue() {
-            return (contract) => {
-                const pcs = Array.isArray(contract.payment_conditions) ? contract.payment_conditions : []
-                let sum = 0
-                for (const pc of pcs) {
-                    const code = String(pc.condition_type_id || '').toUpperCase()
-                    const v = Number(pc.total_value) || 0
-                    sum += this.discountCodes.has(code) ? -v : v
-                }
-                return sum
+        // valor líquido (por contrato): soma condições - descontos DC
+        _contractNetValue: (state) => (contract) => {
+            const isDiscount = (pc) => state.discountCodes.has(String(pc.condition_type_id || '').toUpperCase())
+            const pcs = Array.isArray(contract.payment_conditions) ? contract.payment_conditions : []
+
+            let sum = 0
+            for (const pc of pcs) {
+                const v = Number(pc.total_value) || 0
+                sum += isDiscount(pc) ? -v : v
             }
+            return sum
         },
 
-        // chave para “contratos iguais” (agrupar venda): mesmo cliente + mesma unidade
+        // chave para "contratos iguais" (agregação de vendas)
+        // hoje: mesmo cliente + mesma unidade
         _makeSaleKey: () => (c) => `${c.customer_id}__${(c.unit_name || '').trim().toUpperCase()}`,
 
-        // Vendas únicas (agregando contratos do mesmo cliente/unidade e somando TR, FI, RP, SE, etc.; DC negativo)
+        // --------------------------------------
+
+        // Agrupa vendas por unidade (mesmo cliente + mesma unidade = 1 venda),
+        // somando TODAS as condições e SUBTRAINDO DC.
         uniqueSales() {
-            const map = new Map()
+            const salesMap = new Map()
             const makeKey = this._makeSaleKey
             const netOf = this._contractNetValue
 
-            this.contracts.forEach((c) => {
-                const key = makeKey(c)
-                if (!map.has(key)) {
-                    map.set(key, {
-                        customer_id: c.customer_id,
-                        customer_name: c.customer_name,
-                        unit_name: c.unit_name,
-                        enterprise_name: c.enterprise_name, // só para exibição
-                        financial_institution_date: c.financial_institution_date,
-                        contracts: [c],
+            this.contracts.forEach((contract) => {
+                const key = makeKey(contract)
+
+                if (!salesMap.has(key)) {
+                    salesMap.set(key, {
+                        customer_id: contract.customer_id,
+                        customer_name: contract.customer_name,
+                        unit_name: contract.unit_name,
+                        // OBS: como pode vir de empreendimentos diferentes, não fixamos um enterprise_id único aqui
+                        enterprise_name: contract.enterprise_name, // usada só para exibir, opcional
+                        financial_institution_date: contract.financial_institution_date,
+                        contracts: [contract],
                         total_value: 0
                     })
                 } else {
@@ -62,47 +67,57 @@ export const useContractsStore = defineStore('contracts', {
                 }
             })
 
-            map.forEach((sale) => {
+            // calcula o total líquido somando cada contrato do grupo
+            salesMap.forEach((sale) => {
                 sale.total_value = sale.contracts.reduce((acc, c) => acc + netOf(c), 0)
             })
 
             return Array.from(map.values())
         },
 
-        // Vendas por empreendimento (cada contrato soma APENAS no seu próprio empreendimento)
+        // Vendas por empreendimento (cada empreendimento recebe apenas suas parcelas)
         salesByEnterprise(state) {
-            const map = new Map()
+            const enterpriseMap = new Map()
             const netOf = this._contractNetValue
 
-            state.contracts.forEach((c) => {
-                const name = c.enterprise_name || `ID:${c.enterprise_id}`
-                if (!map.has(name)) {
-                    map.set(name, { name, count: 0, total_value: 0 })
+            state.contracts.forEach((contract) => {
+                const key = contract.enterprise_name || `ID:${contract.enterprise_id}`
+                if (!enterpriseMap.has(key)) {
+                    enterpriseMap.set(key, {
+                        name: key,
+                        count: 0,        // número de "vendas" por contrato
+                        total_value: 0   // soma líquida (condições - DC) desse empreendimento
+                    })
                 }
-                const ref = map.get(name)
+                const ref = enterpriseMap.get(key)
                 ref.count += 1
-                ref.total_value += netOf(c)
+                ref.total_value += netOf(contract)
             })
 
             return Array.from(map.values()).sort((a, b) => b.total_value - a.total_value)
         },
 
-        // Resumo por tipo de condição (DC negativo)
+        // Resumo por tipo de condição (DC aparece negativo)
         paymentConditionsSummary(state) {
-            const map = new Map()
+            const conditionsMap = new Map()
+            const discountCodes = this.discountCodes
 
-            state.contracts.forEach((c) => {
-                const pcs = Array.isArray(c.payment_conditions) ? c.payment_conditions : []
+            state.contracts.forEach((contract) => {
+                const pcs = Array.isArray(contract.payment_conditions) ? contract.payment_conditions : []
                 pcs.forEach((pc) => {
-                    const code = String(pc.condition_type_id || '—').toUpperCase()
                     const name = pc.condition_type_name || '—'
+                    const code = (pc.condition_type_id || '—').toString().toUpperCase()
                     const key = `${code}__${name}`
 
-                    if (!map.has(key)) map.set(key, { code, name, total_value: 0, count: 0 })
+                    if (!conditionsMap.has(key)) {
+                        conditionsMap.set(key, { name, code, total_value: 0, count: 0 })
+                    }
 
-                    const sign = this.discountCodes.has(code) ? -1 : 1
+                    // DC entra como negativo
+                    const sign = discountCodes.has(code) ? -1 : 1
                     const v = (Number(pc.total_value) || 0) * sign
-                    const ref = map.get(key)
+
+                    const ref = conditionsMap.get(key)
                     ref.total_value += v
                     ref.count += 1
                 })
@@ -111,16 +126,19 @@ export const useContractsStore = defineStore('contracts', {
             return Array.from(map.values()).sort((a, b) => b.total_value - a.total_value)
         },
 
-        // Agregado mensal baseado nas vendas (não no nível do contrato)
+        // Vendas por mês (agregadas no nível da venda, não do contrato)
         salesByMonth() {
-            const map = new Map()
+            const monthMap = new Map()
 
             this.uniqueSales.forEach((sale) => {
-                const d = new Date(sale.financial_institution_date)
-                if (isNaN(d)) return
-                const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
-                if (!map.has(key)) map.set(key, { month: key, count: 0, total_value: 0 })
-                const ref = map.get(key)
+                const date = new Date(sale.financial_institution_date)
+                if (isNaN(date)) return
+                const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+
+                if (!monthMap.has(monthKey)) {
+                    monthMap.set(monthKey, { month: monthKey, count: 0, total_value: 0 })
+                }
+                const ref = monthMap.get(monthKey)
                 ref.count += 1
                 ref.total_value += Number(sale.total_value) || 0
             })
@@ -128,7 +146,30 @@ export const useContractsStore = defineStore('contracts', {
             return Array.from(map.values()).sort((a, b) => a.month.localeCompare(b.month))
         },
 
-        // Métricas
+        // Top clientes por valor líquido
+        topCustomers() {
+            const customerMap = new Map()
+
+            this.uniqueSales.forEach((sale) => {
+                if (!customerMap.has(sale.customer_id)) {
+                    customerMap.set(sale.customer_id, {
+                        customer_id: sale.customer_id,
+                        customer_name: sale.customer_name,
+                        sales_count: 0,
+                        total_value: 0
+                    })
+                }
+                const c = customerMap.get(sale.customer_id)
+                c.sales_count += 1
+                c.total_value += Number(sale.total_value) || 0
+            })
+
+            return Array.from(customerMap.values())
+                .sort((a, b) => b.total_value - a.total_value)
+                .slice(0, 10)
+        },
+
+        // Métricas gerais (com VGV líquido das vendas agregadas)
         metrics() {
             const unique = this.uniqueSales
             const totalSales = unique.length
@@ -147,6 +188,7 @@ export const useContractsStore = defineStore('contracts', {
     },
 
     actions: {
+        // ---------------- normalização ----------------
         _toNumber(v) {
             return (v === null || v === undefined || v === '') ? 0 : Number(v)
         },
@@ -173,7 +215,7 @@ export const useContractsStore = defineStore('contracts', {
             const n = this._toNumber
 
             const pcs = Array.isArray(c.payment_conditions)
-                ? c.payment_conditions.map(pc => this._normalizePaymentCondition(pc))
+                ? c.payment_conditions.map(this._normalizePaymentCondition)
                 : []
 
             const associates = Array.isArray(c.associates)
@@ -189,14 +231,17 @@ export const useContractsStore = defineStore('contracts', {
                 enterprise_name: c.enterprise_name ?? c.enterpriseName ?? '',
                 financial_institution_date: c.financial_institution_date ?? c.financialInstitutionDate ?? null,
                 unit_name: c.unit_name ?? c.unitName ?? '',
+
                 customer_id: n(c.customer_id ?? c.customerId),
                 customer_name: c.customer_name ?? c.customerName ?? '',
                 participation_percentage: n(c.participation_percentage ?? c.participationPercentage),
+
                 payment_conditions: pcs,
                 associates,
                 links: Array.isArray(c.links) ? c.links : []
             }
         },
+        // ------------------------------------------------
 
         async fetchContracts() {
             const carregamentoStore = useCarregamentoStore()
@@ -210,6 +255,7 @@ export const useContractsStore = defineStore('contracts', {
                 if (this.filters.startDate) params.append('startDate', this.filters.startDate)
                 if (this.filters.endDate) params.append('endDate', this.filters.endDate)
                 params.append('situation', this.filters.situation || 'Emitido')
+
                 if (Array.isArray(this.filters.enterpriseName) && this.filters.enterpriseName.length > 0) {
                     params.append('enterpriseName', this.filters.enterpriseName.join(','))
                 }
@@ -224,11 +270,7 @@ export const useContractsStore = defineStore('contracts', {
                 if (!response.ok) throw new Error(`Erro ao buscar contratos: ${response.status}`)
 
                 const data = await response.json()
-
-                // 👇 IMPORTANTE: preserve o this usando arrow
-                const normalized = Array.isArray(data.results)
-                    ? data.results.map(c => this._normalizeContract(c))
-                    : []
+                const normalized = Array.isArray(data.results) ? data.results.map(this._normalizeContract) : []
 
                 this.contracts = normalized
                 this.total = data.count || 0
