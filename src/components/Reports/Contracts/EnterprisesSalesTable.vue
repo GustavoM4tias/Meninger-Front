@@ -6,7 +6,23 @@
                     <h3 class="text-lg font-semibold text-gray-900">Vendas por Empreendimento</h3>
                     <p class="text-sm text-gray-600">Performance de cada empreendimento</p>
                 </div>
+
                 <div class="flex items-center gap-2">
+                    <!-- Modo de valor: Líquido / Bruto -->
+                    <div class="inline-flex rounded-md border border-gray-200 overflow-hidden">
+                        <button @click="valueMode = 'net'"
+                            :class="['px-3 py-1 text-sm font-medium', valueMode === 'net' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700']"
+                            title="Considera desconto como negativo">
+                            Líquido
+                        </button>
+                        <button @click="valueMode = 'gross'"
+                            :class="['px-3 py-1 text-sm font-medium border-l border-gray-200', valueMode === 'gross' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700']"
+                            title="Considera desconto somando">
+                            Bruto
+                        </button>
+                    </div>
+
+                    <!-- Ordenação -->
                     <button @click="sortBy = sortBy === 'count' ? 'count-desc' : 'count'" :class="[
                         'px-3 py-1 rounded-md text-sm font-medium transition-colors',
                         sortBy.includes('count') ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:text-gray-900'
@@ -60,20 +76,17 @@
                 <thead class="bg-gray-50">
                     <tr>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Empreendimento
+                            Empreendimento</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Vendas</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Valor Total <span class="text-gray-400">({{ valueModeLabel }})</span>
                         </th>
                         <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Vendas
+                            Ticket Médio <span class="text-gray-400">({{ valueModeLabel }})</span>
                         </th>
                         <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Valor Total
-                        </th>
-                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Ticket Médio
-                        </th>
-                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Participação
-                        </th>
+                            Participação</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
@@ -97,24 +110,22 @@
                         </td>
                         <td class="px-6 py-4 text-right">
                             <div class="text-sm font-semibold text-green-600">
-                                {{ formatCurrency(enterprise.total_value) }}
+                                {{ formatCurrency(displayTotal(enterprise)) }}
                             </div>
                         </td>
                         <td class="px-6 py-4 text-right">
                             <div class="text-sm text-gray-900">
-                                {{ formatCurrency(enterprise.total_value / enterprise.count) }}
+                                {{ formatCurrency(displayTotal(enterprise) / (enterprise.count || 1)) }}
                             </div>
                         </td>
                         <td class="px-6 py-4 text-right">
                             <div class="flex items-center justify-end">
                                 <div class="text-sm text-gray-900 mr-2">
-                                    {{ getPercentage(enterprise.total_value) }}%
+                                    {{ getPercentage(displayTotal(enterprise)) }}%
                                 </div>
                                 <div class="w-16 bg-gray-200 rounded-full h-2">
-                                    <div :style="{
-                                        width: `${getPercentage(enterprise.total_value)}%`,
-                                        backgroundColor: getColor(index)
-                                    }" class="h-2 rounded-full transition-all duration-300"></div>
+                                    <div :style="{ width: `${getPercentage(displayTotal(enterprise))}%`, backgroundColor: getColor(index) }"
+                                        class="h-2 rounded-full transition-all duration-300" />
                                 </div>
                             </div>
                         </td>
@@ -129,59 +140,40 @@
 import { ref, computed } from 'vue'
 
 const props = defineProps({
-    data: {
-        type: Array,
-        required: true
-    }
+    // Agora cada item precisa ter: { name, count, total_value_net, total_value_gross }
+    data: { type: Array, required: true }
 })
 
 const sortBy = ref('value-desc')
+const valueMode = ref('net') // 'net' | 'gross'
+const valueModeLabel = computed(() => (valueMode.value === 'net' ? 'Líquido' : 'Bruto'))
 
-const colors = [
-    '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6',
-    '#06B6D4', '#84CC16', '#F97316', '#EC4899', '#6366F1'
-]
+const colors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4', '#84CC16', '#F97316', '#EC4899', '#6366F1']
+
+const valOf = (item) => (valueMode.value === 'net' ? item.total_value_net : item.total_value_gross)
 
 const sortedData = computed(() => {
     const data = [...props.data]
-
     switch (sortBy.value) {
-        case 'count':
-            return data.sort((a, b) => a.count - b.count)
-        case 'count-desc':
-            return data.sort((a, b) => b.count - a.count)
-        case 'value':
-            return data.sort((a, b) => a.total_value - b.total_value)
+        case 'count': return data.sort((a, b) => a.count - b.count)
+        case 'count-desc': return data.sort((a, b) => b.count - a.count)
+        case 'value': return data.sort((a, b) => valOf(a) - valOf(b))
         case 'value-desc':
-        default:
-            return data.sort((a, b) => b.total_value - a.total_value)
+        default: return data.sort((a, b) => valOf(b) - valOf(a))
     }
 })
 
-const totalValue = computed(() =>
-    props.data.reduce((sum, item) => sum + item.total_value, 0)
-)
+const totalValue = computed(() => props.data.reduce((sum, item) => sum + valOf(item), 0))
 
+const displayTotal = (item) => valOf(item)
 const getColor = (index) => colors[index % colors.length]
-
-const formatCurrency = (value) => {
-    return new Intl.NumberFormat('pt-BR', {
-        style: 'currency',
-        currency: 'BRL',
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0
-    }).format(value)
-}
-
-const getPercentage = (value) => {
-    if (totalValue.value === 0) return 0
-    return Math.round((value / totalValue.value) * 100)
-}
+const formatCurrency = (value) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value || 0)
+const getPercentage = (value) => totalValue.value === 0 ? 0 : Math.round((value / totalValue.value) * 100)
 </script>
 
 <style scoped>
 .line-clamp-2 {
-    display: -webkit-box; 
+    display: -webkit-box;
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
