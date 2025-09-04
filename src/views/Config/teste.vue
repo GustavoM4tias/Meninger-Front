@@ -60,10 +60,11 @@ onMounted(async () => {
         geo: {
             map: 'BR',
             roam: true,
-            itemStyle: { areaColor: '#EEF2FF', borderColor: '#FFFFFF', borderWidth: 1 },
-            emphasis: { itemStyle: { areaColor: '#E0E7FF' } },
+            aspectScale: 0.9, // ↓ diminui largura relativa → fica menos “achatado”
+            itemStyle: { areaColor: '#D0D6FF', borderColor: '#FFFFFF', borderWidth: 1 },
+            emphasis: { itemStyle: { areaColor: '#C0C6EE' } },
             center: [-55, -15],
-            zoom: 1.1
+            zoom: 1.8
         },
         visualMap: {
             min: 0, max: 100, orient: 'vertical', right: 10, bottom: 20,
