@@ -1,5 +1,5 @@
 <template>
-    <div class="flex flex-col items-center justify-center h-[calc(100vh-6rem)] bg-gray-300 dark:bg-gray-800 text-center text-2xl">
+    <div class="flex flex-col items-center justify-center h-[calc(100vh-6rem)] bg-gray-200 dark:bg-gray-900 text-center text-2xl">
         <i class="fas fa-eye-low-vision text-9xl"></i>
         <h1 class="text-5xl font-bold">Sem Permissão</h1>
         <p class="mt-4 font-medium">

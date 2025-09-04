@@ -1,6 +1,6 @@
 <template>
     <!-- Botão de busca sempre visível -->
-    <form class="md:w-80">
+    <form class="w-full md:w-80">
         <label class="mb-2 text-sm font-medium text-gray-900 sr-only dark:text-white">Search</label>
         <div class="hidden md:block relative" @click="openModal()">
             <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
