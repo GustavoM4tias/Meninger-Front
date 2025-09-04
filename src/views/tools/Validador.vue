@@ -5,7 +5,7 @@
             <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
 
                 <!-- Sidebar -->
-                <aside class="lg:col-span-1">
+                <aside class="lg:col-span-1 order-2">
                     <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-4">
                         Como Validar
                     </h3>
@@ -54,7 +54,7 @@
                 </aside>
 
                 <!-- Main Content -->
-                <main class="lg:col-span-3">
+                <main class="lg:col-span-3 md:order-3">
                     <div class="flex items-center justify-between mb-2">
                         <div class="flex items-center gap-2">
                             <h1 class="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">Validador de

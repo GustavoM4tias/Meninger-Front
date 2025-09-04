@@ -31,6 +31,7 @@ export const useAuthStore = defineStore('user', {
   actions: {
     setUser(user) {
       this.user = user;
+      localStorage.setItem('role', user.role)
       localStorage.setItem('position', user.position); // Salva o position no localStorage
     },
     setUserById(userById) {
@@ -45,6 +46,7 @@ export const useAuthStore = defineStore('user', {
       this.user = null;
       this.token = null;
       localStorage.removeItem('token'); // Remove o token do localStorage
+      localStorage.removeItem('role'); // Remove o token do localStorage
       localStorage.removeItem('position'); // Remove o position do localStorage
     },
     isAuthenticated() {
@@ -92,6 +94,9 @@ export const useAuthStore = defineStore('user', {
     hasPosition(position) {
       // Verifica a posição pelo estado ou pelo localStorage
       return this.user?.position === position || localStorage.getItem('position') === position;
+    },
+    hasRole(role){
+      return this.user?.role === role || localStorage.getItem('role') === role;
     },
     async initializeAuth() {
       if (this.token && !this.user) {

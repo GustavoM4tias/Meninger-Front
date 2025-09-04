@@ -1,11 +1,11 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue'; 
+import { ref, onMounted, computed } from 'vue';
 import { useAuthStore } from '../../stores/Auth/authStore';
 import { useNotificationStore } from '../../stores/Config/notificationStore';
 import { useFavoritesStore } from '../../stores/Config/favoriteStore';
 import Search from '@/components/Navigation/components/Search.vue';
 import Notification from '@/components/Navigation/components/Notification.vue';
-import Profile from '@/components/Navigation/components/Profile.vue'; 
+import Profile from '@/components/Navigation/components/Profile.vue';
 import { RouterLink } from 'vue-router';
 
 // Stores
@@ -64,7 +64,7 @@ const menuItems = {
         { router: '/tools/validator', section: 'Validador', name: 'Validador', icon: 'fas fa-check-double' }
     ],
     settings: [
-        { router: '/settings/Account', section: 'Account', name: 'Sua Conta', icon: 'fas fa-user-cog' }, 
+        { router: '/settings/Account', section: 'Account', name: 'Sua Conta', icon: 'fas fa-user-cog' },
         { router: '/settings/users', section: 'Usuários', name: 'Usuários', icon: 'fas fa-users' },
         { router: '/settings/organograma', section: 'Organograma', name: 'Organograma', icon: 'fas fa-sitemap' },
     ]
@@ -186,11 +186,14 @@ onMounted(async () => {
                             </svg>
                         </button>
                         <a href="https://menin.com.br" target="_blank" class="flex ms-2 md:me-24">
-                            <img src="/Mlogotext.png" class="h-10 sm:h-12 -my-4 dark:invert-0 invert" alt="Menin Logo" />
+                            <img src="/Mlogotext.png" class="h-10 sm:h-12 -my-4 dark:invert-0 invert"
+                                alt="Menin Logo" />
                         </a>
                     </div>
                     <div class="flex items-center">
-                        <Search />
+                        <div class="hidden md:block">
+                            <Search />
+                        </div>
                         <Notification />
                         <Profile />
                     </div>
@@ -287,7 +290,7 @@ onMounted(async () => {
                                         class="text-gray-500 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white"></i>
                                     <span class="flex-1 ms-3 text-left rtl:text-right whitespace-nowrap">{{
                                         menuItems.marketing.events.name
-                                        }}</span>
+                                    }}</span>
                                     <i :class="subDropdowns.events ? 'fas fa-chevron-up' : 'fas fa-chevron-down'"
                                         class="text-gray-500 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white"></i>
                                 </button>
@@ -444,6 +447,9 @@ onMounted(async () => {
                 <!-- Bottom Section -->
                 <ul class="pt-4 mt-4 space-y-2 font-medium border-t border-gray-200 dark:border-gray-700">
 
+                    <div class="block md:hidden">
+                        <Search />
+                    </div>
                     <li>
                         <RouterLink to="/report"
                             class="flex items-center p-2 text-gray-900 transition duration-75 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white group">
