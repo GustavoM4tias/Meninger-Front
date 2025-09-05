@@ -348,6 +348,7 @@ export const useContractsStore = defineStore('contracts', {
                     : []
 
                 this.contracts = normalized
+                console.log(this.contracts)
                 this.total = data.count || 0
             } catch (error) {
                 this.error = error.message

@@ -9,7 +9,7 @@
             <div class="relative inline-block w-full max-w-6xl my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-2xl"
                 @click.stop>
                 <!-- Header -->
-                <div class="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
+                <div class="bg-gray-100 dark:bg-gray-800 px-6 py-4">
                     <div class="flex items-center justify-between text-white">
                         <div>
                             <h3 class="text-xl font-bold">{{ enterprise.name }}</h3>
@@ -17,17 +17,17 @@
                         </div>
                         <div class="flex items-center gap-4">
                             <!-- Value Mode Toggle -->
-                            <div class="inline-flex rounded-lg border border-blue-400 overflow-hidden bg-blue-500">
+                            <div class="inline-flex rounded-lg border dark:border-gray-700 overflow-hidden">
                                 <button @click="localValueMode = 'net'"
-                                    :class="['px-3 py-1 text-sm font-medium transition-colors', localValueMode === 'net' ? 'bg-white text-blue-600' : 'text-white hover:bg-blue-400']">
+                                    :class="['px-3 py-1 text-sm font-medium', localValueMode === 'net' ? 'bg-blue-600 dark:bg-blue-700 text-white dark:text-gray-100' : 'bg-white dark:bg-gray-600 text-gray-700 dark:text-gray-100']">
                                     Líquido
                                 </button>
                                 <button @click="localValueMode = 'gross'"
-                                    :class="['px-3 py-1 text-sm font-medium transition-colors border-l border-blue-400', localValueMode === 'gross' ? 'bg-white text-blue-600' : 'text-white hover:bg-blue-400']">
+                                    :class="['px-3 py-1 text-sm font-medium border-l border-gray-300 dark:border-gray-700', localValueMode === 'gross' ? 'bg-blue-600 dark:bg-blue-700 text-white dark:text-gray-100' : 'bg-white dark:bg-gray-600 text-gray-700 dark:text-gray-100']">
                                     Bruto
-                                </button>
+                                </button> 
                             </div>
-                            <button @click="$emit('close')" class="text-white hover:text-blue-200 transition-colors">
+                            <button @click="$emit('close')" class="text-white hover:text-blue-100 text-xl transition-colors">
                                 <i class="fas fa-times text-lg"></i>
                             </button>
                         </div>
@@ -37,7 +37,7 @@
                 <!-- Content -->
                 <div class="max-h-[80vh] overflow-y-auto">
                     <!-- Summary Cards -->
-                    <div class="p-6 border-b border-gray-200 bg-gray-50">
+                    <div class="p-6 border-b border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700">
                         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                             <div class="bg-white rounded-lg p-4 shadow-sm border">
                                 <div class="flex items-center justify-between">
@@ -92,7 +92,7 @@
                     </div>
 
                     <!-- Filters -->
-                    <div class="p-6 border-b border-gray-200">
+                    <div class="p-6 border-b border-gray-200 dark:border-gray-600">
                         <div class="flex flex-wrap gap-4 items-end">
                             <div class="flex-1 min-w-64">
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Buscar Cliente ou
@@ -170,7 +170,7 @@
                                             <button @click="toggleDetails(sale)"
                                                 class="text-sm font-medium text-blue-600 hover:text-blue-900 transition-colors">
                                                 {{ expandedSales.has(`${sale.customer_id}-${sale.unit_name}`) ?
-                                                'Ocultar' : 'Detalhes' }}
+                                                    'Ocultar' : 'Detalhes' }}
                                             </button>
                                         </td>
                                     </tr>
