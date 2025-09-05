@@ -21,7 +21,7 @@ export const useContractsStore = defineStore('contracts', {
         discountCodes: () => new Set(['DC', 'DESCONTO_CONSTRUTORA']),
 
         // Totais por contrato: { net, gross }
-        // net: descontos NEGATIVOS | gross: descontos POSITIVOS
+        // net: descontos NEGATIVOS (subtraem) | gross: descontos POSITIVOS (somam)
         _contractTotals() {
             return (contract) => {
                 const isDiscount = (pc) =>
@@ -35,8 +35,14 @@ export const useContractsStore = defineStore('contracts', {
                 let gross = 0
                 for (const pc of pcs) {
                     const v = Number(pc.total_value) || 0
-                    gross += v                      // desconto soma no bruto
-                    net += isDiscount(pc) ? -v : v  // desconto subtrai no líquido
+                    if (isDiscount(pc)) {
+                        // Para desconto: bruto soma, líquido subtrai
+                        gross += v 
+                    } else {
+                        // Para não desconto: ambos somam
+                        gross += v
+                        net += v
+                    }
                 }
                 return { net, gross }
             }
@@ -137,8 +143,15 @@ export const useContractsStore = defineStore('contracts', {
 
                     const v = Number(pc.total_value) || 0
                     const ref = conditionsMap.get(key)
-                    ref.total_value_gross += v                  // desconto soma no bruto
-                    ref.total_value_net += discountCodes.has(code) ? -v : v
+
+                    if (discountCodes.has(code)) {
+                        // Para desconto: bruto soma, líquido subtrai
+                        ref.total_value_gross += v 
+                    } else {
+                        // Para não desconto: ambos somam
+                        ref.total_value_gross += v
+                        ref.total_value_net += v
+                    }
                     ref.count += 1
                 })
             })

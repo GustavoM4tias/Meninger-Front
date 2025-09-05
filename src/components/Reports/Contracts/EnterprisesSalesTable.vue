@@ -87,6 +87,8 @@
                         </th>
                         <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Participação</th>
+                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Ações</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
@@ -129,23 +131,39 @@
                                 </div>
                             </div>
                         </td>
+                        <td class="px-6 py-4 text-center">
+                            <button @click="openEnterpriseModal(enterprise)"
+                                class="inline-flex items-center px-3 py-1 text-xs font-medium text-blue-600 bg-blue-50 rounded-full hover:bg-blue-100 transition-colors">
+                                <i class="fas fa-eye mr-1"></i>
+                                Detalhes
+                            </button>
+                        </td>
                     </tr>
                 </tbody>
             </table>
         </div>
+
+        <!-- Modal de Detalhes do Empreendimento -->
+        <EnterpriseDetailModal v-if="showModal" :enterprise="selectedEnterprise" :sales="enterpriseSales"
+            :value-mode="valueMode" @close="closeModal" />
     </div>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue'
+import { useContractsStore } from '@/stores/Reports/Contracts/contractsStore'
+import EnterpriseDetailModal from './EnterpriseDetailModal.vue'
 
 const props = defineProps({
-    // Agora cada item precisa ter: { name, count, total_value_net, total_value_gross }
     data: { type: Array, required: true }
 })
 
+const contractsStore = useContractsStore()
 const sortBy = ref('value-desc')
-const valueMode = ref('net') // 'net' | 'gross'
+const valueMode = ref('net')
+const showModal = ref(false)
+const selectedEnterprise = ref(null)
+
 const valueModeLabel = computed(() => (valueMode.value === 'net' ? 'Líquido' : 'Bruto'))
 
 const colors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4', '#84CC16', '#F97316', '#EC4899', '#6366F1']
@@ -165,10 +183,27 @@ const sortedData = computed(() => {
 
 const totalValue = computed(() => props.data.reduce((sum, item) => sum + valOf(item), 0))
 
+const enterpriseSales = computed(() => {
+    if (!selectedEnterprise.value) return []
+    return contractsStore.uniqueSales.filter(sale =>
+        sale.enterprise_name === selectedEnterprise.value.name
+    )
+})
+
 const displayTotal = (item) => valOf(item)
 const getColor = (index) => colors[index % colors.length]
 const formatCurrency = (value) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value || 0)
 const getPercentage = (value) => totalValue.value === 0 ? 0 : Math.round((value / totalValue.value) * 100)
+
+const openEnterpriseModal = (enterprise) => {
+    selectedEnterprise.value = enterprise
+    showModal.value = true
+}
+
+const closeModal = () => {
+    showModal.value = false
+    selectedEnterprise.value = null
+}
 </script>
 
 <style scoped>
