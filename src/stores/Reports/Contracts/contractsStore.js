@@ -37,7 +37,7 @@ export const useContractsStore = defineStore('contracts', {
                     const v = Number(pc.total_value) || 0
                     if (isDiscount(pc)) {
                         // Para desconto: bruto soma, líquido subtrai
-                        gross += v 
+                        gross += v
                     } else {
                         // Para não desconto: ambos somam
                         gross += v
@@ -146,7 +146,7 @@ export const useContractsStore = defineStore('contracts', {
 
                     if (discountCodes.has(code)) {
                         // Para desconto: bruto soma, líquido subtrai
-                        ref.total_value_gross += v 
+                        ref.total_value_gross += v
                     } else {
                         // Para não desconto: ambos somam
                         ref.total_value_gross += v
@@ -282,12 +282,30 @@ export const useContractsStore = defineStore('contracts', {
                 ? c.payment_conditions.map(this._normalizePaymentCondition)
                 : []
 
+            const landValue = n(c.land_value ?? c.landValue)
+            const hasTR = pcs.some(pc => String(pc.condition_type_id || '').toUpperCase() === 'TR')
+
+            if (!hasTR && landValue > 0) {
+                pcs.push(this._normalizePaymentCondition({
+                    condition_type_id: 'TR',
+                    condition_type_name: 'Terreno',
+                    total_value: landValue,
+                    total_value_interest: 0,
+                    outstanding_balance: 0,
+                    amount_paid: 0,
+                    base_date: null,
+                    first_payment: null,
+                    indexer_name: null,
+                    bearer_name: null,
+                    interest_type: null,
+                    installments_number: 1
+                }))
+            }
+
             const associates = Array.isArray(c.associates)
-                ? c.associates.map((a) => ({
+                ? c.associates.map(a => ({
                     ...a,
-                    participation_percentage: n(
-                        a.participation_percentage ?? a.participationPercentage
-                    )
+                    participation_percentage: n(a.participation_percentage ?? a.participationPercentage)
                 }))
                 : []
 
@@ -295,21 +313,22 @@ export const useContractsStore = defineStore('contracts', {
                 contract_id: n(c.contract_id ?? c.id),
                 enterprise_id: n(c.enterprise_id ?? c.enterpriseId),
                 enterprise_name: c.enterprise_name ?? c.enterpriseName ?? '',
-                financial_institution_date:
-                    c.financial_institution_date ?? c.financialInstitutionDate ?? null,
+                financial_institution_date: c.financial_institution_date ?? c.financialInstitutionDate ?? null,
                 unit_name: c.unit_name ?? c.unitName ?? '',
 
                 customer_id: n(c.customer_id ?? c.customerId),
                 customer_name: c.customer_name ?? c.customerName ?? '',
-                participation_percentage: n(
-                    c.participation_percentage ?? c.participationPercentage
-                ),
+                participation_percentage: n(c.participation_percentage ?? c.participationPercentage),
 
                 payment_conditions: pcs,
                 associates,
-                links: Array.isArray(c.links) ? c.links : []
+                links: Array.isArray(c.links) ? c.links : [],
+
+                // ➜ mantenha no objeto final
+                land_value: landValue
             }
         },
+
         // ------------------------------------------------
 
         async fetchContracts() {
@@ -343,6 +362,7 @@ export const useContractsStore = defineStore('contracts', {
                     throw new Error(`Erro ao buscar contratos: ${response.status}`)
 
                 const data = await response.json()
+                console.log('RAW API sample:', data.results?.[0]) // deve conter land_value
                 const normalized = Array.isArray(data.results)
                     ? data.results.map(this._normalizeContract)
                     : []
