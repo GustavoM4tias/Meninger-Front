@@ -25,9 +25,10 @@
                                 <button @click="localValueMode = 'gross'"
                                     :class="['px-3 py-1 text-sm font-medium border-l border-gray-300 dark:border-gray-700', localValueMode === 'gross' ? 'bg-blue-600 dark:bg-blue-700 text-white dark:text-gray-100' : 'bg-white dark:bg-gray-600 text-gray-700 dark:text-gray-100']">
                                     Bruto
-                                </button> 
+                                </button>
                             </div>
-                            <button @click="$emit('close')" class="text-white hover:text-blue-100 text-xl transition-colors">
+                            <button @click="$emit('close')"
+                                class="text-white hover:text-blue-100 text-xl transition-colors">
                                 <i class="fas fa-times text-lg"></i>
                             </button>
                         </div>
@@ -124,6 +125,15 @@
                                             Cliente</th>
                                         <th
                                             class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Repasse</th>
+                                        <th
+                                            class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Etapa</th>
+                                        <th
+                                            class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Bloco</th>
+                                        <th
+                                            class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Unidade</th>
                                         <th
                                             class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -145,8 +155,23 @@
                                         class="hover:bg-gray-50 transition-colors">
                                         <td class="px-4 py-3">
                                             <div class="text-sm font-medium text-gray-900">{{ sale.customer_name }}
+                                                <span class="text-sm text-gray-500">#{{ sale.customer_id }}</span>
                                             </div>
-                                            <div class="text-sm text-gray-500">ID: {{ sale.customer_id }}</div>
+                                        </td>
+                                        <td class="flex py-6">
+                                            <a :href="`https://menin.cvcrm.com.br/gestor/financeiro/repasses/${sale.contracts?.[0]?.repasse?.[0]?.idrepasse}/administrar`"
+                                                target="_blank" class="cursor-pointer m-auto"
+                                                v-tippy="sale.contracts?.[0]?.repasse?.[0]?.status_repasse">
+                                                <img src="/CVLogo.png" alt="CV CRM" class="w-5 min-w-5" />
+                                            </a>
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            <div class="text-sm text-gray-900">{{
+                                                sale.contracts?.[0]?.repasse?.[0]?.etapa || '—' }}</div>
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            <div class="text-sm text-gray-900">{{
+                                                sale.contracts?.[0]?.repasse?.[0]?.bloco || '—' }}</div>
                                         </td>
                                         <td class="px-4 py-3">
                                             <div class="text-sm text-gray-900">{{ sale.unit_name }}</div>
@@ -180,7 +205,7 @@
                                         :key="`${sale.customer_id}-${sale.unit_name}-details`"
                                         v-show="expandedSales.has(`${sale.customer_id}-${sale.unit_name}`)"
                                         class="bg-blue-50">
-                                        <td colspan="6" class="px-4 py-4">
+                                        <td colspan="9" class="px-4 py-4">
                                             <div class="space-y-4">
                                                 <h4 class="font-medium text-gray-900 mb-3">Detalhes dos Contratos:</h4>
 
@@ -197,15 +222,24 @@
                                                         </div>
 
                                                         <div
-                                                            class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                                            class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
                                                             <div v-for="condition in contract.payment_conditions"
                                                                 :key="`${contract.contract_id}-${condition.condition_type_id}`"
-                                                                class="bg-gray-50 rounded-lg p-3 border-l-4"
-                                                                :class="isDiscount(condition) ? 'border-red-400' : 'border-blue-400'">
+                                                                class="bg-gray-50 rounded-lg p-3 border-l-4 shadow-sm"
+                                                                :class="isDiscount(condition) ? 'border-red-400' : 'border-emerald-400'">
                                                                 <div class="text-sm font-medium text-gray-800 mb-1">
                                                                     {{ condition.condition_type_name || 'Não informado'
                                                                     }}
+                                                                    <span v-if="condition.synthetic"
+                                                                        class="ml-2 inline-flex items-center px-2 py-0.5 shadow-sm rounded-full text-[10px] font-semibold bg-yellow-100 text-yellow-800">
+                                                                        Campo de Observação
+                                                                    </span>
+                                                                    <button v-if="condition.synthetic"
+                                                                        class="ps-1 text-gray-400"
+                                                                        v-tippy="`Atualização D-1 as 07h`"><i
+                                                                            class="fas fa-circle-info"></i></button>
                                                                 </div>
+
                                                                 <div class="text-lg font-semibold mb-1"
                                                                     :class="isDiscount(condition) ? 'text-red-600' : 'text-green-600'">
                                                                     {{ formatCurrency(condition.total_value) }}
@@ -280,6 +314,7 @@ const props = defineProps({
     valueMode: { type: String, default: 'net' }
 })
 
+console.log(props.sales)
 defineEmits(['close'])
 
 const localValueMode = ref(props.valueMode)
