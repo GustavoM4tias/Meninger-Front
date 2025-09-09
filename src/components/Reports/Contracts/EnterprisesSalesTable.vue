@@ -1,6 +1,6 @@
 <template>
-    <div class="bg-gray-50 dark:bg-gray-800 rounded-lg shadow-sm border dark:border-gray-500 overflow-hidden">
-        <div class="p-6 border-b border-gray-200 dark:border-gray-500">
+    <div class="bg-gray-50 dark:bg-gray-800 rounded-lg shadow-sm border dark:border-gray-600 overflow-hidden">
+        <div class="p-6 border-b border-gray-200 dark:border-gray-600">
             <div class="flex items-center justify-between">
                 <div>
                     <h3 class="text-lg font-semibold">Vendas por Empreendimento</h3>
@@ -10,14 +10,12 @@
                 <div class="flex items-center gap-2">
                     <!-- Modo de valor: Líquido / Bruto -->
                     <div class="inline-flex rounded-md border dark:border-gray-600 overflow-hidden">
-                        <button @click="valueMode = 'net'"
-                            :class="['px-3 py-1 text-sm font-medium', valueMode === 'net' ? 'bg-blue-600 dark:bg-blue-700 text-white dark:text-gray-100' : 'bg-white dark:bg-gray-600 text-gray-700 dark:text-gray-100']"
-                            title="Considera desconto como negativo">
+                        <button @click="contractsStore.setValueMode('net')"
+                            :class="['px-3 py-1 text-sm font-medium', contractsStore.valueMode === 'net' ? 'bg-blue-600 dark:bg-blue-700 text-white dark:text-gray-100' : 'bg-white dark:bg-gray-600 text-gray-700 dark:text-gray-100']">
                             Líquido
                         </button>
-                        <button @click="valueMode = 'gross'"
-                            :class="['px-3 py-1 text-sm font-medium border-l border-gray-300 dark:border-gray-700', valueMode === 'gross' ? 'bg-blue-600 dark:bg-blue-700 text-white dark:text-gray-100' : 'bg-white dark:bg-gray-600 text-gray-700 dark:text-gray-100']"
-                            title="Considera desconto somando">
+                        <button @click="contractsStore.setValueMode('gross')"
+                            :class="['px-3 py-1 text-sm font-medium border-l border-gray-300 dark:border-gray-700', contractsStore.valueMode === 'gross' ? 'bg-blue-600 dark:bg-blue-700 text-white dark:text-gray-100' : 'bg-white dark:bg-gray-600 text-gray-700 dark:text-gray-100']">
                             Bruto
                         </button>
                     </div>
@@ -28,7 +26,7 @@
                         sortBy.includes('count') ? 'bg-blue-100 text-blue-700' : 'hover:text-gray-900 dark:hover:text-white'
                     ]">
                         Quantidade
-               
+
                         <i v-if="sortBy === 'count'" class="fas fa-chevron-up"></i>
                         <i v-else-if="sortBy === 'count-desc'" class="fas fa-chevron-down"></i>
                     </button>
@@ -36,7 +34,7 @@
                         'px-3 py-1 rounded-md text-sm font-medium transition-colors',
                         sortBy.includes('value') ? 'bg-blue-100 text-blue-700' : 'hover:text-gray-900 dark:hover:text-white'
                     ]">
-                        Valor 
+                        Valor
                         <i v-if="sortBy === 'value'" class="fas fa-chevron-up"></i>
                         <i v-else-if="sortBy === 'value-desc'" class="fas fa-chevron-down"></i>
                     </button>
@@ -54,7 +52,7 @@
 
         <div v-else class="overflow-x-auto">
             <table class="w-full">
-                <thead class="bg-gray-50 dark:bg-gray-600 border-b border-gray-200 dark:border-gray-500">
+                <thead class="bg-gray-50 dark:bg-gray-700/60 border-b border-gray-200 dark:border-gray-600">
                     <tr>
                         <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
                             Empreendimento</th>
@@ -72,9 +70,9 @@
                             Ações</th>
                     </tr>
                 </thead>
-                <tbody class="bg-white dark:bg-gray-700 divide-y divide-gray-200 dark:divide-gray-600">
+                <tbody class="bg-white dark:bg-gray-700/40 divide-y divide-gray-200 dark:divide-gray-600">
                     <tr v-for="(enterprise, index) in sortedData" :key="enterprise.name"
-                        class="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                        class="hover:bg-gray-50 dark:hover:bg-gray-800/70 transition-colors">
                         <td class="px-6 py-4">
                             <div class="flex items-center">
                                 <div :style="{ backgroundColor: getColor(index) }" class="w-3 h-3 rounded-full mr-3">
@@ -126,7 +124,7 @@
 
         <!-- Modal de Detalhes do Empreendimento -->
         <EnterpriseDetailModal v-if="showModal" :enterprise="selectedEnterprise" :sales="enterpriseSales"
-            :value-mode="valueMode" @close="closeModal" />
+            @close="closeModal" />
     </div>
 </template>
 
@@ -141,15 +139,12 @@ const props = defineProps({
 
 const contractsStore = useContractsStore()
 const sortBy = ref('value-desc')
-const valueMode = ref('net')
 const showModal = ref(false)
 const selectedEnterprise = ref(null)
-
-const valueModeLabel = computed(() => (valueMode.value === 'net' ? 'Líquido' : 'Bruto'))
+const valueModeLabel = computed(() => contractsStore.valueModeLabel)
+const valOf = (item) => contractsStore.valuePicker(item)
 
 const colors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4', '#84CC16', '#F97316', '#EC4899', '#6366F1']
-
-const valOf = (item) => (valueMode.value === 'net' ? item.total_value_net : item.total_value_gross)
 
 const sortedData = computed(() => {
     const data = [...props.data]
