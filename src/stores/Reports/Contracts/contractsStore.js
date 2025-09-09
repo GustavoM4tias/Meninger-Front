@@ -9,6 +9,7 @@ export const useContractsStore = defineStore('contracts', {
         enterprises: [],
         total: 0,
         error: null,
+        valueMode: 'net', // 'net' | 'gross'
         filters: {
             startDate: '',
             endDate: '',
@@ -18,6 +19,44 @@ export const useContractsStore = defineStore('contracts', {
     }),
 
     getters: {
+        // Regra (override) para um CONTRATO específico
+        enterpriseRuleFor() {
+            return (c) => {
+                const ov = this.enterpriseOverrides || {}
+                const byId = ov.byId || {}
+                const byName = ov.byName || {}
+                const norm = (s) => (s || '').trim().toUpperCase()
+                return byId[c?.enterprise_id] || byName[norm(c?.enterprise_name)] || null
+            }
+        },
+
+        // Conveniência: estamos em BRUTO E o contrato tem gross='LAND_VALUE_ONLY'?
+        isGrossLandOnlyForContract() {
+            return (c) => this.isGross && this.enterpriseRuleFor(c)?.gross === 'LAND_VALUE_ONLY'
+        },
+        // Rótulo do modo atual
+        valueModeLabel: (state) => (state.valueMode === 'net' ? 'Líquido' : 'Bruto'),
+        isGross: (state) => state.valueMode === 'gross',
+        isNet: (state) => state.valueMode === 'net',
+
+        // "picker" genérico para objetos que possuem total_value_net/gross
+        // ex.: enterprises, sales, metrics parciais etc.
+        valuePicker: (state) => (obj) =>
+            (state.valueMode === 'net' ? obj?.total_value_net : obj?.total_value_gross) ?? 0,
+
+
+        // (use byId quando souber o ID; por enquanto usamos byName)
+        enterpriseOverrides: () => ({
+            byId: {
+                // 17004: { gross: 'LAND_VALUE_ONLY', net: 'TR_ONLY' }, // exemplo
+            },
+            byName: {
+                'JACAREZINHO/PR - RESIDENCIAL PARQUE DOS IPÊS - COMERCIAL/INCORPORAÇÃO/ESTOQUE': {
+                    gross: 'LAND_VALUE_ONLY',
+                    net: 'TR_ONLY'
+                }
+            }
+        }),
         // Códigos que representam desconto
         discountCodes: () => new Set(['DC', 'DESCONTO_CONSTRUTORA']),
 
@@ -67,12 +106,12 @@ export const useContractsStore = defineStore('contracts', {
 
             // 1) Agrupar por cliente+unidade
             this.contracts.forEach((contract) => {
-                const key = makeKey(contract) 
+                const key = makeKey(contract)
                 if (!salesMap.has(key)) {
                     salesMap.set(key, {
                         customer_id: contract.customer_id,
                         customer_name: contract.customer_name,
-                        unit_name: contract.unit_name, 
+                        unit_name: contract.unit_name,
                         enterprise_name: contract.enterprise_name,
                         financial_institution_date: contract.financial_institution_date,
                         contracts: [cloneContract(contract)],
@@ -121,16 +160,47 @@ export const useContractsStore = defineStore('contracts', {
                 }
             })
 
-            // 3) Totais do grupo (considerando possível TR sintética)
+            // 3) Totais do grupo (considerando override por empreendimento)
             salesMap.forEach((sale) => {
-                sale.total_value_net = sale.contracts.reduce(
-                    (acc, c) => acc + totalsOf(c).net,
-                    0
-                )
-                sale.total_value_gross = sale.contracts.reduce(
-                    (acc, c) => acc + totalsOf(c).gross,
-                    0
-                )
+                const overrides = this.enterpriseOverrides || {}
+                const byId = overrides.byId || {}
+                const byName = overrides.byName || {}
+                const norm = (s) => (s || '').trim().toUpperCase()
+                const getRuleFor = (c) => byId[c.enterprise_id] || byName[norm(c.enterprise_name)] || null
+
+                const matched = sale.contracts.filter((c) => !!getRuleFor(c))
+                const others = sale.contracts.filter((c) => !getRuleFor(c))
+                const rule = matched.length ? getRuleFor(matched[0]) : null
+
+                // Totais dos "outros" contratos (sem override)
+                const othersGross = others.reduce((acc, c) => acc + totalsOf(c).gross, 0)
+                const othersNet = others.reduce((acc, c) => acc + totalsOf(c).net, 0)
+
+                // Defaults dos "casados" (se não houvesse regra)
+                let matchedGross = matched.reduce((acc, c) => acc + totalsOf(c).gross, 0)
+                let matchedNet = matched.reduce((acc, c) => acc + totalsOf(c).net, 0)
+
+                // Aplica overrides
+                if (rule?.gross === 'LAND_VALUE_ONLY') {
+                    // BRUTO = SOMENTE Land Value dos contratos casados
+                    const landSum = matched.reduce((acc, c) => acc + (Number(c.land_value) || 0), 0)
+                    matchedGross = landSum
+                }
+
+                if (rule?.net === 'TR_ONLY') {
+                    // LÍQUIDO = SOMENTE TR (reais/sintéticas) dos contratos casados
+                    const trSum = matched.reduce((acc, c) => {
+                        const pcs = Array.isArray(c.payment_conditions) ? c.payment_conditions : []
+                        const s = pcs
+                            .filter((pc) => this._isTR(pc))
+                            .reduce((sum, pc) => sum + (Number(pc.total_value) || 0), 0)
+                        return acc + s
+                    }, 0)
+                    matchedNet = trSum
+                }
+
+                sale.total_value_gross = othersGross + matchedGross
+                sale.total_value_net = othersNet + matchedNet
             })
 
             return Array.from(salesMap.values())
@@ -298,6 +368,12 @@ export const useContractsStore = defineStore('contracts', {
     },
 
     actions: {
+        setValueMode(mode) {
+            this.valueMode = mode === 'gross' ? 'gross' : 'net'
+        },
+        toggleValueMode() {
+            this.valueMode = this.valueMode === 'net' ? 'gross' : 'net'
+        },
         // --- helpers ---
         _isTR(pc) {
             if (!pc) return false
