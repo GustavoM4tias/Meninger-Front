@@ -6,7 +6,7 @@
             <div class="fixed inset-0 bg-gray-900/60 transition-opacity"></div>
 
             <!-- Modal panel -->
-            <div class="relative inline-block w-full max-w-6xl my-8 overflow-hidden text-left align-middle transition-all transform bg-gray-50 dark:bg-gray-800 shadow-xl rounded-2xl"
+            <div class="relative inline-block w-full max-w-7xl my-8 overflow-hidden text-left align-middle transition-all transform bg-gray-50 dark:bg-gray-800 shadow-xl rounded-2xl"
                 @click.stop>
                 <!-- Header -->
                 <div class="px-6 py-4">
@@ -45,7 +45,7 @@
                                 <div class="flex items-center justify-between h-full">
                                     <div>
                                         <p class="text-sm font-medium">Total de Vendas</p>
-                                        <p class="text-2xl font-bold text-blue-400">{{ sales.length }}</p>
+                                        <p class="text-2xl font-bold text-blue-400">{{ totalSales }}</p>
                                     </div>
                                     <div
                                         class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center text-2xl">
@@ -108,8 +108,7 @@
                         <div class="flex flex-wrap gap-4 items-end">
                             <div class="flex-1">
                                 <label class="block text-sm font-medium mb-2">
-                                    Buscar Cliente ou
-                                    Unidade
+                                    Busque por Cliente | Repasse | Etapa | Bloco | Unidade | Data | Valor
                                 </label>
                                 <input v-model="searchTerm" type="text" placeholder="Digite para buscar..."
                                     class="w-full px-2 py-1.5 border rounded-lg bg-transparent text-gray-400 border-gray-200 dark:border-gray-500 text-start">
@@ -137,11 +136,14 @@
                                     <tr>
                                         <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">
                                             Cliente</th>
-                                        <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider">
+                                        <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider"
+                                            v-if="hasRepasse">
                                             Repasse</th>
-                                        <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider">
+                                        <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider"
+                                            v-if="hasRepasse">
                                             Etapa</th>
-                                        <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider">
+                                        <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider"
+                                            v-if="hasRepasse">
                                             Bloco</th>
                                         <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider">
                                             Unidade</th>
@@ -168,29 +170,32 @@
                                                     <span class="text-sm text-gray-500">#{{ sale.customer_id }}</span>
                                                 </div>
                                             </td>
-                                            <td class="flex py-6">
+                                            <td class="px-4 py-3 flex" v-if="hasRepasse">
                                                 <a :href="`https://menin.cvcrm.com.br/gestor/financeiro/repasses/${sale.contracts?.[0]?.repasse?.[0]?.idrepasse}/administrar`"
-                                                    target="_blank" class="cursor-pointer m-auto"
+                                                    target="_blank" class="cursor-pointer my-auto"
                                                     v-tippy="sale.contracts?.[0]?.repasse?.[0]?.status_repasse">
                                                     <img src="/CVLogo.png" alt="CV CRM" class="w-5 min-w-5" />
                                                 </a>
+                                                <div class="text-sm ps-2">{{
+                                                    sale.contracts?.[0]?.repasse?.[0]?.status_repasse || '—'
+                                                }}</div>
                                             </td>
-                                            <td class="px-4 py-3">
+                                            <td class="px-4 py-3 truncate" v-if="hasRepasse">
                                                 <div class="text-sm">{{ sale.contracts?.[0]?.repasse?.[0]?.etapa || '—'
                                                 }}</div>
                                             </td>
-                                            <td class="px-4 py-3">
+                                            <td class="px-4 py-3 truncate" v-if="hasRepasse">
                                                 <div class="text-sm">{{ sale.contracts?.[0]?.repasse?.[0]?.bloco || '—'
                                                 }}</div>
                                             </td>
-                                            <td class="px-4 py-3">
+                                            <td class="px-4 py-3 text-center">
                                                 <div class="text-sm">{{ sale.unit_name }}</div>
                                             </td>
-                                            <td class="px-4 py-3">
+                                            <td class="px-4 py-3 text-center">
                                                 <div class="text-sm">{{ formatDate(sale.financial_institution_date) }}
                                                 </div>
                                             </td>
-                                            <td class="px-4 py-3 text-right">
+                                            <td class="px-4 py-3 text-center">
                                                 <div class="text-sm font-semibold text-green-600">
                                                     {{ formatCurrency(getSaleValue(sale)) }}
                                                 </div>
@@ -348,7 +353,12 @@ const filteredSales = computed(() => {
     const term = searchTerm.value.toLowerCase()
     return props.sales.filter(sale =>
         (sale.customer_name || '').toLowerCase().includes(term) ||
-        (sale.unit_name || '').toLowerCase().includes(term)
+        (sale.unit_name || '').toLowerCase().includes(term) ||
+        (sale.contracts?.[0]?.repasse?.[0]?.bloco || '').toLowerCase().includes(term) ||
+        (sale.contracts?.[0]?.repasse?.[0]?.etapa || '').toLowerCase().includes(term) ||
+        (sale.contracts?.[0]?.repasse?.[0]?.status_repasse || '').toLowerCase().includes(term) ||
+        (formatDate(sale.financial_institution_date) || '').toLowerCase().includes(term) ||
+        (formatCurrency(getSaleValue(sale)) || '').toLowerCase().includes(term)
     )
 })
 
@@ -371,6 +381,8 @@ const visiblePages = computed(() => {
     for (let i = start; i <= end; i++) pages.push(i)
     return pages
 })
+
+const totalSales = computed(() => filteredSales.value.length)
 
 const totalValue = computed(() => {
     return filteredSales.value.reduce((sum, sale) => sum + getSaleValue(sale), 0)
@@ -395,6 +407,12 @@ const toggleDetails = (sale) => {
     next.has(key) ? next.delete(key) : next.add(key)
     expandedSales.value = next
 }
+
+const hasRepasse = computed(() => {
+    return paginatedSales.value.some(
+        sale => sale.contracts?.[0]?.repasse?.[0]
+    )
+})
 
 
 const formatCurrency = (value) =>
