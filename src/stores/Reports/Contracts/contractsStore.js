@@ -53,7 +53,7 @@ export const useContractsStore = defineStore('contracts', {
             byName: {
                 'JACAREZINHO/PR - RESIDENCIAL PARQUE DOS IPÊS - COMERCIAL/INCORPORAÇÃO/ESTOQUE': {
                     gross: 'LAND_VALUE_ONLY',
-                    net: 'TR_ONLY'
+                    net: 'LAND_VALUE_ONLY' // antes: 'TR_ONLY'
                 }
             }
         }),
@@ -197,6 +197,13 @@ export const useContractsStore = defineStore('contracts', {
                         return acc + s
                     }, 0)
                     matchedNet = trSum
+                }
+
+
+                // ➜ NOVO: LÍQUIDO = SOMENTE Land Value (igual ao bruto override)
+                if (rule?.net === 'LAND_VALUE_ONLY') {
+                    const landSum = matched.reduce((acc, c) => acc + (Number(c.land_value) || 0), 0)
+                    matchedNet = landSum
                 }
 
                 sale.total_value_gross = othersGross + matchedGross
