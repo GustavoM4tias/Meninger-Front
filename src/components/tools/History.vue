@@ -20,13 +20,13 @@ onMounted(() => {
 
 <template>
   <div
-    class="group bg-gray-100 dark:bg-gray-700 cursor-pointer shadow absolute right-[-18rem] top-0  transform transition-transform duration-300">
+    class="group bg-gray-100 dark:bg-gray-800 cursor-pointer shadow absolute right-[-18rem] top-0 transform transition-transform duration-300">
     <div @click="aiStore.fetchValidatorHistory();"
-      class="button absolute top-10 -left-10 text-xl bg-gray-100 dark:bg-gray-700 shadow-[-3px_0_5px_rgba(0,0,0,.05)] cursor-pointer rounded-l-lg py-3 ps-2.5 pe-3.5">
+      class="button absolute top-10 -left-10 md:-left-14 text-2xl md:text-3xl bg-gray-100 dark:bg-gray-800 shadow-[-3px_0_5px_rgba(0,0,0,.05)] cursor-pointer rounded-l-lg p-2 md:p-4">
       <i class="fas fa-clock-rotate-left"></i>
     </div>
-    <div class="content w-72 max-w-full h-[calc(100vh-4rem)] overflow-hidden p-2 gap-2 flex flex-col justify-between">
-      <h2 class="text-2xl text-center font-semibold text-gray-800 dark:text-gray-100 px-1">
+    <div class="content w-72 max-w-full h-[calc(100vh-3.6rem)] overflow-hidden p-2 gap-2 flex flex-col justify-between">
+      <h2 class="text-2xl text-center font-semibold text-gray-800 dark:text-gray-100 p-2">
         Histórico de Validação
       </h2>
 

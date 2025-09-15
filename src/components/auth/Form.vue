@@ -28,7 +28,7 @@ const preencherEditableUser = () => {
             email: authStore.user.email,
             city: authStore.user.city,
             position: authStore.user.position,
-            birth_date: authStore.user.birth_date ? authStore.user.birth_date.split('T')[0] : '',
+            birth_date: authStore.user.birth_date,
             status: authStore.user.status
         };
     }
@@ -50,7 +50,7 @@ const updateUser = async () => {
             editableUser.value.email,
             editableUser.value.position,
             editableUser.value.city,
-            new Date(editableUser.value.birth_date).toISOString(),
+            editableUser.value.birth_date,
             editableUser.value.status
         );
         message.value = response.message;
@@ -70,7 +70,8 @@ const toggleDisabled = () => {
 <template>
     <form @submit.prevent="updateUser">
         <div :class="{ 'hidden bg-red-400': !isDisabled }" class="absolute">
-            <i class="fas fa-pen text-3xl ps-2 cursor-pointer hover:text-gray-700 dark:hover:text-gray-300" @click="toggleDisabled"></i>
+            <i class="fas fa-pen text-3xl ps-2 cursor-pointer hover:text-gray-700 dark:hover:text-gray-300"
+                @click="toggleDisabled"></i>
         </div>
 
         <div
@@ -80,7 +81,7 @@ const toggleDisabled = () => {
                 <i class="fas fa-pen text-white m-auto text-4xl"></i>
             </div> -->
             <p class="text-gray-100 m-auto text-6xl">
-                {{ authStore.user?.username?.split(" ").slice(0, 2).map(name => name[0].toUpperCase()).join("") }}
+                {{authStore.user?.username?.split(" ").slice(0, 2).map(name => name[0].toUpperCase()).join("")}}
             </p>
         </div>
         <p class="text-center text-xs text-gray-700 dark:text-gray-200 pt-2 pb-4 font-light">

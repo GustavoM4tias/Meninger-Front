@@ -93,7 +93,7 @@ const routes = [
     path: '/teste',
     name: 'Teste',
     component: () => import('../views/Config/teste.vue'),
-    meta: { requiresAuth: true, allowedPosition: 'admin' },
+    meta: { requiresAuth: true, allowedPosition: '', allowedRole: 'admin' },
   },
   {
     path: '/login',
@@ -140,6 +140,7 @@ router.beforeEach((to, from, next) => {
   const authStore = useAuthStore();
   const requiresAuth = to.meta.requiresAuth;
   const allowedPosition = to.meta.allowedPosition;
+  const allowedRole = to.meta.allowedRole;
 
   // Se a rota exigir autenticação e não estiver autenticado, redireciona para "/login"
   if (requiresAuth && !authStore.isAuthenticated()) {
@@ -148,6 +149,14 @@ router.beforeEach((to, from, next) => {
 
   // Se a rota tiver restrição de posição e o usuário não possuir, redireciona para a página de erro
   if (allowedPosition && !authStore.hasPosition(allowedPosition)) {
+    const errorMessage = 'Você não tem permissão para acessar esta página!';
+    return next({
+      path: '/error',
+      query: { message: errorMessage }
+    });
+  }
+  // Se a rota tiver restrição de posição e o usuário não possuir, redireciona para a página de erro
+  if (allowedRole && !authStore.hasRole(allowedRole)) {
     const errorMessage = 'Você não tem permissão para acessar esta página!';
     return next({
       path: '/error',

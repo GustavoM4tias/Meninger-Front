@@ -30,10 +30,8 @@
             <!-- Métricas Principais -->
             <MetricsCards :metrics="contractsStore.metrics" />
 
-            <!-- Tabelas e Listas -->
+            <!-- Tabela de Empreendimentos com Modal -->
             <EnterprisesSalesTable :data="contractsStore.salesByEnterprise" />
-            <!-- Tabela de Vendas Detalhada -->
-            <SalesTable :sales="contractsStore.uniqueSales" />
         </div>
     </div>
 </template>
@@ -47,7 +45,6 @@ import Favorite from "@/components/config/Favorite.vue";
 import DashboardFilters from '@/components/Reports/Contracts/DashboardFilters.vue'
 import MetricsCards from '@/components/Reports/Contracts/MetricsCards.vue'
 import EnterprisesSalesTable from '@/components/Reports/Contracts/EnterprisesSalesTable.vue'
-import SalesTable from '@/components/Reports/Contracts/SalesTable.vue'
 
 const contractsStore = useContractsStore()
 

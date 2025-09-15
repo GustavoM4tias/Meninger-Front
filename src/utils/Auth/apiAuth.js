@@ -75,6 +75,7 @@ export const updateMeInfo = async (username, email, position, city, birth_date, 
     const errorData = await response.json();
     throw new Error(errorData.message);
   }
+  console.log('Valor passado na store', birth_date)
 
   return response.json();
 };
