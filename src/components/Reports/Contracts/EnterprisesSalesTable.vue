@@ -12,53 +12,50 @@
           <!-- Líquido / Bruto -->
           <div class="inline-flex rounded-md border dark:border-gray-600 overflow-hidden">
             <button @click="contractsStore.setValueMode('net')"
-              :class="['px-3 py-1 text-sm font-medium', contractsStore.valueMode==='net' ? 'bg-blue-600 dark:bg-blue-700 text-white dark:text-gray-100' : 'bg-white dark:bg-gray-600 text-gray-700 dark:text-gray-100']">
+              :class="['px-3 py-1 text-sm font-medium', contractsStore.valueMode === 'net' ? 'bg-blue-600 dark:bg-blue-700 text-white dark:text-gray-100' : 'bg-white dark:bg-gray-600 text-gray-700 dark:text-gray-100']">
               Líquido
             </button>
             <button @click="contractsStore.setValueMode('gross')"
-              :class="['px-3 py-1 text-sm font-medium border-l border-gray-300 dark:border-gray-700', contractsStore.valueMode==='gross' ? 'bg-blue-600 dark:bg-blue-700 text-white dark:text-gray-100' : 'bg-white dark:bg-gray-600 text-gray-700 dark:text-gray-100']">
+              :class="['px-3 py-1 text-sm font-medium border-l border-gray-300 dark:border-gray-700', contractsStore.valueMode === 'gross' ? 'bg-blue-600 dark:bg-blue-700 text-white dark:text-gray-100' : 'bg-white dark:bg-gray-600 text-gray-700 dark:text-gray-100']">
               Bruto
             </button>
           </div>
 
           <!-- NOVO: Ações de visualização para 1..N empreendimentos -->
           <div class="inline-flex rounded-md border dark:border-gray-600 overflow-hidden">
-            <button @click="openGroup('list')"
-              :disabled="disabledOpen"
+            <button @click="openGroup('list')" :disabled="disabledOpen"
               class="px-3 py-1 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-900 disabled:opacity-50">
               Detalhes
             </button>
-            <button @click="openGroup('pie')"
-              :disabled="disabledOpen"
+            <button @click="openGroup('pie')" :disabled="disabledOpen"
               class="px-3 py-1 text-sm font-medium border-l border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-900 disabled:opacity-50">
               Pizza
             </button>
-            <button @click="openGroup('bar')"
-              :disabled="disabledOpen"
+            <button @click="openGroup('bar')" :disabled="disabledOpen"
               class="px-3 py-1 text-sm font-medium border-l border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-900 disabled:opacity-50">
               Colunas
             </button>
           </div>
 
           <!-- Ordenação -->
-          <button @click="sortBy = sortBy==='count' ? 'count-desc' : 'count'"
+          <button @click="sortBy = sortBy === 'count' ? 'count-desc' : 'count'"
             :class="['px-3 py-1 rounded-md text-sm font-medium transition-colors', sortBy.includes('count') ? 'bg-blue-100 text-blue-700' : 'hover:text-gray-900 dark:hover:text-white']">
             Quantidade
-            <i v-if="sortBy==='count'" class="fas fa-chevron-up"></i>
-            <i v-else-if="sortBy==='count-desc'" class="fas fa-chevron-down"></i>
+            <i v-if="sortBy === 'count'" class="fas fa-chevron-up"></i>
+            <i v-else-if="sortBy === 'count-desc'" class="fas fa-chevron-down"></i>
           </button>
-          <button @click="sortBy = sortBy==='value' ? 'value-desc' : 'value'"
+          <button @click="sortBy = sortBy === 'value' ? 'value-desc' : 'value'"
             :class="['px-3 py-1 rounded-md text-sm font-medium transition-colors', sortBy.includes('value') ? 'bg-blue-100 text-blue-700' : 'hover:text-gray-900 dark:hover:text-white']">
             Valor
-            <i v-if="sortBy==='value'" class="fas fa-chevron-up"></i>
-            <i v-else-if="sortBy==='value-desc'" class="fas fa-chevron-down"></i>
+            <i v-if="sortBy === 'value'" class="fas fa-chevron-up"></i>
+            <i v-else-if="sortBy === 'value-desc'" class="fas fa-chevron-down"></i>
           </button>
         </div>
       </div>
     </div>
 
     <!-- Empty -->
-    <div v-if="sortedData.length===0" class="p-12 text-center">
+    <div v-if="sortedData.length === 0" class="p-12 text-center">
       <svg class="w-12 h-12 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
           d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
@@ -89,11 +86,10 @@
 
         <tbody class="bg-white dark:bg-gray-700/40 divide-y divide-gray-200 dark:divide-gray-600">
           <tr v-for="(enterprise, index) in sortedData" :key="enterprise.name"
-              class="hover:bg-gray-50 dark:hover:bg-gray-800/70 transition-colors">
+            class="hover:bg-gray-50 dark:hover:bg-gray-800/70 transition-colors">
             <td class="px-6 py-4">
-              <input type="checkbox"
-                     :checked="selectedNames.has(enterprise.name)"
-                     @change="toggleOne(enterprise.name, $event)" />
+              <input type="checkbox" :checked="selectedNames.has(enterprise.name)"
+                @change="toggleOne(enterprise.name, $event)" />
             </td>
 
             <td class="px-6 py-4">
@@ -119,24 +115,30 @@
               <div class="flex items-center justify-end">
                 <div class="text-sm mr-2">{{ getPercentage(displayTotal(enterprise)) }}%</div>
                 <div class="w-16 bg-gray-200 rounded-full h-2">
-                  <div :style="{ width: `${getPercentage(displayTotal(enterprise))}%`, backgroundColor: getColor(index) }"
-                       class="h-2 rounded-full transition-all duration-300" />
+                  <div
+                    :style="{ width: `${getPercentage(displayTotal(enterprise))}%`, backgroundColor: getColor(index) }"
+                    class="h-2 rounded-full transition-all duration-300" />
                 </div>
               </div>
             </td>
-
-            <td class="px-6 py-4 text-center">
-              <!-- ações por linha continuam funcionando -->
-              <button @click="openSingle(enterprise, 'list')"
-                      class="inline-flex items-center px-3 py-1 text-xs font-medium text-blue-600 bg-blue-50 rounded-full hover:bg-blue-100 transition-colors">
-                <i class="fas fa-eye mr-1"></i> Detalhes
-              </button>
-              <button @click="openSingle(enterprise, 'pie')"
-                      class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full transition-colors
-                             text-purple-700 bg-purple-50 hover:bg-purple-100 dark:text-purple-200 dark:bg-purple-700/30"
-                      title="Vendas por imobiliária">
-                <i class="fas fa-chart-pie"></i>
-              </button>
+            <td class="w-fit">
+              <div class="flex gap-1 pe-2 justify-center items-center">
+                <button @click="openSingle(enterprise, 'list')" class="inline-flex items-center px-2 py-2 text-xs font-medium rounded-full transition-colors
+                   text-purple-700 bg-purple-50 hover:bg-purple-100 dark:text-purple-200 dark:bg-purple-700/30"
+                  v-tippy="'Relatório de Vendas'">
+                  <i class="fas fa-eye"></i>
+                </button>
+                <button @click="openSingle(enterprise, 'pie')" class="inline-flex items-center px-2 py-2 text-xs font-medium rounded-full transition-colors
+                   text-purple-700 bg-purple-50 hover:bg-purple-100 dark:text-purple-200 dark:bg-purple-700/30"
+                  v-tippy="'Relatório de Pizza por imobiliária'">
+                  <i class="fas fa-chart-pie"></i>
+                </button>
+                <button @click="openSingle(enterprise, 'bar')" class="inline-flex items-center px-2 py-2 text-xs font-medium rounded-full transition-colors
+                   text-purple-700 bg-purple-50 hover:bg-purple-100 dark:text-purple-200 dark:bg-purple-700/30"
+                  v-tippy="'Relatório de Barra por imobiliária'">
+                  <i class="fas fa-chart-bar"></i>
+                </button>
+              </div>
             </td>
           </tr>
         </tbody>
@@ -144,13 +146,8 @@
     </div>
 
     <!-- Modal único: recebe sales já agregadas e enterprise sintético -->
-    <EnterpriseDetailModal
-      v-if="showModal"
-      :enterprise="{ name: modalTitle }"
-      :sales="modalSales"
-      :initial-mode="initialMode"
-      @close="closeModal"
-    />
+    <EnterpriseDetailModal v-if="showModal" :enterprise="{ name: modalTitle }" :sales="modalSales"
+      :initial-mode="initialMode" @close="closeModal" />
   </div>
 </template>
 
@@ -176,23 +173,23 @@ const initialMode = ref('list') // 'list' | 'pie' | 'bar'
 const valueModeLabel = computed(() => contractsStore.valueModeLabel)
 const valOf = (item) => contractsStore.valuePicker(item)
 
-const colors = ['#3B82F6','#10B981','#F59E0B','#EF4444','#8B5CF6','#06B6D4','#84CC16','#F97316','#EC4899','#6366F1']
+const colors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4', '#84CC16', '#F97316', '#EC4899', '#6366F1']
 
 const sortedData = computed(() => {
   const data = [...props.data]
   switch (sortBy.value) {
-    case 'count':      return data.sort((a,b)=> a.count - b.count)
-    case 'count-desc': return data.sort((a,b)=> b.count - a.count)
-    case 'value':      return data.sort((a,b)=> valOf(a) - valOf(b))
+    case 'count': return data.sort((a, b) => a.count - b.count)
+    case 'count-desc': return data.sort((a, b) => b.count - a.count)
+    case 'value': return data.sort((a, b) => valOf(a) - valOf(b))
     case 'value-desc':
-    default:           return data.sort((a,b)=> valOf(b) - valOf(a))
+    default: return data.sort((a, b) => valOf(b) - valOf(a))
   }
 })
 
 const totalValue = computed(() => props.data.reduce((sum, item) => sum + valOf(item), 0))
 const displayTotal = (item) => valOf(item)
 const getColor = (i) => colors[i % colors.length]
-const formatCurrency = (v) => new Intl.NumberFormat('pt-BR',{ style:'currency', currency:'BRL', minimumFractionDigits:0, maximumFractionDigits:0 }).format(v || 0)
+const formatCurrency = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(v || 0)
 const getPercentage = (v) => totalValue.value === 0 ? 0 : Math.round((v / totalValue.value) * 100)
 
 /* helpers de seleção */
@@ -220,7 +217,7 @@ const salesForNames = (names) =>
   contractsStore.uniqueSales.filter(sale => names.has(sale.enterprise_name))
 
 /* abrir modal para UMA linha (continua compatível) */
-const openSingle = (enterprise, mode='list') => {
+const openSingle = (enterprise, mode = 'list') => {
   const names = new Set([enterprise.name])
   modalSales.value = salesForNames(names)
   modalTitle.value = enterprise.name
@@ -230,7 +227,7 @@ const openSingle = (enterprise, mode='list') => {
 
 /* abrir modal a partir do cabeçalho para seleção 1..N
    - se nada selecionado, usa TODOS os empreendimentos (conjunto completo) */
-const openGroup = (mode='list') => {
+const openGroup = (mode = 'list') => {
   const namesSet = selectedNames.value.size > 0
     ? new Set(selectedNames.value)
     : new Set(props.data.map(e => e.name))

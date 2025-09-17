@@ -44,7 +44,7 @@
               </div>
 
               <button type="button" @click="$emit('close')"
-                class="text-dark ps-2 hover:text-gray-700 dark:text-white dark:hover:text-blue-100 text-xl transition-colors">
+                class="text-dark hover:text-gray-700 dark:text-white dark:hover:text-blue-100 text-xl transition-colors">
                 <i class="fas fa-times text-lg"></i>
               </button>
             </div>
@@ -206,7 +206,7 @@
 
                       <tr v-show="expandedSales.has(`${sale.customer_id}-${sale.unit_name}`)"
                         class="bg-gray-50 dark:bg-gray-900/60">
-                        <td colspan="9">
+                        <td colspan="10">
                           <div v-for="contract in sale.contracts" :key="contract.contract_id" class="space-y-3">
                             <div class="bg-white dark:bg-gray-900/20 p-4 shadow">
                               <div class="flex items-center justify-between mb-3">
@@ -280,13 +280,11 @@
           <template v-else>
             <!-- Gráfico em tela cheia (largura total) -->
             <div class="p-6">
-              <div class="flex items-center justify-between mb-2">
-                <h4 class="text-sm font-medium text-gray-600">Vendas por Imobiliária</h4>
-                <ChartActions :chart-ref="chartRef" filename="vendas-por-imobiliaria" />
-              </div>
-
               <div class="min-h-[360px]">
-                <VChart ref="chartRef" :option="chartOption" autoresize style="height:360px; width:100%;" />
+                <VChart :option="chartOption" autoresize style="height: 360px; width: 100%;" />
+              </div>
+              <div class="flex justify-end mt-2">
+                <ChartActions filename="vendas-por-imobiliaria" />
               </div>
             </div>
 
@@ -364,7 +362,7 @@
 
                       <tr v-show="expandedSales.has(`${sale.customer_id}-${sale.unit_name}`)"
                         class="bg-gray-50 dark:bg-gray-900/60">
-                        <td colspan="9">
+                        <td colspan="10">
                           <div v-for="contract in sale.contracts" :key="contract.contract_id" class="space-y-3">
                             <div class="bg-white dark:bg-gray-900/20 p-4 shadow">
                               <div class="flex items-center justify-between mb-3">
@@ -465,9 +463,6 @@ const getSaleValue = (sale) => contractsStore.valuePicker(sale)
 const formatCurrency = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(v || 0)
 const formatDate = (d) => new Date(d).toLocaleDateString('pt-BR')
 const isDiscount = (c) => contractsStore.discountCodes.has(String(c?.condition_type_id || '').toUpperCase())
-
-/* Chart  */
-const chartRef = ref(null)
 
 /* busca/paginação */
 const searchTerm = ref('')
