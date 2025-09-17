@@ -441,6 +441,10 @@ export const useContractsStore = defineStore('contracts', {
                 }))
                 : []
 
+            // ✅ helper local (sem usar this)
+            const isPlainObject = (v) =>
+                v !== null && typeof v === 'object' && !Array.isArray(v) 
+
             return {
                 contract_id: n(c.contract_id ?? c.id),
                 enterprise_id: n(c.enterprise_id ?? c.enterpriseId),
@@ -461,7 +465,10 @@ export const useContractsStore = defineStore('contracts', {
                 associates,
                 links: Array.isArray(c.links) ? c.links : [],
                 // 👇 NOVO: repasses relacionados à unidade (array de objetos)
-                repasse: Array.isArray(c.repasse) ? c.repasse : []
+                repasse: Array.isArray(c.repasse) ? c.repasse : [],
+
+                // 👇 agora seguro
+                reserva: isPlainObject(c.reserva) ? c.reserva : null
             }
         },
 
