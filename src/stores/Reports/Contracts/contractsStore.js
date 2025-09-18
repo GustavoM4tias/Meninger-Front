@@ -44,19 +44,38 @@ export const useContractsStore = defineStore('contracts', {
         valuePicker: (state) => (obj) =>
             (state.valueMode === 'net' ? obj?.total_value_net : obj?.total_value_gross) ?? 0,
 
-
-        // (use byId quando souber o ID; por enquanto usamos byName)
-        enterpriseOverrides: () => ({
+        
+        enterpriseCommissionRules: () => ({
             byId: {
-                // 17004: { gross: 'LAND_VALUE_ONLY', net: 'TR_ONLY' }, // exemplo
+                // se preferir por ID, adicione aqui: 99999: { commission_pct: 0.04 }
             },
             byName: {
-                'JACAREZINHO/PR - RESIDENCIAL PARQUE DOS IPÊS - COMERCIAL/INCORPORAÇÃO/ESTOQUE': {
-                    gross: 'LAND_VALUE_ONLY',
-                    net: 'LAND_VALUE_ONLY' // antes: 'TR_ONLY'
+                'SINOP/MT - INCORPORADORA MF VERONA SPE LTDA - COMERCIAL/INCORPORAÇÃO/ESTOQUE': {
+                    commission_pct: 0.04
                 }
             }
         }),
+        enterpriseCommissionFor() {
+            return (c) => {
+                const rules = this.enterpriseCommissionRules || {}
+                const byId = rules.byId || {}
+                const byName = rules.byName || {}
+                const norm = (s) => (s || '').trim().toUpperCase()
+                return byId[c?.enterprise_id] || byName[norm(c?.enterprise_name)] || null
+            }
+        },
+
+
+        enterpriseCommissionFor() {
+            return (c) => {
+                const rules = this.enterpriseCommissionRules || {}
+                const byId = rules.byId || {}
+                const byName = rules.byName || {}
+                const norm = (s) => (s || '').trim().toUpperCase()
+                return byId[c?.enterprise_id] || byName[norm(c?.enterprise_name)] || null
+            }
+        },
+
         // Códigos que representam desconto
         discountCodes: () => new Set(['DC', 'DESCONTO_CONSTRUTORA']),
 
@@ -161,6 +180,7 @@ export const useContractsStore = defineStore('contracts', {
             })
 
             // 3) Totais do grupo (considerando override por empreendimento)
+            // 3) Totais do grupo (considerando override por empreendimento) + comissão "por fora"
             salesMap.forEach((sale) => {
                 const overrides = this.enterpriseOverrides || {}
                 const byId = overrides.byId || {}
@@ -168,6 +188,7 @@ export const useContractsStore = defineStore('contracts', {
                 const norm = (s) => (s || '').trim().toUpperCase()
                 const getRuleFor = (c) => byId[c.enterprise_id] || byName[norm(c.enterprise_name)] || null
 
+                const totalsOf = this._contractTotals
                 const matched = sale.contracts.filter((c) => !!getRuleFor(c))
                 const others = sale.contracts.filter((c) => !getRuleFor(c))
                 const rule = matched.length ? getRuleFor(matched[0]) : null
@@ -180,34 +201,62 @@ export const useContractsStore = defineStore('contracts', {
                 let matchedGross = matched.reduce((acc, c) => acc + totalsOf(c).gross, 0)
                 let matchedNet = matched.reduce((acc, c) => acc + totalsOf(c).net, 0)
 
-                // Aplica overrides
+                // Overrides
                 if (rule?.gross === 'LAND_VALUE_ONLY') {
-                    // BRUTO = SOMENTE Land Value dos contratos casados
                     const landSum = matched.reduce((acc, c) => acc + (Number(c.land_value) || 0), 0)
                     matchedGross = landSum
                 }
-
                 if (rule?.net === 'TR_ONLY') {
-                    // LÍQUIDO = SOMENTE TR (reais/sintéticas) dos contratos casados
                     const trSum = matched.reduce((acc, c) => {
                         const pcs = Array.isArray(c.payment_conditions) ? c.payment_conditions : []
-                        const s = pcs
+                        return acc + pcs
                             .filter((pc) => this._isTR(pc))
-                            .reduce((sum, pc) => sum + (Number(pc.total_value) || 0), 0)
-                        return acc + s
+                            .reduce((s, pc) => s + (Number(pc.total_value) || 0), 0)
                     }, 0)
                     matchedNet = trSum
                 }
-
-
-                // ➜ NOVO: LÍQUIDO = SOMENTE Land Value (igual ao bruto override)
                 if (rule?.net === 'LAND_VALUE_ONLY') {
                     const landSum = matched.reduce((acc, c) => acc + (Number(c.land_value) || 0), 0)
                     matchedNet = landSum
                 }
 
-                sale.total_value_gross = othersGross + matchedGross
-                sale.total_value_net = othersNet + matchedNet
+                // === Comissão "por fora" ===
+                const comRules = this.enterpriseCommissionRules || {}
+                const comById = comRules.byId || {}
+                const comByName = comRules.byName || {}
+                const getComFor = (c) => comById[c.enterprise_id] || comByName[norm(c.enterprise_name)] || null
+                const uplift = (base, pct) => (pct > 0 ? base * (pct / (1 - pct)) : 0)
+
+                // Base por contrato respeitando overrides e modo
+                const baseGross = (c) => {
+                    const r = getRuleFor(c) || {}
+                    if (r.gross === 'LAND_VALUE_ONLY') return Number(c.land_value) || 0
+                    return totalsOf(c).gross || 0
+                }
+                const baseNet = (c) => {
+                    const r = getRuleFor(c) || {}
+                    if (r.net === 'TR_ONLY') {
+                        const pcs = Array.isArray(c.payment_conditions) ? c.payment_conditions : []
+                        return pcs.filter((pc) => this._isTR(pc)).reduce((s, pc) => s + (Number(pc.total_value) || 0), 0)
+                    }
+                    if (r.net === 'LAND_VALUE_ONLY') return Number(c.land_value) || 0
+                    return totalsOf(c).net || 0
+                }
+
+                // Soma uplift por contrato com regra de comissão
+                let addGross = 0
+                let addNet = 0
+                for (const c of sale.contracts) {
+                    const com = getComFor(c)
+                    const pct = Number(com?.commission_pct) || 0
+                    if (pct > 0) {
+                        addGross += uplift(baseGross(c), pct)
+                        addNet += uplift(baseNet(c), pct)
+                    }
+                }
+
+                sale.total_value_gross = othersGross + matchedGross + addGross
+                sale.total_value_net = othersNet + matchedNet + addNet
             })
 
             return Array.from(salesMap.values())
@@ -443,7 +492,7 @@ export const useContractsStore = defineStore('contracts', {
 
             // ✅ helper local (sem usar this)
             const isPlainObject = (v) =>
-                v !== null && typeof v === 'object' && !Array.isArray(v) 
+                v !== null && typeof v === 'object' && !Array.isArray(v)
 
             return {
                 contract_id: n(c.contract_id ?? c.id),
