@@ -14,7 +14,11 @@ const currentDate = new Date();
 const search = ref('');
 const selectedEvent = ref(null);
 const addEvent = ref(false);
-const eventStore = useEventStore(); // Usando a store
+const eventStore = useEventStore();
+
+// Estados para animações e loading
+const isLoading = ref(true);
+const searchDebounce = ref(null);
 
 const openEventModal = (event) => {
     selectedEvent.value = event;
@@ -22,7 +26,7 @@ const openEventModal = (event) => {
 
 const closeEventModal = () => {
     selectedEvent.value = null;
-    eventStore.fetchEvents(); // Atualiza eventos após adicionar
+    eventStore.fetchEvents();
 };
 
 const openAddEventModal = () => {
@@ -31,8 +35,21 @@ const openAddEventModal = () => {
 
 const closeAddEventModal = () => {
     addEvent.value = false;
-    eventStore.fetchEvents(); // Atualiza eventos após adicionar
+    eventStore.fetchEvents();
 };
+
+// Debounced search para melhor performance
+const debouncedSearch = (value) => {
+    clearTimeout(searchDebounce.value);
+    searchDebounce.value = setTimeout(() => {
+        router.push({ query: { search: value || undefined, section: currentSection.value } });
+    }, 300);
+};
+
+// Watch para busca com debounce
+watch(search, (newValue) => {
+    debouncedSearch(newValue);
+});
 
 // Atualiza a busca ao alterar a query
 watch(
@@ -41,107 +58,221 @@ watch(
         search.value = newQuery || '';
     },
     { immediate: true }
-);;
+);
 
-// Computed para acessar o estado da store
+// Computed para filtros otimizados
 const eventsFiltereds = computed(() => {
-    const filter = search.value.toLowerCase();
+    if (!search.value) return eventStore.events;
+
+    const filter = search.value.toLowerCase().trim();
     return eventStore.events.filter(event =>
-        event.title.toLowerCase().includes(filter) ||
-        event.description.toLowerCase().includes(filter)
+        event.title?.toLowerCase().includes(filter) ||
+        event.description?.toLowerCase().includes(filter) ||
+        event.tags?.some(tag => tag.toLowerCase().includes(filter))
     );
 });
 
-// Computed para determinar qual seção mostrar
 const currentSection = computed(() => route.query.section || 'Geral');
 
-const eventsInProgress = computed(() => eventsFiltereds.value.filter(event => new Date(event.event_date) >= currentDate));
-const eventsFinisheds = computed(() => eventsFiltereds.value
-    .filter(event => new Date(event.event_date) < currentDate)
-    .sort((a, b) => new Date(b.event_date) - new Date(a.event_date))
+const eventsInProgress = computed(() =>
+    eventsFiltereds.value
+        .filter(event => new Date(event.event_date) >= currentDate)
+        .sort((a, b) => new Date(a.event_date) - new Date(b.event_date))
 );
 
-const updateQuery = () => {
-    router.push({ query: { search: search.value, section: currentSection.value } });
+const eventsFinished = computed(() =>
+    eventsFiltereds.value
+        .filter(event => new Date(event.event_date) < currentDate)
+        .sort((a, b) => new Date(b.event_date) - new Date(a.event_date))
+);
+
+const hasSearchResults = computed(() => route.query.search && eventsFiltereds.value.length > 0);
+const hasNoResults = computed(() => route.query.search && eventsFiltereds.value.length === 0);
+
+// Navegação por seções
+const sections = [
+    { key: 'Geral', label: 'Geral', icon: 'fas fa-th-large' },
+    { key: 'Próximos', label: 'Próximos', icon: 'fas fa-calendar-alt' },
+    { key: 'Finalizados', label: 'Finalizados', icon: 'fas fa-history' }
+];
+
+const changeSection = (section) => {
+    router.push({ query: { section, search: search.value || undefined } });
 };
 
-// Inicializa os eventos
-onMounted(() => eventStore.fetchEvents());
+// Inicialização
+onMounted(async () => {
+    try {
+        await eventStore.fetchEvents();
+    } finally {
+        isLoading.value = false;
+    }
+});
 </script>
 
 <template>
-
-    <div class="h-full relative overflow-y-auto overflow-x-hidden">
-
-        <img class="absolute invert dark:invert-0 z-0 left-72 top-0 opacity-25" src="/traçado.png">
-
-        <i @click="openAddEventModal"
-            class="far fa-calendar-plus absolute text-gray-400 hover:text-gray-500 cursor-pointer top-0 right-0 m-4 md:m-8 text-4xl z-10"></i>
-        <!-- Verificar se usuario é admin/mkt  -->
-
-        <div class="container md:mx-auto mt-5 relative z-10">
-
-            <div class="search items-center md:-mb-5">
-                <h1 class="text-2xl md:text-4xl text-center font-bold mb-2">Eventos
-                    <Favorite :router="'/events'" :section="currentSection" />
-                </h1>
-                <div class="nav bg-gray-400 rounded-full mx-auto p-1 md:p-2 filter w-full md:w-2/5">
-                    <input type="text" v-model="search" @input="updateQuery"
-                        class="busca bg-gray-200 w-full rounded-full px-3 py-1.5 md:px-5 md:py-3 text-gray-700 outline-none font-semibold placeholder-gray-600"
-                        placeholder="Buscar eventos..." />
-                </div>
-            </div>
-
-            <!-- Se houver busca ativa -->
-            <div v-if="route.query.search">
-                <!-- Se houver resultados da pesquisa, mostrar apenas os resultados filtrados -->
-                <div v-if="eventsFiltereds.length > 0" class="mb-10">
-                    <h2 class="text-2xl font-semibold m-3">Resultados da Pesquisa</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <EventCard v-for="event in eventsFiltereds" :key="event.id"
-                            :event="{ ...event, event_date: (event.event_date) }" @click="openEventModal(event)" />
-                    </div>
-                </div>
-
-                <div v-else>
-                    <p class="text-gray-500 text-5xl text-center mt-64">Sem Resultados</p>
-                </div>
-            </div>
-
-            <!-- Se não houver busca ativa, mostrar as seções normais -->
-            <div v-else class="divide-y divide-gray-500">
-
-                <div class="overflow-x-auto pb-5"
-                    v-if="eventsInProgress.length > 0 && (currentSection === 'Geral' || currentSection === 'Próximos')">
-                    <h2 class="text-2xl font-semibold mt-2 mb-1">Próximos Eventos</h2>
-                    <div class="grid grid-flow-col auto-cols-[100%] md:auto-cols-[32.6%] gap-4 mx-3">
-                        <EventCard v-for="event in eventsInProgress" :key="event.id"
-                            :event="{ ...event, event_date: (event.event_date) }" @click="openEventModal(event)" />
-                    </div>
-                </div>
-
-                <div v-if="eventsInProgress >= 0 && (currentSection === 'Próximos')">
-                    <p class="text-gray-500 text-5xl text-center mt-64">Sem Próximos Eventos</p>
-                </div>
-
-                <div class="overflow-x-auto pb-5"
-                    v-if="eventsFinisheds.length > 0 && (currentSection === 'Geral' || currentSection === 'Finalizados')">
-                    <h2 class="text-2xl font-semibold mt-2 mb-1">Eventos Finalizados</h2>
-                    <div class="grid grid-flow-col auto-cols-[100%] md:auto-cols-[32.6%] gap-4 mx-3">
-                        <EventCard v-for="event in eventsFinisheds" :key="event.id"
-                            :event="{ ...event, event_date: (event.event_date) }" @click="openEventModal(event)" />
-                    </div>
-                </div>
-
-            </div>
-
+    <div
+        class="min-h-[calc(100vh-3.5rem)] bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 relative overflow-hidden">
+        <!-- Background Decoration -->
+        <div class="absolute top-0 px-40 w-full opacity-5 dark:opacity-10">
+            <svg class="w-full h-full" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse">
+                        <path d="M 10 0 L 0 0 0 10" fill="none" stroke="currentColor" stroke-width="0.5" />
+                    </pattern>
+                </defs>
+                <rect width="100%" height="100%" fill="url(#grid)" />
+            </svg>
         </div>
 
+        <!-- Floating Action Button -->
+        <div class="fixed bottom-8 right-8 z-30">
+            <button @click="openAddEventModal"
+                class="group bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-full w-14 h-14 shadow-2xl hover:shadow-3xl transform hover:scale-110 transition-all duration-300 flex items-center justify-center"
+                title="Adicionar Evento">
+                <i class="fas fa-plus text-xl group-hover:rotate-90 transition-transform duration-300"></i>
+            </button>
+        </div>
+
+        <div class="container mx-auto px-4 py-8 relative z-10">
+            <!-- Header Section -->
+            <div class="text-center mb-12">
+                <!-- <div class="flex items-center justify-center mb-6">
+                    <div class="bg-gradient-to-r from-blue-500 to-purple-600 p-4 rounded-2xl shadow-xl">
+                        <i class="fas fa-calendar-alt text-4xl text-white"></i>
+                    </div>
+                </div>
+                 -->
+                <h1 class="text-5xl md:text-6xl font-bold mb-2">
+                    Eventos
+                    <Favorite :router="'/events'" :section="currentSection" />
+                </h1>
+
+                <p class="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+                    Descubra e participe dos melhores eventos da sua região
+                </p>
+            </div>
+
+            <!-- Search and Navigation -->
+            <div class="max-w-4xl mx-auto mb-12">
+                <!-- Search Bar -->
+                <div class="relative mb-8">
+                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <i class="fas fa-search text-gray-400"></i>
+                    </div>
+                    <input type="text" v-model="search" placeholder="Buscar eventos, tags, descrições..."
+                        class="w-full pl-12 pr-6 py-4 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-2xl shadow-lg focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-300 text-lg" />
+                    <div v-if="search" class="absolute inset-y-0 right-0 pr-4 flex items-center">
+                        <button @click="search = ''" class="text-gray-400 hover:text-gray-600 transition-colors">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Section Navigation -->
+                <div v-if="!route.query.search" class="flex flex-wrap justify-center gap-4">
+                    <button v-for="section in sections" :key="section.key" @click="changeSection(section.key)" :class="[
+                        'flex items-center gap-3 px-6 py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105',
+                        currentSection === section.key
+                            ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-xl'
+                            : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 shadow-md hover:shadow-lg border border-gray-200 dark:border-gray-700'
+                    ]">
+                        <i :class="section.icon"></i>
+                        {{ section.label }}
+                    </button>
+                </div>
+            </div>
+
+            <!-- Loading State -->
+            <div v-if="isLoading" class="flex justify-center items-center py-20">
+                <div class="animate-spin rounded-full h-16 w-16 border-4 border-blue-500 border-t-transparent"></div>
+            </div>
+
+            <!-- Content -->
+            <div v-else>
+                <!-- Search Results -->
+                <div v-if="hasSearchResults" class="mb-16">
+                    <div class="text-center mb-8">
+                        <h2 class="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-2">Resultados da Pesquisa</h2>
+                        <p class="text-gray-600 dark:text-gray-400">{{ eventsFiltereds.length }} evento(s) encontrado(s)
+                        </p>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                        <EventCard v-for="event in eventsFiltereds" :key="event.id" :event="event"
+                            @click="openEventModal(event)"
+                            class="transform hover:scale-105 transition-all duration-300" />
+                    </div>
+                </div>
+
+                <!-- No Results -->
+                <div v-else-if="hasNoResults" class="text-center py-20">
+                    <div class="mb-8">
+                        <i class="fas fa-search text-6xl text-gray-300 dark:text-gray-600 mb-6"></i>
+                        <h3 class="text-2xl font-semibold text-gray-600 dark:text-gray-400 mb-4">Nenhum resultado
+                            encontrado</h3>
+                        <p class="text-gray-500 dark:text-gray-500">Tente usar palavras-chave diferentes ou verifique a
+                            ortografia</p>
+                    </div>
+                </div>
+
+                <!-- Section-based Content -->
+                <div v-else class="space-y-16">
+                    <!-- Upcoming Events -->
+                    <section
+                        v-if="eventsInProgress.length > 0 && (currentSection === 'Geral' || currentSection === 'Próximos')">
+                        <div class="flex items-center gap-4 mb-8">
+                            <i class="fas fa-calendar-alt text-4xl text-white"></i>
+                            <div>
+                                <h2 class="text-3xl font-bold text-gray-800 dark:text-white">Próximos Eventos</h2>
+                                <p class="text-gray-600 dark:text-gray-400">{{ eventsInProgress.length }} evento(s)
+                                    programado(s)</p>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                            <EventCard v-for="event in eventsInProgress" :key="event.id" :event="event"
+                                @click="openEventModal(event)"
+                                class="transform hover:scale-105 transition-all duration-300" />
+                        </div>
+                    </section>
+
+                    <!-- No Upcoming Events Message -->
+                    <div v-else-if="currentSection === 'Próximos'" class="text-center py-20">
+                        <i class="fas fa-calendar-times text-6xl text-gray-300 dark:text-gray-600 mb-6"></i>
+                        <h3 class="text-2xl font-semibold text-gray-600 dark:text-gray-400 mb-4">Nenhum evento próximo
+                        </h3>
+                        <p class="text-gray-500 dark:text-gray-500">Novos eventos serão exibidos aqui quando disponíveis
+                        </p>
+                    </div>
+
+                    <!-- Finished Events -->
+                    <section
+                        v-if="eventsFinished.length > 0 && (currentSection === 'Geral' || currentSection === 'Finalizados')">
+                        <div class="flex items-center gap-4 mb-8">
+                            <i class="fas fa-history text-4xl text-white"></i>
+                            <div>
+                                <h2 class="text-3xl font-bold text-gray-800 dark:text-white">Eventos Finalizados</h2>
+                                <p class="text-gray-600 dark:text-gray-400">{{ eventsFinished.length }} evento(s)
+                                    realizado(s)</p>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                            <EventCard v-for="event in eventsFinished" :key="event.id" :event="event"
+                                @click="openEventModal(event)"
+                                class="transform hover:scale-105 transition-all duration-300 opacity-75 hover:opacity-100" />
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modals -->
         <EventModal v-if="selectedEvent" :event="selectedEvent" @close="closeEventModal" />
+        <AddEventModal v-if="addEvent" @close="closeAddEventModal" />
 
-        <AddEventModal v-if="addEvent" @close="closeAddEventModal" @openAddEventModal="openAddEventModal" />
-        <div v-if="eventStore.errorMessage">{{ eventStore.errorMessage }}</div>
-
+        <!-- Error Message -->
+        <div v-if="eventStore.errorMessage"
+            class="fixed bottom-4 left-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50">
+            {{ eventStore.errorMessage }}
+        </div>
     </div>
-
 </template>

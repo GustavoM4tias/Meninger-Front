@@ -10,11 +10,12 @@
 
         <!-- Dropdown de notificações -->
         <div id="notificationDropdown"
-            class="z-20 hidden w-72 max-h-72 overflow-y-auto bg-white dark:bg-gray-700 divide-y divide-gray-100 rounded-lg shadow">
+            class="z-20 hidden w-72 max-h-72 overflow-y-auto bg-white dark:bg-gray-700 rounded-lg shadow">
             <div v-if="notificationStore.notifications.length > 0"
                 class="py-2 text-sm text-gray-700 dark:text-gray-200">
+                <p class="text-gray-700 dark:text-gray-100 text-xl font-semibold px-4 pb-2">Notificações <span class="text-gray-500 text-sm">({{ notificationStore.notifications.length }})</span></p>
                 <div v-for="(notification, index) in notificationStore.notifications" :key="index"
-                    class="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600">
+                    class="px-2 py-2 hover:bg-gray-100 dark:hover:bg-gray-600">
                     <NotificationItem :notification="notification" />
                 </div>
             </div>
