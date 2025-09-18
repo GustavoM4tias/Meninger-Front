@@ -16,8 +16,6 @@ const selectedEvent = ref(null);
 const addEvent = ref(false);
 const eventStore = useEventStore();
 
-// Estados para animações e loading
-const isLoading = ref(true);
 const searchDebounce = ref(null);
 
 const openEventModal = (event) => {
@@ -53,9 +51,9 @@ watch(search, (newValue) => {
 
 // Atualiza a busca ao alterar a query
 watch(
-    () => route.query.search,
-    (newQuery) => {
-        search.value = newQuery || '';
+    () => [route.query.search, route.query.busca],
+    ([qSearch, qBusca]) => {
+        search.value = qSearch ?? qBusca ?? '';
     },
     { immediate: true }
 );
@@ -102,11 +100,7 @@ const changeSection = (section) => {
 
 // Inicialização
 onMounted(async () => {
-    try {
-        await eventStore.fetchEvents();
-    } finally {
-        isLoading.value = false;
-    }
+    await eventStore.fetchEvents();
 });
 </script>
 
@@ -183,13 +177,8 @@ onMounted(async () => {
                 </div>
             </div>
 
-            <!-- Loading State -->
-            <div v-if="isLoading" class="flex justify-center items-center py-20">
-                <div class="animate-spin rounded-full h-16 w-16 border-4 border-blue-500 border-t-transparent"></div>
-            </div>
-
             <!-- Content -->
-            <div v-else>
+            <div>
                 <!-- Search Results -->
                 <div v-if="hasSearchResults" class="mb-16">
                     <div class="text-center mb-8">

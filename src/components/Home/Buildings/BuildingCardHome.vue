@@ -53,7 +53,7 @@ const showBuildingDetails = () => {
                 </p>
                 <RouterLink :to="{
                     path: '/buildings',
-                    query: { search: building.nome, section: 'geral' }
+                    query: { search: building.nome, section: 'Geral' }
                 }" class="border rounded-md md:rounded-lg text-white text-md md:text-lg text-wrap hover:bg-gray-100 hover:text-gray-800 duration-300 py-1 px-2 md:py-2 md:px-4 ml-4">
                     Ver Mais
                 </RouterLink>
