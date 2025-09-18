@@ -24,18 +24,34 @@
           <!-- NOVO: Ações de visualização para 1..N empreendimentos -->
           <div class="inline-flex rounded-md border dark:border-gray-600 overflow-hidden">
             <button @click="openGroup('list')" :disabled="disabledOpen"
-              class="px-3 py-1 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-900 disabled:opacity-50">
-              Detalhes
+              class="px-3 py-1 text-sm font-medium bg-white dark:bg-gray-600 hover:bg-purple-600 dark:hover:bg-purple-600 hover:text-white disabled:opacity-50">
+              Listagem
             </button>
             <button @click="openGroup('pie')" :disabled="disabledOpen"
-              class="px-3 py-1 text-sm font-medium border-l border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-900 disabled:opacity-50">
+              class="px-3 py-1 text-sm font-medium border-l border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-600 hover:bg-purple-600 dark:hover:bg-purple-600 hover:text-white disabled:opacity-50">
               Pizza
             </button>
             <button @click="openGroup('bar')" :disabled="disabledOpen"
-              class="px-3 py-1 text-sm font-medium border-l border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-900 disabled:opacity-50">
+              class="px-3 py-1 text-sm font-medium border-l border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-600 hover:bg-purple-600 dark:hover:bg-purple-600 hover:text-white disabled:opacity-50">
               Colunas
             </button>
           </div>
+
+<!-- 
+              <div class="inline-flex rounded-md border dark:border-gray-600 overflow-hidden">
+                <button type="button" @click="viewMode = 'list'"
+                  :class="['px-3 py-1 text-sm font-medium', viewMode === 'list' ? 'bg-purple-600 text-white' : 'bg-white dark:bg-gray-600']">
+                  Listagem
+                </button>
+                <button type="button" @click="viewMode = 'pie'"
+                  :class="['px-3 py-1 text-sm font-medium border-l border-gray-300 dark:border-gray-700', viewMode === 'pie' ? 'bg-purple-600 text-white' : 'bg-white dark:bg-gray-600']">
+                  Pizza
+                </button>
+                <button type="button" @click="viewMode = 'bar'"
+                  :class="['px-3 py-1 text-sm font-medium border-l border-gray-300 dark:border-gray-700', viewMode === 'bar' ? 'bg-purple-600 text-white' : 'bg-white dark:bg-gray-600']">
+                  Colunas
+                </button>
+              </div> -->
 
           <!-- Ordenação -->
           <button @click="sortBy = sortBy === 'count' ? 'count-desc' : 'count'"
