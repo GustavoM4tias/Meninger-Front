@@ -44,8 +44,8 @@
               </div>
 
               <button type="button" @click="$emit('close')"
-                class="text-dark hover:text-gray-700 dark:text-white dark:hover:text-blue-100 text-xl transition-colors">
-                <i class="fas fa-times text-lg"></i>
+                class="text-dark hover:text-gray-700 ps-3 pt-1 dark:text-white dark:hover:text-blue-100 text-2xl transition-colors">
+                <i class="fas fa-times"></i>
               </button>
             </div>
           </div>
@@ -219,8 +219,8 @@
                                 :key="`${contractsStore.valueMode}-${contract.contract_id}`">
                                 <div v-for="(condition, idx) in displayedConditions(contract)"
                                   :key="`${contract.contract_id}-${condition.synthetic ? 'SYNTH' : 'REAL'}-${condition.condition_type_id || 'NA'}-${idx}-${contractsStore.valueMode}`"
-                                  class="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 border-l-4 shadow-sm"
-                                  :class="isDiscount(condition) ? 'border-red-400' : 'border-emerald-400'">
+                                  class="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 border-l-4 shadow-sm" :class="isDiscount(condition) ? 'border-red-400' : 'border-emerald-400',
+                                    condition._isCommission ? 'border-orange-400' : ''">
                                   <div class="text-sm font-medium mb-1">
                                     {{ condition.condition_type_name || 'Não informado' }}
                                     <span v-if="condition.synthetic"
@@ -280,11 +280,11 @@
           <template v-else>
             <!-- Gráfico em tela cheia (largura total) -->
             <div class="p-6">
-              <div class="min-h-[360px]">
-                <VChart :option="chartOption" autoresize style="height: 360px; width: 100%;" />
-              </div>
               <div class="flex justify-end mt-2">
                 <ChartActions filename="vendas-por-imobiliaria" />
+              </div>
+              <div class="min-h-[360px]">
+                <VChart :option="chartOption" autoresize style="height: 360px; width: 100%;" />
               </div>
             </div>
 
@@ -375,8 +375,8 @@
                                 :key="`${contractsStore.valueMode}-${contract.contract_id}`">
                                 <div v-for="(condition, idx) in displayedConditions(contract)"
                                   :key="`${contract.contract_id}-${condition.synthetic ? 'SYNTH' : 'REAL'}-${condition.condition_type_id || 'NA'}-${idx}-${contractsStore.valueMode}`"
-                                  class="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 border-l-4 shadow-sm"
-                                  :class="isDiscount(condition) ? 'border-red-400' : 'border-emerald-400'">
+                                  class="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 border-l-4 shadow-sm" :class="isDiscount(condition) ? 'border-red-400' : 'border-emerald-400',
+                                    condition._isCommission ? 'border-orange-400' : ''">
                                   <div class="text-sm font-medium mb-1">
                                     {{ condition.condition_type_name || 'Não informado' }}
                                     <span v-if="condition.synthetic"
@@ -452,6 +452,8 @@ const props = defineProps({
   sales: { type: Array, required: true },
   initialMode: { type: String, default: 'list' } // 'list' | 'pie' | 'bar'
 })
+
+console.log(props.sales)
 defineEmits(['close'])
 
 const contractsStore = useContractsStore()
@@ -461,7 +463,14 @@ const viewMode = ref(['list', 'pie', 'bar'].includes(props.initialMode) ? props.
 const valueModeLabel = computed(() => contractsStore.valueModeLabel)
 const getSaleValue = (sale) => contractsStore.valuePicker(sale)
 const formatCurrency = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(v || 0)
-const formatDate = (d) => new Date(d).toLocaleDateString('pt-BR')
+const formatDate = (d) => {
+  if (!d) return '—'
+  // se for 'YYYY-MM-DD', formata sem criar Date
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(d)
+  if (m) return `${m[3]}/${m[2]}/${m[1]}`
+  // fallback para outros formatos
+  return new Date(d).toLocaleDateString('pt-BR', { timeZone: 'UTC' })
+}
 const isDiscount = (c) => contractsStore.discountCodes.has(String(c?.condition_type_id || '').toUpperCase())
 
 /* busca/paginação */
@@ -528,10 +537,30 @@ const toggleDetails = (sale) => {
 const displayedConditions = (contract) => {
   const landOnly = contractsStore.isGrossLandOnlyForContract(contract)
   const lv = Number(contract?.land_value) || 0
+
+  // condições reais (ou TR sintética de land_value quando aplicável)
+  let list
   if (landOnly && lv > 0) {
-    return [{ condition_type_id: 'TR', condition_type_name: 'Terreno (TR)', total_value: lv, installments_number: 1, synthetic: true }]
+    list = [{
+      condition_type_id: 'TR',
+      condition_type_name: 'Terreno (TR)',
+      total_value: lv,
+      installments_number: 1,
+      synthetic: true
+    }]
+  } else {
+    list = Array.isArray(contract?.payment_conditions) ? contract.payment_conditions : []
   }
-  return Array.isArray(contract?.payment_conditions) ? contract.payment_conditions : []
+
+  // anexa a condição sintética de comissão (se existir)
+  const commission = commissionConditionFor(contract)
+  if (commission) {
+    // Evita duplicar se já existir (raro, mas por segurança)
+    const hasAlready = list.some(pc => pc.condition_type_id === 'COMISSAO_FORA')
+    if (!hasAlready) list = [...list, commission]
+  }
+
+  return list
 }
 
 /* charts (sobre filteredSales) */
@@ -567,6 +596,56 @@ const totals = computed(() => ({
   count: rowsByBroker.value.reduce((s, r) => s + r.count, 0),
   value: rowsByBroker.value.reduce((s, r) => s + r.value, 0)
 }))
+
+
+// ==== Comissão "por fora" como condição sintética no detalhe ====
+const ruleFor = computed(() => contractsStore.enterpriseRuleFor)
+const comFor = computed(() => contractsStore.enterpriseCommissionFor)
+const totalsOf = computed(() => contractsStore._contractTotals)
+
+const sumTR = (c) => {
+  const pcs = Array.isArray(c.payment_conditions) ? c.payment_conditions : []
+  return pcs.filter((pc) => contractsStore._isTR(pc))
+    .reduce((s, pc) => s + (Number(pc.total_value) || 0), 0)
+}
+const uplift = (base, pct) => (pct > 0 ? base * (pct / (1 - pct)) : 0)
+
+const baseGross = (c) => {
+  const r = ruleFor.value(c) || {}
+  if (r.gross === 'LAND_VALUE_ONLY') return Number(c.land_value) || 0
+  return totalsOf.value(c).gross || 0
+}
+const baseNet = (c) => {
+  const r = ruleFor.value(c) || {}
+  if (r.net === 'TR_ONLY') return sumTR(c)
+  if (r.net === 'LAND_VALUE_ONLY') return Number(c.land_value) || 0
+  return totalsOf.value(c).net || 0
+}
+
+/** Gera a "condição" sintética de comissão para um contrato (ou null) */
+const commissionConditionFor = (contract) => {
+  const rule = comFor.value(contract)
+  const pct = Number(rule?.commission_pct) || 0
+  if (pct <= 0) return null
+
+  const base = contractsStore.isGross ? baseGross(contract) : baseNet(contract)
+  const add = uplift(base, pct)
+
+  if (add <= 0) return null
+
+  const pctLabel = Math.round(pct * 100)
+  return {
+    condition_type_id: 'COMISSAO_FORA',
+    condition_type_name: `Comissão por fora (${pctLabel}%)`,
+    total_value: add,
+    installments_number: 1,
+    synthetic: true,
+    _isCommission: true // flag opcional p/ estilizar se quiser
+  }
+}
+
+
+
 
 /* ECharts */
 const chartOption = computed(() => {
@@ -614,7 +693,7 @@ const chartOption = computed(() => {
       trigger: 'axis',
       valueFormatter: (v) => formatCurrency(v)
     },
-    grid: { left: 64, right: 64, top: 42, bottom: 64, containLabel: true },
+    grid: { left: 32, right: 32, top: 42, bottom: 64, containLabel: true },
     xAxis: {
       type: 'category',
       data: rowsByBroker.value.map(r => r.name),
