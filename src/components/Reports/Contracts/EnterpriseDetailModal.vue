@@ -635,11 +635,11 @@ const commissionConditionFor = (contract) => {
 
   const pctLabel = Math.round(pct * 100)
   return {
-    condition_type_id: 'COMISSAO_FORA',
-    condition_type_name: `Comissão por fora (${pctLabel}%)`,
+    condition_type_id: 'CM',
+    condition_type_name: `Comissão ${pctLabel}% (Fora de contrato)`,
     total_value: add,
     installments_number: 1,
-    synthetic: true,
+    synthetic: false, // quanto é do BI
     _isCommission: true // flag opcional p/ estilizar se quiser
   }
 }
@@ -700,7 +700,7 @@ const chartOption = computed(() => {
       axisLabel: {
         interval: 0,
         rotate: 20,
-        fontSize: 10,          // menor texto
+        fontSize: 8,          // menor texto
         color: '#9CA3AF',
         formatter: (val) => {
           return val.length > 12 ? val.slice(0, 12) + '…' : val // corta texto longo
