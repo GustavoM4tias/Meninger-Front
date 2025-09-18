@@ -2,6 +2,10 @@
 import { fetchCarregamento } from '../Config/fetchCarregamento';
 import API_URL from '../../config/apiUrl'; // Define a URL base da sua API
 
+import { useToast } from 'vue-toastification';
+
+const toast = useToast();
+
 export const getEvents = async () => {
     const response = await fetch(`${API_URL}/events`, {
         method: 'GET',
@@ -62,12 +66,14 @@ export const deleteEvent = async (eventId) => {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`, // Verifique se o token está sendo recuperado corretamente
                 'Content-Type': 'application/json'
             }
-        });
+        },
+        toast.success('Evento excluido com sucesso!'));
         if (!response.ok) {
             throw new Error('Falha na requisição');
         }
     } catch (error) {
         console.error('Erro ao excluir evento:', error);
+        toast.error('Erro ao excluir evento.')
         throw error; // Re-lança o erro para que possa ser tratado onde for chamado
     }
 };

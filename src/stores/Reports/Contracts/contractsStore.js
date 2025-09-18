@@ -44,7 +44,19 @@ export const useContractsStore = defineStore('contracts', {
         valuePicker: (state) => (obj) =>
             (state.valueMode === 'net' ? obj?.total_value_net : obj?.total_value_gross) ?? 0,
 
-        
+        // (RESTAURAR) Regras por empreendimento (LAND/TR etc.)
+        enterpriseOverrides: () => ({
+            byId: {
+                // 17004: { gross: 'LAND_VALUE_ONLY', net: 'TR_ONLY' }, // exemplo
+            },
+            byName: {
+                'JACAREZINHO/PR - RESIDENCIAL PARQUE DOS IPÊS - COMERCIAL/INCORPORAÇÃO/ESTOQUE': {
+                    gross: 'LAND_VALUE_ONLY',
+                    net: 'LAND_VALUE_ONLY' // antes: 'TR_ONLY'
+                }
+            }
+        }),
+
         enterpriseCommissionRules: () => ({
             byId: {
                 // se preferir por ID, adicione aqui: 99999: { commission_pct: 0.04 }

@@ -16,8 +16,8 @@ const showBuildingDetails = () => {
 </script>
 
 <template>
-    <div class="shadow-md dark:shadow-2xl relative filter drop-shadow-lg rounded-xl overflow-hidden duration-300 transform hover:scale-105 h-full"
-        @click="showBuildingDetails">
+    <div
+        class="shadow-md dark:shadow-2xl relative filter drop-shadow-lg rounded-xl overflow-hidden duration-300 transform hover:scale-105 h-full">
         <img :src="props.building.foto ? props.building.foto : '/noimg.jpg'"
             class="w-full h-full object-cover bg-center absolute z-0" />
 
@@ -52,7 +52,7 @@ const showBuildingDetails = () => {
                     class="text-lg md:text-xl text-gray-100 cursor-pointer duration-200 filter drop-shadow hover:text-gray-200 -mt-1">
                     {{ props.building.cidade }}/{{ props.building.sigla }}
                 </p>
-                <button
+                <button @click="showBuildingDetails"
                     class="border rounded-md md:rounded-lg text-gray-100 text-lg text-wrap hover:bg-gray-100 hover:text-gray-800 shadow filter drop-shadow duration-300 py-1 px-2 md:py-2 md:px-4 ml-4">
                     Ver Mais
                 </button>
