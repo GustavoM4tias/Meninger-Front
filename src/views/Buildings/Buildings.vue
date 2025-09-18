@@ -80,44 +80,41 @@ const updateQuery = () => {
 // Inicializa os empreendimentos
 onMounted(() => buildingStore.fetchBuildings());
 
-
-
-
 const enableDragScroll = (el) => {
-  let isDown = false;
-  let startX;
-  let scrollLeft;
+    let isDown = false;
+    let startX;
+    let scrollLeft;
 
-  el.addEventListener("mousedown", (e) => {
-    isDown = true;
-    el.classList.add("active");
-    startX = e.pageX - el.offsetLeft;
-    scrollLeft = el.scrollLeft;
-  });
+    el.addEventListener("mousedown", (e) => {
+        isDown = true;
+        el.classList.add("active");
+        startX = e.pageX - el.offsetLeft;
+        scrollLeft = el.scrollLeft;
+    });
 
-  el.addEventListener("mouseleave", () => {
-    isDown = false;
-    el.classList.remove("active");
-  });
+    el.addEventListener("mouseleave", () => {
+        isDown = false;
+        el.classList.remove("active");
+    });
 
-  el.addEventListener("mouseup", () => {
-    isDown = false;
-    el.classList.remove("active");
-  });
+    el.addEventListener("mouseup", () => {
+        isDown = false;
+        el.classList.remove("active");
+    });
 
-  el.addEventListener("mousemove", (e) => {
-    if (!isDown) return;
-    e.preventDefault();
-    const x = e.pageX - el.offsetLeft;
-    const walk = (x - startX) * 1; // multiplicador de velocidade
-    el.scrollLeft = scrollLeft - walk;
-  });
+    el.addEventListener("mousemove", (e) => {
+        if (!isDown) return;
+        e.preventDefault();
+        const x = e.pageX - el.offsetLeft;
+        const walk = (x - startX) * 1; // multiplicador de velocidade
+        el.scrollLeft = scrollLeft - walk;
+    });
 };
 
 onMounted(() => {
-  document.querySelectorAll(".scroll-drag").forEach((el) => {
-    enableDragScroll(el);
-  });
+    document.querySelectorAll(".scroll-drag").forEach((el) => {
+        enableDragScroll(el);
+    });
 });
 </script>
 
@@ -150,20 +147,6 @@ onMounted(() => {
                     </div>
                 </div>
 
-                <!-- Busca ativa -->
-                <div v-if="route.query.search">
-                    <div v-if="buildingsFiltered.length" class="mb-12">
-                        <h2 class="text-2xl font-semibold mb-4">Resultados</h2>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <BuildingCard v-for="b in buildingsFiltered" :key="b.idempreendimento" :building="b"
-                                @click="openBuildingModal(b)" />
-                        </div>
-                    </div>
-                    <div v-else class="text-center py-24">
-                        <i class="fas fa-search text-6xl text-gray-300 dark:text-gray-600 mb-6"></i>
-                        <p class="text-xl text-gray-500">Sem resultados</p>
-                    </div>
-                </div>
             </div>
 
             <!-- Se houver busca ativa -->
@@ -176,6 +159,10 @@ onMounted(() => {
                             :building="building" @click="openBuildingModal(building)" />
                     </div>
                 </div>
+                <div v-else class="text-center py-24">
+                    <i class="fas fa-search text-6xl text-gray-300 dark:text-gray-600 mb-6"></i>
+                    <p class="text-xl text-gray-500">Sem resultados</p>
+                </div>
 
             </div>
 
@@ -183,7 +170,8 @@ onMounted(() => {
             <div v-else class="divide-y divide-gray-500">
                 <div class="overflow-x-auto pb-5 scroll-drag"
                     v-if="buildingsPreLaunch.length > 0 && (currentSection === 'Geral' || currentSection === 'Pré Lançamentos')">
-                    <h2 class="text-2xl font-semibold mt-2 mb-1"><i class="fas fa-map-marked-alt"></i> Pré Lançamentos</h2>
+                    <h2 class="text-2xl font-semibold mt-2 mb-1"><i class="fas fa-map-marked-alt"></i> Pré Lançamentos
+                    </h2>
                     <div class="grid grid-flow-col auto-cols-[100%] md:auto-cols-[32.6%] gap-4 mx-3">
                         <BuildingCard v-for="building in buildingsPreLaunch" :key="building.idempreendimento"
                             :building="building" @click="openBuildingModal(building)" />
@@ -254,15 +242,20 @@ onMounted(() => {
 
 <style scoped>
 .scroll-drag::-webkit-scrollbar {
-  display: none; /* Chrome, Safari */
+    display: none;
+    /* Chrome, Safari */
 }
+
 .scroll-drag {
-  user-select: none; /* impede seleção de texto */
-  -webkit-user-select: none; /* Safari */
-  -ms-user-select: none; /* IE */
+    user-select: none;
+    /* impede seleção de texto */
+    -webkit-user-select: none;
+    /* Safari */
+    -ms-user-select: none;
+    /* IE */
 }
 
 .scroll-drag:active {
-  cursor: grabbing;
+    cursor: grabbing;
 }
 </style>
