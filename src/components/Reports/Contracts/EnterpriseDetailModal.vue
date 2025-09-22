@@ -43,6 +43,9 @@
                 </button>
               </div>
 
+              <button class="text-2xl ps-2" v-tippy="'Exportar Dados'" @click="open = true"><i
+                  class="fas fa-download"></i></button>
+
               <button type="button" @click="$emit('close')"
                 class="text-dark hover:text-gray-700 ps-3 pt-1 dark:text-white dark:hover:text-blue-100 text-2xl transition-colors">
                 <i class="fas fa-times"></i>
@@ -131,6 +134,23 @@
             </div>
           </div>
 
+          <Export v-model="open" :source="filteredSales" title="Exportação de vendas"
+            filename="Relatório de Faturamento" initial-delimiter=";" initial-array-mode="join" :preselect="[
+              'customer_id',
+              'customer_name',
+              'unit_name',
+              'enterprise_name',
+              'financial_institution_date',
+              'total_value_gross',
+              'total_value_net',
+              'contracts.contract_id'
+            ]"/>
+
+          <!-- :source="sales"   aqui você passa props.sales 
+    initial-delimiter=";"     pt-BR/Excel friendly 
+    initial-array-mode="join" join | first | count 
+    'preselect...contracts.0.contract_id' se quiser pré-seleções específicas -->
+
           <!-- VIEW: LIST -->
           <template v-if="viewMode === 'list'">
             <!-- Tabela padrão -->
@@ -163,7 +183,8 @@
                       <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                         <td class="px-4 py-3">
                           <div class="text-sm font-medium">
-                            {{ sale.customer_name }} <span class="text-sm text-gray-500">#{{ sale.customer_id }}</span>
+                            {{ sale.customer_name }} <span class="text-sm text-gray-500">#{{ sale.customer_id
+                            }}</span>
                           </div>
                         </td>
                         <td class="px-4 py-3 flex" v-if="hasRepasse">
@@ -172,7 +193,8 @@
                             v-tippy="sale.contracts?.[0]?.repasse?.[0]?.status_repasse">
                             <img src="/CVLogo.png" alt="CV CRM" class="w-5 min-w-5" />
                           </a>
-                          <div class="text-sm ps-2">{{ sale.contracts?.[0]?.repasse?.[0]?.status_repasse || '—' }}</div>
+                          <div class="text-sm ps-2">{{ sale.contracts?.[0]?.repasse?.[0]?.status_repasse || '—' }}
+                          </div>
                         </td>
                         <td class="px-4 py-3 truncate" v-if="hasRepasse">
                           <div class="text-sm">{{ sale.contracts?.[0]?.repasse?.[0]?.empreendimento || '—' }}</div>
@@ -252,7 +274,8 @@
 
               <!-- Paginação -->
               <div v-if="totalPages > 1" class="m-4 flex items-center justify-between">
-                <div class="text-sm text-gray-500">Mostrando {{ startItem }} a {{ endItem }} de {{ filteredSales.length
+                <div class="text-sm text-gray-500">Mostrando {{ startItem }} a {{ endItem }} de {{
+                  filteredSales.length
                 }} vendas
                 </div>
                 <div class="flex items-center gap-2">
@@ -319,7 +342,8 @@
                       <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                         <td class="px-4 py-3">
                           <div class="text-sm font-medium">
-                            {{ sale.customer_name }} <span class="text-sm text-gray-500">#{{ sale.customer_id }}</span>
+                            {{ sale.customer_name }} <span class="text-sm text-gray-500">#{{ sale.customer_id
+                            }}</span>
                           </div>
                         </td>
                         <td class="px-4 py-3 flex" v-if="hasRepasse">
@@ -328,7 +352,8 @@
                             v-tippy="sale.contracts?.[0]?.repasse?.[0]?.status_repasse">
                             <img src="/CVLogo.png" alt="CV CRM" class="w-5 min-w-5" />
                           </a>
-                          <div class="text-sm ps-2">{{ sale.contracts?.[0]?.repasse?.[0]?.status_repasse || '—' }}</div>
+                          <div class="text-sm ps-2">{{ sale.contracts?.[0]?.repasse?.[0]?.status_repasse || '—' }}
+                          </div>
                         </td>
                         <td class="px-4 py-3 truncate" v-if="hasRepasse">
                           <div class="text-sm">{{ sale.contracts?.[0]?.repasse?.[0]?.empreendimento || '—' }}</div>
@@ -407,7 +432,8 @@
 
               <!-- Paginação -->
               <div v-if="totalPages > 1" class="m-4 flex items-center justify-between">
-                <div class="text-sm text-gray-500">Mostrando {{ startItem }} a {{ endItem }} de {{ filteredSales.length
+                <div class="text-sm text-gray-500">Mostrando {{ startItem }} a {{ endItem }} de {{
+                  filteredSales.length
                 }} vendas
                 </div>
                 <div class="flex items-center gap-2">
@@ -440,6 +466,7 @@
 import { ref, computed, watch } from 'vue'
 import { useContractsStore } from '@/stores/Reports/Contracts/contractsStore'
 import ChartActions from '@/components/config/ChartActions.vue'
+import Export from '@/components/config/Export.vue'
 import VChart from 'vue-echarts'
 import * as echarts from 'echarts/core'
 import { PieChart, BarChart } from 'echarts/charts'
@@ -453,8 +480,9 @@ const props = defineProps({
   initialMode: { type: String, default: 'list' } // 'list' | 'pie' | 'bar'
 })
 
-console.log(props.sales)
 defineEmits(['close'])
+// --- EXPORT modal state  handler ---
+const open = ref(false) 
 
 const contractsStore = useContractsStore()
 const viewMode = ref(['list', 'pie', 'bar'].includes(props.initialMode) ? props.initialMode : 'list')
@@ -643,9 +671,6 @@ const commissionConditionFor = (contract) => {
     _isCommission: true // flag opcional p/ estilizar se quiser
   }
 }
-
-
-
 
 /* ECharts */
 const chartOption = computed(() => {

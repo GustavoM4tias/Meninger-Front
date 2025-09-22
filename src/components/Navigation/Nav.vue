@@ -64,7 +64,7 @@ const menuItems = {
         { router: '/tools/validator', section: 'Validador', name: 'Validador', icon: 'fas fa-check-double' }
     ],
     settings: [
-        { router: '/settings/Account', section: 'Account', name: 'Sua Conta', icon: 'fas fa-user-cog' },
+        { router: '/settings/Account', section: 'Minha Conta', name: 'Minha Conta', icon: 'fas fa-user-cog' },
         { router: '/settings/users', section: 'Usuários', name: 'Usuários', icon: 'fas fa-users' },
         { router: '/settings/organograma', section: 'Organograma', name: 'Organograma', icon: 'fas fa-sitemap' },
     ]
