@@ -37,7 +37,7 @@
             </button>
           </div>
 
-<!-- 
+          <!-- 
               <div class="inline-flex rounded-md border dark:border-gray-600 overflow-hidden">
                 <button type="button" @click="viewMode = 'list'"
                   :class="['px-3 py-1 text-sm font-medium', viewMode === 'list' ? 'bg-purple-600 text-white' : 'bg-white dark:bg-gray-600']">
@@ -66,6 +66,10 @@
             <i v-if="sortBy === 'value'" class="fas fa-chevron-up"></i>
             <i v-else-if="sortBy === 'value-desc'" class="fas fa-chevron-down"></i>
           </button>
+
+          <button class="text-2xl ps-2" v-tippy="'Exportar Dados'" @click="open = true"><i
+              class="fas fa-download"></i></button>
+
         </div>
       </div>
     </div>
@@ -161,6 +165,9 @@
       </table>
     </div>
 
+    <Export v-model="open" :source="sortedData" title="Exportação de vendas" filename="Relatório de Faturamento"
+      initial-delimiter=";" initial-array-mode="join" :preselect="[]" />
+
     <!-- Modal único: recebe sales já agregadas e enterprise sintético -->
     <EnterpriseDetailModal v-if="showModal" :enterprise="{ name: modalTitle }" :sales="modalSales"
       :initial-mode="initialMode" @close="closeModal" />
@@ -171,11 +178,15 @@
 import { ref, computed } from 'vue'
 import { useContractsStore } from '@/stores/Reports/Contracts/contractsStore'
 import EnterpriseDetailModal from './EnterpriseDetailModal.vue'
+import Export from '@/components/config/Export.vue'
 
 const props = defineProps({ data: { type: Array, required: true } })
 
 const contractsStore = useContractsStore()
 const sortBy = ref('value-desc')
+
+// --- EXPORT modal state  handler ---
+const open = ref(false)
 
 /* seleção multi */
 const selectedNames = ref(new Set())
