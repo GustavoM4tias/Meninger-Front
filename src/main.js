@@ -58,37 +58,10 @@ app.directive('tippy', {
 
 app.use(router);
 
-
-
-
-
-
-
+ 
 // Agora que o Pinia está instalado, é seguro acessar a store e inicializar a autenticação
 import { useAuthStore } from './stores/Auth/authStore';
 const authStore = useAuthStore();
 authStore.initializeAuth();
-
-
-import { use } from 'echarts/core'
-import { CanvasRenderer } from 'echarts/renderers'
-import { BarChart } from 'echarts/charts'
-import {
-  GridComponent,
-  TooltipComponent,
-  TitleComponent,
-  LegendComponent
-} from 'echarts/components'
-import VueECharts from 'vue-echarts'
-
-use([
-  CanvasRenderer,
-  BarChart,
-  GridComponent,
-  TooltipComponent,
-  TitleComponent,
-  LegendComponent
-])
-app.component('v-chart', VueECharts)
-
+ 
 app.mount('#app')

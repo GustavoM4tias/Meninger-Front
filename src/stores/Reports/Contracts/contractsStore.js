@@ -39,7 +39,7 @@ export const useContractsStore = defineStore('contracts', {
             }
         }, 
         // Rótulo do modo atual
-        valueModeLabel: (state) => (state.valueMode === 'net' ? 'Líquido' : 'Bruto'),
+        valueModeLabel: (state) => (state.valueMode === 'net' ? 'VGV' : 'VGV + DC'),
         isGross: (state) => state.valueMode === 'gross',
         isNet: (state) => state.valueMode === 'net',
 

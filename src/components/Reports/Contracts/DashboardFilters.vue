@@ -41,7 +41,7 @@
                 <MultiSelect v-model="localFilters.enterpriseName" :options="contractsStore.enterprises"
                     optionLabel="name" dataKey="id" filter display="chip" placeholder="Selecione empreendimentos"
                     multiple
-                    class="w-full md:w-80 !bg-white dark:!bg-gray-800 !text-gray-600 !rounded-lg !border !border-gray-200 dark:!border-gray-500" />
+                    class="w-full md:w-80 !bg-white dark:!bg-gray-800 !text-gray-600 !rounded-lg !border !border-gray-200 dark:!border-gray-500 p-0" />
             </div>
 
             <!-- Botões -->
