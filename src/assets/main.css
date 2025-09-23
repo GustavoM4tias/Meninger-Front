@@ -1,13 +1,14 @@
 /* Importar fontes primeiro */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
 
+/* Importar tema do Flowbite */
+@import "flowbite/src/themes/default";
+
 /* Tailwind deve vir logo após imports */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Importar tema do Flowbite */
-@import "flowbite/src/themes/default";
 
 html,
 body,
