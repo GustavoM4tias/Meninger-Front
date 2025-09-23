@@ -1,6 +1,6 @@
 <script setup>
-import { ref, computed, onMounted, getCurrentInstance } from 'vue'
-import * as echarts from 'echarts/core' // p/ getInstanceByDom
+import { ref, computed, onMounted } from 'vue'
+import { getInstanceByDom } from 'echarts/core'
 import { useToast } from 'vue-toastification';
 
 const toast = useToast();
@@ -60,7 +60,7 @@ function resolveEC() {
     if (cachedEC) return cachedEC
     const dom = findNearestEchartsDom()
     if (!dom) return null
-    cachedEC = echarts.getInstanceByDom(dom)
+    cachedEC = getInstanceByDom(dom)
     return cachedEC
 }
 
@@ -156,19 +156,23 @@ onMounted(() => {
 
 <template>
     <div ref="root" class="flex items-center gap-2">
-        <button class="px-2 py-1 rounded-md border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-50"
+        <button
+            class="px-2 py-1 rounded-md border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-50"
             :disabled="!isReady" @click="copyPng" title="Copiar imagem do gráfico" v-tippy="'Copiar imagem do gráfico'">
             <i class="fas fa-copy"></i>
         </button>
-        <button class="px-2 py-1 rounded-md border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-50"
+        <button
+            class="px-2 py-1 rounded-md border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-50"
             :disabled="!isReady" @click="download('png')" title="Baixar PNG" v-tippy="'Baixar PNG'">
             <i class="fas fa-file-image"></i>
         </button>
-        <button class="px-2 py-1 rounded-md border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-50"
+        <button
+            class="px-2 py-1 rounded-md border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-50"
             :disabled="!isReady" @click="download('jpeg')" title="Baixar JPG" v-tippy="'Baixar JPG'">
             <i class="fas fa-file"></i>
         </button>
-        <button class="px-2 py-1 rounded-md border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-50"
+        <button
+            class="px-2 py-1 rounded-md border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-50"
             :disabled="!isReady" @click="downloadPdf" title="Baixar PDF" v-tippy="'Baixar PDF'">
             <i class="fas fa-file-pdf"></i>
         </button>
