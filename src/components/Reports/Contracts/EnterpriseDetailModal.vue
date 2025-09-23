@@ -15,15 +15,15 @@
             </div>
 
             <div class="flex items-center gap-2">
-              <!-- Líquido/Bruto -->
+              <!-- VGV/VGV+DC -->
               <div class="inline-flex rounded-md border dark:border-gray-600 overflow-hidden">
                 <button type="button" @click="contractsStore.setValueMode('net')"
                   :class="['px-3 py-1 text-sm font-medium', contractsStore.valueMode === 'net' ? 'bg-blue-600 dark:bg-blue-700 text-white dark:text-gray-100' : 'bg-white dark:bg-gray-600 text-gray-700 dark:text-gray-100']">
-                  Líquido
+                  VGV
                 </button>
                 <button type="button" @click="contractsStore.setValueMode('gross')"
                   :class="['px-3 py-1 text-sm font-medium border-l border-gray-300 dark:border-gray-700', contractsStore.valueMode === 'gross' ? 'bg-blue-600 dark:bg-blue-700 text-white dark:text-gray-100' : 'bg-white dark:bg-gray-600 text-gray-700 dark:text-gray-100']">
-                  Bruto
+                  VGV+DC
                 </button>
               </div>
 
@@ -144,7 +144,7 @@
               'total_value_gross',
               'total_value_net',
               'contracts.contract_id'
-            ]"/>
+            ]" />
 
           <!-- :source="sales"   aqui você passa props.sales 
     initial-delimiter=";"     pt-BR/Excel friendly 
@@ -482,7 +482,7 @@ const props = defineProps({
 
 defineEmits(['close'])
 // --- EXPORT modal state  handler ---
-const open = ref(false) 
+const open = ref(false)
 
 const contractsStore = useContractsStore()
 const viewMode = ref(['list', 'pie', 'bar'].includes(props.initialMode) ? props.initialMode : 'list')
@@ -526,8 +526,13 @@ const filteredSales = computed(() => {
 
 /* cards -> filteredSales */
 const showLandOnlyNote = computed(() =>
-  contractsStore.isGross &&
-  (filteredSales.value ?? []).some(s => (s.contracts ?? []).some(c => contractsStore.enterpriseRuleFor(c)?.gross === 'LAND_VALUE_ONLY'))
+  (filteredSales.value ?? []).some(s =>
+    (s.contracts ?? []).some(c => {
+      const r = contractsStore.enterpriseRuleFor(c)
+      return (contractsStore.isGross && r?.gross === 'LAND_VALUE_ONLY') ||
+        (contractsStore.isNet && r?.net === 'LAND_VALUE_ONLY')
+    })
+  )
 )
 const totalSales = computed(() => filteredSales.value.length)
 const totalValue = computed(() => filteredSales.value.reduce((s, sale) => s + getSaleValue(sale), 0))
@@ -563,15 +568,15 @@ const toggleDetails = (sale) => {
 
 /* detalhe/condições */
 const displayedConditions = (contract) => {
-  const landOnly = contractsStore.isGrossLandOnlyForContract(contract)
+  const landOnly = contractsStore.isLandOnlyForContract(contract)   // 👈 agora olha net OU gross
   const lv = Number(contract?.land_value) || 0
 
-  // condições reais (ou TR sintética de land_value quando aplicável)
   let list
   if (landOnly && lv > 0) {
+    // força mostrar o valor do "Observação" como TR sintética
     list = [{
       condition_type_id: 'TR',
-      condition_type_name: 'Terreno (TR)',
+      condition_type_name: 'Terreno (TR) Campo de Observação', // 👈 rótulo igual ao seu print
       total_value: lv,
       installments_number: 1,
       synthetic: true
@@ -580,10 +585,9 @@ const displayedConditions = (contract) => {
     list = Array.isArray(contract?.payment_conditions) ? contract.payment_conditions : []
   }
 
-  // anexa a condição sintética de comissão (se existir)
+  // anexa comissão "fora" (se houver)
   const commission = commissionConditionFor(contract)
   if (commission) {
-    // Evita duplicar se já existir (raro, mas por segurança)
     const hasAlready = list.some(pc => pc.condition_type_id === 'COMISSAO_FORA')
     if (!hasAlready) list = [...list, commission]
   }

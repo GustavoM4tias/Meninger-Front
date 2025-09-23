@@ -9,15 +9,15 @@
         </div>
 
         <div class="flex items-center gap-2">
-          <!-- Líquido / Bruto -->
+          <!-- VGV / VGV+DC -->
           <div class="inline-flex rounded-md border dark:border-gray-600 overflow-hidden">
             <button @click="contractsStore.setValueMode('net')"
               :class="['px-3 py-1 text-sm font-medium', contractsStore.valueMode === 'net' ? 'bg-blue-600 dark:bg-blue-700 text-white dark:text-gray-100' : 'bg-white dark:bg-gray-600 text-gray-700 dark:text-gray-100']">
-              Líquido
+              VGV
             </button>
             <button @click="contractsStore.setValueMode('gross')"
               :class="['px-3 py-1 text-sm font-medium border-l border-gray-300 dark:border-gray-700', contractsStore.valueMode === 'gross' ? 'bg-blue-600 dark:bg-blue-700 text-white dark:text-gray-100' : 'bg-white dark:bg-gray-600 text-gray-700 dark:text-gray-100']">
-              Bruto
+              VGV+DC
             </button>
           </div>
 
@@ -98,8 +98,7 @@
             </th>
             <th class="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider">
               Ticket Médio <span class="text-gray-400">({{ valueModeLabel }})</span>
-            </th>
-            <th class="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider">Participação</th>
+            </th> 
             <th class="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider">Ações</th>
           </tr>
         </thead>
@@ -130,17 +129,7 @@
             <td class="px-6 py-4 text-right">
               <div class="text-sm">{{ formatCurrency(displayTotal(enterprise) / (enterprise.count || 1)) }}</div>
             </td>
-
-            <td class="px-6 py-4 text-right">
-              <div class="flex items-center justify-end">
-                <div class="text-sm mr-2">{{ getPercentage(displayTotal(enterprise)) }}%</div>
-                <div class="w-16 bg-gray-200 rounded-full h-2">
-                  <div
-                    :style="{ width: `${getPercentage(displayTotal(enterprise))}%`, backgroundColor: getColor(index) }"
-                    class="h-2 rounded-full transition-all duration-300" />
-                </div>
-              </div>
-            </td>
+ 
             <td class="w-fit">
               <div class="flex gap-1 pe-2 justify-center items-center">
                 <button @click="openSingle(enterprise, 'list')" class="inline-flex items-center px-2 py-2 text-xs font-medium rounded-full transition-colors
@@ -216,8 +205,7 @@ const sortedData = computed(() => {
 const totalValue = computed(() => props.data.reduce((sum, item) => sum + valOf(item), 0))
 const displayTotal = (item) => valOf(item)
 const getColor = (i) => colors[i % colors.length]
-const formatCurrency = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(v || 0)
-const getPercentage = (v) => totalValue.value === 0 ? 0 : Math.round((v / totalValue.value) * 100)
+const formatCurrency = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(v || 0) 
 
 /* helpers de seleção */
 const visibleNames = computed(() => sortedData.value.map(e => e.name))

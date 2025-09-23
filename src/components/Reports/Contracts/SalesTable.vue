@@ -10,12 +10,12 @@
                     <button @click="valueMode = 'net'"
                         :class="['px-3 py-1 text-sm font-medium', valueMode === 'net' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700']"
                         title="Considera desconto como negativo">
-                        Líquido
+                        VGV
                     </button>
                     <button @click="valueMode = 'gross'"
                         :class="['px-3 py-1 text-sm font-medium border-l border-gray-200', valueMode === 'gross' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700']"
                         title="Considera desconto somando">
-                        Bruto
+                        VGV+DC
                     </button>
                 </div>
             </div>
@@ -171,7 +171,7 @@ const currentPage = ref(1)
 const itemsPerPage = ref(100)
 const expandedSales = ref(new Set())
 const valueMode = ref('net') // 'net' | 'gross'
-const valueModeLabel = computed(() => (valueMode.value === 'net' ? 'Líquido' : 'Bruto'))
+const valueModeLabel = computed(() => (valueMode.value === 'net' ? 'VGV' : 'VGV+DC'))
 
 const filteredSales = computed(() => {
     if (!searchTerm.value) return props.sales

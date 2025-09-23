@@ -431,7 +431,7 @@ export default {
                         {
                             id: 1,
                             title: 'Relatório Leads X Vendas via Banco de Dados Menin',
-                            description: 'Ajustado todas funcionalidades definidas para o relatório, agora contando com busca e filtros detalhados para qualquer paramêtros, vinculo entre CV e Sienge corretor, valores ajustados para VGV do comercial, sendo "Líquido" o VGV e "Bruto" o valor somado o DC (Desconto Construtora).',
+                            description: 'Ajustado todas funcionalidades definidas para o relatório, agora contando com busca e filtros detalhados para qualquer paramêtros, vinculo entre CV e Sienge corretor, valores ajustados para VGV do comercial, sendo "VGV" e o "VGV+DC" o valor somado o DC (Desconto Construtora).',
                         }, 
                     ], 
                     improvements: [
