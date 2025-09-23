@@ -390,39 +390,146 @@ export default {
             },
 
             roadmap: [
-                {
-                    version: 'v2.1.4',
-                    date: new Date('2025-08-08T00:00:00'),
-                    description: 'Parametrização de abas do sistema, limpeza de desempenho.',
-                    features: ['Telas Responsivas', 'Gráficos Detalhados', 'Visual Design']
-                },
-                {
-                    version: 'v2.1.5',
-                    date: new Date('2025-08-15T00:00:00'),
+                { 
+                    version: 'v2.1.8',
+                    date: new Date('2025-09-30T00:00:00'),
                     description: 'Ajuste de Email para notificações do sistema via comercial@menin.com.br',
                     features: ['Microsoft Ecosystem', 'Email de notificação', 'Suporte Técnico']
                 },
-                {
-                    version: 'v2.1.6',
-                    date: new Date('2025-08-22T00:00:00'),
-                    description: 'Extração de vendas via Banco de Dados Menin',
-                    features: ['Relatórios Personalizados', 'Gráficos Interativos', 'Export Excel/PDF']
+                { 
+                    version: 'v2.1.9',
+                    date: new Date('2025-10-02T00:00:00'),
+                    description: 'Configuração de envio de "Reports" para erros no sistema e suporte.',
+                    features: ['Segurança', 'Erros', 'Email de notificação']
                 },
+                { 
+                    version: 'v2.2.0',
+                    date: new Date('2025-10-02T00:00:00'),
+                    description: 'Ajuste fino nas permissões de usuários para liberação de uso em periodo de testes.',
+                    features: ['Segurança', 'Alçadas', 'Validação']
+                },
+                { 
+                    version: 'v2.2.1',
+                    date: new Date('2025-10-10T00:00:00'),
+                    description: 'Recuperação e alteração de senha via email.',
+                    features: ['Segurança', 'Suporte Técnico']
+                },
+                { 
+                    version: 'v2.2.2',
+                    date: new Date('2025-10-23T00:00:00'),
+                    description: 'Relatórios de Leads x Vendas e comparativos de Entradas/Desempenho por campanha..',
+                    features: ['Relatórios', 'Leads', 'Desempenho']
+                },
+            ],    
+            releases: [
                 {
                     version: 'v2.1.7',
-                    date: new Date('2025-08-29T00:00:00'),
-                    description: 'Envio de Corretores para Sienge ou Junção de dados',
-                    features: ['Informações de Vendas', 'Comissões', 'Relatórios Detalhados']
+                    date: new Date('2025-09-22T00:00:00'),
+                    type: 'patch',
+                    categories: ['frontend', 'mobile', 'api', 'backend'],
+                    features: [
+                        {
+                            id: 1,
+                            title: 'Relatório Leads X Vendas via Banco de Dados Menin',
+                            description: 'Ajustado todas funcionalidades definidas para o relatório, agora contando com busca e filtros detalhados para qualquer paramêtros, vinculo entre CV e Sienge corretor, valores ajustados para VGV do comercial, sendo "VGV" e o "VGV+DC" o valor somado o DC (Desconto Construtora).',
+                        }, 
+                    ], 
+                    improvements: [
+                        {
+                            id: 1,
+                            category: 'Relatórios',
+                            description: 'Agora contando com 3 tipos de relatórios podendo ser Listagem, Pizza ou Barra, relatórios reativos e que acompanham a busca do usuario, tendo dados detalhados e precisos automaticamente.'
+                        },
+                    ],
+                    fixes: [
+                        {
+                            id: 1,
+                            description: 'Ajuste na sincronia e dados da API, pego junto das vendas do sienge o REPASSE, RESERVA e demais itens do cliente no CV.'
+                        },
+                        {
+                            id: 2,
+                            description: 'Corrigido problema de CM (Comissão) que não era entra no contrato Sienge do residencial Verona, criado uma regra de adição de 4% no VGV das vendas até determinado periodo, podendo ser ajustado conforme valor futuro.'
+                        },
+                    ],
+                    breakingChanges: [],
+                    knownIssues: [],
                 },
                 {
-                    version: 'v2.1.8',
-                    date: new Date('2025-09-19T00:00:00'),
-                    description: 'Relatório Leads X Vendas via Banco de Dados Menin',
-                    features: ['Sincronização de Leads x Vendas', 'Campanhas de Mkt', 'Controle de Vendas']
-                }
-            ],
-
-            releases: [
+                    version: 'v2.1.6',
+                    date: new Date('2025-09-04T00:00:00'),
+                    type: 'patch',
+                    categories: ['frontend', 'mobile', 'api', 'backend'],
+                    features: [
+                        {
+                            id: 1,
+                            title: 'Envio de Corretores para Sienge ou Junção de dados',
+                            description: 'Definido vinculo entre corretores no CV e dados do Sienge, impossibilitado conexão de dados internamente, feito vinculo somente no relatório de vendas com base na unidade vendida.',
+                        }, 
+                    ], 
+                    improvements: [],
+                    fixes: [
+                        {
+                            id: 1,
+                            description: 'Ajuste na sincronia e dados da API, pego junto das vendas do sienge o REPASSE, RESERVA e demais itens do cliente no CV.'
+                        },
+                        {
+                            id: 2,
+                            description: 'Corrigido problema de TR (Terreno) que não era retornado na api, feito um vinculo de backup com o Banco de dados externo BI.'
+                        },
+                    ],
+                    breakingChanges: [],
+                    knownIssues: [],
+                },
+                {
+                    version: 'v2.1.5',
+                    date: new Date('2025-08-22T00:00:00'),
+                    type: 'patch',
+                    categories: ['frontend', 'mobile', 'api', 'backend'],
+                    features: [
+                        {
+                            id: 1,
+                            title: 'Tela de relatório e filtros personalizados',
+                            description: 'Tela de listagem para relatório de vendas com dados de faturamento em tempo real do Sienge.',
+                        }, 
+                    ], 
+                    improvements: [],
+                    fixes: [
+                        {
+                            id: 1,
+                            description: 'Getters de API e correlação entre contratos Sienge x CV.'
+                        },
+                    ],
+                    breakingChanges: [],
+                    knownIssues: [],
+                },
+                {
+                    version: 'v2.1.4',
+                    date: new Date('2025-08-08T00:00:00'),
+                    type: 'patch',
+                    categories: ['frontend', 'mobile'],
+                    features: [
+                        {
+                            id: 1,
+                            title: 'Parametrização de abas do sistema, limpeza de desempenho',
+                            description: 'Ajustado layout padrão e menu de navegação, ajustado repetições desnecessarias para desempenho.',
+                        }, 
+                    ],
+                    improvements: [
+                        {
+                            id: 2,
+                            category: 'UX',
+                            description: 'Telas Responsivas, Gráficos Detalhados e Visual Design.'
+                        }
+                    ],
+                    fixes: [
+                        {
+                            id: 1,
+                            description: 'Responsividade geral do sistema em dispositivos moveis.'
+                        },
+                    ],
+                    breakingChanges: [],
+                    knownIssues: [],
+                },
                 {
                     version: 'v2.1.3',
                     date: new Date('2025-07-29T00:00:00'),

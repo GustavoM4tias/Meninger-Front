@@ -8,11 +8,11 @@
         <Card title="Total Contratos" :value="metrics.totalContracts" label="Quantidade total de contratos"
             icon="fas fa-file-signature" class="!bg-indigo-100/30 !border-indigo-200/30" />
 
-        <!-- Valor Total (dinâmico: Líquido/Bruto) -->
+        <!-- Valor Total (dinâmico: VGV/VGV+DC) -->
         <Card :title="valueTitle" :value="formatCurrency(totalValueDynamic)" :label="valueLabel" :icon="valueIcon"
             :class="valueCardColorClass" />
 
-        <!-- Ticket Médio (dinâmico: Líquido/Bruto) -->
+        <!-- Ticket Médio (dinâmico: VGV/VGV+DC) -->
         <Card :title="ticketTitle" :value="formatCurrency(avgTicketDynamic)" :label="ticketLabel" :icon="ticketIcon"
             :class="ticketCardColorClass" />
 
@@ -40,13 +40,13 @@ const ticketTitle = computed(() => `Ticket Médio ${valueModeLabel.value}`)
 
 const valueLabel = computed(() =>
     contractsStore.isNet
-        ? 'Soma líquida (descontos subtraem)'
-        : 'Soma bruta (descontos somam)'
+        ? 'VGV (descontos subtraem)'
+        : 'VGV + DC (descontos somam)'
 )
 const ticketLabel = computed(() =>
     contractsStore.isNet
-        ? 'Valor médio líquido por venda'
-        : 'Valor médio bruto por venda'
+        ? 'VGV médio por venda'
+        : 'VGV+DC médio por venda'
 )
 
 // Ícones dinâmicos

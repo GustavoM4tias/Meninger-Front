@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch } from 'vue';
+import { ref, watch, onMounted, onUnmounted } from 'vue';
 import EventCard from './EventCardHome.vue';
 
 const props = defineProps({
@@ -7,9 +7,14 @@ const props = defineProps({
     type: Array,
     required: true,
   },
+  autoplayInterval: {
+    type: Number,
+    default: 5000
+  }
 });
 
 const currentIndex = ref(0);
+let intervalId = null;
 
 watch(() => props.eventos, (newEventos) => {
   if (newEventos.length > 0) {
@@ -36,6 +41,20 @@ const next = () => {
 const goToSlide = (index) => {
   currentIndex.value = index;
 };
+
+// inicia o autoplay
+onMounted(() => {
+  if (props.autoplayInterval > 0) {
+    intervalId = setInterval(next, props.autoplayInterval);
+  }
+});
+
+// limpa o intervalo ao desmontar
+onUnmounted(() => {
+  if (intervalId) {
+    clearInterval(intervalId);
+  }
+});
 </script>
 
 <template>

@@ -15,15 +15,15 @@
             </div>
 
             <div class="flex items-center gap-2">
-              <!-- Líquido/Bruto -->
+              <!-- VGV/VGV+DC -->
               <div class="inline-flex rounded-md border dark:border-gray-600 overflow-hidden">
                 <button type="button" @click="contractsStore.setValueMode('net')"
                   :class="['px-3 py-1 text-sm font-medium', contractsStore.valueMode === 'net' ? 'bg-blue-600 dark:bg-blue-700 text-white dark:text-gray-100' : 'bg-white dark:bg-gray-600 text-gray-700 dark:text-gray-100']">
-                  Líquido
+                  VGV
                 </button>
                 <button type="button" @click="contractsStore.setValueMode('gross')"
                   :class="['px-3 py-1 text-sm font-medium border-l border-gray-300 dark:border-gray-700', contractsStore.valueMode === 'gross' ? 'bg-blue-600 dark:bg-blue-700 text-white dark:text-gray-100' : 'bg-white dark:bg-gray-600 text-gray-700 dark:text-gray-100']">
-                  Bruto
+                  VGV+DC
                 </button>
               </div>
 
@@ -42,6 +42,9 @@
                   Colunas
                 </button>
               </div>
+
+              <button class="text-2xl ps-2" v-tippy="'Exportar Dados'" @click="open = true"><i
+                  class="fas fa-download"></i></button>
 
               <button type="button" @click="$emit('close')"
                 class="text-dark hover:text-gray-700 ps-3 pt-1 dark:text-white dark:hover:text-blue-100 text-2xl transition-colors">
@@ -131,6 +134,23 @@
             </div>
           </div>
 
+          <Export v-model="open" :source="filteredSales" title="Exportação de vendas"
+            filename="Relatório de Faturamento" initial-delimiter=";" initial-array-mode="join" :preselect="[
+              'customer_id',
+              'customer_name',
+              'unit_name',
+              'enterprise_name',
+              'financial_institution_date',
+              'total_value_gross',
+              'total_value_net',
+              'contracts.contract_id'
+            ]" />
+
+          <!-- :source="sales"   aqui você passa props.sales 
+    initial-delimiter=";"     pt-BR/Excel friendly 
+    initial-array-mode="join" join | first | count 
+    'preselect...contracts.0.contract_id' se quiser pré-seleções específicas -->
+
           <!-- VIEW: LIST -->
           <template v-if="viewMode === 'list'">
             <!-- Tabela padrão -->
@@ -163,7 +183,8 @@
                       <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                         <td class="px-4 py-3">
                           <div class="text-sm font-medium">
-                            {{ sale.customer_name }} <span class="text-sm text-gray-500">#{{ sale.customer_id }}</span>
+                            {{ sale.customer_name }} <span class="text-sm text-gray-500">#{{ sale.customer_id
+                            }}</span>
                           </div>
                         </td>
                         <td class="px-4 py-3 flex" v-if="hasRepasse">
@@ -172,7 +193,8 @@
                             v-tippy="sale.contracts?.[0]?.repasse?.[0]?.status_repasse">
                             <img src="/CVLogo.png" alt="CV CRM" class="w-5 min-w-5" />
                           </a>
-                          <div class="text-sm ps-2">{{ sale.contracts?.[0]?.repasse?.[0]?.status_repasse || '—' }}</div>
+                          <div class="text-sm ps-2">{{ sale.contracts?.[0]?.repasse?.[0]?.status_repasse || '—' }}
+                          </div>
                         </td>
                         <td class="px-4 py-3 truncate" v-if="hasRepasse">
                           <div class="text-sm">{{ sale.contracts?.[0]?.repasse?.[0]?.empreendimento || '—' }}</div>
@@ -252,7 +274,8 @@
 
               <!-- Paginação -->
               <div v-if="totalPages > 1" class="m-4 flex items-center justify-between">
-                <div class="text-sm text-gray-500">Mostrando {{ startItem }} a {{ endItem }} de {{ filteredSales.length
+                <div class="text-sm text-gray-500">Mostrando {{ startItem }} a {{ endItem }} de {{
+                  filteredSales.length
                 }} vendas
                 </div>
                 <div class="flex items-center gap-2">
@@ -319,7 +342,8 @@
                       <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                         <td class="px-4 py-3">
                           <div class="text-sm font-medium">
-                            {{ sale.customer_name }} <span class="text-sm text-gray-500">#{{ sale.customer_id }}</span>
+                            {{ sale.customer_name }} <span class="text-sm text-gray-500">#{{ sale.customer_id
+                            }}</span>
                           </div>
                         </td>
                         <td class="px-4 py-3 flex" v-if="hasRepasse">
@@ -328,7 +352,8 @@
                             v-tippy="sale.contracts?.[0]?.repasse?.[0]?.status_repasse">
                             <img src="/CVLogo.png" alt="CV CRM" class="w-5 min-w-5" />
                           </a>
-                          <div class="text-sm ps-2">{{ sale.contracts?.[0]?.repasse?.[0]?.status_repasse || '—' }}</div>
+                          <div class="text-sm ps-2">{{ sale.contracts?.[0]?.repasse?.[0]?.status_repasse || '—' }}
+                          </div>
                         </td>
                         <td class="px-4 py-3 truncate" v-if="hasRepasse">
                           <div class="text-sm">{{ sale.contracts?.[0]?.repasse?.[0]?.empreendimento || '—' }}</div>
@@ -407,7 +432,8 @@
 
               <!-- Paginação -->
               <div v-if="totalPages > 1" class="m-4 flex items-center justify-between">
-                <div class="text-sm text-gray-500">Mostrando {{ startItem }} a {{ endItem }} de {{ filteredSales.length
+                <div class="text-sm text-gray-500">Mostrando {{ startItem }} a {{ endItem }} de {{
+                  filteredSales.length
                 }} vendas
                 </div>
                 <div class="flex items-center gap-2">
@@ -440,6 +466,7 @@
 import { ref, computed, watch } from 'vue'
 import { useContractsStore } from '@/stores/Reports/Contracts/contractsStore'
 import ChartActions from '@/components/config/ChartActions.vue'
+import Export from '@/components/config/Export.vue'
 import VChart from 'vue-echarts'
 import * as echarts from 'echarts/core'
 import { PieChart, BarChart } from 'echarts/charts'
@@ -453,8 +480,9 @@ const props = defineProps({
   initialMode: { type: String, default: 'list' } // 'list' | 'pie' | 'bar'
 })
 
-console.log(props.sales)
 defineEmits(['close'])
+// --- EXPORT modal state  handler ---
+const open = ref(false)
 
 const contractsStore = useContractsStore()
 const viewMode = ref(['list', 'pie', 'bar'].includes(props.initialMode) ? props.initialMode : 'list')
@@ -498,8 +526,13 @@ const filteredSales = computed(() => {
 
 /* cards -> filteredSales */
 const showLandOnlyNote = computed(() =>
-  contractsStore.isGross &&
-  (filteredSales.value ?? []).some(s => (s.contracts ?? []).some(c => contractsStore.enterpriseRuleFor(c)?.gross === 'LAND_VALUE_ONLY'))
+  (filteredSales.value ?? []).some(s =>
+    (s.contracts ?? []).some(c => {
+      const r = contractsStore.enterpriseRuleFor(c)
+      return (contractsStore.isGross && r?.gross === 'LAND_VALUE_ONLY') ||
+        (contractsStore.isNet && r?.net === 'LAND_VALUE_ONLY')
+    })
+  )
 )
 const totalSales = computed(() => filteredSales.value.length)
 const totalValue = computed(() => filteredSales.value.reduce((s, sale) => s + getSaleValue(sale), 0))
@@ -535,15 +568,15 @@ const toggleDetails = (sale) => {
 
 /* detalhe/condições */
 const displayedConditions = (contract) => {
-  const landOnly = contractsStore.isGrossLandOnlyForContract(contract)
+  const landOnly = contractsStore.isLandOnlyForContract(contract)   // 👈 agora olha net OU gross
   const lv = Number(contract?.land_value) || 0
 
-  // condições reais (ou TR sintética de land_value quando aplicável)
   let list
   if (landOnly && lv > 0) {
+    // força mostrar o valor do "Observação" como TR sintética
     list = [{
       condition_type_id: 'TR',
-      condition_type_name: 'Terreno (TR)',
+      condition_type_name: 'Terreno (TR) Campo de Observação', // 👈 rótulo igual ao seu print
       total_value: lv,
       installments_number: 1,
       synthetic: true
@@ -552,10 +585,9 @@ const displayedConditions = (contract) => {
     list = Array.isArray(contract?.payment_conditions) ? contract.payment_conditions : []
   }
 
-  // anexa a condição sintética de comissão (se existir)
+  // anexa comissão "fora" (se houver)
   const commission = commissionConditionFor(contract)
   if (commission) {
-    // Evita duplicar se já existir (raro, mas por segurança)
     const hasAlready = list.some(pc => pc.condition_type_id === 'COMISSAO_FORA')
     if (!hasAlready) list = [...list, commission]
   }
@@ -643,9 +675,6 @@ const commissionConditionFor = (contract) => {
     _isCommission: true // flag opcional p/ estilizar se quiser
   }
 }
-
-
-
 
 /* ECharts */
 const chartOption = computed(() => {

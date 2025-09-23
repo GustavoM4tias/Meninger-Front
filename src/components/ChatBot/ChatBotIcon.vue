@@ -29,7 +29,7 @@
                 <div 
                     class="flex flex-col items-start gap-2.5 rounded-lg h-full py-3 px-2 mb-2 bg-white dark:bg-gray-500 overflow-auto">
 
-                    <div class="flex flex-col gap-1 w-full max-w-[85%]">
+                    <!-- <div class="flex flex-col gap-1 w-full max-w-[85%]">
                         <div class="flex items-center space-x-2 rtl:space-x-reverse">
                             <span class="text-sm font-semibold text-gray-900 dark:text-white">Eme</span>
                             <span class="text-xs sm:text-sm font-normal text-gray-500 dark:text-gray-400">11:46</span>
@@ -40,9 +40,9 @@
                                 think our
                                 users will really appreciate the improvements.</p>
                         </div>
-                    </div>
+                    </div> -->
 
-                    <div class="flex flex-col gap-0.5 sm:gap-1 w-full max-w-[85%] ml-auto items-end">
+                    <!-- <div class="flex flex-col gap-0.5 sm:gap-1 w-full max-w-[85%] ml-auto items-end">
                         <div class="flex items-center space-x-2 rtl:space-x-reverse">
                             <span class="text-xs sm:text-sm font-normal text-gray-500 dark:text-gray-400">11:47</span>
                             <span class="text-sm font-semibold text-gray-900 dark:text-white">Você</span>
@@ -53,7 +53,8 @@
                                 think our
                                 users will really appreciate the improvements.</p>
                         </div>
-                    </div>
+                    </div> -->
+
                     <div class="flex flex-col gap-1 w-full max-w-[85%]">
                         <div class="flex items-center space-x-2 rtl:space-x-reverse">
                             <span class="text-sm font-semibold text-gray-900 dark:text-white">Eme</span>
@@ -61,9 +62,7 @@
                         </div>
                         <div
                             class="flex flex-col leading-1.5 p-3 border-gray-200 bg-gray-100 rounded-e-xl rounded-b-xl dark:bg-gray-600">
-                            <p class="text-xs sm:text-sm font-normal text-gray-900 dark:text-white"> That's awesome. I
-                                think our
-                                users will really appreciate the improvements.</p>
+                            <p class="text-xs sm:text-sm font-normal text-gray-900 dark:text-white"> Ainda em desenvolvimento.</p>
                         </div>
                     </div>
 
@@ -74,9 +73,7 @@
                         </div>
                         <div
                             class="flex flex-col leading-1.5 p-3 border-gray-200 bg-gray-100 rounded-s-xl rounded-b-xl  dark:bg-gray-400">
-                            <p class="text-xs sm:text-sm font-normal text-gray-900 dark:text-white"> That's awesome. I
-                                think our
-                                users will really appreciate the improvements.</p>
+                            <p class="text-xs sm:text-sm font-normal text-gray-900 dark:text-white"> Disponivel em Breve.</p>
                         </div>
                     </div> 
                 </div>
@@ -106,7 +103,7 @@
 
         <!-- Span de fechar chat: só quando está na caixa fechada (não colapsado nem aberto) -->
         <span v-if="!open && !collapsed" @click.stop="collapseChat"
-            class="fixed w-20 right-3 bottom-1 text-gray-400 text-xs text-end cursor-pointer">
+            class="fixed w-22 right-3 bottom-1 text-gray-400 text-xs text-end cursor-pointer">
             Fechar chat? <i class="fas fa-xmark"></i>
         </span>
     </div>

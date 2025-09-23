@@ -29,11 +29,15 @@ export const useContractsStore = defineStore('contracts', {
                 return byId[c?.enterprise_id] || byName[norm(c?.enterprise_name)] || null
             }
         },
-
-        // Conveniência: estamos em BRUTO E o contrato tem gross='LAND_VALUE_ONLY'?
-        isGrossLandOnlyForContract() {
-            return (c) => this.isGross && this.enterpriseRuleFor(c)?.gross === 'LAND_VALUE_ONLY'
-        },
+        // 👇 novo: checa LAND_VALUE_ONLY respeitando o modo atual (net/gross)
+        isLandOnlyForContract() {
+            return (c) => {
+                const rule = this.enterpriseRuleFor(c)
+                if (!rule) return false
+                return (this.isGross && rule.gross === 'LAND_VALUE_ONLY') ||
+                    (this.isNet && rule.net === 'LAND_VALUE_ONLY')
+            }
+        }, 
         // Rótulo do modo atual
         valueModeLabel: (state) => (state.valueMode === 'net' ? 'Líquido' : 'Bruto'),
         isGross: (state) => state.valueMode === 'gross',
@@ -102,17 +106,22 @@ export const useContractsStore = defineStore('contracts', {
                     ? contract.payment_conditions
                     : []
 
-                let net = 0
-                let gross = 0
+                let full = 0        // soma de tudo que NÃO é DC (valor cheio)
+                let dcSumAbs = 0    // soma ABSOLUTA dos DC (sempre positiva)
+
                 for (const pc of pcs) {
                     const v = Number(pc.total_value) || 0
                     if (isDiscount(pc)) {
-                        gross += v // desconto soma no bruto
+                        // Desconto entra no bruto como positivo (magnitude)
+                        dcSumAbs += Math.abs(v)
                     } else {
-                        gross += v
-                        net += v
+                        // Parte do valor cheio
+                        full += v
                     }
                 }
+
+                const net = full
+                const gross = full + dcSumAbs
                 return { net, gross }
             }
         },
