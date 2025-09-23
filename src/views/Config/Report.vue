@@ -42,7 +42,7 @@
                                 </div>
                                 <div class="flex justify-between text-sm">
                                     <span class="text-gray-500">Resolvidos este mês</span>
-                                    <span class="font-medium text-green-600">{{ stats.resolvedThisMonth }}</span>
+                                    <span class="font-medium text-green-600">{{ stats.resolved }}</span>
                                 </div>
                                 <div class="flex justify-between text-sm">
                                     <span class="text-gray-500">Tempo médio de ajuste</span>
@@ -209,14 +209,14 @@
                                 </div>
 
                                 <!-- Page URL -->
-                                <div>
+                                <!-- <div>
                                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                         URL da Página (onde ocorreu o problema)
                                     </label>
                                     <input v-model="form.pageUrl" type="url"
                                         placeholder="https://sistema.empresa.com/modulo/pagina"
                                         class="w-full px-4 py-3 border bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
-                                </div>
+                                </div> -->
 
                                 <!-- File Upload -->
                                 <div>
@@ -323,6 +323,11 @@
 
 <script setup>
 import { ref, reactive } from 'vue'
+import { useAuthStore } from '../../stores/Auth/authStore';
+import { useToast } from 'vue-toastification';
+
+const toast = useToast();
+const authStore = useAuthStore();
 
 // State
 const isSubmitting = ref(false)
@@ -331,13 +336,13 @@ const reportProtocol = ref('')
 
 const stats = reactive({
     totalReports: 2,
-    resolvedThisMonth: 1,
+    resolved: 1,
     avgResponseTime: '48h'
 })
 
 const form = reactive({
-    userName: '',
-    email: '',
+    userName: authStore.user.username,
+    email: authStore.user.email,
     problemType: '',
     priority: '',
     module: '',
@@ -450,12 +455,12 @@ const handleSubmit = async () => {
         const subject = `[BUG REPORT] ${form.title} - Protocolo #${reportProtocol.value}`
 
         console.log('Email generated:', { subject, body: emailBody })
-
+        toast.success('Reporte enviado com sucesso! Obrigado.')
         showSuccessModal.value = true
         resetForm()
     } catch (error) {
         console.error('Error submitting report:', error)
-        alert('Erro ao enviar o reporte. Tente novamente.')
+        toast.error('Erro ao enviar o reporte. Tente novamente.')
     } finally {
         isSubmitting.value = false
     }
@@ -485,7 +490,7 @@ const handleFileSelect = (event) => {
 
     for (const file of selectedFiles) {
         if (file.size > maxSize) {
-            alert(`O arquivo "${file.name}" excede o tamanho máximo de 10MB`)
+            toast.warning(`O arquivo "${file.name}" excede o tamanho máximo de 10MB`)
             continue
         }
 

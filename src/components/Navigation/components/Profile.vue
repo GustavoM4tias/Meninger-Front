@@ -80,7 +80,7 @@ const logout = () => {
                 <li>
                     <RouterLink to="/settings/Account"
                         class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white"
-                        role="menuitem">Sua Conta</RouterLink>
+                        role="menuitem">Minha Conta</RouterLink>
                 </li>
                 <li>
                     <a @click="logout()"

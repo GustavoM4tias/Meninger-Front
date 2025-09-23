@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue';
+import { ref, onMounted, computed, watch, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useBuildingStore } from '@/stores/Building/buildingStore';
 import BuildingCard from '@/components/Buildings/BuildingCard.vue';
@@ -12,110 +12,99 @@ const search = ref('');
 const selectedBuilding = ref(null);
 const buildingStore = useBuildingStore();
 
+// ... (seu código igual até enableDragScroll)
 
-const openBuildingModal = async (building) => {
-    await buildingStore.fetchBuildingById(building.idempreendimento);
-    selectedBuilding.value = buildingStore.selectedBuilding;
+const enableDragScroll = (el) => {
+  // evita ligar duas vezes
+  if (el.__dragBound) return;
+  el.__dragBound = true;
+
+  let isDown = false;
+  let startX;
+  let scrollLeft;
+
+  const onMouseDown = (e) => {
+    isDown = true;
+    el.classList.add("active");
+    startX = e.pageX - el.offsetLeft;
+    scrollLeft = el.scrollLeft;
+  };
+  const onMouseLeave = () => { isDown = false; el.classList.remove("active"); };
+  const onMouseUp = () => { isDown = false; el.classList.remove("active"); };
+  const onMouseMove = (e) => {
+    if (!isDown) return;
+    e.preventDefault();
+    const x = e.pageX - el.offsetLeft;
+    const walk = (x - startX);
+    el.scrollLeft = scrollLeft - walk;
+  };
+
+  el.addEventListener("mousedown", onMouseDown);
+  el.addEventListener("mouseleave", onMouseLeave);
+  el.addEventListener("mouseup", onMouseUp);
+  el.addEventListener("mousemove", onMouseMove);
 };
 
-const closeBuildingModal = () => {
-    selectedBuilding.value = null;
-    buildingStore.fetchBuildings(); // Atualiza empreendimentos após adicionar
-};
-
-// Atualiza a busca ao alterar a query
-watch(
-    () => route.query.search,
-    (newQuery) => {
-        search.value = newQuery || '';
-    },
-    { immediate: true }
-);
-
-// Computed para acessar o estado da store
-const buildingsFiltered = computed(() => {
-    const filter = search.value.toLowerCase();
-    return buildingStore.buildings
-        .filter(building => building.nome.toLowerCase().includes(filter))
-        .reverse();
-});
-
-const buildingsPreLaunch = computed(() =>
-    buildingsFiltered.value.filter(building =>
-        building.situacao_comercial.length > 0 && building.situacao_comercial[0].nome === 'Pré-Lançamento'
-    )
-);
-
-const buildingsLaunch = computed(() =>
-    buildingsFiltered.value.filter(building =>
-        building.situacao_comercial.length > 0 && building.situacao_comercial[0].nome === 'Lançamento'
-    )
-);
-
-const buildingsUnderConstruction = computed(() =>
-    buildingsFiltered.value.filter(building =>
-        building.situacao_comercial.length > 0 && building.situacao_comercial[0].nome === 'Em construção'
-    )
-);
-
-const buildingsFinished = computed(() =>
-    buildingsFiltered.value.filter(building =>
-        building.situacao_comercial.length > 0 && building.situacao_comercial[0].nome === 'Finalizado'
-    )
-);
-
-const buildingsPortal = computed(() =>
-    buildingsFiltered.value.filter(building =>
-        building.situacao_comercial.length > 0 && building.situacao_comercial[0].nome === 'Portal do Cliente'
-    )
-);
-
-// Computed para determinar qual seção mostrar
-const currentSection = computed(() => route.query.section || 'Geral');
-
-const updateQuery = () => {
-    router.push({ query: { search: search.value, section: currentSection.value } });
+const bindDragScroll = () => {
+  document.querySelectorAll(".scroll-drag").forEach((el) => enableDragScroll(el));
 };
 
 // Inicializa os empreendimentos
-onMounted(() => buildingStore.fetchBuildings());
-
-const enableDragScroll = (el) => {
-    let isDown = false;
-    let startX;
-    let scrollLeft;
-
-    el.addEventListener("mousedown", (e) => {
-        isDown = true;
-        el.classList.add("active");
-        startX = e.pageX - el.offsetLeft;
-        scrollLeft = el.scrollLeft;
-    });
-
-    el.addEventListener("mouseleave", () => {
-        isDown = false;
-        el.classList.remove("active");
-    });
-
-    el.addEventListener("mouseup", () => {
-        isDown = false;
-        el.classList.remove("active");
-    });
-
-    el.addEventListener("mousemove", (e) => {
-        if (!isDown) return;
-        e.preventDefault();
-        const x = e.pageX - el.offsetLeft;
-        const walk = (x - startX) * 1; // multiplicador de velocidade
-        el.scrollLeft = scrollLeft - walk;
-    });
-};
-
-onMounted(() => {
-    document.querySelectorAll(".scroll-drag").forEach((el) => {
-        enableDragScroll(el);
-    });
+onMounted(async () => {
+  await buildingStore.fetchBuildings();
+  await nextTick();        // garante que as seções v-if já renderizaram
+  bindDragScroll();
 });
+
+// --- seus computeds (iguais) ---
+const buildingsFiltered = computed(() => {
+  const filter = search.value.toLowerCase();
+  return buildingStore.buildings
+    .filter(b => b.nome.toLowerCase().includes(filter))
+    .reverse();
+});
+
+const buildingsPreLaunch = computed(() => buildingsFiltered.value.filter(b =>
+  b.situacao_comercial.length > 0 && b.situacao_comercial[0].nome === 'Pré-Lançamento'
+));
+const buildingsLaunch = computed(() => buildingsFiltered.value.filter(b =>
+  b.situacao_comercial.length > 0 && b.situacao_comercial[0].nome === 'Lançamento'
+));
+const buildingsUnderConstruction = computed(() => buildingsFiltered.value.filter(b =>
+  b.situacao_comercial.length > 0 && b.situacao_comercial[0].nome === 'Em construção'
+));
+const buildingsFinished = computed(() => buildingsFiltered.value.filter(b =>
+  b.situacao_comercial.length > 0 && b.situacao_comercial[0].nome === 'Finalizado'
+));
+const buildingsPortal = computed(() => buildingsFiltered.value.filter(b =>
+  b.situacao_comercial.length > 0 && b.situacao_comercial[0].nome === 'Portal do Cliente'
+));
+
+// quando QUALQUER seção mudar, re-liga (caso tenha aparecido/ sumido uma .scroll-drag)
+watch(
+  [buildingsPreLaunch, buildingsLaunch, buildingsUnderConstruction, buildingsFinished, buildingsPortal],
+  async () => {
+    await nextTick();
+    bindDragScroll();
+  }
+);
+
+// Atualiza a busca ao alterar a query (igual ao seu)
+watch(() => route.query.search, (newQuery) => {
+  search.value = newQuery || '';
+}, { immediate: true });
+
+const currentSection = computed(() => route.query.section || 'Geral');
+const updateQuery = () => router.push({ query: { search: search.value, section: currentSection.value } });
+
+const openBuildingModal = async (building) => {
+  await buildingStore.fetchBuildingById(building.idempreendimento);
+  selectedBuilding.value = buildingStore.selectedBuilding;
+};
+const closeBuildingModal = () => {
+  selectedBuilding.value = null;
+  buildingStore.fetchBuildings();
+};
 </script>
 
 <template>

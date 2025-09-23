@@ -8,7 +8,6 @@ import BuildingCarrossel from '../components/Home/Buildings/BuildingCarrossel.vu
   <div class="h-auto md:h-[calc(100vh-3.5rem)] flex flex-col md:flex-row">
  
     <div class="w-full md:w-2/3 flex flex-col">
-
       <div class="w-full">
         <EventCarrossel class="flex-1 filter drop-shadow-xl" />
       </div>
@@ -18,17 +17,13 @@ import BuildingCarrossel from '../components/Home/Buildings/BuildingCarrossel.vu
           <div class="bg-gray-700/30 h-full rounded-2xl animate-pulse flex"><p class="m-auto text-2xl text-gray-400">Em Andamento</p></div> 
         </div>
       </div>
-
     </div>
  
     <div class="w-full md:w-1/3 f-full flex flex-col">
-
       <EventNotification class="flex-1 p-4 md:h-[60%] md:min-h-[60%] filter drop-shadow-xl order-2 md:order-1" />
-
       <div class="enterprise h-[40%] flex-1 order-1 md:order-2">
         <BuildingCarrossel class="flex-1 filter drop-shadow-xl h-full m-auto" />
       </div>
-
     </div>
 
   </div>
