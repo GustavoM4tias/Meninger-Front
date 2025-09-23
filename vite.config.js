@@ -11,7 +11,7 @@ export default defineConfig({
     }
   },
   build: {
-    chunkSizeWarningLimit: 1000, // Aumenta o limite para 1000 KB (1 MB)
+    chunkSizeWarningLimit: 1500, // Aumenta o limite para 1500 KB (1.5 MB)
   },
   server: {
     host: true, // Torna o servidor acessível pelo IP
