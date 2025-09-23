@@ -46,7 +46,7 @@ const valueLabel = computed(() =>
 const ticketLabel = computed(() =>
     contractsStore.isNet
         ? 'VGV médio por venda'
-        : 'VGV+DC médio por venda'
+        : 'VGV + DC médio por venda'
 )
 
 // Ícones dinâmicos

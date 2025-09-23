@@ -116,7 +116,7 @@
           <div class="p-6 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900/40">
             <div class="flex flex-wrap gap-4 items-end">
               <div class="flex-1">
-                <label class="block text-sm font-medium mb-2">Busque por Cliente | Repasse | Empreendimento | Etapa |
+                <label class="block text-sm font-medium mb-2">Cliente | Imobiliária | Repasse | Empreendimento | Etapa |
                   Bloco | Unidade | Data | Valor</label>
                 <input v-model="searchTerm" type="text" placeholder="Digite para buscar..."
                   class="w-full px-2 py-1.5 border rounded-lg bg-transparent text-gray-400 border-gray-200 dark:border-gray-500 text-start">
@@ -162,6 +162,8 @@
                     <tr>
                       <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Cliente</th>
                       <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider" v-if="hasRepasse">
+                        Imobiliária</th>
+                      <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider" v-if="hasRepasse">
                         Repasse</th>
                       <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider" v-if="hasRepasse">
                         Empreendimento</th>
@@ -172,8 +174,7 @@
                       <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider">Unidade</th>
                       <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider">Data</th>
                       <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider">Valor <span
-                          class="text-gray-400">({{ valueModeLabel }})</span></th>
-                      <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider">Contratos</th>
+                          class="text-gray-400">({{ valueModeLabel }})</span></th> 
                       <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider">Ações</th>
                     </tr>
                   </thead>
@@ -186,6 +187,9 @@
                             {{ sale.customer_name }} <span class="text-sm text-gray-500">#{{ sale.customer_id
                             }}</span>
                           </div>
+                        </td>
+                        <td class="px-4 py-3 truncate" v-if="hasRepasse">
+                          <div class="text-sm max-w-24">{{ sale.contracts?.[0]?.reserva?.corretor?.imobiliaria || '—' }}</div>
                         </td>
                         <td class="px-4 py-3 flex" v-if="hasRepasse">
                           <a :href="`https://menin.cvcrm.com.br/gestor/financeiro/repasses/${sale.contracts?.[0]?.repasse?.[0]?.idrepasse}/administrar`"
@@ -214,10 +218,7 @@
                         <td class="px-4 py-3 text-center">
                           <div class="text-sm font-semibold text-green-600">{{ formatCurrency(getSaleValue(sale)) }}
                           </div>
-                        </td>
-                        <td class="px-4 py-3 text-center"><span
-                            class="inline-flex items-center px-2.5 py-1 text-sm font-bold rounded-full bg-blue-100 text-blue-800">{{
-                              sale.contracts.length }}</span></td>
+                        </td> 
                         <td class="px-4 py-3 text-center">
                           <button @click="toggleDetails(sale)"
                             class="text-sm font-medium text-blue-600 hover:text-blue-900 dark:hover:text-blue-400 transition-colors">
@@ -516,9 +517,10 @@ const filteredSales = computed(() => {
     has(sale.customer_name) ||
     has(sale.unit_name) ||
     has(sale.contracts?.[0]?.repasse?.[0]?.bloco) ||
-    has(sale.contracts?.[0]?.repasse?.[0]?.etapa) ||
+    has(sale.contracts?.[0]?.repasse?.[0]?.etapa) || 
     has(sale.contracts?.[0]?.repasse?.[0]?.empreendimento) ||
     has(sale.contracts?.[0]?.repasse?.[0]?.status_repasse) ||
+    has(sale.contracts?.[0]?.reserva?.corretor?.imobiliaria) ||
     has(formatDate(sale.financial_institution_date)) ||
     has(formatCurrency(getSaleValue(sale)))
   )
