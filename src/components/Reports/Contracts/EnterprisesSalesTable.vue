@@ -264,11 +264,4 @@ const closeModal = () => {
   // selectedNames.value = new Set()
 }
 </script>
-
-<style scoped>
-.line-clamp-2 {
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-</style>
+ 
