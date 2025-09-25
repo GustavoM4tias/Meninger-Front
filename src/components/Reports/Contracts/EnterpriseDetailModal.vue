@@ -174,7 +174,7 @@
                       <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider">Unidade</th>
                       <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider">Data</th>
                       <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider">Valor <span
-                          class="text-gray-400">({{ valueModeLabel }})</span></th> 
+                          class="text-gray-400">({{ valueModeLabel }})</span></th>
                       <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider">Ações</th>
                     </tr>
                   </thead>
@@ -184,12 +184,15 @@
                       <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                         <td class="px-4 py-3">
                           <div class="text-sm font-medium">
-                            {{ sale.customer_name }} <span class="text-sm text-gray-500">#{{ sale.customer_id
-                            }}</span>
+                            {{ sale.customer_name }} <span class="text-gray-400">#{{ sale.customer_id }}</span>
+                          </div>
+                          <div v-if="sale.contracts?.[0]?.associates?.[0]" class="text-gray-400 text-xs font-light">
+                            {{ sale.contracts?.[0]?.associates?.[0]?.name }} #{{ sale.contracts?.[0]?.associates?.[0]?.customer_id }}
                           </div>
                         </td>
                         <td class="px-4 py-3 truncate" v-if="hasRepasse">
-                          <div class="text-sm max-w-24">{{ sale.contracts?.[0]?.reserva?.corretor?.imobiliaria || '—' }}</div>
+                          <div class="text-sm max-w-24">{{ sale.contracts?.[0]?.reserva?.corretor?.imobiliaria || '—' }}
+                          </div>
                         </td>
                         <td class="px-4 py-3 flex" v-if="hasRepasse">
                           <a :href="`https://menin.cvcrm.com.br/gestor/financeiro/repasses/${sale.contracts?.[0]?.repasse?.[0]?.idrepasse}/administrar`"
@@ -218,7 +221,7 @@
                         <td class="px-4 py-3 text-center">
                           <div class="text-sm font-semibold text-green-600">{{ formatCurrency(getSaleValue(sale)) }}
                           </div>
-                        </td> 
+                        </td>
                         <td class="px-4 py-3 text-center">
                           <button @click="toggleDetails(sale)"
                             class="text-sm font-medium text-blue-600 hover:text-blue-900 dark:hover:text-blue-400 transition-colors">
@@ -516,8 +519,9 @@ const filteredSales = computed(() => {
   return props.sales.filter(sale =>
     has(sale.customer_name) ||
     has(sale.unit_name) ||
+    has(sale.contracts?.[0]?.associates?.[0]?.name) ||
     has(sale.contracts?.[0]?.repasse?.[0]?.bloco) ||
-    has(sale.contracts?.[0]?.repasse?.[0]?.etapa) || 
+    has(sale.contracts?.[0]?.repasse?.[0]?.etapa) ||
     has(sale.contracts?.[0]?.repasse?.[0]?.empreendimento) ||
     has(sale.contracts?.[0]?.repasse?.[0]?.status_repasse) ||
     has(sale.contracts?.[0]?.reserva?.corretor?.imobiliaria) ||
