@@ -66,10 +66,11 @@ export const deleteEvent = async (eventId) => {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`, // Verifique se o token está sendo recuperado corretamente
                 'Content-Type': 'application/json'
             }
-        },
-        toast.success('Evento excluido com sucesso!'));
+        });
         if (!response.ok) {
             throw new Error('Falha na requisição');
+        } else {
+            toast.success('Evento excluido com sucesso!');
         }
     } catch (error) {
         console.error('Erro ao excluir evento:', error);
