@@ -75,7 +75,7 @@ const routes = [
     path: '/report',
     name: 'Reportar',
     component: () => import('../views/Support/Report.vue'),
-    meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Reportar Problema' },
+    meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Reportar Problema | Suporte' },
   },
   {
     path: '/support',
