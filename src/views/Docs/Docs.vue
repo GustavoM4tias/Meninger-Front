@@ -124,7 +124,7 @@
                                     <div class="flex items-center justify-between mb-2">
                                         <span class="font-semibold">{{ milestone.version }}</span>
                                         <span v-if="milestone?.date" class="text-xs">{{ formatDate(milestone.date)
-                                            }}</span>
+                                        }}</span>
                                         <span v-else class="text-xs">Em Programação</span>
                                     </div>
                                     <p class="text-sm mb-3">{{ milestone.description }}</p>
@@ -190,7 +190,7 @@
                                                     class="text-sm text-gray-700 dark:text-gray-300 flex items-start">
                                                     <span class="text-green-500 mr-2 mt-0.5">•</span>
                                                     <span><strong>{{ feature.title }}:</strong> {{ feature.description
-                                                        }}</span>
+                                                    }}</span>
                                                 </li>
                                             </ul>
                                         </div>
@@ -390,38 +390,78 @@ export default {
             },
 
             roadmap: [
-                { 
-                    version: 'v2.1.8',
-                    date: new Date('2025-09-30T00:00:00'),
-                    description: 'Ajuste de Email para notificações do sistema via comercial@menin.com.br',
-                    features: ['Microsoft Ecosystem', 'Email de notificação', 'Suporte Técnico']
-                },
-                { 
-                    version: 'v2.1.9',
-                    date: new Date('2025-10-02T00:00:00'),
-                    description: 'Configuração de envio de "Reports" para erros no sistema e suporte.',
-                    features: ['Segurança', 'Erros', 'Email de notificação']
-                },
-                { 
+                {
                     version: 'v2.2.0',
-                    date: new Date('2025-10-02T00:00:00'),
+                    date: new Date('2025-10-07T00:00:00'),
                     description: 'Ajuste fino nas permissões de usuários para liberação de uso em periodo de testes.',
                     features: ['Segurança', 'Alçadas', 'Validação']
                 },
-                { 
+                {
                     version: 'v2.2.1',
                     date: new Date('2025-10-10T00:00:00'),
                     description: 'Recuperação e alteração de senha via email.',
                     features: ['Segurança', 'Suporte Técnico']
                 },
-                { 
+                {
                     version: 'v2.2.2',
                     date: new Date('2025-10-23T00:00:00'),
                     description: 'Relatórios de Leads x Vendas e comparativos de Entradas/Desempenho por campanha..',
                     features: ['Relatórios', 'Leads', 'Desempenho']
                 },
-            ],    
+            ],
             releases: [
+                {
+                    version: 'v2.1.9',
+                    date: new Date('2025-10-03T00:00:00'),
+                    type: 'patch',
+                    categories: ['frontend', 'mobile', 'api', 'backend'],
+                    features: [
+                        {
+                            id: 1,
+                            title: 'Configuração de envio de "Reports" para erros no sistema e suporte.',
+                            description: 'Formulário de suporte/reporte de problemas vinculado a nova funcionalidade de disparos, ajustado lógica para resposta e atualização continua do suporte.',
+                        },
+                        {
+                            id: 2,
+                            title: 'Painel de Tickets',
+                            description: 'Desenvolvido painel de tickets para acompanhamento dos tickets abertos pelos usuarios.'
+                        },
+                    ],
+                    improvements: [
+                    ],
+                    fixes: [
+                        {
+                            id: 1,
+                            description: 'Ajuste no disparo de eventos para seleção de usuarios por nome, cargo Ex: Marketing (todos usuarios mkt), e emails externos.'
+                        },
+                    ],
+                    breakingChanges: [],
+                    knownIssues: [],
+                },
+                {
+                    version: 'v2.1.8',
+                    date: new Date('2025-09-30T00:00:00'),
+                    type: 'patch',
+                    categories: ['Microsoft', 'api', 'notificação', 'backend'],
+                    features: [
+                        {
+                            id: 1,
+                            title: 'Ajuste de Email para notificações do sistema via comercial@menin.com.br',
+                            description: 'Não é possivel o envio de emails a partir do contato "comercial@menin.com.br", solicitado um email para notificações internas e utilziado o novo "sistema@menin.com.br" nas notificações.',
+                        },
+                    ],
+                    improvements: [
+                        {
+                            id: 1,
+                            category: 'Controladores',
+                            description: 'Feito toda estrutura de mensagens para notificação via email para Eventos e ja disponivel para expansão em outros modulos.'
+                        },
+                    ],
+                    fixes: [
+                    ],
+                    breakingChanges: [],
+                    knownIssues: [],
+                },
                 {
                     version: 'v2.1.7',
                     date: new Date('2025-09-22T00:00:00'),
@@ -432,8 +472,8 @@ export default {
                             id: 1,
                             title: 'Relatório Leads X Vendas via Banco de Dados Menin',
                             description: 'Ajustado todas funcionalidades definidas para o relatório, agora contando com busca e filtros detalhados para qualquer paramêtros, vinculo entre CV e Sienge corretor, valores ajustados para VGV do comercial, sendo "VGV" e o "VGV+DC" o valor somado o DC (Desconto Construtora).',
-                        }, 
-                    ], 
+                        },
+                    ],
                     improvements: [
                         {
                             id: 1,
@@ -464,8 +504,8 @@ export default {
                             id: 1,
                             title: 'Envio de Corretores para Sienge ou Junção de dados',
                             description: 'Definido vinculo entre corretores no CV e dados do Sienge, impossibilitado conexão de dados internamente, feito vinculo somente no relatório de vendas com base na unidade vendida.',
-                        }, 
-                    ], 
+                        },
+                    ],
                     improvements: [],
                     fixes: [
                         {
@@ -490,8 +530,8 @@ export default {
                             id: 1,
                             title: 'Tela de relatório e filtros personalizados',
                             description: 'Tela de listagem para relatório de vendas com dados de faturamento em tempo real do Sienge.',
-                        }, 
-                    ], 
+                        },
+                    ],
                     improvements: [],
                     fixes: [
                         {
@@ -512,7 +552,7 @@ export default {
                             id: 1,
                             title: 'Parametrização de abas do sistema, limpeza de desempenho',
                             description: 'Ajustado layout padrão e menu de navegação, ajustado repetições desnecessarias para desempenho.',
-                        }, 
+                        },
                     ],
                     improvements: [
                         {
@@ -540,7 +580,7 @@ export default {
                             id: 1,
                             title: 'Reportar Problema adicionado',
                             description: 'Interface de reporte criada e configuração de requisitos definida.',
-                        }, 
+                        },
                     ],
                     improvements: [
                         {

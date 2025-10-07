@@ -54,7 +54,7 @@
                 </aside>
 
                 <!-- Main Content -->
-                <main class="lg:col-span-3"> 
+                <main class="lg:col-span-3">
                     <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-4">
                         Formulário
                     </h3>
@@ -247,9 +247,9 @@
                                             <div class="flex items-center">
                                                 <i class="fas fa-file text-gray-500 mr-2"></i>
                                                 <span class="text-sm text-gray-700 dark:text-gray-300">{{ file.name
-                                                    }}</span>
+                                                }}</span>
                                                 <span class="text-xs text-gray-500 ml-2">({{ formatFileSize(file.size)
-                                                    }})</span>
+                                                }})</span>
                                             </div>
                                             <button type="button" @click="removeFile(index)"
                                                 class="text-red-500 hover:text-red-700">
@@ -323,11 +323,13 @@
 
 <script setup>
 import { ref, reactive } from 'vue'
-import { useAuthStore } from '../../stores/Auth/authStore';
+import { useAuthStore } from '@/stores/Auth/authStore'; 
+import { useSupportStore } from '@/stores/Support/supportStore';
 import { useToast } from 'vue-toastification';
 
 const toast = useToast();
 const authStore = useAuthStore();
+const supportStore = useSupportStore();
 
 // State
 const isSubmitting = ref(false)
@@ -341,8 +343,8 @@ const stats = reactive({
 })
 
 const form = reactive({
-    userName: authStore.user.username,
-    email: authStore.user.email,
+    userName: authStore.user?.username || '',
+    email: authStore.user?.email || '',
     problemType: '',
     priority: '',
     module: '',
@@ -442,29 +444,44 @@ Este relatório foi gerado automaticamente pelo sistema.`
 }
 
 const handleSubmit = async () => {
-    if (!validateForm()) return
+  if (!validateForm()) return;
+  isSubmitting.value = true;
 
-    isSubmitting.value = true
+  try {
+    const payload = {
+      userName: form.userName,
+      email: form.email,
+      problemType: form.problemType,
+      priority: form.priority,
+      module: form.module,
+      title: form.title,
+      description: form.description,
+      stepsToReproduce: form.stepsToReproduce,
+      browser: form.browser,
+      os: form.os,
+      pageUrl: form.pageUrl,
+      attachments: [],        // implementar upload depois
+      allowContact: form.allowContact,
+    };
 
-    try {
-        await new Promise(resolve => setTimeout(resolve, 2000))
+    const res = await supportStore.openTicket(payload);
+    reportProtocol.value = res.protocol;
 
-        reportProtocol.value = generateProtocol()
+    // Atualiza os números da sidebar
+    await Promise.all([supportStore.fetchStats(), supportStore.fetchCounts()]);
+    stats.totalReports = supportStore.stats.totalReports;
+    stats.resolved = supportStore.stats.resolved;
+    stats.avgResponseTime = supportStore.stats.avgResponseTime;
 
-        const emailBody = generateEmailBody()
-        const subject = `[BUG REPORT] ${form.title} - Protocolo #${reportProtocol.value}`
-
-        console.log('Email generated:', { subject, body: emailBody })
-        toast.success('Reporte enviado com sucesso! Obrigado.')
-        showSuccessModal.value = true
-        resetForm()
-    } catch (error) {
-        console.error('Error submitting report:', error)
-        toast.error('Erro ao enviar o reporte. Tente novamente.')
-    } finally {
-        isSubmitting.value = false
-    }
-}
+    toast.success('Reporte enviado com sucesso!');
+    showSuccessModal.value = true;
+    resetForm();
+  } catch (e) {
+    toast.error('Erro ao enviar o reporte. Tente novamente.');
+  } finally {
+    isSubmitting.value = false;
+  }
+};
 
 const resetForm = () => {
     Object.assign(form, {

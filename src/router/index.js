@@ -74,8 +74,21 @@ const routes = [
   {
     path: '/report',
     name: 'Reportar',
-    component: () => import('../views/Config/Report.vue'),
+    component: () => import('../views/Support/Report.vue'),
     meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Reportar Problema' },
+  },
+  {
+    path: '/support',
+    name: 'Suporte',
+    component: () => import('../views/Support/Support.vue'),
+    meta: { requiresAuth: true, allowedPosition: 'Comercial', allowedRole: 'admin', searchable: true, content: 'Andamento do Suporte' },
+  },
+  {
+    path: '/support/:id',
+    name: 'Detalhes Suporte',
+    component: () => import('../views/Support/SupportDetails.vue'),
+    props: true,
+    meta: { requiresAuth: true, allowedPosition: 'Comercial', allowedRole: 'admin', searchable: false, content: 'Detalhes do andamento do suporte' },
   },
   {
     path: '/docs',
