@@ -40,7 +40,7 @@ const ticketTitle = computed(() => `Ticket Médio ${valueModeLabel.value}`)
 
 const valueLabel = computed(() =>
     contractsStore.isNet
-        ? 'VGV (descontos subtraem)'
+        ? 'VGV (descontos ignorados)'
         : 'VGV + DC (descontos somam)'
 )
 const ticketLabel = computed(() =>
