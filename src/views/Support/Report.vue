@@ -41,13 +41,13 @@
                                     <span class="font-medium">{{ stats.totalReports }}</span>
                                 </div>
                                 <div class="flex justify-between text-sm">
+                                    <span class="text-gray-500">Finalizados este mês</span>
+                                    <span class="font-medium text-red-600">{{ counts.closed }}</span>
+                                </div> 
+                                <div class="flex justify-between text-sm">
                                     <span class="text-gray-500">Resolvidos este mês</span>
                                     <span class="font-medium text-green-600">{{ stats.resolved }}</span>
-                                </div>
-                                <div class="flex justify-between text-sm">
-                                    <span class="text-gray-500">Tempo médio de ajuste</span>
-                                    <span class="font-medium">{{ stats.avgResponseTime }}</span>
-                                </div>
+                                </div> 
                             </div>
                         </div>
                     </div>
@@ -247,9 +247,9 @@
                                             <div class="flex items-center">
                                                 <i class="fas fa-file text-gray-500 mr-2"></i>
                                                 <span class="text-sm text-gray-700 dark:text-gray-300">{{ file.name
-                                                }}</span>
+                                                    }}</span>
                                                 <span class="text-xs text-gray-500 ml-2">({{ formatFileSize(file.size)
-                                                }})</span>
+                                                    }})</span>
                                             </div>
                                             <button type="button" @click="removeFile(index)"
                                                 class="text-red-500 hover:text-red-700">
@@ -322,24 +322,30 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
-import { useAuthStore } from '@/stores/Auth/authStore'; 
+import { ref, reactive, onMounted } from 'vue'
+import { storeToRefs } from 'pinia'
+import { useAuthStore } from '@/stores/Auth/authStore';
 import { useSupportStore } from '@/stores/Support/supportStore';
 import { useToast } from 'vue-toastification';
 
 const toast = useToast();
 const authStore = useAuthStore();
 const supportStore = useSupportStore();
+const { stats } = storeToRefs(supportStore); // ← PEGA DA STORE
+const { counts } = storeToRefs(supportStore); // ← PEGA DA STORE
 
 // State
 const isSubmitting = ref(false)
 const showSuccessModal = ref(false)
 const reportProtocol = ref('')
 
-const stats = reactive({
-    totalReports: 2,
-    resolved: 1,
-    avgResponseTime: '48h'
+// sem estado local; usar stats da store
+onMounted(async () => {
+    try {
+        await Promise.all([supportStore.fetchStats(), supportStore.fetchCounts()]);
+    } catch (e) {
+        console.warn('Falha ao buscar estatísticas:', e);
+    }
 })
 
 const form = reactive({
@@ -444,43 +450,40 @@ Este relatório foi gerado automaticamente pelo sistema.`
 }
 
 const handleSubmit = async () => {
-  if (!validateForm()) return;
-  isSubmitting.value = true;
+    if (!validateForm()) return;
+    isSubmitting.value = true;
 
-  try {
-    const payload = {
-      userName: form.userName,
-      email: form.email,
-      problemType: form.problemType,
-      priority: form.priority,
-      module: form.module,
-      title: form.title,
-      description: form.description,
-      stepsToReproduce: form.stepsToReproduce,
-      browser: form.browser,
-      os: form.os,
-      pageUrl: form.pageUrl,
-      attachments: [],        // implementar upload depois
-      allowContact: form.allowContact,
-    };
+    try {
+        const payload = {
+            userName: form.userName,
+            email: form.email,
+            problemType: form.problemType,
+            priority: form.priority,
+            module: form.module,
+            title: form.title,
+            description: form.description,
+            stepsToReproduce: form.stepsToReproduce,
+            browser: form.browser,
+            os: form.os,
+            pageUrl: form.pageUrl,
+            attachments: [],        // implementar upload depois
+            allowContact: form.allowContact,
+        };
 
-    const res = await supportStore.openTicket(payload);
-    reportProtocol.value = res.protocol;
+        const res = await supportStore.openTicket(payload);
+        reportProtocol.value = res.protocol;
 
-    // Atualiza os números da sidebar
-    await Promise.all([supportStore.fetchStats(), supportStore.fetchCounts()]);
-    stats.totalReports = supportStore.stats.totalReports;
-    stats.resolved = supportStore.stats.resolved;
-    stats.avgResponseTime = supportStore.stats.avgResponseTime;
+        // A store já atualiza stats/counts em openTicket; se quiser garantir:
+        await Promise.all([supportStore.fetchStats(), supportStore.fetchCounts()]);
 
-    toast.success('Reporte enviado com sucesso!');
-    showSuccessModal.value = true;
-    resetForm();
-  } catch (e) {
-    toast.error('Erro ao enviar o reporte. Tente novamente.');
-  } finally {
-    isSubmitting.value = false;
-  }
+        toast.success('Reporte enviado com sucesso!');
+        showSuccessModal.value = true;
+        resetForm();
+    } catch (e) {
+        toast.error('Erro ao enviar o reporte. Tente novamente.');
+    } finally {
+        isSubmitting.value = false;
+    }
 };
 
 const resetForm = () => {

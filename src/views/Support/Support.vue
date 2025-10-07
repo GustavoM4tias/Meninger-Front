@@ -10,11 +10,11 @@
                             Gerencie e acompanhe todos os tickets do sistema
                         </p>
                     </div>
-                    <RouterLink :to="{ name: 'Reportar' }"
+                    <!-- <RouterLink :to="{ name: 'Reportar' }"
                         class="px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all flex items-center gap-2 shadow-sm">
                         <i class="fas fa-plus"></i>
                         <span>Novo Chamado</span>
-                    </RouterLink>
+                    </RouterLink> -->
                 </div>
 
                 <!-- Tabs/Filters -->
@@ -36,7 +36,8 @@
             <!-- Tickets Grid -->
             <div class="grid gap-4">
                 <div v-for="t in filtered" :key="t.id"
-                    class="bg-white dark:bg-gray-800 rounded-xl border-s-4 hover:shadow-lg transition-all overflow-hidden" :class="priorityBorderClass(t.priority)">
+                    class="bg-white dark:bg-gray-800 rounded-xl border-s-4 hover:shadow-lg transition-all overflow-hidden"
+                    :class="borderBorderClass(t.status)">
                     <div class="p-6">
                         <div class="flex items-start justify-between gap-4 mb-4">
                             <div class="flex-1">
@@ -112,7 +113,6 @@
 <script setup>
 import { onMounted, ref, computed, watch } from 'vue';
 import { useSupportStore } from '@/stores/Support/supportStore';
-import { color } from 'echarts';
 
 const support = useSupportStore();
 const active = ref('pending');
@@ -131,7 +131,7 @@ const statusMap = {
     closed: 'Fechado',
 };
 
-const counts = support.counts;
+const counts = computed(() => support.counts);
 const filtered = computed(() => support.list.filter(t => t.status === active.value));
 
 const priorityClass = (priority) => {
@@ -144,12 +144,12 @@ const priorityClass = (priority) => {
     return map[priority] || 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300';
 };
 
-const priorityBorderClass = (priority) => {
+const borderBorderClass = (priority) => {
     const map = {
-        critical: 'border-red-300 dark:border-red-600/70 ',
-        high: 'border-orange-300 dark:border-orange-600/70',
-        medium: 'border-yellow-300 dark:border-yellow-600/70',
-        low: 'border-green-300 dark:border-green-600/70',
+        pending: 'border-orange-300 dark:border-orange-600/70 ',
+        in_progress: 'border-yellow-300 dark:border-yellow-600/70',
+        resolved: 'border-emerald-300 dark:border-emerald-600/70',
+        closed: 'border-red-300 dark:border-red-600/70',
     };
     return map[priority] || 'border-gray-100  dark:border-gray-700';
 };
