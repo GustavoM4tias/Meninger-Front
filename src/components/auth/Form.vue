@@ -53,13 +53,14 @@
                                 <p class="text-xs text-gray-500 dark:text-gray-400">
                                     Membro desde
                                 </p>
-                                <p class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                <p class="text-sm font-medium text-gray-700 dark:text-gray-300 -mb-1">
                                     {{ new Date(authStore.user?.created_at).toLocaleDateString("pt-BR", {
                                         day: '2-digit',
                                         month: 'long',
                                         year: 'numeric'
                                     }) }}
                                 </p>
+                                <span class="text-gray-500 text-xs">{{ calculateDaysInSystem() }} dias no sistema.</span>
                             </div>
                         </div>
 
@@ -174,67 +175,7 @@
                     </form>
                 </div>
             </div>
-
-            <!-- Seção de Estatísticas/Info Adicional -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
-
-                <!-- Card Estatística 1 -->
-                <div
-                    class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-                    <div class="flex items-center">
-                        <div class="flex-shrink-0">
-                            <div
-                                class="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
-                                <i class="fas fa-calendar-days text-blue-600 dark:text-blue-400"></i>
-                            </div>
-                        </div>
-                        <div class="ml-4">
-                            <p class="text-sm text-gray-600 dark:text-gray-400">Dias no sistema</p>
-                            <p class="text-lg font-semibold text-gray-900 dark:text-white">
-                                {{ calculateDaysInSystem() }}
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Card Estatística 2 -->
-                <div
-                    class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-                    <div class="flex items-center">
-                        <div class="flex-shrink-0">
-                            <div
-                                class="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
-                                <i class="fas fa-user-check text-green-600 dark:text-green-400"></i>
-                            </div>
-                        </div>
-                        <div class="ml-4">
-                            <p class="text-sm text-gray-600 dark:text-gray-400">Status</p>
-                            <p class="text-lg font-semibold text-gray-900 dark:text-white">
-                                {{ authStore.user?.status ? 'Ativo' : 'Inativo' }}
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Card Estatística 3 -->
-                <div
-                    class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-                    <div class="flex items-center">
-                        <div class="flex-shrink-0">
-                            <div
-                                class="w-8 h-8 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
-                                <i class="fas fa-id-badge text-purple-600 dark:text-purple-400"></i>
-                            </div>
-                        </div>
-                        <div class="ml-4">
-                            <p class="text-sm text-gray-600 dark:text-gray-400">ID do usuário</p>
-                            <p class="text-lg font-semibold text-gray-900 dark:text-white">
-                                #{{ authStore.user?.id || 'N/A' }}
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>
+ 
         </div>
     </div>
 </template>
@@ -250,6 +191,8 @@ import { useToast } from 'vue-toastification';
 
 const toast = useToast();
 const authStore = useAuthStore();
+
+console.log(authStore.user)
 
 const editableUser = ref({
     username: '',

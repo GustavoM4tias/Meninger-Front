@@ -13,7 +13,7 @@ export const useSupportStore = defineStore('support', () => {
     const list = ref([]);
     const current = ref(null);
     const counts = ref({ pending: 0, in_progress: 0, resolved: 0, closed: 0 });
-    const stats = ref({ totalReports: 0, resolved: 0, avgResponseTime: '—' });
+    const stats = ref({ totalReports: 0, resolved: 0 });
     const lastCreated = ref(null);
     const error = ref(null);
 
