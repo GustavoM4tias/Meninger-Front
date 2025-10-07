@@ -36,13 +36,13 @@ const statusTheme = {
         icon: 'text-emerald-600',
     },
     closed: {
-        solid: 'bg-gray-700 hover:bg-gray-800 text-white',
-        soft: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300',
-        ring: 'ring-gray-500/30',
-        border: 'border-gray-300 dark:border-gray-700',
-        header: 'bg-gray-700',
-        avatar: 'bg-gray-700 text-white',
-        icon: 'text-gray-600',
+        solid: 'bg-red-700 hover:bg-red-800 text-white',
+        soft: 'bg-red-100 text-red-700 dark:bg-red-700 dark:text-red-300',
+        ring: 'ring-red-500/30',
+        border: 'border-red-300 dark:border-red-700',
+        header: 'bg-red-700',
+        avatar: 'bg-red-700 text-white',
+        icon: 'text-red-600',
     },
 };
 
