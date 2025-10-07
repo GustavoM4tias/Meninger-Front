@@ -26,7 +26,7 @@ const dropdowns = ref({
 const subDropdowns = ref({
     events: false,
     buildings: false
-});
+}); 
 
 // Configuração dos menus com subcategorias
 const menuItems = {
@@ -67,6 +67,10 @@ const menuItems = {
         { router: '/settings/Account', section: 'Minha Conta', name: 'Minha Conta', icon: 'fas fa-user-cog' },
         { router: '/settings/users', section: 'Usuários', name: 'Usuários', icon: 'fas fa-users' },
         { router: '/settings/organograma', section: 'Organograma', name: 'Organograma', icon: 'fas fa-sitemap' },
+    ],
+    supports: [
+        { router: '/report', section: '', name: 'Reportar Problema', icon: 'fas fa-bug' },
+        { router: '/support', section: '', name: 'Suporte', icon: 'fas fa-comments' }, 
     ]
 };
 
@@ -98,6 +102,7 @@ const getCategoryByRouter = (router) => {
     if (router.startsWith('/events') || router.startsWith('/buildings')) return 'Marketing';
     if (router.startsWith('/tools')) return 'Ferramentas';
     if (router.startsWith('/settings')) return 'Configurações';
+    if (router.startsWith('/support')) return 'Suporte';
     return 'Outros';
 };
 
@@ -450,7 +455,33 @@ onMounted(async () => {
                     <div class="block md:hidden">
                         <Search />
                     </div>
-                    <li>
+
+                    <!-- Configurações -->
+                    <li v-if="authStore?.user?.role === 'admin' ">
+                        <button type="button" @click="toggleDropdown('supports')"
+                            class="flex items-center w-full p-2 text-base text-gray-900 transition duration-75 rounded-lg group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700"
+                            :aria-expanded="dropdowns.supports">
+                            <i
+                                class="fas fa-circle-info text-gray-500 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white"></i>
+                            <span class="flex-1 ms-3 text-left rtl:text-right whitespace-nowrap">Suporte</span>
+                            <i :class="dropdowns.supports ? 'fas fa-chevron-up' : 'fas fa-chevron-down'"
+                                class="text-gray-500 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white"></i>
+                        </button>
+                        <ul v-show="dropdowns.supports" class="py-2 space-y-2 ml-4">
+                            <li v-for="item in menuItems.supports" :key="`${item.router}-${item.section}`">
+                                <div
+                                    class="flex items-center justify-between group/item hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg px-2 py-1">
+                                    <RouterLink :to="{ path: item.router, query: { section: item.section } }"
+                                        class="flex-1 flex items-center text-gray-900 dark:text-white">
+                                        <i :class="item.icon" class="text-gray-500"></i>
+                                        <span class="ms-3">{{ item.name }}</span>
+                                    </RouterLink>
+                                </div>
+                            </li>
+                        </ul>
+                    </li>
+
+                    <li v-else>
                         <RouterLink to="/report"
                             class="flex items-center p-2 text-gray-900 transition duration-75 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white group">
                             <i
@@ -458,6 +489,8 @@ onMounted(async () => {
                             <span class="ms-3">Reportar Problema</span>
                         </RouterLink>
                     </li>
+
+
                     <li>
                         <RouterLink to="/docs"
                             class="flex items-center p-2 text-gray-900 transition duration-75 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white group">

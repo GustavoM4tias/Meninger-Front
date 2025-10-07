@@ -40,10 +40,10 @@ const currentStep = ref(1);
 
 const steps = [
   { number: 1, title: 'Informações Básicas', icon: 'fas fa-info-circle' },
-  { number: 2, title: 'Localização',         icon: 'fas fa-map-marker-alt' },
-  { number: 3, title: 'Mídia e Tags',        icon: 'fas fa-images' },
-  { number: 4, title: 'Organizadores',       icon: 'fas fa-people-group' },
-  { number: 5, title: 'Revisão',             icon: 'fas fa-check-circle' }
+  { number: 2, title: 'Localização', icon: 'fas fa-map-marker-alt' },
+  { number: 3, title: 'Mídia e Tags', icon: 'fas fa-images' },
+  { number: 4, title: 'Organizadores', icon: 'fas fa-people-group' },
+  { number: 5, title: 'Revisão', icon: 'fas fa-check-circle' }
 ];
 // use sempre o length para não desincronizar
 const totalSteps = computed(() => steps.length);
@@ -104,12 +104,12 @@ const validateStep = (step) => {
   errors.value = {};
   switch (step) {
     case 1:
-      if (!newEvent.value.title.trim())       errors.value.title = 'Título é obrigatório';
+      if (!newEvent.value.title.trim()) errors.value.title = 'Título é obrigatório';
       if (!newEvent.value.description.trim()) errors.value.description = 'Descrição é obrigatória';
-      if (!newEvent.value.eventDate)          errors.value.eventDate = 'Data é obrigatória';
+      if (!newEvent.value.eventDate) errors.value.eventDate = 'Data é obrigatória';
       break;
     case 2:
-      if (!newEvent.value.address.zip_code)   errors.value.zip_code = 'CEP é obrigatório';
+      if (!newEvent.value.address.zip_code) errors.value.zip_code = 'CEP é obrigatório';
       break;
     case 4:
       // se marcar notificação, exige ao menos um destino (users|positions|emails)
@@ -171,8 +171,12 @@ const submitAdd = async () => {
 
   isSubmitting.value = true;
   try {
-    // envia exatamente o shape que o backend espera (eventDate camelCase)
-    await addEvent({ ...newEvent.value });
+    const payload = { ...newEvent.value };
+    if (payload.eventDate) {
+      const d = new Date(payload.eventDate);
+      payload.eventDate = d.toISOString(); // garante ISO para o backend
+    }
+    await addEvent(payload);
     emit('close');
   } catch (e) {
     console.error(e);
@@ -202,7 +206,8 @@ const resolveUser = (id) => (authStore.users || []).find(u => u.id === id);
 </script>
 
 <template>
-  <div class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4" @click.self="emit('close')">
+  <div class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+    @click.self="emit('close')">
     <div class="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
       <!-- HEADER -->
       <div class="bg-gradient-to-r from-blue-500 to-purple-600 p-6 text-white">
@@ -216,21 +221,18 @@ const resolveUser = (id) => (authStore.users || []).find(u => u.id === id);
               <p class="text-blue-100">Passo {{ currentStep }} de {{ totalSteps }}</p>
             </div>
           </div>
-          <button @click="emit('close')" class="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-colors">
+          <button @click="emit('close')"
+            class="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-colors">
             <i class="fas fa-times text-xl"></i>
           </button>
         </div>
 
         <!-- STEPS -->
         <div class="flex gap-4">
-          <div
-            v-for="step in steps"
-            :key="step.number"
-            :class="[
-              'flex items-center gap-3 px-4 py-2 rounded-xl transition-all duration-300',
-              currentStep >= step.number ? 'bg-white/20 text-white' : 'bg-white/5 text-blue-200'
-            ]"
-          >
+          <div v-for="step in steps" :key="step.number" :class="[
+            'flex items-center gap-3 px-4 py-2 rounded-xl transition-all duration-300',
+            currentStep >= step.number ? 'bg-white/20 text-white' : 'bg-white/5 text-blue-200'
+          ]">
             <i :class="step.icon"></i>
             <span class="hidden md:block font-medium">{{ step.title }}</span>
           </div>
@@ -246,37 +248,27 @@ const resolveUser = (id) => (authStore.users || []).find(u => u.id === id);
           <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div class="md:col-span-2">
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Título do Evento *</label>
-              <input
-                v-model="newEvent.title"
-                type="text"
-                placeholder="Digite o título do evento"
+              <input v-model="newEvent.title" type="text" placeholder="Digite o título do evento"
                 :class="['w-full px-4 py-3 rounded-xl border-2 transition-colors', errors.title ? 'border-red-500 focus:border-red-600' : 'border-gray-300 dark:border-gray-600 focus:border-blue-500']"
-                class="bg-gray-50 dark:bg-gray-700 dark:text-white"
-              />
+                class="bg-gray-50 dark:bg-gray-700 dark:text-white" />
               <p v-if="errors.title" class="text-red-500 text-sm mt-1">{{ errors.title }}</p>
             </div>
 
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Data do Evento *</label>
-              <input
-                v-model="newEvent.eventDate"
-                type="datetime-local"
+              <input v-model="newEvent.eventDate" type="datetime-local"
                 :class="['w-full px-4 py-3 rounded-xl border-2 transition-colors', errors.eventDate ? 'border-red-500 focus:border-red-600' : 'border-gray-300 dark:border-gray-600 focus:border-blue-500']"
-                class="bg-gray-50 dark:bg-gray-700 dark:text-white"
-              />
+                class="bg-gray-50 dark:bg-gray-700 dark:text-white" />
               <p v-if="errors.eventDate" class="text-red-500 text-sm mt-1">{{ errors.eventDate }}</p>
             </div>
           </div>
 
           <div>
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Descrição do Evento *</label>
-            <textarea
-              v-model="newEvent.description"
-              rows="4"
+            <textarea v-model="newEvent.description" rows="4"
               placeholder="Descreva os detalhes do evento, atividades, público-alvo, etc."
               :class="['w-full px-4 py-3 rounded-xl border-2 transition-colors resize-none', errors.description ? 'border-red-500 focus:border-red-600' : 'border-gray-300 dark:border-gray-600 focus:border-blue-500']"
-              class="bg-gray-50 dark:bg-gray-700 dark:text-white"
-            ></textarea>
+              class="bg-gray-50 dark:bg-gray-700 dark:text-white"></textarea>
             <p v-if="errors.description" class="text-red-500 text-sm mt-1">{{ errors.description }}</p>
           </div>
         </div>
@@ -289,15 +281,9 @@ const resolveUser = (id) => (authStore.users || []).find(u => u.id === id);
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">CEP *</label>
               <div class="relative">
-                <input
-                  v-model="maskedCep"
-                  type="text"
-                  inputmode="numeric"
-                  placeholder="00000-000"
-                  maxlength="9"
+                <input v-model="maskedCep" type="text" inputmode="numeric" placeholder="00000-000" maxlength="9"
                   :class="['w-full px-4 py-3 rounded-xl border-2 transition-colors', errors.zip_code ? 'border-red-500' : 'border-gray-300 dark:border-gray-600 focus:border-blue-500']"
-                  class="bg-gray-50 dark:bg-gray-700 dark:text-white"
-                />
+                  class="bg-gray-50 dark:bg-gray-700 dark:text-white" />
                 <div v-if="isLoadingAddress" class="absolute right-3 top-1/2 -translate-y-1/2">
                   <i class="fas fa-spinner fa-spin text-blue-500"></i>
                 </div>
@@ -307,27 +293,32 @@ const resolveUser = (id) => (authStore.users || []).find(u => u.id === id);
 
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Estado</label>
-              <input v-model="newEvent.address.state" type="text" placeholder="Estado" class="w-full px-4 py-3 rounded-xl border-2 border-gray-300 dark:border-gray-600 focus:border-blue-500 bg-gray-50 dark:bg-gray-700 dark:text-white transition-colors" />
+              <input v-model="newEvent.address.state" type="text" placeholder="Estado"
+                class="w-full px-4 py-3 rounded-xl border-2 border-gray-300 dark:border-gray-600 focus:border-blue-500 bg-gray-50 dark:bg-gray-700 dark:text-white transition-colors" />
             </div>
 
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Cidade</label>
-              <input v-model="newEvent.address.city" type="text" placeholder="Cidade" class="w-full px-4 py-3 rounded-xl border-2 border-gray-300 dark:border-gray-600 focus:border-blue-500 bg-gray-50 dark:bg-gray-700 dark:text-white transition-colors" />
+              <input v-model="newEvent.address.city" type="text" placeholder="Cidade"
+                class="w-full px-4 py-3 rounded-xl border-2 border-gray-300 dark:border-gray-600 focus:border-blue-500 bg-gray-50 dark:bg-gray-700 dark:text-white transition-colors" />
             </div>
 
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Bairro</label>
-              <input v-model="newEvent.address.neighborhood" type="text" placeholder="Bairro" class="w-full px-4 py-3 rounded-xl border-2 border-gray-300 dark:border-gray-600 focus:border-blue-500 bg-gray-50 dark:bg-gray-700 dark:text-white transition-colors" />
+              <input v-model="newEvent.address.neighborhood" type="text" placeholder="Bairro"
+                class="w-full px-4 py-3 rounded-xl border-2 border-gray-300 dark:border-gray-600 focus:border-blue-500 bg-gray-50 dark:bg-gray-700 dark:text-white transition-colors" />
             </div>
 
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Rua</label>
-              <input v-model="newEvent.address.street" type="text" placeholder="Nome da rua" class="w-full px-4 py-3 rounded-xl border-2 border-gray-300 dark:border-gray-600 focus:border-blue-500 bg-gray-50 dark:bg-gray-700 dark:text-white transition-colors" />
+              <input v-model="newEvent.address.street" type="text" placeholder="Nome da rua"
+                class="w-full px-4 py-3 rounded-xl border-2 border-gray-300 dark:border-gray-600 focus:border-blue-500 bg-gray-50 dark:bg-gray-700 dark:text-white transition-colors" />
             </div>
 
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Número</label>
-              <input v-model="newEvent.address.number" type="text" placeholder="Número" class="w-full px-4 py-3 rounded-xl border-2 border-gray-300 dark:border-gray-600 focus:border-blue-500 bg-gray-50 dark:bg-gray-700 dark:text-white transition-colors" />
+              <input v-model="newEvent.address.number" type="text" placeholder="Número"
+                class="w-full px-4 py-3 rounded-xl border-2 border-gray-300 dark:border-gray-600 focus:border-blue-500 bg-gray-50 dark:bg-gray-700 dark:text-white transition-colors" />
             </div>
           </div>
         </div>
@@ -339,18 +330,17 @@ const resolveUser = (id) => (authStore.users || []).find(u => u.id === id);
           <div class="bg-gray-50 dark:bg-gray-700 rounded-2xl p-6">
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Tags do Evento</label>
             <div class="flex gap-3 mb-4">
-              <input v-model="newTag" type="text" placeholder="Digite uma tag" @keyup.enter="addTag" class="flex-1 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-600 dark:text-white focus:border-blue-500 transition-colors" />
-              <button type="button" @click="addTag" class="px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition-colors">
+              <input v-model="newTag" type="text" placeholder="Digite uma tag" @keyup.enter="addTag"
+                class="flex-1 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-600 dark:text-white focus:border-blue-500 transition-colors" />
+              <button type="button" @click="addTag"
+                class="px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition-colors">
                 <i class="fas fa-plus mr-2"></i>Adicionar
               </button>
             </div>
 
             <div v-if="newEvent.tags.length" class="flex flex-wrap gap-2">
-              <span
-                v-for="(tag, index) in newEvent.tags"
-                :key="index"
-                class="flex items-center gap-2 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-3 py-1 rounded-full text-sm"
-              >
+              <span v-for="(tag, index) in newEvent.tags" :key="index"
+                class="flex items-center gap-2 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-3 py-1 rounded-full text-sm">
                 {{ tag }}
                 <button @click="removeTag(index)" class="hover:text-red-500 transition-colors">
                   <i class="fas fa-times text-xs"></i>
@@ -362,20 +352,21 @@ const resolveUser = (id) => (authStore.users || []).find(u => u.id === id);
           <div class="bg-gray-50 dark:bg-gray-700 rounded-2xl p-6">
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Imagens do Evento</label>
             <div class="flex gap-3 mb-4">
-              <input v-model="newImageUrl" type="url" placeholder="URL da imagem" @keyup.enter="addImage" class="flex-1 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-600 dark:text-white focus:border-blue-500 transition-colors" />
-              <button type="button" @click="addImage" class="px-6 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium transition-colors">
+              <input v-model="newImageUrl" type="url" placeholder="URL da imagem" @keyup.enter="addImage"
+                class="flex-1 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-600 dark:text-white focus:border-blue-500 transition-colors" />
+              <button type="button" @click="addImage"
+                class="px-6 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium transition-colors">
                 <i class="fas fa-image mr-2"></i>Adicionar
               </button>
             </div>
 
             <div v-if="newEvent.images.length" class="grid grid-cols-2 md:grid-cols-3 gap-4">
-              <div v-for="(image, index) in newEvent.images" :key="index" class="relative group rounded-xl overflow-hidden">
+              <div v-for="(image, index) in newEvent.images" :key="index"
+                class="relative group rounded-xl overflow-hidden">
                 <img :src="image" :alt="`Imagem ${index + 1}`" class="w-full h-32 object-cover" />
-                <button
-                  @click="removeImage(index)"
+                <button @click="removeImage(index)"
                   class="absolute top-2 right-2 w-8 h-8 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-all"
-                  title="Remover imagem"
-                >
+                  title="Remover imagem">
                   <i class="fas fa-trash text-sm"></i>
                 </button>
               </div>
@@ -392,8 +383,10 @@ const resolveUser = (id) => (authStore.users || []).find(u => u.id === id);
           <OrganizerPicker v-model="newEvent.organizers" :users="authStore.users" />
 
           <div class="flex items-center gap-3">
-            <input id="notify" v-model="newEvent.notification" type="checkbox" class="w-5 h-5 rounded border-gray-300" />
-            <label for="notify" class="text-sm text-gray-700 dark:text-gray-300">Enviar notificação para este evento</label>
+            <input id="notify" v-model="newEvent.notification" type="checkbox"
+              class="w-5 h-5 rounded border-gray-300" />
+            <label for="notify" class="text-sm text-gray-700 dark:text-gray-300">Enviar notificação para este
+              evento</label>
           </div>
 
           <div v-if="newEvent.notification" class="mt-2">
@@ -410,25 +403,32 @@ const resolveUser = (id) => (authStore.users || []).find(u => u.id === id);
             <!-- Info -->
             <div class="rounded-2xl border border-gray-200 dark:border-gray-700 p-4">
               <h4 class="font-semibold text-gray-900 dark:text-white mb-2">Informações</h4>
-              <p class="text-sm text-gray-600 dark:text-gray-300"><span class="font-medium">Título:</span> {{ newEvent.title || '-' }}</p>
-              <p class="text-sm text-gray-600 dark:text-gray-300"><span class="font-medium">Quando:</span> {{ formatDateTime(newEvent.eventDate) || '-' }}</p>
-              <p class="text-sm text-gray-600 dark:text-gray-300 mt-2 whitespace-pre-line"><span class="font-medium">Descrição:</span> {{ newEvent.description || '-' }}</p>
-              <p class="text-sm text-gray-600 dark:text-gray-300 mt-2"><span class="font-medium">Notificação:</span> {{ newEvent.notification ? 'Sim' : 'Não' }}</p>
+              <p class="text-sm text-gray-600 dark:text-gray-300"><span class="font-medium">Título:</span> {{
+                newEvent.title || '-' }}</p>
+              <p class="text-sm text-gray-600 dark:text-gray-300"><span class="font-medium">Quando:</span> {{
+                formatDateTime(newEvent.eventDate) || '-' }}</p>
+              <p class="text-sm text-gray-600 dark:text-gray-300 mt-2 whitespace-pre-line"><span
+                  class="font-medium">Descrição:</span> {{ newEvent.description || '-' }}</p>
+              <p class="text-sm text-gray-600 dark:text-gray-300 mt-2"><span class="font-medium">Notificação:</span> {{
+                newEvent.notification ? 'Sim' : 'Não' }}</p>
             </div>
 
             <!-- Local -->
             <div class="rounded-2xl border border-gray-200 dark:border-gray-700 p-4">
               <h4 class="font-semibold text-gray-900 dark:text-white mb-2">Local</h4>
-              <p class="text-sm text-gray-600 dark:text-gray-300"><span class="font-medium">CEP:</span> {{ maskedCep || '-' }}</p>
+              <p class="text-sm text-gray-600 dark:text-gray-300"><span class="font-medium">CEP:</span> {{ maskedCep ||
+                '-' }}</p>
               <p class="text-sm text-gray-600 dark:text-gray-300">
                 <span class="font-medium">Endereço:</span>
                 {{ newEvent.address.street || '-' }}
                 <span v-if="newEvent.address.number">, {{ newEvent.address.number }}</span>
               </p>
-              <p class="text-sm text-gray-600 dark:text-gray-300"><span class="font-medium">Bairro:</span> {{ newEvent.address.neighborhood || '-' }}</p>
+              <p class="text-sm text-gray-600 dark:text-gray-300"><span class="font-medium">Bairro:</span> {{
+                newEvent.address.neighborhood || '-' }}</p>
               <p class="text-sm text-gray-600 dark:text-gray-300">
                 <span class="font-medium">Cidade/UF:</span>
-                {{ newEvent.address.city || '-' }}<span v-if="newEvent.address.state">/{{ newEvent.address.state }}</span>
+                {{ newEvent.address.city || '-' }}<span v-if="newEvent.address.state">/{{ newEvent.address.state
+                  }}</span>
               </p>
             </div>
 
@@ -438,11 +438,8 @@ const resolveUser = (id) => (authStore.users || []).find(u => u.id === id);
 
               <div class="mb-3">
                 <div v-if="newEvent.tags.length" class="flex flex-wrap gap-2">
-                  <span
-                    v-for="(tag, i) in newEvent.tags"
-                    :key="i"
-                    class="px-2 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-xs font-medium rounded-lg border border-blue-200 dark:border-blue-800"
-                  >
+                  <span v-for="(tag, i) in newEvent.tags" :key="i"
+                    class="px-2 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-xs font-medium rounded-lg border border-blue-200 dark:border-blue-800">
                     {{ tag }}
                   </span>
                 </div>
@@ -451,7 +448,8 @@ const resolveUser = (id) => (authStore.users || []).find(u => u.id === id);
 
               <div>
                 <div v-if="newEvent.images.length" class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  <img v-for="(img, i) in newEvent.images" :key="i" :src="img" class="w-full h-24 object-cover rounded-lg border border-gray-200 dark:border-gray-700" />
+                  <img v-for="(img, i) in newEvent.images" :key="i" :src="img"
+                    class="w-full h-24 object-cover rounded-lg border border-gray-200 dark:border-gray-700" />
                 </div>
                 <p v-else class="text-sm text-gray-500 dark:text-gray-300">Sem imagens.</p>
               </div>
@@ -461,15 +459,13 @@ const resolveUser = (id) => (authStore.users || []).find(u => u.id === id);
             <div class="rounded-2xl border border-gray-200 dark:border-gray-700 p-4 md:col-span-2">
               <h4 class="font-semibold text-gray-900 dark:text-white mb-3">Organizadores</h4>
               <div v-if="newEvent.organizers.length" class="flex flex-wrap gap-2">
-                <span
-                  v-for="(o, i) in newEvent.organizers"
-                  :key="i"
-                  class="px-2 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-200 rounded-lg border text-xs flex items-center gap-2"
-                >
+                <span v-for="(o, i) in newEvent.organizers" :key="i"
+                  class="px-2 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-200 rounded-lg border text-xs flex items-center gap-2">
                   <i class="fas fa-user"></i>
                   <span class="truncate max-w-60">
                     {{ o.name }}
-                    <span v-if="(o.type === 'user' ? (resolveUser(o.id)?.position || o.position) : o.position)" class="opacity-70">
+                    <span v-if="(o.type === 'user' ? (resolveUser(o.id)?.position || o.position) : o.position)"
+                      class="opacity-70">
                       — {{ o.type === 'user' ? (resolveUser(o.id)?.position || o.position) : o.position }}
                     </span>
                     <span v-if="o.email" class="opacity-70"> ({{ o.email }})</span>
@@ -480,22 +476,21 @@ const resolveUser = (id) => (authStore.users || []).find(u => u.id === id);
             </div>
 
             <!-- Notificação -->
-            <div v-if="newEvent.notification" class="rounded-2xl border border-gray-200 dark:border-gray-700 p-4 md:col-span-2">
+            <div v-if="newEvent.notification"
+              class="rounded-2xl border border-gray-200 dark:border-gray-700 p-4 md:col-span-2">
               <h4 class="font-semibold text-gray-900 dark:text-white mb-3">Destinatários da notificação</h4>
 
               <!-- Users -->
               <div class="mb-2">
                 <p class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Usuários</p>
                 <div v-if="newEvent.notify_to.users.length" class="flex flex-wrap gap-2">
-                  <span
-                    v-for="uid in newEvent.notify_to.users"
-                    :key="uid"
-                    class="px-2 py-1 bg-green-50 text-green-700 rounded-lg border text-xs flex items-center gap-2"
-                  >
+                  <span v-for="uid in newEvent.notify_to.users" :key="uid"
+                    class="px-2 py-1 bg-green-50 text-green-700 rounded-lg border text-xs flex items-center gap-2">
                     <i class="fas fa-user"></i>
                     <span class="truncate max-w-56">
                       {{ resolveUser(uid)?.username || ('ID ' + uid) }}
-                      <span v-if="resolveUser(uid)?.position" class="opacity-70"> — {{ resolveUser(uid)?.position }}</span>
+                      <span v-if="resolveUser(uid)?.position" class="opacity-70"> — {{ resolveUser(uid)?.position
+                        }}</span>
                     </span>
                   </span>
                 </div>
@@ -506,11 +501,8 @@ const resolveUser = (id) => (authStore.users || []).find(u => u.id === id);
               <div class="mb-2">
                 <p class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Cargos</p>
                 <div v-if="newEvent.notify_to.positions.length" class="flex flex-wrap gap-2">
-                  <span
-                    v-for="p in newEvent.notify_to.positions"
-                    :key="p"
-                    class="px-2 py-1 bg-sky-50 text-sky-700 rounded-lg border text-xs flex items-center gap-2"
-                  >
+                  <span v-for="p in newEvent.notify_to.positions" :key="p"
+                    class="px-2 py-1 bg-sky-50 text-sky-700 rounded-lg border text-xs flex items-center gap-2">
                     <i class="fas fa-users"></i>{{ p }}
                   </span>
                 </div>
@@ -521,11 +513,8 @@ const resolveUser = (id) => (authStore.users || []).find(u => u.id === id);
               <div>
                 <p class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">E-mails externos</p>
                 <div v-if="newEvent.notify_to.emails.length" class="flex flex-wrap gap-2">
-                  <span
-                    v-for="e in newEvent.notify_to.emails"
-                    :key="e"
-                    class="px-2 py-1 bg-purple-50 text-purple-700 rounded-lg border text-xs flex items-center gap-2"
-                  >
+                  <span v-for="e in newEvent.notify_to.emails" :key="e"
+                    class="px-2 py-1 bg-purple-50 text-purple-700 rounded-lg border text-xs flex items-center gap-2">
                     <i class="fas fa-envelope"></i>{{ e }}
                   </span>
                 </div>
@@ -539,31 +528,22 @@ const resolveUser = (id) => (authStore.users || []).find(u => u.id === id);
       </div>
 
       <!-- FOOTER -->
-      <div class="p-6 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between bg-white/60 dark:bg-gray-800/60 backdrop-blur">
-        <button
-          v-if="currentStep > 1"
-          @click="prevStep"
-          class="px-5 py-3 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-        >
+      <div
+        class="p-6 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between bg-white/60 dark:bg-gray-800/60 backdrop-blur">
+        <button v-if="currentStep > 1" @click="prevStep"
+          class="px-5 py-3 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
           <i class="fas fa-chevron-left mr-2"></i> Voltar
         </button>
         <span v-else></span>
 
         <div class="flex items-center gap-3">
-          <button
-            v-if="currentStep < totalSteps"
-            @click="nextStep"
-            class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold shadow transition-colors"
-          >
+          <button v-if="currentStep < totalSteps" @click="nextStep"
+            class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold shadow transition-colors">
             Próximo <i class="fas fa-chevron-right ml-2"></i>
           </button>
 
-          <button
-            v-else
-            :disabled="isSubmitting"
-            @click="submitAdd"
-            class="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 disabled:opacity-70 text-white rounded-lg font-semibold shadow transition-colors"
-          >
+          <button v-else :disabled="isSubmitting" @click="submitAdd"
+            class="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 disabled:opacity-70 text-white rounded-lg font-semibold shadow transition-colors">
             <i v-if="isSubmitting" class="fas fa-spinner fa-spin mr-2"></i>
             {{ isSubmitting ? 'Criando...' : 'Criar Evento' }}
           </button>
