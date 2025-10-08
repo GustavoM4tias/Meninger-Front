@@ -54,9 +54,7 @@ const menuItems = {
         }
     },
     comercial: [
-        { router: '/comercial/leads', section: 'Leads', name: 'Leads', icon: 'fas fa-user-plus' },
-        { router: '/comercial/reservas', section: 'Reservas', name: 'Reservas', icon: 'fas fa-bookmark' },
-        { router: '/comercial/reservas', section: 'Imobiliarias', name: 'Imobiliárias', icon: 'fas fa-building-user' },
+        { router: '/comercial/leads', section: 'Leads', name: 'Leads', icon: 'fas fa-user-plus' }, 
         { router: '/comercial/repasses', section: 'Repasses', name: 'Repasses', icon: 'fas fa-exchange-alt' },
         { router: '/comercial/faturamento', section: 'Faturamento', name: 'Faturamento', icon: 'fas fa-file-invoice-dollar' }
     ],

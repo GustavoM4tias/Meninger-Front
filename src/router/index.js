@@ -29,14 +29,8 @@ const routes = [
       {
         path: 'leads',
         name: 'Leads',
-        component: () => import('../views/Reports/Leads.vue'),
-        meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Dashboard de leads'  },
-      },  
-      {
-        path: 'reservas',
-        name: 'Reservas',
-        component: () => import('../views/Reports/Reservas.vue'),
-        meta: { requiresAuth: true, allowedPosition: '', searchable: false, content: 'Dashboard de reservas' },
+        component: () => import('../views/Leads/Index.vue'),
+        meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Dashboard de leads' },
       },
       {
         path: 'repasses',
@@ -57,7 +51,7 @@ const routes = [
     path: '/tools',
     name: 'tools',
     children: [
-      { path: 'validator', name: 'Validador', component: () => import('../views/tools/Validador.vue'), meta: { searchable: true, content: 'Validador de Contratos de Venda.' } }, 
+      { path: 'validator', name: 'Validador', component: () => import('../views/tools/Validador.vue'), meta: { searchable: true, content: 'Validador de Contratos de Venda.' } },
     ],
     meta: { requiresAuth: true, allowedPosition: '' },
   },
@@ -115,17 +109,17 @@ const routes = [
     meta: { requiresAuth: false },
   },
   {
-    path: '/academy', 
+    path: '/academy',
     component: () => import('../views/Academy/Academy.vue'),
     children: [
       {
         path: '',
-        name: 'AcademyDefault',  
+        name: 'AcademyDefault',
         redirect: { name: 'AcademyHome' }
       },
       {
         path: 'home',
-        name: 'AcademyHome',  
+        name: 'AcademyHome',
         component: () => import('../views/Academy/Home.vue')
       },
       {
