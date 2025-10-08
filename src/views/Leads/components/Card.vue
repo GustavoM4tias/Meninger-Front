@@ -1,29 +1,12 @@
 <script setup>
 const props = defineProps({
-    title: {
-        type: String,
-        required: true,
-    },
-    class: {
-        type: String,
-        required: true,
-    },
-    icon: {
-        type: String,
-        required: true,
-    },
-    value: {
-        type: [String, Number],
-        required: true,
-    },
-    label: {
-        type: String,
-        required: true,
-    },
+    title: { type: String, required: true },
+    value: { type: [String, Number], default: 0 },
+    label: { type: String, default: '' },
+    icon: { type: String, default: 'fas fa-circle-info' }
 });
-
-</script>
-
+</script> 
+ 
 <template>
     <div class="card flex flex-col w-full p-4 hover:-translate-y-0.5 transition-all rounded-xl border border-gray-300/70 dark:border-gray-600/50 shadow shadow-black/5 hover:shadow-black/10 dark:shadow-white/5 dark:hover:shadow-white/10 duration-150"
         :class="props.class">
