@@ -25,7 +25,7 @@
 <script setup>
 import { computed } from 'vue'
 import { useContractsStore } from '@/stores/Reports/Contracts/contractsStore'
-import Card from '@/components/Reports/Reservas/Card.vue'
+import Card from '@/components/Reports/Contracts/Card.vue'
 
 const props = defineProps({
     metrics: { type: Object, required: true }
