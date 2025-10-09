@@ -62,6 +62,7 @@ const routes = [
       { path: 'Users', name: 'Usuários', component: () => import('../views/Settings/Users.vue'), meta: { searchable: true, content: 'Listagem de usuários do sistema' } },
       { path: 'Account', name: 'Minha Conta', component: () => import('../views/Settings/Account.vue'), meta: { searchable: true, content: 'Sua conta pessoal' } },
       { path: 'Organograma', name: 'Organograma', component: () => import('../views/Settings/Organograma.vue'), meta: { searchable: true, content: 'Organograma estrutural' } },
+      { path: 'Facial', name: 'Reconhecimento Facial', component: () => import('../views/Settings/FacialAuth.vue'), meta: { searchable: true, content: 'Reconhecimento Facial' } },
     ],
     meta: { requiresAuth: true, allowedPosition: '' },
   },

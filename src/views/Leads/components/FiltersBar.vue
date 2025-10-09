@@ -1,10 +1,10 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, onMounted } from 'vue';
 import MultiSelector from '@/components/UI/MultiSelector.vue';
+import dayjs from 'dayjs';
 
 const props = defineProps({
-    filtros: { type: Object, required: true },
-    carregando: { type: Boolean, default: false },
+    filtros: { type: Object, required: true }, 
     empreendimentosOptions: { type: Array, default: () => [] },
     origensOptions: { type: Array, default: () => [] },
     situacoesOptions: { type: Array, default: () => [] },
@@ -14,13 +14,32 @@ const props = defineProps({
 });
 const emit = defineEmits(['update:filtros', 'buscar', 'limpar']);
 
-// emite só o campo alterado (sem deep watch!)
 function updateField(key, val) {
     const next = { ...props.filtros, [key]: Array.isArray(val) ? [...val] : val };
     emit('update:filtros', next);
 }
 
-// indicadores
+/* -------------------- NOVO: defaults de data -------------------- */
+const defaultStart = dayjs().startOf('month').format('YYYY-MM-DD');
+const defaultEnd = dayjs().endOf('month').format('YYYY-MM-DD');
+
+/* proxies v-model -> usam default quando estiver vazio */
+const dataInicio = computed({
+    get: () => props.filtros.data_inicio || defaultStart,
+    set: v => updateField('data_inicio', v || '')
+});
+const dataFim = computed({
+    get: () => props.filtros.data_fim || defaultEnd,
+    set: v => updateField('data_fim', v || '')
+});
+
+/* seta os defaults na 1ª carga, caso venham vazios */
+onMounted(() => {
+    if (!props.filtros.data_inicio) updateField('data_inicio', defaultStart);
+    if (!props.filtros.data_fim) updateField('data_fim', defaultEnd);
+});
+/* --------------------------------------------------------------- */
+
 const hasActiveFilters = computed(() => {
     const f = props.filtros || {};
     return Object.entries(f).some(([k, v]) => Array.isArray(v) ? v.length > 0 : (v && String(v).trim() !== ''));
@@ -32,13 +51,8 @@ const activeFiltersCount = computed(() => {
 </script>
 
 <template>
-    <div class="mb-5">
-        <div class="flex items-center gap-2 mb-3">
-            <i class="fas fa-filter text-lg text-blue-500"></i>
-            <h3 class="text-lg font-semibold">Filtros de Busca</h3>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
+    <div class="p-4 rounded-lg shadow bg-white dark:bg-gray-800">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-3">
             <!-- Empreendimento(s) -->
             <div>
                 <label class="block text-xs font-medium mb-1 text-gray-700 dark:text-gray-300">
@@ -103,8 +117,9 @@ const activeFiltersCount = computed(() => {
                 <label class="block text-xs font-medium mb-1 text-gray-700 dark:text-gray-300">
                     <i class="fas fa-calendar-day mr-1"></i>Data Início
                 </label>
-                <input :value="filtros.data_inicio" @input="updateField('data_inicio', $event.target.value)" type="date"
-                    class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" />
+                <!-- usa proxy computed (c/ default do mês) -->
+                <input v-model="dataInicio" type="date"
+                    class="w-full px-3 py-2 text-md font-medium text-gray-500 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" />
             </div>
 
             <!-- Data Fim -->
@@ -112,32 +127,33 @@ const activeFiltersCount = computed(() => {
                 <label class="block text-xs font-medium mb-1 text-gray-700 dark:text-gray-300">
                     <i class="fas fa-calendar-check mr-1"></i>Data Fim
                 </label>
-                <input :value="filtros.data_fim" @input="updateField('data_fim', $event.target.value)" type="date"
-                    class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" />
+                <!-- usa proxy computed (c/ default do mês) -->
+                <input v-model="dataFim" type="date"
+                    class="w-full px-3 py-2 text-md font-medium text-gray-500 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" />
             </div>
         </div>
 
-        <!-- Botões de ação -->
         <div class="flex gap-2 justify-end">
-            <button @click="$emit('limpar')" :disabled="carregando"
+
+            <div v-if="hasActiveFilters" class="p-3 w-full bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                <div class="flex items-center gap-2 text-sm">
+                    <i class="fas fa-info-circle text-blue-600 dark:text-blue-400"></i>
+                    <span class="text-blue-800 dark:text-blue-200 font-medium">
+                        {{ activeFiltersCount }} filtro(s) ativo(s)
+                    </span>
+                </div>
+            </div>
+
+            <button @click="$emit('limpar')"
                 class="px-4 py-2 rounded-lg bg-gray-500 hover:bg-gray-600 text-white font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
                 <i class="fas fa-eraser"></i> Limpar
             </button>
-            <button @click="$emit('buscar')" :disabled="carregando"
+            <button @click="$emit('buscar')" 
                 class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
-                <i :class="carregando ? 'fas fa-spinner fa-spin' : 'fas fa-search'"></i>
-                {{ carregando ? 'Buscando...' : 'Buscar' }}
+                <i class="fas fa-search"></i>
+                Buscar
             </button>
         </div>
 
-        <!-- Indicador de filtros ativos -->
-        <div v-if="hasActiveFilters" class="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-            <div class="flex items-center gap-2 text-sm">
-                <i class="fas fa-info-circle text-blue-600 dark:text-blue-400"></i>
-                <span class="text-blue-800 dark:text-blue-200 font-medium">
-                    {{ activeFiltersCount }} filtro(s) ativo(s)
-                </span>
-            </div>
-        </div>
     </div>
 </template>

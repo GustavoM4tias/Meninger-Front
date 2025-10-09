@@ -3,8 +3,8 @@
         <div class="flex flex-wrap items-end gap-4">
             <!-- Data Inicial -->
             <div class="flex-1 min-w-32">
-                <label class="block text-sm font-medium mb-2">
-                    Data Inicial
+                <label class="block text-xs font-medium mb-1 text-gray-700 dark:text-gray-300">
+                    <i class="fas fa-calendar-day mr-1"></i>Data Início
                 </label>
                 <input v-model="localFilters.startDate" type="date"
                     class="w-full px-2 py-1.5 border rounded-lg bg-transparent text-gray-400 border-gray-200 dark:border-gray-500 text-center" />
@@ -12,8 +12,8 @@
 
             <!-- Data Final -->
             <div class="flex-1 min-w-32">
-                <label class="block text-sm font-medium mb-2">
-                    Data Final
+                <label class="block text-xs font-medium mb-1 text-gray-700 dark:text-gray-300">
+                    <i class="fas fa-calendar-check mr-1"></i>Data Fim
                 </label>
                 <input v-model="localFilters.endDate" type="date"
                     class="w-full px-2 py-1.5 border rounded-lg bg-transparent text-gray-400 border-gray-200 dark:border-gray-500 text-center" />
@@ -21,8 +21,8 @@
 
             <!-- Situação -->
             <div class="flex-1 min-w-32">
-                <label class="block text-sm font-medium mb-2">
-                    Situação
+                <label class="block text-xs font-medium mb-1 text-gray-700 dark:text-gray-300">
+                    <i class="fas fa-chart-pie mr-1"></i>Situação
                 </label>
                 <select v-model="localFilters.situation"
                     class="w-full px-2 py-2 border rounded-lg bg-transparent text-gray-400 border-gray-200 dark:border-gray-500 text-center">
@@ -35,8 +35,8 @@
 
             <!-- Empreendimentos com PrimeVue MultiSelect -->
             <div class="flex-1 max-w-full">
-                <label class="block text-sm font-medium mb-2">
-                    Empreendimentos
+                <label class="block text-xs font-medium mb-1 text-gray-700 dark:text-gray-300">
+                    <i class="fas fa-city mr-1"></i>Empreendimento(s)
                 </label>
                 <MultiSelect v-model="localFilters.enterpriseName" :options="contractsStore.enterprises"
                     optionLabel="name" dataKey="id" filter display="chip" placeholder="Selecione empreendimentos"
@@ -45,15 +45,14 @@
             </div>
 
             <!-- Botões -->
-            <div class="flex flex-1 gap-4">
-                <button @click="applyFilters"
-                    class="flex w-full px-4 py-2 text-lg font-semibold bg-sky-500 text-white rounded-lg hover:bg-sky-600 focus:outline-none">
-                    <i class="fas fa-filter pe-1 my-auto"></i> Filtrar
-                </button>
-
+            <div class="flex flex-1 gap-4"> 
                 <button @click="clearFilters"
                     class="flex w-full px-4 py-2 text-lg font-semibold bg-gray-500 text-white rounded-lg hover:bg-gray-600 focus:outline-none">
                     <i class="fas fa-broom pe-1 my-auto"></i> Limpar
+                </button>
+                <button @click="applyFilters"
+                    class="flex w-full px-4 py-2 text-lg font-semibold bg-sky-500 text-white rounded-lg hover:bg-sky-600 focus:outline-none">
+                    <i class="fas fa-filter pe-1 my-auto"></i> Filtrar
                 </button>
             </div>
         </div>
