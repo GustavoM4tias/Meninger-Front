@@ -1,31 +1,29 @@
 <script setup>
-import { onMounted, ref } from 'vue';
-import { storeToRefs } from 'pinia';
-import { useLeadsStore } from '@/stores/Reports/Lead/leadsStore';
+import { onMounted, ref } from 'vue'
+import { storeToRefs } from 'pinia'
+import { useLeadsStore } from '@/stores/Reports/Lead/leadsStore'
 
-import Favorite from '@/components/config/Favorite.vue';
-import Filas from './components/Filas.vue';
-import SummaryCards from './components/SummaryCards.vue';
-import FiltersBar from './components/FiltersBar.vue';
-import LeadsTable from './components/LeadsTable.vue';
-import LeadModal from './components/LeadModal.vue';
+import Favorite from '@/components/config/Favorite.vue'
+import Filas from './components/Filas.vue'
+import SummaryCards from './components/SummaryCards.vue'
+import FiltersBar from './components/FiltersBar.vue'
+import LeadsTable from './components/LeadsTable.vue'
+import LeadModal from './components/LeadModal.vue'
 
-const store = useLeadsStore();
-const {
-  leads, count, periodo, filas, carregando, error, filtros,
-  kpiTotais, hasFilters,
-  empreendimentosOptions, origensOptions, situacoesOptions, midiasOptions,
-  imobiliariasOptions, corretoresOptions,
-} = storeToRefs(store);
+const store = useLeadsStore()
+const { leads, periodo, filas, error, filtros, kpiSituacoes, leadsByEnterprise } = storeToRefs(store)
 
-const modalVisivel = ref(false);
-const modalLeads = ref([]);
+const modalVisivel = ref(false)
+const modalLeads = ref([])
+const modalMode = ref('list')
 
-function abrirModal(list) {
-  modalLeads.value = list || [];
-  modalVisivel.value = true;
+function abrirModal([list, mode]) {
+  modalLeads.value = list || []
+  modalMode.value = mode || 'list'
+  modalVisivel.value = true
 }
-function buscar() { store.fetchLeads(); }
+function buscar() { store.fetchLeads() }
+
 function limpar() {
   Object.assign(filtros.value, {
     nome: '', email: '', telefone: '',
@@ -42,67 +40,42 @@ function onFiltrarSituacao(situacao) {
   store.fetchLeads();
 }
 
-onMounted(async () => {
-  await store.fetchFilas();
-  await store.fetchLeads();
-});
+onMounted(async () => { await store.fetchFilas(); await store.fetchLeads() })
 </script>
 
 <template>
-  <div class="px-4 py-4 relative overflow-hidden">
-    <div class="flex items-center pb-3">
-      <h1 class="text-2xl md:text-3xl font-bold">Relatório de Leads</h1>
-      <Favorite :router="'/comercial/leads'" :section="'Leads'" />
+  <div class="h-full relative overflow-hidden">
+    <div class="px-6 pt-6">
+      <div class="flex">
+        <h1 class="text-2xl md:text-2xl font-bold">Relatório de Leads</h1>
+        <Favorite class="m-auto" :router="'/comercial/leads'" :section="'Leads'" />
+      </div>
+      <p class="mt-1">Acompanhe o desempenho dos Leads</p>
     </div>
 
-    <SummaryCards :periodo="periodo" :kpi="kpiTotais" @filtrarSituacao="onFiltrarSituacao" />
+    <div class="px-6 py-4">
+      <FiltersBar v-model:filtros="filtros" :empreendimentos-options="store.empreendimentosOptions"
+        :origens-options="store.origensOptions" :situacoes-options="store.situacoesOptions"
+        :midias-options="store.midiasOptions" :imobiliarias-options="store.imobiliariasOptions"
+        :corretores-options="store.corretoresOptions" @buscar="buscar" @limpar="limpar" />
+    </div>
 
-    <section class="relative bg-gray-300 dark:bg-gray-800 rounded-lg shadow-xl p-5 w-full mx-auto">
-      <!-- overlay de loading (evita “pula-pula”) -->
-      <div v-show="carregando"
-        class="absolute inset-0 bg-black/10 backdrop-blur-[1px] flex items-center justify-center rounded-lg z-10">
-        <i class="fas fa-spinner fa-spin text-xl"></i>
-      </div>
+    <div class="px-6 pb-6 space-y-4">
+      <!-- KPI dinâmico por situação -->
+      <SummaryCards :periodo="periodo" :kpi="kpiSituacoes" @filtrarSituacao="onFiltrarSituacao" />
+    </div>
 
-      <FiltersBar v-model:filtros="filtros" :carregando="carregando" :empreendimentos-options="empreendimentosOptions"
-        :origens-options="origensOptions" :situacoes-options="situacoesOptions" :midias-options="midiasOptions"
-        :imobiliarias-options="imobiliariasOptions" :corretores-options="corretoresOptions" @buscar="buscar"
-        @limpar="limpar" />
+    <div v-if="error" class="px-6 py-4">
+      <div class="my-3 p-3 bg-red-500/20 text-red-200 rounded-lg"><i class="fas fa-exclamation-triangle mr-2"></i>{{
+        error }}</div>
+    </div>
 
-      <div class="flex justify-between items-center py-3 border-b border-gray-400/20">
-        <div class="flex items-center gap-4">
-          <p class="text-sm font-medium">
-            Total: <span class="font-bold text-lg">{{ count }}</span> leads
-          </p>
-          <span v-if="hasFilters" class="text-xs text-gray-200 bg-blue-600 px-2 py-1 rounded">
-            Filtros aplicados
-          </span>
-        </div>
-        <button class="text-blue-200 hover:text-blue-100 underline flex items-center gap-2 transition-colors"
-          @click="abrirModal(leads)">
-          <i class="fas fa-chart-bar"></i> Ver relatório detalhado
-        </button>
-      </div>
+    <div v-else class="px-6 pb-6 space-y-6">
+      <!-- Tabela agregada por empreendimento -->
+      <LeadsTable :data="leadsByEnterprise" @abrirModal="abrirModal" />
+    </div>
 
-      <!-- reserva de altura para evitar jumps -->
-      <div class="min-h-[420px] mt-3">
-        <div v-show="!!error" class="my-3 p-3 bg-red-500/20 text-red-200 rounded-lg">
-          <i class="fas fa-exclamation-triangle mr-2"></i>
-          {{ error }}
-        </div>
-
-        <LeadsTable v-show="!error" :leads="leads" @abrirModal="abrirModal" />
-      </div>
-
-      <LeadModal :leads="modalLeads" :visivel="modalVisivel" @fechar="modalVisivel = false" />
-
-    </section>
+    <LeadModal :leads="modalLeads" :visivel="modalVisivel" :initial-mode="modalMode" @fechar="modalVisivel = false" />
     <Filas :filas="filas" class="mt-6" />
   </div>
 </template>
-
-<style scoped>
-.group:hover {
-  transform: translateX(-18rem);
-}
-</style>

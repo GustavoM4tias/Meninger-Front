@@ -18,7 +18,7 @@
         <div class="version m-auto">
             <button
                 class="bg-gray-200 dark:bg-gray-600 truncate text-sm md:text-md text-gray-600 dark:text-gray-200 px-1 pt-0.5 md:px-2 md:py-1  rounded-lg border border-gray-300 dark:border-gray-600">
-                Versão: 1.07
+                Versão: 2.1.9
             </button>
         </div>
         <div class="credits m-auto mr-0">
