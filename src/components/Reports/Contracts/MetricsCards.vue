@@ -2,11 +2,11 @@
     <div class="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-5 gap-4">
         <!-- Total de Vendas -->
         <Card title="Total de Vendas" :value="metrics.totalSales" label="Total de vendas realizadas"
-            icon="fas fa-chart-line" class="!bg-blue-100/30 !border-blue-200/30" />
+            icon="fas fa-chart-line" class="!bg-blue-300/30 !border-blue-400/30" />
 
         <!-- Total de Contratos -->
         <Card title="Total Contratos" :value="metrics.totalContracts" label="Quantidade total de contratos"
-            icon="fas fa-file-signature" class="!bg-indigo-100/30 !border-indigo-200/30" />
+            icon="fas fa-file-signature" class="!bg-indigo-300/30 !border-indigo-400/30" />
 
         <!-- Valor Total (dinâmico: VGV/VGV+DC) -->
         <Card :title="valueTitle" :value="formatCurrency(totalValueDynamic)" :label="valueLabel" :icon="valueIcon"
@@ -18,14 +18,14 @@
 
         <!-- Empreendimentos -->
         <Card title="Empreendimentos" :value="metrics.totalEnterprises" label="Quantidade de empreendimentos"
-            icon="fas fa-building" class="!bg-orange-100/30 !border-orange-200/30" />
+            icon="fas fa-building" class="!bg-orange-300/30 !border-orange-400/30" />
     </div>
 </template>
 
 <script setup>
 import { computed } from 'vue'
 import { useContractsStore } from '@/stores/Reports/Contracts/contractsStore'
-import Card from '@/components/Reports/Contracts/Card.vue'
+import Card from '@/components/UI/Card.vue'
 
 const props = defineProps({
     metrics: { type: Object, required: true }
@@ -55,10 +55,10 @@ const ticketIcon = computed(() => contractsStore.isNet ? 'fas fa-receipt' : 'fas
 
 // Cores dinâmicas (opcional, só pra manter o mesmo “tema” visual de antes)
 const valueCardColorClass = computed(() =>
-    contractsStore.isNet ? '!bg-green-100/30 !border-green-200/30' : '!bg-amber-100/30 !border-amber-200/30'
+    contractsStore.isNet ? '!bg-green-300/30 !border-green-400/30' : '!bg-amber-300/30 !border-amber-400/30'
 )
 const ticketCardColorClass = computed(() =>
-    contractsStore.isNet ? '!bg-purple-100/30 !border-purple-200/30' : '!bg-cyan-100/30 !border-cyan-200/30'
+    contractsStore.isNet ? '!bg-purple-300/30 !border-purple-400/30' : '!bg-cyan-300/30 !border-cyan-400/30'
 )
 
 // Valores exibidos conforme o modo global

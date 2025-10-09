@@ -46,8 +46,8 @@ function onDocClick(e) {
         emit('close');
     }
 }
-onMounted(() => document.addEventListener('click', onDocClick, { passive: true }));
-onBeforeUnmount(() => document.removeEventListener('click', onDocClick));
+onMounted(() => document.addEventListener('click', onDocClick, { capture: true, passive: true }));
+onBeforeUnmount(() => document.removeEventListener('click', onDocClick, { capture: true }));
 
 // abrir/fechar
 function toggleOpen() {
@@ -157,7 +157,8 @@ function toggleSelectAllFiltered(e) {
 <template>
     <div :class="wrapperClass" ref="wrapperRef">
         <!-- Botão -->
-        <button type="button" class="border-gray-200 dark:border-gray-600 max-h-20 overflow-y-auto" :disabled="disabled" :class="buttonClass" @click="toggleOpen">
+        <button type="button" class="border-gray-200 dark:border-gray-600 max-h-20 overflow-y-auto" :disabled="disabled"
+            :class="buttonClass" @click="toggleOpen">
             <slot name="button" :selected="selected">
                 <span v-if="selected.length">{{ selected.join(', ') }}</span>
                 <span v-else class="opacity-60">{{ placeholder }}</span>
@@ -165,11 +166,12 @@ function toggleSelectAllFiltered(e) {
         </button>
 
         <!-- Painel -->
-        <div v-if="open" class="border-gray-200 dark:border-gray-700" :class="panelClass" role="listbox" aria-multiselectable="true">
+        <div v-if="open" class="border-gray-200 dark:border-gray-700" :class="panelClass" role="listbox"
+            aria-multiselectable="true">
             <!-- Busca -->
             <div class="p-2 sticky top-0 bg-inherit">
-                <input v-model="searchRaw" class="border-gray-200 dark:border-gray-700 bg-gray-700" type="text" :class="searchClass" placeholder="Filtrar..."
-                    aria-label="Filtro de opções" />
+                <input v-model="searchRaw" class="border-gray-200 dark:border-gray-700 bg-gray-700" type="text"
+                    :class="searchClass" placeholder="Filtrar..." aria-label="Filtro de opções" />
             </div>
 
             <!-- Master checkbox (Selecionar/Remover tudo do filtrado) -->

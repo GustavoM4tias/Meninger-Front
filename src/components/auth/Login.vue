@@ -14,19 +14,39 @@
     <a @click="$emit('changeLogin')" class="text-sm mt-1 text-blue-500 cursor-pointer hover:text-blue-600">
       Não tem uma conta? Crie agora.
     </a>
+
+    <div class="mt-4 flex gap-2 items-center">
+      <Button v-if="faceEnabled" type="button" @click="loginFacial">Entrar com o rosto</Button>
+    </div>
+
+    <!-- modal pequenino para captura durante o login -->
+    <div v-if="faceLoginOpen" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div class="bg-white dark:bg-gray-800 p-4 rounded-xl w-full max-w-md">
+        <h3 class="text-lg font-semibold mb-2">Autenticação facial</h3>
+        <video ref="videoLoginRef" autoplay playsinline muted class="w-full rounded-md border"></video>
+        <div class="mt-3 flex gap-2">
+          <Button :disabled="loginLoading" @click="doFaceLogin">{{ loginLoading ? 'Validando...' : 'Confirmar'
+          }}</Button>
+          <Button outlined @click="closeFaceLogin">Cancelar</Button>
+        </div>
+      </div>
+    </div>
   </form>
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue';
+import { watch, ref, onMounted, onBeforeUnmount } from 'vue';
 import { useAuthStore } from '../../stores/Auth/authStore';
+import { useFaceStore } from '@/stores/Auth/faceStore';
 import { loginUser } from '../../utils/Auth/apiAuth';
 import { useRouter } from 'vue-router';
 import Input from '../UI/Input.vue';
 import Button from '../UI/Button.vue';
- 
+
 const router = useRouter();
 const authStore = useAuthStore();
+const faceStore = useFaceStore();
+
 const email = ref('');
 const password = ref('');
 const errorMessage = ref('');
@@ -48,6 +68,73 @@ const handleLogin = async () => {
   }
 };
 
+
+
+
+const faceEnabled = ref(true);
+
+const faceLoginOpen = ref(false);
+const videoLoginRef = ref(null);
+const streamRef = ref(null);
+const loginLoading = ref(false);
+
+function openFaceLogin() { faceLoginOpen.value = true; }
+function closeFaceLogin() { stopCamera(); faceLoginOpen.value = false; }
+
+async function startCamera() {
+  streamRef.value = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
+  const v = videoLoginRef.value;
+  v.srcObject = streamRef.value;
+
+  // espera os metadados
+  if (!(v.readyState >= 2 && v.videoWidth && v.videoHeight)) {
+    await new Promise((resolve) => {
+      v.onloadedmetadata = () => resolve();
+    });
+  }
+  console.log('[FaceLogin] video ready', v.videoWidth, 'x', v.videoHeight);
+}
+
+function stopCamera() {
+  streamRef.value?.getTracks()?.forEach(t => t.stop());
+  streamRef.value = null;
+}
+
+async function loginFacial() {
+  await faceStore.loadModelsOnce();
+  openFaceLogin();
+  await startCamera();
+}
+
+async function doFaceLogin() {
+  loginLoading.value = true;
+  try {
+    const embedding = await faceStore.getOneGoodEmbedding(videoLoginRef.value);
+    if (!embedding) throw new Error('Rosto não detectado.');
+
+    console.log('[FaceLogin] emb typeof:', typeof embedding, 'isArray:', Array.isArray(embedding), 'len:', embedding?.length);
+
+    const r = await faceStore.identify(embedding); // << só o embedding aqui
+    if (r.success && r.data?.token) {
+      authStore.setToken(r.data.token);
+      await authStore.fetchUserInfo();
+      closeFaceLogin();
+      router.push('/');
+    } else {
+      errorMessage.value = r.error || 'Falha no reconhecimento. Use a senha.';
+      closeFaceLogin();
+    }
+  } catch (e) {
+    errorMessage.value = e.message || 'Erro na autenticação facial.';
+    closeFaceLogin();
+  } finally {
+    loginLoading.value = false;
+  }
+}
+
+
+
+
 onMounted(() => {
   if (authStore.isAuthenticated()) {
     router.push('/');
@@ -55,4 +142,10 @@ onMounted(() => {
     authStore.clearUser();
   }
 });
+
+
+
+
+
+onBeforeUnmount(() => stopCamera());
 </script>

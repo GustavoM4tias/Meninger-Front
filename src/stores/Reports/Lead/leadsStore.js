@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import API_URL from '@/config/apiUrl';
+import { useCarregamentoStore } from '@/stores/Config/carregamento';
 import { fetchCarregamento } from '@/utils/Config/fetchCarregamento';
 
 const LS = {
@@ -28,63 +29,42 @@ function saveLS(key, arr) {
 }
 
 export const useLeadsStore = defineStore('leads', () => {
-    const leads = ref([]);
-    const count = ref(0);
-    const periodo = ref({ data_inicio: null, data_fim: null });
-    const filas = ref([]);
-    const error = ref(null);
-    const carregando = ref(false);
+    const leads = ref([])
+    const count = ref(0)
+    const periodo = ref({ data_inicio: null, data_fim: null })
+    const filas = ref([])
+    const error = ref(null)
+    const carregamento = useCarregamentoStore();
 
-    // listas persistentes (não dependem do filtro atual)
-    const empreendimentosOptions = ref(loadLS(LS.emp));
-    const origensOptions = ref(loadLS(LS.org));
-    const situacoesOptions = ref(loadLS(LS.sit));
-    const midiasOptions = ref(loadLS(LS.mid));
-    const imobiliariasOptions = ref(loadLS(LS.imo));
-    const corretoresOptions = ref(loadLS(LS.cor));
+    // listas persistentes
+    const empreendimentosOptions = ref(loadLS(LS.emp))
+    const origensOptions = ref(loadLS(LS.org))
+    const situacoesOptions = ref(loadLS(LS.sit))
+    const midiasOptions = ref(loadLS(LS.mid))
+    const imobiliariasOptions = ref(loadLS(LS.imo))
+    const corretoresOptions = ref(loadLS(LS.cor))
 
-    // filtros como ARRAYS
+
+    // filtros
     const filtros = ref({
-        nome: '',
-        email: '',
-        telefone: '',
-        imobiliaria: [],       // ← array
-        corretor: [],        // ← array
-        situacao_nome: [],     // ← array
-        midia_principal: [],   // ← array
-        origem: [],            // ← array
-        empreendimento: [],    // ← array
-        data_inicio: '',
-        data_fim: '',
-    });
+        nome: '', email: '', telefone: '',
+        imobiliaria: [], corretor: [], situacao_nome: [], midia_principal: [], origem: [], empreendimento: [],
+        data_inicio: '', data_fim: ''
+    })
 
-    const hasFilters = computed(() =>
-        Object.entries(filtros.value).some(([k, v]) => {
-            if (Array.isArray(v)) return v.length > 0;
-            return v && String(v).trim() !== '';
-        })
-    );
 
     const buildQuery = () => {
-        const q = new URLSearchParams();
+        const q = new URLSearchParams()
         Object.entries(filtros.value).forEach(([k, v]) => {
-            if (v === undefined || v === null) return;
-            if (Array.isArray(v)) {
-                if (v.length) q.append(k, v.join(',')); // CSV
-            } else if (String(v).trim() !== '') {
-                q.append(k, String(v).trim());
-            }
-        });
-        return q.toString();
-    };
-
+            if (v === undefined || v === null) return
+            if (Array.isArray(v)) { if (v.length) q.append(k, v.join(',')) } else if (String(v).trim() !== '') { q.append(k, String(v).trim()) }
+        })
+        return q.toString()
+    }
     const authHeaders = () => {
-        const token = localStorage.getItem('token');
-        return {
-            Authorization: token ? `Bearer ${token}` : '',
-            'Content-Type': 'application/json',
-        };
-    };
+        const token = localStorage.getItem('token')
+        return { Authorization: token ? `Bearer ${token}` : '', 'Content-Type': 'application/json' }
+    }
 
     function mergeOptionsFromLeads(list) {
         const empSet = new Set(empreendimentosOptions.value);
@@ -131,14 +111,14 @@ export const useLeadsStore = defineStore('leads', () => {
     }
 
     async function fetchLeads() {
-        carregando.value = true;
         error.value = null;
         try {
+            carregamento.iniciarCarregamento();
             const qs = buildQuery();
             // ajuste se seu backend usa '/api/cv/leads' em vez de '/cv/leads'
             const url = `${API_URL}/cv/leads${qs ? `?${qs}` : ''}`;
 
-            const resp = await fetchCarregamento(url, { method: 'GET', headers: authHeaders() });
+            const resp = await fetch(url, { method: 'GET', headers: authHeaders() });
             if (resp.status === 401) {
                 localStorage.removeItem('token');
                 throw new Error('Sessão expirada. Faça login novamente.');
@@ -155,7 +135,7 @@ export const useLeadsStore = defineStore('leads', () => {
         } catch (e) {
             error.value = e.message;
         } finally {
-            carregando.value = false;
+            carregamento.finalizarCarregamento();
         }
     }
 
@@ -175,34 +155,58 @@ export const useLeadsStore = defineStore('leads', () => {
         }
     }
 
-    // KPIs leves
+    // ---------- KPIs dinâmicos por situação ----------
+    // Mapa bruto: { situacao -> quantidade }
     const kpiPorSituacao = computed(() => {
-        const map = {};
+        const map = new Map()
         for (const l of leads.value) {
-            const key = l.situacao_nome || 'Sem Situação';
-            map[key] = (map[key] || 0) + 1;
+            const key = (l.situacao_nome || 'Sem Situação').trim()
+            map.set(key, (map.get(key) || 0) + 1)
         }
-        return map;
-    });
-    const kpiTotais = computed(() => ({
+        return map
+    })
+    // Lista ordenada para render dinâmico: [{ key, label, count }]
+    const situationsList = computed(() => {
+        return Array.from(kpiPorSituacao.value.entries())
+            .sort((a, b) => b[1] - a[1])
+            .map(([k, v]) => ({ key: k, label: k, count: v }))
+    })
+    // Atalho p/ cards: inclui total agregado
+    const kpiSituacoes = computed(() => ({
         total: count.value || leads.value.length || 0,
-        aguardando: kpiPorSituacao.value['Aguardando Atendimento Corretor'] || 0,
-        atendimento: kpiPorSituacao.value['Em Atendimento'] || 0,
-        qualificados: (kpiPorSituacao.value['Lead Qualificado'] || 0) + (kpiPorSituacao.value['Em Negociação'] || 0),
-        descartados: kpiPorSituacao.value['Descartado'] || 0,
-        analise: kpiPorSituacao.value['Em Análise de Crédito'] || 0,
-        reserva: kpiPorSituacao.value['Com Reserva'] || 0,
-        venda: kpiPorSituacao.value['Venda Realizada'] || 0,
-    }));
+        items: situationsList.value
+    }))
+
+
+    // ---------- Agregação por empreendimento ----------
+    const normalizeEnterpriseName = (l) => {
+        const n = l?.empreendimento?.[0]?.nome
+        return n ? String(n).trim() : 'Sem Empreendimento'
+    }
+
+
+    // Saída: [{ name, count, leads: Lead[] }]
+    const leadsByEnterprise = computed(() => {
+        const map = new Map()
+        for (const l of leads.value) {
+            const name = normalizeEnterpriseName(l)
+            const entry = map.get(name) || { name, count: 0, leads: [] }
+            entry.count += 1
+            entry.leads.push(l)
+            map.set(name, entry)
+        }
+        return Array.from(map.values()).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, 'pt-BR'))
+    })
+
 
     return {
         // state
-        leads, count, periodo, filas, error, carregando, filtros,
+        leads, count, periodo, filas, error, filtros,
         // options
         empreendimentosOptions, origensOptions, situacoesOptions, midiasOptions, imobiliariasOptions, corretoresOptions,
         // getters
-        hasFilters, kpiPorSituacao, kpiTotais,
+        kpiPorSituacao, kpiSituacoes, situationsList, leadsByEnterprise,
         // actions
         fetchLeads, fetchFilas,
-    };
-});
+    }
+})
