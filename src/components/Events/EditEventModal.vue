@@ -21,6 +21,19 @@ const toDateTimeLocal = (d) => {
   return `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}T${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
 };
 const ensureIsoMinute = (v) => (v && v.length === 16 ? `${v}:00` : v);
+  // Converte "YYYY-MM-DDTHH:mm[:ss]" (LOCAL) → ISO UTC (com "Z")
+const toUtcIsoFromLocalInput = (localStr) => {
+  if (!localStr) return null;
+  const full = localStr.length === 16 ? `${localStr}:00` : localStr; // garante segundos
+  const [date, time] = full.split('T');
+  const [y, m, d] = date.split('-').map(Number);
+  const [hh, mm, ss] = time.split(':').map(Number);
+  // Cria Date no fuso LOCAL
+  const dtLocal = new Date(y, (m - 1), d, hh, mm, ss || 0);
+  // Retorna em UTC (padrão ISO)
+  return dtLocal.toISOString();
+};
+
 const formatDateTime = (isoLike) => {
   if (!isoLike) return '';
   const d = new Date(isoLike);
@@ -154,8 +167,9 @@ const submitEdit = async () => {
   try {
     const payload = {
       ...editedEvent.value,
-      eventDate: ensureIsoMinute(editedEvent.value.eventDate) // respeita camelCase no controller
-      // organizers já está dentro de editedEvent
+      eventDate: toUtcIsoFromLocalInput(
+        ensureIsoMinute(editedEvent.value.eventDate)
+      )
     };
     await updateEvent(payload);
     emit('close');
@@ -212,7 +226,7 @@ onUnmounted(() => {
       </div>
 
       <!-- Content -->
-      <div class="p-6 overflow-y-auto max-h=[calc(90vh-200px)] max-h-[calc(90vh-300px)]">
+      <div class="p-6 overflow-y-auto max-h-[calc(90vh-300px)]">
         <!-- Step 1: Basic -->
         <div v-if="currentStep === 1" class="space-y-6">
           <!-- ... (igual ao seu) -->
