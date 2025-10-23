@@ -38,11 +38,18 @@ const isEventPast = computed(() => {
 });
 
 const eventStatus = computed(() => {
+    // A data e hora do evento
     const eventDate = new Date(props.event.event_date);
+    // A data e hora atual
     const now = new Date();
-    const diffTime = eventDate - now;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
+    // 1. Clonar 'now' e zerar a hora/minuto/segundo/milissegundo para o início do dia de hoje.
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    // 2. Clonar 'eventDate' e zerar a hora/minuto/segundo/milissegundo para o início do dia do evento.
+    const eventDayStart = new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate());
+    // 3. Calcular a diferença entre o início do dia do evento e o início do dia atual.
+    const diffTime = eventDayStart - todayStart;
+    // 4. Calcular a diferença em dias (o resultado será um número inteiro).
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
     if (diffDays < 0) return { text: 'Finalizado', color: 'bg-blue-600' };
     if (diffDays === 0) return { text: 'Hoje', color: 'bg-red-500' };
     if (diffDays === 1) return { text: 'Amanhã', color: 'bg-orange-500' };
