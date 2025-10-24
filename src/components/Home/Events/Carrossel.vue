@@ -58,11 +58,11 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div v-if="props.eventos.length > 0" class="relative overflow-hidden rounded-xl">
+  <div v-if="props.eventos.length > 0" class="relative w-full h-full overflow-hidden rounded-xl">
 
-    <div class="flex transition-transform duration-700 ease-in-out"
-      :style="{ transform: `translateX(-${currentIndex * 100}%)` }">
-      <div v-for="event in props.eventos" :key="event.id" class="w-full flex-shrink-0">
+<div class="flex transition-transform duration-700 ease-in-out h-full"
+  :style="{ transform: `translateX(-${currentIndex * 100}%)` }">
+      <div v-for="event in props.eventos" :key="event.id" class="w-full h-full flex-shrink-0">
         <EventCard :event="event" />
       </div>
     </div>
@@ -83,8 +83,8 @@ onUnmounted(() => {
         'cursor-pointer': true
       }"></div>
     </div>
-  </div> 
-  <div class="relative rounded-xl overflow-hidden h-[350px] bg-gray-200 dark:bg-gray-700 flex" v-else> 
+  </div>
+  <div class="relative rounded-xl overflow-hidden h-[350px] bg-gray-200 dark:bg-gray-700 flex" v-else>
     <p class="m-auto text-xl md:text-3xl text-gray-500">Nenhum evento em andamento.</p>
   </div>
 </template>
