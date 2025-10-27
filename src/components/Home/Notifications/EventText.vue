@@ -8,7 +8,7 @@ const props = defineProps({
 
 const formatDate = (dateString) => {
     const months = [
-        'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'
+        'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
     ];
     const date = new Date(dateString);
     const day = date.getDate().toString().padStart(2, '0');
@@ -27,16 +27,16 @@ const formatDate = (dateString) => {
         path: '/events',
         query: { busca: item.title, section: 'geral' }
     }"
-        class="border-b-2 group border-gray-300 hover:bg-gray-100 dark:border-gray-600 dark:hover:bg-gray-800 cursor-pointer px-3 py-2 md:px-5 md:py-3 text-lg md:text-xl flex">
-        <div
-            class="date text-center flex flex-col justify-center text-md md:text-xl font-semibold rounded-br-xl rounded-tl-lg bg-gray-100 group-hover:bg-gray-200 dark:bg-gray-500 dark:hover:bg-gray-600 dark:group-hover:bg-gray-700 text-gray-700 dark:text-gray-200 py-1.5 px-2.5 mr-4">
-            <p class="day font-semibold">{{ formatDate(item.event_date).day }}</p>
-            <p class="month -mt-2">{{ formatDate(item.event_date).month }}</p>
-        </div>
+        class="border-b-2 group border-gray-300 hover:bg-gray-100 dark:border-gray-600 dark:hover:bg-gray-800 cursor-pointer px-3 py-2 md:px-4 md:py-2 text-lg md:text-xl flex">
+        <!-- <div
+            class="date text-center flex flex-col justify-center md:text-lg font-semibold rounded-tl-lg rounded-br-lg bg-gray-100 group-hover:bg-gray-200 dark:bg-gray-500 dark:hover:bg-gray-600 dark:group-hover:bg-gray-700 text-gray-700 dark:text-gray-200 px-2 py-1 mr-3">
+            <p class="day font-semibold"></p>
+            <p class="month -mt-2"></p>
+        </div> -->
         <div class="text w-full truncate flex flex-col justify-center">
-            <p class="title text-xl font-medium text-gray-700 dark:text-gray-100 truncate">{{ item.title }}</p>
-            <p class="hour text-xs md:text-sm text-gray-700 dark:text-gray-300">Hora: {{
-                formatDate(item.event_date).hours }}:{{ formatDate(item.event_date).minutes }}</p>
+            <p class="title md:text-lg font-medium text-gray-700 dark:text-gray-100 truncate">{{ item.title }}</p>
+            <p class="hour text-xs md:text-sm text-gray-700 dark:text-gray-300">
+                {{ formatDate(item.event_date).day }} {{ formatDate(item.event_date).month }} de {{ formatDate(item.event_date).year }}.  {{ formatDate(item.event_date).hours }}:{{ formatDate(item.event_date).minutes }}</p>
         </div>
     </RouterLink>
 

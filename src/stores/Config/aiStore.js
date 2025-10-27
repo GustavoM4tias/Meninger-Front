@@ -33,21 +33,27 @@ export const useAIStore = defineStore('ai', () => {
         }
     };
 
-    // Histórico de validações
-    const fetchValidatorHistory = async () => {
+    // Histórico de validações 
+    const fetchValidatorHistory = async (summary = false) => {
         error.value = null;
 
         try {
-            carregamento.iniciarCarregamento();
-            const res = await fetch(`${API_URL}/ai/validator/history`);
+            if (!summary) carregamento.iniciarCarregamento(); // só inicia se for listagem completa
+
+            const url = summary
+                ? `${API_URL}/ai/validator/history?summary=true`
+                : `${API_URL}/ai/validator/history`;
+
+            const res = await fetch(url);
             if (!res.ok) throw new Error('Erro ao buscar histórico de validações');
             const data = await res.json();
+
             validatorHistory.value = data.results || data;
         } catch (e) {
             error.value = 'Erro ao buscar histórico';
             console.error(e);
         } finally {
-            carregamento.finalizarCarregamento();
+            if (!summary) carregamento.finalizarCarregamento(); // só finaliza se iniciou
         }
     };
 

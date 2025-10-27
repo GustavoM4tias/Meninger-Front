@@ -110,10 +110,11 @@ export const useLeadsStore = defineStore('leads', () => {
         saveLS(LS.cor, corretoresOptions.value);
     }
 
-    async function fetchLeads() {
+    async function fetchLeads(loading = false) {
         error.value = null;
         try {
-            carregamento.iniciarCarregamento();
+            if (loading) carregamento.iniciarCarregamento();
+            console.log('buscando leads')
             const qs = buildQuery();
             // ajuste se seu backend usa '/api/cv/leads' em vez de '/cv/leads'
             const url = `${API_URL}/cv/leads${qs ? `?${qs}` : ''}`;
@@ -135,7 +136,7 @@ export const useLeadsStore = defineStore('leads', () => {
         } catch (e) {
             error.value = e.message;
         } finally {
-            carregamento.finalizarCarregamento();
+            if (loading) carregamento.finalizarCarregamento();
         }
     }
 
