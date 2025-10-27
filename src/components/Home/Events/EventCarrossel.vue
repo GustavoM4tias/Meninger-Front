@@ -1,11 +1,9 @@
 <script setup>
 import { onMounted } from 'vue';
 import Carrossel from "./Carrossel.vue";
-import { useEventStore } from '../../../stores/Event/eventStore';
-import { useAuthStore } from '../../../stores/Auth/authStore'; // Importando o authStore
+import { useEventStore } from '@/stores/Event/eventStore';
 
 const eventStore = useEventStore();
-const authStore = useAuthStore();
 
 onMounted(async () => {
     if (eventStore.events.length === 0) {
@@ -16,10 +14,5 @@ onMounted(async () => {
 </script>
 
 <template>
-    <div class="events-preview flex flex-col p-4">
-        <p class="text-lg md:text-2xl font-semibold py-1 truncate">
-            Olá<span v-if="authStore.user">, {{ authStore.user?.username }}</span>!
-        </p>
-        <Carrossel class="duration-300 transform hover:scale-[101%]" :eventos="eventStore.eventosRecentes" />
-    </div>
+    <Carrossel class="duration-300 transform hover:scale-[101%] filter drop-shadow-xl" :eventos="eventStore.eventosRecentes" />
 </template>

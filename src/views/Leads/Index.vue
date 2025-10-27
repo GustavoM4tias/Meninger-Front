@@ -79,3 +79,9 @@ onMounted(async () => { await store.fetchFilas(); await store.fetchLeads() })
     <Filas :filas="filas" class="mt-6" />
   </div>
 </template>
+
+<style scoped>
+.group:hover {
+  transform: translateX(-18rem);
+}
+</style>

@@ -391,25 +391,59 @@ export default {
 
             roadmap: [
                 {
-                    version: 'v2.2.0',
+                    version: 'v2.2.1',
                     date: new Date('2025-10-07T00:00:00'),
                     description: 'Ajuste fino nas permissões de usuários para liberação de uso em periodo de testes.',
                     features: ['Segurança', 'Alçadas', 'Validação']
                 },
                 {
-                    version: 'v2.2.1',
+                    version: 'v2.2.2',
                     date: new Date('2025-10-10T00:00:00'),
                     description: 'Recuperação e alteração de senha via email.',
                     features: ['Segurança', 'Suporte Técnico']
                 },
                 {
-                    version: 'v2.2.2',
+                    version: 'v2.2.3',
                     date: new Date('2025-10-23T00:00:00'),
                     description: 'Relatórios de Leads x Vendas e comparativos de Entradas/Desempenho por campanha..',
                     features: ['Relatórios', 'Leads', 'Desempenho']
                 },
             ],
             releases: [
+                {
+                    version: 'v2.2.0',
+                    date: new Date('2025-10-23T00:00:00'),
+                    type: 'patch',
+                    categories: ['frontend', 'mobile'],
+                    features: [
+                        {
+                            id: 1,
+                            title: 'Refaturação do Dashboard',
+                            description: 'Reformulado todo o dashboard de vendas para novas funcionalidades e visualizações.',
+                        },
+                        {
+                            id: 2,
+                            title: 'Contagem de Mês',
+                            description: 'Adicionado contador de tempo para fechamento do mês na tela inicial.'
+                        },
+                        {
+                            id: 3,
+                            title: 'Card de Leads',
+                            description: 'Criado card com grafico e detalhes sobre leads para pré visualização no dashboard.'
+                        },
+                        {
+                            id: 4,
+                            title: 'Card de Validações',
+                            description: 'Criado card com grafico e detalhes sobre as validações para pré visualização no dashboard.'
+                        }
+                    ],
+                    improvements: [
+                    ],
+                    fixes: [ 
+                    ],
+                    breakingChanges: [],
+                    knownIssues: [],
+                },
                 {
                     version: 'v2.1.9',
                     date: new Date('2025-10-03T00:00:00'),

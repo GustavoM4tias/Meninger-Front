@@ -66,17 +66,17 @@ watch(mesSelecionado, () => {
     <!-- Ajustar campo de aniversario -->
     <div class="events-notification">
         <div
-            class="border-2 pb-1 rounded-xl h-80 md:h-[calc(100%-2rem)] w-full m-auto md:mt-10 border-gray-300 bg-gray-200 dark:border-gray-600 dark:bg-gray-700 overflow-hidden">
+            class="border-2 rounded-tl-xl rounded-br-xl md:h-full w-full m-auto border-gray-300 dark:bg-gray-700 dark:border-gray-600 overflow-hidden">
             <div
-                class="flex justify-between title border-b-2 border-gray-300 dark:border-gray-600 p-3 md:p-5 text-xl md:text-2xl">
-                <RouterLink class="hover:text-gray-700 dark:hover:text-gray-300 flex items-center text-lg md:text-2xl"
+                class="flex justify-between title border-b-2 border-gray-300 dark:border-gray-600 p-2 md:p-3">
+                <RouterLink class="hover:text-gray-700 dark:hover:text-gray-300 flex items-center md:text-lg"
                     :to="{ path: '/events', query: { section: 'proximos' } }">
                     <i class="fa-solid fa-calendar-days px-1"></i>
                     <span class="hidden lg:block ms-1">Próximos</span> <span class="ms-1.5">Eventos</span>
                 </RouterLink>
-                <div class="text-md">
+                <div>
                     <select v-model="mesSelecionado"
-                        class="py-1 border text-sm text-center md:text-lg text-gray-700 bg-gray-100 dark:text-gray-300 dark:bg-gray-500 dark:border-gray-600 rounded-lg focus:outline-none shadow-sm w-full">
+                        class="text-sm p-1 text-center text-gray-700 bg-gray-100 dark:text-gray-300 dark:bg-gray-800 dark:border-gray-600 border-2 rounded-tl-xl rounded-br-xl focus:outline-none shadow-sm w-full">
                         <option value="">Todos</option>
                         <option v-for="(mes, index) in mounth" :key="index" :value="index">
                             {{ mes }}
@@ -94,7 +94,7 @@ watch(mesSelecionado, () => {
                 </div>
 
                 <div v-if="todosEventosFinalizados.length != 0"
-                    class="bg-gray-100 dark:bg-gray-600 text-center text-md md:text-lg font-medium md:p-0.5 border-b-2 border-gray-300 dark:border-gray-600">
+                    class="bg-gray-100 dark:bg-gray-600 text-center text-sm md:text-md font-medium md:p-0.5 border-b-2 border-gray-300 dark:border-gray-600">
                     Eventos Realizados
                 </div>
                 
