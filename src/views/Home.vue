@@ -1,13 +1,21 @@
 <template>
-  <!-- Container principal: colunas responsivas e linhas automáticas com altura mínima -->
-  <section class="grid p-4 gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-8 lg:grid-rows-4 auto-rows-[minmax(140px,auto)]
-         lg:h-[calc(100vh-3.5rem)] lg:max-h-[calc(100vh-3.5rem)] overflow-hidden">
-    <!-- HERO / Boas‑vindas + Em andamento (ocupar mais espaço) -->
+
+  <div class="flex px-4 h-12 w-full justify-between items-end">
+    <p class="text-lg md:text-2xl font-semibold truncate">
+      Olá<span v-if="authStore.user">, {{ authStore.user?.username }}</span>!
+    </p>
+
+    <p class="text-lg text-end md:text-xl font-semibold truncate">
+      Faltam {{ remaining.days }} dias, {{ remaining.hours }} horas, {{ remaining.minutes }} minutos e {{
+        remaining.seconds }} segundos! 
+    </p>
+  </div>
+
+  <main class="grid p-4 gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-8 lg:grid-rows-4 auto-rows-[minmax(140px,auto)]
+         lg:h-[calc(100vh-3.5rem)] lg:max-h-[calc(100vh-6.5rem)] overflow-hidden">
+
     <div class="min-h-0 col-span-1 sm:col-span-2 lg:col-span-6 lg:row-span-2 order-1">
       <div class="h-full flex flex-col">
-        <p class="text-lg md:text-2xl font-semibold py-1 truncate">
-          Olá<span v-if="authStore.user">, {{ authStore.user?.username }}</span>!
-        </p>
         <div class="min-h-0 flex-1 flex">
           <div class="bg-gray-700/30 w-full flex overflow-hidden">
             <p class="m-auto text-2xl text-gray-400">Em Andamento</p>
@@ -19,40 +27,68 @@
     <!-- Card da esquerda inferior (slot 2) -->
     <div
       class="min-h-0 col-span-1 sm:col-span-2 lg:col-span-3 lg:row-span-2 lg:col-start-1 lg:row-start-3 order-3 lg:order-2">
-      <div class="h-full bg-gray-100 dark:bg-gray-800 p-4 overflow-hidden">
-        <slot name="left-bottom">2</slot>
-      </div>
+      <LeadsPanel class="shadow-lg" />
     </div>
 
     <!-- Card do meio inferior (slot 3) -->
     <div
       class="min-h-0 col-span-1 sm:col-span-2 lg:col-span-3 lg:row-span-2 lg:col-start-4 lg:row-start-3 order-4 lg:order-3">
-      <ValidatorPanel />
+      <ValidatorPanel class="shadow-lg" />
     </div>
 
     <!-- Notificações (sidebar direita) -->
     <aside
-      class="min-h-0 col-span-1 sm:col-span-2 lg:col-span-2 lg:row-span-3 lg:col-start-7 lg:row-start-1 order-2 lg:order-4 overflow-hidden">
-      <p class="text-lg md:text-2xl font-semibold py-1 truncate text-end">
-        Olá<span v-if="authStore.user">, {{ authStore.user?.username }}</span>!
-      </p>
-      <EventNotification class="h-full max-h-full overflow-y-auto filter drop-shadow-xl" />
+      class="min-h-0 col-span-1 sm:col-span-2 lg:col-span-2 lg:row-span-2 lg:col-start-7 lg:row-start-1 order-2 lg:order-4 overflow-hidden">
+      <EventNotification class="h-full overflow-y-auto " />
     </aside>
 
     <!-- Carrossel (base da direita) -->
-    <div class="min-h-0 col-span-1 sm:col-span-2 lg:col-span-2 lg:row-span-1 lg:col-start-7 lg:row-start-4 order-5">
-      <EventCarrossel class="h-full duration-300 transform hover:scale-[101%] filter drop-shadow-xl overflow-hidden" />
+    <div class="min-h-0 col-span-1 sm:col-span-2 lg:col-span-2 lg:row-span-2 lg:col-start-7 lg:row-start-3 order-5">
+      <EventCarrossel />
     </div>
-  </section>
+  </main>
 </template>
 
 <script setup>
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import EventNotification from '@/components/Home/Notifications/EventNotification.vue'
 import EventCarrossel from '@/components/Home/Events/EventCarrossel.vue'
 import { useAuthStore } from '@/stores/Auth/authStore'
 import ValidatorPanel from '@/components/Home/Validator/ValidatorPanel.vue'
+import LeadsPanel from '@/components/Home/Leads/LeadsPanel.vue'
 
 const authStore = useAuthStore()
+
+const now = ref(new Date())
+let timer = null
+
+onMounted(() => {
+  timer = setInterval(() => {
+    now.value = new Date()
+  }, 1000)
+})
+
+onUnmounted(() => clearInterval(timer))
+
+// Próximo mês (início)
+const endOfMonth = computed(() => new Date(now.value.getFullYear(), now.value.getMonth() + 1, 1, 0, 0, 0))
+
+const remaining = computed(() => {
+  const diff = endOfMonth.value - now.value
+  if (diff <= 0) return { days: 0, hours: 0, minutes: 0, seconds: 0 }
+
+  const sec = 1000
+  const min = 60 * sec
+  const hour = 60 * min
+  const day = 24 * hour
+
+  const days = Math.floor(diff / day)
+  const hours = Math.floor((diff % day) / hour)
+  const minutes = Math.floor((diff % hour) / min)
+  const seconds = Math.floor((diff % min) / sec)
+
+  return { days, hours, minutes, seconds }
+})
 </script>
 
 <!--

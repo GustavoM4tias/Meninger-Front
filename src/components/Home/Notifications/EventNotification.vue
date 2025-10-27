@@ -66,7 +66,7 @@ watch(mesSelecionado, () => {
     <!-- Ajustar campo de aniversario -->
     <div class="events-notification">
         <div
-            class="border-2 rounded-tl-xl rounded-br-xl h-80 md:h-[calc(100%-3rem)] w-full m-auto border-gray-300  dark:bg-gray-700 dark:border-gray-600  overflow-hidden">
+            class="border-2 rounded-tl-xl rounded-br-xl md:h-full w-full m-auto border-gray-300 dark:bg-gray-700 dark:border-gray-600 overflow-hidden">
             <div
                 class="flex justify-between title border-b-2 border-gray-300 dark:border-gray-600 p-2 md:p-3">
                 <RouterLink class="hover:text-gray-700 dark:hover:text-gray-300 flex items-center md:text-lg"
