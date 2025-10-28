@@ -102,11 +102,11 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-    <div class="w-full h-[calc(100vh-4rem)] relative overflow-hidden bg-gray-800">
+    <div class="w-full h-[calc(100vh-4rem)] relative overflow-hidden">
 
 
         <div
-            class="grid-container bg-gray-900 shadow-xl shadow-white/5 rounded-xl bg-center bg-contain h-[95%] w-[95%] z-10 relative flex justify-center items-center top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+            class="grid-container bg-gray-900 rounded-xl bg-center bg-contain h-[95%] w-[95%] z-10 relative flex justify-center items-center top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
 
             <div class="flex items-center absolute top-0 left-0 p-3 z-20">
                 <h1 class="text-xl md:text-2xl font-bold">Organograma</h1>
