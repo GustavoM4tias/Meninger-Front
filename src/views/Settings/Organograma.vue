@@ -72,8 +72,8 @@ onMounted(async () => {
             type: 'person',
             data: {
                 image: '',
-                name: 'Empresa',
-                city: 'Cidade',
+                name: 'Empresa', // <— personalize aqui
+                city: '—',
                 title: 'Organograma'
             },
             children: topLevelUsers.map(top => buildHierarchy(top, users))
