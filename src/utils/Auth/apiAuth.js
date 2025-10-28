@@ -61,14 +61,14 @@ export const getUserById = async (id) => {
   return response.json();
 };
 
-export const updateMeInfo = async (username, email, position, city, birth_date, status) => {
+export const updateMeInfo = async (username, email, position, city, birth_date, status, face_enabled) => {
   const response = await fetchCarregamento(`${API_URL}/auth/user`, {
     method: 'PUT',
     headers: {
       'Authorization': `Bearer ${localStorage.getItem('token')}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ username, email, position, city, birth_date, status }),
+    body: JSON.stringify({ username, email, position, city, birth_date, status, face_enabled }),
   });
 
   if (!response.ok) {
@@ -79,23 +79,21 @@ export const updateMeInfo = async (username, email, position, city, birth_date, 
 
   return response.json();
 };
-
-export const updateUserInfo = async (id, username, email, position, manager_id, city, birth_date, status) => {
-
+// src/utils/apiAuth.js
+export const updateUserInfo = async (id, username, email, position, manager_id, city, birth_date, status, role) => {
   const response = await fetchCarregamento(`${API_URL}/auth/users`, {
     method: 'PUT',
     headers: {
       'Authorization': `Bearer ${localStorage.getItem('token')}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ id, username, email, position, manager_id, city, birth_date, status }),
+    body: JSON.stringify({ id, username, email, position, role, manager_id, city, birth_date, status }),
   });
 
   if (!response.ok) {
     const errorData = await response.json();
     throw new Error(errorData.message);
   }
-
   return response.json();
 };
 

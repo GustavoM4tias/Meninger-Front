@@ -29,16 +29,17 @@ const fetchUsers = async () => {
   }
 };
 
+// computed filteredUsers – torne a busca defensiva
 const filteredUsers = computed(() => {
-  const query = searchQuery.value.toLowerCase();
+  const query = (searchQuery.value || '').toLowerCase();
   const field = searchField.value;
 
   return users.value.filter(user => {
-    const matchesSearch = user[field]?.toLowerCase().includes(query);
+    const target = String(user?.[field] ?? '').toLowerCase();
+    const matchesSearch = target.includes(query);
     const matchesCity = !filterCity.value || user.city === filterCity.value;
     const matchesPosition = !filterPosition.value || user.position === filterPosition.value;
     const matchesStatus = filterStatus.value === '' || user.status === filterStatus.value;
-
     return matchesSearch && matchesCity && matchesPosition && matchesStatus;
   });
 });
@@ -216,11 +217,18 @@ onMounted(fetchUsers);
               </div>
             </div>
 
-            <!-- Botão de edição -->
-            <button @click="startEditing(user)"
-              class="flex-shrink-0 p-2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors duration-200">
-              <i class="fas fa-pen-to-square text-2xl"></i>
-            </button>
+            <div class="flex items-center gap-3">
+              <!-- Ícone: Facial ativo/inativo (apenas visual) -->
+              <i class="fas fa-users-viewfinder text-2xl" :class="user.face_enabled ? 'text-green-500' : 'text-red-500'"
+                v-tippy="user.face_enabled ? 'Reconhecimento facial ativo' : 'Reconhecimento facial inativo'"></i>
+
+              <!-- Botão de edição (já existente) -->
+              <button @click="startEditing(user)"
+                class="flex-shrink-0 p-2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors duration-200">
+                <i class="fas fa-pen-to-square text-2xl"></i>
+              </button>
+            </div>
+
           </div>
         </div>
       </div>

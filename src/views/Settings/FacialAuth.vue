@@ -1,7 +1,7 @@
 <!-- src/components/Auth/FaceEnroll.vue -->
 <template>
     <div>
-        <Button @click="openModal" class="mb-2">Habilitar login facial</Button>
+        <Button custom-class="bg-gray-200 md:bg-gray-700 !text-sm" @click="openModal"><slot></slot></Button>
 
         <div v-if="showModal" class="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
             <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-lg p-6">
