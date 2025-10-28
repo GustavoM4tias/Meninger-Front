@@ -11,21 +11,46 @@ export const useAuthStore = defineStore('user', {
     token: localStorage.getItem('token') || null, // Inicializa o token do localStorage
     banners: [], // novo estado para os banners
   }),
+  // src/stores/Auth/authStore.js (getters)
   getters: {
-    usuariosComAniversarioValido: (state) => {
-      return state.users.filter(user => user.birth_date && !isNaN(new Date(user.birth_date)));
+    usuariosComAniversarioValido: (state) =>
+      state.users.filter(u => u.birth_date && !isNaN(new Date(u.birth_date))),
+
+    // helper interno
+    proximoAniversario: () => (birthDateStr) => {
+      const base = new Date(birthDateStr);
+      if (isNaN(base)) return null;
+      const hoje = new Date();
+      const ano = hoje.getFullYear();
+
+      const prox = new Date(ano, base.getMonth(), base.getDate());
+      // se já passou hoje, vai para o próximo ano
+      if (prox < new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate())) {
+        prox.setFullYear(ano + 1);
+      }
+      return prox;
     },
-    aniversariosEmAndamento: (state) => {
-      const dataAtual = new Date();
-      return state.usuariosComAniversarioValido
-        .filter(user => new Date(user.birth_date) >= dataAtual) // Filtra aniversários futuros
-        .sort((a, b) => new Date(a.birth_date) - new Date(b.birth_date)); // Ordena do mais próximo
+
+    aniversariosEmAndamento: (state, getters) => {
+      return getters.usuariosComAniversarioValido
+        .map(u => ({ ...u, _nextBDay: getters.proximoAniversario(u.birth_date) }))
+        .filter(u => u._nextBDay) // válidos
+        .sort((a, b) => a._nextBDay - b._nextBDay);
     },
-    aniversariosFinalizados: (state) => {
-      const dataAtual = new Date();
-      return state.usuariosComAniversarioValido
-        .filter(user => new Date(user.birth_date) < dataAtual) // Filtra aniversários passados
-        .sort((a, b) => new Date(b.birth_date) - new Date(a.birth_date)); // Ordena do mais recente
+
+    aniversariosFinalizados: (state, getters) => {
+      // últimos que ocorreram (ordenados do mais recente)
+      const hoje = new Date();
+      return getters.usuariosComAniversarioValido
+        .map(u => {
+          const base = new Date(u.birth_date);
+          if (isNaN(base)) return null;
+          let last = new Date(hoje.getFullYear(), base.getMonth(), base.getDate());
+          if (last > hoje) last.setFullYear(hoje.getFullYear() - 1);
+          return { ...u, _lastBDay: last };
+        })
+        .filter(Boolean)
+        .sort((a, b) => b._lastBDay - a._lastBDay);
     },
   },
   actions: {
@@ -95,7 +120,7 @@ export const useAuthStore = defineStore('user', {
       // Verifica a posição pelo estado ou pelo localStorage
       return this.user?.position === position || localStorage.getItem('position') === position;
     },
-    hasRole(role){
+    hasRole(role) {
       return this.user?.role === role || localStorage.getItem('role') === role;
     },
     async initializeAuth() {

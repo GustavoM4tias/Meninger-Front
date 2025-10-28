@@ -411,6 +411,41 @@ export default {
             ],
             releases: [
                 {
+                    version: 'v2.2.1',
+                    date: new Date('2025-10-28T00:00:00'),
+                    type: 'minor',
+                    categories: ['frontend', 'mobile', 'api', 'backend'],
+                    features: [
+                        {
+                            id: 1,
+                            title: 'Reconhecimento Facial',
+                            description: 'Reconhecimento facial vinculado na aba de perfil, podendo ativar, reativar. recadastrar.',
+                        }
+                    ],
+                    improvements: [
+                    ],
+                    fixes: [ 
+                        {
+                            id: 1,
+                            description: 'Ajuste no layout no perfil de usuario.'
+                        },
+                        {
+                            id: 2,
+                            description: 'Ajuste no layout da aba de usuarios.'
+                        },
+                        {
+                            id: 3,
+                            description: 'Ajuste na regra de "manager" para vincular superior e hierarquia de usuarios.'
+                        },
+                        {
+                            id: 4,
+                            description: 'Ajustado componente de hierarquia para visualização de usuarios do sistema.'
+                        },
+                    ],
+                    breakingChanges: [],
+                    knownIssues: [],
+                },
+                {
                     version: 'v2.2.0',
                     date: new Date('2025-10-23T00:00:00'),
                     type: 'patch',

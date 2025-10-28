@@ -60,7 +60,8 @@
                                         year: 'numeric'
                                     }) }}
                                 </p>
-                                <span class="text-gray-500 text-xs">{{ calculateDaysInSystem() }} dias no sistema.</span>
+                                <span class="text-gray-500 text-xs">{{ calculateDaysInSystem() }} dias no
+                                    sistema.</span>
                             </div>
                         </div>
 
@@ -68,8 +69,8 @@
                         <div class="flex-grow">
                             <div class="flex items-start justify-between">
                                 <div>
-                                    <h3 class="text-2xl font-bold text-gray-900 dark:text-white">
-                                        {{ authStore.user?.username }}
+                                    <h3 class="flex text-2xl font-bold text-gray-900 dark:text-white">
+                                        {{ authStore.user?.username }} 
                                     </h3>
                                     <p class="text-gray-600 dark:text-gray-400 mt-1">
                                         {{ authStore.user?.position || 'Cargo não definido' }}
@@ -79,18 +80,14 @@
                                     </p>
                                 </div>
 
-                                <span :class="[
-                                    'inline-flex items-center px-3 py-1 rounded-full text-xs font-medium',
-                                    authStore.user?.status
-                                        ? 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100'
-                                        : 'bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100'
-                                ]">
-                                    <div :class="[
-                                        'w-2 h-2 rounded-full mr-2',
-                                        authStore.user?.status ? 'bg-green-400' : 'bg-red-400'
-                                    ]"></div>
-                                    {{ authStore.user?.status ? 'Ativo' : 'Inativo' }}
-                                </span>
+                                <div class="flex flex-col items-end">
+                                    <div class="flex">
+                                        <i :class="authStore.user?.face_enabled ? 'text-green-500' : 'text-red-500'"
+                                            v-tippy="authStore.user?.face_enabled ? 'Reconhecimento Facial Ativo' : 'Reconhecimento Facial Inativo'"
+                                            class="fas text-4xl p-3 pe-4 cursor-pointer fa-users-viewfinder"></i>
+                                    </div>
+
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -113,7 +110,7 @@
                             </div>
 
                             <!-- Email -->
-                            <div class="md:col-span-2">
+                            <div class="md:col-span-1">
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                     Email
                                 </label>
@@ -139,26 +136,52 @@
                             </div>
 
                             <!-- Cargo -->
-                            <div class="md:col-span-2">
+                            <div class="md:col-span-1">
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                     Cargo
                                 </label>
                                 <Input v-model="editableUser.position" :disabled="isDisabled" type="text"
                                     placeholder="Seu cargo atual" required />
                             </div>
+
+                            <div class="flex w-full justify-between md:col-span-2" v-if="!isDisabled">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                        Reconhecimento Facial
+                                    </label>
+
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" v-model="editableUser.face_enabled"
+                                            :disabled="isDisabled" class="sr-only peer" />
+                                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 
+                                            peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 
+                                            rounded-full peer dark:bg-gray-700 
+                                            peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full
+                                            after:content-[''] after:absolute after:top-[2px] after:left-[2px] 
+                                            after:bg-white after:border-gray-300 after:border after:rounded-full 
+                                            after:h-5 after:w-5 after:transition-all dark:border-gray-600 
+                                            peer-checked:bg-blue-600 dark:peer-checked:bg-blue-600"></div>
+                                        <span class="ml-3 text-sm font-medium text-gray-700 dark:text-gray-300">
+                                            {{ editableUser.face_enabled ? 'Ativado' : 'Desativado' }}
+                                        </span>
+                                    </label>
+                                </div>
+                                <FacialAuth v-if="!isDisabled" class="p-2">
+                                    {{ authStore.user?.face_enabled ? 'Recadastrar Facial' : 'Cadastrar Facial'
+                                    }}
+                                </FacialAuth>
+                            </div>
                         </div>
 
                         <!-- Botões de Ação -->
                         <div v-if="!isDisabled"
                             class="flex flex-col sm:flex-row gap-3 pt-6 border-t border-gray-200 dark:border-gray-700">
-                            <Button type="submit"
-                                class="flex-1 sm:flex-none sm:w-auto">
+                            <Button type="submit" class="flex-1 sm:flex-none sm:w-auto">
                                 <i class="fas fa-save mr-2"></i>
                                 Salvar Alterações
                             </Button>
 
-                            <Button type="button" @click="cancelEdit"
-                                class="flex-1 sm:flex-none sm:w-auto ">
+                            <Button type="button" @click="cancelEdit" class="flex-1 sm:flex-none sm:w-auto ">
                                 <i class="fas fa-times mr-2"></i>
                                 Cancelar
                             </Button>
@@ -175,7 +198,7 @@
                     </form>
                 </div>
             </div>
- 
+
         </div>
     </div>
 </template>
@@ -187,12 +210,12 @@ import { updateMeInfo } from '../../utils/Auth/apiAuth';
 import Input from '../UI/Input.vue';
 import Button from '../UI/Button.vue';
 import Favorite from "@/components/config/Favorite.vue";
+import FacialAuth from '@/views/Settings/FacialAuth.vue';
 import { useToast } from 'vue-toastification';
 
 const toast = useToast();
 const authStore = useAuthStore();
 
-console.log(authStore.user)
 
 const editableUser = ref({
     username: '',
@@ -200,7 +223,8 @@ const editableUser = ref({
     city: '',
     position: '',
     birth_date: '',
-    status: ''
+    status: false,
+    face_enabled: false
 });
 
 const message = ref('');
@@ -215,7 +239,8 @@ const preencherEditableUser = () => {
             city: authStore.user.city,
             position: authStore.user.position,
             birth_date: authStore.user.birth_date,
-            status: authStore.user.status
+            status: authStore.user.status,
+            face_enabled: authStore.user.face_enabled
         };
         editableUser.value = { ...userData };
         originalUser.value = { ...userData };
@@ -238,6 +263,7 @@ onMounted(async () => {
         await authStore.fetchUserInfo();
     }
     preencherEditableUser();
+    console.log(authStore.user)
 });
 
 const updateUser = async () => {
@@ -248,7 +274,8 @@ const updateUser = async () => {
             editableUser.value.position,
             editableUser.value.city,
             editableUser.value.birth_date,
-            editableUser.value.status
+            editableUser.value.status,
+            editableUser.value.face_enabled
         );
         message.value = response.message;
         await authStore.fetchUserInfo();
