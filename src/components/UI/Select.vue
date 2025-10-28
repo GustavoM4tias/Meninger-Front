@@ -1,7 +1,9 @@
 <template>
-    <div class="select-field w-full">
+    <div class="input-field w-full mt-2">
+        <label v-if="label" for="input-field" class="block text-gray-800 dark:text-gray-100 font-semibold mb-1">{{ label
+        }}</label>
         <select
-            class="py-3 px-2 border text-lg md:text-xl text-gray-700 dark:text-gray-300 dark:bg-gray-500 border-gray-100 dark:border-gray-600 rounded-lg focus:outline-none shadow-sm w-full"
+            class="py-3 px-2 border text-lg md:text-xl text-gray-700 dark:text-gray-300 dark:bg-gray-600 border-gray-100 dark:border-gray-600 rounded-lg focus:outline-none shadow-sm w-full"
             :value="modelValue" @change="updateValue" :class="classes" :required="required">
             <option value="" disabled hidden>{{ placeholder }}</option>
             <option v-for="option in options" :key="option.value" :value="option.value">
@@ -23,6 +25,7 @@ const props = defineProps({
         default: () => []
     },
     placeholder: { type: String, default: 'Selecione uma opção' },
+    label: { type: String, default: '' },
     required: { type: Boolean, default: false },
     classes: { type: String, default: '' }
 });
