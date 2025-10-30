@@ -49,11 +49,27 @@ function onDocClick(e) {
 onMounted(() => document.addEventListener('click', onDocClick, { capture: true, passive: true }));
 onBeforeUnmount(() => document.removeEventListener('click', onDocClick, { capture: true }));
 
+const searchInputRef = ref(null);
+const autoFocusOnOpen = true; // deixe true; torne prop se quiser
+
 // abrir/fechar
 function toggleOpen() {
     if (props.disabled) return;
     open.value = !open.value;
     emit(open.value ? 'open' : 'close');
+    // foca o campo de busca assim que o painel renderizar
+    if (open.value && autoFocusOnOpen) {
+        nextTick(() => {
+            // delay curtinho ajuda em alguns navegadores
+            setTimeout(() => {
+                if (searchInputRef.value) {
+                    searchInputRef.value.focus();
+                    // opcional: selecionar conteúdo atual
+                    try { searchInputRef.value.select?.(); } catch { }
+                }
+            }, 0);
+        });
+    }
 }
 
 // ===== Busca com debounce =====
@@ -170,8 +186,8 @@ function toggleSelectAllFiltered(e) {
             aria-multiselectable="true">
             <!-- Busca -->
             <div class="p-2 sticky top-0 bg-inherit">
-                <input v-model="searchRaw" class="border-gray-200 dark:border-gray-700 bg-gray-700" type="text"
-                    :class="searchClass" placeholder="Filtrar..." aria-label="Filtro de opções" />
+                <input ref="searchInputRef" v-model="searchRaw" class="border-gray-200 dark:border-gray-700 bg-gray-700"
+                    type="text" :class="searchClass" placeholder="Filtrar..." aria-label="Filtro de opções" />
             </div>
 
             <!-- Master checkbox (Selecionar/Remover tudo do filtrado) -->

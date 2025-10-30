@@ -5,12 +5,12 @@
         <div
             class="px-4 py-3 md:px-6 md:h-24 border-b border-gray-200 dark:border-gray-700 flex flex-col md:flex-row items-start md:items-center gap-3">
             <div class="min-w-0 my-auto">
-                <RouterLink to="/comercial/leads?section=Leads"
+                <RouterLink to="/marketing/leads?section=Leads"
                     class="text-base md:text-xl font-semibold truncate inline-flex items-center gap-2">
                     <i class="fas fa-user-plus" />
                     Leads
                 </RouterLink>
-                <Favorite class="m-auto" :router="'/comercial/leads'" :section="'Leads'" />
+                <Favorite class="m-auto" :router="'/marketing/leads'" :section="'Leads'" />
                 <p class="text-[8px] md:text-xs text-gray-500 dark:text-gray-400">
                     {{ rangeLabels.this }} | {{ rangeLabels.prev }}
                 </p>
@@ -110,8 +110,103 @@ const fmtMonthLabel = (d) => new Date(d).toLocaleDateString('pt-BR', { month: 's
 const nowHour = new Date().getHours()
 const wd = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom']
 
-/* Data do lead (resiliente) */
+// ✅ ADD — helpers consistentes com sua store
 const leadDate = (l) => new Date(l.createdAt || l.created_at || l.data_criacao || l.data || l.updatedAt || Date.now())
+const empName = (l) => String(l?.empreendimento?.[0]?.nome ?? '—').trim()
+
+// dentro do range atual?
+const inThisRange = (d) => {
+    const r = ranges.value.this
+    const t = d.getTime()
+    return t >= r.start.getTime() && t <= r.end.getTime()
+}
+
+// top-N utilitário
+const topNFrom = (arr, n = 3) => {
+    const m = new Map()
+    for (const l of arr) {
+        const k = empName(l)
+        m.set(k, (m.get(k) || 0) + 1)
+    }
+    return [...m.entries()].sort((a, b) => b[1] - a[1]).slice(0, n).map(([nome, qtd]) => ({ nome, qtd }))
+}
+// ✅ ADD — pega a janela exata (start/end) correspondente ao índice "i" do eixo X para o bucket atual
+const bucketWindowAt = (i) => {
+    const r = ranges.value
+    if (r.bucket === 'hour') {
+        // Hoje, hora = i
+        const d = new Date(r.this.start)
+        const now = new Date()
+        d.setHours(0, 0, 0, 0)
+        const start = new Date(d); start.setHours(i, 0, 0, 0)
+        const end = new Date(d); end.setHours(i, 59, 59, 999)
+        // clampa no range this
+        return {
+            start: start < r.this.start ? r.this.start : start,
+            end: end > r.this.end ? r.this.end : end
+        }
+    }
+
+    if (r.bucket === 'weekday') {
+        // Semana: i = 0..6 (Seg..Dom). Filtra somente o dia da semana "i" dentro de this.
+        // Em vez de retornar uma única janela, retornamos um predicate.
+        return {
+            predicate: (d) => {
+                if (!inThisRange(d)) return false
+                let idx = d.getDay() - 1; if (idx < 0) idx = 6
+                return idx === i
+            }
+        }
+    }
+
+    // bucket 'day' (rolling7, week, month)
+    // índice i = i-ésimo dia do range "this"
+    const dayAt = (base, i) => {
+        const d = new Date(base); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() + i); return d
+    }
+
+    // categorias já foram geradas do start..end do range 'this'
+    const start = dayAt(r.this.start, i)
+    const end = new Date(start); end.setHours(23, 59, 59, 999)
+
+    // no modo 'month', o array pode ser maior que os dias reais; clamp natural resolve.
+    return {
+        start: start < r.this.start ? r.this.start : start,
+        end: end > r.this.end ? r.this.end : end
+    }
+}
+
+// ✅ ADD — devolve os TOP empreendimentos naquele índice do eixo X
+const topByIndex = computed(() => {
+    const bucket = ranges.value.bucket
+    const list = leadsStore.leads || []
+
+    return categories.value.map((_, i) => {
+        if (bucket === 'weekday') {
+            // usa predicate por weekday dentro do range this
+            const pred = bucketWindowAt(i).predicate
+            const arr = pred ? list.filter(l => pred(leadDate(l))) : []
+            return topNFrom(arr, 3)
+        } else if (bucket === 'hour') {
+            const { start, end } = bucketWindowAt(i)
+            const s = start.getTime(), e = end.getTime()
+            const arr = list.filter(l => {
+                const d = leadDate(l).getTime()
+                return d >= s && d <= e
+            })
+            return topNFrom(arr, 3)
+        } else {
+            // 'day'
+            const { start, end } = bucketWindowAt(i)
+            const s = start.getTime(), e = end.getTime()
+            const arr = list.filter(l => {
+                const d = leadDate(l).getTime()
+                return d >= s && d <= e
+            })
+            return topNFrom(arr, 3)
+        }
+    })
+})
 
 // ================== RANGE PARA A API (BUSCA SOB DEMANDA) ==================
 /**
@@ -458,6 +553,7 @@ const chartOption = computed(() => {
         animationDuration: 400,
         grid: { left: 6, right: 8, top: 24, bottom: 8, containLabel: true },
         legend: { top: 0, textStyle: { color: '#9CA3AF', fontSize: 10 } },
+        // 🔁 CHANGE — apenas o formatter do tooltip
         tooltip: {
             trigger: 'axis',
             axisPointer: { type: 'shadow' },
@@ -465,11 +561,21 @@ const chartOption = computed(() => {
             borderWidth: 0,
             textStyle: { color: '#f4f4f4' },
             formatter: (params) => {
+                const idx = params?.[0]?.dataIndex ?? 0
                 const head = `<div style="font-weight:700;margin-bottom:4px">${params?.[0]?.axisValueLabel ?? ''}</div>`
-                const lines = params.map(p => `<div><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${p.color};margin-right:6px;"></span>${p.seriesName}: <b>${p.value}</b></div>`).join('')
-                return head + lines
+                const lines = params.map(p =>
+                    `<div><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${p.color};margin-right:6px;"></span>${p.seriesName}: <b>${p.value}</b></div>`
+                ).join('')
+
+                const emp = topByIndex.value?.[idx] || []
+                const empHtml = emp.length
+                    ? `<div style="margin-top:6px;opacity:.9">${emp.map(e => `<div>• ${e.nome} (${e.qtd})</div>`).join('')}</div>`
+                    : ''
+
+                return head + lines + empHtml
             }
         },
+
         xAxis: {
             type: 'category',
             data: categories.value,
