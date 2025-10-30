@@ -389,27 +389,84 @@ export default {
                 period: 'all'
             },
 
-            roadmap: [
+            roadmap: [ 
                 {
-                    version: 'v2.2.1',
-                    date: new Date('2025-10-07T00:00:00'),
-                    description: 'Ajuste fino nas permissões de usuários para liberação de uso em periodo de testes.',
-                    features: ['Segurança', 'Alçadas', 'Validação']
-                },
-                {
-                    version: 'v2.2.2',
+                    version: 'v2.2.5',
                     date: new Date('2025-10-10T00:00:00'),
                     description: 'Recuperação e alteração de senha via email.',
                     features: ['Segurança', 'Suporte Técnico']
                 },
                 {
-                    version: 'v2.2.3',
+                    version: 'v2.2.6',
                     date: new Date('2025-10-23T00:00:00'),
                     description: 'Relatórios de Leads x Vendas e comparativos de Entradas/Desempenho por campanha..',
                     features: ['Relatórios', 'Leads', 'Desempenho']
                 },
             ],
             releases: [
+                {
+                    version: 'v2.2.3',
+                    date: new Date('2025-10-30T00:00:00'),
+                    type: 'patch',
+                    categories: ['frontend', 'mobile', 'api', 'backend'],
+                    features: [
+                        {
+                            id: 1,
+                            title: 'Sistema gerencial de Projeção de Vendas',
+                            description: 'Criado um sistema de gerenciamento de metas por empreendimento, o sistema tem todas as funções necessarias para o andamento atual com a criação, adição, exclusão e revisões de projeção.',
+                        }
+                    ],
+                    improvements: [
+                        {
+                            id: 1,
+                            category: 'Comercial - Projeção de Vendas',
+                            description: 'Criado tela para novo relatório gerencial.'
+                        }, 
+                    ], 
+                    fixes: [ 
+                    ],
+                    breakingChanges: [],
+                    knownIssues: [],
+                },
+                {
+                    version: 'v2.2.2',
+                    date: new Date('2025-10-29T00:00:00'),
+                    type: 'patch',
+                    categories: ['frontend', 'mobile', 'api', 'backend'],
+                    features: [
+                        {
+                            id: 1,
+                            title: 'Gerenciamento Global de Cidades CRM x ERP',
+                            description: 'Adicionado um gerenciamento global de cidades e empreendimentos do CV CRM e Sienge, vinculado mais de 2000 centros de custos e + 20 empreendimentos do CRM, agora podendo gerenciar e vincular a cidades, que são vinculadas a usuarios limitando assim cada um com a sua visualização permitida. (Gerenciamento somente para Administradores)',
+                        }
+                    ],
+                    improvements: [
+                        {
+                            id: 1,
+                            category: 'Relatórios de Leads',
+                            description: 'Adaptado relatório de Leads para novo gerenciamento de cidades.'
+                        },
+                        {
+                            id: 2,
+                            category: 'Relatórios de Faturamento',
+                            description: 'Adaptado relatório de Faturamento para novo gerenciamento de cidades.'
+                        },
+                        {
+                            id: 3,
+                            category: 'Relatórios de Eventos',
+                            description: 'Adaptado Eventos para visualização com novo gerenciamento de cidades.'
+                        },
+                        {
+                            id: 4,
+                            category: 'Relatórios de Empreendimentos',
+                            description: 'Adaptado Empreendimentos para visualização com novo gerenciamento de cidades.'
+                        },
+                    ], 
+                    fixes: [ 
+                    ],
+                    breakingChanges: [],
+                    knownIssues: [],
+                },
                 {
                     version: 'v2.2.1',
                     date: new Date('2025-10-28T00:00:00'),
@@ -423,24 +480,28 @@ export default {
                         }
                     ],
                     improvements: [
-                    ],
-                    fixes: [ 
                         {
                             id: 1,
+                            category: 'Perfil de usuários',
                             description: 'Ajuste no layout no perfil de usuario.'
                         },
                         {
                             id: 2,
+                            category: 'Perfil de usuários',
                             description: 'Ajuste no layout da aba de usuarios.'
                         },
                         {
                             id: 3,
+                            category: 'Organograma',
                             description: 'Ajuste na regra de "manager" para vincular superior e hierarquia de usuarios.'
                         },
                         {
                             id: 4,
+                            category: 'Organograma',
                             description: 'Ajustado componente de hierarquia para visualização de usuarios do sistema.'
                         },
+                    ],
+                    fixes: [ 
                     ],
                     breakingChanges: [],
                     knownIssues: [],
@@ -497,12 +558,13 @@ export default {
                         },
                     ],
                     improvements: [
-                    ],
-                    fixes: [
                         {
                             id: 1,
+                            category: 'Eventos',
                             description: 'Ajuste no disparo de eventos para seleção de usuarios por nome, cargo Ex: Marketing (todos usuarios mkt), e emails externos.'
                         },
+                    ],
+                    fixes: [
                     ],
                     breakingChanges: [],
                     knownIssues: [],

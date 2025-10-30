@@ -139,7 +139,7 @@ onMounted(async () => {
                  -->
                 <h1 class="text-5xl md:text-6xl font-bold mb-2">
                     Eventos
-                    <Favorite :router="'/events'" :section="currentSection" />
+                    <Favorite :router="'/marketing/events'" :section="currentSection" />
                 </h1>
 
                 <p class="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">

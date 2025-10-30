@@ -70,7 +70,7 @@ watch(mesSelecionado, () => {
             <div
                 class="flex justify-between title border-b-2 border-gray-300 dark:border-gray-600 p-2 md:p-3">
                 <RouterLink class="hover:text-gray-700 dark:hover:text-gray-300 flex items-center md:text-lg"
-                    :to="{ path: '/events', query: { section: 'proximos' } }">
+                    :to="{ path: '/marketing/events', query: { section: 'proximos' } }">
                     <i class="fa-solid fa-calendar-days px-1"></i>
                     <span class="hidden lg:block ms-1">Próximos</span> <span class="ms-1.5">Eventos</span>
                 </RouterLink>

@@ -118,7 +118,7 @@ const closeBuildingModal = () => {
                 <div class="text-center">
                     <h1 class="text-4xl md:text-5xl font-bold mb-4">
                         Empreendimentos
-                        <Favorite :router="'/buildings'" :section="currentSection" />
+                        <Favorite :router="'/comercial/buildings'" :section="currentSection" />
                     </h1>
 
                     <!-- Busca pill -->
