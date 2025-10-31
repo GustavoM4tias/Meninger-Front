@@ -256,7 +256,7 @@
 import { ref } from 'vue'
 import Favorite from "@/components/config/Favorite.vue";
 import { useAIStore } from '@/stores/Config/aiStore.js'
-import History from '@/components/tools/History.vue';
+import History from './components/History.vue';
 
 const aiStore = useAIStore();
 

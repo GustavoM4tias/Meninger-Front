@@ -3,7 +3,7 @@ import { onMounted, ref, computed, watch, nextTick, onBeforeUnmount } from 'vue'
 import { useRoute, onBeforeRouteLeave } from 'vue-router';
 import { useProjectionsStore } from '@/stores/Comercial/Projections/projectionsStore';
 import ProjectionLogsDrawer from './components/ProjectionLogsDrawer.vue';
-import { useAuthStore } from '@/stores/Auth/authStore';
+import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 import API_URL from '@/config/apiUrl';
 
 /* ===== Helpers ===== */
@@ -537,7 +537,7 @@ const chipClass = {
 
                                     <div>
                                         <label class="text-[11px] text-gray-500 block">Centro de Custo: {{ r.erp_id
-                                        }}</label>
+                                            }}</label>
                                         <!-- "texto" clicável -->
                                         <div v-if="!isEditing(r, 'name')" @click="startEdit(r, 'name')"
                                             class="h-9 px-2 rounded flex items-center cursor-text">
@@ -558,7 +558,7 @@ const chipClass = {
                                             <div v-if="!isEditing(r, 'price')" @click="startEdit(r, 'price')"
                                                 class="h-9 px-2 rounded flex items-center cursor-text">
                                                 <span class="tabular-nums">{{ fmtBRL(Number(r.defaultPrice || 0))
-                                                }}</span>
+                                                    }}</span>
                                             </div>
                                             <!-- input quando editando -->
                                             <input v-else :id="`in-price-${r.erp_id}|${r.alias_id}`" type="number"
@@ -594,7 +594,7 @@ const chipClass = {
                                         class="w-20 h-9 border border-gray-200 dark:border-gray-800 rounded px-2 bg-white/90 dark:bg-gray-900/70 focus:outline-none focus:ring-0"
                                         placeholder="Uds" />
                                 </div>
-                                <div>
+                                <!-- <div>
                                     <label class="text-[11px] text-gray-500 block text-center">VGV</label>
                                     <input :disabled="!isAdmin || store.detail?.projection?.is_locked"
                                         v-model.number="(r.values[ym(year, mm)] ||= { units: 0, price: 0 }).price"
@@ -605,7 +605,21 @@ const chipClass = {
                                         {{ fmtBRL(((r.values[ym(year, mm)]?.units || 0) * (r.values[ym(year, mm)]?.price
                                             || 0))) }}
                                     </div>
+                                </div> -->
+                                <div>   
+                                    <label class="text-[11px] text-gray-500 block text-center">VGV</label>
+
+                                    <input :disabled="!isAdmin || store.detail?.projection?.is_locked"
+                                        v-model.number="(r.values[ym(year, mm)] ||= { units: 0, total: 0 }).total"
+                                        type="number" min="0" step="0.01"
+                                        class="w-36 h-9 border border-gray-200 dark:border-gray-800 rounded px-2 bg-white/90 dark:bg-gray-900/70 focus:outline-none focus:ring-0"
+                                        :placeholder="fmtBRL((r.values[ym(year, mm)]?.units || 0) * (r.values[ym(year, mm)]?.price || 0))" />
+
+                                    <div class="text-[10px] text-gray-500">
+                                        {{ `R$ ${(r.values[ym(year, mm)] ||= { units: 0, price: 0 }).price} `}}
+                                    </div>
                                 </div>
+
                             </div>
                         </td>
                     </tr>
@@ -683,7 +697,7 @@ const chipClass = {
                                 <span class="truncate">
                                     {{ p.name }}
                                     <span class="text-xs text-gray-500">(ERP {{ p.erp_id }}, alias {{ p.alias_id
-                                    }})</span>
+                                        }})</span>
                                 </span>
                             </li>
                         </ul>

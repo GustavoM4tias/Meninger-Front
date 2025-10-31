@@ -1,7 +1,7 @@
 // src/stores/notificationStore.js
 import { defineStore } from 'pinia';
-import { useAuthStore } from '../Auth/authStore';
-import { useEventStore } from '../Event/eventStore';
+import { useAuthStore } from '../Settings/Auth/authStore';
+import { useEventStore } from '../Marketing/Event/eventStore';
 
 const startOfDay = (d) => {
     const dt = new Date(d);

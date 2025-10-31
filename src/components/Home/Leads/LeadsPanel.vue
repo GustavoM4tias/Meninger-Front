@@ -79,7 +79,7 @@
 
 <script setup>
 import { onMounted, watch, computed, ref } from 'vue'
-import { useLeadsStore } from '@/stores/Reports/Lead/leadsStore'
+import { useLeadsStore } from '@/stores/Marketing/Lead/leadsStore'
 import VChart from 'vue-echarts'
 import * as echarts from 'echarts/core'
 import { BarChart } from 'echarts/charts'

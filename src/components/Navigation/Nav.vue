@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
-import { useAuthStore } from '../../stores/Auth/authStore';
+import { useAuthStore } from '../../stores/Settings/Auth/authStore';
 import { useNotificationStore } from '../../stores/Config/notificationStore';
 import { useFavoritesStore } from '../../stores/Config/favoriteStore';
 import Search from '@/components/Navigation/components/Search.vue';
@@ -54,6 +54,7 @@ const menuItems = {
         items: [ 
             { router: '/comercial/faturamento', section: 'Faturamento', name: 'Faturamento', icon: 'fas fa-file-invoice-dollar' }, 
             { router: '/comercial/projections', section: 'Projeção', name: 'Projeção Vendas', icon: 'fas fa-chart-line' }, 
+            { router: '/comercial/workflow/groups', section: 'Workflow', name: 'Grupos de Workflow', icon: 'fas fa-chart-diagram' }, 
         ]
     }, 
     tools: [

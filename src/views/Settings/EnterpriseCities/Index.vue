@@ -2,7 +2,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import Favorite from '@/components/config/Favorite.vue'
-import { useEnterpriseCitiesStore } from '@/stores/Admin/enterpriseCitiesStore'
+import { useEnterpriseCitiesStore } from '@/stores/Settings/Admin/enterpriseCitiesStore'
 import { useCarregamentoStore } from '@/stores/Config/carregamento'
 
 const store = useEnterpriseCitiesStore()

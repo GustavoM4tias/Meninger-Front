@@ -60,7 +60,7 @@ app.use(router);
 
  
 // Agora que o Pinia está instalado, é seguro acessar a store e inicializar a autenticação
-import { useAuthStore } from './stores/Auth/authStore';
+import { useAuthStore } from './stores/Settings/Auth/authStore';
 const authStore = useAuthStore();
 authStore.initializeAuth();
  

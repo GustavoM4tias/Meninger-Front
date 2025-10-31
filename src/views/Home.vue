@@ -53,7 +53,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import EventNotification from '@/components/Home/Notifications/EventNotification.vue'
 import EventCarrossel from '@/components/Home/Events/EventCarrossel.vue'
-import { useAuthStore } from '@/stores/Auth/authStore'
+import { useAuthStore } from '@/stores/Settings/Auth/authStore'
 import ValidatorPanel from '@/components/Home/Validator/ValidatorPanel.vue'
 import LeadsPanel from '@/components/Home/Leads/LeadsPanel.vue'
 

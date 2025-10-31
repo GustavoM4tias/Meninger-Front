@@ -1,6 +1,6 @@
 <script setup>
 import { onMounted, ref, toRef } from 'vue'
-import { useLeadsStore } from '@/stores/Reports/Lead/leadsStore'
+import { useLeadsStore } from '@/stores/Marketing/Lead/leadsStore'
 
 import Favorite from '@/components/config/Favorite.vue'
 import Filas from './components/Filas.vue'

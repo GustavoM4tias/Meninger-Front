@@ -42,7 +42,7 @@
 
 <script setup>
 import { ref, onMounted, onBeforeUnmount, computed, watch } from 'vue';
-import { useAuthStore } from '../../stores/Auth/authStore';
+import { useAuthStore } from '../../stores/Settings/Auth/authStore';
 
 // Props
 const props = defineProps({

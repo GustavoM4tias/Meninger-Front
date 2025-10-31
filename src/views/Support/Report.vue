@@ -324,7 +324,7 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
-import { useAuthStore } from '@/stores/Auth/authStore';
+import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 import { useSupportStore } from '@/stores/Support/supportStore';
 import { useToast } from 'vue-toastification';
 

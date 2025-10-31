@@ -1,7 +1,7 @@
 <script setup>
 import { onMounted } from 'vue';
 import Carrossel from "./Carrossel.vue";
-import { useEventStore } from '@/stores/Event/eventStore';
+import { useEventStore } from '@/stores/Marketing/Event/eventStore';
 
 const eventStore = useEventStore();
 

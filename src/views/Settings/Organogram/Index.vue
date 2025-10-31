@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from "vue";
 import panzoom from "@panzoom/panzoom";
-import { useAuthStore } from '@/stores/Auth/authStore';
+import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 import OrganizationChart from 'primevue/organizationchart';
 import Favorite from "@/components/config/Favorite.vue";
 

@@ -2,7 +2,7 @@
 import { onMounted, ref, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useSupportStore } from '@/stores/Support/supportStore';
-import { useAuthStore } from '@/stores/Auth/authStore';
+import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 import { useToast } from 'vue-toastification';
 
 //

@@ -1,8 +1,8 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
-import { useAuthStore } from '@/stores/Auth/authStore';
+import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 import { useCarregamentoStore } from '@/stores/Config/carregamento';
-import userModal from '@/components/Settings/Users/userModal.vue';
+import userModal from '@/views/Settings/Users/components/userModal.vue';
 import Favorite from "@/components/config/Favorite.vue";
 
 
