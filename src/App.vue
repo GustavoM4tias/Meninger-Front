@@ -4,7 +4,7 @@ import { useRoute } from 'vue-router';
 import Carregamento from './components/Loading/Carregamento.vue';
 import ChatBot from './components/ChatBot/ChatBotIcon.vue';
 import Nav from './components/Navigation/Nav.vue';
-import { useAuthStore } from './stores/Auth/authStore'; // Importando o authStore
+import { useAuthStore } from './stores/Settings/Auth/authStore'; // Importando o authStore
 const authStore = useAuthStore();
 
 const isAuthenticated = computed(() => authStore.isAuthenticated());

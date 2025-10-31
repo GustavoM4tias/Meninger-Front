@@ -3,7 +3,7 @@
 import { ref, watch, onMounted, onUnmounted, computed } from 'vue';
 import { addEvent } from '../../utils/Event/apiEvents';
 import { getAddress } from '../../utils/Config/apiExternalBuilding';
-import { useAuthStore } from '../../stores/Auth/authStore';
+import { useAuthStore } from '../../stores/Settings/Auth/authStore';
 import OrganizerPicker from './OrganizerPicker.vue';
 import NotifyToPicker from './NotifyToPicker.vue';
 

@@ -1,6 +1,6 @@
 // src/router/index.js
 import { createRouter, createWebHistory } from 'vue-router';
-import { useAuthStore } from '../stores/Auth/authStore';
+import { useAuthStore } from '../stores/Settings/Auth/authStore';
 import Home from '../views/Home.vue';
 
 const routes = [
@@ -49,7 +49,7 @@ const routes = [
       {
         path: 'projections',
         name: 'Projeção',
-        component: () => import('@/views/Comercial/Projections/ProjectionsList.vue'),
+        component: () => import('@/views/Comercial/Projections/Index.vue'),
         meta: { requiresAuth: true, allowedPosition: '', searchable: false, content: 'Projeção' },
       },
       {
@@ -57,6 +57,12 @@ const routes = [
         name: 'Projeção Detalhes',
         component: () => import('@/views/Comercial/Projections/ProjectionDetail.vue'),
         meta: { requiresAuth: true, allowedPosition: '', searchable: false, content: 'Projeção Detalhes' },
+      },
+      {
+        path: 'workflow/groups',
+        name: 'Grupos de Workflow',
+        component: () => import('@/views/Comercial/Workflow/Index.vue'),
+        meta: { requiresAuth: true, allowedPosition: '', searchable: false, content: 'Grupos de Workflow' },
       }
     ],
     meta: { requiresAuth: true, allowedPosition: '' },
@@ -65,7 +71,7 @@ const routes = [
     path: '/tools',
     name: 'tools',
     children: [
-      { path: 'validator', name: 'Validador', component: () => import('@/views/Tools/Validador.vue'), meta: { searchable: true, content: 'Validador de Contratos de Venda.' } },
+      { path: 'validator', name: 'Validador', component: () => import('@/views/Tools/Index.vue'), meta: { searchable: true, content: 'Validador de Contratos de Venda.' } },
     ],
     meta: { requiresAuth: true, allowedPosition: '' },
   },
@@ -73,10 +79,10 @@ const routes = [
     path: '/settings',
     name: 'settings',
     children: [
-      { path: 'users', name: 'Usuários', component: () => import('@/views/Settings/Users.vue'), meta: { requiresAuth: true, allowedPosition: '', allowedRole: 'admin', searchable: true, content: 'Listagem de usuários do sistema' } },
-      { path: 'account', name: 'Minha Conta', component: () => import('@/views/Settings/Account.vue'), meta: { searchable: true, content: 'Sua conta pessoal' } },
-      { path: 'organograma', name: 'Organograma', component: () => import('@/views/Settings/Organograma.vue'), meta: { searchable: true, content: 'Organograma estrutural' } },
-      { path: 'cidades', name: 'Cidades', component: () => import('@/views/Settings/EnterpriseCities.vue'), meta: { requiresAuth: true, allowedPosition: '', allowedRole: 'admin', searchable: true, content: 'Gerenciamento de Cidades x Empreendimentos' } },
+      { path: 'users', name: 'Usuários', component: () => import('@/views/Settings/Users/Index.vue'), meta: { requiresAuth: true, allowedPosition: '', allowedRole: 'admin', searchable: true, content: 'Listagem de usuários do sistema' } },
+      { path: 'account', name: 'Minha Conta', component: () => import('@/views/Settings/Account/Index.vue'), meta: { searchable: true, content: 'Sua conta pessoal' } },
+      { path: 'organograma', name: 'Organograma', component: () => import('@/views/Settings/Organogram/Index.vue'), meta: { searchable: true, content: 'Organograma estrutural' } },
+      { path: 'cidades', name: 'Cidades', component: () => import('@/views/Settings/EnterpriseCities/Index.vue'), meta: { requiresAuth: true, allowedPosition: '', allowedRole: 'admin', searchable: true, content: 'Gerenciamento de Cidades x Empreendimentos' } },
     ],
     meta: { requiresAuth: true, allowedPosition: '' },
   },

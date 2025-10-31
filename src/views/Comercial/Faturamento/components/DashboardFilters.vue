@@ -20,7 +20,7 @@
             </div>
 
             <!-- Situação -->
-            <div class="flex-1 min-w-32">
+            <!-- <div class="flex-1 min-w-32">
                 <label class="block text-xs font-medium mb-1 text-gray-700 dark:text-gray-300">
                     <i class="fas fa-chart-pie mr-1"></i>Situação
                 </label>
@@ -31,7 +31,7 @@
                     <option class="text-gray-600" value="Autorizado">Autorizado</option>
                     <option class="text-gray-600" value="Cancelado">Cancelado</option>
                 </select>
-            </div>
+            </div> -->
 
             <!-- Empreendimentos com seu MultiSelector -->
             <div class="flex-1 max-w-full">

@@ -2,7 +2,7 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { useCarregamentoStore } from '@/stores/Config/carregamento';
-import { useAuthStore } from '@/stores/Auth/authStore'; // 👈 pegar token
+import { useAuthStore } from '@/stores/Settings/Auth/authStore'; // 👈 pegar token
 import API_URL from '@/config/apiUrl';
 
 export const useSupportStore = defineStore('support', () => {

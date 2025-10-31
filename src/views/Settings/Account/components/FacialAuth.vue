@@ -50,7 +50,7 @@
 <script setup>
 import Button from '@/components/UI/Button.vue';
 import { ref, onBeforeUnmount, nextTick } from 'vue';
-import { useFaceStore } from '@/stores/Auth/faceStore';
+import { useFaceStore } from '@/stores/Settings/Auth/faceStore';
 import * as faceapi from '@vladmandic/face-api';
 
 const face = useFaceStore();

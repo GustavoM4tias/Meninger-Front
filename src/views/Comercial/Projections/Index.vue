@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue';
 import { useProjectionsStore } from '@/stores/Comercial/Projections/projectionsStore';
-import { useAuthStore } from '@/stores/Auth/authStore';
+import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 import Favorite from "@/components/config/Favorite.vue";
 import { RouterLink } from 'vue-router';
 

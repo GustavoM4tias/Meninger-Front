@@ -14,7 +14,8 @@
       <p class="text-sm text-gray-500 dark:text-gray-300 truncate">
         {{ item.empreendimento }}
       </p>
-      <span>{{ item.tokensUsed }} tokens</span>
+      <span class="text-sm text-gray-400 -mb-1.5">{{ item.model }}</span>
+      <span>{{ item.tokens_used }} tokens</span>
 
     </div>
 
@@ -24,6 +25,8 @@
 <script setup>
 const props = defineProps({ item: Object });
 const emit = defineEmits(['open']);
+
+console.log(props.item)
 
 const statusBadge = (status) => {
   switch (status) {
