@@ -50,7 +50,7 @@ const showBuildingDetails = () => {
             <div class="descricao flex-1 flex items-end justify-between">
                 <p
                     class="text-lg md:text-xl text-gray-100 cursor-pointer duration-200 filter drop-shadow hover:text-gray-200 -mt-1">
-                    {{ props.building.cidade }}/{{ props.building.sigla }}
+                    {{ props.building.cidade }}/{{ props.building.estado }}
                 </p>
                 <button @click="showBuildingDetails"
                     class="border rounded-md md:rounded-lg text-gray-100 text-lg text-wrap hover:bg-gray-100 hover:text-gray-800 shadow filter drop-shadow duration-300 py-1 px-2 md:py-2 md:px-4 ml-4">
