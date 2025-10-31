@@ -8,42 +8,56 @@ const routes = [
     path: '/',
     name: 'Home',
     component: Home,
-    meta: { requiresAuth: true, searchable: false, content: 'Página inicial do sistema' },
+    meta: { requiresAuth: true, searchable: true, content: 'Página inicial do sistema' },
   },
+
   {
-    path: '/events',
-    name: 'Eventos',
-    component: () => import('../views/Events/Events.vue'),
-    meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Listagem de eventos' },
-  },
-  {
-    path: '/buildings',
-    name: 'Empreendimentos',
-    component: () => import('../views/Buildings/Buildings.vue'),
-    meta: { requiresAuth: true, allowedPosition: '', searchable: false, content: 'Listagem de empreendimentos' },
+    path: '/marketing',
+    name: 'marketing',
+    children: [
+      {
+        path: 'Events',
+        name: 'Eventos',
+        component: () => import('@/views/Marketing/Events/Events.vue'),
+        meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Listagem de eventos' },
+      },
+      {
+        path: 'leads',
+        name: 'Leads',
+        component: () => import('@/views/Marketing/Leads/Index.vue'),
+        meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Dashboard de leads' },
+      },
+    ],
+    meta: { requiresAuth: true, allowedPosition: '' },
   },
   {
     path: '/comercial',
     name: 'comercial',
     children: [
       {
-        path: 'leads',
-        name: 'Leads',
-        component: () => import('../views/Leads/Index.vue'),
-        meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Dashboard de leads' },
-      },
-      {
-        path: 'repasses',
-        name: 'Repasses',
-        component: () => import('../views/Reports/Repasses.vue'),
-        meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Kanban de repasses' },
-      },
-      {
         path: 'faturamento',
         name: 'Faturamento',
-        component: () => import('../views/Reports/Faturamento.vue'),
+        component: () => import('@/views/Comercial/Faturamento/Index.vue'),
         meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Dashboard de faturamento e contratos' },
       },
+      {
+        path: 'buildings',
+        name: 'Empreendimentos',
+        component: () => import('@/views/Comercial/Buildings/Index.vue'),
+        meta: { requiresAuth: true, allowedPosition: '', searchable: false, content: 'Listagem de empreendimentos' },
+      },
+      {
+        path: 'projections',
+        name: 'Projeção',
+        component: () => import('@/views/Comercial/Projections/ProjectionsList.vue'),
+        meta: { requiresAuth: true, allowedPosition: '', searchable: false, content: 'Projeção' },
+      },
+      {
+        path: 'projections/:id',
+        name: 'Projeção Detalhes',
+        component: () => import('@/views/Comercial/Projections/ProjectionDetail.vue'),
+        meta: { requiresAuth: true, allowedPosition: '', searchable: false, content: 'Projeção Detalhes' },
+      }
     ],
     meta: { requiresAuth: true, allowedPosition: '' },
   },
@@ -51,7 +65,7 @@ const routes = [
     path: '/tools',
     name: 'tools',
     children: [
-      { path: 'validator', name: 'Validador', component: () => import('../views/tools/Validador.vue'), meta: { searchable: true, content: 'Validador de Contratos de Venda.' } },
+      { path: 'validator', name: 'Validador', component: () => import('@/views/Tools/Validador.vue'), meta: { searchable: true, content: 'Validador de Contratos de Venda.' } },
     ],
     meta: { requiresAuth: true, allowedPosition: '' },
   },
@@ -59,36 +73,36 @@ const routes = [
     path: '/settings',
     name: 'settings',
     children: [
-      { path: 'Users', name: 'Usuários', component: () => import('../views/Settings/Users.vue'), meta: { searchable: true, content: 'Listagem de usuários do sistema' } },
-      { path: 'Account', name: 'Minha Conta', component: () => import('../views/Settings/Account.vue'), meta: { searchable: true, content: 'Sua conta pessoal' } },
-      { path: 'Organograma', name: 'Organograma', component: () => import('../views/Settings/Organograma.vue'), meta: { searchable: true, content: 'Organograma estrutural' } },
-      { path: 'Facial', name: 'Reconhecimento Facial', component: () => import('../views/Settings/FacialAuth.vue'), meta: { searchable: true, content: 'Reconhecimento Facial' } },
+      { path: 'users', name: 'Usuários', component: () => import('@/views/Settings/Users.vue'), meta: { requiresAuth: true, allowedPosition: '', allowedRole: 'admin', searchable: true, content: 'Listagem de usuários do sistema' } },
+      { path: 'account', name: 'Minha Conta', component: () => import('@/views/Settings/Account.vue'), meta: { searchable: true, content: 'Sua conta pessoal' } },
+      { path: 'organograma', name: 'Organograma', component: () => import('@/views/Settings/Organograma.vue'), meta: { searchable: true, content: 'Organograma estrutural' } },
+      { path: 'cidades', name: 'Cidades', component: () => import('@/views/Settings/EnterpriseCities.vue'), meta: { requiresAuth: true, allowedPosition: '', allowedRole: 'admin', searchable: true, content: 'Gerenciamento de Cidades x Empreendimentos' } },
     ],
     meta: { requiresAuth: true, allowedPosition: '' },
   },
   {
     path: '/report',
     name: 'Reportar',
-    component: () => import('../views/Support/Report.vue'),
+    component: () => import('@/views/Support/Report.vue'),
     meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Reportar Problema | Suporte' },
   },
   {
     path: '/support',
     name: 'Suporte',
-    component: () => import('../views/Support/Support.vue'),
-    meta: { requiresAuth: true, allowedPosition: 'Comercial', allowedRole: 'admin', searchable: true, content: 'Andamento do Suporte' },
+    component: () => import('@/views/Support/Support.vue'),
+    meta: { requiresAuth: true, allowedPosition: '', allowedRole: 'admin', searchable: true, content: 'Andamento do Suporte' },
   },
   {
     path: '/support/:id',
     name: 'Detalhes Suporte',
-    component: () => import('../views/Support/SupportDetails.vue'),
+    component: () => import('@/views/Support/SupportDetails.vue'),
     props: true,
-    meta: { requiresAuth: true, allowedPosition: 'Comercial', allowedRole: 'admin', searchable: false, content: 'Detalhes do andamento do suporte' },
+    meta: { requiresAuth: true, allowedPosition: '', allowedRole: 'admin', searchable: true, content: 'Detalhes do andamento do suporte' },
   },
   {
     path: '/docs',
     name: 'Documentação',
-    component: () => import('../views/Docs/Docs.vue'),
+    component: () => import('@/views/Docs/Docs.vue'),
     meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Documentação do sistema' },
   },
   {
@@ -106,12 +120,12 @@ const routes = [
   {
     path: '/login',
     name: 'login',
-    component: () => import('../views/Auth/Auth.vue'),
+    component: () => import('@/views/Auth/Auth.vue'),
     meta: { requiresAuth: false },
   },
   {
     path: '/academy',
-    component: () => import('../views/Academy/Academy.vue'),
+    component: () => import('@/views/Academy/Academy.vue'),
     children: [
       {
         path: '',
@@ -121,17 +135,17 @@ const routes = [
       {
         path: 'home',
         name: 'AcademyHome',
-        component: () => import('../views/Academy/Home.vue')
+        component: () => import('@/views/Academy/Home.vue')
       },
       {
         path: 'corretor',
         name: 'Corretor',
-        component: () => import('../views/Academy/Courses/Corretor.vue')
+        component: () => import('@/views/Academy/Courses/Corretor.vue')
       },
       {
         path: 'imobiliaria',
         name: 'Imobiliaria',
-        component: () => import('../views/Academy/Courses/Imobiliaria.vue')
+        component: () => import('@/views/Academy/Courses/Imobiliaria.vue')
       },
     ],
     meta: { requiresAuth: false, allowedPosition: '' },
@@ -170,6 +184,9 @@ router.beforeEach((to, from, next) => {
       path: '/error',
       query: { message: errorMessage }
     });
+  }
+  if (to.meta?.requiresAdmin && auth?.user?.role !== 'admin') {
+    return next({ path: '/' }); // ou uma página 403
   }
   next();
 });

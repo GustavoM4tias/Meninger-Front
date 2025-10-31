@@ -1,8 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import API_URL from '@/config/apiUrl';
-import { useCarregamentoStore } from '@/stores/Config/carregamento';
-import { fetchCarregamento } from '@/utils/Config/fetchCarregamento';
+import { useCarregamentoStore } from '@/stores/Config/carregamento'; 
 
 const LS = {
     emp: 'leads_emp_options_v1',

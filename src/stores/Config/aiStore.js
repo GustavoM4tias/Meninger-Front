@@ -4,6 +4,38 @@ import { ref } from 'vue';
 import API_URL from '@/config/apiUrl';
 import { useCarregamentoStore } from '@/stores/Config/carregamento';
 
+// ajuste aqui se você guarda o token em outro lugar (ex.: Pinia de auth)
+function getToken() {
+    return localStorage.getItem('token'); // ou sessionStorage / cookie, etc.
+}
+
+async function requestWithAuth(url, options = {}) {
+    const token = getToken();
+    const headers = new Headers(options.headers || {});
+
+    if (token) headers.set('Authorization', `Bearer ${token}`);
+
+    // se body for FormData, não definir Content-Type manualmente
+    const isFormData = (options.body && typeof FormData !== 'undefined' && options.body instanceof FormData);
+    if (!isFormData && !headers.has('Content-Type') && options.method && options.method !== 'GET') {
+        headers.set('Content-Type', 'application/json');
+    }
+
+    const res = await fetch(url, { ...options, headers });
+    if (!res.ok) {
+        // mensagens amigáveis
+        if (res.status === 401) throw new Error('Não autorizado. Faça login novamente.');
+        if (res.status === 400) {
+            const j = await res.json().catch(() => ({}));
+            throw new Error(j?.error || 'Requisição inválida.');
+        }
+        throw new Error('Erro na requisição.');
+    }
+    // algumas rotas podem não ter body
+    const contentType = res.headers.get('content-type') || '';
+    return contentType.includes('application/json') ? res.json() : res.text();
+}
+
 export const useAIStore = defineStore('ai', () => {
     const validatorResult = ref(null);
     const validatorHistory = ref([]);
@@ -19,60 +51,57 @@ export const useAIStore = defineStore('ai', () => {
 
         try {
             carregamento.iniciarCarregamento();
-            const res = await fetch(`${API_URL}/ai/validator`, {
+            const data = await requestWithAuth(`${API_URL}/ai/validator`, {
                 method: 'POST',
-                body: formData,
+                body: formData, // não setar Content-Type manualmente
             });
-            if (!res.ok) throw new Error('Erro ao validar documentos');
-            validatorResult.value = await res.json();
+            validatorResult.value = data;
         } catch (e) {
-            error.value = 'Erro ao validar documentos';
+            error.value = e.message || 'Erro ao validar documentos';
             console.error(e);
         } finally {
             carregamento.finalizarCarregamento();
         }
     };
 
-    // Histórico de validações 
+    // Histórico de validações (sem filtros, só cidade via backend)
     const fetchValidatorHistory = async (summary = false) => {
         error.value = null;
-
         try {
-            if (!summary) carregamento.iniciarCarregamento(); // só inicia se for listagem completa
+            if (!summary) carregamento.iniciarCarregamento();
 
             const url = summary
                 ? `${API_URL}/ai/validator/history?summary=true`
                 : `${API_URL}/ai/validator/history`;
-
-            const res = await fetch(url);
-            if (!res.ok) throw new Error('Erro ao buscar histórico de validações');
-            const data = await res.json();
-
-            validatorHistory.value = data.results || data;
+ 
+            // backend retorna array puro; manter compat com possível {results: []}
+            const data = await requestWithAuth(url);
+            const list = Array.isArray(data) ? data : (data.results || []);
+            validatorHistory.value = list.map(({ created_at, updated_at, ...rest }) => ({
+                ...rest,
+                createdAt: created_at,
+                updatedAt: updated_at,
+            }));
         } catch (e) {
-            error.value = 'Erro ao buscar histórico';
+            error.value = e.message || 'Erro ao buscar histórico';
             console.error(e);
         } finally {
-            if (!summary) carregamento.finalizarCarregamento(); // só finaliza se iniciou
+            if (!summary) carregamento.finalizarCarregamento();
         }
     };
 
-    // Enviar mensagem ao chat AI
+    // Chat
     const sendChatMessage = async (message) => {
         error.value = null;
-
         try {
             carregamento.iniciarCarregamento();
-            const res = await fetch(`${API_URL}/ai/chat`, {
+            const data = await requestWithAuth(`${API_URL}/ai/chat`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ message }),
             });
-            if (!res.ok) throw new Error('Erro ao enviar mensagem ao chat');
-            const data = await res.json();
             chatHistory.value.push({ user: message, ai: data.response });
         } catch (e) {
-            error.value = 'Erro no chat AI';
+            error.value = e.message || 'Erro no chat AI';
             console.error(e);
         } finally {
             carregamento.finalizarCarregamento();
@@ -82,14 +111,11 @@ export const useAIStore = defineStore('ai', () => {
     // Estatísticas de tokens
     const fetchTokenStats = async () => {
         error.value = null;
-
         try {
             carregamento.iniciarCarregamento();
-            const res = await fetch(`${API_URL}/ai/token`);
-            if (!res.ok) throw new Error('Erro ao buscar estatísticas de tokens');
-            tokenStats.value = await res.json();
+            tokenStats.value = await requestWithAuth(`${API_URL}/ai/token`);
         } catch (e) {
-            error.value = 'Erro ao buscar tokens';
+            error.value = e.message || 'Erro ao buscar tokens';
             console.error(e);
         } finally {
             carregamento.finalizarCarregamento();

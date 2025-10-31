@@ -468,7 +468,7 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue'
-import { useContractsStore } from '@/stores/Reports/Contracts/contractsStore'
+import { useContractsStore } from '@/stores/Comercial/Contracts/contractsStore'
 import ChartActions from '@/components/config/ChartActions.vue'
 import Export from '@/components/config/Export.vue'
 import VChart from 'vue-echarts'

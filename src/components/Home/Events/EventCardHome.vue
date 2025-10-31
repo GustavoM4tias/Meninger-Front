@@ -48,7 +48,7 @@ const formatDate = (dateString) => {
                     <!-- Cidade  -->
                 </p>
                 <RouterLink :to="{
-                    path: '/events',
+                    path: '/marketing/events',
                     query: { busca: event.title, section: 'Geral' }
                 }"
                     class="border rounded-md md:rounded-lg text-white text-md md:text-lg text-wrap hover:bg-gray-100 hover:text-gray-800 duration-300 py-0.5 px-1 md:py-1 md:px-3 ml-4">

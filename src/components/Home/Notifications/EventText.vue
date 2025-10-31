@@ -24,7 +24,7 @@ const formatDate = (dateString) => {
 <template>
     <!-- Verifica se o item é um evento ou aniversário -->
     <RouterLink v-if="item.event_date" :to="{
-        path: '/events',
+        path: '/marketing/events',
         query: { busca: item.title, section: 'geral' }
     }"
         class="border-b-2 group border-gray-300 hover:bg-gray-100 dark:border-gray-600 dark:hover:bg-gray-800 cursor-pointer px-3 py-2 md:px-4 md:py-2 text-lg md:text-xl flex">

@@ -190,7 +190,7 @@
 
                     <div class="w-full justify-between flex gap-1.5 overflow-x-auto mt-2 text-xs md:text-lg">
                         <a v-tippy="'Visualizar Empreendimento'"
-                            :href="'/buildings?search=' + lead.empreendimento[0].nome" target="_blank"
+                            :href="'/comercial/buildings?search=' + lead.empreendimento[0].nome" target="_blank"
                             class="bg-gray-200 dark:bg-gray-600 rounded-md px-2 truncate"
                             v-if="lead.empreendimento.length > 0">
                             {{ lead.empreendimento[0].nome }}
