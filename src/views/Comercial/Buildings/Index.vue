@@ -2,8 +2,8 @@
 import { ref, onMounted, computed, watch, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useBuildingStore } from '@/stores/Building/buildingStore';
-import BuildingCard from '@/components/Buildings/BuildingCard.vue';
-import BuildingModal from '@/components/Buildings/BuildingModal.vue';
+import BuildingCard from '@/views/Comercial/Buildings/components/BuildingCard.vue';
+import BuildingModal from '@/views/Comercial/Buildings/components/BuildingModal.vue';
 import Favorite from "@/components/config/Favorite.vue";
 
 const route = useRoute();

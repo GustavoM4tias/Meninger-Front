@@ -31,6 +31,7 @@ function abrirModal([list, mode]) {
   modalMode.value = mode || 'list'
   modalVisivel.value = true
 }
+
 function buscar() { store.fetchLeads(true) }
 
 function limpar() {
