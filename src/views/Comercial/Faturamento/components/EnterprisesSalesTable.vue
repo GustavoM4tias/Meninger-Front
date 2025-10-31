@@ -165,7 +165,7 @@
 
 <script setup>
 import { ref, computed } from 'vue'
-import { useContractsStore } from '@/stores/Reports/Contracts/contractsStore'
+import { useContractsStore } from '@/stores/Comercial/Contracts/contractsStore'
 import EnterpriseDetailModal from './EnterpriseDetailModal.vue'
 import Export from '@/components/config/Export.vue'
 

@@ -104,7 +104,7 @@ const periodOptions = [
 ]
 const selectedPeriod = ref('7d')
 const groupMonthly = ref(false)
- 
+
 const keyOfDate = (d) => dayjs(d).format('YYYY-MM-DD')
 const labelOfDate = (d) => dayjs(d).format('DD/MM')
 
@@ -167,7 +167,8 @@ const filteredRows = (range) => {
     const rows = norm(ai.validatorHistory)
     const s = range.start.getTime(), e = range.end.getTime()
     return rows.filter(r => {
-        const d = dayjs(r.createdAt || r.updatedAt || Date.now()).toDate().getTime()
+        const d = dayjs(r.created_at || r.updated_at || r.createdAt || r.updatedAt || Date.now())
+        .toDate().getTime()
         return d >= s && d <= e
     })
 }
@@ -178,7 +179,7 @@ const makeSeries = (range) => {
     const rows = filteredRows(range)
 
     for (const r of rows) {
-        const baseDate = r.createdAt || r.updatedAt || Date.now()
+        const baseDate = r.created_at || r.updated_at || r.createdAt || r.updatedAt || Date.now()
         const k = range.group === 'month' ? keyOfMonth(baseDate) : keyOfDate(baseDate)
 
         if (!by.has(k)) by.set(k, { a: 0, r: 0, emp: new Map(), date: dayjs(baseDate).toDate() })

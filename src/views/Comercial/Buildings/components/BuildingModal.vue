@@ -1,6 +1,6 @@
 <script setup>
 import { onMounted, ref } from 'vue';
-import { useBuildingStore } from '../../stores/Building/buildingStore';
+import { useBuildingStore } from '../../../../stores/Building/buildingStore';
 import WeatherInfo from './UI/WeatherInfo.vue'
 import Flag from './UI/Flag.vue';
 

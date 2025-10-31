@@ -38,13 +38,13 @@
 
 <script setup>
 import { onMounted } from 'vue'
-import { useContractsStore } from '@/stores/Reports/Contracts/contractsStore'
+import { useContractsStore } from '@/stores/Comercial/Contracts/contractsStore'
 import Favorite from "@/components/config/Favorite.vue";
 
 // Components
-import DashboardFilters from '@/components/Reports/Contracts/DashboardFilters.vue'
-import MetricsCards from '@/components/Reports/Contracts/MetricsCards.vue'
-import EnterprisesSalesTable from '@/components/Reports/Contracts/EnterprisesSalesTable.vue'
+import DashboardFilters from './components/DashboardFilters.vue'
+import MetricsCards from './components/MetricsCards.vue'
+import EnterprisesSalesTable from './components/EnterprisesSalesTable.vue'
 
 const contractsStore = useContractsStore()
 

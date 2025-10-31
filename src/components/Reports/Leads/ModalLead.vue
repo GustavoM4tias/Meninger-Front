@@ -83,7 +83,7 @@
 
                     <div class="flex w-full justify-between pt-1">
                         <a v-tippy="lead.empreendimento[0]?.nome"
-                            :href="'/buildings?search=' + lead.empreendimento[0]?.nome" target="_blank"
+                            :href="'/comercial/buildings?search=' + lead.empreendimento[0]?.nome" target="_blank"
                             class="bg-gray-50 dark:bg-gray-700 rounded-md px-2 w-auto truncate text-sm ms-0 m-auto"
                             v-if="lead.empreendimento && lead.empreendimento.length > 0">
                             {{ lead.empreendimento[0].nome }}
