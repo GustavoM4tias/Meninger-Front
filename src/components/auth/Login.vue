@@ -36,12 +36,12 @@
 
 <script setup>
 import { watch, ref, onMounted, onBeforeUnmount } from 'vue';
-import { useAuthStore } from '../../stores/Settings/Auth/authStore';
+import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 import { useFaceStore } from '@/stores/Settings/Auth/faceStore';
-import { loginUser } from '../../utils/Auth/apiAuth';
+import { loginUser } from '@/utils/Auth/apiAuth';
 import { useRouter } from 'vue-router';
-import Input from '../UI/Input.vue';
-import Button from '../UI/Button.vue';
+import Input from '@/UI/Input.vue';
+import Button from '@/UI/Button.vue';
 
 const router = useRouter();
 const authStore = useAuthStore();
