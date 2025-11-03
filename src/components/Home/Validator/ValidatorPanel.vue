@@ -16,7 +16,7 @@
 
             <!-- KPIs -->
             <div class="flex-1 grid grid-cols-2 gap-2 ps-2 md:ps-4">
-                <div class="rounded-lg my-auto ps-3 p-1.5 bg-white/60 dark:bg-gray-900/40 border-l-4 border-indigo-500">
+                <div class="rounded-lg px-3 py-2 bg-white/60 dark:bg-gray-900/40 border-l-4 border-indigo-500">
                     <p class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 truncate">Validações</p>
                     <p class="font-semibold text-gray-800 dark:text-gray-100 md:text-lg leading-tight">
                         {{ totals.aprovados + totals.reprovados }}
