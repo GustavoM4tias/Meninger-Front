@@ -1,13 +1,14 @@
 import { defineStore } from 'pinia'
 import API_URL from '@/config/apiUrl'
+import { useCarregamentoStore } from '@/stores/Config/carregamento';
 
 export const useWorkflowGroupsStore = defineStore('workflowGroups', {
     state: () => ({
         grupos: [],
         workflow: [],
-        tipo: 'reservas',
-        loading: false,
-        error: null,
+        tipo: 'reservas', 
+        segmentos: [],         // opções vindas de cv_enterprises.segmento_nome
+        error: null
     }),
 
     actions: {
@@ -29,7 +30,8 @@ export const useWorkflowGroupsStore = defineStore('workflowGroups', {
         },
 
         async fetchGrupos(tipo = this.tipo) {
-            this.loading = true
+            const carregamentoStore = useCarregamentoStore();
+            carregamentoStore.iniciarCarregamento();
             this.error = null
             try {
                 const res = await fetch(`${API_URL}/cv/workflow-grupos?tipo=${tipo}`, {
@@ -44,9 +46,10 @@ export const useWorkflowGroupsStore = defineStore('workflowGroups', {
                 this.tipo = tipo
             } catch (e) {
                 this.error = e.message
+                carregamentoStore.finalizarCarregamento();
                 console.error(e)
             } finally {
-                this.loading = false
+                carregamentoStore.finalizarCarregamento();
             }
         },
 
@@ -59,8 +62,11 @@ export const useWorkflowGroupsStore = defineStore('workflowGroups', {
                 },
                 body: JSON.stringify(payload)
             })
-            if (!res.ok) throw new Error(`Erro ao salvar grupo (${res.status})`)
+            if (!res.ok) throw new Error(`Erro ao salvar: ${res.status}`)
+            const data = await res.json()
+            // refresh rápido
             await this.fetchGrupos(this.tipo)
+            return data
         },
 
         async deleteGrupo(idgroup) {
@@ -70,6 +76,21 @@ export const useWorkflowGroupsStore = defineStore('workflowGroups', {
             })
             if (!res.ok) throw new Error(`Erro ao excluir grupo (${res.status})`)
             await this.fetchGrupos(this.tipo)
+        },
+
+        // --- NOVO: carrega opções distintas de segmento a partir do backend ---
+        async fetchSegmentos() {
+            const res = await fetch(`${API_URL}/cv/workflow-grupos/segments`, {
+                headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+            })
+            if (!res.ok) throw new Error('Falha ao carregar segmentos')
+            const data = await res.json()
+            const items = Array.isArray(data?.results) ? data.results : (Array.isArray(data) ? data : [])
+            this.segmentos = items
+                .map(s => (typeof s === 'string' ? s : s?.segmento_nome || s?.name || ''))
+                .map(s => s?.trim())
+                .filter(Boolean)
+                .sort((a, b) => a.localeCompare(b))
         }
     }
 })

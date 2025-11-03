@@ -98,14 +98,14 @@
             </th>
             <th class="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider">
               Ticket Médio <span class="text-gray-400">({{ valueModeLabel }})</span>
-            </th> 
+            </th>
             <th class="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider">Ações</th>
           </tr>
         </thead>
 
         <tbody class="bg-white dark:bg-gray-700/40 divide-y divide-gray-200 dark:divide-gray-600">
           <tr v-for="(enterprise, index) in sortedData" :key="enterprise.name"
-            class="hover:bg-gray-50 dark:hover:bg-gray-800/70 transition-colors">
+            :class="nameHasProjection(enterprise.name) ? 'bg-green-50/70 dark:bg-green-900/20 hover:bg-green-100/70 dark:hover:bg-green-900/30' : 'hover:bg-gray-50 dark:hover:bg-gray-800/70'">
             <td class="px-6 py-4">
               <input type="checkbox" :checked="selectedNames.has(enterprise.name)"
                 @change="toggleOne(enterprise.name, $event)" />
@@ -114,7 +114,9 @@
             <td class="px-6 py-4">
               <div class="flex items-center">
                 <div :style="{ backgroundColor: getColor(index) }" class="w-3 h-3 rounded-full mr-3"></div>
-                <div class="text-sm font-medium line-clamp-2">{{ enterprise.name }}</div>
+                <div class="flex text-sm font-medium line-clamp-2">{{ enterprise.name }}
+                  <div v-if="nameHasProjection(enterprise.name)" class="w-2 h-2 rounded-full ml-2 my-auto cursor-pointer bg-emerald-400 animate-pulse" v-tippy="'Projeção de Entrada'"></div>
+                </div>
               </div>
             </td>
 
@@ -129,7 +131,7 @@
             <td class="px-6 py-4 text-right">
               <div class="text-sm">{{ formatCurrency(displayTotal(enterprise) / (enterprise.count || 1)) }}</div>
             </td>
- 
+
             <td class="w-fit">
               <div class="flex gap-1 pe-2 justify-center items-center">
                 <button @click="openSingle(enterprise, 'list')" class="inline-flex items-center px-2 py-2 text-xs font-medium rounded-full transition-colors
@@ -189,6 +191,10 @@ const initialMode = ref('list') // 'list' | 'pie' | 'bar'
 const valueModeLabel = computed(() => contractsStore.valueModeLabel)
 const valOf = (item) => contractsStore.valuePicker(item)
 
+// depois (SIMPLES e à prova de nulos):
+const nameHasProjection = (name) =>
+  contractsStore.contracts.some(c => c._projection === true && c.enterprise_name === name)
+
 const colors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4', '#84CC16', '#F97316', '#EC4899', '#6366F1']
 
 const sortedData = computed(() => {
@@ -205,7 +211,7 @@ const sortedData = computed(() => {
 const totalValue = computed(() => props.data.reduce((sum, item) => sum + valOf(item), 0))
 const displayTotal = (item) => valOf(item)
 const getColor = (i) => colors[i % colors.length]
-const formatCurrency = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(v || 0) 
+const formatCurrency = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(v || 0)
 
 /* helpers de seleção */
 const visibleNames = computed(() => sortedData.value.map(e => e.name))
@@ -264,4 +270,3 @@ const closeModal = () => {
   // selectedNames.value = new Set()
 }
 </script>
- 

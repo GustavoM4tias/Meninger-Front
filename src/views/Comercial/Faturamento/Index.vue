@@ -51,7 +51,8 @@ const contractsStore = useContractsStore()
 const loadData = async () => {
     await Promise.all([
         contractsStore.fetchContracts(),
-        contractsStore.fetchEnterprises()
+        contractsStore.fetchEnterprises(),
+        contractsStore.fetchWorkflowGroups() // opcional
     ])
 }
 
