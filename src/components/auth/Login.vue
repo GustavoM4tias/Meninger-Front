@@ -35,18 +35,13 @@
 </template>
 
 <script setup>
-import { watch, ref, onMounted, onBeforeUnmount } from 'vue';
+import { ref, onMounted, onBeforeUnmount } from 'vue';
 import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 import { useFaceStore } from '@/stores/Settings/Auth/faceStore';
 import { loginUser } from '@/utils/Auth/apiAuth';
 import { useRouter } from 'vue-router';
-<<<<<<< HEAD
 import Input from '@/components/UI/Input.vue';
 import Button from '@/components/UI/Button.vue';
-=======
-import Input from '@/UI/Input.vue';
-import Button from '@/UI/Button.vue';
->>>>>>> 36ea54657de2f5d1580f6c2ec17035af0cd3118e
 
 const router = useRouter();
 const authStore = useAuthStore();
