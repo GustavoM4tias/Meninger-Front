@@ -1,6 +1,6 @@
 // src/utils/apiAuth.js
-import { fetchCarregamento } from '../Config/fetchCarregamento';
-import API_URL from '../../config/apiUrl';
+import { fetchCarregamento } from '@/utils/Config/fetchCarregamento';
+import API_URL from '@/config/apiUrl';
 
 export const registerUser = async (username, password, email, position, city, birth_date) => {
   const response = await fetchCarregamento(`${API_URL}/auth/register`, {

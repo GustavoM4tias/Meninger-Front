@@ -2,8 +2,8 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import EditEventModal from './EditEventModal.vue';
-import { deleteEvent } from '../../utils/Event/apiEvents';
-import { useAuthStore } from '../../stores/Settings/Auth/authStore';
+import { deleteEvent } from '@/utils/Event/apiEvents';
+import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 
 const authStore = useAuthStore();
 

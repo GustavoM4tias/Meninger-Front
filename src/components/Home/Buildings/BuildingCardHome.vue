@@ -1,5 +1,5 @@
 <script setup>
-import Flag from '../../Buildings/UI/Flag.vue';
+import Flag from '@/Buildings/UI/Flag.vue';
 
 const props = defineProps({
     building: {

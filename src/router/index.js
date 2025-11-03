@@ -1,7 +1,7 @@
 // src/router/index.js
 import { createRouter, createWebHistory } from 'vue-router';
-import { useAuthStore } from '../stores/Settings/Auth/authStore';
-import Home from '../views/Home.vue';
+import { useAuthStore } from '@/stores/Settings/Auth/authStore';
+import Home from '@/views/Home.vue';
 
 const routes = [
   {
@@ -114,13 +114,13 @@ const routes = [
   {
     path: '/error',
     name: 'Error',
-    component: () => import('../views/Config/ErrorPage.vue'),
+    component: () => import('@/views/Config/ErrorPage.vue'),
     meta: { requiresAuth: false },
   },
   {
     path: '/teste',
     name: 'Teste',
-    component: () => import('../views/Config/teste.vue'),
+    component: () => import('@/views/Config/teste.vue'),
     meta: { requiresAuth: true, allowedPosition: '', allowedRole: 'admin' },
   },
   {

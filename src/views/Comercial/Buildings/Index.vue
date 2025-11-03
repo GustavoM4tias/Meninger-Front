@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted, computed, watch, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { useBuildingStore } from '@/stores/Building/buildingStore';
+import { useBuildingStore } from '@/stores/Comercial/Building/buildingStore';
 import BuildingCard from '@/views/Comercial/Buildings/components/BuildingCard.vue';
 import BuildingModal from '@/views/Comercial/Buildings/components/BuildingModal.vue';
 import Favorite from "@/components/config/Favorite.vue";

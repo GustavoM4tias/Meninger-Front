@@ -1,6 +1,6 @@
 // src/utils/apiBuilding.js
-import { fetchCarregamento } from '../Config/fetchCarregamento';
-import API_URL from '../../config/apiUrl'; // Define a URL base da sua API
+import { fetchCarregamento } from '@/utils/Config/fetchCarregamento';
+import API_URL from '@/config/apiUrl'; // Define a URL base da sua API
 
 export const getAddress = async (cep) => {
     const response = await fetchCarregamento(`https://viacep.com.br/ws/${cep}/json/`, {

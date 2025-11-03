@@ -1,8 +1,8 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
-import { useAuthStore } from '../../stores/Settings/Auth/authStore';
-import { useNotificationStore } from '../../stores/Config/notificationStore';
-import { useFavoritesStore } from '../../stores/Config/favoriteStore';
+import { useAuthStore } from '@/stores/Settings/Auth/authStore';
+import { useNotificationStore } from '@/stores/Config/notificationStore';
+import { useFavoritesStore } from '@/stores/Config/favoriteStore';
 import Search from '@/components/Navigation/components/Search.vue';
 import Notification from '@/components/Navigation/components/Notification.vue';
 import Profile from '@/components/Navigation/components/Profile.vue';

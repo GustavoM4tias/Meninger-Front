@@ -1,5 +1,5 @@
 <script setup>
-import { useCarregamentoStore } from '../../stores/Config/carregamento'; 
+import { useCarregamentoStore } from '@/stores/Config/carregamento'; 
 
 const carregamentoStore = useCarregamentoStore(); 
 
