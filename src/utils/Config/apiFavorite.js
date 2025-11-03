@@ -1,5 +1,5 @@
 // utils/apiFavorite.js
-import API_URL from '../../config/apiUrl'; // Define a URL base da sua API
+import API_URL from '@/config/apiUrl'; // Define a URL base da sua API
 
 export const addFavorite = async (router, section) => {
     try {

@@ -1,6 +1,6 @@
 // src/stores/buildingStore.js
 import { defineStore } from 'pinia';
-import { getBuildings, getWeather , getWeatherByCity, getBuildingById } from '../../utils/Building/apiBuilding';
+import { getBuildings, getWeather , getWeatherByCity, getBuildingById } from '@/utils/Building/apiBuilding';
 
 export const useBuildingStore = defineStore('buildingStore', {
     state: () => ({

@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted } from 'vue';
-import { useAuthStore } from '../../../stores/Settings/Auth/authStore'
+import { useAuthStore } from '@/stores/Settings/Auth/authStore'
 const authStore = useAuthStore();
 
 const darkMode = ref(false);

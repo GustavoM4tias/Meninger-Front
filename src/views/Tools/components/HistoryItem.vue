@@ -26,8 +26,6 @@
 const props = defineProps({ item: Object });
 const emit = defineEmits(['open']);
 
-console.log(props.item)
-
 const statusBadge = (status) => {
   switch (status) {
     case 'APROVADO':

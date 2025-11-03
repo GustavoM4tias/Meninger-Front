@@ -1,8 +1,8 @@
 <!-- src/components/Events/EditEventModal.vue -->
 <script setup>
 import { ref, watch, onMounted, onUnmounted, computed } from 'vue';
-import { updateEvent } from '../../utils/Event/apiEvents';
-import { getAddress } from '../../utils/Config/apiExternalBuilding';
+import { updateEvent } from '@/utils/Event/apiEvents';
+import { getAddress } from '@/utils/Config/apiExternalBuilding';
 import OrganizerPicker from './OrganizerPicker.vue';
 
 const props = defineProps({

@@ -25,12 +25,12 @@
 
 <script setup>
 import { onMounted, ref } from 'vue';
-import { useAuthStore } from '../../stores/Settings/Auth/authStore';
-import { registerUser } from '../../utils/Auth/apiAuth';
+import { useAuthStore } from '@/stores/Settings/Auth/authStore';
+import { registerUser } from '@/utils/Auth/apiAuth';
 import { useRouter } from 'vue-router';
-import Input from '../UI/Input.vue';
-import Button from '../UI/Button.vue';
-import Select from '../UI/Select.vue';
+import Input from '@/components/UI/Input.vue';
+import Button from '@/components/UI/Button.vue';
+import Select from '@/components/UI/Select.vue';
 
 const router = useRouter();
 const authStore = useAuthStore();

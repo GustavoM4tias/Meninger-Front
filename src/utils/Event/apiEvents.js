@@ -1,6 +1,6 @@
 // src/utils/apiEvents.js
-import { fetchCarregamento } from '../Config/fetchCarregamento';
-import API_URL from '../../config/apiUrl'; // Define a URL base da sua API
+import { fetchCarregamento } from '@/utils/Config/fetchCarregamento';
+import API_URL from '@/config/apiUrl'; // Define a URL base da sua API
 
 import { useToast } from 'vue-toastification';
 

@@ -1,7 +1,7 @@
 <script setup>
 import { onMounted, computed } from 'vue';
 import Carrossel from "./Carrossel.vue";
-import { useBuildingStore } from '../../../stores/Building/buildingStore';
+import { useBuildingStore } from '@/stores/Comercial/Building/buildingStore';
 
 const buildingStore = useBuildingStore();
 
