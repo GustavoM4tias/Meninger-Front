@@ -9,19 +9,25 @@ export const useContractsStore = defineStore('contracts', {
         enterprises: [],
         total: 0,
         error: null,
-        valueMode: 'net', // 'net' | 'gross'
+        valueMode: 'net',
         filters: {
             startDate: '',
             endDate: '',
             situation: 'Emitido',
-            enterpriseName: [] // nomes (CSV no request)
-        }
+            enterpriseName: []
+        },
+
+        // ✅ estes 3 DEVEM ficar na raiz (fora de filters)
+        workflowGroups: [],      // grupos de workflow (projeções)
+        selectedGroupIds: [],    // ids selecionados no filtro
+        _projCache: new Map(),   // cache de projeções por grupo
     }),
 
     getters: {
         // Regra (override) para um CONTRATO específico
         enterpriseRuleFor() {
             return (c) => {
+                if (c?._projection) return null // <-- NUNCA aplica override em projeção
                 const ov = this.enterpriseOverrides || {}
                 const byId = ov.byId || {}
                 const byName = ov.byName || {}
@@ -37,7 +43,7 @@ export const useContractsStore = defineStore('contracts', {
                 return (this.isGross && rule.gross === 'LAND_VALUE_ONLY') ||
                     (this.isNet && rule.net === 'LAND_VALUE_ONLY')
             }
-        }, 
+        },
         // Rótulo do modo atual
         valueModeLabel: (state) => (state.valueMode === 'net' ? 'VGV' : 'VGV + DC'),
         isGross: (state) => state.valueMode === 'gross',
@@ -73,17 +79,7 @@ export const useContractsStore = defineStore('contracts', {
         }),
         enterpriseCommissionFor() {
             return (c) => {
-                const rules = this.enterpriseCommissionRules || {}
-                const byId = rules.byId || {}
-                const byName = rules.byName || {}
-                const norm = (s) => (s || '').trim().toUpperCase()
-                return byId[c?.enterprise_id] || byName[norm(c?.enterprise_name)] || null
-            }
-        },
-
-
-        enterpriseCommissionFor() {
-            return (c) => {
+                if (c?._projection) return null // <-- sem comissão em projeção
                 const rules = this.enterpriseCommissionRules || {}
                 const byId = rules.byId || {}
                 const byName = rules.byName || {}
@@ -163,44 +159,87 @@ export const useContractsStore = defineStore('contracts', {
                 }
             })
 
-            // 2) Injetar TR sintética (somando land_value do grupo) se nenhum contrato tiver TR
+            // 2) Injetar TR sintética só para contratos REAIS (nunca para projeções)
             salesMap.forEach((sale) => {
-                const groupHasTR = sale.contracts.some(
-                    (c) =>
-                        Array.isArray(c.payment_conditions) &&
-                        c.payment_conditions.some((pc) => this._isTR(pc))
-                )
+                const overrides = this.enterpriseOverrides || {}
+                const byId = overrides.byId || {}
+                const byName = overrides.byName || {}
+                const norm = (s) => (s || '').trim().toUpperCase()
+                const getRuleFor = (c) => byId[c.enterprise_id] || byName[norm(c.enterprise_name)] || null
 
-                if (!groupHasTR) {
-                    const sumLand = sale.contracts.reduce(
-                        (acc, c) => acc + (Number(c.land_value) || 0),
-                        0
-                    )
-                    if (sumLand > 0 && sale.contracts.length > 0) {
-                        const target = sale.contracts[0]
-                        target.payment_conditions = [
-                            ...target.payment_conditions,
-                            {
-                                condition_type_id: 'TR',
-                                condition_type_name: 'Terreno (TR)',
-                                total_value: sumLand,
-                                total_value_interest: 0,
-                                outstanding_balance: 0,
-                                amount_paid: 0,
-                                base_date: target.financial_institution_date ?? null,
-                                first_payment: null,
-                                indexer_name: null,
-                                bearer_name: null,
-                                interest_type: null,
-                                installments_number: 1,
-                                synthetic: true
-                            }
-                        ]
+                const totalsOf = this._contractTotals
+                const real = sale._realContracts ?? sale.contracts.filter(c => !c._projection)
+                const projs = sale._projContracts ?? sale.contracts.filter(c => c._projection)
+
+                // aplica regras SÓ nos reais
+                const matched = real.filter((c) => !!getRuleFor(c))
+                const others = real.filter((c) => !getRuleFor(c))
+                const rule = matched.length ? getRuleFor(matched[0]) : null
+
+                const othersGross = others.reduce((acc, c) => acc + totalsOf(c).gross, 0)
+                const othersNet = others.reduce((acc, c) => acc + totalsOf(c).net, 0)
+
+                let matchedGross = matched.reduce((acc, c) => acc + totalsOf(c).gross, 0)
+                let matchedNet = matched.reduce((acc, c) => acc + totalsOf(c).net, 0)
+
+                if (rule?.gross === 'LAND_VALUE_ONLY') {
+                    const landSum = matched.reduce((acc, c) => acc + (Number(c.land_value) || 0), 0)
+                    matchedGross = landSum
+                }
+                if (rule?.net === 'TR_ONLY') {
+                    const trSum = matched.reduce((acc, c) => {
+                        const pcs = Array.isArray(c.payment_conditions) ? c.payment_conditions : []
+                        return acc + pcs.filter((pc) => this._isTR(pc))
+                            .reduce((s, pc) => s + (Number(pc.total_value) || 0), 0)
+                    }, 0)
+                    matchedNet = trSum
+                }
+                if (rule?.net === 'LAND_VALUE_ONLY') {
+                    const landSum = matched.reduce((acc, c) => acc + (Number(c.land_value) || 0), 0)
+                    matchedNet = landSum
+                }
+
+                // comissão “por fora” SÓ nos reais
+                const comRules = this.enterpriseCommissionRules || {}
+                const comById = comRules.byId || {}
+                const comByName = comRules.byName || {}
+                const getComFor = (c) => comById[c.enterprise_id] || comByName[norm(c.enterprise_name)] || null
+                const uplift = (base, pct) => (pct > 0 ? base * (pct / (1 - pct)) : 0)
+
+                const baseGross = (c) => {
+                    const r = getRuleFor(c) || {}
+                    if (r.gross === 'LAND_VALUE_ONLY') return Number(c.land_value) || 0
+                    return totalsOf(c).gross || 0
+                }
+                const baseNet = (c) => {
+                    const r = getRuleFor(c) || {}
+                    if (r.net === 'TR_ONLY') {
+                        const pcs = Array.isArray(c.payment_conditions) ? c.payment_conditions : []
+                        return pcs.filter((pc) => this._isTR(pc)).reduce((s, pc) => s + (Number(pc.total_value) || 0), 0)
+                    }
+                    if (r.net === 'LAND_VALUE_ONLY') return Number(c.land_value) || 0
+                    return totalsOf(c).net || 0
+                }
+
+                let addGross = 0
+                let addNet = 0
+                for (const c of real) {
+                    const com = getComFor(c)
+                    const pct = Number(com?.commission_pct) || 0
+                    if (pct > 0) {
+                        addGross += uplift(baseGross(c), pct)
+                        addNet += uplift(baseNet(c), pct)
                     }
                 }
+
+                // Projeções entram “como vieram” (sem override nem comissão)
+                const projsGross = projs.reduce((acc, c) => acc + totalsOf(c).gross, 0)
+                const projsNet = projs.reduce((acc, c) => acc + totalsOf(c).net, 0)
+
+                sale.total_value_gross = othersGross + matchedGross + addGross + projsGross
+                sale.total_value_net = othersNet + matchedNet + addNet + projsNet
             })
 
-            // 3) Totais do grupo (considerando override por empreendimento)
             // 3) Totais do grupo (considerando override por empreendimento) + comissão "por fora"
             salesMap.forEach((sale) => {
                 const overrides = this.enterpriseOverrides || {}
@@ -441,7 +480,23 @@ export const useContractsStore = defineStore('contracts', {
                 totalEnterprises,
                 totalContracts: this.contracts.length
             }
-        }
+        },
+
+        // getters dentro do defineStore(...)
+        workflowGroupOptions(state) {
+            return (state.workflowGroups || []).map(g => ({
+                label: `${g.tipo === 'reservas' ? 'Reserva' : 'Repasse'} • ${g.nome}`,
+                value: String(g.idgroup)
+            }))
+        },
+
+        projectionContractsCount: (state) => state.contracts.filter(c => c._projection === true).length,
+        projectionItemsCount() {
+            return this.uniqueSales.filter(sale =>
+                sale._has_projection && sale.contracts.every(c => c._projection === true)
+            ).length
+        },
+
     },
 
     actions: {
@@ -538,8 +593,106 @@ export const useContractsStore = defineStore('contracts', {
                 repasse: Array.isArray(c.repasse) ? c.repasse : [],
 
                 // 👇 agora seguro
-                reserva: isPlainObject(c.reserva) ? c.reserva : null
+                reserva: isPlainObject(c.reserva) ? c.reserva : null,
+                // flags de projeção (se vier do endpoint de projeções)
+                _projection: !!c._projection,
+                _projection_tipo: c._projection_tipo || null,
+                _projection_group_id: c._projection_group_id || null
+
             }
+        },
+
+        _normalizeProjectionRepasse(row, groupId) {
+            const n = this._toNumber
+            const value = n(row?.valor_previsto) || n(row?.valor_contrato) || 0
+            return {
+                _projection: true,
+                _projection_tipo: 'repasses',
+                _projection_group_id: groupId,
+
+                contract_id: `PROJ-RP-${row.idrepasse || row.codigointerno_unidade || Math.random().toString(36).slice(2)}`,
+                enterprise_id: n(row.codigointerno_empreendimento),
+                enterprise_name: row.empreendimento || '',
+                financial_institution_date: row.data_status_repasse || null,
+                land_value: value,
+                unit_name: row.unidade || '',
+                unit_id: row.codigointerno_unidade || null,
+
+                customer_id: null,
+                customer_name: '—',
+
+                payment_conditions: [{
+                    condition_type_id: 'PROJ',
+                    condition_type_name: 'Projeção de Repasse',
+                    total_value: value,
+                    installments_number: 1
+                }],
+
+                repasse: [row],
+                reserva: null,
+                links: []
+            }
+        },
+        _normalizeProjectionReserva(row, groupId) {
+            const n = this._toNumber
+            const value =
+                n(row?.condicoes?.total_proposta) ||
+                n(row?.condicoes?.valor_contrato) ||
+                n(row?.condicoes?.vgv_tabela) || 0
+
+            const idempInt = row?.unidade_json?.idempreendimento_int
+            const enterpriseId = idempInt ? Number(idempInt) : null
+
+            return {
+                _projection: true,
+                _projection_tipo: 'reservas',
+                _projection_group_id: groupId,
+
+                contract_id: `PROJ-RS-${row.idreserva || row?.unidade_json?.idunidade_int || Math.random().toString(36).slice(2)}`,
+                enterprise_id: enterpriseId,
+                enterprise_name: row.empreendimento || '',
+                financial_institution_date: row.data_reserva || null,
+                land_value: value,
+                unit_name: row.unidade || '',
+                unit_id: row?.unidade_json?.idunidade_int || null,
+
+                customer_id: null,
+                customer_name: '—',
+
+                payment_conditions: [{
+                    condition_type_id: 'PROJ',
+                    condition_type_name: 'Projeção de Reserva',
+                    total_value: value,
+                    installments_number: 1
+                }],
+
+                repasse: [],
+                reserva: row,
+                links: []
+            }
+        },
+
+        async _fetchProjectionsForGroup(idgroup) {
+            if (this._projCache.has(idgroup)) return this._projCache.get(idgroup)
+
+            const res = await fetch(`${API_URL}/cv/workflow-grupos/${idgroup}/projecoes`, {
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem('token')}`,
+                    'Content-Type': 'application/json'
+                }
+            })
+            if (!res.ok) throw new Error(`Erro ao buscar projeções do grupo ${idgroup}: ${res.status}`)
+            const data = await res.json()
+            const { results = [], meta = {} } = data
+
+            const tipo = meta?.tipo || (results?.[0]?.idrepasse ? 'repasses' : 'reservas')
+            const normalized = results.map(r =>
+                tipo === 'repasses' ? this._normalizeProjectionRepasse(r, idgroup)
+                    : this._normalizeProjectionReserva(r, idgroup)
+            )
+
+            this._projCache.set(idgroup, normalized)
+            return normalized
         },
 
         // --- API ---
@@ -576,8 +729,19 @@ export const useContractsStore = defineStore('contracts', {
                     ? data.results.map(this._normalizeContract)
                     : []
 
-                this.contracts = normalized
-                this.total = data.count || 0
+                // Projeções (se houver grupos selecionados)
+                let projections = []
+                if (this.selectedGroupIds.length > 0) {
+                    const all = await Promise.all(this.selectedGroupIds.map(id =>
+                        this._fetchProjectionsForGroup(id).catch(() => [])
+                    ))
+                    projections = all.flat()       // já normalizados pelas funções PROJ
+                }
+
+                // Merge final
+                this.contracts = [...normalized, ...projections]
+                this.total = (data.count || 0) + (projections.length || 0)
+                return
             } catch (error) {
                 this.error = error.message
             } finally {
@@ -604,6 +768,56 @@ export const useContractsStore = defineStore('contracts', {
             }
         },
 
+        setSelectedGroups(ids) {
+            this.selectedGroupIds = Array.isArray(ids)
+                ? ids.map(Number).filter(Number.isFinite)
+                : []
+        },
+
+        async fetchWorkflowGroups() {
+            try {
+                const headers = {
+                    Authorization: `Bearer ${localStorage.getItem('token')}`,
+                    'Content-Type': 'application/json'
+                }
+
+                // busca os dois tipos e concatena
+                const [resR, resP] = await Promise.all([
+                    fetch(`${API_URL}/cv/workflow-grupos?tipo=reservas`, { headers }),
+                    fetch(`${API_URL}/cv/workflow-grupos?tipo=repasses`, { headers })
+                ])
+
+                if (!resR.ok || !resP.ok) {
+                    const bad = !resR.ok ? resR.status : resP.status
+                    throw new Error(`Erro ao listar grupos: ${bad}`)
+                }
+
+                const [dataR, dataP] = await Promise.all([resR.json(), resP.json()])
+
+                const toArray = (d) =>
+                    Array.isArray(d?.results) ? d.results :
+                        Array.isArray(d?.data) ? d.data :
+                            Array.isArray(d) ? d : []
+
+                const raw = [...toArray(dataR), ...toArray(dataP)]
+
+                const norm = (g) => {
+                    const id = Number(g?.idgroup ?? g?.id ?? g?.group_id ?? g?.grupo_id)
+                    const tipoRaw = (g?.tipo ?? g?.type ?? g?.origem ?? '').toString().toLowerCase()
+                    return {
+                        idgroup: Number.isFinite(id) ? id : null,
+                        nome: g?.nome ?? g?.name ?? g?.titulo ?? '',
+                        tipo: tipoRaw.includes('reserva') ? 'reservas' : 'repasses'
+                    }
+                }
+
+                this.workflowGroups = raw.map(norm).filter(g => g.idgroup !== null)
+            } catch (e) {
+                this.error = e.message
+                this.workflowGroups = []
+            }
+        },
+
         setFilters(filters) {
             this.filters = { ...this.filters, ...filters }
         },
@@ -614,7 +828,8 @@ export const useContractsStore = defineStore('contracts', {
                 endDate: '',
                 situation: 'Emitido',
                 enterpriseName: []
-            }
+            },
+                this.selectedGroupIds = []
         }
     }
 })
