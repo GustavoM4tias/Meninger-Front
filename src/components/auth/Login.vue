@@ -16,7 +16,7 @@
     </a>
 
     <div class="mt-4 flex gap-2 items-center">
-      <Button v-if="faceEnabled" type="button" @click="loginFacial">Entrar com o rosto</Button>
+      <Button v-if="faceEnabled" type="button" @click="loginFacial">Entrar com o Face ID</Button>
     </div>
 
     <!-- modal pequenino para captura durante o login -->
