@@ -21,7 +21,7 @@
             </button>
           </div>
 
-          <!-- NOVO: Ações de visualização para 1..N empreendimentos -->
+          <!-- Ações (1..N) -->
           <div class="inline-flex rounded-md border dark:border-gray-600 overflow-hidden">
             <button @click="openGroup('list')" :disabled="disabledOpen"
               class="px-3 py-1 text-sm font-medium bg-white dark:bg-gray-600 hover:bg-purple-600 dark:hover:bg-purple-600 hover:text-white disabled:opacity-50">
@@ -37,22 +37,6 @@
             </button>
           </div>
 
-          <!-- 
-              <div class="inline-flex rounded-md border dark:border-gray-600 overflow-hidden">
-                <button type="button" @click="viewMode = 'list'"
-                  :class="['px-3 py-1 text-sm font-medium', viewMode === 'list' ? 'bg-purple-600 text-white' : 'bg-white dark:bg-gray-600']">
-                  Listagem
-                </button>
-                <button type="button" @click="viewMode = 'pie'"
-                  :class="['px-3 py-1 text-sm font-medium border-l border-gray-300 dark:border-gray-700', viewMode === 'pie' ? 'bg-purple-600 text-white' : 'bg-white dark:bg-gray-600']">
-                  Pizza
-                </button>
-                <button type="button" @click="viewMode = 'bar'"
-                  :class="['px-3 py-1 text-sm font-medium border-l border-gray-300 dark:border-gray-700', viewMode === 'bar' ? 'bg-purple-600 text-white' : 'bg-white dark:bg-gray-600']">
-                  Colunas
-                </button>
-              </div> -->
-
           <!-- Ordenação -->
           <button @click="sortBy = sortBy === 'count' ? 'count-desc' : 'count'"
             :class="['px-3 py-1 rounded-md text-sm font-medium transition-colors', sortBy.includes('count') ? 'bg-blue-100 text-blue-700' : 'hover:text-gray-900 dark:hover:text-white']">
@@ -67,9 +51,7 @@
             <i v-else-if="sortBy === 'value-desc'" class="fas fa-chevron-down"></i>
           </button>
 
-          <button class="text-2xl ps-2" v-tippy="'Exportar Dados'" @click="open = true"><i
-              class="fas fa-download"></i></button>
-
+          <button class="text-2xl ps-2" v-tippy="'Exportar Dados'" @click="open = true"><i class="fas fa-download"></i></button>
         </div>
       </div>
     </div>
@@ -104,32 +86,50 @@
         </thead>
 
         <tbody class="bg-white dark:bg-gray-700/40 divide-y divide-gray-200 dark:divide-gray-600">
-          <tr v-for="(enterprise, index) in sortedData" :key="enterprise.name"
-            :class="nameHasProjection(enterprise.name) ? 'bg-green-50/70 dark:bg-green-900/20 hover:bg-green-100/70 dark:hover:bg-green-900/30' : 'hover:bg-gray-50 dark:hover:bg-gray-800/70'">
+          <tr
+            v-for="(enterprise, index) in sortedData"
+            :key="enterprise.key"
+            :class="enterprise.onlyProjectionRow
+              ? 'bg-green-50/70 dark:bg-green-900/20 hover:bg-green-100/70 dark:hover:bg-green-900/30'
+              : 'hover:bg-gray-50 dark:hover:bg-gray-800/70'">
             <td class="px-6 py-4">
-              <input type="checkbox" :checked="selectedNames.has(enterprise.name)"
-                @change="toggleOne(enterprise.name, $event)" />
+              <input type="checkbox" :checked="selectedKeys.has(enterprise.key)"
+                @change="toggleOne(enterprise.key, $event)" />
             </td>
 
             <td class="px-6 py-4">
               <div class="flex items-center">
                 <div :style="{ backgroundColor: getColor(index) }" class="w-3 h-3 rounded-full mr-3"></div>
-                <div class="flex text-sm font-medium line-clamp-2">{{ enterprise.name }}
-                  <div v-if="nameHasProjection(enterprise.name)" class="w-2 h-2 rounded-full ml-2 my-auto cursor-pointer bg-emerald-400 animate-pulse" v-tippy="'Projeção de Entrada'"></div>
+                <div class="flex text-sm font-medium line-clamp-2">
+                  {{ enterprise.name }}
+                  <!-- indicador sutil quando há projeção vinculada -->
+                  <div v-if="!enterprise.onlyProjectionRow && enterprise.proj_count > 0"
+                       class="w-2 h-2 rounded-full ml-2 my-auto cursor-pointer bg-emerald-400 animate-pulse"
+                       v-tippy="'Projeção vinculada'"/>
                 </div>
               </div>
             </td>
 
             <td class="px-6 py-4 text-right">
-              <div class="text-sm font-semibold">{{ enterprise.count }}</div>
+              <div class="text-sm font-semibold relative">
+                {{ enterprise.count }}
+                <span v-if="!enterprise.onlyProjectionRow && enterprise.proj_count"
+                      class="font-bold text-emerald-600 absolute -top-3"> +{{ enterprise.proj_count }}</span>
+              </div>
             </td>
 
             <td class="px-6 py-4 text-right">
-              <div class="text-sm font-semibold text-green-600">{{ formatCurrency(displayTotal(enterprise)) }}</div>
+              <div class="text-sm font-semibold text-green-600">
+                {{ formatCurrency(baseValue(enterprise)) }}
+                <span v-if="!enterprise.onlyProjectionRow && appendedValue(enterprise) > 0"
+                      class="text-emerald-600 font-semibold text-xs"> <br>+{{ formatCurrency(appendedValue(enterprise)) }}</span>
+              </div>
             </td>
 
             <td class="px-6 py-4 text-right">
-              <div class="text-sm">{{ formatCurrency(displayTotal(enterprise) / (enterprise.count || 1)) }}</div>
+              <div class="text-sm">
+                {{ formatCurrency(ticketMedio(enterprise)) }}
+              </div>
             </td>
 
             <td class="w-fit">
@@ -156,12 +156,21 @@
       </table>
     </div>
 
-    <Export v-model="open" :source="sortedData" title="Exportação de vendas" filename="Relatório de Faturamento"
-      initial-delimiter=";" initial-array-mode="join" :preselect="[]" />
+    <Export
+      v-model="open"
+      :source="sortedData"
+      title="Exportação de vendas"
+      filename="Relatório de Faturamento"
+      initial-delimiter=";"
+      initial-array-mode="join"
+      :preselect="[]" />
 
-    <!-- Modal único: recebe sales já agregadas e enterprise sintético -->
-    <EnterpriseDetailModal v-if="showModal" :enterprise="{ name: modalTitle }" :sales="modalSales"
-      :initial-mode="initialMode" @close="closeModal" />
+    <EnterpriseDetailModal
+      v-if="showModal"
+      :enterprise="{ name: modalTitle }"
+      :sales="modalSales"
+      :initial-mode="initialMode"
+      @close="closeModal" />
   </div>
 </template>
 
@@ -176,97 +185,122 @@ const props = defineProps({ data: { type: Array, required: true } })
 const contractsStore = useContractsStore()
 const sortBy = ref('value-desc')
 
-// --- EXPORT modal state  handler ---
 const open = ref(false)
 
-/* seleção multi */
-const selectedNames = ref(new Set())
+/* seleção (usando keys únicas) */
+const selectedKeys = ref(new Set())
 
-/* modal control */
+/* modal */
 const showModal = ref(false)
-const modalSales = ref([])      // array de sales filtradas para 1..N empreendimentos
-const modalTitle = ref('')      // título sintético
-const initialMode = ref('list') // 'list' | 'pie' | 'bar'
+const modalSales = ref([])
+const modalTitle = ref('')
+const initialMode = ref('list')
 
 const valueModeLabel = computed(() => contractsStore.valueModeLabel)
 const valOf = (item) => contractsStore.valuePicker(item)
 
-// depois (SIMPLES e à prova de nulos):
-const nameHasProjection = (name) =>
-  contractsStore.contracts.some(c => c._projection === true && c.enterprise_name === name)
-
 const colors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4', '#84CC16', '#F97316', '#EC4899', '#6366F1']
+
+// helpers de valor base/apêndice para cada linha
+const baseValue = (e) => {
+  if (e.onlyProjectionRow) {
+    return contractsStore.isNet ? (e.total_value_net || 0) : (e.total_value_gross || 0)
+  }
+  return contractsStore.valuePicker(e)
+}
+
+const appendedValue = (e) => {
+  if (e.onlyProjectionRow) return 0
+  return contractsStore.valueMode === 'net' ? (e.proj_value_net || 0) : (e.proj_value_gross || 0)
+}
+
+const totalCombined = (e) => baseValue(e) + appendedValue(e)
+
+const ticketMedio = (e) => {
+  // ticket médio pela base real (mantém compat), sem considerar apêndice
+  const denom = e.count || 1
+  return baseValue(e) / denom
+}
 
 const sortedData = computed(() => {
   const data = [...props.data]
   switch (sortBy.value) {
-    case 'count': return data.sort((a, b) => a.count - b.count)
-    case 'count-desc': return data.sort((a, b) => b.count - a.count)
-    case 'value': return data.sort((a, b) => valOf(a) - valOf(b))
+    case 'count': return data.sort((a, b) => (a.count + (a.onlyProjectionRow ? 0 : a.proj_count)) - (b.count + (b.onlyProjectionRow ? 0 : b.proj_count)))
+    case 'count-desc': return data.sort((a, b) => (b.count + (b.onlyProjectionRow ? 0 : b.proj_count)) - (a.count + (a.onlyProjectionRow ? 0 : a.proj_count)))
+    case 'value': return data.sort((a, b) => totalCombined(a) - totalCombined(b))
     case 'value-desc':
-    default: return data.sort((a, b) => valOf(b) - valOf(a))
+    default: return data.sort((a, b) => totalCombined(b) - totalCombined(a))
   }
 })
 
-const totalValue = computed(() => props.data.reduce((sum, item) => sum + valOf(item), 0))
-const displayTotal = (item) => valOf(item)
 const getColor = (i) => colors[i % colors.length]
-const formatCurrency = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(v || 0)
+const formatCurrency = (v) =>
+  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(v || 0)
 
-/* helpers de seleção */
-const visibleNames = computed(() => sortedData.value.map(e => e.name))
-const allVisibleChecked = computed(() => visibleNames.value.every(n => selectedNames.value.has(n)) && visibleNames.value.length > 0)
-const disabledOpen = computed(() => props.data.length === 0) // só desabilita se não houver dados
+/* seleção */
+const visibleKeys = computed(() => sortedData.value.map(e => e.key))
+const allVisibleChecked = computed(() => visibleKeys.value.every(k => selectedKeys.value.has(k)) && visibleKeys.value.length > 0)
+const disabledOpen = computed(() => props.data.length === 0)
 
 const toggleAllVisible = (evt) => {
-  const next = new Set(selectedNames.value)
-  if (evt.target.checked) {
-    visibleNames.value.forEach(n => next.add(n))
-  } else {
-    visibleNames.value.forEach(n => next.delete(n))
-  }
-  selectedNames.value = next
+  const next = new Set(selectedKeys.value)
+  if (evt.target.checked) visibleKeys.value.forEach(k => next.add(k))
+  else visibleKeys.value.forEach(k => next.delete(k))
+  selectedKeys.value = next
 }
-const toggleOne = (name, evt) => {
-  const next = new Set(selectedNames.value)
-  evt.target.checked ? next.add(name) : next.delete(name)
-  selectedNames.value = next
+const toggleOne = (key, evt) => {
+  const next = new Set(selectedKeys.value)
+  evt.target.checked ? next.add(key) : next.delete(key)
+  selectedKeys.value = next
 }
 
-/* filtro de sales para 1..N nomes */
-const salesForNames = (names) =>
-  contractsStore.uniqueSales.filter(sale => names.has(sale.enterprise_name))
+/* filtro de sales para 1..N linhas */
+const salesForRow = (row) => {
+  const isProjOnly = !!row.onlyProjectionRow
+  // enterprise_id preferencial; fallback por nome quando id ausente
+  const id = row.id ?? null
+  const name = row.name
 
-/* abrir modal para UMA linha (continua compatível) */
+  return contractsStore.uniqueSales.filter(sale => {
+    const contracts = sale.contracts || []
+    const first = contracts[0] || {}
+    const sameEnterprise =
+      (id !== null && first.enterprise_id === id) ||
+      (id === null && (first.enterprise_name || sale.enterprise_name) === name)
+
+    if (!sameEnterprise) return false
+
+    if (isProjOnly) {
+      // apenas linhas 100% projeção
+      return contracts.every(c => c._projection)
+    }
+    // linha base: inclui vendas REAIS e também projeções vinculadas
+    return contracts.some(c => !c._projection) || contracts.every(c => c._projection)
+  })
+}
+
+/* abrir modal de UMA linha */
 const openSingle = (enterprise, mode = 'list') => {
-  const names = new Set([enterprise.name])
-  modalSales.value = salesForNames(names)
-  modalTitle.value = enterprise.name
+  modalSales.value = salesForRow(enterprise)
+  modalTitle.value = enterprise.name + (enterprise.onlyProjectionRow ? ' • Projeções' : '')
   initialMode.value = mode
   showModal.value = true
 }
 
-/* abrir modal a partir do cabeçalho para seleção 1..N
-   - se nada selecionado, usa TODOS os empreendimentos (conjunto completo) */
+/* abrir modal p/ seleção (se nada marcado, usa todos) */
 const openGroup = (mode = 'list') => {
-  const namesSet = selectedNames.value.size > 0
-    ? new Set(selectedNames.value)
-    : new Set(props.data.map(e => e.name))
+  const keysSet = selectedKeys.value.size > 0
+    ? new Set(selectedKeys.value)
+    : new Set(props.data.map(e => e.key))
 
-  modalSales.value = salesForNames(namesSet)
+  const rows = props.data.filter(r => keysSet.has(r.key))
+  modalSales.value = rows.flatMap(r => salesForRow(r))
 
-  const count = namesSet.size
-  modalTitle.value = count === 1
-    ? [...namesSet][0]
-    : `Conjunto de ${count} empreendimentos`
-
+  const count = rows.length
+  modalTitle.value = count === 1 ? rows[0].name : `Conjunto de ${count} empreendimentos`
   initialMode.value = mode
   showModal.value = true
 }
 
-const closeModal = () => {
-  showModal.value = false
-  // mantém seleção após fechar; se quiser limpar, descomente a linha abaixo:
-  // selectedNames.value = new Set()
-}
+const closeModal = () => { showModal.value = false }
 </script>

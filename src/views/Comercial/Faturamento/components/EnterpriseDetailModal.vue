@@ -56,7 +56,7 @@
 
         <!-- Content -->
         <div class="max-h=[80vh] overflow-y-auto">
-          <!-- Cards (computados a partir de filteredSales) -->
+          <!-- Cards -->
           <div class="p-4 border-b border-gray-200 dark:border-gray-700">
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div
@@ -112,7 +112,7 @@
             </div>
           </div>
 
-          <!-- Filtros (busca original permanece) -->
+          <!-- Filtros -->
           <div class="p-6 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900/40">
             <div class="flex flex-wrap gap-4 items-end">
               <div class="flex-1">
@@ -146,17 +146,10 @@
               'contracts.contract_id'
             ]" />
 
-          <!-- :source="sales"   aqui você passa props.sales 
-    initial-delimiter=";"     pt-BR/Excel friendly 
-    initial-array-mode="join" join | first | count 
-    'preselect...contracts.0.contract_id' se quiser pré-seleções específicas -->
-
           <!-- VIEW: LIST -->
           <template v-if="viewMode === 'list'">
-            <!-- Tabela padrão -->
             <div>
               <div class="overflow-x-auto">
-                <!-- === TABELA PADRÃO (reutilizada também no modo de gráficos) === -->
                 <table class="w-full">
                   <thead class="border-b border-gray-200 dark:border-gray-700">
                     <tr>
@@ -181,42 +174,43 @@
 
                   <tbody class="bg-white divide-y divide-gray-200 dark:bg-gray-700/40 dark:divide-gray-700">
                     <template v-for="sale in paginatedSales" :key="`${sale.customer_id}-${sale.unit_name}`">
-                      <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                      <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                        :class="saleIsProjection(sale) ? 'bg-green-50/70 dark:bg-green-900/20' : ''">
                         <td class="px-4 py-3">
                           <div class="text-sm font-medium">
-                            {{ sale.customer_name }} <span class="text-gray-400">#{{ sale.customer_id }}</span>
+                            {{ customerNameOf(sale) }} <span class="text-gray-400" v-if="sale.customer_id">#{{
+                              sale.customer_id }}</span>
                           </div>
                           <div v-if="sale.contracts?.[0]?.associates?.[0]" class="text-gray-400 text-xs font-light">
-                            {{ sale.contracts?.[0]?.associates?.[0]?.name }} #{{ sale.contracts?.[0]?.associates?.[0]?.customer_id }}
+                            {{ sale.contracts?.[0]?.associates?.[0]?.name }} #{{
+                              sale.contracts?.[0]?.associates?.[0]?.customer_id }}
                           </div>
                         </td>
                         <td class="px-4 py-3 truncate" v-if="hasRepasse">
-                          <div class="text-sm max-w-24">{{ sale.contracts?.[0]?.reserva?.corretor?.imobiliaria || '—' }}
-                          </div>
+                          <div class="text-sm max-w-24">{{ imobiliariaOf(sale) }}</div>
                         </td>
-                        <td class="px-4 py-3 flex" v-if="hasRepasse">
-                          <a :href="`https://menin.cvcrm.com.br/gestor/financeiro/repasses/${sale.contracts?.[0]?.repasse?.[0]?.idrepasse}/administrar`"
-                            target="_blank" class="cursor-pointer my-auto"
-                            v-tippy="sale.contracts?.[0]?.repasse?.[0]?.status_repasse">
+                        <td class="px-4 py-3 flex items-center justify-center gap-2" v-if="hasRepasse">
+                          <a :href="repasseLinkOf(sale) || 'javascript:void(0)'" target="_blank"
+                            class="cursor-pointer my-auto" v-tippy="repasseStatusOf(sale)">
                             <img src="/CVLogo.png" alt="CV CRM" class="w-5 min-w-5" />
                           </a>
-                          <div class="text-sm ps-2">{{ sale.contracts?.[0]?.repasse?.[0]?.status_repasse || '—' }}
+                          <div class="text-sm">{{ repasseStatusOf(sale) || '—' }}</div>
+                        </td>
+                        <td class="px-4 py-3 truncate" v-if="hasRepasse">
+                          <div class="text-sm">{{ empreendimentoOf(sale) }}</div>
+                        </td>
+                        <td class="px-4 py-3 truncate" v-if="hasRepasse">
+                          <div class="text-sm">{{ etapaOf(sale) }}</div>
+                        </td>
+                        <td class="px-4 py-3 truncate" v-if="hasRepasse">
+                          <div class="text-sm">{{ blocoOf(sale) }}</div>
+                        </td>
+                        <td class="px-4 py-3 text-center">
+                          <div class="text-sm">{{ sale.unit_name || reservaUnitOf(sale) }}</div>
+                        </td>
+                        <td class="px-4 py-3 text-center">
+                          <div class="text-sm">{{ formatDate(sale.financial_institution_date || reservaDateOf(sale)) }}
                           </div>
-                        </td>
-                        <td class="px-4 py-3 truncate" v-if="hasRepasse">
-                          <div class="text-sm">{{ sale.contracts?.[0]?.repasse?.[0]?.empreendimento || '—' }}</div>
-                        </td>
-                        <td class="px-4 py-3 truncate" v-if="hasRepasse">
-                          <div class="text-sm">{{ sale.contracts?.[0]?.repasse?.[0]?.etapa || '—' }}</div>
-                        </td>
-                        <td class="px-4 py-3 truncate" v-if="hasRepasse">
-                          <div class="text-sm">{{ sale.contracts?.[0]?.repasse?.[0]?.bloco || '—' }}</div>
-                        </td>
-                        <td class="px-4 py-3 text-center">
-                          <div class="text-sm">{{ sale.unit_name }}</div>
-                        </td>
-                        <td class="px-4 py-3 text-center">
-                          <div class="text-sm">{{ formatDate(sale.financial_institution_date) }}</div>
                         </td>
                         <td class="px-4 py-3 text-center">
                           <div class="text-sm font-semibold text-green-600">{{ formatCurrency(getSaleValue(sale)) }}
@@ -234,26 +228,28 @@
                         class="bg-gray-50 dark:bg-gray-900/60">
                         <td colspan="10">
                           <div v-for="contract in sale.contracts" :key="contract.contract_id" class="space-y-3">
-                            <div class="bg-white dark:bg-gray-900/20 p-4 shadow">
+                            <div class="bg-white dark:bg-gray-900/20 p-4 shadow"
+                              :class="contract._projection ? 'border-l-4 border-emerald-400' : ''">
                               <div class="flex items-center justify-between mb-3">
-                                <span class="text-sm font-medium">Contrato #{{ contract.contract_id }}</span>
+                                <span class="text-sm font-medium">
+                                  {{ contract._projection ? 'Reserva (Projeção)' : 'Contrato' }} #{{
+                                    contract.contract_id }}
+                                </span>
                                 <span class="text-sm text-gray-500">Participação: {{ contract.participation_percentage
-                                }}%</span>
+                                  || 100 }}%</span>
                               </div>
 
                               <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3"
                                 :key="`${contractsStore.valueMode}-${contract.contract_id}`">
                                 <div v-for="(condition, idx) in displayedConditions(contract)"
                                   :key="`${contract.contract_id}-${condition.synthetic ? 'SYNTH' : 'REAL'}-${condition.condition_type_id || 'NA'}-${idx}-${contractsStore.valueMode}`"
-                                  class="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 border-l-4 shadow-sm" :class="isDiscount(condition) ? 'border-red-400' : 'border-emerald-400',
-                                    condition._isCommission ? 'border-orange-400' : ''">
+                                  class="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 border-l-4 shadow-sm"
+                                  :class="isDiscount(condition) ? 'border-red-400' : (contract._projection ? 'border-emerald-400' : 'border-emerald-400')">
                                   <div class="text-sm font-medium mb-1">
                                     {{ condition.condition_type_name || 'Não informado' }}
                                     <span v-if="condition.synthetic"
                                       class="ml-2 inline-flex items-center px-2 py-0.5 shadow-sm rounded-full text-[10px] font-semibold bg-yellow-100 text-yellow-800">Campo
                                       de Observação</span>
-                                    <button v-if="condition.synthetic" class="ps-1 text-gray-400"
-                                      v-tippy="`Atualização D-1 as 07h`"><i class="fas fa-circle-info"></i></button>
                                   </div>
                                   <div class="text-lg font-semibold mb-1"
                                     :class="isDiscount(condition) ? 'text-red-600' : 'text-green-600'">
@@ -262,8 +258,9 @@
                                   </div>
                                   <div class="text-xs text-gray-500">Código: {{ condition.condition_type_id || '—' }}
                                   </div>
-                                  <div v-if="condition.installments_number" class="text-xs text-gray-500">{{
-                                    condition.installments_number }}x parcelas</div>
+                                  <div v-if="condition.installments_number" class="text-xs text-gray-500">
+                                    {{ condition.installments_number }}x parcelas
+                                  </div>
                                 </div>
                               </div>
                             </div>
@@ -273,13 +270,11 @@
                     </template>
                   </tbody>
                 </table>
-                <!-- === /TABELA PADRÃO === -->
               </div>
 
               <!-- Paginação -->
               <div v-if="totalPages > 1" class="m-4 flex items-center justify-between">
-                <div class="text-sm text-gray-500">Mostrando {{ startItem }} a {{ endItem }} de {{
-                  filteredSales.length
+                <div class="text-sm text-gray-500">Mostrando {{ startItem }} a {{ endItem }} de {{ filteredSales.length
                 }} vendas
                 </div>
                 <div class="flex items-center gap-2">
@@ -290,8 +285,9 @@
                       class="fas fa-chevron-left"></i></button>
                   <div class="flex gap-1">
                     <button v-for="page in visiblePages" :key="page" @click="currentPage = page"
-                      :class="['px-3 py-1 text-sm border rounded-md', page === currentPage ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-300 dark:border-gray-500 hover:bg-gray-50 dark:hover:bg-gray-900']">{{
-                        page }}</button>
+                      :class="['px-3 py-1 text-sm border rounded-md', page === currentPage ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-300 dark:border-gray-500 hover:bg-gray-50 dark:hover:bg-gray-900']">
+                      {{ page }}
+                    </button>
                   </div>
                   <button @click="currentPage++" :disabled="currentPage === totalPages"
                     class="px-3 py-1 text-sm border border-gray-300 dark:border-gray-500 rounded-md hover:bg-gray-50 dark:hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"><i
@@ -303,9 +299,8 @@
             </div>
           </template>
 
-          <!-- VIEW: CHARTS (pizza/colunas) -->
+          <!-- VIEW: CHARTS -->
           <template v-else>
-            <!-- Gráfico em tela cheia (largura total) -->
             <div class="p-6">
               <div class="flex justify-end mt-2">
                 <ChartActions filename="vendas-por-imobiliaria" />
@@ -315,10 +310,9 @@
               </div>
             </div>
 
-            <!-- Reuso da TABELA PADRÃO abaixo do gráfico -->
+            <!-- Reuso da tabela (igual à listagem) -->
             <div>
               <div class="overflow-x-auto">
-                <!-- (copiado da seção de listagem para manter layout idêntico) -->
                 <table class="w-full">
                   <thead class="border-b border-gray-200 dark:border-gray-700">
                     <tr>
@@ -342,45 +336,44 @@
 
                   <tbody class="bg-white divide-y divide-gray-200 dark:bg-gray-700/40 dark:divide-gray-700">
                     <template v-for="sale in paginatedSales" :key="`${sale.customer_id}-${sale.unit_name}`">
-                      <!-- (mesmas linhas/expansão que a listagem) -->
-                      <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                      <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                        :class="saleIsProjection(sale) ? 'bg-green-50/70 dark:bg-green-900/20' : ''">
                         <td class="px-4 py-3">
                           <div class="text-sm font-medium">
-                            {{ sale.customer_name }} <span class="text-sm text-gray-500">#{{ sale.customer_id
-                            }}</span>
+                            {{ customerNameOf(sale) }} <span class="text-sm text-gray-500" v-if="sale.customer_id">#{{
+                              sale.customer_id }}</span>
                           </div>
                         </td>
-                        <td class="px-4 py-3 flex" v-if="hasRepasse">
-                          <a :href="`https://menin.cvcrm.com.br/gestor/financeiro/repasses/${sale.contracts?.[0]?.repasse?.[0]?.idrepasse}/administrar`"
-                            target="_blank" class="cursor-pointer my-auto"
-                            v-tippy="sale.contracts?.[0]?.repasse?.[0]?.status_repasse">
+                        <td class="px-4 py-3 flex items-center justify-center gap-2" v-if="hasRepasse">
+                          <a :href="repasseLinkOf(sale) || 'javascript:void(0)'" target="_blank"
+                            class="cursor-pointer my-auto" v-tippy="repasseStatusOf(sale)">
                             <img src="/CVLogo.png" alt="CV CRM" class="w-5 min-w-5" />
                           </a>
-                          <div class="text-sm ps-2">{{ sale.contracts?.[0]?.repasse?.[0]?.status_repasse || '—' }}
+                          <div class="text-sm ps-2">{{ repasseStatusOf(sale) || '—' }}</div>
+                        </td>
+                        <td class="px-4 py-3 truncate" v-if="hasRepasse">
+                          <div class="text-sm">{{ empreendimentoOf(sale) }}</div>
+                        </td>
+                        <td class="px-4 py-3 truncate" v-if="hasRepasse">
+                          <div class="text-sm">{{ etapaOf(sale) }}</div>
+                        </td>
+                        <td class="px-4 py-3 truncate" v-if="hasRepasse">
+                          <div class="text-sm">{{ blocoOf(sale) }}</div>
+                        </td>
+                        <td class="px-4 py-3 text-center">
+                          <div class="text-sm">{{ sale.unit_name || reservaUnitOf(sale) }}</div>
+                        </td>
+                        <td class="px-4 py-3 text-center">
+                          <div class="text-sm">{{ formatDate(sale.financial_institution_date || reservaDateOf(sale)) }}
                           </div>
-                        </td>
-                        <td class="px-4 py-3 truncate" v-if="hasRepasse">
-                          <div class="text-sm">{{ sale.contracts?.[0]?.repasse?.[0]?.empreendimento || '—' }}</div>
-                        </td>
-                        <td class="px-4 py-3 truncate" v-if="hasRepasse">
-                          <div class="text-sm">{{ sale.contracts?.[0]?.repasse?.[0]?.etapa || '—' }}</div>
-                        </td>
-                        <td class="px-4 py-3 truncate" v-if="hasRepasse">
-                          <div class="text-sm">{{ sale.contracts?.[0]?.repasse?.[0]?.bloco || '—' }}</div>
-                        </td>
-                        <td class="px-4 py-3 text-center">
-                          <div class="text-sm">{{ sale.unit_name }}</div>
-                        </td>
-                        <td class="px-4 py-3 text-center">
-                          <div class="text-sm">{{ formatDate(sale.financial_institution_date) }}</div>
                         </td>
                         <td class="px-4 py-3 text-center">
                           <div class="text-sm font-semibold text-green-600">{{ formatCurrency(getSaleValue(sale)) }}
                           </div>
                         </td>
                         <td class="px-4 py-3 text-center"><span
-                            class="inline-flex items-center px-2.5 py-1 text-sm font-bold rounded-full bg-blue-100 text-blue-800">{{
-                              sale.contracts.length }}</span></td>
+                            class="inline-flex items-center px-2.5 py-1 text-sm font-bold rounded-full bg-blue-100 text-blue-800">
+                            {{ sale.contracts.length }}</span></td>
                         <td class="px-4 py-3 text-center">
                           <button @click="toggleDetails(sale)"
                             class="text-sm font-medium text-blue-600 hover:text-blue-900 dark:hover:text-blue-400 transition-colors">
@@ -393,26 +386,25 @@
                         class="bg-gray-50 dark:bg-gray-900/60">
                         <td colspan="10">
                           <div v-for="contract in sale.contracts" :key="contract.contract_id" class="space-y-3">
-                            <div class="bg-white dark:bg-gray-900/20 p-4 shadow">
+                            <div class="bg-white dark:bg-gray-900/20 p-4 shadow"
+                              :class="contract._projection ? 'border-l-4 border-emerald-400' : ''">
                               <div class="flex items-center justify-between mb-3">
-                                <span class="text-sm font-medium">Contrato #{{ contract.contract_id }}</span>
+                                <span class="text-sm font-medium">
+                                  {{ contract._projection ? 'Reserva (Projeção)' : 'Contrato' }} #{{
+                                    contract.contract_id }}
+                                </span>
                                 <span class="text-sm text-gray-500">Participação: {{ contract.participation_percentage
-                                }}%</span>
+                                  || 100 }}%</span>
                               </div>
 
                               <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3"
                                 :key="`${contractsStore.valueMode}-${contract.contract_id}`">
                                 <div v-for="(condition, idx) in displayedConditions(contract)"
                                   :key="`${contract.contract_id}-${condition.synthetic ? 'SYNTH' : 'REAL'}-${condition.condition_type_id || 'NA'}-${idx}-${contractsStore.valueMode}`"
-                                  class="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 border-l-4 shadow-sm" :class="isDiscount(condition) ? 'border-red-400' : 'border-emerald-400',
-                                    condition._isCommission ? 'border-orange-400' : ''">
+                                  class="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 border-l-4 shadow-sm"
+                                  :class="isDiscount(condition) ? 'border-red-400' : (contract._projection ? 'border-emerald-400' : 'border-emerald-400')">
                                   <div class="text-sm font-medium mb-1">
                                     {{ condition.condition_type_name || 'Não informado' }}
-                                    <span v-if="condition.synthetic"
-                                      class="ml-2 inline-flex items-center px-2 py-0.5 shadow-sm rounded-full text-[10px] font-semibold bg-yellow-100 text-yellow-800">Campo
-                                      de Observação</span>
-                                    <button v-if="condition.synthetic" class="ps-1 text-gray-400"
-                                      v-tippy="`Atualização D-1 as 07h`"><i class="fas fa-circle-info"></i></button>
                                   </div>
                                   <div class="text-lg font-semibold mb-1"
                                     :class="isDiscount(condition) ? 'text-red-600' : 'text-green-600'">
@@ -421,8 +413,9 @@
                                   </div>
                                   <div class="text-xs text-gray-500">Código: {{ condition.condition_type_id || '—' }}
                                   </div>
-                                  <div v-if="condition.installments_number" class="text-xs text-gray-500">{{
-                                    condition.installments_number }}x parcelas</div>
+                                  <div v-if="condition.installments_number" class="text-xs text-gray-500">
+                                    {{ condition.installments_number }}x parcelas
+                                  </div>
                                 </div>
                               </div>
                             </div>
@@ -436,8 +429,7 @@
 
               <!-- Paginação -->
               <div v-if="totalPages > 1" class="m-4 flex items-center justify-between">
-                <div class="text-sm text-gray-500">Mostrando {{ startItem }} a {{ endItem }} de {{
-                  filteredSales.length
+                <div class="text-sm text-gray-500">Mostrando {{ startItem }} a {{ endItem }} de {{ filteredSales.length
                 }} vendas
                 </div>
                 <div class="flex items-center gap-2">
@@ -448,8 +440,9 @@
                       class="fas fa-chevron-left"></i></button>
                   <div class="flex gap-1">
                     <button v-for="page in visiblePages" :key="page" @click="currentPage = page"
-                      :class="['px-3 py-1 text-sm border rounded-md', page === currentPage ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-300 dark:border-gray-500 hover:bg-gray-50 dark:hover:bg-gray-900']">{{
-                        page }}</button>
+                      :class="['px-3 py-1 text-sm border rounded-md', page === currentPage ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-300 dark:border-gray-500 hover:bg-gray-50 dark:hover:bg-gray-900']">
+                      {{ page }}
+                    </button>
                   </div>
                   <button @click="currentPage++" :disabled="currentPage === totalPages"
                     class="px-3 py-1 text-sm border border-gray-300 dark:border-gray-500 rounded-md hover:bg-gray-50 dark:hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"><i
@@ -485,27 +478,110 @@ const props = defineProps({
 })
 
 defineEmits(['close'])
-// --- EXPORT modal state  handler ---
 const open = ref(false)
 
 const contractsStore = useContractsStore()
 const viewMode = ref(['list', 'pie', 'bar'].includes(props.initialMode) ? props.initialMode : 'list')
 
-/* utils */
+/* ===================== HELPERS DE DADOS (sem mudar layout) ===================== */
+const firstContractOf = (sale) => sale?.contracts?.[0] || {}
+const repasseOf = (sale) => firstContractOf(sale)?.repasse?.[0] || null
+const reservaOf = (sale) => firstContractOf(sale)?.reserva || null
+
+const customerNameOf = (sale) =>
+  sale?.customer_name
+  || reservaOf(sale)?.cliente?.nome
+  || reservaOf(sale)?.comprador
+  || '—'
+
+const imobiliariaOf = (sale) =>
+  reservaOf(sale)?.corretor?.imobiliaria
+  ?? repasseOf(sale)?.imobiliaria
+  ?? sale?.contracts?.[0]?.corretor?.imobiliaria
+  ?? sale?.imobiliaria?.nomefantasia
+  ?? sale?.imobiliaria?.razaosocial
+  ?? sale?.imobiliaria?.email
+  ?? sale?.imobiliaria?.cnpj
+  ?? '—'
+
+const repasseLinkOf = (sale) => {
+  const id = repasseOf(sale)?.idrepasse
+  return id ? `https://menin.cvcrm.com.br/gestor/financeiro/repasses/${id}/administrar` : null
+}
+
+/* Status do repasse com fallback para reserva e/ou histórico mais recente do próprio repasse */
+const repasseStatusOf = (sale) => {
+  const r = repasseOf(sale)
+  if (r?.status_repasse) return r.status_repasse
+
+  // procura histórico em possíveis chaves comuns
+  const c = firstContractOf(sale)
+  const pools = [
+    c?.repasse_status_history,
+    c?.repasse_history,
+    c?.historico_repasse,
+    c?.status_evolution,
+    c?.repasse?.status_history, // alguns modelos aninham dentro de repasse
+    c?.reserva_status_history
+  ].filter(Array.isArray)
+
+  for (const arr of pools) {
+    const latest = [...arr].sort((a, b) => new Date(b.captured_at || b.data || 0) - new Date(a.captured_at || a.data || 0))[0]
+    if (latest?.status_repasse) return latest.status_repasse
+    if (latest?.status) return latest.status
+  }
+
+  // fallback para reserva
+  return reservaOf(sale)?.status
+    ?? reservaOf(sale)?.status_workflow
+    ?? reservaOf(sale)?.situacao
+    ?? null
+}
+
+const empreendimentoOf = (sale) =>
+  repasseOf(sale)?.empreendimento
+  ?? reservaOf(sale)?.empreendimento
+  ?? firstContractOf(sale)?.enterprise_name
+  ?? '—'
+
+const etapaOf = (sale) =>
+  repasseOf(sale)?.etapa
+  ?? reservaOf(sale)?.etapa
+  ?? reservaOf(sale)?.unidade_json?.etapa
+  ?? '—'
+
+const blocoOf = (sale) =>
+  repasseOf(sale)?.bloco
+  ?? reservaOf(sale)?.bloco
+  ?? reservaOf(sale)?.unidade_json?.quadra
+  ?? reservaOf(sale)?.unidade_json?.bloco
+  ?? '—'
+
+const reservaUnitOf = (sale) =>
+  reservaOf(sale)?.unidade
+  ?? reservaOf(sale)?.unidade_json?.nome
+  ?? firstContractOf(sale)?.unit_name
+  ?? sale?.unit_name
+  ?? '—'
+
+const reservaDateOf = (sale) =>
+  reservaOf(sale)?.data_reserva
+  ?? reservaOf(sale)?.data
+  ?? null
+
+/* ===================== utils ===================== */
 const valueModeLabel = computed(() => contractsStore.valueModeLabel)
 const getSaleValue = (sale) => contractsStore.valuePicker(sale)
 const formatCurrency = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(v || 0)
 const formatDate = (d) => {
   if (!d) return '—'
-  // se for 'YYYY-MM-DD', formata sem criar Date
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(d)
   if (m) return `${m[3]}/${m[2]}/${m[1]}`
-  // fallback para outros formatos
   return new Date(d).toLocaleDateString('pt-BR', { timeZone: 'UTC' })
 }
 const isDiscount = (c) => contractsStore.discountCodes.has(String(c?.condition_type_id || '').toUpperCase())
 
-/* busca/paginação */
+/* ===================== busca/paginação ===================== */
 const searchTerm = ref('')
 const currentPage = ref(1)
 const itemsPerPage = ref(25)
@@ -515,22 +591,24 @@ const normalizedSearch = computed(() => (searchTerm.value || '').toLowerCase())
 const filteredSales = computed(() => {
   if (!normalizedSearch.value) return props.sales
   const t = normalizedSearch.value
-  const has = (s = '') => String(s).toLowerCase().includes(t)
+  const has = (s = '') => String(s ?? '').toLowerCase().includes(t)
+
   return props.sales.filter(sale =>
-    has(sale.customer_name) ||
+    has(customerNameOf(sale)) ||
     has(sale.unit_name) ||
+    has(reservaUnitOf(sale)) ||
     has(sale.contracts?.[0]?.associates?.[0]?.name) ||
-    has(sale.contracts?.[0]?.repasse?.[0]?.bloco) ||
-    has(sale.contracts?.[0]?.repasse?.[0]?.etapa) ||
-    has(sale.contracts?.[0]?.repasse?.[0]?.empreendimento) ||
-    has(sale.contracts?.[0]?.repasse?.[0]?.status_repasse) ||
-    has(sale.contracts?.[0]?.reserva?.corretor?.imobiliaria) ||
-    has(formatDate(sale.financial_institution_date)) ||
+    has(blocoOf(sale)) ||
+    has(etapaOf(sale)) ||
+    has(empreendimentoOf(sale)) ||
+    has(repasseStatusOf(sale)) ||
+    has(imobiliariaOf(sale)) ||
+    has(formatDate(sale.financial_institution_date || reservaDateOf(sale))) ||
     has(formatCurrency(getSaleValue(sale)))
   )
 })
 
-/* cards -> filteredSales */
+/* cards */
 const showLandOnlyNote = computed(() =>
   (filteredSales.value ?? []).some(s =>
     (s.contracts ?? []).some(c => {
@@ -543,9 +621,9 @@ const showLandOnlyNote = computed(() =>
 const totalSales = computed(() => filteredSales.value.length)
 const totalValue = computed(() => filteredSales.value.reduce((s, sale) => s + getSaleValue(sale), 0))
 const avgTicket = computed(() => totalSales.value ? totalValue.value / totalSales.value : 0)
-const uniqueCustomers = computed(() => new Set(filteredSales.value.map(s => s.customer_id)).size)
+const uniqueCustomers = computed(() => new Set(filteredSales.value.map(s => s.customer_id || customerNameOf(s))).size)
 
-/* paginação (reutilizada em ambos modos) */
+/* paginação */
 const totalPages = computed(() => Math.ceil(filteredSales.value.length / itemsPerPage.value) || 1)
 const startItem = computed(() => (currentPage.value - 1) * itemsPerPage.value + 1)
 const endItem = computed(() => Math.min(currentPage.value * itemsPerPage.value, filteredSales.value.length))
@@ -560,7 +638,11 @@ const visiblePages = computed(() => {
   if (end - start + 1 < max) start = Math.max(1, end - max + 1)
   return Array.from({ length: end - start + 1 }, (_, i) => start + i)
 })
-const hasRepasse = computed(() => paginatedSales.value.some(s => s.contracts?.[0]?.repasse?.[0]))
+
+/* mantém layout, mas mostra colunas quando houver repasse OU reserva */
+const hasRepasse = computed(() =>
+  paginatedSales.value.some(s => s.contracts?.[0]?.repasse?.[0] || s.contracts?.[0]?.reserva)
+)
 
 watch([searchTerm, itemsPerPage], () => { currentPage.value = 1 })
 watch(() => props.sales, () => { expandedSales.value.clear() })
@@ -572,17 +654,18 @@ const toggleDetails = (sale) => {
   expandedSales.value = next
 }
 
-/* detalhe/condições */
+const saleIsProjection = (sale) => (sale.contracts || []).every(c => c._projection)
+
+/* ===================== detalhe/condições ===================== */
 const displayedConditions = (contract) => {
-  const landOnly = contractsStore.isLandOnlyForContract(contract)   // 👈 agora olha net OU gross
+  const landOnly = contractsStore.isLandOnlyForContract(contract)
   const lv = Number(contract?.land_value) || 0
 
   let list
   if (landOnly && lv > 0) {
-    // força mostrar o valor do "Observação" como TR sintética
     list = [{
       condition_type_id: 'TR',
-      condition_type_name: 'Terreno (TR) Campo de Observação', // 👈 rótulo igual ao seu print
+      condition_type_name: 'Terreno (TR) Campo de Observação',
       total_value: lv,
       installments_number: 1,
       synthetic: true
@@ -591,52 +674,13 @@ const displayedConditions = (contract) => {
     list = Array.isArray(contract?.payment_conditions) ? contract.payment_conditions : []
   }
 
-  // anexa comissão "fora" (se houver)
-  const commission = commissionConditionFor(contract)
-  if (commission) {
-    const hasAlready = list.some(pc => pc.condition_type_id === 'COMISSAO_FORA')
-    if (!hasAlready) list = [...list, commission]
+  if (!contract._projection) {
+    const commission = commissionConditionFor(contract)
+    if (commission && !list.some(pc => pc.condition_type_id === 'CM')) list = [...list, commission]
   }
-
   return list
 }
 
-/* charts (sobre filteredSales) */
-const brokerNameOf = (sale) => {
-  const c = [
-    sale?.contracts?.[0]?.reserva?.corretor?.imobiliaria,
-    sale?.reserva?.corretor?.imobiliaria,
-    sale?.contracts?.[0]?.corretor?.imobiliaria,
-    sale?.corretor?.imobiliaria,
-    typeof sale?.imobiliaria === 'string'
-      ? sale?.imobiliaria
-      : sale?.imobiliaria?.nomefantasia || sale?.imobiliaria?.razaosocial || sale?.imobiliaria?.email || sale?.imobiliaria?.cnpj
-  ].find(v => typeof v === 'string' && v.trim())
-  return c ? String(c).trim() : 'Sem imobiliária'
-}
-const keyOf = (n) => (n || '').normalize('NFKC').toLowerCase().replace(/\s+/g, ' ').trim()
-
-const rowsByBroker = computed(() => {
-  const map = new Map()
-  for (const sale of filteredSales.value) {
-    const name = brokerNameOf(sale)
-    const key = keyOf(name)
-    const prev = map.get(key) ?? { name, count: 0, value: 0 }
-    const v = getSaleValue(sale) || 0
-    prev.count += 1
-    prev.value += v
-    map.set(key, prev)
-  }
-  return [...map.values()].sort((a, b) => b.value - a.value)
-})
-
-const totals = computed(() => ({
-  count: rowsByBroker.value.reduce((s, r) => s + r.count, 0),
-  value: rowsByBroker.value.reduce((s, r) => s + r.value, 0)
-}))
-
-
-// ==== Comissão "por fora" como condição sintética no detalhe ====
 const ruleFor = computed(() => contractsStore.enterpriseRuleFor)
 const comFor = computed(() => contractsStore.enterpriseCommissionFor)
 const totalsOf = computed(() => contractsStore._contractTotals)
@@ -660,7 +704,6 @@ const baseNet = (c) => {
   return totalsOf.value(c).net || 0
 }
 
-/** Gera a "condição" sintética de comissão para um contrato (ou null) */
 const commissionConditionFor = (contract) => {
   const rule = comFor.value(contract)
   const pct = Number(rule?.commission_pct) || 0
@@ -668,7 +711,6 @@ const commissionConditionFor = (contract) => {
 
   const base = contractsStore.isGross ? baseGross(contract) : baseNet(contract)
   const add = uplift(base, pct)
-
   if (add <= 0) return null
 
   const pctLabel = Math.round(pct * 100)
@@ -677,31 +719,48 @@ const commissionConditionFor = (contract) => {
     condition_type_name: `Comissão ${pctLabel}% (Fora de contrato)`,
     total_value: add,
     installments_number: 1,
-    synthetic: false, // quanto é do BI
-    _isCommission: true // flag opcional p/ estilizar se quiser
+    synthetic: false,
+    _isCommission: true
   }
 }
 
-/* ECharts */
+/* ===================== charts ===================== */
+const brokerNameOf = (sale) => {
+  const c = [
+    reservaOf(sale)?.corretor?.imobiliaria,
+    repasseOf(sale)?.imobiliaria,
+    sale?.contracts?.[0]?.corretor?.imobiliaria,
+    sale?.imobiliaria?.nomefantasia,
+    sale?.imobiliaria?.razaosocial,
+    sale?.imobiliaria?.email,
+    sale?.imobiliaria?.cnpj
+  ].find(v => typeof v === 'string' && v?.trim())
+  return c ? String(c).trim() : 'Sem imobiliária'
+}
+const keyOf = (n) => (n || '').normalize('NFKC').toLowerCase().replace(/\s+/g, ' ').trim()
+
+const rowsByBroker = computed(() => {
+  const map = new Map()
+  for (const sale of filteredSales.value) {
+    const name = brokerNameOf(sale)
+    const key = keyOf(name)
+    const prev = map.get(key) ?? { name, count: 0, value: 0 }
+    const v = getSaleValue(sale) || 0
+    prev.count += 1
+    prev.value += v
+    map.set(key, prev)
+  }
+  return [...map.values()].sort((a, b) => b.value - a.value)
+})
+
 const chartOption = computed(() => {
   if (viewMode.value === 'pie') {
     return {
-      tooltip: {
-        trigger: 'item',
-        formatter: (p) => `${p.name}<br/><b>${formatCurrency(p.value)}</b> (${p.percent}%)`
-      },
+      tooltip: { trigger: 'item', formatter: (p) => `${p.name}<br/><b>${formatCurrency(p.value)}</b> (${p.percent}%)` },
       legend: {
-        type: 'scroll',                 // ativa scroll
-        orient: 'vertical',
-        left: 'left',
-        top: 'middle',
-        itemWidth: 10,
-        itemHeight: 10,
-        itemGap: 6,
-        textStyle: {
-          fontSize: 10,                 // menor
-          color: '#9CA3AF'              // cinza fixo
-        },
+        type: 'scroll', orient: 'vertical', left: 'left', top: 'middle',
+        itemWidth: 10, itemHeight: 10, itemGap: 6,
+        textStyle: { fontSize: 10, color: '#9CA3AF' },
         pageTextStyle: { color: '#9CA3AF' },
         pageIconColor: '#9CA3AF',
         pageIconInactiveColor: '#D1D5DB'
@@ -714,46 +773,28 @@ const chartOption = computed(() => {
         itemStyle: { borderRadius: 6 },
         label: { show: false },
         emphasis: { label: { show: true, fontWeight: 'bold' } },
-        data: rowsByBroker.value.map(r => ({
-          name: `${r.name} (${r.count})`,
-          value: r.value
-        }))
+        data: rowsByBroker.value.map(r => ({ name: `${r.name} (${r.count})`, value: r.value }))
       }]
     }
   }
-
-  // BARRAS
+  // barras
   return {
-    tooltip: {
-      trigger: 'axis',
-      valueFormatter: (v) => formatCurrency(v)
-    },
+    tooltip: { trigger: 'axis', valueFormatter: (v) => formatCurrency(v) },
     grid: { left: 32, right: 32, top: 42, bottom: 64, containLabel: true },
     xAxis: {
       type: 'category',
       data: rowsByBroker.value.map(r => r.name),
       axisLabel: {
-        interval: 0,
-        rotate: 20,
-        fontSize: 8,          // menor texto
-        color: '#9CA3AF',
-        formatter: (val) => {
-          return val.length > 12 ? val.slice(0, 12) + '…' : val // corta texto longo
-        }
+        interval: 0, rotate: 20, fontSize: 8, color: '#9CA3AF',
+        formatter: (val) => (val.length > 12 ? val.slice(0, 12) + '…' : val)
       },
       axisLine: { lineStyle: { color: '#9CA3AF' } }
     },
     yAxis: {
       type: 'value',
       axisLabel: {
-        fontSize: 10,
-        color: '#9CA3AF',
-        formatter: (v) =>
-          new Intl.NumberFormat('pt-BR', {
-            style: 'currency',
-            currency: 'BRL',
-            maximumFractionDigits: 0
-          }).format(v)
+        fontSize: 10, color: '#9CA3AF',
+        formatter: (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(v)
       },
       splitLine: { lineStyle: { color: '#E5E7EB' } }
     },
@@ -761,20 +802,10 @@ const chartOption = computed(() => {
       name: `Valor (${valueModeLabel.value})`,
       type: 'bar',
       barWidth: '70%',
-      data: rowsByBroker.value.map(r => ({
-        value: r.value,
-        count: r.count   // quantidade de vendas
-      })),
+      data: rowsByBroker.value.map(r => ({ value: r.value, count: r.count })),
       itemStyle: { borderRadius: [6, 6, 0, 0] },
-      label: {
-        show: true,
-        position: 'top',
-        fontSize: 10,
-        color: '#9CA3AF',
-        formatter: (params) => `${params.data.count}`
-      }
+      label: { show: true, position: 'top', fontSize: 10, color: '#9CA3AF', formatter: (p) => `${p.data.count}` }
     }]
   }
 })
-
 </script>
