@@ -55,9 +55,12 @@ export const useContractsStore = defineStore('contracts', {
             (state.valueMode === 'net' ? obj?.total_value_net : obj?.total_value_gross) ?? 0,
 
         // (RESTAURAR) Regras por empreendimento
+        // getters: enterpriseOverrides()
         enterpriseOverrides: () => ({
             byId: {
-                // 17004: { gross: 'LAND_VALUE_ONLY', net: 'TR_ONLY' },
+                // Substitua pelos IDs reais desse empreendimento (se houver dois contratos, pode ter 2 IDs)
+                17004: { gross: 'LAND_VALUE_ONLY', net: 'LAND_VALUE_ONLY' },
+                // 17005: { gross: 'LAND_VALUE_ONLY', net: 'LAND_VALUE_ONLY' },
             },
             byName: {
                 'JACAREZINHO/PR - RESIDENCIAL PARQUE DOS IPÊS - COMERCIAL/INCORPORAÇÃO/ESTOQUE': {
@@ -128,7 +131,7 @@ export const useContractsStore = defineStore('contracts', {
             const makeKey = this._makeSaleKey
             const totalsOf = this._contractTotals
 
-            // clone p/ não mutar this.contracts
+            // --- clone para não mutar this.contracts ---
             const cloneContract = (c) => ({
                 ...c,
                 payment_conditions: Array.isArray(c.payment_conditions)
@@ -152,6 +155,48 @@ export const useContractsStore = defineStore('contracts', {
                     })
                 } else {
                     salesMap.get(key).contracts.push(cloneContract(contract))
+                }
+            })
+
+            // 1.5) Injetar TR sintética (somando land_value dos contratos REAIS) se o grupo NÃO tiver TR real
+            salesMap.forEach((sale) => {
+                // somente contratos REAIS (sem projeção)
+                const realContracts = (sale.contracts || []).filter(c => !c._projection)
+                if (realContracts.length === 0) return
+
+                // já existe este cálculo no bloco 1.5
+                const groupHasTRReal = realContracts.some(
+                    (c) => Array.isArray(c.payment_conditions) && c.payment_conditions.some((pc) => this._isTR(pc))
+                )
+                const sumLandReal = realContracts.reduce((acc, c) => acc + (Number(c.land_value) || 0), 0)
+
+                // 👉 NOVO: anote em cada contrato real (para o modal saber o “land do outro contrato / do grupo”)
+                for (const rc of realContracts) {
+                    rc._group_has_tr_real = groupHasTRReal
+                    rc._group_land_sum_real = sumLandReal
+                }
+
+                // injeta TR sintética se faltou TR real (seu código existente)
+                if (!groupHasTRReal && sumLandReal > 0) {
+                    const target = realContracts[0]
+                    target.payment_conditions = [
+                        ...(Array.isArray(target.payment_conditions) ? target.payment_conditions : []),
+                        {
+                            condition_type_id: 'TR',
+                            condition_type_name: 'Terreno (TR)',
+                            total_value: sumLandReal,
+                            total_value_interest: 0,
+                            outstanding_balance: 0,
+                            amount_paid: 0,
+                            base_date: target.financial_institution_date ?? null,
+                            first_payment: null,
+                            indexer_name: null,
+                            bearer_name: null,
+                            interest_type: null,
+                            installments_number: 1,
+                            synthetic: true
+                        }
+                    ]
                 }
             })
 
@@ -240,7 +285,7 @@ export const useContractsStore = defineStore('contracts', {
                 sale._projContracts = projs
             })
 
-            // 3) (compat) — nada muda aqui
+            // 3) (compat) — retorna array
             return Array.from(salesMap.values())
         },
 
@@ -567,8 +612,9 @@ export const useContractsStore = defineStore('contracts', {
                 unit_name: row.unidade || '',
                 unit_id: row.codigointerno_unidade || null,
 
+                // >>> titular do repasse (quando vier) para nome/cliente
                 customer_id: null,
-                customer_name: '—',
+                customer_name: row?.titular?.nome || row?.cliente || '—',
 
                 // repasse PROJ: condição única simples (mantém comportamento anterior)
                 payment_conditions: [{
@@ -612,8 +658,9 @@ export const useContractsStore = defineStore('contracts', {
                 unit_name: row.unidade || '',
                 unit_id: row?.unidade_json?.idunidade_int || null,
 
+                // >>> titular da reserva para nome/cliente
                 customer_id: null,
-                customer_name: '—',
+                customer_name: row?.titular?.nome || row?.cliente || row?.comprador || '—',
 
                 payment_conditions: pcs,   // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
                 repasse: [],
@@ -635,9 +682,10 @@ export const useContractsStore = defineStore('contracts', {
             const data = await res.json()
             const { results = [], meta = {} } = data
 
-            const tipo = meta?.tipo || (results?.[0]?.idrepasse ? 'repasses' : 'reservas')
+            const tipo = (meta?.tipo || (results?.[0]?.idrepasse ? 'repasses' : 'reservas')).toString().toLowerCase()
             const normalized = results.map(r =>
-                tipo === 'repasses' ? this._normalizeProjectionReserva(r, idgroup)
+                tipo === 'repasses'
+                    ? this._normalizeProjectionReserva(r, idgroup)
                     : this._normalizeProjectionReserva(r, idgroup)
             )
 
