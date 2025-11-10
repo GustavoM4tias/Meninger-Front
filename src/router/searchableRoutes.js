@@ -1,16 +1,4 @@
-export const customSearchableRoutes = [
-    {
-        name: 'Reservas - Imobiliárias',
-        path: '/comercial/reservas',
-        query: { section: 'Imobiliarias' },
-        content: 'Dashboard de reservas por imobiliárias',
-    },
-    {
-        name: 'Reservas',
-        path: '/comercial/reservas',
-        query: { section: 'Reservas' },
-        content: 'Dashboard de reservas',
-    },
+export const customSearchableRoutes = [ 
     {
         name: 'Empreendimentos',
         path: '/comercial/buildings',

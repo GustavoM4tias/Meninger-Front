@@ -65,19 +65,24 @@ onMounted(async () => {
     const users = store.users;
     const topLevelUsers = users.filter(u => u.manager_id === null);
 
-    data.value = topLevelUsers.length === 1
-        ? buildHierarchy(topLevelUsers[0], users)
-        : {
-            key: 'root',
-            type: 'person',
-            data: {
-                image: '',
-                name: 'Empresa', // <— personalize aqui
-                city: '—',
-                title: 'Organograma'
-            },
-            children: topLevelUsers.map(top => buildHierarchy(top, users))
-        };
+    const founders = [
+        { name: 'Gustavo Menin', city: 'Marília', title: 'Sócio-fundador' },
+        { name: 'Francisco Furtado', city: 'Marília', title: 'Sócio-fundador' }
+    ];
+
+    data.value = {
+        key: 'root',
+        type: 'company', // <<— tipo próprio para a empresa
+        data: {
+            image: '/Mlogo.png',
+            name: 'Menin Engenharia',
+            city: 'Marília',
+            title: '',
+            founders // <<— passamos para o template da empresa
+        },
+        // mantém a hierarquia normal (diretores, gerentes, etc) abaixo da empresa
+        children: topLevelUsers.map(top => buildHierarchy(top, users)).filter(Boolean)
+    };
 
     if (zoomContainer.value) {
         panZoomInstance = panzoom(zoomContainer.value, {
@@ -85,11 +90,8 @@ onMounted(async () => {
             zoomSpeed: 0.065,
             boundsPadding: 0.9,
         });
-
-        // Adiciona evento de scroll
         zoomContainer.value.addEventListener('wheel', handleMouseWheel, { passive: false });
     }
-
     window.addEventListener('keydown', handleKeyboardZoom);
 });
 
@@ -128,7 +130,7 @@ onBeforeUnmount(() => {
                         selectionMode="multiple">
                         <template #person="slotProps">
                             <div class="flex flex-col">
-                                <div class="flex flex-col items-center">
+                                <div class="flex flex-col w-[120px] items-center">
                                     <img :alt="slotProps.node.data.name" :src="slotProps.node.data.image"
                                         class="w-12 h-12" />
                                     <span class="text-gray-500 my-1.5 text-xs">{{ slotProps.node.data.city }}</span>
@@ -137,8 +139,39 @@ onBeforeUnmount(() => {
                                 </div>
                             </div>
                         </template>
-                        <template #default="slotProps">
-                            <span>{{ slotProps.node.label }}</span>
+                        <template #company="slotProps">
+                            <div class="company-card relative mx-auto rounded-2xl p-4 shadow-lg w-full flex flex-col items-center">
+
+                                <!-- logo + nome -->
+                                <img v-if="slotProps.node.data.image" :alt="slotProps.node.data.name"
+                                    :src="slotProps.node.data.image" class="w-14 h-14 mb-2" />
+                                <span class="text-gray-400 text-xs">{{ slotProps.node.data.city }}</span>
+                                <span class="font-semibold text-lg mb-2 text-center">
+                                    {{ slotProps.node.data.name }}
+                                </span>
+
+                                <!-- divisor -->
+                                <div class="w-full h-px bg-gray-700/60 my-3"></div>
+
+                                <!-- título da seção -->
+                                <div class="text-[11px] uppercase tracking-wide text-gray-400 mb-2">
+                                    Sócios fundadores
+                                </div>
+
+                                <!-- fundadores lado a lado -->
+                                <div
+                                    class="founders-grid grid grid-cols-2 gap-8 w-full max-w-[520px] items-start justify-items-center">
+                                    <div v-for="f in slotProps.node.data.founders" :key="f.name"
+                                        class="flex flex-col items-center text-center">
+                                        <img :alt="f.name"
+                                            :src="`https://ui-avatars.com/api/?name=${encodeURIComponent(f.name)}&rounded=true&background=random&bold=true&format=svg`"
+                                            class="w-12 h-12 mb-1" />
+                                        <span class="text-gray-500 text-xs">{{ f.city }}</span>
+                                        <span class="font-medium leading-tight">{{ f.name }}</span>
+                                        <span class="text-gray-400 text-xs -mt-0.5">{{ f.title }}</span>
+                                    </div>
+                                </div>
+                            </div>
                         </template>
                     </OrganizationChart>
                 </div>
@@ -150,7 +183,7 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .grid-container {
-    background-image: url('../../assets/Grid-3.svg');
+    background-image: url('@/assets/Grid-3.svg');
 }
 
 .panzoom-container {
