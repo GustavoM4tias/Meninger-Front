@@ -6,6 +6,7 @@ import { CanvasRenderer } from 'echarts/renderers'
 import { MapChart, ScatterChart, EffectScatterChart } from 'echarts/charts'
 import { TooltipComponent, VisualMapComponent, GeoComponent } from 'echarts/components'
 import VChart from 'vue-echarts'
+import { SpeedInsights } from "@vercel/speed-insights/vue"
 
 use([CanvasRenderer, MapChart, ScatterChart, EffectScatterChart, TooltipComponent, VisualMapComponent, GeoComponent])
 
@@ -94,4 +95,5 @@ onMounted(async () => {
     <div class="h-full w-full rounded-2xl shadow overflow-hidden">
         <VChart v-if="option" :option="option" autoresize class="h-full w-full" />
     </div>
+    <SpeedInsights/>
 </template>
