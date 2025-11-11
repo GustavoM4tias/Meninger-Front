@@ -5,6 +5,7 @@ import { useProjectionsStore } from '@/stores/Comercial/Projections/projectionsS
 import ProjectionLogsDrawer from './components/ProjectionLogsDrawer.vue';
 import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 import API_URL from '@/config/apiUrl';
+import MultiSelector from '@/components/UI/MultiSelector.vue';
 
 /* ===== Helpers ===== */
 function getToken() { return localStorage.getItem('token'); }
@@ -78,7 +79,7 @@ const originalPairs = ref(new Set()); // pares "erp|alias" carregados do backend
 const confirmOpen = ref(false);
 const pairsToRemove = ref([]); // [{erp_id, alias_id, name}]
 
-/* Picker de empreendimentos */
+/* Picker de empreendimentos (modal de adicionar) */
 const enterprises = ref([]); // [{ id: <erp_id>, name }]
 const search = ref('');
 const showAdd = ref(false);
@@ -330,21 +331,79 @@ async function toggleLock() {
     const cur = store.detail?.projection?.is_locked;
     await store.updateMeta(id, { is_locked: !cur });
 }
-
+ 
 /* ===== Totais ===== */
+/* ===== Totais (reativos aos filtros do cabeçalho) ===== */
 const fmtBRL = (v) => v?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) ?? 'R$ 0,00';
 const totals = computed(() => {
-    const out = { units: 0, revenue: 0 };
-    for (const r of rows.value) for (const mm of monthKeys) {
-        const cell = r.values[ym(year.value, mm)];
-        if (!cell) continue;
-        const u = Number(cell.units || 0);
-        const p = Number(cell.price || 0);
-        out.units += u;
-        out.revenue += u * p;
+  const out = { units: 0, revenue: 0 };
+  // usa APENAS o que está visível após os filtros (filteredRows)
+  for (const r of filteredRows.value) {
+    for (const mm of monthKeys) {
+      const cell = r.values[ym(year.value, mm)];
+      if (!cell) continue;
+      const u = Number(cell.units || 0);
+      const price = Number(cell.price || 0);
+      const vgv = Number(cell.total ?? 0);
+      out.units += u;
+      // prioriza total (VGV) digitado; se não houver, cai para units * price
+      out.revenue += vgv > 0 ? vgv : (u * price);
     }
-    return out;
+  }
+  return out;
 });
+
+/* ===== Seletor de Empreendimentos (somente; baseado APENAS na projeção) ===== */
+const selectedEnterpriseLabels = ref([]); // nomes selecionados
+
+// Lista única de empreendimentos que existem nas rows (projeção)
+const projectionEnterprises = computed(() => {
+    // Dedup por erp_id, mantendo o primeiro name disponível
+    const map = new Map(); // id -> name
+    for (const r of rows.value || []) {
+        const id = String(r.erp_id);
+        if (!map.has(id)) map.set(id, r.name || id);
+    }
+    // Ordena por label (name)
+    return [...map.entries()]
+        .map(([id, name]) => ({ id, name }))
+        .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
+});
+
+// Options exibidas no MultiSelector (somente nomes que estão na projeção)
+const enterprisesOptions = computed(() =>
+    projectionEnterprises.value.map(e => e.name)
+);
+
+// name -> id (apenas dos que estão na projeção)
+const enterpriseIdByName = computed(() => {
+    const m = new Map();
+    for (const e of projectionEnterprises.value) m.set(e.name, String(e.id));
+    return m;
+});
+
+// Seleção atual convertida em ids (usado para filtrar a grade)
+const selectedEnterpriseIds = computed(() => {
+    const ids = new Set();
+    for (const name of selectedEnterpriseLabels.value || []) {
+        const id = enterpriseIdByName.value.get(name);
+        if (id) ids.add(id);
+    }
+    return ids;
+});
+
+// Filtra as linhas exibidas (sem seleção => mostra tudo)
+const filteredRows = computed(() => {
+    if (!selectedEnterpriseLabels.value.length) return rows.value;
+    const ids = selectedEnterpriseIds.value;
+    return rows.value.filter(r => ids.has(String(r.erp_id)));
+});
+
+// Se rows mudarem (recarregar projeção, etc.), limpa seleções inexistentes
+watch(rows, () => {
+    const allowed = new Set(enterprisesOptions.value);
+    selectedEnterpriseLabels.value = (selectedEnterpriseLabels.value || []).filter(n => allowed.has(n));
+}, { deep: true });
 
 /* ===== Rascunho local + proteção ===== */
 const draftKey = computed(() => `proj:${id}:draft`);
@@ -448,10 +507,6 @@ const chipClass = {
                             :class="chipClass.active(store.detail?.projection?.is_active)">
                             {{ store.detail?.projection?.is_active ? 'Ativa' : 'Inativa' }}
                         </span>
-                        <!-- <span class="px-2.5 py-1 rounded-full text-[11px] font-medium border"
-                            :class="chipClass.locked(store.detail?.projection?.is_locked)">
-                            {{ store.detail?.projection?.is_locked ? 'Bloqueada' : 'Aberta' }}
-                        </span> -->
                     </div>
 
                     <!-- separador visual -->
@@ -496,8 +551,9 @@ const chipClass = {
 
             </div>
 
-            <!-- KPIs -->
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
+            <!-- KPIs + Seletor de Empreendimentos -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4">
+                <!-- KPIs -->
                 <div class="p-3 rounded-xl border dark:border-gray-700 bg-white/70 dark:bg-gray-900/40 shadow-sm">
                     <p class="text-[11px] uppercase tracking-wide text-gray-500">Unidades projetadas</p>
                     <p class="text-lg font-semibold">{{ totals.units }}</p>
@@ -505,6 +561,17 @@ const chipClass = {
                 <div class="p-3 rounded-xl border dark:border-gray-700 bg-white/70 dark:bg-gray-900/40 shadow-sm">
                     <p class="text-[11px] uppercase tracking-wide text-gray-500">Receita projetada</p>
                     <p class="text-lg font-semibold">{{ fmtBRL(totals.revenue) }}</p>
+                </div>
+
+                <!-- Seletor de Empreendimentos (ADICIONADO) -->
+                <div class="p-3 rounded-xl border dark:border-gray-700 bg-white/70 dark:bg-gray-900/40 shadow-sm">
+                    <label class="block text-[11px] font-medium mb-1 text-gray-700 dark:text-gray-300">
+                        <i class="fas fa-city mr-1"></i> Empreendimentos (filtrar exibição)
+                    </label>
+                    <MultiSelector :model-value="selectedEnterpriseLabels"
+                        @update:modelValue="v => selectedEnterpriseLabels = Array.isArray(v) ? v : []"
+                        :options="enterprisesOptions" placeholder="Selecione empreendimentos" :page-size="600"
+                        :select-all="true" />
                 </div>
             </div>
         </div>
@@ -514,7 +581,7 @@ const chipClass = {
             class="rounded-xl border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/50 overflow-auto shadow-sm">
             <table class="min-w-[1100px] w-full text-sm">
                 <thead
-                    class="bg-gray-50/90 dark:bg-gray-900/70 sticky top-0 z-30 backdrop-blur supports-[backdrop-filter]:bg-gray-50/75">
+                    class="bg-gray-50/90 dark:bg-gray-900/70 sticky top-0 z-10 backdrop-blur supports-[backdrop-filter]:bg-gray-50/75">
                     <tr class="text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800">
                         <th class="px-4 py-3 text-left w-[380px] sticky left-0 z-40 bg-inherit">Empreendimento</th>
                         <th v-for="(mm, i) in monthKeys" :key="mm"
@@ -524,7 +591,8 @@ const chipClass = {
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-for="(r, idx) in rows" :key="`${r.erp_id}@@${r.alias_id}`"
+                    <!-- usar filteredRows para respeitar seleção -->
+                    <tr v-for="(r, idx) in filteredRows" :key="`${r.erp_id}@@${r.alias_id}`"
                         :class="idx % 2 ? 'bg-gray-200/40 dark:bg-gray-700/40' : 'bg-white/0'">
                         <!-- Coluna fixa -->
                         <td class="px-3 py-3 align-top sticky left-0 z-20 border-r dark:border-gray-700"
@@ -594,19 +662,7 @@ const chipClass = {
                                         class="w-20 h-9 border border-gray-200 dark:border-gray-800 rounded px-2 bg-white/90 dark:bg-gray-900/70 focus:outline-none focus:ring-0"
                                         placeholder="Uds" />
                                 </div>
-                                <!-- <div>
-                                    <label class="text-[11px] text-gray-500 block text-center">VGV</label>
-                                    <input :disabled="!isAdmin || store.detail?.projection?.is_locked"
-                                        v-model.number="(r.values[ym(year, mm)] ||= { units: 0, price: 0 }).price"
-                                        type="number" min="0" step="0.01"
-                                        class="w-28 h-9 border border-gray-200 dark:border-gray-800 rounded px-2 bg-white/90 dark:bg-gray-900/70 focus:outline-none focus:ring-0"
-                                        placeholder="Ticket" />
-                                    <div class="text-[10px] text-gray-500">
-                                        {{ fmtBRL(((r.values[ym(year, mm)]?.units || 0) * (r.values[ym(year, mm)]?.price
-                                            || 0))) }}
-                                    </div>
-                                </div> -->
-                                <div>   
+                                <div>
                                     <label class="text-[11px] text-gray-500 block text-center">VGV</label>
 
                                     <input :disabled="!isAdmin || store.detail?.projection?.is_locked"
@@ -616,7 +672,7 @@ const chipClass = {
                                         :placeholder="fmtBRL((r.values[ym(year, mm)]?.units || 0) * (r.values[ym(year, mm)]?.price || 0))" />
 
                                     <div class="text-[10px] text-gray-500">
-                                        {{ `R$ ${(r.values[ym(year, mm)] ||= { units: 0, price: 0 }).price} `}}
+                                        {{ `R$ ${(r.values[ym(year, mm)] ||= { units: 0, price: 0 }).price} ` }}
                                     </div>
                                 </div>
 
