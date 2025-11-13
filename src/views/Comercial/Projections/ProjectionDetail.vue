@@ -332,7 +332,6 @@ async function toggleLock() {
     await store.updateMeta(id, { is_locked: !cur });
 }
  
-/* ===== Totais ===== */
 /* ===== Totais (reativos aos filtros do cabeçalho) ===== */
 const fmtBRL = (v) => v?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) ?? 'R$ 0,00';
 const totals = computed(() => {
