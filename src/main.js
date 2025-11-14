@@ -13,8 +13,7 @@ import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import App from './App.vue'
 import router from './router'
-import Toast from 'vue-toastification';
-import { SpeedInsights } from "@vercel/speed-insights/vue"
+import Toast from 'vue-toastification'; 
 
 const app = createApp(App)
 
@@ -59,7 +58,6 @@ app.directive('tippy', {
 
 app.use(router);
 
- 
 // Agora que o Pinia está instalado, é seguro acessar a store e inicializar a autenticação
 import { useAuthStore } from './stores/Settings/Auth/authStore';
 const authStore = useAuthStore();
