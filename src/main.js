@@ -14,6 +14,7 @@ import { createPinia } from 'pinia'
 import App from './App.vue'
 import router from './router'
 import Toast from 'vue-toastification';
+import { SpeedInsights } from "@vercel/speed-insights/vue"
 
 const app = createApp(App)
 
