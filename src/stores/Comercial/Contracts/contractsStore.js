@@ -784,9 +784,12 @@ export const useContractsStore = defineStore('contracts', {
                     fetch(`${API_URL}/cv/workflow-grupos?tipo=repasses`, { headers })
                 ])
 
+                // ❗ Se der erro, apenas desabilita projeções (sem propagar erro global)
                 if (!resR.ok || !resP.ok) {
-                    const bad = !resR.ok ? resR.status : resP.status
-                    throw new Error(`Erro ao listar grupos: ${bad}`)
+                    console.warn('Falha ao listar grupos de workflow (projeções serão desabilitadas).',
+                        { reservas: resR.status, repasses: resP.status })
+                    this.workflowGroups = []
+                    return
                 }
 
                 const [dataR, dataP] = await Promise.all([resR.json(), resP.json()])
@@ -810,7 +813,8 @@ export const useContractsStore = defineStore('contracts', {
 
                 this.workflowGroups = raw.map(norm).filter(g => g.idgroup !== null)
             } catch (e) {
-                this.error = e.message
+                // 👇 NÃO mexe em this.error aqui pra não quebrar o relatório
+                console.warn('Erro ao carregar grupos de workflow (projeções):', e)
                 this.workflowGroups = []
             }
         },
