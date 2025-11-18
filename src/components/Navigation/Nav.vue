@@ -35,7 +35,9 @@ const menuItems = {
             ]
         }, 
         items: [
-            { router: '/marketing/leads', section: 'Leads', name: 'Leads', icon: 'fas fa-user-plus' }
+            { router: '/marketing/leads', section: 'Leads', name: 'Leads', icon: 'fas fa-user-plus' },
+            { router: '/marketing/bills', section: 'Bills', name: 'Bills', icon: 'fas fa-money-bill-transfer' },
+            { router: '/marketing/expenses', section: 'Expenses', name: 'Expenses', icon: 'fas fa-money-bills' }
         ]
     }, 
     comercial: { 

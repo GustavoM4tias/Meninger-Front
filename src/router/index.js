@@ -27,6 +27,18 @@ const routes = [
         component: () => import('@/views/Marketing/Leads/Index.vue'),
         meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Dashboard de leads' },
       },
+      {
+        path: 'bills',
+        name: 'Bills',
+        component: () => import('@/views/Marketing/Bills/Index.vue'),
+        meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Adição custas de Marketing' },
+      },
+      {
+        path: 'expenses',
+        name: 'Expenses',
+        component: () => import('@/views/Marketing/Expenses/Index.vue'),
+        meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Custas de Marketing' },
+      },
     ],
     meta: { requiresAuth: true, allowedPosition: '' },
   },
