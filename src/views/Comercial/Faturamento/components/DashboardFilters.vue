@@ -32,15 +32,19 @@
                     <option class="text-gray-600" value="Cancelado">Cancelado</option>
                 </select>
             </div> -->
-
+ 
             <!-- ✅ Grupos de Workflow (agora como strings) -->
-            <div class="flex-1 max-w-full">
+            <div v-if="groupsOptions.length" class="flex-1 max-w-full">
                 <label class="block text-xs font-medium mb-1">Grupos Workflow (Projeção)</label>
-                <MultiSelector :model-value="localFilters.groupIds"
-                    @update:modelValue="v => localFilters.groupIds = Array.isArray(v) ? v : []" :options="groupsOptions"
-                    placeholder="Selecione grupos" :page-size="200" />
+                <MultiSelector
+                    :model-value="localFilters.groupIds"
+                    @update:modelValue="v => localFilters.groupIds = Array.isArray(v) ? v : []"
+                    :options="groupsOptions"
+                    placeholder="Selecione grupos"
+                    :page-size="200"
+                />
             </div>
-            
+
             <!-- Empreendimentos com seu MultiSelector -->
             <div class="flex-1 max-w-full">
                 <label class="block text-xs font-medium mb-1 text-gray-700 dark:text-gray-300">
