@@ -20,11 +20,19 @@ async function requestWithAuth(url, options = {}) {
     }
 
     const res = await fetch(url, { ...options, headers });
-    if (!res.ok) {
-        const j = await res.json().catch(() => ({}));
-        throw new Error(j?.error || 'Erro na requisição');
+    const data = await res.json().catch(() => ({}));
+
+    // 🔴 Tratamento específico de 401 (igual outras stores)
+    if (res.status === 401) {
+        localStorage.removeItem('token');
+        throw new Error(data?.error || 'Sessão expirada. Faça login novamente.');
     }
-    return res.json();
+
+    if (!res.ok) {
+        throw new Error(data?.error || 'Erro na requisição');
+    }
+
+    return data;
 }
 
 export const useMktBillsStore = defineStore('mktBills', () => {
@@ -34,10 +42,12 @@ export const useMktBillsStore = defineStore('mktBills', () => {
     const today = dayjs();
     const costCenterId = ref('');
     const startDate = ref(
-        today.date(15) // Define o dia para 15
+        today
+            .date(15)          // Define o dia para 15
             .subtract(1, 'month') // Volta um mês
             .format('YYYY-MM-DD') // 2025-10-15
-    ); const endDate = ref(today.add(15, 'day').format('YYYY-MM-DD'));
+    );
+    const endDate = ref(today.add(15, 'day').format('YYYY-MM-DD'));
     const month = ref(today.format('YYYY-MM')); // mês de competência
 
     // dados
@@ -64,7 +74,9 @@ export const useMktBillsStore = defineStore('mktBills', () => {
             return bills.value;
         }
         return bills.value.filter(
-            b => (b.main_department_name || '').toLowerCase() === selectedDepartment.value.toLowerCase()
+            b =>
+                (b.main_department_name || '').toLowerCase() ===
+                selectedDepartment.value.toLowerCase()
         );
     });
 
@@ -75,7 +87,10 @@ export const useMktBillsStore = defineStore('mktBills', () => {
     const selectedCount = computed(() => selectedIds.value.length);
 
     const selectedTotal = computed(() =>
-        selectedBills.value.reduce((sum, b) => sum + Number(b.total_invoice_amount || 0), 0)
+        selectedBills.value.reduce(
+            (sum, b) => sum + Number(b.total_invoice_amount || 0),
+            0
+        )
     );
 
     function toggleSelect(id) {
@@ -96,6 +111,13 @@ export const useMktBillsStore = defineStore('mktBills', () => {
 
     async function fetchBills() {
         error.value = null;
+
+        // 🟡 Se não houver token, nem tenta chamar a API (mesmo padrão das outras)
+        if (!getToken()) {
+            error.value = 'Sessão expirada. Faça login novamente.';
+            return;
+        }
+
         if (!costCenterId.value || !startDate.value || !endDate.value) {
             error.value = 'Informe centro de custo, data inicial e final.';
             return;
@@ -110,9 +132,13 @@ export const useMktBillsStore = defineStore('mktBills', () => {
                 endDate: endDate.value,
             });
 
-            const data = await requestWithAuth(`${API_URL}/sienge/bills?${params.toString()}`);
+            const data = await requestWithAuth(
+                `${API_URL}/sienge/bills?${params.toString()}`
+            );
+
             bills.value = data || [];
             selectedIds.value = [];
+
             // se o filtro "Marketing" não existir, cai para "Todos"
             if (
                 selectedDepartment.value &&
@@ -138,6 +164,12 @@ export const useMktBillsStore = defineStore('mktBills', () => {
      */
     async function linkSelectedToMonth() {
         error.value = null;
+
+        if (!getToken()) {
+            error.value = 'Sessão expirada. Faça login novamente.';
+            return;
+        }
+
         if (!costCenterId.value || !month.value) {
             error.value = 'Informe centro de custo e mês de competência.';
             return;
@@ -153,10 +185,13 @@ export const useMktBillsStore = defineStore('mktBills', () => {
 
             const promises = selectedBills.value.map(bill => {
                 const baseDesc =
-                    `${bill.document_identification_id || ''} ${bill.document_number || ''}`.trim() ||
-                    `Título ${bill.id}`;
+                    `${bill.document_identification_id || ''} ${bill.document_number || ''
+                        }`.trim() || `Título ${bill.id}`;
 
-                const extra = (notes.value && notes.value[bill.id]) ? String(notes.value[bill.id]).trim() : '';
+                const extra =
+                    notes.value && notes.value[bill.id]
+                        ? String(notes.value[bill.id]).trim()
+                        : '';
                 const description = extra ? `${baseDesc} - ${extra}` : baseDesc;
 
                 const payload = {
