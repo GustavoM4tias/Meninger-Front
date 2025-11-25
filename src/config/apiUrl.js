@@ -1,6 +1,5 @@
-// src/config/apiUrl.js
-const API_URL = 'http://localhost:5000/api'; 
-// const API_URL = 'https://node-back-eight.vercel.app/api'; 
-// const API_URL = 'https://menin.up.railway.app/api'
-
+// src/config/apiUrl.js 
+const API_URL = import.meta.env.VITE_API_URL;
+ 
 export default API_URL;
+  
