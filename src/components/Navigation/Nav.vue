@@ -192,7 +192,12 @@ const getSubcategoryByRouterAndSection = (router, section) => {
 
 // Agrupar favoritos por categoria/subcategoria de forma dinâmica
 const groupedFavorites = computed(() => {
-    return favoritesStore.favorites.reduce((groups, fav) => {
+    // Garante que sempre teremos um array
+    const list = Array.isArray(favoritesStore.favorites)
+        ? favoritesStore.favorites
+        : [];
+
+    return list.reduce((groups, fav) => {
         const category = getCategoryByRouter(fav.router);
         const subcategory = getSubcategoryByRouterAndSection(fav.router, fav.section);
 
