@@ -1,38 +1,119 @@
 <script setup>
 import { ref, watchEffect, onMounted, computed } from 'vue';
-import { updateUserInfo } from '@/utils/Auth/apiAuth';
 import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 import Input from '@/components/UI/Input.vue';
 import Button from '@/components/UI/Button.vue';
 import UiSelect from '@/components/UI/Select.vue';
 import { useToast } from 'vue-toastification';
+import API_URL from '@/config/apiUrl';
 
 const authStore = useAuthStore();
 const toast = useToast();
 
-const props = defineProps({ user: Object });
+const props = defineProps({
+  user: {
+    type: Object,
+    default: null,
+  },
+});
+
 const emit = defineEmits(['close', 'reload']);
 
-const editableUser = ref({ ...props.user });
+const isEdit = computed(() => !!props.user);
+
+// estado base pro usuário novo
+const baseUser = {
+  id: undefined,
+  username: '',
+  email: '',
+  position: '',
+  city: '',
+  birth_date: '',
+  status: true,
+  role: 'user',
+  manager_id: null,
+  face_enabled: false,
+};
+
+const editableUser = ref(props.user ? { ...props.user } : { ...baseUser });
 const allUsers = ref([]);
+
+// senha apenas para criação
+const password = ref('');
+const passwordConfirm = ref('');
+
+// opções de cargo e cidade vindas do backend
+const positionsOptions = ref([]);
+const citiesOptions = ref([]);
 
 // Normaliza birth_date para o <input type="date">
 watchEffect(() => {
-  if (editableUser.value?.birth_date) {
-    const d = new Date(editableUser.value.birth_date);
-    if (!isNaN(d)) {
-      const iso = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()))
-        .toISOString().split('T')[0];
-      editableUser.value.birth_date = iso;
+  if (editableUser.value && editableUser.value.birth_date) {
+    const v = editableUser.value.birth_date;
+
+    // Caso já esteja correto, não mexe
+    if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return;
+
+    // Se vier algo como 2005-03-02T00:00:00.000Z ou similar
+    if (typeof v === 'string') {
+      editableUser.value.birth_date = v.slice(0, 10);
     }
   }
 });
 
-// Carrega usuários para popular o select de manager
+// Carrega usuários (para superior), cargos e cidades
 onMounted(async () => {
   try {
+    // usuários para o select de superior
     const res = await authStore.getAllUsers();
-    allUsers.value = res?.data || [];
+    const dataUsers = Array.isArray(res?.data) ? res.data : (Array.isArray(res) ? res : []);
+    allUsers.value = dataUsers || [];
+
+    // posições
+    try {
+      const resPos = await fetch(`${API_URL}/admin/positions`, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      const dataPos = await resPos.json();
+      const listPos = Array.isArray(dataPos) ? dataPos : (dataPos && dataPos.data) || [];
+
+      positionsOptions.value = listPos
+        .filter(p => p && p.active && p.is_internal)
+        .map(p => ({
+          label: p.name,
+          value: p.name, // gravamos o name em user.position
+        }))
+        .sort((a, b) => a.label.localeCompare(b.label));
+    } catch (e) {
+      console.error('Erro ao carregar cargos:', e);
+    }
+
+    // cidades
+    try {
+      const resCity = await fetch(`${API_URL}/admin/user-cities`, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      const dataCity = await resCity.json();
+      const listCity = Array.isArray(dataCity) ? dataCity : (dataCity && dataCity.data) || [];
+
+      citiesOptions.value = listCity
+        .filter(c => c && c.active)
+        .map(c => ({
+          label: c.uf ? `${c.name} - ${c.uf}` : c.name,
+          value: c.name, // gravamos o name em user.city
+        }))
+        .sort((a, b) => a.label.localeCompare(b.label));
+    } catch (e) {
+      console.error('Erro ao carregar cidades:', e);
+    }
   } catch (e) {
     console.error(e);
   }
@@ -42,7 +123,6 @@ const availableManagers = computed(() =>
   allUsers.value.filter(u => u.id !== editableUser.value.id)
 );
 
-// Opções para o UiSelect (value como STRING p/ bater com <select> nativo)
 const managerOptions = computed(() => [
   { label: 'Sem superior', value: '' },
   ...availableManagers.value.map(u => ({
@@ -51,33 +131,76 @@ const managerOptions = computed(() => [
   })),
 ]);
 
-// Proxy p/ o v-model do UiSelect (STRING do select -> number/null no state)
 const managerIdProxy = computed({
-  get: () => String(editableUser.value.manager_id ?? ''),
-  set: (val) => {
-    if (val === '') editableUser.value.manager_id = null;
-    else editableUser.value.manager_id = Number(val);
-  }
+  get() {
+    return String(editableUser.value.manager_id ?? '');
+  },
+  set(val) {
+    if (val === '') {
+      editableUser.value.manager_id = null;
+    } else {
+      editableUser.value.manager_id = Number(val);
+    }
+  },
 });
 
 const saveUser = async () => {
   try {
-    await updateUserInfo(
-      editableUser.value.id,
-      editableUser.value.username,
-      editableUser.value.email,
-      editableUser.value.position,
-      editableUser.value.manager_id,   // number ou null
-      editableUser.value.city,
-      editableUser.value.birth_date,
-      editableUser.value.status,
-      editableUser.value.role          // mantenha se o backend exigir
-    );
+    if (
+      !editableUser.value.username ||
+      !editableUser.value.username.trim() ||
+      !editableUser.value.email ||
+      !editableUser.value.email.trim() ||
+      !editableUser.value.position ||
+      !editableUser.value.city ||
+      !editableUser.value.birth_date
+    ) {
+      toast.error('Preencha todos os campos obrigatórios.');
+      return;
+    }
+
+    if (isEdit.value) {
+      // EDITAR
+      await authStore.updateUser({
+        id: editableUser.value.id,
+        username: editableUser.value.username,
+        email: editableUser.value.email,
+        position: editableUser.value.position,
+        manager_id: editableUser.value.manager_id,
+        city: editableUser.value.city,
+        birth_date: editableUser.value.birth_date,
+        status: editableUser.value.status,
+        role: editableUser.value.role,
+      });
+      toast.success('Usuário atualizado com sucesso!');
+    } else {
+      // CRIAR
+      if (!password.value || password.value.length < 6) {
+        toast.error('Defina uma senha com pelo menos 6 caracteres.');
+        return;
+      }
+      if (password.value !== passwordConfirm.value) {
+        toast.error('As senhas não conferem.');
+        return;
+      }
+
+      await authStore.createUser({
+        username: editableUser.value.username,
+        email: editableUser.value.email,
+        password: password.value,
+        position: editableUser.value.position,
+        city: editableUser.value.city,
+        birth_date: editableUser.value.birth_date,
+      });
+
+      toast.success('Usuário criado com sucesso!');
+    }
+
     emit('close');
     emit('reload');
-    toast.success('Usuário atualizado com sucesso!');
   } catch (error) {
-    toast.error(`Erro ao atualizar o usuário: ${error.message}`);
+    const msg = error && error.message ? error.message : String(error);
+    toast.error(`Erro ao salvar usuário: ${msg}`);
   }
 };
 
@@ -92,8 +215,14 @@ const cancelEditing = () => emit('close');
       @click.stop>
       <div class="flex border-b p-2 border-gray-200 dark:border-gray-700">
         <h3 class="text-lg md:text-2xl font-semibold absolute top-1 md:top-0 left-0 p-3 ps-4">
-          Editando {{ editableUser.username }}
-          <i class="fas fa-users-viewfinder text-2xl"
+          <template v-if="isEdit">
+            Editando {{ editableUser.username }}
+          </template>
+          <template v-else>
+            Criando Usuário
+          </template>
+
+          <i v-if="isEdit" class="fas fa-users-viewfinder text-2xl ps-2"
             :class="editableUser.face_enabled ? 'text-green-500' : 'text-red-500'"
             v-tippy="editableUser.face_enabled ? 'Reconhecimento facial ativo' : 'Reconhecimento facial inativo'" />
         </h3>
@@ -101,11 +230,8 @@ const cancelEditing = () => emit('close');
           @click="cancelEditing" />
       </div>
 
-      <!-- Botão Salvar dentro do form para garantir submit -->
       <form @submit.prevent="saveUser" class="px-6 py-4">
-        <!-- Grid dos campos -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4">
-
           <!-- Nome -->
           <div class="md:col-span-2">
             <Input v-model="editableUser.username" label="Nome de Usuário" type="text" placeholder="Nome" />
@@ -116,14 +242,26 @@ const cancelEditing = () => emit('close');
             <Input v-model="editableUser.email" label="Email" type="email" placeholder="Email" />
           </div>
 
-          <!-- Cargo -->
-          <div>
-            <Input v-model="editableUser.position" label="Cargo" type="text" placeholder="Cargo" />
+          <!-- Senha (apenas criação) -->
+          <div v-if="!isEdit" class="md:col-span-2">
+            <Input v-model="password" label="Senha" type="password" placeholder="Defina uma senha" required />
           </div>
 
-          <!-- Cidade -->
+          <div v-if="!isEdit" class="md:col-span-2">
+            <Input v-model="passwordConfirm" label="Confirmar senha" type="password" placeholder="Repita a senha"
+              required />
+          </div>
+
+          <!-- Cargo (select) -->
           <div>
-            <Input v-model="editableUser.city" label="Cidade" type="text" placeholder="Cidade" />
+            <UiSelect v-model="editableUser.position" :options="positionsOptions" label="Cargo"
+              placeholder="Selecione o cargo" classes="w-full" />
+          </div>
+
+          <!-- Cidade (select) -->
+          <div>
+            <UiSelect v-model="editableUser.city" :options="citiesOptions" label="Cidade"
+              placeholder="Selecione a cidade" classes="w-full" />
           </div>
 
           <!-- Data de Nascimento -->
@@ -132,13 +270,13 @@ const cancelEditing = () => emit('close');
               placeholder="Data de Nascimento" required />
           </div>
 
-          <!-- Manager -->
+          <!-- Superior -->
           <div>
             <UiSelect v-model="managerIdProxy" :options="managerOptions" label="Selecione o superior"
               placeholder="Selecione o superior" classes="w-full" />
           </div>
 
-          <!-- Login -->
+          <!-- Login ON/OFF -->
           <div class="md:col-span-2">
             <label class="block text-lg text-gray-700 dark:text-gray-200 font-semibold mt-2 mb-1">Login</label>
             <label class="relative inline-flex items-center cursor-pointer w-full">
@@ -166,8 +304,8 @@ const cancelEditing = () => emit('close');
           </Button>
 
           <Button type="submit"
-            customClass="bg-emerald-400 hover:bg-emerald-500 dark:bg-emerald-500 dark:hover:bg-emerald-600 truncate">
-            Salvar alterações
+            :customClass="'bg-emerald-400 hover:bg-emerald-500 dark:bg-emerald-500 dark:hover:bg-emerald-600 truncate'">
+            {{ isEdit ? 'Salvar alterações' : 'Criar usuário' }}
           </Button>
         </div>
       </form>

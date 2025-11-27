@@ -67,6 +67,7 @@ const menuItems = {
         { router: '/settings/users', section: 'Usuários', name: 'Usuários', icon: 'fas fa-users' },
         { router: '/settings/organograma', section: 'Organograma', name: 'Organograma', icon: 'fas fa-sitemap' },
         { router: '/settings/cidades', section: 'Cidades', name: 'Cidades', icon: 'fas fa-city'},
+        { router: '/settings/management', section: 'Cargos', name: 'Cargos e Alçadas', icon: 'fas fa-gears'},
     ],
     // supports: [
     //     { router: '/report', section: '', name: 'Reportar Problema', icon: 'fas fa-bug' },
