@@ -1,45 +1,39 @@
 // src/store/authStore.js
 import { defineStore } from 'pinia';
 import router from '@/router';
-import { getUserInfo, getAllUsers, getUserById, fetchBanners } from '@/utils/Auth/apiAuth';
+import API_URL from '@/config/apiUrl';
+import { getUserInfo, getUserById, fetchBanners } from '@/utils/Auth/apiAuth';
 
 export const useAuthStore = defineStore('user', {
   state: () => ({
     users: [],
     user: null,
     userById: null,
-    token: localStorage.getItem('token') || null, // Inicializa o token do localStorage
-    banners: [], // novo estado para os banners
+    token: localStorage.getItem('token') || null,
+    banners: [],
   }),
-  // src/stores/Auth/authStore.js (getters)
+
   getters: {
     usuariosComAniversarioValido: (state) =>
       state.users.filter(u => u.birth_date && !isNaN(new Date(u.birth_date))),
-
-    // helper interno
     proximoAniversario: () => (birthDateStr) => {
       const base = new Date(birthDateStr);
       if (isNaN(base)) return null;
       const hoje = new Date();
       const ano = hoje.getFullYear();
-
       const prox = new Date(ano, base.getMonth(), base.getDate());
-      // se já passou hoje, vai para o próximo ano
       if (prox < new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate())) {
         prox.setFullYear(ano + 1);
       }
       return prox;
     },
-
     aniversariosEmAndamento: (state, getters) => {
       return getters.usuariosComAniversarioValido
         .map(u => ({ ...u, _nextBDay: getters.proximoAniversario(u.birth_date) }))
-        .filter(u => u._nextBDay) // válidos
+        .filter(u => u._nextBDay)
         .sort((a, b) => a._nextBDay - b._nextBDay);
     },
-
     aniversariosFinalizados: (state, getters) => {
-      // últimos que ocorreram (ordenados do mais recente)
       const hoje = new Date();
       return getters.usuariosComAniversarioValido
         .map(u => {
@@ -53,61 +47,153 @@ export const useAuthStore = defineStore('user', {
         .sort((a, b) => b._lastBDay - a._lastBDay);
     },
   },
+
   actions: {
     setUser(user) {
       this.user = user;
-      localStorage.setItem('role', user.role)
-      localStorage.setItem('position', user.position); // Salva o position no localStorage
+      localStorage.setItem('role', user.role);
+      localStorage.setItem('position', user.position);
     },
     setUserById(userById) {
       this.userById = userById;
-      localStorage.setItem('position', userById.position); // Salva o position no localStorage
+      localStorage.setItem('position', userById.position);
     },
     setToken(token) {
       this.token = token;
-      localStorage.setItem('token', token); // Salva o token no localStorage
+      localStorage.setItem('token', token);
     },
     clearUser() {
       this.user = null;
       this.token = null;
-      localStorage.removeItem('token'); // Remove o token do localStorage
-      localStorage.removeItem('role'); // Remove o token do localStorage
-      localStorage.removeItem('position'); // Remove o position do localStorage
+      localStorage.removeItem('token');
+      localStorage.removeItem('role');
+      localStorage.removeItem('position');
     },
     isAuthenticated() {
       return !!this.token;
     },
     logout() {
-      this.clearUser()
+      this.clearUser();
       router.push('/login');
     },
+
     async fetchUserInfo() {
       try {
         const result = await getUserInfo();
-        this.setUser(result.data); // Chama setUser para sincronizar o localStorage
+        this.setUser(result.data);
       } catch (error) {
         console.error(error);
-        this.clearUser(); // Limpa usuário caso não consiga obter dados
-        router.push('/login'); // Redireciona para a rota de login
+        this.clearUser();
+        router.push('/login');
       }
     },
-    async fetchUserById(id) { // ajustar
+
+    async fetchUserById(id) {
       try {
         const result = await getUserById(id);
-        this.setUserById(result.data); // Chama setUser para sincronizar o localStorage
+        this.setUserById(result.data);
       } catch (error) {
         console.error(error);
       }
     },
+
+    // ====== AQUI COMEÇA O CRUD DE USUÁRIOS ======
+
     async getAllUsers() {
       try {
-        const result = await getAllUsers(); // Supondo que getAllUsers retorne um array de usuários
-        this.users = result.data; // Atualiza a lista de usuários 
-        return result;
+        const response = await fetch(`${API_URL}/auth/users`, {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.message || data.error || 'Erro ao buscar usuários');
+        }
+
+        this.users = Array.isArray(data) ? data : (Array.isArray(data.data) ? data.data : []);
+        return data;
       } catch (error) {
-        throw new Error(error.message);
+        console.error('Erro em getAllUsers:', error);
+        throw error;
       }
     },
+
+    async createUser(payload) {
+      const body = {
+        username: payload.username,
+        password: payload.password,
+        email: payload.email,
+        position: payload.position,
+        city: payload.city,
+        birth_date: payload.birth_date,
+      };
+
+      try {
+        const response = await fetch(`${API_URL}/auth/register`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(body),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || data.success === false) {
+          throw new Error(data.message || data.error || 'Erro ao criar usuário');
+        }
+
+        await this.getAllUsers();
+        return data;
+      } catch (error) {
+        console.error('Erro em createUser:', error);
+        throw error;
+      }
+    },
+
+    async updateUser(payload) {
+      const body = {
+        id: payload.id,
+        username: payload.username,
+        email: payload.email,
+        position: payload.position,
+        manager_id: payload.manager_id ?? null,
+        city: payload.city,
+        birth_date: payload.birth_date,
+        status: payload.status,
+        role: payload.role ?? 'user',
+      };
+
+      try {
+        const response = await fetch(`${API_URL}/auth/users`, {
+          method: 'PUT',
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(body),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || data.success === false) {
+          throw new Error(data.message || data.error || 'Erro ao atualizar usuário');
+        }
+
+        await this.getAllUsers();
+        return data;
+      } catch (error) {
+        console.error('Erro em updateUser:', error);
+        throw error;
+      }
+    },
+    // ====== FIM CRUD USUÁRIOS ======
+
     async getBanners() {
       try {
         const result = await fetchBanners();
@@ -117,7 +203,6 @@ export const useAuthStore = defineStore('user', {
       }
     },
     hasPosition(position) {
-      // Verifica a posição pelo estado ou pelo localStorage
       return this.user?.position === position || localStorage.getItem('position') === position;
     },
     hasRole(role) {
@@ -131,6 +216,6 @@ export const useAuthStore = defineStore('user', {
           this.clearUser();
         }
       }
-    }
+    },
   },
 });

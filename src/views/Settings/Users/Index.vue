@@ -3,11 +3,11 @@ import { ref, onMounted, computed } from 'vue';
 import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 import { useCarregamentoStore } from '@/stores/Config/carregamento';
 import userModal from '@/views/Settings/Users/components/userModal.vue';
-import Favorite from "@/components/config/Favorite.vue";
-
+import Favorite from '@/components/config/Favorite.vue';
 
 const userStore = useAuthStore();
 const carregamento = useCarregamentoStore();
+
 const users = ref([]);
 const searchQuery = ref('');
 const searchField = ref('username');
@@ -15,13 +15,13 @@ const filterCity = ref('');
 const filterPosition = ref('');
 const filterStatus = ref('');
 const editableUser = ref(null);
+const showUserModal = ref(false);
 
 const fetchUsers = async () => {
   try {
     carregamento.iniciarCarregamento();
     const fetchedUsers = await userStore.getAllUsers();
-    users.value = fetchedUsers.data;
-    console.log(users.value);
+    users.value = Array.isArray(fetchedUsers.data) ? fetchedUsers.data : fetchedUsers;
     carregamento.finalizarCarregamento();
   } catch (error) {
     console.error('Erro ao carregar os usuários:', error);
@@ -29,7 +29,6 @@ const fetchUsers = async () => {
   }
 };
 
-// computed filteredUsers – torne a busca defensiva
 const filteredUsers = computed(() => {
   const query = (searchQuery.value || '').toLowerCase();
   const field = searchField.value;
@@ -47,13 +46,19 @@ const filteredUsers = computed(() => {
 const uniqueCities = computed(() => [...new Set(users.value.map(user => user.city).filter(Boolean))]);
 const uniquePositions = computed(() => [...new Set(users.value.map(user => user.position).filter(Boolean))]);
 
-
 const startEditing = (user) => {
   editableUser.value = { ...user };
+  showUserModal.value = true;
+};
+
+const startCreating = () => {
+  editableUser.value = null; // modo criação
+  showUserModal.value = true;
 };
 
 const closeModal = () => {
   editableUser.value = null;
+  showUserModal.value = false;
 };
 
 const clearFilters = () => {
@@ -79,6 +84,13 @@ onMounted(fetchUsers);
           Gerencie e administre todos os usuários do sistema
         </p>
       </div>
+
+      <!-- Botão flutuante para novo usuário -->
+      <button
+        class="fixed bottom-6 right-6 z-30 bg-blue-600 hover:bg-blue-700 text-white rounded-full w-14 h-14 shadow-lg flex items-center justify-center"
+        title="Criar novo usuário" @click="startCreating">
+        <i class="fas fa-user-plus text-xl"></i>
+      </button>
 
       <!-- Filtros -->
       <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
@@ -235,6 +247,6 @@ onMounted(fetchUsers);
     </div>
 
     <!-- Modal -->
-    <userModal v-if="editableUser" :user="editableUser" @close="closeModal" @reload="fetchUsers" />
+    <userModal v-if="showUserModal" :user="editableUser" @close="closeModal" @reload="fetchUsers" />
   </div>
 </template>

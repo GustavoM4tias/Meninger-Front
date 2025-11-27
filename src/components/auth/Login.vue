@@ -11,7 +11,7 @@
     <div v-if="errorMessage" class="text-red-500">{{ errorMessage }}</div>
     <hr class="border-t border-gray-400 dark:border-gray-100 mt-6">
     </hr>
-    <a @click="$emit('changeLogin')" class="text-sm mt-1 text-blue-500 cursor-pointer hover:text-blue-600">
+    <a @click="register()" class="text-sm mt-1 text-blue-500 cursor-pointer hover:text-blue-600">
       Não tem uma conta? Crie agora.
     </a>
 
@@ -43,6 +43,10 @@ import { useRouter } from 'vue-router';
 import Input from '@/components/UI/Input.vue';
 import Button from '@/components/UI/Button.vue';
 
+import { useToast } from 'vue-toastification';
+
+const toast = useToast();
+
 const router = useRouter();
 const authStore = useAuthStore();
 const faceStore = useFaceStore();
@@ -68,8 +72,9 @@ const handleLogin = async () => {
   }
 };
 
-
-
+async function register() { 
+  toast.info('Solicite acesso a seu gestor.')
+}
 
 const faceEnabled = ref(true);
 
