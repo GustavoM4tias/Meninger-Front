@@ -27,18 +27,6 @@ const routes = [
         component: () => import('@/views/Marketing/Leads/Index.vue'),
         meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Dashboard de leads' },
       },
-      {
-        path: 'bills',
-        name: 'Bills',
-        component: () => import('@/views/Marketing/Bills/Index.vue'),
-        meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Adição custas de Marketing' },
-      },
-      {
-        path: 'expenses',
-        name: 'Expenses',
-        component: () => import('@/views/Marketing/Expenses/Index.vue'),
-        meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Custas de Marketing' },
-      },
     ],
     meta: { requiresAuth: true, allowedPosition: '' },
   },
@@ -76,6 +64,25 @@ const routes = [
         component: () => import('@/views/Comercial/Workflow/Index.vue'),
         meta: { requiresAuth: true, allowedPosition: '', searchable: false, content: 'Grupos de Workflow' },
       }
+    ],
+    meta: { requiresAuth: true, allowedPosition: '' },
+  },
+  {
+    path: '/financeiro',
+    name: 'financeiro',
+    children: [
+      {
+        path: 'titulos',
+        name: 'Títulos',
+        component: () => import('@/views/Financeiro/Titulos/Index.vue'),
+        meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Adição de custas Financeiro' },
+      },
+      {
+        path: 'custas',
+        name: 'Custas',
+        component: () => import('@/views/Financeiro/Custas/Index.vue'),
+        meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Custas do Financeiro' },
+      },
     ],
     meta: { requiresAuth: true, allowedPosition: '' },
   },
