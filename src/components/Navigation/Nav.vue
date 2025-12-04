@@ -36,8 +36,6 @@ const menuItems = {
         }, 
         items: [
             { router: '/marketing/leads', section: 'Leads', name: 'Leads', icon: 'fas fa-user-plus' },
-            { router: '/marketing/bills', section: 'Bills', name: 'Bills', icon: 'fas fa-money-bill-transfer' },
-            { router: '/marketing/expenses', section: 'Expenses', name: 'Expenses', icon: 'fas fa-money-bills' }
         ]
     }, 
     comercial: { 
@@ -59,6 +57,12 @@ const menuItems = {
             { router: '/comercial/workflow/groups', section: 'Workflow', name: 'Grupos Workflow', icon: 'fas fa-chart-diagram' }, 
         ]
     }, 
+    financeiro: {
+        items: [
+            { router: '/financeiro/titulos', section: 'Títulos', name: 'Títulos', icon: 'fas fa-money-bill-transfer' },
+            { router: '/financeiro/custas', section: 'Custas', name: 'Custas', icon: 'fas fa-coins' }
+        ]
+    },
     tools: [
         { router: '/tools/validator', section: 'Validador', name: 'Validador', icon: 'fas fa-check-double' }
     ],
@@ -82,6 +86,7 @@ const categoryKeys = computed(() => Object.keys(menuItems));
 const categoryLabelMap = {
     marketing: 'Marketing',
     comercial: 'Comercial',
+    financeiro: 'Financeiro',
     tools: 'Ferramentas',
     settings: 'Configurações',
     // supports: 'Suporte',
@@ -342,6 +347,7 @@ onMounted(async () => {
                             <i :class="{
                                 marketing: 'fa fa-bullhorn',
                                 comercial: 'fas fa-briefcase',
+                                financeiro: 'fas fa-money-bill-wave',
                                 tools: 'fas fa-wrench',
                                 settings: 'fas fa-gear',
                                 supports: 'fas fa-circle-info'

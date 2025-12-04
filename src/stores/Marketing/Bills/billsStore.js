@@ -4,6 +4,7 @@ import { ref, computed } from 'vue';
 import dayjs from 'dayjs';
 import API_URL from '@/config/apiUrl';
 import { useCarregamentoStore } from '@/stores/Config/carregamento';
+import { useContractsStore } from '@/stores/Comercial/Contracts/contractsStore';
 
 function getToken() {
     return localStorage.getItem('token');
@@ -35,12 +36,13 @@ async function requestWithAuth(url, options = {}) {
     return data;
 }
 
-export const useMktBillsStore = defineStore('mktBills', () => {
+export const useBillsStore = defineStore('bills', () => {
     const carregamento = useCarregamentoStore();
+    const contractsStore = useContractsStore();   // 👈 aqui
 
     // datas padrão: 15 dias antes / depois de hoje
     const today = dayjs();
-    const costCenterId = ref('');
+    const costCenterIds = ref([]); // ex.: [80001, 80002]
     const startDate = ref(
         today
             .date(15)          // Define o dia para 15
@@ -54,10 +56,13 @@ export const useMktBillsStore = defineStore('mktBills', () => {
     const bills = ref([]);           // todos os títulos carregados
     const error = ref(null);
     const selectedIds = ref([]);     // ids selecionados
-    const notes = ref({});           // { [billId]: string } observação extra
+    const notes = ref({});           // { [billId]: string }
+    const expenseDepartments = ref({}); // { [billId]: string } -> departamento que será usado na custa
+    const billLinks = ref({}); // { [billId]: { count, total } }
 
-    // filtro de departamento
-    const selectedDepartment = ref('Marketing'); // padrão
+    // 🔄 filtro de departamento AGORA MULTI
+    const selectedDepartments = ref([]); // ex.: ['Marketing', 'Comercial']
+
     const departmentsOptions = computed(() => {
         const set = new Set();
         for (const b of bills.value) {
@@ -68,15 +73,16 @@ export const useMktBillsStore = defineStore('mktBills', () => {
 
     const isLoading = computed(() => carregamento.carregando);
 
-    // Bills visíveis considerando filtro de departamento
+    // 🔎 aplica filtro multi de departamentos (vazio = todos)
     const visibleBills = computed(() => {
-        if (!selectedDepartment.value || selectedDepartment.value === 'Todos') {
-            return bills.value;
-        }
-        return bills.value.filter(
-            b =>
-                (b.main_department_name || '').toLowerCase() ===
-                selectedDepartment.value.toLowerCase()
+        if (!selectedDepartments.value.length) return bills.value;
+
+        const selectedSet = new Set(
+            selectedDepartments.value.map(d => (d || '').toLowerCase())
+        );
+
+        return bills.value.filter(b =>
+            selectedSet.has((b.main_department_name || '').toLowerCase())
         );
     });
 
@@ -112,14 +118,13 @@ export const useMktBillsStore = defineStore('mktBills', () => {
     async function fetchBills() {
         error.value = null;
 
-        // 🟡 Se não houver token, nem tenta chamar a API (mesmo padrão das outras)
         if (!getToken()) {
             error.value = 'Sessão expirada. Faça login novamente.';
             return;
         }
 
-        if (!costCenterId.value || !startDate.value || !endDate.value) {
-            error.value = 'Informe centro de custo, data inicial e final.';
+        if (!costCenterIds.value.length || !startDate.value || !endDate.value) {
+            error.value = 'Informe ao menos um centro de custo, data inicial e final.';
             return;
         }
 
@@ -127,7 +132,7 @@ export const useMktBillsStore = defineStore('mktBills', () => {
             carregamento.iniciarCarregamento();
 
             const params = new URLSearchParams({
-                costCenterId: String(costCenterId.value),
+                costCenterId: costCenterIds.value.join(','), // 👈 backend aceita múltiplos
                 startDate: startDate.value,
                 endDate: endDate.value,
             });
@@ -138,14 +143,30 @@ export const useMktBillsStore = defineStore('mktBills', () => {
 
             bills.value = data || [];
             selectedIds.value = [];
+            notes.value = {};
+            expenseDepartments.value = {};
+            billLinks.value = {};
 
-            // se o filtro "Marketing" não existir, cai para "Todos"
-            if (
-                selectedDepartment.value &&
-                selectedDepartment.value !== 'Todos' &&
-                !departmentsOptions.value.includes(selectedDepartment.value)
-            ) {
-                selectedDepartment.value = 'Todos';
+            for (const b of bills.value) {
+                if (b.main_department_name) {
+                    expenseDepartments.value[b.id] = b.main_department_name;
+                }
+            }
+
+            if (bills.value.length) {
+                const idsParam = bills.value.map(b => b.id).join(',');
+                try {
+                    const links = await requestWithAuth(
+                        `${API_URL}/expenses/links?billIds=${idsParam}`
+                    );
+                    const map = {};
+                    for (const l of links) {
+                        map[l.billId] = l;
+                    }
+                    billLinks.value = map;
+                } catch (err) {
+                    console.error('Erro ao buscar vínculos de custas', err);
+                }
             }
         } catch (e) {
             console.error(e);
@@ -155,13 +176,6 @@ export const useMktBillsStore = defineStore('mktBills', () => {
         }
     }
 
-    /**
-     * Vincula os títulos selecionados ao mês de competência, criando registros em /api/mkt/expenses
-     * - costCenterId: do filtro
-     * - month: YYYY-MM
-     * - amount: total_invoice_amount (MVP)
-     * - description: base do documento + observação extra (se houver)
-     */
     async function linkSelectedToMonth() {
         error.value = null;
 
@@ -170,8 +184,8 @@ export const useMktBillsStore = defineStore('mktBills', () => {
             return;
         }
 
-        if (!costCenterId.value || !month.value) {
-            error.value = 'Informe centro de custo e mês de competência.';
+        if (!month.value) {
+            error.value = 'Informe o mês de competência.';
             return;
         }
         if (!selectedIds.value.length) {
@@ -179,14 +193,32 @@ export const useMktBillsStore = defineStore('mktBills', () => {
             return;
         }
 
-        const competenceMonth = month.value; // YYYY-MM
+        const competenceMonth = month.value;
+        const startMonth = dayjs(`${competenceMonth}-01`);
+
         try {
             carregamento.iniciarCarregamento();
 
-            const promises = selectedBills.value.map(bill => {
+            // 🔹 Garantir que temos a lista de empreendimentos carregada
+            if (!contractsStore.enterprises || !contractsStore.enterprises.length) {
+                try {
+                    await contractsStore.fetchEnterprises();
+                } catch (e) {
+                    console.error('Erro ao carregar empreendimentos para custas:', e);
+                }
+            }
+
+            // 🔹 Mapa id -> nome de centro de custo
+            const enterpriseNameById = new Map(
+                (contractsStore.enterprises || []).map(e => [Number(e.id), e.name])
+            );
+
+            const promises = [];
+
+            selectedBills.value.forEach(bill => {
                 const baseDesc =
-                    `${bill.document_identification_id || ''} ${bill.document_number || ''
-                        }`.trim() || `Título ${bill.id}`;
+                    `${bill.document_identification_id || ''} ${bill.document_number || ''}`.trim()
+                    || `Título ${bill.id}`;
 
                 const extra =
                     notes.value && notes.value[bill.id]
@@ -194,18 +226,49 @@ export const useMktBillsStore = defineStore('mktBills', () => {
                         : '';
                 const description = extra ? `${baseDesc} - ${extra}` : baseDesc;
 
-                const payload = {
-                    costCenterId: Number(costCenterId.value),
-                    month: competenceMonth,
-                    billId: bill.id,
-                    amount: Number(bill.total_invoice_amount || 0),
-                    description,
-                };
+                const installments = Number(bill.installments_number || 1);
+                const parts = installments > 0 ? installments : 1;
 
-                return requestWithAuth(`${API_URL}/mkt/expenses`, {
-                    method: 'POST',
-                    body: JSON.stringify(payload),
-                });
+                const total = Number(bill.total_invoice_amount || 0);
+
+                const totalCents = Math.round(total * 100);
+                const basePartCents = Math.floor(totalCents / parts);
+                const diffCents = totalCents - basePartCents * parts;
+
+                const chosenDepartmentName =
+                    (expenseDepartments.value && expenseDepartments.value[bill.id])
+                    || bill.main_department_name
+                    || null;
+                const chosenDepartmentId = bill.main_department_id || null;
+
+                // 👇 Cost center por título
+                const billCostCenterId = Number(bill.cost_center_id || 0);
+                const billCostCenterName = enterpriseNameById.get(billCostCenterId) || null;
+
+                for (let i = 0; i < parts; i++) {
+                    const thisPartCents = basePartCents + (i === parts - 1 ? diffCents : 0);
+                    const amount = thisPartCents / 100;
+
+                    const expMonth = startMonth.add(i, 'month').format('YYYY-MM');
+
+                    const payload = {
+                        costCenterId: billCostCenterId,
+                        costCenterName: billCostCenterName,     // 👈 AGORA ENVIA O NOME
+                        month: expMonth,
+                        billId: bill.id,
+                        amount,
+                        description,
+                        departmentId: chosenDepartmentId,
+                        departmentName: chosenDepartmentName,
+                    };
+
+                    promises.push(
+                        requestWithAuth(`${API_URL}/expenses`, {
+                            method: 'POST',
+                            body: JSON.stringify(payload),
+                        })
+                    );
+                }
             });
 
             await Promise.all(promises);
@@ -220,7 +283,7 @@ export const useMktBillsStore = defineStore('mktBills', () => {
 
     return {
         // state
-        costCenterId,
+        costCenterIds,
         startDate,
         endDate,
         month,
@@ -228,7 +291,9 @@ export const useMktBillsStore = defineStore('mktBills', () => {
         error,
         selectedIds,
         notes,
-        selectedDepartment,
+        selectedDepartments,
+        expenseDepartments,
+        billLinks,
 
         // computed
         isLoading,
@@ -245,4 +310,4 @@ export const useMktBillsStore = defineStore('mktBills', () => {
         clearSelection,
         linkSelectedToMonth,
     };
-});
+}); 
