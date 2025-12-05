@@ -5,6 +5,7 @@ import dayjs from 'dayjs';
 import API_URL from '@/config/apiUrl';
 import { useCarregamentoStore } from '@/stores/Config/carregamento';
 import { useContractsStore } from '@/stores/Comercial/Contracts/contractsStore';
+import { useAdminMetaStore } from '@/stores/Settings/Admin/metaStore';
 
 function getToken() {
     return localStorage.getItem('token');
@@ -38,8 +39,8 @@ async function requestWithAuth(url, options = {}) {
 
 export const useBillsStore = defineStore('bills', () => {
     const carregamento = useCarregamentoStore();
-    const contractsStore = useContractsStore();   // 👈 aqui
-
+    const contractsStore = useContractsStore();
+    const adminMeta = useAdminMetaStore();
     // datas padrão: 15 dias antes / depois de hoje
     const today = dayjs();
     const costCenterIds = ref([]); // ex.: [80001, 80002]
@@ -58,6 +59,7 @@ export const useBillsStore = defineStore('bills', () => {
     const selectedIds = ref([]);     // ids selecionados
     const notes = ref({});           // { [billId]: string }
     const expenseDepartments = ref({}); // { [billId]: string } -> departamento que será usado na custa
+    const expenseCategories = ref({});       // 👈 NOVO { [billId]: categoryId }
     const billLinks = ref({}); // { [billId]: { count, total } }
 
     // 🔄 filtro de departamento AGORA MULTI
@@ -240,7 +242,17 @@ export const useBillsStore = defineStore('bills', () => {
                     || bill.main_department_name
                     || null;
                 const chosenDepartmentId = bill.main_department_id || null;
+                // 👇 NOVO: categoria
+                const chosenCategoryId =
+                    expenseCategories.value && expenseCategories.value[bill.id]
+                        ? Number(expenseCategories.value[bill.id])
+                        : null;
 
+                let chosenCategoryName = null;
+                if (chosenCategoryId && adminMeta.departmentCategories?.length) {
+                    const cat = adminMeta.departmentCategories.find(c => c.id === chosenCategoryId);
+                    if (cat) chosenCategoryName = cat.name;
+                }
                 // 👇 Cost center por título
                 const billCostCenterId = Number(bill.cost_center_id || 0);
                 const billCostCenterName = enterpriseNameById.get(billCostCenterId) || null;
@@ -253,13 +265,15 @@ export const useBillsStore = defineStore('bills', () => {
 
                     const payload = {
                         costCenterId: billCostCenterId,
-                        costCenterName: billCostCenterName,     // 👈 AGORA ENVIA O NOME
+                        costCenterName: billCostCenterName,
                         month: expMonth,
                         billId: bill.id,
                         amount,
                         description,
                         departmentId: chosenDepartmentId,
                         departmentName: chosenDepartmentName,
+                        departmentCategoryId: chosenCategoryId,
+                        departmentCategoryName: chosenCategoryName,
                     };
 
                     promises.push(
@@ -293,6 +307,7 @@ export const useBillsStore = defineStore('bills', () => {
         notes,
         selectedDepartments,
         expenseDepartments,
+        expenseCategories,
         billLinks,
 
         // computed

@@ -7,6 +7,8 @@ export const useAdminMetaStore = defineStore('adminMeta', {
     state: () => ({
         positions: [],
         userCities: [],
+        departments: [],
+        departmentCategories: [],
         error: null,
     }),
 
@@ -178,6 +180,168 @@ export const useAdminMetaStore = defineStore('adminMeta', {
             }
 
             await this.fetchUserCities();
+            return json;
+        },
+        async fetchDepartments() {
+            const carregamentoStore = useCarregamentoStore();
+            carregamentoStore.iniciarCarregamento();
+            this.error = null;
+
+            try {
+                const res = await fetch(`${API_URL}/admin/departments`, {
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem('token')}`,
+                        'Content-Type': 'application/json',
+                    },
+                });
+
+                if (!res.ok) throw new Error(`Erro ao carregar departamentos (${res.status})`);
+
+                const json = await res.json();
+                this.departments = Array.isArray(json.data) ? json.data : (json.data ? [json.data] : []);
+            } catch (e) {
+                console.error(e);
+                this.error = e.message;
+                this.departments = [];
+            } finally {
+                carregamentoStore.finalizarCarregamento();
+            }
+        },
+
+        async createDepartment(payload) {
+            const res = await fetch(`${API_URL}/admin/departments`, {
+                method: 'POST',
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem('token')}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload),
+            });
+
+            const json = await res.json();
+            if (!res.ok || !json.success) {
+                throw new Error(json.error || `Erro ao criar departamento (${res.status})`);
+            }
+
+            await this.fetchDepartments();
+            return json;
+        },
+
+        async updateDepartment(id, payload) {
+            const res = await fetch(`${API_URL}/admin/departments/${id}`, {
+                method: 'PUT',
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem('token')}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload),
+            });
+
+            const json = await res.json();
+            if (!res.ok || !json.success) {
+                throw new Error(json.error || `Erro ao atualizar departamento (${res.status})`);
+            }
+
+            await this.fetchDepartments();
+            return json;
+        },
+
+        async deactivateDepartment(id) {
+            const res = await fetch(`${API_URL}/admin/departments/${id}`, {
+                method: 'DELETE',
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem('token')}`,
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            const json = await res.json();
+            if (!res.ok || !json.success) {
+                throw new Error(json.error || `Erro ao desativar departamento (${res.status})`);
+            }
+
+            await this.fetchDepartments();
+            return json;
+        },
+        async fetchDepartmentCategories() {
+            const carregamentoStore = useCarregamentoStore();
+            carregamentoStore.iniciarCarregamento();
+            this.error = null;
+
+            try {
+                const res = await fetch(`${API_URL}/admin/department-categories`, {
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem('token')}`,
+                        'Content-Type': 'application/json',
+                    },
+                });
+
+                if (!res.ok) throw new Error(`Erro ao carregar categorias (${res.status})`);
+
+                const json = await res.json();
+                this.departmentCategories = Array.isArray(json.data) ? json.data : (json.data ? [json.data] : []);
+            } catch (e) {
+                console.error(e);
+                this.error = e.message;
+                this.departmentCategories = [];
+            } finally {
+                carregamentoStore.finalizarCarregamento();
+            }
+        },
+
+        async createDepartmentCategory(payload) {
+            const res = await fetch(`${API_URL}/admin/department-categories`, {
+                method: 'POST',
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem('token')}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload),
+            });
+
+            const json = await res.json();
+            if (!res.ok || !json.success) {
+                throw new Error(json.error || `Erro ao criar categoria (${res.status})`);
+            }
+
+            await this.fetchDepartmentCategories();
+            return json;
+        },
+
+        async updateDepartmentCategory(id, payload) {
+            const res = await fetch(`${API_URL}/admin/department-categories/${id}`, {
+                method: 'PUT',
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem('token')}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload),
+            });
+
+            const json = await res.json();
+            if (!res.ok || !json.success) {
+                throw new Error(json.error || `Erro ao atualizar categoria (${res.status})`);
+            }
+
+            await this.fetchDepartmentCategories();
+            return json;
+        },
+
+        async deactivateDepartmentCategory(id) {
+            const res = await fetch(`${API_URL}/admin/department-categories/${id}`, {
+                method: 'DELETE',
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem('token')}`,
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            const json = await res.json();
+            if (!res.ok || !json.success) {
+                throw new Error(json.error || `Erro ao desativar categoria (${res.status})`);
+            }
+
+            await this.fetchDepartmentCategories();
             return json;
         },
     },

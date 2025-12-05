@@ -269,6 +269,10 @@
                                         </th>
                                         <th
                                             class="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">
+                                            Categoria
+                                        </th>
+                                        <th
+                                            class="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">
                                             Observação
                                         </th>
                                         <th
@@ -289,14 +293,36 @@
                                             }}
                                         </td>
                                         <td class="px-4 py-3">
-                                            <div v-if="exp.bill" class="max-w-[200px]">
-                                                <div class="text-sm font-medium text-gray-900 dark:text-white">
-                                                    {{ exp.bill.id }}
+                                            <div v-if="exp.bill" class="max-w-[260px]">
+                                                <!-- Fornecedor / Credor -->
+                                                <div
+                                                    class="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                                                    {{
+                                                        exp.bill.creditor_json
+                                                            ? (exp.bill.creditor_json.tradeName ||
+                                                                exp.bill.creditor_json.name ||
+                                                                'Sem nome')
+                                                            : '—'
+                                                    }}
+                                                    <div v-if="exp.bill.creditor_json"
+                                                        class="text-[10px] -my-1 text-gray-500 dark:text-gray-400 truncate">
+                                                        CNPJ: {{ exp.bill.creditor_json.cnpj }}
+                                                    </div>
                                                 </div>
-                                                <div class="text-xs text-gray-500 dark:text-gray-400 truncate">
-                                                    {{ exp.bill.notes || '—' }}
+
+                                                <!-- Documento + número -->
+                                                <div class="text-xs text-gray-600 dark:text-gray-300 truncate">
+                                                    {{ exp.bill.document_identification_id }}
+                                                    {{ exp.bill.document_number }}
                                                 </div>
+
+                                                <!-- ID do título -->
+                                                <div class="text-xs text-gray-500 dark:text-gray-400">
+                                                    Título: {{ exp.bill.id }}
+                                                </div>
+
                                             </div>
+
                                             <div v-else class="text-xs text-gray-500 dark:text-gray-400">
                                                 (sem vínculo)
                                             </div>
@@ -318,9 +344,22 @@
                                             </span>
                                             <span v-else class="text-xs text-gray-500 dark:text-gray-400">—</span>
                                         </td>
+                                        <td class="px-4 py-3 whitespace-nowrap">
+                                            <span v-if="exp.departmentCategoryName"
+                                                class="inline-flex items-center px-2.5 py-1 text-xs font-medium rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                                                {{ exp.departmentCategoryName }}
+                                            </span>
+                                            <span v-else class="text-xs text-gray-500 dark:text-gray-400">—</span>
+                                        </td>
+
                                         <td class="px-4 py-3 max-w-xs">
+
                                             <div class="text-xs text-gray-700 dark:text-gray-300 truncate">
                                                 {{ exp.description || '—' }}
+                                            </div>
+                                            <!-- Observação do título -->
+                                            <div class="text-[10px] text-gray-500 dark:text-gray-400 truncate">
+                                                {{ exp.bill.notes || '—' }}
                                             </div>
                                         </td>
                                         <td class="px-4 py-3 whitespace-nowrap text-right">
@@ -408,6 +447,19 @@
                                 </option>
                             </select>
                         </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                                <i class="fas fa-tags text-emerald-600 mr-2"></i>
+                                Categoria
+                            </label>
+                            <select v-model="editForm.departmentCategoryId"
+                                class="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-400/60 transition-all">
+                                <option :value="null">(Manter / não definido)</option>
+                                <option v-for="cat in categoryOptions" :key="cat.id" :value="cat.id">
+                                    {{ cat.name }}
+                                </option>
+                            </select>
+                        </div>
 
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
@@ -441,11 +493,13 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
-import { useExpensesStore } from '@/stores/Marketing/Expenses/expensesStore';
+import { useExpensesStore } from '@/stores/Financeiro/Expenses/expensesStore';
+import { useAdminMetaStore } from '@/stores/Settings/Admin/metaStore'; // 👈 NOVO
 import { useToast } from 'vue-toastification';
 import MultiSelector from '@/components/UI/MultiSelector.vue';
 
 const store = useExpensesStore();
+const adminMeta = useAdminMetaStore(); // 👈 NOVO
 const toast = (() => {
     try {
         return useToast();
@@ -460,10 +514,18 @@ const editForm = ref({
     amount: 0,
     description: '',
     departmentName: '',
+    departmentCategoryId: null, // 👈 NOVO
 });
 
 const searchTerm = ref('');
 const sortConfig = ref({ key: 'total', direction: 'desc' });
+
+// 👇 NOVO: opções de categoria
+const categoryOptions = computed(() =>
+    (adminMeta.departmentCategories || [])
+        .filter(c => c.active)
+        .map(c => ({ id: c.id, name: c.name }))
+);
 
 // Filtered and sorted groups
 const filteredGroups = computed(() => {
@@ -524,6 +586,7 @@ function startEdit(exp) {
         amount: exp.amount,
         description: exp.description || '',
         departmentName: exp.departmentName || exp.bill?.mainDepartmentName || '',
+        departmentCategoryId: exp.departmentCategoryId || null, // 👈 pega do backend
     };
 }
 
@@ -533,11 +596,25 @@ function cancelEdit() {
 
 async function saveEdit() {
     try {
+        const chosenCategoryId = editForm.value.departmentCategoryId
+            ? Number(editForm.value.departmentCategoryId)
+            : null;
+
+        let chosenCategoryName = null;
+        if (chosenCategoryId) {
+            const found = categoryOptions.value.find(c => c.id === chosenCategoryId);
+            if (found) chosenCategoryName = found.name;
+        }
+
         await store.updateExpense(editingExpense.value.id, {
             amount: Number(editForm.value.amount),
             description: editForm.value.description,
             departmentName: editForm.value.departmentName || null,
+            // 👇 NOVO
+            departmentCategoryId: chosenCategoryId,
+            departmentCategoryName: chosenCategoryName,
         });
+
         toast.success('Custa atualizada com sucesso!');
         editingExpense.value = null;
     } catch (e) {
@@ -557,6 +634,9 @@ async function removeExpense(exp) {
 
 onMounted(async () => {
     store.selectedDepartments = ['Marketing'];
-    await store.fetchExpenses();
-});
+    await Promise.all([
+        adminMeta.fetchDepartmentCategories(), // 👈 carrega categorias
+        store.fetchExpenses(),
+    ]);
+}); 
 </script>

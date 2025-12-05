@@ -71,7 +71,7 @@ const menuItems = {
         { router: '/settings/users', section: 'Usuários', name: 'Usuários', icon: 'fas fa-users' },
         { router: '/settings/organograma', section: 'Organograma', name: 'Organograma', icon: 'fas fa-sitemap' },
         { router: '/settings/cidades', section: 'Cidades', name: 'Cidades', icon: 'fas fa-city'},
-        { router: '/settings/management', section: 'Cargos', name: 'Cargos e Alçadas', icon: 'fas fa-gears'},
+        { router: '/settings/management', section: 'Cargos', name: 'Departamentos', icon: 'fas fa-gears'},
     ],
     // supports: [
     //     { router: '/report', section: '', name: 'Reportar Problema', icon: 'fas fa-bug' },
@@ -112,7 +112,15 @@ const categoryFlatItems = (catKey) => {
     if (catKey === 'settings' && !isAdmin.value) {
         return items.filter(it =>
             it.router !== '/settings/cidades' &&
-            it.router !== '/settings/users'
+            it.router !== '/settings/users' &&
+            it.router !== '/settings/management'  
+        );
+    }
+    // se for a categoria "comercial", remove "cidades" e "users" para não-admin
+    if (catKey === 'comercial' && !isAdmin.value) {
+        return items.filter(it => 
+            it.router !== '/comercial/projections' &&
+            it.router !== '/ccomercial/workflow'
         );
     }
 

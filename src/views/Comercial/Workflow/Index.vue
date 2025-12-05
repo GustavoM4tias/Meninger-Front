@@ -226,7 +226,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import Favorite from '@/components/config/Favorite.vue'
-import { useWorkflowGroupsStore } from '@/stores/Settings/Workflow/groupsStore'
+import { useWorkflowGroupsStore } from '@/stores/Comercial/Workflow/groupsStore'
 
 const store = useWorkflowGroupsStore()
 
