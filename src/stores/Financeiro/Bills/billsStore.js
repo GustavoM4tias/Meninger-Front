@@ -154,17 +154,24 @@ export const useBillsStore = defineStore('bills', () => {
                     expenseDepartments.value[b.id] = b.main_department_name;
                 }
             }
-
             if (bills.value.length) {
                 const idsParam = bills.value.map(b => b.id).join(',');
                 try {
                     const links = await requestWithAuth(
                         `${API_URL}/expenses/links?billIds=${idsParam}`
                     );
+
                     const map = {};
+
                     for (const l of links) {
                         map[l.billId] = l;
+
+                        // 👇 NOVO: se o backend devolveu categoria, usa como default do select
+                        if (l.departmentCategoryId) {
+                            expenseCategories.value[l.billId] = Number(l.departmentCategoryId);
+                        }
                     }
+
                     billLinks.value = map;
                 } catch (err) {
                     console.error('Erro ao buscar vínculos de custas', err);

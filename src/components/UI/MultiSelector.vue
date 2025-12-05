@@ -186,7 +186,7 @@ function toggleSelectAllFiltered(e) {
             aria-multiselectable="true">
             <!-- Busca -->
             <div class="p-2 sticky top-0 bg-inherit">
-                <input ref="searchInputRef" v-model="searchRaw" class="border-gray-200 dark:border-gray-700 bg-gray-700"
+                <input ref="searchInputRef" v-model="searchRaw" class="border-gray-200 dark:border-gray-700 dark:bg-gray-700 bg-gray-100"
                     type="text" :class="searchClass" placeholder="Filtrar..." aria-label="Filtro de opções" />
             </div>
 

@@ -254,7 +254,8 @@
                     class="inline-flex items-center px-2 py-1 text-xs font-semibold text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/30 rounded-full border border-purple-200 dark:border-purple-800">
                     {{ bill.installments_number }}x
                   </span>
-                  <i class="fas fa-asterisk absolute top-0 right-0 fa-xs fa-beat text-indigo-600 dark:text-indigo-400"></i>
+                  <i
+                    class="fas fa-asterisk absolute top-0 right-0 fa-xs fa-beat text-indigo-600 dark:text-indigo-400"></i>
                 </div>
                 <span v-else
                   class="inline-flex items-center px-2.5 py-1 text-xs font-semibold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 rounded-full">
@@ -269,7 +270,7 @@
                     Number(bill.total_invoice_amount || 0).toLocaleString('pt-BR', {
                       style: 'currency',
                       currency: 'BRL'
-                  })
+                    })
                   }}
                 </div>
               </td>
@@ -286,7 +287,7 @@
                 <div class="inline-flex relative flex-col items-center gap-1">
                   <span v-if="bill.main_department_name"
                     class="absolute -top-6 max-w-40 px-2 py-0.5 text-[10px] font-medium rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-                    <span class="truncate">Padrão: {{ bill.main_department_name }}</span>
+                    <p class="truncate">Padrão: {{ bill.main_department_name }}</p>
                   </span>
 
                   <select v-model="store.expenseDepartments[bill.id]"
@@ -307,20 +308,18 @@
 
               <!-- Categoria Custo -->
               <td class="px-2 py-3 text-center align-middle">
-                <select v-model="store.expenseCategories[bill.id]"
-                  class="w-40 px-3 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/60 transition-all">
-                  <option :value="null">
-                    (Sem categoria)
-                  </option>
+                <select v-model.number="store.expenseCategories[bill.id]"
+                  class="w-40 my-auto px-3 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/60 transition-all">
+                  <option value="">(Sem categoria)</option>
                   <option v-for="cat in costCategoriesOptions" :key="cat.id" :value="cat.id">
                     {{ cat.name }}
                   </option>
                 </select>
               </td>
-
+               
               <!-- Observação -->
-              <td class="px-2 py-3 align-middle">
-                <div class="space-y-1 max-w-48">
+              <td class="px-2 py-3 text-center align-middle">
+                <div class="max-w-48">
                   <input v-model="store.notes[bill.id]" type="text" placeholder="Observação extra (opcional)"
                     class="w-full px-3 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-400/60 transition-all" />
                   <p class="text-[10px] text-gray-500 dark:text-gray-400 truncate">
@@ -537,9 +536,23 @@ const toast = (() => {
 })();
 
 async function handleLink() {
+  if (!store.selectedCount || !store.month) return;
+
+  // Formata o mês de competência (YYYY-MM → MM/YYYY)
+  const monthLabel = dayjs(`${store.month}-01`).format('MM/YYYY');
+
+  const confirmed = confirm(
+    `Deseja realmente vincular ${store.selectedCount} título(s) ao mês de ${monthLabel}?`
+  );
+
+  if (!confirmed) return;
+
   try {
     await store.linkSelectedToMonth();
     toast.success('Títulos vinculados com sucesso!');
+
+    // Recarrega a lista para refletir vínculos / limpar seleção etc.
+    await store.fetchBills();
   } catch (e) {
     toast.error(e.message || 'Erro ao vincular títulos.');
   }
