@@ -165,10 +165,10 @@
 
       <!-- Table -->
       <div class="overflow-x-auto">
-        <table class="min-w-full">
+        <table class="min-w-full table-auto">
           <thead class="bg-gray-50 dark:bg-gray-900/60 border-b border-gray-200 dark:border-gray-700">
             <tr>
-              <th class="px-4 py-3 text-center w-12">
+              <th class="px-4 py-3 text-center w-10">
                 <label aria-disabled="!store.visibleBills.length">
                   <input type="checkbox" :checked="store.selectedCount > 0"
                     @click="store.selectedCount > 0 ? store.clearSelection() : store.selectAllCurrentPage()"
@@ -185,7 +185,7 @@
                 Parcelas
               </th>
               <th
-                class="px-4 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                class="px-4 py-3 text-right text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                 Valor
               </th>
               <th
@@ -193,12 +193,12 @@
                 Data
               </th>
               <th
-                class="px-4 py-3 text-start text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                Depto. Sienge
+                class="px-4 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                Depto. Custo
               </th>
               <th
                 class="px-4 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                Depto. Custo
+                Categoria Custo
               </th>
               <th
                 class="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
@@ -206,107 +206,126 @@
               </th>
             </tr>
           </thead>
+
           <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
             <tr v-for="bill in store.visibleBills" :key="bill.id"
               class="hover:bg-indigo-50/50 dark:hover:bg-indigo-900/10 transition-colors"
               :class="{ 'bg-gray-50/50 dark:bg-gray-900/20': store.billLinks[bill.id] }">
               <!-- Checkbox -->
-              <td class="px-4 py-4 text-center align-top">
+              <td class="px-2 py-3 text-center align-middle">
                 <input type="checkbox" :checked="store.selectedIds.includes(bill.id)"
                   :disabled="!!store.billLinks[bill.id]" @change="store.toggleSelect(bill.id)"
                   class="w-4 h-4 text-indigo-600 bg-gray-100 border-gray-300 rounded focus:ring-indigo-500 dark:focus:ring-indigo-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed" />
               </td>
 
               <!-- Documento -->
-              <td class="px-4 py-4 align-top">
-                <div class="flex relative items-start gap-3">
-
-                  <div class="max-w-40">
-                    <div class="text-sm font-semibold text-gray-900 dark:text-white">
-                      {{ bill.document_identification_id }} {{ bill.document_number }}
-                      <i v-tippy="`Já vinculado: ${store.billLinks[bill.id].count} parcela(s) de ${Number(store.billLinks[bill.id].total || 0).toLocaleString('pt-BR',
-                        {
-                          style: 'currency',
-                          currency: 'BRL'
-                        })
-                        }`" v-if="store.billLinks[bill.id]"
-                        class="fas fa-info-circle ps-2 cursor-pointer text-green-600 dark:text-green-400"></i>
-                    </div>
-                    <div class="text-xs text-gray-500 dark:text-gray-400"> ID: {{ bill.id }}
-                    </div>
+              <td class="px-2 py-3 align-middle">
+                <div class="space-y-0.5 max-w-64">
+                  <div class="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                    {{
+                      bill.creditor_json
+                        ? (bill.creditor_json.tradeName || bill.creditor_json.name || 'Sem nome')
+                        : '—'
+                    }}
                   </div>
 
+                  <div v-if="bill.creditor_json" class="text-[10px] text-gray-500 dark:text-gray-400 truncate">
+                    CNPJ: {{ bill.creditor_json.cnpj }}
+                  </div>
+
+                  <div class="text-xs text-gray-600 dark:text-gray-300 truncate flex items-center">
+                    {{ bill.document_identification_id }} {{ bill.document_number }}
+                    <i v-if="store.billLinks[bill.id]"
+                      v-tippy="`Já vinculado: ${store.billLinks[bill.id].count} parcela(s) <BR> Total de ${Number(store.billLinks[bill.id].total || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`"
+                      class="fas fa-info-circle ms-2 cursor-pointer text-green-600 dark:text-green-400"></i>
+                  </div>
+
+                  <div class="text-xs text-gray-500 dark:text-gray-400">
+                    Título: {{ bill.id }}
+                  </div>
                 </div>
               </td>
 
-
               <!-- Parcelas -->
-              <td class="px-4 py-4 whitespace-nowrap align-top text-center">
-                <div v-if="bill.installments_number && bill.installments_number > 1">
+              <td class="px-2 py-3 whitespace-nowrap text-center align-middle relative">
+                <div v-if="bill.installments_number && bill.installments_number > 1"
+                  class="inline-flex relative items-center gap-1 cursor-pointer" @click="openInstallments(bill)">
                   <span
-                    class="inline-flex items-center px-2 py-1 text-md font-semibold text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/30 rounded-full border border-purple-200 dark:border-purple-800">
+                    class="inline-flex items-center px-2 py-1 text-xs font-semibold text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/30 rounded-full border border-purple-200 dark:border-purple-800">
                     {{ bill.installments_number }}x
                   </span>
-                  <button @click="openInstallments(bill)"
-                    class="ml-2 text-md text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 underline font-medium">
-                    Detalhes
-                  </button>
+                  <i class="fas fa-asterisk absolute top-0 right-0 fa-xs fa-beat text-indigo-600 dark:text-indigo-400"></i>
                 </div>
                 <span v-else
-                  class="inline-flex items-center px-2.5 py-1 text-md font-semibold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 rounded-full">
+                  class="inline-flex items-center px-2.5 py-1 text-xs font-semibold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 rounded-full">
                   1x
                 </span>
               </td>
 
               <!-- Valor -->
-              <td class="px-4 py-4 whitespace-nowrap align-top text-right">
-                <div class="text-lg font-bold text-indigo-600 dark:text-indigo-400">
+              <td class="px-2 py-3 whitespace-nowrap text-right align-middle">
+                <div class="text-sm font-bold text-indigo-600 dark:text-indigo-400">
                   {{
                     Number(bill.total_invoice_amount || 0).toLocaleString('pt-BR', {
                       style: 'currency',
                       currency: 'BRL'
-                    })
+                  })
                   }}
                 </div>
               </td>
 
               <!-- Data -->
-              <td class="px-4 py-4 whitespace-nowrap align-top">
+              <td class="px-2 py-3 whitespace-nowrap text-center align-middle">
                 <div class="text-sm text-gray-700 dark:text-gray-300">
                   {{ bill.issue_date ? new Date(bill.issue_date).toLocaleDateString('pt-BR') : '—' }}
                 </div>
               </td>
 
-              <!-- Departamento Sienge -->
-              <td class="px-4 py-4 whitespace-nowrap align-top">
-                <span v-if="bill.main_department_name"
-                  class="inline-flex max-w-28 items-center px-2.5 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-                  <span class="truncate">{{ bill.main_department_name }}</span>
-                </span>
-                <span v-else class="text-xs text-gray-500 dark:text-gray-400">—</span>
+              <!-- Departamento Custo -->
+              <td class="px-2 py-3 text-center align-middle">
+                <div class="inline-flex relative flex-col items-center gap-1">
+                  <span v-if="bill.main_department_name"
+                    class="absolute -top-6 max-w-40 px-2 py-0.5 text-[10px] font-medium rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                    <span class="truncate">Padrão: {{ bill.main_department_name }}</span>
+                  </span>
+
+                  <select v-model="store.expenseDepartments[bill.id]"
+                    class="w-40 px-3 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/60 transition-all">
+                    <option :value="bill.main_department_name || ''">
+                      {{
+                        bill.main_department_name
+                          ? bill.main_department_name
+                          : 'Definir departamento'
+                      }}
+                    </option>
+                    <option v-for="dep in costDepartmentsOptions" :key="dep" :value="dep">
+                      {{ dep }}
+                    </option>
+                  </select>
+                </div>
               </td>
 
-              <!-- Departamento Custo -->
-              <td class="px-4 py-4 align-top">
-                <select v-model="store.expenseDepartments[bill.id]"
-                  class="w-32 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/60 transition-all">
-                  <option :value="bill.main_department_name || ''">
-                    {{ bill.main_department_name ?
-                      `${bill.main_department_name}`
-                      : 'Definir departamento' }}
+              <!-- Categoria Custo -->
+              <td class="px-2 py-3 text-center align-middle">
+                <select v-model="store.expenseCategories[bill.id]"
+                  class="w-40 px-3 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/60 transition-all">
+                  <option :value="null">
+                    (Sem categoria)
                   </option>
-                  <option v-for="dep in costDepartmentsOptions" :key="dep" :value="dep">
-                    {{ dep }}
+                  <option v-for="cat in costCategoriesOptions" :key="cat.id" :value="cat.id">
+                    {{ cat.name }}
                   </option>
                 </select>
               </td>
 
               <!-- Observação -->
-              <td class="px-4 py-4 align-top">
-                <input v-model="store.notes[bill.id]" type="text" placeholder="Observação extra (opcional)"
-                  class="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-400/60 transition-all" />
-                <div class="text-gray-500 max-w-48 dark:text-gray-400 mt-1 truncate">
-                  <p class="truncate text-[10px]">Original: {{ bill.notes || '—' }}</p>
+              <td class="px-2 py-3 align-middle">
+                <div class="space-y-1 max-w-48">
+                  <input v-model="store.notes[bill.id]" type="text" placeholder="Observação extra (opcional)"
+                    class="w-full px-3 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-400/60 transition-all" />
+                  <p class="text-[10px] text-gray-500 dark:text-gray-400 truncate">
+                    Original: {{ bill.notes || 'N/A' }}
+                  </p>
                 </div>
               </td>
             </tr>
@@ -430,11 +449,13 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import dayjs from 'dayjs';
 
-import { useBillsStore } from '@/stores/Marketing/Bills/billsStore';
+import { useBillsStore } from '@/stores/Financeiro/Bills/billsStore';
 import { useContractsStore } from '@/stores/Comercial/Contracts/contractsStore';
+import { useAdminMetaStore } from '@/stores/Settings/Admin/metaStore';
 import { useToast } from 'vue-toastification';
 import MultiSelector from '@/components/UI/MultiSelector.vue';
 
+const adminMeta = useAdminMetaStore();
 const store = useBillsStore();
 const contractsStore = useContractsStore();
 
@@ -507,14 +528,6 @@ function handleCostCenterChange(v) {
   store.costCenterIds = ids;
 }
 
-onMounted(async () => {
-  try {
-    await contractsStore.fetchEnterprises();
-  } catch (e) {
-    console.error('Erro ao carregar empreendimentos para o filtro de centro de custo:', e);
-  }
-});
-
 const toast = (() => {
   try {
     return useToast();
@@ -532,11 +545,27 @@ async function handleLink() {
   }
 }
 
-const costDepartmentsOptions = [
-  'Marketing',
-  'Comercial',
-  'Engenharia',
-  'Administrativo',
-  'Outros',
-];
+const costDepartmentsOptions = computed(() =>
+  adminMeta.departments.filter(d => d.active).map(d => d.name)
+);
+
+// 👇 NOVO: categorias de departamento (somente ativas)
+const costCategoriesOptions = computed(() =>
+  (adminMeta.departmentCategories || [])
+    .filter(c => c.active)
+    .map(c => ({ id: c.id, name: c.name }))
+);
+
+onMounted(async () => {
+  try {
+    await Promise.all([
+      contractsStore.fetchEnterprises(),
+      adminMeta.fetchDepartments(),
+      adminMeta.fetchDepartmentCategories(),
+    ]);
+  } catch (e) {
+    console.error('Erro ao carregar metadados:', e);
+  }
+});
+
 </script>
