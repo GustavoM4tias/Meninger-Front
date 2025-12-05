@@ -169,10 +169,9 @@
           <thead class="bg-gray-50 dark:bg-gray-900/60 border-b border-gray-200 dark:border-gray-700">
             <tr>
               <th class="px-4 py-3 text-center w-10">
-                <label aria-disabled="!store.visibleBills.length">
-                  <input type="checkbox" :checked="store.selectedCount > 0"
-                    @click="store.selectedCount > 0 ? store.clearSelection() : store.selectAllCurrentPage()"
-                    :disabled="!store.visibleBills.length"
+                <label :aria-disabled="!selectableVisibleBills.length">
+                  <input type="checkbox" :checked="isAllSelectedOnPage" @change="toggleSelectAllOnPage"
+                    :disabled="!selectableVisibleBills.length"
                     class="w-4 h-4 text-indigo-600 bg-gray-100 border-gray-300 rounded focus:ring-indigo-500 dark:focus:ring-indigo-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed" />
                 </label>
               </th>
@@ -316,7 +315,7 @@
                   </option>
                 </select>
               </td>
-               
+
               <!-- Observação -->
               <td class="px-2 py-3 text-center align-middle">
                 <div class="max-w-48">
@@ -561,6 +560,36 @@ async function handleLink() {
 const costDepartmentsOptions = computed(() =>
   adminMeta.departments.filter(d => d.active).map(d => d.name)
 );
+
+// ✅ Somente os títulos visíveis e NÃO bloqueados (sem billLinks)
+const selectableVisibleBills = computed(() =>
+  store.visibleBills.filter(bill => !store.billLinks[bill.id])
+);
+
+// ✅ Está tudo dessa página selecionado?
+const isAllSelectedOnPage = computed(() => {
+  if (!selectableVisibleBills.value.length) return false;
+
+  return selectableVisibleBills.value.every(bill =>
+    store.selectedIds.includes(bill.id)
+  );
+});
+
+// ✅ Selecionar / desselecionar apenas o que é selecionável nesta página
+function toggleSelectAllOnPage() {
+  if (!selectableVisibleBills.value.length) return;
+
+  const idsOnPage = selectableVisibleBills.value.map(bill => bill.id);
+
+  if (isAllSelectedOnPage.value) {
+    // Desmarca só os da página
+    store.selectedIds = store.selectedIds.filter(id => !idsOnPage.includes(id));
+  } else {
+    // Marca apenas os selecionáveis da página que ainda não estão selecionados
+    const toAdd = idsOnPage.filter(id => !store.selectedIds.includes(id));
+    store.selectedIds = [...store.selectedIds, ...toAdd];
+  }
+}
 
 // 👇 NOVO: categorias de departamento (somente ativas)
 const costCategoriesOptions = computed(() =>
