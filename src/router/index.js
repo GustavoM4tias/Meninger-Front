@@ -27,6 +27,12 @@ const routes = [
         component: () => import('@/views/Marketing/Leads/Index.vue'),
         meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Dashboard de leads' },
       },
+      {
+        path: 'viability',
+        name: 'Viability',
+        component: () => import('@/views/Marketing/Viability/ViabilityDashboard.vue'),
+        meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Dashboard de Viabilidade Marketing' },
+      },
     ],
     meta: { requiresAuth: true, allowedPosition: '' },
   },

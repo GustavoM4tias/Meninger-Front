@@ -9,11 +9,13 @@ const store = useProjectionsStore();
 const auth = useAuthStore();
 
 const isAdmin = computed(() => auth?.user?.role === 'admin');
-const selectedYear = ref(new Date().getFullYear());
+
+const currentYear = new Date().getFullYear();
+const selectedYear = ref(currentYear);
 const search = ref('');
 const modalOpen = ref(false);
 
-// novo: campos do modal
+// campos do modal
 const form = ref({
     year: selectedYear.value,
     name: '',
@@ -26,33 +28,39 @@ onMounted(async () => {
     await store.fetchAllActive(); // carrega lista de ativas (de todos os anos) para o select de cópia
 });
 
-watch(selectedYear, (y) => store.fetchList(y));
+watch(selectedYear, (y) => {
+    form.value.year = y; // mantém modal sempre no ano selecionado
+    store.fetchList(y);
+});
 
-const years = [2024, 2025, 2026, 2027];
+// ⬇️ gera anos dinamicamente em torno do ano atual
+// (aqui usei -50 / +50, mas é só aumentar se quiser)
+const yearOptions = computed(() => {
+    const years = [];
+    const span = 50; // 50 anos pra trás e 50 pra frente
+    for (let y = currentYear - span; y <= currentYear + span; y++) {
+        years.push(y);
+    }
+    return years;
+});
 
 const filtered = computed(() => {
     const q = (search.value || '').trim().toLowerCase();
 
-    // helper p/ pegar a data de atualização com fallback
     const updatedAt = (p) =>
         new Date(p.updated_at || p.updatedAt || p.created_at || p.createdAt || 0).getTime();
 
     return store.list
         .filter(p => !q || String(p.name).toLowerCase().includes(q))
         .sort((a, b) => {
-            // 1) ano desc
-            if (a.year !== b.year) return b.year - a.year;
+            if (a.year !== b.year) return b.year - a.year; // ano desc
+            if (!!a.is_active !== !!b.is_active) return a.is_active ? -1 : 1; // ativa primeiro
 
-            // 2) ativa primeiro (true antes de false)
-            if (!!a.is_active !== !!b.is_active) return a.is_active ? -1 : 1;
-
-            // 3) mais recente primeiro
             const ua = updatedAt(a);
             const ub = updatedAt(b);
-            if (ua !== ub) return ub - ua;
+            if (ua !== ub) return ub - ua; // mais recente primeiro
 
-            // 4) nome asc (desempate)
-            return String(a.name || '').localeCompare(String(b.name || ''));
+            return String(a.name || '').localeCompare(String(b.name || '')); // nome asc
         });
 });
 
@@ -70,7 +78,7 @@ async function create() {
     const payloadBase = {
         year: form.value.year,
         name: (form.value.name || '').trim(),
-        is_active: !!form.value.is_active, // mesmo que usuário marque, backend aplica regra 1-por-ano
+        is_active: !!form.value.is_active,
     };
     if (!payloadBase.name) return;
 
@@ -98,7 +106,6 @@ const chipClass = {
             : 'bg-red-200 text-red-700 border-red-400';
     }
 };
-
 </script>
 
 <template>
@@ -111,15 +118,18 @@ const chipClass = {
                         Projeções de Vendas
                         <Favorite class="my-auto" :router="'/comercial/projections'" :section="'Projeção'" />
                     </h1>
-                    <p class="text-md text-gray-600 dark:text-gray-400">Crie, visualize e gerencie as projeções por ano.
+                    <p class="text-md text-gray-600 dark:text-gray-400">
+                        Crie, visualize e gerencie as projeções por ano.
                     </p>
                 </div>
                 <div class="flex items-center gap-2">
                     <input v-model="search" placeholder="Buscar por nome..."
-                        class="h-10 w-56 border dark:border-gray-700 rounded-lg px-3 bg-gray-50 dark:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-400/40" />
-                    <select v-model="selectedYear"
+                        class="h-10 w-56 border dark:border-gray-700 rounded-lg px-3 bg-gray-50 dark:bg-gray-900/60 focus:outline-none focus:ring-2 focus:ring-indigo-400/40" />
+                    <select v-model.number="selectedYear"
                         class="h-10 border border-gray-200 dark:border-gray-700 rounded-lg px-3 bg-gray-50 dark:bg-gray-900/60 focus:outline-none focus:ring-2 focus:ring-indigo-400/40">
-                        <option v-for="y in years" :key="y" :value="y">{{ y }}</option>
+                        <option v-for="y in yearOptions" :key="y" :value="y">
+                            {{ y }}
+                        </option>
                     </select>
                     <button v-if="isAdmin" @click="modalOpen = true"
                         class="h-10 px-3 rounded-lg bg-indigo-600 text-white hover:bg-indigo-500 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-400/60">
@@ -138,8 +148,9 @@ const chipClass = {
                     <div class="flex items-start justify-between gap-4">
                         <div class="min-w-0">
                             <div class="font-semibold truncate">{{ p.name }}</div>
-                            <div class="text-xs text-gray-500 mt-1">Criada: {{ new Date(p.created_at ||
-                                p.createdAt).toLocaleDateString() }}</div>
+                            <div class="text-xs text-gray-500 mt-1">
+                                Criada: {{ new Date(p.created_at || p.createdAt).toLocaleDateString() }}
+                            </div>
                             <div class="text-xs text-gray-500 mt-1">
                                 Última atualização em:
                                 {{ new Date(p.updated_at || p.updatedAt || p.created_at ||
@@ -147,12 +158,10 @@ const chipClass = {
                             </div>
                         </div>
                         <div class="flex flex-col items-end gap-1">
-                            <!-- Ativa / Inativa -->
                             <span class="text-[11px] px-2 py-0.5 rounded-full border"
                                 :class="chipClass.active(p.is_active)">
                                 {{ p.is_active ? 'Ativa' : 'Inativa' }}
                             </span>
-                            <!-- Aberta / Bloqueada -->
                             <span class="text-[11px] px-2 py-0.5 rounded-full border"
                                 :class="chipClass.locked(p.is_locked)">
                                 {{ p.is_locked ? 'Bloqueada' : 'Aberta' }}
@@ -179,9 +188,11 @@ const chipClass = {
                     <div class="space-y-3">
                         <div>
                             <label class="text-sm text-gray-600 dark:text-gray-300">Ano</label>
-                            <select v-model="form.year"
+                            <select v-model.number="form.year"
                                 class="w-full h-10 border dark:border-gray-700 rounded-lg px-2 bg-white/90 dark:bg-gray-900/70 focus:outline-none focus:ring-2 focus:ring-indigo-400/40">
-                                <option v-for="y in years" :key="y" :value="y">{{ y }}</option>
+                                <option v-for="y in yearOptions" :key="y" :value="y">
+                                    {{ y }}
+                                </option>
                             </select>
                         </div>
 
@@ -191,10 +202,10 @@ const chipClass = {
                                 class="w-full h-10 border dark:border-gray-700 rounded-lg px-3 bg-white/90 dark:bg-gray-900/70 focus:outline-none focus:ring-2 focus:ring-indigo-400/40" />
                         </div>
 
-                        <!-- NOVO: clonar de projeção ativa -->
                         <div>
-                            <label class="text-sm text-gray-600 dark:text-gray-300">Clonar da projeção ativa
-                                (opcional)</label>
+                            <label class="text-sm text-gray-600 dark:text-gray-300">
+                                Clonar da projeção ativa (opcional)
+                            </label>
                             <select v-model="form.clone_source_id"
                                 class="w-full h-10 border dark:border-gray-700 rounded-lg px-2 bg-white/90 dark:bg-gray-900/70 focus:outline-none focus:ring-2 focus:ring-indigo-400/40">
                                 <option :value="null">— Não clonar —</option>
@@ -208,11 +219,11 @@ const chipClass = {
                             </p>
                         </div>
 
-                        <!-- NOVO: flag ativa? (padrão desmarcada) -->
                         <div class="flex items-center gap-2">
-                            <input id="in-act" type="checkbox" v-model="form.is_active" class="accent-blue-600">
-                            <label for="in-act" class="text-sm text-gray-700 dark:text-gray-200">Ativar após
-                                criar</label>
+                            <input id="in-act" type="checkbox" v-model="form.is_active" class="accent-blue-600" />
+                            <label for="in-act" class="text-sm text-gray-700 dark:text-gray-200">
+                                Ativar após criar
+                            </label>
                         </div>
                         <p class="text-[11px] text-gray-500 -mt-2">
                             Dica: deixe desmarcado para revisar a cópia antes de ativar. Só uma projeção pode ficar
@@ -222,9 +233,13 @@ const chipClass = {
 
                     <div class="mt-4 flex justify-end gap-2">
                         <button @click="modalOpen = false"
-                            class="h-10 px-3 rounded-lg border dark:border-gray-700 bg-white/90 hover:bg-gray-50 dark:bg-gray-900/70">Cancelar</button>
+                            class="h-10 px-3 rounded-lg border dark:border-gray-700 bg-white/90 hover:bg-gray-50 dark:bg-gray-900/70">
+                            Cancelar
+                        </button>
                         <button @click="create"
-                            class="h-10 px-3 rounded-lg bg-indigo-600 text-white hover:bg-indigo-500">Criar</button>
+                            class="h-10 px-3 rounded-lg bg-indigo-600 text-white hover:bg-indigo-500">
+                            Criar
+                        </button>
                     </div>
                 </div>
             </div>

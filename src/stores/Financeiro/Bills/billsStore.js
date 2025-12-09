@@ -48,9 +48,9 @@ export const useBillsStore = defineStore('bills', () => {
         today
             .date(15)          // Define o dia para 15
             .subtract(1, 'month') // Volta um mês
-            .format('YYYY-MM-DD') // 2025-10-15
+            .format('YYYY-MM-DD') // 2025-10-15 
     );
-    const endDate = ref(today.add(15, 'day').format('YYYY-MM-DD'));
+    const endDate = ref(today.format('YYYY-MM-DD'));
     const month = ref(today.format('YYYY-MM')); // mês de competência
 
     // dados

@@ -173,7 +173,7 @@ function toggleSelectAllFiltered(e) {
 <template>
     <div :class="wrapperClass" ref="wrapperRef">
         <!-- Botão -->
-        <button type="button" class="border-gray-200 dark:border-gray-600 max-h-20 overflow-y-auto" :disabled="disabled"
+        <button type="button" class="border-gray-200 dark:border-gray-600 dark:bg-gray-900/60 max-h-20 overflow-y-auto" :disabled="disabled"
             :class="buttonClass" @click="toggleOpen">
             <slot name="button" :selected="selected">
                 <span v-if="selected.length">{{ selected.join(', ') }}</span>

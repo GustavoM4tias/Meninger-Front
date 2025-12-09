@@ -36,6 +36,7 @@ const menuItems = {
         }, 
         items: [
             { router: '/marketing/leads', section: 'Leads', name: 'Leads', icon: 'fas fa-user-plus' },
+            { router: '/marketing/viability', section: 'Viability', name: 'Viabilidade', icon: 'fas fa-scale-balanced' },
         ]
     }, 
     comercial: { 
