@@ -102,8 +102,7 @@ const openBuildingModal = async (building) => {
   selectedBuilding.value = buildingStore.selectedBuilding;
 };
 const closeBuildingModal = () => {
-  selectedBuilding.value = null;
-  buildingStore.fetchBuildings();
+  selectedBuilding.value = null; 
 };
 </script>
 

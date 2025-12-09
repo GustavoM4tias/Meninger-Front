@@ -1,6 +1,9 @@
 // src/stores/buildingStore.js
 import { defineStore } from 'pinia';
-import { getBuildings, getWeather , getWeatherByCity, getBuildingById } from '@/utils/Building/apiBuilding';
+import { getBuildings, getWeather, getWeatherByCity, getBuildingById } from '@/utils/Building/apiBuilding';
+import { useCarregamentoStore } from '@/stores/Config/carregamento'
+
+const carregamentoStore = useCarregamentoStore()
 
 export const useBuildingStore = defineStore('buildingStore', {
     state: () => ({
@@ -12,22 +15,28 @@ export const useBuildingStore = defineStore('buildingStore', {
     actions: {
         async fetchBuildings() {
             try {
+                carregamentoStore.iniciarCarregamento()
                 const result = await getBuildings();
                 this.buildings = result.buildings || result || [];
                 // console.log('Dados retornados pela API:', this.buildings);
             } catch (error) {
                 console.error('Erro ao carregar empreendimentos:', error);
                 this.errorMessage = 'Erro ao carregar empreendimentos.';
+            } finally {
+                carregamentoStore.finalizarCarregamento()
             }
         },
         async fetchBuildingById(id) {
             try {
+                carregamentoStore.iniciarCarregamento()
                 const result = await getBuildingById(id);
                 this.selectedBuilding = result || null;
                 // console.log(`Empreendimento ${id} carregado:`, this.selectedBuilding);
             } catch (error) {
                 console.error('Erro ao carregar empreendimento:', error);
                 this.errorMessage = 'Erro ao carregar empreendimento.';
+            } finally {
+                carregamentoStore.finalizarCarregamento()
             }
         },
         async getWeather(lat, lon) {
@@ -42,7 +51,7 @@ export const useBuildingStore = defineStore('buildingStore', {
         async getWeatherByCity(city) {
             try {
                 const weatherData = await getWeatherByCity(city);
-                this.weather = weatherData; 
+                this.weather = weatherData;
             } catch (error) {
                 console.error('Erro ao buscar o clima:', error.message);
                 this.errorMessage = 'Erro ao buscar informações do clima.';

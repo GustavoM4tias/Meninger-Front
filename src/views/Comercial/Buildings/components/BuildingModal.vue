@@ -43,20 +43,45 @@ const formatDate = (dateString) => {
 };
 
 const getUnitStatus = (unidade) => {
-    // Usa a situação_mapa_disponibilidade para determinar o status
     const situacao = unidade.situacao?.situacao_mapa_disponibilidade;
 
     switch (situacao) {
         case 1:
-            return { text: 'Disponível', class: 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300' };
+            return {
+                text: 'Disponível',
+                class: 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300'
+            };
+
         case 2:
-            return { text: 'Reservado', class: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300' };
+            return {
+                text: 'Reserva Início',
+                class: 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300'
+            };
+
         case 3:
-            return { text: 'Vendido', class: 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-300' };
+            return {
+                text: 'Vendido',
+                class: 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-300'
+            };
+
         case 4:
-            return { text: 'Bloqueado', class: 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300' };
+            // Não considerar mais motivo/integração, apenas que está bloqueado
+            return {
+                text: 'Bloqueado',
+                class: 'bg-gray-200 text-gray-700 dark:bg-gray-900/20 dark:text-gray-300'
+            };
+
+        case 5:
+            return {
+                text: 'Reserva Ativa',
+                class: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300'
+            };
+
         default:
-            return { text: 'Não informado', class: 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300' };
+            return {
+                text: 'Não informado',
+                class: 'bg-slate-100 text-slate-700 dark:bg-slate-900/20 dark:text-slate-300'
+            };
     }
 };
 
@@ -77,19 +102,22 @@ const getTotalBlocks = () => {
 };
 
 const getUnitStatusCounts = () => {
-    if (!props.building.etapas) return { disponivel: 0, reservado: 0, vendido: 0, bloqueado: 0 };
+    if (!props.building.etapas)
+        return { disponivel: 0, reserva_inicio: 0, vendido: 0, bloqueado: 0, reserva_ativa: 0 };
 
-    let counts = { disponivel: 0, reservado: 0, vendido: 0, bloqueado: 0 };
+    let counts = { disponivel: 0, reserva_inicio: 0, vendido: 0, bloqueado: 0, reserva_ativa: 0 };
 
     props.building.etapas.forEach(etapa => {
         etapa.blocos?.forEach(bloco => {
             bloco.unidades?.forEach(unidade => {
-                const situacao = unidade.situacao?.situacao_mapa_disponibilidade;
-                switch (situacao) {
+                const s = unidade.situacao?.situacao_mapa_disponibilidade;
+
+                switch (s) {
                     case 1: counts.disponivel++; break;
-                    case 2: counts.reservado++; break;
+                    case 2: counts.reserva_inicio++; break;
                     case 3: counts.vendido++; break;
                     case 4: counts.bloqueado++; break;
+                    case 5: counts.reserva_ativa++; break;
                 }
             });
         });
@@ -132,7 +160,7 @@ onMounted(() => {
                 <button @click="closeModal"
                     class="absolute top-4 right-4 w-10 h-10 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full flex items-center justify-center transition-all duration-200 group">
                     <i class="fas fa-xmark text-white text-xl group-hover:scale-110 transition-transform"></i>
-                </button> 
+                </button>
 
                 <!-- Informações principais sobrepostas -->
                 <div class="absolute bottom-6 left-6 right-6">
@@ -246,28 +274,45 @@ onMounted(() => {
                             Status das Unidades
                         </h3>
 
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+
                             <div class="text-center">
-                                <div class="text-2xl font-bold text-green-600 dark:text-green-400">{{
-                                    getUnitStatusCounts().disponivel }}</div>
+                                <div class="text-2xl font-bold text-green-600 dark:text-green-400">
+                                    {{ getUnitStatusCounts().disponivel }}
+                                </div>
                                 <div class="text-sm text-gray-600 dark:text-gray-400">Disponíveis</div>
                             </div>
+
                             <div class="text-center">
-                                <div class="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{{
-                                    getUnitStatusCounts().reservado }}</div>
-                                <div class="text-sm text-gray-600 dark:text-gray-400">Reservadas</div>
+                                <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                                    {{ getUnitStatusCounts().reserva_inicio }}
+                                </div>
+                                <div class="text-sm text-gray-600 dark:text-gray-400">Reserva Início</div>
                             </div>
+
                             <div class="text-center">
-                                <div class="text-2xl font-bold text-red-600 dark:text-red-400">{{
-                                    getUnitStatusCounts().vendido }}</div>
+                                <div class="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
+                                    {{ getUnitStatusCounts().reserva_ativa }}
+                                </div>
+                                <div class="text-sm text-gray-600 dark:text-gray-400">Reservas Ativas</div>
+                            </div>
+
+                            <div class="text-center">
+                                <div class="text-2xl font-bold text-red-600 dark:text-red-400">
+                                    {{ getUnitStatusCounts().vendido }}
+                                </div>
                                 <div class="text-sm text-gray-600 dark:text-gray-400">Vendidas</div>
                             </div>
+
                             <div class="text-center">
-                                <div class="text-2xl font-bold text-gray-600 dark:text-gray-400">{{
-                                    getUnitStatusCounts().bloqueado }}</div>
+                                <div class="text-2xl font-bold text-gray-600 dark:text-gray-400">
+                                    {{ getUnitStatusCounts().bloqueado }}
+                                </div>
                                 <div class="text-sm text-gray-600 dark:text-gray-400">Bloqueadas</div>
                             </div>
+
                         </div>
+
                     </div>
                 </div>
 
@@ -341,7 +386,7 @@ onMounted(() => {
                                     class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-amber-200 dark:border-gray-500">
                                     <p class="text-gray-600 dark:text-gray-300 text-sm font-medium mb-1">Nome</p>
                                     <p class="text-gray-900 dark:text-white font-semibold">{{ props.building.tabela.nome
-                                        }}</p>
+                                    }}</p>
                                 </div>
 
                                 <div class="grid grid-cols-2 gap-3">
@@ -384,7 +429,8 @@ onMounted(() => {
                             <div class="space-y-2 text-gray-700 dark:text-gray-300">
                                 <p class="flex items-start gap-2">
                                     <i class="fas fa-road text-green-600 mt-0.5 text-sm"></i>
-                                    <span>{{ props.building?.endereco_emp || 'Não informado' }}{{ props.building?.numero ? ', ' + props.building.numero : '' }}</span>
+                                    <span>{{ props.building?.endereco_emp || 'Não informado' }}{{ props.building?.numero
+                                        ? ', ' + props.building.numero : '' }}</span>
                                 </p>
                                 <p class="flex items-center gap-2" v-if="props.building?.bairro">
                                     <i class="fas fa-location-dot text-green-600 text-sm"></i>
@@ -392,7 +438,8 @@ onMounted(() => {
                                 </p>
                                 <p class="flex items-center gap-2">
                                     <i class="fas fa-city text-green-600 text-sm"></i>
-                                    <span>{{ props.building?.cidade || 'Não informado' }}{{ props.building?.estado ? ' - ' + props.building.estado : '' }}</span>
+                                    <span>{{ props.building?.cidade || 'Não informado' }}
+                                        {{ props.building?.estado ? ' - ' + props.building.estado : '' }}</span>
                                 </p>
                                 <p class="flex items-center gap-2" v-if="props.building?.cep">
                                     <i class="fas fa-mail-bulk text-green-600 text-sm"></i>
@@ -479,7 +526,7 @@ onMounted(() => {
                                                 material.nome }}</h4>
                                             <div class="flex items-center gap-3 mt-1">
                                                 <span class="text-xs text-gray-500 dark:text-gray-400">{{ material.tipo
-                                                    }}</span>
+                                                }}</span>
                                                 <span class="text-xs text-rose-600 dark:text-rose-400"
                                                     v-if="material.tamanho > 0">
                                                     {{ (material.tamanho / 1024 / 1024).toFixed(2) }} MB
@@ -586,8 +633,9 @@ onMounted(() => {
                             </div>
 
                             <div class="flex items-center gap-4">
-                                <div class="text-right"> 
-                                    <p class=" text-sm md:text-lg font-bold text-blue-600 dark:text-blue-400">{{ getTotalUnits() }}
+                                <div class="text-right">
+                                    <p class=" text-sm md:text-lg font-bold text-blue-600 dark:text-blue-400">{{
+                                        getTotalUnits() }}
                                         unidades</p>
                                 </div>
                                 <i class="fas fa-chevron-down text-gray-400 transform transition-transform duration-300"
