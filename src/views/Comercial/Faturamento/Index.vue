@@ -31,13 +31,17 @@
             <MetricsCards :metrics="contractsStore.metrics" />
 
             <!-- Tabela de Empreendimentos com Modal -->
-            <EnterprisesSalesTable :data="contractsStore.salesByEnterprise" />
+            <EnterprisesSalesTable :data="contractsStore.salesByEnterprise"
+                @open-land-sync="isLandSyncModalOpen = true" />
         </div>
+
+        <!-- Modal de configuração de terreno externo -->
+        <LandSyncConfigModal :open="isLandSyncModalOpen" @close="isLandSyncModalOpen = false" />
     </div>
 </template>
 
 <script setup>
-import { onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useContractsStore } from '@/stores/Comercial/Contracts/contractsStore'
 import Favorite from "@/components/config/Favorite.vue";
 
@@ -45,8 +49,10 @@ import Favorite from "@/components/config/Favorite.vue";
 import DashboardFilters from './components/DashboardFilters.vue'
 import MetricsCards from './components/MetricsCards.vue'
 import EnterprisesSalesTable from './components/EnterprisesSalesTable.vue'
+import LandSyncConfigModal from './components/LandSyncConfigModal.vue'
 
 const contractsStore = useContractsStore()
+const isLandSyncModalOpen = ref(false)
 
 const loadData = async () => {
     await Promise.all([

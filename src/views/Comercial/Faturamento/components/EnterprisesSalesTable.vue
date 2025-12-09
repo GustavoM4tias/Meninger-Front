@@ -1,5 +1,6 @@
 <template>
   <div class="bg-gray-50 dark:bg-gray-800 rounded-lg shadow-sm border dark:border-gray-600 overflow-hidden">
+ 
     <!-- Header -->
     <div class="p-6 border-b border-gray-200 dark:border-gray-600">
       <div class="flex items-center justify-between">
@@ -9,17 +10,29 @@
         </div>
 
         <div class="flex items-center gap-2">
+          <!-- ⚙️ Configuração de terreno externo (somente admin) -->
+          <button v-if="isAdmin"
+            class="inline-flex items-center justify-center p-2 rounded-full text-gray-600 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+            v-tippy="'Configurar empreendimentos com terreno externo'" @click="emit('open-land-sync')">
+            <i class="fas fa-cog"></i>
+          </button>
+
           <!-- VGV / VGV+DC -->
           <div class="inline-flex rounded-md border dark:border-gray-600 overflow-hidden">
-            <button @click="contractsStore.setValueMode('net')"
-              :class="['px-3 py-1 text-sm font-medium', contractsStore.valueMode === 'net' ? 'bg-blue-600 dark:bg-blue-700 text-white dark:text-gray-100' : 'bg-white dark:bg-gray-600 text-gray-700 dark:text-gray-100']">
+            <button @click="contractsStore.setValueMode('net')" :class="['px-3 py-1 text-sm font-medium',
+              contractsStore.valueMode === 'net'
+                ? 'bg-blue-600 dark:bg-blue-700 text-white dark:text-gray-100'
+                : 'bg-white dark:bg-gray-600 text-gray-700 dark:text-gray-100']">
               VGV
             </button>
-            <button @click="contractsStore.setValueMode('gross')"
-              :class="['px-3 py-1 text-sm font-medium border-l border-gray-300 dark:border-gray-700', contractsStore.valueMode === 'gross' ? 'bg-blue-600 dark:bg-blue-700 text-white dark:text-gray-100' : 'bg-white dark:bg-gray-600 text-gray-700 dark:text-gray-100']">
+            <button @click="contractsStore.setValueMode('gross')" :class="['px-3 py-1 text-sm font-medium border-l border-gray-300 dark:border-gray-700',
+              contractsStore.valueMode === 'gross'
+                ? 'bg-blue-600 dark:bg-blue-700 text-white dark:text-gray-100'
+                : 'bg-white dark:bg-gray-600 text-gray-700 dark:text-gray-100']">
               VGV+DC
             </button>
           </div>
+
 
           <!-- Ações (1..N) -->
           <div class="inline-flex rounded-md border dark:border-gray-600 overflow-hidden">
@@ -37,21 +50,9 @@
             </button>
           </div>
 
-          <!-- Ordenação -->
-          <button @click="sortBy = sortBy === 'count' ? 'count-desc' : 'count'"
-            :class="['px-3 py-1 rounded-md text-sm font-medium transition-colors', sortBy.includes('count') ? 'bg-blue-100 text-blue-700' : 'hover:text-gray-900 dark:hover:text-white']">
-            Quantidade
-            <i v-if="sortBy === 'count'" class="fas fa-chevron-up"></i>
-            <i v-else-if="sortBy === 'count-desc'" class="fas fa-chevron-down"></i>
+          <button class="text-2xl ps-2" v-tippy="'Exportar Dados'" @click="open = true">
+            <i class="fas fa-download"></i>
           </button>
-          <button @click="sortBy = sortBy === 'value' ? 'value-desc' : 'value'"
-            :class="['px-3 py-1 rounded-md text-sm font-medium transition-colors', sortBy.includes('value') ? 'bg-blue-100 text-blue-700' : 'hover:text-gray-900 dark:hover:text-white']">
-            Valor
-            <i v-if="sortBy === 'value'" class="fas fa-chevron-up"></i>
-            <i v-else-if="sortBy === 'value-desc'" class="fas fa-chevron-down"></i>
-          </button>
-
-          <button class="text-2xl ps-2" v-tippy="'Exportar Dados'" @click="open = true"><i class="fas fa-download"></i></button>
         </div>
       </div>
     </div>
@@ -86,12 +87,9 @@
         </thead>
 
         <tbody class="bg-white dark:bg-gray-700/40 divide-y divide-gray-200 dark:divide-gray-600">
-          <tr
-            v-for="(enterprise, index) in sortedData"
-            :key="enterprise.key"
-            :class="enterprise.onlyProjectionRow
-              ? 'bg-green-50/70 dark:bg-green-900/20 hover:bg-green-100/70 dark:hover:bg-green-900/30'
-              : 'hover:bg-gray-50 dark:hover:bg-gray-800/70'">
+          <tr v-for="(enterprise, index) in sortedData" :key="enterprise.key" :class="enterprise.onlyProjectionRow
+            ? 'bg-green-50/70 dark:bg-green-900/20 hover:bg-green-100/70 dark:hover:bg-green-900/30'
+            : 'hover:bg-gray-50 dark:hover:bg-gray-800/70'">
             <td class="px-6 py-4">
               <input type="checkbox" :checked="selectedKeys.has(enterprise.key)"
                 @change="toggleOne(enterprise.key, $event)" />
@@ -104,8 +102,8 @@
                   {{ enterprise.name }}
                   <!-- indicador sutil quando há projeção vinculada -->
                   <div v-if="!enterprise.onlyProjectionRow && enterprise.proj_count > 0"
-                       class="w-2 h-2 rounded-full ml-2 my-auto cursor-pointer bg-emerald-400 animate-pulse"
-                       v-tippy="'Projeção vinculada'"/>
+                    class="w-2 h-2 rounded-full ml-2 my-auto cursor-pointer bg-emerald-400 animate-pulse"
+                    v-tippy="'Projeção vinculada'" />
                 </div>
               </div>
             </td>
@@ -114,7 +112,7 @@
               <div class="text-sm font-semibold relative">
                 {{ enterprise.count }}
                 <span v-if="!enterprise.onlyProjectionRow && enterprise.proj_count"
-                      class="font-bold text-emerald-600 absolute -top-3"> +{{ enterprise.proj_count }}</span>
+                  class="font-bold text-emerald-600 absolute -top-3"> +{{ enterprise.proj_count }}</span>
               </div>
             </td>
 
@@ -122,7 +120,8 @@
               <div class="text-sm font-semibold text-green-600">
                 {{ formatCurrency(baseValue(enterprise)) }}
                 <span v-if="!enterprise.onlyProjectionRow && appendedValue(enterprise) > 0"
-                      class="text-emerald-600 font-semibold text-xs"> <br>+{{ formatCurrency(appendedValue(enterprise)) }}</span>
+                  class="text-emerald-600 font-semibold text-xs"> <br>+{{ formatCurrency(appendedValue(enterprise))
+                  }}</span>
               </div>
             </td>
 
@@ -156,21 +155,11 @@
       </table>
     </div>
 
-    <Export
-      v-model="open"
-      :source="sortedData"
-      title="Exportação de vendas"
-      filename="Relatório de Faturamento"
-      initial-delimiter=";"
-      initial-array-mode="join"
-      :preselect="[]" />
+    <Export v-model="open" :source="sortedData" title="Exportação de vendas" filename="Relatório de Faturamento"
+      initial-delimiter=";" initial-array-mode="join" :preselect="[]" />
 
-    <EnterpriseDetailModal
-      v-if="showModal"
-      :enterprise="{ name: modalTitle }"
-      :sales="modalSales"
-      :initial-mode="initialMode"
-      @close="closeModal" />
+    <EnterpriseDetailModal v-if="showModal" :enterprise="{ name: modalTitle }" :sales="modalSales"
+      :initial-mode="initialMode" @close="closeModal" />
   </div>
 </template>
 
@@ -181,6 +170,7 @@ import EnterpriseDetailModal from './EnterpriseDetailModal.vue'
 import Export from '@/components/config/Export.vue'
 
 const props = defineProps({ data: { type: Array, required: true } })
+const emit = defineEmits(['open-land-sync'])
 
 const contractsStore = useContractsStore()
 const sortBy = ref('value-desc')
@@ -198,6 +188,18 @@ const initialMode = ref('list')
 
 const valueModeLabel = computed(() => contractsStore.valueModeLabel)
 const valOf = (item) => contractsStore.valuePicker(item)
+
+/** 🔐 somente admin vê o botão de configuração
+ *  Ajuste essa lógica para o seu auth store, se tiver:
+ *  ex: const authStore = useAuthStore(); return authStore.user?.role === 'admin';
+ */
+const isAdmin = computed(() => {
+  try {
+    return localStorage.getItem('role') === 'admin'
+  } catch {
+    return false
+  }
+})
 
 const colors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4', '#84CC16', '#F97316', '#EC4899', '#6366F1']
 
