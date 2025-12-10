@@ -72,13 +72,14 @@ export const useContractsStore = defineStore('contracts', {
 
         enterpriseCommissionRules: () => ({
             byId: {
-                97001: { commission_pct: 0.04 }
+                97001: { commission_pct: 0.04 },
+                80001: { commission_pct: 0.04 }
             },
-            byName: {
-                'SINOP/MT - INCORPORADORA MF VERONA SPE LTDA - COMERCIAL/INCORPORAÇÃO/ESTOQUE': {
-                    commission_pct: 0.04
-                }
-            }
+            // byName: {
+            //     'SINOP/MT - INCORPORADORA MF VERONA SPE LTDA - COMERCIAL/INCORPORAÇÃO/ESTOQUE': {
+            //         commission_pct: 0.04
+            //     }
+            // }
         }),
         enterpriseCommissionFor() {
             return (c) => {
