@@ -54,6 +54,7 @@ const menuItems = {
         }, 
         items: [ 
             { router: '/comercial/faturamento', section: 'Faturamento', name: 'Faturamento', icon: 'fas fa-file-invoice-dollar' }, 
+            { router: '/comercial/awards', section: 'Premiações', name: 'Premiação', icon: 'fas fa-award' }, 
             { router: '/comercial/projections', section: 'Projeção', name: 'Projeção Vendas', icon: 'fas fa-chart-line' }, 
             { router: '/comercial/workflow/groups', section: 'Workflow', name: 'Grupos Workflow', icon: 'fas fa-chart-diagram' }, 
         ]

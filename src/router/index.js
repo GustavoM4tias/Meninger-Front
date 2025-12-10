@@ -53,6 +53,12 @@ const routes = [
         meta: { requiresAuth: true, allowedPosition: '', searchable: false, content: 'Listagem de empreendimentos' },
       },
       {
+        path: 'awards',
+        name: 'Premiação',
+        component: () => import('@/views/Comercial/Awards/Index.vue'),
+        meta: { requiresAuth: true, allowedPosition: '', searchable: false, content: 'Premiações de Vendas' },
+      },
+      {
         path: 'projections',
         name: 'Projeção',
         component: () => import('@/views/Comercial/Projections/Index.vue'),
