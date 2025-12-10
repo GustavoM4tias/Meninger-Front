@@ -114,23 +114,35 @@
 
           <!-- Filtros -->
           <div class="p-6 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900/40">
-            <div class="flex flex-wrap gap-4 items-end">
+            <div class="flex flex-wrap gap-4 items-end justify-between">
               <div class="flex-1">
-                <label class="block text-sm font-medium mb-2">Cliente | Imobiliária | Repasse | Empreendimento | Etapa |
-                  Bloco | Unidade | Data | Valor</label>
+                <!-- já existe -->
+                <label class="block text-sm font-medium mb-2">
+                  Cliente | Imobiliária | Repasse | Empreendimento | Etapa |
+                  Bloco | Unidade | Data | Valor
+                </label>
                 <input v-model="searchTerm" type="text" placeholder="Digite para buscar..."
-                  class="w-full px-2 py-1.5 border rounded-lg bg-transparent text-gray-400 border-gray-200 dark:border-gray-500 text-start">
+                  class="w-full px-2 py-1.5 border rounded-lg bg-transparent text-gray-400 border-gray-200 dark:border-gray-500 text-start" />
               </div>
-              <div class="flex-none">
-                <label class="block text-sm font-medium mb-2">Itens por página</label>
-                <select v-model="itemsPerPage"
-                  class="w-full px-2 py-1.5 border rounded-lg bg-transparent text-gray-400 border-gray-200 dark:border-gray-500 text-center">
-                  <option value="10">10</option>
-                  <option value="25">25</option>
-                  <option value="50">50</option>
-                  <option value="100">100</option>
-                </select>
+
+              <!-- 🔥 BLOCO: premiação -->
+              <div class="flex flex-col items-end gap-2">
+                <span class="text-xs text-gray-500">
+                  Selecionados para premiação: {{ selectedSales.size }}
+                </span>
+
+                <button type="button" @click="registerAwards" :disabled="selectedSales.size === 0" class="inline-flex items-center gap-2 text-sm px-3 py-2 rounded-lg
+           bg-purple-600 text-white disabled:bg-purple-400
+           disabled:cursor-not-allowed shadow-sm">
+                  <i class="fas fa-award"></i>
+                  <span>Adicionar clientes na premiação</span>
+                </button>
+
+                <span v-if="lastAwardsMessage" class="text-xs text-gray-500">
+                  {{ lastAwardsMessage }}
+                </span>
               </div>
+
             </div>
           </div>
 
@@ -166,9 +178,12 @@
                         Bloco</th>
                       <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider">Unidade</th>
                       <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider">Data</th>
-                      <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider">Valor <span
-                          class="text-gray-400">({{ valueModeLabel }})</span></th>
+                      <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider">Valor
+                        <span class="text-gray-400">({{ valueModeLabel }})</span>
+                      </th>
                       <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider">Ações</th>
+                      <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider">Premiar</th>
+                      <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider">Status</th>
                     </tr>
                   </thead>
 
@@ -221,6 +236,15 @@
                             class="text-sm font-medium text-blue-600 hover:text-blue-900 dark:hover:text-blue-400 transition-colors">
                             {{ expandedSales.has(`${sale.customer_id}-${sale.unit_name}`) ? 'Ocultar' : 'Detalhes' }}
                           </button>
+                        </td>
+                        <td class="px-4 py-3 text-center">
+                          <input type="checkbox" :checked="selectedSales.has(saleKeyOf(sale))"
+                            :disabled="sale.awardStatus" @change="toggleSaleSelection(sale)" />
+                        </td>
+                        <td class="px-4 py-3 text-center">
+                          <span v-if="sale.awardStatus" class="text-xs px-2 py-1 rounded bg-purple-100 text-purple-700">
+                            {{ statusLabel(sale.awardStatus) }}
+                          </span>
                         </td>
                       </tr>
 
@@ -320,6 +344,8 @@
                     <tr>
                       <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Cliente</th>
                       <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider" v-if="hasRepasse">
+                        Imobiliária</th>
+                      <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider" v-if="hasRepasse">
                         Repasse</th>
                       <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider" v-if="hasRepasse">
                         Empreendimento</th>
@@ -329,10 +355,12 @@
                         Bloco</th>
                       <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider">Unidade</th>
                       <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider">Data</th>
-                      <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider">Valor <span
-                          class="text-gray-400">({{ valueModeLabel }})</span></th>
-                      <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider">Contratos</th>
+                      <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider">Valor
+                        <span class="text-gray-400">({{ valueModeLabel }})</span>
+                      </th>
                       <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider">Ações</th>
+                      <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider">Premiar</th>
+                      <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider">Status</th>
                     </tr>
                   </thead>
 
@@ -385,6 +413,15 @@
                             class="text-sm font-medium text-blue-600 hover:text-blue-900 dark:hover:text-blue-400 transition-colors">
                             {{ expandedSales.has(`${sale.customer_id}-${sale.unit_name}`) ? 'Ocultar' : 'Detalhes' }}
                           </button>
+                        </td>
+                        <td class="px-4 py-3 text-center">
+                          <input type="checkbox" :checked="selectedSales.has(saleKeyOf(sale))"
+                            @change="toggleSaleSelection(sale)" />
+                        </td>
+                        <td class="px-4 py-3 text-center">
+                          <span v-if="sale.awardStatus" class="text-xs px-2 py-1 rounded bg-purple-100 text-purple-700">
+                            {{ statusLabel(sale.awardStatus) }}
+                          </span>
                         </td>
                       </tr>
 
@@ -473,6 +510,7 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { useContractsStore } from '@/stores/Comercial/Contracts/contractsStore'
+import { useAwardsStore } from '@/stores/Comercial/Awards/awardStore'
 import ChartActions from '@/components/config/ChartActions.vue'
 import Export from '@/components/config/Export.vue'
 import VChart from 'vue-echarts'
@@ -492,7 +530,128 @@ defineEmits(['close'])
 const open = ref(false)
 
 const contractsStore = useContractsStore()
+const awardsStore = useAwardsStore()
 const viewMode = ref(['list', 'pie', 'bar'].includes(props.initialMode) ? props.initialMode : 'list')
+
+const selectedSales = ref(new Set())
+const lastAwardsMessage = ref('')
+
+const statusLabel = (s) => ({
+  iniciado: "Iniciado",
+  autorizacao: "Em autorização",
+  andamento: "Em andamento",
+  pago: "Pago"
+}[s] || "—")
+
+const saleKeyOf = (sale) => {
+  if (!sale) return ''
+
+  const first = firstContractOf(sale)
+
+  const enterprisePart =
+    first?.enterprise_id ??
+    first?.enterprise_name ??
+    props.enterprise?.id ??
+    props.enterprise?.name ??
+    ''
+
+  const customerPart =
+    sale.customer_id ??
+    customerNameOf(sale) ??
+    ''
+
+  const unitPart =
+    sale.unit_id ??
+    sale.unit_name ??
+    reservaUnitOf(sale) ??
+    ''
+
+  const datePart =
+    sale.financial_institution_date ??
+    reservaDateOf(sale) ??
+    ''
+
+  return [enterprisePart, customerPart, unitPart, datePart]
+    .map(v => String(v ?? '').trim())
+    .join('|')
+}
+
+const selectedSalesPayload = computed(() => {
+  const allSales = props.sales || []
+  const list = []
+
+  for (const key of selectedSales.value) {
+    const sale =
+      allSales.find((s) => saleKeyOf(s) === key) ||
+      paginatedSales.value.find((s) => saleKeyOf(s) === key)
+
+    if (!sale) continue
+
+    const first = firstContractOf(sale)
+
+    list.push({
+      saleKey: key,
+      customerId: sale.customer_id || null,
+      customerName: customerNameOf(sale),
+
+      unitId: sale.unit_id || null,
+      unitName: sale.unit_name || reservaUnitOf(sale),
+
+      enterpriseId: first.enterprise_id,
+      enterpriseName: first.enterprise_name,
+
+      saleValue: getSaleValue(sale),
+
+      // campos novos
+      stage: etapaOf(sale),
+      block: blocoOf(sale),
+      costCenter: sale.cost_center || null,
+      saleDate: sale.financial_institution_date,
+    });
+  }
+
+  return list
+})
+
+const toggleSaleSelection = (sale) => {
+  const key = saleKeyOf(sale)
+  const next = new Set(selectedSales.value)
+  if (next.has(key)) next.delete(key)
+  else next.add(key)
+  selectedSales.value = next
+}
+
+const registerAwards = async () => {
+  if (selectedSalesPayload.value.length === 0) return
+
+  try {
+    lastAwardsMessage.value = ''
+    // 1) registra clientes na premiação (backend)
+    await awardsStore.registerSalesForAward(selectedSalesPayload.value)
+
+    // 2) marca localmente como "iniciado" para acompanhamento imediato
+    const selectedKeys = new Set(selectedSales.value)
+
+      ; (props.sales || []).forEach((sale) => {
+        const key = saleKeyOf(sale)
+        if (selectedKeys.has(key)) {
+          // se o backend já não tiver trazido, garantimos um status mínimo
+          if (!sale.awardStatus) {
+            sale.awardStatus = 'iniciado'
+          }
+        }
+      })
+
+    // 3) limpa seleção
+    selectedSales.value = new Set()
+
+    // 4) mensagem de feedback
+    lastAwardsMessage.value = 'Clientes adicionados à premiação com sucesso.'
+  } catch (err) {
+    console.error('Erro ao registrar premiação:', err)
+    lastAwardsMessage.value = 'Erro ao adicionar clientes à premiação.'
+  }
+}
 
 /* ===================== HELPERS DE DADOS (sem mudar layout) ===================== */
 const firstContractOf = (sale) => sale?.contracts?.[0] || {}
@@ -697,7 +856,7 @@ watch([searchTerm, itemsPerPage], () => { currentPage.value = 1 })
 watch(() => props.sales, () => { expandedSales.value.clear() })
 
 const toggleDetails = (sale) => {
-  const key = `${sale.customer_id}-${sale.unit_name}`
+  const key = saleKeyOf(sale)
   const next = new Set(expandedSales.value)
   next.has(key) ? next.delete(key) : next.add(key)
   expandedSales.value = next
