@@ -30,6 +30,27 @@
                 </span>
             </div>
 
+            <div class="flex flex-wrap items-center justify-between gap-3 text-sm text-gray-600 mb-2">
+                <span>Selecionados:
+                    <strong class="text-gray-900 dark:text-gray-100">{{ selectedCount }}</strong>
+                </span>
+                <div class="flex flex-wrap gap-2">
+                    <button
+                        class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-purple-200 text-purple-700 hover:bg-purple-50 dark:border-purple-700 dark:text-purple-200 dark:hover:bg-purple-900/30 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                        :disabled="selectedCount === 0" @click="openManageForSelection">
+                        <i class="fas fa-layer-group text-[11px]"></i>
+                        Gerenciar NF(s) selecionadas
+                    </button>
+                    <button
+                        class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 dark:border-red-500 dark:text-red-300 dark:hover:bg-red-900/30 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                        :disabled="!canDeleteSelected" :title="!canDeleteSelected ? deleteSelectionHint : ''"
+                        @click="openDeleteModalForSelection">
+                        <i class="fas fa-trash text-[11px]"></i>
+                        Excluir selecionados
+                    </button>
+                </div>
+            </div>
+
             <div v-if="rows.length === 0" class="text-gray-500 text-sm">
                 Nenhum cliente vinculado ainda.
             </div>
@@ -39,6 +60,12 @@
                 <table class="min-w-full text-sm">
                     <thead class="bg-gray-50 dark:bg-gray-800/80">
                         <tr>
+                            <th
+                                class="px-4 py-2.5 text-center font-medium text-xs uppercase tracking-wide text-gray-500">
+                                <input type="checkbox"
+                                    class="h-4 w-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                                    :checked="allVisibleSelected" @change="toggleSelectAllVisible">
+                            </th>
                             <th class="px-4 py-2.5 text-left font-medium text-xs uppercase tracking-wide text-gray-500">
                                 Cliente
                             </th>
@@ -74,8 +101,16 @@
                     </thead>
 
                     <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
-                        <tr v-for="row in rows" :key="`${row.awardId}-${row.linkId || 'no-link'}`"
-                            class="hover:bg-gray-50/70 dark:hover:bg-gray-800/70 transition-colors">
+                        <tr v-for="row in rows" :key="`${row.awardId}-${row.linkId || 'no-link'}`" :class="[
+                            'hover:bg-gray-50/70 dark:hover:bg-gray-800/70 transition-colors',
+                            isRowSelected(row) ? 'bg-indigo-50/40 dark:bg-indigo-900/20' : ''
+                        ]">
+                            <td class="px-4 py-3 align-top text-center">
+                                <input type="checkbox"
+                                    class="h-4 w-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                                    :checked="isRowSelected(row)" :disabled="!row.awardId"
+                                    @change.stop="toggleAwardSelection(row.awardId)" />
+                            </td>
                             <!-- Cliente -->
                             <td class="px-4 py-3 align-top">
                                 <div class="font-medium text-gray-900 dark:text-gray-100">
@@ -157,56 +192,102 @@
                             <!-- Ações -->
                             <td class="px-4 py-3 align-top">
                                 <div class="flex items-center justify-center gap-2">
-                                    <!-- Adicionar NF -->
-                                    <button v-if="!row.nfAttached"
-                                        class="inline-flex items-center px-2.5 py-1.5 rounded-lg text-xs font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 dark:bg-blue-900/40 dark:text-blue-200 dark:hover:bg-blue-900/60 transition-colors"
-                                        @click="openAddNF(row)">
-                                        <i class="fas fa-file-circle-plus mr-1.5 text-[11px]"></i>
-                                        Adicionar NF
-                                    </button>
-
-                                    <!-- Editar NF -->
-                                    <button v-else
-                                        class="inline-flex items-center px-2.5 py-1.5 rounded-lg text-xs font-medium bg-purple-50 text-purple-700 hover:bg-purple-100 dark:bg-purple-900/40 dark:text-purple-200 dark:hover:bg-purple-900/60 transition-colors"
-                                        @click="openEditModal(row)">
-                                        <i class="fas fa-pen mr-1.5 text-[11px]"></i>
-                                        Editar NF
-                                    </button>
-
-                                    <!-- Próxima etapa -->
                                     <button
-                                        class="inline-flex items-center px-2.5 py-1.5 rounded-lg text-xs font-medium bg-gray-50 text-gray-700 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700 transition-colors"
+                                        class="inline-flex items-center px-2.5 py-1.5 rounded-lg text-xs font-medium bg-blue-50 text-blue-700 ..."
+                                        @click="openManageForRow(row)">
+                                        <i class="fas fa-file-circle-plus mr-1.5 text-[11px]"></i>
+                                        {{ row.nfAttached ? 'Gerenciar NF' : 'Adicionar NF' }}
+                                    </button>
+
+                                    <button
+                                        class="inline-flex items-center px-2.5 py-1.5 rounded-lg text-xs font-medium bg-red-50 text-red-700 ..."
+                                        :disabled="!canDeleteAward(row)" @click="openDeleteModalForRow(row)">
+                                        <i class="fas fa-trash mr-1.5 text-[11px]"></i>
+                                        Excluir
+                                    </button>
+
+                                    <button
+                                        class="inline-flex items-center px-2.5 py-1.5 rounded-lg text-xs font-medium bg-gray-50 text-gray-700 ..."
                                         @click="nextStatus(row)">
                                         <i class="fas fa-forward-step mr-1.5 text-[11px]"></i>
                                         Próx. etapa
                                     </button>
                                 </div>
                             </td>
+
                         </tr>
                     </tbody>
                 </table>
             </div>
 
-            <!-- Modal: Adicionar NF -->
-            <AddNF v-if="showAddNf" :award="selectedAward" @close="showAddNf = false" />
+            <ManageNFModal v-if="manageModalState.open" :award-ids="manageModalState.awardIds"
+                :initial-mode="manageModalState.initialMode" @close="closeManageModal" @done="handleManageDone" />
 
-            <!-- Modal: Editar NF -->
-            <EditNF v-if="showEdit" :award="selectedAward" @close="showEdit = false" />
+            <DeleteAwardsModal v-if="deleteModalState.open" :award-ids="deleteModalState.awardIds"
+                :rows="deleteModalState.rows" :can-delete="deleteModalState.canDelete"
+                :requires-admin="deleteModalState.requiresAdmin" @close="deleteModalState.open = false"
+                @done="handleDeleteDone" />
+ 
         </div>
     </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { useAwardsStore } from '@/stores/Comercial/Awards/awardStore'
-import AddNF from './components/AddNF.vue'
-import EditNF from './components/EditNF.vue'
+import ManageNFModal from './components/ManageNFModal.vue'
+import DeleteAwardsModal from './components/DeleteAwardsModal.vue' 
 
 const awardsStore = useAwardsStore()
+  
 
-const showAddNf = ref(false)
-const showEdit = ref(false)
-const selectedAward = ref(null)
+const selectedAwardIds = ref(new Set())
+const manageModalState = reactive({
+    open: false,
+    awardIds: [],
+    initialMode: 'upload'
+})
+const deleteModalState = reactive({
+    open: false,
+    awardIds: [],
+    rows: [],
+    requiresAdmin: false,
+    canDelete: true
+})
+
+const userRole = ref('')
+try {
+    userRole.value = localStorage.getItem('role') || ''
+} catch (err) {
+    console.warn('Não foi possível carregar a role do usuário:', err)
+}
+const isAdmin = computed(() => userRole.value?.toLowerCase() === 'admin')
+
+const normalizeCostCenter = (value) => {
+    if (value == null) return null
+    const digits = String(value).replace(/\D/g, '')
+    if (!digits) return null
+    if (digits.length >= 5) return digits.slice(-5)
+    return digits
+}
+
+const extractCostCenterFromText = (text) => {
+    if (!text) return null
+    const match = String(text).match(/(\d{5})/)
+    return match ? match[1] : null
+}
+
+const deriveCostCenter = (link, award) => {
+    return normalizeCostCenter(
+        link?.costCenter ||
+        extractCostCenterFromText(link?.enterpriseName) ||
+        extractCostCenterFromText(award?.enterpriseName) ||
+        extractCostCenterFromText(award?.customerName) ||
+        link?.enterpriseId ||
+        award?.links?.[0]?.enterpriseId ||
+        null
+    )
+}
 
 // 🔥 monta linhas a partir de Award + AwardLink
 const rows = computed(() => {
@@ -233,7 +314,7 @@ const rows = computed(() => {
                     enterpriseName: link.enterpriseName,
                     etapa: link.etapa,
                     bloco: link.bloco,
-                    costCenter: link.costCenter,
+                    costCenter: deriveCostCenter(link, award),
                     saleDate: link.saleDate,
                     saleValue: link.saleValue,
 
@@ -259,7 +340,7 @@ const rows = computed(() => {
                 enterpriseName: null,
                 etapa: null,
                 bloco: null,
-                costCenter: null,
+                costCenter: deriveCostCenter(null, award),
                 saleDate: null,
                 saleValue: null,
 
@@ -272,6 +353,122 @@ const rows = computed(() => {
     return list
 })
 
+const visibleAwardIds = computed(() => {
+    const ids = new Set()
+    rows.value.forEach((row) => {
+        if (row.awardId != null) ids.add(row.awardId)
+    })
+    return Array.from(ids)
+})
+
+const selectedCount = computed(() => selectedAwardIds.value.size)
+const selectedAwardRows = computed(() =>
+    rows.value.filter((row) => row.awardId != null && selectedAwardIds.value.has(row.awardId))
+)
+const requiresAdminForSelection = computed(() =>
+    selectedAwardRows.value.some((row) => row.status && row.status !== 'iniciado')
+)
+const canDeleteSelected = computed(() =>
+    selectedAwardRows.value.length > 0 && (!requiresAdminForSelection.value || isAdmin.value)
+)
+const deleteSelectionHint = computed(() => {
+    if (selectedAwardRows.value.length === 0) return 'Selecione clientes para excluir'
+    if (requiresAdminForSelection.value && !isAdmin.value) {
+        return 'Somente administradores podem excluir premiações fora da etapa inicial'
+    }
+    return ''
+})
+const allVisibleSelected = computed(() => {
+    const visible = visibleAwardIds.value
+    if (visible.length === 0) return false
+    return visible.every((id) => selectedAwardIds.value.has(id))
+})
+
+const toggleAwardSelection = (awardId) => {
+    if (awardId == null) return
+    const next = new Set(selectedAwardIds.value)
+    if (next.has(awardId)) next.delete(awardId)
+    else next.add(awardId)
+    selectedAwardIds.value = next
+}
+
+const isRowSelected = (row) => row?.awardId != null && selectedAwardIds.value.has(row.awardId)
+
+const clearSelection = () => {
+    selectedAwardIds.value = new Set()
+}
+
+const toggleSelectAllVisible = () => {
+    const next = new Set(selectedAwardIds.value)
+    if (allVisibleSelected.value) {
+        visibleAwardIds.value.forEach((id) => next.delete(id))
+    } else {
+        visibleAwardIds.value.forEach((id) => next.add(id))
+    }
+    selectedAwardIds.value = next
+}
+
+const openManageModalWith = (awardIds, initialMode = 'upload', replaceSelection = true) => {
+    const validIds = Array.from(new Set((awardIds || []).filter((id) => id != null)))
+    if (validIds.length === 0) return
+    if (replaceSelection) {
+        selectedAwardIds.value = new Set(validIds)
+    }
+    manageModalState.awardIds = validIds
+    manageModalState.initialMode = initialMode
+    manageModalState.open = true
+}
+
+const openManageForRow = (row, mode) => {
+    if (!row?.awardId) return
+    const initial = mode || (row.nfAttached ? 'existing' : 'upload')
+    openManageModalWith([row.awardId], initial)
+}
+
+const openManageForSelection = () => {
+    if (selectedAwardIds.value.size === 0) return
+    openManageModalWith(Array.from(selectedAwardIds.value), 'upload', false)
+}
+
+const closeManageModal = () => {
+    manageModalState.open = false
+}
+
+const handleManageDone = () => {
+    clearSelection()
+}
+
+const canDeleteAward = (row) => {
+    if (!row?.awardId) return false
+    return row.status === 'iniciado' || isAdmin.value
+}
+
+const openDeleteModalWith = (awardIds) => {
+    const ids = Array.from(new Set((awardIds || []).filter((id) => id != null)))
+    if (ids.length === 0) return
+    const rowsForIds = rows.value.filter((row) => ids.includes(row.awardId))
+    deleteModalState.awardIds = ids
+    deleteModalState.rows = rowsForIds
+    const requiresAdmin = rowsForIds.some((row) => row.status !== 'iniciado')
+    deleteModalState.requiresAdmin = requiresAdmin
+    deleteModalState.canDelete = !requiresAdmin || isAdmin.value
+    deleteModalState.open = true
+}
+
+const openDeleteModalForSelection = () => {
+    if (!canDeleteSelected.value) return
+    openDeleteModalWith(Array.from(selectedAwardIds.value))
+}
+
+const openDeleteModalForRow = (row) => {
+    if (!canDeleteAward(row)) return
+    openDeleteModalWith([row.awardId])
+}
+
+const handleDeleteDone = () => {
+    clearSelection()
+}
+
 const formatCurrency = (v) =>
     Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 
@@ -283,18 +480,6 @@ const formatDate = (value) => {
     return new Date(value).toLocaleDateString('pt-BR')
 }
 
-const openAddNF = (row) => {
-    // por enquanto os modais recebem o Award inteiro
-    selectedAward.value = row.awardRaw
-    showAddNf.value = true
-    console.log('award/link para AddNF:', row)
-}
-
-const openEditModal = (row) => {
-    selectedAward.value = row.awardRaw
-    showEdit.value = true
-}
-
 const nextStatus = async (row) => {
     const award = row.awardRaw
     if (!award) return
@@ -303,7 +488,11 @@ const nextStatus = async (row) => {
     const current = map.indexOf(award.status)
     const next = map[(current + 1 + map.length) % map.length]
 
-    await awardsStore.updateAward({ ...award, status: next })
+    try {
+        await awardsStore.updateAward({ ...award, status: next })
+    } catch (err) {
+        console.error('Erro ao atualizar status da premiação:', err)
+    }
 }
 
 const statusLabel = (s) =>
