@@ -158,7 +158,7 @@
     <Export v-model="open" :source="sortedData" title="Exportação de vendas" filename="Relatório de Faturamento"
       initial-delimiter=";" initial-array-mode="join" :preselect="[]" />
 
-    <EnterpriseDetailModal v-if="showModal" :enterprise="{ name: modalTitle }" :sales="modalSales"
+    <EnterpriseDetailModal v-if="showModal" :enterprise="modalEnterprise" :sales="modalSales"
       :initial-mode="initialMode" @close="closeModal" />
   </div>
 </template>
@@ -185,6 +185,7 @@ const showModal = ref(false)
 const modalSales = ref([])
 const modalTitle = ref('')
 const initialMode = ref('list')
+const modalEnterprise = ref({ name: '' })
 
 const valueModeLabel = computed(() => contractsStore.valueModeLabel)
 const valOf = (item) => contractsStore.valuePicker(item)
@@ -286,6 +287,7 @@ const openSingle = (enterprise, mode = 'list') => {
   modalSales.value = salesForRow(enterprise)
   modalTitle.value = enterprise.name + (enterprise.onlyProjectionRow ? ' • Projeções' : '')
   initialMode.value = mode
+  modalEnterprise.value = enterprise
   showModal.value = true
 }
 
@@ -301,6 +303,7 @@ const openGroup = (mode = 'list') => {
   const count = rows.length
   modalTitle.value = count === 1 ? rows[0].name : `Conjunto de ${count} empreendimentos`
   initialMode.value = mode
+  modalEnterprise.value = { name: modalTitle.value }
   showModal.value = true
 }
 
