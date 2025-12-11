@@ -199,6 +199,37 @@ export const useContractsStore = defineStore('contracts', {
                         }
                     ]
                 }
+                // 👇 NOVO: ordenar contratos do grupo para escolher o "principal"
+                sale.contracts.sort((a, b) => {
+                    const aHasRepasse = Array.isArray(a.repasse) && a.repasse.length > 0
+                    const bHasRepasse = Array.isArray(b.repasse) && b.repasse.length > 0
+                    if (aHasRepasse !== bHasRepasse) {
+                        // quem TEM repasse vem primeiro
+                        return bHasRepasse - aHasRepasse
+                    }
+
+                    // heurística: financiamento antes de terreno
+                    const isFin = (c) =>
+                        Array.isArray(c.payment_conditions) &&
+                        c.payment_conditions.some((pc) => {
+                            const id = String(pc.condition_type_id ?? '').toUpperCase()
+                            return id === 'FI' || id === 'RP'
+                        })
+
+                    const aIsFin = isFin(a)
+                    const bIsFin = isFin(b)
+                    if (aIsFin !== bIsFin) {
+                        return bIsFin - aIsFin // financiamento antes
+                    }
+
+                    // fallback: menor id primeiro
+                    return (Number(a.contract_id) || 0) - (Number(b.contract_id) || 0)
+                })
+
+                // 👇 e atualiza o "cabeçalho" da venda pro contrato principal
+                const main = sale.contracts[0] || {}
+                sale.enterprise_name = main.enterprise_name
+                sale.financial_institution_date = main.financial_institution_date
             })
 
             // 2) Calcular totais respeitando overrides/comissão (REAIS) e "como vieram" (PROJEÇÕES)

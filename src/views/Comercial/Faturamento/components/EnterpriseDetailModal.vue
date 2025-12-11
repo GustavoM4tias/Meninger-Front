@@ -174,7 +174,7 @@
                              bg-purple-600 text-white disabled:bg-purple-400
                              disabled:cursor-not-allowed shadow-sm">
                       <i class="fas fa-award"></i>
-                      <span>Adicionar clientes na premiação</span>
+                      <span>Adicionar prêmio a venda</span>
                     </button>
 
                     <span v-if="lastAwardsMessage" class="text-xs text-gray-500">
@@ -237,19 +237,16 @@
                         Ações
                       </th>
                       <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider">
-                        Premiar
-                      </th>
-                      <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider">
-                        Status
-                      </th>
+                        Premiação
+                      </th> 
                     </tr>
                   </thead>
 
                   <tbody class="bg-white divide-y divide-gray-200 dark:bg-gray-700/40 dark:divide-gray-700">
                     <template v-for="sale in paginatedSales" :key="`${sale.customer_id ?? ''}-${sale.unit_name}`">
                       <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors" :class="saleIsProjection(sale)
-                          ? 'bg-green-50/70 dark:bg-green-900/20'
-                          : ''
+                        ? 'bg-green-50/70 dark:bg-green-900/20'
+                        : ''
                         ">
                         <td class="px-4 py-3">
                           <div class="text-sm font-medium">
@@ -324,14 +321,18 @@
                           </button>
                         </td>
                         <td class="px-4 py-3 text-center">
-                          <input type="checkbox" :checked="selectedSales.has(saleKeyOf(sale))"
-                            :disabled="saleHasAward(sale)" @change="toggleSaleSelection(sale)" />
-                        </td>
-                        <td class="px-4 py-3 text-center">
-                          <span v-if="awardStatusForSale(sale)"
-                            class="text-xs px-2 py-1 rounded bg-purple-100 text-purple-700">
-                            {{ statusLabel(awardStatusForSale(sale)) }}
-                          </span>
+                          <!-- Se tiver prêmio: mostra só o badge -->
+                          <template v-if="awardStatusForSale(sale)">
+                            <span class="text-[10px] truncate px-2 py-1 rounded bg-purple-100 text-purple-700">
+                              {{ statusLabel(awardStatusForSale(sale)) }}
+                            </span>
+                          </template>
+
+                          <!-- Se NÃO tiver prêmio: mostra o checkbox -->
+                          <template v-else>
+                            <input type="checkbox" :checked="selectedSales.has(saleKeyOf(sale))"
+                              @change="toggleSaleSelection(sale)" />
+                          </template>
                         </td>
                       </tr>
 
@@ -341,8 +342,8 @@
                         <td colspan="12">
                           <div v-for="contract in sale.contracts" :key="contract.contract_id" class="space-y-3">
                             <div class="bg-white dark:bg-gray-900/20 p-4 shadow" :class="contract._projection
-                                ? 'border-l-4 border-emerald-400'
-                                : ''
+                              ? 'border-l-4 border-emerald-400'
+                              : ''
                               ">
                               <div class="flex items-center justify-between mb-3">
                                 <span class="text-sm font-medium">
@@ -376,8 +377,8 @@
                                     </button>
                                   </div>
                                   <div class="text-lg font-semibold mb-1" :class="isDiscount(condition)
-                                      ? 'text-red-600'
-                                      : 'text-green-600'
+                                    ? 'text-red-600'
+                                    : 'text-green-600'
                                     ">
                                     {{ formatCurrency(condition.total_value) }}
                                     <span v-if="isDiscount(condition)" class="text-xs ml-1">(desconto)</span>
@@ -487,18 +488,15 @@
                       </th>
                       <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider">
                         Premiar
-                      </th>
-                      <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider">
-                        Status
-                      </th>
+                      </th> 
                     </tr>
                   </thead>
 
                   <tbody class="bg-white divide-y divide-gray-200 dark:bg-gray-700/40 dark:divide-gray-700">
                     <template v-for="sale in paginatedSales" :key="`${sale.customer_id}-${sale.unit_name}`">
                       <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors" :class="saleIsProjection(sale)
-                          ? 'bg-green-50/70 dark:bg-green-900/20'
-                          : ''
+                        ? 'bg-green-50/70 dark:bg-green-900/20'
+                        : ''
                         ">
                         <td class="px-4 py-3">
                           <div class="text-sm font-medium">
@@ -574,15 +572,18 @@
                           </button>
                         </td>
                         <td class="px-4 py-3 text-center">
-                          <input type="checkbox" :checked="selectedSales.has(saleKeyOf(sale))"
-                            :disabled="saleHasAward(sale)" @change="toggleSaleSelection(sale)" />
-                        </td>
-                        <td class="px-4 py-3 text-center">
-                          <span v-if="awardStatusForSale(sale)"
-                            class="text-xs px-2 py-1 rounded bg-purple-100 text-purple-700">
-                            {{ statusLabel(awardStatusForSale(sale)) }}
-                          </span>
-                        </td>
+                          <!-- Se tiver prêmio: mostra só o badge -->
+                          <template v-if="awardStatusForSale(sale)">
+                            <span class="text-[10px] truncate px-2 py-1 rounded bg-purple-100 text-purple-700">
+                              {{ statusLabel(awardStatusForSale(sale)) }}
+                            </span>
+                          </template>
+                          <!-- Se NÃO tiver prêmio: mostra o checkbox -->
+                          <template v-else>
+                            <input type="checkbox" :checked="selectedSales.has(saleKeyOf(sale))"
+                              @change="toggleSaleSelection(sale)" />
+                          </template>
+                        </td> 
                       </tr>
 
                       <tr v-show="expandedSales.has(`${sale.customer_id}-${sale.unit_name}`)"
@@ -591,8 +592,8 @@
                         <td colspan="12">
                           <div v-for="contract in sale.contracts" :key="contract.contract_id" class="space-y-3">
                             <div class="bg-white dark:bg-gray-900/20 p-4 shadow" :class="contract._projection
-                                ? 'border-l-4 border-emerald-400'
-                                : ''
+                              ? 'border-l-4 border-emerald-400'
+                              : ''
                               ">
                               <div class="flex items-center justify-between mb-3">
                                 <span class="text-sm font-medium">
@@ -626,8 +627,8 @@
                                     </button>
                                   </div>
                                   <div class="text-lg font-semibold mb-1" :class="isDiscount(condition)
-                                      ? 'text-red-600'
-                                      : 'text-green-600'
+                                    ? 'text-red-600'
+                                    : 'text-green-600'
                                     ">
                                     {{ formatCurrency(condition.total_value) }}
                                     <span v-if="isDiscount(condition)" class="text-xs ml-1">(desconto)</span>
