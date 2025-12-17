@@ -120,8 +120,7 @@ const categoryFlatItems = (catKey) => {
     }
     // se for a categoria "comercial", remove "cidades" e "users" para não-admin
     if (catKey === 'comercial' && !isAdmin.value) {
-        return items.filter(it => 
-            it.router !== '/comercial/projections' &&
+        return items.filter(it =>  
             it.router !== '/ccomercial/workflow'
         );
     }
@@ -243,7 +242,7 @@ const toggleFavorite = async (router, section) => {
 // Inicialização
 onMounted(async () => {
     await favoritesStore.loadFavorites();
-    await notificationStore.fetchNotifications();
+    // await notificationStore.fetchNotifications(); REATIVAR NOTIFICAÇÃO
     if (typeof initFlowbite !== 'undefined') initFlowbite();
 });
 </script>

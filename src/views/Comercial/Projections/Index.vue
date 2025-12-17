@@ -1,9 +1,9 @@
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
+import { RouterLink } from 'vue-router';
+import Favorite from "@/components/config/Favorite.vue";
 import { useProjectionsStore } from '@/stores/Comercial/Projections/projectionsStore';
 import { useAuthStore } from '@/stores/Settings/Auth/authStore';
-import Favorite from "@/components/config/Favorite.vue";
-import { RouterLink } from 'vue-router';
 
 const store = useProjectionsStore();
 const auth = useAuthStore();
@@ -11,87 +11,73 @@ const auth = useAuthStore();
 const isAdmin = computed(() => auth?.user?.role === 'admin');
 
 const currentYear = new Date().getFullYear();
-const selectedYear = ref(currentYear);
+const startMonth = ref(`${currentYear}-01`);
+const endMonth = ref(`${currentYear}-12`);
+
 const search = ref('');
 const modalOpen = ref(false);
 
-// campos do modal
 const form = ref({
-    year: selectedYear.value,
     name: '',
-    is_active: false,       // por padrão inativa
-    clone_source_id: null,  // id da projeção ativa para clonar (opcional)
+    is_active: false,
+    clone_source_id: null,
 });
+
+function validateRange() {
+    const s = String(startMonth.value || '');
+    const e = String(endMonth.value || '');
+    if (!/^\d{4}-\d{2}$/.test(s) || !/^\d{4}-\d{2}$/.test(e)) return false;
+    return s <= e;
+}
+
+async function refreshList() {
+    if (!validateRange()) return;
+    await store.fetchList({ start_month: startMonth.value, end_month: endMonth.value });
+}
 
 onMounted(async () => {
-    await store.fetchList(selectedYear.value);
-    await store.fetchAllActive(); // carrega lista de ativas (de todos os anos) para o select de cópia
+    await refreshList();
+    await store.fetchAllActive();
 });
 
-watch(selectedYear, (y) => {
-    form.value.year = y; // mantém modal sempre no ano selecionado
-    store.fetchList(y);
-});
-
-// ⬇️ gera anos dinamicamente em torno do ano atual
-// (aqui usei -50 / +50, mas é só aumentar se quiser)
-const yearOptions = computed(() => {
-    const years = [];
-    const span = 50; // 50 anos pra trás e 50 pra frente
-    for (let y = currentYear - span; y <= currentYear + span; y++) {
-        years.push(y);
-    }
-    return years;
+watch([startMonth, endMonth], async () => {
+    await refreshList();
 });
 
 const filtered = computed(() => {
     const q = (search.value || '').trim().toLowerCase();
+    const updatedAt = (p) => new Date(p.updated_at || p.updatedAt || p.created_at || p.createdAt || 0).getTime();
 
-    const updatedAt = (p) =>
-        new Date(p.updated_at || p.updatedAt || p.created_at || p.createdAt || 0).getTime();
-
-    return store.list
-        .filter(p => !q || String(p.name).toLowerCase().includes(q))
+    return (store.list || [])
+        .filter(p => !q || String(p.name || '').toLowerCase().includes(q))
         .sort((a, b) => {
-            if (a.year !== b.year) return b.year - a.year; // ano desc
-            if (!!a.is_active !== !!b.is_active) return a.is_active ? -1 : 1; // ativa primeiro
-
+            if (!!a.is_active !== !!b.is_active) return a.is_active ? -1 : 1;
             const ua = updatedAt(a);
             const ub = updatedAt(b);
-            if (ua !== ub) return ub - ua; // mais recente primeiro
-
-            return String(a.name || '').localeCompare(String(b.name || '')); // nome asc
+            if (ua !== ub) return ub - ua;
+            return String(a.name || '').localeCompare(String(b.name || ''), 'pt-BR');
         });
-});
-
-const grouped = computed(() => {
-    const by = {};
-    for (const p of filtered.value) {
-        const y = p.year;
-        if (!by[y]) by[y] = [];
-        by[y].push(p);
-    }
-    return by;
 });
 
 async function create() {
-    const payloadBase = {
-        year: form.value.year,
-        name: (form.value.name || '').trim(),
-        is_active: !!form.value.is_active,
-    };
-    if (!payloadBase.name) return;
+    const name = (form.value.name || '').trim();
+    if (!name) return;
 
     if (form.value.clone_source_id) {
         await store.cloneProjection({
-            ...payloadBase,
-            source_id: form.value.clone_source_id
+            source_id: form.value.clone_source_id,
+            name,
+            is_active: !!form.value.is_active,
         });
     } else {
-        await store.createProjection(payloadBase);
+        await store.createProjection({ name, is_active: !!form.value.is_active });
     }
+
     modalOpen.value = false;
-    form.value = { year: selectedYear.value, name: '', is_active: false, clone_source_id: null };
+    form.value = { name: '', is_active: false, clone_source_id: null };
+
+    await store.fetchAllActive();
+    await refreshList();
 }
 
 const chipClass = {
@@ -119,57 +105,72 @@ const chipClass = {
                         <Favorite class="my-auto" :router="'/comercial/projections'" :section="'Projeção'" />
                     </h1>
                     <p class="text-md text-gray-600 dark:text-gray-400">
-                        Crie, visualize e gerencie as projeções por ano.
+                        Projeções por mês (sem vínculo fixo com ano). Filtre pelo intervalo para visualizar.
                     </p>
                 </div>
-                <div class="flex items-center gap-2">
+
+                <div class="flex flex-col md:flex-row md:items-center gap-2">
                     <input v-model="search" placeholder="Buscar por nome..."
                         class="h-10 w-56 border dark:border-gray-700 rounded-lg px-3 bg-gray-50 dark:bg-gray-900/60 focus:outline-none focus:ring-2 focus:ring-indigo-400/40" />
-                    <select v-model.number="selectedYear"
-                        class="h-10 border border-gray-200 dark:border-gray-700 rounded-lg px-3 bg-gray-50 dark:bg-gray-900/60 focus:outline-none focus:ring-2 focus:ring-indigo-400/40">
-                        <option v-for="y in yearOptions" :key="y" :value="y">
-                            {{ y }}
-                        </option>
-                    </select>
+
+                    <div class="flex items-center gap-2">
+                        <div class="flex flex-col">
+                            <span class="text-[11px] text-gray-500">Mês inicial</span>
+                            <input type="month" v-model="startMonth"
+                                class="h-10 border dark:border-gray-700 rounded-lg px-3 bg-gray-50 dark:bg-gray-900/60 focus:outline-none focus:ring-2 focus:ring-indigo-400/40" />
+                        </div>
+
+                        <div class="flex flex-col">
+                            <span class="text-[11px] text-gray-500">Mês final</span>
+                            <input type="month" v-model="endMonth"
+                                class="h-10 border dark:border-gray-700 rounded-lg px-3 bg-gray-50 dark:bg-gray-900/60 focus:outline-none focus:ring-2 focus:ring-indigo-400/40" />
+                        </div>
+                    </div>
+
                     <button v-if="isAdmin" @click="modalOpen = true"
                         class="h-10 px-3 rounded-lg bg-indigo-600 text-white hover:bg-indigo-500 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-400/60">
                         Nova projeção
                     </button>
                 </div>
             </div>
+
+            <p v-if="!validateRange()" class="mt-3 text-sm text-red-600">
+                Intervalo inválido: o mês inicial deve ser menor ou igual ao mês final.
+            </p>
         </div>
 
-        <!-- groups -->
-        <div v-for="(items, y) in grouped" :key="y" class="space-y-2">
-            <h2 class="text-xs uppercase text-gray-500 tracking-wide">Ano {{ y }}</h2>
-            <div class="grid sm:grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-4">
-                <RouterLink v-for="p in items" :key="p.id" :to="`/comercial/projections/${p.id}`"
-                    class="p-5 rounded-2xl border dark:border-gray-700 bg-white/70 hover:bg-white dark:bg-gray-800 shadow-lg hover:shadow-md transition-all duration-200 hover:-translate-y-1">
-                    <div class="flex items-start justify-between gap-4">
-                        <div class="min-w-0">
-                            <div class="font-semibold truncate">{{ p.name }}</div>
-                            <div class="text-xs text-gray-500 mt-1">
-                                Criada: {{ new Date(p.created_at || p.createdAt).toLocaleDateString() }}
-                            </div>
-                            <div class="text-xs text-gray-500 mt-1">
-                                Última atualização em:
-                                {{ new Date(p.updated_at || p.updatedAt || p.created_at ||
-                                    p.createdAt).toLocaleDateString() }}
-                            </div>
+        <!-- list -->
+        <div class="grid sm:grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-4">
+            <RouterLink v-for="p in filtered" :key="p.id" :to="`/comercial/projections/${p.id}`"
+                class="p-5 rounded-2xl border dark:border-gray-700 bg-white/70 hover:bg-white dark:bg-gray-800 shadow-lg hover:shadow-md transition-all duration-200 hover:-translate-y-1">
+                <div class="flex items-start justify-between gap-4">
+                    <div class="min-w-0">
+                        <div class="font-semibold truncate">{{ p.name }}</div>
+                        <div class="text-xs text-gray-500 mt-1">
+                            Criada: {{ new Date(p.created_at || p.createdAt).toLocaleDateString('pt-BR') }}
                         </div>
-                        <div class="flex flex-col items-end gap-1">
-                            <span class="text-[11px] px-2 py-0.5 rounded-full border"
-                                :class="chipClass.active(p.is_active)">
-                                {{ p.is_active ? 'Ativa' : 'Inativa' }}
-                            </span>
-                            <span class="text-[11px] px-2 py-0.5 rounded-full border"
-                                :class="chipClass.locked(p.is_locked)">
-                                {{ p.is_locked ? 'Bloqueada' : 'Aberta' }}
-                            </span>
+                        <div class="text-xs text-gray-500 mt-1">
+                            Última atualização:
+                            {{ new Date(p.updated_at || p.updatedAt || p.created_at ||
+                                p.createdAt).toLocaleDateString('pt-BR') }}
+                        </div>
+                        <div class="text-[11px] text-gray-500 mt-2">
+                            Visualizando: <strong>{{ startMonth }}</strong> → <strong>{{ endMonth }}</strong>
                         </div>
                     </div>
-                </RouterLink>
-            </div>
+
+                    <div class="flex flex-col items-end gap-1">
+                        <span class="text-[11px] px-2 py-0.5 rounded-full border"
+                            :class="chipClass.active(p.is_active)">
+                            {{ p.is_active ? 'Ativa' : 'Inativa' }}
+                        </span>
+                        <span class="text-[11px] px-2 py-0.5 rounded-full border"
+                            :class="chipClass.locked(p.is_locked)">
+                            {{ p.is_locked ? 'Bloqueada' : 'Aberta' }}
+                        </span>
+                    </div>
+                </div>
+            </RouterLink>
         </div>
 
         <!-- modal criação -->
@@ -187,35 +188,24 @@ const chipClass = {
 
                     <div class="space-y-3">
                         <div>
-                            <label class="text-sm text-gray-600 dark:text-gray-300">Ano</label>
-                            <select v-model.number="form.year"
-                                class="w-full h-10 border dark:border-gray-700 rounded-lg px-2 bg-white/90 dark:bg-gray-900/70 focus:outline-none focus:ring-2 focus:ring-indigo-400/40">
-                                <option v-for="y in yearOptions" :key="y" :value="y">
-                                    {{ y }}
-                                </option>
-                            </select>
-                        </div>
-
-                        <div>
                             <label class="text-sm text-gray-600 dark:text-gray-300">Nome</label>
-                            <input v-model="form.name" placeholder="Ex.: Projeção 2026"
+                            <input v-model="form.name" placeholder="Ex.: Projeção Geral 2026+"
                                 class="w-full h-10 border dark:border-gray-700 rounded-lg px-3 bg-white/90 dark:bg-gray-900/70 focus:outline-none focus:ring-2 focus:ring-indigo-400/40" />
                         </div>
 
                         <div>
                             <label class="text-sm text-gray-600 dark:text-gray-300">
-                                Clonar da projeção ativa (opcional)
+                                Clonar de uma projeção ativa (opcional)
                             </label>
                             <select v-model="form.clone_source_id"
                                 class="w-full h-10 border dark:border-gray-700 rounded-lg px-2 bg-white/90 dark:bg-gray-900/70 focus:outline-none focus:ring-2 focus:ring-indigo-400/40">
                                 <option :value="null">— Não clonar —</option>
                                 <option v-for="p in store.allActive" :key="p.id" :value="p.id">
-                                    {{ p.year }} — {{ p.name }}
+                                    {{ p.name }}
                                 </option>
                             </select>
                             <p class="text-[11px] text-gray-500 mt-1">
-                                Apenas projeções <strong>ativas</strong> aparecem aqui. A cópia será criada
-                                <strong>inativa</strong> e <strong>desbloqueada</strong>.
+                                A cópia replica <strong>defaults</strong> e <strong>linhas por mês</strong>.
                             </p>
                         </div>
 
@@ -225,9 +215,10 @@ const chipClass = {
                                 Ativar após criar
                             </label>
                         </div>
+
                         <p class="text-[11px] text-gray-500 -mt-2">
-                            Dica: deixe desmarcado para revisar a cópia antes de ativar. Só uma projeção pode ficar
-                            ativa por ano.
+                            Dica: deixe desmarcado para revisar antes. No novo modelo, apenas 1 projeção fica ativa no
+                            sistema.
                         </p>
                     </div>
 
@@ -244,5 +235,6 @@ const chipClass = {
                 </div>
             </div>
         </div>
+
     </div>
 </template>

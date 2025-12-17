@@ -35,6 +35,6 @@ import { useNotificationStore } from '@/stores/Config/notificationStore';
 const notificationStore = useNotificationStore();
 
 onMounted(() => {
-    notificationStore.fetchNotifications();
+    // notificationStore.fetchNotifications(); REATIVAR NOTIFICAÇÃO
 });
 </script>
