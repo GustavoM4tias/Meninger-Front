@@ -30,9 +30,9 @@ function toBool(v) { return v === true || v === 1 || v === '1'; }
 export const useProjectionsStore = defineStore('projections', () => {
     const carregamento = useCarregamentoStore();
 
-    const list = ref([]);      // [{id,name,is_locked,is_active,created_at,updated_at}]
-    const allActive = ref([]); // [{id,name}] - opcional pro clone
-    const detail = ref(null);  // { projection, lines, enterprise_defaults }
+    const list = ref([]);
+    const allActive = ref([]);
+    const detail = ref(null);
     const logs = ref([]);
     const error = ref(null);
 
@@ -55,35 +55,33 @@ export const useProjectionsStore = defineStore('projections', () => {
     }
 
     async function fetchAllActive() {
-        // Caso você tenha endpoint que lista todas ativas sem range,
-        // mantenha como está. Se backend exigir range, passe um range amplo no controller.
         const raw = await requestWithAuth(`${API_URL}/projections?only_active=1&start_month=1900-01&end_month=2999-12`);
         allActive.value = (raw || []).map(p => ({ ...p, is_active: toBool(p.is_active), is_locked: toBool(p.is_locked) }));
     }
 
     async function createProjection({ name, is_active = false }) {
-        const r = await requestWithAuth(`${API_URL}/projections`, {
+        return await requestWithAuth(`${API_URL}/projections`, {
             method: 'POST',
             body: JSON.stringify({ name, is_active })
         });
-        return r;
     }
 
     async function cloneProjection({ source_id, name, is_active = false }) {
-        const r = await requestWithAuth(`${API_URL}/projections/clone`, {
+        return await requestWithAuth(`${API_URL}/projections/clone`, {
             method: 'POST',
             body: JSON.stringify({ source_id, name, is_active })
         });
-        return r;
     }
 
-    async function fetchDetail(id, { start_month, end_month } = {}) {
+    // ✅ include_zero adicionado
+    async function fetchDetail(id, { start_month, end_month, include_zero } = {}) {
         error.value = null;
         try {
             carregamento.iniciarCarregamento();
             const q = new URLSearchParams();
             if (start_month) q.set('start_month', start_month);
             if (end_month) q.set('end_month', end_month);
+            if (include_zero) q.set('include_zero', '1');
 
             const d = await requestWithAuth(`${API_URL}/projections/${id}?${q.toString()}`);
             if (d?.projection) {
