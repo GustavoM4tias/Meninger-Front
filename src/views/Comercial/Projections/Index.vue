@@ -110,8 +110,11 @@ const chipClass = {
                 </div>
 
                 <div class="flex flex-col md:flex-row md:items-center gap-2">
-                    <input v-model="search" placeholder="Buscar por nome..."
-                        class="h-10 w-56 border dark:border-gray-700 rounded-lg px-3 bg-gray-50 dark:bg-gray-900/60 focus:outline-none focus:ring-2 focus:ring-indigo-400/40" />
+                    <div class="flex flex-col">
+                        <span class="text-[11px] text-gray-500">Filtro de busca</span>
+                        <input v-model="search" placeholder="Buscar por nome..."
+                            class="h-10 w-56 border dark:border-gray-700 rounded-lg px-3 bg-gray-50 dark:bg-gray-900/60 focus:outline-none focus:ring-2 focus:ring-indigo-400/40" />
+                    </div>
 
                     <div class="flex items-center gap-2">
                         <div class="flex flex-col">
@@ -128,7 +131,7 @@ const chipClass = {
                     </div>
 
                     <button v-if="isAdmin" @click="modalOpen = true"
-                        class="h-10 px-3 rounded-lg bg-indigo-600 text-white hover:bg-indigo-500 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-400/60">
+                        class="h-full px-4 py-2 truncate mt-3.5 rounded-lg bg-indigo-600 text-white hover:bg-indigo-500 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-400/60">
                         Nova projeção
                     </button>
                 </div>
