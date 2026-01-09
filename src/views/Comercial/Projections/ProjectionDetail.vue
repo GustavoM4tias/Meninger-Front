@@ -7,6 +7,7 @@ import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 import API_URL from '@/config/apiUrl';
 import MultiSelector from '@/components/UI/MultiSelector.vue';
 import AvailabilityInline from './components/AvailabilityInline.vue';
+import Export from '@/components/config/Export.vue';
 
 /* =============================================================================
    AUTH / FETCH
@@ -422,7 +423,6 @@ function inflateFromBackend() {
     originalPairs.value = new Set(arr.map(r => rowPairKey(r)));
     dirty.value = false;
 
-    // garantia
     applyUnitsSummaryPatchFromDefaults(store.detail?.enterprise_defaults);
 }
 
@@ -436,13 +436,8 @@ async function refreshDetail() {
         include_zero: showZero.value ? 1 : 0,
     });
 
-    // 1) backend -> rows com summary
     inflateFromBackend();
-
-    // 2) draft -> merge sem matar summary
     loadDraftIfAnySafe();
-
-    // 3) garantia final
     applyUnitsSummaryPatchFromDefaults(store.detail?.enterprise_defaults);
 }
 
@@ -466,7 +461,6 @@ function uuid() {
     return (crypto?.randomUUID?.() ?? `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`);
 }
 
-/* --- manual/external --- */
 const showManualInAdd = ref(false);
 const manualForm = ref({
     name: '',
@@ -546,25 +540,16 @@ function commitEditRowName(row) {
     cancelEditRowName();
 }
 
-/* summary para AvailabilityInline: mostra totalUnits mesmo quando summary não existe */
+/* summary para AvailabilityInline */
 function availabilitySummaryForRow(r) {
-    // ERP
     if (r?.units_summary) {
-        // garante totalUnits quando vier em outro formato (defensivo)
         if (r.totalUnits != null && (r.units_summary.totalUnits == null)) {
             return { ...r.units_summary, totalUnits: Number(r.totalUnits || 0) };
         }
         return r.units_summary;
     }
-
-    // manual/external
-    if (!r?.erp_id) {
-        return { totalUnits: Number(r.totalUnits || 0) };
-    }
-
-    // fallback: se tiver totalUnits mas não tiver summary
+    if (!r?.erp_id) return { totalUnits: Number(r.totalUnits || 0) };
     if (r?.totalUnits != null) return { totalUnits: Number(r.totalUnits || 0) };
-
     return null;
 }
 
@@ -574,25 +559,21 @@ function addSelected() {
         return;
     }
 
-    // EDIT mode (vincula CC no row existente) — mantém comportamento atual
+    // EDIT mode (vincula CC no row existente)
     if (pickerMode.value === 'edit' && rowBeingEdited.value) {
         const chosen = selectedToAdd.value[0];
         const erpId = String(chosen.id || chosen.erp_id || chosen);
         const name = chosen.name || erpId;
 
         rowBeingEdited.value.erp_id = erpId;
-
-        // Mantemos enterprise_key como está; só muda ERP e nome.
         rowBeingEdited.value.name = name;
 
-        // ✅ ao editar CC, tenta repor summary pelo defaults
         applyUnitsSummaryPatchFromDefaults(store.detail?.enterprise_defaults);
-
         closeAddModal();
         return;
     }
 
-    // ADD mode (adiciona itens do ERP)
+    // ADD mode
     const ids = selectedToAdd.value.map(x => String(x.id || x.erp_id || x));
     for (const erp_id of ids) {
         const exists = rows.value.find(r => String(r.erp_id) === erp_id && String(r.alias_id || 'default') === 'default');
@@ -798,7 +779,7 @@ const totals = computed(() => {
 });
 
 /* =============================================================================
-   ✅ TOTALIZAÇÃO POR MÊS (linha final da tabela)
+   ✅ TOTALIZAÇÃO POR MÊS (somatória no head e no total final)
 ============================================================================= */
 const monthTotals = computed(() => {
     const byMonth = {};
@@ -819,9 +800,105 @@ const monthTotals = computed(() => {
 });
 
 /* =============================================================================
+   ✅ SOMA DA LINHA (para mostrar no “campo de ações”)
+============================================================================= */
+function rowSumUnits(row) {
+    let u = 0;
+    for (const ym of monthKeys.value) u += Number(row.values?.[ym]?.units || 0);
+    return u;
+}
+function rowSumVgv(row) {
+    let v = 0;
+    for (const ym of monthKeys.value) v += Number(vgvValue(row, ym) || 0);
+    return v;
+}
+
+/* =============================================================================
    ROW DISABLED
 ============================================================================= */
 const rowDisabled = computed(() => !!(store.detail?.projection?.is_locked) || !isAdmin.value);
+
+/* =============================================================================
+   ✅ MODAL: editar SOMENTE (defaultPrice, defaultMarketingPct, defaultCommissionPct + duplicar/remover)
+============================================================================= */
+const showRowDefaults = ref(false);
+const rowDefaultsTarget = ref(null);
+
+const rowDefaultsForm = ref({
+    defaultPrice: 0,
+    defaultMarketingPct: 0,
+    defaultCommissionPct: 0,
+});
+
+function openRowDefaultsModal(row) {
+    if (rowDisabled.value) return;
+    rowDefaultsTarget.value = row;
+    rowDefaultsForm.value = {
+        defaultPrice: Number(row?.defaultPrice || 0),
+        defaultMarketingPct: Number(row?.defaultMarketingPct || 0),
+        defaultCommissionPct: Number(row?.defaultCommissionPct || 0),
+    };
+    showRowDefaults.value = true;
+    nextTick(() => document.getElementById('row-default-price')?.focus());
+}
+
+function closeRowDefaultsModal() {
+    showRowDefaults.value = false;
+    rowDefaultsTarget.value = null;
+}
+
+function applyRowDefaultsModal() {
+    const row = rowDefaultsTarget.value;
+    if (!row) return;
+
+    row.defaultPrice = Number(rowDefaultsForm.value.defaultPrice || 0);
+    row.defaultMarketingPct = Number(rowDefaultsForm.value.defaultMarketingPct || 0);
+    row.defaultCommissionPct = Number(rowDefaultsForm.value.defaultCommissionPct || 0);
+
+    onDefaultPriceChange(row);
+    rows.value = [...rows.value];
+
+    closeRowDefaultsModal();
+}
+
+/* =============================================================================
+   EXPORT (Excel/CSV)
+============================================================================= */
+const exportOpen = ref(false);
+
+const exportSource = computed(() => {
+    const out = [];
+    for (const r of filteredRows.value) {
+        for (const ym of monthKeys.value) {
+            const c = ensureCell(r, ym);
+            // exporta tudo do range (inclusive zeros), pra ter visão completa fora do sistema
+            const units = Number(c.units || 0);
+            const price = Number(c.price || 0) || Number(r.defaultPrice || 0);
+            const vgv = Number(vgvValue(r, ym) || 0);
+
+            out.push({
+                enterprise_name: r.name,
+                enterprise_key: r.enterprise_key,
+                erp_id: r.erp_id || null,
+                alias_id: r.alias_id || 'default',
+                year_month: ym,
+                month_label: monthLabel(ym),
+
+                units_target: units,
+                avg_price_target: price,
+                vgv_target: vgv,
+
+                marketing_pct: Number(c.marketing_pct || 0),
+                commission_pct: Number(c.commission_pct || 0),
+
+                default_avg_price: Number(r.defaultPrice || 0),
+                default_marketing_pct: Number(r.defaultMarketingPct || 0),
+                default_commission_pct: Number(r.defaultCommissionPct || 0),
+            });
+        }
+    }
+    return out;
+});
 
 /* =============================================================================
    DRAFT (corrigido)
@@ -856,7 +933,6 @@ function loadDraftIfAnySafe() {
         const data = JSON.parse(raw);
         if (!data?.rows) return false;
 
-        // ✅ merge sem matar summary
         mergeDraftIntoRowsPreservingSummary(
             data.rows,
             rows.value,
@@ -917,14 +993,12 @@ watch(showZero, async () => {
     await refreshDetail();
 });
 
-// ✅ garantia: se defaults chegarem depois, patcha
 watch(
     () => store.detail?.enterprise_defaults,
     (d) => applyUnitsSummaryPatchFromDefaults(d),
     { deep: true, immediate: true }
 );
 
-// ✅ garantia: se alguém substituir rows, patcha
 watch(
     () => rows.value,
     () => applyUnitsSummaryPatchFromDefaults(store.detail?.enterprise_defaults),
@@ -945,7 +1019,7 @@ const chipClass = {
 </script>
 
 <template>
-    <div class="p-4 md:p-6 space-y-4 max-w-[1400px] mx-auto">
+    <div class="p-4 md:p-6 space-y-4 w-full mx-auto">
         <!-- Header -->
         <div
             class="rounded-2xl border dark:border-gray-700 bg-white/90 dark:bg-gray-900/90 p-4 md:p-5 shadow-sm dark:shadow-lg">
@@ -983,7 +1057,7 @@ const chipClass = {
                         </span>
                     </h1>
 
-                    <p
+                    <!-- <p
                         class="text-xs md:text-sm text-gray-600 dark:text-gray-400 mt-1 flex items-center gap-2 flex-wrap">
                         <span class="inline-flex items-center gap-1">
                             <i class="far fa-calendar text-[11px] text-indigo-500"></i>
@@ -991,52 +1065,62 @@ const chipClass = {
                             <span class="font-semibold">{{ startMonth }}</span> → <span class="font-semibold">{{
                                 endMonth }}</span>
                         </span>
-                    </p>
+                    </p> -->
 
-                    <!-- ✅ Show zero -->
+                    <!-- Show zero -->
                     <label
                         class="mt-2 inline-flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300 select-none">
                         <input type="checkbox" v-model="showZero" class="accent-indigo-600" />
-                        Mostrar empreendimentos/linhas zeradas
+                        Mostrar empreendimentos sem projeção
                     </label>
                 </div>
 
                 <!-- Controls -->
-                <div class="flex items-center gap-2 flex-wrap md:justify-end">
-                    <div class="flex flex-col">
-                        <span class="text-[11px] text-gray-500">Mês inicial</span>
-                        <input type="month" v-model="startMonth"
-                            class="h-9 border dark:border-gray-700 rounded-lg px-3 bg-white/90 dark:bg-gray-900/70" />
-                    </div>
+                <div class="flex items-center flex-wrap md:justify-end">
+                    <div class="flex gap-2">
 
-                    <div class="flex flex-col">
-                        <span class="text-[11px] text-gray-500">Mês final</span>
-                        <input type="month" v-model="endMonth"
-                            class="h-9 border dark:border-gray-700 rounded-lg px-3 bg-white/90 dark:bg-gray-900/70" />
-                    </div>
+                        <div class="flex flex-col">
+                            <span class="text-[11px] text-gray-500">Mês inicial</span>
+                            <input type="month" v-model="startMonth"
+                                class="h-9 border dark:border-gray-700 rounded-lg px-3 bg-white/90 dark:bg-gray-900/70" />
+                        </div>
 
-                    <div class="flex gap-2 pt-5">
-                        <div class="hidden md:block w-px h-10 bg-gray-200 dark:bg-gray-700"></div>
+                        <div class="flex flex-col">
+                            <span class="text-[11px] text-gray-500">Mês final</span>
+                            <input type="month" v-model="endMonth"
+                                class="h-9 border dark:border-gray-700 rounded-lg px-3 bg-white/90 dark:bg-gray-900/70" />
+                        </div>
+
+                        <div class="hidden mt-4 md:block w-px h-10 bg-gray-200 dark:bg-gray-700"></div>
 
                         <button v-if="isAdmin"
                             @click="store.updateMeta(id, { is_active: !Boolean(store.detail?.projection?.is_active) })"
-                            class="h-9 px-3 rounded-lg border dark:border-gray-700 bg-white/90 dark:bg-gray-900/80 hover:bg-gray-50 dark:hover:bg-gray-800/80 text-xs md:text-sm font-medium flex items-center gap-2">
+                            class="h-9 mt-4 px-3 rounded-lg border dark:border-gray-700 bg-white/90 dark:bg-gray-900/80 hover:bg-gray-50 dark:hover:bg-gray-800/80 text-xs md:text-sm font-medium flex items-center gap-2">
                             <i class="fas"
                                 :class="store.detail?.projection?.is_active ? 'fa-toggle-off' : 'fa-toggle-on'"></i>
                             {{ store.detail?.projection?.is_active ? 'Inativar' : 'Ativar' }}
                         </button>
 
                         <button v-if="isAdmin" @click="toggleLock"
-                            class="h-9 px-3 rounded-lg border dark:border-gray-700 bg-white/90 dark:bg-gray-900/80 hover:bg-gray-50 dark:hover:bg-gray-800/80 text-xs md:text-sm font-medium flex items-center gap-2">
+                            class="h-9 mt-4 px-3 rounded-lg border dark:border-gray-700 bg-white/90 dark:bg-gray-900/80 hover:bg-gray-50 dark:hover:bg-gray-800/80 text-xs md:text-sm font-medium flex items-center gap-2">
                             <i class="fas"
                                 :class="store.detail?.projection?.is_locked ? 'fa-lock-open' : 'fa-lock'"></i>
                             {{ store.detail?.projection?.is_locked ? 'Desbloquear' : 'Bloquear' }}
                         </button>
 
                         <button v-if="isAdmin && !store.detail?.projection?.is_locked" @click="openAddModal"
-                            class="h-9 px-3 rounded-lg bg-indigo-600 text-white hover:bg-indigo-500 shadow-sm text-xs md:text-sm font-medium flex items-center gap-2">
+                            class="h-9 mt-4 px-3 rounded-lg bg-indigo-600 text-white hover:bg-indigo-500 shadow-sm text-xs md:text-sm font-medium flex items-center gap-2">
                             <i class="fas fa-plus-circle"></i>
-                            Adicionar Empreendimentos
+                            Empreendimentos
+                        </button>
+
+                        <!-- ✅ Export -->
+                        <button
+                            class="h-9 mt-4 px-3 rounded-lg border dark:border-gray-700 bg-white/90 dark:bg-gray-900/80 hover:bg-gray-50 dark:hover:bg-gray-800/80 text-xs md:text-sm font-medium flex items-center gap-2"
+                            v-tippy="'Exportar dados (CSV/Excel)'" @click="exportOpen = true"
+                            :disabled="!monthKeys.length || !filteredRows.length">
+                            <i class="fas fa-download"></i>
+                            Exportar
                         </button>
                     </div>
 
@@ -1100,22 +1184,43 @@ const chipClass = {
         </div>
 
         <!-- Grade -->
-        <div class="rounded-xl border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/50 shadow-sm
-             overflow-auto max-h-[calc(100vh-80px)]">
+        <div
+            class="rounded-xl border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/50 shadow-sm overflow-auto h-[80vh]">
             <table class="min-w-[1100px] w-full text-sm">
                 <thead
-                    class="bg-gray-50/95 dark:bg-gray-900/85 sticky top-0 z-10 backdrop-blur supports-[backdrop-filter]:bg-gray-50/80">
+                    class="bg-gray-50/95 dark:bg-gray-900/85 sticky top-0 z-20 backdrop-blur supports-[backdrop-filter]:bg-gray-50/80">
                     <tr class="text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-900">
-                        <!-- ✅ canto superior esquerdo: sticky TOP + LEFT -->
+                        <!-- canto superior esquerdo: sticky TOP + LEFT -->
                         <th
-                            class="px-4 py-3 text-left w-[420px] sticky left-0 top-0 z-50 bg-inherit border-r dark:border-gray-700">
+                            class="px-4 py-3 text-left sticky left-0 top-0 z-[70] bg-inherit border-r dark:border-gray-700">
                             Empreendimento
                         </th>
 
-                        <!-- ✅ meses sticky no topo -->
+                        <!-- meses com totais no THEAD -->
                         <th v-for="ym in monthKeys" :key="ym"
-                            class="px-4 py-3 text-center font-medium tracking-wide sticky top-0 z-[60] bg-inherit">
-                            {{ monthLabel(ym) }}
+                            class="px-4 py-2 text-center font-medium tracking-wide sticky top-0 z-[50] bg-inherit">
+                            <div class="flex flex-col items-center gap-1">
+                                <div class="text-sm font-semibold text-gray-800 dark:text-gray-100">
+                                    {{ monthLabel(ym) }}
+                                </div>
+
+                                <div class="flex items-center gap-3 text-[10px] text-gray-600 dark:text-gray-300">
+                                    <span class="inline-flex items-center gap-1">
+                                        <i class="fas fa-cubes text-[10px]"></i>
+                                        <span class="font-semibold">{{ monthTotals[ym]?.units || 0 }}</span>
+                                    </span>
+
+                                    <span class="inline-flex items-center gap-1">
+                                        <i class="fas fa-dollar-sign text-[10px]"></i>
+                                        <span class="font-semibold text-emerald-600">{{ fmtBRL(monthTotals[ym]?.revenue
+                                            || 0) }}</span>
+                                    </span>
+                                </div>
+                            </div>
+                        </th>
+                        <th
+                            class="px-4 py-3 text-center sticky right-0 top-0 z-[70] bg-inherit  border-l dark:border-gray-700">
+                            TOTAL
                         </th>
                     </tr>
                 </thead>
@@ -1128,19 +1233,23 @@ const chipClass = {
                         <!-- Coluna fixa -->
                         <td class="px-3 py-3 align-top sticky left-0 z-[5] border-r dark:border-gray-700"
                             :class="idx % 2 ? 'bg-gray-100 dark:bg-gray-900' : 'bg-white dark:bg-[#19222e]'">
-                            <div class="flex flex-wrap items-end gap-x-4 gap-y-2">
-                                <div class="flex justify-between w-full min-w-[420px]">
-                                    <div class="flex flex-col">
-                                        <button type="button"
+
+                            <!-- ✅ limita largura e alinha com between -->
+                            <div class="w-[280px] max-w-[280px]">
+                                <div class="flex items-start justify-between gap-3">
+
+                                    <!-- ESQUERDA -->
+                                    <div class="min-w-0 flex-1">
+                                        <!-- <button type="button"
                                             class="text-[11px] text-gray-500 block text-left underline decoration-dotted underline-offset-2 hover:text-indigo-600 disabled:text-gray-400 disabled:no-underline"
                                             :disabled="rowDisabled" @click="openEditEnterpriseModal(r)">
                                             Centro de Custo:
                                             <span v-if="r.erp_id">{{ r.erp_id }}</span>
                                             <span v-else class="text-orange-600 font-semibold">— manual —</span>
-                                        </button>
+                                        </button> -->
 
-                                        <!-- ✅ Nome clicável p/ editar -->
-                                        <div class="h-9 px-2 -mb-2 rounded flex items-center">
+                                        <!-- Nome clicável -->
+                                        <div class="h-9 -mb-2 rounded flex items-center">
                                             <span v-if="editingRowNameKey !== rowPairKey(r)"
                                                 class="truncate font-medium cursor-text" @click="startEditRowName(r)">
                                                 {{ r.name }}
@@ -1152,70 +1261,60 @@ const chipClass = {
                                                 class="w-full h-9 px-2 rounded border border-gray-200 dark:border-gray-700 bg-white/90 dark:bg-gray-900/70 focus:outline-none" />
                                         </div>
 
-                                        <!-- ✅ DISPONIBILIDADE -->
+                                        <!-- Disponibilidade -->
                                         <AvailabilityInline :summary="r.units_summary" :total-units="r.totalUnits"
                                             :editable="!rowDisabled"
                                             @update:totalUnits="(v) => { r.totalUnits = v; rows = [...rows]; }" />
                                     </div>
 
-                                    <div class="flex m-auto gap-2">
-                                        <!-- Ticket médio padrão -->
-                                        <div>
-                                            <label class="text-[11px] text-gray-500 block">Ticket médio padrão</label>
-                                            <input type="text" inputmode="numeric" :disabled="rowDisabled"
-                                                :value="moneyBR(r.defaultPrice)"
-                                                @input="(e) => { r.defaultPrice = parseMoneyBR(e.target.value); setMaskedInputValue(e.target, r.defaultPrice); }"
-                                                @blur="onDefaultPriceChange(r)"
-                                                class="w-32 h-9 px-2 rounded border border-gray-200 dark:border-gray-700 bg-white/90 dark:bg-gray-900/70 focus:outline-none" />
+                                    <!-- DIREITA (resumo + editar) -->
+                                    <div class="flex flex-col items-center gap-2">
+
+                                        <!-- ✅ mini visualização -->
+                                        <div
+                                            class="hidden sm:flex flex-col gap-1 px-2 py-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-white/70 dark:bg-gray-900/40">
+
+                                            <!-- <div
+                                                class="flex items-center justify-between gap-1 text-[10px] text-gray-600 dark:text-gray-300">
+                                                <span class="whitespace-nowrap">Marketing:</span>
+                                                <span class="font-semibold">
+                                                    {{ Number(r.defaultMarketingPct || 0).toFixed(2) }}%
+                                                </span>
+                                            </div> -->
+
+                                            <div v-tippy="'Comissão'"
+                                                class="h-54 w-8 flex items-center justify-between cursor-pointer gap-1 text-[12px] text-gray-600 dark:text-gray-300">
+                                                {{ Number(r.defaultCommissionPct || 0).toFixed(2) }}%
+                                            </div>
                                         </div>
 
-                                        <!-- % Marketing -->
-                                        <div>
-                                            <label class="text-[11px] text-gray-500 block">% Marketing</label>
-                                            <input type="number" min="0" max="100" step="0.01" :disabled="rowDisabled"
-                                                v-model.number="r.defaultMarketingPct"
-                                                class="w-16 h-9 px-2 rounded border border-gray-200 dark:border-gray-700 bg-white/90 dark:bg-gray-900/70 focus:outline-none" />
-                                        </div>
+                                        <!-- Botão editar -->
+                                        <button type="button" @click="openRowDefaultsModal(r)" :disabled="rowDisabled"
+                                            class="h-7 w-12 inline-flex items-center justify-center rounded-lg border dark:border-gray-700 bg-white/90 dark:bg-gray-900/40 hover:bg-gray-50 dark:hover:bg-gray-800/70"
+                                            v-tippy="'Editar ticket médio / % mkt / % comissão'">
+                                            <i class="fas fa-pen-to-square"></i>
+                                        </button>
 
-                                        <!-- % Comissão -->
-                                        <div>
-                                            <label class="text-[11px] text-gray-500 block">% Comissão</label>
-                                            <input type="number" min="0" max="100" step="0.01" :disabled="rowDisabled"
-                                                v-model.number="r.defaultCommissionPct"
-                                                class="w-16 h-9 px-2 rounded border border-gray-200 dark:border-gray-700 bg-white/90 dark:bg-gray-900/70 focus:outline-none" />
-                                        </div>
-
-                                        <!-- Ações -->
-                                        <div class="flex items-center gap-3">
-                                            <button @click="duplicateRow(r)" :disabled="rowDisabled"
-                                                class="text-lg text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
-                                                <i class="fas fa-copy" v-tippy="'Duplicar Empreendimento'"></i>
-                                            </button>
-                                            <button @click="removeRow(r)" :disabled="rowDisabled"
-                                                class="text-lg text-red-600 hover:text-red-700">
-                                                <i class="fas fa-trash" v-tippy="'Remover Empreendimento'"></i>
-                                            </button>
-                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </td>
 
-                        <!-- Meses -->
-                        <td v-for="ym in monthKeys" :key="ym" class="px-3 py-2 align-center">
-                            <div class="flex gap-2">
+                        <!-- Meses (mantém exatamente a edição de unidades e VGV) -->
+                        <td v-for="ym in monthKeys" :key="ym" class="align-center p-1">
+                            <div class="flex gap-1">
                                 <!-- Unidades -->
                                 <div>
-                                    <label class="text-[11px] text-gray-500 block text-center">Qtd. Uni</label>
+                                    <label class="text-[10px] text-gray-500 block text-center">Qtd. Uni</label>
                                     <input :disabled="rowDisabled" v-model.number="ensureCell(r, ym).units"
                                         @input="onUnitsInput(r, ym)" type="number" min="0"
-                                        class="w-14 h-9 border text-center border-gray-200 dark:border-gray-800 rounded px-2 bg-white/90 dark:bg-gray-900/70 focus:outline-none"
+                                        class="w-14 h-8 border text-center border-gray-200 dark:border-gray-800 rounded px-2 bg-white/90 dark:bg-gray-900/70 focus:outline-none"
                                         placeholder="Uds" />
                                 </div>
 
                                 <!-- VGV -->
                                 <div>
-                                    <label class="text-[11px] text-gray-500 block text-center">VGV</label>
+                                    <label class="text-[10px] text-gray-500 block text-center">VGV</label>
                                     <input :disabled="rowDisabled" type="text" inputmode="numeric"
                                         :value="moneyBR(vgvValue(r, ym))" @input="(e) => {
                                             const c = ensureCell(r, ym);
@@ -1224,7 +1323,7 @@ const chipClass = {
                                             setMaskedInputValue(e.target, vgvValue(r, ym));
                                             r.values = { ...r.values };
                                         }"
-                                        class="w-36 h-9 border border-gray-200 dark:border-gray-800 rounded px-2 bg-white/90 dark:bg-gray-900/70 focus:outline-none" />
+                                        class="w-32 h-8 border border-gray-200 dark:border-gray-800 rounded px-2 bg-white/90 dark:bg-gray-900/70 focus:outline-none" />
 
                                     <div class="text-[10px] text-gray-500 flex items-center justify-between">
                                         <span>{{ fmtBRL((r.values[ym]?.price || 0) || (r.defaultPrice || 0)) }}</span>
@@ -1238,37 +1337,25 @@ const chipClass = {
                             </div>
                         </td>
 
-                    </tr>
+                        <!-- ✅ TOTAL da linha (Unidades + VGV) - coluna fixa à direita -->
+                        <td class="px-3 py-2 text-center sticky right-0 z-10 border-l dark:border-gray-700"
+                            :class="idx % 2 ? 'bg-gray-100 dark:bg-gray-900' : 'bg-white dark:bg-[#19222e]'">
 
-                    <!-- ✅ LINHA FINAL: TOTALIZAÇÃO POR MÊS (Unidades + VGV) -->
-                    <tr v-if="monthKeys.length"
-                        class="bg-gray-50 dark:bg-gray-900/30 border-t border-gray-200 dark:border-gray-700">
-                        <td
-                            class="px-4 py-3 sticky left-0 z-30 border-r dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
-                            <div class="flex items-center justify-between gap-3">
-                                <span class="font-semibold text-gray-900 dark:text-gray-100">
-                                    TOTAL
-                                </span>
-                            </div>
-                        </td>
-
-                        <td v-for="ym in monthKeys" :key="`total-${ym}`" class="px-3 py-2">
-                            <div class="flex gap-2 justify-center">
-                                <div class="text-center">
-                                    <div class="text-[11px] text-gray-500">Qtd. Uni</div>
-                                    <div class="font-semibold text-gray-900 dark:text-white">
-                                        {{ monthTotals[ym]?.units || 0 }}
-                                    </div>
+                            <div class="flex flex-col items-center">
+                                <div
+                                    class="inline-flex items-center gap-1 text-[11px] text-gray-600 dark:text-gray-300">
+                                    <i class="fas fa-cubes text-[11px]"></i>
+                                    <span class="font-semibold">{{ rowSumUnits(r) }}</span>
                                 </div>
 
-                                <div class="text-center">
-                                    <div class="text-[11px] text-gray-500">VGV</div>
-                                    <div class="font-semibold text-emerald-700 dark:text-emerald-300">
-                                        {{ fmtBRL(monthTotals[ym]?.revenue || 0) }}
-                                    </div>
+                                <div
+                                    class="inline-flex items-center gap-1 text-[11px] text-emerald-700 dark:text-emerald-300">
+                                    <i class="fas fa-dollar-sign text-[11px]"></i>
+                                    <span class="font-semibold">{{ fmtBRL(rowSumVgv(r)) }}</span>
                                 </div>
                             </div>
                         </td>
+
                     </tr>
                 </tbody>
             </table>
@@ -1276,6 +1363,121 @@ const chipClass = {
 
         <!-- Logs -->
         <ProjectionLogsDrawer :id="id" />
+
+        <!-- ✅ Export modal -->
+        <Export v-model="exportOpen" :source="exportSource" title="Exportação da projeção" filename="projecao-vendas"
+            initial-delimiter=";" initial-array-mode="join"
+            :preselect="['enterprise_name', 'erp_id', 'year_month', 'units_target', 'avg_price_target', 'vgv_target', 'marketing_pct', 'commission_pct']" />
+
+        <!-- ✅ Modal: defaults (ticket médio padrão, % mkt, % comissão) -->
+        <div v-if="showRowDefaults" class="fixed inset-0 z-[80]">
+            <div class="absolute inset-0 bg-black/40" @click="closeRowDefaultsModal"></div>
+
+            <div class="absolute inset-0 flex items-center justify-center p-4 z-[81]">
+                <div class="bg-white dark:bg-gray-900 rounded-2xl p-4 w-full max-w-lg shadow-xl border dark:border-gray-700"
+                    @click.stop>
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                            <i class="fas fa-sliders"></i>
+                            Editar parâmetros do empreendimento
+                        </h3>
+                        <button @click="closeRowDefaultsModal" class="text-gray-500 hover:text-gray-700">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+
+                    <div class="h-9 rounded flex items-center">
+                        <span v-if="editingRowNameKey !== rowPairKey(rowDefaultsTarget)"
+                            class="truncate font-medium cursor-text" @click="startEditRowName(rowDefaultsTarget)">
+                            {{ rowDefaultsTarget.name }}
+                        </span>
+
+                        <input v-else :id="`row-name-${rowPairKey(rowDefaultsTarget)}`" v-model="tempRowName"
+                            :disabled="rowDisabled" @keyup.enter="commitEditRowName(rowDefaultsTarget)"
+                            @keyup.esc="cancelEditRowName()" @blur="commitEditRowName(rowDefaultsTarget)"
+                            class="w-full px-2 h-9 rounded border border-gray-200 dark:border-gray-700 bg-white/90 dark:bg-gray-900/70 focus:outline-none" />
+                    </div>
+
+                    <button type="button"
+                        class="text-[11px] pb-2 text-gray-500 block text-left underline decoration-dotted underline-offset-2 hover:text-indigo-600 disabled:text-gray-400 disabled:no-underline"
+                        :disabled="rowDisabled" @click="openEditEnterpriseModal(r)">
+                        Centro de Custo:
+                        <span v-if="rowDefaultsTarget?.erp_id">{{ rowDefaultsTarget.erp_id }}</span>
+                        <span v-else class="text-orange-600 font-semibold">— manual —</span>
+                    </button>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
+                        <!-- Ticket médio padrão -->
+                        <div>
+                            <label class="text-[11px] text-gray-500 block">Ticket médio padrão</label>
+                            <input id="row-default-price" type="text" inputmode="numeric" :disabled="rowDisabled"
+                                :value="moneyBR(rowDefaultsForm.defaultPrice)"
+                                @input="(e) => { rowDefaultsForm.defaultPrice = parseMoneyBR(e.target.value); setMaskedInputValue(e.target, rowDefaultsForm.defaultPrice); }"
+                                class="w-full h-9 px-2 rounded border border-gray-200 dark:border-gray-700 bg-white/90 dark:bg-gray-900/70 focus:outline-none" />
+                        </div>
+
+                        <!-- % Marketing -->
+                        <div>
+                            <label class="text-[11px] text-gray-500 block">% Marketing</label>
+                            <input type="number" min="0" max="100" step="0.01" :disabled="rowDisabled"
+                                v-model.number="rowDefaultsForm.defaultMarketingPct"
+                                class="w-full h-9 px-2 rounded border border-gray-200 dark:border-gray-700 bg-white/90 dark:bg-gray-900/70 focus:outline-none" />
+                        </div>
+
+                        <!-- % Comissão -->
+                        <div>
+                            <label class="text-[11px] text-gray-500 block">% Comissão</label>
+                            <input type="number" min="0" max="100" step="0.01" :disabled="rowDisabled"
+                                v-model.number="rowDefaultsForm.defaultCommissionPct"
+                                class="w-full h-9 px-2 rounded border border-gray-200 dark:border-gray-700 bg-white/90 dark:bg-gray-900/70 focus:outline-none" />
+                        </div>
+                    </div>
+
+                    <p class="text-[11px] text-gray-500 mt-3">
+                        Ao salvar, o ticket médio padrão pode ser aplicado automaticamente aos meses com unidades
+                        (quando o preço do mês estiver vazio).
+                    </p>
+
+                    <div class="flex items-center justify-between gap-2 pt-4">
+                        <div class="flex items-center gap-2">
+                            <button type="button"
+                                class="h-9 px-3 rounded-lg border dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/70"
+                                @click="rowDefaultsTarget && duplicateRow(rowDefaultsTarget)"
+                                :disabled="rowDisabled || !rowDefaultsTarget">
+                                <i class="fas fa-copy mr-2"></i>
+                                Duplicar
+                            </button>
+
+                            <button type="button" class="h-9 px-3 rounded-lg bg-red-600 text-white hover:bg-red-500"
+                                @click="rowDefaultsTarget && (removeRow(rowDefaultsTarget), closeRowDefaultsModal())"
+                                :disabled="rowDisabled || !rowDefaultsTarget">
+                                <i class="fas fa-trash mr-2"></i>
+                                Remover
+                            </button>
+                        </div>
+
+                        <div class="flex items-center gap-2">
+                            <button type="button"
+                                class="h-9 px-3 rounded-lg border dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/70"
+                                @click="closeRowDefaultsModal">
+                                Cancelar
+                            </button>
+
+                            <button type="button"
+                                class="h-9 px-3 rounded-lg bg-emerald-600 text-white hover:bg-emerald-500"
+                                @click="applyRowDefaultsModal" :disabled="rowDisabled">
+                                Salvar
+                            </button>
+                        </div>
+                    </div>
+
+                    <p class="text-[11px] text-gray-500 pt-2">
+                        Obs.: as alterações persistem no backend quando você clicar em <strong>Salvar</strong> na tela
+                        principal.
+                    </p>
+                </div>
+            </div>
+        </div>
 
         <!-- Modal adicionar/editar empreendimentos (ERP + Manual) -->
         <div v-if="showAdd" class="fixed inset-0 z-[60]">
@@ -1363,10 +1565,7 @@ const chipClass = {
                                 <div>
                                     <label class="text-[11px] text-gray-500 block">Ticket médio</label>
                                     <input type="text" inputmode="numeric" :value="moneyBR(manualForm.defaultPrice)"
-                                        @input="(e) => {
-                                            manualForm.defaultPrice = parseMoneyBR(e.target.value);
-                                            setMaskedInputValue(e.target, manualForm.defaultPrice);
-                                        }"
+                                        @input="(e) => { manualForm.defaultPrice = parseMoneyBR(e.target.value); setMaskedInputValue(e.target, manualForm.defaultPrice); }"
                                         class="w-full h-10 border dark:border-gray-700 rounded-lg px-3 bg-white/90 dark:bg-gray-900/70" />
                                 </div>
 
