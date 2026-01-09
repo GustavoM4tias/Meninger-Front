@@ -1022,17 +1022,17 @@ const chipClass = {
     <div class="p-4 md:p-6 space-y-4 w-full mx-auto">
         <!-- Header -->
         <div
-            class="rounded-2xl border dark:border-gray-700 bg-white/90 dark:bg-gray-900/90 p-4 md:p-5 shadow-sm dark:shadow-lg">
+            class="relative rounded-2xl border dark:border-gray-700 bg-white/90 dark:bg-gray-900/90 p-4 md:p-5 shadow-sm dark:shadow-lg">
             <div
                 class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-gray-100 dark:border-gray-800 pb-3 mb-3">
                 <div class="min-w-0">
                     <h1
-                        class="text-2xl font-semibold leading-tight text-gray-900 dark:text-white flex items-center gap-2 flex-wrap">
+                        class="text-xl font-semibold leading-tight text-gray-900 dark:text-white flex items-center gap-2 flex-wrap">
                         <!-- Nome -->
                         <span v-if="!editingName" @click="startEditName"
                             class="cursor-text hover:underline decoration-dotted underline-offset-4 flex items-center gap-2">
                             <i class="fas fa-chart-line text-indigo-500"></i>
-                            <span class="truncate max-w-[260px] md:max-w-[360px]">
+                            <span class="truncate max-w-[260px]">
                                 {{ store.detail?.projection?.name }}
                             </span>
                         </span>
@@ -1041,21 +1041,23 @@ const chipClass = {
                             class="h-9 px-3 rounded-lg border border-indigo-200 dark:border-indigo-500/60 bg-white/95 dark:bg-gray-900/90 focus:outline-none focus:ring-2 focus:ring-indigo-400/60 text-sm"
                             :maxlength="120" />
 
-                        <!-- Chips -->
-                        <span class="px-2.5 py-1 rounded-full text-[11px] font-medium border flex items-center gap-1"
+                    </h1>
+                    <!-- Chips -->
+                    <div class="flex gap-1 pt-2">
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-medium border flex items-center gap-1"
                             :class="chipClass.locked(store.detail?.projection?.is_locked)">
                             <i class="fas"
                                 :class="store.detail?.projection?.is_locked ? 'fa-lock' : 'fa-lock-open'"></i>
                             {{ store.detail?.projection?.is_locked ? 'Bloqueada' : 'Aberta' }}
                         </span>
 
-                        <span class="px-2.5 py-1 rounded-full text-[11px] font-medium border flex items-center gap-1"
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-medium border flex items-center gap-1"
                             :class="chipClass.active(store.detail?.projection?.is_active)">
                             <i class="fas"
                                 :class="store.detail?.projection?.is_active ? 'fa-circle-check' : 'fa-circle-dot'"></i>
                             {{ store.detail?.projection?.is_active ? 'Ativa' : 'Inativa' }}
                         </span>
-                    </h1>
+                    </div>
 
                     <!-- <p
                         class="text-xs md:text-sm text-gray-600 dark:text-gray-400 mt-1 flex items-center gap-2 flex-wrap">
@@ -1074,6 +1076,8 @@ const chipClass = {
                         Mostrar empreendimentos sem projeção
                     </label>
                 </div>
+
+
 
                 <!-- Controls -->
                 <div class="flex items-center flex-wrap md:justify-end">
@@ -1122,22 +1126,22 @@ const chipClass = {
                             <i class="fas fa-download"></i>
                             Exportar
                         </button>
+
+                        <button v-if="isAdmin && !store.detail?.projection?.is_locked && dirty"
+                            @click="discardChangesAndReloadFromBackend"
+                            class="h-9 mt-4 px-3 rounded-lg border dark:border-gray-700 bg-white/90 dark:bg-gray-900/80 hover:bg-gray-50 dark:hover:bg-gray-800/80 text-xs md:text-sm font-medium flex items-center gap-2">
+                            <i class="fas fa-rotate-left"></i>
+                            Cancelar
+                        </button>
+
+                        <button v-if="isAdmin && !store.detail?.projection?.is_locked && dirty" @click="onSaveClick"
+                            :disabled="saving || !monthKeys.length"
+                            class="h-9 mt-4 px-3 rounded-lg bg-emerald-600 text-white hover:bg-emerald-500 disabled:opacity-60 shadow-sm text-xs md:text-sm font-semibold flex items-center gap-2">
+                            <i v-if="!saving" class="fas fa-save"></i>
+                            <i v-else class="fas fa-circle-notch fa-spin"></i>
+                            {{ saving ? 'Salvando...' : 'Salvar' }}
+                        </button>
                     </div>
-
-                    <button v-if="isAdmin && !store.detail?.projection?.is_locked && dirty"
-                        @click="discardChangesAndReloadFromBackend"
-                        class="h-9 px-3 rounded-lg border dark:border-gray-700 bg-white/90 dark:bg-gray-900/80 hover:bg-gray-50 dark:hover:bg-gray-800/80 text-xs md:text-sm font-medium flex items-center gap-2">
-                        <i class="fas fa-rotate-left"></i>
-                        Cancelar alterações
-                    </button>
-
-                    <button v-if="isAdmin && !store.detail?.projection?.is_locked && dirty" @click="onSaveClick"
-                        :disabled="saving || !monthKeys.length"
-                        class="h-9 px-3 rounded-lg bg-emerald-600 text-white hover:bg-emerald-500 disabled:opacity-60 shadow-sm text-xs md:text-sm font-semibold flex items-center gap-2">
-                        <i v-if="!saving" class="fas fa-save"></i>
-                        <i v-else class="fas fa-circle-notch fa-spin"></i>
-                        {{ saving ? 'Salvando...' : 'Salvar' }}
-                    </button>
                 </div>
             </div>
 
@@ -1192,13 +1196,13 @@ const chipClass = {
                     <tr class="text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-900">
                         <!-- canto superior esquerdo: sticky TOP + LEFT -->
                         <th
-                            class="px-4 py-3 text-left sticky left-0 top-0 z-[70] bg-inherit border-r dark:border-gray-700">
+                            class="px-4 py-3 text-left sticky left-0 top-0 z-[70] bg-inherit border dark:border-gray-800">
                             Empreendimento
                         </th>
 
                         <!-- meses com totais no THEAD -->
                         <th v-for="ym in monthKeys" :key="ym"
-                            class="px-4 py-2 text-center font-medium tracking-wide sticky top-0 z-[50] bg-inherit">
+                            class="px-4 py-2 text-center font-medium tracking-wide sticky top-0 z-[50] bg-inherit border dark:border-gray-800">
                             <div class="flex flex-col items-center gap-1">
                                 <div class="text-sm font-semibold text-gray-800 dark:text-gray-100">
                                     {{ monthLabel(ym) }}
@@ -1231,7 +1235,7 @@ const chipClass = {
                         :class="idx % 2 ? 'bg-gray-100 dark:bg-gray-900' : 'bg-white dark:bg-[#19222e]'">
 
                         <!-- Coluna fixa -->
-                        <td class="px-3 py-3 align-top sticky left-0 z-[5] border-r dark:border-gray-700"
+                        <td class="px-3 py-3 align-top sticky left-0 z-[5] border dark:border-gray-800"
                             :class="idx % 2 ? 'bg-gray-100 dark:bg-gray-900' : 'bg-white dark:bg-[#19222e]'">
 
                             <!-- ✅ limita largura e alinha com between -->
@@ -1301,7 +1305,7 @@ const chipClass = {
                         </td>
 
                         <!-- Meses (mantém exatamente a edição de unidades e VGV) -->
-                        <td v-for="ym in monthKeys" :key="ym" class="align-center p-1">
+                        <td v-for="ym in monthKeys" :key="ym" class="align-center p-1 border dark:border-gray-800">
                             <div class="flex gap-1">
                                 <!-- Unidades -->
                                 <div>
