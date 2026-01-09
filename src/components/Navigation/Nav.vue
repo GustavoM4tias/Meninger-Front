@@ -501,7 +501,7 @@ onMounted(async () => {
                 </ul>
 
                 <!-- Bottom Section -->
-                <ul class="pt-4 mt-4 space-y-2 font-medium border-t border-gray-200 dark:border-gray-700">
+                <ul class="space-y-2 font-medium border-t border-gray-200 dark:border-gray-700">
                     <div class="block md:hidden">
                         <Search />
                     </div>
