@@ -4,27 +4,9 @@ import { useRoute, onBeforeRouteLeave } from 'vue-router';
 import { useProjectionsStore } from '@/stores/Comercial/Projections/projectionsStore';
 import ProjectionLogsDrawer from './components/ProjectionLogsDrawer.vue';
 import { useAuthStore } from '@/stores/Settings/Auth/authStore';
-import API_URL from '@/config/apiUrl';
 import MultiSelector from '@/components/UI/MultiSelector.vue';
 import AvailabilityInline from './components/AvailabilityInline.vue';
 import Export from '@/components/config/Export.vue';
-
-/* =============================================================================
-   AUTH / FETCH
-============================================================================= */
-function getToken() { return localStorage.getItem('token'); }
-async function requestWithAuth(url, options = {}) {
-    const headers = new Headers(options.headers || {});
-    const token = getToken(); if (token) headers.set('Authorization', `Bearer ${token}`);
-    const isForm = options.body instanceof FormData;
-    if (!isForm && !headers.has('Content-Type') && options.method && options.method !== 'GET') {
-        headers.set('Content-Type', 'application/json');
-    }
-    const res = await fetch(url, { ...options, headers });
-    const tryJson = async () => res.json().catch(() => ({}));
-    if (!res.ok) { const j = await tryJson(); throw new Error(j?.error || j?.message || `HTTP ${res.status}`); }
-    return tryJson();
-}
 
 /* =============================================================================
    HELPERS YM (YYYY-MM)
@@ -101,7 +83,7 @@ const monthLabel = (ym) => {
 };
 
 /* =============================================================================
-   META: EDIT NAME (mantido)
+   META: EDIT NAME
 ============================================================================= */
 const editingName = ref(false);
 const tempName = ref('');
@@ -153,8 +135,11 @@ function hasValueToSave(cell) {
 }
 
 /* =============================================================================
-   ✅ EXIBIÇÃO: quando showZero OFF, só mostra se tiver valor no período
+   EXIBIÇÃO: quando showZero OFF, só mostra se tiver valor no período
 ============================================================================= */
+function rowPairKey(r) {
+    return `${String(r.enterprise_key)}|${String(r.alias_id || 'default')}|${String(r.erp_id || '')}`;
+}
 function rowHasAnyValueInRange(row) {
     const months = monthKeys.value || [];
     for (const ym of months) {
@@ -163,6 +148,8 @@ function rowHasAnyValueInRange(row) {
     }
     return false;
 }
+
+const originalPairs = ref(new Set());
 
 const baseRowsForUI = computed(() => {
     const arr = rows.value || [];
@@ -175,9 +162,10 @@ const baseRowsForUI = computed(() => {
 });
 
 /* =============================================================================
-   FILTER: MultiSelector
+   FILTER: MultiSelector (Empreendimentos) + CIDADES
 ============================================================================= */
 const selectedEnterpriseLabels = ref([]);
+const selectedCityLabels = ref([]);
 
 const projectionEnterprises = computed(() => {
     const map = new Map();
@@ -207,16 +195,40 @@ const selectedEnterpriseIds = computed(() => {
     return ids;
 });
 
+// cidades derivadas das rows (já com applyCitiesToRows)
+const projectionCities = computed(() => {
+    const set = new Set();
+    for (const r of baseRowsForUI.value || []) {
+        if (r?.city) set.add(String(r.city));
+    }
+    return [...set].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+});
+const cityOptions = computed(() => projectionCities.value);
+
 const filteredRows = computed(() => {
     const base = baseRowsForUI.value;
-    if (!selectedEnterpriseLabels.value.length) return base;
+
+    const hasEnterpriseFilter = !!selectedEnterpriseLabels.value.length;
+    const hasCityFilter = !!selectedCityLabels.value.length;
+
+    if (!hasEnterpriseFilter && !hasCityFilter) return base;
+
     const ids = selectedEnterpriseIds.value;
-    return base.filter(r => ids.has(String(r.erp_id || r.enterprise_key)));
+    const cities = new Set((selectedCityLabels.value || []).map(String));
+
+    return base.filter((r) => {
+        const okEnterprise = !hasEnterpriseFilter || ids.has(String(r.erp_id || r.enterprise_key));
+        const okCity = !hasCityFilter || (r?.city && cities.has(String(r.city)));
+        return okEnterprise && okCity;
+    });
 });
 
 watch(rows, () => {
     const allowed = new Set(enterprisesOptions.value);
     selectedEnterpriseLabels.value = (selectedEnterpriseLabels.value || []).filter(n => allowed.has(n));
+
+    const allowedCities = new Set(cityOptions.value);
+    selectedCityLabels.value = (selectedCityLabels.value || []).filter(n => allowedCities.has(n));
 }, { deep: true });
 
 /* =============================================================================
@@ -255,7 +267,7 @@ function onDefaultPriceChange(row) {
 }
 
 /* =============================================================================
-   ✅ AVAILABILITY FIX (units_summary)
+   AVAILABILITY FIX (units_summary)
 ============================================================================= */
 function buildSummaryByErpFromDefaults(defaults) {
     const byErp = new Map();
@@ -308,8 +320,7 @@ function mergeDraftIntoRowsPreservingSummary(draftRows, backendRows, defaults) {
 
         const erp =
             dr?.erp_id != null ? String(dr.erp_id) :
-                br?.erp_id != null ? String(br.erp_id) :
-                    '';
+                br?.erp_id != null ? String(br.erp_id) : '';
 
         const summary =
             dr?.units_summary ||
@@ -340,6 +351,36 @@ function mergeDraftIntoRowsPreservingSummary(draftRows, backendRows, defaults) {
 }
 
 /* =============================================================================
+   CIDADES: aplica city nas rows a partir do enterprisePicker (store)
+============================================================================= */
+const cityByErpId = computed(() => {
+    const m = new Map();
+    for (const it of store.enterprisePicker || []) {
+        if (it?.id == null) continue;
+        if (it?.city) m.set(String(it.id), String(it.city));
+    }
+    return m;
+});
+
+function applyCitiesToRows() {
+    if (!rows.value?.length) return;
+    const map = cityByErpId.value;
+    let changed = false;
+
+    for (const r of rows.value) {
+        const erp = r?.erp_id != null ? String(r.erp_id) : '';
+        if (!erp) continue;
+
+        const city = map.get(erp) || null;
+        if (city && r.city !== city) {
+            r.city = city;
+            changed = true;
+        }
+    }
+    if (changed) rows.value = [...rows.value];
+}
+
+/* =============================================================================
    INFLATE (backend)
 ============================================================================= */
 function inflateFromBackend() {
@@ -349,7 +390,6 @@ function inflateFromBackend() {
     const pairs = detail.enterprise_defaults || [];
     const map = new Map();
 
-    // key: enterprise_key|alias|erp
     for (const d of pairs) {
         const ek = String(d.enterprise_key);
         const alias = String(d.alias_id || 'default');
@@ -361,6 +401,7 @@ function inflateFromBackend() {
             alias_id: alias,
             erp_id: d.erp_id ? String(d.erp_id) : null,
             name: d.enterprise_name_cache || (d.erp_id ? `ERP ${d.erp_id}` : 'Empreendimento'),
+            city: null,
 
             units_summary: d.units_summary || null,
 
@@ -372,7 +413,6 @@ function inflateFromBackend() {
         });
     }
 
-    // lines
     for (const l of (detail.lines || [])) {
         const ek = String(l.enterprise_key);
         const alias = String(l.alias_id || 'default');
@@ -385,6 +425,8 @@ function inflateFromBackend() {
                 alias_id: alias,
                 erp_id: l.erp_id ? String(l.erp_id) : null,
                 name: l.enterprise_name_cache || (l.erp_id ? `ERP ${l.erp_id}` : 'Empreendimento'),
+                city: null,
+
                 totalUnits: null,
                 units_summary: null,
                 defaultPrice: 0,
@@ -407,7 +449,6 @@ function inflateFromBackend() {
         };
     }
 
-    // completa meses do range (zeros)
     const months = monthKeys.value;
     const arr = [...map.values()].map(r => {
         const values = { ...(r.values || {}) };
@@ -424,10 +465,11 @@ function inflateFromBackend() {
     dirty.value = false;
 
     applyUnitsSummaryPatchFromDefaults(store.detail?.enterprise_defaults);
+    applyCitiesToRows();
 }
 
 /* =============================================================================
-   REFRESH DETAIL (corrigido)
+   REFRESH DETAIL
 ============================================================================= */
 async function refreshDetail() {
     await store.fetchDetail(id, {
@@ -439,23 +481,21 @@ async function refreshDetail() {
     inflateFromBackend();
     loadDraftIfAnySafe();
     applyUnitsSummaryPatchFromDefaults(store.detail?.enterprise_defaults);
+    applyCitiesToRows();
 }
 
 /* =============================================================================
-   ADD / EDIT ENTERPRISE PICKER + ✅ MANUAL/EXTERNO (mesclado)
+   ADD / EDIT ENTERPRISE PICKER (STORE) + busca por cidade
 ============================================================================= */
-const enterprises = ref([]); // [{ id, name }]
 const search = ref('');
+const citySearch = ref('');
 const showAdd = ref(false);
 const selectedToAdd = ref([]);
 
-const pickerMode = ref('add');   // 'add' | 'edit'
+const pickerMode = ref('add'); // 'add' | 'edit'
 const rowBeingEdited = ref(null);
 
-async function loadEnterprises() {
-    const data = await requestWithAuth(`${API_URL}/projections/enterprise-picker`);
-    enterprises.value = data.results || data || [];
-}
+const modalSelectedCities = ref([]);
 
 function uuid() {
     return (crypto?.randomUUID?.() ?? `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`);
@@ -464,6 +504,7 @@ function uuid() {
 const showManualInAdd = ref(false);
 const manualForm = ref({
     name: '',
+    city: '', // ✅ obrigatório
     totalUnits: 0,
     defaultPrice: 0,
     defaultMarketingPct: 0,
@@ -473,20 +514,26 @@ const manualForm = ref({
 function resetModalState() {
     selectedToAdd.value = [];
     search.value = '';
+    citySearch.value = '';
+    modalSelectedCities.value = [];
     rowBeingEdited.value = null;
     pickerMode.value = 'add';
     showManualInAdd.value = false;
-    manualForm.value = { name: '', totalUnits: 0, defaultPrice: 0, defaultMarketingPct: 0, defaultCommissionPct: 0 };
+    manualForm.value = { name: '', city: '', totalUnits: 0, defaultPrice: 0, defaultMarketingPct: 0, defaultCommissionPct: 0 };
 }
 
-function openAddModal() {
+async function openAddModal() {
     pickerMode.value = 'add';
     rowBeingEdited.value = null;
     selectedToAdd.value = [];
     search.value = '';
+    citySearch.value = '';
+    modalSelectedCities.value = [];
     showManualInAdd.value = false;
-    manualForm.value = { name: '', totalUnits: 0, defaultPrice: 0, defaultMarketingPct: 0, defaultCommissionPct: 0 };
+    manualForm.value = { name: '', city: '', totalUnits: 0, defaultPrice: 0, defaultMarketingPct: 0, defaultCommissionPct: 0 };
+
     showAdd.value = true;
+    await store.fetchEnterprisePicker(); // ✅ store
 }
 
 function closeAddModal() {
@@ -501,57 +548,25 @@ async function openEditEnterpriseModal(row) {
     rowBeingEdited.value = row;
     selectedToAdd.value = [];
     search.value = '';
+    citySearch.value = '';
+    modalSelectedCities.value = [];
     showManualInAdd.value = false;
 
-    if (!enterprises.value.length) await loadEnterprises();
+    await store.fetchEnterprisePicker();
 
-    const current = enterprises.value.find(e => String(e.id) === String(row.erp_id));
+    const current = (store.enterprisePicker || []).find(e => String(e.id) === String(row.erp_id));
     if (current) selectedToAdd.value = [current];
 
     showAdd.value = true;
 }
 
-/* inline edit do nome da linha */
-function rowPairKey(r) {
-    return `${String(r.enterprise_key)}|${String(r.alias_id || 'default')}|${String(r.erp_id || '')}`;
-}
-
-const editingRowNameKey = ref(null);
-const tempRowName = ref('');
-
-function startEditRowName(row) {
-    if (rowDisabled.value) return;
-    const k = rowPairKey(row);
-    editingRowNameKey.value = k;
-    tempRowName.value = row?.name || '';
-    nextTick(() => document.getElementById(`row-name-${k}`)?.focus());
-}
-function cancelEditRowName() {
-    editingRowNameKey.value = null;
-    tempRowName.value = '';
-}
-function commitEditRowName(row) {
-    const k = rowPairKey(row);
-    if (editingRowNameKey.value !== k) return;
-
-    const nextName = (tempRowName.value || '').trim();
-    if (nextName) row.name = nextName;
-
-    cancelEditRowName();
-}
-
-/* summary para AvailabilityInline */
-function availabilitySummaryForRow(r) {
-    if (r?.units_summary) {
-        if (r.totalUnits != null && (r.units_summary.totalUnits == null)) {
-            return { ...r.units_summary, totalUnits: Number(r.totalUnits || 0) };
-        }
-        return r.units_summary;
-    }
-    if (!r?.erp_id) return { totalUnits: Number(r.totalUnits || 0) };
-    if (r?.totalUnits != null) return { totalUnits: Number(r.totalUnits || 0) };
-    return null;
-}
+const enterprisesFilteredInModal = computed(() => {
+    return store.filterEnterprisePicker({
+        search: search.value,
+        citySearch: citySearch.value,
+        selectedCities: modalSelectedCities.value,
+    });
+});
 
 function addSelected() {
     if (!selectedToAdd.value.length) {
@@ -559,7 +574,7 @@ function addSelected() {
         return;
     }
 
-    // EDIT mode (vincula CC no row existente)
+    // EDIT mode
     if (pickerMode.value === 'edit' && rowBeingEdited.value) {
         const chosen = selectedToAdd.value[0];
         const erpId = String(chosen.id || chosen.erp_id || chosen);
@@ -567,8 +582,10 @@ function addSelected() {
 
         rowBeingEdited.value.erp_id = erpId;
         rowBeingEdited.value.name = name;
+        rowBeingEdited.value.city = chosen.city || null;
 
         applyUnitsSummaryPatchFromDefaults(store.detail?.enterprise_defaults);
+        rows.value = [...rows.value];
         closeAddModal();
         return;
     }
@@ -579,13 +596,16 @@ function addSelected() {
         const exists = rows.value.find(r => String(r.erp_id) === erp_id && String(r.alias_id || 'default') === 'default');
         if (exists) continue;
 
-        const name = enterprises.value.find(e => String(e.id) === erp_id)?.name || erp_id;
+        const pickItem = (store.enterprisePicker || []).find(e => String(e.id) === erp_id);
+        const name = pickItem?.name || erp_id;
+        const city = pickItem?.city || null;
 
         rows.value.push({
             enterprise_key: erp_id,
             erp_id,
             alias_id: 'default',
             name,
+            city,
             totalUnits: null,
             defaultPrice: 0,
             defaultMarketingPct: 0,
@@ -596,6 +616,7 @@ function addSelected() {
     }
 
     applyUnitsSummaryPatchFromDefaults(store.detail?.enterprise_defaults);
+    rows.value = [...rows.value];
     closeAddModal();
 }
 
@@ -603,7 +624,10 @@ function addManualEnterprise() {
     if (rowDisabled.value) return;
 
     const name = (manualForm.value.name || '').trim();
+    const city = (manualForm.value.city || '').trim();
+
     if (!name) return;
+    if (!city) return; // ✅ obriga cidade
 
     const enterprise_key = `MAN:${uuid()}`;
 
@@ -612,6 +636,7 @@ function addManualEnterprise() {
         erp_id: null,
         alias_id: 'default',
         name,
+        city, // ✅ salva cidade
         totalUnits: Number(manualForm.value.totalUnits || 0),
         defaultPrice: Number(manualForm.value.defaultPrice || 0),
         defaultMarketingPct: Number(manualForm.value.defaultMarketingPct || 0),
@@ -620,15 +645,15 @@ function addManualEnterprise() {
         values: {},
     });
 
+    rows.value = [...rows.value];
     closeAddModal();
 }
 
 /* =============================================================================
    DUPLICATE / REMOVE + CONFIRM REMOVE
 ============================================================================= */
-const originalPairs = ref(new Set());
 const confirmOpen = ref(false);
-const pairsToRemove = ref([]); // [{enterprise_key, alias_id, erp_id, name}]
+const pairsToRemove = ref([]);
 
 function shallowCloneRow(r) {
     const out = {
@@ -636,6 +661,7 @@ function shallowCloneRow(r) {
         erp_id: r.erp_id ?? null,
         alias_id: uuid(),
         name: (r.name || r.erp_id || r.enterprise_key) + ' (cópia)',
+        city: r.city ?? null,
         totalUnits: r.totalUnits ?? null,
         defaultPrice: Number(r.defaultPrice || 0),
         defaultMarketingPct: Number(r.defaultMarketingPct || 0),
@@ -658,8 +684,8 @@ function shallowCloneRow(r) {
     return out;
 }
 
-function duplicateRow(row) { rows.value.push(shallowCloneRow(row)); }
-function removeRow(row) { rows.value = rows.value.filter(r => rowPairKey(r) !== rowPairKey(row)); }
+function duplicateRow(row) { rows.value.push(shallowCloneRow(row)); rows.value = [...rows.value]; }
+function removeRow(row) { rows.value = rows.value.filter(r => rowPairKey(r) !== rowPairKey(row)); rows.value = [...rows.value]; }
 
 function computeRemovals() {
     const currentPairs = new Set(rows.value.map(r => rowPairKey(r)));
@@ -743,6 +769,7 @@ async function doSave({ removeMissing }) {
                 default_marketing_pct: Number(r.defaultMarketingPct || 0),
                 default_commission_pct: Number(r.defaultCommissionPct || 0),
                 total_units: r.erp_id ? null : Number(r.totalUnits ?? 0),
+                // cidade ainda é só front (se quiser persistir, precisa endpoint/coluna no backend)
             }));
             await store.saveDefaults(id, defaultsPayload, { removeMissing });
         }
@@ -763,7 +790,7 @@ async function toggleLock() {
 }
 
 /* =============================================================================
-   ✅ TOTALS (KPIs do período, respeitando filtro)
+   TOTALS
 ============================================================================= */
 const totals = computed(() => {
     const out = { units: 0, revenue: 0 };
@@ -778,14 +805,9 @@ const totals = computed(() => {
     return out;
 });
 
-/* =============================================================================
-   ✅ TOTALIZAÇÃO POR MÊS (somatória no head e no total final)
-============================================================================= */
 const monthTotals = computed(() => {
     const byMonth = {};
-    for (const ym of monthKeys.value) {
-        byMonth[ym] = { units: 0, revenue: 0 };
-    }
+    for (const ym of monthKeys.value) byMonth[ym] = { units: 0, revenue: 0 };
 
     for (const r of filteredRows.value) {
         for (const ym of monthKeys.value) {
@@ -799,9 +821,6 @@ const monthTotals = computed(() => {
     return byMonth;
 });
 
-/* =============================================================================
-   ✅ SOMA DA LINHA (para mostrar no “campo de ações”)
-============================================================================= */
 function rowSumUnits(row) {
     let u = 0;
     for (const ym of monthKeys.value) u += Number(row.values?.[ym]?.units || 0);
@@ -819,12 +838,13 @@ function rowSumVgv(row) {
 const rowDisabled = computed(() => !!(store.detail?.projection?.is_locked) || !isAdmin.value);
 
 /* =============================================================================
-   ✅ MODAL: editar SOMENTE (defaultPrice, defaultMarketingPct, defaultCommissionPct + duplicar/remover)
+   MODAL: defaults (Ticket/Mkt/Comissão/Cidade) ✅ FUNCIONANDO
 ============================================================================= */
 const showRowDefaults = ref(false);
 const rowDefaultsTarget = ref(null);
 
 const rowDefaultsForm = ref({
+    city: '',
     defaultPrice: 0,
     defaultMarketingPct: 0,
     defaultCommissionPct: 0,
@@ -832,14 +852,17 @@ const rowDefaultsForm = ref({
 
 function openRowDefaultsModal(row) {
     if (rowDisabled.value) return;
+
     rowDefaultsTarget.value = row;
     rowDefaultsForm.value = {
+        city: row?.city || '',
         defaultPrice: Number(row?.defaultPrice || 0),
         defaultMarketingPct: Number(row?.defaultMarketingPct || 0),
         defaultCommissionPct: Number(row?.defaultCommissionPct || 0),
     };
+
     showRowDefaults.value = true;
-    nextTick(() => document.getElementById('row-default-price')?.focus());
+    nextTick(() => document.getElementById('row-default-city')?.focus());
 }
 
 function closeRowDefaultsModal() {
@@ -851,6 +874,7 @@ function applyRowDefaultsModal() {
     const row = rowDefaultsTarget.value;
     if (!row) return;
 
+    row.city = String(rowDefaultsForm.value.city || '').trim() || null;
     row.defaultPrice = Number(rowDefaultsForm.value.defaultPrice || 0);
     row.defaultMarketingPct = Number(rowDefaultsForm.value.defaultMarketingPct || 0);
     row.defaultCommissionPct = Number(rowDefaultsForm.value.defaultCommissionPct || 0);
@@ -862,7 +886,7 @@ function applyRowDefaultsModal() {
 }
 
 /* =============================================================================
-   EXPORT (Excel/CSV)
+   EXPORT
 ============================================================================= */
 const exportOpen = ref(false);
 
@@ -871,7 +895,6 @@ const exportSource = computed(() => {
     for (const r of filteredRows.value) {
         for (const ym of monthKeys.value) {
             const c = ensureCell(r, ym);
-            // exporta tudo do range (inclusive zeros), pra ter visão completa fora do sistema
             const units = Number(c.units || 0);
             const price = Number(c.price || 0) || Number(r.defaultPrice || 0);
             const vgv = Number(vgvValue(r, ym) || 0);
@@ -880,6 +903,7 @@ const exportSource = computed(() => {
                 enterprise_name: r.name,
                 enterprise_key: r.enterprise_key,
                 erp_id: r.erp_id || null,
+                city: r.city || null,
                 alias_id: r.alias_id || 'default',
                 year_month: ym,
                 month_label: monthLabel(ym),
@@ -901,7 +925,7 @@ const exportSource = computed(() => {
 });
 
 /* =============================================================================
-   DRAFT (corrigido)
+   DRAFT
 ============================================================================= */
 const draftKey = computed(() => `proj:${id}:draft:${startMonth.value}:${endMonth.value}:${showZero.value ? '1' : '0'}`);
 const dirty = ref(false);
@@ -940,6 +964,7 @@ function loadDraftIfAnySafe() {
         );
 
         dirty.value = true;
+        applyCitiesToRows();
         return true;
     } catch {
         return false;
@@ -973,11 +998,12 @@ onBeforeRouteLeave((to, from, next) => {
 });
 
 /* =============================================================================
-   INIT + WATCHERS (range + showZero)
+   INIT + WATCHERS
 ============================================================================= */
 async function init() {
-    if (isAdmin.value) await loadEnterprises();
+    if (isAdmin.value) await store.fetchEnterprisePicker();
     await refreshDetail();
+    applyCitiesToRows();
 }
 onMounted(init);
 
@@ -1000,9 +1026,9 @@ watch(
 );
 
 watch(
-    () => rows.value,
-    () => applyUnitsSummaryPatchFromDefaults(store.detail?.enterprise_defaults),
-    { deep: false, immediate: true }
+    () => store.enterprisePicker,
+    () => applyCitiesToRows(),
+    { deep: false }
 );
 
 /* =============================================================================
@@ -1028,20 +1054,18 @@ const chipClass = {
                 <div class="min-w-0">
                     <h1
                         class="text-xl font-semibold leading-tight text-gray-900 dark:text-white flex items-center gap-2 flex-wrap">
-                        <!-- Nome -->
                         <span v-if="!editingName" @click="startEditName"
                             class="cursor-text hover:underline decoration-dotted underline-offset-4 flex items-center gap-2">
                             <i class="fas fa-chart-line text-indigo-500"></i>
-                            <span class="truncate max-w-[260px]">
-                                {{ store.detail?.projection?.name }}
-                            </span>
+                            <span class="truncate max-w-[260px]">{{ store.detail?.projection?.name }}</span>
                         </span>
+
                         <input v-else id="proj-name-input" v-model="tempName" @keyup.enter="commitName"
                             @keyup.esc="cancelName" @blur="commitName" type="text"
                             class="h-9 px-3 rounded-lg border border-indigo-200 dark:border-indigo-500/60 bg-white/95 dark:bg-gray-900/90 focus:outline-none focus:ring-2 focus:ring-indigo-400/60 text-sm"
                             :maxlength="120" />
-
                     </h1>
+
                     <!-- Chips -->
                     <div class="flex gap-1 pt-2">
                         <span class="px-2 py-0.5 rounded-full text-[10px] font-medium border flex items-center gap-1"
@@ -1059,16 +1083,6 @@ const chipClass = {
                         </span>
                     </div>
 
-                    <!-- <p
-                        class="text-xs md:text-sm text-gray-600 dark:text-gray-400 mt-1 flex items-center gap-2 flex-wrap">
-                        <span class="inline-flex items-center gap-1">
-                            <i class="far fa-calendar text-[11px] text-indigo-500"></i>
-                            Período:
-                            <span class="font-semibold">{{ startMonth }}</span> → <span class="font-semibold">{{
-                                endMonth }}</span>
-                        </span>
-                    </p> -->
-
                     <!-- Show zero -->
                     <label
                         class="mt-2 inline-flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300 select-none">
@@ -1077,12 +1091,9 @@ const chipClass = {
                     </label>
                 </div>
 
-
-
                 <!-- Controls -->
                 <div class="flex items-center flex-wrap md:justify-end">
                     <div class="flex gap-2">
-
                         <div class="flex flex-col">
                             <span class="text-[11px] text-gray-500">Mês inicial</span>
                             <input type="month" v-model="startMonth"
@@ -1118,7 +1129,7 @@ const chipClass = {
                             Empreendimentos
                         </button>
 
-                        <!-- ✅ Export -->
+                        <!-- Export -->
                         <button
                             class="h-9 mt-4 px-3 rounded-lg border dark:border-gray-700 bg-white/90 dark:bg-gray-900/80 hover:bg-gray-50 dark:hover:bg-gray-800/80 text-xs md:text-sm font-medium flex items-center gap-2"
                             v-tippy="'Exportar dados (CSV/Excel)'" @click="exportOpen = true"
@@ -1145,8 +1156,8 @@ const chipClass = {
                 </div>
             </div>
 
-            <!-- KPIs + filtro -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-1">
+            <!-- KPIs + filtros -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mt-1">
                 <div
                     class="p-3 rounded-xl border dark:border-gray-700 bg-white/90 dark:bg-gray-900/60 shadow-sm flex items-center gap-3">
                     <div
@@ -1167,9 +1178,8 @@ const chipClass = {
                     </div>
                     <div>
                         <p class="text-[11px] uppercase tracking-wide text-gray-500">Receita no período</p>
-                        <p class="text-lg font-semibold text-emerald-600 dark:text-emerald-400">
-                            {{ fmtBRL(totals.revenue) }}
-                        </p>
+                        <p class="text-lg font-semibold text-emerald-600 dark:text-emerald-400">{{
+                            fmtBRL(totals.revenue) }}</p>
                     </div>
                 </div>
 
@@ -1184,23 +1194,32 @@ const chipClass = {
                         :options="enterprisesOptions" placeholder="Selecione empreendimentos" :page-size="600"
                         :select-all="true" />
                 </div>
+
+                <div class="p-3 rounded-xl border dark:border-gray-700 bg-white/90 dark:bg-gray-900/60 shadow-sm">
+                    <label
+                        class="text-[11px] font-medium mb-1 text-gray-700 dark:text-gray-300 flex items-center gap-1">
+                        <i class="fas fa-location-dot text-indigo-500"></i>
+                        Cidades (filtrar exibição)
+                    </label>
+                    <MultiSelector :model-value="selectedCityLabels"
+                        @update:modelValue="v => selectedCityLabels = Array.isArray(v) ? v : []" :options="cityOptions"
+                        placeholder="Selecione cidades" :page-size="300" :select-all="true" />
+                </div>
             </div>
         </div>
 
         <!-- Grade -->
         <div
-            class="rounded-xl border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/50 shadow-sm overflow-auto h-[80vh]">
+            class="rounded-xl border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/50 shadow-sm overflow-auto max-h-[80vh]">
             <table class="min-w-[1100px] w-full text-sm">
                 <thead
                     class="bg-gray-50/95 dark:bg-gray-900/85 sticky top-0 z-20 backdrop-blur supports-[backdrop-filter]:bg-gray-50/80">
                     <tr class="text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-900">
-                        <!-- canto superior esquerdo: sticky TOP + LEFT -->
                         <th
                             class="px-4 py-3 text-left sticky left-0 top-0 z-[70] bg-inherit border dark:border-gray-800">
                             Empreendimento
                         </th>
 
-                        <!-- meses com totais no THEAD -->
                         <th v-for="ym in monthKeys" :key="ym"
                             class="px-4 py-2 text-center font-medium tracking-wide sticky top-0 z-[50] bg-inherit border dark:border-gray-800">
                             <div class="flex flex-col items-center gap-1">
@@ -1222,8 +1241,9 @@ const chipClass = {
                                 </div>
                             </div>
                         </th>
+
                         <th
-                            class="px-4 py-3 text-center sticky right-0 top-0 z-[70] bg-inherit  border-l dark:border-gray-700">
+                            class="px-4 py-3 text-center sticky right-0 top-0 z-[70] bg-inherit border-l dark:border-gray-700">
                             TOTAL
                         </th>
                     </tr>
@@ -1237,77 +1257,47 @@ const chipClass = {
                         <!-- Coluna fixa -->
                         <td class="px-3 py-3 align-top sticky left-0 z-[5] border dark:border-gray-800"
                             :class="idx % 2 ? 'bg-gray-100 dark:bg-gray-900' : 'bg-white dark:bg-[#19222e]'">
-
-                            <!-- ✅ limita largura e alinha com between -->
                             <div class="w-[280px] max-w-[280px]">
                                 <div class="flex items-start justify-between gap-3">
-
-                                    <!-- ESQUERDA -->
                                     <div class="min-w-0 flex-1">
-                                        <!-- <button type="button"
-                                            class="text-[11px] text-gray-500 block text-left underline decoration-dotted underline-offset-2 hover:text-indigo-600 disabled:text-gray-400 disabled:no-underline"
-                                            :disabled="rowDisabled" @click="openEditEnterpriseModal(r)">
-                                            Centro de Custo:
-                                            <span v-if="r.erp_id">{{ r.erp_id }}</span>
-                                            <span v-else class="text-orange-600 font-semibold">— manual —</span>
-                                        </button> -->
-
-                                        <!-- Nome clicável -->
                                         <div class="h-9 -mb-2 rounded flex items-center">
-                                            <span v-if="editingRowNameKey !== rowPairKey(r)"
-                                                class="truncate font-medium cursor-text" @click="startEditRowName(r)">
-                                                {{ r.name }}
-                                            </span>
-
-                                            <input v-else :id="`row-name-${rowPairKey(r)}`" v-model="tempRowName"
-                                                :disabled="rowDisabled" @keyup.enter="commitEditRowName(r)"
-                                                @keyup.esc="cancelEditRowName()" @blur="commitEditRowName(r)"
-                                                class="w-full h-9 px-2 rounded border border-gray-200 dark:border-gray-700 bg-white/90 dark:bg-gray-900/70 focus:outline-none" />
+                                            <span class="truncate font-medium">{{ r.name }}</span>
                                         </div>
 
-                                        <!-- Disponibilidade -->
+                                        <div v-if="r.city"
+                                            class="text-[11px] text-gray-500 -my-2 flex items-center gap-1">
+                                            <i class="fas fa-location-dot text-[10px]"></i>
+                                            <span class="truncate">{{ r.city }}</span>
+                                            <span v-if="r.erp_id" class="truncate"> - CC: {{ r.erp_id }}</span> 
+                                        </div>
+
                                         <AvailabilityInline :summary="r.units_summary" :total-units="r.totalUnits"
                                             :editable="!rowDisabled"
-                                            @update:totalUnits="(v) => { r.totalUnits = v; rows = [...rows]; }" />
+                                            @update:totalUnits="(v) => { r.totalUnits = v; rows.value = [...rows.value]; }" />
                                     </div>
 
-                                    <!-- DIREITA (resumo + editar) -->
                                     <div class="flex flex-col items-center gap-2">
-
-                                        <!-- ✅ mini visualização -->
                                         <div
                                             class="hidden sm:flex flex-col gap-1 px-2 py-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-white/70 dark:bg-gray-900/40">
-
-                                            <!-- <div
-                                                class="flex items-center justify-between gap-1 text-[10px] text-gray-600 dark:text-gray-300">
-                                                <span class="whitespace-nowrap">Marketing:</span>
-                                                <span class="font-semibold">
-                                                    {{ Number(r.defaultMarketingPct || 0).toFixed(2) }}%
-                                                </span>
-                                            </div> -->
-
                                             <div v-tippy="'Comissão'"
                                                 class="h-54 w-8 flex items-center justify-between cursor-pointer gap-1 text-[12px] text-gray-600 dark:text-gray-300">
                                                 {{ Number(r.defaultCommissionPct || 0).toFixed(2) }}%
                                             </div>
                                         </div>
 
-                                        <!-- Botão editar -->
                                         <button type="button" @click="openRowDefaultsModal(r)" :disabled="rowDisabled"
                                             class="h-7 w-12 inline-flex items-center justify-center rounded-lg border dark:border-gray-700 bg-white/90 dark:bg-gray-900/40 hover:bg-gray-50 dark:hover:bg-gray-800/70"
-                                            v-tippy="'Editar ticket médio / % mkt / % comissão'">
+                                            v-tippy="'Editar ticket médio / % mkt / % comissão / cidade'">
                                             <i class="fas fa-pen-to-square"></i>
                                         </button>
-
                                     </div>
                                 </div>
                             </div>
                         </td>
 
-                        <!-- Meses (mantém exatamente a edição de unidades e VGV) -->
+                        <!-- Meses -->
                         <td v-for="ym in monthKeys" :key="ym" class="align-center p-1 border dark:border-gray-800">
                             <div class="flex gap-1">
-                                <!-- Unidades -->
                                 <div>
                                     <label class="text-[10px] text-gray-500 block text-center">Qtd. Uni</label>
                                     <input :disabled="rowDisabled" v-model.number="ensureCell(r, ym).units"
@@ -1316,7 +1306,6 @@ const chipClass = {
                                         placeholder="Uds" />
                                 </div>
 
-                                <!-- VGV -->
                                 <div>
                                     <label class="text-[10px] text-gray-500 block text-center">VGV</label>
                                     <input :disabled="rowDisabled" type="text" inputmode="numeric"
@@ -1341,10 +1330,9 @@ const chipClass = {
                             </div>
                         </td>
 
-                        <!-- ✅ TOTAL da linha (Unidades + VGV) - coluna fixa à direita -->
+                        <!-- TOTAL linha -->
                         <td class="px-3 py-2 text-center sticky right-0 z-10 border-l dark:border-gray-700"
                             :class="idx % 2 ? 'bg-gray-100 dark:bg-gray-900' : 'bg-white dark:bg-[#19222e]'">
-
                             <div class="flex flex-col items-center">
                                 <div
                                     class="inline-flex items-center gap-1 text-[11px] text-gray-600 dark:text-gray-300">
@@ -1368,12 +1356,12 @@ const chipClass = {
         <!-- Logs -->
         <ProjectionLogsDrawer :id="id" />
 
-        <!-- ✅ Export modal -->
+        <!-- Export -->
         <Export v-model="exportOpen" :source="exportSource" title="Exportação da projeção" filename="projecao-vendas"
             initial-delimiter=";" initial-array-mode="join"
-            :preselect="['enterprise_name', 'erp_id', 'year_month', 'units_target', 'avg_price_target', 'vgv_target', 'marketing_pct', 'commission_pct']" />
+            :preselect="['enterprise_name', 'city', 'erp_id', 'year_month', 'units_target', 'avg_price_target', 'vgv_target', 'marketing_pct', 'commission_pct']" />
 
-        <!-- ✅ Modal: defaults (ticket médio padrão, % mkt, % comissão) -->
+        <!-- ✅ Modal: Ticket médio / %Mkt / %Comissão / Cidade (ESTAVA FALTANDO) -->
         <div v-if="showRowDefaults" class="fixed inset-0 z-[80]">
             <div class="absolute inset-0 bg-black/40" @click="closeRowDefaultsModal"></div>
 
@@ -1383,112 +1371,105 @@ const chipClass = {
                     <div class="flex items-center justify-between mb-3">
                         <h3 class="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                             <i class="fas fa-sliders"></i>
-                            Editar parâmetros do empreendimento
+                            Ajustes do empreendimento
                         </h3>
                         <button @click="closeRowDefaultsModal" class="text-gray-500 hover:text-gray-700">
                             <i class="fas fa-times"></i>
                         </button>
                     </div>
 
-                    <div class="h-9 rounded flex items-center">
-                        <span v-if="editingRowNameKey !== rowPairKey(rowDefaultsTarget)"
-                            class="truncate font-medium cursor-text" @click="startEditRowName(rowDefaultsTarget)">
-                            {{ rowDefaultsTarget.name }}
-                        </span>
-
-                        <input v-else :id="`row-name-${rowPairKey(rowDefaultsTarget)}`" v-model="tempRowName"
-                            :disabled="rowDisabled" @keyup.enter="commitEditRowName(rowDefaultsTarget)"
-                            @keyup.esc="cancelEditRowName()" @blur="commitEditRowName(rowDefaultsTarget)"
-                            class="w-full px-2 h-9 rounded border border-gray-200 dark:border-gray-700 bg-white/90 dark:bg-gray-900/70 focus:outline-none" />
-                    </div>
-
-                    <button type="button"
-                        class="text-[11px] pb-2 text-gray-500 block text-left underline decoration-dotted underline-offset-2 hover:text-indigo-600 disabled:text-gray-400 disabled:no-underline"
-                        :disabled="rowDisabled" @click="openEditEnterpriseModal(r)">
-                        Centro de Custo:
-                        <span v-if="rowDefaultsTarget?.erp_id">{{ rowDefaultsTarget.erp_id }}</span>
-                        <span v-else class="text-orange-600 font-semibold">— manual —</span>
-                    </button>
-
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
-                        <!-- Ticket médio padrão -->
-                        <div>
-                            <label class="text-[11px] text-gray-500 block">Ticket médio padrão</label>
-                            <input id="row-default-price" type="text" inputmode="numeric" :disabled="rowDisabled"
-                                :value="moneyBR(rowDefaultsForm.defaultPrice)"
-                                @input="(e) => { rowDefaultsForm.defaultPrice = parseMoneyBR(e.target.value); setMaskedInputValue(e.target, rowDefaultsForm.defaultPrice); }"
-                                class="w-full h-9 px-2 rounded border border-gray-200 dark:border-gray-700 bg-white/90 dark:bg-gray-900/70 focus:outline-none" />
-                        </div>
-
-                        <!-- % Marketing -->
-                        <div>
-                            <label class="text-[11px] text-gray-500 block">% Marketing</label>
-                            <input type="number" min="0" max="100" step="0.01" :disabled="rowDisabled"
-                                v-model.number="rowDefaultsForm.defaultMarketingPct"
-                                class="w-full h-9 px-2 rounded border border-gray-200 dark:border-gray-700 bg-white/90 dark:bg-gray-900/70 focus:outline-none" />
-                        </div>
-
-                        <!-- % Comissão -->
-                        <div>
-                            <label class="text-[11px] text-gray-500 block">% Comissão</label>
-                            <input type="number" min="0" max="100" step="0.01" :disabled="rowDisabled"
-                                v-model.number="rowDefaultsForm.defaultCommissionPct"
-                                class="w-full h-9 px-2 rounded border border-gray-200 dark:border-gray-700 bg-white/90 dark:bg-gray-900/70 focus:outline-none" />
-                        </div>
-                    </div>
-
-                    <p class="text-[11px] text-gray-500 mt-3">
-                        Ao salvar, o ticket médio padrão pode ser aplicado automaticamente aos meses com unidades
-                        (quando o preço do mês estiver vazio).
+                    <p class="text-xs text-gray-500 mb-3 truncate">
+                        {{ rowDefaultsTarget?.name }}
                     </p>
 
-                    <div class="flex items-center justify-between gap-2 pt-4">
-                        <div class="flex items-center gap-2">
-                            <button type="button"
-                                class="h-9 px-3 rounded-lg border dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/70"
-                                @click="rowDefaultsTarget && duplicateRow(rowDefaultsTarget)"
-                                :disabled="rowDisabled || !rowDefaultsTarget">
-                                <i class="fas fa-copy mr-2"></i>
-                                Duplicar
-                            </button>
-
-                            <button type="button" class="h-9 px-3 rounded-lg bg-red-600 text-white hover:bg-red-500"
-                                @click="rowDefaultsTarget && (removeRow(rowDefaultsTarget), closeRowDefaultsModal())"
-                                :disabled="rowDisabled || !rowDefaultsTarget">
-                                <i class="fas fa-trash mr-2"></i>
-                                Remover
-                            </button>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="text-[11px] text-gray-500 block">Cidade</label>
+                            <input id="row-default-city" v-model="rowDefaultsForm.city"
+                                class="w-full h-10 border dark:border-gray-700 rounded-lg px-3 bg-white/90 dark:bg-gray-900/70"
+                                placeholder="Ex.: São Paulo" :disabled="rowDisabled" />
                         </div>
 
-                        <div class="flex items-center gap-2">
-                            <button type="button"
-                                class="h-9 px-3 rounded-lg border dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/70"
-                                @click="closeRowDefaultsModal">
-                                Cancelar
-                            </button>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                            <div>
+                                <label class="text-[11px] text-gray-500 block">Ticket médio</label>
+                                <input id="row-default-price" type="text" inputmode="numeric" :disabled="rowDisabled"
+                                    :value="moneyBR(rowDefaultsForm.defaultPrice)"
+                                    @input="(e) => { rowDefaultsForm.defaultPrice = parseMoneyBR(e.target.value); setMaskedInputValue(e.target, rowDefaultsForm.defaultPrice); }"
+                                    class="w-full h-10 border dark:border-gray-700 rounded-lg px-3 bg-white/90 dark:bg-gray-900/70" />
+                            </div>
 
-                            <button type="button"
-                                class="h-9 px-3 rounded-lg bg-emerald-600 text-white hover:bg-emerald-500"
-                                @click="applyRowDefaultsModal" :disabled="rowDisabled">
-                                Salvar
-                            </button>
+                            <div>
+                                <label class="text-[11px] text-gray-500 block">% Marketing</label>
+                                <input type="number" min="0" max="100" step="0.01"
+                                    v-model.number="rowDefaultsForm.defaultMarketingPct" :disabled="rowDisabled"
+                                    class="w-full h-10 border dark:border-gray-700 rounded-lg px-3 bg-white/90 dark:bg-gray-900/70" />
+                            </div>
+
+                            <div class="md:col-span-2">
+                                <label class="text-[11px] text-gray-500 block">% Comissão</label>
+                                <input type="number" min="0" max="100" step="0.01"
+                                    v-model.number="rowDefaultsForm.defaultCommissionPct" :disabled="rowDisabled"
+                                    class="w-full h-10 border dark:border-gray-700 rounded-lg px-3 bg-white/90 dark:bg-gray-900/70" />
+                            </div>
                         </div>
+
+                        <div class="flex flex-col justify-between gap-2 pt-2">
+                            <div class="flex items-center gap-2">
+                                <button type="button"
+                                    class="h-9 px-3 truncate rounded-lg border dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/70"
+                                    @click="rowDefaultsTarget && duplicateRow(rowDefaultsTarget)"
+                                    :disabled="rowDisabled || !rowDefaultsTarget">
+                                    <i class="fas fa-copy mr-2"></i>
+                                    Duplicar
+                                </button>
+
+                                <button type="button"
+                                    class="h-9 px-3 truncate rounded-lg bg-red-600 text-white hover:bg-red-500"
+                                    @click="rowDefaultsTarget && (removeRow(rowDefaultsTarget), closeRowDefaultsModal())"
+                                    :disabled="rowDisabled || !rowDefaultsTarget">
+                                    <i class="fas fa-trash mr-2"></i>
+                                    Excluir
+                                </button>
+
+                                <button type="button"
+                                    class="h-9 px-3 flex-1 truncate rounded-lg border dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/70"
+                                    :disabled="rowDisabled" @click="openEditEnterpriseModal(rowDefaultsTarget)">
+                                    <i class="fas fa-building mr-2"></i> Centro de Custo: <span
+                                        v-if="rowDefaultsTarget?.erp_id">{{ rowDefaultsTarget.erp_id }}</span> <span
+                                        v-else class="text-orange-600 font-semibold">— manual —</span>
+                                </button>
+                            </div>
+
+                            <div class="flex items-center justify-end gap-2">
+                                <button type="button"
+                                    class="h-9 px-3 truncate rounded-lg border dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/70"
+                                    @click="closeRowDefaultsModal">
+                                    Cancelar
+                                </button>
+
+                                <button type="button"
+                                    class="h-9 px-3 truncate rounded-lg bg-emerald-600 text-white hover:bg-emerald-500"
+                                    @click="applyRowDefaultsModal" :disabled="rowDisabled">
+                                    Salvar
+                                </button>
+                            </div>
+                        </div>
+
+                        <p class="text-[11px] text-gray-500 pt-2">
+                            Obs.: persiste no backend quando você clicar em <strong>Salvar</strong> na tela principal.
+                        </p>
                     </div>
-
-                    <p class="text-[11px] text-gray-500 pt-2">
-                        Obs.: as alterações persistem no backend quando você clicar em <strong>Salvar</strong> na tela
-                        principal.
-                    </p>
                 </div>
             </div>
         </div>
 
-        <!-- Modal adicionar/editar empreendimentos (ERP + Manual) -->
-        <div v-if="showAdd" class="fixed inset-0 z-[60]">
+        <!-- Modal adicionar/editar empreendimentos -->
+        <div v-if="showAdd" class="fixed inset-0 z-[90]">
             <div class="absolute inset-0 bg-black/40"></div>
             <div class="absolute inset-0 flex items-center justify-center p-4 z-[61]">
-                <div
-                    class="bg-white dark:bg-gray-900 rounded-2xl p-4 w-full max-w-3xl shadow-xl border dark:border-gray-700">
+                <div class="bg-white dark:bg-gray-900 rounded-2xl p-4 w-full max-w-3xl shadow-xl border dark:border-gray-700"
+                    @click.stop>
                     <div class="flex items-center justify-between mb-3">
                         <h3 class="font-semibold">
                             {{ pickerMode === 'add' ? 'Adicionar empreendimentos' : 'Selecionar centro de custo' }}
@@ -1513,25 +1494,57 @@ const chipClass = {
 
                     <!-- ERP picker -->
                     <div v-if="!showManualInAdd" class="rounded-xl border dark:border-gray-700 p-3">
-                        <div class="relative">
-                            <i
-                                class="fas fa-magnifying-glass absolute left-3 top-5 -translate-y-1/2 text-gray-400 text-sm"></i>
-                            <input v-model="search" @focus="loadEnterprises" placeholder="Buscar..."
-                                class="w-full border dark:border-gray-700 rounded-lg h-10 pl-9 pr-3 bg-white/90 dark:bg-gray-900/70 focus:outline-none focus:ring-2 focus:ring-indigo-400/40 mb-3" />
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mb-3">
+                            <div class="relative">
+                                <i
+                                    class="fas fa-magnifying-glass absolute left-3 top-5 -translate-y-1/2 text-gray-400 text-sm"></i>
+                                <input v-model="search" @focus="store.fetchEnterprisePicker()"
+                                    placeholder="Buscar por nome / ERP..."
+                                    class="w-full border dark:border-gray-700 rounded-lg h-10 pl-9 pr-3 bg-white/90 dark:bg-gray-900/70 focus:outline-none focus:ring-2 focus:ring-indigo-400/40" />
+                            </div>
+
+                            <div class="relative">
+                                <i
+                                    class="fas fa-location-dot absolute left-3 top-5 -translate-y-1/2 text-gray-400 text-sm"></i>
+                                <input v-model="citySearch" placeholder="Buscar por cidade..."
+                                    class="w-full border dark:border-gray-700 rounded-lg h-10 pl-9 pr-3 bg-white/90 dark:bg-gray-900/70 focus:outline-none focus:ring-2 focus:ring-indigo-400/40" />
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="text-[11px] text-gray-500 block mb-1">Filtrar por cidades</label>
+                            <MultiSelector :model-value="modalSelectedCities"
+                                @update:modelValue="v => modalSelectedCities = Array.isArray(v) ? v : []"
+                                :options="store.enterprisePickerCities" placeholder="Selecione cidades" :page-size="400"
+                                :select-all="true" />
                         </div>
 
                         <div class="max-h-80 overflow-auto border dark:border-gray-700 rounded-lg">
-                            <label
-                                v-for="e in enterprises.filter(x => !search || x.name?.toLowerCase().includes(search.toLowerCase()))"
-                                :key="e.id"
+                            <label v-for="e in enterprisesFilteredInModal" :key="e.id"
                                 class="flex items-center justify-between px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700/60">
-                                <div class="flex items-center gap-2">
+                                <div class="flex items-center gap-2 min-w-0">
                                     <input type="checkbox" :value="e" v-model="selectedToAdd" class="accent-indigo-600"
                                         :disabled="pickerMode === 'edit' && selectedToAdd.length > 0 && String(selectedToAdd[0]?.id) !== String(e.id)">
-                                    <span class="font-medium">{{ e.name }}</span>
+                                    <div class="min-w-0">
+                                        <span class="font-medium block truncate">{{ e.name }}</span>
+                                        <span v-if="e.city" class="text-[11px] text-gray-500 flex items-center gap-1">
+                                            <i class="fas fa-location-dot text-[10px]"></i>
+                                            <span class="truncate">{{ e.city }}</span>
+                                        </span>
+                                    </div>
                                 </div>
-                                <span class="text-xs text-gray-500">ERP {{ e.id }}</span>
+
+                                <span class="text-xs text-gray-500 whitespace-nowrap">ERP {{ e.id }}</span>
                             </label>
+
+                            <div v-if="store.enterprisePickerError" class="p-3 text-sm text-red-600">
+                                {{ store.enterprisePickerError }}
+                            </div>
+
+                            <div v-if="!enterprisesFilteredInModal.length && !store.enterprisePickerError"
+                                class="p-3 text-sm text-gray-500">
+                                Nenhum resultado.
+                            </div>
                         </div>
 
                         <div class="mt-4 flex justify-end gap-2">
@@ -1557,6 +1570,14 @@ const chipClass = {
                                 <input v-model="manualForm.name"
                                     class="w-full h-10 border dark:border-gray-700 rounded-lg px-3 bg-white/90 dark:bg-gray-900/70"
                                     placeholder="Ex.: Empreendimento X (pré-cadastro)" />
+                            </div>
+
+                            <div>
+                                <label class="text-[11px] text-gray-500 block">Cidade <span
+                                        class="text-red-500">*</span></label>
+                                <input v-model="manualForm.city"
+                                    class="w-full h-10 border dark:border-gray-700 rounded-lg px-3 bg-white/90 dark:bg-gray-900/70"
+                                    placeholder="Ex.: Campinas" />
                             </div>
 
                             <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
@@ -1594,7 +1615,8 @@ const chipClass = {
                                     Cancelar
                                 </button>
                                 <button @click="addManualEnterprise"
-                                    class="h-9 px-3 rounded-lg bg-emerald-600 text-white hover:bg-emerald-500 shadow">
+                                    class="h-9 px-3 rounded-lg bg-emerald-600 text-white hover:bg-emerald-500 shadow"
+                                    :disabled="!manualForm.name || !manualForm.city">
                                     Criar
                                 </button>
                             </div>
@@ -1602,7 +1624,7 @@ const chipClass = {
                             <p class="text-[11px] text-gray-500">
                                 Manual cria <strong>erp_id = null</strong>, <strong>enterprise_key = MAN:uuid</strong> e
                                 salva
-                                <strong>total_units</strong> via defaults.
+                                <strong>total_units</strong> via defaults. Cidade fica na linha para filtro e export.
                             </p>
                         </div>
                     </div>

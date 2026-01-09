@@ -68,7 +68,7 @@ const menuItems = {
     financeiro: {
         items: [
             { router: '/financeiro/titulos', section: 'Títulos', name: 'Títulos', icon: 'fas fa-money-bill-transfer' },
-            { router: '/financeiro/custas', section: 'Custas', name: 'Custas', icon: 'fas fa-coins' }
+            { router: '/financeiro/custos', section: 'Custos', name: 'Custos', icon: 'fas fa-coins' }
         ]
     },
     tools: [{ router: '/tools/validator', section: 'Validador', name: 'Validador', icon: 'fas fa-check-double' }],

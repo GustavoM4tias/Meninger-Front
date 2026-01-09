@@ -8,7 +8,7 @@
           <div>
             <h1 class="text-3xl font-bold mb-2 flex items-center gap-3">
               <i class="fas fa-file-invoice-dollar"></i>
-              Gerenciamento de Títulos e Custas
+              Gerenciamento de Títulos e Custos
             </h1>
             <p class="text-indigo-50 text-sm">
               Busque os títulos no Sienge, selecione e vincule ao mês de competência
