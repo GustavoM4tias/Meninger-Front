@@ -58,7 +58,7 @@ export const useBillsStore = defineStore('bills', () => {
     const error = ref(null);
     const selectedIds = ref([]);     // ids selecionados
     const notes = ref({});           // { [billId]: string }
-    const expenseDepartments = ref({}); // { [billId]: string } -> departamento que será usado na custa
+    const expenseDepartments = ref({}); // { [billId]: string } -> departamento que será usado no custo
     const expenseCategories = ref({});       // 👈 NOVO { [billId]: categoryId }
     const billLinks = ref({}); // { [billId]: { count, total } }
 
@@ -174,7 +174,7 @@ export const useBillsStore = defineStore('bills', () => {
 
                     billLinks.value = map;
                 } catch (err) {
-                    console.error('Erro ao buscar vínculos de custas', err);
+                    console.error('Erro ao buscar vínculos de custos', err);
                 }
             }
         } catch (e) {
@@ -213,7 +213,7 @@ export const useBillsStore = defineStore('bills', () => {
                 try {
                     await contractsStore.fetchEnterprises();
                 } catch (e) {
-                    console.error('Erro ao carregar empreendimentos para custas:', e);
+                    console.error('Erro ao carregar empreendimentos para custos:', e);
                 }
             }
 

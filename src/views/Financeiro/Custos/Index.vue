@@ -115,7 +115,7 @@
                 <div class="text-3xl font-bold text-gray-900 dark:text-white">
                     {{filteredGroups.reduce((sum, g) => sum + g.expenses.length, 0)}}
                 </div>
-                <div class="text-xs text-gray-500 dark:text-gray-400 mt-2">Custas registradas</div>
+                <div class="text-xs text-gray-500 dark:text-gray-400 mt-2">Custos registrados</div>
             </div>
         </div>
 
@@ -475,7 +475,7 @@
                             <div>
                                 <h3 class="text-xl font-bold flex items-center gap-2">
                                     <i class="fas fa-edit"></i>
-                                    Editar Custa #{{ editingExpense.id }}
+                                    Editar Custo #{{ editingExpense.id }}
                                 </h3>
                                 <p class="text-sm text-blue-50 mt-1">
                                     <span v-if="editingExpense.bill">
@@ -718,7 +718,7 @@ async function saveEdit() {
             departmentCategoryName: chosenCategoryName
         });
 
-        toast.success('Custa atualizada com sucesso!');
+        toast.success('Custo atualizado com sucesso!');
         editingExpense.value = null;
 
         await store.fetchExpenses();
@@ -730,16 +730,16 @@ async function saveEdit() {
             selectedGroup.value = updated || null;
         }
     } catch (e) {
-        toast.error(e.message || 'Erro ao atualizar custa.');
+        toast.error(e.message || 'Erro ao atualizar custo.');
     }
 }
 
 async function removeExpense(exp) {
-    if (!confirm('Deseja realmente excluir esta custa?')) return;
+    if (!confirm('Deseja realmente excluir esta custo?')) return;
 
     try {
         await store.deleteExpense(exp.id);
-        toast.success('Custa excluída com sucesso!');
+        toast.success('Custo excluído com sucesso!');
 
         await store.fetchExpenses();
 
@@ -753,7 +753,7 @@ async function removeExpense(exp) {
             }
         }
     } catch (e) {
-        toast.error(e.message || 'Erro ao excluir custa.');
+        toast.error(e.message || 'Erro ao excluir custo.');
     }
 }
 
@@ -845,14 +845,14 @@ async function removeSelectedExpenses() {
     if (!selectedExpenseIds.value.length) return;
 
     const confirmed = confirm(
-        `Deseja realmente excluir ${selectedExpenseIds.value.length} custa(s) selecionada(s)?`
+        `Deseja realmente excluir ${selectedExpenseIds.value.length} custo(s) selecionado(s)?`
     );
     if (!confirmed) return;
 
     try {
         await Promise.all(selectedExpenseIds.value.map(id => store.deleteExpense(id)));
 
-        toast.success('Custas selecionadas excluídas com sucesso!');
+        toast.success('Custos selecionadas excluídas com sucesso!');
         selectedExpenseIds.value = [];
 
         await store.fetchExpenses();
@@ -867,7 +867,7 @@ async function removeSelectedExpenses() {
             }
         }
     } catch (e) {
-        toast.error(e.message || 'Erro ao excluir custas selecionadas.');
+        toast.error(e.message || 'Erro ao excluir custos selecionados.');
     }
 }
 

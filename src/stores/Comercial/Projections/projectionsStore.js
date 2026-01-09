@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import API_URL from '@/config/apiUrl';
 import { useCarregamentoStore } from '@/stores/Config/carregamento';
 
@@ -35,6 +35,19 @@ export const useProjectionsStore = defineStore('projections', () => {
     const detail = ref(null);
     const logs = ref([]);
     const error = ref(null);
+
+    // ✅ Enterprise Picker (ERP + cidade)
+    const enterprisePicker = ref([]);         // [{id,name,city,...}]
+    const enterprisePickerError = ref(null);
+    const enterprisePickerLoaded = ref(false);
+
+    const enterprisePickerCities = computed(() => {
+        const set = new Set();
+        for (const it of enterprisePicker.value || []) {
+            if (it?.city) set.add(String(it.city));
+        }
+        return [...set].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+    });
 
     async function fetchList({ start_month, end_month, only_active } = {}) {
         error.value = null;
@@ -73,7 +86,6 @@ export const useProjectionsStore = defineStore('projections', () => {
         });
     }
 
-    // ✅ include_zero adicionado
     async function fetchDetail(id, { start_month, end_month, include_zero } = {}) {
         error.value = null;
         try {
@@ -126,8 +138,76 @@ export const useProjectionsStore = defineStore('projections', () => {
         carregamento.finalizarCarregamento();
     }
 
+    // ✅ Busca empreendimentos (ERP) com cidade – USO PELO COMPONENTE
+    async function fetchEnterprisePicker({ force = false } = {}) {
+        enterprisePickerError.value = null;
+
+        if (!force && enterprisePickerLoaded.value && (enterprisePicker.value?.length || 0) > 0) {
+            return enterprisePicker.value;
+        }
+
+        try {
+            carregamento.iniciarCarregamento();
+            const data = await requestWithAuth(`${API_URL}/projections/enterprise-picker`);
+            const results = data?.results || data || [];
+
+            enterprisePicker.value = (results || []).map((it) => ({
+                ...it,
+                id: it?.id ?? it?.erp_id ?? it?.code ?? it?.key,
+                name: it?.name ?? it?.label ?? String(it?.id ?? ''),
+                city: it?.city ?? it?.cidade ?? null,
+            })).filter(it => it?.id != null);
+
+            enterprisePickerLoaded.value = true;
+            return enterprisePicker.value;
+        } catch (e) {
+            enterprisePickerError.value = e.message;
+            enterprisePicker.value = [];
+            enterprisePickerLoaded.value = false;
+            return [];
+        } finally {
+            carregamento.finalizarCarregamento();
+        }
+    }
+
+    // ✅ filtro centralizado (sem query no template)
+    function filterEnterprisePicker({ search = '', citySearch = '', selectedCities = [] } = {}) {
+        const s = String(search || '').trim().toLowerCase();
+        const cs = String(citySearch || '').trim().toLowerCase();
+        const cities = new Set((selectedCities || []).map(x => String(x)));
+
+        return (enterprisePicker.value || []).filter((it) => {
+            const idStr = String(it?.id ?? '');
+            const name = String(it?.name ?? '');
+            const city = String(it?.city ?? '');
+
+            const okSearch =
+                !s ||
+                name.toLowerCase().includes(s) ||
+                idStr.toLowerCase().includes(s);
+
+            const okCitySearch =
+                !cs ||
+                city.toLowerCase().includes(cs);
+
+            const okCitySelected =
+                !cities.size ||
+                (it?.city && cities.has(String(it.city)));
+
+            return okSearch && okCitySearch && okCitySelected;
+        });
+    }
+
     return {
         list, allActive, detail, logs, error,
+
+        // ✅ picker
+        enterprisePicker,
+        enterprisePickerCities,
+        enterprisePickerError,
+        fetchEnterprisePicker,
+        filterEnterprisePicker,
+
         fetchList, fetchAllActive,
         createProjection, cloneProjection,
         fetchDetail, saveLines, saveDefaults,
