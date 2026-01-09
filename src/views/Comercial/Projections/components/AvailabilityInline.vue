@@ -99,37 +99,37 @@ function cancel() {
     <div v-if="mode === 'full'" class="mt-3">
         <div class="flex flex-wrap pb-1 gap-1">
             <span
-                class="inline-flex items-center px-1 py-0.5 rounded-full bg-gray-50 text-gray-500 border border-gray-100 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-500 text-[10px] font-medium cursor-pointer"
+                class="inline-flex items-center ps-1 pe-1.5 py-0.5 rounded-full bg-gray-50 text-gray-500 border border-gray-100 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-500 text-[10px] font-medium cursor-pointer"
                 v-tippy="'Carga total de unidades do empreendimento'">
-                <span class="w-2 h-2 rounded-full bg-gray-400 mr-2"></span>
+                <span class="w-2 h-2 rounded-full bg-gray-400 mr-1"></span>
                 {{ total }}
             </span>
 
             <span
-                class="inline-flex items-center px-1 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-300 dark:border-emerald-800 text-[10px] font-medium cursor-pointer"
+                class="inline-flex items-center ps-1 pe-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-300 dark:border-emerald-800 text-[10px] font-medium cursor-pointer"
                 v-tippy="'Unidades livres para comercialização imediata'">
-                <span class="w-2 h-2 rounded-full bg-emerald-500 mr-2"></span>
+                <span class="w-2 h-2 rounded-full bg-emerald-500 mr-1"></span>
                 {{ available }}
             </span>
 
             <span
-                class="inline-flex items-center px-1 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-800 text-[10px] font-medium cursor-pointer"
+                class="inline-flex items-center ps-1 pe-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-800 text-[10px] font-medium cursor-pointer"
                 v-tippy="'Unidades com reserva ativa ou em processo de proposta'">
-                <span class="w-2 h-2 rounded-full bg-amber-500 mr-2"></span>
+                <span class="w-2 h-2 rounded-full bg-amber-500 mr-1"></span>
                 {{ reserved }}
             </span>
 
             <span
-                class="inline-flex items-center px-1 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-900/20 dark:text-rose-300 dark:border-rose-800 text-[10px] font-medium cursor-pointer"
+                class="inline-flex items-center ps-1 pe-1.5 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-900/20 dark:text-rose-300 dark:border-rose-800 text-[10px] font-medium cursor-pointer"
                 v-tippy="'Contratos de venda finalizados'">
-                <span class="w-2 h-2 rounded-full bg-rose-500 mr-2"></span>
+                <span class="w-2 h-2 rounded-full bg-rose-500 mr-1"></span>
                 {{ sold }}
             </span>
 
             <span
-                class="inline-flex items-center px-1 py-0.5 rounded-full bg-gray-50 text-gray-700 border border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700 text-[10px] font-medium cursor-pointer"
+                class="inline-flex items-center ps-1 pe-1.5 py-0.5 rounded-full bg-gray-50 text-gray-700 border border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700 text-[10px] font-medium cursor-pointer"
                 v-tippy="'Unidades bloqueadas administrativamente'">
-                <span class="w-2 h-2 rounded-full bg-gray-500 mr-2"></span>
+                <span class="w-2 h-2 rounded-full bg-gray-500 mr-1"></span>
                 {{ blocked }}
             </span>
         </div>
@@ -166,7 +166,7 @@ function cancel() {
                 :class="editable ? 'cursor-pointer hover:text-indigo-600' : ''"
                 v-tippy="editable ? 'Clique para editar o total de unidades' : 'Carga total de unidades do empreendimento'"
                 @click="startEdit">
-                <span class="w-2 h-2 rounded-full bg-gray-400 mr-2"></span>
+                <span class="w-2 h-2 rounded-full bg-gray-400 mr-1"></span>
                 {{ total }}
                 <!-- <span v-if="editable" class="ml-1 underline decoration-dotted">(editar)</span> -->
             </span>
@@ -190,7 +190,7 @@ function cancel() {
     </div>
 
     <!-- ✅ EMPTY -->
-    <div v-else class="mt-2 p-2 rounded-lg border border-dashed border-gray-300 dark:border-gray-700 text-center">
+    <div v-else class="mt-2 p-1 rounded-lg border border-dashed border-gray-300 dark:border-gray-700 text-center">
         <template v-if="!editing">
             <p class="text-[10px] text-gray-500" :class="editable ? 'cursor-pointer hover:text-indigo-600' : ''"
                 @click="startEdit"><i class="fas fa-circle-info mr-1.5"></i> Dados de disponibilidade indisponíveis.

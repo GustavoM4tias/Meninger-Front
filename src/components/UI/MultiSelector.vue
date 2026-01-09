@@ -18,7 +18,7 @@ const props = defineProps({
     // classes externas
     wrapperClass: { type: String, default: 'relative' },
     buttonClass: { type: String, default: 'w-full px-3 py-2 rounded-lg border text-left' },
-    panelClass: { type: String, default: 'absolute z-20 mt-1 max-h-72 w-full overflow-hidden rounded-md border shadow bg-white dark:bg-gray-800' },
+    panelClass: { type: String, default: 'absolute z-50 mt-1 max-h-72 w-full overflow-hidden rounded-md border shadow bg-white dark:bg-gray-800' },
     searchClass: { type: String, default: 'w-full mb-2 px-2 py-1 rounded border text-sm' },
     optionClass: { type: String, default: 'flex items-center gap-2 py-1 px-2 cursor-pointer' },
 });
