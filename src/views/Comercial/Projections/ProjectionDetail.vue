@@ -844,6 +844,7 @@ const showRowDefaults = ref(false);
 const rowDefaultsTarget = ref(null);
 
 const rowDefaultsForm = ref({
+    name: '',
     city: '',
     defaultPrice: 0,
     defaultMarketingPct: 0,
@@ -855,6 +856,7 @@ function openRowDefaultsModal(row) {
 
     rowDefaultsTarget.value = row;
     rowDefaultsForm.value = {
+        name: row?.name || '',
         city: row?.city || '',
         defaultPrice: Number(row?.defaultPrice || 0),
         defaultMarketingPct: Number(row?.defaultMarketingPct || 0),
@@ -874,6 +876,7 @@ function applyRowDefaultsModal() {
     const row = rowDefaultsTarget.value;
     if (!row) return;
 
+    row.name = String(rowDefaultsForm.value.name).trim() || null;
     row.city = String(rowDefaultsForm.value.city || '').trim() || null;
     row.defaultPrice = Number(rowDefaultsForm.value.defaultPrice || 0);
     row.defaultMarketingPct = Number(rowDefaultsForm.value.defaultMarketingPct || 0);
@@ -1268,7 +1271,7 @@ const chipClass = {
                                             class="text-[11px] text-gray-500 -my-2 flex items-center gap-1">
                                             <i class="fas fa-location-dot text-[10px]"></i>
                                             <span class="truncate">{{ r.city }}</span>
-                                            <span v-if="r.erp_id" class="truncate"> - CC: {{ r.erp_id }}</span> 
+                                            <span v-if="r.erp_id" class="truncate"> - CC: {{ r.erp_id }}</span>
                                         </div>
 
                                         <AvailabilityInline :summary="r.units_summary" :total-units="r.totalUnits"
@@ -1383,6 +1386,12 @@ const chipClass = {
                     </p>
 
                     <div class="space-y-3">
+                        <div>
+                            <label class="text-[11px] text-gray-500 block">Nome</label>
+                            <input id="row-default-name" v-model="rowDefaultsForm.name"
+                                class="w-full h-10 border dark:border-gray-700 rounded-lg px-3 bg-white/90 dark:bg-gray-900/70"
+                                :disabled="rowDisabled" />
+                        </div>
                         <div>
                             <label class="text-[11px] text-gray-500 block">Cidade</label>
                             <input id="row-default-city" v-model="rowDefaultsForm.city"
