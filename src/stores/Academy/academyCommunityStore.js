@@ -10,6 +10,7 @@ export const useAcademyCommunityStore = defineStore('academyCommunity', {
         pageSize: 20,
         current: null,
         error: null,
+        meta: { categories: null, types: null },
     }),
 
     actions: {
@@ -65,21 +66,33 @@ export const useAcademyCommunityStore = defineStore('academyCommunity', {
             }
         },
 
-        async createTopic({ title, body, tags = [], type = 'questions', audience = 'BOTH' } = {}) {
+        async createTopic({
+            title,
+            body,
+            payload = null,
+            categorySlug = 'geral',
+            tags = [],
+            type = 'questions',
+            audience = 'BOTH',
+        } = {}) {
             this.error = null;
+
             const data = await requestWithAuth('/academy/community/topics', {
                 method: 'POST',
-                body: JSON.stringify({ title, body, tags, type, audience }),
+                body: JSON.stringify({ title, body, payload, categorySlug, tags, type, audience }),
             });
+
             return data;
         },
 
-        async createPost(topicId, { body, type = 'ANSWER' } = {}) {
+        async createPost(topicId, { body, payload = null, type = 'ANSWER' } = {}) {
             this.error = null;
+
             const data = await requestWithAuth(`/academy/community/topics/${topicId}/posts`, {
                 method: 'POST',
-                body: JSON.stringify({ body, type }),
+                body: JSON.stringify({ body, payload, type }),
             });
+
             return data;
         },
 
@@ -96,6 +109,19 @@ export const useAcademyCommunityStore = defineStore('academyCommunity', {
             const data = await requestWithAuth(`/academy/community/topics/${topicId}/close`, {
                 method: 'PATCH',
             });
+            return data;
+        },
+        // actions
+        async fetchMeta() {
+            this.error = null;
+            const data = await requestWithAuth('/academy/community/meta');
+            this.meta = data || { categories: null, types: null };
+            return this.meta;
+        },
+
+        async reopenTopic(topicId) {
+            this.error = null;
+            const data = await requestWithAuth(`/academy/community/topics/${topicId}/reopen`, { method: 'PATCH' });
             return data;
         },
     }
