@@ -1,6 +1,13 @@
 <!-- src/components/Auth/LoginForm.vue -->
 <template>
   <form @submit.prevent="handleLogin">
+    <select v-model="loginType"
+      class="absolute top-20 text-md bg-gray-100 dark:bg-gray-700 border-none rounded-lg px-3 focus:ring-1 focus:ring-blue-500 outline-none cursor-pointer z-10">
+      <option value="/">Office</option>
+      <option value="/academy">Academy</option>
+    </select>
+
+
     <p class="text-xl font-light uppercase my-2 text-gray-500 dark:text-gray-200">Acesse sua conta </p>
     <hr class="border-t border-gray-400 dark:border-gray-100 mb-10">
     </hr>
@@ -55,6 +62,8 @@ const email = ref('');
 const password = ref('');
 const errorMessage = ref('');
 
+const loginType = ref('/'); // Padrão Office
+
 const handleLogin = async () => {
   errorMessage.value = '';
   try {
@@ -62,17 +71,19 @@ const handleLogin = async () => {
 
     if (result.success && result.data.token) {
       authStore.setToken(result.data.token);
-      authStore.fetchUserInfo()
-      router.push('/');
+      await authStore.fetchUserInfo();
+
+      // ALTERADO: window.location.href em vez de router.push
+      window.location.href = loginType.value;
     } else {
       errorMessage.value = result.error;
     }
   } catch (error) {
-    errorMessage.value = (error);
+    errorMessage.value = error;
   }
 };
 
-async function register() { 
+async function register() {
   toast.info('Solicite acesso a seu gestor.')
 }
 
@@ -117,14 +128,14 @@ async function doFaceLogin() {
     const embedding = await faceStore.getOneGoodEmbedding(videoLoginRef.value);
     if (!embedding) throw new Error('Rosto não detectado.');
 
-    console.log('[FaceLogin] emb typeof:', typeof embedding, 'isArray:', Array.isArray(embedding), 'len:', embedding?.length);
-
-    const r = await faceStore.identify(embedding); // << só o embedding aqui
+    const r = await faceStore.identify(embedding);
     if (r.success && r.data?.token) {
       authStore.setToken(r.data.token);
       await authStore.fetchUserInfo();
       closeFaceLogin();
-      router.push('/');
+
+      // ALTERADO: window.location.href
+      window.location.href = loginType.value;
     } else {
       errorMessage.value = r.error || 'Falha no reconhecimento. Use a senha.';
       closeFaceLogin();
@@ -137,20 +148,16 @@ async function doFaceLogin() {
   }
 }
 
-
-
-
 onMounted(() => {
   if (authStore.isAuthenticated()) {
-    router.push('/');
+    // Verifique se já não estamos na página de destino para evitar loops
+    if (router.currentRoute.value.path === '/login') {
+      router.push('/');
+    }
   } else {
     authStore.clearUser();
   }
 });
-
-
-
-
 
 onBeforeUnmount(() => stopCamera());
 </script>

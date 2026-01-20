@@ -3,39 +3,13 @@ import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import API_URL from '@/config/apiUrl';
 import { useCarregamentoStore } from '@/stores/Config/carregamento';
+import { requestWithAuth } from '@/utils/Auth/requestWithAuth';
 
 // ajuste aqui se você guarda o token em outro lugar (ex.: Pinia de auth)
 function getToken() {
     return localStorage.getItem('token'); // ou sessionStorage / cookie, etc.
 }
-
-async function requestWithAuth(url, options = {}) {
-    const token = getToken();
-    const headers = new Headers(options.headers || {});
-
-    if (token) headers.set('Authorization', `Bearer ${token}`);
-
-    // se body for FormData, não definir Content-Type manualmente
-    const isFormData = (options.body && typeof FormData !== 'undefined' && options.body instanceof FormData);
-    if (!isFormData && !headers.has('Content-Type') && options.method && options.method !== 'GET') {
-        headers.set('Content-Type', 'application/json');
-    }
-
-    const res = await fetch(url, { ...options, headers });
-    if (!res.ok) {
-        // mensagens amigáveis
-        if (res.status === 401) throw new Error('Não autorizado. Faça login novamente.');
-        if (res.status === 400) {
-            const j = await res.json().catch(() => ({}));
-            throw new Error(j?.error || 'Requisição inválida.');
-        }
-        throw new Error('Erro na requisição.');
-    }
-    // algumas rotas podem não ter body
-    const contentType = res.headers.get('content-type') || '';
-    return contentType.includes('application/json') ? res.json() : res.text();
-}
-
+ 
 export const useAIStore = defineStore('ai', () => {
     const validatorResult = ref(null);
     const validatorHistory = ref([]);

@@ -4,30 +4,12 @@ import { ref, computed } from 'vue';
 import dayjs from 'dayjs';
 import API_URL from '@/config/apiUrl';
 import { useCarregamentoStore } from '@/stores/Config/carregamento';
+import { requestWithAuth } from '@/utils/Auth/requestWithAuth';
 
 function getToken() {
     return localStorage.getItem('token');
 }
-
-async function requestWithAuth(url, options = {}) {
-    const headers = new Headers(options.headers || {});
-    const token = getToken();
-    if (token) headers.set('Authorization', `Bearer ${token}`);
-
-    const isForm = options.body instanceof FormData;
-    if (!isForm && !headers.has('Content-Type') && options.method && options.method !== 'GET') {
-        headers.set('Content-Type', 'application/json');
-    }
-
-    const res = await fetch(url, { ...options, headers });
-    const data = await res.json().catch(() => ({}));
-
-    if (!res.ok) {
-        throw new Error(data?.error || 'Erro na requisição');
-    }
-    return data;
-}
-
+ 
 export const useExpensesStore = defineStore('expenses', () => {
     const carregamento = useCarregamentoStore();
 

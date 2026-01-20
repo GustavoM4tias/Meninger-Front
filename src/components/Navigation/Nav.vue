@@ -172,7 +172,7 @@ const isCollapsed = ref(false);
 
 // largura expandida e recolhida (Tailwind padrão):
 // w-72 = 18rem | w-12 = 3rem (ainda menor e acompanha só ícones)
-const sidebarWidthClass = computed(() => (isCollapsed.value ? 'sm:w-12 w-12' : 'sm:w-72 w-72'));
+const sidebarWidthClass = computed(() => (isCollapsed.value ? 'sm:w-12 w-12' : 'w-auto sm:w-72'));
 
 const collapseSidebar = () => {
     isCollapsed.value = true;
@@ -316,7 +316,7 @@ onMounted(async () => {
         </nav>
 
         <!-- Sidebar -->
-        <aside id="logo-sidebar" :class="[
+        <main id="logo-sidebar" :class="[
             'fixed top-0 left-0 z-40 h-screen pt-20 bg-white border-r border-gray-200 sm:translate-x-0 dark:bg-gray-800 dark:border-gray-700 -translate-x-full',
             // animação suave ao mudar a largura (evita corte seco)
             'transition-[width] duration-200 ease-in-out',
@@ -541,6 +541,17 @@ onMounted(async () => {
                     </li>
 
                     <li>
+                        <RouterLink to="/academy" @click="expandSidebar"
+                            class="flex items-center p-2 h-10 text-gray-900 transition duration-75 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white group"
+                            :class="isCollapsed ? 'justify-center' : ''">
+                            <i
+                                class="fas fa-graduation-cap w-5 text-gray-500 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white"></i>
+                            <span v-show="!isCollapsed"
+                                class="ms-3 transition-opacity duration-200 ease-in-out">Academy</span>
+                        </RouterLink>
+                    </li>
+
+                    <li>
                         <button @click="authStore.logout()"
                             class="flex items-center w-full p-2 h-10 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group"
                             :class="isCollapsed ? 'justify-center' : ''">
@@ -552,6 +563,6 @@ onMounted(async () => {
                     </li>
                 </ul>
             </div>
-        </aside>
+        </main>
     </div>
 </template>

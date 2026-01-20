@@ -6,5 +6,4 @@
 
 <script setup>
 import Form from '@/views/Settings/Account/components/Form.vue'
-
 </script>
