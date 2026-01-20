@@ -49,7 +49,7 @@
                 <div
                     class="flex flex-col justify-between rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
                     <div>
-                        <div class="text-xs font-semibold text-slate-500 dark:text-slate-400">KB</div>
+                        <div class="text-xs font-semibold text-slate-500 dark:text-slate-400">Artigos</div>
                         <div class="mt-2 text-sm text-slate-700 dark:text-slate-300">Publicados</div>
                         <div class="text-2xl font-bold text-slate-900 dark:text-white">{{ kb.published }}</div>
                         <div class="mt-2 text-xs text-slate-500 dark:text-slate-400">Rascunhos: {{ kb.drafts }} • Total:
