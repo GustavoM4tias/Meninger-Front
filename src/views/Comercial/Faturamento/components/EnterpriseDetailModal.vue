@@ -486,9 +486,9 @@
                       <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider">
                         Ações
                       </th>
-                      <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider">
+                      <!-- <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider">
                         Premiar
-                      </th> 
+                      </th>  -->
                     </tr>
                   </thead>
 
@@ -571,19 +571,17 @@
                             }}
                           </button>
                         </td>
-                        <td class="px-4 py-3 text-center">
-                          <!-- Se tiver prêmio: mostra só o badge -->
+                        <!-- <td class="px-4 py-3 text-center"> 
                           <template v-if="awardStatusForSale(sale)">
                             <span class="text-[10px] truncate px-2 py-1 rounded bg-purple-100 text-purple-700">
                               {{ statusLabel(awardStatusForSale(sale)) }}
                             </span>
-                          </template>
-                          <!-- Se NÃO tiver prêmio: mostra o checkbox -->
+                          </template> 
                           <template v-else>
                             <input type="checkbox" :checked="selectedSales.has(saleKeyOf(sale))"
                               @change="toggleSaleSelection(sale)" />
                           </template>
-                        </td> 
+                        </td>  -->
                       </tr>
 
                       <tr v-show="expandedSales.has(`${sale.customer_id}-${sale.unit_name}`)"

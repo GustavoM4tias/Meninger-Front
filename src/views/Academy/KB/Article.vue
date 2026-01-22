@@ -160,7 +160,7 @@ const backTo = computed(() => {
 
 const breadcrumbs = computed(() => ([
     { label: 'Academy', to: { name: 'AcademyPanel' } },
-    { label: 'KB', to: backTo.value },
+    { label: 'Artigos', to: backTo.value },
     { label: categorySlug.value || 'Categoria', to: backTo.value },
     { label: article.value?.title || articleSlug.value || 'Artigo' },
 ]));

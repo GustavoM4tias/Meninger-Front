@@ -19,16 +19,17 @@
                     </div>
                 </div>
 
-                <div class="flex items-center gap-2 w-full md:w-[520px]">
+                <div class="relative w-full md:w-[420px]">
                     <input v-model="q"
                         class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2.5 text-sm text-slate-900 dark:text-slate-100 shadow-sm focus:outline-none focus:ring-4 focus:ring-slate-100 dark:focus:ring-slate-800 transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500"
                         placeholder="Buscar trilha..." @keyup.enter="reload" />
                     <button
-                        class="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2.5 text-sm hover:bg-slate-50 dark:hover:bg-slate-700"
+                        class="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg px-2 py-1 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                         @click="reload" type="button">
-                        Atualizar
+                        ⌕
                     </button>
                 </div>
+
             </div>
         </div>
 

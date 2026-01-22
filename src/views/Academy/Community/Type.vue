@@ -16,134 +16,167 @@
                             ⌕
                         </button>
                     </div>
-
                     <button
-                        class="rounded-xl bg-slate-900 dark:bg-slate-100 px-4 py-2.5 text-sm font-medium text-white dark:text-slate-900 shadow-sm hover:bg-slate-800 dark:hover:bg-white transition-all active:scale-95"
-                        @click="openCreateModal">
-                        Novo tópico
+                        class="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2.5 text-sm font-medium text-slate-900 dark:text-slate-100 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                        @click="router.push({ name: 'AcademyCommunityMyTopics', params: { type: typeParam } })">
+                        Meus tópicos
                     </button>
+
                 </div>
             </template>
         </AcademyPageHeader>
-
-        <div class="flex flex-col gap-3">
-            <div class="flex flex-wrap gap-2">
-                <button v-for="t in types" :key="t.key"
-                    class="rounded-full border px-3 py-1 text-sm font-medium transition-all"
-                    :class="typeParam === t.key ? activePillClasses : idlePillClasses" @click="goType(t.key)">
-                    {{ t.label }}
-                </button>
-            </div>
-
-        </div>
-
-        <div v-if="store.error"
-            class="rounded-2xl border border-rose-200 dark:border-rose-900/50 bg-white dark:bg-slate-900 p-4 text-sm text-rose-700 dark:text-rose-400">
-            {{ store.error }}
-        </div>
-
-        <div
-            class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm transition-colors overflow-hidden">
-            <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 px-5 py-4">
-                <div class="text-sm text-slate-600 dark:text-slate-400">
-                    <span class="font-semibold text-slate-900 dark:text-slate-200">{{ store.total }}</span>
-                    Tópicos.
-                </div>
-
-                <div class="flex flex-wrap gap-2">
-                    <button class="rounded-full border px-3 py-1 text-sm font-medium transition-all"
-                        :class="status === 'OPEN' ? activePillClasses : idlePillClasses" @click="setStatus('OPEN')">
-                        Abertos
-                    </button>
-                    <button class="rounded-full border px-3 py-1 text-sm font-medium transition-all"
-                        :class="status === 'CLOSED' ? activePillClasses : idlePillClasses" @click="setStatus('CLOSED')">
-                        Fechados
-                    </button>
-                </div>
-            </div>
-
-            <div class="p-2">
-                <ul v-if="store.list?.length" class="divide-y divide-slate-100 dark:divide-slate-800">
-                    <li v-for="it in store.list" :key="it.id"
-                        class="flex items-start justify-between gap-3 rounded-xl px-3 py-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer group"
-                        @click="openTopic(it.id)">
-                        <div class="min-w-0">
-                            <div class="flex flex-wrap items-center gap-2 mb-2">
-                                <p
-                                    class="truncate text-sm font-semibold text-slate-900 dark:text-slate-200 group-hover:text-slate-700 dark:group-hover:text-white transition-colors">
-                                    {{ it.title }}
-                                </p>
-
-                                <span v-if="Number(it.acceptedPostId) > 0"
-                                    class="rounded-full bg-emerald-50 dark:bg-emerald-900/30 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
-                                    resolvido
-                                </span>
-
-                                <span class="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider"
-                                    :class="topicStatusPillClass(it)">
-                                    {{ topicStatusPillLabel(it) }}
-                                </span>
-
-                                <span v-if="it.categorySlug"
-                                    class="rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 py-0.5 text-[10px] font-medium text-slate-600 dark:text-slate-400">
-                                    {{ categoryName(it.categorySlug, it.type) }}
-                                </span>
-                            </div>
-
-                            <div class="flex flex-wrap items-center gap-2">
-                                <span v-for="tag in (it.tags || []).slice(0, 3)" :key="tag"
-                                    class="rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 py-0.5 text-[10px] font-medium text-slate-600 dark:text-slate-400">
-                                    #{{ tag }}
-                                </span>
-                            </div>
-
-                            <div class="mt-2 text-xs text-slate-500 dark:text-slate-500">
-                                <span v-if="it?.createdBy?.username">
-                                    Criado por
-                                    <span class="font-semibold text-slate-700 dark:text-slate-200">{{
-                                        it.createdBy.username
-                                    }}</span>
-                                </span>
-                                <span v-if="it.createdAt">• {{ formatDateTime(it.createdAt) }}</span>
-
-                                <template v-if="it?.updatedBy?.username && it.updatedAt">
-                                    <span>•</span>
-                                    <span>
-                                        Última edição por
-                                        <span class="font-semibold text-slate-700 dark:text-slate-200">{{
-                                            it.updatedBy.username }}</span>
-                                        • {{ formatDateTime(it.updatedAt) }}
-                                    </span>
-                                </template>
-                            </div>
+        <div class="grid grid-cols-1 gap-4 lg:grid-cols-12">
+            <!-- MENU LATERAL (tipos) -->
+            <aside class="lg:col-span-3">
+                <div
+                    class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm transition-colors overflow-hidden">
+                    <div class="flex justify-between border-b border-slate-100 dark:border-slate-800 px-5 py-4">
+                        <div class="flex flex-col gap-2">
+                            <h2 class="text-base font-semibold text-slate-900 dark:text-white">Tipos</h2>
+                            <p class="text-sm text-slate-500 dark:text-slate-400">
+                                <span class="font-semibold text-slate-900 dark:text-slate-200">{{ store.total }}</span>
+                                Tópicos.
+                            </p>
                         </div>
+                        <div class="flex flex-wrap gap-2 my-auto">
+                            <button class="rounded-full border px-3 py-1 text-sm font-medium transition-all"
+                                :class="status === 'OPEN' ? activePillClasses : idlePillClasses"
+                                @click="setStatus('OPEN')">
+                                Abertos
+                            </button>
+                            <button class="rounded-full border px-3 py-1 text-sm font-medium transition-all"
+                                :class="status === 'CLOSED' ? activePillClasses : idlePillClasses"
+                                @click="setStatus('CLOSED')">
+                                Fechados
+                            </button>
+                        </div>
+                    </div>
 
-                        <span
-                            class="text-slate-400 dark:text-slate-600 group-hover:translate-x-1 transition-transform">›</span>
-                    </li>
-                </ul>
+                    <div class="flex flex-col gap-1 p-2">
+                        <button v-for="t in types" :key="t.key"
+                            class="w-full rounded-xl px-3 py-2 text-left text-sm font-medium transition-colors" :class="typeParam === t.key
+                                ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm'
+                                : 'text-slate-700 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50'"
+                            @click="goType(t.key)">
+                            {{ t.label }}
+                        </button>
+                    </div>
 
-                <div v-else class="px-3 py-10 text-sm text-slate-500 dark:text-slate-400 text-center">
-                    Nenhum tópico encontrado.
+                </div>
+
+            </aside>
+
+            <!-- CONTEÚDO (lista + filtros) -->
+            <main class="lg:col-span-9">
+                <div v-if="store.error"
+                    class="mb-4 rounded-2xl border border-rose-200 dark:border-rose-900/50 bg-white dark:bg-slate-900 p-4 text-sm text-rose-700 dark:text-rose-400">
+                    {{ store.error }}
                 </div>
 
                 <div
-                    class="flex items-center justify-between px-3 py-4 border-t border-slate-100 dark:border-slate-800 mt-2">
-                    <button
-                        class="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-30 transition-colors"
-                        :disabled="store.page <= 1" @click="reload(store.page - 1)">
-                        Anterior
-                    </button>
+                    class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm transition-colors overflow-hidden">
+                    <div
+                        class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 px-5 py-4">
+                        <div class="text-sm text-slate-600 dark:text-slate-400">
+                            <span class="font-semibold text-slate-900 dark:text-slate-200">{{ store.total }}</span>
+                            Tópicos • <span class="font-semibold">{{ title }}</span>
+                            <span v-if="q?.trim()">• busca: "{{ q }}"</span>
+                        </div>
 
-                    <div class="text-xs font-medium text-slate-500 dark:text-slate-400">Página {{ store.page }}</div>
+                        <button
+                            class="rounded-xl bg-slate-900 dark:bg-slate-100 px-4 py-2.5 text-sm font-medium text-white dark:text-slate-900 shadow-sm hover:bg-slate-800 dark:hover:bg-white transition-all active:scale-95"
+                            @click="openCreateModal">
+                            Novo tópico
+                        </button>
+                    </div>
 
-                    <button
-                        class="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-30 transition-colors"
-                        :disabled="store.page * store.pageSize >= store.total" @click="reload(store.page + 1)">
-                        Próxima
-                    </button>
+                    <div class="p-2">
+                        <ul v-if="store.list?.length" class="divide-y divide-slate-100 dark:divide-slate-800">
+                            <!-- seu <li> 그대로 -->
+                            <li v-for="it in store.list" :key="it.id"
+                                class="flex items-start justify-between gap-3 rounded-xl px-3 py-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer group"
+                                @click="openTopic(it.id)">
+                                <!-- ... (mantém seu conteúdo igual) ... -->
+                                <div class="min-w-0">
+                                    <div class="flex flex-wrap items-center gap-2 mb-2">
+                                        <p
+                                            class="truncate text-sm font-semibold text-slate-900 dark:text-slate-200 group-hover:text-slate-700 dark:group-hover:text-white transition-colors">
+                                            {{ it.title }}
+                                        </p>
+
+                                        <span v-if="Number(it.acceptedPostId) > 0"
+                                            class="rounded-full bg-emerald-50 dark:bg-emerald-900/30 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+                                            resolvido
+                                        </span>
+
+                                        <span
+                                            class="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider"
+                                            :class="topicStatusPillClass(it)">
+                                            {{ topicStatusPillLabel(it) }}
+                                        </span>
+
+                                        <span v-if="it.categorySlug"
+                                            class="rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 py-0.5 text-[10px] font-medium text-slate-600 dark:text-slate-400">
+                                            {{ categoryName(it.categorySlug, it.type) }}
+                                        </span>
+                                    </div>
+
+                                    <div class="flex flex-wrap items-center gap-2">
+                                        <span v-for="tag in (it.tags || []).slice(0, 3)" :key="tag"
+                                            class="rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 py-0.5 text-[10px] font-medium text-slate-600 dark:text-slate-400">
+                                            #{{ tag }}
+                                        </span>
+                                    </div>
+
+                                    <div class="mt-2 text-xs text-slate-500 dark:text-slate-500">
+                                        <span v-if="it?.createdBy?.username">
+                                            Criado por
+                                            <span class="font-semibold text-slate-700 dark:text-slate-200">{{
+                                                it.createdBy.username }}</span>
+                                        </span>
+                                        <span v-if="it.createdAt">• {{ formatDateTime(it.createdAt) }}</span>
+
+                                        <template v-if="it?.updatedBy?.username && it.updatedAt">
+                                            <span>•</span>
+                                            <span>
+                                                Última edição por
+                                                <span class="font-semibold text-slate-700 dark:text-slate-200">{{
+                                                    it.updatedBy.username }}</span>
+                                                • {{ formatDateTime(it.updatedAt) }}
+                                            </span>
+                                        </template>
+                                    </div>
+                                </div>
+
+                                <span
+                                    class="text-slate-400 dark:text-slate-600 group-hover:translate-x-1 transition-transform">›</span>
+                            </li>
+                        </ul>
+
+                        <div v-else class="px-3 py-10 text-sm text-slate-500 dark:text-slate-400 text-center">
+                            Nenhum tópico encontrado.
+                        </div>
+
+                        <div
+                            class="flex items-center justify-between px-3 py-4 border-t border-slate-100 dark:border-slate-800 mt-2">
+                            <button
+                                class="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-30 transition-colors"
+                                :disabled="store.page <= 1" @click="reload(store.page - 1)">
+                                Anterior
+                            </button>
+
+                            <div class="text-xs font-medium text-slate-500 dark:text-slate-400">Página {{ store.page }}
+                            </div>
+
+                            <button
+                                class="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-30 transition-colors"
+                                :disabled="store.page * store.pageSize >= store.total" @click="reload(store.page + 1)">
+                                Próxima
+                            </button>
+                        </div>
+                    </div>
                 </div>
-            </div>
+            </main>
         </div>
 
         <!-- MODAL -->
@@ -279,6 +312,16 @@ const typeParam = computed(() => String(route.params.type || 'questions'));
 const q = ref('');
 const status = ref('OPEN');
 
+let qTimer = null;
+
+watch(
+    () => q.value,
+    () => {
+        clearTimeout(qTimer);
+        qTimer = setTimeout(() => reload(1), 10);
+    }
+);
+
 const types = [
     { key: 'questions', label: 'Dúvidas' },
     { key: 'discussions', label: 'Discussões' },
@@ -394,12 +437,11 @@ async function openCreateModal() {
 async function goType(t) {
     if (t === typeParam.value) return;
 
+    q.value = '';
+    status.value = 'OPEN';
+
     await router.push({ name: 'AcademyCommunityType', params: { type: t } });
-
-    // garante que o computed (typeParam) atualizou antes de buscar
     await nextTick();
-
-    // carrega os tópicos do novo tipo
     await reload(1);
 }
 

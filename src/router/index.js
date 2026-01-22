@@ -235,12 +235,24 @@ const routes = [
         component: () => import('@/views/Academy/Me.vue'),
         meta: { requiresAuth: true, searchable: true, content: 'Academy | Meu perfil' },
       },
-
       {
         path: 'community',
         name: 'AcademyCommunity',
         component: () => import('@/views/Academy/Community/Index.vue'),
         meta: { requiresAuth: true, searchable: true, content: 'Academy | Comunidade' },
+      },
+      {
+        path: 'community/my',
+        name: 'AcademyCommunityMyTopics',
+        component: () => import('@/views/Academy/Community/MyTopics.vue'),
+        meta: { requiresAuth: true, searchable: false, content: 'Academy | Comunidade | Meus tópicos' },
+      },
+      {
+        path: 'community/my/:id(\\d+)',
+        name: 'AcademyCommunityTopicManage',
+        component: () => import('@/views/Academy/Community/TopicManage.vue'),
+        props: true,
+        meta: { requiresAuth: true, searchable: false, content: 'Academy | Comunidade | Gerenciar tópico' },
       },
       {
         path: 'community/:type',

@@ -3,7 +3,7 @@
         <AcademyPageHeader :title="headerTitle" subtitle="KB • criar e editar artigos" :backTo="{ name: 'AcademyKB' }"
             :breadcrumbs="[
                 { label: 'Academy', to: { name: 'AcademyPanel' } },
-                { label: 'KB', to: { name: 'AcademyKB' } },
+                { label: 'Artigos', to: { name: 'AcademyKB' } },
                 { label: isEdit ? 'Editar' : 'Novo' }
             ]">
             <template #actions>
