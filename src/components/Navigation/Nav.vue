@@ -61,7 +61,7 @@ const menuItems = {
             ]
         },
         items: [ 
-            { router: '/comercial/awards', section: 'Premiações', name: 'Premiação', icon: 'fas fa-award' }, 
+            // { router: '/comercial/awards', section: 'Premiações', name: 'Premiação', icon: 'fas fa-award' }, 
             { router: '/comercial/workflow/groups', section: 'Workflow', name: 'Grupos Workflow', icon: 'fas fa-chart-diagram' }
         ]
     },

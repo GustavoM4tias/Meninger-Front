@@ -172,7 +172,7 @@ const kb = useAcademyKbStore();
 
 const breadcrumbs = [
     { label: 'Academy', to: { name: 'AcademyPanel' } },
-    { label: 'KB' },
+    { label: 'Artigos' },
 ];
 
 const qLocal = ref('');
