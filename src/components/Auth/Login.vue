@@ -4,7 +4,7 @@
     <select v-model="loginType"
       class="absolute top-20 text-md bg-gray-100 dark:bg-gray-700 border-none rounded-lg px-3 focus:ring-1 focus:ring-blue-500 outline-none cursor-pointer z-10">
       <option value="/">Office</option>
-      <option value="/academy">Academy</option>
+      <option value="/academy/panel">Academy</option>
     </select>
 
 

@@ -39,7 +39,7 @@ function go(path) {
 
 function logout() {
     open.value = false;
-    authStore.logout();
+    authStore.academyLogout();
 }
 
 function onDocClick(e) {

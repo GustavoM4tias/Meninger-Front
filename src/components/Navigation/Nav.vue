@@ -541,7 +541,7 @@ onMounted(async () => {
                     </li>
 
                     <li>
-                        <RouterLink to="/academy" @click="expandSidebar"
+                        <RouterLink to="/academy/panel" @click="expandSidebar"
                             class="flex items-center p-2 h-10 text-gray-900 transition duration-75 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white group"
                             :class="isCollapsed ? 'justify-center' : ''">
                             <i
