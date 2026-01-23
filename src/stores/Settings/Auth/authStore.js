@@ -4,16 +4,33 @@ import router from '@/router';
 import API_URL from '@/config/apiUrl';
 import { getUserInfo, getUserById, fetchBanners } from '@/utils/Auth/apiAuth';
 
+function safeJsonParse(v, fallback = null) {
+  try { return JSON.parse(v); } catch { return fallback; }
+}
+
+function normalizeProvider(user) {
+  const p = String(user?.auth_provider || 'INTERNAL').toUpperCase();
+  return p || 'INTERNAL';
+}
+
 export const useAuthStore = defineStore('user', {
   state: () => ({
     users: [],
-    user: null,
+    user: safeJsonParse(localStorage.getItem('user'), null), // ✅ persiste sessão com user completo
     userById: null,
     token: localStorage.getItem('token') || null,
     banners: [],
   }),
 
   getters: {
+    // ✅ provider canônico para controles
+    authProvider: (state) => normalizeProvider(state.user),
+
+    // ✅ externo vs interno (para guards e UI)
+    isExternal: (state) => normalizeProvider(state.user) !== 'INTERNAL',
+    isInternal: (state) => normalizeProvider(state.user) === 'INTERNAL',
+
+    // ✅ seus getters atuais (mantidos)
     usuariosComAniversarioValido: (state) =>
       state.users.filter(u => u.birth_date && !isNaN(new Date(u.birth_date))),
     proximoAniversario: () => (birthDateStr) => {
@@ -49,42 +66,94 @@ export const useAuthStore = defineStore('user', {
   },
 
   actions: {
+    // =========================
+    // Sessão / Persistência
+    // =========================
     setUser(user) {
-      this.user = user;
-      localStorage.setItem('role', user.role);
-      localStorage.setItem('position', user.position);
+      this.user = user || null;
+
+      // ✅ persistir user completo (evita depender só de role/position)
+      if (this.user) localStorage.setItem('user', JSON.stringify(this.user));
+      else localStorage.removeItem('user');
+
+      // compatibilidade com seu legado
+      localStorage.setItem('role', this.user?.role || '');
+      localStorage.setItem('position', this.user?.position || '');
+      localStorage.setItem('auth_provider', this.user?.auth_provider || 'INTERNAL');
     },
-    setUserById(userById) {
-      this.userById = userById;
-      localStorage.setItem('position', userById.position);
-    },
+
     setToken(token) {
-      this.token = token;
-      localStorage.setItem('token', token);
+      this.token = token || null;
+      if (this.token) localStorage.setItem('token', this.token);
+      else localStorage.removeItem('token');
     },
+
     clearUser() {
       this.user = null;
+      this.userById = null;
       this.token = null;
+
       localStorage.removeItem('token');
       localStorage.removeItem('role');
       localStorage.removeItem('position');
+      localStorage.removeItem('user');
+      localStorage.removeItem('auth_provider');
     },
+
     isAuthenticated() {
       return !!this.token;
     },
+
     logout() {
       this.clearUser();
       router.push('/login');
     },
 
+    // ✅ “me” único (serve interno e externo)
+    async fetchMe() {
+      // getUserInfo já usa token, então funciona pra qualquer provider
+      const result = await getUserInfo();
+      this.setUser(result.data);
+      return result.data;
+    },
+
+    async initializeAuth() {
+      // ✅ usado no bootstrap do app
+      if (this.token && !this.user) {
+        try {
+          await this.fetchMe();
+        } catch {
+          this.clearUser();
+        }
+      }
+    },
+
+    // =========================
+    // Regras antigas (mantidas)
+    // =========================
+    setUserById(userById) {
+      this.userById = userById;
+      localStorage.setItem('position', userById?.position || '');
+    },
+
+    hasPosition(position) {
+      if (!position) return true;
+      return this.user?.position === position || localStorage.getItem('position') === position;
+    },
+
+    hasRole(role) {
+      if (!role) return true;
+      return this.user?.role === role || localStorage.getItem('role') === role;
+    },
+
     async fetchUserInfo() {
+      // mantém sua função mas agora delega pro fetchMe
       try {
-        const result = await getUserInfo();
-        this.setUser(result.data);
+        await this.fetchMe();
       } catch (error) {
         console.error(error);
         this.clearUser();
-        router.push('/login');
+        throw error; // ✅ NÃO redireciona aqui
       }
     },
 
@@ -97,8 +166,9 @@ export const useAuthStore = defineStore('user', {
       }
     },
 
-    // ====== AQUI COMEÇA O CRUD DE USUÁRIOS ======
-
+    // =========================
+    // CRUD Usuários (Office)
+    // =========================
     async getAllUsers() {
       try {
         const response = await fetch(`${API_URL}/auth/users`, {
@@ -192,7 +262,6 @@ export const useAuthStore = defineStore('user', {
         throw error;
       }
     },
-    // ====== FIM CRUD USUÁRIOS ======
 
     async getBanners() {
       try {
@@ -200,21 +269,6 @@ export const useAuthStore = defineStore('user', {
         this.banners = result.data;
       } catch (error) {
         console.error('Erro ao buscar banners:', error);
-      }
-    },
-    hasPosition(position) {
-      return this.user?.position === position || localStorage.getItem('position') === position;
-    },
-    hasRole(role) {
-      return this.user?.role === role || localStorage.getItem('role') === role;
-    },
-    async initializeAuth() {
-      if (this.token && !this.user) {
-        try {
-          await this.fetchUserInfo();
-        } catch (error) {
-          this.clearUser();
-        }
       }
     },
   },
