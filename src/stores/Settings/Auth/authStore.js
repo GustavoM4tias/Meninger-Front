@@ -109,6 +109,11 @@ export const useAuthStore = defineStore('user', {
       router.push('/login');
     },
 
+    academyLogout() {
+      this.clearUser();
+      router.push('/academy/login');
+    },
+
     // ✅ “me” único (serve interno e externo)
     async fetchMe() {
       // getUserInfo já usa token, então funciona pra qualquer provider

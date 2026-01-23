@@ -3,7 +3,7 @@
         class="h-screen w-full overflow-hidden flex flex-col bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
         <!-- Header -->
         <header ref="headerEl" class="sticky top-0 z-40 bg-white dark:bg-slate-900 dark:backdrop-blur-md">
-            <div class="mx-auto p-2 md:pb-3 md:pt-4 md:px-3">
+            <div class="mx-auto p-3 pb-1 md:pb-3 md:pt-4 md:px-3">
                 <div class="flex items-center justify-between gap-3">
                     <div class="flex items-center gap-3">
                         <button
@@ -23,17 +23,14 @@
                                 :class="{ 'fa-rotate-180': desktopCollapsed }">
                             </i>
                         </button>
+                        <img src="/ACADEMY.png" class="h-10 invert dark:invert-0" alt="Menin Academy">
 
-                        <div class="leading-tight">
-                            <div class="text-sm font-semibold text-slate-900 dark:text-white">Menin Academy</div>
-                            <div class="text-xs text-slate-500 dark:text-slate-400">Artigos • Comunidade • Trilhas</div>
-                        </div>
                     </div>
 
-                    <div class="flex items-center md: pe-2 gap-4 w-full md:w-auto">
+                    <div class="flex items-center justify-between md:pe-2 gap-4 w-auto">
                         <InputSearch />
                         <i @click="router.push({ name: 'AcademyKBEditor' })"
-                            class="fas text-2xl cursor-pointer fa-book-open"></i>
+                            class="fas text-2xl cursor-pointer fa-book-open !hidden md:!block"></i>
                         <Profile />
                     </div>
                 </div>
@@ -119,17 +116,19 @@
 
                             <div class="mt-auto"></div>
 
-                            <div class="border-t border-slate-100 dark:border-slate-800" />
+                            <div v-if="authStore.isInternal">
+                                <div class="border-t border-slate-100 dark:border-slate-800" />
 
-                            <button
-                                class="w-full rounded-xl px-3 py-2 text-left text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors flex items-center gap-2"
-                                @click="goOffice">
-                                <span class="inline-flex h-6 w-6 items-center justify-center shrink-0">
-                                    <i class="fa-solid fa-arrow-left text-slate-500 dark:text-slate-400"></i>
-                                </span>
-                                <span v-if="!desktopCollapsed">Voltar ao Office</span>
-                            </button>
+                                <button
+                                    class="w-full rounded-xl px-3 py-2 text-left text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors flex items-center gap-2"
+                                    @click="goOffice">
+                                    <span class="inline-flex h-6 w-6 items-center justify-center shrink-0">
+                                        <i class="fa-solid fa-arrow-left text-slate-500 dark:text-slate-400"></i>
+                                    </span>
+                                    <span v-if="!desktopCollapsed">Voltar ao Office</span>
+                                </button>
 
+                            </div>
                         </nav>
                     </aside>
 

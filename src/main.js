@@ -1,6 +1,7 @@
 // main.js
 import './assets/main.css'
 import 'vue-toastification/dist/index.css';
+import '@splidejs/splide/dist/css/splide.min.css'
 
 import tippy from 'tippy.js';
 import 'tippy.js/dist/tippy.css';

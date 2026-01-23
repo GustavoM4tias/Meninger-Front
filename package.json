@@ -11,6 +11,8 @@
   "dependencies": {
     "@panzoom/panzoom": "^4.6.0",
     "@primeuix/themes": "^1.1.1",
+    "@splidejs/splide": "^4.1.4",
+    "@splidejs/vue-splide": "^0.6.12",
     "@tensorflow/tfjs": "^4.22.0",
     "@tensorflow/tfjs-backend-webgl": "^4.22.0",
     "@vladmandic/face-api": "^1.7.15",

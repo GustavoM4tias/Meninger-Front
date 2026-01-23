@@ -1,9 +1,9 @@
-<script setup> 
+<script setup>
 </script>
 
 <template>
-    <footer id="footer" class="bg-gray-950 text-gray-100 pt-10 pb-4"> 
-        <div class="container mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-6 md:gap-8"> 
+    <footer id="footer" class="bg-gray-950 text-gray-100 pt-10 pb-4">
+        <div class="container mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-6 md:gap-8">
             <div>
                 <a href="https://www.menin.com.br/" target="_blank" rel="noopener noreferrer"><img src="/Mlogotext.png"
                         class="w-40 mb-4"></a>
@@ -15,7 +15,7 @@
             </div>
 
             <div class="md:block hidden"></div>
- 
+
             <div>
                 <h3 class="text-xl font-semibold mb-3 md:text-end">Navegação</h3>
                 <ul class="space-y-1 text-lg text-gray-400 md:text-end">
@@ -34,7 +34,7 @@
                     </li>
                 </ul>
             </div>
- 
+
             <div>
                 <h3 class="text-xl font-semibold mb-3 md:text-end">Siga-nos</h3>
                 <ul class="flex space-x-4 md:justify-end">
@@ -49,7 +49,7 @@
                             class="transition-colors duration-200 ">
                             <i
                                 class="fab fa-instagram text-3xl bg-white hover:bg-gradient-to-r from-[#833ab4] via-[#fd1d1d] to-[#feda77] bg-clip-text text-transparent"></i>
-                        </a> 
+                        </a>
                     </li>
                     <li>
                         <a href="https://www.tiktok.com/@meninengenharia?_t=ZM-8vMUB8qf1tf&_r=1" target="_blank"
@@ -68,13 +68,14 @@
                 </ul>
             </div>
         </div>
- 
+
         <div class="container mx-auto px-4 mt-8 border-t border-gray-700 pt-4">
             <div class="flex flex-col md:flex-row items-center justify-between text-xs text-gray-500">
                 <p>&copy; {{ new Date().getFullYear() }} Menin. Todos os direitos reservados.</p>
                 <a href="https://www.gdmd.com.br" target="_blank" rel="noopener noreferrer">
-                    <p class="flex">Desenvolvido por <img
-                            class="h-6 w-4 ms-1 -mt-1" src="/gd.png"></p>
+                    <p class="flex">Desenvolvido por
+                        <!-- <img class="h-6 w-4 ms-1 -mt-1" src="/gd.png"> -->
+                    </p>
                 </a>
             </div>
 

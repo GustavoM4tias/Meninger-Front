@@ -1,6 +1,6 @@
 <template>
 
-    <div class="relative w-full md:w-[420px]">
+    <div class="relative hidden md:block w-full md:w-[420px]">
         <button type="button" @click="openPalette"
             class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2.5 pr-16 text-sm text-slate-600 dark:text-slate-300 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700/60 text-left">
             Buscar (Artigos / trilhas / tópicos)...
