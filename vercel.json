@@ -8,14 +8,6 @@
       "permanent": true
     },
     {
-      "source": "/:path*",
-      "has": [{ "type": "host", "value": "academy.menin.com.br" }],
-      "missing": [
-        { "type": "query", "key": "__allow_academy", "value": "1" }
-      ],
-      "statusCode": 200
-    },
-    {
       "source": "/:path((?!$|login(?:/.*)?$|panel(?:/.*)?$|kb(?:/.*)?$|community(?:/.*)?$|tracks(?:/.*)?$|admin(?:/.*)?$|users(?:/.*)?$|me(?:/.*)?$).*)",
       "has": [{ "type": "host", "value": "academy.menin.com.br" }],
       "destination": "https://office.menin.com.br/:path",

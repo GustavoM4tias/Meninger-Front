@@ -2,15 +2,28 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 import Home from '@/views/Home.vue';
-import { name } from 'dayjs/locale/pt-br';
+
+// ✅ helper: host atual
+function getHost() {
+  return window.location.host;
+}
+
+// ✅ helper: path real do browser (bom no refresh)
+function getBrowserFullPath() {
+  return window.location.pathname + window.location.search + window.location.hash;
+}
 
 const routes = [
+  // =========================
+  // OFFICE (app=office)
+  // =========================
   {
     path: '/',
     name: 'Home',
     component: Home,
     meta: { app: 'office', requiresAuth: true, searchable: true, content: 'Página inicial do sistema' },
   },
+
   {
     path: '/marketing',
     name: 'marketing',
@@ -20,19 +33,19 @@ const routes = [
         path: 'Events',
         name: 'Eventos',
         component: () => import('@/views/Marketing/Events/Index.vue'),
-        meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Listagem de eventos' },
+        meta: { app: 'office', requiresAuth: true, allowedPosition: '', searchable: true, content: 'Listagem de eventos' },
       },
       {
         path: 'leads',
         name: 'Leads',
         component: () => import('@/views/Marketing/Leads/Index.vue'),
-        meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Dashboard de leads' },
+        meta: { app: 'office', requiresAuth: true, allowedPosition: '', searchable: true, content: 'Dashboard de leads' },
       },
       {
         path: 'viability',
         name: 'Viability',
         component: () => import('@/views/Marketing/Viability/ViabilityDashboard.vue'),
-        meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Dashboard de Viabilidade Marketing' },
+        meta: { app: 'office', requiresAuth: true, allowedPosition: '', searchable: true, content: 'Dashboard de Viabilidade Marketing' },
       },
     ],
   },
@@ -46,38 +59,38 @@ const routes = [
         path: 'faturamento',
         name: 'Faturamento',
         component: () => import('@/views/Comercial/Faturamento/Index.vue'),
-        meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Dashboard de faturamento e contratos' },
+        meta: { app: 'office', requiresAuth: true, allowedPosition: '', searchable: true, content: 'Dashboard de faturamento e contratos' },
       },
       {
         path: 'buildings',
         name: 'Empreendimentos',
         component: () => import('@/views/Comercial/Buildings/Index.vue'),
-        meta: { requiresAuth: true, allowedPosition: '', searchable: false, content: 'Listagem de empreendimentos' },
+        meta: { app: 'office', requiresAuth: true, allowedPosition: '', searchable: false, content: 'Listagem de empreendimentos' },
       },
       {
         path: 'awards',
         name: 'Premiação',
         component: () => import('@/views/Comercial/Awards/Index.vue'),
-        meta: { requiresAuth: true, allowedPosition: '', searchable: false, content: 'Premiações de Vendas' },
+        meta: { app: 'office', requiresAuth: true, allowedPosition: '', searchable: false, content: 'Premiações de Vendas' },
       },
       {
         path: 'projections',
         name: 'Projeção',
         component: () => import('@/views/Comercial/Projections/Index.vue'),
-        meta: { requiresAuth: true, allowedPosition: '', searchable: false, content: 'Projeção' },
+        meta: { app: 'office', requiresAuth: true, allowedPosition: '', searchable: false, content: 'Projeção' },
       },
       {
         path: 'projections/:id',
         name: 'Projeção Detalhes',
         component: () => import('@/views/Comercial/Projections/ProjectionDetail.vue'),
-        meta: { requiresAuth: true, allowedPosition: '', searchable: false, content: 'Projeção Detalhes' },
+        meta: { app: 'office', requiresAuth: true, allowedPosition: '', searchable: false, content: 'Projeção Detalhes' },
       },
       {
         path: 'workflow/groups',
         name: 'Grupos de Workflow',
         component: () => import('@/views/Comercial/Workflow/Index.vue'),
-        meta: { requiresAuth: true, allowedPosition: '', searchable: false, content: 'Grupos de Workflow' },
-      }
+        meta: { app: 'office', requiresAuth: true, allowedPosition: '', searchable: false, content: 'Grupos de Workflow' },
+      },
     ],
   },
 
@@ -90,13 +103,13 @@ const routes = [
         path: 'titulos',
         name: 'Títulos',
         component: () => import('@/views/Financeiro/Titulos/Index.vue'),
-        meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Adição de custos Financeiros' },
+        meta: { app: 'office', requiresAuth: true, allowedPosition: '', searchable: true, content: 'Adição de custos Financeiros' },
       },
       {
         path: 'custos',
         name: 'Custos',
         component: () => import('@/views/Financeiro/Custos/Index.vue'),
-        meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Custos do Financeiro' },
+        meta: { app: 'office', requiresAuth: true, allowedPosition: '', searchable: true, content: 'Custos do Financeiro' },
       },
     ],
   },
@@ -106,7 +119,12 @@ const routes = [
     name: 'tools',
     meta: { app: 'office', requiresAuth: true },
     children: [
-      { path: 'validator', name: 'Validador', component: () => import('@/views/Tools/Index.vue'), meta: { searchable: true, content: 'Validador de Contratos de Venda.' } },
+      {
+        path: 'validator',
+        name: 'Validador',
+        component: () => import('@/views/Tools/Index.vue'),
+        meta: { app: 'office', searchable: true, content: 'Validador de Contratos de Venda.' },
+      },
     ],
   },
 
@@ -115,11 +133,26 @@ const routes = [
     name: 'settings',
     meta: { app: 'office', requiresAuth: true },
     children: [
-      { path: 'users', name: 'Usuários', component: () => import('@/views/Settings/Users/Index.vue'), meta: { requiresAuth: true, allowedPosition: '', allowedRole: 'admin', searchable: true, content: 'Listagem de usuários do sistema' } },
-      { path: 'account', name: 'Minha Conta', component: () => import('@/views/Settings/Account/Index.vue'), meta: { searchable: true, content: 'Sua conta pessoal' } },
-      { path: 'organograma', name: 'Organograma', component: () => import('@/views/Settings/Organogram/Index.vue'), meta: { searchable: true, content: 'Organograma estrutural' } },
-      { path: 'cidades', name: 'Cidades', component: () => import('@/views/Settings/EnterpriseCities/Index.vue'), meta: { requiresAuth: true, allowedPosition: '', allowedRole: 'admin', searchable: true, content: 'Gerenciamento de Cidades x Empreendimentos' } },
-      { path: 'management', name: 'Cargos', component: () => import('@/views/Settings/Management/Index.vue'), meta: { requiresAuth: true, allowedPosition: '', allowedRole: 'admin', searchable: true, content: 'Departamentos, Categorias, Cargos e Cidades do sistema' } },
+      {
+        path: 'users',
+        name: 'Usuários',
+        component: () => import('@/views/Settings/Users/Index.vue'),
+        meta: { app: 'office', requiresAuth: true, allowedPosition: '', allowedRole: 'admin', searchable: true, content: 'Listagem de usuários do sistema' },
+      },
+      { path: 'account', name: 'Minha Conta', component: () => import('@/views/Settings/Account/Index.vue'), meta: { app: 'office', searchable: true, content: 'Sua conta pessoal' } },
+      { path: 'organograma', name: 'Organograma', component: () => import('@/views/Settings/Organogram/Index.vue'), meta: { app: 'office', searchable: true, content: 'Organograma estrutural' } },
+      {
+        path: 'cidades',
+        name: 'Cidades',
+        component: () => import('@/views/Settings/EnterpriseCities/Index.vue'),
+        meta: { app: 'office', requiresAuth: true, allowedPosition: '', allowedRole: 'admin', searchable: true, content: 'Gerenciamento de Cidades x Empreendimentos' },
+      },
+      {
+        path: 'management',
+        name: 'Cargos',
+        component: () => import('@/views/Settings/Management/Index.vue'),
+        meta: { app: 'office', requiresAuth: true, allowedPosition: '', allowedRole: 'admin', searchable: true, content: 'Departamentos, Categorias, Cargos e Cidades do sistema' },
+      },
     ],
   },
 
@@ -170,47 +203,50 @@ const routes = [
     component: () => import('@/views/Auth/Index.vue'),
     meta: { app: 'office', requiresAuth: false },
   },
+  // ✅ academy root real
   {
     path: '/',
     meta: { app: 'academy', requiresAuth: false, searchable: false },
     children: [
-      { path: '', name: 'AcademyHome', component: () => import('@/views/Academy/Home.vue') },
-      { path: 'login', name: 'AcademyLogin', component: () => import('@/views/Academy/Login.vue') },
+      { path: '', name: 'AcademyHome', component: () => import('@/views/Academy/Home.vue'), meta: { app: 'academy', requiresAuth: false } },
+      { path: 'login', name: 'AcademyLogin', component: () => import('@/views/Academy/Login.vue'), meta: { app: 'academy', requiresAuth: false } },
 
       {
         path: '',
         component: () => import('@/views/Academy/layouts/AcademyShell.vue'),
+        meta: { app: 'academy', requiresAuth: false },
         children: [
-          { path: 'panel', name: 'AcademyPanel', component: () => import('@/views/Academy/Panel.vue'), meta: { requiresAuth: true } },
-          { path: 'kb', name: 'AcademyKB', component: () => import('@/views/Academy/KB/Index.vue'), meta: { requiresAuth: true } },
-          { path: 'kb/editor', name: 'AcademyKBEditor', component: () => import('@/views/Academy/KB/Editor.vue'), meta: { requiresAuth: true } },
-          { path: 'kb/editor/:id', name: 'AcademyKBEditorEdit', component: () => import('@/views/Academy/KB/Editor.vue'), props: true, meta: { requiresAuth: true } },
-          { path: 'kb/my-articles', name: 'AcademyKBArticles', component: () => import('@/views/Academy/KB/Articles.vue'), meta: { requiresAuth: true } },
-          { path: 'kb/:categorySlug', name: 'AcademyKBCategory', component: () => import('@/views/Academy/KB/Index.vue'), props: true, meta: { requiresAuth: true } },
-          { path: 'kb/:categorySlug/:articleSlug', name: 'AcademyKBArticle', component: () => import('@/views/Academy/KB/Article.vue'), props: true, meta: { requiresAuth: true } },
+          { path: 'panel', name: 'AcademyPanel', component: () => import('@/views/Academy/Panel.vue'), meta: { app: 'academy', requiresAuth: true } },
 
-          { path: 'me', name: 'AcademyMe', component: () => import('@/views/Academy/Me.vue'), meta: { requiresAuth: true } },
+          { path: 'kb', name: 'AcademyKB', component: () => import('@/views/Academy/KB/Index.vue'), meta: { app: 'academy', requiresAuth: true } },
+          { path: 'kb/editor', name: 'AcademyKBEditor', component: () => import('@/views/Academy/KB/Editor.vue'), meta: { app: 'academy', requiresAuth: true } },
+          { path: 'kb/editor/:id', name: 'AcademyKBEditorEdit', component: () => import('@/views/Academy/KB/Editor.vue'), props: true, meta: { app: 'academy', requiresAuth: true } },
+          { path: 'kb/my-articles', name: 'AcademyKBArticles', component: () => import('@/views/Academy/KB/Articles.vue'), meta: { app: 'academy', requiresAuth: true } },
+          { path: 'kb/:categorySlug', name: 'AcademyKBCategory', component: () => import('@/views/Academy/KB/Index.vue'), props: true, meta: { app: 'academy', requiresAuth: true } },
+          { path: 'kb/:categorySlug/:articleSlug', name: 'AcademyKBArticle', component: () => import('@/views/Academy/KB/Article.vue'), props: true, meta: { app: 'academy', requiresAuth: true } },
 
-          { path: 'community', name: 'AcademyCommunity', component: () => import('@/views/Academy/Community/Index.vue'), meta: { requiresAuth: true } },
-          { path: 'community/my', name: 'AcademyCommunityMyTopics', component: () => import('@/views/Academy/Community/MyTopics.vue'), meta: { requiresAuth: true } },
-          { path: 'community/my/:id(\\d+)', name: 'AcademyCommunityTopicManage', component: () => import('@/views/Academy/Community/TopicManage.vue'), props: true, meta: { requiresAuth: true } },
-          { path: 'community/:type', name: 'AcademyCommunityType', component: () => import('@/views/Academy/Community/Type.vue'), props: true, meta: { requiresAuth: true } },
-          { path: 'community/topic/:id', name: 'AcademyCommunityTopic', component: () => import('@/views/Academy/Community/Topic.vue'), props: true, meta: { requiresAuth: true } },
+          { path: 'me', name: 'AcademyMe', component: () => import('@/views/Academy/Me.vue'), meta: { app: 'academy', requiresAuth: true } },
 
-          { path: 'tracks', name: 'AcademyTracks', component: () => import('@/views/Academy/Tracks/Index.vue'), meta: { requiresAuth: true } },
-          { path: 'tracks/:trackSlug', name: 'AcademyTrackDetail', component: () => import('@/views/Academy/Tracks/Detail.vue'), props: true, meta: { requiresAuth: true } },
+          { path: 'community', name: 'AcademyCommunity', component: () => import('@/views/Academy/Community/Index.vue'), meta: { app: 'academy', requiresAuth: true } },
+          { path: 'community/my', name: 'AcademyCommunityMyTopics', component: () => import('@/views/Academy/Community/MyTopics.vue'), meta: { app: 'academy', requiresAuth: true } },
+          { path: 'community/my/:id(\\d+)', name: 'AcademyCommunityTopicManage', component: () => import('@/views/Academy/Community/TopicManage.vue'), props: true, meta: { app: 'academy', requiresAuth: true } },
+          { path: 'community/:type', name: 'AcademyCommunityType', component: () => import('@/views/Academy/Community/Type.vue'), props: true, meta: { app: 'academy', requiresAuth: true } },
+          { path: 'community/topic/:id', name: 'AcademyCommunityTopic', component: () => import('@/views/Academy/Community/Topic.vue'), props: true, meta: { app: 'academy', requiresAuth: true } },
 
-          { path: 'admin', name: 'AcademyAdmin', component: () => import('@/views/Academy/Admin/Index.vue'), meta: { requiresAuth: true, allowedRole: 'admin' } },
-          { path: 'admin/tracks', name: 'AcademyTracksAdmin', component: () => import('@/views/Academy/Admin/Tracks/Index.vue'), meta: { requiresAuth: true, allowedRole: 'admin' } },
-          { path: 'admin/tracks/new', name: 'AcademyTracksAdminCreate', component: () => import('@/views/Academy/Admin/Tracks/Create.vue'), meta: { requiresAuth: true, allowedRole: 'admin' } },
-          { path: 'admin/tracks/:slug', name: 'AcademyTracksAdminDetail', component: () => import('@/views/Academy/Admin/Tracks/Detail.vue'), props: true, meta: { requiresAuth: true, allowedRole: 'admin' } },
+          { path: 'tracks', name: 'AcademyTracks', component: () => import('@/views/Academy/Tracks/Index.vue'), meta: { app: 'academy', requiresAuth: true } },
+          { path: 'tracks/:trackSlug', name: 'AcademyTrackDetail', component: () => import('@/views/Academy/Tracks/Detail.vue'), props: true, meta: { app: 'academy', requiresAuth: true } },
 
-          { path: 'users', name: 'AcademyUsers', component: () => import('@/views/Academy/Users/Index.vue'), meta: { requiresAuth: true } },
-          { path: 'users/:id', name: 'AcademyUserProfile', component: () => import('@/views/Academy/Users/Profile.vue'), props: true, meta: { requiresAuth: true } }
-        ]
-      }
-    ]
-  }
+          { path: 'admin', name: 'AcademyAdmin', component: () => import('@/views/Academy/Admin/Index.vue'), meta: { app: 'academy', requiresAuth: true, allowedRole: 'admin' } },
+          { path: 'admin/tracks', name: 'AcademyTracksAdmin', component: () => import('@/views/Academy/Admin/Tracks/Index.vue'), meta: { app: 'academy', requiresAuth: true, allowedRole: 'admin' } },
+          { path: 'admin/tracks/new', name: 'AcademyTracksAdminCreate', component: () => import('@/views/Academy/Admin/Tracks/Create.vue'), meta: { app: 'academy', requiresAuth: true, allowedRole: 'admin' } },
+          { path: 'admin/tracks/:slug', name: 'AcademyTracksAdminDetail', component: () => import('@/views/Academy/Admin/Tracks/Detail.vue'), props: true, meta: { app: 'academy', requiresAuth: true, allowedRole: 'admin' } },
+
+          { path: 'users', name: 'AcademyUsers', component: () => import('@/views/Academy/Users/Index.vue'), meta: { app: 'academy', requiresAuth: true } },
+          { path: 'users/:id', name: 'AcademyUserProfile', component: () => import('@/views/Academy/Users/Profile.vue'), props: true, meta: { app: 'academy', requiresAuth: true } },
+        ],
+      },
+    ],
+  },
 ];
 
 const router = createRouter({
@@ -221,21 +257,26 @@ const router = createRouter({
 router.beforeEach((to, from, next) => {
   const authStore = useAuthStore();
 
-  const host = window.location.host;
+  const host = getHost();
   const isAcademyHost = host === 'academy.menin.com.br';
   const isOfficeHost = host === 'office.menin.com.br';
 
   const isAcademyRoute = to.matched.some(r => r.meta?.app === 'academy');
   const isOfficeRoute = to.matched.some(r => r.meta?.app === 'office');
 
-  // ✅ cross-domain obrigatório (resolve F5 + acesso direto + navegação interna)
+  // ✅ pega o path REAL do browser (resolve refresh / digitar url / inconsistência de match)
+  const browserPath = getBrowserFullPath();
+
+  // ✅ garante domínio certo
   if (isAcademyHost && isOfficeRoute) {
-    window.location.replace(`https://office.menin.com.br${to.fullPath}`);
+    window.location.replace(`https://office.menin.com.br${browserPath}`);
     return;
   }
 
   if (isOfficeHost && isAcademyRoute) {
-    window.location.replace(`https://academy.menin.com.br${to.fullPath}`);
+    // se o cara tentou /academy/... no office, o Vercel já vai redirecionar,
+    // mas aqui garante também em navegação SPA
+    window.location.replace(`https://academy.menin.com.br${browserPath.replace(/^\/academy/, '')}`);
     return;
   }
 
@@ -263,4 +304,3 @@ router.beforeEach((to, from, next) => {
 });
 
 export default router;
-

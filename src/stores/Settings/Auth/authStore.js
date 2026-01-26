@@ -106,7 +106,8 @@ export const useAuthStore = defineStore('user', {
 
     logout() {
       this.clearUser();
-      router.push('/login');
+      const isAcademy = window.location.host === 'academy.menin.com.br';
+      router.push(isAcademy ? { name: 'AcademyLogin' } : { name: 'login' });
     },
 
     academyLogout() {

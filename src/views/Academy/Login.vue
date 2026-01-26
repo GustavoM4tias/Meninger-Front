@@ -70,28 +70,7 @@ const slides = [
         desc: 'Do produto ao atendimento: rápido, prático e direto.',
     },
 ];
-
-async function loginInternal() {
-    loading.value = true; error.value = '';
-    try {
-        const resp = await fetch(api('/auth/login'), {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: email.value, password: password.value }),
-        }).then(r => r.json());
-
-        if (!resp?.success) throw new Error(resp?.message || resp?.error || 'Falha no login');
-
-        auth.setToken(resp.data?.token || resp.token);
-        await auth.fetchMe();
-        router.push({ name: 'AcademyPanel' });
-    } catch (e) {
-        error.value = e?.message || 'Erro no login';
-    } finally {
-        loading.value = false;
-    }
-}
-
+ 
 async function requestExternalCode() {
     loading.value = true; error.value = '';
     try {
@@ -112,32 +91,79 @@ async function requestExternalCode() {
         loading.value = false;
     }
 }
+function academyOrigin() {
+  return 'https://academy.menin.com.br';
+}
+ 
+function isAcademyHost() {
+  return window.location.host === 'academy.menin.com.br';
+}
+
+function hardGoToAcademy(path) {
+  window.location.replace(`${academyOrigin()}${path}`);
+}
+
+async function goToAcademyPanel() {
+  // ✅ garante domínio correto SEM depender do match do router
+  if (!isAcademyHost()) {
+    hardGoToAcademy('/panel');
+    return;
+  }
+
+  // ✅ evita voltar pro login no botão voltar
+  await router.replace({ name: 'AcademyPanel' });
+}
+
+async function loginInternal() {
+  loading.value = true; error.value = '';
+  try {
+    const resp = await fetch(api('/auth/login'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email.value, password: password.value }),
+    }).then(r => r.json());
+
+    if (!resp?.success) throw new Error(resp?.message || resp?.error || 'Falha no login');
+
+    auth.setToken(resp.data?.token || resp.token);
+    await auth.fetchMe();
+
+    // ✅ sempre cair no painel do academy
+    await goToAcademyPanel();
+  } catch (e) {
+    error.value = e?.message || 'Erro no login';
+  } finally {
+    loading.value = false;
+  }
+}
 
 async function verifyExternalCode() {
-    loading.value = true; error.value = '';
-    try {
-        const cpf = onlyDigits(documentValue.value);
-        const code = onlyDigits(accessCode.value);
+  loading.value = true; error.value = '';
+  try {
+    const cpf = onlyDigits(documentValue.value);
+    const code = onlyDigits(accessCode.value);
 
-        if (cpf.length !== 11) throw new Error('CPF inválido');
-        if (code.length < 4) throw new Error('Código inválido');
+    if (cpf.length !== 11) throw new Error('CPF inválido');
+    if (code.length < 4) throw new Error('Código inválido');
 
-        const resp = await fetch(api('/academy/external/verify'), {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ document: cpf, kind: mode.value, code }),
-        }).then(r => r.json());
+    const resp = await fetch(api('/academy/external/verify'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ document: cpf, kind: mode.value, code }),
+    }).then(r => r.json());
 
-        if (!resp?.success) throw new Error(resp?.message || resp?.error || 'Código incorreto');
+    if (!resp?.success) throw new Error(resp?.message || resp?.error || 'Código incorreto');
 
-        auth.setToken(resp.data?.token || resp.token);
-        await auth.fetchMe();
-        router.push({ name: 'AcademyPanel' });
-    } catch (e) {
-        error.value = e?.message || 'Erro';
-    } finally {
-        loading.value = false;
-    }
+    auth.setToken(resp.data?.token || resp.token);
+    await auth.fetchMe();
+
+    // ✅ sempre cair no painel do academy
+    await goToAcademyPanel();
+  } catch (e) {
+    error.value = e?.message || 'Erro';
+  } finally {
+    loading.value = false;
+  }
 }
 
 async function submit() {
