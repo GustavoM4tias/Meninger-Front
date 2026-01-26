@@ -183,7 +183,7 @@ function goSearch() {
 }
 
 function goOffice() {
-    window.location.href = '/';
+    window.location.href = 'https://office.menin.com.br/';
 }
 
 function lockScroll(lock) {

@@ -3,7 +3,7 @@
     <label v-if="label" for="input-field" class="block text-gray-800 dark:text-gray-100 font-semibold mb-1">{{ label
       }}</label>
     <input
-      class="p-3 md:text-xl border text-gray-800 dark:text-gray-100 placeholder:text-gray-100 bg-gray-200 dark:bg-gray-600 border-gray-100 dark:border-gray-700 rounded-md shadow-sm w-full"
+      class="p-3 md:text-xl border text-gray-800 dark:text-gray-100 placeholder:text-gray-500 placeholder:dark:text-gray-100 bg-gray-200 dark:bg-gray-600 border-gray-100 dark:border-gray-700 rounded-md shadow-sm w-full"
       :type="type" :placeholder="placeholder" :value="modelValue" @input="updateValue" :required="required"
       :disabled="disabled" />
   </div>
