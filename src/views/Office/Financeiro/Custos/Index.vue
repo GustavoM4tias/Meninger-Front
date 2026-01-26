@@ -189,7 +189,7 @@
                                             Number(group.total || 0).toLocaleString('pt-BR', {
                                                 style: 'currency',
                                                 currency: 'BRL'
-                                        })
+                                            })
                                         }}
                                     </div>
                                 </td>
@@ -250,7 +250,7 @@
                                         Number(selectedGroup.total || 0).toLocaleString('pt-BR', {
                                             style: 'currency',
                                             currency: 'BRL'
-                                    })
+                                        })
                                     }}
                                 </p>
                             </div>
@@ -341,7 +341,7 @@
                                             {{
                                                 exp.bill?.issueDate
                                                     ? new Date(exp.bill.issueDate).toLocaleDateString('pt-BR')
-                                            : '—'
+                                                    : '—'
                                             }}
                                         </td>
 
@@ -354,8 +354,8 @@
                                                         exp.bill.creditor_json
                                                             ? exp.bill.creditor_json.tradeName ||
                                                             exp.bill.creditor_json.name ||
-                                                    'Sem nome'
-                                                    : '—'
+                                                            'Sem nome'
+                                                            : '—'
                                                     }}
                                                     <div v-if="exp.bill.creditor_json"
                                                         class="text-[10px] -my-1 text-gray-500 dark:text-gray-400 truncate">
@@ -365,7 +365,12 @@
 
                                                 <div class="text-xs text-gray-600 dark:text-gray-300 truncate">
                                                     {{ exp.bill.document_identification_id }} {{
-                                                    exp.bill.document_number }}
+                                                        exp.bill.document_number }}
+
+                                                    <div class="text-[10px] text-gray-400">
+                                                        Parcela: {{ exp.installmentNumber }} / {{ exp.installmentsNumber
+                                                        }}
+                                                    </div> 
                                                 </div>
 
                                                 <div class="text-xs text-gray-500 dark:text-gray-400">
@@ -384,7 +389,7 @@
                                                     Number(exp.amount || 0).toLocaleString('pt-BR', {
                                                         style: 'currency',
                                                         currency: 'BRL'
-                                                })
+                                                    })
                                                 }}
                                             </span>
                                         </td>
@@ -735,25 +740,27 @@ async function saveEdit() {
 }
 
 async function removeExpense(exp) {
-    if (!confirm('Deseja realmente excluir esta custo?')) return;
+    const billId = exp.billId ?? exp.bill?.id ?? null;
+    const parts = Number(exp.installmentsNumber || 0);
+
+    const msg = (billId && parts > 1)
+        ? `Este lançamento é uma parcela (${exp.installmentNumber}/${parts}).\n\nAo excluir, TODAS as parcelas do Título ${billId} serão removidas.\n\nConfirmar?`
+        : 'Deseja realmente excluir este custo?';
+
+    if (!confirm(msg)) return;
 
     try {
-        await store.deleteExpense(exp.id);
-        toast.success('Custo excluído com sucesso!');
+        const res = await store.deleteExpense(exp.id); // mantém igual
+        toast.success(
+            (billId && parts > 1)
+                ? `Todas as parcelas do título ${billId} foram excluídas.`
+                : 'Custo excluído com sucesso!'
+        );
 
         await store.fetchExpenses();
-
-        if (selectedGroup.value) {
-            const updated = store.groups.find(
-                g => g.costCenterId === selectedGroup.value.costCenterId
-            );
-            selectedGroup.value = updated || null;
-            if (updated && updated.expenses.length === 0) {
-                selectedGroup.value = null;
-            }
-        }
+        closeDetails()
     } catch (e) {
-        toast.error(e.message || 'Erro ao excluir custo.');
+        toast.error(e.message || 'Erro ao excluir custo(s).');
     }
 }
 

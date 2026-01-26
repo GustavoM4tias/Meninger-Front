@@ -303,7 +303,7 @@
                                             {{ item.enterpriseName || '—' }}
                                         </div>
                                         <div class="text-xs font-light text-gray-400">
-                                            ERP: {{ item.erpId }}
+                                            ERP: {{ item.displayId || item.erpId || '—' }}
                                             <span v-if="item.cvEnterpriseId">
                                                 • CV: {{ item.cvEnterpriseId }}
                                             </span>
@@ -348,13 +348,16 @@
                                     <template v-if="unitScope === 'MONTH'">
                                         <div class="text-xs">
                                             Projetado até {{ monthLabel }}:
-                                            <strong class="text-sm">{{ formatCurrency(projectedBudgetToMonth(item)) }}</strong>
+                                            <strong class="text-sm">{{ formatCurrency(projectedBudgetToMonth(item))
+                                                }}</strong>
                                         </div>
 
                                         <div class="text-xs relative flex pb-3 flex-col">
                                             Gasto até {{ monthLabel }}:<br>
-                                            <strong class="text-sm">{{ formatCurrency(item.header?.spentTotal || 0) }}</strong>
-                                            <strong class="absolute bottom-0 right-0 text-xs" :class="moneyClass(balanceToMonth(item))">
+                                            <strong class="text-sm">{{ formatCurrency(item.header?.spentTotal || 0)
+                                                }}</strong>
+                                            <strong class="absolute bottom-0 right-0 text-xs"
+                                                :class="moneyClass(balanceToMonth(item))">
                                                 {{ formatCurrency(balanceToMonth(item)) }}
                                             </strong>
                                         </div>
@@ -365,17 +368,20 @@
                                     <template v-else>
                                         <div class="text-xs">
                                             Orçamento anual:
-                                            <strong class="text-sm">{{ formatCurrency(item.header?.budgetTotal || 0) }}</strong>
+                                            <strong class="text-sm">{{ formatCurrency(item.header?.budgetTotal || 0)
+                                                }}</strong>
                                         </div>
 
                                         <div class="text-xs relative flex pb-3 flex-col">
                                             Gasto até {{ monthLabel }}:
-                                            <strong class="text-sm">{{ formatCurrency(item.header?.spentTotal || 0) }}</strong>
-                                            <strong class="absolute bottom-0 right-0 text-xs" :class="moneyClass(annualBalance(item))">
+                                            <strong class="text-sm">{{ formatCurrency(item.header?.spentTotal || 0)
+                                                }}</strong>
+                                            <strong class="absolute bottom-0 right-0 text-xs"
+                                                :class="moneyClass(annualBalance(item))">
                                                 {{ formatCurrency(annualBalance(item)) }}
                                             </strong>
                                         </div>
- 
+
                                     </template>
                                 </div>
                             </td>
@@ -459,15 +465,18 @@
                                     <div class="text-[11px] text-gray-500 dark:text-gray-400">
                                         Total de unidades:
                                         <span class="font-semibold text-gray-900 dark:text-white">
-                                            {{ item.header?.totalUnits || 0 }} unid.
+                                            {{
+                                                Number(item.header?.availableInventory || 0) +
+                                                Number(item.header?.soldUnitsStock ?? item.header?.soldUnits ?? 0)
+                                            }} unid.
                                         </span>
                                     </div>
 
                                     <div class="text-[11px] text-gray-500 dark:text-gray-400">
                                         Não vendidas:
                                         <span class="font-semibold text-gray-900 dark:text-white"
-                                            :class="moneyClass(remainingUnitsToSell(item), true)">
-                                            {{ remainingUnitsToSell(item) }} unid.
+                                            :class="moneyClass(Number(item.header?.availableInventory || 0), true)">
+                                            {{ Number(item.header?.availableInventory || 0) }} unid.
                                         </span>
                                     </div>
 
@@ -478,38 +487,33 @@
                                             v-tippy="'Unidades disponíveis para venda (não reservadas nem bloqueadas)'">
                                             <span
                                                 class="min-w-2 h-2 rounded-full text-center bg-emerald-500 mr-1"></span>
-                                            {{ item.header?.availableUnits || 0 }}
+                                            {{ Number(item.header?.availableUnits || 0) }}
                                         </span>
 
                                         <span
                                             class="w-full flex items-center px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
                                             v-tippy="'Unidades reservadas (início ou ativa)'">
                                             <span class="min-w-2 h-2 rounded-full text-center bg-blue-500 mr-1"></span>
-                                            {{ item.header?.reservedUnits || 0 }}
+                                            {{ Number(item.header?.reservedUnits || 0) }}
                                         </span>
 
                                         <span
                                             class="w-full flex items-center px-2 py-0.5 rounded-full bg-gray-100 text-gray-700 dark:bg-gray-900/40 dark:text-gray-300"
                                             v-tippy="'Unidades bloqueadas para venda'">
                                             <span class="min-w-2 h-2 rounded-full text-center bg-gray-500 mr-1"></span>
-                                            {{ item.header?.blockedUnits || 0 }}
+                                            {{ Number(item.header?.blockedUnits || 0) }}
                                         </span>
 
                                         <span
                                             class="w-full flex items-center px-2 py-0.5 rounded-full bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300"
-                                            v-tippy="'Unidades já vendidas (fora do estoque de viabilidade)'">
+                                            v-tippy="'Unidades vendidas (snapshot)'">
                                             <span class="min-w-2 h-2 rounded-full text-center bg-red-500 mr-1"></span>
-                                            {{ item.header?.soldUnits || 0 }}
+                                            {{ Number(item.header?.soldUnitsStock ?? item.header?.soldUnits ?? 0) }}
                                         </span>
                                     </div>
-
-                                    <!-- <div v-if="item.header?.inventoryShortfallUnits > 0"
-                                        class="mt-1 text-[11px] text-red-600 dark:text-red-400">
-                                        Falta de {{ item.header.inventoryShortfallUnits }} unid. para a projeção.
-                                    </div> -->
-                                    <!-- Sobra removida conforme pedido -->
                                 </div>
                             </td>
+
                         </tr>
 
                         <tr v-if="!activeItems.length && !store.isLoading">
@@ -559,7 +563,7 @@ const selectedErpIds = ref([]);
 
 // Label amigável para cada empreendimento
 const enterpriseLabel = item =>
-    `${item.enterpriseName || '—'} (ERP ${item.erpId})`;
+    `${item.enterpriseName || '—'} (ERP ${item.displayId || item.erpId || '—'})`;
 
 // Opções para o MultiSelector
 const enterpriseOptions = computed(() =>

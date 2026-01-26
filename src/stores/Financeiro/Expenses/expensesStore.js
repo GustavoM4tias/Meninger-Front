@@ -9,7 +9,7 @@ import { requestWithAuth } from '@/utils/Auth/requestWithAuth';
 function getToken() {
     return localStorage.getItem('token');
 }
- 
+
 export const useExpensesStore = defineStore('expenses', () => {
     const carregamento = useCarregamentoStore();
 
@@ -89,6 +89,17 @@ export const useExpensesStore = defineStore('expenses', () => {
             carregamento.iniciarCarregamento();
             const params = new URLSearchParams({ month: month.value });
             const res = await requestWithAuth(`${API_URL}/expenses?${params.toString()}`);
+            // ✅ normaliza snake_case -> camelCase
+            if (res?.groups?.length) {
+                res.groups = res.groups.map(g => ({
+                    ...g,
+                    expenses: (g.expenses || []).map(e => ({
+                        ...e,
+                        installmentNumber: e.installmentNumber ?? e.installment_number ?? null,
+                        installmentsNumber: e.installmentsNumber ?? e.installments_number ?? null,
+                    })),
+                }));
+            }
             data.value = res || null;
         } catch (e) {
             console.error(e);
@@ -110,11 +121,9 @@ export const useExpensesStore = defineStore('expenses', () => {
     }
 
     async function deleteExpense(id) {
-        await requestWithAuth(`${API_URL}/expenses/${id}`, {
-            method: 'DELETE',
-        });
-
+        const res = await requestWithAuth(`${API_URL}/expenses/${id}`, { method: 'DELETE' });
         await fetchExpenses();
+        return res;
     }
 
     return {

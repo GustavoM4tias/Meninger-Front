@@ -11,7 +11,7 @@ import { requestWithAuth } from '@/utils/Auth/requestWithAuth';
 function getToken() {
     return localStorage.getItem('token');
 }
- 
+
 export const useBillsStore = defineStore('bills', () => {
     const carregamento = useCarregamentoStore();
     const contractsStore = useContractsStore();
@@ -256,7 +256,19 @@ export const useBillsStore = defineStore('bills', () => {
                         departmentName: chosenDepartmentName,
                         departmentCategoryId: chosenCategoryId,
                         departmentCategoryName: chosenCategoryName,
+
+                        // ✅ NOVO: parcela do lançamento
+                        installmentNumber: i + 1,
+                        installmentsNumber: parts,
                     };
+                    // printlog
+                    console.log('[linkSelectedToMonth] bill', bill.id, {
+                        parts,
+                        installmentNumber: i + 1,
+                        installmentsNumber: parts,
+                        expMonth,
+                        amount,
+                    });
 
                     promises.push(
                         requestWithAuth(`${API_URL}/expenses`, {
