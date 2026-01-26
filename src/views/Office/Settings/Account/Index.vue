@@ -5,5 +5,5 @@
 </template>
 
 <script setup>
-import Form from '@/views/Settings/Account/components/Form.vue'
+import Form from '@/views/Office/Settings/Account/components/Form.vue'
 </script>

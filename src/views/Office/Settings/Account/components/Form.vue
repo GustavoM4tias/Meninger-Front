@@ -210,7 +210,7 @@ import { updateMeInfo } from '@/utils/Auth/apiAuth';
 import Input from '@/components/UI/Input.vue';
 import Button from '@/components/UI/Button.vue';
 import Favorite from "@/components/config/Favorite.vue";
-import FacialAuth from '@/views/Settings/Account/components/FacialAuth.vue';
+import FacialAuth from '@/views/Office/Settings/Account/components/FacialAuth.vue';
 import { useToast } from 'vue-toastification';
 
 const toast = useToast();

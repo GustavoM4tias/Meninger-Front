@@ -47,6 +47,9 @@ app.directive('tippy', {
 });
 
 app.use(router);
+ 
+const prefersDark = window.matchMedia?.('(prefers-color-scheme: dark)')?.matches;
+if (prefersDark) document.documentElement.classList.add('dark');
 
 // ✅ initializeAuth: só aqui, uma vez
 import { useAuthStore } from './stores/Settings/Auth/authStore';

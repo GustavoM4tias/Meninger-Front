@@ -3,9 +3,9 @@
 import { ref, onMounted, computed, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useEventStore } from '@/stores/Marketing/Event/eventStore';
-import EventCard from '@/views/Marketing/Events/components/EventCard.vue';
-import EventModal from '@/views/Marketing/Events/components/EventModal.vue';
-import AddEventModal from '@/views/Marketing/Events/components/AddEventModal.vue';
+import EventCard from '@/views/Office/Marketing/Events/components/EventCard.vue';
+import EventModal from '@/views/Office/Marketing/Events/components/EventModal.vue';
+import AddEventModal from '@/views/Office/Marketing/Events/components/AddEventModal.vue';
 import Favorite from "@/components/config/Favorite.vue";
 
 const route = useRoute();
