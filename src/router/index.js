@@ -171,69 +171,47 @@ const routes = [
     component: () => import('@/views/Auth/Index.vue'),
     meta: { requiresAuth: false },
   },
-  // ✅ UM ÚNICO /academy como pai
   {
-    path: '/academy',
-    meta: { requiresAuth: false, searchable: false },
+    path: '/',
+    meta: { requiresAuth: false, searchable: false, app: 'academy' },
     children: [
-      // /academy -> Home.vue (LP)
-      {
-        path: '',
-        name: 'AcademyHome',
-        component: () => import('@/views/Academy/Home.vue'),
-        meta: { requiresAuth: false, searchable: true, content: 'Academy | Home' },
-      },
+      { path: '', name: 'AcademyHome', component: () => import('@/views/Academy/Home.vue') },
+      { path: 'login', name: 'AcademyLogin', component: () => import('@/views/Academy/Login.vue') },
 
-      // /academy/login -> Login.vue
-      {
-        path: 'login',
-        name: 'AcademyLogin',
-        component: () => import('@/views/Academy/Login.vue'),
-        meta: { requiresAuth: false, searchable: false, content: 'Academy | Login' },
-      },
-
-      // ✅ Shell somente para área logada do Academy
       {
         path: '',
         component: () => import('@/views/Academy/layouts/AcademyShell.vue'),
-        meta: { requiresAuth: false, searchable: false },
         children: [
-          {
-            path: 'panel',
-            name: 'AcademyPanel',
-            component: () => import('@/views/Academy/Panel.vue'),
-            meta: { requiresAuth: true, searchable: true, content: 'Academy | Painel' },
-          },
+          { path: 'panel', name: 'AcademyPanel', component: () => import('@/views/Academy/Panel.vue'), meta: { requiresAuth: true } },
+          { path: 'kb', name: 'AcademyKB', component: () => import('@/views/Academy/KB/Index.vue'), meta: { requiresAuth: true } },
+          { path: 'kb/editor', name: 'AcademyKBEditor', component: () => import('@/views/Academy/KB/Editor.vue'), meta: { requiresAuth: true } },
+          { path: 'kb/editor/:id', name: 'AcademyKBEditorEdit', component: () => import('@/views/Academy/KB/Editor.vue'), props: true, meta: { requiresAuth: true } },
+          { path: 'kb/my-articles', name: 'AcademyKBArticles', component: () => import('@/views/Academy/KB/Articles.vue'), meta: { requiresAuth: true } },
+          { path: 'kb/:categorySlug', name: 'AcademyKBCategory', component: () => import('@/views/Academy/KB/Index.vue'), props: true, meta: { requiresAuth: true } },
+          { path: 'kb/:categorySlug/:articleSlug', name: 'AcademyKBArticle', component: () => import('@/views/Academy/KB/Article.vue'), props: true, meta: { requiresAuth: true } },
 
-          { path: 'kb', name: 'AcademyKB', component: () => import('@/views/Academy/KB/Index.vue'), meta: { requiresAuth: true, searchable: true, content: 'Academy | Base de Conhecimento' } },
-          { path: 'kb/editor', name: 'AcademyKBEditor', component: () => import('@/views/Academy/KB/Editor.vue'), meta: { requiresAuth: true, searchable: false, content: 'Academy | KB | Editor' } },
-          { path: 'kb/editor/:id', name: 'AcademyKBEditorEdit', component: () => import('@/views/Academy/KB/Editor.vue'), props: true, meta: { requiresAuth: true, searchable: false, content: 'Academy | KB | Editor' } },
-          { path: 'kb/my-articles', name: 'AcademyKBArticles', component: () => import('@/views/Academy/KB/Articles.vue'), meta: { requiresAuth: true, searchable: true, content: 'Academy | KB | Meus artigos' } },
-          { path: 'kb/:categorySlug', name: 'AcademyKBCategory', component: () => import('@/views/Academy/KB/Index.vue'), props: true, meta: { requiresAuth: true, searchable: false, content: 'Academy | KB | Categoria' } },
-          { path: 'kb/:categorySlug/:articleSlug', name: 'AcademyKBArticle', component: () => import('@/views/Academy/KB/Article.vue'), props: true, meta: { requiresAuth: true, searchable: false, content: 'Academy | KB | Artigo' } },
+          { path: 'me', name: 'AcademyMe', component: () => import('@/views/Academy/Me.vue'), meta: { requiresAuth: true } },
 
-          { path: 'me', name: 'AcademyMe', component: () => import('@/views/Academy/Me.vue'), meta: { requiresAuth: true, searchable: true, content: 'Academy | Meu perfil' } },
+          { path: 'community', name: 'AcademyCommunity', component: () => import('@/views/Academy/Community/Index.vue'), meta: { requiresAuth: true } },
+          { path: 'community/my', name: 'AcademyCommunityMyTopics', component: () => import('@/views/Academy/Community/MyTopics.vue'), meta: { requiresAuth: true } },
+          { path: 'community/my/:id(\\d+)', name: 'AcademyCommunityTopicManage', component: () => import('@/views/Academy/Community/TopicManage.vue'), props: true, meta: { requiresAuth: true } },
+          { path: 'community/:type', name: 'AcademyCommunityType', component: () => import('@/views/Academy/Community/Type.vue'), props: true, meta: { requiresAuth: true } },
+          { path: 'community/topic/:id', name: 'AcademyCommunityTopic', component: () => import('@/views/Academy/Community/Topic.vue'), props: true, meta: { requiresAuth: true } },
 
-          { path: 'community', name: 'AcademyCommunity', component: () => import('@/views/Academy/Community/Index.vue'), meta: { requiresAuth: true, searchable: true, content: 'Academy | Comunidade' } },
-          { path: 'community/my', name: 'AcademyCommunityMyTopics', component: () => import('@/views/Academy/Community/MyTopics.vue'), meta: { requiresAuth: true, searchable: false, content: 'Academy | Comunidade | Meus tópicos' } },
-          { path: 'community/my/:id(\\d+)', name: 'AcademyCommunityTopicManage', component: () => import('@/views/Academy/Community/TopicManage.vue'), props: true, meta: { requiresAuth: true, searchable: false, content: 'Academy | Comunidade | Gerenciar tópico' } },
-          { path: 'community/:type', name: 'AcademyCommunityType', component: () => import('@/views/Academy/Community/Type.vue'), props: true, meta: { requiresAuth: true, searchable: false, content: 'Academy | Comunidade | Tipo' } },
-          { path: 'community/topic/:id', name: 'AcademyCommunityTopic', component: () => import('@/views/Academy/Community/Topic.vue'), props: true, meta: { requiresAuth: true, searchable: false, content: 'Academy | Tópico' } },
+          { path: 'tracks', name: 'AcademyTracks', component: () => import('@/views/Academy/Tracks/Index.vue'), meta: { requiresAuth: true } },
+          { path: 'tracks/:trackSlug', name: 'AcademyTrackDetail', component: () => import('@/views/Academy/Tracks/Detail.vue'), props: true, meta: { requiresAuth: true } },
 
-          { path: 'tracks', name: 'AcademyTracks', component: () => import('@/views/Academy/Tracks/Index.vue'), meta: { requiresAuth: true, searchable: true, content: 'Academy | Trilhas' } },
-          { path: 'tracks/:trackSlug', name: 'AcademyTrackDetail', component: () => import('@/views/Academy/Tracks/Detail.vue'), props: true, meta: { requiresAuth: true, searchable: false, content: 'Academy | Trilha' } },
+          { path: 'admin', name: 'AcademyAdmin', component: () => import('@/views/Academy/Admin/Index.vue'), meta: { requiresAuth: true, allowedRole: 'admin' } },
+          { path: 'admin/tracks', name: 'AcademyTracksAdmin', component: () => import('@/views/Academy/Admin/Tracks/Index.vue'), meta: { requiresAuth: true, allowedRole: 'admin' } },
+          { path: 'admin/tracks/new', name: 'AcademyTracksAdminCreate', component: () => import('@/views/Academy/Admin/Tracks/Create.vue'), meta: { requiresAuth: true, allowedRole: 'admin' } },
+          { path: 'admin/tracks/:slug', name: 'AcademyTracksAdminDetail', component: () => import('@/views/Academy/Admin/Tracks/Detail.vue'), props: true, meta: { requiresAuth: true, allowedRole: 'admin' } },
 
-          { path: 'admin', name: 'AcademyAdmin', component: () => import('@/views/Academy/Admin/Index.vue'), meta: { requiresAuth: true, allowedRole: 'admin', searchable: true, content: 'Academy | Admin' } },
-          { path: 'admin/tracks', name: 'AcademyTracksAdmin', component: () => import('@/views/Academy/Admin/Tracks/Index.vue'), meta: { requiresAuth: true, allowedRole: 'admin', searchable: true, content: 'Academy | Admin | Trilhas' } },
-          { path: 'admin/tracks/new', name: 'AcademyTracksAdminCreate', component: () => import('@/views/Academy/Admin/Tracks/Create.vue'), meta: { requiresAuth: true, allowedRole: 'admin', searchable: false, content: 'Academy | Admin | Trilhas | Criar' } },
-          { path: 'admin/tracks/:slug', name: 'AcademyTracksAdminDetail', component: () => import('@/views/Academy/Admin/Tracks/Detail.vue'), props: true, meta: { requiresAuth: true, allowedRole: 'admin', searchable: false, content: 'Academy | Admin | Trilhas | Detalhe' } },
-
-          { path: 'users', name: 'AcademyUsers', component: () => import('@/views/Academy/Users/Index.vue'), meta: { requiresAuth: true, searchable: true, content: 'Academy | Ranking de usuários' } },
-          { path: 'users/:id', name: 'AcademyUserProfile', component: () => import('@/views/Academy/Users/Profile.vue'), props: true, meta: { requiresAuth: true, searchable: false, content: 'Academy | Perfil do usuário' } },
-        ],
-      },
-    ],
-  },
+          { path: 'users', name: 'AcademyUsers', component: () => import('@/views/Academy/Users/Index.vue'), meta: { requiresAuth: true } },
+          { path: 'users/:id', name: 'AcademyUserProfile', component: () => import('@/views/Academy/Users/Profile.vue'), props: true, meta: { requiresAuth: true } }
+        ]
+      }
+    ]
+  }
 ];
 
 const router = createRouter({
@@ -244,19 +222,21 @@ const router = createRouter({
 router.beforeEach((to, from, next) => {
   const authStore = useAuthStore();
 
-  const isAcademy = to.path === '/academy' || to.path.startsWith('/academy/');
-  const isAcademyPublic = isAcademy && (to.name === 'AcademyHome' || to.name === 'AcademyLogin');
+  const host = window.location.host;
+  const isAcademyHost = host === 'academy.menin.com.br';
+  const isOfficeHost = host === 'office.menin.com.br';
 
-  // ✅ público SEMPRE passa
+  const isAcademyPublic = isAcademyHost && (to.name === 'AcademyHome' || to.name === 'AcademyLogin');
+
   if (isAcademyPublic) return next();
 
-  // ✅ calcula auth do jeito certo
   const requiresAuth = to.matched.some(r => r.meta?.requiresAuth);
   const allowedPosition = to.meta.allowedPosition;
   const allowedRole = to.meta.allowedRole;
 
   if (requiresAuth && !authStore.isAuthenticated()) {
-    return next(isAcademy ? { name: 'AcademyLogin' } : '/login');
+    // manda pro login correto por host
+    return next(isAcademyHost ? { name: 'AcademyLogin' } : { name: 'login' });
   }
 
   if (allowedPosition && !authStore.hasPosition(allowedPosition)) {
