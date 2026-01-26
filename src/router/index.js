@@ -9,12 +9,12 @@ const routes = [
     path: '/',
     name: 'Home',
     component: Home,
-    meta: { requiresAuth: true, searchable: true, content: 'Página inicial do sistema' },
+    meta: { app: 'office', requiresAuth: true, searchable: true, content: 'Página inicial do sistema' },
   },
-
   {
     path: '/marketing',
     name: 'marketing',
+    meta: { app: 'office', requiresAuth: true },
     children: [
       {
         path: 'Events',
@@ -35,12 +35,12 @@ const routes = [
         meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Dashboard de Viabilidade Marketing' },
       },
     ],
-    meta: { requiresAuth: true, allowedPosition: '' },
   },
 
   {
     path: '/comercial',
     name: 'comercial',
+    meta: { app: 'office', requiresAuth: true },
     children: [
       {
         path: 'faturamento',
@@ -79,12 +79,12 @@ const routes = [
         meta: { requiresAuth: true, allowedPosition: '', searchable: false, content: 'Grupos de Workflow' },
       }
     ],
-    meta: { requiresAuth: true, allowedPosition: '' },
   },
 
   {
     path: '/financeiro',
     name: 'financeiro',
+    meta: { app: 'office', requiresAuth: true },
     children: [
       {
         path: 'titulos',
@@ -99,21 +99,21 @@ const routes = [
         meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Custos do Financeiro' },
       },
     ],
-    meta: { requiresAuth: true, allowedPosition: '' },
   },
 
   {
     path: '/tools',
     name: 'tools',
+    meta: { app: 'office', requiresAuth: true },
     children: [
       { path: 'validator', name: 'Validador', component: () => import('@/views/Tools/Index.vue'), meta: { searchable: true, content: 'Validador de Contratos de Venda.' } },
     ],
-    meta: { requiresAuth: true, allowedPosition: '' },
   },
 
   {
     path: '/settings',
     name: 'settings',
+    meta: { app: 'office', requiresAuth: true },
     children: [
       { path: 'users', name: 'Usuários', component: () => import('@/views/Settings/Users/Index.vue'), meta: { requiresAuth: true, allowedPosition: '', allowedRole: 'admin', searchable: true, content: 'Listagem de usuários do sistema' } },
       { path: 'account', name: 'Minha Conta', component: () => import('@/views/Settings/Account/Index.vue'), meta: { searchable: true, content: 'Sua conta pessoal' } },
@@ -121,59 +121,58 @@ const routes = [
       { path: 'cidades', name: 'Cidades', component: () => import('@/views/Settings/EnterpriseCities/Index.vue'), meta: { requiresAuth: true, allowedPosition: '', allowedRole: 'admin', searchable: true, content: 'Gerenciamento de Cidades x Empreendimentos' } },
       { path: 'management', name: 'Cargos', component: () => import('@/views/Settings/Management/Index.vue'), meta: { requiresAuth: true, allowedPosition: '', allowedRole: 'admin', searchable: true, content: 'Departamentos, Categorias, Cargos e Cidades do sistema' } },
     ],
-    meta: { requiresAuth: true, allowedPosition: '' },
   },
 
   {
     path: '/report',
     name: 'Reportar',
     component: () => import('@/views/Support/Report.vue'),
-    meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Reportar Problema | Suporte' },
+    meta: { app: 'office', requiresAuth: true, allowedPosition: '', searchable: true, content: 'Reportar Problema | Suporte' },
   },
   {
     path: '/support',
     name: 'Suporte',
     component: () => import('@/views/Support/Support.vue'),
-    meta: { requiresAuth: true, allowedPosition: '', allowedRole: 'admin', searchable: true, content: 'Andamento do Suporte' },
+    meta: { app: 'office', requiresAuth: true, allowedPosition: '', allowedRole: 'admin', searchable: true, content: 'Andamento do Suporte' },
   },
   {
     path: '/support/:id',
     name: 'Detalhes Suporte',
     component: () => import('@/views/Support/SupportDetails.vue'),
     props: true,
-    meta: { requiresAuth: true, allowedPosition: '', allowedRole: 'admin', searchable: true, content: 'Detalhes do andamento do suporte' },
+    meta: { app: 'office', requiresAuth: true, allowedPosition: '', allowedRole: 'admin', searchable: true, content: 'Detalhes do andamento do suporte' },
   },
 
   {
     path: '/docs',
     name: 'Documentação',
     component: () => import('@/views/Docs/Docs.vue'),
-    meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Documentação do sistema' },
+    meta: { app: 'office', requiresAuth: true, allowedPosition: '', searchable: true, content: 'Documentação do sistema' },
   },
 
   {
     path: '/error',
     name: 'Error',
     component: () => import('@/views/Config/ErrorPage.vue'),
-    meta: { requiresAuth: false },
+    meta: { app: 'office', requiresAuth: false },
   },
 
   {
     path: '/teste',
     name: 'Teste',
     component: () => import('@/views/Config/teste.vue'),
-    meta: { requiresAuth: true, allowedPosition: '', allowedRole: 'admin' },
+    meta: { app: 'office', requiresAuth: true, allowedPosition: '', allowedRole: 'admin' },
   },
 
   {
     path: '/login',
     name: 'login',
     component: () => import('@/views/Auth/Index.vue'),
-    meta: { requiresAuth: false },
+    meta: { app: 'office', requiresAuth: false },
   },
   {
     path: '/',
-    meta: { requiresAuth: false, searchable: false, app: 'academy' },
+    meta: { app: 'academy', requiresAuth: false, searchable: false },
     children: [
       { path: '', name: 'AcademyHome', component: () => import('@/views/Academy/Home.vue') },
       { path: 'login', name: 'AcademyLogin', component: () => import('@/views/Academy/Login.vue') },
@@ -226,8 +225,22 @@ router.beforeEach((to, from, next) => {
   const isAcademyHost = host === 'academy.menin.com.br';
   const isOfficeHost = host === 'office.menin.com.br';
 
-  const isAcademyPublic = isAcademyHost && (to.name === 'AcademyHome' || to.name === 'AcademyLogin');
+  const isAcademyRoute = to.matched.some(r => r.meta?.app === 'academy');
+  const isOfficeRoute = to.matched.some(r => r.meta?.app === 'office');
 
+  // ✅ cross-domain obrigatório (resolve F5 + acesso direto + navegação interna)
+  if (isAcademyHost && isOfficeRoute) {
+    window.location.replace(`https://office.menin.com.br${to.fullPath}`);
+    return;
+  }
+
+  if (isOfficeHost && isAcademyRoute) {
+    window.location.replace(`https://academy.menin.com.br${to.fullPath}`);
+    return;
+  }
+
+  // ✅ público do Academy
+  const isAcademyPublic = isAcademyRoute && (to.name === 'AcademyHome' || to.name === 'AcademyLogin');
   if (isAcademyPublic) return next();
 
   const requiresAuth = to.matched.some(r => r.meta?.requiresAuth);
@@ -235,7 +248,6 @@ router.beforeEach((to, from, next) => {
   const allowedRole = to.meta.allowedRole;
 
   if (requiresAuth && !authStore.isAuthenticated()) {
-    // manda pro login correto por host
     return next(isAcademyHost ? { name: 'AcademyLogin' } : { name: 'login' });
   }
 
