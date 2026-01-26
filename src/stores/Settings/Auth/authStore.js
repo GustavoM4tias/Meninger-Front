@@ -111,7 +111,7 @@ export const useAuthStore = defineStore('user', {
 
     academyLogout() {
       this.clearUser();
-      router.push('/academy/login');
+      router.push({ name: 'AcademyLogin' });
     },
 
     // ✅ “me” único (serve interno e externo)

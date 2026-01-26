@@ -1,30 +1,23 @@
 {
-  "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
-    }
-  ],
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }],
   "redirects": [
     {
       "source": "/academy/:path*",
-      "has": [
-        {
-          "type": "host",
-          "value": "office.menin.com.br"
-        }
-      ],
+      "has": [{ "type": "host", "value": "office.menin.com.br" }],
       "destination": "https://academy.menin.com.br/:path*",
       "permanent": true
     },
     {
-      "source": "/:path((?!$|login$|panel$|kb|community|tracks|admin|users|me).*)",
-      "has": [
-        {
-          "type": "host",
-          "value": "academy.menin.com.br"
-        }
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "academy.menin.com.br" }],
+      "missing": [
+        { "type": "query", "key": "__allow_academy", "value": "1" }
       ],
+      "statusCode": 200
+    },
+    {
+      "source": "/:path((?!$|login(?:/.*)?$|panel(?:/.*)?$|kb(?:/.*)?$|community(?:/.*)?$|tracks(?:/.*)?$|admin(?:/.*)?$|users(?:/.*)?$|me(?:/.*)?$).*)",
+      "has": [{ "type": "host", "value": "academy.menin.com.br" }],
       "destination": "https://office.menin.com.br/:path",
       "permanent": true
     }
