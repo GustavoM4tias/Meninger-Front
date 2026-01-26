@@ -253,12 +253,12 @@ export const useViabilityStore = defineStore('marketingViability', () => {
             if (selectedMonth.value) params.set('month', selectedMonth.value);
 
             const url = `${API_URL}/viability/enterprises?${params.toString()}`;
-            console.log('[ViabilityStore] fetchList: GET', {
-                url,
-                year,
-                aliasId: selectedAliasId.value,
-                month: selectedMonth.value || null
-            });
+            // console.log('[ViabilityStore] fetchList: GET', {
+            //     url,
+            //     year,
+            //     aliasId: selectedAliasId.value,
+            //     month: selectedMonth.value || null
+            // });
 
             const res = await requestWithAuth(url);
 
