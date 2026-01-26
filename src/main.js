@@ -1,4 +1,4 @@
-// main.js
+// src/main.js
 import './assets/main.css'
 import 'vue-toastification/dist/index.css';
 import '@splidejs/splide/dist/css/splide.min.css'
@@ -14,16 +14,14 @@ import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import App from './App.vue'
 import router from './router'
-import Toast from 'vue-toastification'; 
+import Toast from 'vue-toastification';
 
-const app = createApp(App)
+const app = createApp(App);
 
-// Instalar o Pinia antes de acessar as stores
 const pinia = createPinia();
 app.use(pinia);
 
-// Registrar o Vue Toastification
-const toastOptions = {
+app.use(Toast, {
   position: "top-right",
   timeout: 4000,
   closeOnClick: true,
@@ -35,33 +33,24 @@ const toastOptions = {
   hideProgressBar: true,
   closeButton: "button",
   icon: true,
-};
-app.use(Toast, toastOptions);
-app.use(PrimeVue, {
-  theme: {
-    preset: Aura
-  }
 });
-// Diretiva para Tippy.js
+
+app.use(PrimeVue, { theme: { preset: Aura } });
+
 app.directive('tippy', {
   mounted(el, binding) {
-    tippy(el, {
-      content: binding.value,
-      allowHTML: true,
-    });
+    tippy(el, { content: binding.value, allowHTML: true });
   },
   updated(el, binding) {
-    if (el._tippy) {
-      el._tippy.setContent(binding.value);
-    }
+    if (el._tippy) el._tippy.setContent(binding.value);
   }
 });
 
 app.use(router);
 
-// Agora que o Pinia está instalado, é seguro acessar a store e inicializar a autenticação
+// ✅ initializeAuth: só aqui, uma vez
 import { useAuthStore } from './stores/Settings/Auth/authStore';
 const authStore = useAuthStore();
 authStore.initializeAuth();
- 
-app.mount('#app')
+
+app.mount('#app');

@@ -97,6 +97,6 @@ function goSearch() {
 }
 
 function goOffice() {
-    window.location.href = '/';
+  window.location.href = 'https://office.menin.com.br/';
 }
 </script>
