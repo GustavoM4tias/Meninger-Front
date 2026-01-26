@@ -56,11 +56,11 @@ const menuItems = {
             name: 'Vendas',
             icon: 'fas fa-credit-card',
             items: [
-                { router: '/comercial/faturamento', section: 'Faturamento', name: 'Faturamento', icon: 'fas fa-file-invoice-dollar' }, 
-                { router: '/comercial/projections', section: 'Projeção', name: 'Projeção vendas', icon: 'fas fa-chart-line' }, 
+                { router: '/comercial/faturamento', section: 'Faturamento', name: 'Faturamento', icon: 'fas fa-file-invoice-dollar' },
+                { router: '/comercial/projections', section: 'Projeção', name: 'Projeção vendas', icon: 'fas fa-chart-line' },
             ]
         },
-        items: [ 
+        items: [
             // { router: '/comercial/awards', section: 'Premiações', name: 'Premiação', icon: 'fas fa-award' }, 
             { router: '/comercial/workflow/groups', section: 'Workflow', name: 'Grupos Workflow', icon: 'fas fa-chart-diagram' }
         ]
@@ -460,7 +460,7 @@ onMounted(async () => {
                                                         class="w-5 text-gray-500"></i>
                                                     <span v-show="!isCollapsed"
                                                         class="ms-3 transition-opacity duration-200 ease-in-out">{{
-                                                        item.name }}</span>
+                                                            item.name }}</span>
                                                 </RouterLink>
 
                                                 <button @click="toggleFavorite(item.router, item.section)"
@@ -539,16 +539,16 @@ onMounted(async () => {
                                 class="ms-3 transition-opacity duration-200 ease-in-out">Documentação</span>
                         </RouterLink>
                     </li>
-
+                    
                     <li>
-                        <RouterLink to="/academy/panel" @click="expandSidebar"
+                        <a href="https://academy.menin.com.br/panel" @click="expandSidebar"
                             class="flex items-center p-2 h-10 text-gray-900 transition duration-75 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white group"
                             :class="isCollapsed ? 'justify-center' : ''">
                             <i
                                 class="fas fa-graduation-cap w-5 text-gray-500 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white"></i>
                             <span v-show="!isCollapsed"
                                 class="ms-3 transition-opacity duration-200 ease-in-out">Academy</span>
-                        </RouterLink>
+                        </a>
                     </li>
 
                     <li>
