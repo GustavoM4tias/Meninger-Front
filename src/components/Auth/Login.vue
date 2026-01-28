@@ -1,6 +1,6 @@
 <!-- src/components/Auth/LoginForm.vue -->
 <template>
-  <form @submit.prevent="handleLogin" class="relative">
+  <form @submit.prevent="handleLogin">
     <!-- ✅ select como antes (paths) -->
     <select v-model="loginType"
       class="absolute top-20 text-md bg-gray-100 dark:bg-gray-700 border-none rounded-lg px-3 focus:ring-1 focus:ring-blue-500 outline-none cursor-pointer z-10">

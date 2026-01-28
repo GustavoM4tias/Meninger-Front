@@ -16,11 +16,11 @@ export const useContractsStore = defineStore('contracts', {
             situation: 'Emitido',
             enterpriseName: []
         },
-
         // ✅ estes 3 DEVEM ficar na raiz (fora de filters)
         workflowGroups: [],      // grupos de workflow (projeções)
         selectedGroupIds: [],    // ids selecionados no filtro
         _projCache: new Map(),   // cache de projeções por grupo
+        enterpriseCities: [],
     }),
 
     getters: {
@@ -802,6 +802,47 @@ export const useContractsStore = defineStore('contracts', {
             this.selectedGroupIds = Array.isArray(ids)
                 ? ids.map(Number).filter(Number.isFinite)
                 : []
+        },
+
+        // actions:
+        async fetchEnterpriseCities() {
+            // cache simples
+            if (this.enterpriseCities.length > 0) return this.enterpriseCities;
+
+            try {
+                const headers = {
+                    Authorization: `Bearer ${localStorage.getItem('token')}`,
+                    'Content-Type': 'application/json'
+                };
+
+                // puxa bastante de uma vez (ajuste pageSize se precisar)
+                const qs = new URLSearchParams({ page: '1', pageSize: '2000' });
+                // opcional: se você quiser só ERP: qs.set('source', 'erp');
+
+                const res = await fetch(`${API_URL}/admin/enterprise-cities?${qs.toString()}`, { headers });
+                if (!res.ok) throw new Error(`Erro ao buscar enterprise-cities: ${res.status}`);
+
+                const data = await res.json();
+
+                // endpoint retorna { items: [...] }
+                const items = Array.isArray(data?.items) ? data.items : [];
+
+                // Normaliza pro que você precisa no select (erp_id = costCenterId)
+                this.enterpriseCities = items
+                    .filter(i => i?.erp_id) // precisa ter cost center id
+                    .map(i => ({
+                        erp_id: String(i.erp_id),
+                        name: i.enterprise_name || '—',
+                        city: i.effective_city || i.default_city || null,
+                        source: i.source
+                    }));
+
+                return this.enterpriseCities;
+            } catch (e) {
+                this.error = e.message;
+                this.enterpriseCities = [];
+                return [];
+            }
         },
 
         async fetchWorkflowGroups() {
