@@ -504,13 +504,14 @@ function closeInstallments() {
 const selectedCostCenterNames = ref([]);
 
 const costCenterOptions = computed(() =>
-  (contractsStore.enterprises || []).map(e => e.name)
+  (contractsStore.enterpriseCities || []).map(e => e.name)
 );
 
 const costCenterIdByName = computed(() => {
   const m = new Map();
-  for (const e of contractsStore.enterprises || []) {
-    m.set(e.name, e.id);
+  for (const e of contractsStore.enterpriseCities || []) {
+    // erp_id é o costCenterId do Sienge
+    m.set(e.name, Number(e.erp_id));
   }
   return m;
 });
@@ -600,8 +601,8 @@ const costCategoriesOptions = computed(() =>
 
 onMounted(async () => {
   try {
-    await Promise.all([
-      contractsStore.fetchEnterprises(),
+    await Promise.all([ 
+      contractsStore.fetchEnterpriseCities(), // 👈 aqui
       adminMeta.fetchDepartments(),
       adminMeta.fetchDepartmentCategories(),
     ]);

@@ -183,18 +183,19 @@ export const useBillsStore = defineStore('bills', () => {
         try {
             carregamento.iniciarCarregamento();
 
-            // 🔹 Garantir que temos a lista de empreendimentos carregada
-            if (!contractsStore.enterprises || !contractsStore.enterprises.length) {
+            // antes de usar o map:
+            if (!contractsStore.enterpriseCities || !contractsStore.enterpriseCities.length) {
                 try {
-                    await contractsStore.fetchEnterprises();
+                    await contractsStore.fetchEnterpriseCities();
                 } catch (e) {
-                    console.error('Erro ao carregar empreendimentos para custos:', e);
+                    console.error('Erro ao carregar enterprise-cities para custos:', e);
                 }
             }
 
-            // 🔹 Mapa id -> nome de centro de custo
+            // Mapa id -> nome
             const enterpriseNameById = new Map(
-                (contractsStore.enterprises || []).map(e => [Number(e.id), e.name])
+                (contractsStore.enterpriseCities || [])
+                    .map(e => [Number(e.erp_id), e.name])
             );
 
             const promises = [];

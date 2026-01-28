@@ -70,100 +70,125 @@ const slides = [
         desc: 'Do produto ao atendimento: rápido, prático e direto.',
     },
 ];
- 
+
+// dentro do seu <script setup> (substitua a função inteira)
+
 async function requestExternalCode() {
-    loading.value = true; error.value = '';
+    loading.value = true;
+    error.value = '';
+
+    const controller = new AbortController();
+    const timeoutMs = 12000; // 12s
+    const t = setTimeout(() => controller.abort(), timeoutMs);
+
     try {
         const cpf = onlyDigits(documentValue.value);
         if (cpf.length !== 11) throw new Error('CPF inválido');
 
-        const resp = await fetch(api('/academy/external/request'), {
+        const respRaw = await fetch(api('/academy/external/request'), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ document: cpf, kind: mode.value }),
+            signal: controller.signal,
+        });
+
+        // tenta ler json, mas não quebra se vier vazio
+        let resp = null;
+        try { resp = await respRaw.json(); } catch { resp = null; }
+
+        // Se backend respondeu, não trava UX:
+        // - Se vier erro explícito (success:false), mostra.
+        // - Caso contrário, segue para a etapa de código (resposta neutra é ok)
+        if (resp?.success === false) {
+            throw new Error(resp?.message || resp?.error || 'Não foi possível enviar o código');
+        }
+
+        step.value = 'CODE';
+    } catch (e) {
+        if (e?.name === 'AbortError') {
+            error.value = 'Demorou para responder. Tente novamente.';
+        } else {
+            error.value = e?.message || 'Erro';
+        }
+    } finally {
+        clearTimeout(t);
+        loading.value = false;
+    }
+}
+
+function academyOrigin() {
+    return 'https://academy.menin.com.br';
+}
+
+function isAcademyHost() {
+    return window.location.host === 'academy.menin.com.br';
+}
+
+function hardGoToAcademy(path) {
+    window.location.replace(`${academyOrigin()}${path}`);
+}
+
+async function goToAcademyPanel() {
+    // ✅ garante domínio correto SEM depender do match do router
+    if (!isAcademyHost()) {
+        hardGoToAcademy('/panel');
+        return;
+    }
+
+    // ✅ evita voltar pro login no botão voltar
+    await router.replace({ name: 'AcademyPanel' });
+}
+
+async function loginInternal() {
+    loading.value = true; error.value = '';
+    try {
+        const resp = await fetch(api('/auth/login'), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: email.value, password: password.value }),
         }).then(r => r.json());
 
-        if (!resp?.success) throw new Error(resp?.message || resp?.error || 'Não foi possível enviar o código');
-        step.value = 'CODE';
+        if (!resp?.success) throw new Error(resp?.message || resp?.error || 'Falha no login');
+
+        auth.setToken(resp.data?.token || resp.token);
+        await auth.fetchMe();
+
+        // ✅ sempre cair no painel do academy
+        await goToAcademyPanel();
+    } catch (e) {
+        error.value = e?.message || 'Erro no login';
+    } finally {
+        loading.value = false;
+    }
+}
+
+async function verifyExternalCode() {
+    loading.value = true; error.value = '';
+    try {
+        const cpf = onlyDigits(documentValue.value);
+        const code = onlyDigits(accessCode.value);
+
+        if (cpf.length !== 11) throw new Error('CPF inválido');
+        if (code.length !== 6) throw new Error('Código inválido');
+
+        const resp = await fetch(api('/academy/external/verify'), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ document: cpf, kind: mode.value, code }),
+        }).then(r => r.json());
+
+        if (!resp?.success) throw new Error(resp?.message || resp?.error || 'Código incorreto');
+
+        auth.setToken(resp.data?.token || resp.token);
+        await auth.fetchMe();
+
+        // ✅ sempre cair no painel do academy
+        await goToAcademyPanel();
     } catch (e) {
         error.value = e?.message || 'Erro';
     } finally {
         loading.value = false;
     }
-}
-function academyOrigin() {
-  return 'https://academy.menin.com.br';
-}
- 
-function isAcademyHost() {
-  return window.location.host === 'academy.menin.com.br';
-}
-
-function hardGoToAcademy(path) {
-  window.location.replace(`${academyOrigin()}${path}`);
-}
-
-async function goToAcademyPanel() {
-  // ✅ garante domínio correto SEM depender do match do router
-  if (!isAcademyHost()) {
-    hardGoToAcademy('/panel');
-    return;
-  }
-
-  // ✅ evita voltar pro login no botão voltar
-  await router.replace({ name: 'AcademyPanel' });
-}
-
-async function loginInternal() {
-  loading.value = true; error.value = '';
-  try {
-    const resp = await fetch(api('/auth/login'), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: email.value, password: password.value }),
-    }).then(r => r.json());
-
-    if (!resp?.success) throw new Error(resp?.message || resp?.error || 'Falha no login');
-
-    auth.setToken(resp.data?.token || resp.token);
-    await auth.fetchMe();
-
-    // ✅ sempre cair no painel do academy
-    await goToAcademyPanel();
-  } catch (e) {
-    error.value = e?.message || 'Erro no login';
-  } finally {
-    loading.value = false;
-  }
-}
-
-async function verifyExternalCode() {
-  loading.value = true; error.value = '';
-  try {
-    const cpf = onlyDigits(documentValue.value);
-    const code = onlyDigits(accessCode.value);
-
-    if (cpf.length !== 11) throw new Error('CPF inválido');
-    if (code.length < 4) throw new Error('Código inválido');
-
-    const resp = await fetch(api('/academy/external/verify'), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ document: cpf, kind: mode.value, code }),
-    }).then(r => r.json());
-
-    if (!resp?.success) throw new Error(resp?.message || resp?.error || 'Código incorreto');
-
-    auth.setToken(resp.data?.token || resp.token);
-    await auth.fetchMe();
-
-    // ✅ sempre cair no painel do academy
-    await goToAcademyPanel();
-  } catch (e) {
-    error.value = e?.message || 'Erro';
-  } finally {
-    loading.value = false;
-  }
 }
 
 async function submit() {
