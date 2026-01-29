@@ -4,7 +4,7 @@ export default [
     {
         path: '/login',
         name: 'login',
-        component: () => import('@/views/Academy/Login.vue'),
+        component: () => import('@/views/Office/Auth/Index.vue'),
         meta: { requiresAuth: false },
     },
     {
