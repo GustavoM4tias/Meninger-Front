@@ -116,8 +116,8 @@
 
                             <div class="mt-auto"></div>
 
-                            <div v-if="authStore.isExternal">
-                                <div class="border-t border-slate-100 dark:border-slate-800" />
+                            <div v-if="authStore.isInternal">
+                                <div class="border-t border-slate-100 pb-2 dark:border-slate-800" />
 
                                 <button
                                     class="w-full rounded-xl px-3 py-2 text-left text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors flex items-center gap-2"
