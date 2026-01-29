@@ -9,8 +9,8 @@ function safeJsonParse(v, fallback = null) {
 }
 
 function normalizeProvider(user) {
-  const p = String(user?.auth_provider || 'INTERNAL').toUpperCase();
-  return p || 'INTERNAL';
+  const p = String(user?.auth_provider || '').toUpperCase();
+  return p || '';
 }
 
 export const useAuthStore = defineStore('user', {
@@ -79,7 +79,7 @@ export const useAuthStore = defineStore('user', {
       // compatibilidade com seu legado
       localStorage.setItem('role', this.user?.role || '');
       localStorage.setItem('position', this.user?.position || '');
-      localStorage.setItem('auth_provider', this.user?.auth_provider || 'INTERNAL');
+      localStorage.setItem('auth_provider', this.user?.auth_provider || '');
     },
 
     setToken(token) {
