@@ -124,7 +124,7 @@
                                     <div class="flex items-center justify-between mb-2">
                                         <span class="font-semibold">{{ milestone.version }}</span>
                                         <span v-if="milestone?.date" class="text-xs">{{ formatDate(milestone.date)
-                                        }}</span>
+                                            }}</span>
                                         <span v-else class="text-xs">Em Programação</span>
                                     </div>
                                     <p class="text-sm mb-3">{{ milestone.description }}</p>
@@ -190,7 +190,7 @@
                                                     class="text-sm text-gray-700 dark:text-gray-300 flex items-start">
                                                     <span class="text-green-500 mr-2 mt-0.5">•</span>
                                                     <span><strong>{{ feature.title }}:</strong> {{ feature.description
-                                                    }}</span>
+                                                        }}</span>
                                                 </li>
                                             </ul>
                                         </div>
@@ -389,21 +389,202 @@ export default {
                 period: 'all'
             },
 
-            roadmap: [ 
+            roadmap: [
                 {
-                    version: 'v2.2.5',
-                    date: new Date('2025-10-10T00:00:00'),
+                    version: 'v2.4.1',
+                    date: new Date('2026-01-30T00:00:00'),
                     description: 'Recuperação e alteração de senha via email.',
                     features: ['Segurança', 'Suporte Técnico']
                 },
-                {
-                    version: 'v2.2.6',
-                    date: new Date('2025-10-23T00:00:00'),
-                    description: 'Relatórios de Leads x Vendas e comparativos de Entradas/Desempenho por campanha..',
-                    features: ['Relatórios', 'Leads', 'Desempenho']
-                },
             ],
             releases: [
+
+                {
+                    version: 'v2.4.0',
+                    date: new Date('2026-01-29T00:00:00'), // Baseado no commit de hoje
+                    type: 'minor',
+                    categories: ['frontend', 'api', 'backend'],
+                    features: [
+                        {
+                            id: 1,
+                            title: 'Menin Academy',
+                            description: 'Lançamento da estrutura inicial do módulo educacional "Academy", incluindo login externo para alunos e layout dedicado para cursos e treinamentos.'
+                        },
+                        {
+                            id: 2,
+                            title: 'Reconhecimento Facial (Ajustes)',
+                            description: 'Refatoração do layout de cadastro facial para melhor usabilidade em dispositivos móveis e validação de imagem.'
+                        }
+                    ],
+                    improvements: [
+                        {
+                            id: 1,
+                            category: 'Infraestrutura',
+                            description: 'Padronização global de URLs e domínios da aplicação para melhorar SEO e segurança.'
+                        },
+                        {
+                            id: 2,
+                            category: 'Financeiro',
+                            description: 'Implementação inicial do módulo de Despesas e Contas (Bills & Expenses).'
+                        }
+                    ],
+                    fixes: [
+                        {
+                            id: 1,
+                            description: 'Correção no envio de e-mails transacionais (Email Sent Ajust).'
+                        },
+                        {
+                            id: 2,
+                            description: 'Ajuste de rotas internas para evitar conflitos na navegação.'
+                        }
+                    ],
+                    breakingChanges: [],
+                    knownIssues: []
+                },
+                {
+                    version: 'v2.3.5',
+                    date: new Date('2026-01-09T00:00:00'),
+                    type: 'patch',
+                    categories: ['frontend', 'UX'],
+                    features: [
+                        {
+                            id: 1,
+                            title: 'UX - Menu Retrátil',
+                            description: 'Implementada funcionalidade de "Minimizar Menu" (Navbar Minimalize), aumentando a área útil de trabalho em telas menores.'
+                        }
+                    ],
+                    improvements: [
+                        {
+                            id: 1,
+                            category: 'Projeção de Vendas',
+                            description: 'Adicionado filtro de busca por Cidades na tabela de projeção.'
+                        },
+                        {
+                            id: 2,
+                            category: 'Layout',
+                            description: 'Melhoria no detalhamento das tabelas de projeção (Table Details).'
+                        }
+                    ],
+                    fixes: [],
+                    breakingChanges: [],
+                    knownIssues: []
+                },
+                {
+                    version: 'v2.3.0',
+                    date: new Date('2025-12-19T00:00:00'),
+                    type: 'minor',
+                    categories: ['backend', 'frontend', 'mobile'],
+                    features: [
+                        {
+                            id: 1,
+                            title: 'Módulo de Premiações (Awards)',
+                            description: 'Início da implementação do sistema de gamificação e premiações para a equipe comercial.'
+                        },
+                        {
+                            id: 2,
+                            title: 'Gestão de Contratos (Store Contracts)',
+                            description: 'Novo fluxo para armazenamento e recuperação de contratos digitais.'
+                        },
+                        {
+                            id: 3,
+                            title: 'Viabilidade de Marketing',
+                            description: 'Ferramenta para análise de viabilidade de novos empreendimentos baseada em dados de marketing (Land Settings & Viability).'
+                        }
+                    ],
+                    improvements: [
+                        {
+                            id: 1,
+                            category: 'Financeiro',
+                            description: 'Gestão de Títulos e Custos operacionais adicionada ao painel administrativo.'
+                        },
+                        {
+                            id: 2,
+                            category: 'Repasse',
+                            description: 'Ajustes na lógica de repasse financeiro integrados à API.'
+                        }
+                    ],
+                    fixes: [
+                        {
+                            id: 1,
+                            description: 'Correção na seleção de departamentos e categorias financeiras.'
+                        }
+                    ],
+                    breakingChanges: [],
+                    knownIssues: []
+                },
+                {
+                    version: 'v2.2.5',
+                    date: new Date('2025-11-27T00:00:00'),
+                    type: 'patch',
+                    categories: ['frontend', 'api'],
+                    features: [
+                        {
+                            id: 1,
+                            title: 'Gestão de Posições e Cidades',
+                            description: 'Atualização robusta no gerenciamento de cargos (positions) e vinculação de usuários a cidades específicas.'
+                        },
+                        {
+                            id: 2,
+                            title: 'Despesas de Marketing',
+                            description: 'Nova tela para lançamento e acompanhamento de despesas exclusivas do setor de Marketing.'
+                        }
+                    ],
+                    improvements: [],
+                    fixes: [
+                        {
+                            id: 1,
+                            description: 'Correção crítica: Tela preta ao acessar a área de Favoritos (Login Black Screen Error).'
+                        },
+                        {
+                            id: 2,
+                            description: 'Ajuste no cálculo de comissão específico para o empreendimento "Parque das Flores".'
+                        },
+                        {
+                            id: 3,
+                            description: 'Correção de erro de agrupamento no relatório de faturamento.'
+                        }
+                    ],
+                    breakingChanges: [],
+                    knownIssues: []
+                },
+                {
+                    version: 'v2.2.4',
+                    date: new Date('2025-11-11T00:00:00'),
+                    type: 'minor',
+                    categories: ['frontend', 'backend'],
+                    features: [
+                        {
+                            id: 1,
+                            title: 'Organograma Interativo',
+                            description: 'Novo visualizador de hierarquia corporativa (Organogram) integrado aos perfis de usuário.'
+                        },
+                        {
+                            id: 2,
+                            title: 'Multiselector para Projeções',
+                            description: 'Capacidade de selecionar múltiplos empreendimentos simultaneamente para criação de projeções de vendas.'
+                        }
+                    ],
+                    improvements: [
+                        {
+                            id: 1,
+                            category: 'Regras de Venda',
+                            description: 'Refinamento das regras de validação para novas vendas (Sales Ajust Rules).'
+                        },
+                        {
+                            id: 2,
+                            category: 'Workflow',
+                            description: 'Melhorias no fluxo de trabalho de grupos de venda.'
+                        }
+                    ],
+                    fixes: [
+                        {
+                            id: 1,
+                            description: 'Ajustes nas rotas de autenticação do validador.'
+                        }
+                    ],
+                    breakingChanges: [],
+                    knownIssues: []
+                },
                 {
                     version: 'v2.2.3',
                     date: new Date('2025-10-30T00:00:00'),
@@ -421,9 +602,9 @@ export default {
                             id: 1,
                             category: 'Comercial - Projeção de Vendas',
                             description: 'Criado tela para novo relatório gerencial.'
-                        }, 
-                    ], 
-                    fixes: [ 
+                        },
+                    ],
+                    fixes: [
                     ],
                     breakingChanges: [],
                     knownIssues: [],
@@ -461,8 +642,8 @@ export default {
                             category: 'Relatórios de Empreendimentos',
                             description: 'Adaptado Empreendimentos para visualização com novo gerenciamento de cidades.'
                         },
-                    ], 
-                    fixes: [ 
+                    ],
+                    fixes: [
                     ],
                     breakingChanges: [],
                     knownIssues: [],
@@ -501,7 +682,7 @@ export default {
                             description: 'Ajustado componente de hierarquia para visualização de usuarios do sistema.'
                         },
                     ],
-                    fixes: [ 
+                    fixes: [
                     ],
                     breakingChanges: [],
                     knownIssues: [],
@@ -535,7 +716,7 @@ export default {
                     ],
                     improvements: [
                     ],
-                    fixes: [ 
+                    fixes: [
                     ],
                     breakingChanges: [],
                     knownIssues: [],

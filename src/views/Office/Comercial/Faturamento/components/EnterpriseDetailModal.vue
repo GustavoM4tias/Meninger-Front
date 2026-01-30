@@ -165,7 +165,7 @@
                   </div>
 
                   <!-- Bloco de premiação -->
-                  <div class="flex flex-col items-end gap-2">
+                  <!-- <div class="flex flex-col items-end gap-2">
                     <span class="text-xs text-gray-500">
                       Selecionados para premiação: {{ selectedSales.size }}
                     </span>
@@ -180,7 +180,7 @@
                     <span v-if="lastAwardsMessage" class="text-xs text-gray-500">
                       {{ lastAwardsMessage }}
                     </span>
-                  </div>
+                  </div> -->
                 </div>
               </div>
             </div>
@@ -236,9 +236,9 @@
                       <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider">
                         Ações
                       </th>
-                      <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider">
+                      <!-- <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider">
                         Premiação
-                      </th> 
+                      </th>  -->
                     </tr>
                   </thead>
 
@@ -276,8 +276,8 @@
                             {{ repasseStatusOf(sale) || '—' }}
                           </div>
                         </td>
-                        <td class="px-4 py-3 truncate" v-if="hasRepasse">
-                          <div class="text-sm">
+                        <td class="px-4 py-3 max-w-64" v-if="hasRepasse">
+                          <div class="text-sm truncate">
                             {{ empreendimentoOf(sale) }}
                           </div>
                         </td>
@@ -329,10 +329,10 @@
                           </template>
 
                           <!-- Se NÃO tiver prêmio: mostra o checkbox -->
-                          <template v-else>
+                          <!-- <template v-else>
                             <input type="checkbox" :checked="selectedSales.has(saleKeyOf(sale))"
                               @change="toggleSaleSelection(sale)" />
-                          </template>
+                          </template> -->
                         </td>
                       </tr>
 
@@ -459,6 +459,9 @@
                         Cliente
                       </th>
                       <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider" v-if="hasRepasse">
+                        Imobiliária
+                      </th>
+                      <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider" v-if="hasRepasse">
                         Repasse
                       </th>
                       <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider" v-if="hasRepasse">
@@ -507,9 +510,14 @@
                           </div>
                           <div v-if="sale.contracts?.[0]?.associates?.[0]" class="text-gray-400 text-xs font-light">
                             {{
-                              sale.contracts?.[0]?.associates?.[0]?.name
+                              sale.contracts?.[0]?.associates?.[0]?.name 
                             }}
                             #{{ sale.contracts?.[0]?.associates?.[0]?.customer_id }}
+                          </div>
+                        </td>
+                        <td class="px-4 py-3 truncate" v-if="hasRepasse">
+                          <div class="text-sm max-w-24">
+                            {{ imobiliariaOf(sale) }}
                           </div>
                         </td>
                         <td class="px-4 py-3 flex items-center justify-center gap-2" v-if="hasRepasse">
@@ -521,8 +529,8 @@
                             {{ repasseStatusOf(sale) || '—' }}
                           </div>
                         </td>
-                        <td class="px-4 py-3 truncate" v-if="hasRepasse">
-                          <div class="text-sm">
+                        <td class="px-4 py-3 truncate max-w-64" v-if="hasRepasse">
+                          <div class="text-sm truncate ">
                             {{ empreendimentoOf(sale) }}
                           </div>
                         </td>
@@ -576,12 +584,12 @@
                             <span class="text-[10px] truncate px-2 py-1 rounded bg-purple-100 text-purple-700">
                               {{ statusLabel(awardStatusForSale(sale)) }}
                             </span>
-                          </template> 
-                          <template v-else>
+                          </template>
+<template v-else>
                             <input type="checkbox" :checked="selectedSales.has(saleKeyOf(sale))"
                               @change="toggleSaleSelection(sale)" />
                           </template>
-                        </td>  -->
+</td> -->
                       </tr>
 
                       <tr v-show="expandedSales.has(`${sale.customer_id}-${sale.unit_name}`)"
