@@ -1,6 +1,6 @@
 <template>
   <div class="bg-gray-50 dark:bg-gray-800 rounded-lg shadow-sm border dark:border-gray-600 overflow-hidden">
- 
+
     <!-- Header -->
     <div class="p-6 border-b border-gray-200 dark:border-gray-600">
       <div class="flex items-center justify-between">
@@ -188,12 +188,8 @@ const initialMode = ref('list')
 const modalEnterprise = ref({ name: '' })
 
 const valueModeLabel = computed(() => contractsStore.valueModeLabel)
-const valOf = (item) => contractsStore.valuePicker(item)
 
-/** 🔐 somente admin vê o botão de configuração
- *  Ajuste essa lógica para o seu auth store, se tiver:
- *  ex: const authStore = useAuthStore(); return authStore.user?.role === 'admin';
- */
+/** 🔐 somente admin vê o botão de configuração */
 const isAdmin = computed(() => {
   try {
     return localStorage.getItem('role') === 'admin'
@@ -202,9 +198,12 @@ const isAdmin = computed(() => {
   }
 })
 
-const colors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4', '#84CC16', '#F97316', '#EC4899', '#6366F1']
+const colors = [
+  '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6',
+  '#06B6D4', '#84CC16', '#F97316', '#EC4899', '#6366F1'
+]
 
-// helpers de valor base/apêndice para cada linha
+/* helpers de valor base/apêndice para cada linha */
 const baseValue = (e) => {
   if (e.onlyProjectionRow) {
     return contractsStore.isNet ? (e.total_value_net || 0) : (e.total_value_gross || 0)
@@ -220,7 +219,6 @@ const appendedValue = (e) => {
 const totalCombined = (e) => baseValue(e) + appendedValue(e)
 
 const ticketMedio = (e) => {
-  // ticket médio pela base real (mantém compat), sem considerar apêndice
   const denom = e.count || 1
   return baseValue(e) / denom
 }
@@ -228,27 +226,46 @@ const ticketMedio = (e) => {
 const sortedData = computed(() => {
   const data = [...props.data]
   switch (sortBy.value) {
-    case 'count': return data.sort((a, b) => (a.count + (a.onlyProjectionRow ? 0 : a.proj_count)) - (b.count + (b.onlyProjectionRow ? 0 : b.proj_count)))
-    case 'count-desc': return data.sort((a, b) => (b.count + (b.onlyProjectionRow ? 0 : b.proj_count)) - (a.count + (a.onlyProjectionRow ? 0 : a.proj_count)))
-    case 'value': return data.sort((a, b) => totalCombined(a) - totalCombined(b))
+    case 'count':
+      return data.sort(
+        (a, b) =>
+          (a.count + (a.onlyProjectionRow ? 0 : a.proj_count)) -
+          (b.count + (b.onlyProjectionRow ? 0 : b.proj_count))
+      )
+    case 'count-desc':
+      return data.sort(
+        (a, b) =>
+          (b.count + (b.onlyProjectionRow ? 0 : b.proj_count)) -
+          (a.count + (a.onlyProjectionRow ? 0 : a.proj_count))
+      )
+    case 'value':
+      return data.sort((a, b) => totalCombined(a) - totalCombined(b))
     case 'value-desc':
-    default: return data.sort((a, b) => totalCombined(b) - totalCombined(a))
+    default:
+      return data.sort((a, b) => totalCombined(b) - totalCombined(a))
   }
 })
 
 const getColor = (i) => colors[i % colors.length]
 const formatCurrency = (v) =>
-  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(v || 0)
+  new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  }).format(v || 0)
 
 /* seleção */
-const visibleKeys = computed(() => sortedData.value.map(e => e.key))
-const allVisibleChecked = computed(() => visibleKeys.value.every(k => selectedKeys.value.has(k)) && visibleKeys.value.length > 0)
+const visibleKeys = computed(() => sortedData.value.map((e) => e.key))
+const allVisibleChecked = computed(
+  () => visibleKeys.value.every((k) => selectedKeys.value.has(k)) && visibleKeys.value.length > 0
+)
 const disabledOpen = computed(() => props.data.length === 0)
 
 const toggleAllVisible = (evt) => {
   const next = new Set(selectedKeys.value)
-  if (evt.target.checked) visibleKeys.value.forEach(k => next.add(k))
-  else visibleKeys.value.forEach(k => next.delete(k))
+  if (evt.target.checked) visibleKeys.value.forEach((k) => next.add(k))
+  else visibleKeys.value.forEach((k) => next.delete(k))
   selectedKeys.value = next
 }
 const toggleOne = (key, evt) => {
@@ -257,34 +274,45 @@ const toggleOne = (key, evt) => {
   selectedKeys.value = next
 }
 
-/* filtro de sales para 1..N linhas */
-const salesForRow = (row) => {
+/* =========================
+   FIX PRINCIPAL: não usar contractsStore.uniqueSales "vivo"
+   -> snapshot após fetch (copia do array) e filtra em cima dele
+   ========================= */
+
+const salesForRowFrom = (sales, row) => {
   const isProjOnly = !!row.onlyProjectionRow
-  // enterprise_id preferencial; fallback por nome quando id ausente
   const id = row.id ?? null
   const name = row.name
 
-  return contractsStore.uniqueSales.filter(sale => {
+  return (sales || []).filter((sale) => {
     const contracts = sale.contracts || []
     const first = contracts[0] || {}
+
     const sameEnterprise =
       (id !== null && first.enterprise_id === id) ||
       (id === null && (first.enterprise_name || sale.enterprise_name) === name)
 
     if (!sameEnterprise) return false
 
-    if (isProjOnly) {
-      // apenas linhas 100% projeção
-      return contracts.every(c => c._projection)
-    }
-    // linha base: inclui vendas REAIS e também projeções vinculadas
-    return contracts.some(c => !c._projection) || contracts.every(c => c._projection)
+    if (isProjOnly) return contracts.every((c) => c._projection)
+    return contracts.some((c) => !c._projection) || contracts.every((c) => c._projection)
   })
 }
 
 /* abrir modal de UMA linha */
-const openSingle = (enterprise, mode = 'list') => {
-  modalSales.value = salesForRow(enterprise)
+const openSingle = async (enterprise, mode = 'list') => {
+  if (enterprise.id != null) {
+    await contractsStore.fetchContracts({ view: 'detail', enterpriseId: enterprise.id })
+  } else {
+    await contractsStore.fetchContracts({ view: 'detail' })
+  }
+
+  // snapshot estável do momento (evita diferença 1406 -> 1724)
+  const salesSnapshot = Array.isArray(contractsStore.uniqueSales)
+    ? [...contractsStore.uniqueSales]
+    : []
+
+  modalSales.value = salesForRowFrom(salesSnapshot, enterprise)
   modalTitle.value = enterprise.name + (enterprise.onlyProjectionRow ? ' • Projeções' : '')
   initialMode.value = mode
   modalEnterprise.value = enterprise
@@ -292,13 +320,49 @@ const openSingle = (enterprise, mode = 'list') => {
 }
 
 /* abrir modal p/ seleção (se nada marcado, usa todos) */
-const openGroup = (mode = 'list') => {
-  const keysSet = selectedKeys.value.size > 0
-    ? new Set(selectedKeys.value)
-    : new Set(props.data.map(e => e.key))
+const openGroup = async (mode = 'list') => {
+  const keysSet =
+    selectedKeys.value.size > 0
+      ? new Set(selectedKeys.value)
+      : new Set(props.data.map((e) => e.key))
 
-  const rows = props.data.filter(r => keysSet.has(r.key))
-  modalSales.value = rows.flatMap(r => salesForRow(r))
+  const rows = props.data.filter((r) => keysSet.has(r.key))
+
+  const enterpriseIds = [
+    ...new Set(rows.map((r) => r.id).filter((v) => v != null).map(Number).filter(Number.isFinite))
+  ]
+
+  if (enterpriseIds.length > 0) {
+    await contractsStore.fetchContracts({ view: 'detail', enterpriseIds })
+  } else {
+    await contractsStore.fetchContracts({ view: 'detail' })
+  }
+
+  // snapshot estável do momento
+  const salesSnapshot = Array.isArray(contractsStore.uniqueSales)
+    ? [...contractsStore.uniqueSales]
+    : []
+
+  // dedupe por uma chave estável (evita duplicar quando o mesmo sale cai em mais de 1 row)
+  const dedupe = new Map()
+  for (const r of rows) {
+    for (const s of salesForRowFrom(salesSnapshot, r)) {
+      const first = s?.contracts?.[0] || {}
+      const key =
+        [
+          s.customer_id ?? '',
+          s.unit_id ?? s.unit_name ?? '',
+          s.financial_institution_date ?? first.financial_institution_date ?? '',
+          first.enterprise_id ?? first.enterprise_name ?? s.enterprise_name ?? ''
+        ]
+          .map((v) => String(v ?? '').trim())
+          .join('|')
+
+      if (!dedupe.has(key)) dedupe.set(key, s)
+    }
+  }
+
+  modalSales.value = [...dedupe.values()]
 
   const count = rows.length
   modalTitle.value = count === 1 ? rows[0].name : `Conjunto de ${count} empreendimentos`
@@ -307,5 +371,12 @@ const openGroup = (mode = 'list') => {
   showModal.value = true
 }
 
-const closeModal = () => { showModal.value = false }
+const closeModal = () => {
+  showModal.value = false
+
+  const ok = contractsStore.restoreDashboardFromCache()
+  if (!ok) {
+    contractsStore.fetchContracts({ view: 'dashboard' })
+  }
+}
 </script>

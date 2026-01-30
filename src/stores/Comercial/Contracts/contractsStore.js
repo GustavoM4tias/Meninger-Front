@@ -9,6 +9,7 @@ export const useContractsStore = defineStore('contracts', {
         enterprises: [],
         total: 0,
         error: null,
+
         valueMode: 'net',
         filters: {
             startDate: '',
@@ -16,51 +17,28 @@ export const useContractsStore = defineStore('contracts', {
             situation: 'Emitido',
             enterpriseName: []
         },
-        // ✅ estes 3 DEVEM ficar na raiz (fora de filters)
-        workflowGroups: [],      // grupos de workflow (projeções)
-        selectedGroupIds: [],    // ids selecionados no filtro
-        _projCache: new Map(),   // cache de projeções por grupo
+
+        workflowGroups: [],
+        selectedGroupIds: [],
+        _projCache: new Map(),
+
         enterpriseCities: [],
+
+        // cache por request (dashboard/detail) - mantém
+        _contractsCache: new Map(), // key -> { ts, contracts, total }
+        _cacheTTLms: 1000 * 60 * 5,
+        _lastDashboardKey: null,
+
+        // ✅ NOVO: cache DETAIL por empreendimento (enterprise_id) + contexto (datas/situation/names/grupos)
+        _detailByEnterprise: new Map(), // ctxKey -> Map(enterpriseId -> { ts, contracts: [] })
+        _detailTTLms: 1000 * 60 * 10
     }),
 
     getters: {
-        // Regra (override) para um CONTRATO específico
-        enterpriseRuleFor() {
-            return (c) => {
-                if (c?._projection) return null // <-- NUNCA aplica override em projeção
-                const ov = this.enterpriseOverrides || {}
-                const byId = ov.byId || {}
-                const byName = ov.byName || {}
-                const norm = (s) => (s || '').trim().toUpperCase()
-                return byId[c?.enterprise_id] || byName[norm(c?.enterprise_name)] || null
-            }
-        },
-        // 👇 checa LAND_VALUE_ONLY respeitando o modo atual (net/gross)
-        isLandOnlyForContract() {
-            return (c) => {
-                const rule = this.enterpriseRuleFor(c)
-                if (!rule) return false
-                return (this.isGross && rule.gross === 'LAND_VALUE_ONLY') ||
-                    (this.isNet && rule.net === 'LAND_VALUE_ONLY')
-            }
-        },
-
-        // Rótulo do modo atual
-        valueModeLabel: (state) => (state.valueMode === 'net' ? 'VGV' : 'VGV + DC'),
-        isGross: (state) => state.valueMode === 'gross',
-        isNet: (state) => state.valueMode === 'net',
-
-        // "picker" genérico
-        valuePicker: (state) => (obj) =>
-            (state.valueMode === 'net' ? obj?.total_value_net : obj?.total_value_gross) ?? 0,
-
-        // (RESTAURAR) Regras por empreendimento
-        // getters: enterpriseOverrides()
+        // Regras por empreendimento
         enterpriseOverrides: () => ({
             byId: {
-                // Substitua pelos IDs reais desse empreendimento (se houver dois contratos, pode ter 2 IDs)
-                17004: { gross: 'LAND_VALUE_ONLY', net: 'LAND_VALUE_ONLY' },
-                // 17005: { gross: 'LAND_VALUE_ONLY', net: 'LAND_VALUE_ONLY' },
+                17004: { gross: 'LAND_VALUE_ONLY', net: 'LAND_VALUE_ONLY' }
             },
             byName: {
                 'JACAREZINHO/PR - RESIDENCIAL PARQUE DOS IPÊS - COMERCIAL/INCORPORAÇÃO/ESTOQUE': {
@@ -74,16 +52,23 @@ export const useContractsStore = defineStore('contracts', {
             byId: {
                 97001: { commission_pct: 0.04 },
                 80001: { commission_pct: 0.04 }
-            },
-            // byName: {
-            //     'SINOP/MT - INCORPORADORA MF VERONA SPE LTDA - COMERCIAL/INCORPORAÇÃO/ESTOQUE': {
-            //         commission_pct: 0.04
-            //     }
-            // }
+            }
         }),
+
+        enterpriseRuleFor() {
+            return (c) => {
+                if (c?._projection) return null
+                const ov = this.enterpriseOverrides || {}
+                const byId = ov.byId || {}
+                const byName = ov.byName || {}
+                const norm = (s) => (s || '').trim().toUpperCase()
+                return byId[c?.enterprise_id] || byName[norm(c?.enterprise_name)] || null
+            }
+        },
+
         enterpriseCommissionFor() {
             return (c) => {
-                if (c?._projection) return null // <-- sem comissão em projeção
+                if (c?._projection) return null
                 const rules = this.enterpriseCommissionRules || {}
                 const byId = rules.byId || {}
                 const byName = rules.byName || {}
@@ -92,29 +77,35 @@ export const useContractsStore = defineStore('contracts', {
             }
         },
 
-        // Códigos que representam desconto
+        isLandOnlyForContract() {
+            return (c) => {
+                const rule = this.enterpriseRuleFor(c)
+                if (!rule) return false
+                return (this.isGross && rule.gross === 'LAND_VALUE_ONLY') || (this.isNet && rule.net === 'LAND_VALUE_ONLY')
+            }
+        },
+
+        valueModeLabel: (state) => (state.valueMode === 'net' ? 'VGV' : 'VGV + DC'),
+        isGross: (state) => state.valueMode === 'gross',
+        isNet: (state) => state.valueMode === 'net',
+
+        valuePicker: (state) => (obj) =>
+            (state.valueMode === 'net' ? obj?.total_value_net : obj?.total_value_gross) ?? 0,
+
         discountCodes: () => new Set(['DC', 'DESCONTO_CONSTRUTORA']),
 
-        // Totais por contrato: { net, gross }
         _contractTotals() {
             return (contract) => {
-                const isDiscount = (pc) =>
-                    this.discountCodes.has(String(pc.condition_type_id || '').toUpperCase())
+                const isDiscount = (pc) => this.discountCodes.has(String(pc.condition_type_id || '').toUpperCase())
+                const pcs = Array.isArray(contract.payment_conditions) ? contract.payment_conditions : []
 
-                const pcs = Array.isArray(contract.payment_conditions)
-                    ? contract.payment_conditions
-                    : []
-
-                let full = 0        // soma de tudo que NÃO é DC (valor cheio)
-                let dcSumAbs = 0    // soma ABSOLUTA dos DC (sempre positiva)
+                let full = 0
+                let dcSumAbs = 0
 
                 for (const pc of pcs) {
                     const v = Number(pc.total_value) || 0
-                    if (isDiscount(pc)) {
-                        dcSumAbs += Math.abs(v)   // desconto entra no bruto
-                    } else {
-                        full += v
-                    }
+                    if (isDiscount(pc)) dcSumAbs += Math.abs(v)
+                    else full += v
                 }
 
                 const net = full
@@ -123,24 +114,19 @@ export const useContractsStore = defineStore('contracts', {
             }
         },
 
-        _makeSaleKey: () => (c) =>
-            `${c.customer_id}__${(c.unit_name || '').trim().toUpperCase()}`,
+        _makeSaleKey: () => (c) => `${c.customer_id}__${(c.unit_name || '').trim().toUpperCase()}`,
 
-        // === AGRUPAMENTO DE VENDAS (mantido — não altera nada existente) ===
         uniqueSales() {
             const salesMap = new Map()
             const makeKey = this._makeSaleKey
             const totalsOf = this._contractTotals
 
-            // --- clone para não mutar this.contracts ---
             const cloneContract = (c) => ({
                 ...c,
-                payment_conditions: Array.isArray(c.payment_conditions)
-                    ? [...c.payment_conditions]
-                    : []
+                payment_conditions: Array.isArray(c.payment_conditions) ? [...c.payment_conditions] : []
             })
 
-            // 1) Agrupar por cliente+unidade
+            // 1) agrupar por cliente+unidade
             this.contracts.forEach((contract) => {
                 const key = makeKey(contract)
                 if (!salesMap.has(key)) {
@@ -159,25 +145,21 @@ export const useContractsStore = defineStore('contracts', {
                 }
             })
 
-            // 1.5) Injetar TR sintética (somando land_value dos contratos REAIS) se o grupo NÃO tiver TR real
+            // 1.5 TR sintética + escolher contrato principal
             salesMap.forEach((sale) => {
-                // somente contratos REAIS (sem projeção)
-                const realContracts = (sale.contracts || []).filter(c => !c._projection)
+                const realContracts = (sale.contracts || []).filter((c) => !c._projection)
                 if (realContracts.length === 0) return
 
-                // já existe este cálculo no bloco 1.5
                 const groupHasTRReal = realContracts.some(
                     (c) => Array.isArray(c.payment_conditions) && c.payment_conditions.some((pc) => this._isTR(pc))
                 )
                 const sumLandReal = realContracts.reduce((acc, c) => acc + (Number(c.land_value) || 0), 0)
 
-                // 👉 NOVO: anote em cada contrato real (para o modal saber o “land do outro contrato / do grupo”)
                 for (const rc of realContracts) {
                     rc._group_has_tr_real = groupHasTRReal
                     rc._group_land_sum_real = sumLandReal
                 }
 
-                // injeta TR sintética se faltou TR real (seu código existente)
                 if (!groupHasTRReal && sumLandReal > 0) {
                     const target = realContracts[0]
                     target.payment_conditions = [
@@ -199,16 +181,12 @@ export const useContractsStore = defineStore('contracts', {
                         }
                     ]
                 }
-                // 👇 NOVO: ordenar contratos do grupo para escolher o "principal"
+
                 sale.contracts.sort((a, b) => {
                     const aHasRepasse = Array.isArray(a.repasse) && a.repasse.length > 0
                     const bHasRepasse = Array.isArray(b.repasse) && b.repasse.length > 0
-                    if (aHasRepasse !== bHasRepasse) {
-                        // quem TEM repasse vem primeiro
-                        return bHasRepasse - aHasRepasse
-                    }
+                    if (aHasRepasse !== bHasRepasse) return bHasRepasse - aHasRepasse
 
-                    // heurística: financiamento antes de terreno
                     const isFin = (c) =>
                         Array.isArray(c.payment_conditions) &&
                         c.payment_conditions.some((pc) => {
@@ -218,21 +196,17 @@ export const useContractsStore = defineStore('contracts', {
 
                     const aIsFin = isFin(a)
                     const bIsFin = isFin(b)
-                    if (aIsFin !== bIsFin) {
-                        return bIsFin - aIsFin // financiamento antes
-                    }
+                    if (aIsFin !== bIsFin) return bIsFin - aIsFin
 
-                    // fallback: menor id primeiro
                     return (Number(a.contract_id) || 0) - (Number(b.contract_id) || 0)
                 })
 
-                // 👇 e atualiza o "cabeçalho" da venda pro contrato principal
                 const main = sale.contracts[0] || {}
                 sale.enterprise_name = main.enterprise_name
                 sale.financial_institution_date = main.financial_institution_date
             })
 
-            // 2) Calcular totais respeitando overrides/comissão (REAIS) e "como vieram" (PROJEÇÕES)
+            // 2) totais (override/comissão em reais; projeção como veio)
             salesMap.forEach((sale) => {
                 const overrides = this.enterpriseOverrides || {}
                 const byId = overrides.byId || {}
@@ -240,9 +214,8 @@ export const useContractsStore = defineStore('contracts', {
                 const norm = (s) => (s || '').trim().toUpperCase()
                 const getRuleFor = (c) => byId[c.enterprise_id] || byName[norm(c.enterprise_name)] || null
 
-                const totalsOf = this._contractTotals
-                const real = sale.contracts.filter(c => !c._projection)
-                const projs = sale.contracts.filter(c => c._projection)
+                const real = sale.contracts.filter((c) => !c._projection)
+                const projs = sale.contracts.filter((c) => c._projection)
 
                 const matched = real.filter((c) => !!getRuleFor(c))
                 const others = real.filter((c) => !getRuleFor(c))
@@ -261,7 +234,8 @@ export const useContractsStore = defineStore('contracts', {
                 if (rule?.net === 'TR_ONLY') {
                     const trSum = matched.reduce((acc, c) => {
                         const pcs = Array.isArray(c.payment_conditions) ? c.payment_conditions : []
-                        return acc + pcs.filter((pc) => this._isTR(pc))
+                        return acc + pcs
+                            .filter((pc) => this._isTR(pc))
                             .reduce((s, pc) => s + (Number(pc.total_value) || 0), 0)
                     }, 0)
                     matchedNet = trSum
@@ -271,7 +245,6 @@ export const useContractsStore = defineStore('contracts', {
                     matchedNet = landSum
                 }
 
-                // comissão “por fora” SÓ nos reais
                 const comRules = this.enterpriseCommissionRules || {}
                 const comById = comRules.byId || {}
                 const comByName = comRules.byName || {}
@@ -304,45 +277,38 @@ export const useContractsStore = defineStore('contracts', {
                     }
                 }
 
-                // Projeções entram “como vieram” (sem override nem comissão)
                 const projsGross = projs.reduce((acc, c) => acc + totalsOf(c).gross, 0)
                 const projsNet = projs.reduce((acc, c) => acc + totalsOf(c).net, 0)
 
                 sale.total_value_gross = othersGross + matchedGross + addGross + projsGross
                 sale.total_value_net = othersNet + matchedNet + addNet + projsNet
 
-                // flags úteis para o modal
                 sale._has_projection = projs.length > 0
                 sale._realContracts = real
                 sale._projContracts = projs
             })
 
-            // 3) (compat) — retorna array
             return Array.from(salesMap.values())
         },
 
-        // === NOVO: agregação por empreendimento com real vs. projeção (para a Tabela) === 
         salesByEnterprise() {
-            const pick = this.valuePicker; // net/gross dinâmico
-            const keyOf = (id, name) => (id != null ? `ID:${id}` : `NAME:${(name || '').trim().toUpperCase()}`);
+            const pick = this.valuePicker
+            const keyOf = (id, name) => (id != null ? `ID:${id}` : `NAME:${(name || '').trim().toUpperCase()}`)
 
-            // 1) Constrói vendas únicas já existentes
-            const unique = this.uniqueSales;
+            const unique = this.uniqueSales
+            const real = unique.filter((s) => s.contracts.some((c) => !c._projection))
+            const proj = unique.filter((s) => s.contracts.every((c) => c._projection))
 
-            // 2) Separa real vs projeção pura
-            const real = unique.filter(s => s.contracts.some(c => !c._projection));
-            const proj = unique.filter(s => s.contracts.every(c => c._projection));
-
-            // 3) Agrega REAL por enterprise_id (fallback: nome)
-            const realMap = new Map();
+            const realMap = new Map()
             for (const s of real) {
-                const first = s.contracts[0] || {};
-                const id = first.enterprise_id ?? null;
-                const name = first.enterprise_name || s.enterprise_name || '—';
-                const key = keyOf(id, name);
+                const first = s.contracts[0] || {}
+                const id = first.enterprise_id ?? null
+                const name = first.enterprise_name || s.enterprise_name || '—'
+                const key = keyOf(id, name)
 
                 const prev = realMap.get(key) || {
-                    id, name,
+                    id,
+                    name,
                     count: 0,
                     total_value_net: 0,
                     total_value_gross: 0,
@@ -351,37 +317,34 @@ export const useContractsStore = defineStore('contracts', {
                     proj_value_gross: 0,
                     onlyProjectionRow: false,
                     key
-                };
+                }
 
-                // soma usando o total já calculado na venda única
-                prev.count += 1;
-                prev.total_value_net += Number(s.total_value_net) || 0;
-                prev.total_value_gross += Number(s.total_value_gross) || 0;
+                prev.count += 1
+                prev.total_value_net += Number(s.total_value_net) || 0
+                prev.total_value_gross += Number(s.total_value_gross) || 0
 
-                realMap.set(key, prev);
+                realMap.set(key, prev)
             }
 
-            // 4) Agrega PROJEÇÃO por enterprise_id (fallback: nome) e vincula
-            const outMap = new Map(realMap); // começa do real
+            const outMap = new Map(realMap)
             for (const s of proj) {
-                const first = s.contracts[0] || {};
-                const id = first.enterprise_id ?? null;
-                const name = first.enterprise_name || s.enterprise_name || '—';
-                const key = keyOf(id, name);
+                const first = s.contracts[0] || {}
+                const id = first.enterprise_id ?? null
+                const name = first.enterprise_name || s.enterprise_name || '—'
+                const key = keyOf(id, name)
 
-                // se houver base real com o mesmo enterprise_id, apenda; senão cria linha "verde"
-                const hasReal = [...realMap.values()].some(r => (r.id != null && r.id === id));
+                const hasReal = [...realMap.values()].some((r) => r.id != null && r.id === id)
                 if (hasReal && id != null) {
-                    // encontra a chave de mesmo id no outMap
-                    const baseKey = [...outMap.keys()].find(k => (outMap.get(k)?.id === id)) || key;
-                    const row = outMap.get(baseKey);
-                    row.proj_count += 1;
-                    row.proj_value_net += Number(s.total_value_net) || 0;
-                    row.proj_value_gross += Number(s.total_value_gross) || 0;
-                    outMap.set(baseKey, row);
+                    const baseKey = [...outMap.keys()].find((k) => outMap.get(k)?.id === id) || key
+                    const row = outMap.get(baseKey)
+                    row.proj_count += 1
+                    row.proj_value_net += Number(s.total_value_net) || 0
+                    row.proj_value_gross += Number(s.total_value_gross) || 0
+                    outMap.set(baseKey, row)
                 } else {
                     const prev = outMap.get(key) || {
-                        id, name,
+                        id,
+                        name,
                         count: 0,
                         total_value_net: 0,
                         total_value_gross: 0,
@@ -390,43 +353,33 @@ export const useContractsStore = defineStore('contracts', {
                         proj_value_gross: 0,
                         onlyProjectionRow: true,
                         key: `${key}__PROJ`
-                    };
-                    prev.count += 1; // conta projeções na linha verde
-                    prev.total_value_net += Number(s.total_value_net) || 0;
-                    prev.total_value_gross += Number(s.total_value_gross) || 0;
-                    outMap.set(key, prev);
+                    }
+                    prev.count += 1
+                    prev.total_value_net += Number(s.total_value_net) || 0
+                    prev.total_value_gross += Number(s.total_value_gross) || 0
+                    outMap.set(key, prev)
                 }
             }
 
-            // 5) Ordena pelo total combinado conforme o modo atual (net/gross)
-            const combined = [...outMap.values()].map(r => {
-                const base = pick(r); // usa valuePicker no próprio row (net/gross)
-                const append = (this.isNet ? r.proj_value_net : r.proj_value_gross) || 0;
-                return { ...r, __combined: (base || 0) + append };
-            });
+            const combined = [...outMap.values()].map((r) => {
+                const base = pick(r)
+                const append = (this.isNet ? r.proj_value_net : r.proj_value_gross) || 0
+                return { ...r, __combined: (base || 0) + append }
+            })
 
-            return combined.sort((a, b) => b.__combined - a.__combined);
+            return combined.sort((a, b) => b.__combined - a.__combined)
         },
-        // ==== (compat) demais getters inalterados ====
 
-        // Vendas por mês (a partir das vendas únicas)
         salesByMonth() {
             const monthMap = new Map()
 
             this.uniqueSales.forEach((sale) => {
                 const date = new Date(sale.financial_institution_date)
                 if (isNaN(date)) return
-                const monthKey = `${date.getFullYear()}-${String(
-                    date.getMonth() + 1
-                ).padStart(2, '0')}`
+                const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
 
                 if (!monthMap.has(monthKey)) {
-                    monthMap.set(monthKey, {
-                        month: monthKey,
-                        count: 0,
-                        total_value_net: 0,
-                        total_value_gross: 0
-                    })
+                    monthMap.set(monthKey, { month: monthKey, count: 0, total_value_net: 0, total_value_gross: 0 })
                 }
                 const ref = monthMap.get(monthKey)
                 ref.count += 1
@@ -434,9 +387,7 @@ export const useContractsStore = defineStore('contracts', {
                 ref.total_value_gross += Number(sale.total_value_gross) || 0
             })
 
-            return Array.from(monthMap.values()).sort((a, b) =>
-                a.month.localeCompare(b.month)
-            )
+            return Array.from(monthMap.values()).sort((a, b) => a.month.localeCompare(b.month))
         },
 
         topCustomers() {
@@ -467,22 +418,13 @@ export const useContractsStore = defineStore('contracts', {
             const unique = this.uniqueSales
             const totalSales = unique.length
 
-            const totalValueNet = unique.reduce(
-                (sum, s) => sum + (Number(s.total_value_net) || 0),
-                0
-            )
-            const totalValueGross = unique.reduce(
-                (sum, s) => sum + (Number(s.total_value_gross) || 0),
-                0
-            )
+            const totalValueNet = unique.reduce((sum, s) => sum + (Number(s.total_value_net) || 0), 0)
+            const totalValueGross = unique.reduce((sum, s) => sum + (Number(s.total_value_gross) || 0), 0)
 
             const avgSaleValueNet = totalSales > 0 ? totalValueNet / totalSales : 0
-            const avgSaleValueGross =
-                totalSales > 0 ? totalValueGross / totalSales : 0
+            const avgSaleValueGross = totalSales > 0 ? totalValueGross / totalSales : 0
 
-            const totalEnterprises = new Set(
-                this.contracts.map((c) => c.enterprise_id)
-            ).size
+            const totalEnterprises = new Set(this.contracts.map((c) => c.enterprise_id)).size
 
             return {
                 totalSales,
@@ -497,20 +439,18 @@ export const useContractsStore = defineStore('contracts', {
             }
         },
 
-        // opções de grupos
         workflowGroupOptions(state) {
-            return (state.workflowGroups || []).map(g => ({
+            return (state.workflowGroups || []).map((g) => ({
                 label: `${g.tipo === 'reservas' ? 'Reserva' : 'Repasse'} • ${g.nome}`,
                 value: String(g.idgroup)
             }))
         },
 
-        projectionContractsCount: (state) => state.contracts.filter(c => c._projection === true).length,
+        projectionContractsCount: (state) => state.contracts.filter((c) => c._projection === true).length,
         projectionItemsCount() {
-            return this.uniqueSales.filter(sale =>
-                sale._has_projection && sale.contracts.every(c => c._projection === true)
-            ).length
-        },
+            return this.uniqueSales.filter((sale) => sale._has_projection && sale.contracts.every((c) => c._projection === true))
+                .length
+        }
     },
 
     actions: {
@@ -521,7 +461,6 @@ export const useContractsStore = defineStore('contracts', {
             this.valueMode = this.valueMode === 'net' ? 'gross' : 'net'
         },
 
-        // --- helpers ---
         _isTR(pc) {
             if (!pc) return false
             const id = String(pc.condition_type_id ?? '').trim().toUpperCase()
@@ -529,14 +468,11 @@ export const useContractsStore = defineStore('contracts', {
             return id === 'TR' || name === 'TR' || name.includes('TERRENO')
         },
 
-        // --- normalização ---
         _toNumber(v) {
             if (v === null || v === undefined || v === '') return 0
             if (typeof v === 'number') return v
             if (typeof v === 'string') {
-                const s = v.includes(',')
-                    ? v.replace(/\./g, '').replace(',', '.')
-                    : v
+                const s = v.includes(',') ? v.replace(/\./g, '').replace(',', '.') : v
                 const num = Number(s.replace(/[^\d.-]/g, ''))
                 return Number.isFinite(num) ? num : 0
             }
@@ -548,8 +484,7 @@ export const useContractsStore = defineStore('contracts', {
             const n = this._toNumber
             return {
                 condition_type_id: pc.condition_type_id ?? pc.conditionTypeId ?? null,
-                condition_type_name:
-                    pc.condition_type_name ?? pc.conditionTypeName ?? null,
+                condition_type_name: pc.condition_type_name ?? pc.conditionTypeName ?? null,
                 total_value: n(pc.total_value ?? pc.totalValue),
                 total_value_interest: n(pc.total_value_interest ?? pc.totalValueInterest),
                 outstanding_balance: n(pc.outstanding_balance ?? pc.outstandingBalance),
@@ -566,37 +501,29 @@ export const useContractsStore = defineStore('contracts', {
         _normalizeContract(c) {
             const n = this._toNumber
 
-            const pcs = Array.isArray(c.payment_conditions)
-                ? c.payment_conditions.map(this._normalizePaymentCondition)
-                : []
+            const pcs = Array.isArray(c.payment_conditions) ? c.payment_conditions.map(this._normalizePaymentCondition) : []
 
             const associates = Array.isArray(c.associates)
                 ? c.associates.map((a) => ({
                     ...a,
-                    participation_percentage: n(
-                        a.participation_percentage ?? a.participationPercentage
-                    )
+                    participation_percentage: n(a.participation_percentage ?? a.participationPercentage)
                 }))
                 : []
 
-            const isPlainObject = (v) =>
-                v !== null && typeof v === 'object' && !Array.isArray(v)
+            const isPlainObject = (v) => v !== null && typeof v === 'object' && !Array.isArray(v)
 
             return {
                 contract_id: n(c.contract_id ?? c.id),
                 enterprise_id: n(c.enterprise_id ?? c.enterpriseId),
                 enterprise_name: c.enterprise_name ?? c.enterpriseName ?? '',
-                financial_institution_date:
-                    c.financial_institution_date ?? c.financialInstitutionDate ?? null,
+                financial_institution_date: c.financial_institution_date ?? c.financialInstitutionDate ?? null,
                 land_value: n(c.land_value ?? c.landValue),
                 unit_name: c.unit_name ?? c.unitName ?? '',
                 unit_id: c.unit_id ?? c.unitId ?? '',
 
                 customer_id: n(c.customer_id ?? c.customerId),
                 customer_name: c.customer_name ?? c.customerName ?? '',
-                participation_percentage: n(
-                    c.participation_percentage ?? c.participationPercentage
-                ),
+                participation_percentage: n(c.participation_percentage ?? c.participationPercentage),
 
                 payment_conditions: pcs,
                 associates,
@@ -610,17 +537,16 @@ export const useContractsStore = defineStore('contracts', {
             }
         },
 
-        // === NOVO: séries -> payment_conditions (projeção RESERVA) ===
         _seriesToPaymentConditions(series = []) {
             const n = this._toNumber
             const out = []
-            for (const s of (series || [])) {
+            for (const s of series || []) {
                 const qty = n(s?.quantidade) || 1
                 const val = n(s?.valor) || 0
                 out.push({
                     condition_type_id: (s?.sigla ?? '').toString().trim().toUpperCase() || null,
                     condition_type_name: s?.serie || '—',
-                    total_value: val * qty,                // soma total da série
+                    total_value: val * qty,
                     installments_number: qty,
                     base_date: s?.vencimento || null
                 })
@@ -644,17 +570,17 @@ export const useContractsStore = defineStore('contracts', {
                 unit_name: row.unidade || '',
                 unit_id: row.codigointerno_unidade || null,
 
-                // >>> titular do repasse (quando vier) para nome/cliente
                 customer_id: null,
                 customer_name: row?.titular?.nome || row?.cliente || '—',
 
-                // repasse PROJ: condição única simples (mantém comportamento anterior)
-                payment_conditions: [{
-                    condition_type_id: 'PROJ',
-                    condition_type_name: 'Projeção de Repasse',
-                    total_value: value,
-                    installments_number: 1
-                }],
+                payment_conditions: [
+                    {
+                        condition_type_id: 'PROJ',
+                        condition_type_name: 'Projeção de Repasse',
+                        total_value: value,
+                        installments_number: 1
+                    }
+                ],
 
                 repasse: [row],
                 reserva: null,
@@ -664,18 +590,11 @@ export const useContractsStore = defineStore('contracts', {
 
         _normalizeProjectionReserva(row, groupId) {
             const n = this._toNumber
-
             const idempInt = row?.unidade_json?.idempreendimento_int
             const enterpriseId = idempInt ? Number(idempInt) : null
 
-            // >>> séries -> payment_conditions (net ignora DC, gross soma DC)
             const pcs = this._seriesToPaymentConditions(row?.condicoes?.series)
-
-            // land_value: podemos usar total_proposta / valor_contrato / vgv_tabela como fallback
-            const fallback =
-                n(row?.condicoes?.total_proposta) ||
-                n(row?.condicoes?.valor_contrato) ||
-                n(row?.condicoes?.vgv_tabela) || 0
+            const fallback = n(row?.condicoes?.total_proposta) || n(row?.condicoes?.valor_contrato) || n(row?.condicoes?.vgv_tabela) || 0
 
             return {
                 _projection: true,
@@ -686,15 +605,14 @@ export const useContractsStore = defineStore('contracts', {
                 enterprise_id: enterpriseId,
                 enterprise_name: row.empreendimento || '',
                 financial_institution_date: row.data_reserva || null,
-                land_value: fallback,      // só exibido em “Observação” / LAND overrides
+                land_value: fallback,
                 unit_name: row.unidade || '',
                 unit_id: row?.unidade_json?.idunidade_int || null,
 
-                // >>> titular da reserva para nome/cliente
                 customer_id: null,
                 customer_name: row?.titular?.nome || row?.cliente || row?.comprador || '—',
 
-                payment_conditions: pcs,   // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+                payment_conditions: pcs,
                 repasse: [],
                 reserva: row,
                 links: []
@@ -715,35 +633,191 @@ export const useContractsStore = defineStore('contracts', {
             const { results = [], meta = {} } = data
 
             const tipo = (meta?.tipo || (results?.[0]?.idrepasse ? 'repasses' : 'reservas')).toString().toLowerCase()
-            const normalized = results.map(r =>
-                tipo === 'repasses'
-                    ? this._normalizeProjectionReserva(r, idgroup)
-                    : this._normalizeProjectionReserva(r, idgroup)
-            )
+
+            // ⚠️ mantém seu comportamento (corrigindo o bug aqui: repasses deve ir pra _normalizeProjectionRepasse)
+            const normalized = results.map((r) => (tipo === 'repasses' ? this._normalizeProjectionRepasse(r, idgroup) : this._normalizeProjectionReserva(r, idgroup)))
 
             this._projCache.set(idgroup, normalized)
             return normalized
         },
 
-        // --- API ---
-        async fetchContracts() {
+        _buildContractsCacheKey({ view = 'dashboard', enterpriseId = null, enterpriseIds = null } = {}) {
+            const f = this.filters || {}
+            const start = f.startDate || ''
+            const end = f.endDate || ''
+            const sit = f.situation || 'Emitido'
+            const names = Array.isArray(f.enterpriseName) ? f.enterpriseName.slice().sort().join('|') : ''
+
+            const ids = Array.isArray(enterpriseIds)
+                ? [...new Set(enterpriseIds.map(Number).filter(Number.isFinite))].sort((a, b) => a - b).join(',')
+                : ''
+            const id1 = enterpriseId != null ? String(Number(enterpriseId)) : ''
+
+            const groups = Array.isArray(this.selectedGroupIds) ? [...new Set(this.selectedGroupIds)].sort((a, b) => a - b).join(',') : ''
+
+            return `v=${view};s=${start};e=${end};sit=${sit};names=${names};id=${id1};ids=${ids};g=${groups}`
+        },
+
+        _getCachedContracts(key) {
+            const item = this._contractsCache.get(key)
+            if (!item) return null
+            if (Date.now() - item.ts > this._cacheTTLms) {
+                this._contractsCache.delete(key)
+                return null
+            }
+            return item
+        },
+
+        _setCachedContracts(key, payload) {
+            this._contractsCache.set(key, { ts: Date.now(), ...payload })
+        },
+
+        restoreDashboardFromCache() {
+            if (!this._lastDashboardKey) return false
+            const cached = this._getCachedContracts(this._lastDashboardKey)
+            if (!cached) return false
+            this.contracts = cached.contracts
+            this.total = cached.total
+            return true
+        },
+
+        clearContractsCache() {
+            this._contractsCache.clear()
+            this._lastDashboardKey = null
+        },
+
+        // ==========================
+        // ✅ CACHE DETAIL POR EMPREENDIMENTO
+        // ==========================
+        _buildDetailCtxKey() {
+            const f = this.filters || {}
+            const start = f.startDate || ''
+            const end = f.endDate || ''
+            const sit = f.situation || 'Emitido'
+            const names = Array.isArray(f.enterpriseName) ? f.enterpriseName.slice().sort().join('|') : ''
+            const groups = Array.isArray(this.selectedGroupIds) ? [...new Set(this.selectedGroupIds)].sort((a, b) => a - b).join(',') : ''
+            return `s=${start};e=${end};sit=${sit};names=${names};g=${groups}`
+        },
+
+        _getDetailBucket(ctxKey) {
+            if (!this._detailByEnterprise.has(ctxKey)) this._detailByEnterprise.set(ctxKey, new Map())
+            return this._detailByEnterprise.get(ctxKey)
+        },
+
+        _getDetailFromCache(ctxKey, enterpriseId) {
+            const bucket = this._getDetailBucket(ctxKey)
+            const id = Number(enterpriseId)
+            if (!Number.isFinite(id)) return null
+            const item = bucket.get(id)
+            if (!item) return null
+            if (Date.now() - item.ts > this._detailTTLms) {
+                bucket.delete(id)
+                return null
+            }
+            return item.contracts
+        },
+
+        _indexDetailIntoCache(ctxKey, normalizedContracts = []) {
+            const bucket = this._getDetailBucket(ctxKey)
+
+            const byEnt = new Map()
+            for (const c of normalizedContracts) {
+                const id = Number(c.enterprise_id)
+                if (!Number.isFinite(id)) continue
+                if (!byEnt.has(id)) byEnt.set(id, [])
+                byEnt.get(id).push(c)
+            }
+
+            for (const [enterpriseId, list] of byEnt.entries()) {
+                bucket.set(enterpriseId, { ts: Date.now(), contracts: list })
+            }
+        },
+
+        clearDetailCache() {
+            this._detailByEnterprise.clear()
+        },
+
+        // ==========================
+        // API
+        // ==========================
+        async fetchContracts({ view = 'dashboard', enterpriseId = null, enterpriseIds = null, force = false } = {}) {
             const carregamentoStore = useCarregamentoStore()
             this.error = null
+
+            const isDetail = String(view).toLowerCase() === 'detail'
+
+            // ✅ detail: resolve via cache por enterprise_id (evita request unitário)
+            if (isDetail && !force && enterpriseId != null) {
+                const ctxKey = this._buildDetailCtxKey()
+                const cachedDetail = this._getDetailFromCache(ctxKey, enterpriseId)
+                if (cachedDetail) {
+                    let projections = []
+                    if (this.selectedGroupIds.length > 0) {
+                        const all = await Promise.all(this.selectedGroupIds.map((id) => this._fetchProjectionsForGroup(id).catch(() => [])))
+                        projections = all.flat()
+                    }
+                    this.contracts = [...cachedDetail, ...projections]
+                    this.total = this.contracts.length
+                    return
+                }
+            }
+
+            // ✅ detail: se vier enterpriseIds, pede só os que faltam (se já tiver no cache)
+            if (isDetail && !force && Array.isArray(enterpriseIds) && enterpriseIds.length > 0) {
+                const ctxKey = this._buildDetailCtxKey()
+                const ids = enterpriseIds.map(Number).filter(Number.isFinite)
+                const missing = ids.filter((id) => !this._getDetailFromCache(ctxKey, id))
+
+                if (missing.length === 0) {
+                    const allCached = ids.flatMap((id) => this._getDetailFromCache(ctxKey, id) || [])
+                    let projections = []
+                    if (this.selectedGroupIds.length > 0) {
+                        const all = await Promise.all(this.selectedGroupIds.map((gid) => this._fetchProjectionsForGroup(gid).catch(() => [])))
+                        projections = all.flat()
+                    }
+                    this.contracts = [...allCached, ...projections]
+                    this.total = this.contracts.length
+                    return
+                }
+
+                // otimiza request: busca só o que falta
+                enterpriseIds = missing
+            }
+
+            // ✅ mantém cache por request (bom pro dashboard + restore)
+            const key = this._buildContractsCacheKey({ view, enterpriseId, enterpriseIds })
+
+            if (!force) {
+                const cached = this._getCachedContracts(key)
+                if (cached) {
+                    this.contracts = cached.contracts
+                    this.total = cached.total
+                    if (view === 'dashboard') this._lastDashboardKey = key
+                    return
+                }
+            }
+
             try {
                 carregamentoStore.iniciarCarregamento()
 
                 let url = `${API_URL}/sienge/contracts`
                 const params = new URLSearchParams()
+
                 if (this.filters.startDate) params.append('startDate', this.filters.startDate)
                 if (this.filters.endDate) params.append('endDate', this.filters.endDate)
                 params.append('situation', this.filters.situation || 'Emitido')
 
-                if (
-                    Array.isArray(this.filters.enterpriseName) &&
-                    this.filters.enterpriseName.length > 0
-                ) {
+                if (Array.isArray(this.filters.enterpriseName) && this.filters.enterpriseName.length > 0) {
                     params.append('enterpriseName', this.filters.enterpriseName.join(','))
                 }
+
+                params.append('view', view)
+
+                if (enterpriseId != null) params.append('enterpriseId', String(enterpriseId))
+                if (Array.isArray(enterpriseIds) && enterpriseIds.length > 0) {
+                    params.append('enterpriseIds', enterpriseIds.map(String).join(','))
+                }
+
                 if (params.toString()) url += `?${params.toString()}`
 
                 const response = await fetch(url, {
@@ -755,23 +829,29 @@ export const useContractsStore = defineStore('contracts', {
                 if (!response.ok) throw new Error(`Erro ao buscar contratos: ${response.status}`)
 
                 const data = await response.json()
-                const normalized = Array.isArray(data.results)
-                    ? data.results.map(this._normalizeContract)
-                    : []
+                const normalized = Array.isArray(data.results) ? data.results.map(this._normalizeContract) : []
 
-                // Projeções (se houver grupos selecionados)
+                // ✅ indexa detail por empreendimento (para não buscar unitário depois)
+                if (isDetail) {
+                    const ctxKey = this._buildDetailCtxKey()
+                    this._indexDetailIntoCache(ctxKey, normalized)
+                }
+
+                // projeções
                 let projections = []
                 if (this.selectedGroupIds.length > 0) {
-                    const all = await Promise.all(this.selectedGroupIds.map(id =>
-                        this._fetchProjectionsForGroup(id).catch(() => [])
-                    ))
+                    const all = await Promise.all(this.selectedGroupIds.map((id) => this._fetchProjectionsForGroup(id).catch(() => [])))
                     projections = all.flat()
                 }
 
-                // Merge final
-                this.contracts = [...normalized, ...projections]
-                this.total = (data.count || 0) + (projections.length || 0)
-                return
+                const merged = [...normalized, ...projections]
+                const total = (data.count || 0) + (projections.length || 0)
+
+                this.contracts = merged
+                this.total = total
+
+                this._setCachedContracts(key, { contracts: merged, total })
+                if (view === 'dashboard') this._lastDashboardKey = key
             } catch (error) {
                 this.error = error.message
             } finally {
@@ -799,49 +879,42 @@ export const useContractsStore = defineStore('contracts', {
         },
 
         setSelectedGroups(ids) {
-            this.selectedGroupIds = Array.isArray(ids)
-                ? ids.map(Number).filter(Number.isFinite)
-                : []
+            this.selectedGroupIds = Array.isArray(ids) ? ids.map(Number).filter(Number.isFinite) : []
+            // mudou grupos => muda contexto do detail
+            this.clearDetailCache()
+            this.clearContractsCache()
         },
 
-        // actions:
         async fetchEnterpriseCities() {
-            // cache simples
-            if (this.enterpriseCities.length > 0) return this.enterpriseCities;
+            if (this.enterpriseCities.length > 0) return this.enterpriseCities
 
             try {
                 const headers = {
                     Authorization: `Bearer ${localStorage.getItem('token')}`,
                     'Content-Type': 'application/json'
-                };
+                }
 
-                // puxa bastante de uma vez (ajuste pageSize se precisar)
-                const qs = new URLSearchParams({ page: '1', pageSize: '2000' });
-                // opcional: se você quiser só ERP: qs.set('source', 'erp');
+                const qs = new URLSearchParams({ page: '1', pageSize: '2000' })
+                const res = await fetch(`${API_URL}/admin/enterprise-cities?${qs.toString()}`, { headers })
+                if (!res.ok) throw new Error(`Erro ao buscar enterprise-cities: ${res.status}`)
 
-                const res = await fetch(`${API_URL}/admin/enterprise-cities?${qs.toString()}`, { headers });
-                if (!res.ok) throw new Error(`Erro ao buscar enterprise-cities: ${res.status}`);
+                const data = await res.json()
+                const items = Array.isArray(data?.items) ? data.items : []
 
-                const data = await res.json();
-
-                // endpoint retorna { items: [...] }
-                const items = Array.isArray(data?.items) ? data.items : [];
-
-                // Normaliza pro que você precisa no select (erp_id = costCenterId)
                 this.enterpriseCities = items
-                    .filter(i => i?.erp_id) // precisa ter cost center id
-                    .map(i => ({
+                    .filter((i) => i?.erp_id)
+                    .map((i) => ({
                         erp_id: String(i.erp_id),
                         name: i.enterprise_name || '—',
                         city: i.effective_city || i.default_city || null,
                         source: i.source
-                    }));
+                    }))
 
-                return this.enterpriseCities;
+                return this.enterpriseCities
             } catch (e) {
-                this.error = e.message;
-                this.enterpriseCities = [];
-                return [];
+                this.error = e.message
+                this.enterpriseCities = []
+                return []
             }
         },
 
@@ -857,21 +930,18 @@ export const useContractsStore = defineStore('contracts', {
                     fetch(`${API_URL}/cv/workflow-grupos?tipo=repasses`, { headers })
                 ])
 
-                // ❗ Se der erro, apenas desabilita projeções (sem propagar erro global)
                 if (!resR.ok || !resP.ok) {
-                    console.warn('Falha ao listar grupos de workflow (projeções serão desabilitadas).',
-                        { reservas: resR.status, repasses: resP.status })
+                    console.warn('Falha ao listar grupos de workflow (projeções serão desabilitadas).', {
+                        reservas: resR.status,
+                        repasses: resP.status
+                    })
                     this.workflowGroups = []
                     return
                 }
 
                 const [dataR, dataP] = await Promise.all([resR.json(), resP.json()])
 
-                const toArray = (d) =>
-                    Array.isArray(d?.results) ? d.results :
-                        Array.isArray(d?.data) ? d.data :
-                            Array.isArray(d) ? d : []
-
+                const toArray = (d) => (Array.isArray(d?.results) ? d.results : Array.isArray(d?.data) ? d.data : Array.isArray(d) ? d : [])
                 const raw = [...toArray(dataR), ...toArray(dataP)]
 
                 const norm = (g) => {
@@ -884,9 +954,8 @@ export const useContractsStore = defineStore('contracts', {
                     }
                 }
 
-                this.workflowGroups = raw.map(norm).filter(g => g.idgroup !== null)
+                this.workflowGroups = raw.map(norm).filter((g) => g.idgroup !== null)
             } catch (e) {
-                // 👇 NÃO mexe em this.error aqui pra não quebrar o relatório
                 console.warn('Erro ao carregar grupos de workflow (projeções):', e)
                 this.workflowGroups = []
             }
@@ -894,16 +963,15 @@ export const useContractsStore = defineStore('contracts', {
 
         setFilters(filters) {
             this.filters = { ...this.filters, ...filters }
+            this.clearContractsCache()
+            this.clearDetailCache()
         },
 
         clearFilters() {
-            this.filters = {
-                startDate: '',
-                endDate: '',
-                situation: 'Emitido',
-                enterpriseName: []
-            }
+            this.filters = { startDate: '', endDate: '', situation: 'Emitido', enterpriseName: [] }
             this.selectedGroupIds = []
+            this.clearContractsCache()
+            this.clearDetailCache()
         }
     }
 })
