@@ -110,18 +110,33 @@
 
             <td class="px-6 py-4 text-right">
               <div class="text-sm font-semibold relative">
-                {{ enterprise.count }}
+                {{ enterprise.count - distratoCount(enterprise) }}
+
                 <span v-if="!enterprise.onlyProjectionRow && enterprise.proj_count"
-                  class="font-bold text-emerald-600 absolute -top-3"> +{{ enterprise.proj_count }}</span>
+                  class="font-bold text-emerald-600 absolute -top-3">
+                  +{{ enterprise.proj_count }}
+                </span>
+
+                <span v-if="!enterprise.onlyProjectionRow && distratoCount(enterprise) > 0"
+                  class="font-bold text-red-600 absolute -top-4 right-2" v-tippy="'Distratos (não contabilizados)'">
+                  -{{ distratoCount(enterprise) }}
+                </span>
               </div>
             </td>
 
             <td class="px-6 py-4 text-right">
               <div class="text-sm font-semibold text-green-600">
                 {{ formatCurrency(baseValue(enterprise)) }}
+
                 <span v-if="!enterprise.onlyProjectionRow && appendedValue(enterprise) > 0"
-                  class="text-emerald-600 font-semibold text-xs"> <br>+{{ formatCurrency(appendedValue(enterprise))
-                  }}</span>
+                  class="text-emerald-600 font-semibold text-xs">
+                  <br>+{{ formatCurrency(appendedValue(enterprise)) }}
+                </span>
+
+                <span v-if="!enterprise.onlyProjectionRow && distratoValue(enterprise) > 0"
+                  class="text-red-600 font-semibold text-xs" v-tippy="'Distratos (não contabilizados)'">
+                  <br>-{{ formatCurrency(distratoValue(enterprise)) }}
+                </span>
               </div>
             </td>
 
@@ -203,14 +218,6 @@ const colors = [
   '#06B6D4', '#84CC16', '#F97316', '#EC4899', '#6366F1'
 ]
 
-/* helpers de valor base/apêndice para cada linha */
-const baseValue = (e) => {
-  if (e.onlyProjectionRow) {
-    return contractsStore.isNet ? (e.total_value_net || 0) : (e.total_value_gross || 0)
-  }
-  return contractsStore.valuePicker(e)
-}
-
 const appendedValue = (e) => {
   if (e.onlyProjectionRow) return 0
   return contractsStore.valueMode === 'net' ? (e.proj_value_net || 0) : (e.proj_value_gross || 0)
@@ -218,9 +225,76 @@ const appendedValue = (e) => {
 
 const totalCombined = (e) => baseValue(e) + appendedValue(e)
 
+/* ===================== DISTrATO (dashboard) ===================== */
+
+/** normaliza status */
+const norm = (v) => String(v ?? '').trim().toLowerCase()
+
+/** pega status do repasse no sale (mesma lógica do modal, versão enxuta) */
+const repasseStatusOfSale = (sale) => {
+  const first = sale?.contracts?.[0] || {}
+  const r = first?.repasse?.[0]
+  if (r) {
+    const sr = (r.status_repasse ?? r.statusRepasse ?? '').toString().trim()
+    if (sr) return sr
+  }
+  const res = first?.reserva
+  if (res) {
+    const srr = (res.status_repasse ?? res.statusRepasse ?? '').toString().trim()
+    if (srr) return srr
+  }
+  return null
+}
+
+const saleIsDistrato = (sale) => norm(repasseStatusOfSale(sale)) === 'distrato'
+
+/**
+ * calcula distrato por row usando snapshot das sales do dashboard
+ * - count: quantidade de sales distratadas (mesma granularidade do dashboard)
+ * - value: soma dos valores dessas sales (via valuePicker)
+ */
+const distratoMetaForRow = (row) => {
+  const snapshot = Array.isArray(contractsStore.uniqueSales) ? contractsStore.uniqueSales : []
+  const sales = salesForRowFrom(snapshot, row)
+
+  let count = 0
+  let value = 0
+
+  for (const s of sales) {
+    if (!saleIsDistrato(s)) continue
+    // não aplica em linha só de projeção
+    if (row.onlyProjectionRow) continue
+
+    count += 1
+    value += Number(contractsStore.valuePicker(s) || 0)
+  }
+
+  return { count, value }
+}
+
+const distratoCount = (row) => distratoMetaForRow(row).count
+const distratoValue = (row) => distratoMetaForRow(row).value
+
+/* ======= ajustes para NÃO contabilizar distrato no dashboard ======= */
+
+const baseValue = (e) => {
+  if (e.onlyProjectionRow) {
+    return contractsStore.isNet ? (e.total_value_net || 0) : (e.total_value_gross || 0)
+  }
+
+  // base original do row (como já vinha)
+  const base = Number(contractsStore.valuePicker(e) || 0)
+
+  // remove distrato do valor mostrado
+  const dv = Number(distratoValue(e) || 0)
+  return base - dv
+}
+
 const ticketMedio = (e) => {
-  const denom = e.count || 1
-  return baseValue(e) / denom
+  // remove distratos do denominador também
+  const denom = (e.count || 0) - distratoCount(e)
+  const safeDenom = denom > 0 ? denom : 1
+  return baseValue(e) / safeDenom
 }
 
 const sortedData = computed(() => {
@@ -229,14 +303,14 @@ const sortedData = computed(() => {
     case 'count':
       return data.sort(
         (a, b) =>
-          (a.count + (a.onlyProjectionRow ? 0 : a.proj_count)) -
-          (b.count + (b.onlyProjectionRow ? 0 : b.proj_count))
+          ((a.count - distratoCount(a)) + (a.onlyProjectionRow ? 0 : a.proj_count)) -
+          ((b.count - distratoCount(b)) + (b.onlyProjectionRow ? 0 : b.proj_count))
       )
     case 'count-desc':
       return data.sort(
         (a, b) =>
-          (b.count + (b.onlyProjectionRow ? 0 : b.proj_count)) -
-          (a.count + (a.onlyProjectionRow ? 0 : a.proj_count))
+          ((b.count - distratoCount(b)) + (b.onlyProjectionRow ? 0 : b.proj_count)) -
+          ((a.count - distratoCount(a)) + (a.onlyProjectionRow ? 0 : a.proj_count))
       )
     case 'value':
       return data.sort((a, b) => totalCombined(a) - totalCombined(b))
@@ -286,11 +360,10 @@ const salesForRowFrom = (sales, row) => {
 
   return (sales || []).filter((sale) => {
     const contracts = sale.contracts || []
-    const first = contracts[0] || {}
 
     const sameEnterprise =
-      (id !== null && first.enterprise_id === id) ||
-      (id === null && (first.enterprise_name || sale.enterprise_name) === name)
+      (id != null && contracts.some((c) => c.enterprise_id === id)) ||
+      (id == null && contracts.some((c) => (c.enterprise_name || '') === name))
 
     if (!sameEnterprise) return false
 
@@ -301,18 +374,37 @@ const salesForRowFrom = (sales, row) => {
 
 /* abrir modal de UMA linha */
 const openSingle = async (enterprise, mode = 'list') => {
-  if (enterprise.id != null) {
+  // snapshot do dashboard ANTES de trocar pra detail
+  const dashboardSalesSnapshot = Array.isArray(contractsStore.uniqueSales)
+    ? [...contractsStore.uniqueSales]
+    : []
+
+  // pega as sales que "pertencem" ao empreendimento clicado
+  const targetSales = salesForRowFrom(dashboardSalesSnapshot, enterprise)
+
+  // junta TODOS enterprise_ids presentes nessas sales (pra trazer o outro contrato também)
+  const enterpriseIds = [
+    ...new Set(
+      targetSales
+        .flatMap((s) => (s.contracts || []).map((c) => Number(c.enterprise_id)))
+        .filter(Number.isFinite)
+    )
+  ]
+
+  // agora sim busca detail com TODOS os enterpriseIds envolvidos
+  if (enterpriseIds.length > 0) {
+    await contractsStore.fetchContracts({ view: 'detail', enterpriseIds })
+  } else if (enterprise.id != null) {
     await contractsStore.fetchContracts({ view: 'detail', enterpriseId: enterprise.id })
   } else {
     await contractsStore.fetchContracts({ view: 'detail' })
   }
 
-  // snapshot estável do momento (evita diferença 1406 -> 1724)
-  const salesSnapshot = Array.isArray(contractsStore.uniqueSales)
+  const detailSalesSnapshot = Array.isArray(contractsStore.uniqueSales)
     ? [...contractsStore.uniqueSales]
     : []
 
-  modalSales.value = salesForRowFrom(salesSnapshot, enterprise)
+  modalSales.value = salesForRowFrom(detailSalesSnapshot, enterprise)
   modalTitle.value = enterprise.name + (enterprise.onlyProjectionRow ? ' • Projeções' : '')
   initialMode.value = mode
   modalEnterprise.value = enterprise
