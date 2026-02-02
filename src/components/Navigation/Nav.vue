@@ -40,6 +40,15 @@ const menuItems = {
         ]
     },
     comercial: {
+        sales: {
+            name: 'Vendas',
+            icon: 'fas fa-credit-card',
+            items: [
+                { router: '/comercial/sales-projection', section: 'sales-projection', name: 'Vendas X Projeção', icon: 'fas fa-arrow-trend-up' },
+                { router: '/comercial/faturamento', section: 'Faturamento', name: 'Faturamento', icon: 'fas fa-file-invoice-dollar' },
+                { router: '/comercial/projections', section: 'Projeção', name: 'Projeção', icon: 'fas fa-chart-line' },
+            ]
+        },
         buildings: {
             name: 'Empreendimentos',
             icon: 'fas fa-building',
@@ -50,14 +59,6 @@ const menuItems = {
                 { router: '/comercial/buildings', section: 'Em Obras', name: 'Em Obras', icon: 'fas fa-hammer' },
                 { router: '/comercial/buildings', section: 'Finalizados', name: 'Finalizados', icon: 'fas fa-check-circle' },
                 { router: '/comercial/buildings', section: 'Portal do Cliente', name: 'Portal do Cliente', icon: 'fas fa-user-circle' }
-            ]
-        },
-        sales: {
-            name: 'Vendas',
-            icon: 'fas fa-credit-card',
-            items: [
-                { router: '/comercial/faturamento', section: 'Faturamento', name: 'Faturamento', icon: 'fas fa-file-invoice-dollar' },
-                { router: '/comercial/projections', section: 'Projeção', name: 'Projeção vendas', icon: 'fas fa-chart-line' },
             ]
         },
         items: [
@@ -539,7 +540,7 @@ onMounted(async () => {
                                 class="ms-3 transition-opacity duration-200 ease-in-out">Documentação</span>
                         </RouterLink>
                     </li>
-                    
+
                     <li>
                         <a href="https://academy.menin.com.br/panel" @click="expandSidebar"
                             class="flex items-center p-2 h-10 text-gray-900 transition duration-75 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white group"
