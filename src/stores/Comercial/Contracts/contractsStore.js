@@ -633,10 +633,11 @@ export const useContractsStore = defineStore('contracts', {
             const { results = [], meta = {} } = data
 
             const tipo = (meta?.tipo || (results?.[0]?.idrepasse ? 'repasses' : 'reservas')).toString().toLowerCase()
-
-            // ⚠️ mantém seu comportamento (corrigindo o bug aqui: repasses deve ir pra _normalizeProjectionRepasse)
-            const normalized = results.map((r) => (tipo === 'repasses' ? this._normalizeProjectionRepasse(r, idgroup) : this._normalizeProjectionReserva(r, idgroup)))
-
+            const normalized = results.map(r =>
+                tipo === 'repasses'
+                    ? this._normalizeProjectionReserva(r, idgroup)
+                    : this._normalizeProjectionReserva(r, idgroup)
+            )
             this._projCache.set(idgroup, normalized)
             return normalized
         },
@@ -746,6 +747,12 @@ export const useContractsStore = defineStore('contracts', {
 
             const isDetail = String(view).toLowerCase() === 'detail'
 
+            // ✅ suporte: quando detail usa enterpriseIds e cai em "missing",
+            // precisamos manter os que já estavam em cache para NÃO abrir parcial
+            let __detailCachedBeforeRequest = []
+            let __detailCtxKey = null
+            let __detailRequestedIds = null
+
             // ✅ detail: resolve via cache por enterprise_id (evita request unitário)
             if (isDetail && !force && enterpriseId != null) {
                 const ctxKey = this._buildDetailCtxKey()
@@ -779,6 +786,14 @@ export const useContractsStore = defineStore('contracts', {
                     this.total = this.contracts.length
                     return
                 }
+
+                // ✅ AQUI É O FIX: guarda o que já existe em cache (dos ids pedidos)
+                // para unir com o retorno do request (missing) e NÃO abrir parcial
+                __detailCtxKey = ctxKey
+                __detailRequestedIds = ids
+                __detailCachedBeforeRequest = ids
+                    .filter((id) => !missing.includes(id))
+                    .flatMap((id) => this._getDetailFromCache(ctxKey, id) || [])
 
                 // otimiza request: busca só o que falta
                 enterpriseIds = missing
@@ -844,8 +859,26 @@ export const useContractsStore = defineStore('contracts', {
                     projections = all.flat()
                 }
 
-                const merged = [...normalized, ...projections]
-                const total = (data.count || 0) + (projections.length || 0)
+                // ✅ FIX FINAL: se foi "detail + missing", une cache + resposta + projeções
+                let merged = [...normalized, ...projections]
+
+                if (isDetail && Array.isArray(__detailRequestedIds) && __detailCachedBeforeRequest.length > 0) {
+                    merged = [...__detailCachedBeforeRequest, ...normalized, ...projections]
+                }
+
+                // (opcional mas seguro) dedupe por contract_id para não duplicar
+                // não muda regra nenhuma, só evita duplicação
+                const dedup = new Map()
+                for (const c of merged) {
+                    const k = String(c?.contract_id ?? '')
+                    if (!k) continue
+                    if (!dedup.has(k)) dedup.set(k, c)
+                }
+                merged = [...dedup.values()]
+
+                // total: como agora pode vir (cache + missing), não dá pra usar data.count
+                // sem alterar comportamento: total passa a ser o tamanho real do merged
+                const total = merged.length
 
                 this.contracts = merged
                 this.total = total

@@ -52,12 +52,17 @@ export default [
                     },
                 ],
             },
-
             {
                 path: 'comercial',
                 name: 'comercial',
                 meta: { requiresAuth: true },
                 children: [
+                    {
+                        path: 'sales-projection',
+                        name: 'Vendas X Projeção',
+                        component: () => import('@/views/Office/Comercial/Sales-Projection/Index.vue'),
+                        meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Dashboard de Vendas X Projeção de Vendas' },
+                    },
                     {
                         path: 'faturamento',
                         name: 'Faturamento',
