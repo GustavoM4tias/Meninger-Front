@@ -18,6 +18,7 @@ export const useAuthStore = defineStore('user', {
     users: [],
     user: safeJsonParse(localStorage.getItem('user'), null), // ✅ persiste sessão com user completo
     userById: null,
+    weather: null, // Estado para armazenar o clima
     token: localStorage.getItem('token') || null,
     banners: [],
   }),

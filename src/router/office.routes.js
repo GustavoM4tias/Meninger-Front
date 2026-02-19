@@ -46,7 +46,7 @@ export default [
                     },
                     {
                         path: 'viability',
-                        name: 'Viability',
+                        name: 'Viabilidade',
                         component: () => import('@/views/Office/Marketing/Viability/ViabilityDashboard.vue'),
                         meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Dashboard de Viabilidade Marketing' },
                     },

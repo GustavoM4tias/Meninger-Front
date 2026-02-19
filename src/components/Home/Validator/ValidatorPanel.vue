@@ -4,12 +4,12 @@
 
         <!-- Header -->
         <div
-            class="px-4 py-3 md:px-6 md:h-24 border-b border-gray-200 dark:border-gray-700 flex flex-col md:flex-row items-start md:items-center gap-3">
+            class="px-4 py-3 md:px-6 border-b border-gray-200 dark:border-gray-700 flex flex-col md:flex-row items-start md:items-center gap-3">
             <div class="min-w-0 flex">
                 <RouterLink to="/tools/validator?section=Validador"
                     class="text-base md:text-xl font-semibold inline-flex items-center gap-2">
                     <i class="fas fa-check-double"></i>
-                    Validador<span class="md:hidden xl:block"> Contratos</span>
+                    Validador
                 </RouterLink>
                 <Favorite class="m-auto" :router="'/tools/validator'" :section="'Validador'" />
             </div>

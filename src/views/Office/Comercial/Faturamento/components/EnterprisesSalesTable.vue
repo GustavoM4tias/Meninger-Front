@@ -10,7 +10,6 @@
         </div>
 
         <div class="flex items-center gap-2">
-          <!-- ⚙️ Configuração de terreno externo (somente admin) -->
           <button v-if="isAdmin"
             class="inline-flex items-center justify-center p-2 rounded-full text-gray-600 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
             v-tippy="'Configurar empreendimentos com terreno externo'" @click="emit('open-land-sync')">
@@ -19,20 +18,23 @@
 
           <!-- VGV / VGV+DC -->
           <div class="inline-flex rounded-md border dark:border-gray-600 overflow-hidden">
-            <button @click="contractsStore.setValueMode('net')" :class="['px-3 py-1 text-sm font-medium',
+            <button @click="contractsStore.setValueMode('net')" :class="[
+              'px-3 py-1 text-sm font-medium',
               contractsStore.valueMode === 'net'
                 ? 'bg-blue-600 dark:bg-blue-700 text-white dark:text-gray-100'
-                : 'bg-white dark:bg-gray-600 text-gray-700 dark:text-gray-100']">
+                : 'bg-white dark:bg-gray-600 text-gray-700 dark:text-gray-100'
+            ]">
               VGV
             </button>
-            <button @click="contractsStore.setValueMode('gross')" :class="['px-3 py-1 text-sm font-medium border-l border-gray-300 dark:border-gray-700',
+            <button @click="contractsStore.setValueMode('gross')" :class="[
+              'px-3 py-1 text-sm font-medium border-l border-gray-300 dark:border-gray-700',
               contractsStore.valueMode === 'gross'
                 ? 'bg-blue-600 dark:bg-blue-700 text-white dark:text-gray-100'
-                : 'bg-white dark:bg-gray-600 text-gray-700 dark:text-gray-100']">
+                : 'bg-white dark:bg-gray-600 text-gray-700 dark:text-gray-100'
+            ]">
               VGV+DC
             </button>
           </div>
-
 
           <!-- Ações (1..N) -->
           <div class="inline-flex rounded-md border dark:border-gray-600 overflow-hidden">
@@ -47,6 +49,26 @@
             <button @click="openGroup('bar')" :disabled="disabledOpen"
               class="px-3 py-1 text-sm font-medium border-l border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-600 hover:bg-purple-600 dark:hover:bg-purple-600 hover:text-white disabled:opacity-50">
               Colunas
+            </button>
+          </div>
+
+          <!-- GroupBy -->
+          <div class="inline-flex rounded-md border dark:border-gray-600 overflow-hidden">
+            <button @click="contractsStore.setGroupBy('enterprise')" :class="[
+              'px-3 py-1 text-sm font-medium',
+              contractsStore.groupBy === 'enterprise'
+                ? 'bg-blue-600 dark:bg-blue-700 text-white dark:text-gray-100'
+                : 'bg-white dark:bg-gray-600 text-gray-700 dark:text-gray-100'
+            ]">
+              Empreendimento
+            </button>
+            <button @click="contractsStore.setGroupBy('company')" :class="[
+              'px-3 py-1 text-sm font-medium border-l border-gray-300 dark:border-gray-700',
+              contractsStore.groupBy === 'company'
+                ? 'bg-blue-600 dark:bg-blue-700 text-white dark:text-gray-100'
+                : 'bg-white dark:bg-gray-600 text-gray-700 dark:text-gray-100'
+            ]">
+              Empresa
             </button>
           </div>
 
@@ -74,7 +96,9 @@
             <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider w-10">
               <input type="checkbox" :checked="allVisibleChecked" @change="toggleAllVisible($event)" />
             </th>
-            <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Empreendimento</th>
+            <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
+              {{ contractsStore.groupBy === 'company' ? 'Empresa' : 'Empreendimento' }}
+            </th>
             <th class="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider">Vendas</th>
             <th class="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider">
               Valor Total <span class="text-gray-400">({{ valueModeLabel }})</span>
@@ -100,7 +124,6 @@
                 <div :style="{ backgroundColor: getColor(index) }" class="w-3 h-3 rounded-full mr-3"></div>
                 <div class="flex text-sm font-medium line-clamp-2">
                   {{ enterprise.name }}
-                  <!-- indicador sutil quando há projeção vinculada -->
                   <div v-if="!enterprise.onlyProjectionRow && enterprise.proj_count > 0"
                     class="w-2 h-2 rounded-full ml-2 my-auto cursor-pointer bg-emerald-400 animate-pulse"
                     v-tippy="'Projeção vinculada'" />
@@ -130,12 +153,12 @@
 
                 <span v-if="!enterprise.onlyProjectionRow && appendedValue(enterprise) > 0"
                   class="text-emerald-600 font-semibold text-xs">
-                  <br>+{{ formatCurrency(appendedValue(enterprise)) }}
+                  <br />+{{ formatCurrency(appendedValue(enterprise)) }}
                 </span>
 
                 <span v-if="!enterprise.onlyProjectionRow && distratoValue(enterprise) > 0"
                   class="text-red-600 font-semibold text-xs" v-tippy="'Distratos (não contabilizados)'">
-                  <br>-{{ formatCurrency(distratoValue(enterprise)) }}
+                  <br />-{{ formatCurrency(distratoValue(enterprise)) }}
                 </span>
               </div>
             </td>
@@ -148,18 +171,18 @@
 
             <td class="w-fit">
               <div class="flex gap-1 pe-2 justify-center items-center">
-                <button @click="openSingle(enterprise, 'list')" class="inline-flex items-center px-2 py-2 text-xs font-medium rounded-full transition-colors
-                   text-purple-700 bg-purple-50 hover:bg-purple-100 dark:text-purple-200 dark:bg-purple-700/30"
+                <button @click="openSingle(enterprise, 'list')"
+                  class="inline-flex items-center px-2 py-2 text-xs font-medium rounded-full transition-colors text-purple-700 bg-purple-50 hover:bg-purple-100 dark:text-purple-200 dark:bg-purple-700/30"
                   v-tippy="'Relatório de Vendas'">
                   <i class="fas fa-eye"></i>
                 </button>
-                <button @click="openSingle(enterprise, 'pie')" class="inline-flex items-center px-2 py-2 text-xs font-medium rounded-full transition-colors
-                   text-purple-700 bg-purple-50 hover:bg-purple-100 dark:text-purple-200 dark:bg-purple-700/30"
+                <button @click="openSingle(enterprise, 'pie')"
+                  class="inline-flex items-center px-2 py-2 text-xs font-medium rounded-full transition-colors text-purple-700 bg-purple-50 hover:bg-purple-100 dark:text-purple-200 dark:bg-purple-700/30"
                   v-tippy="'Relatório de Pizza por imobiliária'">
                   <i class="fas fa-chart-pie"></i>
                 </button>
-                <button @click="openSingle(enterprise, 'bar')" class="inline-flex items-center px-2 py-2 text-xs font-medium rounded-full transition-colors
-                   text-purple-700 bg-purple-50 hover:bg-purple-100 dark:text-purple-200 dark:bg-purple-700/30"
+                <button @click="openSingle(enterprise, 'bar')"
+                  class="inline-flex items-center px-2 py-2 text-xs font-medium rounded-full transition-colors text-purple-700 bg-purple-50 hover:bg-purple-100 dark:text-purple-200 dark:bg-purple-700/30"
                   v-tippy="'Relatório de Barra por imobiliária'">
                   <i class="fas fa-chart-bar"></i>
                 </button>
@@ -179,17 +202,16 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watchEffect } from 'vue'
 import { useContractsStore } from '@/stores/Comercial/Contracts/contractsStore'
 import EnterpriseDetailModal from './EnterpriseDetailModal.vue'
 import Export from '@/components/config/Export.vue'
 
 const props = defineProps({ data: { type: Array, required: true } })
-const emit = defineEmits(['open-land-sync'])
+const emit = defineEmits(['open-land-sync', 'selection-metrics'])
 
 const contractsStore = useContractsStore()
 const sortBy = ref('value-desc')
-
 const open = ref(false)
 
 /* seleção (usando keys únicas) */
@@ -204,19 +226,24 @@ const modalEnterprise = ref({ name: '' })
 
 const valueModeLabel = computed(() => contractsStore.valueModeLabel)
 
-/** 🔐 somente admin vê o botão de configuração */
 const isAdmin = computed(() => {
-  try {
-    return localStorage.getItem('role') === 'admin'
-  } catch {
-    return false
-  }
+  try { return localStorage.getItem('role') === 'admin' } catch { return false }
 })
 
 const colors = [
   '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6',
   '#06B6D4', '#84CC16', '#F97316', '#EC4899', '#6366F1'
 ]
+
+const getColor = (i) => colors[i % colors.length]
+
+const formatCurrency = (v) =>
+  new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  }).format(v || 0)
 
 const appendedValue = (e) => {
   if (e.onlyProjectionRow) return 0
@@ -225,12 +252,9 @@ const appendedValue = (e) => {
 
 const totalCombined = (e) => baseValue(e) + appendedValue(e)
 
-/* ===================== DISTrATO (dashboard) ===================== */
-
-/** normaliza status */
+/* ===================== DISTRATO (dashboard) ===================== */
 const norm = (v) => String(v ?? '').trim().toLowerCase()
 
-/** pega status do repasse no sale (mesma lógica do modal, versão enxuta) */
 const repasseStatusOfSale = (sale) => {
   const first = sale?.contracts?.[0] || {}
   const r = first?.repasse?.[0]
@@ -248,11 +272,6 @@ const repasseStatusOfSale = (sale) => {
 
 const saleIsDistrato = (sale) => norm(repasseStatusOfSale(sale)) === 'distrato'
 
-/**
- * calcula distrato por row usando snapshot das sales do dashboard
- * - count: quantidade de sales distratadas (mesma granularidade do dashboard)
- * - value: soma dos valores dessas sales (via valuePicker)
- */
 const distratoMetaForRow = (row) => {
   const snapshot = Array.isArray(contractsStore.uniqueSales) ? contractsStore.uniqueSales : []
   const sales = salesForRowFrom(snapshot, row)
@@ -262,9 +281,7 @@ const distratoMetaForRow = (row) => {
 
   for (const s of sales) {
     if (!saleIsDistrato(s)) continue
-    // não aplica em linha só de projeção
     if (row.onlyProjectionRow) continue
-
     count += 1
     value += Number(contractsStore.valuePicker(s) || 0)
   }
@@ -275,28 +292,22 @@ const distratoMetaForRow = (row) => {
 const distratoCount = (row) => distratoMetaForRow(row).count
 const distratoValue = (row) => distratoMetaForRow(row).value
 
-/* ======= ajustes para NÃO contabilizar distrato no dashboard ======= */
-
 const baseValue = (e) => {
   if (e.onlyProjectionRow) {
-    return contractsStore.isNet ? (e.total_value_net || 0) : (e.total_value_gross || 0)
+    return contractsStore.isNet ? Number(e.total_value_net || 0) : Number(e.total_value_gross || 0)
   }
-
-  // base original do row (como já vinha)
   const base = Number(contractsStore.valuePicker(e) || 0)
-
-  // remove distrato do valor mostrado
   const dv = Number(distratoValue(e) || 0)
-  return base - dv
+  return (Number.isFinite(base) ? base : 0) - (Number.isFinite(dv) ? dv : 0)
 }
 
 const ticketMedio = (e) => {
-  // remove distratos do denominador também
   const denom = (e.count || 0) - distratoCount(e)
   const safeDenom = denom > 0 ? denom : 1
   return baseValue(e) / safeDenom
 }
 
+/* ===================== SORT ===================== */
 const sortedData = computed(() => {
   const data = [...props.data]
   switch (sortBy.value) {
@@ -320,16 +331,7 @@ const sortedData = computed(() => {
   }
 })
 
-const getColor = (i) => colors[i % colors.length]
-const formatCurrency = (v) =>
-  new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0
-  }).format(v || 0)
-
-/* seleção */
+/* ===================== seleção ===================== */
 const visibleKeys = computed(() => sortedData.value.map((e) => e.key))
 const allVisibleChecked = computed(
   () => visibleKeys.value.every((k) => selectedKeys.value.has(k)) && visibleKeys.value.length > 0
@@ -342,100 +344,197 @@ const toggleAllVisible = (evt) => {
   else visibleKeys.value.forEach((k) => next.delete(k))
   selectedKeys.value = next
 }
+
 const toggleOne = (key, evt) => {
   const next = new Set(selectedKeys.value)
   evt.target.checked ? next.add(key) : next.delete(key)
   selectedKeys.value = next
 }
 
-/* =========================
-   FIX PRINCIPAL: não usar contractsStore.uniqueSales "vivo"
-   -> snapshot após fetch (copia do array) e filtra em cima dele
-   ========================= */
+/* =====================
+   FILTRO CORRETO POR ROW
+   ===================== */
+const toNum = (v) => {
+  if (v === null || v === undefined || v === '') return null
+  const n = Number(v)
+  return Number.isFinite(n) ? n : null
+}
 
 const salesForRowFrom = (sales, row) => {
-  const isProjOnly = !!row.onlyProjectionRow
-  const id = row.id ?? null
-  const name = row.name
+  const byCompany = contractsStore.groupBy === 'company'
+  const onlyProjRow = !!row.onlyProjectionRow
+
+  const rowCompanyId = toNum(row.company_id ?? row.id ?? null)
+  const rowEnterpriseId = toNum(row.enterprise_id ?? row.id ?? null)
 
   return (sales || []).filter((sale) => {
-    const contracts = sale.contracts || []
+    const contracts = Array.isArray(sale?.contracts) ? sale.contracts : []
+    if (!contracts.length) return false
 
-    const sameEnterprise =
-      (id != null && contracts.some((c) => c.enterprise_id === id)) ||
-      (id == null && contracts.some((c) => (c.enterprise_name || '') === name))
+    let belongs = false
+    if (byCompany) {
+      if (rowCompanyId != null) belongs = contracts.some((c) => toNum(c.company_id) === rowCompanyId)
+      else belongs = contracts.some((c) => c.company_id == null)
+    } else {
+      if (rowEnterpriseId != null) belongs = contracts.some((c) => toNum(c.enterprise_id) === rowEnterpriseId)
+      else belongs = false
+    }
 
-    if (!sameEnterprise) return false
-
-    if (isProjOnly) return contracts.every((c) => c._projection)
-    return contracts.some((c) => !c._projection) || contracts.every((c) => c._projection)
+    if (!belongs) return false
+    if (onlyProjRow) return contracts.every((c) => !!c._projection)
+    return true
   })
 }
 
-/* abrir modal de UMA linha */
-const openSingle = async (enterprise, mode = 'list') => {
-  // snapshot do dashboard ANTES de trocar pra detail
-  const dashboardSalesSnapshot = Array.isArray(contractsStore.uniqueSales)
-    ? [...contractsStore.uniqueSales]
-    : []
+/* =====================
+   MODAL - SINGLE (CORRIGIDO)
+   ===================== */
+const openSingle = async (row, mode = 'list') => {
+  const dashboardSalesSnapshot = Array.isArray(contractsStore.uniqueSales) ? [...contractsStore.uniqueSales] : []
+  const targetSales = salesForRowFrom(dashboardSalesSnapshot, row)
 
-  // pega as sales que "pertencem" ao empreendimento clicado
-  const targetSales = salesForRowFrom(dashboardSalesSnapshot, enterprise)
+  // ✅ regra: company usa enterpriseIds do próprio row (mais confiável)
+  const enterpriseIds =
+    (contractsStore.groupBy === 'company' && Array.isArray(row.enterpriseIds) && row.enterpriseIds.length > 0)
+      ? [...new Set(row.enterpriseIds.map(Number).filter(Number.isFinite))]
+      : [
+        ...new Set(
+          targetSales
+            .flatMap((s) => (s.contracts || []).map((c) => Number(c?.enterprise_id)))
+            .filter((id) => Number.isFinite(id) && id > 0)
+        )
+      ]
 
-  // junta TODOS enterprise_ids presentes nessas sales (pra trazer o outro contrato também)
-  const enterpriseIds = [
-    ...new Set(
-      targetSales
-        .flatMap((s) => (s.contracts || []).map((c) => Number(c.enterprise_id)))
-        .filter(Number.isFinite)
-    )
-  ]
-
-  // agora sim busca detail com TODOS os enterpriseIds envolvidos
   if (enterpriseIds.length > 0) {
     await contractsStore.fetchContracts({ view: 'detail', enterpriseIds })
-  } else if (enterprise.id != null) {
-    await contractsStore.fetchContracts({ view: 'detail', enterpriseId: enterprise.id })
+  } else if (contractsStore.groupBy === 'enterprise' && row.id != null) {
+    await contractsStore.fetchContracts({ view: 'detail', enterpriseId: row.id })
   } else {
     await contractsStore.fetchContracts({ view: 'detail' })
   }
 
-  const detailSalesSnapshot = Array.isArray(contractsStore.uniqueSales)
-    ? [...contractsStore.uniqueSales]
-    : []
+  const detailSalesSnapshot = Array.isArray(contractsStore.uniqueSales) ? [...contractsStore.uniqueSales] : []
+  modalSales.value = salesForRowFrom(detailSalesSnapshot, row)
 
-  modalSales.value = salesForRowFrom(detailSalesSnapshot, enterprise)
-  modalTitle.value = enterprise.name + (enterprise.onlyProjectionRow ? ' • Projeções' : '')
+  modalTitle.value =
+    (contractsStore.groupBy === 'company' ? `Empresa: ${row.name}` : row.name) +
+    (row.onlyProjectionRow ? ' • Projeções' : '')
+
   initialMode.value = mode
-  modalEnterprise.value = enterprise
+  modalEnterprise.value = { ...row, name: modalTitle.value }
   showModal.value = true
 }
 
-/* abrir modal p/ seleção (se nada marcado, usa todos) */
+const saleDedupeKey = (s) => {
+  const first = s?.contracts?.[0] || {}
+  return [
+    s.customer_id ?? '',
+    s.unit_id ?? s.unit_name ?? '',
+    s.financial_institution_date ?? first.financial_institution_date ?? '',
+    (contractsStore.groupBy === 'company'
+      ? (first.company_id ?? first.company_name ?? '')
+      : (first.enterprise_id ?? first.enterprise_name ?? s.enterprise_name ?? '')
+    )
+  ].map(v => String(v ?? '').trim()).join('|')
+}
+
+const selectedRows = computed(() => {
+  if (selectedKeys.value.size === 0) return []
+  const keys = selectedKeys.value
+  return props.data.filter(r => keys.has(r.key))
+})
+
+const selectedSales = computed(() => {
+  if (selectedRows.value.length === 0) return []
+
+  const snapshot = Array.isArray(contractsStore.uniqueSales) ? contractsStore.uniqueSales : []
+  const dedupe = new Map()
+
+  for (const r of selectedRows.value) {
+    const list = salesForRowFrom(snapshot, r)
+    for (const s of list) {
+      const k = saleDedupeKey(s)
+      if (!dedupe.has(k)) dedupe.set(k, s)
+    }
+  }
+
+  return [...dedupe.values()]
+})
+
+const selectionMetricsComputed = computed(() => {
+  // sem seleção => null (Dashboard cai nas métricas globais)
+  if (selectedSales.value.length === 0) return null
+
+  const sales = selectedSales.value
+  const totalSales = sales.length
+
+  const totalValueNet = sales.reduce((sum, s) => sum + (Number(s.total_value_net) || 0), 0)
+  const totalValueGross = sales.reduce((sum, s) => sum + (Number(s.total_value_gross) || 0), 0)
+
+  const avgSaleValueNet = totalSales > 0 ? totalValueNet / totalSales : 0
+  const avgSaleValueGross = totalSales > 0 ? totalValueGross / totalSales : 0
+
+  const totalContracts = sales.reduce((sum, s) => sum + (Array.isArray(s.contracts) ? s.contracts.length : 0), 0)
+
+  const entSet = new Set()
+  for (const s of sales) {
+    for (const c of (s.contracts || [])) {
+      const eid = Number(c.enterprise_id)
+      if (Number.isFinite(eid) && eid > 0) entSet.add(eid)
+    }
+  }
+
+  return {
+    totalSales,
+    totalContracts,
+    totalValueNet,
+    totalValueGross,
+    avgSaleValueNet,
+    avgSaleValueGross,
+    totalValue: totalValueNet,
+    avgSaleValue: avgSaleValueNet,
+    totalEnterprises: entSet.size,
+
+    // opcional (mantém compat com seu objeto atual)
+    totalSalesWithProjections: null
+  }
+})
+
+// emite sempre que seleção / groupBy / uniqueSales mudar
+watchEffect(() => {
+  emit('selection-metrics', selectionMetricsComputed.value)
+})
+
+/* =====================
+   MODAL - GROUP (CORRIGIDO + BUG row.id removido)
+   ===================== */
 const openGroup = async (mode = 'list') => {
   const keysSet =
-    selectedKeys.value.size > 0
-      ? new Set(selectedKeys.value)
-      : new Set(props.data.map((e) => e.key))
+    selectedKeys.value.size > 0 ? new Set(selectedKeys.value) : new Set(props.data.map((e) => e.key))
 
   const rows = props.data.filter((r) => keysSet.has(r.key))
 
-  const enterpriseIds = [
-    ...new Set(rows.map((r) => r.id).filter((v) => v != null).map(Number).filter(Number.isFinite))
-  ]
+  const dashboardSalesSnapshot = Array.isArray(contractsStore.uniqueSales) ? [...contractsStore.uniqueSales] : []
+
+  const allSales = []
+  for (const r of rows) allSales.push(...salesForRowFrom(dashboardSalesSnapshot, r))
+
+  const enterpriseIds =
+    (contractsStore.groupBy === 'company')
+      ? [...new Set(rows.flatMap(r => (r.enterpriseIds || [])).map(Number).filter(Number.isFinite))]
+      : [...new Set(allSales.flatMap(s => (s.contracts || []).map(c => Number(c.enterprise_id))).filter(Number.isFinite))]
 
   if (enterpriseIds.length > 0) {
     await contractsStore.fetchContracts({ view: 'detail', enterpriseIds })
+  } else if (contractsStore.groupBy === 'enterprise' && rows.length === 1 && rows[0]?.id != null) {
+    // ✅ aqui era o bug: "row" não existe dentro do openGroup
+    await contractsStore.fetchContracts({ view: 'detail', enterpriseId: rows[0].id })
   } else {
     await contractsStore.fetchContracts({ view: 'detail' })
   }
 
-  // snapshot estável do momento
-  const salesSnapshot = Array.isArray(contractsStore.uniqueSales)
-    ? [...contractsStore.uniqueSales]
-    : []
+  const salesSnapshot = Array.isArray(contractsStore.uniqueSales) ? [...contractsStore.uniqueSales] : []
 
-  // dedupe por uma chave estável (evita duplicar quando o mesmo sale cai em mais de 1 row)
   const dedupe = new Map()
   for (const r of rows) {
     for (const s of salesForRowFrom(salesSnapshot, r)) {
@@ -445,7 +544,10 @@ const openGroup = async (mode = 'list') => {
           s.customer_id ?? '',
           s.unit_id ?? s.unit_name ?? '',
           s.financial_institution_date ?? first.financial_institution_date ?? '',
-          first.enterprise_id ?? first.enterprise_name ?? s.enterprise_name ?? ''
+          (contractsStore.groupBy === 'company'
+            ? (first.company_id ?? first.company_name ?? '')
+            : (first.enterprise_id ?? first.enterprise_name ?? s.enterprise_name ?? '')
+          )
         ]
           .map((v) => String(v ?? '').trim())
           .join('|')
@@ -455,9 +557,11 @@ const openGroup = async (mode = 'list') => {
   }
 
   modalSales.value = [...dedupe.values()]
+  modalTitle.value =
+    rows.length === 1
+      ? (contractsStore.groupBy === 'company' ? `Empresa: ${rows[0].name}` : rows[0].name)
+      : `Conjunto de ${rows.length} ${contractsStore.groupBy === 'company' ? 'empresas' : 'empreendimentos'}`
 
-  const count = rows.length
-  modalTitle.value = count === 1 ? rows[0].name : `Conjunto de ${count} empreendimentos`
   initialMode.value = mode
   modalEnterprise.value = { name: modalTitle.value }
   showModal.value = true
@@ -465,10 +569,7 @@ const openGroup = async (mode = 'list') => {
 
 const closeModal = () => {
   showModal.value = false
-
   const ok = contractsStore.restoreDashboardFromCache()
-  if (!ok) {
-    contractsStore.fetchContracts({ view: 'dashboard' })
-  }
+  if (!ok) contractsStore.fetchContracts({ view: 'dashboard' })
 }
 </script>

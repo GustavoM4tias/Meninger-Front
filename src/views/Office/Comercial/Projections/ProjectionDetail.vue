@@ -852,7 +852,7 @@ const rowDefaultsForm = ref({
 });
 
 function openRowDefaultsModal(row) {
-    if (rowDisabled.value) return;
+    // if (rowDisabled.value) return;
 
     rowDefaultsTarget.value = row;
     rowDefaultsForm.value = {
@@ -864,7 +864,10 @@ function openRowDefaultsModal(row) {
     };
 
     showRowDefaults.value = true;
-    nextTick(() => document.getElementById('row-default-city')?.focus());
+    // Só foca se não estiver desabilitado, para evitar erro no console
+    if (!rowDisabled.value) {
+        nextTick(() => document.getElementById('row-default-city')?.focus());
+    }
 }
 
 function closeRowDefaultsModal() {
@@ -1288,7 +1291,7 @@ const chipClass = {
                                             </div>
                                         </div>
 
-                                        <button type="button" @click="openRowDefaultsModal(r)" :disabled="rowDisabled"
+                                        <button type="button" @click="openRowDefaultsModal(r)"
                                             class="h-7 w-12 inline-flex items-center justify-center rounded-lg border dark:border-gray-700 bg-white/90 dark:bg-gray-900/40 hover:bg-gray-50 dark:hover:bg-gray-800/70"
                                             v-tippy="'Editar ticket médio / % mkt / % comissão / cidade'">
                                             <i class="fas fa-pen-to-square"></i>

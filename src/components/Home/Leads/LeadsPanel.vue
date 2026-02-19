@@ -3,7 +3,7 @@
         class="h-full w-full flex flex-col rounded-2xl overflow-hidden bg-gray-50 dark:bg-gray-800 border border-gray-200/60 dark:border-gray-700/60">
         <!-- Header -->
         <div
-            class="px-4 py-3 md:px-6 md:h-24 border-b border-gray-200 dark:border-gray-700 flex flex-col md:flex-row items-start md:items-center gap-3">
+            class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex flex-col md:flex-row items-start md:items-center gap-3">
             <div class="min-w-0 my-auto">
                 <RouterLink to="/marketing/leads?section=Leads"
                     class="text-base md:text-xl font-semibold truncate inline-flex items-center gap-2">
