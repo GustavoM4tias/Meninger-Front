@@ -2,21 +2,21 @@
     <div class="p-4 rounded-lg shadow bg-white dark:bg-gray-800">
         <div class="flex flex-wrap items-end gap-4">
             <!-- Data Inicial -->
-            <div class="flex-1 min-w-28">
+            <div class="flex-1 md:flex-initial md:min-w-64">
                 <label class="block text-xs font-medium mb-1 text-gray-700 dark:text-gray-300">
                     <i class="fas fa-calendar-day mr-1"></i>Data Início
                 </label>
                 <input v-model="localFilters.startDate" type="date"
-                    class="w-full px-2 py-1.5 border rounded-lg bg-transparent text-gray-400 border-gray-200 dark:border-gray-600 dark:bg-gray-900/60 text-center" />
+                    class="w-full px-2 py-2.5 border rounded-lg bg-transparent text-gray-400 border-gray-200 dark:border-gray-600 dark:bg-gray-900/60 text-center" />
             </div>
 
             <!-- Data Final -->
-            <div class="flex-1 min-w-28">
+            <div class="flex-1 md:flex-initial md:min-w-64">
                 <label class="block text-xs font-medium mb-1 text-gray-700 dark:text-gray-300">
                     <i class="fas fa-calendar-check mr-1"></i>Data Fim
                 </label>
                 <input v-model="localFilters.endDate" type="date"
-                    class="w-full px-2 py-1.5 border rounded-lg bg-transparent text-gray-400 border-gray-200 dark:border-gray-600 dark:bg-gray-900/60 text-center" />
+                    class="w-full px-2 py-2.5 border rounded-lg bg-transparent text-gray-400 border-gray-200 dark:border-gray-600 dark:bg-gray-900/60 text-center" />
             </div>
 
             <!-- Situação -->
@@ -36,7 +36,7 @@
             <!-- ✅ Grupos de Workflow (agora como strings) -->
             <div v-if="groupsOptions.length" class="flex-1 max-w-full">
                 <label class="block text-xs font-medium mb-1">Grupos Workflow (Projeção)</label>
-                <MultiSelector
+                <MultiSelector class="-mb-1.5"
                     :model-value="localFilters.groupIds"
                     @update:modelValue="v => localFilters.groupIds = Array.isArray(v) ? v : []"
                     :options="groupsOptions"

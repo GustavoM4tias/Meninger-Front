@@ -28,10 +28,10 @@
         <!-- Dashboard Content -->
         <div v-else class="px-6 pb-6 space-y-6">
             <!-- Métricas Principais -->
-            <MetricsCards :metrics="contractsStore.metrics" />
+            <MetricsCards :metrics="metricsToShow" />
 
             <!-- Tabela de Empreendimentos com Modal -->
-            <EnterprisesSalesTable :data="contractsStore.salesByEnterprise"
+            <EnterprisesSalesTable :data="contractsStore.salesDashboard" @selection-metrics="selectionMetrics = $event"
                 @open-land-sync="isLandSyncModalOpen = true" />
         </div>
 
@@ -41,7 +41,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, computed } from 'vue'
 import { useContractsStore } from '@/stores/Comercial/Contracts/contractsStore'
 import Favorite from "@/components/config/Favorite.vue";
 
@@ -53,6 +53,9 @@ import LandSyncConfigModal from './components/LandSyncConfigModal.vue'
 
 const contractsStore = useContractsStore()
 const isLandSyncModalOpen = ref(false)
+const selectionMetrics = ref(null)
+
+const metricsToShow = computed(() => selectionMetrics.value || contractsStore.metrics)
 
 const loadData = async () => {
     await Promise.all([

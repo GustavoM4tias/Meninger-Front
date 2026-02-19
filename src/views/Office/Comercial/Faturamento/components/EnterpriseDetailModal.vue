@@ -6,16 +6,14 @@
       <div
         class="relative inline-block w-full max-w-7xl my-8 overflow-hidden text-left align-middle transition-all transform bg-gray-50 dark:bg-gray-800 shadow-xl rounded-2xl"
         @click.stop>
-        <!-- Header -->
         <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
           <div class="flex items-center justify-between">
             <div>
               <h3 class="text-xl font-bold">{{ enterprise.name }}</h3>
-              <p class="text-sm">Detalhes das vendas do empreendimento</p>
+              <p class="text-sm text-gray-500">Detalhes das vendas do empreendimento</p>
             </div>
 
             <div class="flex items-center gap-2">
-              <!-- VGV/VGV+DC -->
               <div class="inline-flex rounded-md border dark:border-gray-600 overflow-hidden">
                 <button type="button" @click="contractsStore.setValueMode('net')" :class="[
                   'px-3 py-1 text-sm font-medium',
@@ -35,7 +33,6 @@
                 </button>
               </div>
 
-              <!-- Visualização -->
               <div class="inline-flex rounded-md border dark:border-gray-600 overflow-hidden">
                 <button type="button" @click="viewMode = 'list'" :class="[
                   'px-3 py-1 text-sm font-medium',
@@ -69,9 +66,8 @@
           </div>
         </div>
 
-        <!-- Content -->
-        <div class="max-h=[80vh] overflow-y-auto">
-          <!-- Cards -->
+        <div class="max-h-[80vh] overflow-y-auto bg-gray-50 dark:bg-gray-900/40">
+
           <div class="p-4 border-b border-gray-200 dark:border-gray-700">
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div
@@ -139,7 +135,6 @@
             </div>
           </div>
 
-          <!-- Filtros + Premiação -->
           <div class="p-6 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900/40">
             <div class="flex flex-wrap gap-4 items-end justify-between">
               <div class="flex-1">
@@ -147,8 +142,14 @@
                   Cliente | Imobiliária | Repasse | Empreendimento | Etapa |
                   Bloco | Unidade | Data | Valor
                 </label>
-                <input v-model="searchTerm" type="text" placeholder="Digite para buscar..."
-                  class="w-full px-2 py-1.5 border rounded-lg bg-transparent text-gray-400 border-gray-200 dark:border-gray-500 text-start" />
+                <div class="relative">
+                  <input v-model="searchTerm" type="text" placeholder="Digite para buscar..."
+                    class="w-full px-2 py-1.5 border rounded-lg bg-transparent text-gray-400 border-gray-200 dark:border-gray-500 text-start" />
+                  <button v-if="searchTerm" @click="searchTerm = ''"
+                    class="absolute right-2 top-2 text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times-circle"></i>
+                  </button>
+                </div>
               </div>
 
               <div class="flex flex-col items-end gap-3">
@@ -163,26 +164,27 @@
                       <option value="100">100</option>
                     </select>
                   </div>
-
-                  <!-- Bloco de premiação -->
-                  <!-- <div class="flex flex-col items-end gap-2">
-                    <span class="text-xs text-gray-500">
-                      Selecionados para premiação: {{ selectedSales.size }}
-                    </span>
-
-                    <button type="button" @click="registerAwards" :disabled="selectedSales.size === 0" class="inline-flex items-center gap-2 text-sm px-3 py-2 rounded-lg
-                             bg-purple-600 text-white disabled:bg-purple-400
-                             disabled:cursor-not-allowed shadow-sm">
-                      <i class="fas fa-award"></i>
-                      <span>Adicionar prêmio a venda</span>
-                    </button>
-
-                    <span v-if="lastAwardsMessage" class="text-xs text-gray-500">
-                      {{ lastAwardsMessage }}
-                    </span>
-                  </div> -->
                 </div>
               </div>
+            </div>
+          </div>
+
+          <div v-if="viewMode !== 'list'"
+            class="p-6 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+            <div class="flex justify-between items-center mb-4">
+              <div class="text-sm text-gray-500">
+                <span v-if="searchTerm" class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">
+                  Filtro ativo: {{ searchTerm }}
+                  <button @click="searchTerm = ''" class="ml-1 hover:text-blue-900 font-bold">x</button>
+                </span>
+                <span v-else>Clique no gráfico para filtrar a lista abaixo.</span>
+              </div>
+              <ChartActions :filename="`vendas-${viewMode}`" />
+            </div>
+
+            <div
+              class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700">
+              <VChart :option="chartOption" autoresize style="height: 360px; width: 100%;" @click="onChartClick" />
             </div>
           </div>
 
@@ -198,503 +200,226 @@
               'contracts.contract_id'
             ]" />
 
-          <!-- VIEW: LIST -->
-          <template v-if="viewMode === 'list'">
-            <div>
-              <div class="overflow-x-auto">
-                <table class="w-full">
-                  <thead class="border-b border-gray-200 dark:border-gray-700">
-                    <tr>
-                      <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">
-                        Cliente
-                      </th>
-                      <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider" v-if="hasRepasse">
-                        Imobiliária
-                      </th>
-                      <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider" v-if="hasRepasse">
-                        Repasse
-                      </th>
-                      <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider" v-if="hasRepasse">
-                        Empreendimento
-                      </th>
-                      <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider" v-if="hasRepasse">
-                        Etapa
-                      </th>
-                      <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider" v-if="hasRepasse">
-                        Bloco
-                      </th>
-                      <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider">
-                        Unidade
-                      </th>
-                      <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider">
-                        Data
-                      </th>
-                      <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider">
-                        Valor
-                        <span class="text-gray-400">({{ valueModeLabel }})</span>
-                      </th>
-                      <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider">
-                        Ações
-                      </th>
-                      <!-- <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider">
-                        Premiação
-                      </th>  -->
-                    </tr>
-                  </thead>
+          <div>
+            <div class="overflow-x-auto">
+              <table class="w-full">
+                <thead class="border-b border-gray-200 dark:border-gray-700">
+                  <tr>
+                    <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">
+                      Cliente
+                    </th>
+                    <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider" v-if="hasRepasse">
+                      Imobiliária
+                    </th>
+                    <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider" v-if="hasRepasse">
+                      Repasse
+                    </th>
+                    <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider" v-if="hasRepasse">
+                      Empreendimento
+                    </th>
+                    <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider" v-if="hasRepasse">
+                      Etapa
+                    </th>
+                    <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider" v-if="hasRepasse">
+                      Bloco
+                    </th>
+                    <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider">
+                      Unidade
+                    </th>
+                    <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider">
+                      Data
+                    </th>
+                    <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider">
+                      Valor
+                      <span class="text-gray-400">({{ valueModeLabel }})</span>
+                    </th>
+                    <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider">
+                      Ações
+                    </th>
+                  </tr>
+                </thead>
 
-                  <tbody class="bg-white divide-y divide-gray-200 dark:bg-gray-700/40 dark:divide-gray-700">
-                    <template v-for="sale in paginatedSales" :key="`${sale.customer_id ?? ''}-${sale.unit_name}`">
-                      <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors" :class="saleIsProjection(sale)
-                        ? 'bg-green-50/70 dark:bg-green-900/20'
-                        : ''
-                        ">
-                        <td class="px-4 py-3">
-                          <div class="text-sm font-medium">
-                            {{ customerNameOf(sale) }}
-                            <span class="text-gray-400" v-if="sale.customer_id">
-                              #{{ sale.customer_id }}
-                            </span>
-                          </div>
-                          <div v-if="sale.contracts?.[0]?.associates?.[0]" class="text-gray-400 text-xs font-light">
-                            {{
-                              sale.contracts?.[0]?.associates?.[0]?.name
-                            }}
-                            #{{ sale.contracts?.[0]?.associates?.[0]?.customer_id }}
-                          </div>
-                        </td>
-                        <td class="px-4 py-3 truncate" v-if="hasRepasse">
-                          <div class="text-sm max-w-24">
-                            {{ imobiliariaOf(sale) }}
-                          </div>
-                        </td>
-                        <td class="px-4 py-3 flex items-center justify-center gap-2" v-if="hasRepasse">
-                          <a :href="repasseLinkOf(sale) || 'javascript:void(0)'" target="_blank"
-                            class="cursor-pointer my-auto" v-tippy="repasseTooltipOf(sale)">
-                            <img src="/CVLogo.png" alt="CV CRM" class="w-5 min-w-5" />
-                          </a>
-                          <div class="text-sm">
-                            {{ repasseStatusOf(sale) || '—' }}
-                          </div>
-                        </td>
-                        <td class="px-4 py-3 max-w-64" v-if="hasRepasse">
-                          <div class="text-sm truncate">
-                            {{ empreendimentoOf(sale) }}
-                          </div>
-                        </td>
-                        <td class="px-4 py-3 truncate" v-if="hasRepasse">
-                          <div class="text-sm">
-                            {{ etapaOf(sale) }}
-                          </div>
-                        </td>
-                        <td class="px-4 py-3 truncate" v-if="hasRepasse">
-                          <div class="text-sm">
-                            {{ blocoOf(sale) }}
-                          </div>
-                        </td>
-                        <td class="px-4 py-3 text-center">
-                          <div class="text-sm">
-                            {{ sale.unit_name || reservaUnitOf(sale) }}
-                          </div>
-                        </td>
-                        <td class="px-4 py-3 text-center">
-                          <div class="text-sm">
-                            {{
-                              formatDate(
-                                sale.financial_institution_date || reservaDateOf(sale)
-                              )
-                            }}
-                          </div>
-                        </td>
-                        <td class="px-4 py-3 text-center">
-                          <div class="text-sm font-semibold text-green-600">
-                            {{ formatCurrency(getSaleValue(sale)) }}
-                          </div>
-                        </td>
-                        <td class="px-4 py-3 text-center">
-                          <button @click="toggleDetails(sale)"
-                            class="text-sm font-medium text-blue-600 hover:text-blue-900 dark:hover:text-blue-400 transition-colors">
-                            {{
-                              expandedSales.has(`${sale.customer_id}-${sale.unit_name}`)
-                                ? 'Ocultar'
-                                : 'Detalhes'
-                            }}
-                          </button>
-                        </td>
-                        <td class="px-4 py-3 text-center">
-                          <!-- Se tiver prêmio: mostra só o badge -->
-                          <template v-if="awardStatusForSale(sale)">
-                            <span class="text-[10px] truncate px-2 py-1 rounded bg-purple-100 text-purple-700">
-                              {{ statusLabel(awardStatusForSale(sale)) }}
-                            </span>
-                          </template>
-
-                          <!-- Se NÃO tiver prêmio: mostra o checkbox -->
-                          <!-- <template v-else>
-                            <input type="checkbox" :checked="selectedSales.has(saleKeyOf(sale))"
-                              @change="toggleSaleSelection(sale)" />
-                          </template> -->
-                        </td>
-                      </tr>
-
-                      <tr v-show="expandedSales.has(`${sale.customer_id}-${sale.unit_name}`)"
-                        class="bg-gray-50 dark:bg-gray-900/60">
-                        <!-- 12 colunas agora -->
-                        <td colspan="12">
-                          <div v-for="contract in sale.contracts" :key="contract.contract_id" class="space-y-3">
-                            <div class="bg-white dark:bg-gray-900/20 p-4 shadow" :class="contract._projection
-                              ? 'border-l-4 border-emerald-400'
-                              : ''
-                              ">
-                              <div class="flex items-center justify-between mb-3">
-                                <span class="text-sm font-medium">
-                                  {{ contract._projection ? 'Reserva' : 'Contrato' }}
-                                  #{{ contract.contract_id }}
-                                </span>
-                                <span class="text-sm text-gray-500">
-                                  Participação:
-                                  {{ contract.participation_percentage || 100 }}%
-                                </span>
-                              </div>
-
-                              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3"
-                                :key="`${contractsStore.valueMode}-${contract.contract_id}`">
-                                <div v-for="(condition, idx) in displayedConditions(contract)" :key="`${contract.contract_id}-${condition.synthetic ? 'SYNTH' : 'REAL'
-                                  }-${condition.condition_type_id || 'NA'}-${idx}-${contractsStore.valueMode
-                                  }`" class="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 border-l-4 shadow-sm" :class="[
-                                    isDiscount(condition)
-                                      ? 'border-red-400'
-                                      : 'border-emerald-400',
-                                    condition._isCommission ? 'border-orange-400' : ''
-                                  ]">
-                                  <div class="text-sm font-medium mb-1">
-                                    {{ condition.condition_type_name || 'Não informado' }}
-                                    <span v-if="condition.synthetic"
-                                      class="ml-2 inline-flex items-center px-2 py-0.5 shadow-sm rounded-full text-[10px] font-semibold bg-yellow-100 text-yellow-800">Campo
-                                      de Observação</span>
-                                    <button v-if="condition.synthetic" class="ps-1 text-gray-400"
-                                      v-tippy="`Atualização D-1 as 07h`">
-                                      <i class="fas fa-circle-info"></i>
-                                    </button>
-                                  </div>
-                                  <div class="text-lg font-semibold mb-1" :class="isDiscount(condition)
-                                    ? 'text-red-600'
-                                    : 'text-green-600'
-                                    ">
-                                    {{ formatCurrency(condition.total_value) }}
-                                    <span v-if="isDiscount(condition)" class="text-xs ml-1">(desconto)</span>
-                                  </div>
-                                  <div class="text-xs text-gray-500">
-                                    Código: {{ condition.condition_type_id || '—' }}
-                                  </div>
-                                  <div v-if="condition.installments_number" class="text-xs text-gray-500">
-                                    {{ condition.installments_number }}x parcelas
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </td>
-                      </tr>
-                    </template>
-                  </tbody>
-                </table>
-              </div>
-
-              <!-- Paginação -->
-              <div v-if="totalPages > 1" class="m-4 flex items-center justify-between">
-                <div class="text-sm text-gray-500">
-                  Mostrando {{ startItem }} a {{ endItem }} de
-                  {{ filteredSales.length }} vendas
-                </div>
-                <div class="flex items-center gap-2">
-                  <button @click="currentPage = 1" :disabled="currentPage === 1"
-                    class="px-3 py-1 text-sm border border-gray-300 dark:border-gray-500 rounded-md hover:bg-gray-50 dark:hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed">
-                    Primeira
-                  </button>
-                  <button @click="currentPage--" :disabled="currentPage === 1"
-                    class="px-3 py-1 text-sm border border-gray-300 dark:border-gray-500 rounded-md hover:bg-gray-50 dark:hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed">
-                    <i class="fas fa-chevron-left"></i>
-                  </button>
-                  <div class="flex gap-1">
-                    <button v-for="page in visiblePages" :key="page" @click="currentPage = page" :class="[
-                      'px-3 py-1 text-sm border rounded-md',
-                      page === currentPage
-                        ? 'bg-blue-600 text-white border-blue-600'
-                        : 'border-gray-300 dark:border-gray-500 hover:bg-gray-50 dark:hover:bg-gray-900'
-                    ]">
-                      {{ page }}
-                    </button>
-                  </div>
-                  <button @click="currentPage++" :disabled="currentPage === totalPages"
-                    class="px-3 py-1 text-sm border border-gray-300 dark:border-gray-500 rounded-md hover:bg-gray-50 dark:hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed">
-                    <i class="fas fa-chevron-right"></i>
-                  </button>
-                  <button @click="currentPage = totalPages" :disabled="currentPage === totalPages"
-                    class="px-3 py-1 text-sm border border-gray-300 dark:border-gray-500 rounded-md hover:bg-gray-50 dark:hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed">
-                    Última
-                  </button>
-                </div>
-              </div>
-            </div>
-          </template>
-
-          <!-- VIEW: CHARTS -->
-          <template v-else>
-            <div class="p-6">
-              <div class="flex justify-end mt-2">
-                <ChartActions filename="vendas-por-imobiliaria" />
-              </div>
-              <div class="min-h-[360px]">
-                <VChart :option="chartOption" autoresize style="height: 360px; width: 100%;" />
-              </div>
-            </div>
-
-            <!-- Reuso da tabela (igual à listagem) -->
-            <div>
-              <div class="overflow-x-auto">
-                <table class="w-full">
-                  <thead class="border-b border-gray-200 dark:border-gray-700">
-                    <tr>
-                      <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">
-                        Cliente
-                      </th>
-                      <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider" v-if="hasRepasse">
-                        Imobiliária
-                      </th>
-                      <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider" v-if="hasRepasse">
-                        Repasse
-                      </th>
-                      <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider" v-if="hasRepasse">
-                        Empreendimento
-                      </th>
-                      <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider" v-if="hasRepasse">
-                        Etapa
-                      </th>
-                      <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider" v-if="hasRepasse">
-                        Bloco
-                      </th>
-                      <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider">
-                        Unidade
-                      </th>
-                      <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider">
-                        Data
-                      </th>
-                      <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider">
-                        Valor
-                        <span class="text-gray-400">({{ valueModeLabel }})</span>
-                      </th>
-                      <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider">
-                        Contratos
-                      </th>
-                      <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider">
-                        Ações
-                      </th>
-                      <!-- <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider">
-                        Premiar
-                      </th>  -->
-                    </tr>
-                  </thead>
-
-                  <tbody class="bg-white divide-y divide-gray-200 dark:bg-gray-700/40 dark:divide-gray-700">
-                    <template v-for="sale in paginatedSales" :key="`${sale.customer_id}-${sale.unit_name}`">
-                      <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors" :class="saleIsProjection(sale)
-                        ? 'bg-green-50/70 dark:bg-green-900/20'
-                        : ''
-                        ">
-                        <td class="px-4 py-3">
-                          <div class="text-sm font-medium">
-                            {{ customerNameOf(sale) }}
-                            <span class="text-sm text-gray-500" v-if="sale.customer_id">
-                              #{{ sale.customer_id }}
-                            </span>
-                          </div>
-                          <div v-if="sale.contracts?.[0]?.associates?.[0]" class="text-gray-400 text-xs font-light">
-                            {{
-                              sale.contracts?.[0]?.associates?.[0]?.name 
-                            }}
-                            #{{ sale.contracts?.[0]?.associates?.[0]?.customer_id }}
-                          </div>
-                        </td>
-                        <td class="px-4 py-3 truncate" v-if="hasRepasse">
-                          <div class="text-sm max-w-24">
-                            {{ imobiliariaOf(sale) }}
-                          </div>
-                        </td>
-                        <td class="px-4 py-3 flex items-center justify-center gap-2" v-if="hasRepasse">
-                          <a :href="repasseLinkOf(sale) || 'javascript:void(0)'" target="_blank"
-                            class="cursor-pointer my-auto" v-tippy="repasseTooltipOf(sale)">
-                            <img src="/CVLogo.png" alt="CV CRM" class="w-5 min-w-5" />
-                          </a>
-                          <div class="text-sm">
-                            {{ repasseStatusOf(sale) || '—' }}
-                          </div>
-                        </td>
-                        <td class="px-4 py-3 truncate max-w-64" v-if="hasRepasse">
-                          <div class="text-sm truncate ">
-                            {{ empreendimentoOf(sale) }}
-                          </div>
-                        </td>
-                        <td class="px-4 py-3 truncate" v-if="hasRepasse">
-                          <div class="text-sm">
-                            {{ etapaOf(sale) }}
-                          </div>
-                        </td>
-                        <td class="px-4 py-3 truncate" v-if="hasRepasse">
-                          <div class="text-sm">
-                            {{ blocoOf(sale) }}
-                          </div>
-                        </td>
-                        <td class="px-4 py-3 text-center">
-                          <div class="text-sm">
-                            {{ sale.unit_name || reservaUnitOf(sale) }}
-                          </div>
-                        </td>
-                        <td class="px-4 py-3 text-center">
-                          <div class="text-sm">
-                            {{
-                              formatDate(
-                                sale.financial_institution_date || reservaDateOf(sale)
-                              )
-                            }}
-                          </div>
-                        </td>
-                        <td class="px-4 py-3 text-center">
-                          <div class="text-sm font-semibold text-green-600">
-                            {{ formatCurrency(getSaleValue(sale)) }}
-                          </div>
-                        </td>
-                        <td class="px-4 py-3 text-center">
-                          <span
-                            class="inline-flex items-center px-2.5 py-1 text-sm font-bold rounded-full bg-blue-100 text-blue-800">
-                            {{ sale.contracts.length }}
+                <tbody class="bg-white divide-y divide-gray-200 dark:bg-gray-700/40 dark:divide-gray-700">
+                  <template v-for="sale in paginatedSales" :key="`${sale.customer_id ?? ''}-${sale.unit_name}`">
+                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors" :class="saleIsProjection(sale)
+                      ? 'bg-green-50/70 dark:bg-green-900/20'
+                      : ''
+                      ">
+                      <td class="px-3 py-4">
+                        <div class="text-sm font-medium">
+                          {{ customerNameOf(sale) }}
+                          <span class="text-gray-400" v-if="sale.customer_id">
+                            #{{ sale.customer_id }}
                           </span>
-                        </td>
-                        <td class="px-4 py-3 text-center">
-                          <button @click="toggleDetails(sale)"
-                            class="text-sm font-medium text-blue-600 hover:text-blue-900 dark:hover:text-blue-400 transition-colors">
-                            {{
-                              expandedSales.has(`${sale.customer_id}-${sale.unit_name}`)
-                                ? 'Ocultar'
-                                : 'Detalhes'
-                            }}
-                          </button>
-                        </td>
-                        <!-- <td class="px-4 py-3 text-center"> 
-                          <template v-if="awardStatusForSale(sale)">
-                            <span class="text-[10px] truncate px-2 py-1 rounded bg-purple-100 text-purple-700">
-                              {{ statusLabel(awardStatusForSale(sale)) }}
-                            </span>
-                          </template>
-<template v-else>
-                            <input type="checkbox" :checked="selectedSales.has(saleKeyOf(sale))"
-                              @change="toggleSaleSelection(sale)" />
-                          </template>
-</td> -->
-                      </tr>
+                        </div>
+                        <div v-if="sale.contracts?.[0]?.associates?.[0]"
+                          class="text-gray-400 text-xs font-light truncate w-20">
+                          {{
+                            sale.contracts?.[0]?.associates?.[0]?.name
+                          }}
+                          #{{ sale.contracts?.[0]?.associates?.[0]?.customer_id }}
+                        </div>
+                      </td>
+                      <td class="px-3 py-4 truncate" v-if="hasRepasse">
+                        <div class="text-sm max-w-28 truncate">
+                          {{ imobiliariaOf(sale) }}
+                        </div>
+                      </td>
+                      <td v-if="hasRepasse">
+                        <div class="flex gap-2 group" v-tippy="repasseTooltipOf(sale)">
+                          <a :href="repasseLinkOf(sale) || 'javascript:void(0)'" target="_blank" class="cursor-pointer">
+                            <img src="/CVLogo.png" alt="CV CRM" class="w-5 min-w-5 grayscale group-hover:grayscale-0" />
+                          </a>
+                          <p class="text-sm truncate w-28">
+                            {{ repasseStatusOf(sale) || '—' }}
+                          </p>
+                        </div>
+                      </td>
+                      <td class="px-3 py-4 max-w-64" v-if="hasRepasse">
+                        <div class="text-sm truncate max-w-32">
+                          {{ empreendimentoOf(sale) }}
+                        </div>
+                      </td>
+                      <td class="px-3 py-4" v-if="hasRepasse">
+                        <div class="text-sm truncate">
+                          {{ etapaOf(sale) }}
+                        </div>
+                      </td>
+                      <td class="px-3 py-4 truncate" v-if="hasRepasse">
+                        <div class="text-sm">
+                          {{ blocoOf(sale) }}
+                        </div>
+                      </td>
+                      <td class="px-3 py-4 text-center">
+                        <div class="text-sm">
+                          {{ sale.unit_name || reservaUnitOf(sale) }}
+                        </div>
+                      </td>
+                      <td class="px-3 py-4 text-center">
+                        <div class="text-sm">
+                          {{
+                            formatDate(
+                              sale.financial_institution_date || reservaDateOf(sale)
+                            )
+                          }}
+                        </div>
+                      </td>
+                      <td class="px-3 py-4 text-center">
+                        <div class="text-sm font-semibold text-green-600">
+                          {{ formatCurrency(getSaleValue(sale)) }}
+                        </div>
+                      </td>
+                      <td class="px-3 py-4 text-center">
+                        <button @click="toggleDetails(sale)"
+                          class="text-sm font-medium text-blue-600 hover:text-blue-900 dark:hover:text-blue-400 transition-colors">
+                          {{
+                            expandedSales.has(`${sale.customer_id}-${sale.unit_name}`)
+                              ? 'Ocultar'
+                              : 'Detalhes'
+                          }}
+                        </button>
+                      </td>
+                    </tr>
 
-                      <tr v-show="expandedSales.has(`${sale.customer_id}-${sale.unit_name}`)"
-                        class="bg-gray-50 dark:bg-gray-900/60">
-                        <!-- 12 colunas agora -->
-                        <td colspan="12">
-                          <div v-for="contract in sale.contracts" :key="contract.contract_id" class="space-y-3">
-                            <div class="bg-white dark:bg-gray-900/20 p-4 shadow" :class="contract._projection
-                              ? 'border-l-4 border-emerald-400'
-                              : ''
-                              ">
-                              <div class="flex items-center justify-between mb-3">
-                                <span class="text-sm font-medium">
-                                  {{ contract._projection ? 'Reserva' : 'Contrato' }}
-                                  #{{ contract.contract_id }}
-                                </span>
-                                <span class="text-sm text-gray-500">
-                                  Participação:
-                                  {{ contract.participation_percentage || 100 }}%
-                                </span>
-                              </div>
+                    <tr v-show="expandedSales.has(`${sale.customer_id}-${sale.unit_name}`)"
+                      class="bg-gray-50 dark:bg-gray-900/60">
+                      <td colspan="12">
+                        <div v-for="contract in sale.contracts" :key="contract.contract_id" class="space-y-3">
+                          <div class="bg-white dark:bg-gray-900/20 p-4 shadow" :class="contract._projection
+                            ? 'border-l-4 border-emerald-400'
+                            : ''
+                            ">
+                            <div class="flex items-center justify-between mb-3">
+                              <span class="text-sm font-medium">
+                                {{ contract._projection ? 'Reserva' : 'Contrato' }}
+                                #{{ contract.contract_id }}
+                              </span>
+                              <span class="text-sm text-gray-500">
+                                Participação:
+                                {{ contract.participation_percentage || 100 }}%
+                              </span>
+                            </div>
 
-                              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3"
-                                :key="`${contractsStore.valueMode}-${contract.contract_id}`">
-                                <div v-for="(condition, idx) in displayedConditions(contract)" :key="`${contract.contract_id}-${condition.synthetic ? 'SYNTH' : 'REAL'
-                                  }-${condition.condition_type_id || 'NA'}-${idx}-${contractsStore.valueMode
-                                  }`" class="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 border-l-4 shadow-sm" :class="[
-                                    isDiscount(condition)
-                                      ? 'border-red-400'
-                                      : 'border-emerald-400',
-                                    condition._isCommission ? 'border-orange-400' : ''
-                                  ]">
-                                  <div class="text-sm font-medium mb-1">
-                                    {{ condition.condition_type_name || 'Não informado' }}
-                                    <span v-if="condition.synthetic"
-                                      class="ml-2 inline-flex items-center px-2 py-0.5 shadow-sm rounded-full text-[10px] font-semibold bg-yellow-100 text-yellow-800">Campo
-                                      de Observação</span>
-                                    <button v-if="condition.synthetic" class="ps-1 text-gray-400"
-                                      v-tippy="`Atualização D-1 as 07h`">
-                                      <i class="fas fa-circle-info"></i>
-                                    </button>
-                                  </div>
-                                  <div class="text-lg font-semibold mb-1" :class="isDiscount(condition)
-                                    ? 'text-red-600'
-                                    : 'text-green-600'
-                                    ">
-                                    {{ formatCurrency(condition.total_value) }}
-                                    <span v-if="isDiscount(condition)" class="text-xs ml-1">(desconto)</span>
-                                  </div>
-                                  <div class="text-xs text-gray-500">
-                                    Código: {{ condition.condition_type_id || '—' }}
-                                  </div>
-                                  <div v-if="condition.installments_number" class="text-xs text-gray-500">
-                                    {{ condition.installments_number }}x parcelas
-                                  </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3"
+                              :key="`${contractsStore.valueMode}-${contract.contract_id}`">
+                              <div v-for="(condition, idx) in displayedConditions(contract)" :key="`${contract.contract_id}-${condition.synthetic ? 'SYNTH' : 'REAL'
+                                }-${condition.condition_type_id || 'NA'}-${idx}-${contractsStore.valueMode
+                                }`" class="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 border-l-4 shadow-sm" :class="[
+                                  isDiscount(condition)
+                                    ? 'border-red-400'
+                                    : 'border-emerald-400',
+                                  condition._isCommission ? 'border-orange-400' : ''
+                                ]">
+                                <div class="text-sm font-medium mb-1">
+                                  {{ condition.condition_type_name || 'Não informado' }}
+                                  <span v-if="condition.synthetic"
+                                    class="ml-2 inline-flex items-center px-2 py-0.5 shadow-sm rounded-full text-[10px] font-semibold bg-yellow-100 text-yellow-800">Campo
+                                    de Observação</span>
+                                  <button v-if="condition.synthetic" class="ps-1 text-gray-400"
+                                    v-tippy="`Atualização D-1 as 07h`">
+                                    <i class="fas fa-circle-info"></i>
+                                  </button>
+                                </div>
+                                <div class="text-lg font-semibold mb-1" :class="isDiscount(condition)
+                                  ? 'text-red-600'
+                                  : 'text-green-600'
+                                  ">
+                                  {{ formatCurrency(condition.total_value) }}
+                                  <span v-if="isDiscount(condition)" class="text-xs ml-1">(desconto)</span>
+                                </div>
+                                <div class="text-xs text-gray-500">
+                                  Código: {{ condition.condition_type_id || '—' }}
+                                </div>
+                                <div v-if="condition.installments_number" class="text-xs text-gray-500">
+                                  {{ condition.installments_number }}x parcelas
                                 </div>
                               </div>
                             </div>
                           </div>
-                        </td>
-                      </tr>
-                    </template>
-                  </tbody>
-                </table>
-              </div>
+                        </div>
+                      </td>
+                    </tr>
+                  </template>
+                </tbody>
+              </table>
+            </div>
 
-              <!-- Paginação -->
-              <div v-if="totalPages > 1" class="m-4 flex items-center justify-between">
-                <div class="text-sm text-gray-500">
-                  Mostrando {{ startItem }} a {{ endItem }} de
-                  {{ filteredSales.length }} vendas
-                </div>
-                <div class="flex items-center gap-2">
-                  <button @click="currentPage = 1" :disabled="currentPage === 1"
-                    class="px-3 py-1 text-sm border border-gray-300 dark:border-gray-500 rounded-md hover:bg-gray-50 dark:hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed">
-                    Primeira
-                  </button>
-                  <button @click="currentPage--" :disabled="currentPage === 1"
-                    class="px-3 py-1 text-sm border border-gray-300 dark:border-gray-500 rounded-md hover:bg-gray-50 dark:hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed">
-                    <i class="fas fa-chevron-left"></i>
-                  </button>
-                  <div class="flex gap-1">
-                    <button v-for="page in visiblePages" :key="page" @click="currentPage = page" :class="[
-                      'px-3 py-1 text-sm border rounded-md',
-                      page === currentPage
-                        ? 'bg-blue-600 text-white border-blue-600'
-                        : 'border-gray-300 dark:border-gray-500 hover:bg-gray-50 dark:hover:bg-gray-900'
-                    ]">
-                      {{ page }}
-                    </button>
-                  </div>
-                  <button @click="currentPage++" :disabled="currentPage === totalPages"
-                    class="px-3 py-1 text-sm border border-gray-300 dark:border-gray-500 rounded-md hover:bg-gray-50 dark:hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed">
-                    <i class="fas fa-chevron-right"></i>
-                  </button>
-                  <button @click="currentPage = totalPages" :disabled="currentPage === totalPages"
-                    class="px-3 py-1 text-sm border border-gray-300 dark:border-gray-500 rounded-md hover:bg-gray-50 dark:hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed">
-                    Última
+            <div v-if="totalPages > 1" class="m-4 flex items-center justify-between">
+              <div class="text-sm text-gray-500">
+                Mostrando {{ startItem }} a {{ endItem }} de
+                {{ filteredSales.length }} vendas
+              </div>
+              <div class="flex items-center gap-2">
+                <button @click="currentPage = 1" :disabled="currentPage === 1"
+                  class="px-3 py-1 text-sm border border-gray-300 dark:border-gray-500 rounded-md hover:bg-gray-50 dark:hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed">
+                  Primeira
+                </button>
+                <button @click="currentPage--" :disabled="currentPage === 1"
+                  class="px-3 py-1 text-sm border border-gray-300 dark:border-gray-500 rounded-md hover:bg-gray-50 dark:hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed">
+                  <i class="fas fa-chevron-left"></i>
+                </button>
+                <div class="flex gap-1">
+                  <button v-for="page in visiblePages" :key="page" @click="currentPage = page" :class="[
+                    'px-3 py-1 text-sm border rounded-md',
+                    page === currentPage
+                      ? 'bg-blue-600 text-white border-blue-600'
+                      : 'border-gray-300 dark:border-gray-500 hover:bg-gray-50 dark:hover:bg-gray-900'
+                  ]">
+                    {{ page }}
                   </button>
                 </div>
+                <button @click="currentPage++" :disabled="currentPage === totalPages"
+                  class="px-3 py-1 text-sm border border-gray-300 dark:border-gray-500 rounded-md hover:bg-gray-50 dark:hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed">
+                  <i class="fas fa-chevron-right"></i>
+                </button>
+                <button @click="currentPage = totalPages" :disabled="currentPage === totalPages"
+                  class="px-3 py-1 text-sm border border-gray-300 dark:border-gray-500 rounded-md hover:bg-gray-50 dark:hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed">
+                  Última
+                </button>
               </div>
             </div>
-          </template>
+          </div>
         </div>
-        <!-- /content -->
       </div>
     </div>
   </div>
@@ -709,14 +434,15 @@ import Export from '@/components/config/Export.vue'
 import VChart from 'vue-echarts'
 import * as echarts from 'echarts/core'
 import { PieChart, BarChart } from 'echarts/charts'
-import { TooltipComponent, LegendComponent, GridComponent } from 'echarts/components'
+import { TooltipComponent, LegendComponent, GridComponent, DataZoomComponent, TitleComponent, ToolboxComponent } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
-echarts.use([PieChart, BarChart, TooltipComponent, LegendComponent, GridComponent, CanvasRenderer])
+
+echarts.use([PieChart, BarChart, TooltipComponent, LegendComponent, GridComponent, DataZoomComponent, TitleComponent, ToolboxComponent, CanvasRenderer])
 
 const props = defineProps({
   enterprise: { type: Object, required: true },
   sales: { type: Array, required: true },
-  initialMode: { type: String, default: 'list' } // 'list' | 'pie' | 'bar'
+  initialMode: { type: String, default: 'list' }
 })
 
 const emit = defineEmits(['close'])
@@ -726,9 +452,13 @@ const contractsStore = useContractsStore()
 const awardsStore = useAwardsStore()
 const viewMode = ref(['list', 'pie', 'bar'].includes(props.initialMode) ? props.initialMode : 'list')
 
-/**
- * Premiação
- */
+// Helpers de Tema
+const isDark = computed(() => document.documentElement.classList.contains('dark'))
+const txt = computed(() => (isDark.value ? '#E5E7EB' : '#374151'))
+const sub = computed(() => (isDark.value ? '#9CA3AF' : '#6B7280'))
+const gridLine = computed(() => (isDark.value ? '#374151' : '#E5E7EB'))
+const palette = ['#8B5CF6', '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#06B6D4', '#84CC16', '#F97316', '#EC4899', '#6366F1']
+
 const selectedSales = ref(new Set())
 const lastAwardsMessage = ref('')
 
@@ -748,9 +478,19 @@ const statusLabel = (s) =>
 
 const firstContractOf = (sale) => sale?.contracts?.[0] || {}
 const repasseOf = (sale) => firstContractOf(sale)?.repasse?.[0] || null
-const reservaOf = (sale) => firstContractOf(sale)?.reserva || null
+const reservaOf = (sale) => {
+  const first = firstContractOf(sale)
+  if (first?.reserva) return first.reserva
 
-// chave estável da venda pra premiação (não mexe no expandedSales!)
+  const r = first?.repasse?.[0]
+  if (r?.reserva) return r.reserva
+  if (r?.reserva_obj) return r.reserva_obj
+  if (r?.reservaObj) return r.reservaObj
+
+  return null
+}
+
+// chave estável da venda pra premiação
 const saleKeyOf = (sale) => {
   if (!sale) return ''
 
@@ -796,7 +536,6 @@ const awardInfoForSale = (sale) => awardStatusBySaleKey.value.get(saleKeyOf(sale
 const awardStatusForSale = (sale) => awardInfoForSale(sale)?.status || null
 const saleHasAward = (sale) => !!awardInfoForSale(sale)
 
-// sempre que um sale vira premiação, tira do set de selecionados
 watch(awardStatusBySaleKey, (map) => {
   if (!map) return
   const next = new Set(selectedSales.value)
@@ -888,15 +627,45 @@ const customerNameOf = (sale) =>
   reservaOf(sale)?.comprador ||
   '—'
 
-const imobiliariaOf = (sale) =>
-  reservaOf(sale)?.corretor?.imobiliaria ??
-  repasseOf(sale)?.imobiliaria ??
-  sale?.contracts?.[0]?.corretor?.imobiliaria ??
-  sale?.imobiliaria?.nomefantasia ??
-  sale?.imobiliaria?.razaosocial ??
-  sale?.imobiliaria?.email ??
-  sale?.imobiliaria?.cnpj ??
-  '—'
+// EnterpriseDetailModal.vue
+
+const imobiliariaOf = (sale) => {
+  const res = reservaOf(sale)
+  const rep = repasseOf(sale)
+
+  return (
+    res?.corretor?.imobiliaria ||
+    rep?.corretor?.imobiliaria ||                 // ✅ NOVO
+    sale?.contracts?.[0]?.corretor?.imobiliaria ||
+    // fallback (quando realmente só existir “objeto”)
+    sale?.imobiliaria?.nomefantasia ||
+    sale?.imobiliaria?.razaosocial ||
+    rep?.imobiliaria?.nomefantasia ||
+    rep?.imobiliaria?.razaosocial ||
+    rep?.imobiliaria?.email ||
+    rep?.imobiliaria?.cnpj ||
+    '—'
+  )
+}
+
+const brokerNameOf = (sale) => {
+  const res = reservaOf(sale)
+  const rep = repasseOf(sale)
+
+  const c = [
+    res?.corretor?.imobiliaria,
+    rep?.corretor?.imobiliaria,                   // ✅ NOVO
+    sale?.contracts?.[0]?.corretor?.imobiliaria,
+    sale?.imobiliaria?.nomefantasia,
+    sale?.imobiliaria?.razaosocial,
+    rep?.imobiliaria?.nomefantasia,
+    rep?.imobiliaria?.razaosocial,
+    rep?.imobiliaria?.email,
+    rep?.imobiliaria?.cnpj
+  ].find((v) => typeof v === 'string' && v.trim())
+
+  return c ? String(c).trim() : 'Sem imobiliária'
+}
 
 const repasseLinkOf = (sale) => {
   const idRep = repasseOf(sale)?.idrepasse
@@ -910,7 +679,7 @@ const repasseLinkOf = (sale) => {
   return 'javascript:void(0)'
 }
 
-/* Status do repasse com fallback para reserva e/ou histórico mais recente do próprio repasse */
+/* Status do repasse com fallback */
 const repasseStatusOf = (sale) => {
   const r = repasseOf(sale)
   if (r) {
@@ -993,7 +762,63 @@ const reservaDateOf = (sale) =>
 
 /* ===================== utils ===================== */
 const valueModeLabel = computed(() => contractsStore.valueModeLabel)
-const getSaleValue = (sale) => contractsStore.valuePicker(sale)
+
+const toNumSafe = (v) => {
+  const n = Number(v)
+  return Number.isFinite(n) ? n : 0
+}
+
+// soma TR quando regra TR_ONLY
+const sumTR = (c) => {
+  const pcs = Array.isArray(c.payment_conditions) ? c.payment_conditions : []
+  return pcs
+    .filter((pc) => contractsStore._isTR(pc))
+    .reduce((s, pc) => s + (Number(pc.total_value) || 0), 0)
+}
+
+const uplift = (base, pct) => (pct > 0 ? base * (pct / (1 - pct)) : 0)
+
+// calcula valor do contrato respeitando modo (net/gross), override e comissão
+const contractValueByMode = (contract) => {
+  if (!contract) return 0
+
+  const pct = Number(contractsStore.enterpriseCommissionFor(contract)?.commission_pct) || 0
+  const rule = contractsStore.enterpriseRuleFor(contract) || {}
+
+  // base do contrato (sem comissão), conforme modo
+  let base = 0
+
+  if (contractsStore.isGross) {
+    // gross: LAND_VALUE_ONLY -> land_value, senão _contractTotals.gross
+    if (rule.gross === 'LAND_VALUE_ONLY') base = Number(contract.land_value) || 0
+    else base = toNumSafe(contractsStore._contractTotals(contract).gross)
+  } else {
+    // net: TR_ONLY -> soma TR; LAND_VALUE_ONLY -> land_value; senão _contractTotals.net
+    if (rule.net === 'TR_ONLY') base = sumTR(contract)
+    else if (rule.net === 'LAND_VALUE_ONLY') base = Number(contract.land_value) || 0
+    else base = toNumSafe(contractsStore._contractTotals(contract).net)
+  }
+
+  // comissão fora do contrato (igual store)
+  const add = pct > 0 ? uplift(base, pct) : 0
+  return base + (Number.isFinite(add) ? add : 0)
+}
+
+// ✅ valor da venda = soma dos contratos (inclui projeções)
+const saleValueFromConditions = (sale) => {
+  const contracts = Array.isArray(sale?.contracts) ? sale.contracts : []
+  if (!contracts.length) return 0
+  return contracts.reduce((sum, c) => sum + contractValueByMode(c), 0)
+}
+
+// usa total pronto se existir, senão recalcula por condições
+const getSaleValue = (sale) => {
+  const direct = contractsStore.isGross ? sale?.total_value_gross : sale?.total_value_net
+  const d = Number(direct)
+  if (Number.isFinite(d) && d > 0) return d
+  return saleValueFromConditions(sale)
+}
+
 const formatCurrency = (v) =>
   new Intl.NumberFormat('pt-BR', {
     style: 'currency',
@@ -1054,12 +879,15 @@ const showLandOnlyNote = computed(() =>
 )
 
 const totalSales = computed(() => filteredSales.value.length)
+
 const totalValue = computed(() =>
-  filteredSales.value.reduce((s, sale) => s + getSaleValue(sale), 0)
+  filteredSales.value.reduce((s, sale) => s + Number(getSaleValue(sale) || 0), 0)
 )
+
 const avgTicket = computed(() =>
   totalSales.value ? totalValue.value / totalSales.value : 0
 )
+
 const uniqueCustomers = computed(
   () =>
     new Set(
@@ -1106,7 +934,6 @@ watch(
 )
 
 const toggleDetails = (sale) => {
-  // mantém a chave original que funcionava
   const key = `${sale.customer_id}-${sale.unit_name}`
   const next = new Set(expandedSales.value)
   next.has(key) ? next.delete(key) : next.add(key)
@@ -1149,14 +976,6 @@ const displayedConditions = (contract) => {
 const ruleFor = computed(() => contractsStore.enterpriseRuleFor)
 const comFor = computed(() => contractsStore.enterpriseCommissionFor)
 const totalsOf = computed(() => contractsStore._contractTotals)
-
-const sumTR = (c) => {
-  const pcs = Array.isArray(c.payment_conditions) ? c.payment_conditions : []
-  return pcs
-    .filter((pc) => contractsStore._isTR(pc))
-    .reduce((s, pc) => s + (Number(pc.total_value) || 0), 0)
-}
-const uplift = (base, pct) => (pct > 0 ? base * (pct / (1 - pct)) : 0)
 
 const baseGross = (c) => {
   const r = ruleFor.value(c) || {}
@@ -1259,19 +1078,6 @@ const registerAwards = async () => {
   }
 }
 
-/* ===================== charts ===================== */
-const brokerNameOf = (sale) => {
-  const c = [
-    reservaOf(sale)?.corretor?.imobiliaria,
-    repasseOf(sale)?.imobiliaria,
-    sale?.contracts?.[0]?.corretor?.imobiliaria,
-    sale?.imobiliaria?.nomefantasia,
-    sale?.imobiliaria?.razaosocial,
-    sale?.imobiliaria?.email,
-    sale?.imobiliaria?.cnpj
-  ].find((v) => typeof v === 'string' && v?.trim())
-  return c ? String(c).trim() : 'Sem imobiliária'
-}
 const keyOf = (n) =>
   (n || '')
     .normalize('NFKC')
@@ -1279,13 +1085,14 @@ const keyOf = (n) =>
     .replace(/\s+/g, ' ')
     .trim()
 
+// Agrupa dados filtrados
 const rowsByBroker = computed(() => {
   const map = new Map()
   for (const sale of filteredSales.value) {
     const name = brokerNameOf(sale)
     const key = keyOf(name)
     const prev = map.get(key) ?? { name, count: 0, value: 0 }
-    const v = getSaleValue(sale) || 0
+    const v = Number(getSaleValue(sale) || 0)
     prev.count += 1
     prev.value += v
     map.set(key, prev)
@@ -1293,10 +1100,20 @@ const rowsByBroker = computed(() => {
   return [...map.values()].sort((a, b) => b.value - a.value)
 })
 
+const baseTooltip = computed(() => ({
+  trigger: 'item',
+  confine: true,
+  appendToBody: true,
+  extraCssText: 'max-width:260px; white-space:normal; font-size:12px; line-height:1.2; padding:6px 8px;'
+}))
+
 const chartOption = computed(() => {
+  // PIZZA: Vendas por Imobiliária
   if (viewMode.value === 'pie') {
     return {
+      color: palette,
       tooltip: {
+        ...baseTooltip.value,
         trigger: 'item',
         formatter: (p) =>
           `${p.name}<br/><b>${formatCurrency(p.value)}</b> (${p.percent}%)`
@@ -1309,10 +1126,10 @@ const chartOption = computed(() => {
         itemWidth: 10,
         itemHeight: 10,
         itemGap: 6,
-        textStyle: { fontSize: 10, color: '#9CA3AF' },
-        pageTextStyle: { color: '#9CA3AF' },
-        pageIconColor: '#9CA3AF',
-        pageIconInactiveColor: '#D1D5DB'
+        textStyle: { fontSize: 11, color: txt.value },
+        pageTextStyle: { color: sub.value },
+        pageIconColor: sub.value,
+        pageIconInactiveColor: gridLine.value
       },
       series: [
         {
@@ -1320,41 +1137,48 @@ const chartOption = computed(() => {
           type: 'pie',
           radius: ['40%', '70%'],
           padAngle: 1,
-          itemStyle: { borderRadius: 6 },
+          itemStyle: { borderRadius: 6, borderColor: 'transparent', borderWidth: 0 },
           label: { show: false },
-          emphasis: { label: { show: true, fontWeight: 'bold' } },
+          emphasis: { label: { show: true, fontWeight: 'bold', color: txt.value } },
           data: rowsByBroker.value.map((r) => ({
-            name: `${r.name} (${r.count})`,
-            value: r.value
+            name: r.name, // Use nome limpo para facilitar o filtro ao clicar
+            value: r.value,
+            _rawCount: r.count
           }))
         }
       ]
     }
   }
 
+  // BARRAS: Valor por Imobiliária
   return {
+    color: palette,
     tooltip: {
       trigger: 'axis',
-      valueFormatter: (v) => formatCurrency(v)
+      confine: true,
+      axisPointer: { type: 'shadow' },
+      valueFormatter: (v) => formatCurrency(v),
+      extraCssText: 'max-width:320px; white-space:normal; font-size:12px; line-height:1.2; padding:6px 8px;'
     },
     grid: { left: 32, right: 32, top: 42, bottom: 64, containLabel: true },
+    dataZoom: [{ type: 'inside' }, { type: 'slider', height: 18, bottom: 20 }],
     xAxis: {
       type: 'category',
       data: rowsByBroker.value.map((r) => r.name),
       axisLabel: {
         interval: 0,
         rotate: 20,
-        fontSize: 8,
-        color: '#9CA3AF',
-        formatter: (val) => (val.length > 12 ? val.slice(0, 12) + '…' : val)
+        fontSize: 10,
+        color: txt.value,
+        formatter: (val) => (val.length > 15 ? val.slice(0, 15) + '…' : val)
       },
-      axisLine: { lineStyle: { color: '#9CA3AF' } }
+      axisLine: { lineStyle: { color: sub.value } }
     },
     yAxis: {
       type: 'value',
       axisLabel: {
         fontSize: 10,
-        color: '#9CA3AF',
+        color: txt.value,
         formatter: (v) =>
           new Intl.NumberFormat('pt-BR', {
             style: 'currency',
@@ -1362,27 +1186,47 @@ const chartOption = computed(() => {
             maximumFractionDigits: 0
           }).format(v)
       },
-      splitLine: { lineStyle: { color: '#E5E7EB' } }
+      splitLine: { lineStyle: { color: gridLine.value } }
     },
     series: [
       {
         name: `Valor (${valueModeLabel.value})`,
         type: 'bar',
-        barWidth: '70%',
+        barWidth: '60%',
         data: rowsByBroker.value.map((r) => ({
           value: r.value,
           count: r.count
         })),
         itemStyle: { borderRadius: [6, 6, 0, 0] },
+        emphasis: { focus: 'series' },
         label: {
           show: true,
           position: 'top',
           fontSize: 10,
-          color: '#9CA3AF',
+          color: sub.value,
           formatter: (p) => `${p.data.count}`
         }
       }
     ]
   }
 })
+
+// Drill-down: Ao clicar no gráfico, filtra a lista pelo nome da imobiliária
+const onChartClick = (params) => {
+  if (params && params.name) {
+    searchTerm.value = params.name
+  }
+}
 </script>
+
+<style scoped>
+.modal-enter-active,
+.modal-leave-active {
+  transition: opacity 0.25s ease;
+}
+
+.modal-enter-from,
+.modal-leave-to {
+  opacity: 0;
+}
+</style>
