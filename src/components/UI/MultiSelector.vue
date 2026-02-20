@@ -173,10 +173,15 @@ function toggleSelectAllFiltered(e) {
 <template>
     <div :class="wrapperClass" ref="wrapperRef">
         <!-- Botão -->
-        <button type="button" class="border-gray-200 dark:border-gray-600 dark:bg-gray-900/60 h-12 overflow-y-auto" :disabled="disabled"
-            :class="buttonClass" @click="toggleOpen">
+        <button type="button" class="border-gray-200 dark:border-gray-600 dark:bg-gray-900/60 h-12 overflow-y-auto"
+            :disabled="disabled" :class="buttonClass" @click="toggleOpen">
             <slot name="button" :selected="selected">
-                <span v-if="selected.length">{{ selected.join(', ') }}</span>
+                <span v-if="selected.length === 1" class="block truncate">
+                    {{ selected[0] }}
+                </span>
+                <span v-else-if="selected.length > 1" class="block truncate">
+                    {{ selected.length }} itens selecionados
+                </span>
                 <span v-else class="opacity-60">{{ placeholder }}</span>
             </slot>
         </button>
@@ -186,8 +191,9 @@ function toggleSelectAllFiltered(e) {
             aria-multiselectable="true">
             <!-- Busca -->
             <div class="p-2 sticky top-0 bg-inherit">
-                <input ref="searchInputRef" v-model="searchRaw" class="border-gray-200 dark:border-gray-700 dark:bg-gray-700 bg-gray-100"
-                    type="text" :class="searchClass" placeholder="Filtrar..." aria-label="Filtro de opções" />
+                <input ref="searchInputRef" v-model="searchRaw"
+                    class="border-gray-200 dark:border-gray-700 dark:bg-gray-700 bg-gray-100" type="text"
+                    :class="searchClass" placeholder="Filtrar..." aria-label="Filtro de opções" />
             </div>
 
             <!-- Master checkbox (Selecionar/Remover tudo do filtrado) -->
