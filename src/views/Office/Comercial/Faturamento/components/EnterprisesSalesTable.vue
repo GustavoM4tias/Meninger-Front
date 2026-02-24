@@ -198,6 +198,7 @@
 
     <EnterpriseDetailModal v-if="showModal" :enterprise="modalEnterprise" :sales="modalSales"
       :initial-mode="initialMode" @close="closeModal" />
+
   </div>
 </template>
 
@@ -367,20 +368,36 @@ const salesForRowFrom = (sales, row) => {
   const rowCompanyId = toNum(row.company_id ?? row.id ?? null)
   const rowEnterpriseId = toNum(row.enterprise_id ?? row.id ?? null)
 
+  // ✅ lista de empreendimentos permitidos p/ linha de projeção em company
+  const allowedEnterpriseIds =
+    (byCompany && onlyProjRow && Array.isArray(row.enterpriseIds) && row.enterpriseIds.length > 0)
+      ? new Set(row.enterpriseIds.map(Number).filter(Number.isFinite))
+      : null
+
   return (sales || []).filter((sale) => {
     const contracts = Array.isArray(sale?.contracts) ? sale.contracts : []
     if (!contracts.length) return false
 
     let belongs = false
+
     if (byCompany) {
-      if (rowCompanyId != null) belongs = contracts.some((c) => toNum(c.company_id) === rowCompanyId)
-      else belongs = contracts.some((c) => c.company_id == null)
+      if (rowCompanyId != null) {
+        belongs = contracts.some((c) => toNum(c.company_id) === rowCompanyId)
+      } else {
+        // antes: qualquer company_id null entrava
+        // agora: só entra se estiver no(s) empreendimento(s) da linha
+        belongs = contracts.some((c) => c.company_id == null)
+        if (belongs && allowedEnterpriseIds) {
+          belongs = contracts.some((c) => allowedEnterpriseIds.has(Number(c.enterprise_id)))
+        }
+      }
     } else {
       if (rowEnterpriseId != null) belongs = contracts.some((c) => toNum(c.enterprise_id) === rowEnterpriseId)
       else belongs = false
     }
 
     if (!belongs) return false
+
     if (onlyProjRow) return contracts.every((c) => !!c._projection)
     return true
   })
