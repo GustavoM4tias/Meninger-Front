@@ -59,7 +59,7 @@
         </div>
 
         <!-- Controles -->
-        <div class="w-full flex items-center justify-start gap-2 p-4 pt-0 -mt-3">
+        <div class="w-full flex items-center justify-start gap-2 p-4 pt-0 -mt-6">
             <select v-model="selectedPeriod"
                 class="h-9 rounded-md bg-white/70 dark:bg-gray-900/40 border border-gray-300 dark:border-gray-700 text-xs">
                 <option v-for="o in periodOptions" :key="o.value" :value="o.value">{{ o.label }}</option>

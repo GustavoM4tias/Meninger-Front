@@ -1,6 +1,7 @@
 <template>
     <div class="p-4 rounded-lg shadow bg-white dark:bg-gray-800">
         <div class="flex flex-wrap items-end gap-4">
+
             <!-- Data Inicial -->
             <div class="flex-1 lg:flex-initial lg:min-w-64">
                 <label class="block text-xs font-medium mb-1 text-gray-700 dark:text-gray-300">

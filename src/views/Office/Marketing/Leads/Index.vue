@@ -5,6 +5,7 @@ import { useLeadsStore } from '@/stores/Marketing/Lead/leadsStore'
 import Favorite from '@/components/config/Favorite.vue'
 import Filas from './components/Filas.vue'
 import SummaryCards from './components/SummaryCards.vue'
+import DashboardCharts from './components/DashboardCharts.vue'
 import FiltersBar from './components/FiltersBar.vue'
 import LeadsTable from './components/LeadsTable.vue'
 import LeadModal from './components/LeadModal.vue'
@@ -12,14 +13,14 @@ import LeadModal from './components/LeadModal.vue'
 const store = useLeadsStore()
 
 // ✅ Em vez de storeToRefs: faça refs diretas do state
-const leads    = toRef(store, 'leads')
-const periodo  = toRef(store, 'periodo')
-const filas    = toRef(store, 'filas')
-const error    = toRef(store, 'error')
-const filtros  = toRef(store, 'filtros')
+const leads = toRef(store, 'leads')
+const periodo = toRef(store, 'periodo')
+const filas = toRef(store, 'filas')
+const error = toRef(store, 'error')
+const filtros = toRef(store, 'filtros')
 
 // ✅ Getters como *refs* estáveis (mesma API esperada pelos filhos)
-const kpiSituacoes      = toRef(store, 'kpiSituacoes')
+const kpiSituacoes = toRef(store, 'kpiSituacoes')
 const leadsByEnterprise = toRef(store, 'leadsByEnterprise')
 
 const modalVisivel = ref(false)
@@ -77,6 +78,12 @@ onMounted(async () => {
       <!-- KPI dinâmico por situação -->
       <SummaryCards :periodo="periodo" :kpi="kpiSituacoes" @filtrarSituacao="onFiltrarSituacao" />
     </div>
+
+    <!-- ✅ NOVO: Charts na tela -->
+    <!-- <div class="px-6 pb-6">
+      <DashboardCharts :leads="leads" :leads-by-enterprise="leadsByEnterprise" @abrirModal="abrirModal"
+        @filtrarSituacao="onFiltrarSituacao" />
+    </div> -->
 
     <div v-if="error" class="px-6 py-4">
       <div class="my-3 p-3 bg-red-500/20 text-red-200 rounded-lg"><i class="fas fa-exclamation-triangle mr-2"></i>{{

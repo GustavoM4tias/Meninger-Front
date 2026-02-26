@@ -65,7 +65,7 @@
         </div>
 
         <!-- Controles -->
-        <div class="w-full flex items-center gap-2 px-4 pb-4 -mt-2">
+        <div class="w-full flex items-center gap-2 px-4 pb-4 -mt-4">
             <select v-model="mode"
                 class="h-9 rounded-md bg-white/70 dark:bg-gray-900/40 border border-gray-300 dark:border-gray-700 text-xs">
                 <option value="day">Dia × Dia</option>
