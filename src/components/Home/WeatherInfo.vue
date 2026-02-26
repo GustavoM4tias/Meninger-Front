@@ -113,12 +113,12 @@ const subtitle = computed(() => {
         <div v-if="w" class="flex items-center justify-between gap-6 my-2">
             <!-- Texto -->
             <div class="min-w-0 text-end">
-                <p class="text-gray-200 text-xl md:text-2xl font-semibold truncate">
+                <p class="dark:text-gray-200 text-xl md:text-2xl px-1 font-semibold truncate">
                     {{ headline }}
                     <i :class="[weatherIcon, iconColor]" class="text-2xl md:text-3xl drop-shadow" />
                 </p>
 
-                 <p class="text-slate-300 text-xs md:text-sm truncate">
+                 <p class="dark:text-slate-300 text-xs px-1 md:text-sm truncate">
                     {{ subtitle }}
                 </p>  
             </div>

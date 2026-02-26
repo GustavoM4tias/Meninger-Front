@@ -198,7 +198,6 @@
 
     <EnterpriseDetailModal v-if="showModal" :enterprise="modalEnterprise" :sales="modalSales"
       :initial-mode="initialMode" @close="closeModal" />
-
   </div>
 </template>
 
@@ -353,7 +352,7 @@ const toggleOne = (key, evt) => {
 }
 
 /* =====================
-   FILTRO CORRETO POR ROW
+   FILTRO POR ROW (NÃO MEXER - TABELA/DASHBOARD)
    ===================== */
 const toNum = (v) => {
   if (v === null || v === undefined || v === '') return null
@@ -368,39 +367,58 @@ const salesForRowFrom = (sales, row) => {
   const rowCompanyId = toNum(row.company_id ?? row.id ?? null)
   const rowEnterpriseId = toNum(row.enterprise_id ?? row.id ?? null)
 
-  // ✅ lista de empreendimentos permitidos p/ linha de projeção em company
-  const allowedEnterpriseIds =
-    (byCompany && onlyProjRow && Array.isArray(row.enterpriseIds) && row.enterpriseIds.length > 0)
-      ? new Set(row.enterpriseIds.map(Number).filter(Number.isFinite))
-      : null
-
   return (sales || []).filter((sale) => {
     const contracts = Array.isArray(sale?.contracts) ? sale.contracts : []
     if (!contracts.length) return false
 
     let belongs = false
-
     if (byCompany) {
-      if (rowCompanyId != null) {
-        belongs = contracts.some((c) => toNum(c.company_id) === rowCompanyId)
-      } else {
-        // antes: qualquer company_id null entrava
-        // agora: só entra se estiver no(s) empreendimento(s) da linha
-        belongs = contracts.some((c) => c.company_id == null)
-        if (belongs && allowedEnterpriseIds) {
-          belongs = contracts.some((c) => allowedEnterpriseIds.has(Number(c.enterprise_id)))
-        }
-      }
+      if (rowCompanyId != null) belongs = contracts.some((c) => toNum(c.company_id) === rowCompanyId)
+      else belongs = contracts.some((c) => c.company_id == null)
     } else {
       if (rowEnterpriseId != null) belongs = contracts.some((c) => toNum(c.enterprise_id) === rowEnterpriseId)
       else belongs = false
     }
 
     if (!belongs) return false
-
     if (onlyProjRow) return contracts.every((c) => !!c._projection)
     return true
   })
+}
+
+/* =====================
+   FILTRO EXCLUSIVO DO MODAL (CORRIGE PROJEÇÕES EM COMPANY)
+   ===================== */
+const salesForModalRowFrom = (sales, row, ctx = {}) => {
+  const byCompany = contractsStore.groupBy === 'company'
+  const onlyProjRow = !!row.onlyProjectionRow
+
+  // Regra: só muda comportamento no MODAL quando for:
+  // - agrupado por empresa
+  // - linha de projeção
+  if (byCompany && onlyProjRow) {
+    const allowed = Array.isArray(ctx.enterpriseIds) ? ctx.enterpriseIds : []
+    const allowedSet = new Set(allowed.map(Number).filter(Number.isFinite))
+
+    return (sales || []).filter((sale) => {
+      const contracts = Array.isArray(sale?.contracts) ? sale.contracts : []
+      if (!contracts.length) return false
+
+      // 1) precisa ser 100% projeção
+      if (!contracts.every((c) => !!c._projection)) return false
+
+      // 2) precisa estar nos empreendimentos dessa linha (evita puxar MOND junto do URBAN)
+      if (allowedSet.size > 0) {
+        return contracts.some((c) => allowedSet.has(Number(c.enterprise_id)))
+      }
+
+      // fallback: se não houver enterpriseIds (não deveria), mantém só a regra de projeção
+      return true
+    })
+  }
+
+  // Todo o resto mantém a regra original (tabela/dashboard)
+  return salesForRowFrom(sales, row)
 }
 
 /* =====================
@@ -410,7 +428,7 @@ const openSingle = async (row, mode = 'list') => {
   const dashboardSalesSnapshot = Array.isArray(contractsStore.uniqueSales) ? [...contractsStore.uniqueSales] : []
   const targetSales = salesForRowFrom(dashboardSalesSnapshot, row)
 
-  // ✅ regra: company usa enterpriseIds do próprio row (mais confiável)
+  // regra: company usa enterpriseIds do próprio row (mais confiável)
   const enterpriseIds =
     (contractsStore.groupBy === 'company' && Array.isArray(row.enterpriseIds) && row.enterpriseIds.length > 0)
       ? [...new Set(row.enterpriseIds.map(Number).filter(Number.isFinite))]
@@ -431,7 +449,9 @@ const openSingle = async (row, mode = 'list') => {
   }
 
   const detailSalesSnapshot = Array.isArray(contractsStore.uniqueSales) ? [...contractsStore.uniqueSales] : []
-  modalSales.value = salesForRowFrom(detailSalesSnapshot, row)
+
+  // ✅ aqui: usa filtro do MODAL, sem mexer na regra da tabela
+  modalSales.value = salesForModalRowFrom(detailSalesSnapshot, row, { enterpriseIds })
 
   modalTitle.value =
     (contractsStore.groupBy === 'company' ? `Empresa: ${row.name}` : row.name) +
@@ -479,7 +499,6 @@ const selectedSales = computed(() => {
 })
 
 const selectionMetricsComputed = computed(() => {
-  // sem seleção => null (Dashboard cai nas métricas globais)
   if (selectedSales.value.length === 0) return null
 
   const sales = selectedSales.value
@@ -511,19 +530,16 @@ const selectionMetricsComputed = computed(() => {
     totalValue: totalValueNet,
     avgSaleValue: avgSaleValueNet,
     totalEnterprises: entSet.size,
-
-    // opcional (mantém compat com seu objeto atual)
     totalSalesWithProjections: null
   }
 })
 
-// emite sempre que seleção / groupBy / uniqueSales mudar
 watchEffect(() => {
   emit('selection-metrics', selectionMetricsComputed.value)
 })
 
 /* =====================
-   MODAL - GROUP (CORRIGIDO + BUG row.id removido)
+   MODAL - GROUP (CORRIGIDO)
    ===================== */
 const openGroup = async (mode = 'list') => {
   const keysSet =
@@ -532,7 +548,6 @@ const openGroup = async (mode = 'list') => {
   const rows = props.data.filter((r) => keysSet.has(r.key))
 
   const dashboardSalesSnapshot = Array.isArray(contractsStore.uniqueSales) ? [...contractsStore.uniqueSales] : []
-
   const allSales = []
   for (const r of rows) allSales.push(...salesForRowFrom(dashboardSalesSnapshot, r))
 
@@ -544,7 +559,6 @@ const openGroup = async (mode = 'list') => {
   if (enterpriseIds.length > 0) {
     await contractsStore.fetchContracts({ view: 'detail', enterpriseIds })
   } else if (contractsStore.groupBy === 'enterprise' && rows.length === 1 && rows[0]?.id != null) {
-    // ✅ aqui era o bug: "row" não existe dentro do openGroup
     await contractsStore.fetchContracts({ view: 'detail', enterpriseId: rows[0].id })
   } else {
     await contractsStore.fetchContracts({ view: 'detail' })
@@ -552,9 +566,13 @@ const openGroup = async (mode = 'list') => {
 
   const salesSnapshot = Array.isArray(contractsStore.uniqueSales) ? [...contractsStore.uniqueSales] : []
 
+  // ✅ dedupe mantendo regra do seu key
   const dedupe = new Map()
   for (const r of rows) {
-    for (const s of salesForRowFrom(salesSnapshot, r)) {
+    // ✅ aqui: filtro do MODAL por row (resolve linhas de projeção em company)
+    const list = salesForModalRowFrom(salesSnapshot, r, { enterpriseIds: (r.enterpriseIds || enterpriseIds) })
+
+    for (const s of list) {
       const first = s?.contracts?.[0] || {}
       const key =
         [

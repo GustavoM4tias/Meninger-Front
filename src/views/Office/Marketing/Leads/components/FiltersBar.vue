@@ -119,7 +119,7 @@ const activeFiltersCount = computed(() => {
                 </label>
                 <!-- usa proxy computed (c/ default do mês) -->
                 <input v-model="dataInicio" type="date"
-                    class="w-full px-3 py-2 text-md font-medium text-gray-500 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" />
+                    class="w-full px-2 py-[.7rem] border rounded-lg bg-transparent text-gray-400 border-gray-200 dark:border-gray-600 dark:bg-gray-900/60 text-center" />
             </div>
 
             <!-- Data Fim -->
@@ -129,7 +129,7 @@ const activeFiltersCount = computed(() => {
                 </label>
                 <!-- usa proxy computed (c/ default do mês) -->
                 <input v-model="dataFim" type="date"
-                    class="w-full px-3 py-2 text-md font-medium text-gray-500 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" />
+                    class="w-full px-2 py-[.7rem] border rounded-lg bg-transparent text-gray-400 border-gray-200 dark:border-gray-600 dark:bg-gray-900/60 text-center" />
             </div>
         </div>
 
