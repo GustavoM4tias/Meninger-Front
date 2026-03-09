@@ -1,202 +1,302 @@
 <template>
-    <div class="h-full py-8 px-4">
-        <div class="max-w-4xl mx-auto">
-            <!-- Header -->
-            <div class="mb-6">
-                <h1 class="flex text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                    Minha Conta
-                    <Favorite class="my-auto" :router="'/settings/Account'" :section="'Minha Conta'" />
-                </h1>
-                <p class="text-gray-600 dark:text-gray-400">
-                    Gerencie suas informações pessoais e configurações de perfil
-                </p>
+    <div class="min-h-full py-8 px-4">
+        <div class="max-w-3xl mx-auto space-y-6">
+
+            <!-- ── Page Header ── -->
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="flex items-center gap-2 text-3xl font-bold text-gray-900 dark:text-white tracking-tight">
+                        Minha Conta
+                        <Favorite class="my-auto ms-0" :router="'/settings/Account'" :section="'Minha Conta'" />
+                    </h1>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                        Gerencie suas informações pessoais e segurança
+                    </p>
+                </div>
             </div>
 
-            <!-- Card Principal -->
-            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+            <!-- ── Profile Card ── -->
+            <div
+                class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-sm">
 
-                <!-- Seção do Perfil -->
-                <div class="p-6 border-b border-gray-200 dark:border-gray-700">
-                    <div class="flex items-center justify-between mb-6">
-                        <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
-                            Informações do Perfil
-                        </h2>
+                <!-- Profile Hero -->
+                <div
+                    class="relative bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-950/10 px-6 pt-6 pb-4">
+                    <div class="flex items-start gap-4">
+                        <!-- Avatar -->
+                        <div class="relative shrink-0">
+                            <img class="w-16 h-16 rounded-2xl object-cover ring-4 ring-white dark:ring-gray-900 shadow-md"
+                                :src="`https://ui-avatars.com/api/?name=${encodeURIComponent(
+                                    (authStore.user?.username ?? '').split(' ').slice(0, 2).map(n => n[0]?.toUpperCase()).join(' ')
+                                )}&background=random&size=128`" alt="avatar" />
+                            <!-- Face ID badge -->
+                            <div class="absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center ring-2 ring-white dark:ring-gray-900"
+                                :class="authStore.user?.face_enabled ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'"
+                                v-tippy="authStore.user?.face_enabled ? 'Reconhecimento facial ativo' : 'Reconhecimento facial inativo'">
+                                <i class="fas fa-users-viewfinder text-white text-[8px]"></i>
+                            </div>
+                        </div>
 
-                        <!-- Botão de Editar/Cancelar -->
-                        <button @click="toggleDisabled" :class="[
-                            'flex items-center gap-2 px-4 py-2 rounded-lg transition-colors duration-200',
-                            isDisabled
-                                ? 'bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 text-blue-700 dark:text-blue-300'
-                                : 'bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300'
-                        ]">
-                            <i :class="isDisabled ? 'fas fa-pen' : 'fas fa-times'" class="text-sm"></i>
+                        <!-- Name & info -->
+                        <div class="flex-1 min-w-0">
+                            <h2 class="text-lg font-bold text-gray-900 dark:text-white truncate">
+                                {{ authStore.user?.username }}
+                            </h2>
+                            <p class="text-sm text-gray-600 dark:text-gray-400">{{ authStore.user?.position || 'Cargo não definido' }}</p>
+                            <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{{ authStore.user?.city ||
+                                'Cidade não informada' }}</p>
+                        </div>
+
+                        <!-- Edit toggle -->
+                        <button @click="toggleDisabled"
+                            class="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-xl font-medium transition-all duration-200"
+                            :class="isDisabled
+                                ? 'bg-blue-100 hover:bg-blue-200 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-blue-700 dark:text-blue-300'
+                                : 'bg-red-100 hover:bg-red-200 dark:bg-red-900/30 dark:hover:bg-red-900/50 text-red-600 dark:text-red-400'">
+                            <i :class="isDisabled ? 'fas fa-pen text-[10px]' : 'fas fa-times text-[10px]'"></i>
                             {{ isDisabled ? 'Editar' : 'Cancelar' }}
                         </button>
                     </div>
 
-                    <!-- Avatar e Informações Básicas -->
-                    <div class="flex flex-col md:flex-row gap-6">
-                        <!-- Avatar -->
-                        <div class="flex-shrink-0 flex flex-col items-center">
-                            <div class="relative">
-                                <img class="w-20 h-20 rounded-full" :src="`https://ui-avatars.com/api/?name=${encodeURIComponent(
-                                    (authStore.user?.username ?? '')
-                                        .split(' ')
-                                        .slice(0, 2)
-                                        .map(n => n[0]?.toUpperCase())
-                                        .join(' ')
-                                )}&background=random`" alt="usuario foto" />
-                            </div>
-
-                            <!-- Data de Cadastro -->
-                            <div class="mt-4 text-center">
-                                <p class="text-xs text-gray-500 dark:text-gray-400">
-                                    Membro desde
-                                </p>
-                                <p class="text-sm font-medium text-gray-700 dark:text-gray-300 -mb-1">
-                                    {{ new Date(authStore.user?.created_at).toLocaleDateString("pt-BR", {
-                                        day: '2-digit',
-                                        month: 'long',
-                                        year: 'numeric'
-                                    }) }}
-                                </p>
-                                <span class="text-gray-500 text-xs">{{ calculateDaysInSystem() }} dias no
-                                    sistema.</span>
-                            </div>
+                    <!-- Meta row -->
+                    <div class="flex items-center gap-4 mt-4 pt-3 border-t border-black/5 dark:border-white/5">
+                        <div class="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
+                            <i class="fas fa-calendar-alt text-gray-400"></i>
+                            Membro desde {{ new Date(authStore.user?.created_at).toLocaleDateString("pt-BR", {
+                                day:
+                                    '2-digit', month: 'long', year: 'numeric' }) }}
                         </div>
-
-                        <!-- Status Badge -->
-                        <div class="flex-grow">
-                            <div class="flex items-start justify-between">
-                                <div>
-                                    <h3 class="flex text-2xl font-bold text-gray-900 dark:text-white">
-                                        {{ authStore.user?.username }} 
-                                    </h3>
-                                    <p class="text-gray-600 dark:text-gray-400 mt-1">
-                                        {{ authStore.user?.position || 'Cargo não definido' }}
-                                    </p>
-                                    <p class="text-gray-500 dark:text-gray-500 text-sm">
-                                        {{ authStore.user?.city || 'Cidade não informada' }}
-                                    </p>
-                                </div>
-
-                                <div class="flex flex-col items-end">
-                                    <div class="flex">
-                                        <i :class="authStore.user?.face_enabled ? 'text-green-500' : 'text-red-500'"
-                                            v-tippy="authStore.user?.face_enabled ? 'Reconhecimento Facial Ativo' : 'Reconhecimento Facial Inativo'"
-                                            class="fas text-4xl p-3 pe-4 cursor-pointer fa-users-viewfinder"></i>
-                                    </div>
-
-                                </div>
-                            </div>
+                        <div class="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
+                            <i class="fas fa-clock text-gray-400"></i>
+                            {{ calculateDaysInSystem() }} dias no sistema
                         </div>
                     </div>
                 </div>
 
-                <!-- Formulário -->
-                <div class="p-6">
-                    <form @submit.prevent="updateUser" class="space-y-6">
+                <!-- Profile Form -->
+                <form @submit.prevent="updateUser" class="p-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-                        <!-- Grid de Campos -->
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-                            <!-- Nome Completo -->
-                            <div class="md:col-span-2">
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                    Nome Completo
-                                </label>
-                                <Input v-model="editableUser.username" :disabled="isDisabled" type="text"
-                                    placeholder="Digite seu nome completo" required />
-                            </div>
-
-                            <!-- Email -->
-                            <div class="md:col-span-1">
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                    Email
-                                </label>
-                                <Input v-model="editableUser.email" :disabled="isDisabled" type="email"
-                                    placeholder="seu@email.com" required />
-                            </div>
-
-                            <!-- Data de Nascimento -->
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                    Data de Nascimento
-                                </label>
-                                <Input v-model="editableUser.birth_date" :disabled="isDisabled" type="date" required />
-                            </div>
-
-                            <!-- Cidade -->
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                    Cidade
-                                </label>
-                                <Input v-model="editableUser.city" :disabled="isDisabled" type="text"
-                                    placeholder="Sua cidade" required />
-                            </div>
-
-                            <!-- Cargo -->
-                            <div class="md:col-span-1">
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                    Cargo
-                                </label>
-                                <Input v-model="editableUser.position" :disabled="isDisabled" type="text"
-                                    placeholder="Seu cargo atual" required />
-                            </div>
-
-                            <div class="flex w-full justify-between md:col-span-2" v-if="!isDisabled">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                        Reconhecimento Facial
-                                    </label>
-
-                                    <label class="relative inline-flex items-center cursor-pointer">
-                                        <input type="checkbox" v-model="editableUser.face_enabled"
-                                            :disabled="isDisabled" class="sr-only peer" />
-                                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 
-                                            peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 
-                                            rounded-full peer dark:bg-gray-700 
-                                            peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full
-                                            after:content-[''] after:absolute after:top-[2px] after:left-[2px] 
-                                            after:bg-white after:border-gray-300 after:border after:rounded-full 
-                                            after:h-5 after:w-5 after:transition-all dark:border-gray-600 
-                                            peer-checked:bg-blue-600 dark:peer-checked:bg-blue-600"></div>
-                                        <span class="ml-3 text-sm font-medium text-gray-700 dark:text-gray-300">
-                                            {{ editableUser.face_enabled ? 'Ativado' : 'Desativado' }}
-                                        </span>
-                                    </label>
-                                </div>
-                                <FacialAuth v-if="!isDisabled" class="p-2">
-                                    {{ authStore.user?.face_enabled ? 'Recadastrar Facial' : 'Cadastrar Facial'
-                                    }}
-                                </FacialAuth>
-                            </div>
+                        <!-- Nome -->
+                        <div class="md:col-span-2 space-y-1.5">
+                            <label
+                                class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Nome
+                                Completo</label>
+                            <Input v-model="editableUser.username" :disabled="isDisabled" type="text"
+                                placeholder="Seu nome completo" required />
                         </div>
 
-                        <!-- Botões de Ação -->
-                        <div v-if="!isDisabled"
-                            class="flex flex-col sm:flex-row gap-3 pt-6 border-t border-gray-200 dark:border-gray-700">
-                            <Button type="submit" class="flex-1 sm:flex-none sm:w-auto">
-                                <i class="fas fa-save mr-2"></i>
-                                Salvar Alterações
-                            </Button>
+                        <!-- Email -->
+                        <div class="space-y-1.5">
+                            <label
+                                class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Email</label>
+                            <Input v-model="editableUser.email" :disabled="isDisabled" type="email"
+                                placeholder="seu@email.com" required />
+                        </div>
 
-                            <Button type="button" @click="cancelEdit" class="flex-1 sm:flex-none sm:w-auto ">
-                                <i class="fas fa-times mr-2"></i>
+                        <!-- Nascimento -->
+                        <div class="space-y-1.5">
+                            <label
+                                class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Data
+                                de Nascimento</label>
+                            <Input v-model="editableUser.birth_date" :disabled="isDisabled" type="date" required />
+                        </div>
+
+                        <!-- Cargo -->
+                        <div class="space-y-1.5">
+                            <label
+                                class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Cargo</label>
+                            <Input v-model="editableUser.position" :disabled="isDisabled" type="text"
+                                placeholder="Seu cargo" required />
+                        </div>
+
+                        <!-- Cidade -->
+                        <div class="space-y-1.5">
+                            <label
+                                class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Cidade</label>
+                            <Input v-model="editableUser.city" :disabled="isDisabled" type="text"
+                                placeholder="Sua cidade" required />
+                        </div>
+
+                        <!-- Face ID row (edit mode only) -->
+                        <transition name="fade">
+                            <div v-if="!isDisabled"
+                                class="md:col-span-2 flex items-center justify-between p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-9 h-9 rounded-xl flex items-center justify-center"
+                                        :class="editableUser.face_enabled ? 'bg-green-100 dark:bg-green-900/30' : 'bg-gray-200 dark:bg-gray-700'">
+                                        <i class="fas fa-users-viewfinder text-sm"
+                                            :class="editableUser.face_enabled ? 'text-green-600 dark:text-green-400' : 'text-gray-400'"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-800 dark:text-gray-200">Reconhecimento
+                                            Facial</p>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ editableUser.face_enabled
+                                            ? 'Ativo — login por câmera habilitado' : 'Inativo' }}</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-3">
+                                    <FacialAuth class="shrink-0">
+                                        {{ authStore.user?.face_enabled ? 'Recadastrar' : 'Cadastrar' }}
+                                    </FacialAuth>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" v-model="editableUser.face_enabled"
+                                            class="sr-only peer" />
+                                        <div class="w-10 h-5 bg-gray-200 dark:bg-gray-700 rounded-full peer peer-checked:bg-blue-600
+                      after:content-[''] after:absolute after:top-[2px] after:left-[2px]
+                      after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all
+                      peer-checked:after:translate-x-5 peer-focus:ring-2 peer-focus:ring-blue-500/30"></div>
+                                    </label>
+                                </div>
+                            </div>
+                        </transition>
+                    </div>
+
+                    <!-- Actions -->
+                    <transition name="fade">
+                        <div v-if="!isDisabled"
+                            class="flex gap-3 mt-5 pt-5 border-t border-gray-100 dark:border-gray-800">
+                            <Button type="submit" :disabled="profileLoading">
+                                <i class="fas fa-check mr-2 text-xs"></i>
+                                {{ profileLoading ? 'Salvando...' : 'Salvar alterações' }}
+                            </Button>
+                            <Button type="button" outlined @click="cancelEdit">
                                 Cancelar
                             </Button>
                         </div>
+                    </transition>
+                </form>
+            </div>
 
-                        <!-- Mensagem de Sucesso -->
-                        <div v-if="message"
-                            class="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-                            <div class="flex items-center">
-                                <i class="fas fa-check-circle text-green-500 mr-3"></i>
-                                <p class="text-green-700 dark:text-green-300">{{ message }}</p>
-                            </div>
+            <!-- ── Change Password Card ── (only for INTERNAL auth) -->
+            <div v-if="authStore.isInternal"
+                class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-sm">
+                <!-- Card header / toggle -->
+                <button type="button"
+                    class="w-full flex items-center justify-between px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                    @click="togglePasswordSection">
+                    <div class="flex items-center gap-3">
+                        <div
+                            class="w-9 h-9 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+                            <i class="fas fa-lock text-sm text-amber-600 dark:text-amber-400"></i>
                         </div>
-                    </form>
-                </div>
+                        <div class="text-left">
+                            <p class="text-sm font-semibold text-gray-900 dark:text-white">Alterar Senha</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">Atualize sua senha de acesso</p>
+                        </div>
+                    </div>
+                    <i class="fas fa-chevron-down text-gray-400 text-xs transition-transform duration-200"
+                        :class="{ 'rotate-180': passwordSectionOpen }"></i>
+                </button>
+
+                <!-- Password form (collapsible) -->
+                <transition name="expand">
+                    <div v-if="passwordSectionOpen" class="px-6 pb-6 border-t border-gray-100 dark:border-gray-800">
+                        <form @submit.prevent="handleChangePassword" class="pt-5 space-y-4">
+
+                            <!-- Current password -->
+                            <div class="space-y-1.5">
+                                <label
+                                    class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                                    Senha Atual
+                                </label>
+                                <div class="relative">
+                                    <Input v-model="passwordForm.current"
+                                        :type="showPasswords.current ? 'text' : 'password'"
+                                        placeholder="Digite sua senha atual" required autocomplete="current-password" />
+                                    <button type="button"
+                                        class="absolute inset-y-0 right-0 w-12 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-white"
+                                        @click="showPasswords.current = !showPasswords.current">
+                                        <i :class="showPasswords.current ? 'fas fa-eye-slash' : 'fas fa-eye'"
+                                            class="text-sm"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Divider -->
+                            <div class="border-t border-dashed border-gray-200 dark:border-gray-700 my-1"></div>
+
+                            <!-- New password -->
+                            <div class="space-y-1.5">
+                                <label
+                                    class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                                    Nova Senha
+                                </label>
+                                <div class="relative">
+                                    <Input v-model="passwordForm.new"
+                                        :type="showPasswords.new ? 'text' : 'password'"
+                                        placeholder="Mínimo 8 caracteres" required autocomplete="new-password" />
+                                    <button type="button"
+                                        class="absolute inset-y-0 right-0 w-12 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-white"
+                                        @click="showPasswords.new = !showPasswords.new">
+                                        <i :class="showPasswords.new ? 'fas fa-eye-slash' : 'fas fa-eye'"
+                                            class="text-sm"></i>
+                                    </button>
+                                </div>
+
+                                <!-- Strength bar + checklist -->
+                                <transition name="fade">
+                                    <div v-if="passwordForm.new" class="mt-2 space-y-2">
+                                        <!-- Bar -->
+                                        <div class="flex gap-1">
+                                            <div v-for="n in 4" :key="n"
+                                                class="h-1 flex-1 rounded-full transition-all duration-300"
+                                                :class="strengthBarColor(n)" />
+                                        </div>
+                                        <!-- Checks -->
+                                        <div class="grid grid-cols-2 gap-1">
+                                            <div v-for="check in passwordCheckList" :key="check.key"
+                                                class="flex items-center gap-1.5 text-xs transition-colors"
+                                                :class="newPasswordChecks[check.key] ? 'text-green-600 dark:text-green-400' : 'text-gray-400'">
+                                                <i class="text-[10px] w-3 shrink-0"
+                                                    :class="newPasswordChecks[check.key] ? 'fas fa-check-circle text-green-500' : 'far fa-circle'"></i>
+                                                {{ check.label }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </transition>
+                            </div>
+
+                            <!-- Confirm new password -->
+                            <div class="space-y-1.5">
+                                <label
+                                    class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                                    Confirmar Nova Senha
+                                </label>
+                                <div class="relative">
+                                    <Input v-model="passwordForm.confirm"
+                                        :type="showPasswords.confirm ? 'text' : 'password'"
+                                        placeholder="Repita a nova senha" required autocomplete="new-password" />
+                                    <button type="button"
+                                        class="absolute inset-y-0 right-0 w-12 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-white"
+                                        @click="showPasswords.confirm = !showPasswords.confirm">
+                                        <i :class="showPasswords.confirm ? 'fas fa-eye-slash' : 'fas fa-eye'"
+                                            class="text-sm"></i>
+                                    </button>
+                                </div>
+                                <transition name="fade">
+                                    <p v-if="passwordForm.confirm && !newPasswordChecks.match"
+                                        class="text-xs text-red-500 mt-1">
+                                        <i class="fas fa-exclamation-circle mr-1"></i>As senhas não coincidem.
+                                    </p>
+                                    <p v-else-if="passwordForm.confirm && newPasswordChecks.match"
+                                        class="text-xs text-green-600 dark:text-green-400 mt-1">
+                                        <i class="fas fa-check-circle mr-1"></i>Senhas coincidem.
+                                    </p>
+                                </transition>
+                            </div>
+
+                            <!-- Submit -->
+                            <div class="pt-2">
+                                <Button type="submit" :disabled="passwordLoading || !canSubmitPassword">
+                                    <i class="fas fa-shield-halved mr-2 text-xs"></i>
+                                    {{ passwordLoading ? 'Alterando...' : 'Alterar senha' }}
+                                </Button>
+                            </div>
+
+                        </form>
+                    </div>
+                </transition>
             </div>
 
         </div>
@@ -204,106 +304,203 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, watch, reactive } from 'vue';
 import { useAuthStore } from '@/stores/Settings/Auth/authStore';
-import { updateMeInfo } from '@/utils/Auth/apiAuth';
+import { updateMeInfo, changePassword } from '@/utils/Auth/apiAuth';
 import Input from '@/components/UI/Input.vue';
 import Button from '@/components/UI/Button.vue';
-import Favorite from "@/components/config/Favorite.vue";
+import Favorite from '@/components/config/Favorite.vue';
 import FacialAuth from '@/views/Office/Settings/Account/components/FacialAuth.vue';
 import { useToast } from 'vue-toastification';
 
+// ─── Constants ────────────────────────────────────────────────────────────────
+const PASSWORD_MIN_LENGTH = 8;
+const UPPERCASE_REGEX = /[A-Z]/;
+const LOWERCASE_REGEX = /[a-z]/;
+const NUMBER_REGEX = /[0-9]/;
+const SPECIAL_REGEX = /[!@#$%^&*()_\-+=[\]{};:,.?/\\|~`"'<>]/;
+const ALLOWED_REGEX = /^[A-Za-z0-9!@#$%^&*()_\-+=[\]{};:,.?/\\|~`"'<>]+$/;
+
+const passwordCheckList = [
+    { key: 'minLength', label: `${PASSWORD_MIN_LENGTH}+ caracteres` },
+    { key: 'uppercase', label: '1 maiúscula' },
+    { key: 'lowercase', label: '1 minúscula' },
+    { key: 'number', label: '1 número' },
+    { key: 'special', label: '1 caractere especial' },
+    { key: 'noInvalidChars', label: 'Apenas chars válidos' },
+];
+
+// ─── Setup ────────────────────────────────────────────────────────────────────
 const toast = useToast();
 const authStore = useAuthStore();
 
+// ─── Profile state ────────────────────────────────────────────────────────────
+const editableUser = ref({ username: '', email: '', city: '', position: '', birth_date: '', status: false, face_enabled: false });
+const originalUser = ref({});
+const isDisabled = ref(true);
+const profileLoading = ref(false);
 
-const editableUser = ref({
-    username: '',
-    email: '',
-    city: '',
-    position: '',
-    birth_date: '',
-    status: false,
-    face_enabled: false
+// ─── Password state ───────────────────────────────────────────────────────────
+const passwordSectionOpen = ref(false);
+const passwordLoading = ref(false);
+const passwordForm = reactive({ current: '', new: '', confirm: '' });
+const showPasswords = reactive({ current: false, new: false, confirm: false });
+
+// ─── Computed: new password checks ────────────────────────────────────────────
+const newPasswordChecks = computed(() => {
+    const p = passwordForm.new;
+    const c = passwordForm.confirm;
+    return {
+        minLength: p.length >= PASSWORD_MIN_LENGTH,
+        uppercase: UPPERCASE_REGEX.test(p),
+        lowercase: LOWERCASE_REGEX.test(p),
+        number: NUMBER_REGEX.test(p),
+        special: SPECIAL_REGEX.test(p),
+        noInvalidChars: p.length > 0 ? ALLOWED_REGEX.test(p) : true,
+        match: p.length > 0 && c.length > 0 && p === c,
+    };
 });
 
-const message = ref('');
-const isDisabled = ref(true);
-const originalUser = ref({});
+const strengthScore = computed(() => {
+    const c = newPasswordChecks.value;
+    return [c.minLength, c.uppercase, c.lowercase, c.number, c.special].filter(Boolean).length;
+});
 
-const preencherEditableUser = () => {
-    if (authStore.user) {
-        const userData = {
-            username: authStore.user.username,
-            email: authStore.user.email,
-            city: authStore.user.city,
-            position: authStore.user.position,
-            birth_date: authStore.user.birth_date,
-            status: authStore.user.status,
-            face_enabled: authStore.user.face_enabled
-        };
-        editableUser.value = { ...userData };
-        originalUser.value = { ...userData };
-    }
+function strengthBarColor(n) {
+    const score = strengthScore.value;
+    if (score === 0) return 'bg-gray-200 dark:bg-gray-700';
+    const level = Math.ceil((score / 5) * 4);
+    const colors = ['bg-red-400', 'bg-orange-400', 'bg-yellow-400', 'bg-green-500'];
+    return n <= level ? colors[level - 1] : 'bg-gray-200 dark:bg-gray-700';
+}
+
+const canSubmitPassword = computed(() => {
+    const c = newPasswordChecks.value;
+    return Boolean(
+        passwordForm.current &&
+        passwordForm.new &&
+        passwordForm.confirm &&
+        c.minLength && c.uppercase && c.lowercase && c.number && c.special && c.noInvalidChars && c.match
+    );
+});
+
+// ─── Profile helpers ──────────────────────────────────────────────────────────
+const fillEditableUser = () => {
+    if (!authStore.user) return;
+    const data = {
+        username: authStore.user.username,
+        email: authStore.user.email,
+        city: authStore.user.city,
+        position: authStore.user.position,
+        birth_date: authStore.user.birth_date,
+        status: authStore.user.status,
+        face_enabled: authStore.user.face_enabled,
+    };
+    editableUser.value = { ...data };
+    originalUser.value = { ...data };
 };
 
 const calculateDaysInSystem = () => {
     if (!authStore.user?.created_at) return 'N/A';
-    const createdDate = new Date(authStore.user.created_at);
-    const currentDate = new Date();
-    const diffTime = Math.abs(currentDate - createdDate);
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays;
+    const diff = Math.abs(new Date() - new Date(authStore.user.created_at));
+    return Math.ceil(diff / (1000 * 60 * 60 * 24));
 };
 
-watch(() => authStore.user, preencherEditableUser);
+watch(() => authStore.user, fillEditableUser);
 
 onMounted(async () => {
-    if (!authStore.user) {
-        await authStore.fetchUserInfo();
-    }
-    preencherEditableUser();
-    console.log(authStore.user)
+    if (!authStore.user) await authStore.fetchUserInfo();
+    fillEditableUser();
 });
 
+// ─── Profile actions ──────────────────────────────────────────────────────────
+const toggleDisabled = () => {
+    isDisabled.value = !isDisabled.value;
+};
+
+const cancelEdit = () => {
+    editableUser.value = { ...originalUser.value };
+    isDisabled.value = true;
+};
+
 const updateUser = async () => {
+    profileLoading.value = true;
     try {
-        const response = await updateMeInfo(
+        await updateMeInfo(
             editableUser.value.username,
             editableUser.value.email,
             editableUser.value.position,
             editableUser.value.city,
             editableUser.value.birth_date,
             editableUser.value.status,
-            editableUser.value.face_enabled
+            editableUser.value.face_enabled,
         );
-        message.value = response.message;
         await authStore.fetchUserInfo();
-        preencherEditableUser();
+        fillEditableUser();
         isDisabled.value = true;
-        toast.success("Atualizado com Sucesso!");
-
-        // Clear message after 3 seconds
-        setTimeout(() => {
-            message.value = '';
-        }, 3000);
-
+        toast.success('Perfil atualizado com sucesso!');
     } catch (error) {
-        console.error(error);
-        toast.error("Erro ao atualizar informações!");
+        toast.error(error?.message || 'Erro ao atualizar informações.');
+    } finally {
+        profileLoading.value = false;
     }
 };
 
-const toggleDisabled = () => {
-    isDisabled.value = !isDisabled.value;
-    if (!isDisabled.value) {
-        message.value = '';
-    }
+// ─── Password actions ─────────────────────────────────────────────────────────
+const togglePasswordSection = () => {
+    passwordSectionOpen.value = !passwordSectionOpen.value;
+    if (!passwordSectionOpen.value) resetPasswordForm();
 };
 
-const cancelEdit = () => {
-    editableUser.value = { ...originalUser.value };
-    isDisabled.value = true;
-    message.value = '';
+const resetPasswordForm = () => {
+    passwordForm.current = '';
+    passwordForm.new = '';
+    passwordForm.confirm = '';
+    showPasswords.current = false;
+    showPasswords.new = false;
+    showPasswords.confirm = false;
+};
+
+const handleChangePassword = async () => {
+    if (!canSubmitPassword.value) return;
+    passwordLoading.value = true;
+    try {
+        await changePassword(passwordForm.current, passwordForm.new, passwordForm.confirm);
+        toast.success('Senha alterada com sucesso!');
+        resetPasswordForm();
+        passwordSectionOpen.value = false;
+    } catch (error) {
+        toast.error(error?.message || 'Erro ao alterar senha.');
+    } finally {
+        passwordLoading.value = false;
+    }
 };
 </script>
+
+<style scoped>
+.fade-enter-active,
+.fade-leave-active {
+    transition: opacity 0.18s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+    opacity: 0;
+}
+
+.expand-enter-active {
+    transition: max-height 0.28s ease, opacity 0.2s ease;
+    max-height: 600px;
+}
+
+.expand-leave-active {
+    transition: max-height 0.22s ease, opacity 0.15s ease;
+}
+
+.expand-enter-from,
+.expand-leave-to {
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+}
+</style>

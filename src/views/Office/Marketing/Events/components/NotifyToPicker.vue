@@ -1,11 +1,11 @@
-<!-- NotifyToPicker.vue -->
 <script setup>
 import { ref, computed } from 'vue';
 
 const props = defineProps({
-    // Agora aceitamos também positions no modelValue
-    modelValue: { type: Object, default: () => ({ users: [], positions: [], emails: [] }) },
-    // users = [{ id, username, email, position }]
+    modelValue: {
+        type: Object,
+        default: () => ({ users: [], positions: [], emails: [] }),
+    },
     users: { type: Array, default: () => [] },
 });
 
@@ -15,171 +15,216 @@ const userQuery = ref('');
 const emailInput = ref('');
 const posQuery = ref('');
 
-// ---------- Helpers ----------
 const ensureMV = (mv) => ({
-    users: mv?.users ?? [],
-    positions: mv?.positions ?? [],
-    emails: mv?.emails ?? [],
+    users: Array.isArray(mv?.users) ? mv.users : [],
+    positions: Array.isArray(mv?.positions) ? mv.positions : [],
+    emails: Array.isArray(mv?.emails) ? mv.emails : [],
 });
 
 const mv = computed(() => ensureMV(props.modelValue));
 
-// Lista de cargos únicos (limpa nulos, tira repetidos, ordena)
+const normalizeText = (value) =>
+    String(value || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .trim();
+
+const inputBase =
+    'w-full px-3.5 py-2.5 text-sm rounded-xl border outline-none transition bg-white dark:bg-gray-800/60 text-gray-900 dark:text-gray-100 placeholder:text-gray-400';
+const inputClass = `${inputBase} border-gray-200 dark:border-gray-700 focus:border-blue-400 focus:ring-2 focus:ring-blue-500/15`;
+const labelClass = 'text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide';
+
 const uniquePositions = computed(() => {
-    const set = new Set((props.users || []).map(u => u?.position).filter(Boolean));
+    const set = new Set((props.users || []).map((u) => u?.position).filter(Boolean));
     return Array.from(set).sort((a, b) => a.localeCompare(b, 'pt-BR'));
 });
 
 const filteredUsers = computed(() => {
-    const q = userQuery.value.trim().toLowerCase();
-    const list = q
-        ? props.users.filter(u =>
-            (u.username || '').toLowerCase().includes(q) ||
-            (u.email || '').toLowerCase().includes(q)
-        )
-        : props.users;
-    return list.slice(0, 8);
+    const q = normalizeText(userQuery.value);
+
+    const list = !q
+        ? props.users
+        : props.users.filter((u) => {
+            const haystack = normalizeText([u.username, u.email, u.position].filter(Boolean).join(' '));
+            return haystack.includes(q);
+        });
+
+    return list
+        .filter((u) => !mv.value.users.includes(u.id))
+        .slice(0, 8);
 });
 
 const filteredPositions = computed(() => {
-    const q = posQuery.value.trim().toLowerCase();
-    const list = uniquePositions.value.filter(p => p.toLowerCase().includes(q));
-    return list.slice(0, 8);
+    const q = normalizeText(posQuery.value);
+
+    const list = !q
+        ? uniquePositions.value
+        : uniquePositions.value.filter((p) => normalizeText(p).includes(q));
+
+    return list
+        .filter((p) => !mv.value.positions.includes(p))
+        .slice(0, 8);
 });
 
 const modelUpdate = (partial) => {
-    const next = { ...mv.value, ...partial };
-    emit('update:modelValue', next);
+    emit('update:modelValue', { ...mv.value, ...partial });
 };
 
-// ---------- Users ----------
+const resolveUser = (id) => props.users.find((u) => u.id === id);
+
 const addUserId = (id) => {
     const set = new Set(mv.value.users);
     set.add(id);
     modelUpdate({ users: Array.from(set) });
     userQuery.value = '';
 };
+
 const removeUserId = (id) => {
-    modelUpdate({ users: mv.value.users.filter(u => u !== id) });
+    modelUpdate({ users: mv.value.users.filter((u) => u !== id) });
 };
 
-// Resolve dados do usuário a partir do id (para mostrar nome/cargo em vez do ID)
-const resolveUser = (id) => props.users.find(u => u.id === id);
-
-// ---------- Emails ----------
 const isValidEmail = (email) => /\S+@\S+\.\S+/.test(email);
 
 const addEmail = () => {
-    const email = emailInput.value.trim();
+    const email = emailInput.value.trim().toLowerCase();
     if (!email || !isValidEmail(email)) return;
+
     const set = new Set(mv.value.emails);
     set.add(email);
     modelUpdate({ emails: Array.from(set) });
     emailInput.value = '';
 };
-const removeEmail = (e) => {
-    modelUpdate({ emails: mv.value.emails.filter(x => x !== e) });
+
+const removeEmail = (email) => {
+    modelUpdate({ emails: mv.value.emails.filter((x) => x !== email) });
 };
 
-// ---------- Positions ----------
-const addPosition = (p) => {
+const addPosition = (position) => {
     const set = new Set(mv.value.positions);
-    set.add(p);
+    set.add(position);
     modelUpdate({ positions: Array.from(set) });
     posQuery.value = '';
 };
-const removePosition = (p) => {
-    modelUpdate({ positions: mv.value.positions.filter(x => x !== p) });
+
+const removePosition = (position) => {
+    modelUpdate({ positions: mv.value.positions.filter((x) => x !== position) });
 };
 </script>
 
 <template>
-    <div class="space-y-6">
-        <label class="text-sm font-medium">Destinatários das notificações</label>
+    <div class="space-y-5">
+        <!-- Usuários -->
+        <div class="space-y-2">
+            <label :class="labelClass">Usuários</label>
 
-        <!-- Usuários do sistema -->
-        <div>
-            <p class="text-xs text-gray-500 mb-1">Usuários do sistema</p>
             <div class="relative">
-                <input v-model="userQuery" type="text" placeholder="Buscar usuário (nome ou e-mail)"
-                    class="w-full px-4 py-3 rounded-xl border-2 border-gray-300 dark:border-gray-600 focus:border-blue-500 bg-gray-50 dark:bg-gray-700 dark:text-white transition-colors" />
+                <input v-model="userQuery" type="text" placeholder="Buscar usuário por nome, e-mail ou cargo"
+                    :class="inputClass" />
+
                 <div v-if="userQuery && filteredUsers.length"
-                    class="absolute z-10 bg-gray-100 dark:bg-gray-600 shadow rounded-lg w-full max-h-52 overflow-auto">
-                    <button v-for="u in filteredUsers" :key="u.id"
-                        class="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 flex items-center justify-between"
-                        @click="addUserId(u.id)">
-                        <span>
-                            {{ u.username }}
-                            <span v-if="u.email" class="text-gray-400 text-xs">- {{ u.email }}</span>
-                        </span>
-                        <span v-if="u.position"
-                            class="text-xs px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-600 text-gray-600 dark:text-gray-200">
-                            {{ u.position }}
-                        </span>
-                    </button>
+                    class="absolute z-20 mt-2 w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-lg overflow-hidden">
+                    <div class="max-h-56 overflow-y-auto">
+                        <button v-for="u in filteredUsers" :key="u.id" type="button"
+                            @mousedown.prevent="addUserId(u.id)"
+                            class="w-full px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800/60 transition border-b border-gray-100 dark:border-gray-800 last:border-b-0">
+                            <div class="flex items-start justify-between gap-3">
+                                <div class="min-w-0">
+                                    <p class="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                                        {{ u.username }}
+                                    </p>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400 truncate">
+                                        {{ u.email || 'Sem e-mail' }}
+                                    </p>
+                                </div>
+
+                                <span v-if="u.position"
+                                    class="shrink-0 text-[11px] px-2 py-1 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300">
+                                    {{ u.position }}
+                                </span>
+                            </div>
+                        </button>
+                    </div>
                 </div>
             </div>
 
-            <!-- Chips de usuários selecionados -->
-            <div class="mt-2 flex flex-wrap gap-2" v-if="mv.users.length">
+            <div v-if="mv.users.length" class="flex flex-wrap gap-1.5">
                 <span v-for="id in mv.users" :key="id"
-                    class="px-2 py-1 bg-green-50 text-green-700 rounded-lg border text-xs flex items-center gap-2">
-                    <i class="fas fa-user"></i>
-                    <span class="truncate max-w-48">
-                        {{ resolveUser(id)?.username || ('ID ' + id) }}
-                        <span v-if="resolveUser(id)?.position" class="opacity-70"> - {{ resolveUser(id)?.position
-                            }}</span>
+                    class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
+                    <i class="fas fa-user text-[10px]"></i>
+                    <span class="truncate max-w-56">
+                        {{ resolveUser(id)?.username || `ID ${id}` }}
+                        <span v-if="resolveUser(id)?.position" class="opacity-70">
+                            - {{ resolveUser(id)?.position }}
+                        </span>
                     </span>
-                    <button @click="removeUserId(id)" class="hover:text-red-500">
-                        <i class="fas fa-times text-xs"></i>
+                    <button type="button" @click="removeUserId(id)" class="hover:text-red-500 transition leading-none">
+                        <i class="fas fa-times text-[10px]"></i>
                     </button>
                 </span>
             </div>
         </div>
 
-        <!-- Cargos (positions) -->
-        <div>
-            <p class="text-xs text-gray-500 mb-1">Cargos (todos os usuários com estes cargos serão notificados)</p>
+        <!-- Cargos -->
+        <div class="space-y-2">
+            <label :class="labelClass">Cargos</label>
+
             <div class="relative">
-                <input v-model="posQuery" type="text" placeholder="Buscar cargo (ex.: Vendedor, Gerente...)"
-                    class="w-full px-4 py-3 rounded-xl border-2 border-gray-300 dark:border-gray-600 focus:border-blue-500 bg-gray-50 dark:bg-gray-700 dark:text-white transition-colors" />
-                <div v-if="filteredPositions.length && posQuery"
-                    class="absolute z-10 bg-gray-100 dark:bg-gray-600 shadow rounded-lg w-full max-h-52 overflow-auto">
-                    <button v-for="p in filteredPositions" :key="p"
-                        class="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-600"
-                        @click="addPosition(p)">
-                        <i class="fas fa-id-badge mr-2"></i>{{ p }}
-                    </button>
+                <input v-model="posQuery" type="text" placeholder="Buscar cargo" :class="inputClass" />
+
+                <div v-if="posQuery && filteredPositions.length"
+                    class="absolute z-20 mt-2 w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-lg overflow-hidden">
+                    <div class="max-h-56 overflow-y-auto">
+                        <button v-for="position in filteredPositions" :key="position" type="button"
+                            @mousedown.prevent="addPosition(position)"
+                            class="w-full px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800/60 transition border-b border-gray-100 dark:border-gray-800 last:border-b-0">
+                            <p class="text-sm font-medium text-gray-900 dark:text-gray-100">
+                                {{ position }}
+                            </p>
+                        </button>
+                    </div>
                 </div>
             </div>
 
-            <!-- Chips de cargos selecionados -->
-            <div class="mt-2 flex flex-wrap gap-2" v-if="mv.positions.length">
-                <span v-for="p in mv.positions" :key="p"
-                    class="px-2 py-1 bg-sky-50 text-sky-700 rounded-lg border text-xs flex items-center gap-2">
-                    <i class="fas fa-users"></i>{{ p }}
-                    <button @click="removePosition(p)" class="hover:text-red-500">
-                        <i class="fas fa-times text-xs"></i>
+            <p class="text-[11px] text-gray-500 dark:text-gray-400">
+                Todos os usuários com os cargos selecionados receberão notificação.
+            </p>
+
+            <div v-if="mv.positions.length" class="flex flex-wrap gap-1.5">
+                <span v-for="position in mv.positions" :key="position"
+                    class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-full bg-sky-100 dark:bg-sky-900/30 text-sky-700 dark:text-sky-300">
+                    <i class="fas fa-id-badge text-[10px]"></i>
+                    {{ position }}
+                    <button type="button" @click="removePosition(position)"
+                        class="hover:text-red-500 transition leading-none">
+                        <i class="fas fa-times text-[10px]"></i>
                     </button>
                 </span>
             </div>
         </div>
 
-        <!-- E-mails externos -->
-        <div>
-            <p class="text-xs text-gray-500 mb-1">E-mails externos</p>
+        <!-- Emails -->
+        <div class="space-y-2">
+            <label :class="labelClass">E-mails externos</label>
+
             <div class="flex gap-2">
-                <input v-model="emailInput" type="email" placeholder="email@dominio.com"
-                    class="w-full px-4 py-3 rounded-xl border-2 border-gray-300 dark:border-gray-600 focus:border-blue-500 bg-gray-50 dark:bg-gray-700 dark:text-white transition-colors"
-                    @keyup.enter="addEmail" />
-                <button class="px-3 py-2 bg-blue-600 text-white rounded-xl" @click="addEmail">Adicionar</button>
+                <input v-model="emailInput" type="email" placeholder="email@dominio.com" :class="inputClass + ' flex-1'"
+                    @keydown.enter.prevent="addEmail" />
+
+                <button type="button" @click="addEmail"
+                    class="px-3 py-2.5 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition shrink-0">
+                    <i class="fas fa-plus text-xs"></i>
+                </button>
             </div>
-            <div class="mt-2 flex flex-wrap gap-2" v-if="mv.emails.length">
-                <span v-for="e in mv.emails" :key="e"
-                    class="px-2 py-1 bg-purple-50 text-purple-700 rounded-lg border text-xs flex items-center gap-2">
-                    <i class="fas fa-envelope"></i>{{ e }}
-                    <button @click="removeEmail(e)" class="hover:text-red-500">
-                        <i class="fas fa-times text-xs"></i>
+
+            <div v-if="mv.emails.length" class="flex flex-wrap gap-1.5">
+                <span v-for="email in mv.emails" :key="email"
+                    class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">
+                    <i class="fas fa-envelope text-[10px]"></i>
+                    <span class="truncate max-w-64">{{ email }}</span>
+                    <button type="button" @click="removeEmail(email)"
+                        class="hover:text-red-500 transition leading-none">
+                        <i class="fas fa-times text-[10px]"></i>
                     </button>
                 </span>
             </div>

@@ -106,7 +106,7 @@ onMounted(async () => {
 
 <template>
     <div
-        class="min-h-[calc(100vh-3.5rem)] bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 relative overflow-hidden">
+        class="min-h-[calc(100vh-3.5rem)] relative overflow-hidden">
         <!-- Background Decoration -->
         <div class="absolute top-0 px-40 w-full opacity-5 dark:opacity-10">
             <svg class="w-full h-full" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -137,9 +137,9 @@ onMounted(async () => {
                     </div>
                 </div>
                  -->
-                <h1 class="text-5xl md:text-6xl font-bold mb-2">
+                <h1 class="relative text-4xl md:text-5xl font-bold mb-2 -ms-8">
                     Eventos
-                    <Favorite :router="'/marketing/events'" :section="currentSection" />
+                    <Favorite class="absolute top-4 ms-2" :router="'/marketing/events'" :section="currentSection" />
                 </h1>
 
                 <p class="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">

@@ -284,7 +284,7 @@ onMounted(async () => {
     <!-- wrapper acompanha a largura da sidebar (expanded/colapsed) -->
     <div :class="['transition-[width] duration-200 ease-in-out', sidebarWidthClass]">
         <!-- Top Navigation Bar -->
-        <nav class="fixed top-0 z-50 w-full bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+        <nav class="fixed top-0 z-50 w-full bg-white border-b border-gray-200 dark:bg-gray-900 dark:border-gray-700">
             <div class="px-3 py-3 lg:px-5 lg:pl-3">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center justify-start rtl:justify-end">
@@ -318,13 +318,13 @@ onMounted(async () => {
 
         <!-- Sidebar -->
         <main id="logo-sidebar" :class="[
-            'fixed top-0 left-0 z-40 h-screen pt-20 bg-white border-r border-gray-200 sm:translate-x-0 dark:bg-gray-800 dark:border-gray-700 -translate-x-full',
+            'fixed top-0 left-0 z-40 h-screen pt-20 bg-white border-r border-gray-200 sm:translate-x-0 dark:bg-gray-900 dark:border-gray-700 -translate-x-full',
             // animação suave ao mudar a largura (evita corte seco)
             'transition-[width] duration-200 ease-in-out',
             isCollapsed ? 'w-12' : 'w-72'
         ]" aria-label="Sidebar">
             <div :class="[
-                'flex flex-col justify-between h-full pb-4 overflow-y-auto bg-white dark:bg-gray-800',
+                'flex flex-col justify-between h-full pb-4 overflow-y-auto bg-white dark:bg-gray-900',
                 isCollapsed ? 'px-1' : 'px-3',
                 // animação leve de padding junto com a largura
                 'transition-[padding] duration-200 ease-in-out'
@@ -333,7 +333,7 @@ onMounted(async () => {
                     <!-- Dashboard -->
                     <li>
                         <RouterLink to="/" @click="expandSidebar"
-                            class="flex items-center p-2 h-10 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group"
+                            class="flex items-center p-2 h-10 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 group"
                             :class="isCollapsed ? 'justify-center' : ''">
                             <!-- ÍCONE não muda de tamanho -->
                             <i
@@ -349,7 +349,7 @@ onMounted(async () => {
                     <!-- Favoritos -->
                     <li>
                         <button type="button" @click="toggleDropdownSafe('favorites')"
-                            class="flex items-center w-full p-2 h-10 text-base text-gray-900 transition duration-75 rounded-lg group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700"
+                            class="flex items-center w-full p-2 h-10 text-base text-gray-900 transition duration-75 rounded-lg group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-800"
                             :class="isCollapsed ? 'justify-center' : ''" :aria-expanded="dropdowns.favorites">
                             <i
                                 class="fa fa-star w-5 text-gray-500 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white"></i>

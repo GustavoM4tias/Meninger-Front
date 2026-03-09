@@ -27,7 +27,7 @@ const isAuthenticated = computed(() => authStore.isAuthenticated());
 
                 <div
                     class="flex flex-1 mt-16 sm:mt-14 w-full h-auto md:min-h-[calc(100vh-3.5rem)] break-words overflow-auto">
-                    <div class="w-full max-w-full bg-gray-50 dark:bg-gray-900">
+                    <div class="w-full max-w-full bg-gray-50 dark:bg-gray-950">
                         <router-view />
                     </div>
                 </div>

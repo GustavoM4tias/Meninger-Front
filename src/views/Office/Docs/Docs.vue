@@ -1,5 +1,5 @@
 <template>
-    <div class="min-h-screen dark:bg-gray-900 bg-gray-100">
+    <div class="min-h-screen">
 
         <div class="max-w-7xl mx-auto px-6 py-8">
             <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
@@ -10,12 +10,12 @@
                         Filtros
                     </h3>
                     <div
-                        class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-300 dark:border-gray-700 p-6 sticky top-8">
+                        class="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-300 dark:border-gray-700 p-6 sticky top-8">
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Buscar</label>
                         <div class="flex items-center space-x-4 mb-6 w-full">
                             <div class="relative w-full">
                                 <input v-model="searchQuery" type="text" placeholder="Buscar atualizações..."
-                                    class="w-full pl-10 pr-4 py-2 border bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-700 placeholder:text-gray-800 placeholder:dark:text-gray-200 placeholder:font-normal rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                                    class="w-full pl-10 pr-4 py-2 border bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-700 placeholder:text-gray-800 placeholder:dark:text-gray-200 placeholder:font-normal rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
                                 <i class="fas fa-magnifying-glass absolute left-3 top-3.5"></i>
                             </div>
                         </div>
@@ -25,7 +25,7 @@
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tipo de
                                 Release</label>
                             <select v-model="filters.type"
-                                class="w-full border bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                                class="w-full border bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
                                 <option value="all">Todos</option>
                                 <option value="major">Major</option>
                                 <option value="minor">Minor</option>
@@ -39,7 +39,7 @@
                             <label
                                 class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Categoria</label>
                             <select v-model="filters.category"
-                                class="w-full border bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                                class="w-full border bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
                                 <option value="all">Todas</option>
                                 <option value="frontend">Frontend</option>
                                 <option value="backend">Backend</option>
@@ -54,7 +54,7 @@
                             <label
                                 class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Período</label>
                             <select v-model="filters.period"
-                                class="w-full border bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                                class="w-full border bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
                                 <option value="all">Todo período</option>
                                 <option value="week">Última semana</option>
                                 <option value="month">Último mês</option>
@@ -120,11 +120,11 @@
                         <div class="overflow-x-auto">
                             <div class="flex gap-4 mb-4 min-w-full">
                                 <div v-for="milestone in roadmap" :key="milestone.version"
-                                    class="min-w-72 max-w-[250px] flex-shrink-0 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-300 dark:border-gray-700 p-4 hover:shadow-md transition-shadow">
+                                    class="min-w-72 max-w-[250px] flex-shrink-0 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-300 dark:border-gray-700 p-4 hover:shadow-md transition-shadow">
                                     <div class="flex items-center justify-between mb-2">
                                         <span class="font-semibold">{{ milestone.version }}</span>
                                         <span v-if="milestone?.date" class="text-xs">{{ formatDate(milestone.date)
-                                            }}</span>
+                                        }}</span>
                                         <span v-else class="text-xs">Em Programação</span>
                                     </div>
                                     <p class="text-sm mb-3">{{ milestone.description }}</p>
@@ -154,7 +154,7 @@
                         <!-- Cards de Release -->
                         <div class="space-y-6">
                             <div v-for="release in paginatedReleases" :key="release.version"
-                                class="bg-white dark:bg-gray-800/40 rounded-xl shadow-sm border border-gray-300 dark:border-gray-700 overflow-hidden hover:shadow-md transition-shadow">
+                                class="bg-white dark:bg-gray-900/40 rounded-xl shadow-sm border border-gray-300 dark:border-gray-700 overflow-hidden hover:shadow-md transition-shadow">
                                 <!-- Header do Release -->
                                 <div
                                     class="bg-gray-50 dark:bg-gray-900 px-6 py-4 border-b border-gray-300 dark:border-gray-700">
@@ -190,7 +190,7 @@
                                                     class="text-sm text-gray-700 dark:text-gray-300 flex items-start">
                                                     <span class="text-green-500 mr-2 mt-0.5">•</span>
                                                     <span><strong>{{ feature.title }}:</strong> {{ feature.description
-                                                        }}</span>
+                                                    }}</span>
                                                 </li>
                                             </ul>
                                         </div>
@@ -288,7 +288,7 @@
         <!-- Modal de Detalhes -->
         <div v-if="selectedRelease"
             class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" @click="closeModal">
-            <div class="bg-white dark:bg-gray-800 rounded-xl max-w-4xl max-h-[90vh] overflow-y-auto" @click.stop>
+            <div class="bg-white dark:bg-gray-900 rounded-xl max-w-4xl max-h-[90vh] overflow-y-auto" @click.stop>
                 <div
                     class="sticky top-0 bg-white dark:bg-gray-900 border-b border-gray-300 dark:border-gray-700 px-6 py-4 flex items-center justify-between">
                     <h3 class="text-xl font-bold text-gray-900 dark:text-white">{{ selectedRelease.version }} - Detalhes
@@ -391,14 +391,30 @@ export default {
 
             roadmap: [
                 {
-                    version: 'v2.4.1',
-                    date: new Date('2026-01-30T00:00:00'),
-                    description: 'Recuperação e alteração de senha via email.',
-                    features: ['Segurança', 'Suporte Técnico']
+                    version: 'v2.8.9',
+                    date: new Date('2026-03-16T00:00:00'),
+                    description: 'Relatório de Faturamento X Projeção de vendas.',
+                    features: ['Relatórios']
                 },
             ],
             releases: [
 
+                {
+                    version: 'v2.4.1',
+                    date: new Date('2026-03-09T00:00:00'),
+                    description: 'Recuperação e alteração de senha via email.',
+                    type: 'minor',
+                    categories: ['Segurança', 'Suporte Técnico'],
+                    features: [
+                        {
+                            id: 1,
+                            title: 'Alteração de senha',
+                            description: 'Alteração de senha para usuários logados e deslogados, usando notificações via email.'
+                        }, 
+                    ], 
+                    breakingChanges: [],
+                    knownIssues: []
+                },
                 {
                     version: 'v2.4.0',
                     date: new Date('2026-01-29T00:00:00'), // Baseado no commit de hoje

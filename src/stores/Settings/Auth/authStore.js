@@ -1,11 +1,21 @@
-// src/store/authStore.js
 import { defineStore } from 'pinia';
 import router from '@/router';
 import API_URL from '@/config/apiUrl';
-import { getUserInfo, getUserById, fetchBanners } from '@/utils/Auth/apiAuth';
+import {
+  getUserInfo,
+  getUserById,
+  fetchBanners,
+  loginUser,
+  requestPasswordReset,
+  resetPassword,
+} from '@/utils/Auth/apiAuth';
 
 function safeJsonParse(v, fallback = null) {
-  try { return JSON.parse(v); } catch { return fallback; }
+  try {
+    return JSON.parse(v);
+  } catch {
+    return fallback;
+  }
 }
 
 function normalizeProvider(user) {
@@ -13,52 +23,75 @@ function normalizeProvider(user) {
   return p || '';
 }
 
+function getErrorMessage(error, fallback = 'Ocorreu um erro.') {
+  if (error?.message) return error.message;
+  if (typeof error === 'string') return error;
+  return fallback;
+}
+
 export const useAuthStore = defineStore('user', {
   state: () => ({
     users: [],
-    user: safeJsonParse(localStorage.getItem('user'), null), // ✅ persiste sessão com user completo
+    user: safeJsonParse(localStorage.getItem('user'), null),
     userById: null,
-    weather: null, // Estado para armazenar o clima
+    weather: null,
     token: localStorage.getItem('token') || null,
     banners: [],
+
+    forgotPassword: {
+      open: false,
+      loading: false,
+      step: 1,
+      email: '',
+      code: '',
+      password: '',
+      confirmPassword: '',
+      message: '',
+      error: '',
+    },
   }),
 
   getters: {
-    // ✅ provider canônico para controles
     authProvider: (state) => normalizeProvider(state.user),
-
-    // ✅ externo vs interno (para guards e UI)
     isExternal: (state) => normalizeProvider(state.user) !== 'INTERNAL',
     isInternal: (state) => normalizeProvider(state.user) === 'INTERNAL',
 
-    // ✅ seus getters atuais (mantidos)
     usuariosComAniversarioValido: (state) =>
-      state.users.filter(u => u.birth_date && !isNaN(new Date(u.birth_date))),
+      state.users.filter((u) => u.birth_date && !isNaN(new Date(u.birth_date))),
+
     proximoAniversario: () => (birthDateStr) => {
       const base = new Date(birthDateStr);
       if (isNaN(base)) return null;
+
       const hoje = new Date();
       const ano = hoje.getFullYear();
       const prox = new Date(ano, base.getMonth(), base.getDate());
+
       if (prox < new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate())) {
         prox.setFullYear(ano + 1);
       }
+
       return prox;
     },
+
     aniversariosEmAndamento: (state, getters) => {
       return getters.usuariosComAniversarioValido
-        .map(u => ({ ...u, _nextBDay: getters.proximoAniversario(u.birth_date) }))
-        .filter(u => u._nextBDay)
+        .map((u) => ({ ...u, _nextBDay: getters.proximoAniversario(u.birth_date) }))
+        .filter((u) => u._nextBDay)
         .sort((a, b) => a._nextBDay - b._nextBDay);
     },
+
     aniversariosFinalizados: (state, getters) => {
       const hoje = new Date();
+
       return getters.usuariosComAniversarioValido
-        .map(u => {
+        .map((u) => {
           const base = new Date(u.birth_date);
           if (isNaN(base)) return null;
+
           let last = new Date(hoje.getFullYear(), base.getMonth(), base.getDate());
           if (last > hoje) last.setFullYear(hoje.getFullYear() - 1);
+
           return { ...u, _lastBDay: last };
         })
         .filter(Boolean)
@@ -67,17 +100,15 @@ export const useAuthStore = defineStore('user', {
   },
 
   actions: {
-    // =========================
-    // Sessão / Persistência
-    // =========================
     setUser(user) {
       this.user = user || null;
 
-      // ✅ persistir user completo (evita depender só de role/position)
-      if (this.user) localStorage.setItem('user', JSON.stringify(this.user));
-      else localStorage.removeItem('user');
+      if (this.user) {
+        localStorage.setItem('user', JSON.stringify(this.user));
+      } else {
+        localStorage.removeItem('user');
+      }
 
-      // compatibilidade com seu legado
       localStorage.setItem('role', this.user?.role || '');
       localStorage.setItem('position', this.user?.position || '');
       localStorage.setItem('auth_provider', this.user?.auth_provider || '');
@@ -85,8 +116,12 @@ export const useAuthStore = defineStore('user', {
 
     setToken(token) {
       this.token = token || null;
-      if (this.token) localStorage.setItem('token', this.token);
-      else localStorage.removeItem('token');
+
+      if (this.token) {
+        localStorage.setItem('token', this.token);
+      } else {
+        localStorage.removeItem('token');
+      }
     },
 
     clearUser() {
@@ -116,16 +151,13 @@ export const useAuthStore = defineStore('user', {
       router.push({ name: 'AcademyLogin' });
     },
 
-    // ✅ “me” único (serve interno e externo)
     async fetchMe() {
-      // getUserInfo já usa token, então funciona pra qualquer provider
       const result = await getUserInfo();
       this.setUser(result.data);
       return result.data;
     },
 
     async initializeAuth() {
-      // ✅ usado no bootstrap do app
       if (this.token && !this.user) {
         try {
           await this.fetchMe();
@@ -135,9 +167,6 @@ export const useAuthStore = defineStore('user', {
       }
     },
 
-    // =========================
-    // Regras antigas (mantidas)
-    // =========================
     setUserById(userById) {
       this.userById = userById;
       localStorage.setItem('position', userById?.position || '');
@@ -154,13 +183,12 @@ export const useAuthStore = defineStore('user', {
     },
 
     async fetchUserInfo() {
-      // mantém sua função mas agora delega pro fetchMe
       try {
         await this.fetchMe();
       } catch (error) {
         console.error(error);
         this.clearUser();
-        throw error; // ✅ NÃO redireciona aqui
+        throw error;
       }
     },
 
@@ -173,9 +201,122 @@ export const useAuthStore = defineStore('user', {
       }
     },
 
-    // =========================
-    // CRUD Usuários (Office)
-    // =========================
+    async login(email, password) {
+      try {
+        const result = await loginUser(email, password);
+
+        if (!result?.success || !result?.data?.token) {
+          throw new Error(result?.message || result?.error || 'Falha no login.');
+        }
+
+        this.setToken(result.data.token);
+        await this.fetchUserInfo();
+
+        return result;
+      } catch (error) {
+        throw new Error(getErrorMessage(error, 'Erro ao tentar login.'));
+      }
+    },
+
+    openForgotPasswordModal(email = '') {
+      this.forgotPassword.open = true;
+      this.forgotPassword.loading = false;
+      this.forgotPassword.step = 1;
+      this.forgotPassword.email = email || '';
+      this.forgotPassword.code = '';
+      this.forgotPassword.password = '';
+      this.forgotPassword.confirmPassword = '';
+      this.forgotPassword.message = '';
+      this.forgotPassword.error = '';
+    },
+
+    closeForgotPasswordModal() {
+      this.forgotPassword.open = false;
+      this.forgotPassword.loading = false;
+      this.forgotPassword.step = 1;
+      this.forgotPassword.email = '';
+      this.forgotPassword.code = '';
+      this.forgotPassword.password = '';
+      this.forgotPassword.confirmPassword = '';
+      this.forgotPassword.message = '';
+      this.forgotPassword.error = '';
+    },
+
+    backForgotPasswordStep() {
+      this.forgotPassword.step = 1;
+      this.forgotPassword.code = '';
+      this.forgotPassword.password = '';
+      this.forgotPassword.confirmPassword = '';
+      this.forgotPassword.message = '';
+      this.forgotPassword.error = '';
+    },
+
+    setForgotPasswordField(field, value) {
+      if (!Object.prototype.hasOwnProperty.call(this.forgotPassword, field)) return;
+      this.forgotPassword[field] = value;
+    },
+
+    async requestForgotPassword() {
+      this.forgotPassword.loading = true;
+      this.forgotPassword.error = '';
+      this.forgotPassword.message = '';
+
+      try {
+        const result = await requestPasswordReset(this.forgotPassword.email);
+
+        if (result?.success === false) {
+          throw new Error(result?.message || result?.error || 'Erro ao solicitar redefinição.');
+        }
+
+        this.forgotPassword.message =
+          result?.message ||
+          result?.data?.message ||
+          'Se existir uma conta válida, enviaremos um código para o e-mail informado.';
+
+        this.forgotPassword.step = 2;
+
+        return result;
+      } catch (error) {
+        const message = getErrorMessage(error, 'Erro ao solicitar redefinição.');
+        this.forgotPassword.error = message;
+        throw new Error(message);
+      } finally {
+        this.forgotPassword.loading = false;
+      }
+    },
+
+    async confirmForgotPassword() {
+      this.forgotPassword.loading = true;
+      this.forgotPassword.error = '';
+      this.forgotPassword.message = '';
+
+      try {
+        const result = await resetPassword(
+          this.forgotPassword.email,
+          this.forgotPassword.code,
+          this.forgotPassword.password,
+          this.forgotPassword.confirmPassword
+        );
+
+        if (result?.success === false) {
+          throw new Error(result?.message || result?.error || 'Erro ao redefinir senha.');
+        }
+
+        this.forgotPassword.message =
+          result?.message ||
+          result?.data?.message ||
+          'Senha redefinida com sucesso.';
+
+        return result;
+      } catch (error) {
+        const message = getErrorMessage(error, 'Erro ao redefinir senha.');
+        this.forgotPassword.error = message;
+        throw new Error(message);
+      } finally {
+        this.forgotPassword.loading = false;
+      }
+    },
+
     async getAllUsers() {
       try {
         const response = await fetch(`${API_URL}/auth/users`, {
@@ -187,11 +328,12 @@ export const useAuthStore = defineStore('user', {
         });
 
         const data = await response.json();
+
         if (!response.ok) {
           throw new Error(data.message || data.error || 'Erro ao buscar usuários');
         }
 
-        this.users = Array.isArray(data) ? data : (Array.isArray(data.data) ? data.data : []);
+        this.users = Array.isArray(data) ? data : Array.isArray(data.data) ? data.data : [];
         return data;
       } catch (error) {
         console.error('Erro em getAllUsers:', error);

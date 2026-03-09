@@ -18,7 +18,7 @@
                         'border dark:border-gray-700 shadow-sm hover:shadow',
                         store.tipo === t
                             ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white border-transparent scale-[1.02]'
-                            : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300'
+                            : 'bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300'
                     ]">
                     <i :class="t === 'reservas' ? 'fas fa-clipboard-list' : 'fas fa-hand-holding-dollar'"></i>
                     {{ t === 'reservas' ? 'Reservas' : 'Repasses' }}
@@ -41,7 +41,7 @@
             <!-- Grid de Cards -->
             <div v-else class="grid sm:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
                 <article v-for="g in store.grupos" :key="g.idgroup"
-                    class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
+                    class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
                     <!-- Card header -->
                     <div
                         class="p-4 md:p-5 border-b border-gray-200 dark:border-gray-700 flex items-start justify-between gap-4">
@@ -117,7 +117,7 @@
             <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center">
                 <div class="absolute inset-0 bg-gray-900/60" @click="closeModal" />
 
-                <div class="relative w-full max-w-2xl mx-4 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden"
+                <div class="relative w-full max-w-2xl mx-4 bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden"
                     role="dialog" aria-modal="true">
                     <!-- Modal header -->
                     <div
