@@ -10,7 +10,8 @@ export const useFavoritesStore = defineStore('favorites', {
     getters: {
         // Verifica se um item está favoritado
         isFavorited: (state) => (router, section) => {
-            return state.favorites.some(fav => fav.router === router && fav.section === section);
+            return Array.isArray(state.favorites) &&
+                state.favorites.some(fav => fav.router === router && fav.section === section);
         },
     },
     actions: {
@@ -19,10 +20,10 @@ export const useFavoritesStore = defineStore('favorites', {
             this.errorMessage = '';
             try {
                 const result = await getFavorites();
-                this.favorites = result;  // Atualiza os favoritos  
-                // console.log(result)
+                this.favorites = Array.isArray(result) ? result : [];
             } catch (error) {
                 console.error('Erro ao carregar favoritos:', error);
+                this.favorites = [];
                 this.errorMessage = 'Erro ao carregar favoritos.';
             }
         },
