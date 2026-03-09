@@ -27,7 +27,7 @@
       Esqueceu a Senha?
     </p>
 
-    <Button type="submit" :disabled="loginLoading">
+    <Button class="w-full text-xl" type="submit" :disabled="loginLoading">
       {{ loginLoading ? 'Entrando...' : 'Login' }}
     </Button>
 
