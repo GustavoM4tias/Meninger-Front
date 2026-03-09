@@ -13,7 +13,7 @@
                 class="absolute inset-y-0 end-0 flex items-center pe-3 pointer-events-none text-xs font-mono tracking-tighter uppercase text-gray-500 dark:text-gray-300">
                 CTRL<span class="p-[0.05rem]"></span>+<span class="p-[0.1rem]"></span>K
             </span>
-        </div> 
+        </div>
     </form>
 
     <!-- Modal de busca -->
@@ -92,7 +92,11 @@ function openModal() {
     open.value = true;
     query.value = '';
 
-    const favoriteRoutes = favoritesStore.favorites.map(fav => {
+    const favoriteList = Array.isArray(favoritesStore.favorites)
+        ? favoritesStore.favorites
+        : [];
+
+    const favoriteRoutes = favoriteList.map(fav => {
         return allRoutes.find(r =>
             r.path === fav.router &&
             (r.query?.section === fav.section || r.name === fav.section)
@@ -153,15 +157,16 @@ function goTo(pathOrItem) {
     }
 }
 
-function toggleFavorite(item) {
+async function toggleFavorite(item) {
     const isNowFav = favoritesStore.isFavorited(item.path, item.name);
+
     if (isNowFav) {
-        favoritesStore.removeFavorite(item.path, item.name);
+        await favoritesStore.removeFavorite(item.path, item.name);
     } else {
-        favoritesStore.addFavorite(item.path, item.name);
+        await favoritesStore.addFavorite(item.path, item.name);
     }
 
-    favoritesStore.loadFavorites();
+    await favoritesStore.loadFavorites();
     item.favorited = !isNowFav;
 }
 
