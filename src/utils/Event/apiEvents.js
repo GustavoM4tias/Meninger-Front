@@ -78,3 +78,20 @@ export const deleteEvent = async (eventId) => {
         throw error; // Re-lança o erro para que possa ser tratado onde for chamado
     }
 };
+
+export const getSelectableEnterprises = async () => {
+  const response = await fetch(`${API_URL}/cv/empreendimentos`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem('token')}`,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || 'Erro ao obter empreendimentos');
+  }
+
+  return response.json();
+};

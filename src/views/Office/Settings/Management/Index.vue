@@ -22,7 +22,7 @@
             'border dark:border-gray-700 shadow-sm hover:shadow',
             activeTab === tab.value
               ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white border-transparent scale-[1.02]'
-              : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300'
+              : 'bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300'
           ]">
           <i :class="tab.icon"></i>
           {{ tab.label }}
@@ -51,7 +51,7 @@
 
         <div v-else class="grid sm:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
           <article v-for="d in store.departments" :key="d.id"
-            class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
+            class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
             <div
               class="p-4 md:p-5 border-b border-gray-200 dark:border-gray-700 flex items-start justify-between gap-4">
               <div class="min-w-0">
@@ -60,7 +60,7 @@
                 </h2>
                 <div class="mt-1 flex flex-wrap items-center gap-2 text-xs">
                   <span
-                    class="inline-flex items-center px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200">
+                    class="inline-flex truncate items-center px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200">
                     <i class="fas fa-hashtag mr-1.5"></i>
                     {{ d.code }}
                   </span>
@@ -109,7 +109,7 @@
 
         <div v-else class="grid sm:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
           <article v-for="c in store.departmentCategories" :key="c.id"
-            class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
+            class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
             <div
               class="p-4 md:p-5 border-b border-gray-200 dark:border-gray-700 flex items-start justify-between gap-4">
               <div class="min-w-0">
@@ -175,7 +175,7 @@
 
         <div v-else class="grid sm:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
           <article v-for="p in store.positions" :key="p.id"
-            class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
+            class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
             <div
               class="p-4 md:p-5 border-b border-gray-200 dark:border-gray-700 flex items-start justify-between gap-4">
               <div class="min-w-0">
@@ -184,28 +184,30 @@
                 </h2>
                 <div class="mt-1 flex flex-wrap items-center gap-2 text-xs">
                   <span
-                    class="inline-flex items-center px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200">
+                    class="inline-flex truncate items-center px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200">
                     <i class="fas fa-hashtag mr-1.5"></i>
-                    {{ p.code }}
+                    <p class="truncate">{{ p.code }}</p>
                   </span>
 
                   <!-- Departamento do cargo -->
-                  <span v-if="p.department || p.department_id"
-                    class="inline-flex items-center px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300">
-                    <i class="fas fa-sitemap mr-1.5"></i>
-                    {{ p.department?.name || departmentNameById(p.department_id) || 'Sem departamento' }}
-                  </span>
+                  <div class="flex gap-2 my-1">
+                    <span v-if="p.department || p.department_id"
+                      class="inline-flex items-center px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300">
+                      <i class="fas fa-sitemap mr-1.5"></i>
+                      {{ p.department?.name || departmentNameById(p.department_id) || 'Sem departamento' }}
+                    </span>
 
-                  <span v-if="p.is_internal"
-                    class="inline-flex items-center px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
-                    <i class="fas fa-building mr-1.5"></i>
-                    Interno
-                  </span>
-                  <span v-if="p.is_partner"
-                    class="inline-flex items-center px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
-                    <i class="fas fa-handshake mr-1.5"></i>
-                    Parceiro
-                  </span>
+                    <span v-if="p.is_internal"
+                      class="inline-flex items-center px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                      <i class="fas fa-building mr-1.5"></i>
+                      Interno
+                    </span>
+                    <span v-if="p.is_partner"
+                      class="inline-flex items-center px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
+                      <i class="fas fa-handshake mr-1.5"></i>
+                      Parceiro
+                    </span>
+                  </div>
                 </div>
               </div>
 
@@ -251,7 +253,7 @@
 
         <div v-else class="grid sm:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
           <article v-for="c in store.userCities" :key="c.id"
-            class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
+            class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
             <div
               class="p-4 md:p-5 border-b border-gray-200 dark:border-gray-700 flex items-start justify-between gap-4">
               <div class="min-w-0">
@@ -305,7 +307,7 @@
         <div class="absolute inset-0 bg-gray-900/60" @click="closeModal"></div>
 
         <div
-          class="relative w-full max-w-lg mx-4 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden"
+          class="relative w-full max-w-lg mx-4 bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden"
           role="dialog" aria-modal="true">
           <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
             <div>
@@ -464,7 +466,7 @@
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Nome da cidade
                 </label>
-                <input v-model="form.name" type="text"
+                <Input v-model="form.name" type="text"
                   class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Ex: Marília" />
               </div>
@@ -473,7 +475,7 @@
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   UF
                 </label>
-                <input v-model="form.uf" type="text" maxlength="2"
+                <Input v-model="form.uf" type="text" maxlength="2"
                   class="w-24 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase"
                   placeholder="SP" />
               </div>
@@ -502,8 +504,9 @@ import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import Favorite from '@/components/config/Favorite.vue';
 import { useAuthStore } from '@/stores/Settings/Auth/authStore';
-import { useAdminMetaStore } from '@/stores/Settings/Admin/metaStore';
+import { useAdminMetaStore } from '@/stores/Settings/Admin/metaStore'; 
 import { useToast } from 'vue-toastification';
+import Input from '@/components/UI/Input.vue';
 
 const router = useRouter();
 const authStore = useAuthStore();

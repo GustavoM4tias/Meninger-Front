@@ -1,6 +1,6 @@
 <template>
 
-    <div class="h-auto min-h-full overflow-x-hidden relative dark:bg-gray-900 bg-gray-100">
+    <div class="h-auto min-h-full overflow-x-hidden relative">
         <div class="max-w-7xl mx-auto px-6 py-8">
             <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
 
@@ -11,7 +11,7 @@
                     </h3>
 
                     <div
-                        class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-300 dark:border-gray-700 p-6 sticky top-8">
+                        class="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-300 dark:border-gray-700 p-6 sticky top-8">
                         <div class="mb-6">
                             <h4 class="text-sm font-semibold text-gray-900 dark:text-white mb-3">Dicas Rápidas</h4>
                             <ul class="space-y-2 text-sm text-gray-600 dark:text-gray-400">
@@ -68,7 +68,7 @@
                     <!-- Card do Form -->
                     <section class="mb-8">
                         <div
-                            class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-300 dark:border-gray-700 overflow-hidden">
+                            class="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-300 dark:border-gray-700 overflow-hidden">
                             <div
                                 class="bg-gray-50 dark:bg-gray-900 px-6 py-4 border-b border-gray-300 dark:border-gray-700">
                                 <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Enviar Documentos</h2>
@@ -86,7 +86,7 @@
                                             Contrato Caixa <span class="text-red-500">*</span>
                                         </label>
                                         <label for="dropzone-contrato"
-                                            class="flex flex-col items-center justify-center relative w-full h-48 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-100 dark:bg-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:hover:border-gray-600">
+                                            class="flex flex-col items-center justify-center relative w-full h-48 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-100 dark:bg-gray-800 hover:bg-gray-50 dark:border-gray-700 dark:hover:border-gray-600">
                                             <div
                                                 class="flex flex-col items-center justify-center px-3 text-gray-500 dark:text-gray-300">
                                                 <i class="far fa-file-pdf text-3xl mb-2"></i>
@@ -114,7 +114,7 @@
                                             Confissão de Dívida <span class="text-red-500">*</span>
                                         </label>
                                         <label for="dropzone-confissao"
-                                            class="flex flex-col items-center justify-center relative w-full h-48 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-100 dark:bg-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:hover:border-gray-600">
+                                            class="flex flex-col items-center justify-center relative w-full h-48 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-100 dark:bg-gray-800 hover:bg-gray-50 dark:border-gray-700 dark:hover:border-gray-600">
                                             <div
                                                 class="flex flex-col items-center justify-center px-3 text-gray-500 dark:text-gray-300">
                                                 <i class="far fa-file-pdf text-3xl mb-2"></i>

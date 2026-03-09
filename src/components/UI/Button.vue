@@ -1,21 +1,25 @@
 <template>
-  <div class="input-field w-full text-lg">
-    <label v-if="label" class="block text-gray-700 dark:text-gray-200 font-semibold mb-1">
-      {{ label }}
-    </label>
-    <button
-      :class="['btn w-full text-lg md:text-xl p-3 border-0 rounded-lg cursor-pointer duration-200', customClass]"
-      :type="type" :disabled="disabled" @click="handleClick">
-      <slot></slot>
-    </button>
-  </div>
+  <button :type="type" :disabled="disabled" :class="[
+    'inline-flex items-center justify-center gap-2',
+    'px-4 py-2 text-sm font-medium rounded-lg',
+    'transition-all duration-150 cursor-pointer',
+    'focus:outline-none focus:ring-2 focus:ring-offset-1',
+    outlined
+      ? 'border border-gray-300 dark:border-gray-600 bg-transparent text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 focus:ring-gray-400'
+      : 'bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white shadow-sm focus:ring-blue-500',
+    disabled ? 'opacity-50 cursor-not-allowed pointer-events-none' : '',
+  ]" @click="handleClick">
+    <slot />
+  </button>
 </template>
 
 <script setup>
 const props = defineProps({
   type: { type: String, default: 'button' },
-  label: { type: String, default: '' },
   disabled: { type: Boolean, default: false },
-  customClass: { type: String, default: 'bg-blue-700 hover:bg-blue-800 text-gray-50' } 
+  outlined: { type: Boolean, default: false },
 });
+
+const emit = defineEmits(['click']);
+const handleClick = (e) => emit('click', e);
 </script>

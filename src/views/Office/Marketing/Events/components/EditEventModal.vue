@@ -1,468 +1,705 @@
-<!-- src/components/Events/EditEventModal.vue -->
+<!-- src/views/Office/Marketing/Events/components/EditEventModal.vue -->
 <script setup>
-import { ref, watch, onMounted, onUnmounted, computed } from 'vue';
-import { updateEvent } from '@/utils/Event/apiEvents';
+import { ref, watch, computed, onMounted, onUnmounted, nextTick } from 'vue';
+import { updateEvent, getSelectableEnterprises } from '@/utils/Event/apiEvents';
 import { getAddress } from '@/utils/Config/apiExternalBuilding';
 import OrganizerPicker from './OrganizerPicker.vue';
 
 const props = defineProps({
   event: { type: Object, required: true },
-  // opcional: lista de usuários do sistema para sugerir no picker
-  // se não passar, o picker ainda permite editar/ adicionar externos
   users: { type: Array, default: () => [] }
 });
+
 const emit = defineEmits(['close']);
 
-/* ---------- Helpers ---------- */
-const toDateTimeLocal = (d) => {
+// ── HELPERS ──────────────────────────────────────────────────────────────────
+const toLocal = (d) => {
   if (!d) return '';
   const dt = new Date(d);
-  const pad = (n) => String(n).padStart(2, '0');
-  return `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}T${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
+  const p = (n) => String(n).padStart(2, '0');
+  return `${dt.getFullYear()}-${p(dt.getMonth() + 1)}-${p(dt.getDate())}T${p(dt.getHours())}:${p(dt.getMinutes())}`;
 };
-const ensureIsoMinute = (v) => (v && v.length === 16 ? `${v}:00` : v);
-  // Converte "YYYY-MM-DDTHH:mm[:ss]" (LOCAL) → ISO UTC (com "Z")
-const toUtcIsoFromLocalInput = (localStr) => {
-  if (!localStr) return null;
-  const full = localStr.length === 16 ? `${localStr}:00` : localStr; // garante segundos
+
+const toUTC = (s) => {
+  if (!s) return null;
+  const full = s.length === 16 ? `${s}:00` : s;
   const [date, time] = full.split('T');
   const [y, m, d] = date.split('-').map(Number);
   const [hh, mm, ss] = time.split(':').map(Number);
-  // Cria Date no fuso LOCAL
-  const dtLocal = new Date(y, (m - 1), d, hh, mm, ss || 0);
-  // Retorna em UTC (padrão ISO)
-  return dtLocal.toISOString();
+  return new Date(y, m - 1, d, hh, mm, ss || 0).toISOString();
 };
 
-const formatDateTime = (isoLike) => {
-  if (!isoLike) return '';
-  const d = new Date(isoLike);
-  const date = d.toLocaleDateString('pt-BR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-  const time = d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-  return `${date} • ${time}`;
+const fmtDate = (iso) => {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return d.toLocaleDateString('pt-BR', {
+    weekday: 'short',
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric'
+  }) + ' • ' + d.toLocaleTimeString('pt-BR', {
+    hour: '2-digit',
+    minute: '2-digit'
+  });
 };
 
-/* ---------- Form base ---------- */
-const baseAddress = { street: '', number: '', neighborhood: '', city: '', state: '', zip_code: '' };
+const normalizeText = (value) =>
+  String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
 
-const editedEvent = ref({
+const emptyAddress = () => ({
+  street: '',
+  number: '',
+  neighborhood: '',
+  city: '',
+  state: '',
+  zip_code: '',
+});
+
+const stateMap = {
+  acre: 'AC',
+  alagoas: 'AL',
+  amapa: 'AP',
+  amazonas: 'AM',
+  bahia: 'BA',
+  ceara: 'CE',
+  'distrito federal': 'DF',
+  'espirito santo': 'ES',
+  goias: 'GO',
+  maranhao: 'MA',
+  'mato grosso': 'MT',
+  'mato grosso do sul': 'MS',
+  'minas gerais': 'MG',
+  para: 'PA',
+  paraiba: 'PB',
+  parana: 'PR',
+  pernambuco: 'PE',
+  piaui: 'PI',
+  'rio de janeiro': 'RJ',
+  'rio grande do norte': 'RN',
+  'rio grande do sul': 'RS',
+  rondonia: 'RO',
+  roraima: 'RR',
+  'santa catarina': 'SC',
+  'sao paulo': 'SP',
+  sergipe: 'SE',
+  tocantins: 'TO',
+};
+
+const normalizeState = (enterprise) => {
+  const sigla = String(enterprise?.sigla || '').trim();
+  if (sigla) return sigla.toUpperCase();
+
+  const estado = normalizeText(enterprise?.estado || '');
+  return stateMap[estado] || String(enterprise?.estado || '').toUpperCase();
+};
+
+const mapEnterpriseAddress = (enterprise) => ({
+  street: enterprise?.endereco_emp || enterprise?.logradouro || enterprise?.endereco || '',
+  number: enterprise?.numero || '',
+  neighborhood: enterprise?.bairro || '',
+  city: enterprise?.cidade || '',
+  state: normalizeState(enterprise),
+  zip_code: String(enterprise?.cep || '').replace(/\D/g, '').slice(0, 8),
+});
+
+// ── FORM ─────────────────────────────────────────────────────────────────────
+const form = ref({
   id: props.event.id,
   title: props.event.title || '',
   description: props.event.description || '',
-  eventDate: toDateTimeLocal(props.event.event_date),
+  eventDate: toLocal(props.event.event_date),
   tags: Array.isArray(props.event.tags) ? [...props.event.tags] : [],
   images: Array.isArray(props.event.images) ? [...props.event.images] : [],
-  address: { ...(props.event.address || baseAddress) },
+  address: { ...emptyAddress(), ...(props.event.address || {}) },
   created_by: props.event.created_by || '',
-  // 👇 agora editável
-  organizers: Array.isArray(props.event.organizers) ? [...props.event.organizers] : []
+  organizers: Array.isArray(props.event.organizers) ? [...props.event.organizers] : [],
+
+  enterprise_id: props.event.enterprise_id ?? null,
+  enterprise_name: props.event.enterprise_name || '',
+  enterprise_logo: props.event.enterprise_logo || '',
 });
 
-/* ---------- UI state ---------- */
-const newTag = ref('');
-const newImageUrl = ref('');
+// ── UI STATE ─────────────────────────────────────────────────────────────────
 const isSubmitting = ref(false);
 const errors = ref({});
-const currentStep = ref(1);
+const titleRef = ref(null);
+const openSections = ref({ location: false, media: false, organizers: false });
+const toggle = (k) => { openSections.value[k] = !openSections.value[k]; };
 
-const steps = [
-  { number: 1, title: 'Informações Básicas', icon: 'fas fa-info-circle' },
-  { number: 2, title: 'Localização', icon: 'fas fa-map-marker-alt' },
-  { number: 3, title: 'Mídia e Tags', icon: 'fas fa-images' },
-  { number: 4, title: 'Organizadores', icon: 'fas fa-people-group' },
-  { number: 5, title: 'Revisão', icon: 'fas fa-check-circle' }
+// ── ENTERPRISES ──────────────────────────────────────────────────────────────
+const enterprises = ref([]);
+const loadingEnterprises = ref(false);
+const enterpriseSearch = ref(props.event.enterprise_name || '');
+const showEnterpriseResults = ref(false);
+
+const filteredEnterprises = computed(() => {
+  const q = normalizeText(enterpriseSearch.value);
+
+  if (!q) return enterprises.value.slice(0, 8);
+
+  return enterprises.value
+    .filter((enterprise) => {
+      const haystack = normalizeText([
+        enterprise.nome,
+        enterprise.cidade,
+        enterprise.estado,
+        enterprise.bairro,
+        enterprise.idempreendimento_int,
+        enterprise.endereco,
+        enterprise.endereco_emp,
+      ].filter(Boolean).join(' '));
+
+      return haystack.includes(q);
+    })
+    .slice(0, 8);
+});
+
+const selectedEnterprise = computed(() => {
+  if (!form.value.enterprise_id) return null;
+
+  return enterprises.value.find(
+    (enterprise) => String(enterprise.idempreendimento) === String(form.value.enterprise_id)
+  ) || null;
+});
+
+const syncEnterpriseFromInitialEvent = () => {
+  if (!form.value.enterprise_id) return;
+
+  const found = enterprises.value.find(
+    (enterprise) => String(enterprise.idempreendimento) === String(form.value.enterprise_id)
+  );
+
+  if (!found) return;
+
+  form.value.enterprise_name = found.nome || form.value.enterprise_name || '';
+  form.value.enterprise_logo = found.logo || form.value.enterprise_logo || '';
+
+  if (!enterpriseSearch.value) {
+    enterpriseSearch.value = found.nome || '';
+  }
+};
+
+const selectEnterprise = (enterprise) => {
+  form.value.enterprise_id = enterprise?.idempreendimento ?? null;
+  form.value.enterprise_name = enterprise?.nome || '';
+  form.value.enterprise_logo = enterprise?.logo || '';
+  form.value.address = mapEnterpriseAddress(enterprise);
+
+  enterpriseSearch.value = enterprise?.nome || '';
+  showEnterpriseResults.value = false;
+};
+
+const clearEnterprise = () => {
+  form.value.enterprise_id = null;
+  form.value.enterprise_name = '';
+  form.value.enterprise_logo = '';
+  enterpriseSearch.value = '';
+  showEnterpriseResults.value = false;
+};
+
+const onEnterpriseInputFocus = () => {
+  showEnterpriseResults.value = true;
+};
+
+const onEnterpriseInputBlur = () => {
+  setTimeout(() => {
+    showEnterpriseResults.value = false;
+  }, 120);
+};
+
+// ── QUICK DATES ──────────────────────────────────────────────────────────────
+const quickDates = [
+  { label: 'Hoje', getValue: () => localISO(offset(0)) },
+  { label: 'Amanhã', getValue: () => localISO(offset(1)) },
+  { label: 'Próx. seg', getValue: () => localISO(weekday(1)) },
+  { label: 'Próx. sáb', getValue: () => localISO(weekday(6)) },
 ];
-const totalSteps = computed(() => steps.length);
 
-const isLoadingAddress = ref(false);
+function offset(n) {
+  const d = new Date();
+  d.setDate(d.getDate() + n);
+  return d;
+}
 
-/* ---------- CEP (máscara + autofill) ---------- */
-const maskedCep = computed({
-  get() {
-    const raw = editedEvent.value.address.zip_code || '';
-    const onlyDigits = String(raw).replace(/\D/g, '').slice(0, 8);
-    if (onlyDigits.length <= 5) return onlyDigits;
-    return `${onlyDigits.slice(0, 5)}-${onlyDigits.slice(5)}`;
-  },
-  set(v) {
-    editedEvent.value.address.zip_code = (v || '').replace(/\D/g, '').slice(0, 8);
-  }
-});
+function weekday(t) {
+  const d = new Date();
+  d.setDate(d.getDate() + ((t - d.getDay() + 7) % 7 || 7));
+  return d;
+}
 
-const fetchAddress = async (cep) => {
-  if (cep.length !== 8) return;
-  isLoadingAddress.value = true;
-  try {
-    const data = await getAddress(cep);
-    editedEvent.value.address.street = data.logradouro || '';
-    editedEvent.value.address.neighborhood = data.bairro || '';
-    editedEvent.value.address.city = data.localidade || '';
-    editedEvent.value.address.state = data.uf || '';
-  } finally {
-    isLoadingAddress.value = false;
-  }
+function localISO(d) {
+  const p = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T09:00`;
+}
+
+const applyQuick = (qd) => {
+  form.value.eventDate = qd.getValue();
 };
 
-watch(() => editedEvent.value.address.zip_code, (newCep) => {
-  const clean = (newCep || '').replace(/\D/g, '');
-  if (clean.length === 8) fetchAddress(clean);
-  else if (clean.length === 0) editedEvent.value.address = { ...baseAddress };
-});
+// ── TAGS ─────────────────────────────────────────────────────────────────────
+const newTag = ref('');
 
-/* ---------- Validações + navegação ---------- */
-const validateStep = (step) => {
-  errors.value = {};
-  switch (step) {
-    case 1:
-      if (!editedEvent.value.title.trim()) errors.value.title = 'Título é obrigatório';
-      if (!editedEvent.value.description.trim()) errors.value.description = 'Descrição é obrigatória';
-      if (!editedEvent.value.eventDate) errors.value.eventDate = 'Data é obrigatória';
-      break;
-    case 2:
-      if (!editedEvent.value.address.zip_code) errors.value.zip_code = 'CEP é obrigatório';
-      break;
-    case 4:
-      // opcional: pode exigir pelo menos 1 organizador
-      // if (!editedEvent.value.organizers.length) errors.value.organizers = 'Informe ao menos um organizador.';
-      break;
-  }
-  return Object.keys(errors.value).length === 0;
-};
-
-const nextStep = () => {
-  if (validateStep(currentStep.value)) {
-    currentStep.value = Math.min(currentStep.value + 1, totalSteps.value);
-  }
-};
-const prevStep = () => { currentStep.value = Math.max(currentStep.value - 1, 1); };
-
-/* ---------- Tags & Imagens ---------- */
 const addTag = () => {
   const t = newTag.value.trim();
-  if (t && !editedEvent.value.tags.includes(t)) {
-    editedEvent.value.tags.push(t);
+  if (t && !form.value.tags.includes(t)) {
+    form.value.tags.push(t);
     newTag.value = '';
   }
 };
-const removeTag = (i) => editedEvent.value.tags.splice(i, 1);
 
-const addImage = () => {
-  const url = newImageUrl.value.trim();
-  if (url && !editedEvent.value.images.includes(url)) {
-    editedEvent.value.images.push(url);
-    newImageUrl.value = '';
+const removeTag = (i) => form.value.tags.splice(i, 1);
+
+// ── IMAGES ───────────────────────────────────────────────────────────────────
+const newImg = ref('');
+
+const addImg = () => {
+  const u = newImg.value.trim();
+  if (u && !form.value.images.includes(u)) {
+    form.value.images.push(u);
+    newImg.value = '';
   }
 };
-const removeImage = (i) => editedEvent.value.images.splice(i, 1);
 
-/* ---------- Submit ---------- */
-const submitEdit = async () => {
-  if (!validateStep(1) || !validateStep(2) /* || !validateStep(4) */) {
-    if (errors.value.title || errors.value.description || errors.value.eventDate) currentStep.value = 1;
-    else if (errors.value.zip_code) currentStep.value = 2;
-    else currentStep.value = 4;
-    return;
+const removeImg = (i) => form.value.images.splice(i, 1);
+
+// ── CEP ──────────────────────────────────────────────────────────────────────
+const loadingCep = ref(false);
+
+const maskedCep = computed({
+  get() {
+    const r = (form.value.address.zip_code || '').replace(/\D/g, '').slice(0, 8);
+    return r.length > 5 ? `${r.slice(0, 5)}-${r.slice(5)}` : r;
+  },
+  set(v) {
+    form.value.address.zip_code = (v || '').replace(/\D/g, '').slice(0, 8);
   }
+});
+
+watch(() => form.value.address.zip_code, async (cep) => {
+  const c = (cep || '').replace(/\D/g, '');
+
+  if (c.length === 8) {
+    loadingCep.value = true;
+    try {
+      const d = await getAddress(c);
+      Object.assign(form.value.address, {
+        street: d.logradouro || form.value.address.street || '',
+        neighborhood: d.bairro || form.value.address.neighborhood || '',
+        city: d.localidade || form.value.address.city || '',
+        state: d.uf || form.value.address.state || '',
+      });
+    } catch (e) {
+      // silent
+    } finally {
+      loadingCep.value = false;
+    }
+  } else if (c.length === 0) {
+    form.value.address.zip_code = '';
+  }
+});
+
+// ── VALIDATE / SUBMIT ────────────────────────────────────────────────────────
+const validate = () => {
+  errors.value = {};
+  if (!form.value.title.trim()) errors.value.title = 'Obrigatório';
+  if (!form.value.eventDate) errors.value.eventDate = 'Obrigatório';
+  return !Object.keys(errors.value).length;
+};
+
+const submit = async () => {
+  if (!validate()) return;
+
   isSubmitting.value = true;
+
   try {
     const payload = {
-      ...editedEvent.value,
-      eventDate: toUtcIsoFromLocalInput(
-        ensureIsoMinute(editedEvent.value.eventDate)
-      )
+      ...form.value,
+      address: { ...form.value.address },
+      tags: [...form.value.tags],
+      images: [...form.value.images],
+      organizers: [...form.value.organizers],
+      eventDate: toUTC(form.value.eventDate),
     };
+
+    if ((!payload.images || payload.images.length === 0) && payload.enterprise_logo) {
+      payload.images = [payload.enterprise_logo];
+    }
+
     await updateEvent(payload);
     emit('close');
-  } catch (error) {
-    console.error('Erro ao atualizar o evento:', error);
-    errors.value.submit = 'Erro ao salvar alterações. Tente novamente.';
+  } catch (e) {
+    errors.value.submit = 'Erro ao salvar alterações.';
   } finally {
     isSubmitting.value = false;
   }
 };
 
-/* ---------- Acessibilidade ---------- */
-const handleKeydown = (e) => { if (e.key === 'Escape') emit('close'); };
-onMounted(() => {
-  document.addEventListener('keydown', handleKeydown);
+// ── KEYBOARD ─────────────────────────────────────────────────────────────────
+const onKey = (e) => {
+  if (e.key === 'Escape') emit('close');
+  if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') submit();
+};
+
+onMounted(async () => {
+  document.addEventListener('keydown', onKey);
   document.body.style.overflow = 'hidden';
+
+  await nextTick();
+  titleRef.value?.focus();
+
+  loadingEnterprises.value = true;
+  try {
+    const result = await getSelectableEnterprises();
+    enterprises.value = Array.isArray(result) ? result : [];
+    syncEnterpriseFromInitialEvent();
+  } catch (error) {
+    console.error('Erro ao carregar empreendimentos:', error);
+  } finally {
+    loadingEnterprises.value = false;
+  }
 });
+
 onUnmounted(() => {
-  document.removeEventListener('keydown', handleKeydown);
+  document.removeEventListener('keydown', onKey);
   document.body.style.overflow = '';
 });
+
+// ── TOKENS ───────────────────────────────────────────────────────────────────
+const b = 'w-full px-3.5 py-2.5 text-sm rounded-xl border outline-none transition bg-white dark:bg-gray-800/60 text-gray-900 dark:text-gray-100 placeholder:text-gray-400';
+const inp = `${b} border-gray-200 dark:border-gray-700 focus:border-amber-400 focus:ring-2 focus:ring-amber-500/15`;
+const inpE = `${b} border-red-400 bg-red-50 dark:bg-red-900/10 focus:ring-2 focus:ring-red-400/20`;
+const lbl = 'text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide';
 </script>
 
 <template>
-  <div class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-    @click.self="emit('close')">
-    <div class="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
-      <!-- Header -->
-      <div class="bg-gradient-to-r from-blue-500 to-purple-600 p-6 text-white">
-        <div class="flex items-center justify-between mb-4">
-          <div class="flex items-center gap-4">
-            <div class="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
-              <i class="fas fa-pen text-2xl"></i>
-            </div>
-            <div>
-              <h2 class="text-2xl font-bold">Editar Evento</h2>
-              <p class="text-blue-100">Passo {{ currentStep }} de {{ totalSteps }}</p>
-            </div>
-          </div>
-          <button @click="emit('close')"
-            class="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-colors">
-            <i class="fas fa-times text-xl"></i>
-          </button>
-        </div>
+  <div class="fixed inset-0 z-[60] flex justify-end" @click.self="$emit('close')">
+    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="$emit('close')" />
 
-        <!-- Steps -->
-        <div class="flex gap-4">
-          <div v-for="step in steps" :key="step.number" :class="['flex items-center gap-3 px-4 py-2 rounded-xl transition-all duration-300',
-            currentStep >= step.number ? 'bg-white/20 text-white' : 'bg-white/5 text-blue-200']">
-            <i :class="step.icon"></i>
-            <span class="hidden md:block font-medium">{{ step.title }}</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Content -->
-      <div class="p-6 overflow-y-auto max-h-[calc(90vh-300px)]">
-        <!-- Step 1: Basic -->
-        <div v-if="currentStep === 1" class="space-y-6">
-          <!-- ... (igual ao seu) -->
-          <!-- título, data, descrição com validação -->
-          <!-- (mantive todo bloco original de Step 1) -->
-          <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-6">Informações Básicas</h3>
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div class="md:col-span-2">
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Título do Evento *</label>
-              <input v-model="editedEvent.title" type="text" placeholder="Digite o título do evento"
-                :class="['w-full px-4 py-3 rounded-xl border-2 transition-colors', errors.title ? 'border-red-500 focus:border-red-600' : 'border-gray-300 dark:border-gray-600 focus:border-blue-500']"
-                class="bg-gray-50 dark:bg-gray-700 dark:text-white" />
-              <p v-if="errors.title" class="text-red-500 text-sm mt-1">{{ errors.title }}</p>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Data do Evento *</label>
-              <input v-model="editedEvent.eventDate" type="datetime-local"
-                :class="['w-full px-4 py-3 rounded-xl border-2 transition-colors', errors.eventDate ? 'border-red-500 focus:border-red-600' : 'border-gray-300 dark:border-gray-600 focus:border-blue-500']"
-                class="bg-gray-50 dark:bg-gray-700 dark:text-white" />
-              <p v-if="errors.eventDate" class="text-red-500 text-sm mt-1">{{ errors.eventDate }}</p>
-            </div>
+    <div class="relative h-full w-full max-w-xl bg-white dark:bg-gray-900 shadow-2xl flex flex-col overflow-hidden"
+      style="animation:slideIn .22s cubic-bezier(.4,0,.2,1)">
+      <!-- HEADER -->
+      <div
+        class="px-6 pt-5 pb-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between shrink-0">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-lg bg-amber-500 grid place-items-center shrink-0">
+            <i class="fas fa-pen text-white text-xs"></i>
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Descrição do Evento *</label>
-            <textarea v-model="editedEvent.description" rows="4"
-              placeholder="Descreva os detalhes do evento, atividades, público-alvo, etc."
-              :class="['w-full px-4 py-3 rounded-xl border-2 transition-colors resize-none', errors.description ? 'border-red-500 focus:border-red-600' : 'border-gray-300 dark:border-gray-600 focus:border-blue-500']"
-              class="bg-gray-50 dark:bg-gray-700 dark:text-white"></textarea>
-            <p v-if="errors.description" class="text-red-500 text-sm mt-1">{{ errors.description }}</p>
+            <h2 class="text-sm font-semibold text-gray-900 dark:text-white leading-none">Editar Evento</h2>
+            <p class="text-xs text-gray-400 mt-0.5 truncate max-w-xs">{{ form.title || 'sem título' }}</p>
           </div>
         </div>
 
-        <!-- Step 2: Location -->
-        <div v-if="currentStep === 2" class="space-y-6">
-          <!-- ... (igual ao seu Step 2, mantendo CEP + autofill) -->
-          <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-6">Localização do Evento</h3>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">CEP *</label>
-              <div class="relative">
-                <input v-model="maskedCep" type="text" inputmode="numeric" placeholder="00000-000" maxlength="9"
-                  :class="['w-full px-4 py-3 rounded-xl border-2 transition-colors', errors.zip_code ? 'border-red-500' : 'border-gray-300 dark:border-gray-600 focus:border-blue-500']"
-                  class="bg-gray-50 dark:bg-gray-700 dark:text-white" />
-                <div v-if="isLoadingAddress" class="absolute right-3 top-1/2 -translate-y-1/2">
-                  <i class="fas fa-spinner fa-spin text-blue-500"></i>
+        <button @click="$emit('close')"
+          class="w-8 h-8 rounded-lg grid place-items-center text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition">
+          <i class="fas fa-times text-sm"></i>
+        </button>
+      </div>
+
+      <!-- BODY -->
+      <div class="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+        <!-- TÍTULO -->
+        <div class="space-y-1.5">
+          <label :class="lbl">Título <span class="text-red-400">*</span></label>
+          <input ref="titleRef" v-model="form.title" type="text" placeholder="Nome do evento..."
+            :class="errors.title ? inpE : inp" />
+          <p v-if="errors.title" class="text-xs text-red-500">{{ errors.title }}</p>
+        </div>
+
+        <!-- EMPREENDIMENTO -->
+        <div class="space-y-2">
+          <label :class="lbl">Empreendimento</label>
+
+          <div class="relative">
+            <input v-model="enterpriseSearch" type="text" placeholder="Buscar empreendimento por nome, cidade ou bairro"
+              :class="inp" @focus="onEnterpriseInputFocus" @blur="onEnterpriseInputBlur" />
+
+            <div v-if="showEnterpriseResults"
+              class="absolute z-20 mt-2 w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-lg overflow-hidden">
+              <div v-if="loadingEnterprises" class="px-4 py-3 text-sm text-gray-400">
+                Carregando empreendimentos...
+              </div>
+
+              <div v-else-if="filteredEnterprises.length" class="max-h-64 overflow-y-auto">
+                <button v-for="enterprise in filteredEnterprises" :key="enterprise.idempreendimento" type="button"
+                  @mousedown.prevent="selectEnterprise(enterprise)"
+                  class="w-full px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800/60 transition border-b border-gray-100 dark:border-gray-800 last:border-b-0">
+                  <div class="flex items-start justify-between gap-3">
+                    <div class="min-w-0">
+                      <p class="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                        {{ enterprise.nome }}
+                      </p>
+                      <p class="text-xs text-gray-500 dark:text-gray-400 truncate">
+                        {{ enterprise.cidade || 'Sem cidade' }}
+                        <span v-if="enterprise.estado"> - {{ enterprise.estado }}</span>
+                        <span v-if="enterprise.bairro"> • {{ enterprise.bairro }}</span>
+                      </p>
+                    </div>
+
+                    <i v-if="String(form.enterprise_id) === String(enterprise.idempreendimento)"
+                      class="fas fa-check text-xs text-amber-500 mt-1 shrink-0"></i>
+                  </div>
+                </button>
+              </div>
+
+              <div v-else class="px-4 py-3 text-sm text-gray-400">
+                Nenhum empreendimento encontrado.
+              </div>
+            </div>
+          </div>
+
+          <div v-if="selectedEnterprise"
+            class="rounded-2xl border border-amber-100 dark:border-amber-900/40 bg-amber-50/70 dark:bg-amber-900/10 px-4 py-3">
+            <div class="flex items-start justify-between gap-3">
+              <div class="flex items-start gap-3 min-w-0">
+                <img v-if="selectedEnterprise.logo" :src="selectedEnterprise.logo" alt="Logo empreendimento"
+                  class="w-12 h-12 rounded-xl object-cover bg-white border border-gray-200 dark:border-gray-700 shrink-0" />
+
+                <div class="min-w-0">
+                  <p class="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
+                    {{ selectedEnterprise.nome }}
+                  </p>
+
+                  <p class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+                    {{ selectedEnterprise.endereco_emp || selectedEnterprise.endereco || 'Endereço não informado' }}
+                    <span v-if="selectedEnterprise.numero">, {{ selectedEnterprise.numero }}</span>
+                    <span v-if="selectedEnterprise.bairro"> • {{ selectedEnterprise.bairro }}</span>
+                    <span v-if="selectedEnterprise.cidade"> • {{ selectedEnterprise.cidade }}</span>
+                    <span v-if="selectedEnterprise.estado">/{{ selectedEnterprise.estado }}</span>
+                  </p>
+
+                  <p class="text-[11px] text-amber-600 dark:text-amber-400 mt-1">
+                    Endereço preenchido automaticamente. Você ainda pode editar abaixo.
+                  </p>
                 </div>
               </div>
-              <p v-if="errors.zip_code" class="text-red-500 text-sm mt-1">{{ errors.zip_code }}</p>
-            </div>
 
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Estado</label>
-              <input v-model="editedEvent.address.state" type="text" placeholder="Estado"
-                class="w-full px-4 py-3 rounded-xl border-2 border-gray-300 dark:border-gray-600 focus:border-blue-500 bg-gray-50 dark:bg-gray-700 dark:text-white transition-colors" />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Cidade</label>
-              <input v-model="editedEvent.address.city" type="text" placeholder="Cidade"
-                class="w-full px-4 py-3 rounded-xl border-2 border-gray-300 dark:border-gray-600 focus:border-blue-500 bg-gray-50 dark:bg-gray-700 dark:text-white transition-colors" />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Bairro</label>
-              <input v-model="editedEvent.address.neighborhood" type="text" placeholder="Bairro"
-                class="w-full px-4 py-3 rounded-xl border-2 border-gray-300 dark:border-gray-600 focus:border-blue-500 bg-gray-50 dark:bg-gray-700 dark:text-white transition-colors" />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Rua</label>
-              <input v-model="editedEvent.address.street" type="text" placeholder="Nome da rua"
-                class="w-full px-4 py-3 rounded-xl border-2 border-gray-300 dark:border-gray-600 focus:border-blue-500 bg-gray-50 dark:bg-gray-700 dark:text-white transition-colors" />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Número</label>
-              <input v-model="editedEvent.address.number" type="text" placeholder="Número"
-                class="w-full px-4 py-3 rounded-xl border-2 border-gray-300 dark:border-gray-600 focus:border-blue-500 bg-gray-50 dark:bg-gray-700 dark:text-white transition-colors" />
+              <button type="button" @click="clearEnterprise"
+                class="shrink-0 w-8 h-8 rounded-lg grid place-items-center text-gray-400 hover:text-red-500 hover:bg-white/70 dark:hover:bg-gray-800 transition"
+                title="Remover empreendimento">
+                <i class="fas fa-times text-xs"></i>
+              </button>
             </div>
           </div>
         </div>
 
-        <!-- Step 3: Mídia e Tags -->
-        <div v-if="currentStep === 3" class="space-y-6">
-          <!-- ... (igual ao seu Step 3) -->
-          <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-6">Mídia e Categorias</h3>
+        <!-- DATA + ATALHOS -->
+        <div class="space-y-1.5">
+          <label :class="lbl">Data &amp; Hora <span class="text-red-400">*</span></label>
 
-          <div class="bg-gray-50 dark:bg-gray-700 rounded-2xl p-6">
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Tags do Evento</label>
-            <div class="flex gap-3 mb-4">
-              <input v-model="newTag" type="text" placeholder="Digite uma tag" @keyup.enter="addTag"
-                class="flex-1 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-600 dark:text-white focus:border-blue-500 transition-colors" />
-              <button type="button" @click="addTag"
-                class="px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition-colors">
-                <i class="fas fa-plus mr-2"></i>Adicionar
-              </button>
-            </div>
-            <div v-if="editedEvent.tags.length" class="flex flex-wrap gap-2">
-              <span v-for="(tag, i) in editedEvent.tags" :key="i"
-                class="flex items-center gap-2 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-3 py-1 rounded-full text-sm">
-                {{ tag }}
-                <button @click="removeTag(i)" class="hover:text-red-500 transition-colors"><i
-                    class="fas fa-times text-xs"></i></button>
-              </span>
-            </div>
+          <div class="flex flex-wrap gap-1.5">
+            <button v-for="qd in quickDates" :key="qd.label" type="button" @click="applyQuick(qd)"
+              class="px-2.5 py-1 rounded-lg text-xs font-medium border transition"
+              :class="form.eventDate === qd.getValue()
+                ? 'bg-amber-500 text-white border-amber-500'
+                : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:border-amber-400 hover:text-amber-600 dark:hover:text-amber-400'">
+              {{ qd.label }}
+            </button>
           </div>
 
-          <div class="bg-gray-50 dark:bg-gray-700 rounded-2xl p-6">
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Imagens do Evento</label>
-            <div class="flex gap-3 mb-4">
-              <input v-model="newImageUrl" type="url" placeholder="URL da imagem" @keyup.enter="addImage"
-                class="flex-1 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-600 dark:text-white focus:border-blue-500 transition-colors" />
-              <button type="button" @click="addImage"
-                class="px-6 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium transition-colors">
-                <i class="fas fa-image mr-2"></i>Adicionar
+          <input v-model="form.eventDate" type="datetime-local" :class="errors.eventDate ? inpE : inp" />
+
+          <p v-if="form.eventDate" class="text-xs text-amber-600 dark:text-amber-400 capitalize">
+            <i class="fas fa-calendar-check mr-1 opacity-60"></i>{{ fmtDate(form.eventDate) }}
+          </p>
+
+          <p v-if="errors.eventDate" class="text-xs text-red-500">{{ errors.eventDate }}</p>
+        </div>
+
+        <!-- DESCRIÇÃO -->
+        <div class="space-y-1.5">
+          <label :class="lbl">
+            Descrição
+            <span class="text-gray-400 font-normal normal-case text-xs">(opcional)</span>
+          </label>
+
+          <textarea v-model="form.description" rows="3" placeholder="Detalhes, público-alvo, programação..."
+            class="w-full px-3.5 py-2.5 text-sm rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/60 text-gray-900 dark:text-gray-100 outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-500/15 placeholder:text-gray-400 resize-none transition" />
+        </div>
+
+        <!-- TAGS -->
+        <div class="space-y-1.5">
+          <label :class="lbl">
+            Tags
+            <span class="text-gray-400 font-normal normal-case text-xs">(Enter para adicionar)</span>
+          </label>
+
+          <input v-model="newTag" type="text" placeholder="Ex: Workshop, Lançamento..." @keydown.enter.prevent="addTag"
+            :class="inp" />
+
+          <div v-if="form.tags.length" class="flex flex-wrap gap-1.5 pt-0.5">
+            <span v-for="(tag, i) in form.tags" :key="i"
+              class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300">
+              {{ tag }}
+              <button @click="removeTag(i)" class="hover:text-red-500 transition leading-none">
+                <i class="fas fa-times text-[10px]"></i>
+              </button>
+            </span>
+          </div>
+        </div>
+
+        <!-- LOCALIZAÇÃO -->
+        <div class="rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+          <button type="button" @click="toggle('location')"
+            class="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition">
+            <span class="flex items-center gap-2">
+              <i class="fas fa-map-marker-alt text-xs text-gray-400"></i>
+              Localização
+              <span v-if="form.address.city" class="text-xs font-normal text-gray-400">
+                — {{ form.address.city }}<span v-if="form.address.state">/{{ form.address.state }}</span>
+              </span>
+            </span>
+
+            <i class="fas fa-chevron-down text-xs text-gray-400 transition-transform duration-200"
+              :class="{ 'rotate-180': openSections.location }"></i>
+          </button>
+
+          <div v-show="openSections.location"
+            class="px-4 pb-4 pt-3 border-t border-gray-100 dark:border-gray-800 space-y-3">
+            <div class="space-y-1.5">
+              <label :class="lbl">CEP</label>
+              <div class="relative">
+                <input v-model="maskedCep" type="text" inputmode="numeric" maxlength="9" placeholder="00000-000"
+                  :class="inp" />
+                <i v-if="loadingCep"
+                  class="fas fa-spinner fa-spin absolute right-3.5 top-1/2 -translate-y-1/2 text-amber-400 text-xs"></i>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-3 gap-3">
+              <div class="col-span-2 space-y-1.5">
+                <label :class="lbl">Cidade</label>
+                <input v-model="form.address.city" type="text" placeholder="Cidade" :class="inp" />
+              </div>
+
+              <div class="space-y-1.5">
+                <label :class="lbl">UF</label>
+                <input v-model="form.address.state" type="text" maxlength="2" placeholder="SP"
+                  :class="inp + ' uppercase'" />
+              </div>
+            </div>
+
+            <div class="grid grid-cols-3 gap-3">
+              <div class="col-span-2 space-y-1.5">
+                <label :class="lbl">Rua</label>
+                <input v-model="form.address.street" type="text" placeholder="Logradouro" :class="inp" />
+              </div>
+
+              <div class="space-y-1.5">
+                <label :class="lbl">Nº</label>
+                <input v-model="form.address.number" type="text" placeholder="123" :class="inp" />
+              </div>
+            </div>
+
+            <div class="space-y-1.5">
+              <label :class="lbl">Bairro</label>
+              <input v-model="form.address.neighborhood" type="text" placeholder="Bairro" :class="inp" />
+            </div>
+          </div>
+        </div>
+
+        <!-- IMAGENS -->
+        <div class="rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+          <button type="button" @click="toggle('media')"
+            class="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition">
+            <span class="flex items-center gap-2">
+              <i class="fas fa-images text-xs text-gray-400"></i>
+              Imagens
+              <span v-if="form.images.length" class="text-xs font-normal text-gray-400">
+                — {{ form.images.length }} adicionada{{ form.images.length > 1 ? 's' : '' }}
+              </span>
+            </span>
+
+            <i class="fas fa-chevron-down text-xs text-gray-400 transition-transform duration-200"
+              :class="{ 'rotate-180': openSections.media }"></i>
+          </button>
+
+          <div v-show="openSections.media"
+            class="px-4 pb-4 pt-3 border-t border-gray-100 dark:border-gray-800 space-y-3">
+            <div class="flex gap-2">
+              <input v-model="newImg" type="url" placeholder="URL da imagem..." @keydown.enter.prevent="addImg"
+                :class="inp + ' flex-1'" />
+              <button type="button" @click="addImg"
+                class="px-3 py-2.5 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition shrink-0">
+                <i class="fas fa-plus text-xs"></i>
               </button>
             </div>
-            <div v-if="editedEvent.images.length" class="grid grid-cols-2 md:grid-cols-3 gap-4">
-              <div v-for="(image, i) in editedEvent.images" :key="i" class="relative group rounded-2xl overflow-hidden">
-                <img :src="image" :alt="`Imagem ${i + 1}`" class="w-full h-32 object-cover" />
-                <button @click="removeImage(i)"
-                  class="absolute top-2 right-2 w-8 h-8 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-all"
-                  title="Remover imagem">
-                  <i class="fas fa-trash text-sm"></i>
+
+            <p v-if="!form.images.length && form.enterprise_logo" class="text-xs text-gray-500 dark:text-gray-400">
+              Sem imagens anexadas. Ao salvar, a logo do empreendimento será usada automaticamente.
+            </p>
+
+            <div v-if="form.images.length" class="grid grid-cols-3 gap-2">
+              <div v-for="(img, i) in form.images" :key="i"
+                class="relative group rounded-lg overflow-hidden aspect-video bg-gray-100 dark:bg-gray-800">
+                <img :src="img" class="w-full h-full object-cover" />
+                <button @click="removeImg(i)"
+                  class="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 text-white grid place-items-center opacity-0 group-hover:opacity-100 transition">
+                  <i class="fas fa-times text-[9px]"></i>
                 </button>
               </div>
             </div>
-            <p v-else class="text-sm text-gray-500 dark:text-gray-300">Sem imagens no momento.</p>
+
+            <p v-else class="text-xs text-gray-400">Sem imagens.</p>
           </div>
         </div>
 
-        <!-- Step 4: Organizadores -->
-        <div v-if="currentStep === 4" class="space-y-6">
-          <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-6">Organizadores</h3>
-          <!-- Se quiser sugestões de usuários internos, passe :users="authStore.users" no pai -->
-          <OrganizerPicker v-model="editedEvent.organizers" :users="props.users" />
-          <p v-if="errors.organizers" class="text-red-500 text-sm mt-2">{{ errors.organizers }}</p>
-        </div>
+        <!-- ORGANIZADORES -->
+        <div class="rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+          <button type="button" @click="toggle('organizers')"
+            class="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition">
+            <span class="flex items-center gap-2">
+              <i class="fas fa-people-group text-xs text-gray-400"></i>
+              Organizadores
+              <span v-if="form.organizers.length" class="text-xs font-normal text-gray-400">
+                — {{ form.organizers.length }}
+              </span>
+            </span>
 
-        <!-- Step 5: Revisão -->
-        <div v-if="currentStep === 5" class="space-y-6">
-          <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-6">Revise os dados</h3>
+            <i class="fas fa-chevron-down text-xs text-gray-400 transition-transform duration-200"
+              :class="{ 'rotate-180': openSections.organizers }"></i>
+          </button>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <!-- Info -->
-            <div class="rounded-2xl border border-gray-200 dark:border-gray-700 p-4">
-              <h4 class="font-semibold text-gray-900 dark:text-white mb-2">Informações</h4>
-              <p class="text-sm text-gray-600 dark:text-gray-300"><span class="font-medium">Título:</span> {{
-                editedEvent.title || '-' }}</p>
-              <p class="text-sm text-gray-600 dark:text-gray-300"><span class="font-medium">Quando:</span> {{
-                formatDateTime(editedEvent.eventDate) || '-' }}</p>
-              <p class="text-sm text-gray-600 dark:text-gray-300 mt-2 whitespace-pre-line"><span
-                  class="font-medium">Descrição:</span> {{ editedEvent.description || '-' }}</p>
-              <p class="text-sm text-gray-600 dark:text-gray-300 mt-2"><span class="font-medium">Criado por:</span> {{
-                editedEvent.created_by || '-' }}</p>
-            </div>
-
-            <!-- Local -->
-            <div class="rounded-2xl border border-gray-200 dark:border-gray-700 p-4">
-              <h4 class="font-semibold text-gray-900 dark:text-white mb-2">Local</h4>
-              <p class="text-sm text-gray-600 dark:text-gray-300"><span class="font-medium">CEP:</span> {{ maskedCep ||
-                '-' }}</p>
-              <p class="text-sm text-gray-600 dark:text-gray-300">
-                <span class="font-medium">Endereço:</span>
-                {{ editedEvent.address.street || '-' }}<span v-if="editedEvent.address.number">, {{
-                  editedEvent.address.number }}</span>
-              </p>
-              <p class="text-sm text-gray-600 dark:text-gray-300"><span class="font-medium">Bairro:</span> {{
-                editedEvent.address.neighborhood || '-' }}</p>
-              <p class="text-sm text-gray-600 dark:text-gray-300">
-                <span class="font-medium">Cidade/UF:</span>
-                {{ editedEvent.address.city || '-' }}<span v-if="editedEvent.address.state">/{{
-                  editedEvent.address.state }}</span>
-              </p>
-            </div>
-
-            <!-- Tags & Imagens -->
-            <div class="rounded-2xl border border-gray-200 dark:border-gray-700 p-4 md:col-span-2">
-              <h4 class="font-semibold text-gray-900 dark:text-white mb-3">Tags e Imagens</h4>
-              <div class="mb-3">
-                <div v-if="editedEvent.tags.length" class="flex flex-wrap gap-2">
-                  <span v-for="(tag, i) in editedEvent.tags" :key="i"
-                    class="px-2 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-xs font-medium rounded-lg border border-blue-200 dark:border-blue-800">{{
-                    tag }}</span>
-                </div>
-                <p v-else class="text-sm text-gray-500 dark:text-gray-300">Sem tags.</p>
-              </div>
-              <div>
-                <div v-if="editedEvent.images.length" class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  <img v-for="(img, i) in editedEvent.images" :key="i" :src="img"
-                    class="w-full h-24 object-cover rounded-lg border border-gray-200 dark:border-gray-700" />
-                </div>
-                <p v-else class="text-sm text-gray-500 dark:text-gray-300">Sem imagens.</p>
-              </div>
-            </div>
-
-            <!-- Organizadores -->
-            <div class="rounded-2xl border border-gray-200 dark:border-gray-700 p-4 md:col-span-2">
-              <h4 class="font-semibold text-gray-900 dark:text-white mb-3">Organizadores</h4>
-              <div v-if="editedEvent.organizers?.length" class="flex flex-wrap gap-2">
-                <span v-for="(o, i) in editedEvent.organizers" :key="i"
-                  class="px-2 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-200 rounded-lg border text-xs flex items-center gap-2">
-                  <i class="fas fa-user"></i>
-                  <span class="truncate max-w-60">
-                    {{ o.name }}
-                    <span v-if="o.position" class="opacity-70"> — {{ o.position }}</span>
-                    <span v-if="o.email" class="opacity-70"> ({{ o.email }})</span>
-                  </span>
-                </span>
-              </div>
-              <p v-else class="text-sm text-gray-500 dark:text-gray-300">Nenhum organizador informado.</p>
-            </div>
+          <div v-show="openSections.organizers" class="px-4 pb-4 pt-1 border-t border-gray-100 dark:border-gray-800">
+            <OrganizerPicker v-model="form.organizers" :users="props.users" />
           </div>
-
-          <p v-if="errors.submit" class="text-red-500 text-sm mt-2">{{ errors.submit }}</p>
         </div>
+
+        <p v-if="errors.submit" class="text-xs text-red-500 text-center">{{ errors.submit }}</p>
       </div>
 
-      <!-- Footer -->
-      <div
-        class="p-6 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between bg-white/60 dark:bg-gray-800/60 backdrop-blur">
-        <button v-if="currentStep > 1" @click="prevStep"
-          class="px-5 py-3 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-          <i class="fas fa-chevron-left mr-2"></i> Voltar
+      <!-- FOOTER -->
+      <div class="px-6 py-4 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between shrink-0">
+        <button @click="$emit('close')"
+          class="px-4 py-2 rounded-xl text-sm font-medium border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition">
+          Cancelar
         </button>
-        <span v-else></span>
 
-        <div class="flex items-center gap-3">
-          <button v-if="currentStep < totalSteps" @click="nextStep"
-            class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold shadow transition-colors">
-            Próximo <i class="fas fa-chevron-right ml-2"></i>
-          </button>
-
-          <button v-else :disabled="isSubmitting" @click="submitEdit"
-            class="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 disabled:opacity-70 text-white rounded-lg font-semibold shadow transition-colors">
-            <i v-if="isSubmitting" class="fas fa-spinner fa-spin mr-2"></i>
-            {{ isSubmitting ? 'Salvando...' : 'Salvar Alterações' }}
-          </button>
-        </div>
+        <button @click="submit" :disabled="isSubmitting"
+          class="flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold bg-amber-500 hover:bg-amber-600 disabled:opacity-60 disabled:cursor-not-allowed text-white shadow-sm transition">
+          <i v-if="isSubmitting" class="fas fa-spinner fa-spin text-xs"></i>
+          <i v-else class="fas fa-check text-xs"></i>
+          {{ isSubmitting ? 'Salvando...' : 'Salvar Alterações' }}
+        </button>
       </div>
     </div>
   </div>
 </template>
+
+<style scoped>
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+</style>

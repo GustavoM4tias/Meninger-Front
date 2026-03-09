@@ -29,6 +29,48 @@ export const loginUser = async (email, password) => {
   return response.json();
 };
 
+export const changePassword = async (currentPassword, newPassword, confirmNewPassword) => {
+  const response = await fetchCarregamento(`${API_URL}/auth/user/password`, {
+    method: 'PUT',
+    headers: {
+      'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ currentPassword, newPassword, confirmNewPassword }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message);
+  }
+
+  return response.json();
+};
+
+export const requestPasswordReset = async (email) => {
+  const response = await fetchCarregamento(`${API_URL}/auth/forgot-password/request`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ email }),
+  });
+
+  return response.json();
+};
+
+export const resetPassword = async (email, code, password, confirmPassword) => {
+  const response = await fetchCarregamento(`${API_URL}/auth/forgot-password/reset`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ email, code, password, confirmPassword }),
+  });
+
+  return response.json();
+};
+
 export const getUserInfo = async () => {
   const response = await fetch(`${API_URL}/auth/user`, {
     method: 'GET',

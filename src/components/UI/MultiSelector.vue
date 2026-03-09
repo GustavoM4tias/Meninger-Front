@@ -1,45 +1,32 @@
 <script setup>
 import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue';
 
-/**
- * MultiSelector — com “Selecionar tudo (filtrado)” + otimizações
- * - Emissão em lote via requestAnimationFrame (evita travar com listas grandes)
- * - Select-all atua sobre a LISTA FILTRADA (mais útil no dia a dia)
- */
-
 const props = defineProps({
-    options: { type: Array, default: () => [] },          // array<string>
-    modelValue: { type: Array, default: () => [] },        // array<string>
+    options: { type: Array, default: () => [] },
+    modelValue: { type: Array, default: () => [] },
     placeholder: { type: String, default: 'Selecione...' },
+    label: { type: String, default: '' },
     searchDebounce: { type: Number, default: 180 },
     pageSize: { type: Number, default: 150 },
     disabled: { type: Boolean, default: false },
-
-    // classes externas
-    wrapperClass: { type: String, default: 'relative' },
-    buttonClass: { type: String, default: 'w-full px-3 py-2 rounded-lg border text-left' },
-    panelClass: { type: String, default: 'absolute z-50 mt-1 max-h-72 w-full overflow-hidden rounded-md border shadow bg-white dark:bg-gray-800' },
-    searchClass: { type: String, default: 'w-full mb-2 px-2 py-1 rounded border text-sm' },
-    optionClass: { type: String, default: 'flex items-center gap-2 py-1 px-2 cursor-pointer' },
 });
 
 const emit = defineEmits(['update:modelValue', 'open', 'close', 'change']);
 
 const open = ref(false);
 const wrapperRef = ref(null);
+const searchInputRef = ref(null);
+const masterRef = ref(null);
 
-// seleção interna via Set (leve)
+// internal selection Set
 const selectedSet = ref(new Set(props.modelValue));
 const selected = computed(() => Array.from(selectedSet.value));
 
-// sincroniza mudanças externas
-watch(
-    () => props.modelValue,
-    (arr) => { selectedSet.value = new Set(Array.isArray(arr) ? arr : []); },
-    { deep: false }
-);
+watch(() => props.modelValue, (arr) => {
+    selectedSet.value = new Set(Array.isArray(arr) ? arr : []);
+}, { deep: false });
 
-// click fora
+// click outside
 function onDocClick(e) {
     if (open.value && wrapperRef.value && !wrapperRef.value.contains(e.target)) {
         open.value = false;
@@ -49,66 +36,42 @@ function onDocClick(e) {
 onMounted(() => document.addEventListener('click', onDocClick, { capture: true, passive: true }));
 onBeforeUnmount(() => document.removeEventListener('click', onDocClick, { capture: true }));
 
-const searchInputRef = ref(null);
-const autoFocusOnOpen = true; // deixe true; torne prop se quiser
-
-// abrir/fechar
 function toggleOpen() {
     if (props.disabled) return;
     open.value = !open.value;
     emit(open.value ? 'open' : 'close');
-    // foca o campo de busca assim que o painel renderizar
-    if (open.value && autoFocusOnOpen) {
-        nextTick(() => {
-            // delay curtinho ajuda em alguns navegadores
-            setTimeout(() => {
-                if (searchInputRef.value) {
-                    searchInputRef.value.focus();
-                    // opcional: selecionar conteúdo atual
-                    try { searchInputRef.value.select?.(); } catch { }
-                }
-            }, 0);
-        });
+    if (open.value) {
+        nextTick(() => setTimeout(() => { searchInputRef.value?.focus(); try { searchInputRef.value?.select(); } catch { } }, 0));
     }
 }
 
-// ===== Busca com debounce =====
+// search debounce
 const searchRaw = ref('');
 const search = ref('');
 let t;
-watch(searchRaw, (v) => {
-    clearTimeout(t);
-    t = setTimeout(() => (search.value = v), props.searchDebounce);
-});
+watch(searchRaw, (v) => { clearTimeout(t); t = setTimeout(() => (search.value = v), props.searchDebounce); });
 
-// ===== Pré-processamento: cache em minúsculas =====
+// lowercased cache
 const optionsLc = computed(() =>
     (props.options || []).map(o => [o, (o ?? '').toString().toLowerCase()])
 );
 
-// opções filtradas (usando cache)
 const filteredOptions = computed(() => {
     const s = (search.value || '').trim().toLowerCase();
     if (!s) return optionsLc.value.map(([orig]) => orig);
     const out = [];
-    for (let i = 0; i < optionsLc.value.length; i++) {
-        const [orig, low] = optionsLc.value[i];
-        if (low.includes(s)) out.push(orig);
-    }
+    for (const [orig, low] of optionsLc.value) if (low.includes(s)) out.push(orig);
     return out;
 });
 
-// virtualização simples
 const page = ref(props.pageSize);
 const visibleOptions = computed(() => filteredOptions.value.slice(0, page.value));
 function onScroll(e) {
     const el = e.target;
-    if (el.scrollTop + el.clientHeight >= el.scrollHeight - 60) {
-        page.value += props.pageSize;
-    }
+    if (el.scrollTop + el.clientHeight >= el.scrollHeight - 60) page.value += props.pageSize;
 }
 
-// ===== Emissão (aplica imediatamente) =====
+// emit batch
 let rafId = 0;
 function emitSelectedOnce() {
     if (rafId) cancelAnimationFrame(rafId);
@@ -120,107 +83,142 @@ function emitSelectedOnce() {
     });
 }
 
-// toggle item
 function toggle(option) {
     const set = new Set(selectedSet.value);
-    if (set.has(option)) set.delete(option); else set.add(option);
+    set.has(option) ? set.delete(option) : set.add(option);
     selectedSet.value = set;
     emitSelectedOnce();
 }
 
-// limpar total (opcional de fora)
 function clearAll() {
     selectedSet.value = new Set();
     emitSelectedOnce();
 }
 
-// ====== Select All (atua sobre a lista FILTRADA) ======
-const masterRef = ref(null);
+// select-all (filtered)
 const filteredCount = computed(() => filteredOptions.value.length);
-const selectedInFiltered = computed(() => {
-    let c = 0;
-    const set = selectedSet.value;
-    const list = filteredOptions.value;
-    for (let i = 0; i < list.length; i++) if (set.has(list[i])) c++;
-    return c;
-});
+const selectedInFiltered = computed(() => { let c = 0; for (const o of filteredOptions.value) if (selectedSet.value.has(o)) c++; return c; });
 const allFilteredSelected = computed(() => filteredCount.value > 0 && selectedInFiltered.value === filteredCount.value);
 const noneFilteredSelected = computed(() => selectedInFiltered.value === 0);
 
-// controla estado indeterminate do checkbox master
 watch([selectedInFiltered, filteredCount], async () => {
     await nextTick();
     if (!masterRef.value) return;
     masterRef.value.indeterminate = !allFilteredSelected.value && !noneFilteredSelected.value && filteredCount.value > 0;
 });
 
-// selecionar/limpar tudo do filtro atual
 function toggleSelectAllFiltered(e) {
     const check = e?.target?.checked ?? !allFilteredSelected.value;
     const set = new Set(selectedSet.value);
-    const list = filteredOptions.value;
-
-    if (check) {
-        for (let i = 0; i < list.length; i++) set.add(list[i]);
-    } else {
-        for (let i = 0; i < list.length; i++) set.delete(list[i]);
-    }
+    for (const o of filteredOptions.value) check ? set.add(o) : set.delete(o);
     selectedSet.value = set;
     emitSelectedOnce();
 }
 </script>
 
 <template>
-    <div :class="wrapperClass" ref="wrapperRef">
-        <!-- Botão -->
-        <button type="button" class="border-gray-200 dark:border-gray-600 dark:bg-gray-900/60 h-12 overflow-y-auto"
-            :disabled="disabled" :class="buttonClass" @click="toggleOpen">
-            <slot name="button" :selected="selected">
-                <span v-if="selected.length === 1" class="block truncate">
-                    {{ selected[0] }}
-                </span>
-                <span v-else-if="selected.length > 1" class="block truncate">
-                    {{ selected.length }} itens selecionados
-                </span>
-                <span v-else class="opacity-60">{{ placeholder }}</span>
-            </slot>
+    <div class="relative w-full" ref="wrapperRef">
+        <!-- Label -->
+        <label v-if="label"
+            class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">
+            {{ label }}
+        </label>
+
+        <!-- Trigger button -->
+        <button type="button" :disabled="disabled" @click="toggleOpen" class="w-full flex items-center justify-between gap-2
+             px-3.5 py-2.5 text-sm text-left
+             bg-white dark:bg-gray-900/60
+             border border-gray-200 dark:border-gray-700
+             rounded-md shadow-sm
+             outline-none transition-all duration-150
+             focus:border-blue-400 dark:focus:border-blue-500
+             focus:ring-2 focus:ring-blue-500/15
+             disabled:opacity-50 disabled:cursor-not-allowed">
+            <span class="truncate"
+                :class="selected.length === 0 ? 'text-gray-400 dark:text-gray-500' : 'text-gray-900 dark:text-gray-100'">
+                <slot name="button" :selected="selected">
+                    <template v-if="selected.length === 1">{{ selected[0] }}</template>
+                    <template v-else-if="selected.length > 1">{{ selected.length }} selecionados</template>
+                    <template v-else>{{ placeholder }}</template>
+                </slot>
+            </span>
+            <i class="fas fa-chevron-down text-gray-400 text-xs transition-transform duration-200 shrink-0"
+                :class="{ 'rotate-180': open }"></i>
         </button>
 
-        <!-- Painel -->
-        <div v-if="open" class="border-gray-200 dark:border-gray-700" :class="panelClass" role="listbox"
-            aria-multiselectable="true">
-            <!-- Busca -->
-            <div class="p-2 sticky top-0 bg-inherit">
-                <input ref="searchInputRef" v-model="searchRaw"
-                    class="border-gray-200 dark:border-gray-700 dark:bg-gray-700 bg-gray-100" type="text"
-                    :class="searchClass" placeholder="Filtrar..." aria-label="Filtro de opções" />
-            </div>
+        <!-- Dropdown panel -->
+        <transition name="dropdown">
+            <div v-if="open" class="absolute z-50 mt-1.5 w-full
+               bg-white dark:bg-gray-800
+               border border-gray-200 dark:border-gray-700
+               rounded-md shadow-lg overflow-hidden" role="listbox" aria-multiselectable="true">
+                <!-- Search -->
+                <div class="p-2 border-b border-gray-100 dark:border-gray-700">
+                    <div class="relative">
+                        <i
+                            class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none"></i>
+                        <input ref="searchInputRef" v-model="searchRaw" type="text" placeholder="Filtrar..."
+                            aria-label="Filtro de opções" class="w-full pl-8 pr-3 py-2 text-sm
+                     bg-gray-50 dark:bg-gray-700/60
+                     border border-gray-200 dark:border-gray-600
+                     rounded-lg outline-none
+                     text-gray-900 dark:text-gray-100
+                     placeholder:text-gray-400
+                     focus:border-blue-400 dark:focus:border-blue-500
+                     focus:ring-1 focus:ring-blue-500/15" />
+                    </div>
+                </div>
 
-            <!-- Master checkbox (Selecionar/Remover tudo do filtrado) -->
-            <div
-                class="px-2 py-1 sticky top-10 bg-inherit flex items-center gap-2 text-sm border-b border-gray-200 dark:border-gray-700">
-                <input ref="masterRef" type="checkbox" class="accent-blue-600" :checked="allFilteredSelected"
-                    @change="toggleSelectAllFiltered" />
-                <span>
-                    {{ allFilteredSelected ? 'Remover tudo (filtrado)' : 'Selecionar tudo (filtrado)' }}
-                    <span class="opacity-60">— {{ selectedInFiltered }} / {{ filteredCount }}</span>
-                </span>
-            </div>
+                <!-- Select all row -->
+                <div
+                    class="flex items-center gap-2 px-3 py-2 text-xs text-gray-600 dark:text-gray-400 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/30">
+                    <input ref="masterRef" type="checkbox" class="accent-blue-600 cursor-pointer"
+                        :checked="allFilteredSelected" @change="toggleSelectAllFiltered" />
+                    <span class="cursor-pointer select-none" @click="toggleSelectAllFiltered">
+                        {{ allFilteredSelected ? 'Remover todos' : 'Selecionar todos' }}
+                    </span>
+                    <span class="ml-auto opacity-60">{{ selectedInFiltered }}/{{ filteredCount }}</span>
+                </div>
 
-            <!-- Lista -->
-            <div class="max-h-60 overflow-auto pb-12" @scroll.passive="onScroll">
-                <label v-for="opt in visibleOptions" :key="opt" :class="optionClass">
-                    <input type="checkbox" class="accent-blue-600" :checked="selectedSet.has(opt)"
-                        @change="toggle(opt)" />
-                    <slot name="option" :option="opt" :checked="selectedSet.has(opt)">
-                        <span class="truncate">{{ opt }}</span>
-                    </slot>
-                </label>
+                <!-- Options list -->
+                <div class="max-h-56 overflow-y-auto" @scroll.passive="onScroll">
+                    <label v-for="opt in visibleOptions" :key="opt" class="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer
+                   text-gray-700 dark:text-gray-300
+                   hover:bg-blue-50 dark:hover:bg-blue-900/20
+                   transition-colors duration-100">
+                        <input type="checkbox" class="accent-blue-600 cursor-pointer shrink-0"
+                            :checked="selectedSet.has(opt)" @change="toggle(opt)" />
+                        <slot name="option" :option="opt" :checked="selectedSet.has(opt)">
+                            <span class="truncate">{{ opt }}</span>
+                        </slot>
+                    </label>
 
-                <div v-if="visibleOptions.length < filteredOptions.length" class="p-2 text-center text-xs opacity-60">
-                    Carregando… ({{ visibleOptions.length }}/{{ filteredOptions.length }})
+                    <div v-if="visibleOptions.length === 0" class="px-3 py-4 text-sm text-center text-gray-400">
+                        Nenhum resultado encontrado.
+                    </div>
+
+                    <div v-if="visibleOptions.length < filteredOptions.length"
+                        class="px-3 py-2 text-xs text-center text-gray-400">
+                        Carregando... ({{ visibleOptions.length }}/{{ filteredOptions.length }})
+                    </div>
                 </div>
             </div>
-        </div>
+        </transition>
     </div>
 </template>
+
+<style scoped>
+.dropdown-enter-active {
+    transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.dropdown-leave-active {
+    transition: opacity 0.1s ease, transform 0.1s ease;
+}
+
+.dropdown-enter-from,
+.dropdown-leave-to {
+    opacity: 0;
+    transform: translateY(-4px);
+}
+</style>

@@ -1,49 +1,65 @@
-<!-- OrganizerPicker.vue -->
 <script setup>
 import { ref, computed } from 'vue';
 
 const props = defineProps({
-    modelValue: { type: Array, default: () => [] }, // [{type:'user'|'external', id?, name, email?, position?}]
-    users: { type: Array, default: () => [] }       // [{id, username, email, position}]
+    modelValue: { type: Array, default: () => [] },
+    users: { type: Array, default: () => [] },
 });
 
 const emit = defineEmits(['update:modelValue']);
 
 const query = ref('');
-
-// campos para externo
 const externalName = ref('');
 const externalEmail = ref('');
-const externalPosition = ref(''); // <— novo
+const externalPosition = ref('');
+
+const normalizeText = (value) =>
+    String(value || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .trim();
+
+const inputBase =
+    'w-full px-3.5 py-2.5 text-sm rounded-xl border outline-none transition bg-white dark:bg-gray-800/60 text-gray-900 dark:text-gray-100 placeholder:text-gray-400';
+const inputClass = `${inputBase} border-gray-200 dark:border-gray-700 focus:border-blue-400 focus:ring-2 focus:ring-blue-500/15`;
+const labelClass = 'text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide';
 
 const filteredUsers = computed(() => {
-    const q = query.value.trim().toLowerCase();
-    const base = props.users || [];
-    const list = q
-        ? base.filter(u =>
-            (u.username || '').toLowerCase().includes(q) ||
-            (u.email || '').toLowerCase().includes(q) ||
-            (u.position || '').toLowerCase().includes(q)
-        )
-        : base;
-    return list.slice(0, 8);
+    const q = normalizeText(query.value);
+    const selectedIds = new Set(
+        (props.modelValue || [])
+            .filter((o) => o.type === 'user')
+            .map((o) => o.id)
+    );
+
+    const base = !q
+        ? props.users
+        : props.users.filter((u) => {
+            const haystack = normalizeText([u.username, u.email, u.position].filter(Boolean).join(' '));
+            return haystack.includes(q);
+        });
+
+    return base
+        .filter((u) => !selectedIds.has(u.id))
+        .slice(0, 8);
 });
 
 const addUser = (u) => {
-    const exists = props.modelValue.some(o => o.type === 'user' && o.id === u.id);
-    if (!exists) {
-        const next = [
-            ...props.modelValue,
-            {
-                type: 'user',
-                id: u.id,
-                name: u.username,
-                email: u.email,
-                position: u.position || undefined, // << snapshot do cargo
-            }
-        ];
-        emit('update:modelValue', next);
-    }
+    const exists = props.modelValue.some((o) => o.type === 'user' && o.id === u.id);
+    if (exists) return;
+
+    emit('update:modelValue', [
+        ...props.modelValue,
+        {
+            type: 'user',
+            id: u.id,
+            name: u.username,
+            email: u.email,
+            position: u.position || undefined,
+        },
+    ]);
+
     query.value = '';
 };
 
@@ -51,88 +67,113 @@ const addExternal = () => {
     const name = externalName.value.trim();
     const email = externalEmail.value.trim();
     const position = externalPosition.value.trim();
+
     if (!name) return;
+
     emit('update:modelValue', [
         ...props.modelValue,
-        { type: 'external', name, email: email || undefined, position: position || undefined }
+        {
+            type: 'external',
+            name,
+            email: email || undefined,
+            position: position || undefined,
+        },
     ]);
+
     externalName.value = '';
     externalEmail.value = '';
     externalPosition.value = '';
 };
 
 const removeAt = (idx) => {
-    const arr = [...props.modelValue];
-    arr.splice(idx, 1);
-    emit('update:modelValue', arr);
+    const next = [...props.modelValue];
+    next.splice(idx, 1);
+    emit('update:modelValue', next);
 };
 
-// ajuda a re-exibir cargo atualizado do user caso queira (fallback para snapshot salvo)
-const resolveUser = (id) => (props.users || []).find(u => u.id === id);
+const resolveUser = (id) => (props.users || []).find((u) => u.id === id);
+
 const displayPosition = (o) => {
-    if (o.type === 'user') {
-        // prioriza cargo atual do store, senão usa o snapshot salvo
-        return resolveUser(o.id)?.position || o.position;
-    }
+    if (o.type === 'user') return resolveUser(o.id)?.position || o.position;
     return o.position;
+};
+
+const displayEmail = (o) => {
+    if (o.type === 'user') return resolveUser(o.id)?.email || o.email;
+    return o.email;
 };
 </script>
 
 <template>
-    <div class="space-y-3"> 
-
+    <div class="space-y-5">
         <!-- Selecionados -->
-        <div v-if="modelValue.length" class="flex flex-wrap gap-2">
+        <div v-if="modelValue.length" class="flex flex-wrap gap-1.5">
             <span v-for="(o, i) in modelValue" :key="i"
-                class="px-2 py-1 bg-blue-50 text-blue-700 rounded-lg border text-xs flex items-center gap-2">
-                <i class="fas fa-user"></i>
-                <span class="truncate max-w-56 font-semibold">
+                class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
+                <i class="fas fa-user text-[10px]"></i>
+
+                <span class="truncate max-w-64">
                     {{ o.name }}
-                    <template v-if="displayPosition(o)">
-                        <span class="opacity-70"> - {{ displayPosition(o) }}</span>
-                    </template>
-                    <template v-else-if="o.email">
-                        <span class="opacity-70"> ({{ o.email }})</span>
-                    </template>
+                    <span v-if="displayPosition(o)" class="opacity-70"> - {{ displayPosition(o) }}</span>
+                    <span v-else-if="displayEmail(o)" class="opacity-70"> ({{ displayEmail(o) }})</span>
                 </span>
-                <button @click="removeAt(i)" class="hover:text-red-500">
-                    <i class="fas fa-times text-xs"></i>
+
+                <button type="button" @click="removeAt(i)" class="hover:text-red-500 transition leading-none">
+                    <i class="fas fa-times text-[10px]"></i>
                 </button>
             </span>
         </div>
 
         <!-- Buscar usuários -->
-        <div class="relative">
-            <input v-model="query" type="text" placeholder="Buscar organizador (nome, e-mail ou cargo)"
-                class="w-full px-4 py-3 rounded-xl border-2 border-gray-300 dark:border-gray-600 focus:border-blue-500 bg-gray-50 dark:bg-gray-700 dark:text-white transition-colors" />
-            <div v-if="filteredUsers.length && query"
-                class="absolute z-10 mt-1 bg-white dark:bg-gray-700 shadow rounded-lg w-full max-h-48 overflow-auto">
-                <button v-for="u in filteredUsers" :key="u.id"
-                    class="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 flex items-center justify-between"
-                    @click="addUser(u)">
-                    <span>
-                        {{ u.username }}
-                        <span v-if="u.email" class="text-gray-500 text-xs">— {{ u.email }}</span>
-                    </span>
-                    <span v-if="u.position"
-                        class="text-xs px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-600 text-gray-600 dark:text-gray-200">
-                        {{ u.position }}
-                    </span>
-                </button>
+        <div class="space-y-2">
+            <label :class="labelClass">Usuários internos</label>
+
+            <div class="relative">
+                <input v-model="query" type="text" placeholder="Buscar organizador por nome, e-mail ou cargo"
+                    :class="inputClass" />
+
+                <div v-if="query && filteredUsers.length"
+                    class="absolute z-20 mt-2 w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-lg overflow-hidden">
+                    <div class="max-h-56 overflow-y-auto">
+                        <button v-for="u in filteredUsers" :key="u.id" type="button" @mousedown.prevent="addUser(u)"
+                            class="w-full px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800/60 transition border-b border-gray-100 dark:border-gray-800 last:border-b-0">
+                            <div class="flex items-start justify-between gap-3">
+                                <div class="min-w-0">
+                                    <p class="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                                        {{ u.username }}
+                                    </p>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400 truncate">
+                                        {{ u.email || 'Sem e-mail' }}
+                                    </p>
+                                </div>
+
+                                <span v-if="u.position"
+                                    class="shrink-0 text-[11px] px-2 py-1 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300">
+                                    {{ u.position }}
+                                </span>
+                            </div>
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- Adicionar externo -->
-        <div class="grid grid-cols-3 gap-2">
-            <input v-model="externalName" type="text" placeholder="Nome externo"
-                class="w-full px-4 py-3 rounded-xl border-2 border-gray-300 dark:border-gray-600 focus:border-blue-500 bg-gray-50 dark:bg-gray-700 dark:text-white transition-colors" />
-            <input v-model="externalEmail" type="email" placeholder="E-mail (opcional)"
-                class="w-full px-4 py-3 rounded-xl border-2 border-gray-300 dark:border-gray-600 focus:border-blue-500 bg-gray-50 dark:bg-gray-700 dark:text-white transition-colors" />
-            <input v-model="externalPosition" type="text" placeholder="Cargo (opcional)"
-                class="w-full px-4 py-3 rounded-xl border-2 border-gray-300 dark:border-gray-600 focus:border-blue-500 bg-gray-50 dark:bg-gray-700 dark:text-white transition-colors" />
+        <!-- Externo -->
+        <div class="space-y-2">
+            <label :class="labelClass">Organizador externo</label>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
+                <input v-model="externalName" type="text" placeholder="Nome" :class="inputClass" />
+                <input v-model="externalEmail" type="email" placeholder="E-mail (opcional)" :class="inputClass" />
+                <input v-model="externalPosition" type="text" placeholder="Cargo (opcional)" :class="inputClass" />
+            </div>
+
+            <div class="flex justify-end">
+                <button type="button" @click="addExternal"
+                    class="px-3 py-2.5 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition">
+                    Adicionar externo
+                </button>
+            </div>
         </div>
-        <button class="px-3 py-2 bg-blue-600 text-white rounded-lg" @click="addExternal">
-            Adicionar externo
-        </button>
     </div>
 </template>
