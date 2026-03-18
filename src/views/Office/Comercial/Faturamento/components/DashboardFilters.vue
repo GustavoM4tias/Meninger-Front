@@ -76,12 +76,15 @@
 
 <script setup>
 import { onMounted, ref, computed, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import dayjs from 'dayjs'
 import { useContractsStore } from '@/stores/Comercial/Contracts/contractsStore'
 import MultiSelector from '@/components/UI/MultiSelector.vue'
 
 const emit = defineEmits(['filter-changed'])
 const contractsStore = useContractsStore()
+const route = useRoute()
+const router = useRouter()
 
 const localFilters = ref({
     startDate: dayjs().startOf('month').format('YYYY-MM-DD'),
@@ -115,6 +118,31 @@ const groupIdByLabel = computed(() => {
     return m
 })
 
+/* ---------- URL SYNC ---------- */
+function syncFiltersFromUrl() {
+    const q = route.query
+    if (!Object.keys(q).length) return
+    const next = { ...localFilters.value }
+    if (q.enterpriseName) next.enterpriseName = String(q.enterpriseName).split(',').map(s => s.trim()).filter(Boolean)
+    else next.enterpriseName = []
+    if (q.groupIds) next.groupIds = String(q.groupIds).split(',').map(s => s.trim()).filter(Boolean)
+    else next.groupIds = []
+    if (q.startDate) next.startDate = String(q.startDate)
+    if (q.endDate) next.endDate = String(q.endDate)
+    if (q.situation) next.situation = String(q.situation)
+    localFilters.value = next
+    emit('filter-changed')
+}
+
+function syncUrlFromFilters() {
+    const q = {}
+    Object.entries(localFilters.value).forEach(([k, v]) => {
+        if (Array.isArray(v)) { if (v.length) q[k] = v.join(',') }
+        else if (v && String(v).trim()) q[k] = String(v).trim()
+    })
+    router.replace({ query: q })
+}
+
 /* ---------- APPLY / WATCH: converte labels -> ids ---------- */
 const applyFilters = () => {
     // aplica filtros “visuais” (não tem problema mandar labels aqui)
@@ -126,6 +154,7 @@ const applyFilters = () => {
         .filter(n => Number.isFinite(n))
 
     contractsStore.setSelectedGroups(ids) // números
+    syncUrlFromFilters()
     emit('filter-changed')
 }
 
@@ -155,6 +184,7 @@ const clearFilters = () => {
         groupIds: [] // limpa labels
     }
     contractsStore.clearFilters()
+    router.replace({ query: {} })
     emit('filter-changed')
 }
 
@@ -163,5 +193,6 @@ onMounted(async () => {
         contractsStore.fetchEnterprises(),
         contractsStore.fetchWorkflowGroups()
     ])
+    syncFiltersFromUrl()
 })
 </script>
