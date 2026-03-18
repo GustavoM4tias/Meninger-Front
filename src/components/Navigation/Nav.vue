@@ -72,7 +72,10 @@ const menuItems = {
             { router: '/financeiro/custos', section: 'Custos', name: 'Custos', icon: 'fas fa-coins' }
         ]
     },
-    tools: [{ router: '/tools/validator', section: 'Validador', name: 'Validador', icon: 'fas fa-check-double' }],
+    tools: [
+        { router: '/tools/validator', section: 'Validador', name: 'Validador', icon: 'fas fa-check-double' },
+        { router: '/tools/paymentflow', section: 'PaymentFlow', name: 'Fluxo de Pagamento', icon: 'fas fa-diagram-project'}
+    ],
     settings: [
         { router: '/settings/Account', section: 'Minha Conta', name: 'Minha Conta', icon: 'fas fa-user-cog' },
         { router: '/settings/users', section: 'Usuários', name: 'Usuários', icon: 'fas fa-users' },

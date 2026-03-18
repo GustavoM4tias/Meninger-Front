@@ -1,5 +1,6 @@
 <script setup>
 import { onMounted, ref, toRef } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useLeadsStore } from '@/stores/Marketing/Lead/leadsStore'
 
 import Favorite from '@/components/config/Favorite.vue'
@@ -11,6 +12,8 @@ import LeadsTable from './components/LeadsTable.vue'
 import LeadModal from './components/LeadModal.vue'
 
 const store = useLeadsStore()
+const route = useRoute()
+const router = useRouter()
 
 // ✅ Em vez de storeToRefs: faça refs diretas do state
 const leads = toRef(store, 'leads')
@@ -23,6 +26,31 @@ const filtros = toRef(store, 'filtros')
 const kpiSituacoes = toRef(store, 'kpiSituacoes')
 const leadsByEnterprise = toRef(store, 'leadsByEnterprise')
 
+const ARRAY_FIELDS = ['imobiliaria', 'corretor', 'situacao_nome', 'midia_principal', 'origem', 'empreendimento']
+
+function syncFiltersFromUrl() {
+  const q = route.query
+  if (!Object.keys(q).length) return
+  const next = { ...filtros.value }
+  for (const key of ARRAY_FIELDS) {
+    if (q[key]) next[key] = String(q[key]).split(',').map(s => s.trim()).filter(Boolean)
+    else next[key] = []
+  }
+  for (const key of ['nome', 'email', 'telefone', 'data_inicio', 'data_fim']) {
+    next[key] = q[key] ? String(q[key]) : ''
+  }
+  Object.assign(filtros.value, next)
+}
+
+function syncUrlFromFilters() {
+  const q = {}
+  Object.entries(filtros.value).forEach(([k, v]) => {
+    if (Array.isArray(v)) { if (v.length) q[k] = v.join(',') }
+    else if (v && String(v).trim()) q[k] = String(v).trim()
+  })
+  router.replace({ query: q })
+}
+
 const modalVisivel = ref(false)
 const modalLeads = ref([])
 const modalMode = ref('list')
@@ -33,7 +61,10 @@ function abrirModal([list, mode]) {
   modalVisivel.value = true
 }
 
-function buscar() { store.fetchLeads(true) }
+function buscar() {
+  syncUrlFromFilters()
+  store.fetchLeads(true)
+}
 
 function limpar() {
   Object.assign(filtros.value, {
@@ -42,16 +73,20 @@ function limpar() {
     situacao_nome: [], midia_principal: [], origem: [], empreendimento: [],
     data_inicio: '', data_fim: ''
   })
+  router.replace({ query: {} })
   store.fetchLeads(true)
 }
+
 function onFiltrarSituacao(situacao) {
   const set = new Set(filtros.value.situacao_nome || [])
   if (situacao && !set.has(situacao)) set.add(situacao)
   filtros.value.situacao_nome = Array.from(set)
+  syncUrlFromFilters()
   store.fetchLeads(true)
 }
 
 onMounted(async () => {
+  syncFiltersFromUrl()
   await store.fetchFilas()
   await store.fetchLeads(true)
 })

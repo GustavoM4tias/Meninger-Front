@@ -299,6 +299,84 @@
                 </transition>
             </div>
 
+            <!-- ── Sienge Credentials Card ── -->
+            <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-sm">
+                <!-- Card header / toggle -->
+                <button type="button"
+                    class="w-full flex items-center justify-between px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                    @click="toggleSiengeSection">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-xl flex items-center justify-center"
+                            :class="siengeStatus?.hasCredentials ? 'bg-emerald-100 dark:bg-emerald-900/30' : 'bg-blue-100 dark:bg-blue-900/30'">
+                            <i class="fas fa-plug text-sm"
+                                :class="siengeStatus?.hasCredentials ? 'text-emerald-600 dark:text-emerald-400' : 'text-blue-600 dark:text-blue-400'"></i>
+                        </div>
+                        <div class="text-left">
+                            <p class="text-sm font-semibold text-gray-900 dark:text-white">Credenciais Sienge</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">
+                                <span v-if="siengeStatus?.hasCredentials" class="text-emerald-600 dark:text-emerald-400">
+                                    <i class="fas fa-circle-check mr-1"></i>Configurado — {{ siengeStatus.maskedEmail }}
+                                </span>
+                                <span v-else>Não configurado — necessário para criar contratos automaticamente</span>
+                            </p>
+                        </div>
+                    </div>
+                    <i class="fas fa-chevron-down text-gray-400 text-xs transition-transform duration-200"
+                        :class="{ 'rotate-180': siengeSectionOpen }"></i>
+                </button>
+
+                <transition name="expand">
+                    <div v-if="siengeSectionOpen" class="px-6 pb-6 border-t border-gray-100 dark:border-gray-800">
+                        <!-- LGPD notice -->
+                        <div class="mt-4 mb-4 p-3 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 text-xs text-blue-700 dark:text-blue-300">
+                            <i class="fas fa-shield-halved mr-1.5"></i>
+                            <strong>Privacidade e segurança:</strong> Suas credenciais Sienge são criptografadas com AES-256 antes de serem armazenadas e nunca são compartilhadas com outros usuários. Apenas você pode utilizá-las para criar contratos automaticamente no Sienge.
+                        </div>
+                        <form @submit.prevent="handleSaveSiengeCredentials" class="space-y-4">
+                            <div class="space-y-1.5">
+                                <label class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                                    E-mail Sienge
+                                </label>
+                                <Input v-model="siengeForm.email" type="email" placeholder="seu@email.com" required autocomplete="off" />
+                            </div>
+                            <div class="space-y-1.5">
+                                <label class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                                    Senha Sienge
+                                </label>
+                                <div class="relative">
+                                    <Input v-model="siengeForm.password"
+                                        :type="showSiengePassword ? 'text' : 'password'"
+                                        placeholder="Sua senha do Sienge" required autocomplete="new-password" />
+                                    <button type="button"
+                                        class="absolute inset-y-0 right-0 w-12 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-white"
+                                        @click="showSiengePassword = !showSiengePassword">
+                                        <i :class="showSiengePassword ? 'fas fa-eye-slash' : 'fas fa-eye'" class="text-sm"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="space-y-1.5">
+                                <label class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                                    Confirmar Senha Sienge
+                                </label>
+                                <Input v-model="siengeForm.confirmPassword"
+                                    :type="showSiengePassword ? 'text' : 'password'"
+                                    placeholder="Repita a senha" required autocomplete="new-password" />
+                                <p v-if="siengeForm.confirmPassword && siengeForm.password !== siengeForm.confirmPassword"
+                                    class="text-xs text-red-500 mt-1">
+                                    <i class="fas fa-exclamation-circle mr-1"></i>As senhas não coincidem.
+                                </p>
+                            </div>
+                            <div class="pt-2">
+                                <Button type="submit" :disabled="siengeLoading || !canSubmitSienge">
+                                    <i class="fas fa-floppy-disk mr-2 text-xs"></i>
+                                    {{ siengeLoading ? 'Salvando...' : (siengeStatus?.hasCredentials ? 'Atualizar credenciais' : 'Salvar credenciais') }}
+                                </Button>
+                            </div>
+                        </form>
+                    </div>
+                </transition>
+            </div>
+
         </div>
     </div>
 </template>
@@ -312,6 +390,8 @@ import Button from '@/components/UI/Button.vue';
 import Favorite from '@/components/config/Favorite.vue';
 import FacialAuth from '@/views/Office/Settings/Account/components/FacialAuth.vue';
 import { useToast } from 'vue-toastification';
+import { requestWithAuth } from '@/utils/Auth/requestWithAuth';
+import API_URL from '@/config/apiUrl';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const PASSWORD_MIN_LENGTH = 8;
@@ -408,11 +488,6 @@ const calculateDaysInSystem = () => {
 
 watch(() => authStore.user, fillEditableUser);
 
-onMounted(async () => {
-    if (!authStore.user) await authStore.fetchUserInfo();
-    fillEditableUser();
-});
-
 // ─── Profile actions ──────────────────────────────────────────────────────────
 const toggleDisabled = () => {
     isDisabled.value = !isDisabled.value;
@@ -475,6 +550,61 @@ const handleChangePassword = async () => {
         passwordLoading.value = false;
     }
 };
+
+// ─── Sienge Credentials ───────────────────────────────────────────────────────
+const siengeSectionOpen = ref(false);
+const siengeLoading = ref(false);
+const siengeStatus = ref(null); // { hasCredentials, maskedEmail }
+const siengeForm = reactive({ email: '', password: '', confirmPassword: '' });
+const showSiengePassword = ref(false);
+
+async function loadSiengeStatus() {
+    try {
+        siengeStatus.value = await requestWithAuth(`${API_URL}/auth/user/sienge-credentials`);
+    } catch { /* silencioso */ }
+}
+
+function toggleSiengeSection() {
+    siengeSectionOpen.value = !siengeSectionOpen.value;
+    if (!siengeSectionOpen.value) {
+        siengeForm.email = '';
+        siengeForm.password = '';
+        siengeForm.confirmPassword = '';
+    }
+}
+
+const canSubmitSienge = computed(() =>
+    siengeForm.email?.trim() &&
+    siengeForm.password?.trim() &&
+    siengeForm.password === siengeForm.confirmPassword
+);
+
+async function handleSaveSiengeCredentials() {
+    if (!canSubmitSienge.value) return;
+    siengeLoading.value = true;
+    try {
+        await requestWithAuth(`${API_URL}/auth/user/sienge-credentials`, {
+            method: 'PUT',
+            body: JSON.stringify({ email: siengeForm.email.trim(), password: siengeForm.password }),
+        });
+        await loadSiengeStatus();
+        siengeSectionOpen.value = false;
+        siengeForm.email = '';
+        siengeForm.password = '';
+        siengeForm.confirmPassword = '';
+        toast.success('Credenciais Sienge salvas com segurança!');
+    } catch (error) {
+        toast.error(error?.message || 'Erro ao salvar credenciais Sienge.');
+    } finally {
+        siengeLoading.value = false;
+    }
+}
+
+onMounted(async () => {
+    if (!authStore.user) await authStore.fetchUserInfo();
+    fillEditableUser();
+    loadSiengeStatus();
+});
 </script>
 
 <style scoped>

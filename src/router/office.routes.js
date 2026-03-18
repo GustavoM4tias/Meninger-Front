@@ -130,8 +130,14 @@ export default [
                     {
                         path: 'validator',
                         name: 'Validador',
-                        component: () => import('@/views/Office/Tools/Index.vue'),
+                        component: () => import('@/views/Office/Tools/Validator/Index.vue'),
                         meta: { searchable: true, content: 'Validador de Contratos de Venda.' },
+                    },
+                    {
+                        path: 'paymentflow',
+                        name: 'PaymentFlow',
+                        component: () => import('@/views/Office/Tools/PaymentoFlow/Index.vue'),
+                        meta: { searchable: true, content: 'Lançamentos de pagamento Sienge.' },
                     },
                 ],
             },
