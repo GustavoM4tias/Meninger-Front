@@ -9,6 +9,7 @@ const props = defineProps({
     searchDebounce: { type: Number, default: 180 },
     pageSize: { type: Number, default: 150 },
     disabled: { type: Boolean, default: false },
+    single: { type: Boolean, default: false },
 });
 
 const emit = defineEmits(['update:modelValue', 'open', 'close', 'change']);
@@ -84,6 +85,13 @@ function emitSelectedOnce() {
 }
 
 function toggle(option) {
+    if (props.single) {
+        selectedSet.value = new Set([option]);
+        emitSelectedOnce();
+        open.value = false;
+        emit('close');
+        return;
+    }
     const set = new Set(selectedSet.value);
     set.has(option) ? set.delete(option) : set.add(option);
     selectedSet.value = set;
@@ -169,8 +177,8 @@ function toggleSelectAllFiltered(e) {
                     </div>
                 </div>
 
-                <!-- Select all row -->
-                <div
+                <!-- Select all row (multi only) -->
+                <div v-if="!single"
                     class="flex items-center gap-2 px-3 py-2 text-xs text-gray-600 dark:text-gray-400 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/30">
                     <input ref="masterRef" type="checkbox" class="accent-blue-600 cursor-pointer"
                         :checked="allFilteredSelected" @change="toggleSelectAllFiltered" />
@@ -185,11 +193,15 @@ function toggleSelectAllFiltered(e) {
                     <label v-for="opt in visibleOptions" :key="opt" class="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer
                    text-gray-700 dark:text-gray-300
                    hover:bg-blue-50 dark:hover:bg-blue-900/20
-                   transition-colors duration-100">
-                        <input type="checkbox" class="accent-blue-600 cursor-pointer shrink-0"
+                   transition-colors duration-100"
+                        :class="{ 'bg-blue-50/60 dark:bg-blue-900/20': single && selectedSet.has(opt) }">
+                        <input v-if="!single" type="checkbox" class="accent-blue-600 cursor-pointer shrink-0"
                             :checked="selectedSet.has(opt)" @change="toggle(opt)" />
+                        <i v-else class="fas shrink-0 text-xs w-3"
+                            :class="selectedSet.has(opt) ? 'fa-circle-dot text-blue-500' : 'fa-circle text-gray-300 dark:text-gray-600'"
+                            @click.prevent="toggle(opt)"></i>
                         <slot name="option" :option="opt" :checked="selectedSet.has(opt)">
-                            <span class="truncate">{{ opt }}</span>
+                            <span class="truncate" @click.prevent="toggle(opt)">{{ opt }}</span>
                         </slot>
                     </label>
 
