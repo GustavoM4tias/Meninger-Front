@@ -95,7 +95,7 @@ watch(() => route.query.search, (newQuery) => {
 }, { immediate: true });
 
 const currentSection = computed(() => route.query.section || 'Geral');
-const updateQuery = () => router.push({ query: { search: search.value, section: currentSection.value } });
+const updateQuery = () => router.replace({ query: { search: search.value, section: currentSection.value } });
 
 const openBuildingModal = async (building) => {
   await buildingStore.fetchBuildingById(building.idempreendimento);

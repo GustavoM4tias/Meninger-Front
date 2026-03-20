@@ -1,44 +1,26 @@
-// src/stores/Marketing/Bills/billsStore.js
+// src/stores/Financeiro/Bills/billsStore.js
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import dayjs from 'dayjs';
 import API_URL from '@/config/apiUrl';
 import { useCarregamentoStore } from '@/stores/Config/carregamento';
-import { useContractsStore } from '@/stores/Comercial/Contracts/contractsStore';
-import { useAdminMetaStore } from '@/stores/Settings/Admin/metaStore';
 import { requestWithAuth } from '@/utils/Auth/requestWithAuth';
-
-function getToken() {
-    return localStorage.getItem('token');
-}
 
 export const useBillsStore = defineStore('bills', () => {
     const carregamento = useCarregamentoStore();
-    const contractsStore = useContractsStore();
-    const adminMeta = useAdminMetaStore();
-    // datas padrão: 15 dias antes / depois de hoje
+
     const today = dayjs();
-    const costCenterIds = ref([]); // ex.: [80001, 80002]
-    const startDate = ref(
-        today
-            .date(15)          // Define o dia para 15
-            .subtract(1, 'month') // Volta um mês
-            .format('YYYY-MM-DD') // 2025-10-15 
-    );
+    const costCenterIds = ref([]);
+    const startDate = ref(today.subtract(1, 'month').date(15).format('YYYY-MM-DD'));
     const endDate = ref(today.format('YYYY-MM-DD'));
-    const month = ref(today.format('YYYY-MM')); // mês de competência
 
-    // dados
-    const bills = ref([]);           // todos os títulos carregados
+    const bills = ref([]);
     const error = ref(null);
-    const selectedIds = ref([]);     // ids selecionados
-    const notes = ref({});           // { [billId]: string }
-    const expenseDepartments = ref({}); // { [billId]: string } -> departamento que será usado no custo
-    const expenseCategories = ref({});       // 👈 NOVO { [billId]: categoryId }
-    const billLinks = ref({}); // { [billId]: { count, total } }
 
-    // 🔄 filtro de departamento AGORA MULTI
-    const selectedDepartments = ref([]); // ex.: ['Marketing', 'Comercial']
+    // filtro multi de departamento (lado cliente)
+    const selectedDepartments = ref([]);
+
+    const isLoading = computed(() => carregamento.carregando);
 
     const departmentsOptions = computed(() => {
         const set = new Set();
@@ -48,60 +30,33 @@ export const useBillsStore = defineStore('bills', () => {
         return Array.from(set).sort();
     });
 
-    const isLoading = computed(() => carregamento.carregando);
-
-    // 🔎 aplica filtro multi de departamentos (vazio = todos)
     const visibleBills = computed(() => {
         if (!selectedDepartments.value.length) return bills.value;
-
-        const selectedSet = new Set(
-            selectedDepartments.value.map(d => (d || '').toLowerCase())
-        );
-
-        return bills.value.filter(b =>
-            selectedSet.has((b.main_department_name || '').toLowerCase())
-        );
+        const sel = new Set(selectedDepartments.value.map(d => (d || '').toLowerCase()));
+        return bills.value.filter(b => sel.has((b.main_department_name || '').toLowerCase()));
     });
 
-    const selectedBills = computed(() =>
-        bills.value.filter(b => selectedIds.value.includes(b.id))
-    );
+    const MAX_MONTHS = 6;
 
-    const selectedCount = computed(() => selectedIds.value.length);
-
-    const selectedTotal = computed(() =>
-        selectedBills.value.reduce(
-            (sum, b) => sum + Number(b.total_invoice_amount || 0),
-            0
-        )
-    );
-
-    function toggleSelect(id) {
-        if (selectedIds.value.includes(id)) {
-            selectedIds.value = selectedIds.value.filter(x => x !== id);
-        } else {
-            selectedIds.value = [...selectedIds.value, id];
-        }
-    }
-
-    function selectAllCurrentPage() {
-        selectedIds.value = visibleBills.value.map(b => b.id);
-    }
-
-    function clearSelection() {
-        selectedIds.value = [];
-    }
+    const dateRangeWarning = computed(() => {
+        if (!startDate.value || !endDate.value) return null;
+        const s = new Date(startDate.value);
+        const e = new Date(endDate.value);
+        const diff = (e.getFullYear() - s.getFullYear()) * 12 + (e.getMonth() - s.getMonth());
+        if (diff > MAX_MONTHS) return `Período máximo é ${MAX_MONTHS} meses. Ajuste as datas.`;
+        return null;
+    });
 
     async function fetchBills() {
         error.value = null;
 
-        if (!getToken()) {
-            error.value = 'Sessão expirada. Faça login novamente.';
+        if (!costCenterIds.value.length || !startDate.value || !endDate.value) {
+            error.value = 'Informe ao menos um centro de custo, data inicial e final.';
             return;
         }
 
-        if (!costCenterIds.value.length || !startDate.value || !endDate.value) {
-            error.value = 'Informe ao menos um centro de custo, data inicial e final.';
+        if (dateRangeWarning.value) {
+            error.value = dateRangeWarning.value;
             return;
         }
 
@@ -109,182 +64,16 @@ export const useBillsStore = defineStore('bills', () => {
             carregamento.iniciarCarregamento();
 
             const params = new URLSearchParams({
-                costCenterId: costCenterIds.value.join(','), // 👈 backend aceita múltiplos
+                costCenterId: costCenterIds.value.join(','),
                 startDate: startDate.value,
                 endDate: endDate.value,
             });
 
-            const data = await requestWithAuth(
-                `${API_URL}/sienge/bills?${params.toString()}`
-            );
-
+            const data = await requestWithAuth(`${API_URL}/sienge/bills?${params.toString()}`);
             bills.value = data || [];
-            selectedIds.value = [];
-            notes.value = {};
-            expenseDepartments.value = {};
-            billLinks.value = {};
-
-            for (const b of bills.value) {
-                if (b.main_department_name) {
-                    expenseDepartments.value[b.id] = b.main_department_name;
-                }
-            }
-            if (bills.value.length) {
-                const idsParam = bills.value.map(b => b.id).join(',');
-                try {
-                    const links = await requestWithAuth(
-                        `${API_URL}/expenses/links?billIds=${idsParam}`
-                    );
-
-                    const map = {};
-
-                    for (const l of links) {
-                        map[l.billId] = l;
-
-                        // 👇 NOVO: se o backend devolveu categoria, usa como default do select
-                        if (l.departmentCategoryId) {
-                            expenseCategories.value[l.billId] = Number(l.departmentCategoryId);
-                        }
-                    }
-
-                    billLinks.value = map;
-                } catch (err) {
-                    console.error('Erro ao buscar vínculos de custos', err);
-                }
-            }
         } catch (e) {
             console.error(e);
             error.value = e.message;
-        } finally {
-            carregamento.finalizarCarregamento();
-        }
-    }
-
-    async function linkSelectedToMonth() {
-        error.value = null;
-
-        if (!getToken()) {
-            error.value = 'Sessão expirada. Faça login novamente.';
-            return;
-        }
-
-        if (!month.value) {
-            error.value = 'Informe o mês de competência.';
-            return;
-        }
-        if (!selectedIds.value.length) {
-            error.value = 'Selecione ao menos um título.';
-            return;
-        }
-
-        const competenceMonth = month.value;
-        const startMonth = dayjs(`${competenceMonth}-01`);
-
-        try {
-            carregamento.iniciarCarregamento();
-
-            // antes de usar o map:
-            if (!contractsStore.enterpriseCities || !contractsStore.enterpriseCities.length) {
-                try {
-                    await contractsStore.fetchEnterpriseCities();
-                } catch (e) {
-                    console.error('Erro ao carregar enterprise-cities para custos:', e);
-                }
-            }
-
-            // Mapa id -> nome
-            const enterpriseNameById = new Map(
-                (contractsStore.enterpriseCities || [])
-                    .map(e => [Number(e.erp_id), e.name])
-            );
-
-            const promises = [];
-
-            selectedBills.value.forEach(bill => {
-                const baseDesc =
-                    `${bill.document_identification_id || ''} ${bill.document_number || ''}`.trim()
-                    || `Título ${bill.id}`;
-
-                const extra =
-                    notes.value && notes.value[bill.id]
-                        ? String(notes.value[bill.id]).trim()
-                        : '';
-                const description = extra ? `${baseDesc} - ${extra}` : baseDesc;
-
-                const installments = Number(bill.installments_number || 1);
-                const parts = installments > 0 ? installments : 1;
-
-                const total = Number(bill.total_invoice_amount || 0);
-
-                const totalCents = Math.round(total * 100);
-                const basePartCents = Math.floor(totalCents / parts);
-                const diffCents = totalCents - basePartCents * parts;
-
-                const chosenDepartmentName =
-                    (expenseDepartments.value && expenseDepartments.value[bill.id])
-                    || bill.main_department_name
-                    || null;
-                const chosenDepartmentId = bill.main_department_id || null;
-                // 👇 NOVO: categoria
-                const chosenCategoryId =
-                    expenseCategories.value && expenseCategories.value[bill.id]
-                        ? Number(expenseCategories.value[bill.id])
-                        : null;
-
-                let chosenCategoryName = null;
-                if (chosenCategoryId && adminMeta.departmentCategories?.length) {
-                    const cat = adminMeta.departmentCategories.find(c => c.id === chosenCategoryId);
-                    if (cat) chosenCategoryName = cat.name;
-                }
-                // 👇 Cost center por título
-                const billCostCenterId = Number(bill.cost_center_id || 0);
-                const billCostCenterName = enterpriseNameById.get(billCostCenterId) || null;
-
-                for (let i = 0; i < parts; i++) {
-                    const thisPartCents = basePartCents + (i === parts - 1 ? diffCents : 0);
-                    const amount = thisPartCents / 100;
-
-                    const expMonth = startMonth.add(i, 'month').format('YYYY-MM');
-
-                    const payload = {
-                        costCenterId: billCostCenterId,
-                        costCenterName: billCostCenterName,
-                        month: expMonth,
-                        billId: bill.id,
-                        amount,
-                        description,
-                        departmentId: chosenDepartmentId,
-                        departmentName: chosenDepartmentName,
-                        departmentCategoryId: chosenCategoryId,
-                        departmentCategoryName: chosenCategoryName,
-
-                        // ✅ NOVO: parcela do lançamento
-                        installmentNumber: i + 1,
-                        installmentsNumber: parts,
-                    };
-                    // printlog
-                    console.log('[linkSelectedToMonth] bill', bill.id, {
-                        parts,
-                        installmentNumber: i + 1,
-                        installmentsNumber: parts,
-                        expMonth,
-                        amount,
-                    });
-
-                    promises.push(
-                        requestWithAuth(`${API_URL}/expenses`, {
-                            method: 'POST',
-                            body: JSON.stringify(payload),
-                        })
-                    );
-                }
-            });
-
-            await Promise.all(promises);
-        } catch (e) {
-            console.error(e);
-            error.value = e.message;
-            throw e;
         } finally {
             carregamento.finalizarCarregamento();
         }
@@ -295,29 +84,17 @@ export const useBillsStore = defineStore('bills', () => {
         costCenterIds,
         startDate,
         endDate,
-        month,
         bills,
         error,
-        selectedIds,
-        notes,
         selectedDepartments,
-        expenseDepartments,
-        expenseCategories,
-        billLinks,
 
         // computed
         isLoading,
         visibleBills,
         departmentsOptions,
-        selectedBills,
-        selectedCount,
-        selectedTotal,
+        dateRangeWarning,
 
         // actions
         fetchBills,
-        toggleSelect,
-        selectAllCurrentPage,
-        clearSelection,
-        linkSelectedToMonth,
     };
-}); 
+});

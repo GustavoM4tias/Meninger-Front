@@ -40,7 +40,7 @@ const closeAddEventModal = () => {
 const debouncedSearch = (value) => {
     clearTimeout(searchDebounce.value);
     searchDebounce.value = setTimeout(() => {
-        router.push({ query: { search: value || undefined, section: currentSection.value } });
+        router.replace({ query: { search: value || undefined, section: currentSection.value } });
     }, 300);
 };
 

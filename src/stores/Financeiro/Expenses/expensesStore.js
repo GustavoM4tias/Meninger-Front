@@ -13,8 +13,9 @@ function getToken() {
 export const useExpensesStore = defineStore('expenses', () => {
     const carregamento = useCarregamentoStore();
 
-    const month = ref(dayjs().format('YYYY-MM')); // mês atual
-    const data = ref(null);                       // { competenceMonth, total, groups: [...] }
+    const startDate = ref(dayjs().startOf('month').format('YYYY-MM-DD'));
+    const endDate = ref(dayjs().endOf('month').format('YYYY-MM-DD'));
+    const data = ref(null);                       // { startDate, endDate, total, groups: [...] }
     const error = ref(null);
 
     // 🔎 filtro por departamento (multi) 
@@ -80,14 +81,14 @@ export const useExpensesStore = defineStore('expenses', () => {
 
     async function fetchExpenses() {
         error.value = null;
-        if (!month.value) {
-            error.value = 'Informe o mês.';
+        if (!startDate.value || !endDate.value) {
+            error.value = 'Informe o período (data início e fim).';
             return;
         }
 
         try {
             carregamento.iniciarCarregamento();
-            const params = new URLSearchParams({ month: month.value });
+            const params = new URLSearchParams({ startDate: startDate.value, endDate: endDate.value });
             const res = await requestWithAuth(`${API_URL}/expenses?${params.toString()}`);
             // ✅ normaliza snake_case -> camelCase
             if (res?.groups?.length) {
@@ -128,7 +129,8 @@ export const useExpensesStore = defineStore('expenses', () => {
 
     return {
         // state
-        month,
+        startDate,
+        endDate,
         data,
         error,
         selectedDepartments,
@@ -138,7 +140,7 @@ export const useExpensesStore = defineStore('expenses', () => {
         rawTotal,
         rawGroups,
         total,
-        groups: filteredGroups,     // 👈 já vem filtrado por departamento
+        groups: filteredGroups,
         departmentOptions,
 
         // actions

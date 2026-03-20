@@ -28,6 +28,10 @@ export const PIPELINE_STAGE_LABELS = {
     additive_created: { label: 'Aditivo criado', icon: 'fa-file-circle-plus', color: 'green' },
     additive_error: { label: 'Erro no aditivo', icon: 'fa-triangle-exclamation', color: 'red' },
     awaiting_authorization: { label: 'Aguardando autorização', icon: 'fa-lock', color: 'orange' },
+    creating_measurement: { label: 'Criando medição...', icon: 'fa-spinner fa-spin', color: 'blue' },
+    measurement_created: { label: 'Medição criada', icon: 'fa-ruler-combined', color: 'green' },
+    measurement_error: { label: 'Erro na medição', icon: 'fa-triangle-exclamation', color: 'red' },
+    awaiting_measurement_authorization: { label: 'Aguardando autorização da medição', icon: 'fa-lock', color: 'orange' },
     // legado
     validating_items: { label: 'Validando itens...', icon: 'fa-spinner fa-spin', color: 'blue' },
     items_ok: { label: 'Saldo disponível', icon: 'fa-circle-check', color: 'green' },
@@ -39,6 +43,7 @@ export const PIPELINE_STAGE_LABELS = {
 const LIVE_REFRESH_STAGES = new Set([
     'searching_creditor', 'searching_contract',
     'creating_contract', 'creating_additive',
+    'creating_measurement',
     'validating_items',
 ]);
 
@@ -311,6 +316,10 @@ export const usePaymentFlowStore = defineStore('paymentFlow', () => {
             if (!silent) carregamento.iniciarCarregamento();
             const data = await requestWithAuth(`${API_URL}/sienge/payment-flow?${buildQuery()}`);
             launches.value = data.data || [];
+            // Se qualquer lançamento tem credenciais inválidas → abre modal de atualização
+            if (launches.value.some(l => l.siengeCredentialsInvalid)) {
+                siengeCredentialsOk.value = false;
+            }
             pagination.value = {
                 total: data.total,
                 page: data.page,
