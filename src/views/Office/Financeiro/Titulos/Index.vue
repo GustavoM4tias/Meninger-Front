@@ -11,17 +11,8 @@
               Gerenciamento de Títulos e Custos
             </h1>
             <p class="text-indigo-50 text-sm">
-              Busque os títulos no Sienge, selecione e vincule ao mês de competência
+              Busque títulos no Sienge — parcelas e custos gerados automaticamente por data de vencimento
             </p>
-          </div>
-
-          <div class="bg-white/20 backdrop-blur-sm rounded-xl p-4 min-w-[220px]">
-            <label class="text-xs font-medium text-indigo-50 mb-2 flex items-center gap-2">
-              <i class="far fa-calendar-alt"></i>
-              Mês de Competência
-            </label>
-            <input type="month" v-model="store.month"
-              class="w-full px-3 py-2 bg-white dark:bg-gray-800 border-0 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-white/50 transition-all" />
           </div>
         </div>
       </div>
@@ -37,8 +28,13 @@
             Empreendimento / Centro de Custo
             <span class="text-[10px] text-gray-400 font-normal">(máx. 3)</span>
           </label>
-          <MultiSelector :model-value="selectedCostCenterNames" @update:modelValue="handleCostCenterChange"
-            :options="costCenterOptions" placeholder="Selecione empreendimentos" :page-size="200" />
+          <MultiSelector
+            :model-value="selectedCostCenterNames"
+            @update:modelValue="handleCostCenterChange"
+            :options="costCenterOptions"
+            placeholder="Selecione empreendimentos"
+            :page-size="200"
+            :disabled="isSyncing" />
         </div>
 
         <!-- Data Inicial -->
@@ -47,8 +43,8 @@
             <i class="fas fa-calendar-day text-indigo-600"></i>
             Data Inicial
           </label>
-          <input v-model="store.startDate" type="date"
-            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/60 transition-all" />
+          <input v-model="store.startDate" type="date" :disabled="isSyncing"
+            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-gray-50 dark:bg-gray-900/60 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/60 transition-all disabled:opacity-50 disabled:cursor-not-allowed" />
         </div>
 
         <!-- Data Final -->
@@ -57,8 +53,8 @@
             <i class="fas fa-calendar-check text-indigo-600"></i>
             Data Final
           </label>
-          <input v-model="store.endDate" type="date"
-            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/60 transition-all" />
+          <input v-model="store.endDate" type="date" :disabled="isSyncing"
+            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-gray-50 dark:bg-gray-900/60 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/60 transition-all disabled:opacity-50 disabled:cursor-not-allowed" />
         </div>
 
         <!-- Departamentos -->
@@ -69,19 +65,35 @@
           </label>
           <MultiSelector :model-value="store.selectedDepartments"
             @update:modelValue="v => store.selectedDepartments = Array.isArray(v) ? v : []"
-            :options="store.departmentsOptions" placeholder="Departamento" :page-size="200" />
+            :options="store.departmentsOptions" placeholder="Departamento" :page-size="200"
+            :disabled="isSyncing" />
         </div>
 
         <!-- Botão Filtrar -->
-        <div class="md:col-span-2">
+        <div class="md:col-span-2 flex flex-col gap-2">
           <button @click="store.fetchBills"
             class="w-full px-6 py-2.5 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold rounded-lg hover:from-indigo-600 hover:to-purple-700 focus:outline-none focus:ring-4 focus:ring-indigo-300/50 transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-            :disabled="store.isLoading || !store.costCenterIds.length">
+            :disabled="store.isLoading || !store.costCenterIds.length || isSyncing">
             <i class="fas fa-filter"></i>
             <span v-if="!store.isLoading">Filtrar</span>
             <span v-else>Carregando...</span>
           </button>
+
+          <!-- Sincronizar Tudo — aparece só quando 1 empreendimento selecionado -->
+          <button v-if="canSyncEnterprise"
+            @click="startEnterpriseSync"
+            class="w-full px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-semibold rounded-lg hover:from-emerald-600 hover:to-teal-700 focus:outline-none focus:ring-4 focus:ring-emerald-300/50 transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+            :disabled="isSyncing || store.isLoading">
+            <i :class="isSyncing ? 'fas fa-spinner fa-spin' : 'fas fa-cloud-download-alt'"></i>
+            <span>{{ isSyncing ? 'Sincronizando...' : 'Sincronizar Tudo' }}</span>
+          </button>
         </div>
+      </div>
+
+      <!-- Aviso de range excessivo -->
+      <div v-if="store.dateRangeWarning" class="mt-3 flex items-center gap-2 text-sm text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 px-4 py-2.5 rounded-lg">
+        <i class="fas fa-exclamation-triangle flex-none"></i>
+        {{ store.dateRangeWarning }}
       </div>
 
       <p v-if="store.error" class="mt-4 text-sm text-red-600 bg-red-50 dark:bg-red-900/20 px-4 py-2 rounded-lg">
@@ -89,10 +101,94 @@
       </p>
     </div>
 
+    <!-- Painel de Sync Completo -->
+    <transition name="slide-down">
+      <div v-if="syncStatus && syncStatus.phase !== null"
+        class="rounded-2xl border shadow-lg overflow-hidden"
+        :class="{
+          'border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-900/20': syncStatus.phase === 'done',
+          'border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900/20': syncStatus.phase === 'error',
+          'border-indigo-300 dark:border-indigo-700 bg-indigo-50 dark:bg-indigo-900/20': syncStatus.running,
+        }">
+        <div class="p-5">
+          <div class="flex items-start justify-between gap-4">
+            <div class="flex-1 min-w-0">
+              <!-- Cabeçalho do painel -->
+              <div class="flex items-center gap-3 mb-3">
+                <div class="w-9 h-9 rounded-xl flex items-center justify-center text-white shadow-sm flex-none"
+                  :class="{
+                    'bg-emerald-500': syncStatus.phase === 'done',
+                    'bg-red-500': syncStatus.phase === 'error',
+                    'bg-indigo-500': syncStatus.running,
+                  }">
+                  <i :class="{
+                    'fas fa-check': syncStatus.phase === 'done',
+                    'fas fa-times': syncStatus.phase === 'error',
+                    'fas fa-sync-alt fa-spin': syncStatus.running,
+                  }"></i>
+                </div>
+                <div>
+                  <h3 class="font-semibold text-gray-900 dark:text-white text-sm">
+                    Sincronização Completa do Empreendimento
+                  </h3>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">
+                    {{ syncPhaseLabel }}
+                  </p>
+                </div>
+              </div>
+
+              <!-- Barra de progresso -->
+              <div v-if="syncStatus.running" class="mb-3">
+                <div class="h-2 bg-white/60 dark:bg-gray-700 rounded-full overflow-hidden">
+                  <div
+                    class="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full transition-all duration-500"
+                    :style="{ width: syncProgressPct + '%' }">
+                  </div>
+                </div>
+                <div class="flex justify-between text-[11px] text-gray-500 dark:text-gray-400 mt-1">
+                  <span>{{ syncProgressLabel }}</span>
+                  <span>{{ syncProgressPct }}%</span>
+                </div>
+              </div>
+
+              <!-- Resultado final (done) -->
+              <div v-if="syncStatus.phase === 'done' && syncStatus.result"
+                class="grid grid-cols-3 gap-3 text-center">
+                <div class="bg-white/70 dark:bg-gray-800/70 rounded-lg px-3 py-2">
+                  <div class="text-lg font-bold text-emerald-600">{{ syncStatus.result.total }}</div>
+                  <div class="text-[10px] text-gray-500">Títulos</div>
+                </div>
+                <div class="bg-white/70 dark:bg-gray-800/70 rounded-lg px-3 py-2">
+                  <div class="text-lg font-bold text-indigo-600">{{ syncStatus.result.missingDeps }}</div>
+                  <div class="text-[10px] text-gray-500">Departamentos novos</div>
+                </div>
+                <div class="bg-white/70 dark:bg-gray-800/70 rounded-lg px-3 py-2">
+                  <div class="text-lg font-bold text-purple-600">{{ syncStatus.result.missingInst }}</div>
+                  <div class="text-[10px] text-gray-500">Parcelas novas</div>
+                </div>
+              </div>
+
+              <!-- Erro -->
+              <p v-if="syncStatus.phase === 'error'"
+                class="text-sm text-red-700 dark:text-red-400 bg-red-100/80 dark:bg-red-900/30 px-3 py-2 rounded-lg">
+                <i class="fas fa-exclamation-circle mr-2"></i>{{ syncStatus.error }}
+              </p>
+            </div>
+
+            <!-- Botão fechar (só quando finalizado) -->
+            <button v-if="!syncStatus.running"
+              @click="syncStatus = null"
+              class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors flex-none mt-0.5">
+              <i class="fas fa-times text-base"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </transition>
+
     <!-- Summary & Actions Card -->
     <div class="rounded-2xl border dark:border-gray-700 bg-white/90 dark:bg-gray-800 p-6 shadow-lg">
       <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-        <!-- Resumo -->
         <div class="flex flex-col md:flex-row md:items-center gap-4">
           <div class="flex items-center gap-3">
             <div
@@ -108,47 +204,6 @@
               </div>
             </div>
           </div>
-
-          <div v-if="store.selectedCount"
-            class="flex items-center gap-3 pl-4 border-l border-gray-300 dark:border-gray-600">
-            <div
-              class="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white shadow-md">
-              <i class="fas fa-check-circle text-xl"></i>
-            </div>
-            <div>
-              <div class="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
-                {{ store.selectedTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-                }}
-              </div>
-              <div class="text-xs text-gray-500 dark:text-gray-400">
-                {{ store.selectedCount }} selecionado(s)
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Actions -->
-        <div class="flex flex-wrap gap-2">
-          <!-- <button @click="store.selectAllCurrentPage"
-            class="px-4 py-2 text-sm font-medium text-indigo-700 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-            :disabled="!store.visibleBills.length">
-            <i class="far fa-check-square"></i>
-            Selecionar Todos
-          </button>
-
-          <button @click="store.clearSelection"
-            class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-            :disabled="!store.selectedCount">
-            <i class="fas fa-eraser"></i>
-            Limpar Seleção
-          </button> -->
-
-          <button @click="handleLink"
-            class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-emerald-500 to-teal-600 rounded-lg hover:from-emerald-600 hover:to-teal-700 transition-all shadow-md hover:shadow-lg flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-            :disabled="!store.selectedCount || store.isLoading || !store.month">
-            <i class="fas fa-link"></i>
-            Vincular ao Mês
-          </button>
         </div>
       </div>
     </div>
@@ -168,168 +223,94 @@
         <table class="min-w-full table-auto">
           <thead class="bg-gray-50 dark:bg-gray-900/60 border-b border-gray-200 dark:border-gray-700">
             <tr>
-              <th class="px-4 py-3 text-center w-10">
-                <label :aria-disabled="!selectableVisibleBills.length">
-                  <input type="checkbox" :checked="isAllSelectedOnPage" @change="toggleSelectAllOnPage"
-                    :disabled="!selectableVisibleBills.length"
-                    class="w-4 h-4 text-indigo-600 bg-gray-100 border-gray-300 rounded focus:ring-indigo-500 dark:focus:ring-indigo-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed" />
-                </label>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                Fornecedor
               </th>
-              <th
-                class="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                 Documento
               </th>
-              <th
-                class="px-4 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+              <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                 Parcelas
               </th>
-              <th
-                class="px-4 py-3 text-right text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                Valor
+              <th class="px-4 py-3 text-right text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                Valor Total
               </th>
-              <th
-                class="px-4 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                Data
+              <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                Emissão
               </th>
-              <th
-                class="px-4 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                Depto. Custo
-              </th>
-              <th
-                class="px-4 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                Categoria Custo
-              </th>
-              <th
-                class="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                Observação
+              <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                Departamento
               </th>
             </tr>
           </thead>
 
           <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
             <tr v-for="bill in store.visibleBills" :key="bill.id"
-              class="hover:bg-indigo-50/50 dark:hover:bg-indigo-900/10 transition-colors"
-              :class="{ 'bg-gray-50/50 dark:bg-gray-900/20': store.billLinks[bill.id] }">
-              <!-- Checkbox -->
-              <td class="px-2 py-3 text-center align-middle">
-                <input type="checkbox" :checked="store.selectedIds.includes(bill.id)"
-                  :disabled="!!store.billLinks[bill.id]" @change="store.toggleSelect(bill.id)"
-                  class="w-4 h-4 text-indigo-600 bg-gray-100 border-gray-300 rounded focus:ring-indigo-500 dark:focus:ring-indigo-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed" />
+              class="hover:bg-indigo-50/50 dark:hover:bg-indigo-900/10 transition-colors">
+
+              <!-- Fornecedor -->
+              <td class="px-4 py-3 align-middle">
+                <div class="space-y-0.5 max-w-56">
+                  <div class="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                    {{ bill.creditor_json ? (bill.creditor_json.tradeName || bill.creditor_json.name || 'Sem nome') : '—' }}
+                  </div>
+                  <div v-if="bill.creditor_json?.cnpj" class="text-[10px] text-gray-400 truncate">
+                    CNPJ: {{ bill.creditor_json.cnpj }}
+                  </div>
+                </div>
               </td>
 
               <!-- Documento -->
-              <td class="px-2 py-3 align-middle">
-                <div class="space-y-0.5 max-w-64">
-                  <div class="text-sm font-semibold text-gray-900 dark:text-white truncate">
-                    {{
-                      bill.creditor_json
-                        ? (bill.creditor_json.tradeName || bill.creditor_json.name || 'Sem nome')
-                        : '—'
-                    }}
-                  </div>
-
-                  <div v-if="bill.creditor_json" class="text-[10px] text-gray-500 dark:text-gray-400 truncate">
-                    CNPJ: {{ bill.creditor_json.cnpj }}
-                  </div>
-
-                  <div class="text-xs text-gray-600 dark:text-gray-300 truncate flex items-center">
+              <td class="px-4 py-3 align-middle">
+                <div class="space-y-0.5">
+                  <div class="text-xs font-medium text-gray-700 dark:text-gray-300">
                     {{ bill.document_identification_id }} {{ bill.document_number }}
-                    <i v-if="store.billLinks[bill.id]"
-                      v-tippy="`Já vinculado: ${store.billLinks[bill.id].count} parcela(s) <BR> Total de ${Number(store.billLinks[bill.id].total || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`"
-                      class="fas fa-info-circle ms-2 cursor-pointer text-green-600 dark:text-green-400"></i>
                   </div>
-
-                  <div class="text-xs text-gray-500 dark:text-gray-400">
-                    Título: {{ bill.id }}
+                  <div class="text-[10px] text-gray-400">#{{ bill.id }}</div>
+                  <div v-if="bill.notes" class="text-[10px] text-gray-400 truncate max-w-40" :title="bill.notes">
+                    {{ bill.notes }}
                   </div>
                 </div>
               </td>
 
               <!-- Parcelas -->
-              <td class="px-2 py-3 whitespace-nowrap text-center align-middle relative">
-                <div v-if="bill.installments_number && bill.installments_number > 1"
-                  class="inline-flex relative items-center gap-1 cursor-pointer" @click="openInstallments(bill)">
-                  <span
-                    class="inline-flex items-center px-2 py-1 text-xs font-semibold text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/30 rounded-full border border-purple-200 dark:border-purple-800">
-                    {{ bill.installments_number }}x
-                  </span>
-                  <i
-                    class="fas fa-asterisk absolute top-0 right-0 fa-xs fa-beat text-indigo-600 dark:text-indigo-400"></i>
-                </div>
+              <td class="px-4 py-3 whitespace-nowrap text-center align-middle">
+                <span v-if="bill.installments_number && bill.installments_number > 1"
+                  class="inline-flex items-center px-2 py-1 text-xs font-semibold text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/30 rounded-full border border-purple-200 dark:border-purple-800">
+                  {{ bill.installments_number }}x
+                </span>
                 <span v-else
-                  class="inline-flex items-center px-2.5 py-1 text-xs font-semibold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 rounded-full">
+                  class="inline-flex items-center px-2.5 py-1 text-xs font-semibold text-gray-500 bg-gray-100 dark:bg-gray-800 rounded-full">
                   1x
                 </span>
               </td>
 
               <!-- Valor -->
-              <td class="px-2 py-3 whitespace-nowrap text-right align-middle">
+              <td class="px-4 py-3 whitespace-nowrap text-right align-middle">
                 <div class="text-sm font-bold text-indigo-600 dark:text-indigo-400">
-                  {{
-                    Number(bill.total_invoice_amount || 0).toLocaleString('pt-BR', {
-                      style: 'currency',
-                      currency: 'BRL'
-                    })
-                  }}
+                  {{ Number(bill.total_invoice_amount || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) }}
                 </div>
               </td>
 
-              <!-- Data -->
-              <td class="px-2 py-3 whitespace-nowrap text-center align-middle">
+              <!-- Emissão -->
+              <td class="px-4 py-3 whitespace-nowrap text-center align-middle">
                 <div class="text-sm text-gray-700 dark:text-gray-300">
-                  {{ bill.issue_date ? new Date(bill.issue_date).toLocaleDateString('pt-BR') : '—' }}
+                  {{ bill.issue_date ? new Date(bill.issue_date + 'T12:00:00').toLocaleDateString('pt-BR') : '—' }}
                 </div>
               </td>
 
-              <!-- Departamento Custo -->
-              <td class="px-2 py-3 text-center align-middle">
-                <div class="inline-flex relative flex-col items-center gap-1">
-                  <span v-if="bill.main_department_name"
-                    class="absolute -top-6 max-w-40 px-2 py-0.5 text-[10px] font-medium rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-                    <p class="truncate">Padrão: {{ bill.main_department_name }}</p>
-                  </span>
-
-                  <select v-model="store.expenseDepartments[bill.id]"
-                    class="w-40 px-3 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/60 transition-all">
-                    <option :value="bill.main_department_name || ''">
-                      {{
-                        bill.main_department_name
-                          ? bill.main_department_name
-                          : 'Definir departamento'
-                      }}
-                    </option>
-                    <option v-for="dep in costDepartmentsOptions" :key="dep" :value="dep">
-                      {{ dep }}
-                    </option>
-                  </select>
-                </div>
-              </td>
-
-              <!-- Categoria Custo -->
-              <td class="px-2 py-3 text-center align-middle">
-                <select v-model.number="store.expenseCategories[bill.id]"
-                  class="w-40 my-auto px-3 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/60 transition-all">
-                  <option value="">(Sem categoria)</option>
-                  <option v-for="cat in costCategoriesOptions" :key="cat.id" :value="cat.id">
-                    {{ cat.name }}
-                  </option>
-                </select>
-              </td>
-
-              <!-- Observação -->
-              <td class="px-2 py-3 text-center align-middle">
-                <div class="max-w-48">
-                  <input v-model="store.notes[bill.id]" type="text" placeholder="Observação extra (opcional)"
-                    class="w-full px-3 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-400/60 transition-all" />
-                  <p class="text-[10px] text-gray-500 dark:text-gray-400 truncate">
-                    Original: {{ bill.notes || 'N/A' }}
-                  </p>
-                </div>
+              <!-- Departamento -->
+              <td class="px-4 py-3 text-center align-middle">
+                <span v-if="bill.main_department_name"
+                  class="inline-flex items-center px-2 py-1 text-xs font-medium text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/30 rounded-full border border-blue-200 dark:border-blue-800">
+                  {{ bill.main_department_name }}
+                </span>
+                <span v-else class="text-xs text-gray-400">—</span>
               </td>
             </tr>
 
             <tr v-if="!store.visibleBills.length && !store.isLoading">
-              <td colspan="8" class="px-6 py-12 text-center">
+              <td colspan="6" class="px-6 py-12 text-center">
                 <div class="flex flex-col items-center gap-3 text-gray-500 dark:text-gray-400">
                   <i class="fas fa-inbox text-4xl opacity-50"></i>
                   <p class="text-sm font-medium">Nenhum título encontrado</p>
@@ -342,165 +323,21 @@
       </div>
     </div>
 
-    <!-- Modal de Parcelas -->
-    <div v-if="previewBill" class="fixed inset-0 z-50 overflow-y-auto">
-      <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
-        <div class="fixed inset-0 transition-opacity bg-gray-900/75 backdrop-blur-sm" @click="closeInstallments"></div>
-
-        <div
-          class="relative inline-block w-full max-w-3xl my-8 overflow-hidden text-left align-middle transition-all transform bg-white dark:bg-gray-800 shadow-2xl rounded-2xl">
-          <!-- Modal Header -->
-          <div class="px-6 py-5 bg-gradient-to-r from-purple-500 to-indigo-600 text-white border-b border-purple-600">
-            <div class="flex items-center justify-between">
-              <div>
-                <h3 class="text-2xl font-bold flex items-center gap-3">
-                  <i class="fas fa-calendar-alt"></i>
-                  Parcelas do Título {{ previewBill.id }}
-                </h3>
-                <div class="flex items-center gap-4 mt-2 text-sm text-purple-50">
-                  <span>
-                    <i class="fas fa-dollar-sign mr-1"></i>
-                    Valor Total:
-                    {{
-                      Number(previewBill.total_invoice_amount || 0).toLocaleString('pt-BR', {
-                        style: 'currency',
-                        currency: 'BRL'
-                      })
-                    }}
-                  </span>
-                  <span>
-                    <i class="fas fa-list-ol mr-1"></i>
-                    {{ previewBill.installments_number || 1 }} parcela(s)
-                  </span>
-                  <span>
-                    <i class="fas fa-calendar-check mr-1"></i>
-                    Base: {{ store.month || '—' }}
-                  </span>
-                </div>
-              </div>
-              <button @click="closeInstallments" class="p-2 rounded-lg bg-white/20 hover:bg-white/30 transition-colors">
-                <i class="fas fa-times text-xl"></i>
-              </button>
-            </div>
-          </div>
-
-          <!-- Modal Body -->
-          <div class="px-6 py-6 max-h-[60vh] overflow-y-auto">
-            <div class="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
-              <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                <thead class="bg-gray-50 dark:bg-gray-900/60">
-                  <tr>
-                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">
-                      Parcela
-                    </th>
-                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">
-                      Mês de Competência
-                    </th>
-                    <th class="px-4 py-3 text-right text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">
-                      Valor
-                    </th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-800">
-                  <tr v-for="row in previewInstallments" :key="row.index"
-                    class="hover:bg-gray-50 dark:hover:bg-gray-900/40 transition-colors">
-                    <td class="px-4 py-3 whitespace-nowrap">
-                      <span
-                        class="inline-flex items-center px-2.5 py-1 text-xs font-semibold text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/30 rounded-full border border-purple-200 dark:border-purple-800">
-                        #{{ row.index }}
-                      </span>
-                    </td>
-                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
-                      <i class="far fa-calendar mr-2 text-gray-400"></i>
-                      {{ row.month }}
-                    </td>
-                    <td class="px-4 py-3 whitespace-nowrap text-right">
-                      <span class="text-sm font-semibold text-indigo-600 dark:text-indigo-400">
-                        {{ row.amount.toLocaleString('pt-BR', {
-                          style: 'currency', currency:
-                            'BRL'
-                        }) }}
-                      </span>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <!-- Modal Footer -->
-          <div class="px-6 py-4 bg-gray-50 dark:bg-gray-900/40 border-t border-gray-200 dark:border-gray-700">
-            <div class="flex justify-end">
-              <button @click="closeInstallments"
-                class="px-6 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                Fechar
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue';
-import dayjs from 'dayjs';
-
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useBillsStore } from '@/stores/Financeiro/Bills/billsStore';
 import { useContractsStore } from '@/stores/Comercial/Contracts/contractsStore';
-import { useAdminMetaStore } from '@/stores/Settings/Admin/metaStore';
-import { useToast } from 'vue-toastification';
 import MultiSelector from '@/components/UI/MultiSelector.vue';
+import API_URL from '@/config/apiUrl';
+import { requestWithAuth } from '@/utils/Auth/requestWithAuth';
 
-const adminMeta = useAdminMetaStore();
 const store = useBillsStore();
 const contractsStore = useContractsStore();
 
-const previewBill = ref(null);
-
-/**
- * Preview das parcelas (como já estava), usando installments_number do Sienge
- */
-const previewInstallments = computed(() => {
-  if (!previewBill.value || !store.month) return [];
-
-  const bill = previewBill.value;
-  const installments = Number(bill.installments_number || 1);
-  const parts = installments > 0 ? installments : 1;
-
-  const total = Number(bill.total_invoice_amount || 0);
-  const totalCents = Math.round(total * 100);
-  const basePartCents = Math.floor(totalCents / parts);
-  const diffCents = totalCents - basePartCents * parts;
-
-  const startMonth = dayjs(`${store.month}-01`);
-  const rows = [];
-
-  for (let i = 0; i < parts; i++) {
-    const thisPartCents = basePartCents + (i === parts - 1 ? diffCents : 0);
-    const amount = thisPartCents / 100;
-    const monthLabel = startMonth.add(i, 'month').format('YYYY-MM');
-
-    rows.push({
-      index: i + 1,
-      month: monthLabel,
-      amount,
-    });
-  }
-
-  return rows;
-});
-
-function openInstallments(bill) {
-  previewBill.value = bill;
-}
-
-function closeInstallments() {
-  previewBill.value = null;
-}
-
-// 🔹 MultiSelector de centro de custo (até 3 nomes)
+// ── MultiSelector de centro de custo ──────────────────────────────────────────
 const selectedCostCenterNames = ref([]);
 
 const costCenterOptions = computed(() =>
@@ -510,7 +347,6 @@ const costCenterOptions = computed(() =>
 const costCenterIdByName = computed(() => {
   const m = new Map();
   for (const e of contractsStore.enterpriseCities || []) {
-    // erp_id é o costCenterId do Sienge
     m.set(e.name, Number(e.erp_id));
   }
   return m;
@@ -519,96 +355,158 @@ const costCenterIdByName = computed(() => {
 function handleCostCenterChange(v) {
   const arr = Array.isArray(v) ? v.slice(0, 3) : [];
   selectedCostCenterNames.value = arr;
-
-  const ids = arr
+  store.costCenterIds = arr
     .map(name => costCenterIdByName.value.get(name))
     .filter(id => Number.isFinite(id));
-
-  store.costCenterIds = ids;
 }
 
-const toast = (() => {
-  try {
-    return useToast();
-  } catch {
-    return { success: console.log, error: console.error };
-  }
-})();
+// ── Sync completo de empreendimento ───────────────────────────────────────────
 
-async function handleLink() {
-  if (!store.selectedCount || !store.month) return;
+/** Estado do sync vindo do backend */
+const syncStatus = ref(null);
 
-  // Formata o mês de competência (YYYY-MM → MM/YYYY)
-  const monthLabel = dayjs(`${store.month}-01`).format('MM/YYYY');
+/** Apenas 1 empreendimento selecionado → habilita "Sincronizar Tudo" */
+const canSyncEnterprise = computed(() => store.costCenterIds.length === 1);
 
-  const confirmed = confirm(
-    `Deseja realmente vincular ${store.selectedCount} título(s) ao mês de ${monthLabel}?`
-  );
+const isSyncing = computed(() => syncStatus.value?.running === true);
 
-  if (!confirmed) return;
+let pollTimer = null;
 
-  try {
-    await store.linkSelectedToMonth();
-    toast.success('Títulos vinculados com sucesso!');
+const syncPhaseLabels = {
+  starting: 'Iniciando...',
+  fetching: 'Buscando títulos no Sienge...',
+  upserting: 'Salvando títulos no banco...',
+  departments: 'Processando departamentos...',
+  installments: 'Processando parcelas e despesas...',
+  done: 'Sincronização concluída!',
+  error: 'Erro durante a sincronização',
+};
 
-    // Recarrega a lista para refletir vínculos / limpar seleção etc.
-    await store.fetchBills();
-  } catch (e) {
-    toast.error(e.message || 'Erro ao vincular títulos.');
-  }
-}
-
-const costDepartmentsOptions = computed(() =>
-  adminMeta.departments.filter(d => d.active).map(d => d.name)
+const syncPhaseLabel = computed(() =>
+  syncPhaseLabels[syncStatus.value?.phase] || syncStatus.value?.phase || '...'
 );
 
-// ✅ Somente os títulos visíveis e NÃO bloqueados (sem billLinks)
-const selectableVisibleBills = computed(() =>
-  store.visibleBills.filter(bill => !store.billLinks[bill.id])
-);
+const syncProgressPct = computed(() => {
+  const s = syncStatus.value;
+  if (!s?.running) return 100;
 
-// ✅ Está tudo dessa página selecionado?
-const isAllSelectedOnPage = computed(() => {
-  if (!selectableVisibleBills.value.length) return false;
-
-  return selectableVisibleBills.value.every(bill =>
-    store.selectedIds.includes(bill.id)
-  );
+  // Pesos por fase (estimativa visual)
+  if (s.phase === 'fetching') {
+    if (!s.total) return 5;
+    return Math.min(20, Math.round((s.fetched / s.total) * 20));
+  }
+  if (s.phase === 'upserting') {
+    if (!s.total) return 20;
+    return 20 + Math.round((s.done / s.total) * 20);
+  }
+  if (s.phase === 'departments') {
+    if (!s.total) return 40;
+    return 40 + Math.round((s.done / s.total) * 25);
+  }
+  if (s.phase === 'installments') {
+    if (!s.total) return 65;
+    return 65 + Math.round((s.done / s.total) * 34);
+  }
+  return 5;
 });
 
-// ✅ Selecionar / desselecionar apenas o que é selecionável nesta página
-function toggleSelectAllOnPage() {
-  if (!selectableVisibleBills.value.length) return;
+const syncProgressLabel = computed(() => {
+  const s = syncStatus.value;
+  if (!s) return '';
+  if (s.phase === 'fetching') return `${s.fetched ?? 0} / ${s.total ?? '?'} títulos`;
+  if (s.phase === 'upserting') return `${s.done ?? 0} / ${s.total ?? '?'} salvos`;
+  if (s.phase === 'departments') return `${s.done ?? 0} / ${s.total ?? '?'} departamentos`;
+  if (s.phase === 'installments') return `${s.done ?? 0} / ${s.total ?? '?'} parcelas`;
+  return '';
+});
 
-  const idsOnPage = selectableVisibleBills.value.map(bill => bill.id);
+async function pollSyncStatus() {
+  const costCenterId = store.costCenterIds[0];
+  if (!costCenterId) return;
 
-  if (isAllSelectedOnPage.value) {
-    // Desmarca só os da página
-    store.selectedIds = store.selectedIds.filter(id => !idsOnPage.includes(id));
-  } else {
-    // Marca apenas os selecionáveis da página que ainda não estão selecionados
-    const toAdd = idsOnPage.filter(id => !store.selectedIds.includes(id));
-    store.selectedIds = [...store.selectedIds, ...toAdd];
+  try {
+    const data = await requestWithAuth(
+      `${API_URL}/sienge/bills/sync-enterprise/status/${costCenterId}`
+    );
+    syncStatus.value = data;
+
+    if (!data.running) {
+      stopPolling();
+    }
+  } catch (err) {
+    console.warn('[Títulos] Falha ao consultar status do sync:', err.message);
   }
 }
 
-// 👇 NOVO: categorias de departamento (somente ativas)
-const costCategoriesOptions = computed(() =>
-  (adminMeta.departmentCategories || [])
-    .filter(c => c.active)
-    .map(c => ({ id: c.id, name: c.name }))
-);
+function startPolling() {
+  stopPolling();
+  pollTimer = setInterval(pollSyncStatus, 2500);
+}
+
+function stopPolling() {
+  if (pollTimer) {
+    clearInterval(pollTimer);
+    pollTimer = null;
+  }
+}
+
+async function startEnterpriseSync() {
+  const costCenterId = store.costCenterIds[0];
+  if (!costCenterId) return;
+
+  try {
+    syncStatus.value = {
+      running: true,
+      phase: 'starting',
+      fetched: 0,
+      total: null,
+      done: 0,
+    };
+
+    await requestWithAuth(`${API_URL}/sienge/bills/sync-enterprise`, {
+      method: 'POST',
+      body: JSON.stringify({ costCenterId }),
+    });
+
+    startPolling();
+  } catch (err) {
+    syncStatus.value = {
+      running: false,
+      phase: 'error',
+      error: err.message,
+    };
+  }
+}
+
+// Para o polling quando sai da página
+onUnmounted(() => stopPolling());
+
+// Se mudar de empreendimento enquanto syncing, para o polling do anterior
+watch(() => store.costCenterIds, () => {
+  if (!isSyncing.value) {
+    stopPolling();
+    syncStatus.value = null;
+  }
+});
 
 onMounted(async () => {
   try {
-    await Promise.all([ 
-      contractsStore.fetchEnterpriseCities(), // 👈 aqui
-      adminMeta.fetchDepartments(),
-      adminMeta.fetchDepartmentCategories(),
-    ]);
+    await contractsStore.fetchEnterpriseCities();
   } catch (e) {
-    console.error('Erro ao carregar metadados:', e);
+    console.error('Erro ao carregar empreendimentos:', e);
   }
 });
-
 </script>
+
+<style scoped>
+.slide-down-enter-active,
+.slide-down-leave-active {
+  transition: all 0.3s ease;
+}
+
+.slide-down-enter-from,
+.slide-down-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+</style>

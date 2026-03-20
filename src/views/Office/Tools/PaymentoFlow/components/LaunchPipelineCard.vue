@@ -55,11 +55,35 @@ const balance = computed(() => Number(props.launch.siengeItemBalanceAvailable) |
 const unitPrice = computed(() => Number(props.launch.unitPrice) || 0);
 
 const isRunning = computed(() =>
-    ['searching_creditor', 'searching_contract', 'creating_contract', 'creating_additive', 'validating_items']
+    ['searching_creditor', 'searching_contract', 'creating_contract', 'creating_additive', 'creating_measurement', 'validating_items']
         .includes(stage.value)
 );
 const isReady = computed(() => stage.value === 'ready');
-const hasError = computed(() => ['contract_error', 'additive_error'].includes(stage.value) || creditorMissing.value);
+const hasError = computed(() => ['contract_error', 'additive_error', 'measurement_error'].includes(stage.value) || creditorMissing.value);
+
+// ── Medição step ───────────────────────────────────────────────────────────────
+const measurementCreating = computed(() => stage.value === 'creating_measurement');
+const measurementCreated = computed(() =>
+    ['measurement_created', 'awaiting_measurement_authorization', 'ready'].includes(stage.value)
+);
+const measurementError = computed(() => stage.value === 'measurement_error');
+const measurementErrorMsg = computed(() =>
+    measurementError.value ? (props.launch.siengeMeasurementError || null) : null
+);
+const measurementAuthorized = computed(() => props.launch.siengeMeasurementAuthorized === true);
+
+const measurementStepClass = computed(() => {
+    if (measurementError.value) return 'bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400';
+    if (measurementCreating.value) return 'bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400';
+    if (measurementCreated.value) return 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400';
+    return 'bg-gray-100 dark:bg-gray-700 text-gray-400';
+});
+const measurementStepTextClass = computed(() => {
+    if (measurementError.value) return 'text-red-600 dark:text-red-400 font-semibold';
+    if (measurementCreating.value) return 'text-blue-600 dark:text-blue-400 font-semibold';
+    if (measurementCreated.value) return 'text-emerald-600 dark:text-emerald-400 font-semibold';
+    return 'text-gray-400';
+});
 
 // ── Fluxo de aditivo: contrato existia (status 'found') ──────────────────────
 const isAdditivePath = computed(() => props.launch.siengeContractStatus === 'found');
@@ -68,7 +92,9 @@ const isAdditivePath = computed(() => props.launch.siengeContractStatus === 'fou
 const additiveCreating = computed(() => stage.value === 'creating_additive');
 const additiveCreated = computed(() =>
     stage.value === 'additive_created' ||
-    (stage.value === 'awaiting_authorization' && isAdditivePath.value)
+    (stage.value === 'awaiting_authorization' && isAdditivePath.value) ||
+    ['creating_measurement', 'measurement_created', 'measurement_error',
+     'awaiting_measurement_authorization', 'ready'].includes(stage.value)
 );
 const additiveError = computed(() => stage.value === 'additive_error');
 const additiveErrorMsg = computed(() =>
@@ -165,15 +191,16 @@ function authLevelLabel(level) {
                     <i :class="running ? 'fas fa-spinner fa-spin text-xs' : 'fas fa-play text-xs'"></i>
                     {{ running ? 'Processando...' : 'Processar' }}
                 </button>
-                <!-- Retentar: aparece quando há erro de contrato ou aditivo -->
-                <button v-if="contractError || additiveError"
+                <!-- Retentar: aparece quando há erro de contrato, aditivo ou medição -->
+                <button v-if="contractError || additiveError || measurementError"
                     class="text-xs px-2.5 py-1 rounded-lg bg-red-500 hover:bg-red-600 text-white transition flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
                     :disabled="isRunning || running"
                     @click="!running && emit('retry-contract', launch.id)">
                     <i :class="running ? 'fas fa-spinner fa-spin text-xs' : 'fas fa-rotate-right text-xs'"></i>
                     {{ running ? 'Processando...' : 'Retentar' }}
                 </button>
-                <button v-if="(contractFound || additiveCreated) && !isAuthorized"
+                <!-- Poll manual: autorização de contrato/aditivo ou medição -->
+                <button v-if="(contractFound || additiveCreated || measurementCreated) && (!isAuthorized || !measurementAuthorized)"
                     class="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition disabled:opacity-40 disabled:cursor-not-allowed"
                     :disabled="polling || running" @click="emit('poll', launch.id)">
                     <i class="fas fa-arrows-rotate text-xs"></i>
@@ -326,10 +353,14 @@ function authLevelLabel(level) {
                                 <div class="flex-1 h-0.5 mx-1 bg-gray-200 dark:bg-gray-700"></div>
                                 <!-- Medição -->
                                 <div class="flex flex-col items-center text-center flex-1 min-w-0">
-                                    <div class="w-7 h-7 rounded-full flex items-center justify-center mb-1 bg-gray-100 dark:bg-gray-700 text-gray-400">
-                                        <span class="text-xs font-bold">3</span>
+                                    <div class="w-7 h-7 rounded-full flex items-center justify-center mb-1"
+                                        :class="measurementStepClass">
+                                        <i v-if="measurementCreating" class="fas fa-spinner fa-spin text-xs"></i>
+                                        <i v-else-if="measurementError" class="fas fa-xmark text-xs"></i>
+                                        <i v-else-if="measurementCreated" class="fas fa-check text-xs"></i>
+                                        <span v-else class="text-xs font-bold">3</span>
                                     </div>
-                                    <span class="text-xs text-gray-400 leading-tight">Medição</span>
+                                    <span class="text-xs leading-tight" :class="measurementStepTextClass">Medição</span>
                                 </div>
                                 <div class="flex-1 h-0.5 mx-1 bg-gray-200 dark:bg-gray-700"></div>
                                 <!-- Título -->
@@ -343,8 +374,15 @@ function authLevelLabel(level) {
                         </div>
                     </div>
 
+                    <!-- Criando aditivo via Playwright -->
+                    <div v-if="additiveCreating"
+                        class="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        Criando aditivo no Sienge via automação...
+                    </div>
+
                     <!-- Erro no aditivo -->
-                    <div v-if="additiveError"
+                    <div v-else-if="additiveError"
                         class="rounded-lg border border-red-200 dark:border-red-700 bg-red-50 dark:bg-red-900/20 p-3 text-xs text-red-700 dark:text-red-300 space-y-1">
                         <div class="font-semibold flex items-center gap-1.5">
                             <i class="fas fa-triangle-exclamation"></i> Falha na criação do aditivo
@@ -353,8 +391,8 @@ function authLevelLabel(level) {
                         <div v-else class="italic text-red-400">Detalhes do erro não disponíveis.</div>
                     </div>
 
-                    <!-- Autorização (oculto quando há erro ativo no aditivo) -->
-                    <div v-else class="flex items-center justify-between px-3 py-2.5 rounded-lg" :class="isAuthorized
+                    <!-- Autorização do contrato/aditivo (só quando aditivo criado/aguardando; oculto em creating/erro) -->
+                    <div v-else-if="additiveCreated" class="flex items-center justify-between px-3 py-2.5 rounded-lg" :class="isAuthorized
                         ? 'bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-700'
                         : 'bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700'">
                         <div class="flex items-center gap-2">
@@ -370,6 +408,47 @@ function authLevelLabel(level) {
                         <span v-if="!isAuthorized && authLevelLabel(launch.siengeContractAuthLevel)"
                             class="text-xs font-bold px-2 py-0.5 rounded-full bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-200">
                             {{ authLevelLabel(launch.siengeContractAuthLevel) }}
+                        </span>
+                    </div>
+
+                    <!-- ── Medição ───────────────────────────────────────────── -->
+                    <!-- Criando via Playwright -->
+                    <div v-if="measurementCreating"
+                        class="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        Criando medição no Sienge via automação...
+                    </div>
+
+                    <!-- Erro na medição -->
+                    <div v-else-if="measurementError"
+                        class="rounded-lg border border-red-200 dark:border-red-700 bg-red-50 dark:bg-red-900/20 p-3 text-xs text-red-700 dark:text-red-300 space-y-1">
+                        <div class="font-semibold flex items-center gap-1.5">
+                            <i class="fas fa-triangle-exclamation"></i> Falha na criação da medição
+                        </div>
+                        <div v-if="measurementErrorMsg" class="break-words leading-relaxed">{{ measurementErrorMsg }}</div>
+                        <div v-else class="italic text-red-400">Detalhes do erro não disponíveis.</div>
+                    </div>
+
+                    <!-- Medição criada — autorização -->
+                    <div v-else-if="measurementCreated"
+                        class="flex items-center justify-between px-3 py-2.5 rounded-lg"
+                        :class="measurementAuthorized
+                            ? 'bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-700'
+                            : 'bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700'">
+                        <div class="flex items-center gap-2">
+                            <i :class="measurementAuthorized ? 'fas fa-ruler-combined text-emerald-500' : 'fas fa-lock text-yellow-500'"></i>
+                            <span class="text-xs font-semibold" :class="measurementAuthorized
+                                ? 'text-emerald-700 dark:text-emerald-300'
+                                : 'text-yellow-700 dark:text-yellow-300'">
+                                {{ measurementAuthorized ? 'Medição autorizada' : 'Medição em autorização' }}
+                                <span v-if="launch.siengeMeasurementNumber" class="font-normal opacity-75 ml-1">
+                                    #{{ launch.siengeMeasurementNumber }}
+                                </span>
+                            </span>
+                        </div>
+                        <span v-if="!measurementAuthorized && authLevelLabel(launch.siengeMeasurementAuthLevel)"
+                            class="text-xs font-bold px-2 py-0.5 rounded-full bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-200">
+                            {{ authLevelLabel(launch.siengeMeasurementAuthLevel) }}
                         </span>
                     </div>
                 </div>
