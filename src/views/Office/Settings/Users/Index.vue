@@ -145,6 +145,40 @@
                 :class="user.face_enabled ? 'text-green-500' : 'text-gray-300 dark:text-gray-600'"
                 v-tippy="user.face_enabled ? 'Reconhecimento facial ativo' : 'Reconhecimento facial inativo'"></i>
 
+              <!-- Ícone Sienge -->
+              <img
+                src="/sienge.png"
+                alt="Sienge"
+                width="14" height="14"
+                v-tippy="user.sienge_email ? 'Credenciais Sienge configuradas' : 'Sem credenciais Sienge'"
+                :class="user.sienge_email ? 'opacity-100' : 'opacity-20'"
+                class="object-contain"
+              />
+
+              <!-- Ícone Microsoft -->
+              <svg
+                v-tippy="user.microsoft_id ? 'Conta Microsoft conectada' : 'Sem conta Microsoft'"
+                width="14" height="14" viewBox="0 0 21 21" fill="none" xmlns="http://www.w3.org/2000/svg"
+                :class="user.microsoft_id ? 'opacity-100' : 'opacity-20'">
+                <rect x="0" y="0" width="10" height="10" fill="#F25022"/>
+                <rect x="11" y="0" width="10" height="10" fill="#7FBA00"/>
+                <rect x="0" y="11" width="10" height="10" fill="#00A4EF"/>
+                <rect x="11" y="11" width="10" height="10" fill="#FFB900"/>
+              </svg>
+
+              <!-- Toggle organograma (admin only) -->
+              <button
+                v-if="isAdmin"
+                @click.stop="toggleOrganogram(user)"
+                :disabled="togglingOrgId === user.id"
+                v-tippy="user.show_in_organogram ? 'Visível no organograma' : 'Oculto no organograma'"
+                class="p-1.5 rounded-lg transition-all duration-150"
+                :class="user.show_in_organogram
+                  ? 'text-purple-600 bg-purple-50 dark:bg-purple-900/20'
+                  : 'text-gray-300 dark:text-gray-600 hover:text-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/20'">
+                <i class="fas fa-sitemap text-xs" :class="togglingOrgId === user.id ? 'animate-pulse' : ''"></i>
+              </button>
+
               <button @click="startEditing(user)"
                 class="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 opacity-0 group-hover:opacity-100 transition-all duration-150">
                 <i class="fas fa-pen text-xs"></i>
@@ -164,20 +198,25 @@
 import { ref, computed, onMounted } from 'vue';
 import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 import { useCarregamentoStore } from '@/stores/Config/carregamento';
+import { useToast } from 'vue-toastification';
 import userModal from '@/views/Office/Settings/Users/components/userModal.vue';
 import Favorite from '@/components/config/Favorite.vue';
 
 const userStore = useAuthStore();
 const carregamento = useCarregamentoStore();
+const toast = useToast();
 
 const users = ref([]);
 const searchQuery = ref('');
 const searchField = ref('username');
 const filterCity = ref('');
 const filterPosition = ref('');
-const filterStatus = ref('');
+const filterStatus = ref(true);
 const editableUser = ref(null);
 const showUserModal = ref(false);
+const togglingOrgId = ref(null);
+
+const isAdmin = computed(() => userStore.user?.role === 'admin');
 
 const fetchUsers = async () => {
   try {
@@ -210,6 +249,19 @@ const startEditing = (user) => { editableUser.value = { ...user }; showUserModal
 const startCreating = () => { editableUser.value = null; showUserModal.value = true; };
 const closeModal = () => { editableUser.value = null; showUserModal.value = false; };
 const clearFilters = () => { searchQuery.value = ''; filterCity.value = ''; filterPosition.value = ''; filterStatus.value = ''; };
+
+const toggleOrganogram = async (user) => {
+  if (togglingOrgId.value) return;
+  togglingOrgId.value = user.id;
+  try {
+    await userStore.updateUser({ ...user, show_in_organogram: !user.show_in_organogram });
+    await fetchUsers();
+  } catch (e) {
+    toast.error('Erro ao atualizar visibilidade no organograma.');
+  } finally {
+    togglingOrgId.value = null;
+  }
+};
 
 onMounted(fetchUsers);
 </script>

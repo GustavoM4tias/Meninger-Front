@@ -94,6 +94,14 @@
                                 placeholder="seu@email.com" required />
                         </div>
 
+                        <!-- Telefone -->
+                        <div class="space-y-1.5">
+                            <label
+                                class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Telefone <span class="text-gray-400 font-normal normal-case tracking-normal">(com DDD)</span></label>
+                            <Input v-model="editableUser.phone" :disabled="isDisabled" type="tel"
+                                placeholder="(11) 99999-9999" />
+                        </div>
+
                         <!-- Nascimento -->
                         <div class="space-y-1.5">
                             <label
@@ -299,6 +307,81 @@
                 </transition>
             </div>
 
+            <!-- ── Microsoft Card ── -->
+            <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-sm">
+                <button type="button"
+                    class="w-full flex items-center justify-between px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                    @click="microsoftSectionOpen = !microsoftSectionOpen">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-xl flex items-center justify-center"
+                            :class="microsoftStore.connected ? 'bg-blue-100 dark:bg-blue-900/30' : 'bg-gray-100 dark:bg-gray-800'">
+                            <svg width="18" height="18" viewBox="0 0 21 21" fill="none" xmlns="http://www.w3.org/2000/svg"
+                                :class="microsoftStore.connected ? 'opacity-100' : 'opacity-40'">
+                                <rect x="0" y="0" width="10" height="10" fill="#F25022"/>
+                                <rect x="11" y="0" width="10" height="10" fill="#7FBA00"/>
+                                <rect x="0" y="11" width="10" height="10" fill="#00A4EF"/>
+                                <rect x="11" y="11" width="10" height="10" fill="#FFB900"/>
+                            </svg>
+                        </div>
+                        <div class="text-left">
+                            <p class="text-sm font-semibold text-gray-900 dark:text-white">Conta Microsoft</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">
+                                <span v-if="microsoftStore.connected" class="text-blue-600 dark:text-blue-400">
+                                    <i class="fas fa-circle-check mr-1"></i>Conectada — {{ authStore.user?.email }}
+                                </span>
+                                <span v-else>Não conectada — faça login com sua conta @menin.com.br</span>
+                            </p>
+                        </div>
+                    </div>
+                    <i class="fas fa-chevron-down text-gray-400 text-xs transition-transform duration-200"
+                        :class="{ 'rotate-180': microsoftSectionOpen }"></i>
+                </button>
+
+                <transition name="expand">
+                    <div v-if="microsoftSectionOpen" class="px-6 pb-6 border-t border-gray-100 dark:border-gray-800">
+                        <div class="mt-4 space-y-4">
+
+                            <!-- Conectado -->
+                            <template v-if="microsoftStore.connected">
+                                <div class="p-3 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 text-xs text-blue-700 dark:text-blue-300">
+                                    <i class="fas fa-circle-check mr-1.5"></i>
+                                    Sua conta Microsoft está vinculada. O sistema usa ela para autenticar e acessar recursos do ecossistema Microsoft (SharePoint, Teams, etc.) em seu nome.
+                                </div>
+
+                                <div v-if="!microsoftStore.isMicrosoftOnly" class="pt-1">
+                                    <Button type="button" outlined :disabled="microsoftStore.loading" @click="handleUnlink">
+                                        <i class="fas fa-unlink mr-2 text-xs"></i>
+                                        {{ microsoftStore.loading ? 'Desvinculando...' : 'Desvincular conta Microsoft' }}
+                                    </Button>
+                                </div>
+                                <p v-else class="text-xs text-amber-600 dark:text-amber-400">
+                                    <i class="fas fa-triangle-exclamation mr-1"></i>
+                                    Esta é sua única forma de login — não é possível desvincular sem configurar uma senha.
+                                </p>
+                            </template>
+
+                            <!-- Não conectado -->
+                            <template v-else>
+                                <div class="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 text-xs text-gray-600 dark:text-gray-400">
+                                    <i class="fas fa-info-circle mr-1.5"></i>
+                                    Conecte sua conta <strong>@menin.com.br</strong> para habilitar login simplificado e integração com SharePoint, Teams e outros serviços Microsoft.
+                                </div>
+                                <Button type="button" @click="microsoftStore.redirectToLogin()">
+                                    <svg class="mr-2" width="14" height="14" viewBox="0 0 21 21" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <rect x="0" y="0" width="10" height="10" fill="#F25022"/>
+                                        <rect x="11" y="0" width="10" height="10" fill="#7FBA00"/>
+                                        <rect x="0" y="11" width="10" height="10" fill="#00A4EF"/>
+                                        <rect x="11" y="11" width="10" height="10" fill="#FFB900"/>
+                                    </svg>
+                                    Conectar conta Microsoft
+                                </Button>
+                            </template>
+
+                        </div>
+                    </div>
+                </transition>
+            </div>
+
             <!-- ── Sienge Credentials Card ── -->
             <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-sm">
                 <!-- Card header / toggle -->
@@ -306,15 +389,16 @@
                     class="w-full flex items-center justify-between px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
                     @click="toggleSiengeSection">
                     <div class="flex items-center gap-3">
-                        <div class="w-9 h-9 rounded-xl flex items-center justify-center"
-                            :class="siengeStatus?.hasCredentials ? 'bg-emerald-100 dark:bg-emerald-900/30' : 'bg-blue-100 dark:bg-blue-900/30'">
-                            <i class="fas fa-plug text-sm"
-                                :class="siengeStatus?.hasCredentials ? 'text-emerald-600 dark:text-emerald-400' : 'text-blue-600 dark:text-blue-400'"></i>
+                        <div class="w-9 h-9 rounded-xl flex items-center justify-center p-1.5"
+                            :class="siengeStatus?.hasCredentials ? 'bg-red-50 dark:bg-red-900/20' : 'bg-gray-100 dark:bg-gray-800'">
+                            <img src="/sienge.png" alt="Sienge"
+                                class="w-full h-full object-contain"
+                                :class="siengeStatus?.hasCredentials ? 'opacity-100' : 'opacity-40'" />
                         </div>
                         <div class="text-left">
                             <p class="text-sm font-semibold text-gray-900 dark:text-white">Credenciais Sienge</p>
                             <p class="text-xs text-gray-500 dark:text-gray-400">
-                                <span v-if="siengeStatus?.hasCredentials" class="text-emerald-600 dark:text-emerald-400">
+                                <span v-if="siengeStatus?.hasCredentials" class="text-red-600 dark:text-red-400">
                                     <i class="fas fa-circle-check mr-1"></i>Configurado — {{ siengeStatus.maskedEmail }}
                                 </span>
                                 <span v-else>Não configurado — necessário para criar contratos automaticamente</span>
@@ -384,6 +468,7 @@
 <script setup>
 import { ref, computed, onMounted, watch, reactive } from 'vue';
 import { useAuthStore } from '@/stores/Settings/Auth/authStore';
+import { useMicrosoftStore } from '@/stores/Microsoft/microsoftStore';
 import { updateMeInfo, changePassword } from '@/utils/Auth/apiAuth';
 import Input from '@/components/UI/Input.vue';
 import Button from '@/components/UI/Button.vue';
@@ -413,9 +498,10 @@ const passwordCheckList = [
 // ─── Setup ────────────────────────────────────────────────────────────────────
 const toast = useToast();
 const authStore = useAuthStore();
+const microsoftStore = useMicrosoftStore();
 
 // ─── Profile state ────────────────────────────────────────────────────────────
-const editableUser = ref({ username: '', email: '', city: '', position: '', birth_date: '', status: false, face_enabled: false });
+const editableUser = ref({ username: '', email: '', phone: '', city: '', position: '', birth_date: '', status: false, face_enabled: false });
 const originalUser = ref({});
 const isDisabled = ref(true);
 const profileLoading = ref(false);
@@ -470,6 +556,7 @@ const fillEditableUser = () => {
     const data = {
         username: authStore.user.username,
         email: authStore.user.email,
+        phone: authStore.user.phone || '',
         city: authStore.user.city,
         position: authStore.user.position,
         birth_date: authStore.user.birth_date,
@@ -509,6 +596,7 @@ const updateUser = async () => {
             editableUser.value.birth_date,
             editableUser.value.status,
             editableUser.value.face_enabled,
+            editableUser.value.phone || null,
         );
         await authStore.fetchUserInfo();
         fillEditableUser();
@@ -550,6 +638,18 @@ const handleChangePassword = async () => {
         passwordLoading.value = false;
     }
 };
+
+// ─── Microsoft ────────────────────────────────────────────────────────────────
+const microsoftSectionOpen = ref(false);
+
+async function handleUnlink() {
+    try {
+        await microsoftStore.unlink();
+        toast.success('Conta Microsoft desvinculada.');
+    } catch (err) {
+        toast.error(err?.message || 'Erro ao desvincular conta Microsoft.');
+    }
+}
 
 // ─── Sienge Credentials ───────────────────────────────────────────────────────
 const siengeSectionOpen = ref(false);
@@ -604,6 +704,7 @@ onMounted(async () => {
     if (!authStore.user) await authStore.fetchUserInfo();
     fillEditableUser();
     loadSiengeStatus();
+    microsoftStore.fetchStatus();
 });
 </script>
 

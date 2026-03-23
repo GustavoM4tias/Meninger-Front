@@ -51,6 +51,8 @@ function syncUrlFromFilters() {
   router.replace({ query: q })
 }
 
+const showCharts = ref(false)
+
 const modalVisivel = ref(false)
 const modalLeads = ref([])
 const modalMode = ref('list')
@@ -70,9 +72,11 @@ function limpar() {
   Object.assign(filtros.value, {
     nome: '', email: '', telefone: '',
     imobiliaria: [], corretor: [],
-    situacao_nome: [], midia_principal: [], origem: [], empreendimento: [],
+    midia_principal: [], origem: [], empreendimento: [],
     data_inicio: '', data_fim: ''
   })
+  // Restaura o default: todas as situações exceto as de painel
+  store.applyDefaultSituacoes()
   router.replace({ query: {} })
   store.fetchLeads(true)
 }
@@ -106,29 +110,44 @@ onMounted(async () => {
       <FiltersBar v-model:filtros="filtros" :empreendimentos-options="store.empreendimentosOptions"
         :origens-options="store.origensOptions" :situacoes-options="store.situacoesOptions"
         :midias-options="store.midiasOptions" :imobiliarias-options="store.imobiliariasOptions"
-        :corretores-options="store.corretoresOptions" @buscar="buscar" @limpar="limpar" />
+        :corretores-options="store.corretoresOptions" @buscar="buscar" @limpar="limpar">
+        <!-- Toggle de visualização -->
+        <template #extra-actions>
+          <button @click="showCharts = !showCharts"
+            v-tippy="showCharts ? 'Voltar para visão geral' : 'Ver dashboard analítico'"
+            :class="['px-3 py-2 rounded-lg font-medium text-sm flex items-center gap-2 transition-all border', showCharts
+              ? 'bg-purple-600 text-white border-purple-600 hover:bg-purple-700'
+              : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-purple-400 hover:text-purple-600']">
+            <i :class="showCharts ? 'fas fa-table-cells' : 'fas fa-chart-area'"></i>
+            <span class="hidden sm:inline">{{ showCharts ? 'Geral' : 'Dashboard' }}</span>
+          </button>
+        </template>
+      </FiltersBar>
     </div>
 
-    <div class="px-6 pb-6 space-y-4">
-      <!-- KPI dinâmico por situação -->
-      <SummaryCards :periodo="periodo" :kpi="kpiSituacoes" @filtrarSituacao="onFiltrarSituacao" />
-    </div>
+    <!-- Visão padrão: KPIs + Tabela -->
+    <template v-if="!showCharts">
+      <div class="px-6 pb-6 space-y-4">
+        <SummaryCards :periodo="periodo" :kpi="kpiSituacoes" @filtrarSituacao="onFiltrarSituacao" />
+      </div>
 
-    <!-- ✅ NOVO: Charts na tela -->
-    <!-- <div class="px-6 pb-6">
-      <DashboardCharts :leads="leads" :leads-by-enterprise="leadsByEnterprise" @abrirModal="abrirModal"
-        @filtrarSituacao="onFiltrarSituacao" />
-    </div> -->
+      <div v-if="error" class="px-6 py-4">
+        <div class="my-3 p-3 bg-red-500/20 text-red-200 rounded-lg">
+          <i class="fas fa-exclamation-triangle mr-2"></i>{{ error }}
+        </div>
+      </div>
+      <div v-else class="px-6 pb-6 space-y-6">
+        <LeadsTable :data="leadsByEnterprise" @abrirModal="abrirModal" />
+      </div>
+    </template>
 
-    <div v-if="error" class="px-6 py-4">
-      <div class="my-3 p-3 bg-red-500/20 text-red-200 rounded-lg"><i class="fas fa-exclamation-triangle mr-2"></i>{{
-        error }}</div>
-    </div>
-
-    <div v-else class="px-6 pb-6 space-y-6">
-      <!-- Tabela agregada por empreendimento -->
-      <LeadsTable :data="leadsByEnterprise" @abrirModal="abrirModal" />
-    </div>
+    <!-- Visão analítica: Dashboard de gráficos -->
+    <template v-else>
+      <div class="px-6 pb-6">
+        <DashboardCharts :leads="leads" :leads-by-enterprise="leadsByEnterprise" @abrirModal="abrirModal"
+          @filtrarSituacao="onFiltrarSituacao" />
+      </div>
+    </template>
 
     <LeadModal :leads="modalLeads" :visivel="modalVisivel" :initial-mode="modalMode" @fechar="modalVisivel = false" />
     <Filas :filas="filas" class="mt-6" />

@@ -143,58 +143,60 @@
 
                             <div v-else class="space-y-2">
                                 <div v-for="l in leadsFiltrados" :key="l.idlead"
-                                    class="bg-white dark:bg-gray-900/40 border border-gray-200/60 dark:border-gray-700 rounded-lg px-3 py-2 hover:shadow transition-shadow">
+                                    class="bg-white dark:bg-gray-900/40 border border-gray-200/60 dark:border-gray-700 rounded-xl px-4 py-3 hover:shadow-md hover:border-blue-300 dark:hover:border-blue-600 transition-all cursor-pointer group"
+                                    @click="openDetail(l)">
+                                    <!-- Linha 1: Nome + status + data + links -->
                                     <div class="flex items-start justify-between gap-2">
-                                        <div class="min-w-0">
-                                            <div class="flex items-center gap-2">
-                                                <h4 class="font-semibold text-sm truncate">{{ l.nome }}</h4>
-                                                <span
-                                                    :class="['px-2 py-0.5 rounded-full text-[10px] font-medium', getStatusPill(l.situacao_nome)]">
-                                                    {{ l.situacao_nome || 'Sem situação' }}
-                                                </span>
-                                            </div>
-                                            <div
-                                                class="mt-1 grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs text-gray-500 dark:text-gray-300">
-                                                <div class="truncate">
-                                                    <i class="fas fa-building mr-1 text-indigo-500"></i>
-                                                    <span class="font-medium">Imobiliária: </span>{{ brokerOf(l) }}
-                                                </div>
-                                                <div class="truncate">
-                                                    <i class="fas fa-user mr-1 text-orange-500"></i>
-                                                    <span class="font-medium">Corretor: </span>{{ l.corretor?.nome ||
-                                                    '—' }}
-                                                </div>
-                                                <div class="truncate">
-                                                    <i class="fas fa-bullhorn mr-1 text-pink-500"></i>
-                                                    <span class="font-medium">Mídia: </span>{{ l.midia_principal || '—'
-                                                    }}
-                                                </div>
-                                            </div>
-                                            <div v-if="Array.isArray(l.empreendimento) && l.empreendimento.length"
-                                                class="mt-1 flex flex-wrap gap-1">
-                                                <span v-for="(emp, idx) in l.empreendimento" :key="idx"
-                                                    class="bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200 px-2 py-0.5 rounded text-[10px]">
-                                                    {{ emp?.nome }}
-                                                </span>
-                                            </div>
+                                        <div class="flex items-center gap-2 min-w-0 flex-1">
+                                            <h4 class="font-semibold text-sm truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{{ l.nome }}</h4>
+                                            <span :class="['shrink-0 px-2 py-0.5 rounded-full text-[10px] font-medium', getStatusPill(l.situacao_nome)]">
+                                                {{ l.situacao_nome || 'Sem situação' }}
+                                            </span>
                                         </div>
+                                        <div class="flex items-center gap-2 shrink-0">
+                                            <span class="text-[10px] text-gray-400">{{ formatDateHour(l.data_cad) }}</span>
+                                            <a :href="`https://menin.cvcrm.com.br/gestor/comercial/leads/${l.idlead}/administrar?lido=true`"
+                                                target="_blank" class="hover:opacity-70 transition-opacity" v-tippy="'CV CRM'" @click.stop>
+                                                <img src="/CVLogo.png" alt="CV CRM" class="h-4" />
+                                            </a>
+                                            <a v-if="l.link_rdstation" :href="l.link_rdstation" target="_blank"
+                                                class="hover:opacity-70 transition-opacity" v-tippy="'RD Station'" @click.stop>
+                                                <img src="/RDLogo.png" alt="RD Station" class="h-4" />
+                                            </a>
+                                        </div>
+                                    </div>
 
-                                        <div class="flex flex-col items-end gap-1 shrink-0">
-                                            <span class="text-[11px] text-gray-500">{{ formatDateHour(l.data_cad)
-                                                }}</span>
-                                            <div class="flex gap-2">
-                                                <a :href="`https://menin.cvcrm.com.br/gestor/comercial/leads/${l.idlead}/administrar?lido=true`"
-                                                    target="_blank" class="hover:opacity-80 transition-opacity"
-                                                    v-tippy="'Abrir no CV CRM'">
-                                                    <img src="/CVLogo.png" alt="CV CRM" class="h-5" />
-                                                </a>
-                                                <a v-if="l.link_rdstation" :href="l.link_rdstation" target="_blank"
-                                                    class="hover:opacity-80 transition-opacity"
-                                                    v-tippy="'Abrir no RD Station'">
-                                                    <img src="/RDLogo.png" alt="RD Station" class="h-5" />
-                                                </a>
-                                            </div>
-                                        </div>
+                                    <!-- Linha 2: Imobiliária, Corretor, Mídia, Empreendimentos -->
+                                    <div class="mt-1.5 flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-gray-500 dark:text-gray-400">
+                                        <span class="truncate max-w-[180px]">
+                                            <i class="fas fa-building mr-1 text-indigo-400"></i>{{ brokerOf(l) }}
+                                        </span>
+                                        <span class="truncate max-w-[180px]">
+                                            <i class="fas fa-user-tie mr-1 text-orange-400"></i>{{ l.corretor?.nome || '—' }}
+                                        </span>
+                                        <span v-if="l.midia_principal" class="truncate max-w-[160px]">
+                                            <i class="fas fa-bullhorn mr-1 text-pink-400"></i>{{ l.midia_principal }}
+                                        </span>
+                                        <template v-if="Array.isArray(l.empreendimento) && l.empreendimento.length">
+                                            <span v-for="(emp, idx) in l.empreendimento" :key="idx"
+                                                class="px-1.5 py-0.5 rounded bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 text-[10px] font-medium">
+                                                {{ emp?.nome }}
+                                            </span>
+                                        </template>
+                                    </div>
+
+                                    <!-- Linha 3: Motivo de cancelamento (se houver) -->
+                                    <div v-if="cancelReasonOf(l)"
+                                        class="mt-1.5 flex items-start gap-1.5 text-xs text-red-600 dark:text-red-400">
+                                        <i class="fas fa-ban shrink-0 mt-0.5 text-[10px]"></i>
+                                        <span class="font-medium">{{ cancelReasonOf(l) }}</span>
+                                    </div>
+
+                                    <!-- Linha 4: Última anotação (se houver) -->
+                                    <div v-if="annotationOf(l)"
+                                        class="mt-1.5 flex items-start gap-1.5 text-xs text-gray-500 dark:text-gray-400">
+                                        <i class="fas fa-comment-dots shrink-0 mt-0.5 text-teal-500 text-[10px]"></i>
+                                        <span class="line-clamp-2 italic">{{ annotationOf(l) }}</span>
                                     </div>
                                 </div>
 
@@ -211,6 +213,9 @@
             </div>
         </div>
     </Transition>
+
+    <!-- Lead Detail Modal -->
+    <LeadDetailModal v-if="selectedLead" :lead="selectedLead" :visivel="detailVisible" @fechar="closeDetail" />
 </template>
 
 <script setup>
@@ -218,6 +223,7 @@ import { computed, ref, watch, onMounted } from 'vue'
 import Export from '@/components/config/Export.vue'
 import ChartActions from '@/components/config/ChartActions.vue'
 import MultiSelector from '@/components/UI/MultiSelector.vue'
+import LeadDetailModal from './LeadDetailModal.vue'
 import VChart from 'vue-echarts'
 import * as echarts from 'echarts/core'
 import { FunnelChart, PieChart, BarChart } from 'echarts/charts'
@@ -247,6 +253,12 @@ const open = ref(false)
 const groupBy = ref('date')
 const chartRef = ref(null)
 const normalizeMode = (m) => (['list', 'funnel', 'stacked', 'pie'].includes(m) ? m : 'list')
+
+// Lead detail modal
+const selectedLead = ref(null)
+const detailVisible = ref(false)
+const openDetail = (lead) => { selectedLead.value = lead; detailVisible.value = true }
+const closeDetail = () => { detailVisible.value = false }
 
 // quando o pai trocar initialMode, atualiza o viewMode
 watch(() => props.initialMode, (m) => {
@@ -308,6 +320,21 @@ const normalizeOpt = (v) => {
 const setSet = (bagRef, arr) => {
     const next = new Set((Array.isArray(arr) ? arr : []).map(normalizeOpt))
     bagRef.value = next
+}
+
+// Extrai motivo de cancelamento: lê dos campos dedicados do banco
+const cancelReasonOf = (l) => {
+    if (!l?.motivo_cancelamento) return null
+    const sub = l.submotivo_cancelamento ? ` — ${l.submotivo_cancelamento}` : ''
+    return l.motivo_cancelamento + sub
+}
+
+// Extrai descrição da última interação (array)
+const annotationOf = (l) => {
+    const i = l?.interacao
+    if (!i) return null
+    if (Array.isArray(i)) return i.length ? (i[i.length - 1]?.descricao || null) : null
+    return i.anotacao || i.descricao || null
 }
 
 // brokerOf sempre string "limpa"

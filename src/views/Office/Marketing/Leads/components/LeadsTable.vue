@@ -60,14 +60,21 @@
                                 @change="toggleOne(e.name, $event)" />
                         </td>
                         <td class="px-6 py-4">
-                            <div class="flex items-center">
-                                <div :style="{ backgroundColor: getColor(idx) }" class="w-3 h-3 rounded-full mr-3">
+                            <div class="flex items-center gap-3 min-w-0">
+                                <div :style="{ backgroundColor: getColor(idx) }" class="w-2.5 h-2.5 rounded-full shrink-0"></div>
+                                <div class="min-w-0 flex-1">
+                                    <div class="text-sm font-medium line-clamp-1">{{ e.name }}</div>
+                                    <div class="mt-1 h-1.5 rounded-full bg-gray-100 dark:bg-gray-700 overflow-hidden">
+                                        <div class="h-full rounded-full transition-all duration-500"
+                                            :style="{ width: maxCount ? `${(e.count / maxCount) * 100}%` : '0%', backgroundColor: getColor(idx) }">
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="text-sm font-medium line-clamp-2">{{ e.name }}</div>
                             </div>
                         </td>
                         <td class="px-6 py-4 text-right">
-                            <div class="text-sm font-semibold">{{ e.count }}</div>
+                            <div class="text-sm font-bold tabular-nums">{{ e.count }}</div>
+                            <div class="text-[10px] text-gray-400">{{ maxCount ? ((e.count / totalCount) * 100).toFixed(1) : 0 }}%</div>
                         </td>
                         <td class="px-6 py-4">
                             <div class="flex gap-1 justify-center items-center">
@@ -99,7 +106,7 @@
         </div>
 
         <div v-if="data?.length" class="p-4 flex justify-between items-center text-sm text-gray-600 dark:text-gray-400">
-            <span>Mostrando {{ data.length }} empreendimentos</span>
+            <span>{{ data.length }} empreendimento(s) · {{ totalCount }} lead(s) no total</span>
             <button @click="openGroup('list')"
                 class="px-3 py-1 rounded-md text-sm bg-blue-600 text-white hover:bg-blue-700 transition-colors">
                 Ver selecionados
@@ -127,6 +134,9 @@ const sortedData = computed(() => {
     const arr = [...props.data]
     return sortBy.value === 'count' ? arr.sort((a, b) => a.count - b.count) : arr.sort((a, b) => b.count - a.count)
 })
+
+const maxCount = computed(() => Math.max(...(props.data.map(e => e.count)), 1))
+const totalCount = computed(() => props.data.reduce((s, e) => s + e.count, 0))
 
 const toggleAllVisible = (evt) => {
     const next = new Set(selectedNames.value)

@@ -6,8 +6,8 @@
       <option value="/panel">Academy</option>
     </select>
 
-    <p class="text-xl font-light uppercase my-2 text-gray-500 dark:text-gray-200">Acesse sua conta</p>
-    <hr class="border-t border-gray-400 dark:border-gray-100 mb-10" />
+    <p class="text-xl font-light uppercase my-2 dark:text-gray-400">Acesse sua conta</p>
+    <hr class="border-t border-gray-400 dark:border-gray-600 mb-10" />
 
     <Input class="my-6" v-model="email" type="email" placeholder="Email" required />
 
@@ -30,11 +30,27 @@
     <Button class="w-full text-xl" type="submit" :disabled="loginLoading">
       {{ loginLoading ? 'Entrando...' : 'Login' }}
     </Button>
+ 
+    <!-- Entrar com Microsoft -->
+    <button
+      type="button"
+      @click="microsoftStore.redirectToLogin()"
+      :disabled="loginLoading"
+      class="w-full mt-3 flex items-center justify-center gap-3 px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+    >
+      <!-- Logo Microsoft SVG -->
+      <svg width="18" height="18" viewBox="0 0 21 21" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="0" y="0" width="10" height="10" fill="#F25022"/>
+        <rect x="11" y="0" width="10" height="10" fill="#7FBA00"/>
+        <rect x="0" y="11" width="10" height="10" fill="#00A4EF"/>
+        <rect x="11" y="11" width="10" height="10" fill="#FFB900"/>
+      </svg>
+      Entrar com Microsoft
+    </button>
+
 
     <div v-if="errorMessage" class="text-red-500 mt-2 text-sm">{{ errorMessage }}</div>
-
-    <hr class="border-t border-gray-400 dark:border-gray-100 mt-6" />
-
+    
     <a @click="register" class="text-sm mt-1 text-blue-500 cursor-pointer hover:text-blue-600">
       Não tem uma conta? Crie agora.
     </a>
@@ -352,6 +368,7 @@
 import { ref, computed, onMounted, onBeforeUnmount, nextTick, watch } from 'vue';
 import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 import { useFaceStore } from '@/stores/Settings/Auth/faceStore';
+import { useMicrosoftStore } from '@/stores/Microsoft/microsoftStore';
 import Input from '@/components/UI/Input.vue';
 import Button from '@/components/UI/Button.vue';
 import { useToast } from 'vue-toastification';
@@ -379,6 +396,7 @@ const passwordCheckList = [
 const toast = useToast();
 const authStore = useAuthStore();
 const faceStore = useFaceStore();
+const microsoftStore = useMicrosoftStore();
 
 // ─── Login state ─────────────────────────────────────────────────────────────
 const email = ref('');
