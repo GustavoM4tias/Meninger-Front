@@ -3,6 +3,7 @@ import { ref, onMounted, computed } from 'vue';
 import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 import { useNotificationStore } from '@/stores/Config/notificationStore';
 import { useFavoritesStore } from '@/stores/Config/favoriteStore';
+import { useMicrosoftStore } from '@/stores/Microsoft/microsoftStore';
 import Search from '@/components/Navigation/components/Search.vue';
 import Notification from '@/components/Navigation/components/Notification.vue';
 import Profile from '@/components/Navigation/components/Profile.vue';
@@ -12,6 +13,7 @@ import { RouterLink } from 'vue-router';
 const authStore = useAuthStore();
 const favoritesStore = useFavoritesStore();
 const notificationStore = useNotificationStore();
+const microsoftStore = useMicrosoftStore();
 
 /**
  * MENU FLEXÍVEL
@@ -76,6 +78,11 @@ const menuItems = {
         { router: '/tools/validator', section: 'Validador', name: 'Validador', icon: 'fas fa-check-double' },
         { router: '/tools/paymentflow', section: 'PaymentFlow', name: 'Fluxo de Pagamento', icon: 'fas fa-diagram-project'}
     ],
+    microsoft: [
+        { router: '/microsoft/sharepoint',  section: 'SharePoint',  name: 'SharePoint',  icon: 'fas fa-folder-open' },
+        { router: '/microsoft/teams',       section: 'Teams',       name: 'Teams',       icon: 'fas fa-users' },
+        { router: '/microsoft/transcripts', section: 'Transcrições', name: 'Transcrições & IA', icon: 'fas fa-file-waveform' },
+    ],
     settings: [
         { router: '/settings/Account', section: 'Minha Conta', name: 'Minha Conta', icon: 'fas fa-user-cog' },
         { router: '/settings/users', section: 'Usuários', name: 'Usuários', icon: 'fas fa-users' },
@@ -88,14 +95,17 @@ const menuItems = {
 
 // ---- Helpers de forma/estrutura ----
 const isArrayCategory = (cat) => Array.isArray(menuItems[cat]);
-const categoryKeys = computed(() => Object.keys(menuItems));
+const categoryKeys = computed(() =>
+    Object.keys(menuItems).filter(k => k !== 'microsoft' || microsoftStore.connected)
+);
 
 const categoryLabelMap = {
     marketing: 'Marketing',
     comercial: 'Comercial',
     financeiro: 'Financeiro',
     tools: 'Ferramentas',
-    settings: 'Configurações'
+    settings: 'Configurações',
+    microsoft: 'Microsoft'
 };
 const catLabel = (key) => categoryLabelMap[key] || (key.charAt(0).toUpperCase() + key.slice(1));
 
@@ -277,7 +287,10 @@ const toggleFavorite = async (router, section) => {
 
 // Inicialização
 onMounted(async () => {
-    await favoritesStore.loadFavorites();
+    await Promise.all([
+        favoritesStore.loadFavorites(),
+        microsoftStore.fetchStatus(),
+    ]);
     // await notificationStore.fetchNotifications(); REATIVAR NOTIFICAÇÃO
     if (typeof initFlowbite !== 'undefined') initFlowbite();
 });
@@ -412,7 +425,15 @@ onMounted(async () => {
                         <button type="button" @click="toggleDropdownSafe(catKey)"
                             class="flex items-center w-full h-10 px-2 text-base text-gray-900 transition duration-75 rounded-lg group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700"
                             :class="isCollapsed ? 'justify-center' : ''" :aria-expanded="dropdowns[catKey]">
-                            <i :class="{
+                            <template v-if="catKey === 'microsoft'">
+                                <svg width="20" height="20" viewBox="0 0 21 21" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-5 shrink-0">
+                                    <rect x="0" y="0" width="10" height="10" fill="#F25022"/>
+                                    <rect x="11" y="0" width="10" height="10" fill="#7FBA00"/>
+                                    <rect x="0" y="11" width="10" height="10" fill="#00A4EF"/>
+                                    <rect x="11" y="11" width="10" height="10" fill="#FFB900"/>
+                                </svg>
+                            </template>
+                            <i v-else :class="{
                                 marketing: 'fa fa-bullhorn',
                                 comercial: 'fas fa-briefcase',
                                 financeiro: 'fas fa-money-bill-wave',

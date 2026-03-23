@@ -8,6 +8,13 @@ export default [
         meta: { requiresAuth: false },
     },
     {
+        // Callback do OAuth Microsoft — backend redireciona aqui com ?token=JWT
+        path: '/microsoft/callback',
+        name: 'MicrosoftCallback',
+        component: () => import('@/views/Office/Auth/MicrosoftCallback.vue'),
+        meta: { requiresAuth: false },
+    },
+    {
         path: '/error',
         name: 'Error',
         component: () => import('@/views/Office/Config/ErrorPage.vue'),
@@ -118,6 +125,32 @@ export default [
                         name: 'Custos',
                         component: () => import('@/views/Office/Financeiro/Custos/Index.vue'),
                         meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Custos do Financeiro' },
+                    },
+                ],
+            },
+
+            {
+                path: 'microsoft',
+                name: 'microsoft',
+                meta: { requiresAuth: true },
+                children: [
+                    {
+                        path: 'sharepoint',
+                        name: 'SharePoint',
+                        component: () => import('@/views/Office/Microsoft/Sharepoint/Index.vue'),
+                        meta: { requiresAuth: true, searchable: true, content: 'Gestão de arquivos SharePoint' },
+                    },
+                    {
+                        path: 'teams',
+                        name: 'Teams',
+                        component: () => import('@/views/Office/Microsoft/Teams/Index.vue'),
+                        meta: { requiresAuth: true, searchable: true, content: 'Reuniões e calendário Microsoft Teams' },
+                    },
+                    {
+                        path: 'transcripts',
+                        name: 'Transcrições',
+                        component: () => import('@/views/Office/Microsoft/Transcripts/Index.vue'),
+                        meta: { requiresAuth: true, searchable: true, content: 'Transcrições de reuniões com relatório IA' },
                     },
                 ],
             },

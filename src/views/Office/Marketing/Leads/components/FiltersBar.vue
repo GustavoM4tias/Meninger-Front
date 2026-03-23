@@ -52,7 +52,7 @@ const activeFiltersCount = computed(() => {
 
 <template>
     <div class="p-4 rounded-lg shadow bg-white dark:bg-gray-800">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-3">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
             <!-- Empreendimento(s) -->
             <div>
                 <label class="block text-xs font-medium mb-1 text-gray-700 dark:text-gray-300">
@@ -133,25 +133,26 @@ const activeFiltersCount = computed(() => {
             </div>
         </div>
 
-        <div class="flex gap-2 justify-end">
+        <div class="flex flex-wrap gap-2 justify-end items-center">
 
-            <div v-if="hasActiveFilters" class="p-3 w-full bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+            <div v-if="hasActiveFilters" class="flex-1 min-w-0 p-2.5 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                 <div class="flex items-center gap-2 text-sm">
-                    <i class="fas fa-info-circle text-blue-600 dark:text-blue-400"></i>
-                    <span class="text-blue-800 dark:text-blue-200 font-medium">
+                    <i class="fas fa-info-circle text-blue-600 dark:text-blue-400 shrink-0"></i>
+                    <span class="text-blue-800 dark:text-blue-200 font-medium text-xs">
                         {{ activeFiltersCount }} filtro(s) ativo(s)
                     </span>
                 </div>
             </div>
 
+            <slot name="extra-actions" />
+
             <button @click="$emit('limpar')"
-                class="px-4 py-2 rounded-lg bg-gray-500 hover:bg-gray-600 text-white font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
-                <i class="fas fa-eraser"></i> Limpar
+                class="shrink-0 px-3 py-2 rounded-lg bg-gray-500 hover:bg-gray-600 text-white font-medium transition-colors flex items-center gap-2 text-sm">
+                <i class="fas fa-eraser"></i><span class="hidden sm:inline">Limpar</span>
             </button>
-            <button @click="$emit('buscar')" 
-                class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
-                <i class="fas fa-search"></i>
-                Buscar
+            <button @click="$emit('buscar')"
+                class="shrink-0 px-3 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors flex items-center gap-2 text-sm">
+                <i class="fas fa-search"></i><span class="hidden sm:inline">Buscar</span>
             </button>
         </div>
 

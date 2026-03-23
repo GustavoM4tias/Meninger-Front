@@ -103,14 +103,14 @@ export const getUserById = async (id) => {
   return response.json();
 };
 
-export const updateMeInfo = async (username, email, position, city, birth_date, status, face_enabled) => {
+export const updateMeInfo = async (username, email, position, city, birth_date, status, face_enabled, phone = null) => {
   const response = await fetchCarregamento(`${API_URL}/auth/user`, {
     method: 'PUT',
     headers: {
       'Authorization': `Bearer ${localStorage.getItem('token')}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ username, email, position, city, birth_date, status, face_enabled }),
+    body: JSON.stringify({ username, email, position, city, birth_date, status, face_enabled, phone }),
   });
 
   if (!response.ok) {

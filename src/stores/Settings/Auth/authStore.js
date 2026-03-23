@@ -386,6 +386,8 @@ export const useAuthStore = defineStore('user', {
         birth_date: payload.birth_date,
         status: payload.status,
         role: payload.role ?? 'user',
+        show_in_organogram: payload.show_in_organogram ?? false,
+        phone: payload.phone ?? null,
       };
 
       try {

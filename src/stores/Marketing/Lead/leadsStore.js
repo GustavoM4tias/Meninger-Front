@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import API_URL from '@/config/apiUrl';
-import { useCarregamentoStore } from '@/stores/Config/carregamento'; 
+import { useCarregamentoStore } from '@/stores/Config/carregamento';
 
 const LS = {
     emp: 'leads_emp_options_v1',
@@ -43,6 +43,7 @@ export const useLeadsStore = defineStore('leads', () => {
     const imobiliariasOptions = ref(loadLS(LS.imo))
     const corretoresOptions = ref(loadLS(LS.cor))
 
+    const SITUACOES_EXCLUIDAS = ['Painel Corretor', 'Painel Gestor', 'Painel Imobiliária'];
 
     // filtros
     const filtros = ref({
@@ -51,6 +52,13 @@ export const useLeadsStore = defineStore('leads', () => {
         data_inicio: '', data_fim: ''
     })
 
+    function applyDefaultSituacoes() {
+        if (situacoesOptions.value.length === 0) return;
+        filtros.value.situacao_nome = situacoesOptions.value.filter(s => !SITUACOES_EXCLUIDAS.includes(s));
+    }
+
+    // Aplica o default imediatamente se as opções já estão no localStorage
+    applyDefaultSituacoes();
 
     const buildQuery = () => {
         const q = new URLSearchParams()
@@ -107,6 +115,12 @@ export const useLeadsStore = defineStore('leads', () => {
         saveLS(LS.mid, midiasOptions.value);
         saveLS(LS.imo, imobiliariasOptions.value);
         saveLS(LS.cor, corretoresOptions.value);
+
+        // Aplica default de situações se o filtro ainda está vazio
+        // (não sobrescreve seleção manual do usuário)
+        if (filtros.value.situacao_nome.length === 0 && situacoesOptions.value.length > 0) {
+            applyDefaultSituacoes();
+        }
     }
 
     async function fetchLeads(loading = false) {
@@ -207,6 +221,6 @@ export const useLeadsStore = defineStore('leads', () => {
         // getters
         kpiPorSituacao, kpiSituacoes, situationsList, leadsByEnterprise,
         // actions
-        fetchLeads, fetchFilas,
+        fetchLeads, fetchFilas, applyDefaultSituacoes,
     }
 })
