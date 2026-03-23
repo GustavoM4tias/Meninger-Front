@@ -391,14 +391,135 @@ export default {
 
             roadmap: [
                 {
-                    version: 'v2.8.9',
-                    date: new Date('2026-03-16T00:00:00'),
-                    description: 'Relatório de Faturamento X Projeção de vendas.',
-                    features: ['Relatórios']
+                    version: 'v2.6.0',
+                    date: new Date('2026-04-10T00:00:00'),
+                    description: 'Relatório de Faturamento X Projeção de vendas — cruzamento em tempo real.',
+                    features: ['Relatórios', 'Comercial']
+                },
+                {
+                    version: 'v2.6.1',
+                    date: new Date('2026-04-20T00:00:00'),
+                    description: 'App mobile nativo para iOS e Android com push notifications.',
+                    features: ['Mobile', 'Notificações']
+                },
+                {
+                    version: 'v2.7.0',
+                    date: new Date('2026-05-05T00:00:00'),
+                    description: 'Dashboard executivo com KPIs consolidados e BI avançado.',
+                    features: ['BI', 'Relatórios', 'Dashboard']
                 },
             ],
             releases: [
 
+                {
+                    version: 'v2.5.0',
+                    date: new Date('2026-03-23T00:00:00'),
+                    description: 'Ecossistema Microsoft 365 completo com IA embarcada.',
+                    type: 'major',
+                    categories: ['frontend', 'backend', 'api'],
+                    features: [
+                        {
+                            id: 1,
+                            title: 'Microsoft Teams — Calendário Integrado',
+                            description: 'Calendário completo com visões Mês e Semana integrado ao Microsoft Teams. Mês responsivo com hover visual, chips compactos para reuniões sobrepostas, popup de overflow sem criar novo evento e cursor crosshair na semana. Semana com ghost de hover mostrando onde o evento será criado e snap automático a 30 minutos.'
+                        },
+                        {
+                            id: 2,
+                            title: 'Microsoft SharePoint — Gestão de Arquivos',
+                            description: 'Navegação completa por sites e drives do SharePoint com visualização em grid/lista. Preview inline de imagens, PDFs e documentos Office, download via proxy autenticado, upload com progresso, links de compartilhamento, renomeação, exclusão, movimentação e busca global.'
+                        },
+                        {
+                            id: 3,
+                            title: 'Transcrições em Tempo Real com IA',
+                            description: 'Gravação e transcrição em tempo real de reuniões presenciais usando Web Speech API. A transcrição persiste enquanto navega pelo sistema, com timer, visualização de ondas de áudio, pausar/retomar e relatório gerado por IA ao finalizar.'
+                        },
+                        {
+                            id: 4,
+                            title: 'Relatórios de Reuniões com IA',
+                            description: 'Geração automática de relatório estruturado (resumo, pontos-chave, decisões e próximos passos) para reuniões do Teams e reuniões presenciais, com envio direto por e-mail.'
+                        },
+                        {
+                            id: 5,
+                            title: 'Abrir Arquivos no Office Nativo',
+                            description: 'Suporte a protocol handlers do Microsoft Office (ms-word, ms-excel, ms-powerpoint) para abrir documentos diretamente no aplicativo desktop a partir do SharePoint.'
+                        },
+                    ],
+                    improvements: [
+                        {
+                            id: 1,
+                            category: 'SharePoint — Preview',
+                            description: 'Visualização de imagens com zoom via scroll/pinch, PDFs e documentos Office via Office Online Viewer embutido, com download nativo corrigido para cross-origin.'
+                        },
+                        {
+                            id: 2,
+                            category: 'Teams — Reuniões Presenciais',
+                            description: 'Modal de nova reunião presencial integrado na aba de transcrições, eliminando a necessidade de rota separada. Título, local e participantes configuráveis antes de iniciar.'
+                        },
+                        {
+                            id: 3,
+                            category: 'Calendário — Modo Claro/Escuro',
+                            description: 'Todos os componentes do ecossistema Microsoft com suporte completo a dark mode usando a paleta padrão do sistema.'
+                        },
+                    ],
+                    fixes: [
+                        {
+                            id: 1,
+                            description: 'Corrigido envio de e-mail no painel de relatórios (emit @email não propagado para Index.vue).'
+                        },
+                        {
+                            id: 2,
+                            description: 'Corrigido "Abrir no aplicativo" — Chrome bloqueava protocol handlers em iframe; substituído por <a>.click().'
+                        },
+                        {
+                            id: 3,
+                            description: 'Corrigido download de arquivos SharePoint que retornava apenas abertura em nova aba por falha de CORS; agora roteado via proxy autenticado do backend.'
+                        },
+                    ],
+                    breakingChanges: [],
+                    knownIssues: []
+                },
+                {
+                    version: 'v2.4.3',
+                    date: new Date('2026-03-20T00:00:00'),
+                    description: 'Melhorias no módulo financeiro de despesas e contas.',
+                    type: 'patch',
+                    categories: ['frontend', 'backend'],
+                    features: [
+                        {
+                            id: 1,
+                            title: 'Despesas e Contas — Novas Funcionalidades',
+                            description: 'Expansão do módulo Bills & Expenses com novas regras de lançamento, categorização e relatórios de despesas por período.'
+                        },
+                    ],
+                    improvements: [],
+                    fixes: [],
+                    breakingChanges: [],
+                    knownIssues: []
+                },
+                {
+                    version: 'v2.4.2',
+                    date: new Date('2026-03-18T00:00:00'),
+                    description: 'Fluxo de pagamento Sienge e filtros de vendas.',
+                    type: 'minor',
+                    categories: ['frontend', 'backend', 'api'],
+                    features: [
+                        {
+                            id: 1,
+                            title: 'Pipeline de Pagamento — Fluxo Sienge (RID)',
+                            description: 'Implementado fluxo completo de cadastro de fornecedor via RID no Sienge, com pipeline visual das etapas: validação → cadastro → aprovação → pagamento. Integração com a API do Sienge para acompanhar status em tempo real.'
+                        },
+                    ],
+                    improvements: [
+                        {
+                            id: 1,
+                            category: 'Relatório de Vendas',
+                            description: 'Adicionado filtro por URL de vendas para segmentação avançada de resultados no relatório comercial.'
+                        },
+                    ],
+                    fixes: [],
+                    breakingChanges: [],
+                    knownIssues: []
+                },
                 {
                     version: 'v2.4.1',
                     date: new Date('2026-03-09T00:00:00'),
