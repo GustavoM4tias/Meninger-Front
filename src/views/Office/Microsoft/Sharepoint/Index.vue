@@ -23,13 +23,8 @@
       <!-- ── Header ── -->
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center p-2">
-            <svg width="22" height="22" viewBox="0 0 21 21" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect x="0" y="0" width="10" height="10" fill="#F25022"/>
-              <rect x="11" y="0" width="10" height="10" fill="#7FBA00"/>
-              <rect x="0" y="11" width="10" height="10" fill="#00A4EF"/>
-              <rect x="11" y="11" width="10" height="10" fill="#FFB900"/>
-            </svg>
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-sky-700 flex items-center justify-center shrink-0 shadow-sm">
+            <img class="p-2" src="https://luna1.co/71d453.png" alt="Teams">
           </div>
           <div>
             <h1 class="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">SharePoint</h1>
@@ -310,6 +305,7 @@
 
 <script setup>
 import { ref, reactive, nextTick, onMounted, watch } from 'vue';
+import API_URL from '@/config/apiUrl';
 
 const breadcrumbDragOver = ref(null);
 import { useSharepointStore } from '@/stores/Microsoft/sharepointStore';
@@ -398,14 +394,13 @@ const APP_PROTOCOLS = {
 function openInNativeApp(item) {
   const protocol = APP_PROTOCOLS[item.ext?.toLowerCase()];
   if (protocol && item.webUrl) {
-    // Usa iframe hidden — mesma técnica do SharePoint Online nativo.
-    // encodeURI garante que espaços no caminho sejam codificados (%20).
-    const uri = `${protocol}:ofe|u|${encodeURI(item.webUrl)}`;
-    const iframe = document.createElement('iframe');
-    iframe.style.cssText = 'position:fixed;top:-1px;left:-1px;width:1px;height:1px;opacity:0;border:0';
-    iframe.src = uri;
-    document.body.appendChild(iframe);
-    setTimeout(() => document.body.removeChild(iframe), 2000);
+    // Chrome bloqueia protocol handlers em iframes — usar <a>.click() é mais confiável
+    const a = document.createElement('a');
+    a.href = `${protocol}:ofe|u|${item.webUrl}`;
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => document.body.removeChild(a), 500);
   } else {
     window.open(item.webUrl, '_blank', 'noopener');
   }
@@ -430,6 +425,9 @@ async function handleAction(type, item) {
     }
     case 'open-app':
       openInNativeApp(item);
+      break;
+    case 'open-new-tab':
+      if (item.webUrl) window.open(item.webUrl, '_blank', 'noopener');
       break;
     case 'share':
       openShareModal(item);
@@ -458,24 +456,28 @@ async function handleAction(type, item) {
   }
 }
 
-// ── Forçar download (fetch + blob para evitar abrir no navegador) ─────────────
+// ── Download via proxy do backend (sem CORS) ─────────────────────────────────
 async function forceDownload(item) {
-  const url = item.downloadUrl || item.webUrl;
-  if (!url) return;
+  if (!item?.driveId) {
+    if (item?.webUrl) window.open(item.webUrl, '_blank', 'noopener');
+    return;
+  }
   try {
-    const res = await fetch(url);
-    const blob = await res.blob();
+    const token = localStorage.getItem('token');
+    const url   = `${API_URL}/microsoft/sharepoint/drives/${item.driveId}/items/${item.id}/content?dl=1`;
+    const res   = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const blob    = await res.blob();
     const blobUrl = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = blobUrl;
-    a.download = item.name;
+    const a       = document.createElement('a');
+    a.href        = blobUrl;
+    a.download    = item.name;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
-  } catch {
-    // fallback: abre em nova aba
-    window.open(url, '_blank', 'noopener');
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 15000);
+  } catch (err) {
+    showToast(`Erro ao baixar: ${err.message}`, 'error');
   }
 }
 

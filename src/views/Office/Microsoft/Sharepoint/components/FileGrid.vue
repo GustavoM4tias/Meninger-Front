@@ -96,11 +96,11 @@
             class="w-6 h-6 rounded-md bg-white dark:bg-gray-700 shadow flex items-center justify-center text-blue-600 hover:text-blue-800 dark:text-blue-400">
             <i class="fas fa-eye text-[10px]"></i>
           </button>
-          <a v-if="item.downloadUrl" :href="item.downloadUrl"
-            title="Baixar" @click.stop
+          <button @click.stop="emit('action', 'download', item)"
+            title="Baixar"
             class="w-6 h-6 rounded-md bg-white dark:bg-gray-700 shadow flex items-center justify-center text-green-600 hover:text-green-800 dark:text-green-400">
             <i class="fas fa-download text-[10px]"></i>
-          </a>
+          </button>
         </div>
       </div>
     </div>
@@ -154,10 +154,10 @@
             class="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">
             <i class="fas fa-eye text-xs"></i>
           </button>
-          <a v-if="item.downloadUrl && !item.isFolder" :href="item.downloadUrl" @click.stop
+          <button v-if="!item.isFolder" @click.stop="emit('action', 'download', item)"
             class="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors">
             <i class="fas fa-download text-xs"></i>
-          </a>
+          </button>
           <button @click.stop="openCtx({ clientX: $event.clientX, clientY: $event.clientY }, item)"
             class="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
             <i class="fas fa-ellipsis-vertical text-xs"></i>

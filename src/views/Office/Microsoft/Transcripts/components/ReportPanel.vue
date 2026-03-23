@@ -158,11 +158,15 @@
       </div>
     </section>
 
-    <!-- Print button -->
-    <div class="flex justify-end pt-2">
+    <!-- Ações do relatório -->
+    <div class="flex items-center justify-end gap-2 pt-2 flex-wrap">
+      <button @click="$emit('email')"
+        class="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+        <i class="fas fa-envelope text-purple-500"></i> Enviar por e-mail
+      </button>
       <button @click="printReport"
         class="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-        <i class="fas fa-print"></i> Imprimir / Exportar PDF
+        <i class="fas fa-file-pdf text-red-500"></i> Exportar PDF
       </button>
     </div>
 
@@ -172,7 +176,12 @@
 <script setup>
 import { ref, watch } from 'vue';
 
-const props = defineProps({ report: { type: Object, required: true } });
+const props = defineProps({
+  report:  { type: Object, required: true },
+  meeting: { type: Object, default: null },
+});
+
+defineEmits(['email']);
 
 // Checklist reativo local (não salvo no backend — é visual)
 const checklistLocal = ref([]);
@@ -217,8 +226,134 @@ function priorityClass(p) {
 const PALETTE = ['#6366f1','#8b5cf6','#ec4899','#f59e0b','#10b981','#3b82f6','#ef4444','#14b8a6'];
 function avatarColor(name, i) { return PALETTE[i % PALETTE.length]; }
 
-// ── Print ─────────────────────────────────────────────────────────────────────
-function printReport() { window.print(); }
+// ── Print / PDF — abre nova aba com HTML formatado e aciona impressão ──────────
+function esc(str) {
+  return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function fmtDateStr(dt) {
+  if (!dt) return '';
+  const d = new Date(dt.replace?.('T',' ')?.split?.('.')?.[0] ?? dt);
+  return d.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+function printReport() {
+  const r  = props.report;
+  const m  = props.meeting;
+  const title = m?.subject || 'Relatório de Reunião';
+
+  const rows = (arr, cols) => arr.map(item =>
+    `<tr>${cols.map(c => `<td>${esc(item[c] ?? '—')}</td>`).join('')}</tr>`
+  ).join('');
+
+  const numbered = (arr) => arr.map((item, i) =>
+    `<div class="item"><span class="num">${i+1}</span><span>${esc(item)}</span></div>`
+  ).join('');
+
+  const bulleted = (arr, color='#f59e0b') => arr.map(item =>
+    `<div class="item"><span style="color:${color};margin-top:2px">●</span><span>${esc(item)}</span></div>`
+  ).join('');
+
+  const html = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>${esc(title)}</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#111827;padding:40px;max-width:900px;margin:0 auto;font-size:13px}
+  h1{font-size:20px;font-weight:700;margin-bottom:6px}
+  .meta{color:#6b7280;font-size:12px;margin-bottom:20px}
+  h2{font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;margin:28px 0 10px;padding-bottom:6px;border-bottom:2px solid #e5e7eb}
+  .card{border:1px solid #e5e7eb;border-radius:8px;padding:14px 16px;margin-bottom:6px;line-height:1.7;color:#374151}
+  .tag{background:#ede9fe;color:#6d28d9;padding:2px 8px;border-radius:9999px;font-size:11px;margin-right:4px;display:inline-block}
+  .item{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid #f3f4f6;align-items:flex-start}
+  .num{width:22px;height:22px;min-width:22px;background:#ede9fe;color:#6d28d9;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
+  table{width:100%;border-collapse:collapse;margin-bottom:8px}
+  th{text-align:left;padding:8px 10px;background:#f9fafb;border-bottom:2px solid #e5e7eb;font-size:11px;color:#6b7280;font-weight:600;text-transform:uppercase}
+  td{padding:8px 10px;border-bottom:1px solid #f3f4f6;color:#374151;vertical-align:top}
+  .badge{padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600}
+  .alta{background:#fee2e2;color:#dc2626}
+  .media{background:#fef3c7;color:#d97706}
+  .baixa{background:#f3f4f6;color:#6b7280}
+  .warn{background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:10px 14px;margin-bottom:6px;color:#9a3412}
+  .kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:8px}
+  .kpi{border:1px solid #e5e7eb;border-radius:8px;padding:14px}
+  .kpi-name{font-size:10px;color:#6b7280;text-transform:uppercase;margin-bottom:4px}
+  .kpi-val{font-size:22px;font-weight:700;color:#111827}
+  .footer{margin-top:40px;padding-top:16px;border-top:1px solid #e5e7eb;font-size:11px;color:#9ca3af;text-align:center}
+  @media print{body{padding:20px}@page{margin:15mm}}
+</style>
+</head>
+<body>
+  <h1>${esc(title)}</h1>
+  <div class="meta">
+    ${m?.start ? `📅 ${fmtDateStr(m.start)}` : ''}
+    ${m?.organizer?.name ? ` &nbsp;·&nbsp; 👤 ${esc(m.organizer.name)}` : ''}
+    ${r.duracao_real_min ? ` &nbsp;·&nbsp; ⏱ ${r.duracao_real_min} min` : ''}
+  </div>
+  ${r.tags?.length ? `<div style="margin-bottom:16px">${r.tags.map(t=>`<span class="tag">#${esc(t)}</span>`).join('')}</div>` : ''}
+
+  ${r.resumo ? `<h2>📋 Resumo Executivo</h2><div class="card">${esc(r.resumo)}</div>` : ''}
+
+  ${r.pauta?.length ? `<h2>📝 Pauta Discutida</h2>${numbered(r.pauta)}` : ''}
+
+  ${r.decisoes?.length ? `<h2>✅ Decisões Tomadas</h2>${bulleted(r.decisoes)}` : ''}
+
+  ${r.acoes?.length ? `
+  <h2>⚡ Ações & Responsabilidades</h2>
+  <table>
+    <thead><tr><th>Tarefa</th><th>Responsável</th><th>Prazo</th><th>Prioridade</th></tr></thead>
+    <tbody>${r.acoes.map(a=>`<tr>
+      <td>${esc(a.tarefa)}</td>
+      <td>${esc(a.responsavel||'—')}</td>
+      <td>${esc(a.prazo||'—')}</td>
+      <td><span class="badge ${a.prioridade||'baixa'}">${a.prioridade==='alta'?'Alta':a.prioridade==='media'?'Média':'Baixa'}</span></td>
+    </tr>`).join('')}</tbody>
+  </table>` : ''}
+
+  ${r.kpis?.length ? `
+  <h2>📊 KPIs & Métricas</h2>
+  <div class="kpi-grid">${r.kpis.map(k=>`
+    <div class="kpi">
+      <div class="kpi-name">${esc(k.nome)}</div>
+      <div class="kpi-val">${esc(String(k.valor))}</div>
+      ${k.referencia?`<div style="font-size:11px;color:#6b7280">Meta: ${esc(k.referencia)}</div>`:''}
+      ${k.contexto?`<div style="font-size:11px;color:#9ca3af;margin-top:4px">${esc(k.contexto)}</div>`:''}
+    </div>`).join('')}
+  </div>` : ''}
+
+  ${r.pontos_atencao?.length ? `<h2>⚠️ Pontos de Atenção</h2>${r.pontos_atencao.map(p=>`<div class="warn">${esc(p)}</div>`).join('')}` : ''}
+
+  ${r.proximos_passos?.length ? `<h2>➡️ Próximos Passos</h2>${numbered(r.proximos_passos)}` : ''}
+
+  ${r.checklist?.length ? `<h2>☑️ Checklist</h2>${r.checklist.map(c=>`<div class="item"><span style="font-size:15px">☐</span><span>${esc(typeof c==='string'?c:c.item)}</span></div>`).join('')}` : ''}
+
+  ${r.participantes?.length ? `
+  <h2>👥 Participantes</h2>
+  <table>
+    <thead><tr><th>Nome</th><th>Papel</th><th>Contribuição</th></tr></thead>
+    <tbody>${r.participantes.map(p=>`<tr>
+      <td><strong>${esc(p.nome)}</strong></td>
+      <td>${esc(p.papel||'—')}</td>
+      <td style="color:#6b7280">${esc(p.contribuicao||'—')}</td>
+    </tr>`).join('')}</tbody>
+  </table>` : ''}
+
+  <div class="footer">
+    Gerado por <strong>Menin Office AI</strong> · ${new Date().toLocaleDateString('pt-BR')}
+    <div style="margin-top:8px;padding:8px 14px;background:#fefce8;border:1px solid #fde68a;border-radius:6px;color:#92400e;font-size:11px;display:inline-block">
+      ⚠️ Este conteúdo foi gerado por inteligência artificial e pode conter imprecisões. Revise as informações antes de utilizá-las.
+    </div>
+  </div>
+  <script>window.onload=()=>setTimeout(()=>window.print(),400)<\/script>
+</body>
+</html>`;
+
+  const win = window.open('', '_blank');
+  if (!win) { alert('Permita pop-ups para exportar o PDF.'); return; }
+  win.document.write(html);
+  win.document.close();
+}
 </script>
 
 <style scoped>

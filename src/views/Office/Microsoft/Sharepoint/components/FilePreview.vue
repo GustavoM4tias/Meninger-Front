@@ -16,10 +16,18 @@
             </div>
           </div>
           <div class="flex items-center gap-2 shrink-0 ml-4">
-            <button v-if="item.downloadUrl || item.webUrl"
-              @click="forceDownload"
+            <button
+              @click="handleDownload"
+              :disabled="downloadingFile"
+              class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-xs text-gray-200 transition-colors disabled:opacity-50">
+              <i v-if="downloadingFile" class="fas fa-circle-notch animate-spin"></i>
+              <i v-else class="fas fa-download"></i>
+              Baixar
+            </button>
+            <button v-if="item.webUrl"
+              @click="openInNewTab"
               class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-xs text-gray-200 transition-colors">
-              <i class="fas fa-download"></i> Baixar
+              <i class="fas fa-up-right-from-square"></i> Nova guia
             </button>
             <button @click="openInNativeApp"
               class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-xs text-white transition-colors">
@@ -34,15 +42,24 @@
 
         <!-- Preview area -->
         <div class="flex-1 overflow-hidden flex items-center justify-center p-4">
-          <!-- Image -->
-          <template v-if="isImage">
-            <img :src="item.downloadUrl" :alt="item.name"
+
+          <!-- Loading state -->
+          <div v-if="previewLoading" class="flex flex-col items-center gap-3 text-gray-400">
+            <i class="fas fa-circle-notch animate-spin text-3xl text-blue-400"></i>
+            <span class="text-sm">Carregando preview...</span>
+          </div>
+
+          <!-- Image — via blob URL do proxy -->
+          <template v-else-if="isImage">
+            <img v-if="blobSrc" :src="blobSrc" :alt="item.name"
               class="max-w-full max-h-full object-contain rounded-lg shadow-2xl" />
+            <PreviewUnsupported v-else :item="item" @open="openInNativeApp" />
           </template>
 
-          <!-- PDF -->
+          <!-- PDF — via blob URL do proxy -->
           <template v-else-if="item.ext === 'pdf'">
-            <iframe :src="item.downloadUrl" class="w-full h-full rounded-lg border-0" title="PDF Preview" />
+            <iframe v-if="blobSrc" :src="blobSrc" class="w-full h-full rounded-lg border-0" title="PDF Preview" />
+            <PreviewUnsupported v-else :item="item" @open="openInNativeApp" />
           </template>
 
           <!-- Video -->
@@ -62,7 +79,7 @@
             </div>
           </template>
 
-          <!-- Text / Code -->
+          <!-- Text / Code — via proxy -->
           <template v-else-if="isText">
             <div class="w-full h-full overflow-auto bg-gray-900 rounded-lg p-5">
               <div v-if="textLoading" class="flex items-center justify-center h-full text-gray-400">
@@ -85,17 +102,7 @@
 
           <!-- Unsupported -->
           <template v-else>
-            <div class="flex flex-col items-center gap-4 text-center">
-              <div class="w-24 h-24 rounded-2xl bg-gray-800 flex items-center justify-center">
-                <i :class="fileIconClass(item.ext)" class="text-5xl"></i>
-              </div>
-              <p class="text-gray-300 font-medium">Pré-visualização não disponível</p>
-              <p class="text-gray-500 text-sm max-w-xs">Este formato não pode ser visualizado diretamente. Use "Abrir no aplicativo" para acessar.</p>
-              <button @click="openInNativeApp"
-                class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium transition-colors">
-                <i class="fas fa-arrow-up-right-from-square mr-1.5"></i> Abrir no aplicativo
-              </button>
-            </div>
+            <PreviewUnsupported :item="item" @open="openInNativeApp" />
           </template>
         </div>
       </div>
@@ -104,60 +111,136 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
+import { ref, computed, watch, defineComponent, h, onMounted, onUnmounted } from 'vue';
+import API_URL from '@/config/apiUrl';
 
 const props = defineProps({ item: { type: Object, default: null } });
-const emit = defineEmits(['close']);
+const emit  = defineEmits(['close']);
 
-const textContent = ref('');
-const textLoading = ref(false);
+// ── Inline unsupported placeholder ───────────────────────────────────────────
+const PreviewUnsupported = defineComponent({
+  props: { item: Object },
+  emits: ['open'],
+  setup(p, { emit: e }) {
+    return () => h('div', { class: 'flex flex-col items-center gap-4 text-center' }, [
+      h('div', { class: 'w-24 h-24 rounded-2xl bg-gray-800 flex items-center justify-center' },
+        [h('i', { class: `${EXT_ICONS[p.item?.ext?.toLowerCase()] || 'fas fa-file text-gray-400'} text-5xl` })]),
+      h('p', { class: 'text-gray-300 font-medium' }, 'Pré-visualização não disponível'),
+      h('p', { class: 'text-gray-500 text-sm max-w-xs' }, 'Use "Abrir no aplicativo" para acessar.'),
+      h('button', {
+        class: 'px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium transition-colors',
+        onClick: () => e('open'),
+      }, [h('i', { class: 'fas fa-arrow-up-right-from-square mr-1.5' }), 'Abrir no aplicativo']),
+    ]);
+  },
+});
 
+// ── File type detection ────────────────────────────────────────────────────────
 const IMAGES = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'ico'];
 const VIDEOS = ['mp4', 'webm', 'ogg', 'mov', 'avi'];
 const AUDIOS = ['mp3', 'wav', 'ogg', 'flac', 'm4a'];
 const TEXTS  = ['txt', 'csv', 'json', 'js', 'ts', 'html', 'css', 'md', 'xml', 'yaml', 'yml', 'log', 'sh', 'py', 'java', 'c', 'cpp'];
 const OFFICE = ['docx', 'doc', 'xlsx', 'xls', 'pptx', 'ppt'];
 
-const ext = computed(() => props.item?.ext?.toLowerCase());
+const ext      = computed(() => props.item?.ext?.toLowerCase());
 const isImage  = computed(() => IMAGES.includes(ext.value));
 const isVideo  = computed(() => VIDEOS.includes(ext.value));
 const isAudio  = computed(() => AUDIOS.includes(ext.value));
 const isText   = computed(() => TEXTS.includes(ext.value));
 const isOffice = computed(() => OFFICE.includes(ext.value));
 
-// Fetch text content when a text file is opened
-watch(() => props.item, async (item) => {
-  textContent.value = '';
-  if (!item || !isText.value || !item.downloadUrl) return;
-  textLoading.value = true;
-  try {
-    const res = await fetch(item.downloadUrl);
-    textContent.value = await res.text();
-  } catch {
-    textContent.value = '(Não foi possível carregar o conteúdo)';
-  } finally {
-    textLoading.value = false;
-  }
-});
+// ── Content state ─────────────────────────────────────────────────────────────
+const blobSrc        = ref(null);  // object URL para imagem / PDF
+const previewLoading = ref(false);
+const textContent    = ref('');
+const textLoading    = ref(false);
+const downloadingFile = ref(false);
+let _currentBlobUrl = null;
 
-// ── Download forçado (fetch + blob, evita abrir inline no navegador) ─────────
-async function forceDownload() {
-  const url = props.item?.downloadUrl || props.item?.webUrl;
-  if (!url) return;
+function _revokeCurrent() {
+  if (_currentBlobUrl) { URL.revokeObjectURL(_currentBlobUrl); _currentBlobUrl = null; }
+  blobSrc.value = null;
+  textContent.value = '';
+}
+
+function _authHeaders() {
+  const token = localStorage.getItem('token');
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+function _proxyUrl(item, dl = false) {
+  return `${API_URL}/microsoft/sharepoint/drives/${item.driveId}/items/${item.id}/content${dl ? '?dl=1' : ''}`;
+}
+
+// ── Watch item change → fetch content ────────────────────────────────────────
+watch(() => props.item, async (item) => {
+  _revokeCurrent();
+  if (!item) return;
+
+  const e = item.ext?.toLowerCase();
+
+  // Images & PDFs: fetch via proxy → blob URL (sem CORS)
+  if ((IMAGES.includes(e) || e === 'pdf') && item.driveId) {
+    previewLoading.value = true;
+    try {
+      const res = await fetch(_proxyUrl(item), { headers: _authHeaders() });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const blob = await res.blob();
+      _currentBlobUrl = URL.createObjectURL(blob);
+      blobSrc.value   = _currentBlobUrl;
+    } catch {
+      blobSrc.value = null;
+    } finally {
+      previewLoading.value = false;
+    }
+    return;
+  }
+
+  // Text / Code: fetch via proxy
+  if (TEXTS.includes(e) && item.driveId) {
+    textLoading.value = true;
+    try {
+      const res = await fetch(_proxyUrl(item), { headers: _authHeaders() });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      textContent.value = await res.text();
+    } catch {
+      textContent.value = '(Não foi possível carregar o conteúdo)';
+    } finally {
+      textLoading.value = false;
+    }
+  }
+}, { immediate: true });
+
+// ── Download via proxy ────────────────────────────────────────────────────────
+async function handleDownload() {
+  if (!props.item?.driveId) {
+    // fallback: webUrl
+    if (props.item?.webUrl) window.open(props.item.webUrl, '_blank', 'noopener');
+    return;
+  }
+  downloadingFile.value = true;
   try {
-    const res = await fetch(url);
-    const blob = await res.blob();
-    const blobUrl = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = blobUrl;
-    a.download = props.item.name;
+    const res = await fetch(_proxyUrl(props.item, true), { headers: _authHeaders() });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const blob   = await res.blob();
+    const url    = URL.createObjectURL(blob);
+    const a      = document.createElement('a');
+    a.href       = url;
+    a.download   = props.item.name;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+    setTimeout(() => URL.revokeObjectURL(url), 15000);
   } catch {
-    window.open(url, '_blank', 'noopener');
+    if (props.item?.webUrl) window.open(props.item.webUrl, '_blank', 'noopener');
+  } finally {
+    downloadingFile.value = false;
   }
+}
+
+// ── Abrir em nova guia ────────────────────────────────────────────────────────
+function openInNewTab() {
+  if (props.item?.webUrl) window.open(props.item.webUrl, '_blank', 'noopener');
 }
 
 // ── Abrir no app nativo ───────────────────────────────────────────────────────
@@ -170,23 +253,27 @@ const APP_PROTOCOLS = {
 function openInNativeApp() {
   const protocol = APP_PROTOCOLS[props.item?.ext?.toLowerCase()];
   if (protocol && props.item?.webUrl) {
-    const uri = `${protocol}:ofe|u|${encodeURI(props.item.webUrl)}`;
-    const iframe = document.createElement('iframe');
-    iframe.style.cssText = 'position:fixed;top:-1px;left:-1px;width:1px;height:1px;opacity:0;border:0';
-    iframe.src = uri;
-    document.body.appendChild(iframe);
-    setTimeout(() => document.body.removeChild(iframe), 2000);
+    // Chrome bloqueia protocol handlers em iframes — <a>.click() é mais confiável
+    const a = document.createElement('a');
+    a.href = `${protocol}:ofe|u|${props.item.webUrl}`;
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => document.body.removeChild(a), 500);
   } else {
     window.open(props.item?.webUrl, '_blank', 'noopener');
   }
 }
 
-// Close on Escape
+// ── Cleanup + Escape key ──────────────────────────────────────────────────────
 function onKey(e) { if (e.key === 'Escape') emit('close'); }
 onMounted(() => document.addEventListener('keydown', onKey));
-onUnmounted(() => document.removeEventListener('keydown', onKey));
+onUnmounted(() => {
+  document.removeEventListener('keydown', onKey);
+  _revokeCurrent();
+});
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
+// ── Helpers ───────────────────────────────────────────────────────────────────
 const EXT_ICONS = {
   xlsx: 'fas fa-file-excel text-green-500', xls: 'fas fa-file-excel text-green-500',
   docx: 'fas fa-file-word text-blue-500', doc: 'fas fa-file-word text-blue-500',

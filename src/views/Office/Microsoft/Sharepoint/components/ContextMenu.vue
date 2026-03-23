@@ -18,6 +18,7 @@
 
         <template v-if="item?.isFolder">
           <CtxItem icon="fas fa-folder-open text-blue-500" label="Abrir" @click="act('open')" />
+          <CtxItem icon="fas fa-arrow-up-right-from-square text-gray-400" label="Abrir em nova guia" @click="act('open-new-tab')" />
           <CtxDivider />
           <CtxItem :icon="isFavorited ? 'fas fa-star text-amber-400' : 'far fa-star text-amber-400'" :label="isFavorited ? 'Remover favorito' : 'Favoritar'" @click="act('favorite')" />
           <CtxDivider />
@@ -28,6 +29,7 @@
         <template v-else>
           <CtxItem icon="fas fa-eye text-blue-500" label="Visualizar" @click="act('preview')" />
           <CtxItem icon="fas fa-arrow-up-right-from-square text-gray-400" label="Abrir no aplicativo" @click="act('open-app')" />
+          <CtxItem icon="fas fa-up-right-from-square text-gray-400" label="Abrir em nova guia" @click="act('open-new-tab')" />
           <CtxDivider />
           <CtxItem icon="fas fa-share-nodes text-green-500" label="Compartilhar..." @click="act('share')" />
           <CtxItem icon="fas fa-link text-gray-500" label="Copiar link" @click="act('copy-link')" />

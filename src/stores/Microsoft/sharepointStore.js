@@ -230,6 +230,26 @@ export const useSharepointStore = defineStore('sharepoint', () => {
         }
     }
 
+    /**
+     * Faz download de um arquivo via proxy do backend (sem CORS).
+     * Chama /drives/:driveId/items/:itemId/content?dl=1 com auth header.
+     */
+    async function downloadFile(driveId, itemId, filename) {
+        const token = localStorage.getItem('token');
+        const url = `${BASE}/drives/${driveId}/items/${itemId}/content?dl=1`;
+        const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const blob = await res.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 15000);
+    }
+
     async function createSharingLink(itemId) {
         if (!selectedDrive.value) return null;
         error.value = null;
@@ -279,6 +299,7 @@ export const useSharepointStore = defineStore('sharepoint', () => {
         openFolder, navigateToBreadcrumb,
         doSearch, clearSearch,
         deleteItem, renameItem, moveItem, uploadFile, createSharingLink, fetchItemDetail,
+        downloadFile,
         reset,
     };
 });
