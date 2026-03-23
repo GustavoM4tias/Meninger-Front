@@ -24,6 +24,7 @@ export const useTranscriptStore = defineStore('transcript', () => {
     const checkingTranscript  = ref(false);
     const loadingTranscript   = ref(false);
     const generatingReport    = ref(false);
+    const reportDbId          = ref(null);  // ID do banco do relatório atual (para e-mail)
 
     // ── Reuniões recentes ─────────────────────────────────────────────────────
 
@@ -46,6 +47,7 @@ export const useTranscriptStore = defineStore('transcript', () => {
         transcriptInfo.value = null;
         cues.value = [];
         report.value = null;
+        reportDbId.value = null;
 
         if (!meeting.joinUrl) {
             transcriptInfo.value = { available: false, transcripts: [] };
@@ -113,8 +115,10 @@ export const useTranscriptStore = defineStore('transcript', () => {
                 { method: 'POST', body: JSON.stringify({ force }) }
             );
             report.value = data.report;
-            // Atualiza lista de relatórios se existir
+            // Atualiza lista e captura o ID do banco
             if (!data.cached) await fetchReports();
+            const saved = reports.value.find(r => r.transcriptId === transcriptId);
+            if (saved) reportDbId.value = saved.id;
             return data.report;
         } catch (err) {
             error.value = err.message;
@@ -141,12 +145,16 @@ export const useTranscriptStore = defineStore('transcript', () => {
     async function loadReport(transcriptId) {
         // Verifica se já está no estado local
         if (report.value) return report.value;
-        // Busca da lista
-        const saved = reports.value.find(r => r.transcriptId === transcriptId);
+        // Busca na lista local; se vazia, tenta buscar do backend
+        let saved = reports.value.find(r => r.transcriptId === transcriptId);
+        if (!saved) {
+            await fetchReports();
+            saved = reports.value.find(r => r.transcriptId === transcriptId);
+        }
         if (saved) {
-            // Carrega completo pelo ID do banco
             const full = await requestWithAuth(`${BASE}/reports/${saved.id}`);
             report.value = full.report;
+            reportDbId.value = saved.id;
             cues.value = full.cues || cues.value;
             return full.report;
         }
@@ -157,11 +165,13 @@ export const useTranscriptStore = defineStore('transcript', () => {
         loadingTranscript.value = true;
         cues.value = [];
         report.value = null;
+        reportDbId.value = null;
         error.value = null;
         try {
             const full = await requestWithAuth(`${BASE}/reports/${reportId}`);
             cues.value = full.cues || [];
             report.value = full.report;
+            reportDbId.value = reportId;
             selectedMeeting.value = {
                 subject: full.subject,
                 start: full.meetingDate,
@@ -186,14 +196,15 @@ export const useTranscriptStore = defineStore('transcript', () => {
         transcriptInfo.value = null;
         cues.value = [];
         report.value = null;
+        reportDbId.value = null;
         error.value = null;
     }
 
     return {
         meetings, reports, loadingMeetings, loadingReports, error,
-        selectedMeeting, transcriptInfo, cues, report,
+        selectedMeeting, transcriptInfo, cues, report, reportDbId,
         checkingTranscript, loadingTranscript, generatingReport,
         fetchMeetings, checkTranscript, loadTranscript,
-        generateReport, fetchReports, openSavedReport, reset,
+        generateReport, fetchReports, loadReport, openSavedReport, reset,
     };
 });

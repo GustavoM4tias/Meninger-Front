@@ -152,6 +152,18 @@ export default [
                         component: () => import('@/views/Office/Microsoft/Transcripts/Index.vue'),
                         meta: { requiresAuth: true, searchable: true, content: 'Transcrições de reuniões com relatório IA' },
                     },
+                    {
+                        path: 'inperson',
+                        name: 'InPersonMeetings',
+                        component: () => import('@/views/Office/Microsoft/Transcripts/InPerson/Index.vue'),
+                        meta: { requiresAuth: true, searchable: true, content: 'Reuniões presenciais transcritas com IA' },
+                    },
+                    {
+                        path: 'inperson/recording',
+                        name: 'InPersonRecording',
+                        component: () => import('@/views/Office/Microsoft/Transcripts/InPerson/Recording.vue'),
+                        meta: { requiresAuth: true, searchable: false },
+                    },
                 ],
             },
 

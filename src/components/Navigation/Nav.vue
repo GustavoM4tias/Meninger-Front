@@ -78,18 +78,18 @@ const menuItems = {
         { router: '/tools/validator', section: 'Validador', name: 'Validador', icon: 'fas fa-check-double' },
         { router: '/tools/paymentflow', section: 'PaymentFlow', name: 'Fluxo de Pagamento', icon: 'fas fa-diagram-project'}
     ],
-    microsoft: [
-        { router: '/microsoft/sharepoint',  section: 'SharePoint',  name: 'SharePoint',  icon: 'fas fa-folder-open' },
-        { router: '/microsoft/teams',       section: 'Teams',       name: 'Teams',       icon: 'fas fa-users' },
-        { router: '/microsoft/transcripts', section: 'Transcrições', name: 'Transcrições & IA', icon: 'fas fa-file-waveform' },
-    ],
     settings: [
         { router: '/settings/Account', section: 'Minha Conta', name: 'Minha Conta', icon: 'fas fa-user-cog' },
         { router: '/settings/users', section: 'Usuários', name: 'Usuários', icon: 'fas fa-users' },
         { router: '/settings/organograma', section: 'Organograma', name: 'Organograma', icon: 'fas fa-sitemap' },
         { router: '/settings/cidades', section: 'Cidades', name: 'Cidades', icon: 'fas fa-city' },
         { router: '/settings/management', section: 'Cargos', name: 'Departamentos', icon: 'fas fa-gears' }
-    ]
+    ],
+    microsoft: [
+        { router: '/microsoft/sharepoint',  section: 'SharePoint',  name: 'SharePoint',  icon: 'fas fa-folder-open' },
+        { router: '/microsoft/teams',       section: 'Teams',       name: 'Teams',       icon: 'fas fa-users' },
+        { router: '/microsoft/transcripts', section: 'Transcrições', name: 'Transcrições & IA', icon: 'fas fa-file-waveform' },
+    ],
     // supports: [...]
 };
 
