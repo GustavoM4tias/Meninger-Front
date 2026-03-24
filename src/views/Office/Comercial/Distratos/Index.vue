@@ -59,18 +59,25 @@
                 <!-- ── KPI Strip ────────────────────────────────────────────── -->
                 <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
                     <div v-for="kpi in kpiCards" :key="kpi.label"
-                        class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm p-4">
+                        class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm p-4 relative group">
                         <div class="flex items-center justify-between mb-2">
-                            <span class="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">{{ kpi.label
-                                }}</span>
+                            <span class="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">{{ kpi.label }}</span>
                             <div class="w-7 h-7 rounded-lg flex items-center justify-center"
                                 :style="`background:${kpi.color}1a`">
                                 <i :class="kpi.icon" class="text-xs" :style="`color:${kpi.color}`"></i>
                             </div>
                         </div>
                         <p class="text-xl font-bold text-gray-900 dark:text-white truncate">{{ kpi.value }}</p>
-                        <p class="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5 truncate" :title="kpi.sub">{{
-                            kpi.sub }}</p>
+                        <p class="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5 truncate" :title="kpi.sub">
+                            {{ kpi.sub }}
+                        </p>
+                        <!-- Tooltip extra para o card de valor rescisão -->
+                        <div v-if="kpi.label === 'Valor Total Rescisão'"
+                            class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-10 w-56 bg-gray-900 text-white text-[10px] rounded-lg px-3 py-2 shadow-xl pointer-events-none text-center leading-4">
+                            Soma de <strong>valor devolvido + a devolver</strong> conforme campo
+                            <code class="text-yellow-300">totalCancellationAmount</code> do Sienge.
+                            A quebra individual requer campos adicionais da API.
+                        </div>
                     </div>
                 </div>
 
@@ -113,25 +120,7 @@
                             </div>
                             <ChartActions chart-id="chart-trend" />
                         </div>
-                        <VChart id="chart-trend" :option="optionTrend" style="height:230px" autoresize />
-                    </div>
-
-                    <!-- Motivos -->
-                    <div
-                        class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm p-5">
-                        <div class="flex items-center justify-between mb-3">
-                            <div>
-                                <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Motivos de Distrato</h3>
-                                <p class="text-xs text-gray-400 mt-0.5">Distribuição por razão de cancelamento</p>
-                            </div>
-                            <ChartActions chart-id="chart-reasons" />
-                        </div>
-                        <div v-if="allUnknownReasons"
-                            class="flex flex-col items-center justify-center h-[230px] text-gray-400 dark:text-gray-600 gap-2">
-                            <i class="fas fa-circle-info text-2xl"></i>
-                            <p class="text-xs text-center">Motivos não informados no Sienge para este período</p>
-                        </div>
-                        <VChart v-else id="chart-reasons" :option="optionReasons" style="height:230px" autoresize />
+                        <VChart id="chart-trend" :option="optionTrend" style="height:280px" autoresize />
                     </div>
 
                     <!-- Por empreendimento -->
@@ -144,7 +133,7 @@
                             </div>
                             <ChartActions chart-id="chart-ent-count" />
                         </div>
-                        <VChart id="chart-ent-count" :option="optionEntCount" style="height:230px" autoresize />
+                        <VChart id="chart-ent-count" :option="optionEntCount" style="height:280px" autoresize />
                     </div>
 
                     <!-- Valor por empreendimento -->
@@ -159,12 +148,31 @@
                             <ChartActions chart-id="chart-ent-avg" />
                         </div>
                         <div v-if="noAmounts"
-                            class="flex flex-col items-center justify-center h-[230px] text-gray-400 dark:text-gray-600 gap-2">
+                            class="flex flex-col items-center justify-center h-[280px] text-gray-400 dark:text-gray-600 gap-2">
                             <i class="fas fa-circle-info text-2xl"></i>
                             <p class="text-xs">Valores de rescisão não informados no Sienge</p>
                         </div>
-                        <VChart v-else id="chart-ent-avg" :option="optionEntAvg" style="height:230px" autoresize />
+                        <VChart v-else id="chart-ent-avg" :option="optionEntAvg" style="height:280px" autoresize />
                     </div>
+
+                    <!-- Motivos -->
+                    <div
+                        class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm p-5">
+                        <div class="flex items-center justify-between mb-3">
+                            <div>
+                                <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Motivos de Distrato</h3>
+                                <p class="text-xs text-gray-400 mt-0.5">Distribuição por razão de cancelamento</p>
+                            </div>
+                            <ChartActions chart-id="chart-reasons" />
+                        </div>
+                        <div v-if="allUnknownReasons"
+                            class="flex flex-col items-center justify-center h-[280px] text-gray-400 dark:text-gray-600 gap-2">
+                            <i class="fas fa-circle-info text-2xl"></i>
+                            <p class="text-xs text-center">Motivos não informados no Sienge para este período</p>
+                        </div>
+                        <VChart v-else id="chart-reasons" :option="optionReasons" style="height:280px" autoresize />
+                    </div>
+                    
                 </div>
 
                 <!-- ── Table ────────────────────────────────────────────────── -->
@@ -220,8 +228,14 @@
                                         :title="row.unit">
                                         {{ row.unit }}
                                     </td>
+                                    <td class="px-4 py-2.5 whitespace-nowrap text-gray-500 dark:text-gray-400">
+                                        {{ fmtDate(row.financialInstitutionDate) }}
+                                    </td>
                                     <td class="px-4 py-2.5 whitespace-nowrap text-gray-600 dark:text-gray-300">
                                         {{ fmtDate(row.cancelDate) }}
+                                        <span v-if="row.cancelDate && !row.hasCancelDate"
+                                            title="Data estimada — cancellation_date não preenchido no Sienge"
+                                            class="ml-1 text-[9px] text-amber-400 font-medium">est.</span>
                                     </td>
                                     <td class="px-4 py-2.5 max-w-[200px]">
                                         <span
@@ -240,7 +254,7 @@
                                     </td>
                                 </tr>
                                 <tr v-if="filteredRows.length === 0">
-                                    <td colspan="8" class="px-4 py-10 text-center text-gray-400 text-xs">Nenhum
+                                    <td colspan="9" class="px-4 py-10 text-center text-gray-400 text-xs">Nenhum
                                         resultado encontrado</td>
                                 </tr>
                             </tbody>
@@ -328,6 +342,14 @@ const fmtDate = (d) => {
 // ── KPI Cards ──────────────────────────────────────────────────────────────
 const kpiCards = computed(() => {
     const k = store.kpis
+    // Contratos com e sem valor de rescisão definido
+    const comValor = store.tableRows.filter(r => r.cancelAmount > 0).length
+    const semValor = store.tableRows.filter(r => !r.cancelAmount).length
+    // Percentual do VGV que representa rescisão
+    const pctVgv = k.totalOriginal > 0
+        ? ((k.totalAmount / k.totalOriginal) * 100).toFixed(1) + '%'
+        : '—'
+
     return [
         {
             label: 'Total Distratos',
@@ -344,9 +366,10 @@ const kpiCards = computed(() => {
             color: '#F97316',
         },
         {
-            label: 'Valor Rescisão',
+            label: 'Valor Total Rescisão',
             value: brlShort(k.totalAmount),
-            sub: 'total pago em rescisões',
+            // Nota: totalAmount = soma de totalCancellationAmount do Sienge (devolvido + a devolver)
+            sub: `${pctVgv} do VGV · ${comValor} c/ valor definido`,
             icon: 'fas fa-money-bill-wave',
             color: '#EAB308',
         },
@@ -358,13 +381,13 @@ const kpiCards = computed(() => {
             color: '#A855F7',
         },
         {
-            label: 'Alertas',
-            value: k.alertCount,
-            sub: k.alertCount > 0
-                ? `${k.topEnt ? '' + k.topEnt.name : ''}`
-                : 'tudo dentro do normal',
-            icon: k.alertCount > 0 ? 'fas fa-triangle-exclamation' : 'fas fa-circle-check',
-            color: k.alertCount > 0 ? '#F59E0B' : '#22C55E',
+            label: 'Sem Valor Rescisão',
+            value: semValor,
+            sub: semValor > 0
+                ? `${semValor} contrato${semValor > 1 ? 's' : ''} aguardando definição`
+                : 'todos com valor definido',
+            icon: semValor > 0 ? 'fas fa-hourglass-half' : 'fas fa-circle-check',
+            color: semValor > 0 ? '#6366F1' : '#22C55E',
         },
     ]
 })
@@ -454,16 +477,10 @@ const optionReasons = computed(() => {
         },
         legend: {
             type: 'scroll', orient: 'vertical', left: 4, top: 'middle', width: 150,
-            textStyle: { color: sub_c.value, fontSize: 10, width: 160, overflow: 'truncate', }, icon: 'circle', itemWidth: 7, itemHeight: 7, itemGap: 6,
-            tooltip: {
-                show: true
-            }, icon: 'circle',
-            itemWidth: 7,
-            itemHeight: 7,
-            itemGap: 6,
-            formatter: function (name) {
-                return name;
-            }
+            textStyle: { color: sub_c.value, fontSize: 10, width: 160, overflow: 'truncate' },
+            icon: 'circle', itemWidth: 7, itemHeight: 7, itemGap: 6,
+            tooltip: { show: true },
+            formatter: name => name,
         },
         graphic: [
             { type: 'text', left: '68%', top: '44%', style: { text: `${total}`, fill: txt.value, fontSize: 18, fontWeight: 'bold', textAlign: 'center' } },
@@ -482,8 +499,10 @@ const optionReasons = computed(() => {
 
 // ── Chart: Por empreendimento (count) ─────────────────────────────────────
 const optionEntCount = computed(() => {
-    const data = store.byEnterprise.slice(0, 12)
-    const names = data.map(e => e.name.length > 32 ? e.name.slice(0, 32) + '…' : e.name)
+    const data = store.byEnterprise.slice(0, 20)
+    // reversed: highest count aparece no topo do gráfico horizontal
+    const reversed = data.slice().reverse()
+    const names = reversed.map(e => e.name.length > 32 ? e.name.slice(0, 32) + '…' : e.name)
     const avgCount = data.length ? data.reduce((s, e) => s + e.count, 0) / data.length : 0
     const alertNames = new Set(store.kpis.alerts.map(a => a.name))
     return {
@@ -491,7 +510,8 @@ const optionEntCount = computed(() => {
         tooltip: {
             trigger: 'axis', confine: true, appendToBody: true, extraCssText: TT, axisPointer: { type: 'shadow' },
             formatter: ps => {
-                const ent = data[ps[0].dataIndex]
+                // ps[0].dataIndex mapeia para reversed[] — mesmo array do yAxis e series
+                const ent = reversed[ps[0].dataIndex]
                 return `<b>${ent?.name}</b><br/>` +
                     `<span style="color:#EF4444;font-weight:600">${ps[0].value}</span> distrato${ps[0].value !== 1 ? 's' : ''}<br/>` +
                     `Valor rescisão: ${brlShort(ent?.amount)}`
@@ -499,13 +519,13 @@ const optionEntCount = computed(() => {
         },
         grid: { left: 8, right: 16, top: 8, bottom: 8, containLabel: true },
         xAxis: { type: 'value', minInterval: 1, axisLabel: { color: sub_c.value, fontSize: 10 }, splitLine: { lineStyle: { color: dim_c.value, type: 'dashed' } }, axisLine: { show: false } },
-        yAxis: { type: 'category', data: names.slice().reverse(), axisLabel: { color: sub_c.value, fontSize: 10 }, axisTick: { show: false } },
+        yAxis: { type: 'category', data: names, axisLabel: { color: sub_c.value, fontSize: 10 }, axisTick: { show: false } },
         series: [{
             type: 'bar', barMaxWidth: 22,
-            data: data.map(e => e.count).reverse(),
+            data: reversed.map(e => e.count),
             itemStyle: {
                 borderRadius: [0, 6, 6, 0],
-                color: (p) => alertNames.has(data.slice().reverse()[p.dataIndex]?.name) ? '#F59E0B' : '#EF4444',
+                color: (p) => alertNames.has(reversed[p.dataIndex]?.name) ? '#F59E0B' : '#EF4444',
             },
             markLine: avgCount > 0
                 ? { silent: true, lineStyle: { color: 'rgba(239,68,68,0.5)', type: 'dashed' }, data: [{ xAxis: avgCount, label: { color: sub_c.value, fontSize: 10, formatter: `μ ${avgCount.toFixed(1)}` } }] }
@@ -574,14 +594,15 @@ const sortCol = ref('cancelDate')
 const sortAsc = ref(false)
 
 const tableCols = [
-    { key: 'number', label: 'Nº Contrato' },
-    { key: 'enterprise', label: 'Empreendimento' },
-    { key: 'customer', label: 'Cliente' },
-    { key: 'unit', label: 'Unidade' },
-    { key: 'cancelDate', label: 'Data Distrato' },
-    { key: 'reason', label: 'Motivo' },
-    { key: 'originalValue', label: 'VGV' },
-    { key: 'cancelAmount', label: 'Valor Rescisão' },
+    { key: 'number',                  label: 'Nº Contrato' },
+    { key: 'enterprise',              label: 'Empreendimento' },
+    { key: 'customer',                label: 'Cliente' },
+    { key: 'unit',                    label: 'Unidade' },
+    { key: 'financialInstitutionDate', label: 'Dt. Inst. Financeira' },
+    { key: 'cancelDate',              label: 'Data Distrato' },
+    { key: 'reason',                  label: 'Motivo' },
+    { key: 'originalValue',           label: 'VGV' },
+    { key: 'cancelAmount',            label: 'Valor Rescisão' },
 ]
 
 function sortBy(col) {

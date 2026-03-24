@@ -65,11 +65,11 @@ export const useDistratosStore = defineStore('distratos', () => {
 
     // ── Analytics computeds ───────────────────────────────────────────────────
 
-    /** Tendência por mês usando cancellation_date */
+    /** Tendência por mês usando effective_date (cancellation_date → financial_institution_date → contract_date) */
     const byMonth = computed(() => {
         const m = new Map()
         for (const d of distratos.value) {
-            const raw = d.cancellation_date || d.contract_date
+            const raw = d.cancellation_date || d.effective_date || d.contract_date
             if (!raw) continue
             const key  = String(raw).slice(0, 7)   // YYYY-MM
             const prev = m.get(key) || { count: 0, amount: 0 }
@@ -138,20 +138,26 @@ export const useDistratosStore = defineStore('distratos', () => {
         return { total, totalAmount, totalOriginal, avgAmount, topEnt, alerts, alertCount: alerts.length, topReason }
     })
 
-    /** Linhas da tabela, enriquecidas com campos do novo endpoint */
+    /** Linhas da tabela, enriquecidas com campos do endpoint de distratos */
     const tableRows = computed(() =>
-        distratos.value.map(d => ({
-            id:            d.contract_id || d.id,
-            number:        d.number,
-            enterprise:    d.enterprise_name || '—',
-            customer:      d.customer_name   || '—',
-            unit:          d.unit_name       || '—',
-            cancelDate:    d.cancellation_date || null,
-            contractDate:  d.contract_date || null,
-            reason:        d.cancellation_reason?.trim() || 'Não informado',
-            originalValue: Number(d.total_selling_value) || Number(d.contract_value) || 0,
-            cancelAmount:  Number(d.total_cancellation_amount) || 0,
-        })).sort((a, b) => {
+        distratos.value.map(d => {
+            // effective_date já vem do backend como COALESCE(cancellation_date, financial_institution_date, contract_date)
+            const effectiveDate = d.cancellation_date || d.effective_date || null
+            return {
+                id:                      d.contract_id || d.id,
+                number:                  d.number,
+                enterprise:              d.enterprise_name || '—',
+                customer:                d.customer_name   || '—',
+                unit:                    d.unit_name       || '—',
+                financialInstitutionDate: d.financial_institution_date || null,
+                cancelDate:              effectiveDate,
+                hasCancelDate:           !!d.cancellation_date,
+                contractDate:            d.contract_date || null,
+                reason:                  d.cancellation_reason?.trim() || 'Não informado',
+                originalValue:           Number(d.total_selling_value) || Number(d.contract_value) || 0,
+                cancelAmount:            Number(d.total_cancellation_amount) || 0,
+            }
+        }).sort((a, b) => {
             if (!a.cancelDate && !b.cancelDate) return 0
             if (!a.cancelDate) return 1
             if (!b.cancelDate) return -1
