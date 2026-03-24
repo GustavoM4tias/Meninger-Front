@@ -77,6 +77,12 @@ export default [
                         meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Dashboard de faturamento e contratos' },
                     },
                     {
+                        path: 'distratos',
+                        name: 'Distratos',
+                        component: () => import('@/views/Office/Comercial/Distratos/Index.vue'),
+                        meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Gestão e análise de distratos (rescisões de contrato)' },
+                    },
+                    {
                         path: 'buildings',
                         name: 'Empreendimentos',
                         component: () => import('@/views/Office/Comercial/Buildings/Index.vue'),

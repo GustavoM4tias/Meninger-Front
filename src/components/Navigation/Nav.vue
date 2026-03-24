@@ -48,6 +48,7 @@ const menuItems = {
             items: [
                 { router: '/comercial/sales-projection', section: 'sales-projection', name: 'Vendas X Projeção', icon: 'fas fa-arrow-trend-up' },
                 { router: '/comercial/faturamento', section: 'Faturamento', name: 'Faturamento', icon: 'fas fa-file-invoice-dollar' },
+                { router: '/comercial/distratos', section: 'Distratos', name: 'Distratos', icon: 'fas fa-file-circle-xmark' },
                 { router: '/comercial/projections', section: 'Projeção', name: 'Projeção', icon: 'fas fa-chart-line' },
             ]
         },

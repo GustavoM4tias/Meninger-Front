@@ -1,8 +1,8 @@
 <template>
-  <div class="bg-gray-50 dark:bg-gray-800 rounded-lg shadow-sm border dark:border-gray-600 overflow-hidden">
+  <div class="bg-gray-50 dark:bg-gray-900 rounded-lg shadow-sm border dark:border-gray-700 overflow-hidden">
 
     <!-- Header -->
-    <div class="p-6 border-b border-gray-200 dark:border-gray-600">
+    <div class="p-6 border-b border-gray-200 dark:border-gray-700">
       <div class="flex items-center justify-between">
         <div>
           <h3 class="text-lg font-semibold">Vendas por Empreendimento</h3>
@@ -17,12 +17,12 @@
           </button>
 
           <!-- VGV / VGV+DC -->
-          <div class="inline-flex rounded-md border dark:border-gray-600 overflow-hidden">
+          <div class="inline-flex rounded-md border dark:border-gray-700 overflow-hidden">
             <button @click="contractsStore.setValueMode('net')" :class="[
               'px-3 py-1 text-sm font-medium',
               contractsStore.valueMode === 'net'
                 ? 'bg-blue-600 dark:bg-blue-700 text-white dark:text-gray-100'
-                : 'bg-white dark:bg-gray-600 text-gray-700 dark:text-gray-100'
+                : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-100'
             ]">
               VGV
             </button>
@@ -30,35 +30,35 @@
               'px-3 py-1 text-sm font-medium border-l border-gray-300 dark:border-gray-700',
               contractsStore.valueMode === 'gross'
                 ? 'bg-blue-600 dark:bg-blue-700 text-white dark:text-gray-100'
-                : 'bg-white dark:bg-gray-600 text-gray-700 dark:text-gray-100'
+                : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-100'
             ]">
               VGV+DC
             </button>
           </div>
 
           <!-- Ações (1..N) -->
-          <div class="inline-flex rounded-md border dark:border-gray-600 overflow-hidden">
+          <div class="inline-flex rounded-md border dark:border-gray-700 overflow-hidden">
             <button @click="openGroup('list')" :disabled="disabledOpen"
-              class="px-3 py-1 text-sm font-medium bg-white dark:bg-gray-600 hover:bg-purple-600 dark:hover:bg-purple-600 hover:text-white disabled:opacity-50">
+              class="px-3 py-1 text-sm font-medium bg-white dark:bg-gray-700 hover:bg-purple-600 dark:hover:bg-purple-600 hover:text-white disabled:opacity-50">
               Listagem
             </button>
             <button @click="openGroup('pie')" :disabled="disabledOpen"
-              class="px-3 py-1 text-sm font-medium border-l border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-600 hover:bg-purple-600 dark:hover:bg-purple-600 hover:text-white disabled:opacity-50">
+              class="px-3 py-1 text-sm font-medium border-l border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-700 hover:bg-purple-600 dark:hover:bg-purple-600 hover:text-white disabled:opacity-50">
               Pizza
             </button>
             <button @click="openGroup('bar')" :disabled="disabledOpen"
-              class="px-3 py-1 text-sm font-medium border-l border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-600 hover:bg-purple-600 dark:hover:bg-purple-600 hover:text-white disabled:opacity-50">
+              class="px-3 py-1 text-sm font-medium border-l border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-700 hover:bg-purple-600 dark:hover:bg-purple-600 hover:text-white disabled:opacity-50">
               Colunas
             </button>
           </div>
 
           <!-- GroupBy -->
-          <div class="inline-flex rounded-md border dark:border-gray-600 overflow-hidden">
+          <div class="inline-flex rounded-md border dark:border-gray-700 overflow-hidden">
             <button @click="contractsStore.setGroupBy('enterprise')" :class="[
               'px-3 py-1 text-sm font-medium',
               contractsStore.groupBy === 'enterprise'
                 ? 'bg-blue-600 dark:bg-blue-700 text-white dark:text-gray-100'
-                : 'bg-white dark:bg-gray-600 text-gray-700 dark:text-gray-100'
+                : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-100'
             ]">
               Empreendimento
             </button>
@@ -66,7 +66,7 @@
               'px-3 py-1 text-sm font-medium border-l border-gray-300 dark:border-gray-700',
               contractsStore.groupBy === 'company'
                 ? 'bg-blue-600 dark:bg-blue-700 text-white dark:text-gray-100'
-                : 'bg-white dark:bg-gray-600 text-gray-700 dark:text-gray-100'
+                : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-100'
             ]">
               Empresa
             </button>
@@ -91,7 +91,7 @@
     <!-- Table -->
     <div v-else class="overflow-x-auto">
       <table class="w-full">
-        <thead class="bg-gray-50 dark:bg-gray-700/60 border-b border-gray-200 dark:border-gray-600">
+        <thead class="bg-gray-50 dark:bg-gray-800/60 border-b border-gray-200 dark:border-gray-700">
           <tr>
             <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider w-10">
               <input type="checkbox" :checked="allVisibleChecked" @change="toggleAllVisible($event)" />
@@ -110,7 +110,7 @@
           </tr>
         </thead>
 
-        <tbody class="bg-white dark:bg-gray-700/40 divide-y divide-gray-200 dark:divide-gray-600">
+        <tbody class="bg-white dark:bg-gray-800/40 divide-y divide-gray-200 dark:divide-gray-600">
           <tr v-for="(enterprise, index) in sortedData" :key="enterprise.key" :class="enterprise.onlyProjectionRow
             ? 'bg-green-50/70 dark:bg-green-900/20 hover:bg-green-100/70 dark:hover:bg-green-900/30'
             : 'hover:bg-gray-50 dark:hover:bg-gray-800/70'">

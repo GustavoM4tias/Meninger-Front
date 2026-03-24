@@ -110,14 +110,6 @@
                             <Input v-model="editableUser.birth_date" :disabled="isDisabled" type="date" required />
                         </div>
 
-                        <!-- Cargo -->
-                        <div class="space-y-1.5">
-                            <label
-                                class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Cargo</label>
-                            <Input v-model="editableUser.position" :disabled="isDisabled" type="text"
-                                placeholder="Seu cargo" required />
-                        </div>
-
                         <!-- Cidade -->
                         <div class="space-y-1.5">
                             <label
@@ -126,6 +118,22 @@
                                 placeholder="Sua cidade" required />
                         </div>
 
+                        <!-- Cargo -->
+                        <div class="space-y-1.5">
+                            <label
+                                class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Cargo</label>
+                            <UiSelect v-if="!isDisabled" v-model="editableUser.position"
+                                :options="positionsOptions" placeholder="Selecione o cargo" required />
+                            <Input v-else v-model="editableUser.position" :disabled="true" type="text"
+                                placeholder="Seu cargo" />
+                            <transition name="fade">
+                                <div v-if="selectedPositionDesc && !isDisabled"
+                                    class="flex items-start gap-2 px-3 py-2 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/40">
+                                    <i class="fas fa-circle-info text-blue-400 text-xs mt-0.5 shrink-0"></i>
+                                    <p class="text-xs text-blue-700 dark:text-blue-300 leading-relaxed">{{ selectedPositionDesc }}</p>
+                                </div>
+                            </transition>
+                        </div>
                         <!-- Face ID row (edit mode only) -->
                         <transition name="fade">
                             <div v-if="!isDisabled"
@@ -472,6 +480,7 @@ import { useMicrosoftStore } from '@/stores/Microsoft/microsoftStore';
 import { updateMeInfo, changePassword } from '@/utils/Auth/apiAuth';
 import Input from '@/components/UI/Input.vue';
 import Button from '@/components/UI/Button.vue';
+import UiSelect from '@/components/UI/Select.vue';
 import Favorite from '@/components/config/Favorite.vue';
 import FacialAuth from '@/views/Office/Settings/Account/components/FacialAuth.vue';
 import { useToast } from 'vue-toastification';
@@ -499,6 +508,28 @@ const passwordCheckList = [
 const toast = useToast();
 const authStore = useAuthStore();
 const microsoftStore = useMicrosoftStore();
+
+// ─── Positions (select) ───────────────────────────────────────────────────────
+const positionsOptions = ref([]);
+const positionDescMap  = ref({});
+const selectedPositionDesc = computed(() =>
+    editableUser.value.position ? positionDescMap.value[editableUser.value.position] || '' : ''
+);
+
+async function loadPositions() {
+    try {
+        const res  = await fetch(`${API_URL}/admin/positions`, {
+            headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        });
+        const data = await res.json();
+        const list = Array.isArray(data) ? data : (data?.data || []);
+        const active = list.filter(p => p?.active && p?.is_internal);
+        positionsOptions.value = active
+            .map(p => ({ label: p.name, value: p.name }))
+            .sort((a, b) => a.label.localeCompare(b.label));
+        positionDescMap.value = Object.fromEntries(active.map(p => [p.name, p.description || '']));
+    } catch { /* silencioso */ }
+}
 
 // ─── Profile state ────────────────────────────────────────────────────────────
 const editableUser = ref({ username: '', email: '', phone: '', city: '', position: '', birth_date: '', status: false, face_enabled: false });
@@ -705,6 +736,7 @@ onMounted(async () => {
     fillEditableUser();
     loadSiengeStatus();
     microsoftStore.fetchStatus();
+    loadPositions();
 });
 </script>
 
