@@ -97,14 +97,14 @@ const chipClass = {
 <template>
     <div class="p-4 md:p-6 max-w-7xl mx-auto space-y-4">
         <!-- header -->
-        <div class="rounded-2xl border dark:border-gray-700 bg-white/90 dark:bg-gray-800 p-4 md:p-6 mt-4 shadow-sm">
+        <div class="rounded-2xl border dark:border-gray-700 bg-white/90 dark:bg-gray-900 p-4 md:p-6 mt-4 shadow-sm">
             <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                 <div>
                     <h1 class="text-2xl font-semibold text-gray-900 dark:text-white">
                         Projeções de Vendas
                         <Favorite class="my-auto" :router="'/comercial/projections'" :section="'Projeção'" />
                     </h1>
-                    <p class="text-md text-gray-600 dark:text-gray-400">
+                    <p class="text-xs text-gray-600 dark:text-gray-400">
                         Projeções por mês (sem vínculo fixo com ano). Filtre pelo intervalo para visualizar.
                     </p>
                 </div>
@@ -145,7 +145,7 @@ const chipClass = {
         <!-- list -->
         <div class="grid sm:grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-4">
             <RouterLink v-for="p in filtered" :key="p.id" :to="`/comercial/projections/${p.id}`"
-                class="p-5 rounded-2xl border dark:border-gray-700 bg-white/70 hover:bg-white dark:bg-gray-800 shadow-lg hover:shadow-md transition-all duration-200 hover:-translate-y-1">
+                class="p-5 rounded-2xl border dark:border-gray-700 bg-white/70 hover:bg-white dark:bg-gray-900 shadow-lg hover:shadow-md transition-all duration-200 hover:-translate-y-1">
                 <div class="flex items-start justify-between gap-4">
                     <div class="min-w-0">
                         <div class="font-semibold truncate">{{ p.name }}</div>
@@ -181,7 +181,7 @@ const chipClass = {
             <div class="absolute inset-0 bg-black/30"></div>
             <div class="absolute inset-0 flex items-center justify-center p-4 z-[61]">
                 <div
-                    class="bg-white dark:bg-gray-800 rounded-2xl p-5 w-full max-w-md shadow-xl border dark:border-gray-700">
+                    class="bg-white dark:bg-gray-900 rounded-2xl p-5 w-full max-w-md shadow-xl border dark:border-gray-700">
                     <div class="flex items-center justify-between mb-3">
                         <h3 class="font-semibold text-xl">Nova Projeção</h3>
                         <button @click="modalOpen = false" class="text-gray-500 hover:text-gray-700">
