@@ -16,6 +16,52 @@
                 <!-- ── Coluna principal ── -->
                 <div class="lg:col-span-2 space-y-6">
 
+                    <!-- CARD: Modo de envio -->
+                    <div class="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-300 dark:border-gray-700 p-5">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h2 class="text-base font-semibold text-gray-900 dark:text-white">Pasta de destino</h2>
+                                <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                                    Use <strong>test-robot</strong> para testar a integração antes de enviar para produção.
+                                </p>
+                            </div>
+                            <!-- Toggle -->
+                            <div class="flex items-center gap-3 flex-shrink-0">
+                                <span class="text-sm font-medium" :class="!store.testMode ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400 dark:text-gray-500'">
+                                    encaminhados
+                                </span>
+                                <button
+                                    @click="store.testMode = !store.testMode"
+                                    :disabled="!!store.preview"
+                                    class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none disabled:opacity-40 disabled:cursor-not-allowed"
+                                    :class="store.testMode ? 'bg-amber-400' : 'bg-blue-600'"
+                                >
+                                    <span
+                                        class="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform"
+                                        :class="store.testMode ? 'translate-x-6' : 'translate-x-1'"
+                                    />
+                                </button>
+                                <span class="text-sm font-medium" :class="store.testMode ? 'text-amber-500 dark:text-amber-400' : 'text-gray-400 dark:text-gray-500'">
+                                    test-robot
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Badge da pasta ativa -->
+                        <div class="mt-3 flex items-center gap-2">
+                            <span class="text-xs text-gray-500 dark:text-gray-400">Destino atual:</span>
+                            <span
+                                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium"
+                                :class="store.testMode
+                                    ? 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300'
+                                    : 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300'"
+                            >
+                                <i :class="store.testMode ? 'fas fa-flask' : 'fas fa-paper-plane'" class="text-xs"></i>
+                                <span class="font-mono">bucket-menin/{{ store.testMode ? 'test-robot' : 'encaminhados' }}/</span>
+                            </span>
+                        </div>
+                    </div>
+
                     <!-- CARD: Upload -->
                     <div class="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-300 dark:border-gray-700 overflow-hidden">
                         <div class="bg-gray-50 dark:bg-gray-900 px-6 py-4 border-b border-gray-300 dark:border-gray-700">
@@ -63,17 +109,26 @@
                                     </button>
                                 </div>
 
-                                <!-- Arquivos gerados -->
-                                <div class="flex gap-3">
-                                    <div
-                                        v-for="file in store.preview.files"
-                                        :key="file.name"
-                                        class="flex items-center gap-2 px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg text-sm"
-                                    >
-                                        <i class="fas fa-file-csv text-blue-500"></i>
-                                        <span class="font-mono text-gray-700 dark:text-gray-300">{{ file.name }}</span>
-                                        <span class="text-gray-400">({{ file.totalRows }} linhas)</span>
+                                <!-- Arquivos gerados com nomes no padrão da doc -->
+                                <div class="space-y-2">
+                                    <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Arquivos que serão enviados</p>
+                                    <div class="flex flex-wrap gap-2">
+                                        <div
+                                            v-for="file in store.preview.files"
+                                            :key="file.name"
+                                            class="flex items-center gap-2 px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg text-sm border border-gray-200 dark:border-gray-700"
+                                        >
+                                            <i class="fas fa-file-csv text-blue-500"></i>
+                                            <div>
+                                                <span class="font-mono text-gray-700 dark:text-gray-300 text-xs">{{ file.name }}</span>
+                                                <span class="ml-2 text-gray-400 text-xs">({{ file.totalRows }} linhas)</span>
+                                            </div>
+                                        </div>
                                     </div>
+                                    <p class="text-xs text-gray-400 dark:text-gray-500">
+                                        Destino:
+                                        <span class="font-mono">bucket-menin/{{ store.testMode ? 'test-robot' : 'encaminhados' }}/</span>
+                                    </p>
                                 </div>
 
                                 <!-- Botões de ação -->
@@ -81,11 +136,14 @@
                                     <button
                                         @click="handleConfirm"
                                         :disabled="store.uploading"
-                                        class="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors"
+                                        class="flex items-center gap-2 px-5 py-2.5 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors"
+                                        :class="store.testMode
+                                            ? 'bg-amber-500 hover:bg-amber-600'
+                                            : 'bg-blue-600 hover:bg-blue-700'"
                                     >
                                         <i v-if="store.uploading" class="fas fa-spinner fa-spin"></i>
-                                        <i v-else class="fas fa-cloud-upload-alt"></i>
-                                        {{ store.uploading ? 'Enviando...' : 'Enviar ao Bucket' }}
+                                        <i v-else :class="store.testMode ? 'fas fa-flask' : 'fas fa-cloud-upload-alt'"></i>
+                                        {{ store.uploading ? 'Enviando...' : (store.testMode ? 'Enviar para test-robot' : 'Enviar ao Bucket') }}
                                     </button>
                                     <button
                                         @click="resetFile"
@@ -105,13 +163,17 @@
                             </div>
 
                             <!-- Confirmação de sucesso -->
-                            <div v-if="successMessage" class="mt-4 flex items-start gap-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                            <div v-if="successResult" class="mt-4 flex items-start gap-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
                                 <i class="fas fa-check-circle text-green-500 mt-0.5"></i>
                                 <div>
-                                    <p class="text-sm font-medium text-green-800 dark:text-green-300">{{ successMessage }}</p>
-                                    <p class="text-xs text-green-600 dark:text-green-400 mt-1">
-                                        Destino: <span class="font-mono">bucket-menin/encaminhados/</span>
-                                    </p>
+                                    <p class="text-sm font-medium text-green-800 dark:text-green-300">{{ successResult.message }}</p>
+                                    <div class="flex flex-wrap gap-1 mt-1">
+                                        <span
+                                            v-for="f in successResult.files"
+                                            :key="f.path"
+                                            class="text-xs font-mono text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/40 px-2 py-0.5 rounded"
+                                        >{{ f.path }}</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -121,19 +183,21 @@
                     <div v-if="store.preview" class="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-300 dark:border-gray-700 overflow-hidden">
                         <div class="bg-gray-50 dark:bg-gray-900 px-6 py-4 border-b border-gray-300 dark:border-gray-700">
                             <h2 class="text-lg font-semibold text-gray-900 dark:text-white">2. Pré-visualização dos CSVs</h2>
-                            <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Primeiras linhas de cada arquivo gerado</p>
+                            <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Todas as linhas de cada arquivo gerado</p>
                         </div>
 
-                        <div class="p-6 space-y-6">
+                        <div class="p-6 space-y-8">
                             <div v-for="file in store.preview.files" :key="file.name">
+                                <!-- Cabeçalho do arquivo -->
                                 <div class="flex items-center gap-2 mb-3">
                                     <i class="fas fa-file-csv text-blue-500"></i>
-                                    <h3 class="font-semibold text-gray-800 dark:text-gray-200 font-mono">{{ file.name }}</h3>
+                                    <h3 class="font-semibold text-gray-800 dark:text-gray-200 font-mono text-sm">{{ file.name }}</h3>
                                     <span class="text-xs text-gray-500 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full">
                                         {{ file.totalRows }} linhas
                                     </span>
                                 </div>
 
+                                <!-- Tabela -->
                                 <div class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
                                     <table class="min-w-full text-xs">
                                         <thead>
@@ -147,7 +211,7 @@
                                         </thead>
                                         <tbody>
                                             <tr
-                                                v-for="(row, ri) in file.previewRows.slice(1)"
+                                                v-for="(row, ri) in getPageRows(file)"
                                                 :key="ri"
                                                 class="border-t border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50"
                                             >
@@ -160,9 +224,57 @@
                                         </tbody>
                                     </table>
                                 </div>
-                                <p v-if="file.totalRows > 19" class="text-xs text-gray-400 mt-1 text-right">
-                                    Exibindo 20 de {{ file.totalRows + 1 }} linhas
-                                </p>
+
+                                <!-- Paginação -->
+                                <div class="flex items-center justify-between mt-3">
+                                    <p class="text-xs text-gray-400">
+                                        Exibindo {{ pageRangeLabel(file) }} de {{ file.totalRows }} linhas
+                                    </p>
+                                    <div class="flex items-center gap-1">
+                                        <!-- Primeira -->
+                                        <button
+                                            @click="setPage(file, 1)"
+                                            :disabled="getPage(file) === 1"
+                                            class="px-2 py-1 rounded text-xs border border-gray-200 dark:border-gray-700 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400 transition-colors"
+                                            title="Primeira página"
+                                        ><i class="fas fa-angle-double-left"></i></button>
+                                        <!-- Anterior -->
+                                        <button
+                                            @click="setPage(file, getPage(file) - 1)"
+                                            :disabled="getPage(file) === 1"
+                                            class="px-2 py-1 rounded text-xs border border-gray-200 dark:border-gray-700 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400 transition-colors"
+                                            title="Página anterior"
+                                        ><i class="fas fa-angle-left"></i></button>
+
+                                        <!-- Páginas numéricas -->
+                                        <template v-for="p in visiblePages(file)" :key="p">
+                                            <span v-if="p === '...'" class="px-1 text-xs text-gray-400">…</span>
+                                            <button
+                                                v-else
+                                                @click="setPage(file, p)"
+                                                class="min-w-[28px] px-2 py-1 rounded text-xs border transition-colors"
+                                                :class="getPage(file) === p
+                                                    ? 'bg-blue-600 border-blue-600 text-white font-semibold'
+                                                    : 'border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400'"
+                                            >{{ p }}</button>
+                                        </template>
+
+                                        <!-- Próxima -->
+                                        <button
+                                            @click="setPage(file, getPage(file) + 1)"
+                                            :disabled="getPage(file) === totalPages(file)"
+                                            class="px-2 py-1 rounded text-xs border border-gray-200 dark:border-gray-700 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400 transition-colors"
+                                            title="Próxima página"
+                                        ><i class="fas fa-angle-right"></i></button>
+                                        <!-- Última -->
+                                        <button
+                                            @click="setPage(file, totalPages(file))"
+                                            :disabled="getPage(file) === totalPages(file)"
+                                            class="px-2 py-1 rounded text-xs border border-gray-200 dark:border-gray-700 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400 transition-colors"
+                                            title="Última página"
+                                        ><i class="fas fa-angle-double-right"></i></button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -177,33 +289,55 @@
                         <h3 class="font-semibold text-gray-900 dark:text-white mb-3">Destino</h3>
                         <div class="space-y-2 text-sm">
                             <div class="flex items-start gap-2">
-                                <i class="fas fa-bucket text-blue-500 mt-0.5"></i>
+                                <i class="fas fa-database text-blue-500 mt-0.5"></i>
                                 <div>
                                     <p class="text-gray-500 dark:text-gray-400 text-xs">Bucket</p>
                                     <p class="font-mono text-gray-800 dark:text-gray-200">bucket-menin</p>
                                 </div>
                             </div>
                             <div class="flex items-start gap-2">
-                                <i class="fas fa-folder text-yellow-500 mt-0.5"></i>
+                                <i
+                                    class="mt-0.5"
+                                    :class="store.testMode ? 'fas fa-flask text-amber-500' : 'fas fa-folder text-yellow-500'"
+                                ></i>
                                 <div>
-                                    <p class="text-gray-500 dark:text-gray-400 text-xs">Pasta</p>
-                                    <p class="font-mono text-gray-800 dark:text-gray-200">encaminhados/</p>
+                                    <p class="text-gray-500 dark:text-gray-400 text-xs">Pasta ativa</p>
+                                    <p class="font-mono text-gray-800 dark:text-gray-200">{{ store.testMode ? 'test-robot/' : 'encaminhados/' }}</p>
                                 </div>
                             </div>
                         </div>
 
                         <div class="mt-4 border-t border-gray-200 dark:border-gray-700 pt-4">
                             <h4 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-2">Arquivos gerados</h4>
-                            <ul class="space-y-1.5 text-sm">
-                                <li class="flex items-center gap-2 text-gray-700 dark:text-gray-300">
-                                    <i class="fas fa-file-csv text-blue-400 text-xs"></i>
-                                    <span class="font-mono text-xs">Engenharia.csv</span>
+                            <ul class="space-y-1.5 text-xs text-gray-500 dark:text-gray-400">
+                                <li class="flex items-center gap-2">
+                                    <i class="fas fa-file-csv text-blue-400"></i>
+                                    <span class="font-mono">Engenharia.csv</span>
                                 </li>
-                                <li class="flex items-center gap-2 text-gray-700 dark:text-gray-300">
-                                    <i class="fas fa-file-csv text-blue-400 text-xs"></i>
-                                    <span class="font-mono text-xs">Area_construida_total.csv</span>
+                                <li class="flex items-center gap-2">
+                                    <i class="fas fa-file-csv text-blue-400"></i>
+                                    <span class="font-mono">Area_construida_total.csv</span>
                                 </li>
                             </ul>
+                        </div>
+
+                        <div class="mt-4 border-t border-gray-200 dark:border-gray-700 pt-4 space-y-1.5">
+                            <h4 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-2">Pastas do bucket</h4>
+                            <div class="flex items-center gap-2 text-xs">
+                                <i class="fas fa-flask text-amber-400 w-4 text-center"></i>
+                                <span class="font-mono text-gray-700 dark:text-gray-300">test-robot/</span>
+                                <span class="text-gray-400">testes</span>
+                            </div>
+                            <div class="flex items-center gap-2 text-xs">
+                                <i class="fas fa-paper-plane text-blue-400 w-4 text-center"></i>
+                                <span class="font-mono text-gray-700 dark:text-gray-300">encaminhados/</span>
+                                <span class="text-gray-400">produção</span>
+                            </div>
+                            <div class="flex items-center gap-2 text-xs">
+                                <i class="fas fa-archive text-gray-400 w-4 text-center"></i>
+                                <span class="font-mono text-gray-700 dark:text-gray-300">processados/</span>
+                                <span class="text-gray-400">pós-processamento</span>
+                            </div>
                         </div>
                     </div>
 
@@ -217,10 +351,14 @@
                             </li>
                             <li class="flex items-start gap-2">
                                 <span class="bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">2</span>
-                                Revise a pré-visualização dos dados
+                                Teste primeiro em <strong>test-robot</strong> antes de enviar para produção
                             </li>
                             <li class="flex items-start gap-2">
                                 <span class="bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">3</span>
+                                Revise a pré-visualização dos dados
+                            </li>
+                            <li class="flex items-start gap-2">
+                                <span class="bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">4</span>
                                 Clique em <strong>Enviar ao Bucket</strong> para confirmar
                             </li>
                         </ol>
@@ -248,6 +386,7 @@
                                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Data/Hora</th>
                                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Usuário</th>
                                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Arquivo Origem</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Pasta</th>
                                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Arquivos Enviados</th>
                                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Status</th>
                                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Detalhe</th>
@@ -270,6 +409,17 @@
                                 </td>
                                 <td class="px-4 py-3 text-gray-600 dark:text-gray-400 font-mono text-xs">
                                     {{ item.sourceFile || '—' }}
+                                </td>
+                                <td class="px-4 py-3">
+                                    <span
+                                        class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium font-mono"
+                                        :class="item.folder === 'test-robot'
+                                            ? 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300'
+                                            : 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300'"
+                                    >
+                                        <i :class="item.folder === 'test-robot' ? 'fas fa-flask' : 'fas fa-paper-plane'" class="text-xs"></i>
+                                        {{ item.folder || 'encaminhados' }}
+                                    </span>
                                 </td>
                                 <td class="px-4 py-3">
                                     <div v-if="item.filesUploaded?.length" class="flex flex-wrap gap-1">
@@ -311,7 +461,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { useBucketUploadStore } from '@/stores/Tools/BucketUpload/bucketUploadStore';
 import Favorite from '@/components/config/Favorite.vue'
 
@@ -319,9 +469,51 @@ const store = useBucketUploadStore();
 const fileInput = ref(null);
 const dragging = ref(false);
 const selectedFileName = ref('');
-const successMessage = ref('');
+const successResult = ref(null);
 
 onMounted(() => store.fetchHistory());
+
+// ── Paginação ────────────────────────────────────────────────────────────────
+const PAGE_SIZE = 20;
+const pageMap = ref({});  // { [file.name]: currentPage }
+
+watch(() => store.preview, () => { pageMap.value = {}; });
+
+function getPage(file)  { return pageMap.value[file.name] ?? 1; }
+function setPage(file, p) {
+    const max = totalPages(file);
+    pageMap.value[file.name] = Math.max(1, Math.min(p, max));
+}
+function totalPages(file) {
+    return Math.max(1, Math.ceil(file.totalRows / PAGE_SIZE));
+}
+function getPageRows(file) {
+    const dataRows = file.previewRows.slice(1); // exclui header
+    const page = getPage(file);
+    const start = (page - 1) * PAGE_SIZE;
+    return dataRows.slice(start, start + PAGE_SIZE);
+}
+function pageRangeLabel(file) {
+    const page = getPage(file);
+    const start = (page - 1) * PAGE_SIZE + 1;
+    const end   = Math.min(page * PAGE_SIZE, file.totalRows);
+    return `${start}–${end}`;
+}
+function visiblePages(file) {
+    const current = getPage(file);
+    const total   = totalPages(file);
+    if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+
+    const pages = [];
+    if (current <= 4) {
+        pages.push(1, 2, 3, 4, 5, '...', total);
+    } else if (current >= total - 3) {
+        pages.push(1, '...', total - 4, total - 3, total - 2, total - 1, total);
+    } else {
+        pages.push(1, '...', current - 1, current, current + 1, '...', total);
+    }
+    return pages;
+}
 
 function onDrop(e) {
     dragging.value = false;
@@ -341,16 +533,16 @@ async function processFile(file) {
         return;
     }
     selectedFileName.value = file.name;
-    successMessage.value = '';
+    successResult.value = null;
     store.error = null;
     await store.processFile(file);
 }
 
 async function handleConfirm() {
-    successMessage.value = '';
+    successResult.value = null;
     try {
         const result = await store.confirmSend();
-        successMessage.value = result.message || 'Arquivos enviados com sucesso!';
+        successResult.value = result;
         selectedFileName.value = '';
     } catch {
         // error já está em store.error
@@ -360,7 +552,7 @@ async function handleConfirm() {
 function resetFile() {
     store.cancelPreview();
     selectedFileName.value = '';
-    successMessage.value = '';
+    successResult.value = null;
     if (fileInput.value) fileInput.value.value = '';
 }
 
