@@ -4,16 +4,19 @@ import { ref } from 'vue';
 import { requestWithAuth } from '@/utils/Auth/requestWithAuth';
 
 export const useBucketUploadStore = defineStore('bucketUpload', () => {
-    const preview = ref(null);       // { tempId, files: [{ name, previewRows, totalRows }] }
-    const history = ref([]);
-    const loading = ref(false);
+    const preview  = ref(null);   // { tempId, files: [{ name, dataType, previewRows, totalRows }] }
+    const history  = ref([]);
+    const loading  = ref(false);
     const uploading = ref(false);
-    const error = ref(null);
+    const error    = ref(null);
+    const testMode = ref(false);  // false = encaminhados | true = test-robot
+
+    const activeFolder = () => testMode.value ? 'test-robot' : 'encaminhados';
 
     async function processFile(file) {
-        loading.value = true;
-        error.value = null;
-        preview.value = null;
+        loading.value  = true;
+        error.value    = null;
+        preview.value  = null;
 
         try {
             const form = new FormData();
@@ -38,12 +41,15 @@ export const useBucketUploadStore = defineStore('bucketUpload', () => {
         if (!preview.value?.tempId) throw new Error('Nenhum preview ativo.');
 
         uploading.value = true;
-        error.value = null;
+        error.value     = null;
 
         try {
             const data = await requestWithAuth('/bucket-upload/confirm', {
                 method: 'POST',
-                body: JSON.stringify({ tempId: preview.value.tempId }),
+                body: JSON.stringify({
+                    tempId: preview.value.tempId,
+                    folder: activeFolder(),
+                }),
             });
 
             preview.value = null;
@@ -68,8 +74,11 @@ export const useBucketUploadStore = defineStore('bucketUpload', () => {
 
     function cancelPreview() {
         preview.value = null;
-        error.value = null;
+        error.value   = null;
     }
 
-    return { preview, history, loading, uploading, error, processFile, confirmSend, fetchHistory, cancelPreview };
+    return {
+        preview, history, loading, uploading, error, testMode,
+        activeFolder, processFile, confirmSend, fetchHistory, cancelPreview,
+    };
 });

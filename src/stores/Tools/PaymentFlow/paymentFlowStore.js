@@ -477,9 +477,18 @@ export const usePaymentFlowStore = defineStore('paymentFlow', () => {
         }
     }
 
-    function startPolling(id) {
+    async function startPolling(id) {
         const numId = Number(id);
         if (pipelinePolling.value[numId]) return; // já rodando
+
+        // Executa imediatamente ao clicar em ⟳ (não espera 30s)
+        try {
+            await requestWithAuth(`${API_URL}/sienge/payment-flow/${numId}/pipeline/poll-contract`);
+            await _refreshLaunchInList(numId);
+            const launch = launches.value.find(l => l.id === numId);
+            if (launch?.siengeContractAuthorized) return; // já autorizado, não precisa de intervalo
+        } catch (_) { /* silencioso */ }
+
         const intervalId = setInterval(async () => {
             try {
                 await requestWithAuth(`${API_URL}/sienge/payment-flow/${numId}/pipeline/poll-contract`);
