@@ -1,180 +1,115 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 import { useNotificationStore } from '@/stores/Config/notificationStore';
 import { useFavoritesStore } from '@/stores/Config/favoriteStore';
 import { useMicrosoftStore } from '@/stores/Microsoft/microsoftStore';
+import { usePermissionStore } from '@/stores/Settings/Permissions/permissionStore';
+import { navRegistry, allManagedRoutes } from '@/config/navRegistry';
 import Search from '@/components/Navigation/components/Search.vue';
 import Notification from '@/components/Navigation/components/Notification.vue';
 import Profile from '@/components/Navigation/components/Profile.vue';
 import { RouterLink } from 'vue-router';
 
 // Stores
-const authStore = useAuthStore();
-const favoritesStore = useFavoritesStore();
+const authStore       = useAuthStore();
+const favoritesStore  = useFavoritesStore();
 const notificationStore = useNotificationStore();
-const microsoftStore = useMicrosoftStore();
+const microsoftStore  = useMicrosoftStore();
+const permissionStore = usePermissionStore();
 
-/**
- * MENU FLEXÍVEL
- * - Categoria pode ser:
- *    1) Array:   categoria: [ {router, section, name, icon}, ... ]
- *    2) Objeto:  categoria: {
- *          items?: [ ...itens planos ],
- *          subkey1: { name, icon, items: [ ... ] },
- *          subkey2: { name, icon, items: [ ... ] },
- *       }
- */
-const menuItems = {
-    marketing: {
-        events: {
-            name: 'Eventos',
-            icon: 'fas fa-newspaper',
-            items: [
-                { router: '/marketing/events', section: 'Geral', name: 'Geral', icon: 'fas fa-list' },
-                { router: '/marketing/events', section: 'Próximos', name: 'Próximos', icon: 'fas fa-calendar-plus' },
-                { router: '/marketing/events', section: 'Finalizados', name: 'Finalizados', icon: 'fas fa-calendar-check' }
-            ]
-        },
-        items: [
-            { router: '/marketing/leads', section: 'Leads', name: 'Leads', icon: 'fas fa-user-plus' },
-            { router: '/marketing/viability', section: 'Viability', name: 'Viabilidade', icon: 'fas fa-scale-balanced' }
-        ]
-    },
-    comercial: {
-        sales: {
-            name: 'Vendas',
-            icon: 'fas fa-credit-card',
-            items: [
-                { router: '/comercial/sales-projection', section: 'sales-projection', name: 'Vendas X Projeção', icon: 'fas fa-arrow-trend-up' },
-                { router: '/comercial/faturamento', section: 'Faturamento', name: 'Faturamento', icon: 'fas fa-file-invoice-dollar' },
-                { router: '/comercial/distratos', section: 'Distratos', name: 'Distratos', icon: 'fas fa-file-circle-xmark' },
-                { router: '/comercial/projections', section: 'Projeção', name: 'Projeção', icon: 'fas fa-chart-line' },
-            ]
-        },
-        buildings: {
-            name: 'Empreendimentos',
-            icon: 'fas fa-building',
-            items: [
-                { router: '/comercial/buildings', section: 'Geral', name: 'Geral', icon: 'fas fa-list' },
-                { router: '/comercial/buildings', section: 'Pré Lançamentos', name: 'Pré Lançamentos', icon: 'fas fa-rocket' },
-                { router: '/comercial/buildings', section: 'Lançamentos', name: 'Lançamentos', icon: 'fas fa-play' },
-                { router: '/comercial/buildings', section: 'Em Obras', name: 'Em Obras', icon: 'fas fa-hammer' },
-                { router: '/comercial/buildings', section: 'Finalizados', name: 'Finalizados', icon: 'fas fa-check-circle' },
-                { router: '/comercial/buildings', section: 'Portal do Cliente', name: 'Portal do Cliente', icon: 'fas fa-user-circle' }
-            ]
-        },
-        items: [
-            // { router: '/comercial/awards', section: 'Premiações', name: 'Premiação', icon: 'fas fa-award' }, 
-            { router: '/comercial/workflow/groups', section: 'Workflow', name: 'Grupos Workflow', icon: 'fas fa-chart-diagram' }
-        ]
-    },
-    financeiro: {
-        items: [
-            { router: '/financeiro/titulos', section: 'Títulos', name: 'Títulos', icon: 'fas fa-money-bill-transfer' },
-            { router: '/financeiro/custos', section: 'Custos', name: 'Custos', icon: 'fas fa-coins' }
-        ]
-    },
-    tools: [
-        { router: '/tools/validator', section: 'Validador', name: 'Validador', icon: 'fas fa-check-double' },
-        { router: '/tools/paymentflow', section: 'PaymentFlow', name: 'Fluxo de Pagamento', icon: 'fas fa-diagram-project'}
-    ],
-    settings: [
-        { router: '/settings/Account', section: 'Minha Conta', name: 'Minha Conta', icon: 'fas fa-user-cog' },
-        { router: '/settings/users', section: 'Usuários', name: 'Usuários', icon: 'fas fa-users' },
-        { router: '/settings/organograma', section: 'Organograma', name: 'Organograma', icon: 'fas fa-sitemap' },
-        { router: '/settings/cidades', section: 'Cidades', name: 'Cidades', icon: 'fas fa-city' },
-        { router: '/settings/management', section: 'Cargos', name: 'Departamentos', icon: 'fas fa-gears' }
-    ],
-    microsoft: [
-        { router: '/microsoft/sharepoint',  section: 'SharePoint',  name: 'SharePoint',  icon: 'fas fa-folder-open' },
-        { router: '/microsoft/teams',       section: 'Teams',       name: 'Teams',       icon: 'fas fa-users' },
-        { router: '/microsoft/transcripts', section: 'Transcrições', name: 'Transcrições & IA', icon: 'fas fa-file-waveform' },
-    ],
-    // supports: [...]
-};
-
-// ---- Helpers de forma/estrutura ----
-const isArrayCategory = (cat) => Array.isArray(menuItems[cat]);
-const categoryKeys = computed(() =>
-    Object.keys(menuItems).filter(k => k !== 'microsoft' || microsoftStore.connected)
-);
-
-const categoryLabelMap = {
-    marketing: 'Marketing',
-    comercial: 'Comercial',
-    financeiro: 'Financeiro',
-    tools: 'Ferramentas',
-    settings: 'Configurações',
-    microsoft: 'Microsoft'
-};
-const catLabel = (key) => categoryLabelMap[key] || (key.charAt(0).toUpperCase() + key.slice(1));
-
-// Subcategorias de um objeto-categoria (ignora "items")
-const subcatEntries = (catKey) => {
-    const node = menuItems[catKey];
-    if (Array.isArray(node)) return [];
-    return Object.entries(node || {}).filter(([k, v]) => k !== 'items' && v && Array.isArray(v.items));
-};
-
+// ─── Reatividade de usuário ───────────────────────────────────────────────────
 const isAdmin = computed(() => authStore?.user?.role === 'admin');
 
-const categoryFlatItems = (catKey) => {
-    const node = menuItems[catKey];
-    const items = Array.isArray(node) ? node : (Array.isArray(node?.items) ? node.items : []);
+// ─── Lookup rápido por key ────────────────────────────────────────────────────
+const getCat = (key) => navRegistry.find(c => c.key === key);
 
-    if (catKey === 'settings' && !isAdmin.value) {
-        return items.filter(
-            (it) =>
-                it.router !== '/settings/cidades' &&
-                it.router !== '/settings/users' &&
-                it.router !== '/settings/management'
-        );
-    }
+// ─── Visibilidade por permissão/role ─────────────────────────────────────────
 
-    if (catKey === 'comercial' && !isAdmin.value) {
-        return items.filter((it) => it.router !== '/ccomercial/workflow');
-    }
-
-    return items;
+// Verifica se um item individual pode ser exibido.
+// - adminOnly: oculta para não-admin
+// - rotas não gerenciadas (ex: settings): sempre visíveis
+// - rotas gerenciadas: verifica alçada
+const canSeeItem = (item) => {
+    if (isAdmin.value) return true;
+    if (item.adminOnly) return false;
+    if (!allManagedRoutes.includes(item.route)) return true;
+    return permissionStore.hasAccess(item.route);
 };
 
-// ---- Estados de dropdowns (dinâmicos) ----
-const dropdowns = ref({});
-const subDropdowns = ref({}); // chave: `${cat}.${subKey}`
+// Verifica se uma subcategoria tem pelo menos 1 item visível
+const subcatHasVisible = (sub) => (sub.pages || []).some(it => canSeeItem(it));
+
+// Verifica se uma categoria tem pelo menos 1 item/subitem visível
+const categoryHasVisible = (key) => {
+    if (isAdmin.value) return true;
+    const cat = getCat(key);
+    if (!cat) return false;
+    const flatOk   = (cat.pages || []).some(it => canSeeItem(it));
+    const subcatOk = (cat.subcategories || []).some(sub => subcatHasVisible(sub));
+    return flatOk || subcatOk;
+};
+
+// ─── Categorias visíveis (ordem preservada do navRegistry) ───────────────────
+// Categorias com permissionManaged:false (ex: settings) são controladas por role,
+// não por alçadas — sempre incluídas sem verificação de permissão.
+const categoryKeys = computed(() =>
+    navRegistry
+        .filter(cat => !cat.requiresMicrosoft || microsoftStore.connected)
+        .filter(cat => cat.permissionManaged === false || categoryHasVisible(cat.key))
+        .map(cat => cat.key)
+);
+
+// ─── Subcategorias visíveis de uma categoria ─────────────────────────────────
+const subcatEntries = (key) => {
+    const cat = getCat(key);
+    const subs = cat?.subcategories || [];
+    return isAdmin.value ? subs : subs.filter(sub => subcatHasVisible(sub));
+};
+
+// ─── Itens planos visíveis de uma categoria ──────────────────────────────────
+const categoryFlatItems = (key) => {
+    const items = getCat(key)?.pages || [];
+    return isAdmin.value ? items : items.filter(it => canSeeItem(it));
+};
+
+// ─── Itens visíveis dentro de uma subcategoria ───────────────────────────────
+const subcatVisibleItems = (sub) => {
+    const items = sub?.pages || [];
+    return isAdmin.value ? items : items.filter(it => canSeeItem(it));
+};
+
+// ─── Estados de dropdown ─────────────────────────────────────────────────────
+const dropdowns    = ref({});
+const subDropdowns = ref({});
 
 function initDropdownStates() {
     const d = {};
     const s = {};
-    for (const cat of categoryKeys.value) {
-        d[cat] = false;
-        if (!isArrayCategory(cat)) {
-            for (const [subKey] of subcatEntries(cat)) {
-                s[`${cat}.${subKey}`] = false;
-            }
+    for (const key of categoryKeys.value) {
+        d[key] = false;
+        for (const sub of subcatEntries(key)) {
+            s[`${key}.${sub.key}`] = false;
         }
     }
-    // garante favorites
     d.favorites = false;
-
-    dropdowns.value = d;
+    dropdowns.value    = d;
     subDropdowns.value = s;
 }
 initDropdownStates();
 
-// Toggles (lógica original)
-const toggleDropdown = (dropdownName) => {
-    Object.keys(dropdowns.value).forEach((k) => {
-        if (k !== dropdownName) dropdowns.value[k] = false;
-    });
+// Reinicializa quando auth carrega e categoryKeys muda (ex: settings aparece)
+watch(categoryKeys, () => { initDropdownStates(); });
 
-    if (!dropdowns.value[dropdownName]) {
-        Object.keys(subDropdowns.value).forEach((k) => {
-            if (k.startsWith(`${dropdownName}.`)) subDropdowns.value[k] = false;
+// ─── Toggles ─────────────────────────────────────────────────────────────────
+const toggleDropdown = (name) => {
+    Object.keys(dropdowns.value).forEach(k => { if (k !== name) dropdowns.value[k] = false; });
+    if (!dropdowns.value[name]) {
+        Object.keys(subDropdowns.value).forEach(k => {
+            if (k.startsWith(`${name}.`)) subDropdowns.value[k] = false;
         });
     }
-
-    dropdowns.value[dropdownName] = !dropdowns.value[dropdownName];
+    dropdowns.value[name] = !dropdowns.value[name];
 };
 
 const toggleSubDropdown = (cat, subKey) => {
@@ -182,86 +117,55 @@ const toggleSubDropdown = (cat, subKey) => {
     subDropdowns.value[key] = !subDropdowns.value[key];
 };
 
-// ---- Sidebar collapse (somente UI) ----
+// ─── Sidebar collapse ────────────────────────────────────────────────────────
 const isCollapsed = ref(false);
-
-// largura expandida e recolhida (Tailwind padrão):
-// w-72 = 18rem | w-12 = 3rem (ainda menor e acompanha só ícones)
-const sidebarWidthClass = computed(() => (isCollapsed.value ? 'sm:w-12 w-12' : 'w-auto sm:w-72'));
+const sidebarWidthClass = computed(() => isCollapsed.value ? 'sm:w-12 w-12' : 'w-auto sm:w-72');
 
 const collapseSidebar = () => {
     isCollapsed.value = true;
-
-    // fecha tudo visualmente (não muda sua lógica de favoritos/index, só estados de dropdown)
-    Object.keys(dropdowns.value).forEach((k) => (dropdowns.value[k] = false));
-    Object.keys(subDropdowns.value).forEach((k) => (subDropdowns.value[k] = false));
+    Object.keys(dropdowns.value).forEach(k => (dropdowns.value[k] = false));
+    Object.keys(subDropdowns.value).forEach(k => (subDropdowns.value[k] = false));
 };
+const expandSidebar = () => { isCollapsed.value = false; };
+const toggleSidebar = () => { isCollapsed.value ? expandSidebar() : collapseSidebar(); };
 
-const expandSidebar = () => {
-    isCollapsed.value = false;
+// Expande a sidebar antes de executar a ação, se estiver colapsada
+const withExpand = (fn) => (...args) => {
+    if (isCollapsed.value) { expandSidebar(); requestAnimationFrame(() => fn(...args)); return; }
+    fn(...args);
 };
-
-const toggleSidebar = () => {
-    if (isCollapsed.value) expandSidebar();
-    else collapseSidebar();
-};
-
-// Quando estiver colapsado, expande antes e depois executa a ação original
-const withExpand = (fn) => {
-    return (...args) => {
-        if (isCollapsed.value) {
-            expandSidebar();
-            requestAnimationFrame(() => fn(...args));
-            return;
-        }
-        fn(...args);
-    };
-};
-
-const toggleDropdownSafe = withExpand(toggleDropdown);
+const toggleDropdownSafe    = withExpand(toggleDropdown);
 const toggleSubDropdownSafe = withExpand(toggleSubDropdown);
 
-// ---- Índice para favoritos (router+section -> categoria/subcategoria) ----
+// ─── Índice para favoritos ────────────────────────────────────────────────────
 const routeIndex = computed(() => {
     const idx = {};
-
     const add = (catKey, subcatName, item) => {
-        const k = `${item.router}@@${item.section ?? ''}`;
-        idx[k] = { category: catLabel(catKey), subcategory: subcatName || null };
+        const k = `${item.route}@@${item.section ?? ''}`;
+        idx[k] = { category: getCat(catKey)?.label || catKey, subcategory: subcatName || null };
     };
-
     for (const catKey of categoryKeys.value) {
-        if (isArrayCategory(catKey)) {
-            for (const it of menuItems[catKey]) add(catKey, null, it);
-        } else {
-            for (const it of categoryFlatItems(catKey)) add(catKey, null, it);
-            for (const [, subObj] of subcatEntries(catKey)) {
-                const subName = subObj.name;
-                for (const it of subObj.items || []) add(catKey, subName, it);
-            }
+        for (const it of categoryFlatItems(catKey)) add(catKey, null, it);
+        for (const sub of subcatEntries(catKey)) {
+            for (const it of sub.pages || []) add(catKey, sub.name, it);
         }
     }
     return idx;
 });
 
 const getCategoryByRouter = (router) => {
-    const keys = Object.keys(routeIndex.value);
-    const found = keys.find((k) => k.startsWith(`${router}@@`));
+    const found = Object.keys(routeIndex.value).find(k => k.startsWith(`${router}@@`));
     return found ? routeIndex.value[found].category : 'Outros';
 };
+const getSubcategoryByRouterAndSection = (router, section) =>
+    routeIndex.value[`${router}@@${section ?? ''}`]?.subcategory ?? null;
 
-const getSubcategoryByRouterAndSection = (router, section) => {
-    const key = `${router}@@${section ?? ''}`;
-    return routeIndex.value[key]?.subcategory ?? null;
-};
-
+// ─── Favoritos ───────────────────────────────────────────────────────────────
 const groupedFavorites = computed(() => {
     const list = Array.isArray(favoritesStore.favorites) ? favoritesStore.favorites : [];
-
     return list.reduce((groups, fav) => {
-        const category = getCategoryByRouter(fav.router);
+        const category    = getCategoryByRouter(fav.router);
         const subcategory = getSubcategoryByRouterAndSection(fav.router, fav.section);
-
         if (!groups[category]) groups[category] = {};
         const key = subcategory || '__sem_subcategoria__';
         if (!groups[category][key]) groups[category][key] = [];
@@ -270,23 +174,18 @@ const groupedFavorites = computed(() => {
     }, {});
 });
 
-// Favoritos
-const isFavorited = (router, section) => favoritesStore.isFavorited(router, section);
-
-const toggleFavorite = async (router, section) => {
+const isFavorited   = (route, section) => favoritesStore.isFavorited(route, section);
+const toggleFavorite = async (route, section) => {
     try {
-        if (isFavorited(router, section)) {
-            await favoritesStore.removeFavorite(router, section);
-        } else {
-            await favoritesStore.addFavorite(router, section);
-        }
+        if (isFavorited(route, section)) await favoritesStore.removeFavorite(route, section);
+        else                             await favoritesStore.addFavorite(route, section);
         await favoritesStore.loadFavorites();
     } catch (error) {
         console.error('Erro ao atualizar favorito', error);
     }
 };
 
-// Inicialização
+// ─── Inicialização ────────────────────────────────────────────────────────────
 onMounted(async () => {
     await Promise.all([
         favoritesStore.loadFavorites(),
@@ -336,14 +235,12 @@ onMounted(async () => {
         <!-- Sidebar -->
         <main id="logo-sidebar" :class="[
             'fixed top-0 left-0 z-40 h-screen pt-20 bg-white border-r border-gray-200 sm:translate-x-0 dark:bg-gray-900 dark:border-gray-700 -translate-x-full',
-            // animação suave ao mudar a largura (evita corte seco)
             'transition-[width] duration-200 ease-in-out',
             isCollapsed ? 'w-12' : 'w-72'
         ]" aria-label="Sidebar">
             <div :class="[
                 'flex flex-col justify-between h-full pb-4 overflow-y-auto bg-white dark:bg-gray-900',
                 isCollapsed ? 'px-1' : 'px-3',
-                // animação leve de padding junto com a largura
                 'transition-[padding] duration-200 ease-in-out'
             ]">
                 <ul class="space-y-2 font-medium overflow-auto">
@@ -352,14 +249,8 @@ onMounted(async () => {
                         <RouterLink to="/" @click="expandSidebar"
                             class="flex items-center p-2 h-10 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 group"
                             :class="isCollapsed ? 'justify-center' : ''">
-                            <!-- ÍCONE não muda de tamanho -->
-                            <i
-                                class="fas fa-house w-5 text-gray-500 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white"></i>
-
-                            <!-- texto some com fade simples -->
-                            <span v-show="!isCollapsed" class="ms-3 transition-opacity duration-200 ease-in-out">
-                                Dashboard
-                            </span>
+                            <i class="fas fa-house w-5 text-gray-500 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white"></i>
+                            <span v-show="!isCollapsed" class="ms-3 transition-opacity duration-200 ease-in-out">Dashboard</span>
                         </RouterLink>
                     </li>
 
@@ -368,16 +259,9 @@ onMounted(async () => {
                         <button type="button" @click="toggleDropdownSafe('favorites')"
                             class="flex items-center w-full p-2 h-10 text-base text-gray-900 transition duration-75 rounded-lg group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-800"
                             :class="isCollapsed ? 'justify-center' : ''" :aria-expanded="dropdowns.favorites">
-                            <i
-                                class="fa fa-star w-5 text-gray-500 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white"></i>
-
-                            <span v-show="!isCollapsed"
-                                class="flex-1 ms-3 text-left rtl:text-right whitespace-nowrap transition-opacity duration-200 ease-in-out">
-                                Favoritos
-                            </span>
-
-                            <i v-show="!isCollapsed"
-                                :class="dropdowns.favorites ? 'fas fa-chevron-up' : 'fas fa-chevron-down'"
+                            <i class="fa fa-star w-5 text-gray-500 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white"></i>
+                            <span v-show="!isCollapsed" class="flex-1 ms-3 text-left rtl:text-right whitespace-nowrap transition-opacity duration-200 ease-in-out">Favoritos</span>
+                            <i v-show="!isCollapsed" :class="dropdowns.favorites ? 'fas fa-chevron-up' : 'fas fa-chevron-down'"
                                 class="text-gray-500 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white transition-opacity duration-200 ease-in-out"></i>
                         </button>
 
@@ -386,24 +270,18 @@ onMounted(async () => {
                                 <li v-for="(subGroups, category) in groupedFavorites" :key="category" class="ml-4">
                                     <p class="font-semibold text-gray-600 dark:text-gray-400 mb-1">{{ category }}</p>
                                     <ul>
-                                        <li v-for="(favorites, subcategory) in subGroups" :key="subcategory"
-                                            class="ml-2">
+                                        <li v-for="(favorites, subcategory) in subGroups" :key="subcategory" class="ml-2">
                                             <p v-if="subcategory !== '__sem_subcategoria__'"
-                                                class="text-sm text-gray-500 dark:text-gray-400 mb-1">
-                                                {{ subcategory }}
-                                            </p>
+                                                class="text-sm text-gray-500 dark:text-gray-400 mb-1">{{ subcategory }}</p>
                                             <ul class="space-y-1">
-                                                <li v-for="favorite in favorites"
-                                                    :key="`${favorite.router}-${favorite.section}`">
-                                                    <div
-                                                        class="flex items-center justify-between group/item hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg px-2 py-1">
+                                                <li v-for="favorite in favorites" :key="`${favorite.router}-${favorite.section}`">
+                                                    <div class="flex items-center justify-between group/item hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg px-2 py-1">
                                                         <RouterLink @click="expandSidebar"
                                                             :to="{ path: favorite.router, query: { section: favorite.section } }"
                                                             class="flex-1 flex items-center text-gray-900 dark:text-white">
                                                             <span class="truncate">{{ favorite.section }}</span>
                                                         </RouterLink>
-                                                        <button
-                                                            @click="toggleFavorite(favorite.router, favorite.section)"
+                                                        <button @click="toggleFavorite(favorite.router, favorite.section)"
                                                             class="ml-2 p-1 transition-opacity duration-200 text-amber-400 hover:text-amber-400">
                                                             <i class="fas fa-star"></i>
                                                         </button>
@@ -414,114 +292,95 @@ onMounted(async () => {
                                     </ul>
                                 </li>
                             </template>
-
                             <li v-else class="ml-4">
                                 <p class="text-sm text-gray-500 dark:text-gray-400 p-2">Nenhum favorito adicionado</p>
                             </li>
                         </ul>
                     </li>
 
-                    <!-- CATEGORIAS DINÂMICAS -->
+                    <!-- CATEGORIAS DINÂMICAS (geradas pelo navRegistry) -->
                     <li v-for="catKey in categoryKeys" :key="catKey">
                         <button type="button" @click="toggleDropdownSafe(catKey)"
                             class="flex items-center w-full h-10 px-2 text-base text-gray-900 transition duration-75 rounded-lg group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700"
                             :class="isCollapsed ? 'justify-center' : ''" :aria-expanded="dropdowns[catKey]">
-                            <template v-if="catKey === 'microsoft'">
-                                <svg width="20" height="20" viewBox="0 0 21 21" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-5 shrink-0">
-                                    <rect x="0" y="0" width="10" height="10" fill="#F25022"/>
-                                    <rect x="11" y="0" width="10" height="10" fill="#7FBA00"/>
-                                    <rect x="0" y="11" width="10" height="10" fill="#00A4EF"/>
-                                    <rect x="11" y="11" width="10" height="10" fill="#FFB900"/>
+
+                            <!-- Ícone especial Microsoft -->
+                            <template v-if="getCat(catKey)?.requiresMicrosoft">
+                                <svg width="20" height="20" viewBox="0 0 21 21" fill="none"
+                                    xmlns="http://www.w3.org/2000/svg" class="w-5 shrink-0">
+                                    <rect x="0"  y="0"  width="10" height="10" fill="#F25022" />
+                                    <rect x="11" y="0"  width="10" height="10" fill="#7FBA00" />
+                                    <rect x="0"  y="11" width="10" height="10" fill="#00A4EF" />
+                                    <rect x="11" y="11" width="10" height="10" fill="#FFB900" />
                                 </svg>
                             </template>
-                            <i v-else :class="{
-                                marketing: 'fa fa-bullhorn',
-                                comercial: 'fas fa-briefcase',
-                                financeiro: 'fas fa-money-bill-wave',
-                                tools: 'fas fa-wrench',
-                                settings: 'fas fa-gear',
-                                supports: 'fas fa-circle-info'
-                            }[catKey] || 'far fa-folder'"
+                            <i v-else :class="getCat(catKey)?.icon || 'far fa-folder'"
                                 class="w-5 text-gray-500 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white"></i>
 
                             <span v-show="!isCollapsed"
                                 class="flex-1 ms-3 text-left rtl:text-right whitespace-nowrap transition-opacity duration-200 ease-in-out">
-                                {{ catLabel(catKey) }}
+                                {{ getCat(catKey)?.label }}
                             </span>
-
                             <i v-show="!isCollapsed"
                                 :class="dropdowns[catKey] ? 'fas fa-chevron-up' : 'fas fa-chevron-down'"
                                 class="text-gray-500 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white transition-opacity duration-200 ease-in-out"></i>
                         </button>
 
                         <ul v-show="!isCollapsed && dropdowns[catKey]" class="py-2 space-y-2 ml-4">
+
                             <!-- SUBCATEGORIAS -->
-                            <template v-if="!isArrayCategory(catKey)">
-                                <li v-for="[subKey, subObj] in subcatEntries(catKey)" :key="`${catKey}.${subKey}`">
-                                    <button type="button" @click="toggleSubDropdownSafe(catKey, subKey)"
-                                        class="flex items-center w-full p-1.5 text-gray-700 transition duration-75 rounded-lg group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-600"
-                                        :aria-expanded="subDropdowns[`${catKey}.${subKey}`]">
-                                        <i :class="subObj.icon || 'far fa-folder'"
-                                            class="w-5 text-gray-500 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white"></i>
+                            <li v-for="sub in subcatEntries(catKey)" :key="`${catKey}.${sub.key}`">
+                                <button type="button" @click="toggleSubDropdownSafe(catKey, sub.key)"
+                                    class="flex items-center w-full p-1.5 text-gray-700 transition duration-75 rounded-lg group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-600"
+                                    :aria-expanded="subDropdowns[`${catKey}.${sub.key}`]">
+                                    <i :class="sub.icon || 'far fa-folder'"
+                                        class="w-5 text-gray-500 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white"></i>
+                                    <span v-show="!isCollapsed"
+                                        class="flex-1 ms-3 text-left rtl:text-right whitespace-nowrap transition-opacity duration-200 ease-in-out">
+                                        {{ sub.name }}
+                                    </span>
+                                    <i v-show="!isCollapsed"
+                                        :class="subDropdowns[`${catKey}.${sub.key}`] ? 'fas fa-chevron-up' : 'fas fa-chevron-down'"
+                                        class="text-gray-500 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white transition-opacity duration-200 ease-in-out"></i>
+                                </button>
 
-                                        <span v-show="!isCollapsed"
-                                            class="flex-1 ms-3 text-left rtl:text-right whitespace-nowrap transition-opacity duration-200 ease-in-out">
-                                            {{ subObj.name || subKey }}
-                                        </span>
-
-                                        <i v-show="!isCollapsed"
-                                            :class="subDropdowns[`${catKey}.${subKey}`] ? 'fas fa-chevron-up' : 'fas fa-chevron-down'"
-                                            class="text-gray-500 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white transition-opacity duration-200 ease-in-out"></i>
-                                    </button>
-
-                                    <ul v-show="!isCollapsed && subDropdowns[`${catKey}.${subKey}`]"
-                                        class="py-1 space-y-1 ml-4">
-                                        <li v-for="item in subObj.items" :key="`${item.router}-${item.section}`">
-                                            <div
-                                                class="flex items-center justify-between group/item hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg px-2 py-1">
-                                                <RouterLink @click="expandSidebar"
-                                                    :to="{ path: item.router, query: { section: item.section } }"
-                                                    class="flex-1 flex items-center text-gray-900 dark:text-white">
-                                                    <i :class="item.icon || 'far fa-file'"
-                                                        class="w-5 text-gray-500"></i>
-                                                    <span v-show="!isCollapsed"
-                                                        class="ms-3 transition-opacity duration-200 ease-in-out">{{
-                                                            item.name }}</span>
-                                                </RouterLink>
-
-                                                <button @click="toggleFavorite(item.router, item.section)"
-                                                    class="ml-2 p-1 transition-opacity duration-200"
-                                                    :class="isFavorited(item.router, item.section) ? 'text-amber-400 hover:text-amber-400' : 'text-gray-400 hover:text-amber-400'">
-                                                    <i :class="isFavorited(item.router, item.section) ? 'fas fa-star' : 'far fa-star'"
-                                                        class="text-lg"></i>
-                                                </button>
-                                            </div>
-                                        </li>
-                                    </ul>
-                                </li>
-                            </template>
+                                <ul v-show="!isCollapsed && subDropdowns[`${catKey}.${sub.key}`]"
+                                    class="py-1 space-y-1 ml-4">
+                                    <li v-for="item in subcatVisibleItems(sub)" :key="`${item.route}-${item.section}`">
+                                        <div class="flex items-center justify-between group/item hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg px-2 py-1">
+                                            <RouterLink @click="expandSidebar"
+                                                :to="{ path: item.route, query: item.section ? { section: item.section } : undefined }"
+                                                class="flex-1 flex items-center text-gray-900 dark:text-white">
+                                                <i :class="item.icon || 'far fa-file'" class="w-5 text-gray-500"></i>
+                                                <span v-show="!isCollapsed" class="ms-3 transition-opacity duration-200 ease-in-out">{{ item.name }}</span>
+                                            </RouterLink>
+                                            <button @click="toggleFavorite(item.route, item.section)"
+                                                class="ml-2 p-1 transition-opacity duration-200"
+                                                :class="isFavorited(item.route, item.section) ? 'text-amber-400 hover:text-amber-400' : 'text-gray-400 hover:text-amber-400'">
+                                                <i :class="isFavorited(item.route, item.section) ? 'fas fa-star' : 'far fa-star'" class="text-lg"></i>
+                                            </button>
+                                        </div>
+                                    </li>
+                                </ul>
+                            </li>
 
                             <!-- ITENS PLANOS -->
-                            <li v-for="item in categoryFlatItems(catKey)" :key="`${item.router}-${item.section}`">
-                                <div
-                                    class="flex items-center justify-between group/item hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg px-2 py-1">
+                            <li v-for="item in categoryFlatItems(catKey)" :key="`${item.route}-${item.section}`">
+                                <div class="flex items-center justify-between group/item hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg px-2 py-1">
                                     <RouterLink @click="expandSidebar"
-                                        :to="{ path: item.router, query: { section: item.section } }"
+                                        :to="{ path: item.route, query: item.section ? { section: item.section } : undefined }"
                                         class="flex-1 flex items-center text-gray-900 dark:text-white">
                                         <i :class="item.icon || 'far fa-file'" class="w-5 text-gray-500"></i>
-                                        <span v-show="!isCollapsed"
-                                            class="ms-3 transition-opacity duration-200 ease-in-out">{{ item.name
-                                            }}</span>
+                                        <span v-show="!isCollapsed" class="ms-3 transition-opacity duration-200 ease-in-out">{{ item.name }}</span>
                                     </RouterLink>
-
-                                    <button @click="toggleFavorite(item.router, item.section)"
+                                    <button @click="toggleFavorite(item.route, item.section)"
                                         class="ml-2 p-1 transition-opacity duration-200"
-                                        :class="isFavorited(item.router, item.section) ? 'text-amber-400 hover:text-amber-400' : 'text-gray-400 hover:text-amber-400'">
-                                        <i :class="isFavorited(item.router, item.section) ? 'fas fa-star' : 'far fa-star'"
-                                            class="text-lg"></i>
+                                        :class="isFavorited(item.route, item.section) ? 'text-amber-400 hover:text-amber-400' : 'text-gray-400 hover:text-amber-400'">
+                                        <i :class="isFavorited(item.route, item.section) ? 'fas fa-star' : 'far fa-star'" class="text-lg"></i>
                                     </button>
                                 </div>
                             </li>
+
                         </ul>
                     </li>
                 </ul>
@@ -536,10 +395,8 @@ onMounted(async () => {
                         <RouterLink to="/support" @click="expandSidebar"
                             class="flex items-center p-2 h-10 text-gray-900 transition duration-75 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white group"
                             :class="isCollapsed ? 'justify-center' : ''">
-                            <i
-                                class="fas fa-circle-info w-5 text-gray-500 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white"></i>
-                            <span v-show="!isCollapsed"
-                                class="ms-3 transition-opacity duration-200 ease-in-out">Suporte</span>
+                            <i class="fas fa-circle-info w-5 text-gray-500 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white"></i>
+                            <span v-show="!isCollapsed" class="ms-3 transition-opacity duration-200 ease-in-out">Suporte</span>
                         </RouterLink>
                     </li>
 
@@ -547,11 +404,8 @@ onMounted(async () => {
                         <RouterLink to="/report" @click="expandSidebar"
                             class="flex items-center p-2 h-10 text-gray-900 transition duration-75 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white group"
                             :class="isCollapsed ? 'justify-center' : ''">
-                            <i
-                                class="fas fa-bug w-5 text-gray-500 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white"></i>
-                            <span v-show="!isCollapsed"
-                                class="ms-3 transition-opacity duration-200 ease-in-out">Reportar
-                                Problema</span>
+                            <i class="fas fa-bug w-5 text-gray-500 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white"></i>
+                            <span v-show="!isCollapsed" class="ms-3 transition-opacity duration-200 ease-in-out">Reportar Problema</span>
                         </RouterLink>
                     </li>
 
@@ -559,10 +413,8 @@ onMounted(async () => {
                         <RouterLink to="/docs" @click="expandSidebar"
                             class="flex items-center p-2 h-10 text-gray-900 transition duration-75 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white group"
                             :class="isCollapsed ? 'justify-center' : ''">
-                            <i
-                                class="fas fa-book w-5 text-gray-500 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white"></i>
-                            <span v-show="!isCollapsed"
-                                class="ms-3 transition-opacity duration-200 ease-in-out">Documentação</span>
+                            <i class="fas fa-book w-5 text-gray-500 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white"></i>
+                            <span v-show="!isCollapsed" class="ms-3 transition-opacity duration-200 ease-in-out">Documentação</span>
                         </RouterLink>
                     </li>
 
@@ -570,10 +422,8 @@ onMounted(async () => {
                         <a href="https://academy.menin.com.br/panel" @click="expandSidebar"
                             class="flex items-center p-2 h-10 text-gray-900 transition duration-75 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white group"
                             :class="isCollapsed ? 'justify-center' : ''">
-                            <i
-                                class="fas fa-graduation-cap w-5 text-gray-500 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white"></i>
-                            <span v-show="!isCollapsed"
-                                class="ms-3 transition-opacity duration-200 ease-in-out">Academy</span>
+                            <i class="fas fa-graduation-cap w-5 text-gray-500 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white"></i>
+                            <span v-show="!isCollapsed" class="ms-3 transition-opacity duration-200 ease-in-out">Academy</span>
                         </a>
                     </li>
 
@@ -581,10 +431,8 @@ onMounted(async () => {
                         <button @click="authStore.logout()"
                             class="flex items-center w-full p-2 h-10 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group"
                             :class="isCollapsed ? 'justify-center' : ''">
-                            <i
-                                class="fas fa-arrow-right-from-bracket w-5 text-gray-500 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white"></i>
-                            <span v-show="!isCollapsed"
-                                class="flex-1 ms-3 whitespace-nowrap text-left transition-opacity duration-200 ease-in-out">Sair</span>
+                            <i class="fas fa-arrow-right-from-bracket w-5 text-gray-500 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white"></i>
+                            <span v-show="!isCollapsed" class="flex-1 ms-3 whitespace-nowrap text-left transition-opacity duration-200 ease-in-out">Sair</span>
                         </button>
                     </li>
                 </ul>

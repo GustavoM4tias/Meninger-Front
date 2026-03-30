@@ -113,20 +113,20 @@ const chipClass = {
                     <div class="flex flex-col">
                         <span class="text-[11px] text-gray-500">Filtro de busca</span>
                         <input v-model="search" placeholder="Buscar por nome..."
-                            class="h-10 w-56 border dark:border-gray-700 rounded-lg px-3 bg-gray-50 dark:bg-gray-900/60 focus:outline-none focus:ring-2 focus:ring-indigo-400/40" />
+                            class="h-10 w-56 border dark:border-gray-700 rounded-lg px-3 bg-gray-50 dark:bg-gray-800/60 focus:outline-none focus:ring-2 focus:ring-indigo-400/40" />
                     </div>
 
                     <div class="flex items-center gap-2">
                         <div class="flex flex-col">
                             <span class="text-[11px] text-gray-500">Mês inicial</span>
                             <input type="month" v-model="startMonth"
-                                class="h-10 border dark:border-gray-700 rounded-lg px-3 bg-gray-50 dark:bg-gray-900/60 focus:outline-none focus:ring-2 focus:ring-indigo-400/40" />
+                                class="h-10 border dark:border-gray-700 rounded-lg px-3 bg-gray-50 dark:bg-gray-800/60 focus:outline-none focus:ring-2 focus:ring-indigo-400/40" />
                         </div>
 
                         <div class="flex flex-col">
                             <span class="text-[11px] text-gray-500">Mês final</span>
                             <input type="month" v-model="endMonth"
-                                class="h-10 border dark:border-gray-700 rounded-lg px-3 bg-gray-50 dark:bg-gray-900/60 focus:outline-none focus:ring-2 focus:ring-indigo-400/40" />
+                                class="h-10 border dark:border-gray-700 rounded-lg px-3 bg-gray-50 dark:bg-gray-800/60 focus:outline-none focus:ring-2 focus:ring-indigo-400/40" />
                         </div>
                     </div>
 
@@ -145,7 +145,7 @@ const chipClass = {
         <!-- list -->
         <div class="grid sm:grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-4">
             <RouterLink v-for="p in filtered" :key="p.id" :to="`/comercial/projections/${p.id}`"
-                class="p-5 rounded-2xl border dark:border-gray-700 bg-white/70 hover:bg-white dark:bg-gray-900 shadow-lg hover:shadow-md transition-all duration-200 hover:-translate-y-1">
+                class="p-5 rounded-2xl bg-white/70 hover:bg-white dark:bg-gray-900 border-t hover:border-t-4 border-purple-600 shadow-lg hover:shadow-md transition-all duration-200 hover:-translate-y-1">
                 <div class="flex items-start justify-between gap-4">
                     <div class="min-w-0">
                         <div class="font-semibold truncate">{{ p.name }}</div>

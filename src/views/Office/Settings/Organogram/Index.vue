@@ -394,7 +394,7 @@ onBeforeUnmount(() => {
 }
 
 .company-card {
-    background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+    background: linear-gradient(135deg, #14296d 0%, #2756a3 100%);
     border-radius: 16px;
     box-shadow: 0 4px 20px rgba(59, 130, 246, 0.35);
     min-width: 180px;
