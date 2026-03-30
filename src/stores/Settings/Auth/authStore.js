@@ -9,6 +9,7 @@ import {
   requestPasswordReset,
   resetPassword,
 } from '@/utils/Auth/apiAuth';
+import { usePermissionStore } from '@/stores/Settings/Permissions/permissionStore';
 
 function safeJsonParse(v, fallback = null) {
   try {
@@ -134,6 +135,9 @@ export const useAuthStore = defineStore('user', {
       localStorage.removeItem('position');
       localStorage.removeItem('user');
       localStorage.removeItem('auth_provider');
+
+      // Limpa permissões ao sair
+      try { usePermissionStore().clearPermissions(); } catch { /* ignora */ }
     },
 
     isAuthenticated() {
@@ -185,6 +189,8 @@ export const useAuthStore = defineStore('user', {
     async fetchUserInfo() {
       try {
         await this.fetchMe();
+        // Carrega permissões logo após autenticar o usuário
+        try { await usePermissionStore().fetchMyPermissions(); } catch { /* não bloqueia o login */ }
       } catch (error) {
         console.error(error);
         this.clearUser();

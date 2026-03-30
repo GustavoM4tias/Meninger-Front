@@ -190,6 +190,12 @@ export default [
                         component: () => import('@/views/Office/Tools/PaymentoFlow/Index.vue'),
                         meta: { searchable: true, content: 'Lançamentos de pagamento Sienge.' },
                     },
+                    {
+                        path: 'bucket-upload',
+                        name: 'BucketUpload',
+                        component: () => import('@/views/Office/Tools/BucketUpload/Index.vue'),
+                        meta: { searchable: true, content: 'Envio de planilhas de Engenharia e Área Construída ao bucket GCS.' },
+                    },
                 ],
             },
 
@@ -217,6 +223,12 @@ export default [
                         name: 'Cargos',
                         component: () => import('@/views/Office/Settings/Management/Index.vue'),
                         meta: { requiresAuth: true, allowedPosition: '', allowedRole: 'admin', searchable: true, content: 'Departamentos, Categorias, Cargos e Cidades do sistema' },
+                    },
+                    {
+                        path: 'permissions',
+                        name: 'Alçadas',
+                        component: () => import('@/views/Office/Settings/Permissions/Index.vue'),
+                        meta: { requiresAuth: true, allowedRole: 'admin', searchable: true, content: 'Gestão de alçadas: controle de acesso por usuário e departamento' },
                     },
                 ],
             },

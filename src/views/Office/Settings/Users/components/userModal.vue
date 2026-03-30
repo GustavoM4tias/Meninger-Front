@@ -136,14 +136,14 @@ const saveUser = async () => {
       @click.stop>
 
       <!-- Banner + avatar -->
-      <div class="relative h-20 bg-gradient-to-r from-blue-700 to-blue-500">
+      <div class="flex justify-end  h-12 bg-gradient-to-r from-blue-700 to-blue-500">
         <button type="button" @click="$emit('close')"
-          class="absolute top-3 right-3 w-7 h-7 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white transition">
+          class="my-auto me-2 w-7 h-7 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white transition">
           <i class="fas fa-times text-xs"></i>
         </button>
       </div>
 
-      <div class="px-6 pb-0 -mt-8 flex items-end gap-4">
+      <div class="px-6 pb-0 my-2 flex items-end gap-4">
         <img v-if="isEdit" :src="avatarUrl" :alt="editableUser.username"
           class="w-16 h-16 rounded-2xl ring-4 ring-white dark:ring-gray-900 shadow-md shrink-0" />
         <div v-else

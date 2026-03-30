@@ -43,7 +43,7 @@
             </div>
 
             <!-- Empreendimentos com seu MultiSelector -->
-            <div class="flex-1 max-w-full">
+            <div class="flex-1 max-w-96">
                 <label class="block text-xs font-medium mb-1 text-gray-700 dark:text-gray-300">
                     <i class="fas fa-city mr-1"></i>Empreendimento(s)
                 </label>

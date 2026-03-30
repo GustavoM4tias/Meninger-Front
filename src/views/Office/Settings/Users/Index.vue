@@ -179,6 +179,15 @@
                 <i class="fas fa-sitemap text-xs" :class="togglingOrgId === user.id ? 'animate-pulse' : ''"></i>
               </button>
 
+              <!-- Botão Alçadas (admin only, não aparece para outros admins) -->
+              <button
+                v-if="isAdmin && user.role !== 'admin'"
+                @click="goToPermissions(user)"
+                v-tippy="'Configurar alçadas'"
+                class="p-2 rounded-lg text-gray-400 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20 opacity-0 group-hover:opacity-100 transition-all duration-150">
+                <i class="fas fa-shield-halved text-xs"></i>
+              </button>
+
               <button @click="startEditing(user)"
                 class="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 opacity-0 group-hover:opacity-100 transition-all duration-150">
                 <i class="fas fa-pen text-xs"></i>
@@ -196,11 +205,14 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 import { useCarregamentoStore } from '@/stores/Config/carregamento';
 import { useToast } from 'vue-toastification';
 import userModal from '@/views/Office/Settings/Users/components/userModal.vue';
 import Favorite from '@/components/config/Favorite.vue';
+
+const router = useRouter();
 
 const userStore = useAuthStore();
 const carregamento = useCarregamentoStore();
@@ -249,6 +261,10 @@ const startEditing = (user) => { editableUser.value = { ...user }; showUserModal
 const startCreating = () => { editableUser.value = null; showUserModal.value = true; };
 const closeModal = () => { editableUser.value = null; showUserModal.value = false; };
 const clearFilters = () => { searchQuery.value = ''; filterCity.value = ''; filterPosition.value = ''; filterStatus.value = ''; };
+
+const goToPermissions = (user) => {
+  router.push({ path: '/settings/permissions', query: { userId: user.id } });
+};
 
 const toggleOrganogram = async (user) => {
   if (togglingOrgId.value) return;

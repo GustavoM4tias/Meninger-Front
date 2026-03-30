@@ -6,6 +6,7 @@ import { useEventStore } from '@/stores/Marketing/Event/eventStore';
 import EventCard from '@/views/Office/Marketing/Events/components/EventCard.vue';
 import EventModal from '@/views/Office/Marketing/Events/components/EventModal.vue';
 import AddEventModal from '@/views/Office/Marketing/Events/components/AddEventModal.vue';
+import ReportModal from '@/views/Office/Marketing/Events/components/ReportModal.vue';
 import Favorite from "@/components/config/Favorite.vue";
 
 const route = useRoute();
@@ -15,6 +16,7 @@ const search = ref('');
 const selectedEvent = ref(null);
 const addEvent = ref(false);
 const eventStore = useEventStore();
+const showReport = ref(false);
 
 const searchDebounce = ref(null);
 
@@ -174,6 +176,13 @@ onMounted(async () => {
                         <i :class="section.icon"></i>
                         {{ section.label }}
                     </button>
+
+                    <!-- Gerar Relatório -->
+                    <button @click="showReport = true" :disabled="!eventsFiltereds.length"
+                        class="flex items-center gap-3 px-6 py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 shadow-md hover:shadow-lg border border-gray-200 dark:border-gray-700 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100">
+                        <i class="fas fa-file-image"></i>
+                        Gerar Relatório
+                    </button>
                 </div>
             </div>
 
@@ -257,6 +266,7 @@ onMounted(async () => {
         <!-- Modals -->
         <EventModal v-if="selectedEvent" :event="selectedEvent" @close="closeEventModal" />
         <AddEventModal v-if="addEvent" @close="closeAddEventModal" />
+        <ReportModal v-if="showReport" :events="eventsFiltereds" @close="showReport = false" />
 
         <!-- Error Message -->
         <div v-if="eventStore.errorMessage"
