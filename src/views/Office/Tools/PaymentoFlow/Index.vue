@@ -9,6 +9,7 @@ import CreateLaunchModal from './components/CreateLaunchModal.vue';
 import LaunchPipelineCard from './components/LaunchPipelineCard.vue';
 import SiengeCredentialsModal from './components/SiengeCredentialsModal.vue';
 import RidRequestModal from './components/RidRequestModal.vue';
+import UpdateBoletoModal from './components/UpdateBoletoModal.vue';
 
 const store = usePaymentFlowStore();
 const authStore = useAuthStore();
@@ -95,7 +96,7 @@ const ACTIONS = {
     contrato:   [CANCEL],
     aditivo:    [CANCEL],
     medicao:    [CANCEL],
-    titulo:     [CANCEL, { action: 'mark-paid', label: 'Marcar Pago', icon: 'fa-money-bill-wave', color: 'emerald' }],
+    titulo:     [CANCEL],
     erro:       [CANCEL],
 };
 
@@ -163,6 +164,28 @@ const totalActiveAmount = computed(() =>
         (acc, k) => acc + (store.summary[k]?.totalAmount || 0), 0
     )
 );
+
+async function handleContinueExistingContract(launchId) {
+    try {
+        await store.continueExistingContract(launchId);
+        await store.fetchLaunches();
+    } catch (error) {
+        console.error(error);
+    }
+}
+
+// ── UpdateBoleto modal ─────────────────────────────────────────────────────────
+const showUpdateBoletoModal = ref(false);
+const updateBoletoLaunch = ref(null);
+
+function handleUpdateBoleto(launch) {
+    updateBoletoLaunch.value = launch;
+    showUpdateBoletoModal.value = true;
+}
+
+async function onBoletoUpdated() {
+    await store.fetchLaunches(true);
+}
 </script>
 
 <template>
@@ -470,10 +493,13 @@ const totalActiveAmount = computed(() =>
                                         <LaunchPipelineCard :launch="launch"
                                             :polling="!!store.pipelinePolling[launch.id]"
                                             :running="store.pipelineRunningIds.has(launch.id)"
-                                            @run-pipeline="store.runPipeline" @poll="store.startPolling"
+                                            @run-pipeline="store.runPipeline" @poll="store.pollNow"
                                             @retry-contract="store.runPipeline"
                                             @dismiss-error="store.fetchLaunches(true)"
-                                            @open-rid-modal="l => store.openRidModal(l.id)" />
+                                            @open-rid-modal="l => store.openRidModal(l.id)"
+                                            @register-boleto="id => store.registerBoleto(id)"
+                                            @update-boleto="handleUpdateBoleto"
+                                            @continue-existing-contract="handleContinueExistingContract" />
 
                                         <!-- Ações de status -->
                                         <div class="space-y-3">
@@ -585,6 +611,13 @@ const totalActiveAmount = computed(() =>
             v-if="store.showRidModal && store.ridModalLaunchId"
             :launch="store.launches.find(l => l.id === store.ridModalLaunchId) || store.currentLaunch || {}"
             @close="store.closeRidModal()" />
+
+        <!-- Modal atualização de boleto -->
+        <UpdateBoletoModal
+            v-if="showUpdateBoletoModal && updateBoletoLaunch"
+            :launch="updateBoletoLaunch"
+            @close="showUpdateBoletoModal = false; updateBoletoLaunch = null"
+            @updated="onBoletoUpdated" />
 
         <!-- Modal de conflito de duplicidade -->
         <div v-if="store.conflictLaunch"
