@@ -4,7 +4,7 @@
  * Modal com formulário completo da RID (Planilha de Qualificação de Fornecedores).
  * O usuário preenche os dados → sistema gera o DOCX → envia email automaticamente.
  */
-import { ref, computed, reactive } from 'vue';
+import { ref, computed, reactive, nextTick } from 'vue';
 import { usePaymentFlowStore } from '@/stores/Tools/PaymentFlow/paymentFlowStore';
 
 const props = defineProps({
@@ -162,6 +162,55 @@ function handleClose() {
     store.closeRidModal();
 }
 
+// ── Painel de perguntas ────────────────────────────────────────────────────────
+const showQuestions = ref(false);
+const copySuccess = ref(false);
+
+const QUESTIONS_TEXT = `PLANILHA DE QUALIFICAÇÃO DE FORNECEDORES — RID
+
+1. IDENTIFICAÇÃO DO FORNECEDOR
+• Razão Social
+• CNPJ
+• Inscrição Estadual
+• CEP / Endereço completo (Rua, Número, Bairro, Cidade, Estado)
+• Telefone
+• Nome do Contato
+• Serviço ou Material que fornece
+• E-mail
+• Classificação Tributária (MEI / Simples Nacional / Lucro Presumido / Lucro Real / Isenta / Imune)
+
+2. QUALIFICAÇÃO PARA FORNECIMENTO
+
+2.1 Possui sistema de qualidade (ISO 9001 ou PBQP-H)?
+     — Se sim, qual?
+
+2.2 A empresa possui os seguintes documentos? (SIM / NÃO / Não se aplica)
+     • Alvará de Funcionamento (Prefeitura Municipal)
+     • Auto de Vistoria do Corpo de Bombeiros (AVCB)
+     • Licença de Operação (CETESB, IBAMA, etc.)
+     • Apresenta FISPQ ou similar dos produtos?
+     • É fornecedor de controle tecnológico?
+     • Tipo de acreditação: INMETRO / ISO 9001 / Não certificada
+
+2.3 Informe ao menos 1 empresa para a qual fornece:
+     (Razão Social, Telefone, Contato)
+
+2.4 Verificação do serviço aplicado em outros locais (SIM / NÃO / Não se aplica)
+
+2.5 Visita às instalações do fornecedor (SIM / NÃO / Não se aplica)
+
+2.6 Análise do curriculum do fornecedor (SIM / NÃO / Não se aplica)
+
+2.7 Atende aos requisitos de fornecimento da Empresa? (SIM / NÃO)`;
+
+async function copyQuestions() {
+    try {
+        await navigator.clipboard.writeText(QUESTIONS_TEXT);
+        copySuccess.value = true;
+        setTimeout(() => { copySuccess.value = false; }, 2500);
+    } catch (_) { /* silencioso */ }
+}
+
 // ── UI Helpers ────────────────────────────────────────────────────────────────
 const SIM_NAO = [
     { value: 'sim', label: 'SIM' },
@@ -229,6 +278,38 @@ const CLASSIFICACAO_TRIBUTARIA = [
                                 }}</div>
                             <div class="text-xs font-mono text-gray-500">{{ launch.providerCnpj || '—' }}</div>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Painel "Ver perguntas" — copiar para WhatsApp/email -->
+                <div class="px-6 pt-4">
+                    <button
+                        type="button"
+                        class="flex items-center gap-2 text-xs font-semibold text-amber-700 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300 transition"
+                        @click="showQuestions = !showQuestions">
+                        <i class="fas fa-list-check text-sm"></i>
+                        Ver perguntas para o fornecedor
+                        <i :class="showQuestions ? 'fas fa-chevron-up' : 'fas fa-chevron-down'" class="text-[10px] ml-0.5"></i>
+                    </button>
+
+                    <div v-if="showQuestions"
+                        class="mt-2 rounded-xl border border-amber-200 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20 overflow-hidden">
+                        <div class="flex items-center justify-between px-4 py-2.5 border-b border-amber-200 dark:border-amber-700">
+                            <span class="text-xs font-semibold text-amber-700 dark:text-amber-300">
+                                Campos que precisam ser preenchidos pelo fornecedor
+                            </span>
+                            <button
+                                type="button"
+                                class="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium transition"
+                                :class="copySuccess
+                                    ? 'bg-emerald-500 text-white'
+                                    : 'bg-amber-500 hover:bg-amber-600 text-white'"
+                                @click="copyQuestions">
+                                <i :class="copySuccess ? 'fas fa-check' : 'fas fa-copy'" class="text-[11px]"></i>
+                                {{ copySuccess ? 'Copiado!' : 'Copiar perguntas' }}
+                            </button>
+                        </div>
+                        <pre class="px-4 py-3 text-[11px] text-amber-900 dark:text-amber-100 whitespace-pre-wrap font-mono leading-relaxed overflow-auto max-h-64">{{ QUESTIONS_TEXT }}</pre>
                     </div>
                 </div>
 

@@ -12,7 +12,7 @@ import { requestWithAuth } from '@/utils/Auth/requestWithAuth';
 // Mantidos por compatibilidade — agora carregados dinamicamente da API via fetchLaunchTypes()
 export const LAUNCH_TYPE_DEFAULTS = {};
 export const LAUNCH_TYPES = [];
- 
+
 export const PIPELINE_STAGE_LABELS = {
     idle: { label: 'Aguardando', icon: 'fa-clock', color: 'gray' },
     searching_creditor: { label: 'Buscando credor...', icon: 'fa-spinner fa-spin', color: 'blue' },
@@ -32,6 +32,11 @@ export const PIPELINE_STAGE_LABELS = {
     measurement_created: { label: 'Medição criada', icon: 'fa-ruler-combined', color: 'green' },
     measurement_error: { label: 'Erro na medição', icon: 'fa-triangle-exclamation', color: 'red' },
     awaiting_measurement_authorization: { label: 'Aguardando autorização da medição', icon: 'fa-lock', color: 'orange' },
+    creating_titulo: { label: 'Criando título...', icon: 'fa-spinner fa-spin', color: 'blue' },
+    titulo_created: { label: 'Título criado', icon: 'fa-file-invoice-dollar', color: 'emerald' },
+    titulo_error: { label: 'Erro no título', icon: 'fa-triangle-exclamation', color: 'red' },
+    awaiting_titulo_authorization: { label: 'Aguardando pagamento do título', icon: 'fa-clock', color: 'orange' },
+    titulo_pago: { label: 'Título pago', icon: 'fa-circle-check', color: 'emerald' },
     // legado
     validating_items: { label: 'Validando itens...', icon: 'fa-spinner fa-spin', color: 'blue' },
     items_ok: { label: 'Saldo disponível', icon: 'fa-circle-check', color: 'green' },
@@ -43,7 +48,7 @@ export const PIPELINE_STAGE_LABELS = {
 const LIVE_REFRESH_STAGES = new Set([
     'searching_creditor', 'searching_contract',
     'creating_contract', 'creating_additive',
-    'creating_measurement',
+    'creating_measurement', 'creating_titulo',
     'validating_items',
 ]);
 
@@ -477,17 +482,46 @@ export const usePaymentFlowStore = defineStore('paymentFlow', () => {
         }
     }
 
+    // Registra boleto de um título já existente (criado manualmente)
+    async function registerBoleto(id, tituloNumber = null) {
+        const numId = Number(id);
+        try {
+            const body = tituloNumber ? { tituloNumber: Number(tituloNumber) } : {};
+            await requestWithAuth(`${API_URL}/sienge/payment-flow/${numId}/pipeline/register-boleto`, {
+                method: 'POST',
+                body: JSON.stringify(body),
+            });
+            await _refreshLaunchInList(numId);
+        } catch (err) {
+            console.error('[registerBoleto]', err);
+        }
+    }
+
+    // Checa o Sienge AGORA — roteia para o poll correto baseado no stage atual
+    async function pollNow(id) {
+        const numId = Number(id);
+        try {
+            await requestWithAuth(`${API_URL}/sienge/payment-flow/${numId}/pipeline/poll-now`);
+            await _refreshLaunchInList(numId);
+        } catch (_) { /* silencioso */ }
+        // Garante que o intervalo de contrato também está rodando (para stages de contrato/aditivo)
+        startPolling(id);
+    }
+
+    // Atualiza boleto de um título já existente (novo arquivo + novo barcode)
+    async function updateBoleto(id, { boletoUrl, boletoPath, boletoFilename, boletoBarcode, boletoDueDate, boletoAmount }) {
+        const numId = Number(id);
+        const data = await requestWithAuth(`${API_URL}/sienge/payment-flow/${numId}/pipeline/update-boleto`, {
+            method: 'POST',
+            body: JSON.stringify({ boletoUrl, boletoPath, boletoFilename, boletoBarcode, boletoDueDate, boletoAmount }),
+        });
+        await _refreshLaunchInList(numId);
+        return data;
+    }
+
     async function startPolling(id) {
         const numId = Number(id);
-        if (pipelinePolling.value[numId]) return; // já rodando
-
-        // Executa imediatamente ao clicar em ⟳ (não espera 30s)
-        try {
-            await requestWithAuth(`${API_URL}/sienge/payment-flow/${numId}/pipeline/poll-contract`);
-            await _refreshLaunchInList(numId);
-            const launch = launches.value.find(l => l.id === numId);
-            if (launch?.siengeContractAuthorized) return; // já autorizado, não precisa de intervalo
-        } catch (_) { /* silencioso */ }
+        if (pipelinePolling.value[numId]) return; // intervalo já rodando
 
         const intervalId = setInterval(async () => {
             try {
@@ -527,6 +561,14 @@ export const usePaymentFlowStore = defineStore('paymentFlow', () => {
             }
             if (currentLaunch.value?.id === numId) currentLaunch.value = fresh;
         } catch (_) { /* silencioso */ }
+    }
+
+    // Atualiza boleto de um título já existente (novo arquivo + novo barcode)
+    async function continueExistingContract(launchId) {
+        const data = await requestWithAuth(`${API_URL}/sienge/payment-flow/${launchId}/continue-existing-contract`, {
+            method: 'POST',
+        });
+        return data;
     }
 
     // ── Filtros / Paginação ───────────────────────────────────────────────────
@@ -720,7 +762,7 @@ export const usePaymentFlowStore = defineStore('paymentFlow', () => {
         cancelLaunch, markPaid, advanceStage,
 
         // Actions: pipeline
-        runPipeline, startPolling, stopPolling, stopAllPolling,
+        runPipeline, pollNow, startPolling, stopPolling, stopAllPolling, registerBoleto, updateBoleto,
 
         // Actions: live refresh
         startLiveRefresh, stopLiveRefresh,
@@ -736,5 +778,7 @@ export const usePaymentFlowStore = defineStore('paymentFlow', () => {
 
         // Actions: modal
         openCreateModal, closeCreateModal,
+
+        continueExistingContract,
     };
 });
