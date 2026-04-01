@@ -22,6 +22,7 @@ const emit = defineEmits([
     'register-boleto',
     'update-boleto',
     'continue-existing-contract',
+    'abort',
 ]);
 
 const ridEmailSent = computed(() => !!props.launch.ridEmailSent);
@@ -239,6 +240,13 @@ function authLevelLabel(level) {
                     :disabled="isRunning || running" @click="!running && !isRunning && emit('run-pipeline', launch.id)">
                     <i :class="running ? 'fas fa-spinner fa-spin text-xs' : 'fas fa-play text-xs'"></i>
                     {{ running ? 'Processando...' : 'Processar' }}
+                </button>
+                <!-- Abortar: aparece enquanto o pipeline está rodando -->
+                <button v-if="running"
+                    class="text-xs px-2.5 py-1 rounded-lg bg-red-600 hover:bg-red-700 text-white transition flex items-center gap-1"
+                    @click="emit('abort', launch.id)">
+                    <i class="fas fa-stop text-xs"></i>
+                    Abortar
                 </button>
                 <!-- Forçar reprocessar: quando travado em estado creating_* -->
                 <!-- <button v-if="isRunning && !running"
