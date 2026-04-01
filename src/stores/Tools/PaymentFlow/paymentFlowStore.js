@@ -99,16 +99,24 @@ export const usePaymentFlowStore = defineStore('paymentFlow', () => {
     const currentLaunch = ref(null);
     const summary = ref({});
     const pagination = ref({ total: 0, page: 1, limit: 20, pages: 1 });
-    // ── Período de lançamento (padrão: mês corrente) ──────────────────────────
-    function _monthStart() {
-        const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
+    // ── Período padrão: início do mês anterior → fim do mês atual ────────────
+    function _prevMonthStart() {
+        const d = new Date();
+        const prev = new Date(d.getFullYear(), d.getMonth() - 1, 1);
+        return `${prev.getFullYear()}-${String(prev.getMonth() + 1).padStart(2, '0')}-01`;
     }
-    function _monthEnd() {
+    function _currentMonthEnd() {
         const d = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0);
         return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     }
 
-    const filters = ref({ status: '', launchType: '', search: '', dateFrom: _monthStart(), dateTo: _monthEnd() });
+    const filters = ref({
+        status: '',
+        launchType: '',
+        search: '',
+        dateFrom: _prevMonthStart(),
+        dateTo:   _currentMonthEnd(),
+    });
 
     // ── Modal / upload ────────────────────────────────────────────────────────
     const showCreateModal = ref(false);
@@ -149,8 +157,9 @@ export const usePaymentFlowStore = defineStore('paymentFlow', () => {
     const siengeCredentialsOk = ref(null); // null = não verificado, true/false
 
     // ── Filtros de visibilidade ────────────────────────────────────────────────
-    const showCancelled = ref(false);   // por padrão, cancelados ficam ocultos
-    const showErrors = ref(true);       // erros visíveis por padrão
+    const showCancelled = ref(false);    // por padrão, cancelados ficam ocultos
+    const showErrors = ref(true);        // erros visíveis por padrão
+    const showTituloPago = ref(false);   // por padrão, títulos pagos ficam ocultos
 
     // ── Conflito de duplicidade ────────────────────────────────────────────────
     const conflictLaunch = ref(null);   // { id, status, launchType, ..., pendingPayload }
@@ -164,6 +173,16 @@ export const usePaymentFlowStore = defineStore('paymentFlow', () => {
 
     // ── Computed ──────────────────────────────────────────────────────────────
     const hasLaunches = computed(() => launches.value.length > 0);
+
+    /** true quando algum filtro difere dos padrões (usado p/ exibir botão "Limpar") */
+    const hasNonDefaultFilters = computed(() => {
+        const f = filters.value;
+        return !!(
+            f.status || f.launchType || f.search ||
+            f.dateFrom !== _prevMonthStart() ||
+            f.dateTo   !== _currentMonthEnd()
+        );
+    });
     const hasActivePipelines = computed(() =>
         launches.value.some(l => LIVE_REFRESH_STAGES.has(l.pipelineStage))
     );
@@ -182,10 +201,11 @@ export const usePaymentFlowStore = defineStore('paymentFlow', () => {
         if (f.status) {
             p.set('status', f.status);
         } else {
-            // Oculta cancelados e/ou erros por padrão conforme toggles
+            // Oculta cancelados, erros e/ou títulos pagos conforme toggles
             const excluded = [];
             if (!showCancelled.value) excluded.push('cancelado');
             if (!showErrors.value) excluded.push('erro');
+            if (!showTituloPago.value) excluded.push('titulo_pago');
             if (excluded.length) p.set('excludeStatus', excluded.join(','));
         }
         if (f.launchType) p.set('launchType', f.launchType);
@@ -194,6 +214,15 @@ export const usePaymentFlowStore = defineStore('paymentFlow', () => {
         if (f.dateTo) p.set('dateTo', f.dateTo);
         p.set('page', String(pagination.value.page));
         p.set('limit', String(pagination.value.limit));
+        return p.toString();
+    }
+
+    // Constrói query só com os filtros (sem paginação) para o summary reativo
+    function buildSummaryQuery() {
+        const p = new URLSearchParams();
+        const f = filters.value;
+        if (f.dateFrom) p.set('dateFrom', f.dateFrom);
+        if (f.dateTo) p.set('dateTo', f.dateTo);
         return p.toString();
     }
 
@@ -234,6 +263,15 @@ export const usePaymentFlowStore = defineStore('paymentFlow', () => {
     function toggleShowErrors() {
         showErrors.value = !showErrors.value;
         if (!showErrors.value && filters.value.status === 'erro') {
+            filters.value.status = '';
+        }
+        pagination.value.page = 1;
+        fetchLaunches();
+    }
+
+    function toggleShowTituloPago() {
+        showTituloPago.value = !showTituloPago.value;
+        if (!showTituloPago.value && filters.value.status === 'titulo_pago') {
             filters.value.status = '';
         }
         pagination.value.page = 1;
@@ -354,7 +392,8 @@ export const usePaymentFlowStore = defineStore('paymentFlow', () => {
 
     async function fetchSummary() {
         try {
-            summary.value = await requestWithAuth(`${API_URL}/sienge/payment-flow/summary`);
+            const q = buildSummaryQuery();
+            summary.value = await requestWithAuth(`${API_URL}/sienge/payment-flow/summary${q ? '?' + q : ''}`);
         } catch (_) { /* silencioso */ }
     }
 
@@ -597,11 +636,19 @@ export const usePaymentFlowStore = defineStore('paymentFlow', () => {
         filters.value = { ...filters.value, ...newF };
         pagination.value.page = 1;
         fetchLaunches();
+        fetchSummary();
     }
     function resetFilters() {
-        filters.value = { status: '', launchType: '', search: '', dateFrom: _monthStart(), dateTo: _monthEnd() };
+        filters.value = {
+            status: '',
+            launchType: '',
+            search: '',
+            dateFrom: _prevMonthStart(),
+            dateTo:   _currentMonthEnd(),
+        };
         pagination.value.page = 1;
         fetchLaunches();
+        fetchSummary();
     }
 
     function getTypeDefaults(name) {
@@ -749,7 +796,7 @@ export const usePaymentFlowStore = defineStore('paymentFlow', () => {
     return {
         // Estado: lista
         launches, currentLaunch, summary, pagination, filters,
-        error, success, hasLaunches, hasActivePipelines,
+        error, success, hasLaunches, hasActivePipelines, hasNonDefaultFilters,
 
         // Estado: modal / upload
         showCreateModal, isProcessing,
@@ -767,7 +814,7 @@ export const usePaymentFlowStore = defineStore('paymentFlow', () => {
         launchTypes, siengeCredentialsOk,
 
         // Estado: visibilidade cancelados/erros + conflito de duplicidade + live refresh
-        showCancelled, showErrors, conflictLaunch, liveRefreshId,
+        showCancelled, showErrors, showTituloPago, conflictLaunch, liveRefreshId,
 
         // Actions: upload
         handleNfFile, handleBoletoFile, handleExtraFile, removeExtraFile,
@@ -788,7 +835,7 @@ export const usePaymentFlowStore = defineStore('paymentFlow', () => {
         fetchLaunchTypes, checkSiengeCredentials, getTypeDefaults,
 
         // Actions: filtros / paginação
-        setPage, applyFilters, resetFilters, toggleShowCancelled, toggleShowErrors,
+        setPage, applyFilters, resetFilters, toggleShowCancelled, toggleShowErrors, toggleShowTituloPago,
 
         // Actions: RID
         openRidModal, closeRidModal, downloadRidTemplate, sendRidEmail, sendRidForm,

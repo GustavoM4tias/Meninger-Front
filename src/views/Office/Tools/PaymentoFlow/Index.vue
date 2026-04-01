@@ -41,11 +41,9 @@ const searchInput = ref('');
 const filterStatus = ref('');
 const filterType = ref('');
 
-let searchDebounce = null;
-watch(searchInput, val => {
-    clearTimeout(searchDebounce);
-    searchDebounce = setTimeout(() => store.applyFilters({ search: val }), 400);
-});
+function applySearch() {
+    store.applyFilters({ search: searchInput.value });
+}
 
 function applyStatusFilter(s) {
     filterStatus.value = filterStatus.value === s ? '' : s;
@@ -150,15 +148,14 @@ function formatDate(val) {
 
 // ── Sidebar summary ───────────────────────────────────────────────────────────
 const summaryItems = [
-    { key: 'fornecedor',  label: 'Fornecedor',  icon: 'fa-user',             dot: 'bg-blue-400'    },
-    { key: 'contrato',    label: 'Contrato',    icon: 'fa-file-contract',    dot: 'bg-indigo-400'  },
-    { key: 'aditivo',     label: 'Aditivo',     icon: 'fa-file-circle-plus', dot: 'bg-purple-400'  },
-    { key: 'medicao',     label: 'Medição',     icon: 'fa-ruler',            dot: 'bg-cyan-400'    },
-    { key: 'titulo',      label: 'Título',      icon: 'fa-receipt',          dot: 'bg-yellow-400'  },
-    { key: 'titulo_pago', label: 'Título Pago', icon: 'fa-money-bill-wave',  dot: 'bg-emerald-400' },
+    { key: 'fornecedor', label: 'Fornecedor',  dot: 'bg-blue-400'    },
+    { key: 'contrato',   label: 'Contrato',    dot: 'bg-indigo-400'  },
+    { key: 'aditivo',    label: 'Aditivo',     dot: 'bg-purple-400'  },
+    { key: 'medicao',    label: 'Medição',     dot: 'bg-cyan-400'    },
+    { key: 'titulo',     label: 'Título',      dot: 'bg-yellow-400'  },
 ];
 
-// Itens especiais ficam nos toggles (cancelado/erro)
+// Itens especiais ficam nos toggles (cancelado/erro/titulo_pago)
 const totalActiveAmount = computed(() =>
     ['fornecedor', 'contrato', 'aditivo', 'medicao', 'titulo'].reduce(
         (acc, k) => acc + (store.summary[k]?.totalAmount || 0), 0
@@ -239,9 +236,35 @@ async function onBoletoUpdated() {
                             </div>
                         </div>
 
-                        <!-- Cancelados e Erros (toggles de visibilidade) -->
+                        <!-- Especiais: Título Pago, Cancelados, Erros -->
                         <div class="border-t border-gray-200 dark:border-gray-700 pt-3 space-y-2">
                             <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Especiais</div>
+
+                            <!-- Título Pago -->
+                            <div class="flex items-center justify-between p-3 rounded-lg cursor-pointer transition"
+                                :class="filterStatus === 'titulo_pago'
+                                    ? 'bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-700'
+                                    : store.showTituloPago
+                                        ? 'bg-emerald-50/50 dark:bg-emerald-900/10 hover:bg-emerald-50 dark:hover:bg-emerald-900/20'
+                                        : 'hover:bg-gray-50 dark:hover:bg-gray-800 opacity-60'"
+                                @click="applyStatusFilter('titulo_pago'); if(!store.showTituloPago) store.toggleShowTituloPago()">
+                                <div class="flex items-center gap-2">
+                                    <span class="inline-block w-2 h-2 rounded-full bg-emerald-400 flex-shrink-0"></span>
+                                    <span class="text-sm text-gray-600 dark:text-gray-400">Título Pago</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span v-if="store.showTituloPago" class="font-bold text-sm text-gray-900 dark:text-white">
+                                        {{ store.summary['titulo_pago']?.count || 0 }}
+                                    </span>
+                                    <button class="text-xs px-1.5 py-0.5 rounded border transition"
+                                        :class="store.showTituloPago
+                                            ? 'border-emerald-400 text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/30'
+                                            : 'border-gray-300 dark:border-gray-600 text-gray-400'"
+                                        @click.stop="store.toggleShowTituloPago(); if(store.showTituloPago && filterStatus === 'titulo_pago') filterStatus = ''">
+                                        {{ store.showTituloPago ? 'Ocultar' : 'Exibir' }}
+                                    </button>
+                                </div>
+                            </div>
 
                             <!-- Cancelados -->
                             <div class="flex items-center justify-between p-3 rounded-lg cursor-pointer transition"
@@ -351,7 +374,8 @@ async function onBoletoUpdated() {
                             <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
                             <input v-model="searchInput" type="text"
                                 :placeholder="isAdmin ? 'Buscar por fornecedor, empresa, documento, criador…' : 'Buscar por fornecedor, empresa, documento…'"
-                                class="w-full pl-9 pr-4 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white outline-none focus:border-blue-500 transition" />
+                                class="w-full pl-9 pr-4 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white outline-none focus:border-blue-500 transition"
+                                @keydown.enter="applySearch" />
                         </div>
 
                         <!-- Filtro de período -->
@@ -361,23 +385,29 @@ async function onBoletoUpdated() {
                                 type="date"
                                 :value="store.filters.dateFrom"
                                 @change="store.applyFilters({ dateFrom: $event.target.value })"
-                                class="text-xs rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white px-2 py-1.5 outline-none focus:border-blue-500 transition" />
+                                class="text-xs rounded-lg border py-2.5 border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white px-2 outline-none focus:border-blue-500 transition" />
                             <span class="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">Até</span>
                             <input
                                 type="date"
                                 :value="store.filters.dateTo"
                                 @change="store.applyFilters({ dateTo: $event.target.value })"
-                                class="text-xs rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white px-2 py-1.5 outline-none focus:border-blue-500 transition" />
+                                class="text-xs rounded-lg border py-2.5 border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white px-2 outline-none focus:border-blue-500 transition" />
                         </div>
+
+                        <!-- Botão Pesquisar -->
+                        <button
+                            class="flex items-center gap-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition"
+                            @click="applySearch">
+                            <i class="fas fa-search text-xs"></i> Pesquisar
+                        </button>
 
                         <!-- Indicador de live refresh -->
                         <div v-if="store.liveRefreshId || store.hasActivePipelines"
                             class="flex items-center gap-1.5 text-xs text-blue-500 dark:text-blue-400">
                             <i class="fas fa-sync fa-spin text-xs"></i>
-                            <!-- Atualizando... -->
                         </div>
 
-                        <button v-if="filterStatus || filterType || searchInput"
+                        <button v-if="filterStatus || filterType || searchInput || store.hasNonDefaultFilters"
                             class="text-xs text-gray-400 hover:text-red-500 flex items-center gap-1 transition"
                             @click="clearAllFilters">
                             <i class="fas fa-xmark"></i> Limpar
