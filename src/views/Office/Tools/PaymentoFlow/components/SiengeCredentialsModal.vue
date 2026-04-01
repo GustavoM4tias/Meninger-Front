@@ -57,10 +57,25 @@ async function handleSave() {
             </div>
 
             <div class="px-6 py-5 space-y-4">
-                <!-- LGPD -->
+
+                <!-- Aviso de autonomia / consentimento -->
+                <div class="rounded-xl border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20 p-3 space-y-2">
+                    <p class="text-xs font-semibold text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
+                        <i class="fas fa-triangle-exclamation"></i>
+                        Leia antes de continuar
+                    </p>
+                    <p class="text-xs text-amber-700 dark:text-amber-400 leading-relaxed">
+                        Ao informar suas credenciais, você autoriza o sistema a acessar o Sienge utilizando sua conta para realizar automaticamente ações como <strong>criar contratos, aditivos, medições e títulos</strong>, além de <strong>ler e editar dados</strong> em seu nome.
+                    </p>
+                    <p class="text-xs text-amber-700 dark:text-amber-400 leading-relaxed">
+                        Em determinados processos, o sistema pode precisar <strong>iniciar uma sessão ativa</strong> com seu usuário, o que pode resultar no encerramento de sessões abertas no navegador. Isso é esperado e necessário para a automação funcionar corretamente.
+                    </p>
+                </div>
+
+                <!-- Segurança das credenciais -->
                 <div class="p-3 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 text-xs text-blue-700 dark:text-blue-300">
                     <i class="fas fa-shield-halved mr-1.5"></i>
-                    <strong>Seus dados estão seguros.</strong> As credenciais são criptografadas com AES-256 e armazenadas exclusivamente na sua conta. Nenhum outro usuário tem acesso a elas. Elas serão usadas apenas para automatizar processos no Sienge em seu nome.
+                    <strong>Suas credenciais estão protegidas.</strong> Os dados são criptografados com AES-256 e armazenados exclusivamente na sua conta. Nenhum outro usuário tem acesso a eles.
                 </div>
 
                 <!-- Email -->
