@@ -174,6 +174,14 @@ async function handleContinueExistingContract(launchId) {
     }
 }
 
+async function handleAbort(launchId) {
+    try {
+        await store.abortPipeline(launchId);
+    } catch (error) {
+        console.error(error);
+    }
+}
+
 // ── UpdateBoleto modal ─────────────────────────────────────────────────────────
 const showUpdateBoletoModal = ref(false);
 const updateBoletoLaunch = ref(null);
@@ -346,6 +354,22 @@ async function onBoletoUpdated() {
                                 class="w-full pl-9 pr-4 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white outline-none focus:border-blue-500 transition" />
                         </div>
 
+                        <!-- Filtro de período -->
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">De</span>
+                            <input
+                                type="date"
+                                :value="store.filters.dateFrom"
+                                @change="store.applyFilters({ dateFrom: $event.target.value })"
+                                class="text-xs rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white px-2 py-1.5 outline-none focus:border-blue-500 transition" />
+                            <span class="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">Até</span>
+                            <input
+                                type="date"
+                                :value="store.filters.dateTo"
+                                @change="store.applyFilters({ dateTo: $event.target.value })"
+                                class="text-xs rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white px-2 py-1.5 outline-none focus:border-blue-500 transition" />
+                        </div>
+
                         <!-- Indicador de live refresh -->
                         <div v-if="store.liveRefreshId || store.hasActivePipelines"
                             class="flex items-center gap-1.5 text-xs text-blue-500 dark:text-blue-400">
@@ -499,6 +523,7 @@ async function onBoletoUpdated() {
                                             @open-rid-modal="l => store.openRidModal(l.id)"
                                             @register-boleto="id => store.registerBoleto(id)"
                                             @update-boleto="handleUpdateBoleto"
+                                            @abort="handleAbort"
                                             @continue-existing-contract="handleContinueExistingContract" />
 
                                         <!-- Ações de status -->

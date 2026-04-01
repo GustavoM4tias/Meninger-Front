@@ -99,7 +99,16 @@ export const usePaymentFlowStore = defineStore('paymentFlow', () => {
     const currentLaunch = ref(null);
     const summary = ref({});
     const pagination = ref({ total: 0, page: 1, limit: 20, pages: 1 });
-    const filters = ref({ status: '', launchType: '', search: '' });
+    // ── Período de lançamento (padrão: mês corrente) ──────────────────────────
+    function _monthStart() {
+        const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
+    }
+    function _monthEnd() {
+        const d = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0);
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+
+    const filters = ref({ status: '', launchType: '', search: '', dateFrom: _monthStart(), dateTo: _monthEnd() });
 
     // ── Modal / upload ────────────────────────────────────────────────────────
     const showCreateModal = ref(false);
@@ -181,6 +190,8 @@ export const usePaymentFlowStore = defineStore('paymentFlow', () => {
         }
         if (f.launchType) p.set('launchType', f.launchType);
         if (f.search) p.set('search', f.search);
+        if (f.dateFrom) p.set('dateFrom', f.dateFrom);
+        if (f.dateTo) p.set('dateTo', f.dateTo);
         p.set('page', String(pagination.value.page));
         p.set('limit', String(pagination.value.limit));
         return p.toString();
@@ -509,6 +520,12 @@ export const usePaymentFlowStore = defineStore('paymentFlow', () => {
     }
 
     // Atualiza boleto de um título já existente (novo arquivo + novo barcode)
+    async function abortPipeline(id) {
+        const numId = Number(id);
+        await requestWithAuth(`${API_URL}/sienge/payment-flow/${numId}/pipeline/abort`, { method: 'POST' });
+        await _refreshLaunchInList(numId);
+    }
+
     async function updateBoleto(id, { boletoUrl, boletoPath, boletoFilename, boletoBarcode, boletoDueDate, boletoAmount }) {
         const numId = Number(id);
         const data = await requestWithAuth(`${API_URL}/sienge/payment-flow/${numId}/pipeline/update-boleto`, {
@@ -582,7 +599,7 @@ export const usePaymentFlowStore = defineStore('paymentFlow', () => {
         fetchLaunches();
     }
     function resetFilters() {
-        filters.value = { status: '', launchType: '', search: '' };
+        filters.value = { status: '', launchType: '', search: '', dateFrom: _monthStart(), dateTo: _monthEnd() };
         pagination.value.page = 1;
         fetchLaunches();
     }
@@ -762,7 +779,7 @@ export const usePaymentFlowStore = defineStore('paymentFlow', () => {
         cancelLaunch, markPaid, advanceStage,
 
         // Actions: pipeline
-        runPipeline, pollNow, startPolling, stopPolling, stopAllPolling, registerBoleto, updateBoleto,
+        runPipeline, pollNow, startPolling, stopPolling, stopAllPolling, registerBoleto, updateBoleto, abortPipeline,
 
         // Actions: live refresh
         startLiveRefresh, stopLiveRefresh,
