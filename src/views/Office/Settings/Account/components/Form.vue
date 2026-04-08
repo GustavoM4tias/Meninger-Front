@@ -184,8 +184,8 @@
                 </form>
             </div>
 
-            <!-- ── Change Password Card ── (only for INTERNAL auth) -->
-            <div v-if="authStore.isInternal"
+            <!-- ── Change Password Card ── -->
+            <div
                 class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-sm">
                 <!-- Card header / toggle -->
                 <button type="button"
@@ -315,6 +315,39 @@
                 </transition>
             </div>
 
+            <!-- ── Banner: senha alterada com sucesso ── -->
+            <transition name="fade">
+                <div v-if="passwordSuccessBanner.visible"
+                    class="bg-white dark:bg-gray-900 rounded-2xl border border-green-200 dark:border-green-800 overflow-hidden shadow-sm">
+                    <div class="px-6 py-4 flex items-start gap-4">
+                        <div class="w-9 h-9 rounded-xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center shrink-0">
+                            <i class="fas fa-circle-check text-green-600 dark:text-green-400 text-sm"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-semibold text-gray-900 dark:text-white">Senha alterada com sucesso!</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 mb-3">Copie sua nova senha antes que este aviso desapareça.</p>
+                            <div class="flex items-center gap-2">
+                                <div class="flex-1 px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 font-mono text-sm text-gray-900 dark:text-white tracking-wider truncate">
+                                    {{ passwordSuccessBanner.password }}
+                                </div>
+                                <button type="button" @click="copyChangedPassword"
+                                    class="shrink-0 flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg transition-all"
+                                    :class="passwordSuccessBanner.copied
+                                        ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                                        : 'bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'">
+                                    <i :class="passwordSuccessBanner.copied ? 'fas fa-check' : 'fas fa-copy'" class="text-xs"></i>
+                                    {{ passwordSuccessBanner.copied ? 'Copiado!' : 'Copiar' }}
+                                </button>
+                                <button type="button" @click="dismissPasswordBanner"
+                                    class="shrink-0 w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition">
+                                    <i class="fas fa-times text-xs"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </transition>
+
             <!-- ── Microsoft Card ── -->
             <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-sm">
                 <button type="button"
@@ -356,7 +389,7 @@
                                     Sua conta Microsoft está vinculada. O sistema usa ela para autenticar e acessar recursos do ecossistema Microsoft (SharePoint, Teams, etc.) em seu nome.
                                 </div>
 
-                                <div v-if="!microsoftStore.isMicrosoftOnly" class="pt-1">
+                                <div v-if="!microsoftStore.isMicrosoftOnly || authStore.isInternal" class="pt-1">
                                     <Button type="button" outlined :disabled="microsoftStore.loading" @click="handleUnlink">
                                         <i class="fas fa-unlink mr-2 text-xs"></i>
                                         {{ microsoftStore.loading ? 'Desvinculando...' : 'Desvincular conta Microsoft' }}
@@ -542,6 +575,8 @@ const passwordSectionOpen = ref(false);
 const passwordLoading = ref(false);
 const passwordForm = reactive({ current: '', new: '', confirm: '' });
 const showPasswords = reactive({ current: false, new: false, confirm: false });
+const passwordSuccessBanner = ref({ visible: false, password: '', copied: false });
+let passwordSuccessTimer = null;
 
 // ─── Computed: new password checks ────────────────────────────────────────────
 const newPasswordChecks = computed(() => {
@@ -644,6 +679,7 @@ const updateUser = async () => {
 const togglePasswordSection = () => {
     passwordSectionOpen.value = !passwordSectionOpen.value;
     if (!passwordSectionOpen.value) resetPasswordForm();
+    dismissPasswordBanner();
 };
 
 const resetPasswordForm = () => {
@@ -659,16 +695,35 @@ const handleChangePassword = async () => {
     if (!canSubmitPassword.value) return;
     passwordLoading.value = true;
     try {
-        await changePassword(passwordForm.current, passwordForm.new, passwordForm.confirm);
-        toast.success('Senha alterada com sucesso!');
+        const newPwd = passwordForm.new;
+        await changePassword(passwordForm.current, newPwd, passwordForm.confirm);
         resetPasswordForm();
         passwordSectionOpen.value = false;
+
+        // Exibe painel temporário com a nova senha para copiar
+        if (passwordSuccessTimer) clearTimeout(passwordSuccessTimer);
+        passwordSuccessBanner.value = { visible: true, password: newPwd, copied: false };
+        passwordSuccessTimer = setTimeout(() => {
+            passwordSuccessBanner.value.visible = false;
+        }, 30000);
     } catch (error) {
         toast.error(error?.message || 'Erro ao alterar senha.');
     } finally {
         passwordLoading.value = false;
     }
 };
+
+function copyChangedPassword() {
+    navigator.clipboard.writeText(passwordSuccessBanner.value.password);
+    passwordSuccessBanner.value.copied = true;
+    setTimeout(() => { passwordSuccessBanner.value.copied = false; }, 2500);
+}
+
+function dismissPasswordBanner() {
+    if (passwordSuccessTimer) clearTimeout(passwordSuccessTimer);
+    passwordSuccessBanner.value.visible = false;
+    passwordSuccessBanner.value.password = '';
+}
 
 // ─── Microsoft ────────────────────────────────────────────────────────────────
 const microsoftSectionOpen = ref(false);
