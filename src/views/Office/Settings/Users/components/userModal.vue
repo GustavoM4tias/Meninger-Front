@@ -6,6 +6,7 @@ import Button from '@/components/UI/Button.vue';
 import UiSelect from '@/components/UI/Select.vue';
 import { useToast } from 'vue-toastification';
 import API_URL from '@/config/apiUrl';
+import { adminResetUserPassword } from '@/utils/Auth/apiAuth';
 
 const authStore = useAuthStore();
 const toast = useToast();
@@ -94,6 +95,35 @@ const avatarUrl = computed(() => {
   const name = editableUser.value.username || '?';
   return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&rounded=true&background=random&bold=true&format=svg&size=96`;
 });
+
+// ── Reset de Senha (admin) ────────────────────────────────────────────────────
+const resetPwdModal = ref({ open: false, password: '', copied: false, loading: false });
+
+async function handleResetPassword() {
+  resetPwdModal.value.loading = true;
+  try {
+    const result = await adminResetUserPassword(editableUser.value.id);
+    resetPwdModal.value.password = result.data?.password || result.password || '';
+    resetPwdModal.value.open = true;
+    resetPwdModal.value.copied = false;
+  } catch (error) {
+    toast.error(error?.message || 'Erro ao resetar senha.');
+  } finally {
+    resetPwdModal.value.loading = false;
+  }
+}
+
+function copyResetPassword() {
+  navigator.clipboard.writeText(resetPwdModal.value.password);
+  resetPwdModal.value.copied = true;
+  setTimeout(() => { resetPwdModal.value.copied = false; }, 2500);
+}
+
+function closeResetPwdModal() {
+  resetPwdModal.value.open = false;
+  resetPwdModal.value.password = '';
+  resetPwdModal.value.copied = false;
+}
 
 const saveUser = async () => {
   const u = editableUser.value;
@@ -325,6 +355,28 @@ const saveUser = async () => {
           </label>
         </div>
 
+        <!-- Resetar Senha (admin only, somente contas INTERNAL, apenas em edição) -->
+        <div v-if="isEdit && isAdmin"
+          class="flex items-center justify-between px-4 py-3 rounded-xl border border-red-200 dark:border-red-900/40 bg-red-50/60 dark:bg-red-900/10">
+          <div class="flex items-center gap-2.5">
+            <div class="w-7 h-7 rounded-lg bg-red-100 dark:bg-red-900/30 flex items-center justify-center shrink-0">
+              <i class="fas fa-key text-red-500 text-xs"></i>
+            </div>
+            <div>
+              <p class="text-sm font-medium text-gray-800 dark:text-gray-200">Resetar Senha</p>
+              <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Gera e substitui por uma senha aleatória segura</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            :disabled="resetPwdModal.loading"
+            @click.prevent="handleResetPassword"
+            class="shrink-0 flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 bg-white dark:bg-gray-900 hover:bg-red-50 dark:hover:bg-red-900/20 transition disabled:opacity-50 disabled:cursor-not-allowed">
+            <i :class="resetPwdModal.loading ? 'fas fa-spinner animate-spin' : 'fas fa-arrows-rotate'" class="text-xs"></i>
+            {{ resetPwdModal.loading ? 'Gerando...' : 'Resetar' }}
+          </button>
+        </div>
+
         <!-- Actions -->
         <div class="flex items-center justify-end gap-3 pt-2 border-t border-gray-100 dark:border-gray-800">
           <Button type="button" outlined @click="$emit('close')">Cancelar</Button>
@@ -336,6 +388,53 @@ const saveUser = async () => {
       </form>
     </div>
   </div>
+
+  <!-- ── Modal: senha gerada pelo admin ── -->
+  <Teleport to="body">
+    <div v-if="resetPwdModal.open"
+      class="fixed inset-0 z-[70] flex items-center justify-center p-4"
+      @click="closeResetPwdModal">
+      <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+
+      <div
+        class="relative w-full max-w-sm bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-2xl p-6"
+        @click.stop>
+
+        <!-- Header -->
+        <div class="flex items-center gap-3 mb-5">
+          <div class="w-10 h-10 rounded-xl bg-red-100 dark:bg-red-900/30 flex items-center justify-center shrink-0">
+            <i class="fas fa-key text-red-500 text-base"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-gray-900 dark:text-white">Senha Resetada</h3>
+            <p class="text-xs text-gray-500 dark:text-gray-400">Copie e compartilhe com o usuário</p>
+          </div>
+        </div>
+
+        <!-- Senha gerada -->
+        <div class="flex items-center gap-2 p-3 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 mb-4">
+          <p class="flex-1 text-center font-mono text-lg font-bold text-gray-900 dark:text-white tracking-widest break-all">
+            {{ resetPwdModal.password }}
+          </p>
+        </div>
+
+        <!-- Aviso -->
+        <div class="flex items-start gap-2 p-3 mb-5 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-xs text-amber-700 dark:text-amber-300">
+          <i class="fas fa-triangle-exclamation shrink-0 mt-0.5"></i>
+          <span>Esta senha <strong>não será exibida novamente</strong>. Copie antes de fechar.</span>
+        </div>
+
+        <!-- Ações -->
+        <div class="flex gap-3">
+          <Button type="button" class="flex-1" @click="copyResetPassword">
+            <i :class="resetPwdModal.copied ? 'fas fa-check' : 'fas fa-copy'" class="mr-2 text-xs"></i>
+            {{ resetPwdModal.copied ? 'Copiado!' : 'Copiar senha' }}
+          </Button>
+          <Button type="button" outlined @click="closeResetPwdModal">Fechar</Button>
+        </div>
+      </div>
+    </div>
+  </Teleport>
 </template>
 
 <style scoped>

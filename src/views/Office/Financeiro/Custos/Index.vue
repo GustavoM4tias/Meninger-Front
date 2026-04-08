@@ -513,7 +513,7 @@
                                 <td class="px-4 py-3 max-w-20 whitespace-nowrap">
                                     <span v-if="exp.departmentName || exp.bill?.mainDepartmentName"
                                         class="inline-flex w-full items-center px-2 py-0.5 text-xs font-medium rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-                                        <p class="truncate">{{ exp.departmentName || exp.bill?.mainDepartmentName }}</p>
+                                        <p class="truncate mx-auto">{{ exp.departmentName || exp.bill?.mainDepartmentName }}</p>
                                     </span>
                                     <span v-else class="text-xs text-gray-400">—</span>
                                 </td>

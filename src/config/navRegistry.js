@@ -45,14 +45,14 @@ export const navRegistry = [
                 name: 'Eventos',
                 icon: 'fas fa-newspaper',
                 pages: [
-                    { route: '/marketing/events', section: 'Geral',       name: 'Geral',       icon: 'fas fa-list' },
-                    { route: '/marketing/events', section: 'Próximos',    name: 'Próximos',    icon: 'fas fa-calendar-plus' },
+                    { route: '/marketing/events', section: 'Geral', name: 'Geral', icon: 'fas fa-list' },
+                    { route: '/marketing/events', section: 'Próximos', name: 'Próximos', icon: 'fas fa-calendar-plus' },
                     { route: '/marketing/events', section: 'Finalizados', name: 'Finalizados', icon: 'fas fa-calendar-check' },
                 ],
             },
         ],
         pages: [
-            { route: '/marketing/leads',     name: 'Leads',       icon: 'fas fa-user-plus' },
+            { route: '/marketing/leads', name: 'Leads', icon: 'fas fa-user-plus' },
             { route: '/marketing/viability', name: 'Viabilidade', icon: 'fas fa-scale-balanced' },
         ],
     },
@@ -69,9 +69,9 @@ export const navRegistry = [
                 icon: 'fas fa-credit-card',
                 pages: [
                     { route: '/comercial/sales-projection', section: 'sales-projection', name: 'Vendas X Projeção', icon: 'fas fa-arrow-trend-up' },
-                    { route: '/comercial/faturamento',       section: 'Faturamento',      name: 'Faturamento',      icon: 'fas fa-file-invoice-dollar' },
-                    { route: '/comercial/distratos',         section: 'Distratos',        name: 'Distratos',        icon: 'fas fa-file-circle-xmark' },
-                    { route: '/comercial/projections',       section: 'Projeção',         name: 'Projeção',         icon: 'fas fa-chart-line' },
+                    { route: '/comercial/faturamento', section: 'Faturamento', name: 'Faturamento', icon: 'fas fa-file-invoice-dollar' },
+                    { route: '/comercial/distratos', section: 'Distratos', name: 'Distratos', icon: 'fas fa-file-circle-xmark' },
+                    { route: '/comercial/projections', section: 'Projeção', name: 'Projeção', icon: 'fas fa-chart-line' },
                 ],
             },
             {
@@ -79,11 +79,11 @@ export const navRegistry = [
                 name: 'Empreendimentos',
                 icon: 'fas fa-building',
                 pages: [
-                    { route: '/comercial/buildings', section: 'Geral',             name: 'Geral',             icon: 'fas fa-list' },
-                    { route: '/comercial/buildings', section: 'Pré Lançamentos',   name: 'Pré Lançamentos',   icon: 'fas fa-rocket' },
-                    { route: '/comercial/buildings', section: 'Lançamentos',       name: 'Lançamentos',       icon: 'fas fa-play' },
-                    { route: '/comercial/buildings', section: 'Em Obras',          name: 'Em Obras',          icon: 'fas fa-hammer' },
-                    { route: '/comercial/buildings', section: 'Finalizados',       name: 'Finalizados',       icon: 'fas fa-check-circle' },
+                    { route: '/comercial/buildings', section: 'Geral', name: 'Geral', icon: 'fas fa-list' },
+                    { route: '/comercial/buildings', section: 'Pré Lançamentos', name: 'Pré Lançamentos', icon: 'fas fa-rocket' },
+                    { route: '/comercial/buildings', section: 'Lançamentos', name: 'Lançamentos', icon: 'fas fa-play' },
+                    { route: '/comercial/buildings', section: 'Em Obras', name: 'Em Obras', icon: 'fas fa-hammer' },
+                    { route: '/comercial/buildings', section: 'Finalizados', name: 'Finalizados', icon: 'fas fa-check-circle' },
                     { route: '/comercial/buildings', section: 'Portal do Cliente', name: 'Portal do Cliente', icon: 'fas fa-user-circle' },
                 ],
             },
@@ -100,7 +100,7 @@ export const navRegistry = [
         icon: 'fas fa-money-bill-wave',
         pages: [
             { route: '/financeiro/titulos', name: 'Títulos', icon: 'fas fa-money-bill-transfer' },
-            { route: '/financeiro/custos',  name: 'Custos',  icon: 'fas fa-coins' },
+            { route: '/financeiro/custos', name: 'Custos', icon: 'fas fa-coins' },
         ],
     },
 
@@ -110,9 +110,9 @@ export const navRegistry = [
         label: 'Ferramentas',
         icon: 'fas fa-wrench',
         pages: [
-            { route: '/tools/validator',     name: 'Validador',          icon: 'fas fa-check-double' },
-            { route: '/tools/paymentflow',   name: 'Fluxo de Pagamento', icon: 'fas fa-diagram-project' },
-            { route: '/tools/bucket-upload', name: 'Envio ao Bucket',    icon: 'fas fa-cloud-upload-alt' },
+            { route: '/tools/validator', name: 'Validador', icon: 'fas fa-check-double' },
+            { route: '/tools/paymentflow', name: 'Fluxo de Pagamento', icon: 'fas fa-diagram-project' },
+            { route: '/tools/bucket-upload', name: 'Envio ao Bucket', icon: 'fas fa-cloud-upload-alt' },
         ],
     },
 
@@ -130,16 +130,16 @@ export const navRegistry = [
                 name: 'Gestão Usuários',
                 icon: 'fas fa-users-gear',
                 pages: [
-                    { route: '/settings/Account',     name: 'Minha Conta',   icon: 'fas fa-user-cog',  permissionManaged: false },
-                    { route: '/settings/users',       name: 'Usuários',      icon: 'fas fa-users',     adminOnly: true },
-                    { route: '/settings/organograma', name: 'Organograma',   icon: 'fas fa-sitemap' },
-                    { route: '/settings/management',  name: 'Departamentos', icon: 'fas fa-gears',     adminOnly: true },
+                    { route: '/settings/Account', name: 'Minha Conta', icon: 'fas fa-user-cog', permissionManaged: false },
+                    { route: '/settings/users', name: 'Usuários', icon: 'fas fa-users', adminOnly: true },
+                    { route: '/settings/organograma', name: 'Organograma', icon: 'fas fa-sitemap' },
                 ],
             },
         ],
         pages: [
-            { route: '/settings/cidades',     name: 'Cidades', icon: 'fas fa-city',          adminOnly: true },
+            { route: '/settings/cidades', name: 'Cidades', icon: 'fas fa-city', adminOnly: true },
             { route: '/settings/permissions', name: 'Alçadas', icon: 'fas fa-shield-halved', adminOnly: true },
+            { route: '/settings/management', name: 'Departamentos', icon: 'fas fa-gears', adminOnly: true },
         ],
     },
 
@@ -150,10 +150,10 @@ export const navRegistry = [
         icon: 'fab fa-microsoft',
         requiresMicrosoft: true,
         pages: [
-            { route: '/microsoft/sharepoint', name: 'SharePoint',            icon: 'fas fa-folder-open' },
-            { route: '/microsoft/teams',       name: 'Teams',                 icon: 'fas fa-users' },
-            { route: '/microsoft/transcripts', name: 'Transcrições & IA',    icon: 'fas fa-file-waveform' },
-            { route: '/microsoft/inperson',    name: 'Reuniões Presenciais',  icon: 'fas fa-people-group' },
+            { route: '/microsoft/sharepoint', name: 'SharePoint', icon: 'fas fa-folder-open' },
+            { route: '/microsoft/teams', name: 'Teams', icon: 'fas fa-users' },
+            { route: '/microsoft/transcripts', name: 'Transcrições & IA', icon: 'fas fa-file-waveform' },
+            // { route: '/microsoft/inperson',    name: 'Reuniões Presenciais',  icon: 'fas fa-people-group' },
         ],
     },
 

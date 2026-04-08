@@ -201,7 +201,7 @@ function toggleSelectAllFiltered(e) {
                             :class="selectedSet.has(opt) ? 'fa-circle-dot text-blue-500' : 'fa-circle text-gray-300 dark:text-gray-600'"
                             @click.prevent="toggle(opt)"></i>
                         <slot name="option" :option="opt" :checked="selectedSet.has(opt)">
-                            <span class="truncate" @click.prevent="toggle(opt)">{{ opt }}</span>
+                            <span class="truncate" @click.prevent="toggle(opt)" :title="opt">{{ opt }}</span>
                         </slot>
                     </label>
 

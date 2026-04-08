@@ -139,6 +139,23 @@ export const updateUserInfo = async (id, username, email, position, manager_id, 
   return response.json();
 };
 
+export const adminResetUserPassword = async (id) => {
+  const response = await fetchCarregamento(`${API_URL}/auth/users/${id}/reset-password`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message);
+  }
+
+  return response.json();
+};
+
 export const getAllUsers = async () => {
   const response = await fetch(`${API_URL}/auth/users`, {
     method: 'GET',
