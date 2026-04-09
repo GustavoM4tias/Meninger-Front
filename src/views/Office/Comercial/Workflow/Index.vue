@@ -4,8 +4,8 @@
             <!-- Header -->
             <div class="mb-6 md:mb-8">
                 <div class="flex items-center">
-                    <h1 class="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">Grupos de Situações</h1>
-                    <Favorite class="ml-3" :router="'/cv/workflow-grupos'" :section="'Workflow CV'" />
+                    <h1 class="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">Grupos Workflow</h1>
+                    <Favorite class="ml-3" :router="'/comercial/workflow/groups'" :section="'Grupos Workflow'" />
                 </div>
                 <p class="text-gray-600 dark:text-gray-400 mt-1">Visualize e gerencie o fluxo de Reservas e Repasses</p>
             </div>

@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import {
-    usePaymentFlowStore, 
+    usePaymentFlowStore,
     PIPELINE_STAGE_LABELS,
 } from '@/stores/Tools/PaymentFlow/paymentFlowStore';
 import { useAuthStore } from '@/stores/Settings/Auth/authStore';
@@ -10,6 +10,7 @@ import LaunchPipelineCard from './components/LaunchPipelineCard.vue';
 import SiengeCredentialsModal from './components/SiengeCredentialsModal.vue';
 import RidRequestModal from './components/RidRequestModal.vue';
 import UpdateBoletoModal from './components/UpdateBoletoModal.vue';
+import Favorite from '@/components/config/Favorite.vue'
 
 const store = usePaymentFlowStore();
 const authStore = useAuthStore();
@@ -91,37 +92,37 @@ async function executeAction() {
 const CANCEL = { action: 'cancel', label: 'Cancelar', icon: 'fa-ban', color: 'slate' };
 const ACTIONS = {
     fornecedor: [CANCEL],
-    contrato:   [CANCEL],
-    aditivo:    [CANCEL],
-    medicao:    [CANCEL],
-    titulo:     [CANCEL],
-    erro:       [CANCEL],
+    contrato: [CANCEL],
+    aditivo: [CANCEL],
+    medicao: [CANCEL],
+    titulo: [CANCEL],
+    erro: [CANCEL],
 };
 
 // ── Helpers visuais ───────────────────────────────────────────────────────────
 function statusBadgeClass(status) {
     const map = {
-        fornecedor:  'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
-        contrato:    'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300',
-        aditivo:     'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300',
-        medicao:     'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-300',
-        titulo:      'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300',
+        fornecedor: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
+        contrato: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300',
+        aditivo: 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300',
+        medicao: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-300',
+        titulo: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300',
         titulo_pago: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
-        cancelado:   'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400',
-        erro:        'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
+        cancelado: 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400',
+        erro: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
     };
     return map[status] || map.fornecedor;
 }
 
 const STATUS_LABELS = {
-    fornecedor:  'Fornecedor',
-    contrato:    'Contrato',
-    aditivo:     'Aditivo',
-    medicao:     'Medição',
-    titulo:      'Título',
+    fornecedor: 'Fornecedor',
+    contrato: 'Contrato',
+    aditivo: 'Aditivo',
+    medicao: 'Medição',
+    titulo: 'Título',
     titulo_pago: 'Título Pago',
-    cancelado:   'Cancelado',
-    erro:        'Erro',
+    cancelado: 'Cancelado',
+    erro: 'Erro',
 };
 
 function pipelineDotClass(stage) {
@@ -148,11 +149,11 @@ function formatDate(val) {
 
 // ── Sidebar summary ───────────────────────────────────────────────────────────
 const summaryItems = [
-    { key: 'fornecedor', label: 'Fornecedor',  dot: 'bg-blue-400'    },
-    { key: 'contrato',   label: 'Contrato',    dot: 'bg-indigo-400'  },
-    { key: 'aditivo',    label: 'Aditivo',     dot: 'bg-purple-400'  },
-    { key: 'medicao',    label: 'Medição',     dot: 'bg-cyan-400'    },
-    { key: 'titulo',     label: 'Título',      dot: 'bg-yellow-400'  },
+    { key: 'fornecedor', label: 'Fornecedor', dot: 'bg-blue-400' },
+    { key: 'contrato', label: 'Contrato', dot: 'bg-indigo-400' },
+    { key: 'aditivo', label: 'Aditivo', dot: 'bg-purple-400' },
+    { key: 'medicao', label: 'Medição', dot: 'bg-cyan-400' },
+    { key: 'titulo', label: 'Título', dot: 'bg-yellow-400' },
 ];
 
 // Itens especiais ficam nos toggles (cancelado/erro/titulo_pago)
@@ -206,14 +207,13 @@ async function onBoletoUpdated() {
                         class="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-300 dark:border-gray-700 p-5 sticky top-8 space-y-4">
 
                         <!-- Etapas do processo -->
-                        <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Etapas</div>
+                        <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                            Etapas</div>
 
                         <div v-for="item in summaryItems" :key="item.key"
-                            class="flex items-center justify-between p-3 rounded-lg cursor-pointer transition"
-                            :class="filterStatus === item.key
+                            class="flex items-center justify-between p-3 rounded-lg cursor-pointer transition" :class="filterStatus === item.key
                                 ? 'bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700'
-                                : 'hover:bg-gray-50 dark:hover:bg-gray-800'"
-                            @click="applyStatusFilter(item.key)">
+                                : 'hover:bg-gray-50 dark:hover:bg-gray-800'" @click="applyStatusFilter(item.key)">
                             <div class="flex items-center gap-2">
                                 <span class="inline-block w-2 h-2 rounded-full flex-shrink-0" :class="item.dot"></span>
                                 <span class="text-sm text-gray-600 dark:text-gray-400">{{ item.label }}</span>
@@ -238,7 +238,9 @@ async function onBoletoUpdated() {
 
                         <!-- Especiais: Título Pago, Cancelados, Erros -->
                         <div class="border-t border-gray-200 dark:border-gray-700 pt-3 space-y-2">
-                            <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Especiais</div>
+                            <div
+                                class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">
+                                Especiais</div>
 
                             <!-- Título Pago -->
                             <div class="flex items-center justify-between p-3 rounded-lg cursor-pointer transition"
@@ -247,20 +249,20 @@ async function onBoletoUpdated() {
                                     : store.showTituloPago
                                         ? 'bg-emerald-50/50 dark:bg-emerald-900/10 hover:bg-emerald-50 dark:hover:bg-emerald-900/20'
                                         : 'hover:bg-gray-50 dark:hover:bg-gray-800 opacity-60'"
-                                @click="applyStatusFilter('titulo_pago'); if(!store.showTituloPago) store.toggleShowTituloPago()">
+                                @click="applyStatusFilter('titulo_pago'); if (!store.showTituloPago) store.toggleShowTituloPago()">
                                 <div class="flex items-center gap-2">
                                     <span class="inline-block w-2 h-2 rounded-full bg-emerald-400 flex-shrink-0"></span>
                                     <span class="text-sm text-gray-600 dark:text-gray-400">Título Pago</span>
                                 </div>
                                 <div class="flex items-center gap-2">
-                                    <span v-if="store.showTituloPago" class="font-bold text-sm text-gray-900 dark:text-white">
+                                    <span v-if="store.showTituloPago"
+                                        class="font-bold text-sm text-gray-900 dark:text-white">
                                         {{ store.summary['titulo_pago']?.count || 0 }}
                                     </span>
-                                    <button class="text-xs px-1.5 py-0.5 rounded border transition"
-                                        :class="store.showTituloPago
-                                            ? 'border-emerald-400 text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/30'
-                                            : 'border-gray-300 dark:border-gray-600 text-gray-400'"
-                                        @click.stop="store.toggleShowTituloPago(); if(store.showTituloPago && filterStatus === 'titulo_pago') filterStatus = ''">
+                                    <button class="text-xs px-1.5 py-0.5 rounded border transition" :class="store.showTituloPago
+                                        ? 'border-emerald-400 text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/30'
+                                        : 'border-gray-300 dark:border-gray-600 text-gray-400'"
+                                        @click.stop="store.toggleShowTituloPago(); if (store.showTituloPago && filterStatus === 'titulo_pago') filterStatus = ''">
                                         {{ store.showTituloPago ? 'Ocultar' : 'Exibir' }}
                                     </button>
                                 </div>
@@ -273,20 +275,20 @@ async function onBoletoUpdated() {
                                     : store.showCancelled
                                         ? 'bg-slate-50 dark:bg-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-700/40'
                                         : 'hover:bg-gray-50 dark:hover:bg-gray-800 opacity-60'"
-                                @click="applyStatusFilter('cancelado'); if(!store.showCancelled) store.toggleShowCancelled()">
+                                @click="applyStatusFilter('cancelado'); if (!store.showCancelled) store.toggleShowCancelled()">
                                 <div class="flex items-center gap-2">
                                     <span class="inline-block w-2 h-2 rounded-full bg-slate-400 flex-shrink-0"></span>
                                     <span class="text-sm text-gray-600 dark:text-gray-400">Cancelados</span>
                                 </div>
                                 <div class="flex items-center gap-2">
-                                    <span v-if="store.showCancelled" class="font-bold text-sm text-gray-900 dark:text-white">
+                                    <span v-if="store.showCancelled"
+                                        class="font-bold text-sm text-gray-900 dark:text-white">
                                         {{ store.summary['cancelado']?.count || 0 }}
                                     </span>
-                                    <button class="text-xs px-1.5 py-0.5 rounded border transition"
-                                        :class="store.showCancelled
-                                            ? 'border-slate-400 text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-700'
-                                            : 'border-gray-300 dark:border-gray-600 text-gray-400'"
-                                        @click.stop="store.toggleShowCancelled(); if(store.showCancelled && filterStatus === 'cancelado') filterStatus = ''">
+                                    <button class="text-xs px-1.5 py-0.5 rounded border transition" :class="store.showCancelled
+                                        ? 'border-slate-400 text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-700'
+                                        : 'border-gray-300 dark:border-gray-600 text-gray-400'"
+                                        @click.stop="store.toggleShowCancelled(); if (store.showCancelled && filterStatus === 'cancelado') filterStatus = ''">
                                         {{ store.showCancelled ? 'Ocultar' : 'Exibir' }}
                                     </button>
                                 </div>
@@ -299,20 +301,20 @@ async function onBoletoUpdated() {
                                     : store.showErrors
                                         ? 'bg-red-50/50 dark:bg-red-900/10 hover:bg-red-50 dark:hover:bg-red-900/20'
                                         : 'hover:bg-gray-50 dark:hover:bg-gray-800 opacity-60'"
-                                @click="applyStatusFilter('erro'); if(!store.showErrors) store.toggleShowErrors()">
+                                @click="applyStatusFilter('erro'); if (!store.showErrors) store.toggleShowErrors()">
                                 <div class="flex items-center gap-2">
                                     <span class="inline-block w-2 h-2 rounded-full bg-red-400 flex-shrink-0"></span>
                                     <span class="text-sm text-gray-600 dark:text-gray-400">Erros</span>
                                 </div>
                                 <div class="flex items-center gap-2">
-                                    <span v-if="store.showErrors" class="font-bold text-sm text-gray-900 dark:text-white">
+                                    <span v-if="store.showErrors"
+                                        class="font-bold text-sm text-gray-900 dark:text-white">
                                         {{ store.summary['erro']?.count || 0 }}
                                     </span>
-                                    <button class="text-xs px-1.5 py-0.5 rounded border transition"
-                                        :class="store.showErrors
-                                            ? 'border-red-400 text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/30'
-                                            : 'border-gray-300 dark:border-gray-600 text-gray-400'"
-                                        @click.stop="store.toggleShowErrors(); if(store.showErrors && filterStatus === 'erro') filterStatus = ''">
+                                    <button class="text-xs px-1.5 py-0.5 rounded border transition" :class="store.showErrors
+                                        ? 'border-red-400 text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/30'
+                                        : 'border-gray-300 dark:border-gray-600 text-gray-400'"
+                                        @click.stop="store.toggleShowErrors(); if (store.showErrors && filterStatus === 'erro') filterStatus = ''">
                                         {{ store.showErrors ? 'Ocultar' : 'Exibir' }}
                                     </button>
                                 </div>
@@ -321,14 +323,15 @@ async function onBoletoUpdated() {
 
                         <!-- Filtro por tipo -->
                         <div class="border-t border-gray-200 dark:border-gray-700 pt-4">
-                            <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">Tipo</div>
+                            <div
+                                class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">
+                                Tipo</div>
                             <div class="flex flex-wrap gap-1.5">
                                 <button v-for="t in store.launchTypes" :key="t.id"
                                     class="text-xs px-2.5 py-1 rounded-full border transition truncate"
                                     :class="filterType === t.name
                                         ? 'bg-blue-600 text-white border-blue-600'
-                                        : 'border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:border-blue-400'"
-                                    @click="applyTypeFilter(t.name)">
+                                        : 'border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:border-blue-400'" @click="applyTypeFilter(t.name)">
                                     {{ t.name }}
                                 </button>
                             </div>
@@ -337,7 +340,8 @@ async function onBoletoUpdated() {
                         <!-- Pipeline em andamento -->
                         <div v-if="Object.keys(store.pipelinePolling).length"
                             class="border-t border-gray-200 dark:border-gray-700 pt-4">
-                            <div class="text-xs font-medium text-blue-600 dark:text-blue-400 flex items-center gap-1.5 mb-1">
+                            <div
+                                class="text-xs font-medium text-blue-600 dark:text-blue-400 flex items-center gap-1.5 mb-1">
                                 <i class="fas fa-sync fa-spin text-xs"></i>
                                 {{ Object.keys(store.pipelinePolling).length }} monitorando
                             </div>
@@ -355,7 +359,9 @@ async function onBoletoUpdated() {
                     <!-- Header -->
                     <div class="flex items-center justify-between mb-2">
                         <div>
-                            <h1 class="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">Payment Flow</h1>
+                            <h1 class="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">Fluxo de pagamento
+                                <Favorite :router="'/tools/paymentflow'" :section="'Fluxo de Pagamento'" />
+                            </h1>
                             <p class="text-gray-500 dark:text-gray-400 text-sm mt-0.5">
                                 Gerenciamento de lançamentos para pagamento
                             </p>
@@ -381,15 +387,11 @@ async function onBoletoUpdated() {
                         <!-- Filtro de período -->
                         <div class="flex items-center gap-2">
                             <span class="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">De</span>
-                            <input
-                                type="date"
-                                :value="store.filters.dateFrom"
+                            <input type="date" :value="store.filters.dateFrom"
                                 @change="store.applyFilters({ dateFrom: $event.target.value })"
                                 class="text-xs rounded-lg border py-2.5 border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white px-2 outline-none focus:border-blue-500 transition" />
                             <span class="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">Até</span>
-                            <input
-                                type="date"
-                                :value="store.filters.dateTo"
+                            <input type="date" :value="store.filters.dateTo"
                                 @change="store.applyFilters({ dateTo: $event.target.value })"
                                 class="text-xs rounded-lg border py-2.5 border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white px-2 outline-none focus:border-blue-500 transition" />
                         </div>
@@ -470,7 +472,7 @@ async function onBoletoUpdated() {
                                             {{ launch.providerCnpj
                                                 ? launch.providerCnpj.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/,
                                                     '$1.$2.$3/$4-$5')
-                                            : '' }}
+                                                : '' }}
                                         </div>
                                         <!-- Badge do criador (apenas admin) -->
                                         <div v-if="isAdmin && launch.createdByName"
@@ -552,8 +554,7 @@ async function onBoletoUpdated() {
                                             @dismiss-error="store.fetchLaunches(true)"
                                             @open-rid-modal="l => store.openRidModal(l.id)"
                                             @register-boleto="id => store.registerBoleto(id)"
-                                            @update-boleto="handleUpdateBoleto"
-                                            @abort="handleAbort"
+                                            @update-boleto="handleUpdateBoleto" @abort="handleAbort"
                                             @continue-existing-contract="handleContinueExistingContract" />
 
                                         <!-- Ações de status -->
@@ -574,7 +575,7 @@ async function onBoletoUpdated() {
                                                         'border-emerald-300 text-emerald-600 hover:bg-emerald-50 dark:border-emerald-700 dark:text-emerald-400 dark:hover:bg-emerald-900/20': act.color === 'emerald',
                                                         'border-gray-300 text-gray-500 hover:bg-gray-100 dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-700': act.color === 'slate',
                                                     }"
-                                                    :disabled="['searching_creditor','searching_contract','creating_contract','creating_additive','validating_items'].includes(launch.pipelineStage) || store.pipelineRunningIds.has(launch.id)"
+                                                    :disabled="['searching_creditor', 'searching_contract', 'creating_contract', 'creating_additive', 'validating_items'].includes(launch.pipelineStage) || store.pipelineRunningIds.has(launch.id)"
                                                     @click="askAction(launch, act.action, act.label)">
                                                     <i :class="`fas ${act.icon} text-xs`"></i>
                                                     {{ act.label }}
@@ -626,7 +627,7 @@ async function onBoletoUpdated() {
                             class="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-700">
                             <span class="text-xs text-gray-500">
                                 {{ store.pagination.total }} lançamentos · pág. {{ store.pagination.page }}/{{
-                                store.pagination.pages }}
+                                    store.pagination.pages }}
                             </span>
                             <div class="flex gap-1">
                                 <button
@@ -662,17 +663,13 @@ async function onBoletoUpdated() {
             @created="store.fetchLaunches()" />
 
         <!-- Modal RID: solicitar cadastro de fornecedor -->
-        <RidRequestModal
-            v-if="store.showRidModal && store.ridModalLaunchId"
+        <RidRequestModal v-if="store.showRidModal && store.ridModalLaunchId"
             :launch="store.launches.find(l => l.id === store.ridModalLaunchId) || store.currentLaunch || {}"
             @close="store.closeRidModal()" />
 
         <!-- Modal atualização de boleto -->
-        <UpdateBoletoModal
-            v-if="showUpdateBoletoModal && updateBoletoLaunch"
-            :launch="updateBoletoLaunch"
-            @close="showUpdateBoletoModal = false; updateBoletoLaunch = null"
-            @updated="onBoletoUpdated" />
+        <UpdateBoletoModal v-if="showUpdateBoletoModal && updateBoletoLaunch" :launch="updateBoletoLaunch"
+            @close="showUpdateBoletoModal = false; updateBoletoLaunch = null" @updated="onBoletoUpdated" />
 
         <!-- Modal de conflito de duplicidade -->
         <div v-if="store.conflictLaunch"
@@ -682,7 +679,8 @@ async function onBoletoUpdated() {
                 class="w-full max-w-md bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-orange-200 dark:border-orange-700 p-6 space-y-4">
                 <!-- Cabeçalho -->
                 <div class="flex items-start gap-3">
-                    <div class="w-10 h-10 rounded-full bg-orange-100 dark:bg-orange-900/40 flex items-center justify-center flex-shrink-0">
+                    <div
+                        class="w-10 h-10 rounded-full bg-orange-100 dark:bg-orange-900/40 flex items-center justify-center flex-shrink-0">
                         <i class="fas fa-triangle-exclamation text-orange-500"></i>
                     </div>
                     <div>
@@ -694,32 +692,39 @@ async function onBoletoUpdated() {
                 </div>
 
                 <!-- Detalhes do lançamento existente -->
-                <div class="rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 space-y-2 text-xs">
+                <div
+                    class="rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 space-y-2 text-xs">
                     <div class="flex justify-between">
                         <span class="text-gray-500">Lançamento</span>
-                        <span class="font-mono font-semibold text-gray-800 dark:text-gray-200">#{{ store.conflictLaunch.id }}</span>
+                        <span class="font-mono font-semibold text-gray-800 dark:text-gray-200">#{{
+                            store.conflictLaunch.id }}</span>
                     </div>
                     <div class="flex justify-between">
                         <span class="text-gray-500">Status</span>
-                        <span class="font-semibold" :class="statusBadgeClass(store.conflictLaunch.status)?.replace('bg-', 'text-').replace(/ bg-\S+/g, '')">
+                        <span class="font-semibold"
+                            :class="statusBadgeClass(store.conflictLaunch.status)?.replace('bg-', 'text-').replace(/ bg-\S+/g, '')">
                             {{ store.conflictLaunch.status }}
                         </span>
                     </div>
                     <div class="flex justify-between">
                         <span class="text-gray-500">Tipo</span>
-                        <span class="text-gray-700 dark:text-gray-300">{{ store.conflictLaunch.launchType || '—' }}</span>
+                        <span class="text-gray-700 dark:text-gray-300">{{ store.conflictLaunch.launchType || '—'
+                            }}</span>
                     </div>
                     <div class="flex justify-between">
                         <span class="text-gray-500">Fornecedor</span>
-                        <span class="text-gray-700 dark:text-gray-300 text-right max-w-48 truncate">{{ store.conflictLaunch.providerName || '—' }}</span>
+                        <span class="text-gray-700 dark:text-gray-300 text-right max-w-48 truncate">{{
+                            store.conflictLaunch.providerName || '—' }}</span>
                     </div>
                     <div class="flex justify-between">
                         <span class="text-gray-500">NF</span>
-                        <span class="font-mono text-gray-700 dark:text-gray-300">{{ store.conflictLaunch.nfNumber }}</span>
+                        <span class="font-mono text-gray-700 dark:text-gray-300">{{ store.conflictLaunch.nfNumber
+                            }}</span>
                     </div>
                     <div class="flex justify-between">
                         <span class="text-gray-500">Criado por</span>
-                        <span class="text-gray-700 dark:text-gray-300">{{ store.conflictLaunch.createdByName || '—' }}</span>
+                        <span class="text-gray-700 dark:text-gray-300">{{ store.conflictLaunch.createdByName || '—'
+                            }}</span>
                     </div>
                 </div>
 
@@ -756,11 +761,9 @@ async function onBoletoUpdated() {
                 <div class="flex justify-end gap-3">
                     <button class="text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition"
                         @click="cancelAction">Cancelar</button>
-                    <button class="px-4 py-2 text-sm font-medium rounded-xl text-white transition"
-                        :class="confirmingAction.action === 'cancel'
-                            ? 'bg-red-600 hover:bg-red-700'
-                            : 'bg-emerald-600 hover:bg-emerald-700'"
-                        @click="executeAction">
+                    <button class="px-4 py-2 text-sm font-medium rounded-xl text-white transition" :class="confirmingAction.action === 'cancel'
+                        ? 'bg-red-600 hover:bg-red-700'
+                        : 'bg-emerald-600 hover:bg-emerald-700'" @click="executeAction">
                         Confirmar
                     </button>
                 </div>

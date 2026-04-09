@@ -7,7 +7,7 @@
           <h1 class="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
             Cargos, Departamentos, Categorias e Alçadas
           </h1>
-          <Favorite class="ml-3" :router="'/settings/management'" :section="'Cargos'" />
+          <Favorite class="ml-3" :router="'/settings/management'" :section="'Departamentos'" />
         </div>
         <p class="text-gray-600 dark:text-gray-400 mt-1">
           Configure departamentos, categorias, cargos e as cidades disponíveis para cadastro e gestão dos usuários.

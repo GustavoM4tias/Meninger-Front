@@ -1,7 +1,7 @@
 <script setup>
 /**
  * SiengeCredentialsModal.vue
- * Gate exibido quando o usuário acessa o Payment Flow sem ter
+ * Gate exibido quando o usuário acessa o Fluxo de pagamento sem ter
  * configurado suas credenciais Sienge.
  */
 import { ref, reactive, computed } from 'vue';
