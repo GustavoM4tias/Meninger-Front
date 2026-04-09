@@ -5,7 +5,7 @@
             <!-- Header -->
             <div class="flex items-center gap-2 mb-2">
                 <h1 class="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">Envio ao Bucket GCS</h1>
-                <Favorite :router="'/tools/bucket-upload'" :section="'BucketUpload'" />
+                <Favorite :router="'/tools/bucket-upload'" :section="'Envio ao Bucket'" />
             </div>
             <p class="text-gray-600 dark:text-gray-400 mb-6">
                 Converta e envie as abas <strong>Engenharia</strong> e <strong>Area Contruida Total</strong> da planilha para o bucket GCS.

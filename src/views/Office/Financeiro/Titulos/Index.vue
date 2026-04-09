@@ -9,6 +9,7 @@
             <h1 class="text-3xl font-bold mb-2 flex items-center gap-3">
               <i class="fas fa-file-invoice-dollar"></i>
               Gerenciamento de Títulos e Custos
+                <Favorite :router="'/financeiro/titulos'" :section="'Títulos'" />
             </h1>
             <p class="text-indigo-50 text-sm">
               Busque títulos no Sienge — parcelas e custos gerados automaticamente por data de vencimento
@@ -28,12 +29,8 @@
             Empreendimento / Centro de Custo
             <span class="text-[10px] text-gray-400 font-normal">(máx. 3)</span>
           </label>
-          <MultiSelector
-            :model-value="selectedCostCenterNames"
-            @update:modelValue="handleCostCenterChange"
-            :options="costCenterOptions"
-            placeholder="Selecione empreendimentos"
-            :page-size="200"
+          <MultiSelector :model-value="selectedCostCenterNames" @update:modelValue="handleCostCenterChange"
+            :options="costCenterOptions" placeholder="Selecione empreendimentos" :page-size="200"
             :disabled="isSyncing" />
         </div>
 
@@ -65,8 +62,7 @@
           </label>
           <MultiSelector :model-value="store.selectedDepartments"
             @update:modelValue="v => store.selectedDepartments = Array.isArray(v) ? v : []"
-            :options="store.departmentsOptions" placeholder="Departamento" :page-size="200"
-            :disabled="isSyncing" />
+            :options="store.departmentsOptions" placeholder="Departamento" :page-size="200" :disabled="isSyncing" />
         </div>
 
         <!-- Botão Filtrar -->
@@ -80,8 +76,7 @@
           </button>
 
           <!-- Sincronizar Tudo — aparece só quando 1 empreendimento selecionado -->
-          <button v-if="canSyncEnterprise"
-            @click="startEnterpriseSync"
+          <button v-if="canSyncEnterprise" @click="startEnterpriseSync"
             class="w-full px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-semibold rounded-lg hover:from-emerald-600 hover:to-teal-700 focus:outline-none focus:ring-4 focus:ring-emerald-300/50 transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
             :disabled="isSyncing || store.isLoading">
             <i :class="isSyncing ? 'fas fa-spinner fa-spin' : 'fas fa-cloud-download-alt'"></i>
@@ -91,7 +86,8 @@
       </div>
 
       <!-- Aviso de range excessivo -->
-      <div v-if="store.dateRangeWarning" class="mt-3 flex items-center gap-2 text-sm text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 px-4 py-2.5 rounded-lg">
+      <div v-if="store.dateRangeWarning"
+        class="mt-3 flex items-center gap-2 text-sm text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 px-4 py-2.5 rounded-lg">
         <i class="fas fa-exclamation-triangle flex-none"></i>
         {{ store.dateRangeWarning }}
       </div>
@@ -103,24 +99,21 @@
 
     <!-- Painel de Sync Completo -->
     <transition name="slide-down">
-      <div v-if="syncStatus && syncStatus.phase !== null"
-        class="rounded-2xl border shadow-lg overflow-hidden"
-        :class="{
-          'border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-900/20': syncStatus.phase === 'done',
-          'border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900/20': syncStatus.phase === 'error',
-          'border-indigo-300 dark:border-indigo-700 bg-indigo-50 dark:bg-indigo-900/20': syncStatus.running,
-        }">
+      <div v-if="syncStatus && syncStatus.phase !== null" class="rounded-2xl border shadow-lg overflow-hidden" :class="{
+        'border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-900/20': syncStatus.phase === 'done',
+        'border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900/20': syncStatus.phase === 'error',
+        'border-indigo-300 dark:border-indigo-700 bg-indigo-50 dark:bg-indigo-900/20': syncStatus.running,
+      }">
         <div class="p-5">
           <div class="flex items-start justify-between gap-4">
             <div class="flex-1 min-w-0">
               <!-- Cabeçalho do painel -->
               <div class="flex items-center gap-3 mb-3">
-                <div class="w-9 h-9 rounded-xl flex items-center justify-center text-white shadow-sm flex-none"
-                  :class="{
-                    'bg-emerald-500': syncStatus.phase === 'done',
-                    'bg-red-500': syncStatus.phase === 'error',
-                    'bg-indigo-500': syncStatus.running,
-                  }">
+                <div class="w-9 h-9 rounded-xl flex items-center justify-center text-white shadow-sm flex-none" :class="{
+                  'bg-emerald-500': syncStatus.phase === 'done',
+                  'bg-red-500': syncStatus.phase === 'error',
+                  'bg-indigo-500': syncStatus.running,
+                }">
                   <i :class="{
                     'fas fa-check': syncStatus.phase === 'done',
                     'fas fa-times': syncStatus.phase === 'error',
@@ -152,8 +145,7 @@
               </div>
 
               <!-- Resultado final (done) -->
-              <div v-if="syncStatus.phase === 'done' && syncStatus.result"
-                class="grid grid-cols-3 gap-3 text-center">
+              <div v-if="syncStatus.phase === 'done' && syncStatus.result" class="grid grid-cols-3 gap-3 text-center">
                 <div class="bg-white/70 dark:bg-gray-800/70 rounded-lg px-3 py-2">
                   <div class="text-lg font-bold text-emerald-600">{{ syncStatus.result.total }}</div>
                   <div class="text-[10px] text-gray-500">Títulos</div>
@@ -176,8 +168,7 @@
             </div>
 
             <!-- Botão fechar (só quando finalizado) -->
-            <button v-if="!syncStatus.running"
-              @click="syncStatus = null"
+            <button v-if="!syncStatus.running" @click="syncStatus = null"
               class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors flex-none mt-0.5">
               <i class="fas fa-times text-base"></i>
             </button>
@@ -223,22 +214,28 @@
         <table class="min-w-full table-auto">
           <thead class="bg-gray-50 dark:bg-gray-900/60 border-b border-gray-200 dark:border-gray-700">
             <tr>
-              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+              <th
+                class="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                 Fornecedor
               </th>
-              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+              <th
+                class="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                 Documento
               </th>
-              <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+              <th
+                class="px-4 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                 Parcelas
               </th>
-              <th class="px-4 py-3 text-right text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+              <th
+                class="px-4 py-3 text-right text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                 Valor Total
               </th>
-              <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+              <th
+                class="px-4 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                 Emissão
               </th>
-              <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+              <th
+                class="px-4 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                 Departamento
               </th>
             </tr>
@@ -252,7 +249,8 @@
               <td class="px-4 py-3 align-middle">
                 <div class="space-y-0.5 max-w-56">
                   <div class="text-sm font-semibold text-gray-900 dark:text-white truncate">
-                    {{ bill.creditor_json ? (bill.creditor_json.tradeName || bill.creditor_json.name || 'Sem nome') : '—' }}
+                    {{ bill.creditor_json ? (bill.creditor_json.tradeName || bill.creditor_json.name || 'Sem nome') :
+                    '—' }}
                   </div>
                   <div v-if="bill.creditor_json?.cnpj" class="text-[10px] text-gray-400 truncate">
                     CNPJ: {{ bill.creditor_json.cnpj }}
@@ -288,7 +286,9 @@
               <!-- Valor -->
               <td class="px-4 py-3 whitespace-nowrap text-right align-middle">
                 <div class="text-sm font-bold text-indigo-600 dark:text-indigo-400">
-                  {{ Number(bill.total_invoice_amount || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) }}
+                  {{ Number(bill.total_invoice_amount || 0).toLocaleString('pt-BR', {
+                    style: 'currency', currency: 'BRL'
+                  }) }}
                 </div>
               </td>
 
@@ -333,6 +333,7 @@ import { useContractsStore } from '@/stores/Comercial/Contracts/contractsStore';
 import MultiSelector from '@/components/UI/MultiSelector.vue';
 import API_URL from '@/config/apiUrl';
 import { requestWithAuth } from '@/utils/Auth/requestWithAuth';
+import Favorite from '@/components/config/Favorite.vue'
 
 const store = useBillsStore();
 const contractsStore = useContractsStore();

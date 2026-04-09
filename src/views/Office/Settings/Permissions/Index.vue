@@ -5,6 +5,7 @@
             <!-- Header -->
             <div class="flex items-center gap-2 mb-1">
                 <h1 class="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">Gestão de Alçadas</h1>
+                <Favorite :router="'/settings/permissions'" :section="'Alçadas'" />
             </div>
             <p class="text-gray-600 dark:text-gray-400 mb-6">
                 Controle quais módulos cada usuário pode visualizar e acessar.
@@ -212,6 +213,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { managedRegistry, getDeptManagedPages } from '@/config/navRegistry';
 import { requestWithAuth } from '@/utils/Auth/requestWithAuth';
+import Favorite from '@/components/config/Favorite.vue'
 
 const route = useRoute();
 

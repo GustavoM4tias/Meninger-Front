@@ -189,5 +189,6 @@ onMounted(async () => {
         contractsStore.fetchWorkflowGroups()
     ])
     syncFiltersFromUrl()
+    console.log('Contracts Store Value Mode:', contractsStore.valueMode)
 })
 </script>

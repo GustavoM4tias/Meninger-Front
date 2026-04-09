@@ -110,18 +110,27 @@
                             <Input v-model="editableUser.birth_date" :disabled="isDisabled" type="date" required />
                         </div>
 
-                        <!-- Cidade -->
+                        <!-- Cidade — sempre somente-leitura; edição apenas pelo administrador -->
                         <div class="space-y-1.5">
                             <label
                                 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Cidade</label>
-                            <Input v-model="editableUser.city" :disabled="isDisabled" type="text"
-                                placeholder="Sua cidade" required />
+                            <div class="relative">
+                                <Input v-model="editableUser.city" :disabled="true" type="text"
+                                    placeholder="Cidade não informada" />
+                                <span
+                                    class="absolute inset-y-0 right-3 flex items-center pointer-events-none text-gray-400"
+                                    v-tippy="'Editável somente pelo administrador'">
+                                    <i class="fas fa-lock text-xs"></i>
+                                </span>
+                            </div>
                         </div>
 
-                        <!-- Cargo -->
-                        <div class="space-y-1.5">
+                        <!-- Cargo — visível e obrigatório apenas para admin -->
+                        <div v-if="isAdmin" class="space-y-1.5">
                             <label
-                                class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Cargo</label>
+                                class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                                Cargo <span class="text-red-400">*</span>
+                            </label>
                             <UiSelect v-if="!isDisabled" v-model="editableUser.position"
                                 :options="positionsOptions" placeholder="Selecione o cargo" required />
                             <Input v-else v-model="editableUser.position" :disabled="true" type="text"
@@ -541,6 +550,9 @@ const passwordCheckList = [
 const toast = useToast();
 const authStore = useAuthStore();
 const microsoftStore = useMicrosoftStore();
+
+// ─── Role helpers ─────────────────────────────────────────────────────────────
+const isAdmin = computed(() => authStore.user?.role === 'admin')
 
 // ─── Positions (select) ───────────────────────────────────────────────────────
 const positionsOptions = ref([]);

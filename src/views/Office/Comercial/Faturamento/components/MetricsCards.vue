@@ -1,12 +1,12 @@
 <template>
-    <div class="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-5 gap-4">
+    <div class="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-4 gap-4">
         <!-- Total de Vendas -->
         <Card title="Total de Vendas" :value="metrics.totalSales" label="Total de vendas realizadas"
             icon="fas fa-chart-line" class="!bg-blue-300/30 !border-blue-400/30" />
 
         <!-- Total de Contratos -->
-        <Card title="Total Contratos" :value="metrics.totalContracts" label="Quantidade total de contratos"
-            icon="fas fa-file-signature" class="!bg-indigo-300/30 !border-indigo-400/30" />
+        <!-- <Card title="Total Contratos" :value="metrics.totalContracts" label="Quantidade total de contratos"
+            icon="fas fa-file-signature" class="!bg-indigo-300/30 !border-indigo-400/30" /> -->
 
         <!-- Valor Total (dinâmico: VGV/VGV+DC) -->
         <Card :title="valueTitle" :value="formatCurrency(totalValueDynamic)" :label="valueLabel" :icon="valueIcon"
