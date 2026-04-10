@@ -12,22 +12,18 @@
         <div class="flex items-center gap-2 flex-wrap">
           <!-- VGV / VGV+DC -->
           <div class="inline-flex rounded-md border dark:border-gray-700 overflow-hidden">
-            <button
-              @click="contractsStore.setValueMode('net')"
-              :class="[
-                'px-3 py-1 text-sm font-medium',
-                contractsStore.valueMode === 'net'
-                  ? 'bg-blue-600 dark:bg-blue-700 text-white dark:text-gray-100'
-                  : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-100'
-              ]">VGV</button>
-            <button
-              @click="contractsStore.setValueMode('gross')"
-              :class="[
-                'px-3 py-1 text-sm font-medium border-l border-gray-300 dark:border-gray-700',
-                contractsStore.valueMode === 'gross'
-                  ? 'bg-blue-600 dark:bg-blue-700 text-white dark:text-gray-100'
-                  : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-100'
-              ]">VGV+DC</button>
+            <button @click="contractsStore.setValueMode('net')" :class="[
+              'px-3 py-1 text-sm font-medium',
+              contractsStore.valueMode === 'net'
+                ? 'bg-blue-600 dark:bg-blue-700 text-white dark:text-gray-100'
+                : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-100'
+            ]">VGV</button>
+            <button @click="contractsStore.setValueMode('gross')" :class="[
+              'px-3 py-1 text-sm font-medium border-l border-gray-300 dark:border-gray-700',
+              contractsStore.valueMode === 'gross'
+                ? 'bg-blue-600 dark:bg-blue-700 text-white dark:text-gray-100'
+                : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-100'
+            ]">VGV+DC</button>
           </div>
 
           <!-- Ordenação -->
@@ -39,6 +35,13 @@
             <option value="achievement-asc">% Atingida ↑</option>
             <option value="name-asc">Nome A→Z</option>
           </select>
+
+          <!-- Exportar -->
+          <button
+            class="text-2xl ps-2 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400"
+            v-tippy="'Exportar Dados'" @click="open = true">
+            <i class="fas fa-download"></i>
+          </button>
         </div>
       </div>
     </div>
@@ -57,6 +60,9 @@
       <table class="w-full">
         <thead class="bg-gray-50 dark:bg-gray-800/60 border-b border-gray-200 dark:border-gray-700">
           <tr>
+            <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider w-10">
+              <input type="checkbox" :checked="allVisibleChecked" @change="toggleAllVisible($event)" />
+            </th>
             <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
               Empreendimento
             </th>
@@ -65,6 +71,9 @@
             </th>
             <th class="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
               Realizado <span class="text-gray-400">({{ valueModeLabel }})</span>
+            </th>
+            <th class="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+              Meta Unidades
             </th>
             <th class="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
               Meta Projetada
@@ -81,30 +90,66 @@
         <tbody class="bg-white dark:bg-gray-800/40 divide-y divide-gray-200 dark:divide-gray-600">
           <tr
             v-for="row in sortedData"
-            :key="row.enterprise_id ?? row.name"
-            class="hover:bg-gray-50 dark:hover:bg-gray-800/70 transition-colors">
+            :key="row._key"
+            :class="row.onlyProjectionRow
+              ? 'bg-green-50/70 dark:bg-green-900/20 hover:bg-green-100/70 dark:hover:bg-green-900/30'
+              : 'hover:bg-gray-50 dark:hover:bg-gray-800/70'"
+            class="transition-colors">
+
+            <!-- Checkbox -->
+            <td class="px-6 py-4">
+              <input type="checkbox" :checked="selectedKeys.has(row._key)" @change="toggleOne(row._key, $event)" />
+            </td>
 
             <!-- Empreendimento -->
-            <td class="px-6 py-4">
+            <td class="px-6 py-4 max-w-96">
               <div class="flex items-center gap-2">
                 <div class="w-2.5 h-2.5 rounded-full flex-shrink-0" :style="{ backgroundColor: dotColor(row.status) }" />
-                <span class="text-sm font-medium text-gray-900 dark:text-white line-clamp-2">{{ row.name }}</span>
+                <span class="text-sm font-medium text-gray-900 dark:text-white line-clamp-2 truncate">{{ row.name }}</span>
               </div>
             </td>
 
-            <!-- Vendas -->
             <td class="px-6 py-4 text-right">
-              <span class="text-sm font-semibold text-gray-900 dark:text-white">{{ row.count }}</span>
+              <div class="text-sm font-semibold relative">
+                {{ row.count - distratoCount(row) }}
+
+                <span v-if="!row.onlyProjectionRow && row.proj_count"
+                  class="font-bold text-emerald-600 absolute -top-3">
+                  +{{ row.proj_count }}
+                </span>
+
+                <span v-if="!row.onlyProjectionRow && distratoCount(row) > 0"
+                  class="font-bold text-red-600 absolute -top-4 right-2" v-tippy="'Distratos (não contabilizados)'">
+                  -{{ distratoCount(row) }}
+                </span>
+              </div>
             </td>
 
-            <!-- Realizado VGV -->
             <td class="px-6 py-4 text-right">
-              <span class="text-sm font-semibold text-green-600 dark:text-green-400">
-                {{ formatCurrency(row.realizedVgv) }}
+              <div class="text-sm font-semibold text-green-600">
+                {{ formatCurrency(baseValue(row)) }}
+
+                <span v-if="!row.onlyProjectionRow && appendedValue(row) > 0"
+                  class="text-emerald-600 font-semibold text-xs">
+                  <br />+{{ formatCurrency(appendedValue(row)) }}
+                </span>
+
+                <span v-if="!row.onlyProjectionRow && distratoValue(row) > 0"
+                  class="text-red-600 font-semibold text-xs" v-tippy="'Distratos (não contabilizados)'">
+                  <br />-{{ formatCurrency(distratoValue(row)) }}
+                </span>
+              </div>
+            </td>
+
+            <!-- Meta Unidades -->
+            <td class="px-6 py-4 text-right">
+              <span v-if="row.projectedUnits" class="text-sm font-medium text-violet-600 dark:text-violet-400">
+                {{ row.projectedUnits }}
               </span>
+              <span v-else class="text-sm text-gray-400 dark:text-gray-500">—</span>
             </td>
 
-            <!-- Meta Projetada -->
+            <!-- Meta Projetada (VGV) -->
             <td class="px-6 py-4 text-right">
               <span v-if="row.projectedVgv" class="text-sm font-medium text-sky-600 dark:text-sky-400">
                 {{ formatCurrency(row.projectedVgv) }}
@@ -142,21 +187,170 @@
       </table>
     </div>
 
+    <Export v-model="open" :source="sortedData" title="Exportação de Vendas × Projeção"
+      filename="Vendas_Projecao" initial-delimiter=";" initial-array-mode="join" :preselect="[]" />
+
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch, watchEffect } from 'vue'
 import { useContractsStore } from '@/stores/Comercial/Contracts/contractsStore'
+import Export from '@/components/config/Export.vue'
 
 const props = defineProps({
-  data:            { type: Array,  required: true },
-  timeElapsedPct:  { type: Number, default: 0 },
+  data:           { type: Array,  required: true },
+  timeElapsedPct: { type: Number, default: 0 },
 })
+
+const emit = defineEmits(['selection-metrics'])
 
 const contractsStore = useContractsStore()
 const sortBy         = ref('vgv-desc')
+const open           = ref(false)
 const valueModeLabel = computed(() => contractsStore.valueModeLabel)
+
+// ── Distrato (igual ao Dashboard de Faturamento) ──────────────────────────────
+
+const norm = (v) => String(v ?? '').trim().toLowerCase()
+
+function repasseStatusOfSale(sale) {
+  const first = sale?.contracts?.[0] || {}
+  const r = first?.repasse?.[0]
+  if (r) {
+    const sr = (r.status_repasse ?? r.statusRepasse ?? '').toString().trim()
+    if (sr) return sr
+  }
+  const res = first?.reserva
+  if (res) {
+    const srr = (res.status_repasse ?? res.statusRepasse ?? '').toString().trim()
+    if (srr) return srr
+  }
+  return null
+}
+
+const saleIsDistrato = (sale) => norm(repasseStatusOfSale(sale)) === 'distrato'
+
+const toNum = (v) => {
+  if (v === null || v === undefined || v === '') return null
+  const n = Number(v)
+  return Number.isFinite(n) ? n : null
+}
+
+// Exatamente igual ao salesForRowFrom do EnterprisesSalesTable (modo enterprise)
+function salesForRow(sales, row) {
+  const rowEnterpriseId = toNum(row.enterprise_id ?? row.id ?? null)
+  if (rowEnterpriseId == null) return []
+  const onlyProjRow = !!row.onlyProjectionRow
+  return (sales || []).filter(sale => {
+    const contracts = Array.isArray(sale?.contracts) ? sale.contracts : []
+    if (!contracts.length) return false
+    const belongs = contracts.some(c => toNum(c.enterprise_id) === rowEnterpriseId)
+    if (!belongs) return false
+    if (onlyProjRow) return contracts.every(c => !!c._projection)
+    return true
+  })
+}
+
+function distratoMetaForRow(row) {
+  const snapshot = Array.isArray(contractsStore.uniqueSales) ? contractsStore.uniqueSales : []
+  const sales = salesForRow(snapshot, row)
+  let count = 0
+  let value = 0
+  for (const s of sales) {
+    if (!saleIsDistrato(s)) continue
+    if (row.onlyProjectionRow) continue
+    count += 1
+    value += Number(contractsStore.valuePicker(s) || 0)
+  }
+  return { count, value }
+}
+
+const distratoCount = (row) => distratoMetaForRow(row).count
+const distratoValue = (row) => distratoMetaForRow(row).value
+
+// Mesmo padrão do baseValue do EnterprisesSalesTable
+function baseValue(row) {
+  const base = Number(contractsStore.isNet ? (row.total_value_net || 0) : (row.total_value_gross || 0))
+  const dv   = Number(distratoValue(row) || 0)
+  return (Number.isFinite(base) ? base : 0) - (Number.isFinite(dv) ? dv : 0)
+}
+
+function appendedValue(row) {
+  if (row.onlyProjectionRow) return 0
+  return contractsStore.isNet ? Number(row.proj_value_net || 0) : Number(row.proj_value_gross || 0)
+}
+
+// ── Seleção ───────────────────────────────────────────────────────────────────
+
+const selectedKeys = ref(new Set())
+
+watch(() => props.data, () => { selectedKeys.value = new Set() })
+
+const visibleKeys = computed(() => sortedData.value.map(r => r._key))
+
+const allVisibleChecked = computed(() =>
+  visibleKeys.value.length > 0 && visibleKeys.value.every(k => selectedKeys.value.has(k))
+)
+
+function toggleAllVisible(evt) {
+  const next = new Set(selectedKeys.value)
+  if (evt.target.checked) visibleKeys.value.forEach(k => next.add(k))
+  else visibleKeys.value.forEach(k => next.delete(k))
+  selectedKeys.value = next
+}
+
+function toggleOne(key, evt) {
+  const next = new Set(selectedKeys.value)
+  evt.target.checked ? next.add(key) : next.delete(key)
+  selectedKeys.value = next
+}
+
+// ── Métricas de seleção ───────────────────────────────────────────────────────
+
+const selectedRows = computed(() => {
+  if (selectedKeys.value.size === 0) return []
+  return props.data.filter(r => selectedKeys.value.has(r._key))
+})
+
+const selectionMetricsComputed = computed(() => {
+  if (selectedRows.value.length === 0) return null
+  const rows = selectedRows.value
+
+  const totalSales      = rows.reduce((s, r) => s + Math.max(0, (r.count || 0) - distratoCount(r)), 0)
+  const totalValueNet   = rows.reduce((s, r) => s + (r.total_value_net   || 0), 0)
+  const totalValueGross = rows.reduce((s, r) => s + (r.total_value_gross || 0), 0)
+  const projectedVgv    = rows.reduce((s, r) => s + (r.projectedVgv    || 0), 0)
+  const projectedUnits  = rows.reduce((s, r) => s + (r.projectedUnits  || 0), 0)
+
+  const avgSaleValueNet    = totalSales > 0 ? totalValueNet   / totalSales : 0
+  const avgSaleValueGross  = totalSales > 0 ? totalValueGross / totalSales : 0
+  const avgProjectedTicket = projectedUnits > 0 ? projectedVgv / projectedUnits : 0
+
+  const realizedVgv    = contractsStore.isNet ? totalValueNet : totalValueGross
+  const achievementPct = projectedVgv > 0
+    ? parseFloat((realizedVgv / projectedVgv * 100).toFixed(1))
+    : null
+
+  return {
+    totalSales,
+    totalContracts:    totalSales,
+    totalValueNet,
+    totalValueGross,
+    avgSaleValueNet,
+    avgSaleValueGross,
+    totalValue:        totalValueNet,
+    avgSaleValue:      avgSaleValueNet,
+    totalEnterprises:  rows.length,
+    projectedVgv,
+    projectedUnits,
+    avgProjectedTicket,
+    achievementPct,
+    timeElapsedPct:    props.timeElapsedPct,
+  }
+})
+
+watchEffect(() => { emit('selection-metrics', selectionMetricsComputed.value) })
 
 // ── Ordenação ─────────────────────────────────────────────────────────────────
 
@@ -171,7 +365,7 @@ const sortedData = computed(() => {
       return list.sort((a, b) => (a.achievementPct ?? 999) - (b.achievementPct ?? 999))
     case 'name-asc':
       return list.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'pt-BR'))
-    default: // vgv-desc
+    default:
       return list.sort((a, b) => b.realizedVgv - a.realizedVgv)
   }
 })
@@ -187,19 +381,19 @@ function ratioOf(row) {
 
 function achievementTextClass(row) {
   const r = ratioOf(row)
-  if (r === null)  return 'text-gray-400 dark:text-gray-500'
-  if (r >= 1.1)    return 'text-emerald-600 dark:text-emerald-400'
-  if (r >= 0.8)    return 'text-blue-600 dark:text-blue-400'
-  if (r >= 0.4)    return 'text-yellow-600 dark:text-yellow-400'
+  if (r === null) return 'text-gray-400 dark:text-gray-500'
+  if (r >= 1.1)   return 'text-emerald-600 dark:text-emerald-400'
+  if (r >= 0.8)   return 'text-blue-600 dark:text-blue-400'
+  if (r >= 0.4)   return 'text-yellow-600 dark:text-yellow-400'
   return 'text-red-600 dark:text-red-400'
 }
 
 function achievementBarClass(row) {
   const r = ratioOf(row)
-  if (r === null)  return 'bg-gray-300 dark:bg-gray-600'
-  if (r >= 1.1)    return 'bg-emerald-500'
-  if (r >= 0.8)    return 'bg-blue-500'
-  if (r >= 0.4)    return 'bg-yellow-500'
+  if (r === null) return 'bg-gray-300 dark:bg-gray-600'
+  if (r >= 1.1)   return 'bg-emerald-500'
+  if (r >= 0.8)   return 'bg-blue-500'
+  if (r >= 0.4)   return 'bg-yellow-500'
   return 'bg-red-500'
 }
 

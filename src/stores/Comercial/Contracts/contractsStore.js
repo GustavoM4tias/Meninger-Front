@@ -4,11 +4,10 @@ import { useCarregamentoStore } from '@/stores/Config/carregamento'
 import API_URL from '@/config/apiUrl'
 
 const DEBUG = true
-const DEBUG_PROJECTIONS = true // <- liga/desliga só projeções
+const DEBUG_PROJECTIONS = true
 const log = (...a) => { if (DEBUG) console.log('[contractsStore]', ...a) }
 const logProj = (...a) => { if (DEBUG && DEBUG_PROJECTIONS) console.log('[contractsStore][PROJ]', ...a) }
 
-// evita log gigante travar o console
 const preview = (obj, max = 2500) => {
     try {
         const s = JSON.stringify(obj, null, 2)
@@ -17,11 +16,12 @@ const preview = (obj, max = 2500) => {
         return obj
     }
 }
+
 export const useContractsStore = defineStore('contracts', {
     state: () => ({
         contracts: [],
         enterprises: [],
-        groupBy: 'company', // 'enterprise' | 'company'
+        groupBy: 'company',
         total: 0,
         error: null,
 
@@ -36,23 +36,19 @@ export const useContractsStore = defineStore('contracts', {
         workflowGroups: [],
         selectedGroupIds: [],
         _projCache: new Map(),
+        _enterpriseCompanyMap: new Map(),
 
         enterpriseCities: [],
 
-        // cache por request (dashboard/detail)
-        _contractsCache: new Map(), // key -> { ts, contracts, total }
+        _contractsCache: new Map(),
         _cacheTTLms: 1000 * 60 * 5,
         _lastDashboardKey: null,
 
-        // cache DETAIL por empreendimento
-        _detailByEnterprise: new Map(), // ctxKey -> Map(enterpriseId -> { ts, contracts: [] })
+        _detailByEnterprise: new Map(),
         _detailTTLms: 1000 * 60 * 10
     }),
 
     getters: {
-        // ==========================
-        // Regras (mantidas)
-        // ==========================
         enterpriseOverrides: () => ({
             byId: {
                 17004: { gross: 'LAND_VALUE_ONLY', net: 'LAND_VALUE_ONLY' }
@@ -67,7 +63,6 @@ export const useContractsStore = defineStore('contracts', {
 
         enterpriseCommissionRules: () => ({
             byId: {
-                // 97001: { commission_pct: 0.04 },
                 80001: { commission_pct: 0.04 }
             }
         }),
@@ -105,9 +100,6 @@ export const useContractsStore = defineStore('contracts', {
             }
         },
 
-        // ==========================
-        // Value mode
-        // ==========================
         valueModeLabel: (state) => (state.valueMode === 'net' ? 'VGV' : 'VGV + DC'),
         isGross: (state) => state.valueMode === 'gross',
         isNet: (state) => state.valueMode === 'net',
@@ -115,11 +107,7 @@ export const useContractsStore = defineStore('contracts', {
         valuePicker: (state) => (obj) =>
             (state.valueMode === 'net' ? obj?.total_value_net : obj?.total_value_gross) ?? 0,
 
-        // ==========================
-        // Compat: totals / totalSales (faltavam no seu consumo)
-        // ==========================
         totalSales() {
-            // total de vendas (inclui vendas com contratos reais; projeções puras não contam como venda real)
             return this.uniqueSales.length
         },
 
@@ -131,9 +119,6 @@ export const useContractsStore = defineStore('contracts', {
             return this.uniqueSales.reduce((sum, s) => sum + (Number(s.total_value_gross) || 0), 0)
         },
 
-        // ==========================
-        // Totais por contrato (VGV / VGV+DC)
-        // ==========================
         discountCodes: () => new Set(['DC', 'DESCONTO_CONSTRUTORA']),
 
         _contractTotals() {
@@ -157,24 +142,17 @@ export const useContractsStore = defineStore('contracts', {
             }
         },
 
-        // ==========================
-        // Chave única de venda (corrigida: não pode ser só cliente+unidade)
-        // ==========================
         _makeSaleKey() {
             return (c) => {
                 const cust = c.customer_id ?? 'NULL'
                 const unitId = (c.unit_id != null && c.unit_id !== '') ? String(c.unit_id) : 'NULL'
                 const unitName = (c.unit_name || '').trim().toUpperCase() || 'NULL'
                 const ent = (c.enterprise_id != null && c.enterprise_id !== '') ? String(c.enterprise_id) : 'NULL'
-                // company entra como “refino” no modo company (evita colidir unidades iguais em empresas diferentes)
                 const comp = (c.company_id != null && c.company_id !== '') ? String(c.company_id) : 'NULL'
                 return `${cust}__${ent}__${comp}__${unitId}__${unitName}`
             }
         },
 
-        // ==========================
-        // Agrupamento em vendas (uniqueSales)
-        // ==========================
         uniqueSales() {
             const salesMap = new Map()
             const makeKey = this._makeSaleKey
@@ -185,7 +163,6 @@ export const useContractsStore = defineStore('contracts', {
                 payment_conditions: Array.isArray(c.payment_conditions) ? [...c.payment_conditions] : []
             })
 
-            // 1) agrupar por cliente+unidade(+enterprise/+company)
             this.contracts.forEach((contract) => {
                 const key = makeKey(contract)
                 if (!salesMap.has(key)) {
@@ -208,7 +185,6 @@ export const useContractsStore = defineStore('contracts', {
                 }
             })
 
-            // 1.5 TR sintética + escolher contrato principal
             salesMap.forEach((sale) => {
                 const realContracts = (sale.contracts || []).filter((c) => !c._projection)
                 if (realContracts.length === 0) return
@@ -273,7 +249,6 @@ export const useContractsStore = defineStore('contracts', {
                 sale.financial_institution_date = main.financial_institution_date
             })
 
-            // 2) totais (override/comissão em reais; projeção como veio)
             salesMap.forEach((sale) => {
                 const overrides = this.enterpriseOverrides || {}
                 const byId = overrides.byId || {}
@@ -363,9 +338,6 @@ export const useContractsStore = defineStore('contracts', {
             return Array.from(salesMap.values())
         },
 
-        // ==========================
-        // DASHBOARD (por empreendimento)
-        // ==========================
         salesByEnterprise() {
             const pick = this.valuePicker
             const keyOf = (id, name) => (id != null ? `ID:${id}` : `NAME:${(name || '').trim().toUpperCase()}`)
@@ -447,7 +419,6 @@ export const useContractsStore = defineStore('contracts', {
             return combined.sort((a, b) => b.__combined - a.__combined)
         },
 
-        // mapeia enterprise->company baseado nos contratos reais atuais no store
         enterpriseToCompanyMap() {
             const map = new Map()
             for (const c of this.contracts || []) {
@@ -461,9 +432,6 @@ export const useContractsStore = defineStore('contracts', {
             return map
         },
 
-        // ==========================
-        // DASHBOARD (por empresa)
-        // ==========================
         salesByCompany() {
             const pick = this.valuePicker
             const normName = (s) => (s || '').trim()
@@ -501,7 +469,6 @@ export const useContractsStore = defineStore('contracts', {
                 return byCompany.get(key)
             }
 
-            // 1) agrega REAL por company_id
             for (const s of real) {
                 const first = s.contracts.find((c) => !c._projection) || s.contracts[0] || {}
                 const companyId = first.company_id ?? null
@@ -520,14 +487,12 @@ export const useContractsStore = defineStore('contracts', {
                 }
             }
 
-            // 2) agrega PROJEÇÕES por company_id (já carimbadas) OU via centro de custo/enterprise->company
             for (const s of proj) {
                 const first = s.contracts[0] || {}
 
                 const companyId = first.company_id ?? null
                 const companyName = first.company_name ?? null
 
-                // preferencial: já veio com company
                 if (companyId != null || companyName) {
                     const row = ensure(companyId, companyName)
                     row.proj_count += 1
@@ -538,9 +503,7 @@ export const useContractsStore = defineStore('contracts', {
 
                 const eid = toNum(first.enterprise_id)
 
-                // se não tem enterprise_id válido, não tenta encaixar por enterpriseId
                 if (eid == null || eid <= 0) {
-                    // cria/agg linha só de projeção por NOME (evita "0" e evita pular itens)
                     const ename = (first.enterprise_name || s.enterprise_name || 'Sem vínculo').trim()
                     const key = `COMPANY:PROJ:NAME:${ename.toUpperCase()}`
 
@@ -557,7 +520,7 @@ export const useContractsStore = defineStore('contracts', {
                             proj_value_net: 0,
                             proj_value_gross: 0,
                             onlyProjectionRow: true,
-                            enterpriseIds: new Set() // importante: NÃO guardar 0 aqui
+                            enterpriseIds: new Set()
                         })
                     }
 
@@ -569,7 +532,8 @@ export const useContractsStore = defineStore('contracts', {
                 }
 
                 const map = this.enterpriseToCompanyMap
-                const comp = (map instanceof Map) ? map.get(eid) : null
+                const comp = (map instanceof Map ? map.get(eid) : null) ?? this._enterpriseCompanyMap.get(eid) ?? null
+
                 if (comp && (comp.company_id != null || comp.company_name)) {
                     const row = ensure(comp.company_id ?? null, comp.company_name ?? null)
                     row.proj_count += 1
@@ -579,26 +543,25 @@ export const useContractsStore = defineStore('contracts', {
                     continue
                 }
 
-                // 2.2 fallback antigo: encaixa em algum row que já possua esse enterpriseId
                 let targetRow = null
                 for (const row of byCompany.values()) {
-                    if (row.enterpriseIds.has(eid)) { targetRow = row; break }
+                    if (row.enterpriseIds.has(eid)) {
+                        targetRow = row
+                        break
+                    }
                 }
 
                 if (targetRow) {
-                    // ✅ se a linha é "só projeção" (verde), soma no BASE (count/total_value)
                     if (targetRow.onlyProjectionRow) {
                         targetRow.count += 1
                         targetRow.total_value_net += Number(s.total_value_net) || 0
                         targetRow.total_value_gross += Number(s.total_value_gross) || 0
                     } else {
-                        // ✅ se a linha tem real, projeção é "append" (bolinha verde)
                         targetRow.proj_count += 1
                         targetRow.proj_value_net += Number(s.total_value_net) || 0
                         targetRow.proj_value_gross += Number(s.total_value_gross) || 0
                     }
                 } else {
-                    // cria linha só de projeção
                     const key = `COMPANY:PROJ:ENT:${eid}`
                     if (!byCompany.has(key)) {
                         byCompany.set(key, {
@@ -623,7 +586,6 @@ export const useContractsStore = defineStore('contracts', {
                 }
             }
 
-            // 3) finaliza e ordena por combinado
             const out = [...byCompany.values()].map((r) => {
                 const base = pick(r)
                 const append = (this.isNet ? r.proj_value_net : r.proj_value_gross) || 0
@@ -637,7 +599,6 @@ export const useContractsStore = defineStore('contracts', {
             return out.sort((a, b) => b.__combined - a.__combined)
         },
 
-        // Getter único para o dashboard
         salesDashboard() {
             return this.groupBy === 'company' ? this.salesByCompany : this.salesByEnterprise
         },
@@ -720,6 +681,7 @@ export const useContractsStore = defineStore('contracts', {
         },
 
         projectionContractsCount: (state) => state.contracts.filter((c) => c._projection === true).length,
+
         projectionItemsCount() {
             return this.uniqueSales.filter(
                 (sale) => sale._has_projection && sale.contracts.every((c) => c._projection === true)
@@ -757,7 +719,6 @@ export const useContractsStore = defineStore('contracts', {
             return Number.isFinite(num) ? num : 0
         },
 
-        // extrai número de string tipo "123 - XYZ" / "CC 123"
         _parseLeadingNumber(v) {
             if (v === null || v === undefined) return null
             if (typeof v === 'number') return Number.isFinite(v) ? v : null
@@ -769,10 +730,10 @@ export const useContractsStore = defineStore('contracts', {
             return Number.isFinite(n) ? n : null
         },
 
-        // ===== Centro de custo -> enterprise/company (best effort) =====
         _extractEnterpriseIdFromProjectionRow(row) {
-            // já existentes
             const direct =
+                this._parseLeadingNumber(row?.idemp_erp_resolvido) ??
+                this._parseLeadingNumber(row?.idemp_int_from_reserva) ??
                 this._parseLeadingNumber(row?.codigointerno_empreendimento) ??
                 this._parseLeadingNumber(row?.codigointernoEmpreendimento) ??
                 this._parseLeadingNumber(row?.unidade_json?.idempreendimento_int) ??
@@ -782,7 +743,6 @@ export const useContractsStore = defineStore('contracts', {
 
             if (direct != null) return direct
 
-            // “centro de custo” (variações comuns)
             const cc =
                 row?.centro_custo_id ??
                 row?.centrodecusto_id ??
@@ -804,6 +764,8 @@ export const useContractsStore = defineStore('contracts', {
 
         _extractCompanyFromProjectionRow(row) {
             const cid =
+                this._parseLeadingNumber(row?.empresa_correspondente?.id) ??
+                this._parseLeadingNumber(row?.empresa_correspondente?.company_id) ??
                 this._parseLeadingNumber(row?.company_id) ??
                 this._parseLeadingNumber(row?.companyId) ??
                 this._parseLeadingNumber(row?.empresa_id) ??
@@ -819,6 +781,8 @@ export const useContractsStore = defineStore('contracts', {
                 row?.empresaNome ??
                 row?.nome_empresa ??
                 row?.nomeEmpresa ??
+                row?.empresa_correspondente?.name ??
+                row?.empresa_correspondente?.company_name ??
                 null
 
             return {
@@ -827,13 +791,11 @@ export const useContractsStore = defineStore('contracts', {
             }
         },
 
-        // ✅ com log e limpando caches
         setGroupBy(mode) {
             const prev = this.groupBy
             this.groupBy = mode === 'company' ? 'company' : 'enterprise'
             log('setGroupBy:', prev, '->', this.groupBy)
 
-            // sanity do agrupamento (se vier 0, API não traz company_id)
             let withCompany = 0
             let withoutCompany = 0
             for (const c of this.contracts || []) {
@@ -880,14 +842,12 @@ export const useContractsStore = defineStore('contracts', {
 
             const isPlainObject = (v) => v !== null && typeof v === 'object' && !Array.isArray(v)
 
-            // IMPORTANT: contract_id precisa preservar string (projeções usam "PROJ-...")
             const rawId = c.contract_id ?? c.id ?? ''
             const contract_id = (rawId === null || rawId === undefined) ? '' : String(rawId)
 
             return {
                 contract_id,
 
-                // empresa (para agrupamento)
                 company_id: (c.company_id ?? c.companyId) != null ? n(c.company_id ?? c.companyId) : null,
                 company_name: c.company_name ?? c.companyName ?? null,
 
@@ -931,66 +891,7 @@ export const useContractsStore = defineStore('contracts', {
             return out
         },
 
-        // ===== PROJEÇÕES: normaliza e "carimba" company usando enterprise OU centro de custo =====
-        _normalizeProjectionRepasse(row, groupId) {
-            const n = this._toNumber
-
-            // valor fallback
-            const fallbackValue =
-                n(row?.valor_previsto) ||
-                n(row?.valor_contrato) ||
-                n(row?.condicoes?.total_proposta) ||
-                n(row?.condicoes?.valor_contrato) ||
-                n(row?.condicoes?.vgv_tabela) ||
-                0
-
-            // enterpriseId: tenta campos originais e fallback pelo centro de custo
-            const enterpriseId = this._extractEnterpriseIdFromProjectionRow(row)
-
-            // company: 1) se vier na projeção; 2) tenta enterprise->company
-            const directCompany = this._extractCompanyFromProjectionRow(row)
-            const map = this.enterpriseToCompanyMap
-            const mapped = (enterpriseId != null && map instanceof Map) ? map.get(Number(enterpriseId)) : null
-
-            const company_id = (directCompany.company_id != null)
-                ? directCompany.company_id
-                : (mapped?.company_id ?? null)
-
-            const company_name = (directCompany.company_name)
-                ? directCompany.company_name
-                : (mapped?.company_name ?? null)
-
-            const projId =
-                row?.idrepasse ||
-                row?.codigointerno_unidade ||
-                row?.codigointernoUnidade ||
-                Math.random().toString(36).slice(2)
-
-            // ✅ 1) tenta montar condições por séries:
-            // prioridade: row.condicoes.series (se o endpoint já devolve)
-            // fallback: row.reserva.condicoes.series (se vier “reserva embutida” no repasse)
-            const series =
-                row?.condicoes?.series ||
-                row?.reserva?.condicoes?.series ||
-                row?.reserva_obj?.condicoes?.series ||
-                row?.reservaObj?.condicoes?.series ||
-                null
-
-            let pcs = this._seriesToPaymentConditions(series)
-
-            // ✅ 2) fallback: cria condição sintética se não veio séries
-            if (!Array.isArray(pcs) || pcs.length === 0) {
-                pcs = [{
-                    condition_type_id: 'PROJ',
-                    condition_type_name: 'Projeção de Repasse',
-                    total_value: fallbackValue,
-                    installments_number: 1,
-                    base_date: row?.data_status_repasse || row?.dataStatusRepasse || null,
-                    synthetic: true
-                }]
-            }
-
-            // ✅ 3) anexa reserva (se vier), senão cria stub quando existir idreserva
+        _buildReservaStub(row, fallbackEnterpriseName = null) {
             const embeddedReserva =
                 row?.reserva ||
                 row?.reserva_obj ||
@@ -1007,7 +908,7 @@ export const useContractsStore = defineStore('contracts', {
                     idreserva: idreserva ?? null,
                     data_reserva: row?.data_reserva || row?.dataReserva || null,
                     data_venda: row?.data_venda || row?.dataVenda || null,
-                    empreendimento: row?.empreendimento || row?.enterprise_name || null,
+                    empreendimento: row?.empreendimento || row?.enterprise_name || fallbackEnterpriseName || null,
                     etapa: row?.etapa || row?.unidade_json?.etapa || null,
                     bloco: row?.bloco || row?.unidade_json?.bloco || row?.unidade_json?.quadra || null,
                     unidade: row?.unidade || row?.unit_name || null,
@@ -1019,7 +920,57 @@ export const useContractsStore = defineStore('contracts', {
                 }
                 : null
 
-            const reservaFinal = embeddedReserva || reservaStub
+            return embeddedReserva || reservaStub || null
+        },
+
+        _normalizeProjectionRepasse(row, groupId) {
+            const n = this._toNumber
+
+            const fallbackValue =
+                n(row?.valor_previsto) ||
+                n(row?.valor_contrato) ||
+                n(row?.condicoes?.total_proposta) ||
+                n(row?.condicoes?.valor_contrato) ||
+                n(row?.condicoes?.vgv_tabela) ||
+                0
+
+            const enterpriseId = this._extractEnterpriseIdFromProjectionRow(row)
+
+            const directCompany = this._extractCompanyFromProjectionRow(row)
+            const permMapped = (enterpriseId != null)
+                ? this._enterpriseCompanyMap.get(Number(enterpriseId))
+                : null
+
+            const company_id = directCompany.company_id ?? permMapped?.company_id ?? null
+            const company_name = directCompany.company_name ?? permMapped?.company_name ?? null
+
+            const projId =
+                row?.idrepasse ||
+                row?.codigointerno_unidade ||
+                row?.codigointernoUnidade ||
+                Math.random().toString(36).slice(2)
+
+            const series =
+                row?.condicoes?.series ||
+                row?.reserva?.condicoes?.series ||
+                row?.reserva_obj?.condicoes?.series ||
+                row?.reservaObj?.condicoes?.series ||
+                null
+
+            let pcs = this._seriesToPaymentConditions(series)
+
+            if (!Array.isArray(pcs) || pcs.length === 0) {
+                pcs = [{
+                    condition_type_id: 'PROJ',
+                    condition_type_name: 'Projeção de Repasse',
+                    total_value: fallbackValue,
+                    installments_number: 1,
+                    base_date: row?.data_status_repasse || row?.dataStatusRepasse || null,
+                    synthetic: true
+                }]
+            }
+
+            const reservaFinal = this._buildReservaStub(row, row?.empreendimento || row?.enterprise_name || null)
 
             return {
                 _projection: true,
@@ -1036,7 +987,6 @@ export const useContractsStore = defineStore('contracts', {
 
                 financial_institution_date: row?.data_status_repasse || row?.dataStatusRepasse || null,
 
-                // mantém só como referência
                 land_value: fallbackValue,
 
                 unit_name: row?.unidade || row?.unit_name || '',
@@ -1045,48 +995,45 @@ export const useContractsStore = defineStore('contracts', {
                 customer_id: null,
                 customer_name: row?.titular?.nome || row?.cliente || '—',
 
-                // ✅ AGORA É AQUI QUE O MODAL VAI SE APOIAR PRA LISTAR/ SOMAR
                 payment_conditions: pcs,
 
-                // ✅ mantém repasse, mas também garante que reserva fique acessível
                 repasse: [{
                     ...row,
-                    // se o endpoint não devolve, ao menos deixa acessível a reserva para o front
                     reserva: reservaFinal ?? row?.reserva ?? null
                 }],
 
-                reserva: reservaFinal, // ✅ também no nível do contrato (compat)
+                reserva: reservaFinal,
                 links: []
             }
         },
+
         _normalizeProjectionReserva(row, groupId) {
             const n = this._toNumber
 
             const enterpriseId = this._extractEnterpriseIdFromProjectionRow(row)
 
             const directCompany = this._extractCompanyFromProjectionRow(row)
-            const map = this.enterpriseToCompanyMap
-            const mapped = (enterpriseId != null && map instanceof Map) ? map.get(Number(enterpriseId)) : null
+            const permMapped = (enterpriseId != null)
+                ? this._enterpriseCompanyMap.get(Number(enterpriseId))
+                : null
 
-            const company_id = (directCompany.company_id != null)
-                ? directCompany.company_id
-                : (mapped?.company_id ?? null)
+            const company_id = directCompany.company_id ?? permMapped?.company_id ?? null
+            const company_name = directCompany.company_name ?? permMapped?.company_name ?? null
 
-            const company_name = (directCompany.company_name)
-                ? directCompany.company_name
-                : (mapped?.company_name ?? null)
+            let pcs =
+                this._seriesToPaymentConditions(row?.condicoes?.series) ||
+                this._seriesToPaymentConditions(row?.reserva?.condicoes?.series) ||
+                this._seriesToPaymentConditions(row?.reserva_obj?.condicoes?.series) ||
+                this._seriesToPaymentConditions(row?.reservaObj?.condicoes?.series)
 
-            // 1) tenta montar por séries
-            let pcs = this._seriesToPaymentConditions(row?.condicoes?.series)
-
-            // 2) fallback (quando não tem séries)
             const fallback =
                 n(row?.condicoes?.total_proposta) ||
                 n(row?.condicoes?.valor_contrato) ||
                 n(row?.condicoes?.vgv_tabela) ||
+                n(row?.valor_previsto) ||
+                n(row?.valor_contrato) ||
                 0
 
-            // ✅ FIX: se não vier série, cria uma condição sintética com o fallback
             if (!Array.isArray(pcs) || pcs.length === 0) {
                 pcs = [{
                     condition_type_id: 'PROJ',
@@ -1099,10 +1046,20 @@ export const useContractsStore = defineStore('contracts', {
             }
 
             const projId =
-                row.idreserva ||
+                row?.idreserva ||
                 row?.unidade_json?.idunidade_int ||
                 row?.unidadeJson?.idunidade_int ||
                 Math.random().toString(36).slice(2)
+
+            const reservaFinal = this._buildReservaStub(row, row?.empreendimento || row?.enterprise_name || null)
+
+            const repasseSynthetic = {
+                ...row,
+                idrepasse: row?.idrepasse ?? `SYNTH-RS-${projId}`,
+                status_repasse: row?.status_repasse ?? row?.statusRepasse ?? 'PROJECAO_RESERVA',
+                data_status_repasse: row?.data_status_repasse ?? row?.dataStatusRepasse ?? row?.data_reserva ?? row?.dataReserva ?? null,
+                reserva: reservaFinal ?? row
+            }
 
             return {
                 _projection: true,
@@ -1112,17 +1069,16 @@ export const useContractsStore = defineStore('contracts', {
                 contract_id: `PROJ-RS-${projId}`,
 
                 enterprise_id: enterpriseId,
-                enterprise_name: row.empreendimento || row?.enterprise_name || '',
+                enterprise_name: row?.empreendimento || row?.enterprise_name || '',
 
                 company_id,
                 company_name,
 
-                financial_institution_date: row.data_reserva || row?.dataReserva || null,
+                financial_institution_date: row?.data_reserva || row?.dataReserva || null,
 
-                // mantém (não é usado no total, mas ok para referência)
                 land_value: fallback,
 
-                unit_name: row.unidade || row?.unit_name || '',
+                unit_name: row?.unidade || row?.unit_name || '',
                 unit_id: row?.unidade_json?.idunidade_int || row?.unidadeJson?.idunidade_int || null,
 
                 customer_id: null,
@@ -1130,10 +1086,28 @@ export const useContractsStore = defineStore('contracts', {
 
                 payment_conditions: pcs,
 
-                repasse: [],
-                reserva: row,
+                // redundância proposital para compatibilidade do front
+                repasse: [repasseSynthetic],
+                reserva: reservaFinal ?? row,
                 links: []
             }
+        },
+
+        _detectProjectionItemType(item, metaTipo = null) {
+            const mt = String(metaTipo ?? '').toLowerCase().trim()
+            if (mt === 'repasses' || mt === 'repasse') return 'repasses'
+            if (mt === 'reservas' || mt === 'reserva') return 'reservas'
+
+            if (item?.idrepasse != null) return 'repasses'
+            if (item?.idreserva != null) return 'reservas'
+
+            const hasRepasseSignals =
+                item?.data_status_repasse ||
+                item?.status_repasse ||
+                item?.statusRepasse
+
+            if (hasRepasseSignals) return 'repasses'
+            return 'reservas'
         },
 
         async _fetchProjectionsForGroup(idgroup) {
@@ -1157,11 +1131,9 @@ export const useContractsStore = defineStore('contracts', {
             const data = await res.json()
             const { results = [], meta = {} } = data
 
-            // --- LOG 1: meta + tamanho
             logProj('response meta:', meta)
             logProj('results length:', results.length)
 
-            // --- LOG 2: amostra bruta (primeiro item) + keys
             const firstRaw = results?.[0] ?? null
             if (firstRaw) {
                 logProj('first raw ids:', {
@@ -1171,28 +1143,29 @@ export const useContractsStore = defineStore('contracts', {
                     seriesLen: Array.isArray(firstRaw?.condicoes?.series) ? firstRaw.condicoes.series.length : 0,
                     hasEmbeddedReserva: !!(firstRaw?.reserva || firstRaw?.reserva_obj || firstRaw?.reservaObj)
                 })
+                logProj('first raw ALL keys (para diagnóstico centro de custo):', Object.keys(firstRaw))
+                logProj('first raw centro_custo candidates:', {
+                    centro_custo_id: firstRaw?.centro_custo_id ?? undefined,
+                    centrodecusto_id: firstRaw?.centrodecusto_id ?? undefined,
+                    centroCustoId: firstRaw?.centroCustoId ?? undefined,
+                    centro_custo: firstRaw?.centro_custo ?? undefined,
+                    codigo_centro_custo: firstRaw?.codigo_centro_custo ?? undefined,
+                    codigointerno_empreendimento: firstRaw?.codigointerno_empreendimento ?? undefined,
+                    enterprise_id: firstRaw?.enterprise_id ?? undefined,
+                    unidade_json_idempreendimento: firstRaw?.unidade_json?.idempreendimento_int ?? undefined
+                })
             } else {
                 logProj('no results returned')
             }
 
-            // determina tipo (sem inventar)
-            const tipo =
-                (meta?.tipo || (results?.[0]?.idrepasse ? 'repasses' : 'reservas'))
-                    .toString()
-                    .toLowerCase()
+            const metaTipo = (meta?.tipo || '').toString().toLowerCase()
+            logProj('detected meta tipo:', metaTipo || '(empty)')
 
-            logProj('detected tipo:', tipo)
-
-            // --- LOG 3: checar caminhos de "imobiliária" que o SEU front já tenta usar hoje
-            // (repasseOf/reservaOf/imobiliariaOf do modal)
             if (firstRaw) {
                 const rawImob = {
-                    // caminhos comuns do seu front
                     imob_direct: firstRaw?.imobiliaria ?? null,
                     imob_reserva_corretor: firstRaw?.corretor?.imobiliaria ?? null,
                     imob_reserva_titular_corretor: firstRaw?.titular?.corretor?.imobiliaria ?? null,
-
-                    // alguns payloads vêm com objeto (mostra só keys)
                     imob_obj_keys: (firstRaw?.imobiliaria && typeof firstRaw.imobiliaria === 'object')
                         ? Object.keys(firstRaw.imobiliaria)
                         : null
@@ -1200,16 +1173,16 @@ export const useContractsStore = defineStore('contracts', {
                 logProj('raw imobiliaria candidates (first):', rawImob)
             }
 
-            // normaliza
-            const normalized = results.map((r) =>
-                tipo === 'repasses'
+            const normalized = results.map((r) => {
+                const itemTipo = this._detectProjectionItemType(r, metaTipo)
+                return itemTipo === 'repasses'
                     ? this._normalizeProjectionRepasse(r, idgroup)
                     : this._normalizeProjectionReserva(r, idgroup)
-            )
+            })
 
-            // --- LOG 4: amostra normalizada (valor, ids e repasse/reserva)
             const sample = normalized.slice(0, 3).map((c) => ({
                 contract_id: c.contract_id,
+                projection_tipo: c._projection_tipo,
                 enterprise_id: c.enterprise_id,
                 company_id: c.company_id,
                 pcs_len: Array.isArray(c?.payment_conditions) ? c.payment_conditions.length : 0,
@@ -1274,9 +1247,6 @@ export const useContractsStore = defineStore('contracts', {
             log('clearContractsCache')
         },
 
-        // ==========================
-        // cache DETAIL POR EMPREENDIMENTO
-        // ==========================
         _buildDetailCtxKey() {
             const f = this.filters || {}
             const start = f.startDate || ''
@@ -1328,9 +1298,6 @@ export const useContractsStore = defineStore('contracts', {
             log('clearDetailCache')
         },
 
-        // ==========================
-        // API
-        // ==========================
         async fetchContracts({ view = 'dashboard', enterpriseId = null, enterpriseIds = null, force = false } = {}) {
             const carregamentoStore = useCarregamentoStore()
             this.error = null
@@ -1340,7 +1307,6 @@ export const useContractsStore = defineStore('contracts', {
             let __detailCachedBeforeRequest = []
             let __detailRequestedIds = null
 
-            // detail: 1 enterprise
             if (isDetail && !force && enterpriseId != null) {
                 const ctxKey = this._buildDetailCtxKey()
                 const cachedDetail = this._getDetailFromCache(ctxKey, enterpriseId)
@@ -1359,7 +1325,6 @@ export const useContractsStore = defineStore('contracts', {
                 }
             }
 
-            // detail: enterpriseIds (busca só missing)
             if (isDetail && !force && Array.isArray(enterpriseIds) && enterpriseIds.length > 0) {
                 const ctxKey = this._buildDetailCtxKey()
                 const ids = enterpriseIds.map(Number).filter(Number.isFinite)
@@ -1437,8 +1402,29 @@ export const useContractsStore = defineStore('contracts', {
                 const data = await response.json()
                 const normalized = Array.isArray(data.results) ? data.results.map(this._normalizeContract) : []
 
-                // seta temporário para permitir enterpriseToCompanyMap no normalize de projeção
                 this.contracts = normalized
+
+                for (const c of normalized) {
+                    if (c?._projection) continue
+                    const eid = Number(c.enterprise_id)
+                    if (!Number.isFinite(eid)) continue
+
+                    this._enterpriseCompanyMap.set(eid, {
+                        company_id: c.company_id ?? null,
+                        company_name: c.company_name ?? null
+                    })
+                }
+
+                for (const c of normalized) {
+                    const eid = Number(c.enterprise_id)
+                    if (!Number.isFinite(eid) || eid <= 0) continue
+                    if (!this._enterpriseCompanyMap.has(eid) && (c.company_id != null || c.company_name)) {
+                        this._enterpriseCompanyMap.set(eid, {
+                            company_id: c.company_id ?? null,
+                            company_name: c.company_name ?? null
+                        })
+                    }
+                }
 
                 if (isDetail) {
                     const ctxKey = this._buildDetailCtxKey()
@@ -1459,7 +1445,6 @@ export const useContractsStore = defineStore('contracts', {
                     merged = [...__detailCachedBeforeRequest, ...normalized, ...projections]
                 }
 
-                // dedupe por contract_id
                 const dedup = new Map()
                 for (const c of merged) {
                     const k = String(c?.contract_id ?? '')
@@ -1477,7 +1462,13 @@ export const useContractsStore = defineStore('contracts', {
                 if (view === 'dashboard') this._lastDashboardKey = key
 
                 const sampleReal = merged.find((c) => !c._projection)
-                log('fetchContracts done:', { view, normalized: normalized.length, projections: projections.length, merged: merged.length })
+                log('fetchContracts done:', {
+                    view,
+                    normalized: normalized.length,
+                    projections: projections.length,
+                    merged: merged.length,
+                    projSample: preview(projections.slice(0, 2))
+                })
                 log('sample company:', sampleReal ? { company_id: sampleReal.company_id, company_name: sampleReal.company_name } : null)
 
                 let withCompany = 0
@@ -1517,6 +1508,7 @@ export const useContractsStore = defineStore('contracts', {
 
         setSelectedGroups(ids) {
             this.selectedGroupIds = Array.isArray(ids) ? ids.map(Number).filter(Number.isFinite) : []
+            this._projCache.clear()
             this.clearDetailCache()
             this.clearContractsCache()
             log('setSelectedGroups:', this.selectedGroupIds)
@@ -1580,6 +1572,7 @@ export const useContractsStore = defineStore('contracts', {
 
                 const toArray = (d) =>
                     Array.isArray(d?.results) ? d.results : Array.isArray(d?.data) ? d.data : Array.isArray(d) ? d : []
+
                 const raw = [...toArray(dataR), ...toArray(dataP)]
 
                 const norm = (g) => {
