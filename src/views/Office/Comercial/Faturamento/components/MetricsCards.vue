@@ -1,5 +1,5 @@
 <template>
-    <div class="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-4 gap-4">
+    <div class="grid grid-cols-1 xl:grid-cols-3 gap-4">
         <!-- Total de Vendas -->
         <Card title="Total de Vendas" :value="metrics.totalSales" label="Total de vendas realizadas"
             icon="fas fa-chart-line" class="!bg-blue-300/30 !border-blue-400/30" />
@@ -17,8 +17,8 @@
             :class="ticketCardColorClass" />
 
         <!-- Empreendimentos -->
-        <Card title="Empreendimentos" :value="metrics.totalEnterprises" label="Quantidade de empreendimentos"
-            icon="fas fa-building" class="!bg-orange-300/30 !border-orange-400/30" />
+        <!-- <Card title="Empreendimentos" :value="metrics.totalEnterprises" label="Quantidade de empreendimentos"
+            icon="fas fa-building" class="!bg-orange-300/30 !border-orange-400/30" /> -->
     </div>
 </template>
 

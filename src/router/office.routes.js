@@ -196,6 +196,12 @@ export default [
                         component: () => import('@/views/Office/Tools/BucketUpload/Index.vue'),
                         meta: { searchable: true, content: 'Envio de planilhas de Engenharia e Área Construída ao bucket GCS.' },
                     },
+                    {
+                        path: 'signature',
+                        name: 'Assinatura Digital',
+                        component: () => import('@/views/Office/Tools/Signature/Index.vue'),
+                        meta: { requiresAuth: true, searchable: true, content: 'Assine documentos PDF com autenticação por senha e reconhecimento facial.' },
+                    },
                 ],
             },
 

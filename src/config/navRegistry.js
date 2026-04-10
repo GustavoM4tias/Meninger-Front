@@ -113,6 +113,7 @@ export const navRegistry = [
             { route: '/tools/validator', section: 'Validador', name: 'Validador', icon: 'fas fa-check-double' },
             { route: '/tools/paymentflow', section: 'Fluxo de Pagamento', name: 'Fluxo de Pagamento', icon: 'fas fa-diagram-project' },
             { route: '/tools/bucket-upload', section: 'Envio ao Bucket', name: 'Envio ao Bucket', icon: 'fas fa-cloud-upload-alt' },
+            { route: '/tools/signature', section: 'Assinatura Digital', name: 'Assinatura Digital', icon: 'fas fa-pen-nib' },
         ],
     },
 
