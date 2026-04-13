@@ -112,6 +112,18 @@ export default [
                         component: () => import('@/views/Office/Comercial/Workflow/Index.vue'),
                         meta: { requiresAuth: true, allowedPosition: '', searchable: false, content: 'Grupos de Workflow' },
                     },
+                    {
+                        path: 'conditions',
+                        name: 'Fichas Comerciais',
+                        component: () => import('@/views/Office/Comercial/Conditions/Index.vue'),
+                        meta: { requiresAuth: true, searchable: true, content: 'Fichas Comerciais — condições mensais de produto por empreendimento' },
+                    },
+                    {
+                        path: 'conditions/:id',
+                        name: 'Ficha Comercial Detalhe',
+                        component: () => import('@/views/Office/Comercial/Conditions/Detail.vue'),
+                        meta: { requiresAuth: true, searchable: false, content: 'Detalhe da Ficha Comercial' },
+                    },
                 ],
             },
 

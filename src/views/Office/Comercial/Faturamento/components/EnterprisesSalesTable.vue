@@ -123,7 +123,8 @@
               <div class="flex items-center">
                 <div :style="{ backgroundColor: getColor(index) }" class="w-3 h-3 rounded-full mr-3"></div>
                 <div class="flex text-sm font-medium line-clamp-2">
-                  {{ enterprise.name }}
+                  <span class="max-w-96 truncate">{{ enterprise.name }}</span>
+                  
                   <div v-if="!enterprise.onlyProjectionRow && enterprise.proj_count > 0"
                     class="w-2 h-2 rounded-full ml-2 my-auto cursor-pointer bg-emerald-400 animate-pulse"
                     v-tippy="'Projeção vinculada'" />
@@ -387,15 +388,15 @@ const salesForRowFrom = (sales, row) => {
 }
 
 /* =====================
-   FILTRO EXCLUSIVO DO MODAL (CORRIGE PROJEÇÕES EM COMPANY)
+   FILTRO DO MODAL — inclui projeções vinculadas por nome quando o backend
+   não resolveu o idemp_erp_resolvido (enterprise_id = null nas projeções).
+   Garante que o modal mostre as mesmas vendas que o dashboard conta no +N.
    ===================== */
 const salesForModalRowFrom = (sales, row, ctx = {}) => {
   const byCompany = contractsStore.groupBy === 'company'
   const onlyProjRow = !!row.onlyProjectionRow
 
-  // Regra: só muda comportamento no MODAL quando for:
-  // - agrupado por empresa
-  // - linha de projeção
+  // ── Empresa + linha de projeção pura ────────────────────────────────
   if (byCompany && onlyProjRow) {
     const allowed = Array.isArray(ctx.enterpriseIds) ? ctx.enterpriseIds : []
     const allowedSet = new Set(allowed.map(Number).filter(Number.isFinite))
@@ -403,21 +404,50 @@ const salesForModalRowFrom = (sales, row, ctx = {}) => {
     return (sales || []).filter((sale) => {
       const contracts = Array.isArray(sale?.contracts) ? sale.contracts : []
       if (!contracts.length) return false
-
-      // 1) precisa ser 100% projeção
       if (!contracts.every((c) => !!c._projection)) return false
-
-      // 2) precisa estar nos empreendimentos dessa linha (evita puxar MOND junto do URBAN)
-      if (allowedSet.size > 0) {
-        return contracts.some((c) => allowedSet.has(Number(c.enterprise_id)))
-      }
-
-      // fallback: se não houver enterpriseIds (não deveria), mantém só a regra de projeção
+      if (allowedSet.size > 0) return contracts.some((c) => allowedSet.has(Number(c.enterprise_id)))
       return true
     })
   }
 
-  // Todo o resto mantém a regra original (tabela/dashboard)
+  // ── Empreendimento + linha real (inclui projeções vinculadas) ────────
+  if (!byCompany && !onlyProjRow) {
+    const rowEnterpriseId = toNum(row.enterprise_id ?? row.id ?? null)
+    const rowName = (row.name || '').toUpperCase().trim()
+
+    return (sales || []).filter((sale) => {
+      const contracts = Array.isArray(sale?.contracts) ? sale.contracts : []
+      if (!contracts.length) return false
+
+      // A) contratos reais: filtro padrão por enterprise_id
+      const hasReal = contracts.some((c) => !c._projection)
+      if (hasReal) {
+        return rowEnterpriseId != null
+          ? contracts.some((c) => !c._projection && toNum(c.enterprise_id) === rowEnterpriseId)
+          : false
+      }
+
+      // B) projeções puras: aceita se enterprise_id bate OU se nome do empreendimento da projeção
+      //    é prefixo/subconjunto do nome da linha real (resolve o caso "TERRAS DE SÃO PAULO V"
+      //    vs "MARILIA/SP - TERRAS DE SÃO PAULO V - FASE 3 ...")
+      if (rowEnterpriseId != null) {
+        const matchById = contracts.some((c) => toNum(c.enterprise_id) === rowEnterpriseId)
+        if (matchById) return true
+      }
+
+      // Name-prefix fallback para projeções sem enterprise_id resolvido
+      if (rowName) {
+        return contracts.some((c) => {
+          const projName = (c.enterprise_name || '').toUpperCase().trim()
+          return projName && (rowName.includes(projName) || projName.includes(rowName))
+        })
+      }
+
+      return false
+    })
+  }
+
+  // ── Tudo o mais: regra original ──────────────────────────────────────
   return salesForRowFrom(sales, row)
 }
 
