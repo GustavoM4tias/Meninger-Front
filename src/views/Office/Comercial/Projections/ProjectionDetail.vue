@@ -1612,7 +1612,7 @@ const filterPanelOpen = ref(true)
                                 <span class="text-xs font-bold w-8 text-right shrink-0 tabular-nums"
                                     :class="(row.values?.[ym]?.units || 0) > 0 ? 'text-indigo-700 dark:text-indigo-300' : 'text-gray-200 dark:text-gray-800'">
                                     {{ row.values?.[ym]?.units || 0 }}
-                                    <span v-if="vgvValue(row, ym) > 0" class="text-[9px] text-gray-400 ml-1">({{ brlShortFmt(vgvValue(row, ym)) }} VGV)</span>
+                                    <!-- <span v-if="vgvValue(row, ym) > 0" class="text-[9px] text-gray-400 ml-1">({{ brlShortFmt(vgvValue(row, ym)) }} VGV)</span> -->
                                 </span>
                                 <span class="text-[10px] w-28 text-right shrink-0 tabular-nums font-semibold truncate"
                                     :class="vgvValue(row, ym) > 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-gray-200 dark:text-gray-800'">

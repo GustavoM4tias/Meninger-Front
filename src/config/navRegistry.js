@@ -87,9 +87,18 @@ export const navRegistry = [
                     { route: '/comercial/buildings', section: 'Portal do Cliente', name: 'Portal do Cliente', icon: 'fas fa-user-circle' },
                 ],
             },
+            {
+                key: 'produto',
+                name: 'Produto',
+                icon: 'fas fa-file-contract',
+                pages: [
+                    { route: '/comercial/conditions', name: 'Fichas Comerciais', icon: 'fas fa-file-contract' },
+                ],
+            },
         ],
         pages: [
             { route: '/comercial/workflow/groups', section: 'Grupos Workflow', name: 'Grupos Workflow', icon: 'fas fa-chart-diagram' },
+            { route: '/comercial/conditions',      section: 'Fichas Comerciais', name: 'Fichas Comerciais', icon: 'fas fa-file-contract' },
         ],
     },
 

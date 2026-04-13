@@ -43,6 +43,7 @@
 <script setup>
 import { onMounted, ref, computed } from 'vue'
 import { useContractsStore } from '@/stores/Comercial/Contracts/contractsStore'
+import { useHiddenEnterprisesStore } from '@/stores/Comercial/Contracts/hiddenEnterprisesStore'
 import Favorite from "@/components/config/Favorite.vue";
 
 // Components
@@ -52,8 +53,13 @@ import EnterprisesSalesTable from './components/EnterprisesSalesTable.vue'
 import LandSyncConfigModal from './components/LandSyncConfigModal.vue'
 
 const contractsStore = useContractsStore()
+const hiddenStore = useHiddenEnterprisesStore()
 const isLandSyncModalOpen = ref(false)
 const selectionMetrics = ref(null)
+
+const isAdmin = computed(() => {
+    try { return localStorage.getItem('role') === 'admin' } catch { return false }
+})
 
 const metricsToShow = computed(() => selectionMetrics.value || contractsStore.metrics)
 
@@ -71,5 +77,7 @@ const handleFilterChange = async () => {
 
 onMounted(() => {
     loadData()
+    // Pre-load hidden enterprises filter for admin users
+    if (isAdmin.value) hiddenStore.fetchAll()
 })
 </script>
