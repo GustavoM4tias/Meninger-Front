@@ -465,7 +465,7 @@ async function onBoletoUpdated() {
 
                                     <!-- Fornecedor -->
                                     <div class="col-span-12 md:col-span-3">
-                                        <div class="font-medium text-sm text-gray-900 dark:text-white truncate">
+                                        <div class="font-medium text-sm text-gray-900 dark:text-white truncate" :title="launch.providerName">
                                             {{ launch.providerName || '—' }}
                                         </div>
                                         <div class="text-xs text-gray-400 font-mono">
@@ -484,7 +484,7 @@ async function onBoletoUpdated() {
 
                                     <!-- Empreendimento -->
                                     <div
-                                        class="col-span-12 md:col-span-2 text-sm text-gray-600 dark:text-gray-400 truncate">
+                                        class="col-span-12 md:col-span-2 text-sm text-gray-600 dark:text-gray-400 truncate" :title="launch.enterpriseName">
                                         {{ launch.enterpriseName || launch.companyName || '—' }}
                                     </div>
 
