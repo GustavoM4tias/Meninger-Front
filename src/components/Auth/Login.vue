@@ -55,11 +55,11 @@
       Não tem uma conta? Crie agora.
     </a>
 
-    <div class="mt-4 flex gap-2 items-center">
+    <!-- <div class="mt-4 flex gap-2 items-center">
       <Button v-if="faceEnabled" type="button" @click="loginFacial" :disabled="loginLoading">
         Entrar com o Face ID
       </Button>
-    </div>
+    </div> --> 
 
     <!-- ─────────────────── FORGOT PASSWORD MODAL ─────────────────── -->
     <teleport to="body">
