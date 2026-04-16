@@ -44,6 +44,7 @@
 import { onMounted, ref, computed } from 'vue'
 import { useContractsStore } from '@/stores/Comercial/Contracts/contractsStore'
 import { useHiddenEnterprisesStore } from '@/stores/Comercial/Contracts/hiddenEnterprisesStore'
+import { useStageCommissionRulesStore } from '@/stores/Comercial/Contracts/stageCommissionRulesStore'
 import Favorite from "@/components/config/Favorite.vue";
 
 // Components
@@ -54,6 +55,7 @@ import LandSyncConfigModal from './components/LandSyncConfigModal.vue'
 
 const contractsStore = useContractsStore()
 const hiddenStore = useHiddenEnterprisesStore()
+const stageCommissionRulesStore = useStageCommissionRulesStore()
 const isLandSyncModalOpen = ref(false)
 const selectionMetrics = ref(null)
 
@@ -77,7 +79,8 @@ const handleFilterChange = async () => {
 
 onMounted(() => {
     loadData()
-    // Pre-load hidden enterprises filter for admin users
+    // Pre-load filters/rules needed for calculations
     if (isAdmin.value) hiddenStore.fetchAll()
+    stageCommissionRulesStore.fetchAll()
 })
 </script>

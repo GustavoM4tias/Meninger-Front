@@ -12,7 +12,7 @@
         <div class="flex items-center gap-2">
           <button v-if="isAdmin"
             class="inline-flex items-center justify-center p-2 rounded-full text-gray-600 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
-            v-tippy="'Configurar empreendimentos com terreno externo'" @click="emit('open-land-sync')">
+            v-tippy="'Configurar regras'" @click="emit('open-land-sync')">
             <i class="fas fa-cog"></i>
           </button>
 
