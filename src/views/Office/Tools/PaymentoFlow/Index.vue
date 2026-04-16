@@ -377,31 +377,55 @@ async function onBoletoUpdated() {
                     <div
                         class="bg-white dark:bg-gray-900 rounded-xl border border-gray-300 dark:border-gray-700 px-4 py-3 mb-4 flex flex-wrap items-center gap-3">
                         <div class="flex-1 min-w-48 relative">
-                            <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+
+                            <label class="block text-xs font-medium mb-1 text-gray-700 dark:text-gray-300">
+                                <i class="fas fa-money-bill mr-1"></i>Buscar pagamentos
+                            </label>
+                            <i class="fas fa-search absolute left-4 top-2/3 -translate-y-1/2 text-gray-400 text-md"></i>
                             <input v-model="searchInput" type="text"
                                 :placeholder="isAdmin ? 'Buscar por fornecedor, empresa, documento, criador…' : 'Buscar por fornecedor, empresa, documento…'"
-                                class="w-full pl-9 pr-4 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white outline-none focus:border-blue-500 transition"
+                                class="w-full px-10 py-[.5rem] border rounded-lg bg-transparent text-gray-400 border-gray-200 dark:border-gray-700 dark:bg-gray-900/60 text-start truncate"
                                 @keydown.enter="applySearch" />
                         </div>
 
                         <!-- Filtro de período -->
                         <div class="flex items-center gap-2">
-                            <span class="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">De</span>
-                            <input type="date" :value="store.filters.dateFrom"
-                                @change="store.applyFilters({ dateFrom: $event.target.value })"
-                                class="text-xs rounded-lg border py-2.5 border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white px-2 outline-none focus:border-blue-500 transition" />
-                            <span class="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">Até</span>
-                            <input type="date" :value="store.filters.dateTo"
-                                @change="store.applyFilters({ dateTo: $event.target.value })"
-                                class="text-xs rounded-lg border py-2.5 border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white px-2 outline-none focus:border-blue-500 transition" />
+                            <div>
+                                <label class="block text-xs font-medium mb-1 text-gray-700 dark:text-gray-300">
+                                    <i class="fas fa-calendar-day mr-1"></i>Data Início
+                                </label>
+                                <input type="date" :value="store.filters.dateFrom"
+                                    @change="store.applyFilters({ dateFrom: $event.target.value })"
+                                    class="w-full px-2 py-[.5rem] border rounded-lg bg-transparent text-gray-400 border-gray-200 dark:border-gray-700 dark:bg-gray-900/60 text-center" />
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-medium mb-1 text-gray-700 dark:text-gray-300">
+                                    <i class="fas fa-calendar-check mr-1"></i>Data Fim
+                                </label>
+                                <input type="date" :value="store.filters.dateTo"
+                                    @change="store.applyFilters({ dateTo: $event.target.value })"
+                                    class="w-full px-2 py-[.5rem] border rounded-lg bg-transparent text-gray-400 border-gray-200 dark:border-gray-700 dark:bg-gray-900/60 text-center" />
+                            </div>
                         </div>
 
                         <!-- Botão Pesquisar -->
-                        <button
-                            class="flex items-center gap-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition"
-                            @click="applySearch">
-                            <i class="fas fa-search text-xs"></i> Pesquisar
-                        </button>
+                        <div class="pt-[1.1rem]">
+                            <button
+                                class="flex px-4 py-2 text-lg font-semibold bg-sky-500 text-white rounded-lg hover:bg-sky-600 focus:outline-none"
+                                @click="applySearch">
+                                <i class="fas fa-filter pe-1 my-auto"></i> <span
+                                    class="text-center w-full">Filtrar</span>
+                            </button>
+                        </div>
+
+                        <div class="pt-[1.1rem]">
+                            <button v-if="filterStatus || filterType || searchInput || store.hasNonDefaultFilters"
+                                @click="clearAllFilters"
+                                class="flex px-4 py-2 text-lg font-semibold bg-gray-500 text-white rounded-lg hover:bg-gray-600 focus:outline-none">
+                                <i class="fas fa-eraser pe-1 my-auto"></i><span class="hidden sm:inline">Limpar</span>
+                            </button>
+                        </div>
 
                         <!-- Indicador de live refresh -->
                         <div v-if="store.liveRefreshId || store.hasActivePipelines"
@@ -409,11 +433,6 @@ async function onBoletoUpdated() {
                             <i class="fas fa-sync fa-spin text-xs"></i>
                         </div>
 
-                        <button v-if="filterStatus || filterType || searchInput || store.hasNonDefaultFilters"
-                            class="text-xs text-gray-400 hover:text-red-500 flex items-center gap-1 transition"
-                            @click="clearAllFilters">
-                            <i class="fas fa-xmark"></i> Limpar
-                        </button>
                     </div>
 
                     <!-- Lista de lançamentos -->
@@ -465,7 +484,8 @@ async function onBoletoUpdated() {
 
                                     <!-- Fornecedor -->
                                     <div class="col-span-12 md:col-span-3">
-                                        <div class="font-medium text-sm text-gray-900 dark:text-white truncate" :title="launch.providerName">
+                                        <div class="font-medium text-sm text-gray-900 dark:text-white truncate"
+                                            :title="launch.providerName">
                                             {{ launch.providerName || '—' }}
                                         </div>
                                         <div class="text-xs text-gray-400 font-mono">
@@ -483,8 +503,8 @@ async function onBoletoUpdated() {
                                     </div>
 
                                     <!-- Empreendimento -->
-                                    <div
-                                        class="col-span-12 md:col-span-2 text-sm text-gray-600 dark:text-gray-400 truncate" :title="launch.enterpriseName">
+                                    <div class="col-span-12 md:col-span-2 text-sm text-gray-600 dark:text-gray-400 truncate"
+                                        :title="launch.enterpriseName">
                                         {{ launch.enterpriseName || launch.companyName || '—' }}
                                     </div>
 

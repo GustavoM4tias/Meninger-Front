@@ -42,16 +42,15 @@
                     placeholder="Selecione grupos" :page-size="200" />
             </div>
 
-            <!-- Empreendimentos com seu MultiSelector -->
+            <!-- Empresas com seu MultiSelector -->
             <div class="flex-1 max-w-96">
                 <label class="block text-xs font-medium mb-1 text-gray-700 dark:text-gray-300">
-                    <i class="fas fa-city mr-1"></i>Empreendimento(s)
+                    <i class="fas fa-city mr-1"></i>Empresa(s)
                 </label>
 
-                <!-- O MultiSelector trabalha com modelValue e update:modelValue -->
-                <MultiSelector :model-value="localFilters.enterpriseName"
-                    @update:modelValue="v => localFilters.enterpriseName = Array.isArray(v) ? v : []"
-                    :options="enterprisesOptions" placeholder="Empreendimentos" :page-size="150" :select-all="true" />
+                <MultiSelector :model-value="localFilters.selectedCompanyNames"
+                    @update:modelValue="v => localFilters.selectedCompanyNames = Array.isArray(v) ? v : []"
+                    :options="companiesOptions" placeholder="Empresas" :page-size="150" :select-all="true" />
             </div>
 
             <!-- Botões -->
@@ -85,15 +84,24 @@ const localFilters = ref({
     startDate: dayjs().startOf('month').format('YYYY-MM-DD'),
     endDate: dayjs().endOf('month').format('YYYY-MM-DD'),
     situation: '',
-    enterpriseName: [],
+    selectedCompanyNames: [],
     // ⚠️ Aqui guardaremos os LABELS selecionados (string[])
     groupIds: []
 })
 
-/* Empreendimentos como antes (string[]) */
-const enterprisesOptions = computed(() =>
-    (contractsStore.enterprises || []).map(e => e.name)
+/* Empresas (por company_id) */
+const companiesOptions = computed(() =>
+    (contractsStore.companies || []).map(c => c.name)
 )
+
+/* Mapa nome -> id para converter na hora de filtrar */
+const companyIdByName = computed(() => {
+    const m = new Map()
+    for (const c of contractsStore.companies || []) {
+        m.set(c.name, Number(c.id))
+    }
+    return m
+})
 
 /* ---------- GRUPOS: LABELS e MAPEAMENTOS ---------- */
 const groupLabelOf = (g) =>
@@ -118,8 +126,8 @@ function syncFiltersFromUrl() {
     const q = route.query
     if (!Object.keys(q).length) return
     const next = { ...localFilters.value }
-    if (q.enterpriseName) next.enterpriseName = String(q.enterpriseName).split(',').map(s => s.trim()).filter(Boolean)
-    else next.enterpriseName = []
+    if (q.companyNames) next.selectedCompanyNames = String(q.companyNames).split(',').map(s => s.trim()).filter(Boolean)
+    else next.selectedCompanyNames = []
     if (q.groupIds) next.groupIds = String(q.groupIds).split(',').map(s => s.trim()).filter(Boolean)
     else next.groupIds = []
     if (q.startDate) next.startDate = String(q.startDate)
@@ -131,24 +139,34 @@ function syncFiltersFromUrl() {
 
 function syncUrlFromFilters() {
     const q = {}
-    Object.entries(localFilters.value).forEach(([k, v]) => {
-        if (Array.isArray(v)) { if (v.length) q[k] = v.join(',') }
-        else if (v && String(v).trim()) q[k] = String(v).trim()
-    })
+    if (localFilters.value.startDate) q.startDate = localFilters.value.startDate
+    if (localFilters.value.endDate) q.endDate = localFilters.value.endDate
+    if (localFilters.value.situation) q.situation = localFilters.value.situation
+    if (localFilters.value.selectedCompanyNames?.length) q.companyNames = localFilters.value.selectedCompanyNames.join(',')
+    if (localFilters.value.groupIds?.length) q.groupIds = localFilters.value.groupIds.join(',')
     router.replace({ query: q })
 }
 
 /* ---------- APPLY / WATCH: converte labels -> ids ---------- */
 const applyFilters = () => {
-    // aplica filtros “visuais” (não tem problema mandar labels aqui)
-    contractsStore.setFilters({ ...localFilters.value })
+    // Converte nomes de empresas selecionados em IDs numéricos
+    const companyIds = (localFilters.value.selectedCompanyNames || [])
+        .map(name => companyIdByName.value.get(name))
+        .filter(id => Number.isFinite(id))
 
-    // converte labels selecionados em ids numéricos p/ o store
-    const ids = (localFilters.value.groupIds || [])
+    contractsStore.setFilters({
+        startDate: localFilters.value.startDate,
+        endDate: localFilters.value.endDate,
+        situation: localFilters.value.situation,
+        companyIds
+    })
+
+    // Converte labels de grupos em ids numéricos
+    const groupIds = (localFilters.value.groupIds || [])
         .map(lbl => groupIdByLabel.value.get(lbl))
         .filter(n => Number.isFinite(n))
 
-    contractsStore.setSelectedGroups(ids) // números
+    contractsStore.setSelectedGroups(groupIds)
     syncUrlFromFilters()
     emit('filter-changed')
 }
@@ -161,13 +179,22 @@ const hasActiveFilters = computed(() =>
 watch(localFilters, () => {
     if (!hasActiveFilters.value) return
 
-    contractsStore.setFilters({ ...localFilters.value })
+    const companyIds = (localFilters.value.selectedCompanyNames || [])
+        .map(name => companyIdByName.value.get(name))
+        .filter(id => Number.isFinite(id))
 
-    const ids = (localFilters.value.groupIds || [])
+    contractsStore.setFilters({
+        startDate: localFilters.value.startDate,
+        endDate: localFilters.value.endDate,
+        situation: localFilters.value.situation,
+        companyIds
+    })
+
+    const groupIds = (localFilters.value.groupIds || [])
         .map(lbl => groupIdByLabel.value.get(lbl))
         .filter(n => Number.isFinite(n))
 
-    contractsStore.setSelectedGroups(ids)
+    contractsStore.setSelectedGroups(groupIds)
 }, { deep: true })
 
 const clearFilters = () => {
@@ -175,8 +202,8 @@ const clearFilters = () => {
         startDate: '',
         endDate: '',
         situation: '',
-        enterpriseName: [],
-        groupIds: [] // limpa labels
+        selectedCompanyNames: [],
+        groupIds: []
     }
     contractsStore.clearFilters()
     router.replace({ query: {} })
@@ -185,7 +212,7 @@ const clearFilters = () => {
 
 onMounted(async () => {
     await Promise.all([
-        contractsStore.fetchEnterprises(),
+        contractsStore.fetchCompanies(),
         contractsStore.fetchWorkflowGroups()
     ])
     syncFiltersFromUrl()

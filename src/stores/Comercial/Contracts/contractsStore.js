@@ -3,6 +3,7 @@ import { defineStore } from 'pinia'
 import { useCarregamentoStore } from '@/stores/Config/carregamento'
 import API_URL from '@/config/apiUrl'
 import { useHiddenEnterprisesStore } from '@/stores/Comercial/Contracts/hiddenEnterprisesStore'
+import { useStageCommissionRulesStore } from '@/stores/Comercial/Contracts/stageCommissionRulesStore'
 
 // ─── Debug helpers ──────────────────────────────────────────────────────────
 const DEBUG = true
@@ -93,6 +94,24 @@ function commissionRuleFor(c) {
         || null
 }
 
+// ─── Stage-history helper ────────────────────────────────────────────────────
+// Returns true if any repasse linked to this contract ever had the given CV situacao ID.
+// The `status` JSONB array on each repasse stores snapshots: { idsituacao_repasse, ... }
+function contractHadStageInHistory(contract, stageId) {
+    const repasses = Array.isArray(contract?.repasse) ? contract.repasse : []
+    const stageNum = Number(stageId)
+    if (!Number.isFinite(stageNum)) return false
+    for (const rp of repasses) {
+        if (!rp) continue
+        // Current stage
+        if (Number(rp.idsituacao_repasse) === stageNum) return true
+        // Historical snapshots captured by the sync service
+        const history = Array.isArray(rp.status) ? rp.status : []
+        if (history.some(s => Number(s?.idsituacao_repasse) === stageNum)) return true
+    }
+    return false
+}
+
 // ─── Enterprise ID extraction from projection rows ────────────────────────────
 function extractEnterpriseIdFromProjectionRow(row) {
     // Priority 1: ERP-resolved ID (Sienge) — only reliable ID for Sienge lookups
@@ -146,6 +165,7 @@ export const useContractsStore = defineStore('contracts', {
     state: () => ({
         contracts: [],
         enterprises: [],
+        companies: [],
         groupBy: 'company', // 'enterprise' | 'company'
         total: 0,
         error: null,
@@ -155,7 +175,8 @@ export const useContractsStore = defineStore('contracts', {
             startDate: '',
             endDate: '',
             situation: 'Emitido',
-            enterpriseName: []
+            enterpriseName: [],
+            companyIds: []
         },
 
         workflowGroups: [],
@@ -390,11 +411,40 @@ export const useContractsStore = defineStore('contracts', {
                     return contractTotals(c).net
                 }
 
+                // Resolve commission pct: hardcoded rules first, then dynamic stage-based rules.
+                // Dynamic rules check if the contract's repasse ever passed through a specific CV stage.
+                // If no rule applies the pct is 0 and no uplift is added — identical to the old behaviour.
+                let _dynamicRulesByEid = null
+                const getDynamicRulesForEnterprise = (eid) => {
+                    if (_dynamicRulesByEid === null) {
+                        try {
+                            _dynamicRulesByEid = useStageCommissionRulesStore().rulesByEnterprise
+                        } catch { _dynamicRulesByEid = new Map() }
+                    }
+                    return _dynamicRulesByEid.get(Number(eid)) || []
+                }
+
+                const resolveCommissionPct = (c) => {
+                    // 1) Existing hardcoded rules — preserved exactly
+                    const hardcoded = commissionRuleFor(c)
+                    if (hardcoded) return Number(hardcoded.commission_pct) || 0
+
+                    // 2) Dynamic stage-based rules from DB
+                    if (c?._projection) return 0
+                    const eid = Number(c?.enterprise_id)
+                    if (!Number.isFinite(eid) || eid <= 0) return 0
+                    for (const rule of getDynamicRulesForEnterprise(eid)) {
+                        if (contractHadStageInHistory(c, rule.stage_id)) {
+                            return Number(rule.commission_pct) || 0
+                        }
+                    }
+                    return 0
+                }
+
                 let addGross = 0
                 let addNet = 0
                 for (const c of real) {
-                    const com = commissionRuleFor(c)
-                    const pct = Number(com?.commission_pct) || 0
+                    const pct = resolveCommissionPct(c)
                     if (pct > 0) {
                         addGross += uplift(baseGrossOf(c), pct)
                         addNet += uplift(baseNetOf(c), pct)
@@ -753,14 +803,22 @@ export const useContractsStore = defineStore('contracts', {
             this.clearDetailCache()
         },
         clearFilters() {
-            this.filters = { startDate: '', endDate: '', situation: 'Emitido', enterpriseName: [] }
+            this.filters = { startDate: '', endDate: '', situation: 'Emitido', enterpriseName: [], companyIds: [] }
             this.selectedGroupIds = []
             this.clearContractsCache()
             this.clearDetailCache()
         },
         setSelectedGroups(ids) {
-            this.selectedGroupIds = Array.isArray(ids) ? ids.map(Number).filter(Number.isFinite) : []
-            this._projCache.clear()
+            const newIds = (Array.isArray(ids) ? ids.map(Number).filter(Number.isFinite) : [])
+                .sort((a, b) => a - b)
+            const prevIds = [...this.selectedGroupIds].sort((a, b) => a - b)
+            const changed = newIds.join(',') !== prevIds.join(',')
+
+            this.selectedGroupIds = newIds
+            // Only clear projection cache when the actual group selection changes.
+            // This preserves cached projections when only dates/company change,
+            // avoiding redundant re-fetches of the heavy projection queries.
+            if (changed) this._projCache.clear()
             this.clearDetailCache()
             this.clearContractsCache()
         },
@@ -1030,11 +1088,12 @@ export const useContractsStore = defineStore('contracts', {
         _buildContractsCacheKey({ view = 'dashboard', enterpriseId = null, enterpriseIds = null } = {}) {
             const f = this.filters
             const names = Array.isArray(f.enterpriseName) ? [...f.enterpriseName].sort().join('|') : ''
+            const cids = Array.isArray(f.companyIds) ? [...f.companyIds].map(Number).filter(Number.isFinite).sort((a, b) => a - b).join(',') : ''
             const ids = Array.isArray(enterpriseIds)
                 ? [...new Set(enterpriseIds.map(Number).filter(Number.isFinite))].sort((a, b) => a - b).join(',')
                 : ''
             const groups = [...new Set(this.selectedGroupIds)].sort((a, b) => a - b).join(',')
-            return `v=${view};s=${f.startDate};e=${f.endDate};sit=${f.situation};names=${names};id=${enterpriseId ?? ''};ids=${ids};g=${groups}`
+            return `v=${view};s=${f.startDate};e=${f.endDate};sit=${f.situation};names=${names};cids=${cids};id=${enterpriseId ?? ''};ids=${ids};g=${groups}`
         },
 
         _getCachedContracts(key) {
@@ -1066,8 +1125,9 @@ export const useContractsStore = defineStore('contracts', {
         _buildDetailCtxKey() {
             const f = this.filters
             const names = Array.isArray(f.enterpriseName) ? [...f.enterpriseName].sort().join('|') : ''
+            const cids = Array.isArray(f.companyIds) ? [...f.companyIds].map(Number).filter(Number.isFinite).sort((a, b) => a - b).join(',') : ''
             const groups = [...new Set(this.selectedGroupIds)].sort((a, b) => a - b).join(',')
-            return `s=${f.startDate};e=${f.endDate};sit=${f.situation};names=${names};g=${groups}`
+            return `s=${f.startDate};e=${f.endDate};sit=${f.situation};names=${names};cids=${cids};g=${groups}`
         },
 
         _getDetailBucket(ctxKey) {
@@ -1164,7 +1224,10 @@ export const useContractsStore = defineStore('contracts', {
                 if (this.filters.startDate) params.append('startDate', this.filters.startDate)
                 if (this.filters.endDate) params.append('endDate', this.filters.endDate)
                 params.append('situation', this.filters.situation || 'Emitido')
-                if (Array.isArray(this.filters.enterpriseName) && this.filters.enterpriseName.length > 0) {
+                // companyIds takes priority over legacy enterpriseName filter
+                if (Array.isArray(this.filters.companyIds) && this.filters.companyIds.length > 0) {
+                    params.append('companyIds', this.filters.companyIds.join(','))
+                } else if (Array.isArray(this.filters.enterpriseName) && this.filters.enterpriseName.length > 0) {
                     params.append('enterpriseName', this.filters.enterpriseName.join(','))
                 }
                 params.append('view', view)
@@ -1218,9 +1281,29 @@ export const useContractsStore = defineStore('contracts', {
                 // Await the already-started projections fetch
                 const projs = await projsFetchPromise
 
+                // Apply company filter to projections when active.
+                // By this point _enterpriseCompanyMap is built from normalized contracts,
+                // so we can resolve company_id for projections that don't have it directly.
+                const companyFilter = Array.isArray(this.filters.companyIds) && this.filters.companyIds.length > 0
+                    ? new Set(this.filters.companyIds.map(Number))
+                    : null
+
+                const filteredProjs = companyFilter
+                    ? projs.filter((p) => {
+                        let cid = p.company_id != null ? Number(p.company_id) : null
+                        if (cid == null && p.enterprise_id != null) {
+                            const mapped = this._enterpriseCompanyMap.get(Number(p.enterprise_id))
+                            cid = mapped?.company_id != null ? Number(mapped.company_id) : null
+                        }
+                        // If company is resolved, check membership; if unresolvable, keep it
+                        if (cid != null) return companyFilter.has(cid)
+                        return true
+                    })
+                    : projs
+
                 let merged = isDetail && requestedIds && cachedBeforeRequest.length > 0
-                    ? [...cachedBeforeRequest, ...normalized, ...projs]
-                    : [...normalized, ...projs]
+                    ? [...cachedBeforeRequest, ...normalized, ...filteredProjs]
+                    : [...normalized, ...filteredProjs]
 
                 // Deduplicate by contract_id
                 const dedup = new Map()
@@ -1262,6 +1345,25 @@ export const useContractsStore = defineStore('contracts', {
                 const data = await res.json()
                 this.enterprises = data.results || []
                 return this.enterprises
+            } catch (error) {
+                this.error = error.message
+                return []
+            }
+        },
+
+        async fetchCompanies() {
+            if (this.companies.length > 0) return this.companies
+            try {
+                const res = await fetch(`${API_URL}/sienge/contracts/companies`, {
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem('token')}`,
+                        'Content-Type': 'application/json'
+                    }
+                })
+                if (!res.ok) throw new Error(`Erro ao buscar empresas: ${res.status}`)
+                const data = await res.json()
+                this.companies = data.results || []
+                return this.companies
             } catch (error) {
                 this.error = error.message
                 return []

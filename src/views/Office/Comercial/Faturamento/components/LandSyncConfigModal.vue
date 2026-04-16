@@ -174,11 +174,115 @@
                         </div>
                     </div>
 
+                    <!-- Tab: Comissão por Etapa -->
+                    <div v-if="activeTab === 'commission'" class="px-5 py-4 space-y-4">
+                        <p class="text-xs text-gray-500 dark:text-gray-400 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-md px-3 py-2">
+                            <i class="fas fa-info-circle mr-1 text-blue-500"></i>
+                            Define que contratos de um empreendimento cujo repasse <strong>passou em algum momento</strong> por uma etapa do CV devem ter o VGV recalculado com comissão apartada.
+                            Fórmula: <code class="font-mono text-[0.7rem]">VGV_real = VGV_recebido / (1 − comissão)</code>
+                        </p>
+
+                        <div v-if="commissionRulesStore.error" class="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-md text-xs">{{ commissionRulesStore.error }}</div>
+                        <div v-if="commissionRulesStore.loading" class="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                            <span class="w-3 h-3 rounded-full border-2 border-blue-500 border-t-transparent animate-spin"></span>
+                            Carregando regras...
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- Lista atual -->
+                            <div class="space-y-2">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-100">Regras configuradas</h3>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400">Comissão apartada aplicada por etapa do repasse.</p>
+                                    </div>
+                                    <span class="inline-flex items-center justify-center px-3 py-0.5 rounded-full text-[0.65rem] font-semibold bg-blue-50 text-blue-700 dark:bg-blue-900/40 dark:text-blue-200">
+                                        {{ commissionRulesStore.rules.length }} regra(s)
+                                    </span>
+                                </div>
+                                <div class="mt-1 max-h-72 overflow-auto border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50/60 dark:bg-gray-900/40">
+                                    <div v-if="!commissionRulesStore.rules.length && !commissionRulesStore.loading" class="px-4 py-6 text-xs text-gray-500 dark:text-gray-400 text-center">
+                                        Nenhuma regra configurada.<br />Use o painel ao lado para adicionar.
+                                    </div>
+                                    <ul v-else class="divide-y divide-gray-200 dark:divide-gray-800">
+                                        <li v-for="rule in commissionRulesStore.rules" :key="rule.id"
+                                            class="px-4 py-3 flex items-start justify-between gap-2 hover:bg-white/80 dark:hover:bg-gray-800">
+                                            <div class="min-w-0">
+                                                <p class="text-xs font-medium text-gray-900 dark:text-gray-100 truncate">{{ rule.enterprise_name || `Empreendimento ${rule.enterprise_id}` }}</p>
+                                                <p class="text-[0.7rem] text-gray-500 dark:text-gray-400 mt-0.5">
+                                                    ERP: <span class="font-mono">{{ rule.enterprise_id }}</span>
+                                                    &nbsp;·&nbsp; Etapa CV: <span class="font-mono">{{ rule.stage_id }}</span>
+                                                    <span v-if="rule.stage_name"> ({{ rule.stage_name }})</span>
+                                                    &nbsp;·&nbsp; <span class="text-emerald-600 dark:text-emerald-400 font-semibold">{{ (rule.commission_pct * 100).toFixed(2) }}%</span>
+                                                </p>
+                                                <p v-if="rule.description" class="text-[0.65rem] text-gray-400 mt-0.5 italic truncate">{{ rule.description }}</p>
+                                            </div>
+                                            <button class="mt-0.5 shrink-0 inline-flex items-center px-2 py-1 rounded-full text-[0.7rem] font-medium text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 dark:bg-red-900/30 dark:text-red-300 dark:hover:bg-red-900/60"
+                                                @click="handleCommissionRemove(rule.id)">
+                                                <i class="fas fa-trash-alt mr-1"></i>Remover
+                                            </button>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <!-- Formulário para adicionar -->
+                            <div class="space-y-3">
+                                <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-100">Adicionar regra</h3>
+                                <p class="text-xs text-gray-500 dark:text-gray-400">O cálculo aplica-se apenas a contratos cujo repasse <em>já passou</em> pela etapa indicada.</p>
+                                <div class="space-y-2">
+                                    <div>
+                                        <label class="block text-xs font-medium mb-1 text-gray-700 dark:text-gray-300">Empreendimento (ERP)</label>
+                                        <select v-model="newRule.enterprise_id"
+                                            class="w-full px-2 py-1.5 border rounded-md text-gray-400 dark:text-gray-200 border-gray-200 dark:border-gray-700 dark:bg-gray-900/60 text-start">
+                                            <option value="">Selecione...</option>
+                                            <option v-for="e in contractsStore.enterprises" :key="e.id" :value="e.id">
+                                                {{ e.name }} ({{ e.id }})
+                                            </option>
+                                        </select>
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <div>
+                                            <label class="block text-xs font-medium mb-1 text-gray-700 dark:text-gray-300">Repasse CV ID</label>
+                                            <input v-model.number="newRule.stage_id" type="number" min="1" placeholder="ex: 52"
+                                                class="w-full px-2 py-1.5 border rounded-md text-gray-400 dark:text-gray-200 border-gray-200 dark:border-gray-700 dark:bg-gray-900/60 text-start" />
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-medium mb-1 text-gray-700 dark:text-gray-300">Comissão (%)</label>
+                                            <input v-model.number="newRule.commission_pct_display" type="number" min="0.01" max="99.99" step="0.01" placeholder="ex: 4"
+                                                class="w-full px-2 py-1.5 border rounded-md text-gray-400 dark:text-gray-200 border-gray-200 dark:border-gray-700 dark:bg-gray-900/60 text-start" />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium mb-1 text-gray-700 dark:text-gray-300">Nome da etapa <span class="font-normal text-gray-400">(opcional)</span></label>
+                                        <input v-model="newRule.stage_name" type="text" placeholder="ex: 30/70 Análise Caixa"
+                                            class="w-full px-2 py-1.5 border rounded-md text-gray-400 dark:text-gray-200 border-gray-200 dark:border-gray-700 dark:bg-gray-900/60 text-start" />
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium mb-1 text-gray-700 dark:text-gray-300">Descrição <span class="font-normal text-gray-400">(opcional)</span></label>
+                                        <input v-model="newRule.description" type="text" placeholder="ex: Contratos 30/70 — comissão apartada 4%"
+                                            class="w-full px-2 py-1.5 border rounded-md text-gray-400 dark:text-gray-200 border-gray-200 dark:border-gray-700 dark:bg-gray-900/60 text-start" />
+                                    </div>
+                                </div>
+                                <div class="flex justify-end pt-1">
+                                    <button
+                                        class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-60 disabled:cursor-not-allowed"
+                                        :disabled="!isNewRuleValid" @click="handleCommissionAdd">
+                                        <i class="fas fa-plus mr-1"></i>Adicionar regra
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Footer -->
                     <div class="px-5 py-3 border-t border-gray-200 dark:border-gray-700 flex flex-col md:flex-row gap-2 md:gap-0 md:items-center md:justify-between">
                         <p v-if="activeTab === 'obstit'" class="text-[0.6rem] text-gray-500 dark:text-gray-400">
                             A coleta de dados de TR é D-1, feita 1x ao dia às 07:05 AM.<br>
                             A sincronização manual pode levar de 1 a 10 minutos.
+                        </p>
+                        <p v-else-if="activeTab === 'commission'" class="text-[0.6rem] text-gray-500 dark:text-gray-400">
+                            Alterações são aplicadas imediatamente. Recarregue os contratos para ver os novos valores.
                         </p>
                         <p v-else class="text-[0.6rem] text-gray-500 dark:text-gray-400">
                             Alterações são aplicadas imediatamente no dashboard.<br>
@@ -210,6 +314,7 @@ import { ref, computed, watch } from 'vue'
 import { useLandSyncStore } from '@/stores/Comercial/Contracts/landSyncStore'
 import { useContractsStore } from '@/stores/Comercial/Contracts/contractsStore'
 import { useHiddenEnterprisesStore } from '@/stores/Comercial/Contracts/hiddenEnterprisesStore'
+import { useStageCommissionRulesStore } from '@/stores/Comercial/Contracts/stageCommissionRulesStore'
 import MultiSelector from '@/components/UI/MultiSelector.vue'
 
 const props = defineProps({ open: { type: Boolean, default: false } })
@@ -218,15 +323,25 @@ const emit = defineEmits(['close'])
 const landSyncStore = useLandSyncStore()
 const contractsStore = useContractsStore()
 const hiddenStore = useHiddenEnterprisesStore()
+const commissionRulesStore = useStageCommissionRulesStore()
 
 const activeTab = ref('obstit')
 const tabs = [
     { id: 'obstit', label: 'Terreno Externo (OBSTIT)', icon: 'fas fa-mountain' },
-    { id: 'hidden', label: 'Ocultar Empreendimentos', icon: 'fas fa-eye-slash' }
+    { id: 'hidden', label: 'Ocultar Empreendimentos', icon: 'fas fa-eye-slash' },
+    { id: 'commission', label: 'Comissão por Etapa', icon: 'fas fa-percent' }
 ]
 
 const selectedLandNames = ref([])
 const selectedHiddenNames = ref([])
+
+// ── Commission rule form ───────────────────────────────────────────
+const newRule = ref({ enterprise_id: '', stage_id: null, commission_pct_display: null, stage_name: '', description: '' })
+const isNewRuleValid = computed(() =>
+    newRule.value.enterprise_id !== '' &&
+    Number.isInteger(newRule.value.stage_id) && newRule.value.stage_id > 0 &&
+    Number.isFinite(newRule.value.commission_pct_display) && newRule.value.commission_pct_display > 0 && newRule.value.commission_pct_display < 100
+)
 
 const enterprisesOptions = computed(() =>
     (contractsStore.enterprises || []).map(e => e.name)
@@ -244,9 +359,10 @@ watch(() => props.open, async (isOpen) => {
     activeTab.value = 'obstit'
     selectedLandNames.value = []
     selectedHiddenNames.value = []
+    newRule.value = { enterprise_id: '', stage_id: null, commission_pct_display: null, stage_name: '', description: '' }
 
     if (!contractsStore.enterprises.length) await contractsStore.fetchEnterprises()
-    await Promise.all([landSyncStore.fetchAll(), hiddenStore.fetchAll()])
+    await Promise.all([landSyncStore.fetchAll(), hiddenStore.fetchAll(), commissionRulesStore.fetchAll()])
 })
 
 // ── OBSTIT handlers ────────────────────────────────────────────────
@@ -302,6 +418,34 @@ async function handleHiddenAdd() {
 async function handleHiddenRemove(id) {
     if (!window.confirm('Restaurar visibilidade deste empreendimento?')) return
     await hiddenStore.removeItem(id)
+    contractsStore.clearContractsCache()
+}
+
+// ── Commission rule handlers ───────────────────────────────────────
+async function handleCommissionAdd() {
+    if (!isNewRuleValid.value) return
+    const eid = Number(newRule.value.enterprise_id)
+    const ent = contractsStore.enterprises.find(e => Number(e.id) === eid)
+    try {
+        await commissionRulesStore.addRule({
+            enterprise_id: eid,
+            enterprise_name: ent?.name || null,
+            stage_id: newRule.value.stage_id,
+            stage_name: newRule.value.stage_name || null,
+            commission_pct: newRule.value.commission_pct_display / 100,
+            description: newRule.value.description || null
+        })
+        newRule.value = { enterprise_id: '', stage_id: null, commission_pct_display: null, stage_name: '', description: '' }
+        // Invalidate contracts cache so new VGV values apply immediately
+        contractsStore.clearContractsCache()
+    } catch (e) {
+        window.alert(e?.message || 'Erro ao adicionar regra.')
+    }
+}
+
+async function handleCommissionRemove(id) {
+    if (!window.confirm('Remover esta regra de comissão por etapa?')) return
+    await commissionRulesStore.removeRule(id)
     contractsStore.clearContractsCache()
 }
 </script>

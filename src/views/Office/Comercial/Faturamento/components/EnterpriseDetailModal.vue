@@ -155,6 +155,16 @@
               <div class="flex flex-col items-end gap-3">
                 <div class="flex gap-4 items-end">
                   <div class="flex-none">
+                    <label class="block text-sm font-medium mb-2">Série</label>
+                    <select v-model="selectedSerie"
+                      class="w-full px-2 py-1.5 border rounded-lg bg-transparent text-gray-400 border-gray-200 dark:border-gray-500 text-center">
+                      <option value="">Todas</option>
+                      <option v-for="s in seriesOptions" :key="s.id" :value="s.id">
+                        {{ s.label }}
+                      </option>
+                    </select>
+                  </div>
+                  <div class="flex-none">
                     <label class="block text-sm font-medium mb-2">Itens por página</label>
                     <select v-model="itemsPerPage"
                       class="w-full px-2 py-1.5 border rounded-lg bg-transparent text-gray-400 border-gray-200 dark:border-gray-500 text-center">
@@ -344,11 +354,12 @@
                               :key="`${contractsStore.valueMode}-${contract.contract_id}`">
                               <div v-for="(condition, idx) in displayedConditions(contract)" :key="`${contract.contract_id}-${condition.synthetic ? 'SYNTH' : 'REAL'
                                 }-${condition.condition_type_id || 'NA'}-${idx}-${contractsStore.valueMode
-                                }`" class="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 border-l-4 shadow-sm" :class="[
+                                }`" class="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 border-l-4 shadow-sm transition-opacity" :class="[
                                   isDiscount(condition)
                                     ? 'border-red-400'
                                     : 'border-emerald-400',
-                                  condition._isCommission ? 'border-orange-400' : ''
+                                  condition._isCommission ? 'border-orange-400' : '',
+                                  condition._dimmed ? 'opacity-30' : ''
                                 ]">
                                 <div class="text-sm font-medium mb-1">
                                   {{ condition.condition_type_name || 'Não informado' }}
@@ -428,6 +439,7 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
 import { useContractsStore } from '@/stores/Comercial/Contracts/contractsStore'
+import { useStageCommissionRulesStore } from '@/stores/Comercial/Contracts/stageCommissionRulesStore'
 import { useAwardsStore } from '@/stores/Comercial/Awards/awardStore'
 import ChartActions from '@/components/config/ChartActions.vue'
 import Export from '@/components/config/Export.vue'
@@ -449,7 +461,22 @@ const emit = defineEmits(['close'])
 const open = ref(false)
 
 const contractsStore = useContractsStore()
+const stageRulesStore = useStageCommissionRulesStore()
 const awardsStore = useAwardsStore()
+
+// Local helper — mirrors contractHadStageInHistory in contractsStore
+const hadStageInHistory = (contract, stageId) => {
+  const repasses = Array.isArray(contract?.repasse) ? contract.repasse : []
+  const stageNum = Number(stageId)
+  if (!Number.isFinite(stageNum)) return false
+  for (const rp of repasses) {
+    if (!rp) continue
+    if (Number(rp.idsituacao_repasse) === stageNum) return true
+    const history = Array.isArray(rp.status) ? rp.status : []
+    if (history.some((s) => Number(s?.idsituacao_repasse) === stageNum)) return true
+  }
+  return false
+}
 const viewMode = ref(['list', 'pie', 'bar'].includes(props.initialMode) ? props.initialMode : 'list')
 
 // Helpers de Tema
@@ -804,18 +831,23 @@ const contractValueByMode = (contract) => {
   return base + (Number.isFinite(add) ? add : 0)
 }
 
-// ✅ valor da venda = soma dos contratos (inclui projeções)
+// valor da venda = soma dos contratos respeitando filtro de série
 const saleValueFromConditions = (sale) => {
   const contracts = Array.isArray(sale?.contracts) ? sale.contracts : []
   if (!contracts.length) return 0
+  if (selectedSerie.value) {
+    return contracts.reduce((sum, c) => sum + contractValueForSerie(c, selectedSerie.value), 0)
+  }
   return contracts.reduce((sum, c) => sum + contractValueByMode(c), 0)
 }
 
-// usa total pronto se existir, senão recalcula por condições
+// usa total pronto se existir e não há filtro de série; senão recalcula por condições
 const getSaleValue = (sale) => {
-  const direct = contractsStore.isGross ? sale?.total_value_gross : sale?.total_value_net
-  const d = Number(direct)
-  if (Number.isFinite(d) && d > 0) return d
+  if (!selectedSerie.value) {
+    const direct = contractsStore.isGross ? sale?.total_value_gross : sale?.total_value_net
+    const d = Number(direct)
+    if (Number.isFinite(d) && d > 0) return d
+  }
   return saleValueFromConditions(sale)
 }
 
@@ -836,6 +868,65 @@ const formatDate = (d) => {
 const isDiscount = (c) =>
   contractsStore.discountCodes.has(String(c?.condition_type_id || '').toUpperCase())
 
+/* ===================== série filter ===================== */
+const selectedSerie = ref('')
+
+// Collect all distinct condition codes present in the current sales
+const seriesOptions = computed(() => {
+  const map = new Map()
+  let hasCommission = false
+  for (const sale of props.sales) {
+    for (const contract of sale.contracts || []) {
+      for (const pc of contract.payment_conditions || []) {
+        const id = String(pc.condition_type_id || '').trim().toUpperCase()
+        const name = String(pc.condition_type_name || pc.condition_type_id || '').trim()
+        if (id && !map.has(id)) map.set(id, name)
+      }
+      // Check if any contract in this sale would generate a commission
+      if (!hasCommission && resolveCommissionPct(contract) > 0) {
+        hasCommission = true
+      }
+    }
+  }
+  const options = [...map.entries()]
+    .map(([id, name]) => ({ id, label: name ? `${name} (${id})` : id }))
+    .sort((a, b) => a.id.localeCompare(b.id))
+  if (hasCommission) {
+    options.push({ id: 'COMISSAO_FORA', label: 'Comissão Fora do Contrato (COMISSAO_FORA)' })
+  }
+  return options
+})
+
+// A contract value limited to the selected serie only
+const contractValueForSerie = (contract, serieId) => {
+  if (!serieId) return contractValueByMode(contract)
+
+  // Commission-only série: return just the uplift value for this contract
+  if (serieId === 'COMISSAO_FORA') {
+    const pct = resolveCommissionPct(contract)
+    if (pct <= 0) return 0
+    const base = contractsStore.isGross ? baseGross(contract) : baseNet(contract)
+    return uplift(base, pct)
+  }
+
+  const rule = contractsStore.enterpriseRuleFor(contract) || {}
+  const pcs = Array.isArray(contract?.payment_conditions) ? contract.payment_conditions : []
+  const matching = pcs.filter(
+    (pc) => String(pc.condition_type_id || '').trim().toUpperCase() === serieId
+  )
+  if (!matching.length) return 0
+
+  const serieTotal = matching.reduce((s, pc) => s + (Number(pc.total_value) || 0), 0)
+
+  // Respect LAND_VALUE_ONLY override: if active and this is the TR serie, show land_value instead
+  if (serieId === 'TR') {
+    if (contractsStore.isGross && rule.gross === 'LAND_VALUE_ONLY') return Number(contract.land_value) || 0
+    if (contractsStore.isNet && rule.net === 'LAND_VALUE_ONLY') return Number(contract.land_value) || 0
+  }
+
+  return serieTotal
+}
+
 /* ===================== busca/paginação ===================== */
 const searchTerm = ref('')
 const currentPage = ref(1)
@@ -844,11 +935,31 @@ const expandedSales = ref(new Set())
 
 const normalizedSearch = computed(() => (searchTerm.value || '').toLowerCase())
 const filteredSales = computed(() => {
-  if (!normalizedSearch.value) return props.sales
+  let list = props.sales
+
+  // Serie filter: keep only sales that have at least one condition matching the serie
+  if (selectedSerie.value) {
+    if (selectedSerie.value === 'COMISSAO_FORA') {
+      // Keep sales where at least one contract has a commission (hardcoded or dynamic)
+      list = list.filter((sale) =>
+        (sale.contracts || []).some((contract) => resolveCommissionPct(contract) > 0)
+      )
+    } else {
+      list = list.filter((sale) =>
+        (sale.contracts || []).some((contract) =>
+          (contract.payment_conditions || []).some(
+            (pc) => String(pc.condition_type_id || '').trim().toUpperCase() === selectedSerie.value
+          )
+        )
+      )
+    }
+  }
+
+  if (!normalizedSearch.value) return list
   const t = normalizedSearch.value
   const has = (s = '') => String(s ?? '').toLowerCase().includes(t)
 
-  return props.sales.filter((sale) => {
+  return list.filter((sale) => {
     return (
       has(customerNameOf(sale)) ||
       has(sale.unit_name) ||
@@ -923,13 +1034,14 @@ const hasRepasse = computed(() =>
   )
 )
 
-watch([searchTerm, itemsPerPage], () => {
+watch([searchTerm, itemsPerPage, selectedSerie], () => {
   currentPage.value = 1
 })
 watch(
   () => props.sales,
   () => {
     expandedSales.value.clear()
+    selectedSerie.value = ''
   }
 )
 
@@ -970,6 +1082,15 @@ const displayedConditions = (contract) => {
     list = [...list, commission]
   }
 
+  // When a serie is selected, dim non-matching conditions instead of hiding them
+  // so the user can still see the full contract context
+  if (selectedSerie.value) {
+    list = list.map((pc) => ({
+      ...pc,
+      _dimmed: String(pc.condition_type_id || '').trim().toUpperCase() !== selectedSerie.value
+    }))
+  }
+
   return list
 }
 
@@ -989,9 +1110,28 @@ const baseNet = (c) => {
   return totalsOf.value(c).net || 0
 }
 
+const resolveCommissionPct = (contract) => {
+  // 1. Hardcoded enterprise rules (existing logic)
+  const hardcoded = comFor.value(contract)
+  if (hardcoded) {
+    const p = Number(hardcoded.commission_pct) || 0
+    if (p > 0) return p
+  }
+  // 2. Dynamic stage-based rules
+  if (contract?._projection) return 0
+  const eid = Number(contract?.enterprise_id)
+  if (!Number.isFinite(eid) || eid <= 0) return 0
+  const dynamicRules = stageRulesStore.rulesByEnterprise.get(eid) || []
+  for (const rule of dynamicRules) {
+    if (hadStageInHistory(contract, rule.stage_id)) {
+      return Number(rule.commission_pct) || 0
+    }
+  }
+  return 0
+}
+
 const commissionConditionFor = (contract) => {
-  const rule = comFor.value(contract)
-  const pct = Number(rule?.commission_pct) || 0
+  const pct = resolveCommissionPct(contract)
   if (pct <= 0) return null
 
   const base = contractsStore.isGross ? baseGross(contract) : baseNet(contract)
