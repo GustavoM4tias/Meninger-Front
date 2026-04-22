@@ -52,6 +52,12 @@
                 ]">
                   Colunas
                 </button>
+                <button v-if="projectionRow" type="button" @click="viewMode = 'comparison'" :class="[
+                  'px-3 py-1 text-sm font-medium border-l border-gray-300 dark:border-gray-700',
+                  viewMode === 'comparison' ? 'bg-emerald-600 text-white' : 'bg-white dark:bg-gray-600'
+                ]">
+                  Comparação
+                </button>
               </div>
 
               <button class="text-2xl ps-2" v-tippy="'Exportar Dados'" @click="open = true">
@@ -179,7 +185,88 @@
             </div>
           </div>
 
-          <div v-if="viewMode !== 'list'"
+          <!-- ── Comparação Realizado × Projetado ─────────────────────────── -->
+          <div v-if="viewMode === 'comparison' && projectionRow"
+            class="p-6 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 space-y-4">
+
+            <div class="flex items-center justify-between">
+              <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-200">Realizado × Projetado</h4>
+              <span class="text-xs text-gray-400">
+                {{ timeElapsedPct > 0 ? `${timeElapsedPct.toFixed(0)}% do mês decorrido` : 'Início do período' }}
+              </span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+              <!-- Unidades -->
+              <div class="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40 p-5">
+                <div class="flex items-center gap-2 mb-3">
+                  <i class="fas fa-key text-violet-500"></i>
+                  <span class="text-sm font-semibold">Vendas (Unidades)</span>
+                </div>
+                <div class="flex items-end gap-1 mb-1">
+                  <span class="text-3xl font-bold">{{ totalSales }}</span>
+                  <span class="text-base text-gray-400 mb-0.5">/ {{ projectionRow.projectedUnits || '—' }}</span>
+                </div>
+                <p class="text-xs text-gray-400 mb-3">realizadas / projetadas</p>
+                <div class="w-full h-2.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden mb-1">
+                  <div
+                    class="h-full rounded-full transition-all duration-500"
+                    :class="achievementBarColor(achievementPctUnits)"
+                    :style="{ width: Math.min(achievementPctUnits ?? 0, 100) + '%' }" />
+                </div>
+                <div class="flex items-center justify-between text-xs mt-1">
+                  <span class="font-semibold" :class="achievementTextColor(achievementPctUnits)">
+                    {{ achievementPctUnits != null ? achievementPctUnits.toFixed(1) + '%' : '—' }}
+                  </span>
+                  <span v-if="timeElapsedPct > 0" class="text-gray-400">
+                    meta parcial: {{ projectionRow.projectedUnits ? Math.ceil(projectionRow.projectedUnits * timeElapsedPct / 100) : '—' }} un.
+                  </span>
+                </div>
+              </div>
+
+              <!-- VGV -->
+              <div class="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40 p-5">
+                <div class="flex items-center gap-2 mb-3">
+                  <i class="fas fa-bullseye text-sky-500"></i>
+                  <span class="text-sm font-semibold">{{ valueModeLabel }}</span>
+                </div>
+                <div class="flex items-end gap-1 mb-1">
+                  <span class="text-xl font-bold">{{ formatCurrency(totalValue) }}</span>
+                </div>
+                <p class="text-xs text-gray-400 mb-1">de {{ formatCurrency(projectionRow.projectedVgv || 0) }} projetado</p>
+                <div class="w-full h-2.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden mb-1">
+                  <div
+                    class="h-full rounded-full transition-all duration-500"
+                    :class="achievementBarColor(achievementPctVgv)"
+                    :style="{ width: Math.min(achievementPctVgv ?? 0, 100) + '%' }" />
+                </div>
+                <div class="flex items-center justify-between text-xs mt-1">
+                  <span class="font-semibold" :class="achievementTextColor(achievementPctVgv)">
+                    {{ achievementPctVgv != null ? achievementPctVgv.toFixed(1) + '%' : '—' }}
+                  </span>
+                  <span v-if="timeElapsedPct > 0 && projectionRow.projectedVgv" class="text-gray-400">
+                    meta parcial: {{ formatCurrency(projectionRow.projectedVgv * timeElapsedPct / 100) }}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Time-elapsed reference bar -->
+            <div v-if="timeElapsedPct > 0" class="flex items-center gap-3 text-xs text-gray-400">
+              <span class="flex-none">0%</span>
+              <div class="relative flex-1 h-1 bg-gray-200 dark:bg-gray-700 rounded-full">
+                <div class="absolute top-0 left-0 h-full bg-blue-300 dark:bg-blue-700 rounded-full"
+                  :style="{ width: timeElapsedPct + '%' }" />
+                <div class="absolute top-1/2 -translate-y-1/2 w-2 h-2 bg-blue-500 rounded-full border border-white"
+                  :style="{ left: 'calc(' + timeElapsedPct + '% - 4px)' }" />
+              </div>
+              <span class="flex-none">100%</span>
+              <span class="flex-none text-blue-500 font-medium">{{ timeElapsedPct.toFixed(0) }}% do mês</span>
+            </div>
+          </div>
+
+          <div v-if="viewMode !== 'list' && viewMode !== 'comparison'"
             class="p-6 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
             <div class="flex justify-between items-center mb-4">
               <div class="text-sm text-gray-500">
@@ -454,7 +541,11 @@ echarts.use([PieChart, BarChart, TooltipComponent, LegendComponent, GridComponen
 const props = defineProps({
   enterprise: { type: Object, required: true },
   sales: { type: Array, required: true },
-  initialMode: { type: String, default: 'list' }
+  initialMode: { type: String, default: 'list' },
+  /** When provided (from Sales-Projection), enables the "Comparação" view tab. */
+  projectionRow: { type: Object, default: null },
+  /** % of month elapsed (0-100), used for achievement status in comparison view. */
+  timeElapsedPct: { type: Number, default: 0 },
 })
 
 const emit = defineEmits(['close'])
@@ -1097,6 +1188,37 @@ const displayedConditions = (contract) => {
 const ruleFor = computed(() => contractsStore.enterpriseRuleFor)
 const comFor = computed(() => contractsStore.enterpriseCommissionFor)
 const totalsOf = computed(() => contractsStore._contractTotals)
+
+/* ===================== comparison view (projection context) ===================== */
+const achievementPctUnits = computed(() => {
+  if (!props.projectionRow?.projectedUnits) return null
+  return parseFloat((totalSales.value / props.projectionRow.projectedUnits * 100).toFixed(1))
+})
+
+const achievementPctVgv = computed(() => {
+  if (!props.projectionRow?.projectedVgv) return null
+  return parseFloat((totalValue.value / props.projectionRow.projectedVgv * 100).toFixed(1))
+})
+
+function achievementBarColor(pct) {
+  if (pct == null) return 'bg-gray-300 dark:bg-gray-600'
+  const elapsed = props.timeElapsedPct || 0
+  const ratio = elapsed > 0 ? pct / elapsed : (pct >= 100 ? 1.2 : 0.5)
+  if (ratio >= 1.1) return 'bg-emerald-500'
+  if (ratio >= 0.8) return 'bg-blue-500'
+  if (ratio >= 0.4) return 'bg-yellow-500'
+  return 'bg-red-500'
+}
+
+function achievementTextColor(pct) {
+  if (pct == null) return 'text-gray-400 dark:text-gray-500'
+  const elapsed = props.timeElapsedPct || 0
+  const ratio = elapsed > 0 ? pct / elapsed : (pct >= 100 ? 1.2 : 0.5)
+  if (ratio >= 1.1) return 'text-emerald-600 dark:text-emerald-400'
+  if (ratio >= 0.8) return 'text-blue-600 dark:text-blue-400'
+  if (ratio >= 0.4) return 'text-yellow-600 dark:text-yellow-400'
+  return 'text-red-600 dark:text-red-400'
+}
 
 const baseGross = (c) => {
   const r = ruleFor.value(c) || {}

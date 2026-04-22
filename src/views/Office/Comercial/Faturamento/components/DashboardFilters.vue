@@ -3,7 +3,7 @@
         <div class="flex flex-wrap items-end gap-4">
 
             <!-- Data Inicial -->
-            <div class="flex-1 lg:flex-initial lg:min-w-64">
+            <div class="flex-1 lg:flex-initial lg:min-w-44">
                 <label class="block text-xs font-medium mb-1 text-gray-700 dark:text-gray-300">
                     <i class="fas fa-calendar-day mr-1"></i>Data Início
                 </label>
@@ -12,7 +12,7 @@
             </div>
 
             <!-- Data Final -->
-            <div class="flex-1 lg:flex-initial lg:min-w-64">
+            <div class="flex-1 lg:flex-initial lg:min-w-44">
                 <label class="block text-xs font-medium mb-1 text-gray-700 dark:text-gray-300">
                     <i class="fas fa-calendar-check mr-1"></i>Data Fim
                 </label>

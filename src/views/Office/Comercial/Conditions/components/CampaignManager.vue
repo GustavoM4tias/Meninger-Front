@@ -11,6 +11,7 @@
           </span>
         </div>
         <button
+          v-if="!readonly"
           @click="addCampaign"
           class="flex items-center gap-2 px-3.5 py-2 text-xs font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
         >
@@ -202,6 +203,7 @@ import { ref } from 'vue';
 const props = defineProps({
     campaigns: { type: Array,   default: () => [] },
     saving:    { type: Boolean, default: false },
+    readonly:  { type: Boolean, default: false },
 });
 const emit = defineEmits(['update:campaigns', 'save']);
 

@@ -1344,6 +1344,21 @@ export const useContractsStore = defineStore('contracts', {
                 if (!res.ok) throw new Error(`Erro ao buscar empreendimentos: ${res.status}`)
                 const data = await res.json()
                 this.enterprises = data.results || []
+
+                // Seed the permanent enterprise→company map from the full enterprise list.
+                // This ensures projection-only enterprises (which may never appear in real
+                // contracts for the current filter period) are still resolvable by company.
+                for (const ent of this.enterprises) {
+                    const eid = Number(ent.id)
+                    if (!Number.isFinite(eid) || eid <= 0) continue
+                    if (!this._enterpriseCompanyMap.has(eid) && (ent.company_id != null || ent.company_name)) {
+                        this._enterpriseCompanyMap.set(eid, {
+                            company_id: ent.company_id ?? null,
+                            company_name: ent.company_name ?? null
+                        })
+                    }
+                }
+
                 return this.enterprises
             } catch (error) {
                 this.error = error.message

@@ -33,16 +33,16 @@
           :page-size="200" />
       </div>
 
-      <!-- Empreendimentos -->
+      <!-- Empresas (company-based, igual ao Faturamento) -->
       <div class="flex-1 max-w-96">
         <label class="block text-xs font-medium mb-1 text-gray-700 dark:text-gray-300">
-          <i class="fas fa-city mr-1"></i>Empreendimento(s)
+          <i class="fas fa-city mr-1"></i>Empresa(s)
         </label>
         <MultiSelector
-          :model-value="localEnterpriseNames"
-          @update:modelValue="v => localEnterpriseNames = Array.isArray(v) ? v : []"
-          :options="enterprisesOptions"
-          placeholder="Empreendimentos"
+          :model-value="localCompanyNames"
+          @update:modelValue="v => localCompanyNames = Array.isArray(v) ? v : []"
+          :options="companiesOptions"
+          placeholder="Empresas"
           :page-size="150"
           :select-all="true" />
       </div>
@@ -74,15 +74,25 @@ import MultiSelector from '@/components/UI/MultiSelector.vue'
 const emit = defineEmits(['filter-changed'])
 const contractsStore = useContractsStore()
 
-const localStart           = ref(dayjs().format('YYYY-MM'))
-const localEnd             = ref(dayjs().format('YYYY-MM'))
-const localEnterpriseNames = ref([])
-const localGroupIds        = ref([])
+const localStart        = ref(dayjs().format('YYYY-MM'))
+const localEnd          = ref(dayjs().format('YYYY-MM'))
+const localCompanyNames = ref([])
+const localGroupIds     = ref([])
 
-const enterprisesOptions = computed(() =>
-  (contractsStore.enterprises || []).map(e => e.name)
+/* ── Companies (same as DashboardFilters in Faturamento) ────────────────── */
+const companiesOptions = computed(() =>
+  (contractsStore.companies || []).map(c => c.name)
 )
 
+const companyIdByName = computed(() => {
+  const m = new Map()
+  for (const c of contractsStore.companies || []) {
+    m.set(c.name, Number(c.id))
+  }
+  return m
+})
+
+/* ── Workflow groups ─────────────────────────────────────────────────────── */
 const groupLabelOf = (g) => `${g.tipo === 'reservas' ? 'Reserva' : 'Repasse'} • ${g.nome}`
 
 const groupsOptions = computed(() =>
@@ -104,10 +114,15 @@ const isValid = computed(() =>
 function applyFilters() {
   if (!isValid.value) return
 
-  const ids = localGroupIds.value
+  const companyIds = localCompanyNames.value
+    .map(n => companyIdByName.value.get(n))
+    .filter(id => Number.isFinite(id))
+
+  const groupIds = localGroupIds.value
     .map(lbl => groupIdByLabel.value.get(lbl))
     .filter(n => Number.isFinite(n))
-  contractsStore.setSelectedGroups(ids)
+
+  contractsStore.setSelectedGroups(groupIds)
 
   const startDate = dayjs(localStart.value + '-01').startOf('month').format('YYYY-MM-DD')
   const endDate   = dayjs(localEnd.value   + '-01').endOf('month').format('YYYY-MM-DD')
@@ -115,28 +130,28 @@ function applyFilters() {
   emit('filter-changed', {
     startDate,
     endDate,
-    enterpriseName: localEnterpriseNames.value,
+    companyIds,
   })
 }
 
 function clearFilters() {
-  localStart.value           = dayjs().format('YYYY-MM')
-  localEnd.value             = dayjs().format('YYYY-MM')
-  localEnterpriseNames.value = []
-  localGroupIds.value        = []
+  localStart.value        = dayjs().format('YYYY-MM')
+  localEnd.value          = dayjs().format('YYYY-MM')
+  localCompanyNames.value = []
+  localGroupIds.value     = []
   contractsStore.clearFilters()
   contractsStore.setSelectedGroups([])
 
   emit('filter-changed', {
-    startDate:      dayjs().startOf('month').format('YYYY-MM-DD'),
-    endDate:        dayjs().endOf('month').format('YYYY-MM-DD'),
-    enterpriseName: [],
+    startDate:  dayjs().startOf('month').format('YYYY-MM-DD'),
+    endDate:    dayjs().endOf('month').format('YYYY-MM-DD'),
+    companyIds: [],
   })
 }
 
 onMounted(async () => {
   await Promise.all([
-    contractsStore.fetchEnterprises(),
+    contractsStore.fetchCompanies(),
     contractsStore.fetchWorkflowGroups(),
   ])
 })

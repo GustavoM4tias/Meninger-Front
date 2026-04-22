@@ -14,6 +14,7 @@ export const useConditionsStore = defineStore('conditions', () => {
     const correspondents = ref([]);
     const officeUsers = ref([]);
     const correspondentCompanies = ref([]);
+    const settings = ref(null);         // configurações comerciais (aprovadores)
     const error = ref(null);
 
     // ─── Listagem ────────────────────────────────────────────────────────────
@@ -66,23 +67,72 @@ export const useConditionsStore = defineStore('conditions', () => {
         });
     }
 
-    // ─── Publicar ─────────────────────────────────────────────────────────────
+    // ─── Enviar para autorização (draft → pending_approval) ──────────────────
 
-    async function publishCondition(id) {
-        const result = await requestWithAuth(`${API_URL}/conditions/${id}/publish`, {
+    async function submitForApproval(id) {
+        const result = await requestWithAuth(`${API_URL}/conditions/${id}/submit`, {
             method: 'POST',
         });
-        if (detail.value?.id === id) detail.value.status = 'published';
+        if (detail.value?.id === id) {
+            detail.value.status = 'pending_approval';
+        }
+        return result;
+    }
+
+    // ─── Desbloquear (approved → draft) ──────────────────────────────────────
+
+    async function unlockCondition(id, note = '') {
+        const result = await requestWithAuth(`${API_URL}/conditions/${id}/unlock`, {
+            method: 'POST',
+            body: JSON.stringify({ note }),
+        });
+        if (detail.value?.id === id) {
+            detail.value.status = 'draft';
+            detail.value.approved_at = null;
+        }
+        return result;
+    }
+
+    // ─── Publicar (legado — alias de submitForApproval) ───────────────────────
+
+    async function publishCondition(id) {
+        return submitForApproval(id);
+    }
+
+    // ─── Configurações comerciais ─────────────────────────────────────────────
+
+    async function fetchSettings() {
+        try {
+            settings.value = await requestWithAuth(`${API_URL}/conditions/settings`);
+        } catch (e) {
+            console.warn('[conditions] fetchSettings:', e.message);
+        }
+    }
+
+    async function updateSettings(payload) {
+        const result = await requestWithAuth(`${API_URL}/conditions/settings`, {
+            method: 'PUT',
+            body: JSON.stringify(payload),
+        });
+        await fetchSettings();
         return result;
     }
 
     // ─── Módulos ─────────────────────────────────────────────────────────────
 
     async function saveModules(id, modules) {
+        // modules agora inclui campaigns[] dentro de cada módulo
         return await requestWithAuth(`${API_URL}/conditions/${id}/modules`, {
             method: 'PUT',
             body: JSON.stringify({ modules }),
         });
+    }
+
+    async function deleteModule(conditionId, moduleId) {
+        return await requestWithAuth(
+            `${API_URL}/conditions/${conditionId}/modules/${moduleId}`,
+            { method: 'DELETE' }
+        );
     }
 
     async function copyModule(conditionId, targetModuleId, sourceModuleId) {
@@ -92,12 +142,31 @@ export const useConditionsStore = defineStore('conditions', () => {
         );
     }
 
+    async function copyModuleFromSource(conditionId, moduleId, sourceConditionId, sourceModuleId, fields = []) {
+        return await requestWithAuth(
+            `${API_URL}/conditions/${conditionId}/modules/${moduleId}/copy-from/${sourceConditionId}/module/${sourceModuleId}`,
+            { method: 'POST', body: JSON.stringify({ fields }) }
+        );
+    }
+
+    async function fetchModulesForEnterprise(idempreendimento) {
+        return await requestWithAuth(`${API_URL}/conditions/enterprise/${idempreendimento}/modules`);
+    }
+
+    async function fetchEnterpriseStages(idempreendimento) {
+        return await requestWithAuth(`${API_URL}/conditions/enterprise/${idempreendimento}/stages`);
+    }
+
+    async function fetchUnitsForStage(idempreendimento, idetapa) {
+        return await requestWithAuth(`${API_URL}/conditions/enterprise/${idempreendimento}/stages/${idetapa}/units`);
+    }
+
     // ─── Campanhas ───────────────────────────────────────────────────────────
 
-    async function saveCampaigns(id, campaigns) {
+    async function saveCampaigns(id, campaigns, module_id = null) {
         return await requestWithAuth(`${API_URL}/conditions/${id}/campaigns`, {
             method: 'PUT',
-            body: JSON.stringify({ campaigns }),
+            body: JSON.stringify({ campaigns, ...(module_id != null ? { module_id } : {}) }),
         });
     }
 
@@ -167,12 +236,15 @@ export const useConditionsStore = defineStore('conditions', () => {
     }
 
     return {
-        list, detail, priceTables, priceDistribution, correspondents, officeUsers, correspondentCompanies, error,
+        list, detail, priceTables, priceDistribution, correspondents, officeUsers, correspondentCompanies, settings, error,
         fetchList, fetchDetail,
         createCondition, saveCondition, publishCondition,
-        saveModules, copyModule,
+        submitForApproval, unlockCondition,
+        saveModules, deleteModule, copyModule, copyModuleFromSource, fetchModulesForEnterprise, fetchEnterpriseStages,
         saveCampaigns, deleteCampaign,
         fetchPriceTables, fetchPriceDistribution,
         fetchCorrespondents, fetchOfficeUsers, fetchCorrespondentCompanies,
+        fetchSettings, updateSettings,
+        fetchUnitsForStage,
     };
 });
