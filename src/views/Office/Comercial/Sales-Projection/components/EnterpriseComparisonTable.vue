@@ -5,8 +5,10 @@
     <div class="p-6 border-b border-gray-200 dark:border-gray-700">
       <div class="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Vendas por Empreendimento</h3>
-          <p class="text-sm text-gray-500 dark:text-gray-400">Realizado vs. Projetado por empreendimento</p>
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+            Vendas por {{ contractsStore.groupBy === 'company' ? 'Empresa' : 'Empreendimento' }}
+          </h3>
+          <p class="text-sm text-gray-500 dark:text-gray-400">Realizado vs. Projetado</p>
         </div>
 
         <div class="flex items-center gap-2 flex-wrap">
@@ -26,6 +28,22 @@
             ]">VGV+DC</button>
           </div>
 
+          <!-- GroupBy: Empreendimento / Empresa -->
+          <div class="inline-flex rounded-md border dark:border-gray-700 overflow-hidden">
+            <button @click="contractsStore.setGroupBy('enterprise')" :class="[
+              'px-3 py-1 text-sm font-medium',
+              contractsStore.groupBy === 'enterprise'
+                ? 'bg-blue-600 dark:bg-blue-700 text-white dark:text-gray-100'
+                : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-100'
+            ]">Empreendimento</button>
+            <button @click="contractsStore.setGroupBy('company')" :class="[
+              'px-3 py-1 text-sm font-medium border-l border-gray-300 dark:border-gray-700',
+              contractsStore.groupBy === 'company'
+                ? 'bg-blue-600 dark:bg-blue-700 text-white dark:text-gray-100'
+                : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-100'
+            ]">Empresa</button>
+          </div>
+
           <!-- Ordenação -->
           <select v-model="sortBy"
             class="rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 text-sm px-2 py-1.5 text-gray-700 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500">
@@ -35,6 +53,21 @@
             <option value="achievement-asc">% Atingida ↑</option>
             <option value="name-asc">Nome A→Z</option>
           </select>
+
+          <!-- Configurações de regras (admin only) — abre o mesmo modal do Faturamento -->
+          <button v-if="isAdmin"
+            class="inline-flex items-center justify-center p-2 rounded-full text-gray-600 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            v-tippy="'Configurar regras (ocultar empreendimentos, comissão, LAND_VALUE_ONLY…)'"
+            @click="$emit('open-rules')">
+            <i class="fas fa-cog"></i>
+          </button>
+
+          <!-- Configurações de Meta (admin only) — modo unidades/VGV -->
+          <button v-if="isAdmin"
+            class="text-xl ps-1 text-gray-500 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
+            v-tippy="'Configurações de Meta (unidades vs VGV)'" @click="$emit('open-settings')">
+            <i class="fas fa-sliders"></i>
+          </button>
 
           <!-- Exportar -->
           <button
@@ -64,7 +97,7 @@
               <input type="checkbox" :checked="allVisibleChecked" @change="toggleAllVisible($event)" />
             </th>
             <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-              Empreendimento
+              {{ contractsStore.groupBy === 'company' ? 'Empresa' : 'Empreendimento' }}
             </th>
             <th class="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
               Vendas
@@ -78,7 +111,8 @@
             <th class="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
               Meta Projetada
             </th>
-            <th class="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+            <th class="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400"
+              v-tippy="`Modo padrão: ${goalStore.globalMode === 'units' ? 'Unidades' : 'VGV'}. Clique no nome para ver detalhes.`">
               % Atingida
             </th>
             <th class="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
@@ -105,7 +139,12 @@
             <td class="px-6 py-4 max-w-96">
               <div class="flex items-center gap-2">
                 <div class="w-2.5 h-2.5 rounded-full flex-shrink-0" :style="{ backgroundColor: dotColor(row.status) }" />
-                <span class="text-sm font-medium text-gray-900 dark:text-white line-clamp-2 truncate">{{ row.name }}</span>
+                <button
+                  class="text-sm font-medium text-gray-900 dark:text-white line-clamp-2 truncate text-left hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                  v-tippy="`Ver detalhes das vendas — Meta por ${goalModeLabel(row)}`"
+                  @click="$emit('open-detail', row)">
+                  {{ row.name }}
+                </button>
               </div>
             </td>
 
@@ -159,15 +198,16 @@
 
             <!-- % Atingida -->
             <td class="px-6 py-4 text-right">
-              <div v-if="row.achievementPct != null && row.projectedVgv > 0" class="flex flex-col items-end gap-1.5">
-                <span class="text-sm font-bold" :class="achievementTextClass(row)">
-                  {{ row.achievementPct.toFixed(1) }}%
+              <div v-if="effectiveAchievementPct(row) != null" class="flex flex-col items-end gap-1.5">
+                <span class="text-sm font-bold" :class="achievementTextClass(row)"
+                  v-tippy="`Meta por ${goalModeLabel(row)}`">
+                  {{ effectiveAchievementPct(row).toFixed(1) }}%
                 </span>
                 <div class="w-20 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                   <div
                     class="h-full rounded-full transition-all duration-300"
                     :class="achievementBarClass(row)"
-                    :style="{ width: Math.min(row.achievementPct, 100) + '%' }" />
+                    :style="{ width: Math.min(effectiveAchievementPct(row), 100) + '%' }" />
                 </div>
               </div>
               <span v-else class="text-sm text-gray-400 dark:text-gray-500">—</span>
@@ -196,6 +236,7 @@
 <script setup>
 import { ref, computed, watch, watchEffect } from 'vue'
 import { useContractsStore } from '@/stores/Comercial/Contracts/contractsStore'
+import { useProjectionGoalModeStore } from '@/stores/Comercial/Projections/projectionGoalModeStore'
 import Export from '@/components/config/Export.vue'
 
 const props = defineProps({
@@ -203,12 +244,14 @@ const props = defineProps({
   timeElapsedPct: { type: Number, default: 0 },
 })
 
-const emit = defineEmits(['selection-metrics'])
+const emit = defineEmits(['selection-metrics', 'open-detail', 'open-settings', 'open-rules'])
 
 const contractsStore = useContractsStore()
+const goalStore      = useProjectionGoalModeStore()
 const sortBy         = ref('vgv-desc')
 const open           = ref(false)
 const valueModeLabel = computed(() => contractsStore.valueModeLabel)
+const isAdmin        = computed(() => { try { return localStorage.getItem('role') === 'admin' } catch { return false } })
 
 // ── Distrato (igual ao Dashboard de Faturamento) ──────────────────────────────
 
@@ -317,40 +360,80 @@ const selectionMetricsComputed = computed(() => {
   if (selectedRows.value.length === 0) return null
   const rows = selectedRows.value
 
+  const useNet = contractsStore.isNet
+
   const totalSales      = rows.reduce((s, r) => s + Math.max(0, (r.count || 0) - distratoCount(r)), 0)
   const totalValueNet   = rows.reduce((s, r) => s + (r.total_value_net   || 0), 0)
   const totalValueGross = rows.reduce((s, r) => s + (r.total_value_gross || 0), 0)
   const projectedVgv    = rows.reduce((s, r) => s + (r.projectedVgv    || 0), 0)
   const projectedUnits  = rows.reduce((s, r) => s + (r.projectedUnits  || 0), 0)
 
-  const avgSaleValueNet    = totalSales > 0 ? totalValueNet   / totalSales : 0
-  const avgSaleValueGross  = totalSales > 0 ? totalValueGross / totalSales : 0
+  // Inclui VGV workflow (pipeline) na métrica realizada para consistência com os cards
+  const wfValueNet   = rows.reduce((s, r) => s + (r.proj_value_net   || 0), 0)
+  const wfValueGross = rows.reduce((s, r) => s + (r.proj_value_gross || 0), 0)
+  const effectiveValueNet   = totalValueNet   + wfValueNet
+  const effectiveValueGross = totalValueGross + wfValueGross
+
+  const avgSaleValueNet    = totalSales > 0 ? effectiveValueNet   / totalSales : 0
+  const avgSaleValueGross  = totalSales > 0 ? effectiveValueGross / totalSales : 0
   const avgProjectedTicket = projectedUnits > 0 ? projectedVgv / projectedUnits : 0
 
-  const realizedVgv    = contractsStore.isNet ? totalValueNet : totalValueGross
+  const realizedVgv    = useNet ? effectiveValueNet : effectiveValueGross
   const achievementPct = projectedVgv > 0
     ? parseFloat((realizedVgv / projectedVgv * 100).toFixed(1))
     : null
 
+  const realizedUnits    = rows.reduce((s, r) => s + Math.max(0, (r.count || 0) - distratoCount(r)), 0)
+  const achievementPctUnits = projectedUnits > 0
+    ? parseFloat((realizedUnits / projectedUnits * 100).toFixed(1))
+    : null
+
   return {
     totalSales,
-    totalContracts:    totalSales,
+    totalContracts:      totalSales,
     totalValueNet,
     totalValueGross,
     avgSaleValueNet,
     avgSaleValueGross,
-    totalValue:        totalValueNet,
-    avgSaleValue:      avgSaleValueNet,
-    totalEnterprises:  rows.length,
+    totalValue:          totalValueNet,
+    avgSaleValue:        avgSaleValueNet,
+    totalEnterprises:    rows.length,
     projectedVgv,
     projectedUnits,
     avgProjectedTicket,
     achievementPct,
-    timeElapsedPct:    props.timeElapsedPct,
+    achievementPctUnits,
+    timeElapsedPct:      props.timeElapsedPct,
   }
 })
 
 watchEffect(() => { emit('selection-metrics', selectionMetricsComputed.value) })
+
+// ── Goal-mode-aware achievement ───────────────────────────────────────────
+
+/** Returns effective achievement % based on goal mode for this enterprise. */
+function effectiveAchievementPct(row) {
+  const eid = row.enterprise_id ?? row.id ?? null
+  const mode = goalStore.modeForEnterprise(eid)
+  if (mode === 'units') {
+    const projected = row.projectedUnits || 0
+    if (projected <= 0) return null
+    // Quando não há vendas reais (count=0) mas há pipeline workflow (proj_count>0),
+    // usa proj_count como realizados — ex.: empresa com 0+1 deve mostrar 1/5 = 20%.
+    const effectiveCount = (row.count || 0) > 0 ? (row.count || 0) : (row.proj_count || 0)
+    const realized = Math.max(0, effectiveCount - distratoCount(row))
+    return parseFloat((realized / projected * 100).toFixed(1))
+  }
+  // vgv mode — row.achievementPct já inclui workflowVgv quando count=0
+  return row.achievementPct ?? null
+}
+
+/** Effective goal mode label for this row (for tooltip) */
+function goalModeLabel(row) {
+  const eid = row.enterprise_id ?? row.id ?? null
+  const mode = goalStore.modeForEnterprise(eid)
+  return mode === 'units' ? 'Unidades' : 'VGV'
+}
 
 // ── Ordenação ─────────────────────────────────────────────────────────────────
 
@@ -360,9 +443,9 @@ const sortedData = computed(() => {
     case 'vgv-asc':
       return list.sort((a, b) => a.realizedVgv - b.realizedVgv)
     case 'achievement-desc':
-      return list.sort((a, b) => (b.achievementPct ?? -1) - (a.achievementPct ?? -1))
+      return list.sort((a, b) => (effectiveAchievementPct(b) ?? -1) - (effectiveAchievementPct(a) ?? -1))
     case 'achievement-asc':
-      return list.sort((a, b) => (a.achievementPct ?? 999) - (b.achievementPct ?? 999))
+      return list.sort((a, b) => (effectiveAchievementPct(a) ?? 999) - (effectiveAchievementPct(b) ?? 999))
     case 'name-asc':
       return list.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'pt-BR'))
     default:
@@ -374,9 +457,11 @@ const sortedData = computed(() => {
 
 function ratioOf(row) {
   const elapsed = props.timeElapsedPct
-  if (!row.projectedVgv) return null
-  if (elapsed === 0) return row.achievementPct >= 100 ? 1.2 : 0.5
-  return (row.achievementPct ?? 0) / elapsed
+  const ach = effectiveAchievementPct(row)
+  if (ach == null) return null
+  if (!row.projectedVgv && !row.projectedUnits) return null
+  if (elapsed === 0) return ach >= 100 ? 1.2 : 0.5
+  return ach / elapsed
 }
 
 function achievementTextClass(row) {

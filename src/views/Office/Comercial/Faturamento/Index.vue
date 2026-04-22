@@ -2,11 +2,11 @@
     <div class="h-full">
         <!-- Header -->
         <div class="px-6 pt-6">
-            <div class="flex">
+            <div class="flex items-center gap-2">
                 <h1 class="text-2xl font-bold">Dashboard de Vendas</h1>
                 <Favorite class="m-auto" :router="'/comercial/faturamento'" :section="'Faturamento'" />
             </div>
-            <p class="mt-1">Acompanhe o desempenho dos empreendimentos</p>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Acompanhe o desempenho dos empreendimentos.</p>
         </div>
 
         <!-- Filtros -->
@@ -16,7 +16,7 @@
 
         <!-- Error State -->
         <div v-if="contractsStore.error" class="px-6 py-4">
-            <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+            <div class="bg-red-500/60 border border-red-200 rounded-lg p-4">
                 <p class="text-red-800">Erro ao carregar dados: {{ contractsStore.error }}</p>
                 <button @click="loadData"
                     class="mt-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors">
@@ -24,6 +24,22 @@
                 </button>
             </div>
         </div>
+
+        <div v-if="loading" class="px-6 pb-8 space-y-6 fa-fade [--fa-animation-duration:2s] opacity-75">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="bg-white dark:bg-gray-900 rounded-lg shadow-sm border dark:border-gray-700 h-32 w-full">
+                </div>
+                <div class="bg-white dark:bg-gray-900 rounded-lg shadow-sm border dark:border-gray-700 h-32 w-full">
+                </div>
+                <div class="bg-white dark:bg-gray-900 rounded-lg shadow-sm border dark:border-gray-700 h-32 w-full">
+                </div>
+            </div>
+
+            <div
+                class="bg-white dark:bg-gray-900 rounded-lg shadow-sm border dark:border-gray-700 overflow-hidden h-[80vh]">
+            </div>
+        </div>
+
 
         <!-- Dashboard Content -->
         <div v-else class="px-6 pb-6 space-y-6">
@@ -58,6 +74,7 @@ const hiddenStore = useHiddenEnterprisesStore()
 const stageCommissionRulesStore = useStageCommissionRulesStore()
 const isLandSyncModalOpen = ref(false)
 const selectionMetrics = ref(null)
+const loading = ref(false)
 
 const isAdmin = computed(() => {
     try { return localStorage.getItem('role') === 'admin' } catch { return false }
@@ -66,11 +83,13 @@ const isAdmin = computed(() => {
 const metricsToShow = computed(() => selectionMetrics.value || contractsStore.metrics)
 
 const loadData = async () => {
+    loading.value = true
     await Promise.all([
         contractsStore.fetchContracts(),
         contractsStore.fetchEnterprises(),
         contractsStore.fetchWorkflowGroups() // opcional
     ])
+    loading.value = false
 }
 
 const handleFilterChange = async () => {

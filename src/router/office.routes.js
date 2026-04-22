@@ -124,6 +124,12 @@ export default [
                         component: () => import('@/views/Office/Comercial/Conditions/Detail.vue'),
                         meta: { requiresAuth: true, searchable: false, content: 'Detalhe da Ficha Comercial' },
                     },
+                    {
+                        path: 'conditions/settings',
+                        name: 'Fichas Comerciais Configurações',
+                        component: () => import('@/views/Office/Comercial/Conditions/Settings.vue'),
+                        meta: { requiresAuth: true, requiresAdmin: true, searchable: false, content: 'Configurações das Fichas Comerciais' },
+                    },
                 ],
             },
 
@@ -143,6 +149,12 @@ export default [
                         name: 'Custos',
                         component: () => import('@/views/Office/Financeiro/Custos/Index.vue'),
                         meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Custos do Financeiro' },
+                    },
+                    {
+                        path: 'boleto-caixa',
+                        name: 'Boleto Caixa',
+                        component: () => import('@/views/Office/Financeiro/BoletoCaixa/Index.vue'),
+                        meta: { requiresAuth: true, requiresAdmin: true, searchable: false, content: 'Configuração e histórico de emissão de boletos via Caixa Econômica Federal' },
                     },
                 ],
             },

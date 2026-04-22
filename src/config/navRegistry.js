@@ -110,6 +110,7 @@ export const navRegistry = [
         pages: [
             { route: '/financeiro/titulos', section: 'Títulos', name: 'Títulos', icon: 'fas fa-money-bill-transfer' },
             { route: '/financeiro/custos', section: 'Custos', name: 'Custos', icon: 'fas fa-coins' },
+            { route: '/financeiro/boleto-caixa', name: 'Boleto Caixa', icon: 'fas fa-barcode', adminOnly: true },
         ],
     },
 
