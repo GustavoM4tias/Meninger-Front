@@ -401,7 +401,7 @@
                 </span>
                 <div class="flex-1 min-w-0">
                   <span :class="['text-sm font-semibold', faixaEnabled(fc.faixa) ? fc.textActive : 'text-gray-800 dark:text-gray-100']">{{ fc.label }}</span>
-                  <span class="ml-2 text-xs text-gray-400 dark:text-gray-500">{{ fc.desc }}</span>
+                  <!-- <span class="ml-2 text-xs text-gray-400 dark:text-gray-500">{{ fc.desc }}</span> -->
                 </div>
                 <i v-if="faixaEnabled(fc.faixa)" class="fas fa-chevron-down text-xs text-gray-400 dark:text-gray-500"></i>
               </div>
@@ -968,7 +968,7 @@ const STATUS_LABELS = {
 
 const FAIXAS_CONFIG = [
     {
-        faixa: 1, label: 'Faixa 1', desc: 'Renda até R$ 2.640',
+        faixa: 1, label: 'Faixa 1',
         borderActive: 'border-blue-400 dark:border-blue-600 shadow-sm',
         bgActive: 'bg-blue-50 dark:bg-blue-950/30',
         checkActive: 'border-blue-500 bg-blue-500',
@@ -980,7 +980,7 @@ const FAIXAS_CONFIG = [
         },
     },
     {
-        faixa: 2, label: 'Faixa 2', desc: 'Renda até R$ 5.000',
+        faixa: 2, label: 'Faixa 2',
         borderActive: 'border-green-400 dark:border-green-600 shadow-sm',
         bgActive: 'bg-green-50 dark:bg-green-950/30',
         checkActive: 'border-green-500 bg-green-500',
@@ -992,7 +992,7 @@ const FAIXAS_CONFIG = [
         },
     },
     {
-        faixa: 3, label: 'Faixa 3', desc: 'Renda até R$ 9.600',
+        faixa: 3, label: 'Faixa 3',
         borderActive: 'border-amber-400 dark:border-amber-600 shadow-sm',
         bgActive: 'bg-amber-50 dark:bg-amber-950/30',
         checkActive: 'border-amber-500 bg-amber-500',
@@ -1004,7 +1004,7 @@ const FAIXAS_CONFIG = [
         },
     },
     {
-        faixa: 4, label: 'Faixa 4', desc: 'Renda até R$ 13.000',
+        faixa: 4, label: 'Faixa 4',
         borderActive: 'border-orange-400 dark:border-orange-600 shadow-sm',
         bgActive: 'bg-orange-50 dark:bg-orange-950/30',
         checkActive: 'border-orange-500 bg-orange-500',

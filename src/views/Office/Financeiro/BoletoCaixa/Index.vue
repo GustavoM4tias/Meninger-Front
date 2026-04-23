@@ -11,7 +11,7 @@
               Boleto Caixa
             </h1>
             <p class="text-blue-100 text-sm">
-              Emissão automática de boletos no ECO Cobrança via webhook do CV
+              Emissão automática de boletos no Ecobrança via webhook do CV
             </p>
           </div>
 
@@ -34,8 +34,7 @@
     <!-- Tabs -->
     <div class="flex gap-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-xl w-fit">
       <button v-for="tab in tabs" :key="tab.key" @click="activeTab = tab.key"
-        class="px-5 py-2 rounded-lg text-sm font-medium transition-all"
-        :class="activeTab === tab.key
+        class="px-5 py-2 rounded-lg text-sm font-medium transition-all" :class="activeTab === tab.key
           ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow'
           : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'">
         <i :class="tab.icon" class="mr-2"></i>{{ tab.label }}
@@ -45,14 +44,15 @@
     <!-- ── TAB: Configurações ───────────────────────────────────────────────── -->
     <div v-if="activeTab === 'settings'" class="space-y-5">
 
-      <!-- Card: Credenciais ECO Cobrança -->
+      <!-- Card: Credenciais Ecobrança -->
       <div class="rounded-2xl border dark:border-gray-700 bg-white dark:bg-gray-800 p-6 shadow-sm space-y-4">
         <div class="flex items-center gap-3 mb-2">
-          <div class="w-9 h-9 bg-blue-100 dark:bg-blue-900/30 text-blue-600 rounded-xl flex items-center justify-center">
+          <div
+            class="w-9 h-9 bg-blue-100 dark:bg-blue-900/30 text-blue-600 rounded-xl flex items-center justify-center">
             <i class="fas fa-lock"></i>
           </div>
           <div>
-            <h2 class="font-semibold text-gray-900 dark:text-white">Credenciais ECO Cobrança</h2>
+            <h2 class="font-semibold text-gray-900 dark:text-white">Credenciais Ecobrança</h2>
             <p class="text-xs text-gray-500 dark:text-gray-400">Acesso ao portal da Caixa Econômica Federal</p>
           </div>
         </div>
@@ -83,7 +83,8 @@
       <!-- Card: Webhook -->
       <div class="rounded-2xl border dark:border-gray-700 bg-white dark:bg-gray-800 p-6 shadow-sm space-y-3">
         <div class="flex items-center gap-3 mb-2">
-          <div class="w-9 h-9 bg-purple-100 dark:bg-purple-900/30 text-purple-600 rounded-xl flex items-center justify-center">
+          <div
+            class="w-9 h-9 bg-purple-100 dark:bg-purple-900/30 text-purple-600 rounded-xl flex items-center justify-center">
             <i class="fas fa-webhook"></i>
           </div>
           <div>
@@ -92,7 +93,8 @@
           </div>
         </div>
 
-        <div class="flex items-center gap-2 bg-gray-50 dark:bg-gray-900/60 border border-gray-200 dark:border-gray-700 rounded-lg px-4 py-3">
+        <div
+          class="flex items-center gap-2 bg-gray-50 dark:bg-gray-900/60 border border-gray-200 dark:border-gray-700 rounded-lg px-4 py-3">
           <code class="text-sm text-blue-600 dark:text-blue-400 flex-1 break-all select-all">
             {{ webhookUrl }}
           </code>
@@ -103,7 +105,8 @@
           </button>
         </div>
 
-        <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg px-4 py-3 text-sm text-amber-800 dark:text-amber-300">
+        <div
+          class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg px-4 py-3 text-sm text-amber-800 dark:text-amber-300">
           <i class="fas fa-info-circle mr-2"></i>
           Configure o gatilho <strong>"Quando entrar na situação..."</strong> para a funcionalidade
           <strong>Reserva</strong> no CV com este endereço.
@@ -113,20 +116,46 @@
       <!-- Card: Configurações de Série e CV -->
       <div class="rounded-2xl border dark:border-gray-700 bg-white dark:bg-gray-800 p-6 shadow-sm space-y-4">
         <div class="flex items-center gap-3 mb-2">
-          <div class="w-9 h-9 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 rounded-xl flex items-center justify-center">
+          <div
+            class="w-9 h-9 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 rounded-xl flex items-center justify-center">
             <i class="fas fa-sliders"></i>
           </div>
           <h2 class="font-semibold text-gray-900 dark:text-white">Configurações do CV</h2>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
+          <!-- IDs de Série — chip input (múltiplos) -->
+          <div class="md:col-span-1">
             <label class="text-sm font-medium text-gray-700 dark:text-gray-300 block mb-1">
-              ID da Série (Recurso Próprio a Vista)
+              IDs de Série CV (Entrada)
             </label>
-            <input v-model.number="form.idserie_ra" type="number" placeholder="21"
-              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900/60 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm" />
-            <p class="text-xs text-gray-400 mt-1">Padrão: 21</p>
+            <!-- input para adicionar nova série -->
+            <div class="flex gap-2">
+              <input v-model.number="novaSerieId" type="number" placeholder="Ex: 21" @keydown.enter.prevent="addSerieId"
+                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900/60 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm" />
+              <button type="button" @click="addSerieId"
+                class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors flex items-center gap-1">
+                <i class="fas fa-plus text-xs"></i> Adicionar
+              </button>
+            </div>
+            <!-- chips das séries salvas -->
+            <div class="flex flex-wrap gap-1 mt-2">
+              <span v-for="id in form.idserie_ra" :key="id"
+                class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300 text-xs font-medium">
+                {{ id }}
+                <button type="button" @click="removeSerieId(id)"
+                  class="hover:text-red-500 transition-colors leading-none">
+                  <i class="fas fa-times text-xs"></i>
+                </button>
+              </span>
+              <span v-if="!form.idserie_ra.length" class="text-xs text-gray-400 italic self-center">
+                Nenhuma série configurada
+              </span>
+            </div>
+            <p class="text-xs text-gray-400 mt-1">
+              Séries cujas parcelas de entrada disparam emissão de boleto. Regra: somente 1 parcela destas séries por
+              reserva.
+            </p>
           </div>
           <div>
             <label class="text-sm font-medium text-gray-700 dark:text-gray-300 block mb-1">
@@ -134,7 +163,7 @@
             </label>
             <input v-model.number="form.cv_idtipo_documento" type="number" placeholder="Ex: 14"
               class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900/60 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm" />
-            <p class="text-xs text-gray-400 mt-1">Obtido na API de tipos de arquivo do CV.</p>
+            <p class="text-xs text-gray-400 mt-1">Obtido nos tipos de arquivo do CV.</p>
           </div>
           <div>
             <label class="text-sm font-medium text-gray-700 dark:text-gray-300 block mb-1">
@@ -142,6 +171,7 @@
             </label>
             <input v-model.number="form.situacao_sucesso_id" type="number" placeholder="ID da situação"
               class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900/60 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm" />
+            <p class="text-xs text-gray-400 mt-1">Etapa de Sucesso CV.</p>
           </div>
           <div>
             <label class="text-sm font-medium text-gray-700 dark:text-gray-300 block mb-1">
@@ -149,7 +179,7 @@
             </label>
             <input v-model.number="form.situacao_erro_id" type="number" placeholder="ID da situação"
               class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900/60 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm" />
-            <p class="text-xs text-gray-400 mt-1">Usa endpoint <code>cancelar-reserva</code> do CV.</p>
+            <p class="text-xs text-gray-400 mt-1">Etapa de Erro CV.</p>
           </div>
         </div>
       </div>
@@ -197,7 +227,8 @@
       <div v-if="isDev"
         class="rounded-2xl border-2 border-dashed border-yellow-400 dark:border-yellow-600 bg-yellow-50 dark:bg-yellow-900/20 p-6 shadow-sm space-y-4">
         <div class="flex items-center gap-3">
-          <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-yellow-400 text-yellow-900 text-xs font-bold uppercase tracking-wide">
+          <span
+            class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-yellow-400 text-yellow-900 text-xs font-bold uppercase tracking-wide">
             <i class="fas fa-flask"></i> Dev Only
           </span>
           <h3 class="text-base font-semibold text-yellow-800 dark:text-yellow-300">
@@ -210,15 +241,9 @@
         </p>
 
         <div class="flex flex-col sm:flex-row gap-3">
-          <input
-            v-model="simulateIdreserva"
-            type="number"
-            placeholder="ID da Reserva (ex: 12345)"
-            class="flex-1 rounded-xl border border-yellow-300 dark:border-yellow-600 bg-white dark:bg-gray-800 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400"
-          />
-          <button
-            @click="handleSimulate"
-            :disabled="store.simulateLoading || !simulateIdreserva"
+          <input v-model="simulateIdreserva" type="number" placeholder="ID da Reserva (ex: 12345)"
+            class="flex-1 rounded-xl border border-yellow-300 dark:border-yellow-600 bg-white dark:bg-gray-800 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400" />
+          <button @click="handleSimulate" :disabled="store.simulateLoading || !simulateIdreserva"
             class="px-5 py-2.5 bg-yellow-500 hover:bg-yellow-600 text-white font-semibold rounded-xl transition-colors shadow disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 whitespace-nowrap">
             <i :class="store.simulateLoading ? 'fas fa-spinner fa-spin' : 'fas fa-play'"></i>
             {{ store.simulateLoading ? 'Disparando...' : 'Disparar' }}
@@ -254,8 +279,8 @@
           </div>
           <div>
             <label class="text-xs font-medium text-gray-500 dark:text-gray-400 block mb-1">ID Reserva</label>
-            <input v-model="store.historyFilter.idreserva" @keyup.enter="store.fetchHistory()"
-              type="number" placeholder="Ex: 7187"
+            <input v-model="store.historyFilter.idreserva" @keyup.enter="store.fetchHistory()" type="number"
+              placeholder="Ex: 7187"
               class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900/60 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-400 w-32" />
           </div>
           <button @click="store.fetchHistory()"
@@ -325,7 +350,7 @@
                   </span>
                 </td>
                 <td class="px-4 py-3 text-center text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                  {{ formatDateTime(item.created_at) }}
+                  {{ formatDateTime(item.createdAt) }}
                 </td>
                 <td class="px-4 py-3 text-center">
                   <a v-if="item.boleto_supabase_url" :href="item.boleto_supabase_url" target="_blank"
@@ -351,8 +376,7 @@
           </span>
           <div class="flex gap-1">
             <button v-for="p in store.totalPages" :key="p" @click="store.setPage(p)"
-              class="w-8 h-8 rounded-lg text-sm font-medium transition-colors"
-              :class="store.historyPage === p
+              class="w-8 h-8 rounded-lg text-sm font-medium transition-colors" :class="store.historyPage === p
                 ? 'bg-blue-600 text-white'
                 : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'">
               {{ p }}
@@ -375,7 +399,7 @@ const store = useBoletoStore();
 // ── Tabs ──────────────────────────────────────────────────────────────────────
 const tabs = [
   { key: 'settings', label: 'Configurações', icon: 'fas fa-gear' },
-  { key: 'history',  label: 'Histórico',     icon: 'fas fa-clock-rotate-left' },
+  { key: 'history', label: 'Histórico', icon: 'fas fa-clock-rotate-left' },
 ];
 const activeTab = ref('settings');
 
@@ -411,12 +435,26 @@ async function handleSimulate() {
 const form = ref({
   eco_usuario: '',
   eco_senha: '',
-  idserie_ra: 21,
+  idserie_ra: [21],   // array de IDs de série
   cv_idtipo_documento: null,
   situacao_sucesso_id: null,
   situacao_erro_id: null,
   active: false,
 });
+
+// ── Chip input para IDs de Série ──────────────────────────────────────────────
+const novaSerieId = ref(null);
+
+function addSerieId() {
+  const id = Number(novaSerieId.value);
+  if (!id || form.value.idserie_ra.includes(id)) return;
+  form.value.idserie_ra = [...form.value.idserie_ra, id];
+  novaSerieId.value = null;
+}
+
+function removeSerieId(id) {
+  form.value.idserie_ra = form.value.idserie_ra.filter(s => s !== id);
+}
 
 async function handleSave() {
   const payload = { ...form.value };
@@ -449,16 +487,16 @@ function truncate(str, n) {
 function statusClass(status) {
   return {
     processing: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400',
-    success:    'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400',
-    error:      'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400',
+    success: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400',
+    error: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400',
   }[status] || 'bg-gray-100 text-gray-500';
 }
 
 function statusIcon(status) {
   return {
     processing: 'fas fa-spinner fa-spin',
-    success:    'fas fa-check',
-    error:      'fas fa-times',
+    success: 'fas fa-check',
+    error: 'fas fa-times',
   }[status] || 'fas fa-question';
 }
 
@@ -470,12 +508,14 @@ function statusLabel(status) {
 onMounted(async () => {
   await store.fetchSettings();
   if (store.settings) {
-    form.value.eco_usuario        = store.settings.eco_usuario || '';
-    form.value.idserie_ra         = store.settings.idserie_ra ?? 21;
+    form.value.eco_usuario = store.settings.eco_usuario || '';
+    const rawSerie = store.settings.idserie_ra;
+    form.value.idserie_ra = Array.isArray(rawSerie) ? rawSerie
+      : rawSerie ? [Number(rawSerie)] : [21];
     form.value.cv_idtipo_documento = store.settings.cv_idtipo_documento || null;
     form.value.situacao_sucesso_id = store.settings.situacao_sucesso_id || null;
-    form.value.situacao_erro_id    = store.settings.situacao_erro_id || null;
-    form.value.active              = store.settings.active ?? false;
+    form.value.situacao_erro_id = store.settings.situacao_erro_id || null;
+    form.value.active = store.settings.active ?? false;
   }
   await store.fetchHistory();
 });
