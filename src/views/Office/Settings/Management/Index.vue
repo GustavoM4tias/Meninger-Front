@@ -522,8 +522,8 @@ const toast = (() => {
 
 const tabs = [
   { value: 'departments', label: 'Departamentos', icon: 'fas fa-sitemap' },
-  { value: 'categories', label: 'Categorias', icon: 'fas fa-tags' },
   { value: 'positions', label: 'Cargos', icon: 'fas fa-id-badge' },
+  { value: 'categories', label: 'Categorias Financeiras', icon: 'fas fa-tags' },
   { value: 'cities', label: 'Cidades', icon: 'fas fa-city' },
 ];
 

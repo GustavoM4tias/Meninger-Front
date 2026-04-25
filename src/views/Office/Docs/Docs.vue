@@ -391,26 +391,259 @@ export default {
 
             roadmap: [
                 {
-                    version: 'v2.6.0',
-                    date: new Date('2026-04-10T00:00:00'),
-                    description: 'Relatório de Faturamento X Projeção de vendas — cruzamento em tempo real.',
-                    features: ['Relatórios', 'Comercial']
-                },
-                {
                     version: 'v2.6.1',
-                    date: new Date('2026-04-20T00:00:00'),
+                    date: null,
                     description: 'App mobile nativo para iOS e Android com push notifications.',
                     features: ['Mobile', 'Notificações']
                 },
                 {
                     version: 'v2.7.0',
-                    date: new Date('2026-05-05T00:00:00'),
+                    date: new Date('2026-05-15T00:00:00'),
                     description: 'Dashboard executivo com KPIs consolidados e BI avançado.',
                     features: ['BI', 'Relatórios', 'Dashboard']
+                },
+                {
+                    version: 'v2.7.1',
+                    date: null,
+                    description: 'Expansão do ecossistema Microsoft: integração de eventos com Teams e busca semântica em transcrições.',
+                    features: ['Microsoft', 'IA', 'Teams']
                 },
             ],
             releases: [
 
+                {
+                    version: 'v2.6.0',
+                    date: new Date('2026-04-23T00:00:00'),
+                    description: 'Primeira automação completa de pagamento via eCobrança com headless browser.',
+                    type: 'major',
+                    categories: ['backend', 'api'],
+                    features: [
+                        {
+                            id: 1,
+                            title: 'Automação eCobrança',
+                            description: 'Integração completa com o portal eCobrança via Playwright headless (Chromium). O sistema navega automaticamente no portal, cria o ticket, gera o boleto e captura os dados de retorno sem intervenção manual.'
+                        },
+                        {
+                            id: 2,
+                            title: 'Geração e Aceite de Boleto',
+                            description: 'Fluxo automatizado de geração de boleto com confirmação de aceite e envio de mensagem associada. O boleto concluído é vinculado ao lançamento de pagamento correspondente.'
+                        },
+                    ],
+                    improvements: [
+                        {
+                            id: 1,
+                            category: 'PaymentFlow',
+                            description: 'Pipeline de pagamento estendido com etapa de boleto eCobrança como passo final após emissão do título.'
+                        },
+                        {
+                            id: 2,
+                            category: 'Infraestrutura',
+                            description: 'Adicionado suporte a proxy e dependências Chromium no servidor para execução do headless browser em produção.'
+                        },
+                    ],
+                    fixes: [],
+                    breakingChanges: [],
+                    knownIssues: []
+                },
+                {
+                    version: 'v2.5.7',
+                    date: new Date('2026-04-16T00:00:00'),
+                    description: 'Dashboard Vendas × Projeção com filtros por empresa e modo de meta configurável.',
+                    type: 'minor',
+                    categories: ['frontend', 'backend'],
+                    features: [
+                        {
+                            id: 1,
+                            title: 'Filtro por Empresa no Dashboard de Vendas',
+                            description: 'Filtro do relatório Vendas × Projeção migrado de empreendimento para empresa, com toggle para agrupar por empreendimento ou empresa, alinhando com o painel de Faturamento.'
+                        },
+                        {
+                            id: 2,
+                            title: 'Modo de Meta por Empreendimento',
+                            description: 'Configuração de meta global (unidades ou VGV) com override individual por empreendimento. Administradores acessam via modal de configurações direto do dashboard. Persiste em localStorage.'
+                        },
+                        {
+                            id: 3,
+                            title: 'Modal de Comparação Realizado × Projetado',
+                            description: 'Ao clicar no empreendimento na tabela de projeção, abre modal com aba "Comparação" mostrando realizado vs projetado em unidades e VGV.'
+                        },
+                    ],
+                    improvements: [],
+                    fixes: [],
+                    breakingChanges: [],
+                    knownIssues: []
+                },
+                {
+                    version: 'v2.5.6',
+                    date: new Date('2026-04-14T00:00:00'),
+                    description: 'Assinatura digital finalizada, módulo de Eventos e ajustes no PaymentFlow.',
+                    type: 'minor',
+                    categories: ['frontend', 'backend', 'api'],
+                    features: [
+                        {
+                            id: 1,
+                            title: 'Assinatura Digital — Versão Final',
+                            description: 'Módulo de assinatura eletrônica de documentos concluído. Suporta fluxo completo com dois aprovadores, rastreamento de status (PENDING → SIGNED/CANCELLED/REJECTED/EXPIRED) e polling automático a cada 10 minutos.'
+                        },
+                        {
+                            id: 2,
+                            title: 'Fichas Comerciais — Aprovação por Assinatura',
+                            description: 'Fichas Comerciais integradas ao módulo de assinatura digital: submit gera SignatureDocument para os aprovadores configurados; ao assinar, ficha passa para status "approved" automaticamente.'
+                        },
+                        {
+                            id: 3,
+                            title: 'Módulo de Eventos',
+                            description: 'Gestão de eventos de marketing com upload de imagens direto ao Supabase, criação, edição e visualização de eventos por empreendimento.'
+                        },
+                    ],
+                    improvements: [
+                        {
+                            id: 1,
+                            category: 'PaymentFlow',
+                            description: 'Ajustes no fluxo e integração do PaymentFlow com melhorias na consulta e regras de validação.'
+                        },
+                    ],
+                    fixes: [],
+                    breakingChanges: [],
+                    knownIssues: []
+                },
+                {
+                    version: 'v2.5.5',
+                    date: new Date('2026-04-10T00:00:00'),
+                    description: 'Assinatura digital v1 e Fichas Comerciais com condições mensais por empreendimento.',
+                    type: 'minor',
+                    categories: ['frontend', 'backend', 'api'],
+                    features: [
+                        {
+                            id: 1,
+                            title: 'Assinatura Digital v1',
+                            description: 'Primeira versão funcional do módulo de assinatura eletrônica: upload de documentos PDF ao Supabase, criação de SignatureDocument com aprovadores, rastreamento de status e integração com schedulers.'
+                        },
+                        {
+                            id: 2,
+                            title: 'Fichas Comerciais',
+                            description: 'Novo módulo de condições comerciais mensais por empreendimento, substituindo planilhas Excel. Inclui módulos por etapa (idetapa CV), campanhas, distribuição de preços, regras de negociação e seção operacional (CEF/ITBI/cartório). RBAC: admin CRUD completo, usuário vê apenas fichas aprovadas.'
+                        },
+                        {
+                            id: 3,
+                            title: 'Fichas Comerciais — Auto-geração Mensal',
+                            description: 'Scheduler que gera automaticamente a ficha do mês seguinte no dia 1 às 1h para empreendimentos com ao menos 1 ficha aprovada no histórico.'
+                        },
+                    ],
+                    improvements: [
+                        {
+                            id: 1,
+                            category: 'Vendas × Projeção',
+                            description: 'Cruzamento de dados de vendas realizadas com projeção de metas, integrado ao novo dashboard comercial.'
+                        },
+                    ],
+                    fixes: [],
+                    breakingChanges: [],
+                    knownIssues: []
+                },
+                {
+                    version: 'v2.5.4',
+                    date: new Date('2026-04-08T00:00:00'),
+                    description: 'Novas funções de gerenciamento de senha para usuários.',
+                    type: 'patch',
+                    categories: ['frontend', 'backend', 'security'],
+                    features: [
+                        {
+                            id: 1,
+                            title: 'Novas Funções de Senha',
+                            description: 'Expansão das funcionalidades de gerenciamento de senha: alteração de senha para usuários autenticados e recuperação via e-mail com token seguro.'
+                        },
+                    ],
+                    improvements: [],
+                    fixes: [],
+                    breakingChanges: [],
+                    knownIssues: []
+                },
+                {
+                    version: 'v2.5.3',
+                    date: new Date('2026-04-02T00:00:00'),
+                    description: 'PaymentFlow com Playwright, RID integrado, filtros e ajustes no Sienge.',
+                    type: 'minor',
+                    categories: ['frontend', 'backend', 'api'],
+                    features: [
+                        {
+                            id: 1,
+                            title: 'Playwright no PaymentFlow',
+                            description: 'Automação de etapas do Sienge via Playwright headless, utilizado nas etapas de criação de contrato e navegação no portal quando a API não é suficiente.'
+                        },
+                        {
+                            id: 2,
+                            title: 'RID integrado ao PaymentFlow',
+                            description: 'Fluxo de Solicitação de Cadastro de Fornecedor (RID) integrado diretamente no pipeline de pagamento: quando fornecedor não é encontrado no Sienge, notificação aparece no card do lançamento para abertura do modal de RID.'
+                        },
+                    ],
+                    improvements: [
+                        {
+                            id: 1,
+                            category: 'Sienge — Filtros e Queries',
+                            description: 'Ajustes nos filtros do PaymentFlow, queries otimizadas e regras de negócio revisadas para maior precisão nos resultados.'
+                        },
+                        {
+                            id: 2,
+                            category: 'Sienge — ParseObstit',
+                            description: 'Ajuste no parsing de obstáculos com validação de valores mínimos e máximos (min/max) para evitar lançamentos incorretos.'
+                        },
+                        {
+                            id: 3,
+                            category: 'SiengeCredentialsModal',
+                            description: 'Atualização do modal de credenciais Sienge com melhorias de UX no fluxo de configuração.'
+                        },
+                    ],
+                    fixes: [],
+                    breakingChanges: [],
+                    knownIssues: []
+                },
+                {
+                    version: 'v2.5.2',
+                    date: new Date('2026-03-30T00:00:00'),
+                    description: 'PaymentFlow base e sistema de alçadas de aprovação.',
+                    type: 'minor',
+                    categories: ['frontend', 'backend', 'api'],
+                    features: [
+                        {
+                            id: 1,
+                            title: 'PaymentFlow — Fluxo Base',
+                            description: 'Lançamento do módulo de Fluxo de Pagamento com pipeline visual de 5 etapas: fornecedor → contrato → aditivo → medição → título. Integração com API Sienge para validação automática de cada etapa.'
+                        },
+                        {
+                            id: 2,
+                            title: 'Alçadas de Aprovação',
+                            description: 'Sistema de alçadas (limites de valor por nível hierárquico) integrado ao PaymentFlow. Define quais usuários/cargos podem aprovar lançamentos acima de determinados valores, garantindo controle financeiro por camadas.'
+                        },
+                    ],
+                    improvements: [],
+                    fixes: [],
+                    breakingChanges: [],
+                    knownIssues: []
+                },
+                {
+                    version: 'v2.5.1',
+                    date: new Date('2026-03-24T00:00:00'),
+                    description: 'Módulo de Distratos e melhorias na Projeção de Vendas.',
+                    type: 'minor',
+                    categories: ['frontend', 'backend'],
+                    features: [
+                        {
+                            id: 1,
+                            title: 'Módulo de Distratos',
+                            description: 'Nova página para gestão de distratos (cancelamentos de venda). Permite registrar, acompanhar e controlar cancelamentos de contratos de venda de imóveis diretamente no sistema, substituindo controle manual em planilhas.'
+                        },
+                        {
+                            id: 2,
+                            title: 'Projeção de Vendas — Atualização',
+                            description: 'Melhorias no módulo de projeção com dados mais precisos e novos filtros para acompanhamento de metas de venda por empreendimento.'
+                        },
+                    ],
+                    improvements: [],
+                    fixes: [],
+                    breakingChanges: [],
+                    knownIssues: []
+                },
                 {
                     version: 'v2.5.0',
                     date: new Date('2026-03-23T00:00:00'),

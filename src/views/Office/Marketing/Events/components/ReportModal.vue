@@ -2,6 +2,7 @@
 import { ref, computed, watch } from 'vue';
 import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 import { requestWithAuth } from '@/utils/Auth/requestWithAuth';
+import API_URL from '@/config/apiUrl';
 
 const props = defineProps({
     events: { type: Array, default: () => [] },
@@ -157,9 +158,11 @@ const tryConvertImageToDataUrl = async (src) => {
     if (isDataUrl(src)) return src;
 
     try {
-        const response = await fetch(src, {
-            mode: 'cors',
-            credentials: 'omit',
+        // Usa proxy do backend para evitar bloqueio de CORS em imagens externas (ex: CRM)
+        const proxyUrl = `${API_URL}/events/proxy-image?url=${encodeURIComponent(src)}`;
+        const token = localStorage.getItem('token');
+        const response = await fetch(proxyUrl, {
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
 
         if (!response.ok) return null;

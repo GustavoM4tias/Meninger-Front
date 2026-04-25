@@ -86,19 +86,12 @@ export const navRegistry = [
                     { route: '/comercial/buildings', section: 'Finalizados', name: 'Finalizados', icon: 'fas fa-check-circle' },
                     { route: '/comercial/buildings', section: 'Portal do Cliente', name: 'Portal do Cliente', icon: 'fas fa-user-circle' },
                 ],
-            },
-            {
-                key: 'produto',
-                name: 'Produto',
-                icon: 'fas fa-file-contract',
-                pages: [
-                    { route: '/comercial/conditions', name: 'Fichas Comerciais', icon: 'fas fa-file-contract' },
-                ],
-            },
+            }, 
         ],
         pages: [
-            { route: '/comercial/workflow/groups', section: 'Grupos Workflow', name: 'Grupos Workflow', icon: 'fas fa-chart-diagram' },
             { route: '/comercial/conditions',      section: 'Fichas Comerciais', name: 'Fichas Comerciais', icon: 'fas fa-file-contract' },
+            { route: '/comercial/mcmv',            section: 'MCMV',             name: 'MCMV - Limites',             icon: 'fas fa-house-circle-check' },
+            { route: '/comercial/workflow/groups', section: 'Grupos Workflow', name: 'Grupos Workflow', icon: 'fas fa-chart-diagram' },
         ],
     },
 
@@ -111,6 +104,7 @@ export const navRegistry = [
             { route: '/financeiro/titulos', section: 'Títulos', name: 'Títulos', icon: 'fas fa-money-bill-transfer' },
             { route: '/financeiro/custos', section: 'Custos', name: 'Custos', icon: 'fas fa-coins' },
             { route: '/financeiro/boleto-caixa', name: 'Boleto Caixa', icon: 'fas fa-barcode', adminOnly: true },
+            { route: '/financeiro/paymentflow', section: 'Fluxo de Pagamento', name: 'Fluxo de Pagamento', icon: 'fas fa-diagram-project' },
         ],
     },
 
@@ -121,7 +115,6 @@ export const navRegistry = [
         icon: 'fas fa-wrench',
         pages: [
             { route: '/tools/validator', section: 'Validador', name: 'Validador', icon: 'fas fa-check-double' },
-            { route: '/tools/paymentflow', section: 'Fluxo de Pagamento', name: 'Fluxo de Pagamento', icon: 'fas fa-diagram-project' },
             { route: '/tools/bucket-upload', section: 'Envio ao Bucket', name: 'Envio ao Bucket', icon: 'fas fa-cloud-upload-alt' },
             { route: '/tools/signature', section: 'Assinatura Digital', name: 'Assinatura Digital', icon: 'fas fa-pen-nib' },
         ],
@@ -161,8 +154,9 @@ export const navRegistry = [
         icon: 'fab fa-microsoft',
         requiresMicrosoft: true,
         pages: [
-            { route: '/microsoft/sharepoint', section: 'SharePoint', name: 'SharePoint', icon: 'fas fa-folder-open' },
-            { route: '/microsoft/teams', section: 'Teams', name: 'Teams', icon: 'fas fa-users' },
+            { route: '/microsoft/sharepoint',  section: 'SharePoint',        name: 'SharePoint',        icon: 'fas fa-folder-open' },
+            { route: '/microsoft/teams',       section: 'Teams',             name: 'Teams',             icon: 'fas fa-users' },
+            { route: '/microsoft/planner',     section: 'Planner',           name: 'Planner',           icon: 'fas fa-table-columns' },
             { route: '/microsoft/transcripts', section: 'Transcrições & IA', name: 'Transcrições & IA', icon: 'fas fa-file-waveform' },
             // { route: '/microsoft/inperson',    name: 'Reuniões Presenciais',  icon: 'fas fa-people-group' },
         ],

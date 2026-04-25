@@ -15,12 +15,62 @@
         </p>
       </div>
 
-      <!-- FAB -->
+      <!-- FAB (só na aba Office) -->
       <button
+        v-if="activeTab === 'office'"
         class="fixed bottom-6 right-6 z-30 bg-blue-600 hover:bg-blue-700 text-white rounded-full w-12 h-12 shadow-lg hover:shadow-xl flex items-center justify-center transition-all duration-200"
         title="Criar novo usuário" @click="startCreating">
         <i class="fas fa-user-plus text-sm"></i>
       </button>
+
+      <!-- Abas (só para admin) -->
+      <div v-if="isAdmin" class="flex gap-1 mb-5 bg-gray-100 dark:bg-gray-800/60 p-1 rounded-xl w-fit">
+        <button
+          @click="activeTab = 'office'"
+          class="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-150"
+          :class="activeTab === 'office'
+            ? 'bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-sm'
+            : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'"
+        >
+          <i class="fas fa-users text-xs"></i>
+          Usuários Office
+        </button>
+        <button
+          @click="activeTab = 'microsoft'"
+          class="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-150"
+          :class="activeTab === 'microsoft'
+            ? 'bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-sm'
+            : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'"
+        >
+          <svg width="13" height="13" viewBox="0 0 21 21" fill="none" class="shrink-0">
+            <rect x="0" y="0" width="10" height="10" fill="#F25022"/>
+            <rect x="11" y="0" width="10" height="10" fill="#7FBA00"/>
+            <rect x="0" y="11" width="10" height="10" fill="#00A4EF"/>
+            <rect x="11" y="11" width="10" height="10" fill="#FFB900"/>
+          </svg>
+          Usuários Microsoft
+          <span v-if="!isMicrosoftConnected" class="text-[10px] px-1.5 py-0.5 rounded-full bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400">
+            Desconectado
+          </span>
+        </button>
+      </div>
+
+      <!-- Aba Microsoft -->
+      <template v-if="activeTab === 'microsoft'">
+        <div v-if="!isMicrosoftConnected" class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-2xl p-5 flex items-start gap-3">
+          <i class="fas fa-triangle-exclamation text-yellow-500 mt-0.5 shrink-0"></i>
+          <div>
+            <p class="text-sm font-medium text-yellow-800 dark:text-yellow-300">Conta Microsoft não conectada</p>
+            <p class="text-xs text-yellow-600 dark:text-yellow-400 mt-0.5">
+              Vincule sua conta Microsoft em <strong>Minha Conta → Microsoft</strong> para acessar os usuários da organização.
+            </p>
+          </div>
+        </div>
+        <MicrosoftImportPanel v-else @reload="fetchUsers" />
+      </template>
+
+      <!-- Aba Office -->
+      <template v-if="activeTab === 'office'">
 
       <!-- Filtros -->
       <div
@@ -196,10 +246,12 @@
           </div>
         </div>
       </div>
-    </div>
+
+      </template><!-- /aba office -->
 
     <!-- Modal -->
     <userModal v-if="showUserModal" :user="editableUser" @close="closeModal" @reload="fetchUsers" />
+    </div>
   </div>
 </template>
 
@@ -207,16 +259,21 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/Settings/Auth/authStore';
+import { useMicrosoftStore } from '@/stores/Microsoft/microsoftStore';
 import { useCarregamentoStore } from '@/stores/Config/carregamento';
 import { useToast } from 'vue-toastification';
 import userModal from '@/views/Office/Settings/Users/components/userModal.vue';
+import MicrosoftImportPanel from '@/views/Office/Settings/Users/components/MicrosoftImportPanel.vue';
 import Favorite from '@/components/config/Favorite.vue';
 
 const router = useRouter();
 
 const userStore = useAuthStore();
+const microsoftStore = useMicrosoftStore();
 const carregamento = useCarregamentoStore();
 const toast = useToast();
+
+const activeTab = ref('office'); // 'office' | 'microsoft'
 
 const users = ref([]);
 const searchQuery = ref('');
@@ -229,6 +286,7 @@ const showUserModal = ref(false);
 const togglingOrgId = ref(null);
 
 const isAdmin = computed(() => userStore.user?.role === 'admin');
+const isMicrosoftConnected = computed(() => microsoftStore.connected);
 
 const fetchUsers = async () => {
   try {
@@ -279,5 +337,10 @@ const toggleOrganogram = async (user) => {
   }
 };
 
-onMounted(fetchUsers);
+onMounted(async () => {
+  await Promise.all([
+    fetchUsers(),
+    microsoftStore.fetchStatus(),
+  ]);
+});
 </script>
