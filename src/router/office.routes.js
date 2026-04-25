@@ -125,6 +125,18 @@ export default [
                         meta: { requiresAuth: true, searchable: false, content: 'Detalhe da Ficha Comercial' },
                     },
                     {
+                        path: 'mcmv',
+                        name: 'MCMV — Limites por Cidade',
+                        component: () => import('@/views/Office/Comercial/Mcmv/Index.vue'),
+                        meta: { requiresAuth: true, searchable: true, content: 'Consulta de limites MCMV por município e faixa de renda' },
+                    },
+                    {
+                        path: 'mcmv/settings',
+                        name: 'MCMV Configurações',
+                        component: () => import('@/views/Office/Comercial/Mcmv/Settings.vue'),
+                        meta: { requiresAuth: true, requiresAdmin: true, searchable: false, content: 'Configurações e importação da tabela MCMV' },
+                    },
+                    {
                         path: 'conditions/settings',
                         name: 'Fichas Comerciais Configurações',
                         component: () => import('@/views/Office/Comercial/Conditions/Settings.vue'),
@@ -156,6 +168,12 @@ export default [
                         component: () => import('@/views/Office/Financeiro/BoletoCaixa/Index.vue'),
                         meta: { requiresAuth: true, requiresAdmin: true, searchable: false, content: 'Configuração e histórico de emissão de boletos via Caixa Econômica Federal' },
                     },
+                    {
+                        path: 'paymentflow',
+                        name: 'Fluxo de Pagamento',
+                        component: () => import('@/views/Office/Tools/PaymentoFlow/Index.vue'),
+                        meta: { searchable: true, content: 'Lançamentos de pagamento Sienge.' },
+                    },
                 ],
             },
 
@@ -182,6 +200,12 @@ export default [
                         component: () => import('@/views/Office/Microsoft/Transcripts/Index.vue'),
                         meta: { requiresAuth: true, searchable: true, content: 'Transcrições de reuniões com relatório IA' },
                     },
+                    {
+                        path: 'planner',
+                        name: 'Planner',
+                        component: () => import('@/views/Office/Microsoft/Planner/Index.vue'),
+                        meta: { requiresAuth: true, searchable: true, content: 'Quadro Kanban integrado com Microsoft Planner' },
+                    },
                     // {
                     //     path: 'inperson',
                     //     name: 'InPersonMeetings',
@@ -207,12 +231,6 @@ export default [
                         name: 'Validador',
                         component: () => import('@/views/Office/Tools/Validator/Index.vue'),
                         meta: { searchable: true, content: 'Validador de Contratos de Venda.' },
-                    },
-                    {
-                        path: 'paymentflow',
-                        name: 'PaymentFlow',
-                        component: () => import('@/views/Office/Tools/PaymentoFlow/Index.vue'),
-                        meta: { searchable: true, content: 'Lançamentos de pagamento Sienge.' },
                     },
                     {
                         path: 'bucket-upload',

@@ -327,6 +327,7 @@ import { storeToRefs } from 'pinia'
 import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 import { useSupportStore } from '@/stores/Support/supportStore';
 import { useToast } from 'vue-toastification';
+import API_URL from '@/config/apiUrl';
 
 const toast = useToast();
 const authStore = useAuthStore();
@@ -449,11 +450,37 @@ CONTATO:
 Este relatório foi gerado automaticamente pelo sistema.`
 }
 
+const uploadAttachment = async (file) => {
+    const token = localStorage.getItem('token');
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('context', 'support_attachment');
+
+    const response = await fetch(`${API_URL}/uploads`, {
+        method: 'POST',
+        headers: { Authorization: token ? `Bearer ${token}` : '' },
+        body: formData,
+    });
+
+    const data = await response.json();
+    if (!response.ok) throw new Error(data?.message || `Falha ao enviar ${file.name}`);
+
+    return { url: data.url, name: file.name, mimeType: data.mimeType, size: data.size };
+};
+
 const handleSubmit = async () => {
     if (!validateForm()) return;
     isSubmitting.value = true;
 
     try {
+        let uploadedAttachments = [];
+        if (form.attachments.length > 0) {
+            for (const file of form.attachments) {
+                const att = await uploadAttachment(file);
+                uploadedAttachments.push(att);
+            }
+        }
+
         const payload = {
             userName: form.userName,
             email: form.email,
@@ -466,7 +493,7 @@ const handleSubmit = async () => {
             browser: form.browser,
             os: form.os,
             pageUrl: form.pageUrl,
-            attachments: [],        // implementar upload depois
+            attachments: uploadedAttachments,
             allowContact: form.allowContact,
         };
 
