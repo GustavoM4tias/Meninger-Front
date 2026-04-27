@@ -31,6 +31,9 @@ export default defineConfig({
         // toasts (isola para não ir pro index se for usado pontualmente)
         toast: ['vue-toastification'],
 
+        // exportação de planilhas (lazy — só baixa quando o usuário clica em exportar)
+        excel: ['exceljs/dist/exceljs.min.js', 'file-saver'],
+
         // você pode criar buckets por feature, ex.:
         // reservas: ['@/pages/Reservas.vue']  // só se fizer sentido estáticoqq
       }

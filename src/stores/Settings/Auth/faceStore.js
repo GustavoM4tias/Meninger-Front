@@ -61,7 +61,11 @@ export const useFaceStore = defineStore('face', {
             return r;
         },
 
-        async getOneGoodEmbedding(videoEl, opts = { inputSize: 416, scoreThreshold: 0.3 }) {
+        /**
+         * Captura UM embedding de qualidade a partir do vídeo.
+         * scoreThreshold elevado para 0.65 — exige detecção confiante antes de extrair.
+         */
+        async getOneGoodEmbedding(videoEl, opts = { inputSize: 416, scoreThreshold: 0.65 }) {
             await this.loadModelsOnce();
             const options = new faceapi.TinyFaceDetectorOptions(opts);
 
@@ -70,29 +74,65 @@ export const useFaceStore = defineStore('face', {
                 .withFaceLandmarks()
                 .withFaceDescriptor();
 
-            if (!det) {
-                console.warn('[FaceDetect] nada detectado neste frame');
-                return null;
-            }
+            if (!det) return null;
 
             const score = det.detection.score;
             console.log('[FaceDetect] score=', score.toFixed(3));
 
-            if (det.descriptor && score > 0.5) {
+            // Aceita apenas detecções de alta confiança
+            if (det.descriptor && score >= 0.65) {
                 return Array.from(det.descriptor);
             }
             return null;
         },
 
-        // util para debug: retorna deteccao sem descriptor (mais leve)
-        async pingDetect(videoEl, opts = { inputSize: 416, scoreThreshold: 0.3 }) {
+        /**
+         * Captura N frames de qualidade e retorna a média dos embeddings.
+         * Isso reduz ruído de um único frame mal posicionado/iluminado.
+         * Usado exclusivamente no fluxo de LOGIN para maior segurança.
+         */
+        async getAveragedEmbedding(videoEl, frameCount = 5, opts = { inputSize: 416, scoreThreshold: 0.65 }) {
+            await this.loadModelsOnce();
+            const collected = [];
+            const maxAttempts = frameCount * 6; // nunca trava infinitamente
+            let attempts = 0;
+
+            while (collected.length < frameCount && attempts < maxAttempts) {
+                attempts++;
+                const e = await this.getOneGoodEmbedding(videoEl, opts);
+                if (e) {
+                    collected.push(e);
+                    console.log(`[FaceLogin] frame ${collected.length}/${frameCount} coletado`);
+                }
+                await new Promise(r => setTimeout(r, 200));
+            }
+
+            if (!collected.length) return null;
+
+            // Média dos embeddings coletados
+            const len = collected[0].length;
+            const mean = new Array(len).fill(0);
+            for (const v of collected) for (let i = 0; i < len; i++) mean[i] += v[i];
+            for (let i = 0; i < len; i++) mean[i] /= collected.length;
+
+            console.log(`[FaceLogin] embedding médio de ${collected.length} frames`);
+            return mean;
+        },
+
+        // util para debug: retorna detecção sem descriptor (mais leve)
+        async pingDetect(videoEl, opts = { inputSize: 416, scoreThreshold: 0.5 }) {
             await this.loadModelsOnce();
             const options = new faceapi.TinyFaceDetectorOptions(opts);
             const det = await faceapi.detectSingleFace(videoEl, options);
             return det || null;
         },
 
-        async collectEmbeddings(videoEl, total = 10, opts = { inputSize: 320, scoreThreshold: 0.5 }) {
+        /**
+         * Coleta embeddings para ENROLAMENTO.
+         * Score mínimo 0.75 — mais exigente porque a qualidade do template
+         * define a acurácia de todos os logins futuros.
+         */
+        async collectEmbeddings(videoEl, total = 15, opts = { inputSize: 416, scoreThreshold: 0.65 }) {
             await this.loadModelsOnce();
             const options = new faceapi.TinyFaceDetectorOptions(opts);
             const list = [];
@@ -101,10 +141,10 @@ export const useFaceStore = defineStore('face', {
                     .detectSingleFace(videoEl, options)
                     .withFaceLandmarks()
                     .withFaceDescriptor();
-                if (det?.descriptor && det.detection?.score > 0.7) {
+                if (det?.descriptor && det.detection?.score >= 0.75) {
                     list.push(Array.from(det.descriptor));
                 }
-                await new Promise(r => setTimeout(r, 120));
+                await new Promise(r => setTimeout(r, 300));
             }
             return list;
         },

@@ -49,12 +49,17 @@ export const useLeadsStore = defineStore('leads', () => {
     const filtros = ref({
         nome: '', email: '', telefone: '',
         imobiliaria: [], corretor: [], situacao_nome: [], midia_principal: [], origem: [], empreendimento: [],
-        data_inicio: '', data_fim: ''
+        data_inicio: '', data_fim: '', cidade: ''
     })
 
     function applyDefaultSituacoes() {
         if (situacoesOptions.value.length === 0) return;
         filtros.value.situacao_nome = situacoesOptions.value.filter(s => !SITUACOES_EXCLUIDAS.includes(s));
+    }
+
+    function applyDefaultOrigens() {
+        if (origensOptions.value.length === 0) return;
+        filtros.value.origem = origensOptions.value.filter(o => !String(o).startsWith('Painel'));
     }
 
     // Aplica o default imediatamente se as opções já estão no localStorage
@@ -221,6 +226,6 @@ export const useLeadsStore = defineStore('leads', () => {
         // getters
         kpiPorSituacao, kpiSituacoes, situationsList, leadsByEnterprise,
         // actions
-        fetchLeads, fetchFilas, applyDefaultSituacoes,
+        fetchLeads, fetchFilas, applyDefaultSituacoes, applyDefaultOrigens,
     }
 })

@@ -36,10 +36,11 @@ function syncFiltersFromUrl() {
     if (q[key]) next[key] = String(q[key]).split(',').map(s => s.trim()).filter(Boolean)
     else next[key] = []
   }
-  for (const key of ['nome', 'email', 'telefone', 'data_inicio', 'data_fim']) {
+  for (const key of ['nome', 'email', 'telefone', 'data_inicio', 'data_fim', 'cidade']) {
     next[key] = q[key] ? String(q[key]) : ''
   }
   Object.assign(filtros.value, next)
+  if (q.excluir_painel === '1') store.applyDefaultOrigens()
 }
 
 function syncUrlFromFilters() {
@@ -73,7 +74,7 @@ function limpar() {
     nome: '', email: '', telefone: '',
     imobiliaria: [], corretor: [],
     midia_principal: [], origem: [], empreendimento: [],
-    data_inicio: '', data_fim: ''
+    data_inicio: '', data_fim: '', cidade: ''
   })
   // Restaura o default: todas as situações exceto as de painel
   store.applyDefaultSituacoes()
@@ -93,6 +94,7 @@ onMounted(async () => {
   syncFiltersFromUrl()
   await store.fetchFilas()
   await store.fetchLeads(true)
+  if (route.query.excluir_painel === '1') store.applyDefaultOrigens()
 })
 </script>
 

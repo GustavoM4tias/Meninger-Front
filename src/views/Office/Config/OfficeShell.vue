@@ -3,8 +3,7 @@
 import { computed } from 'vue';
 import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 
-import Nav from '@/components/Navigation/Nav.vue';
-import ChatBot from '@/components/ChatBot/ChatBotIcon.vue';
+import Nav from '@/components/Navigation/Nav.vue'; 
 import Carregamento from '@/components/Loading/Carregamento.vue';
 import InPersonRecordingBar from '@/components/InPersonRecordingBar.vue';
 
@@ -22,7 +21,7 @@ const isAuthenticated = computed(() => authStore.isAuthenticated());
 
     <!-- Office: autenticado -->
     <div v-else class="flex w-full">
-        <main class="flex flex-col h-screen w-full">
+        <main class="flex flex-col h-dvw w-full">
             <div class="flex">
                 <Nav />
 
@@ -34,8 +33,7 @@ const isAuthenticated = computed(() => authStore.isAuthenticated());
                 </div>
             </div>
         </main>
-
-        <ChatBot v-if="isAuthenticated" />
+ 
         <InPersonRecordingBar />
         <Carregamento />
     </div>

@@ -33,13 +33,16 @@
 
                 <!-- Área de captura -->
                 <div v-if="enrolling" class="mt-4">
-                    <p class="text-sm text-gray-500 mb-2">Posicione o rosto no centro. Pode ser solicitado virar
-                        levemente a cabeça.</p>
+                    <p class="text-sm text-gray-500 mb-2">
+                        Posicione o rosto no centro e olhe direto para a câmera.
+                        Durante a captura, vire levemente a cabeça para os lados (±15°) para diversificar o template.
+                        Boa iluminação frontal melhora muito a acurácia.
+                    </p>
                     <div class="relative">
                         <video ref="videoRef" autoplay playsinline muted class="w-full rounded-md border"></video>
                         <canvas ref="overlayRef" class="absolute inset-0 w-full h-full pointer-events-none"></canvas>
                     </div>
-                    <p class="text-xs text-gray-500 mt-2">Coletado: {{ collected }}/{{ target }}</p>
+                    <p class="text-xs text-gray-500 mt-2">Coletando frames de alta qualidade: {{ collected }}/{{ target }}</p>
                 </div>
             </div>
         </div>
@@ -65,7 +68,7 @@ const overlayRef = ref(null);
 const streamRef = ref(null);
 
 const collected = ref(0);
-const target = 10;
+const target = 15; // mais frames = template mais robusto
 
 function openModal() {
     console.log('[FaceEnroll] Modal aberto');
@@ -179,8 +182,8 @@ async function startEnroll() {
             await drawOnce();
 
             const e = await face.getOneGoodEmbedding(videoRef.value, {
-                inputSize: 416,       // 320/416/512 — 416 costuma ser um bom equilíbrio
-                scoreThreshold: 0.3,  // mais permissivo para detectar e depois filtramos pelo .5
+                inputSize: 416,
+                scoreThreshold: 0.65, // exige detecção confiante — qualidade > velocidade
             });
 
             if (e) {
@@ -191,7 +194,7 @@ async function startEnroll() {
                 console.warn('[FaceEnroll] Sem embedding neste frame');
             }
 
-            await new Promise((r) => setTimeout(r, 120));
+            await new Promise((r) => setTimeout(r, 300)); // 300ms → variação natural de pose entre frames
         }
 
         console.log('[FaceEnroll] Total de embeddings coletados:', embeddings.length);
