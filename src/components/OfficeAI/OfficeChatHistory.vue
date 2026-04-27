@@ -53,7 +53,7 @@ function fromNow(d) {
     </div>
 
     <!-- Lista de sessões -->
-    <div class="flex-1 overflow-y-auto py-2">
+    <div class="flex-1 overflow-y-auto max-h-80 py-2">
       <!-- Favoritos -->
       <template v-if="favoriteSessions.length">
         <p class="px-4 py-1.5 text-xs text-gray-400 dark:text-gray-600 uppercase tracking-wide">Favoritos</p>

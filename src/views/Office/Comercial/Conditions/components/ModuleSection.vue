@@ -639,7 +639,7 @@
                   <!-- Gerar unidades (a partir do total_units do módulo) -->
                   <button v-if="!readonly" @click="generateUnits(mi)"
                     :disabled="!activeModule.total_units"
-                    class="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-40 transition flex-shrink-0">
+                    class="flex items-center gap-1 p-3 text-xs font-semibold bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-40 transition flex-shrink-0">
                     <i class="fas fa-list text-[10px]"></i>
                     Gerar {{ activeModule.total_units ?? 0 }} unidades
                   </button>
@@ -652,12 +652,12 @@
                       <input type="text" :value="fmtBR(mt.avg_ticket)"
                         @focus="e => { e.target.value = mt.avg_ticket ?? ''; e.target.select(); }"
                         @blur="e => patchManualTable(mi, 'avg_ticket', parseBR(e.target.value))"
-                        class="inp-sm pl-8 w-32" :disabled="readonly" placeholder="0,00" />
+                        class="inp-pfx" :disabled="readonly" placeholder="0,00" />
                     </div>
-                     
+
                     <button v-if="!readonly" @click="applyAvgTicket(mi)"
                       :disabled="!mt.avg_ticket || !(mt.units?.length)"
-                      class="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold bg-gray-700 dark:bg-gray-600 text-white rounded-md hover:bg-gray-800 disabled:opacity-40 transition">
+                      class="flex items-center gap-1 p-3 text-xs font-semibold bg-gray-700 dark:bg-gray-600 text-white rounded-md hover:bg-gray-800 disabled:opacity-40 transition">
                       Aplicar
                     </button>
                   </div>
@@ -694,7 +694,7 @@
                         <input type="text" :value="fmtBR(u.value)"
                           @focus="e => { e.target.value = u.value ?? ''; e.target.select(); }"
                           @blur="e => patchUnit(mi, ui, parseBR(e.target.value))"
-                          class="inp-sm pl-8 w-full" :disabled="readonly" placeholder="—" />
+                          class="inp-pfx pl-8 w-full" :disabled="readonly" placeholder="—" />
                       </div>
                       <button v-if="!readonly" @click="removeUnit(mi, ui)"
                         class="w-5 h-5 flex items-center justify-center rounded text-gray-300 dark:text-gray-600 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition flex-shrink-0">

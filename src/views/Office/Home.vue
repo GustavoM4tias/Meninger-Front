@@ -12,6 +12,8 @@ import ChatNavAction from '@/components/OfficeAI/renderers/ChatNavAction.vue'
 import FeedbackModal from '@/components/OfficeAI/FeedbackModal.vue'
 import ChatLeadsActions from '@/components/OfficeAI/renderers/ChatLeadsActions.vue'
 import ChatEventsActions from '@/components/OfficeAI/renderers/ChatEventsActions.vue'
+import ChatEnterprisesActions from '@/components/OfficeAI/renderers/ChatEnterprisesActions.vue'
+import ChatEnterpriseDetail from '@/components/OfficeAI/renderers/ChatEnterpriseDetail.vue'
 
 const authStore = useAuthStore()
 const buildingStore = useBuildingStore()
@@ -286,6 +288,14 @@ async function confirmFeedback({ comment }) {
                         v-if="getAction(msg)?.context?.source === 'events'"
                         :context="getAction(msg).context"
                         :rows="getAction(msg).rows || getAction(msg).rawRows || []"
+                      />
+                      <ChatEnterprisesActions
+                        v-if="getAction(msg)?.context?.source === 'enterprises'"
+                        :context="getAction(msg).context"
+                      />
+                      <ChatEnterpriseDetail
+                        v-if="getAction(msg)?.type === 'detail'"
+                        :action="getAction(msg)"
                       />
                       <!-- Feedback + Retry -->
                       <div class="flex items-center gap-1 mt-1.5">
