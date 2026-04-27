@@ -244,6 +244,12 @@ export default [
                         component: () => import('@/views/Office/Tools/Signature/Index.vue'),
                         meta: { requiresAuth: true, searchable: true, content: 'Assine documentos PDF com autenticação por senha e reconhecimento facial.' },
                     },
+                    {
+                        path: 'eme-insights',
+                        name: 'Eme Insights',
+                        component: () => import('@/views/Office/Tools/EmeInsights/Index.vue'),
+                        meta: { requiresAuth: true, adminOnly: true, searchable: true, content: 'Gestão de feedbacks e qualidade das respostas do assistente Eme.' },
+                    },
                 ],
             },
 

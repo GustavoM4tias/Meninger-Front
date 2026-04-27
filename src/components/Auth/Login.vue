@@ -55,11 +55,11 @@
       Não tem uma conta? Crie agora.
     </a>
 
-    <!-- <div class="mt-4 flex gap-2 items-center">
+    <div class="mt-4 flex gap-2 items-center">
       <Button v-if="faceEnabled" type="button" @click="loginFacial" :disabled="loginLoading">
         Entrar com o Face ID
       </Button>
-    </div> --> 
+    </div>
 
     <!-- ─────────────────── FORGOT PASSWORD MODAL ─────────────────── -->
     <teleport to="body">
@@ -494,7 +494,7 @@ const canSubmitReset = computed(() => {
 
 // ─── Face computed ────────────────────────────────────────────────────────────
 const statusText = computed(() => {
-  const map = { opening: 'iniciando câmera...', ready: 'alinhe o rosto na moldura', validating: 'validando...', success: 'aprovado ✓', error: 'reprovado ✕' };
+  const map = { opening: 'iniciando câmera...', ready: 'alinhe o rosto na moldura', validating: 'coletando frames e validando...', success: 'aprovado ✓', error: 'reprovado ✕' };
   return map[faceStatus.value] ?? 'aguardando...';
 });
 
@@ -735,8 +735,11 @@ async function doFaceLogin() {
   try {
     const video = videoLoginRef.value;
     if (!video) throw new Error('Câmera não inicializada.');
-    const embedding = await faceStore.getOneGoodEmbedding(video);
-    if (!embedding) throw new Error('Rosto não detectado. Alinhe na moldura.');
+
+    // Captura a média de 5 frames de qualidade — muito mais seguro que 1 frame único
+    const embedding = await faceStore.getAveragedEmbedding(video, 5);
+    if (!embedding) throw new Error('Rosto não detectado com qualidade suficiente. Melhore a iluminação e alinhe na moldura.');
+
     const result = await faceStore.identify(embedding);
     if (result?.success && result?.data?.token) {
       authStore.setToken(result.data.token);
