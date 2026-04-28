@@ -93,6 +93,20 @@ export const useConditionsStore = defineStore('conditions', () => {
         return result;
     }
 
+    // ─── Cancelar autorização (pending_approval → draft) ─────────────────────
+
+    async function cancelApproval(id, note = '') {
+        const result = await requestWithAuth(`${API_URL}/conditions/${id}/cancel-approval`, {
+            method: 'POST',
+            body: JSON.stringify({ note }),
+        });
+        if (detail.value?.id === id) {
+            detail.value.status = 'draft';
+            detail.value.signature_document_id = null;
+        }
+        return result;
+    }
+
     // ─── Publicar (legado — alias de submitForApproval) ───────────────────────
 
     async function publishCondition(id) {
@@ -239,7 +253,7 @@ export const useConditionsStore = defineStore('conditions', () => {
         list, detail, priceTables, priceDistribution, correspondents, officeUsers, correspondentCompanies, settings, error,
         fetchList, fetchDetail,
         createCondition, saveCondition, publishCondition,
-        submitForApproval, unlockCondition,
+        submitForApproval, unlockCondition, cancelApproval,
         saveModules, deleteModule, copyModule, copyModuleFromSource, fetchModulesForEnterprise, fetchEnterpriseStages,
         saveCampaigns, deleteCampaign,
         fetchPriceTables, fetchPriceDistribution,

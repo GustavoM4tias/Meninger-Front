@@ -14,6 +14,7 @@ import ChatLeadsActions from '@/components/OfficeAI/renderers/ChatLeadsActions.v
 import ChatEventsActions from '@/components/OfficeAI/renderers/ChatEventsActions.vue'
 import ChatEnterprisesActions from '@/components/OfficeAI/renderers/ChatEnterprisesActions.vue'
 import ChatEnterpriseDetail from '@/components/OfficeAI/renderers/ChatEnterpriseDetail.vue'
+import ChatMcmvActions from '@/components/OfficeAI/renderers/ChatMcmvActions.vue'
 
 const authStore = useAuthStore()
 const buildingStore = useBuildingStore()
@@ -86,10 +87,10 @@ function autoResize() {
 
 const suggestions = [
   { label: 'Leads deste mes',          icon: '📊', prompt: 'Mostre os leads deste mes' },
-  { label: 'Leads por situação',           icon: '📡', prompt: 'Mostre um grafico de leads agrupados por situação' },
   { label: 'Abrir relatorio de leads',  icon: '🔗', prompt: 'Abra o relatorio de leads com filtro do mes atual' },
   { label: 'Eventos do mes',            icon: '📅', prompt: 'Quais eventos temos este mes?' },
   { label: 'Relatório de eventos',            icon: '📚', prompt: 'Gere o relatório de eventos para o mes atual' },
+  { label: 'Faixas Minha Casa Minha Vida',           icon: '🏠', prompt: 'Qual o teto do Minha Casa Minha Vida na minha cidade' },
 ]
 
 function sendSuggestion(prompt) { aiStore.sendMessage(prompt) }
@@ -296,6 +297,10 @@ async function confirmFeedback({ comment }) {
                       <ChatEnterpriseDetail
                         v-if="getAction(msg)?.type === 'detail'"
                         :action="getAction(msg)"
+                      />
+                      <ChatMcmvActions
+                        v-if="getAction(msg)?.context?.source === 'mcmv'"
+                        :context="getAction(msg).context"
                       />
                       <!-- Feedback + Retry -->
                       <div class="flex items-center gap-1 mt-1.5">
