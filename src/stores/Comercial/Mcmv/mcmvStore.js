@@ -8,7 +8,7 @@ export const useMcmvStore = defineStore('mcmv', () => {
     const carregamento = useCarregamentoStore();
 
     const results  = ref([]);
-    const info     = ref({ total: null, co_periodo: null, updated_at: null, faixa3: 350000, faixa4: 500000 });
+    const info     = ref({ total: null, co_periodo: null, updated_at: null, faixa4: 500000 });
     const error    = ref(null);
 
     // ─── Busca por município ──────────────────────────────────────────────────
@@ -28,7 +28,6 @@ export const useMcmvStore = defineStore('mcmv', () => {
             if (hasUF) params.set('uf', uf.trim());
             const data = await requestWithAuth(`${API_URL}/mcmv/search?${params}`);
             results.value = data.results ?? [];
-            info.value.faixa3 = data.faixa3;
             info.value.faixa4 = data.faixa4;
         } catch (e) {
             error.value = e.message;

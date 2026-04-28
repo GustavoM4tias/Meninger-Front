@@ -47,8 +47,8 @@ const pagedRows = computed(() => {
 // ── Cell formatting ───────────────────────────────────────────────────────────
 function formatCell(value, col) {
   if (value == null || value === '') return null
-  if (col.type === 'date') return dayjs(value).format('DD/MM/YYYY')
-  if (col.type === 'number') return Number(value).toLocaleString('pt-BR')
+  if (col.type === 'date')     return dayjs(value).format('DD/MM/YYYY')
+  if (col.type === 'number')   return Number(value).toLocaleString('pt-BR') 
   return value
 }
 

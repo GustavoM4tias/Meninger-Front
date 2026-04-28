@@ -9,6 +9,7 @@ import ChatLeadsActions from './renderers/ChatLeadsActions.vue'
 import ChatEventsActions from './renderers/ChatEventsActions.vue'
 import ChatEnterprisesActions from './renderers/ChatEnterprisesActions.vue'
 import ChatEnterpriseDetail from './renderers/ChatEnterpriseDetail.vue'
+import ChatMcmvActions from './renderers/ChatMcmvActions.vue'
 import FeedbackModal from './FeedbackModal.vue'
 
 defineOptions({ inheritAttrs: false })
@@ -115,6 +116,10 @@ async function confirmFeedback({ comment }) {
             <ChatEnterpriseDetail
               v-if="getAction(msg)?.type === 'detail'"
               :action="getAction(msg)"
+            />
+            <ChatMcmvActions
+              v-if="getAction(msg)?.context?.source === 'mcmv'"
+              :context="getAction(msg).context"
             />
             <div v-if="msg.response_type === 'error' && msg.metadata?.storageLimit"
               class="flex items-start gap-2 p-3 rounded-xl bg-orange-500/10 border border-orange-500/20 text-sm text-orange-300 mt-2">

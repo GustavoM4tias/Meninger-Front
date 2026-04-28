@@ -139,6 +139,11 @@ export const useOfficeAIStore = defineStore('officeAI', () => {
         streamingText.value += evt.text
         break
 
+      case 'clear':
+        // Texto emitido antes de uma tool call pode ter valores errados do treinamento — descarta
+        streamingText.value = ''
+        break
+
       case 'action':
         pendingAction.value = evt.action
         if (evt.action.type === 'navigate') {

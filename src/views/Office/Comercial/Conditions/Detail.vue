@@ -15,7 +15,7 @@
       </div>
     </transition>
 
-    <!-- Modal: Desbloquear -->
+    <!-- Modal: Desbloquear (approved → draft) -->
     <transition name="fade">
       <div
         v-if="showUnlockModal"
@@ -67,6 +67,101 @@
       </div>
     </transition>
 
+    <!-- Modal: Cancelar Autorização (pending_approval → draft) -->
+    <transition name="fade">
+      <div
+        v-if="showCancelApprovalModal"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+        @click.self="showCancelApprovalModal = false"
+      >
+        <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md border border-gray-100 dark:border-gray-800">
+          <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-800">
+            <div class="flex items-center gap-2">
+              <i class="fas fa-ban text-red-500"></i>
+              <h2 class="text-base font-bold text-gray-900 dark:text-white">Cancelar Autorização</h2>
+            </div>
+            <button @click="showCancelApprovalModal = false" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 transition">
+              <i class="fas fa-times text-sm"></i>
+            </button>
+          </div>
+          <div class="px-6 py-5 space-y-4">
+            <div class="flex items-start gap-3 p-3.5 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl text-red-800 dark:text-red-300 text-sm">
+              <i class="fas fa-exclamation-triangle flex-shrink-0 mt-0.5"></i>
+              <p>
+                Isso irá <strong>cancelar o processo de assinatura</strong> em andamento.
+                A ficha voltará ao status <strong>Rascunho</strong> e poderá ser editada e reenviada.
+              </p>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Motivo do cancelamento (opcional)</label>
+              <textarea
+                v-model="cancelApprovalNote"
+                rows="3"
+                placeholder="Ex: Necessário ajustar valor de entrada..."
+                class="w-full px-3.5 py-2.5 text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900/60 border border-gray-200 dark:border-gray-700 rounded-md shadow-sm placeholder:text-gray-400 outline-none focus:border-red-400 focus:ring-2 focus:ring-red-500/15 transition resize-none"
+              />
+            </div>
+          </div>
+          <div class="flex justify-end gap-3 px-6 pb-5">
+            <button @click="showCancelApprovalModal = false" class="px-4 py-2.5 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white transition">
+              Voltar
+            </button>
+            <button
+              @click="handleCancelApproval"
+              :disabled="actionLoading"
+              class="flex items-center gap-2 px-5 py-2.5 bg-red-600 text-white text-sm font-semibold rounded-xl hover:bg-red-700 disabled:opacity-50 transition"
+            >
+              <i class="fas fa-ban text-xs"></i>
+              {{ actionLoading ? 'Cancelando...' : 'Cancelar Autorização' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </transition>
+
+    <!-- Modal: Salvar em ficha Autorizada -->
+    <transition name="fade">
+      <div
+        v-if="showSaveApprovedModal"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+        @click.self="showSaveApprovedModal = false"
+      >
+        <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md border border-gray-100 dark:border-gray-800">
+          <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-800">
+            <div class="flex items-center gap-2">
+              <i class="fas fa-triangle-exclamation text-amber-500"></i>
+              <h2 class="text-base font-bold text-gray-900 dark:text-white">Atenção — Ficha Autorizada</h2>
+            </div>
+            <button @click="showSaveApprovedModal = false" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 transition">
+              <i class="fas fa-times text-sm"></i>
+            </button>
+          </div>
+          <div class="px-6 py-5">
+            <div class="flex items-start gap-3 p-3.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl text-amber-800 dark:text-amber-300 text-sm">
+              <i class="fas fa-exclamation-triangle flex-shrink-0 mt-0.5"></i>
+              <p>
+                Salvar alterações em uma ficha <strong>Autorizada</strong> irá <strong>cancelar a autorização</strong> e reverter ao status <strong>Rascunho</strong>.
+                Será necessário enviar para autorização novamente.
+              </p>
+            </div>
+          </div>
+          <div class="flex justify-end gap-3 px-6 pb-5">
+            <button @click="showSaveApprovedModal = false" class="px-4 py-2.5 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white transition">
+              Cancelar
+            </button>
+            <button
+              @click="handleConfirmSaveApproved"
+              :disabled="actionLoading"
+              class="flex items-center gap-2 px-5 py-2.5 bg-amber-500 text-white text-sm font-semibold rounded-xl hover:bg-amber-600 disabled:opacity-50 transition"
+            >
+              <i class="fas fa-floppy-disk text-xs"></i>
+              {{ actionLoading ? 'Salvando...' : 'Desbloquear e Salvar' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </transition>
+
     <!-- Erro de carregamento -->
     <div v-if="fetchError && !detail" class="flex flex-col items-center justify-center py-24 text-center px-4">
       <div class="w-14 h-14 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mb-4">
@@ -100,7 +195,12 @@
                   <h1 class="text-lg lg:text-xl font-bold text-gray-900 dark:text-white truncate">
                     {{ detail.enterprise?.nome ?? '...' }}
                   </h1>
-                  <span :class="badgeClass(detail.status)" class="px-2 py-0.5 rounded-full text-xs font-semibold flex-shrink-0">
+                  <!-- Badge: mostra "Reprovada" se foi rejeitada, senão status normal -->
+                  <span v-if="wasRejected && detail.status === 'draft'"
+                    class="px-2 py-0.5 rounded-full text-xs font-semibold flex-shrink-0 bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
+                    Reprovada
+                  </span>
+                  <span v-else :class="badgeClass(detail.status)" class="px-2 py-0.5 rounded-full text-xs font-semibold flex-shrink-0">
                     {{ statusLabel(detail.status) }}
                   </span>
                 </div>
@@ -112,7 +212,7 @@
               </div>
             </div>
 
-            <div class="flex items-center gap-2 flex-shrink-0">
+            <div class="flex items-center gap-2 flex-shrink-0 flex-wrap justify-end">
               <!-- Navegador de histórico (meses anteriores) -->
               <div v-if="detail.history?.length > 1" class="flex items-center gap-1.5">
                 <i class="fas fa-history text-xs text-gray-400"></i>
@@ -131,7 +231,7 @@
 
               <!-- Ações por status (admin only) -->
               <template v-if="isAdmin">
-                <!-- draft → Enviar para Autorização -->
+                <!-- draft ou reprovada → Enviar para Autorização -->
                 <button
                   v-if="detail.status === 'draft'"
                   @click="handleSubmitForApproval"
@@ -142,14 +242,16 @@
                   <span class="hidden sm:inline">Enviar para Autorização</span>
                 </button>
 
-                <!-- pending_approval → aguardando assinaturas -->
-                <div
+                <!-- pending_approval → Cancelar Autorização -->
+                <button
                   v-else-if="detail.status === 'pending_approval'"
-                  class="flex items-center gap-2 px-3.5 py-2 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 text-xs font-semibold rounded-xl border border-blue-200 dark:border-blue-800"
+                  @click="showCancelApprovalModal = true"
+                  :disabled="actionLoading"
+                  class="flex items-center gap-2 px-3.5 py-2 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-xs font-semibold rounded-xl border border-red-200 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-900/30 transition"
                 >
-                  <i class="fas fa-signature text-xs"></i>
-                  <span class="hidden sm:inline">Aguardando assinaturas</span>
-                </div>
+                  <i class="fas fa-ban text-xs"></i>
+                  <span class="hidden sm:inline">Cancelar Autorização</span>
+                </button>
 
                 <!-- approved → Desbloquear -->
                 <button
@@ -162,11 +264,11 @@
                 </button>
               </template>
 
-              <!-- Salvar Tudo — apenas quando editável -->
+              <!-- Salvar Tudo — quando editável ou approved (admin pode editar) -->
               <button
-                v-if="!isLocked"
+                v-if="canSave"
                 @click="handleSaveAll"
-                :disabled="saving"
+                :disabled="saving || actionLoading"
                 class="flex items-center gap-2 px-3.5 py-2 bg-blue-600 text-white text-xs font-semibold rounded-xl hover:bg-blue-700 disabled:opacity-50 transition"
               >
                 <i :class="saving ? 'fa-spinner fa-spin' : 'fa-floppy-disk'" class="fas"></i>
@@ -175,18 +277,33 @@
             </div>
           </div>
 
-          <!-- Banner de status locked -->
+          <!-- Banner: Reprovada -->
           <div
-            v-if="detail.status === 'approved'"
+            v-if="wasRejected && detail.status === 'draft'"
+            class="flex items-start gap-2 mb-3 px-3 py-2.5 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-400 text-xs"
+          >
+            <i class="fas fa-ban flex-shrink-0 mt-0.5"></i>
+            <div>
+              <span class="font-semibold">Autorização reprovada.</span>
+              <span v-if="rejectionNote" class="ml-1">{{ rejectionNote }}</span>
+              <span class="ml-1 text-red-500 dark:text-red-500">Corrija as informações e envie novamente.</span>
+            </div>
+          </div>
+
+          <!-- Banner: Autorizada -->
+          <div
+            v-else-if="detail.status === 'approved'"
             class="flex items-center gap-2 mb-3 px-3 py-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg text-green-700 dark:text-green-400 text-xs"
           >
-            <i class="fas fa-lock"></i>
-            <span>Ficha autorizada e bloqueada para edição.
+            <i class="fas fa-check-circle"></i>
+            <span>
+              Ficha autorizada.
               <template v-if="detail.approved_at"> Aprovada em {{ formatDateFull(detail.approved_at) }}.</template>
-              <template v-if="isAdmin"> Clique em <strong>Desbloquear</strong> para editar.</template>
+              <template v-if="isAdmin"> Edições nesta ficha irão cancelar a autorização.</template>
             </span>
           </div>
 
+          <!-- Banner: Em Autorização -->
           <div
             v-else-if="detail.status === 'pending_approval'"
             class="flex items-center gap-2 mb-3 px-3 py-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg text-blue-700 dark:text-blue-400 text-xs"
@@ -265,10 +382,14 @@
             :office-users="store.officeUsers"
             :enterprise-stages="detail.stages ?? []"
             :is-admin="isAdmin"
+            :is-approver="isApprover"
             :action-loading="actionLoading"
+            :was-rejected="wasRejected"
+            :rejection-note="rejectionNote"
             @navigate-month="navigateToMonth"
             @submit-for-approval="handleSubmitForApproval"
             @unlock="showUnlockModal = true"
+            @cancel-approval="showCancelApprovalModal = true"
           />
         </div>
 
@@ -360,21 +481,59 @@ const auth = useAuthStore();
 
 const isAdmin = computed(() => auth.hasRole('admin'));
 
-// Ficha bloqueada quando aprovada OU quando o usuário não é admin
+// Aprovador = um dos aprovadores configurados nas settings comerciais
+const isApprover = computed(() => {
+    const uid = auth.user?.id;
+    if (!uid || !store.settings) return false;
+    return uid === store.settings.approver_1_id || uid === store.settings.approver_2_id;
+});
+
+// Ficha bloqueada para edição quando em pending_approval (qualquer usuário) ou se não for admin
 const isLocked = computed(() =>
-    !isAdmin.value || detail.value?.status === 'approved' || detail.value?.status === 'pending_approval'
+    !isAdmin.value || detail.value?.status === 'pending_approval'
 );
+
+// Pode salvar: admin E não está em pending_approval
+const canSave = computed(() =>
+    isAdmin.value && detail.value?.status !== 'pending_approval'
+);
+
+// Estado de reprovação: verificar se o último evento de aprovação foi reprovado
+const wasRejected = computed(() => {
+    const hist = detail.value?.approval_history ?? [];
+    // Procura o último evento de aprovação relevante (da lista reversa)
+    for (let i = hist.length - 1; i >= 0; i--) {
+        const ev = hist[i];
+        const approvalActions = ['approval_rejected', 'approved', 'submitted_for_approval', 'unlocked', 'approval_cancelled'];
+        if (approvalActions.includes(ev.action)) {
+            return ev.action === 'approval_rejected';
+        }
+    }
+    return false;
+});
+
+const rejectionNote = computed(() => {
+    const hist = detail.value?.approval_history ?? [];
+    for (let i = hist.length - 1; i >= 0; i--) {
+        if (hist[i].action === 'approval_rejected') {
+            return hist[i].note ?? null;
+        }
+    }
+    return null;
+});
 
 const activeTab = ref('modules');
 const saving = ref(false);
 const actionLoading = ref(false);
 const showUnlockModal = ref(false);
+const showCancelApprovalModal = ref(false);
+const showSaveApprovedModal = ref(false);
 const unlockNote = ref('');
+const cancelApprovalNote = ref('');
 const toast = reactive({ show: false, type: 'success', message: '' });
 const fetchError = ref(null);
 const isDirty = ref(false);
 
-// Empreendimentos para o modal de copiar de outro empreendimento
 const enterpriseOptions = ref([]);
 
 const STATUS_MAP = {
@@ -395,19 +554,10 @@ const visibleTabs = computed(() =>
 );
 
 const detail = computed(() => store.detail);
-
-// localModules: cada módulo carrega todos os seus campos + campaigns[]
 const localModules = ref([]);
+const form = ref({ notes: '' });
 
-// Campos mínimos do nível da condition (mantidos para compatibilidade)
-// Não são mais o foco da edição; os dados por módulo substituem isso
-const form = ref({
-    notes: '',
-});
-
-// ─── Defaults de módulo novo ──────────────────────────────────────────────────
 function moduleDefaults(m = {}) {
-    // structuredClone para deep-copy total segura (arrays, objetos aninhados, JSONB)
     const base = {
         campaigns: [],
         price_table_ids: [],
@@ -452,8 +602,6 @@ function moduleDefaults(m = {}) {
         digital_cert_contact: '',
         notes: '',
     };
-    // Merge com clone profundo dos valores vindos da API
-    // idetapa is always preserved from m; base never shadows it
     try {
         return structuredClone({ ...base, ...m });
     } catch {
@@ -472,7 +620,6 @@ function populateFromDetail(d) {
     form.value = { notes: d.notes ?? '' };
 }
 
-// ─── Alterações não salvas ────────────────────────────────────────────────────
 function onModulesChange(newModules) {
     localModules.value = newModules;
     isDirty.value = true;
@@ -487,7 +634,6 @@ onBeforeRouteLeave((to, from, next) => {
     }
 });
 
-// Aviso nativo ao fechar a aba/janela
 function beforeUnloadHandler(e) {
     if (isDirty.value) {
         e.preventDefault();
@@ -497,13 +643,11 @@ function beforeUnloadHandler(e) {
 onMounted(() => window.addEventListener('beforeunload', beforeUnloadHandler));
 onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnloadHandler));
 
-// ─── Toast ────────────────────────────────────────────────────────────────────
 function showToast(message, type = 'success') {
     toast.show = true; toast.type = type; toast.message = message;
     setTimeout(() => { toast.show = false; }, 3500);
 }
 
-// ─── Navegação de histórico ───────────────────────────────────────────────────
 async function navigateToMonth(id) {
     if (String(id) === String(detail.value?.id)) return;
     router.push(`/comercial/conditions/${id}`);
@@ -521,7 +665,6 @@ async function navigateToMonth(id) {
 
 // ─── Ações de workflow ────────────────────────────────────────────────────────
 
-// Captura snapshot de unidades (com preços) para todos os módulos antes de enviar
 async function captureAllUnitSnapshots() {
     const idempreendimento = detail.value?.idempreendimento;
     if (!idempreendimento) return localModules.value;
@@ -532,7 +675,6 @@ async function captureAllUnitSnapshots() {
         try {
             const units = await store.fetchUnitsForStage(idempreendimento, mod.idetapa);
 
-            // Build idunidade → valor_total map from all selected tables (vigente first)
             const priceMap = new Map();
             const orderedTableIds = [...(mod.price_table_ids ?? [])].sort((a, b) => {
                 const ta = priceTables.find(t => t.idtabela === a);
@@ -550,7 +692,6 @@ async function captureAllUnitSnapshots() {
                 }
             }
 
-            // Merge price into each unit using idunidade as the shared key
             const enriched = units.map(bloco => ({
                 ...bloco,
                 unidades: (bloco.unidades ?? []).map(u => ({
@@ -576,7 +717,6 @@ async function captureAllUnitSnapshots() {
 async function handleSubmitForApproval() {
     actionLoading.value = true;
     try {
-        // Congela estado das unidades (com preços) em todos os módulos
         const modulesWithSnapshot = await captureAllUnitSnapshots();
         localModules.value = modulesWithSnapshot;
         await store.saveModules(detail.value.id, localModules.value);
@@ -585,6 +725,22 @@ async function handleSubmitForApproval() {
         await store.fetchDetail(detail.value.id);
     } catch (e) {
         showToast(e.message || 'Erro ao enviar para autorização.', 'error');
+    } finally {
+        actionLoading.value = false;
+    }
+}
+
+async function handleCancelApproval() {
+    actionLoading.value = true;
+    try {
+        await store.cancelApproval(detail.value.id, cancelApprovalNote.value);
+        showCancelApprovalModal.value = false;
+        cancelApprovalNote.value = '';
+        showToast('Autorização cancelada — ficha voltou para Rascunho.');
+        await store.fetchDetail(detail.value.id);
+        populateFromDetail(store.detail);
+    } catch (e) {
+        showToast(e.message || 'Erro ao cancelar autorização.', 'error');
     } finally {
         actionLoading.value = false;
     }
@@ -607,6 +763,7 @@ async function handleUnlock() {
 }
 
 // ─── Saves ────────────────────────────────────────────────────────────────────
+
 async function handleSaveModules() {
     if (isLocked.value) return;
     saving.value = true;
@@ -624,15 +781,12 @@ async function handleSaveModules() {
     finally { saving.value = false; }
 }
 
-// Save silencioso — usado para auto-save de campos estruturais (ex: idetapa).
-// Persiste no banco sem substituir o estado local (evita apagar edições em andamento).
 async function handleSaveModulesSilent() {
     if (isLocked.value) return;
     try {
         await store.saveModules(detail.value.id, localModules.value);
         isDirty.value = false;
     } catch (e) {
-        // Falha silenciosa no auto-save; o usuário ainda pode salvar manualmente
         console.warn('[Detail] auto-save idetapa failed:', e.message);
     }
 }
@@ -666,6 +820,11 @@ async function handleCopyFromEnterprise({ moduleId, sourceConditionId, sourceMod
 
 async function handleSaveAll() {
     if (isLocked.value) return;
+    // Ficha autorizada: pede confirmação antes de cancelar autorização
+    if (detail.value?.status === 'approved') {
+        showSaveApprovedModal.value = true;
+        return;
+    }
     saving.value = true;
     try {
         const result = await store.saveModules(detail.value.id, localModules.value);
@@ -679,6 +838,27 @@ async function handleSaveAll() {
         showToast(msgs[0], 'error');
     }
     finally { saving.value = false; }
+}
+
+async function handleConfirmSaveApproved() {
+    actionLoading.value = true;
+    try {
+        // Desbloquear (cancela autorização) e depois salvar
+        await store.unlockCondition(detail.value.id, 'Editado pelo administrador após autorização.');
+        await store.fetchDetail(detail.value.id);
+        const result = await store.saveModules(detail.value.id, localModules.value);
+        if (result?.modules) {
+            localModules.value = result.modules.map(m => moduleDefaults(m));
+        }
+        isDirty.value = false;
+        showSaveApprovedModal.value = false;
+        showToast('Ficha desbloqueada e salva com sucesso!');
+        await store.fetchDetail(detail.value.id);
+    } catch (e) {
+        showToast(e.message || 'Erro ao salvar.', 'error');
+    } finally {
+        actionLoading.value = false;
+    }
 }
 
 // ─── Formatadores ─────────────────────────────────────────────────────────────
@@ -713,7 +893,6 @@ function eventLabel(action)     { return EVENT_META[action]?.label    ?? action;
 function eventIcon(action)      { return EVENT_META[action]?.icon     ?? 'fa-circle'; }
 function eventIconClass(action) { return EVENT_META[action]?.cls      ?? 'bg-gray-100 text-gray-400'; }
 
-// Splitados por tipo: aprovação vs alterações
 const approvalHistory = computed(() => {
     const hist = detail.value?.approval_history ?? [];
     return [...hist].reverse().filter(ev => (EVENT_META[ev.action]?.type ?? 'approval') === 'approval');
@@ -745,6 +924,7 @@ async function loadDetail(id) {
             store.fetchCorrespondents(),
             store.fetchCorrespondentCompanies(),
             store.fetchOfficeUsers(),
+            store.fetchSettings(),
         ]);
         try {
             await store.fetchList({});
@@ -769,7 +949,6 @@ async function loadDetail(id) {
     }
 }
 
-// ─── Mount ────────────────────────────────────────────────────────────────────
 onMounted(() => loadDetail(route.params.id));
 </script>
 
