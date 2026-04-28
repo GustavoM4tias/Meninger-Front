@@ -236,7 +236,7 @@ const filteredEvents = computed(() => {
             if (end && eventDate > end) return false;
             return true;
         })
-        .sort((a, b) => new Date(b.event_date) - new Date(a.event_date));
+        .sort((a, b) => new Date(a.event_date) - new Date(b.event_date));
 });
 
 watch(
