@@ -80,14 +80,14 @@ onUnmounted(() => { document.removeEventListener('keydown', handleKey); document
         <div class="absolute top-3 right-3 flex items-center gap-2 z-10">
           <!-- Edit -->
           <button @click="openEdit"
-            class="h-8 px-3 flex items-center gap-1.5 rounded-lg bg-white/15 hover:bg-white/25 backdrop-blur-sm text-white text-xs font-medium transition">
+            class="h-8 px-3 flex items-center gap-1.5 rounded-lg bg-black/15 hover:bg-black/25 backdrop-blur-sm text-white text-xs font-medium transition">
             <i class="fas fa-pen text-[10px]"></i>Editar
           </button>
 
           <!-- Delete (com confirm inline) -->
           <template v-if="!confirmDelete">
             <button @click="confirmDelete = true"
-              class="h-8 w-8 rounded-lg bg-white/15 hover:bg-red-500/70 backdrop-blur-sm text-white grid place-items-center transition"
+              class="h-8 w-8 rounded-lg bg-black/15 hover:bg-red-500/70 backdrop-blur-sm text-white grid place-items-center transition"
               title="Excluir">
               <i class="fas fa-trash text-[10px]"></i>
             </button>
@@ -106,7 +106,7 @@ onUnmounted(() => { document.removeEventListener('keydown', handleKey); document
 
           <!-- Close -->
           <button @click="closeModal"
-            class="h-8 w-8 rounded-lg bg-white/15 hover:bg-white/25 backdrop-blur-sm text-white grid place-items-center transition">
+            class="h-8 w-8 rounded-lg bg-black/15 hover:bg-black/25 backdrop-blur-sm text-white grid place-items-center transition">
             <i class="fas fa-times text-sm"></i>
           </button>
         </div>

@@ -59,6 +59,23 @@ function truncate(text, n = 120) {
 function fromNow(d) {
   return dayjs(d).fromNow()
 }
+
+function formatLatency(ms) {
+  if (ms == null) return '—'
+  return ms < 1000 ? `${ms} ms` : `${(ms / 1000).toFixed(2)} s`
+}
+
+function poolLabel(pool) {
+  if (pool === 'smart') return 'Smart (Pro)'
+  if (pool === 'fast')  return 'Fast (Flash)'
+  return pool || '—'
+}
+
+function poolClass(pool) {
+  if (pool === 'smart') return 'bg-purple-500/15 text-purple-600 dark:text-purple-400'
+  if (pool === 'fast')  return 'bg-blue-500/15 text-blue-600 dark:text-blue-400'
+  return 'bg-gray-200 dark:bg-slate-700 text-gray-500'
+}
 </script>
 
 <template>
@@ -230,7 +247,7 @@ function fromNow(d) {
         class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4"
         @click.self="closeDetail"
       >
-        <div class="w-full max-w-lg bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-2xl shadow-2xl p-5 space-y-4 max-h-[80vh] overflow-y-auto">
+        <div class="w-full max-w-2xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-2xl shadow-2xl p-5 space-y-4 max-h-[85vh] overflow-y-auto">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2">
               <div
@@ -250,13 +267,23 @@ function fromNow(d) {
           </div>
 
           <div class="space-y-3">
-            <div>
-              <p class="text-xs text-gray-400 dark:text-slate-500 uppercase tracking-wide mb-1.5">Resposta avaliada</p>
-              <div class="bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-transparent rounded-xl p-3 text-xs text-gray-700 dark:text-gray-300 leading-relaxed max-h-48 overflow-y-auto whitespace-pre-wrap">
-                {{ truncate(selectedItem.message?.content, 1000) }}
+            <!-- Pergunta original do usuário -->
+            <div v-if="selectedItem.context?.user_question">
+              <p class="text-xs text-gray-400 dark:text-slate-500 uppercase tracking-wide mb-1.5">Pergunta do usuário</p>
+              <div class="bg-slate-700/30 dark:bg-slate-800 border border-slate-600/30 dark:border-transparent rounded-xl p-3 text-xs text-gray-700 dark:text-gray-200 leading-relaxed whitespace-pre-wrap">
+                {{ selectedItem.context.user_question }}
               </div>
             </div>
 
+            <!-- Resposta avaliada -->
+            <div>
+              <p class="text-xs text-gray-400 dark:text-slate-500 uppercase tracking-wide mb-1.5">Resposta avaliada</p>
+              <div class="bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-transparent rounded-xl p-3 text-xs text-gray-700 dark:text-gray-300 leading-relaxed max-h-48 overflow-y-auto whitespace-pre-wrap">
+                {{ selectedItem.context?.assistant_text || truncate(selectedItem.message?.content, 1000) }}
+              </div>
+            </div>
+
+            <!-- Comentário do usuário -->
             <div v-if="selectedItem.comment">
               <p class="text-xs text-gray-400 dark:text-slate-500 uppercase tracking-wide mb-1.5">Comentário do usuário</p>
               <div class="bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-transparent rounded-xl p-3 text-sm text-gray-700 dark:text-gray-200 italic leading-relaxed">
@@ -264,7 +291,72 @@ function fromNow(d) {
               </div>
             </div>
 
-            <div class="flex items-center justify-between text-xs text-gray-400 dark:text-slate-600">
+            <!-- Raciocínio: modelo, pool, latência -->
+            <div v-if="selectedItem.context" class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              <div class="bg-gray-50 dark:bg-slate-800 rounded-xl px-3 py-2">
+                <p class="text-[10px] text-gray-400 dark:text-slate-500 uppercase tracking-wide">Modelo</p>
+                <p class="text-xs text-gray-700 dark:text-gray-200 font-mono truncate">{{ selectedItem.context.model || '—' }}</p>
+              </div>
+              <div class="bg-gray-50 dark:bg-slate-800 rounded-xl px-3 py-2">
+                <p class="text-[10px] text-gray-400 dark:text-slate-500 uppercase tracking-wide">Pool</p>
+                <span class="inline-block text-[10px] font-medium px-2 py-0.5 rounded-full mt-0.5" :class="poolClass(selectedItem.context.pool)">
+                  {{ poolLabel(selectedItem.context.pool) }}
+                </span>
+              </div>
+              <div class="bg-gray-50 dark:bg-slate-800 rounded-xl px-3 py-2">
+                <p class="text-[10px] text-gray-400 dark:text-slate-500 uppercase tracking-wide">Latência</p>
+                <p class="text-xs text-gray-700 dark:text-gray-200">{{ formatLatency(selectedItem.context.latency_ms) }}</p>
+              </div>
+            </div>
+
+            <!-- Ferramentas chamadas -->
+            <div v-if="selectedItem.context?.tool_calls?.length">
+              <p class="text-xs text-gray-400 dark:text-slate-500 uppercase tracking-wide mb-1.5">
+                Ferramentas chamadas ({{ selectedItem.context.tool_calls.length }})
+              </p>
+              <div class="space-y-2">
+                <div
+                  v-for="(tc, idx) in selectedItem.context.tool_calls"
+                  :key="idx"
+                  class="bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-transparent rounded-xl p-3 space-y-2"
+                >
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <code class="text-xs font-mono px-2 py-0.5 rounded bg-indigo-500/15 text-indigo-600 dark:text-indigo-400">
+                      {{ tc.name }}
+                    </code>
+                    <span v-if="tc.error" class="text-[10px] px-2 py-0.5 rounded-full bg-red-500/15 text-red-600 dark:text-red-400">
+                      erro
+                    </span>
+                    <span class="text-[10px] text-gray-400 dark:text-slate-500 ml-auto">{{ formatLatency(tc.ms) }}</span>
+                  </div>
+
+                  <div v-if="tc.args && Object.keys(tc.args).length">
+                    <p class="text-[10px] text-gray-400 dark:text-slate-500 uppercase tracking-wide mb-1">Argumentos</p>
+                    <pre class="text-[11px] font-mono text-gray-600 dark:text-slate-300 bg-white dark:bg-slate-900 rounded-lg p-2 overflow-x-auto">{{ JSON.stringify(tc.args, null, 2) }}</pre>
+                  </div>
+
+                  <div v-if="tc.error" class="text-xs text-red-600 dark:text-red-400">
+                    {{ tc.error }}
+                  </div>
+
+                  <div v-else-if="tc.result_summary">
+                    <p class="text-[10px] text-gray-400 dark:text-slate-500 uppercase tracking-wide mb-1">Resultado</p>
+                    <div class="text-[11px] text-gray-600 dark:text-slate-300 space-y-0.5">
+                      <div v-if="tc.result_summary.title"><span class="text-gray-400 dark:text-slate-500">Título:</span> {{ tc.result_summary.title }}</div>
+                      <div v-if="tc.result_summary.total != null"><span class="text-gray-400 dark:text-slate-500">Total:</span> {{ tc.result_summary.total }}</div>
+                      <div v-if="tc.result_summary.type"><span class="text-gray-400 dark:text-slate-500">Tipo:</span> {{ tc.result_summary.type }}</div>
+                      <div v-if="tc.result_summary.route"><span class="text-gray-400 dark:text-slate-500">Rota:</span> <code class="font-mono">{{ tc.result_summary.route }}</code></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div v-else-if="selectedItem.context" class="text-xs text-gray-400 dark:text-slate-600 italic">
+              Resposta sem chamada de ferramenta — texto direto do modelo.
+            </div>
+
+            <div class="flex items-center justify-between text-xs text-gray-400 dark:text-slate-600 pt-2 border-t border-gray-100 dark:border-white/5">
               <span>Tipo: <span class="text-gray-600 dark:text-slate-400">{{ selectedItem.message?.response_type || 'text' }}</span></span>
               <span>{{ dayjs(selectedItem.created_at).format('DD/MM/YYYY HH:mm') }}</span>
             </div>

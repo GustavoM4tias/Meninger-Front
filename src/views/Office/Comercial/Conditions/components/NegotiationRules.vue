@@ -9,17 +9,18 @@
       </div>
       <div class="p-5 grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div>
-          <label class="lbl">Máx. de Entrada</label>
+          <label class="lbl">Máx. Entrada (%)</label>
           <div class="relative">
-            <span class="pfx">R$</span>
-            <input type="text" :value="fmtBR(form.max_entry_value)"
-  @focus="e => { e.target.value = form.max_entry_value ?? ''; e.target.select(); }"
-  @blur="e => set('max_entry_value', parseBR(e.target.value))"
-  class="inp-pfx" placeholder="0,00" :disabled="readonly" />
+            <input type="text"
+              :value="form.max_entry_value != null ? String(Number(form.max_entry_value).toFixed(2)).replace('.', ',') : ''"
+              @focus="e => { e.target.value = form.max_entry_value ?? ''; e.target.select(); }"
+              @blur="e => { const raw = String(e.target.value).replace(',', '.'); const n = parseFloat(raw); set('max_entry_value', isNaN(n) ? null : Math.round(n * 100) / 100); }"
+              class="inp pr-9" placeholder="Ex: 20" :disabled="readonly" />
+            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 text-xs pointer-events-none">%</span>
           </div>
         </div>
         <div>
-          <label class="lbl">Parcela RP</label>
+          <label class="lbl">Parcela mín RP</label>
           <div class="relative">
             <span class="pfx">R$</span>
             <input type="text" :value="fmtBR(form.rp_installment_value)"
@@ -29,7 +30,12 @@
           </div>
         </div>
         <div>
-          <label class="lbl">Parcela Ato</label>
+          <label class="lbl">Máximo Parcelas RP</label>
+          <input :value="form.max_installments" @input="set('max_installments', numOrNull($event))" type="number"
+            min="0" class="inp" placeholder="Ex: 120" :disabled="readonly" />
+        </div>
+        <div>
+          <label class="lbl">Parcela mín Ato</label>
           <div class="relative">
             <span class="pfx">R$</span>
             <input type="text" :value="fmtBR(form.act_installment_value)"
@@ -38,21 +44,12 @@
   class="inp-pfx" placeholder="0,00" :disabled="readonly" />
           </div>
         </div>
-        <div>
-          <label class="lbl">Parcela Mínima</label>
-          <div class="relative">
-            <span class="pfx">R$</span>
-            <input type="text" :value="fmtBR(form.min_installment_value)"
-  @focus="e => { e.target.value = form.min_installment_value ?? ''; e.target.select(); }"
-  @blur="e => set('min_installment_value', parseBR(e.target.value))"
-  class="inp-pfx" placeholder="0,00" :disabled="readonly" />
-          </div>
-        </div>
 
         <div class="col-span-full">
           <label class="lbl">Regra do RP / Observações de Negociação</label>
           <textarea :value="form.rp_rule" @input="set('rp_rule', $event.target.value)" rows="3" class="inp resize-none"
-            placeholder="Ex: parcela do cliente não pode ultrapassar 30% da renda comprovada..." />
+            placeholder="Ex: parcela do cliente não pode ultrapassar 30% da renda comprovada..."
+            :disabled="readonly" />
         </div>
       </div>
     </div>
@@ -63,23 +60,18 @@
       <div class="px-5 py-3.5 border-b border-gray-100 dark:border-gray-800 bg-gray-50/60 dark:bg-gray-800/40">
         <p class="lbl-section"><i class="fas fa-calendar-days text-blue-500"></i> Reajuste e Prazo</p>
       </div>
-      <div class="p-5 grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div class="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label class="lbl">Parcelas até Habite-se</label>
           <input :value="form.installment_until_habite_se"
             @input="set('installment_until_habite_se', $event.target.value)" type="text" class="inp"
-            placeholder="Ex: INCC" />
+            placeholder="Ex: INCC" :disabled="readonly" />
         </div>
         <div>
           <label class="lbl">Parcelas pós Habite-se</label>
           <input :value="form.installment_post_habite_se"
             @input="set('installment_post_habite_se', $event.target.value)" type="text" class="inp"
-            placeholder="Ex: IPCA + 1% a.m." />
-        </div>
-        <div>
-          <label class="lbl">Máx. Parcelas</label>
-          <input :value="form.max_installments" @input="set('max_installments', numOrNull($event))" type="number"
-            min="0" class="inp" placeholder="Ex: 120" />
+            placeholder="Ex: IPCA + 1% a.m." :disabled="readonly" />
         </div>
       </div>
     </div>
@@ -101,7 +93,8 @@
           </div>
           <button type="button" @click="set('has_state_subsidy', !form.has_state_subsidy)"
             :class="form.has_state_subsidy ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-600'"
-            class="relative inline-flex h-6 w-11 flex-shrink-0 rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900">
+            class="relative inline-flex h-6 w-11 flex-shrink-0 rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
+            :disabled="readonly">
             <span :class="form.has_state_subsidy ? 'translate-x-5' : 'translate-x-1'"
               class="pointer-events-none inline-block h-4 w-4 mt-1 rounded-full bg-white shadow-md transition-transform duration-200" />
           </button>
@@ -133,7 +126,7 @@
             <div>
               <label class="lbl">Nome do Programa</label>
               <input :value="form.state_subsidy_program" @input="set('state_subsidy_program', $event.target.value)"
-                type="text" class="inp" :placeholder="subsidyProgramPlaceholder" />
+                type="text" class="inp" :placeholder="subsidyProgramPlaceholder" :disabled="readonly" />
             </div>
           </div>
 
@@ -142,7 +135,7 @@
             <label class="lbl">Nome do Estado / Programa</label>
             <input :value="form.state_subsidy_custom_state"
               @input="set('state_subsidy_custom_state', $event.target.value)" type="text" class="inp"
-              placeholder="Ex: Goiás, Santa Catarina..." />
+              placeholder="Ex: Goiás, Santa Catarina..." :disabled="readonly" />
           </div>
 
           <!-- Regras -->
@@ -150,7 +143,8 @@
             <label class="lbl">Regras do Subsídio</label>
             <textarea :value="form.state_subsidy_rules" @input="set('state_subsidy_rules', $event.target.value)"
               rows="3" class="inp resize-none"
-              placeholder="Descreva as regras de elegibilidade, limites de renda, documentação necessária..." />
+              placeholder="Descreva as regras de elegibilidade, limites de renda, documentação necessária..."
+              :disabled="readonly" />
           </div>
 
           <!-- Condições -->
@@ -158,7 +152,8 @@
             <label class="lbl">Condições e Observações</label>
             <textarea :value="form.state_subsidy_conditions"
               @input="set('state_subsidy_conditions', $event.target.value)" rows="2" class="inp resize-none"
-              placeholder="Prazos, valores, restrições, contato do programa..." />
+              placeholder="Prazos, valores, restrições, contato do programa..."
+              :disabled="readonly" />
           </div>
         </template>
       </div>
