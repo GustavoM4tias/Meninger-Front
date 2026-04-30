@@ -41,40 +41,31 @@
                 <div class="h-px flex-1 bg-blue-100 dark:bg-blue-900/40"></div>
               </div>
               <!-- KPIs do módulo -->
-              <div class="grid grid-cols-3 sm:grid-cols-5 gap-3 mb-4">
+              <div class="kpi-row compact mb-4">
                 <div class="kpi-card">
                   <span class="kpi-label">Unidades</span>
                   <span class="kpi-value" :class="mod.total_units == null ? 'kpi-empty' : ''">{{ mod.total_units ?? '—' }}</span>
-                </div>
-                <div class="kpi-card">
-                  <span class="kpi-label">Máx. Entrada</span>
-                  <span class="kpi-value text-lg" :class="mod.max_entry_value == null ? 'kpi-empty' : ''">{{ mod.max_entry_value != null ? formatCurrencyShort(mod.max_entry_value) : '—' }}</span>
-                </div>
+                </div> 
                 <div class="kpi-card">
                   <span class="kpi-label">Comissão</span>
                   <span class="kpi-value" :class="mod.commission_pct == null ? 'kpi-empty' : ''">{{ mod.commission_pct != null ? `${parseFloat(mod.commission_pct).toFixed(1)}%` : '—' }}</span>
-                </div>
-                <div class="kpi-card">
-                  <span class="kpi-label">Prazo Entrega</span>
-                  <span class="kpi-value" :class="mod.delivery_deadline_months == null ? 'kpi-empty' : ''">{{ mod.delivery_deadline_months ?? '—' }}</span>
-                  <span v-if="mod.delivery_deadline_months != null" class="kpi-sub">meses</span>
-                </div>
+                </div> 
                 <div class="kpi-card">
                   <span class="kpi-label">Parc. RP</span>
                   <span class="kpi-value text-base" :class="mod.rp_installment_value == null ? 'kpi-empty' : ''">{{ mod.rp_installment_value != null ? formatCurrencyShort(mod.rp_installment_value) : '—' }}</span>
                 </div>
               </div>
               <!-- Campos essenciais em dois cards lado a lado -->
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div class="responsive-card-row mb-4">
                 <!-- Negociação resumida -->
                 <div class="info-card">
                   <div class="info-card-header"><i class="fas fa-handshake text-blue-500"></i> Negociação</div>
                   <div class="info-card-body">
                     <div class="field-grid">
-                      <div class="field-item"><span class="field-label">Parcela RP</span><span class="field-value accent" :class="mod.rp_installment_value == null ? 'field-empty' : ''">{{ mod.rp_installment_value != null ? formatCurrency(mod.rp_installment_value) : 'Não informado' }}</span></div>
-                      <div class="field-item"><span class="field-label">Parcela Ato</span><span class="field-value accent" :class="mod.act_installment_value == null ? 'field-empty' : ''">{{ mod.act_installment_value != null ? formatCurrency(mod.act_installment_value) : 'Não informado' }}</span></div>
-                      <div class="field-item"><span class="field-label">Parc. Mínima</span><span class="field-value" :class="mod.min_installment_value == null ? 'field-empty' : ''">{{ mod.min_installment_value != null ? formatCurrency(mod.min_installment_value) : 'Não informado' }}</span></div>
-                      <div class="field-item"><span class="field-label">Máx. Parcelas</span><span class="field-value" :class="mod.max_installments == null ? 'field-empty' : ''">{{ mod.max_installments != null ? `${mod.max_installments}x` : 'Não informado' }}</span></div>
+                      <div class="field-item"><span class="field-label">Parcela mín RP</span><span class="field-value accent" :class="mod.rp_installment_value == null ? 'field-empty' : ''">{{ mod.rp_installment_value != null ? formatCurrency(mod.rp_installment_value) : 'Não informado' }}</span></div>
+                      <div class="field-item"><span class="field-label">Parcela mín Ato</span><span class="field-value accent" :class="mod.act_installment_value == null ? 'field-empty' : ''">{{ mod.act_installment_value != null ? formatCurrency(mod.act_installment_value) : 'Não informado' }}</span></div>
+                      <div class="field-item"><span class="field-label">Máx. Entrada</span><span class="field-value" :class="mod.max_entry_value == null ? 'field-empty' : ''">{{ mod.max_entry_value != null ? `${parseFloat(mod.max_entry_value).toFixed(0)}%` : 'Não informado' }}</span></div>
+                      <div class="field-item"><span class="field-label">Máximo Parcelas RP</span><span class="field-value" :class="mod.max_installments == null ? 'field-empty' : ''">{{ mod.max_installments != null ? `${mod.max_installments}x` : 'Não informado' }}</span></div>
                       <div class="field-item"><span class="field-label">Até Habite-se</span><span class="field-value" :class="!mod.installment_until_habite_se ? 'field-empty' : ''">{{ mod.installment_until_habite_se || 'Não informado' }}</span></div>
                       <div class="field-item"><span class="field-label">Pós Habite-se</span><span class="field-value" :class="!mod.installment_post_habite_se ? 'field-empty' : ''">{{ mod.installment_post_habite_se || 'Não informado' }}</span></div>
                     </div>
@@ -99,7 +90,7 @@
                 </div>
               </div>
               <!-- Tabelas de preço -->
-              <div v-if="modSelectedPriceTables(mod).length || (mod.manual_price_tables ?? []).length" class="info-card mb-4">
+              <div v-if="modSelectedPriceTables(mod).length || (mod.manual_price_tables ?? []).length" class="info-card">
                 <div class="info-card-header"><i class="fas fa-tag text-blue-500"></i> Tabelas de Preço</div>
                 <div class="info-card-body space-y-2">
                   <div v-for="t in modSelectedPriceTables(mod)" :key="t.idtabela" class="price-table-row flex-col items-start gap-1">
@@ -120,7 +111,7 @@
               <!-- Campanhas ativas -->
               <div v-if="modActiveCampaigns(mod).length" class="info-card mb-4">
                 <div class="info-card-header"><i class="fas fa-bullhorn text-blue-500"></i> Campanhas Ativas</div>
-                <div class="info-card-body grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div class="info-card-body campaign-row">
                   <div v-for="(camp, ci) in modActiveCampaigns(mod)" :key="camp.id ?? ci" class="campaign-card">
                     <p class="text-sm font-bold text-gray-900 dark:text-white">{{ camp.title }}</p>
                     <p v-if="camp.description" class="text-xs text-gray-500 mt-0.5">{{ camp.description }}</p>
@@ -290,52 +281,45 @@
               <span class="kpi-label">Unidades</span>
               <span class="kpi-value" :class="mod.total_units == null ? 'kpi-empty' : ''">
                 {{ mod.total_units ?? '—' }}
-              </span>
-              <span v-if="mod.min_demand != null" class="kpi-sub">mín. {{ mod.min_demand }} demanda</span>
-              <span v-else class="kpi-sub kpi-sub-empty">demanda não definida</span>
+              </span> 
               <span v-if="mod.unit_snapshot?.capturedAt" class="kpi-sub flex items-center gap-1 mt-0.5 justify-center">
                 <i class="fas fa-snowflake text-blue-400 text-[9px]"></i>
                 Foto em {{ formatSnapshotDate(mod.unit_snapshot.capturedAt) }}
               </span>
             </div>
-            <!-- Faixas MCMV -->
-            <template v-for="f in enabledFaixas(mod)" :key="f.faixa">
-              <div class="kpi-card">
-                <span class="kpi-label">MCMV {{ faixaLabel(f.faixa) }}</span>
-                <span class="kpi-value">{{ f.avg_ticket != null ? formatCurrencyShort(f.avg_ticket) : (f.appraisal_value != null ? formatCurrencyShort(f.appraisal_value) : '—') }}</span>
-                <span v-if="f.appraisal_ceiling != null" class="kpi-sub">teto {{ formatCurrencyShort(f.appraisal_ceiling) }}</span>
-              </div>
-            </template>
-            <!-- Legado sem faixas -->
-            <div v-if="!enabledFaixas(mod).length && mod.appraisal_value != null" class="kpi-card">
-              <span class="kpi-label">Avaliação MCMV</span>
-              <span class="kpi-value">{{ formatCurrencyShort(mod.appraisal_value) }}</span>
-              <span v-if="mod.appraisal_ceiling != null" class="kpi-sub">teto {{ formatCurrencyShort(mod.appraisal_ceiling) }}</span>
-            </div>
-            <!-- Máx. Entrada -->
+            <!-- Disponibilidade (do snapshot) -->
             <div class="kpi-card">
-              <span class="kpi-label">Máx. Entrada</span>
-              <span class="kpi-value" :class="mod.max_entry_value == null ? 'kpi-empty' : ''">
-                {{ mod.max_entry_value != null ? formatCurrencyShort(mod.max_entry_value) : '—' }}
+              <span class="kpi-label">Disponíveis</span>
+              <span class="kpi-value" :class="!mod.unit_snapshot?.data?.length ? 'kpi-empty' : ''">
+                {{ mod.unit_snapshot?.data?.length ? snapshotStats(mod).disp : '—' }}
               </span>
+              <span class="kpi-sub">unidades</span>
             </div>
-            <!-- Comissão -->
             <div class="kpi-card">
-              <span class="kpi-label">Comissão</span>
-              <span class="kpi-value" :class="mod.commission_pct == null ? 'kpi-empty' : ''">
-                {{ mod.commission_pct != null ? `${parseFloat(mod.commission_pct).toFixed(1)}%` : '—' }}
+              <span class="kpi-label">Vendidas</span>
+              <span class="kpi-value" :class="!mod.unit_snapshot?.data?.length ? 'kpi-empty' : ''">
+                {{ mod.unit_snapshot?.data?.length ? snapshotStats(mod).vend : '—' }}
               </span>
-              <span v-if="mod.commission_pct != null" class="kpi-sub">
-                {{ mod.commission_source === 'cv' ? 'via CV' : 'manual' }}
-              </span>
+              <span class="kpi-sub">unidades</span>
             </div>
-            <!-- Prazo Entrega -->
             <div class="kpi-card">
-              <span class="kpi-label">Prazo Entrega</span>
-              <span class="kpi-value" :class="mod.delivery_deadline_months == null ? 'kpi-empty' : ''">
-                {{ mod.delivery_deadline_months ?? '—' }}
+              <span class="kpi-label">% Vendido</span>
+              <span class="kpi-value" :class="!mod.unit_snapshot?.data?.length ? 'kpi-empty' : ''">
+                {{ mod.unit_snapshot?.data?.length && snapshotStats(mod).total > 0 ? ((snapshotStats(mod).vend / snapshotStats(mod).total) * 100).toFixed(1) + '%' : '—' }}
               </span>
-              <span v-if="mod.delivery_deadline_months != null" class="kpi-sub">meses</span>
+              <span class="kpi-sub">do total</span>
+            </div>
+            <div class="kpi-card">
+              <span class="kpi-label">Reservadas</span>
+              <span class="kpi-value" :class="!mod.unit_snapshot?.data?.length ? 'kpi-empty' : ''">
+                {{ mod.unit_snapshot?.data?.length ? snapshotStats(mod).res : '—' }}
+              </span>
+              <span class="kpi-sub">unidades</span>
+            </div>
+            <div v-if="mod.unit_snapshot?.data?.length && snapshotStats(mod).bloq > 0" class="kpi-card">
+              <span class="kpi-label">Bloqueadas</span>
+              <span class="kpi-value">{{ snapshotStats(mod).bloq }}</span>
+              <span class="kpi-sub">unidades</span>
             </div>
           </div>
 
@@ -365,6 +349,20 @@
                     {{ mod.min_demand != null ? `${mod.min_demand} unid. (≥ 20%)` : 'Não informado' }}
                   </span>
                 </div>
+                <div class="field-item">
+                  <span class="field-label">Comissão</span>
+                  <span class="field-value" :class="mod.commission_pct == null ? 'field-empty' : ''">
+                    {{ mod.commission_pct != null ? `${parseFloat(mod.commission_pct).toFixed(1)}%` : 'Não informado' }}
+                    <span v-if="mod.commission_pct != null" class="text-xs text-gray-400 ml-1">({{ mod.commission_source === 'cv' ? 'via CV' : 'manual' }})</span>
+                  </span>
+                </div>
+                <div class="field-item">
+                  <span class="field-label">Prazo de Entrega</span>
+                  <span class="field-value" :class="mod.delivery_deadline_months == null ? 'field-empty' : ''">
+                    {{ mod.delivery_deadline_months != null ? `${mod.delivery_deadline_months} meses` : 'Não informado' }}
+                    <span v-if="mod.delivery_deadline_note" class="block text-xs text-gray-400 mt-0.5">{{ mod.delivery_deadline_note }}</span>
+                  </span>
+                </div>
               </div>
               <div v-if="mod.min_demand_note" class="note-block mt-3">
                 <span class="note-label">Obs. Demanda</span>
@@ -372,12 +370,125 @@
               </div>
             </div>
           </div>
+ 
+          <!-- ── Operacional — sempre visível ───────────────────────────── -->
+          <div class="info-card mb-4">
+            <div class="info-card-header">
+              <i class="fas fa-gears text-blue-500"></i>
+              Operacional
+            </div>
 
-          <!-- ── Negociação + Tabelas de Preço ───────────────────────────── -->
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+            <div class="info-card-body">
+              <div class="op-grid">
+
+                <!-- Gestor -->
+                <div class="op-item">
+                  <i class="fas fa-user-tie op-icon"></i>
+                  <div class="min-w-0">
+                    <span class="field-label block mb-1">Gestor Responsável</span>
+                    <span
+                      class="field-value block leading-snug break-words"
+                      :class="!modManagerLabel(mod) ? 'field-empty' : ''"
+                    >
+                      {{ modManagerLabel(mod) || 'Não informado' }}
+                    </span>
+                  </div>
+                </div> 
+
+                <!-- Registro do contrato -->
+                <div class="op-item">
+                  <i class="fas fa-file-signature op-icon"></i>
+                  <div class="min-w-0">
+                    <span class="field-label block mb-1">Registro do Contrato</span>
+                    <span
+                      class="field-value block leading-snug break-words"
+                      :class="!mod.contract_registration_by ? 'field-empty' : ''"
+                    >
+                      {{ mod.contract_registration_by ? contractLabel(mod) : 'Não informado' }}
+                    </span>
+                  </div>
+                </div>
+
+                <!-- CCA -->
+                <div v-if="mod.contract_registration_by === 'cca'" class="op-item">
+                  <i class="fas fa-building-columns op-icon"></i>
+                  <div class="min-w-0">
+                    <span class="field-label block mb-1">CCA</span>
+                    <span class="field-value block leading-snug break-words" :class="!mod.cca_company_name ? 'field-empty' : ''">
+                      {{ mod.cca_company_name || 'Nome não informado' }}
+                      <span class="block mt-1 text-xs font-medium" :class="mod.cca_charges_company ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400'">
+                        <i :class="mod.cca_charges_company ? 'fa-square-check' : 'fa-square'" class="far mr-1"></i>
+                        Pago pela Menin: <strong>{{ mod.cca_charges_company ? 'Sim' : 'Não' }}</strong>
+                        <span v-if="mod.cca_charges_company && mod.cca_cost != null" class="ml-1 text-gray-500 dark:text-gray-400">— {{ formatCurrency(mod.cca_cost) }}</span>
+                      </span>
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Correspondente -->
+                <div class="op-item">
+                  <i class="fas fa-handshake op-icon"></i>
+                  <div class="min-w-0">
+                    <span class="field-label block mb-1">Correspondente Bancário</span>
+                    <span
+                      class="field-value block leading-snug break-words"
+                      :class="!modCorrespondent(mod) ? 'field-empty' : ''"
+                    >
+                      <template v-if="modCorrespondent(mod)">
+                        {{ modCorrespondent(mod).nome }}
+
+                        <span
+                          v-if="modCorrespondent(mod).email"
+                          class="block mt-0.5 text-xs font-normal text-gray-400"
+                        >
+                          {{ modCorrespondent(mod).email }}
+                        </span>
+                      </template>
+
+                      <template v-else>
+                        Não informado
+                      </template>
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Certificação digital -->
+                <div class="op-item">
+                  <i class="fas fa-shield op-icon"></i>
+                  <div class="min-w-0">
+                    <span class="field-label block mb-1">Certificação Digital</span>
+                    <span
+                      class="field-value block leading-snug break-words"
+                      :class="!mod.has_digital_cert ? 'field-empty' : ''"
+                    >
+                      <template v-if="mod.has_digital_cert">
+                        {{ mod.digital_cert_provider || 'Sim' }}
+
+                        <span
+                          v-if="mod.digital_cert_contact"
+                          class="block mt-0.5 text-xs font-normal text-gray-400"
+                        >
+                          {{ mod.digital_cert_contact }}
+                        </span>
+                      </template>
+
+                      <template v-else>
+                        Não utiliza
+                      </template>
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div v-if="mod.notes" class="note-block mt-4">
+                <span class="note-label">Observações</span>
+                <p>{{ mod.notes }}</p>
+              </div>
+            </div>
+          </div> 
 
             <!-- Negociação — sempre visível -->
-            <div class="info-card">
+            <div class="info-card mb-4">
               <div class="info-card-header">
                 <i class="fas fa-handshake text-blue-500"></i>
                 Condições de Negociação
@@ -385,25 +496,25 @@
               <div class="info-card-body">
                 <div class="field-grid">
                   <div class="field-item">
-                    <span class="field-label">Parcela RP</span>
+                    <span class="field-label">Parcela mín RP</span>
                     <span class="field-value accent" :class="mod.rp_installment_value == null ? 'field-empty' : ''">
                       {{ mod.rp_installment_value != null ? formatCurrency(mod.rp_installment_value) : 'Não informado' }}
                     </span>
                   </div>
                   <div class="field-item">
-                    <span class="field-label">Parcela Ato</span>
+                    <span class="field-label">Parcela mín Ato</span>
                     <span class="field-value accent" :class="mod.act_installment_value == null ? 'field-empty' : ''">
                       {{ mod.act_installment_value != null ? formatCurrency(mod.act_installment_value) : 'Não informado' }}
                     </span>
                   </div>
                   <div class="field-item">
-                    <span class="field-label">Parcela Mínima</span>
-                    <span class="field-value" :class="mod.min_installment_value == null ? 'field-empty' : ''">
-                      {{ mod.min_installment_value != null ? formatCurrency(mod.min_installment_value) : 'Não informado' }}
+                    <span class="field-label">Máx. Entrada</span>
+                    <span class="field-value" :class="mod.max_entry_value == null ? 'field-empty' : ''">
+                      {{ mod.max_entry_value != null ? `${parseFloat(mod.max_entry_value).toFixed(0)}%` : 'Não informado' }}
                     </span>
                   </div>
                   <div class="field-item">
-                    <span class="field-label">Máx. Parcelas</span>
+                    <span class="field-label">Máximo Parcelas RP</span>
                     <span class="field-value" :class="mod.max_installments == null ? 'field-empty' : ''">
                       {{ mod.max_installments != null ? `${mod.max_installments}x` : 'Não informado' }}
                     </span>
@@ -449,197 +560,6 @@
               </div>
             </div>
 
-            <!-- Tabelas de Preço — sempre visível -->
-            <div class="info-card">
-              <div class="info-card-header">
-                <i class="fas fa-tag text-blue-500"></i>
-                Tabelas de Preço
-              </div>
-              <div class="info-card-body space-y-3">
-                <!-- CV -->
-                <div v-if="modSelectedPriceTables(mod).length">
-                  <p class="section-sublabel">Tabelas do CV</p>
-                  <div class="space-y-2">
-                    <div v-for="t in modSelectedPriceTables(mod)" :key="t.idtabela"
-                      class="price-table-row flex-col items-start gap-1.5">
-                      <div class="flex items-center justify-between w-full gap-2">
-                        <div class="flex items-center gap-2 min-w-0">
-                          <i class="fas fa-table text-blue-400 text-xs flex-shrink-0"></i>
-                          <span class="text-sm text-gray-800 dark:text-gray-200 font-medium truncate">{{ t.nome }}</span>
-                        </div>
-                        <div class="flex items-center gap-2 flex-shrink-0">
-                          <span v-if="t.vigente" class="badge-green">vigente</span>
-                          <span class="text-xs text-gray-400">{{ formatDate(t.data_vigencia_de) }} → {{ formatDate(t.data_vigencia_ate) }}</span>
-                        </div>
-                      </div>
-                      <div v-if="t.unit_count > 0" class="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400 flex-wrap pl-5">
-                        <span><strong class="text-gray-700 dark:text-gray-300">{{ t.unit_count }}</strong> unidades</span>
-                        <span v-if="t.price_min != null">De <strong>{{ formatCurrencyShort(t.price_min) }}</strong> até <strong>{{ formatCurrencyShort(t.price_max) }}</strong></span>
-                        <span v-if="t.price_avg">· Média <strong>{{ formatCurrencyShort(t.price_avg) }}</strong></span>
-                        <span v-if="t.forma" class="text-gray-400">· {{ t.forma }}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div v-else class="empty-info-row">
-                  <i class="fas fa-table text-gray-300 dark:text-gray-600 text-sm"></i>
-                  <span>Nenhuma tabela do CV selecionada</span>
-                </div>
-
-                <!-- Manuais -->
-                <div v-if="(mod.manual_price_tables ?? []).length">
-                  <p class="section-sublabel">Manuais</p>
-                  <div class="space-y-2">
-                    <div v-for="(mt, mi) in mod.manual_price_tables" :key="mi" class="manual-table-card">
-                      <div class="flex items-center justify-between gap-2 flex-wrap">
-                        <span class="text-sm font-semibold text-gray-800 dark:text-gray-200">{{ mt.name || '(sem nome)' }}</span>
-                        <span v-if="mt.validity_from || mt.validity_to" class="text-xs text-gray-400">
-                          {{ mt.validity_from ? formatDate(mt.validity_from) : '—' }} → {{ mt.validity_to ? formatDate(mt.validity_to) : '—' }}
-                        </span>
-                      </div>
-                      <p v-if="mt.note" class="text-xs text-gray-500 dark:text-gray-400 mt-1 italic">{{ mt.note }}</p>
-                      <div v-if="mt.units?.length" class="mt-2 flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400 flex-wrap">
-                        <span><strong class="text-gray-700 dark:text-gray-300">{{ mt.units.filter(u=>u.value!=null).length }}</strong>/{{ mt.units.length }} unidades</span>
-                        <span v-if="unitMin(mt.units) != null">Mín: <strong>{{ formatCurrency(unitMin(mt.units)) }}</strong></span>
-                        <span v-if="unitMax(mt.units) != null">Máx: <strong>{{ formatCurrency(unitMax(mt.units)) }}</strong></span>
-                        <span v-if="unitAvg(mt.units) != null">Média: <strong>{{ formatCurrency(unitAvg(mt.units)) }}</strong></span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div v-if="mod.price_premise_note" class="note-block">
-                  <span class="note-label">Premissa de Preço</span>
-                  <p>{{ mod.price_premise_note }}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- ── Operacional — sempre visível ───────────────────────────── -->
-          <div class="info-card mb-4">
-            <div class="info-card-header">
-              <i class="fas fa-gears text-blue-500"></i>
-              Operacional
-            </div>
-            <div class="info-card-body">
-              <div class="op-grid">
-
-                <!-- Gestor -->
-                <div class="op-item">
-                  <i class="fas fa-user-tie op-icon"></i>
-                  <div>
-                    <span class="field-label">Gestor Responsável</span>
-                    <span class="field-value" :class="!modManagerLabel(mod) ? 'field-empty' : ''">
-                      {{ modManagerLabel(mod) || 'Não informado' }}
-                    </span>
-                  </div>
-                </div>
-
-                <!-- Prazo -->
-                <div class="op-item">
-                  <i class="fas fa-calendar-check op-icon"></i>
-                  <div>
-                    <span class="field-label">Prazo de Entrega</span>
-                    <span class="field-value" :class="mod.delivery_deadline_months == null ? 'field-empty' : ''">
-                      <template v-if="mod.delivery_deadline_months != null">
-                        {{ mod.delivery_deadline_months }} meses
-                        <span v-if="mod.delivery_deadline_note" class="text-gray-400"> · {{ mod.delivery_deadline_note }}</span>
-                      </template>
-                      <template v-else>Não informado</template>
-                    </span>
-                  </div>
-                </div>
-
-                <!-- Registro do contrato -->
-                <div class="op-item">
-                  <i class="fas fa-file-signature op-icon"></i>
-                  <div>
-                    <span class="field-label">Registro do Contrato</span>
-                    <span class="field-value" :class="!mod.contract_registration_by ? 'field-empty' : ''">
-                      {{ mod.contract_registration_by ? contractLabel(mod) : 'Não informado' }}
-                    </span>
-                  </div>
-                </div>
-
-                <!-- CCA -->
-                <div v-if="mod.contract_registration_by === 'cca'" class="op-item">
-                  <i class="fas fa-building-columns op-icon"></i>
-                  <div>
-                    <span class="field-label">CCA</span>
-                    <span class="field-value" :class="!mod.cca_company_name ? 'field-empty' : ''">
-                      {{ mod.cca_company_name || 'Nome não informado' }}
-                      <span v-if="mod.cca_cost != null" class="text-gray-400"> · {{ formatCurrency(mod.cca_cost) }}</span>
-                      <span v-if="mod.cca_charges_company" class="text-xs ml-1 text-blue-500">(cobra da empresa)</span>
-                    </span>
-                  </div>
-                </div>
-
-                <!-- Correspondente -->
-                <div class="op-item">
-                  <i class="fas fa-handshake op-icon"></i>
-                  <div>
-                    <span class="field-label">Correspondente Bancário</span>
-                    <span class="field-value" :class="!modCorrespondent(mod) ? 'field-empty' : ''">
-                      <template v-if="modCorrespondent(mod)">
-                        {{ modCorrespondent(mod).nome }}
-                        <span v-if="modCorrespondent(mod).email" class="text-gray-400"> · {{ modCorrespondent(mod).email }}</span>
-                      </template>
-                      <template v-else>Não informado</template>
-                    </span>
-                  </div>
-                </div>
-
-                <!-- Certificação digital -->
-                <div class="op-item">
-                  <i class="fas fa-shield-check op-icon"></i>
-                  <div>
-                    <span class="field-label">Certificação Digital</span>
-                    <span class="field-value" :class="!mod.has_digital_cert ? 'field-empty' : ''">
-                      <template v-if="mod.has_digital_cert">
-                        {{ mod.digital_cert_provider || 'Sim' }}
-                        <span v-if="mod.digital_cert_contact" class="text-gray-400"> · {{ mod.digital_cert_contact }}</span>
-                      </template>
-                      <template v-else>Não utiliza</template>
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div v-if="mod.notes" class="note-block mt-4">
-                <span class="note-label">Observações</span>
-                <p>{{ mod.notes }}</p>
-              </div>
-            </div>
-          </div>
-
-          <!-- ── Campanhas ───────────────────────────────────────────────── -->
-          <div class="info-card mb-4">
-            <div class="info-card-header">
-              <i class="fas fa-bullhorn text-blue-500"></i>
-              Campanhas
-            </div>
-            <div class="info-card-body">
-              <div v-if="modActiveCampaigns(mod).length" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                <div v-for="(camp, ci) in modActiveCampaigns(mod)" :key="camp.id ?? ci" class="campaign-card">
-                  <p class="text-sm font-bold text-gray-900 dark:text-white">{{ camp.title || `Campanha ${ci + 1}` }}</p>
-                  <p v-if="camp.description" class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{{ camp.description }}</p>
-                  <div class="flex items-center gap-3 mt-2 flex-wrap">
-                    <span v-if="camp.value" class="campaign-value">{{ formatCurrency(camp.value) }}</span>
-                    <span v-if="camp.start_date" class="text-xs text-gray-400">
-                      {{ formatDate(camp.start_date) }}{{ camp.end_date ? ` → ${formatDate(camp.end_date)}` : '' }}
-                    </span>
-                  </div>
-                  <p v-if="camp.rules" class="text-xs text-gray-500 dark:text-gray-400 mt-2 italic border-t border-gray-100 dark:border-gray-800 pt-2">{{ camp.rules }}</p>
-                </div>
-              </div>
-              <div v-else class="empty-info-row">
-                <i class="fas fa-bullhorn text-gray-300 dark:text-gray-600 text-sm"></i>
-                <span>Nenhuma campanha ativa neste módulo</span>
-              </div>
-            </div>
-          </div>
-
           <!-- ── Avaliação MCMV ──────────────────────────────────────────── -->
           <div class="info-card mb-4">
             <div class="info-card-header">
@@ -668,14 +588,201 @@
                   </template>
                 </div>
               </div>
-              <div v-else class="empty-info-row">
-                <i class="fas fa-house-chimney text-gray-300 dark:text-gray-600 text-sm"></i>
-                <span>Nenhuma faixa MCMV configurada</span>
-              </div>
 
+              <div v-else class="empty-info-row">
+                  <i class="fas fa-table text-gray-300 dark:text-gray-600 text-sm"></i>
+                  <span>Nenhuma faixa Minha Casa Minha Vida selecionada.</span>
+                </div>
+                
               <div v-if="mod.appraisal_note" class="note-block">
                 <span class="note-label">Obs. Avaliação</span>
                 <p>{{ mod.appraisal_note }}</p>
+              </div>
+
+              <!-- QR Code do laudo de avaliação -->
+              <div v-if="mod.appraisal_file_url" class="mt-3 flex items-center gap-3 p-3 bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/40 rounded-xl">
+                <AppraisalQrCode :url="mod.appraisal_file_url" :size="120" />
+                <div class="flex-1 min-w-0">
+                  <p class="text-xs font-bold text-blue-600 dark:text-blue-400 mb-1">Avaliação CEF</p>
+                  <p class="text-[10px] text-gray-500 dark:text-gray-400">Aponte a câmera no QR Code para acessar o laudo de avaliação.</p>
+                  <a :href="mod.appraisal_file_url" target="_blank" rel="noopener" class="text-[10px] text-blue-500 hover:underline truncate block mt-1">{{ mod.appraisal_file_url }}</a>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── Documentação ──────────────────────────────────────────── -->
+          <div v-if="hasDocsInfo(mod)" class="info-card mb-4">
+            <div class="info-card-header">
+              <i class="fas fa-file-contract text-blue-500"></i>
+              Documentação
+            </div>
+            <div class="info-card-body space-y-4">
+              <!-- Pacote CEF + ITBI + Cartório -->
+              <div class="field-grid">
+                <div v-if="mod.cef_package_paid_by || mod.cef_package_avg_value != null" class="field-item">
+                  <span class="field-label">Pacote CEF</span>
+                  <span class="field-value">
+                    {{ mod.cef_package_avg_value != null ? formatCurrency(mod.cef_package_avg_value) : 'Valor não informado' }}
+                    <span v-if="mod.cef_package_paid_by" class="block text-xs text-gray-400 mt-0.5">Pago por: <strong class="text-gray-600 dark:text-gray-300">{{ mod.cef_package_paid_by === 'menin' ? 'Menin' : 'Cliente' }}</strong></span>
+                  </span>
+                </div>
+                <div class="field-item">
+                  <span class="field-label">ITBI</span>
+                  <span class="field-value">
+                    <template v-if="mod.itbi_exempt">
+                      <span class="text-emerald-600 dark:text-emerald-400 font-semibold">Isento</span>
+                    </template>
+                    <template v-else-if="mod.itbi_avg_value != null">
+                      {{ formatCurrency(mod.itbi_avg_value) }}
+                      <span class="block text-xs text-gray-400 mt-0.5">Pago por: <strong class="text-gray-600 dark:text-gray-300">Cliente</strong></span>
+                    </template>
+                    <template v-else>
+                      <span class="field-empty">Não informado</span>
+                    </template>
+                  </span>
+                </div>
+                <div v-if="mod.cartorio_prenotacao_value != null" class="field-item">
+                  <span class="field-label">Cartório — Prenotação</span>
+                  <span class="field-value">{{ formatCurrency(mod.cartorio_prenotacao_value) }}</span>
+                </div>
+                <div v-if="mod.cartorio_registration_value != null" class="field-item">
+                  <span class="field-label">Cartório — Registro</span>
+                  <span class="field-value">
+                    {{ formatCurrency(mod.cartorio_registration_value) }}
+                    <span v-if="mod.cartorio_paid_by" class="block text-xs text-gray-400 mt-0.5">Pago por: <strong class="text-gray-600 dark:text-gray-300">{{ mod.cartorio_paid_by === 'menin' ? 'Menin' : 'Cliente' }}</strong></span>
+                  </span>
+                </div>
+              </div>
+
+              <!-- QR Code do documento de isenção do ITBI -->
+              <div v-if="mod.itbi_exempt && mod.itbi_exemption_doc_url" class="flex items-center gap-3 p-3 bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/40 rounded-xl">
+                <AppraisalQrCode :url="mod.itbi_exemption_doc_url" :size="120" />
+                <div class="flex-1 min-w-0">
+                  <p class="text-xs font-bold text-emerald-600 dark:text-emerald-400 mb-1">Comprovante de Isenção do ITBI</p>
+                  <p class="text-[10px] text-gray-500 dark:text-gray-400">Aponte a câmera no QR Code para acessar o documento.</p>
+                  <a :href="mod.itbi_exemption_doc_url" target="_blank" rel="noopener" class="text-[10px] text-emerald-500 hover:underline truncate block mt-1">{{ mod.itbi_exemption_doc_url }}</a>
+                </div>
+              </div>
+
+              <!-- Resumo de Custos por Pagador -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div class="bg-white dark:bg-gray-900/60 rounded-xl p-3 border border-gray-100 dark:border-gray-800">
+                  <p class="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Pago pela Menin</p>
+                  <ul class="space-y-1 text-xs">
+                    <li v-for="item in modCostSummary(mod).menin" :key="`m-${item.label}`" class="flex justify-between">
+                      <span class="text-gray-600 dark:text-gray-400">{{ item.label }}</span>
+                      <strong class="text-gray-800 dark:text-gray-200">{{ formatCurrency(item.value) }}</strong>
+                    </li>
+                    <li v-if="!modCostSummary(mod).menin.length" class="text-gray-400 italic">—</li>
+                  </ul>
+                  <div class="mt-2 pt-2 border-t border-gray-100 dark:border-gray-800 flex justify-between text-xs">
+                    <span class="font-semibold text-gray-700 dark:text-gray-200">Total</span>
+                    <strong class="text-blue-600 dark:text-blue-400">{{ formatCurrency(modCostSummary(mod).totalMenin) }}</strong>
+                  </div>
+                </div>
+                <div class="bg-white dark:bg-gray-900/60 rounded-xl p-3 border border-gray-100 dark:border-gray-800">
+                  <p class="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Pago pelo Cliente</p>
+                  <ul class="space-y-1 text-xs">
+                    <li v-for="item in modCostSummary(mod).client" :key="`c-${item.label}`" class="flex justify-between">
+                      <span class="text-gray-600 dark:text-gray-400">{{ item.label }}</span>
+                      <strong class="text-gray-800 dark:text-gray-200">{{ formatCurrency(item.value) }}</strong>
+                    </li>
+                    <li v-if="!modCostSummary(mod).client.length" class="text-gray-400 italic">—</li>
+                  </ul>
+                  <div class="mt-2 pt-2 border-t border-gray-100 dark:border-gray-800 flex justify-between text-xs">
+                    <span class="font-semibold text-gray-700 dark:text-gray-200">Total</span>
+                    <strong class="text-blue-600 dark:text-blue-400">{{ formatCurrency(modCostSummary(mod).totalClient) }}</strong>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+            <!-- Tabelas de Preço — sempre visível -->
+            <div class="info-card mb-4">
+              <div class="info-card-header">
+                <i class="fas fa-tag text-blue-500"></i>
+                Tabelas de Preço
+              </div>
+              <div v-if="modSelectedPriceTables(mod).length"> 
+                <div class="space-y-4 flex flex-col gap-4 p-4"> <div v-for="t in modSelectedPriceTables(mod)" :key="t.idtabela"
+                    class="price-table-row flex-col items-start gap-3 p-4 bg-gray-50 dark:bg-gray-800/40 rounded-xl border border-gray-100 dark:border-gray-800">
+                    
+                    <div class="flex items-center justify-between w-full gap-2">
+                      <div class="flex items-center gap-2 min-w-0">
+                        <i class="fas fa-table text-blue-400 text-xs flex-shrink-0"></i>
+                        <span class="text-sm text-gray-800 dark:text-gray-200 font-bold truncate">{{ t.nome }}</span>
+                      </div>
+                      <div class="flex items-center gap-2 flex-shrink-0">
+                        <span v-if="t.vigente" class="badge-green">vigente</span>
+                        <span class="text-xs text-gray-400">{{ formatDate(t.data_vigencia_de) }} → {{ formatDate(t.data_vigencia_ate) }}</span>
+                      </div>
+                    </div>
+
+                    <div v-if="t.unit_count > 0" class="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400 flex-wrap border-b border-gray-200/50 dark:border-gray-700/50 pb-3 w-full">
+                      <span><i class="fas fa-home mr-1"></i><strong>{{ t.unit_count }}</strong> unidades</span>
+                      <span><i class="fas fa-tag mr-1"></i>De <strong>{{ formatCurrencyShort(t.price_min) }}</strong> até <strong>{{ formatCurrencyShort(t.price_max) }}</strong></span>
+                      <span><i class="fas fa-chart-line mr-1"></i>Média <strong>{{ formatCurrencyShort(t.price_avg) }}</strong></span>
+                      <template v-if="tableM2Stats(mod, t)">
+                        <span class="border-l border-gray-200 dark:border-gray-700 pl-4"><i class="fas fa-ruler-combined mr-1"></i>m²: Mín <strong>{{ formatM2(tableM2Stats(mod, t).min) }}</strong> · Máx <strong>{{ formatM2(tableM2Stats(mod, t).max) }}</strong> · Média <strong>{{ formatM2(tableM2Stats(mod, t).avg) }}</strong></span>
+                      </template>
+                    </div>
+
+                    <div v-if="t.unidades?.length" class="w-full">
+                      <p class="text-[10px] font-bold text-blue-500 uppercase tracking-wider mb-2">Fluxo Médio (Ref: {{ t.unidades[0].unidade }})</p>
+                      <div class="flex flex-wrap gap-2 w-full">
+                        <div v-for="serie in t.unidades[0].series" :key="serie.nome" 
+                          class="bg-white dark:bg-gray-900/60 p-2 rounded-lg border border-gray-100 dark:border-gray-800 flex flex-col justify-between flex-grow flex-shrink-0 basis-[calc(25%-0.5rem)] min-w-[120px] max-w-full">
+                          
+                          <p class="text-[9px] text-gray-400 uppercase font-bold whitespace-normal leading-tight mb-1">
+                            {{ serie.nome }}
+                          </p>
+                          
+                          <div>
+                            <p class="text-sm font-black text-gray-700 dark:text-gray-200">{{ formatCurrencyShort(serie.valor) }}</p>
+                            <p class="text-[10px] text-gray-500">
+                              {{ serie.qtd_parcelas }}x 
+                              <span v-if="serie.data_vencimento" class="text-[9px]">({{ serie.data_vencimento.split('/')[2] }})</span>
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div v-if="t.forma" class="bg-blue-50/50 dark:bg-blue-900/10 p-2 rounded-lg w-full">
+                      <p class="text-[10px] text-blue-600 dark:text-blue-400 font-medium italic">
+                        <i class="fas fa-info-circle mr-1"></i>{{ t.forma }}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          <!-- ── Campanhas ───────────────────────────────────────────────── -->
+          <div class="info-card mb-4">
+            <div class="info-card-header">
+              <i class="fas fa-bullhorn text-blue-500"></i>
+              Campanhas
+            </div>
+            <div class="info-card-body">
+              <div v-if="modActiveCampaigns(mod).length" class="campaign-row">
+                <div v-for="(camp, ci) in modActiveCampaigns(mod)" :key="camp.id ?? ci" class="campaign-card">
+                  <p class="text-sm font-bold text-gray-900 dark:text-white">{{ camp.title || `Campanha ${ci + 1}` }}</p>
+                  <p v-if="camp.description" class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{{ camp.description }}</p>
+                  <div class="flex items-center gap-3 mt-2 flex-wrap">
+                    <span v-if="camp.value" class="campaign-value">{{ formatCurrency(camp.value) }}</span>
+                    <span v-if="camp.start_date" class="text-xs text-gray-400">
+                      {{ formatDate(camp.start_date) }}{{ camp.end_date ? ` → ${formatDate(camp.end_date)}` : '' }}
+                    </span>
+                  </div>
+                  <p v-if="camp.rules" class="text-xs text-gray-500 dark:text-gray-400 mt-2 italic border-t border-gray-100 dark:border-gray-800 pt-2">{{ camp.rules }}</p>
+                </div>
+              </div>
+              <div v-else class="empty-info-row">
+                <i class="fas fa-bullhorn text-gray-300 dark:text-gray-600 text-sm"></i>
+                <span>Nenhuma campanha ativa neste módulo</span>
               </div>
             </div>
           </div>
@@ -716,18 +823,12 @@
                     {{ bloco.nome }}
                     <span class="font-normal normal-case">· {{ (bloco.unidades ?? []).length }} unid.</span>
                   </p>
-                  <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-1">
+                  <div class="unit-row">
                     <div v-for="u in (bloco.unidades ?? [])" :key="u.idunidade"
-                      :class="[
-                        'rounded px-1.5 py-1 text-center border text-[10px] leading-tight',
-                        u.situacao_mapa_disponibilidade === 1 ? 'border-green-200 bg-green-50 dark:bg-green-950/20 dark:border-green-800' :
-                        u.situacao_mapa_disponibilidade === 2 ? 'border-yellow-200 bg-yellow-50 dark:bg-yellow-950/20 dark:border-yellow-700' :
-                        u.situacao_mapa_disponibilidade === 3 ? 'border-red-200 bg-red-50 dark:bg-red-950/20 dark:border-red-800' :
-                        'border-gray-200 bg-gray-50 dark:bg-gray-800/30 dark:border-gray-700'
-                      ]">
+                      :class="['rounded px-1.5 py-1 text-center border text-[10px] leading-tight', unitStatusClass(u)]">
                       <p class="font-semibold text-gray-800 dark:text-gray-200 truncate">{{ u.nome }}</p>
                       <p v-if="u.valor_total != null" class="text-blue-600 dark:text-blue-400 font-bold">{{ formatCurrencyShort(u.valor_total) }}</p>
-                      <p v-if="u.area_privativa" class="text-gray-400">{{ u.area_privativa }}m²</p>
+                      <p v-if="u.area_privativa" class="text-gray-400">{{ Number(u.area_privativa).toFixed(2) }}m²</p>
                     </div>
                   </div>
                 </div>
@@ -758,6 +859,9 @@
 
 <script setup>
 import { ref, computed, nextTick } from 'vue';
+import QRCode from 'qrcode';
+import AppraisalQrCode from './AppraisalQrCode.vue';
+import { computeCostSummary } from './costSummary.js';
 
 const props = defineProps({
     detail:           { type: Object,  default: null },
@@ -915,6 +1019,64 @@ function unitMax(units) {
     return vals.length ? Math.max(...vals) : null;
 }
 
+function tableM2Stats(mod, table) {
+    const areaMap = {};
+    for (const b of (mod.unit_snapshot?.data ?? [])) {
+        for (const u of (b.unidades ?? [])) {
+            if (u.idunidade) areaMap[String(u.idunidade)] = Number(u.area_privativa) || 0;
+        }
+    }
+    const prices = [];
+    for (const tu of (table.unidades ?? [])) {
+        if (tu.idunidade == null || tu.valor_total == null) continue;
+        const area = areaMap[String(tu.idunidade)];
+        if (area > 0) prices.push(Number(tu.valor_total) / area);
+    }
+    if (!prices.length) return null;
+    return {
+        min: Math.min(...prices),
+        max: Math.max(...prices),
+        avg: prices.reduce((a, b) => a + b, 0) / prices.length,
+    };
+}
+
+function modM2Stats(mod) {
+    const blocos = mod?.unit_snapshot?.data ?? [];
+    if (!blocos.length) return null;
+    const prices = [];
+    for (const b of blocos) {
+        for (const u of (b.unidades ?? [])) {
+            if (u.valor_total != null && u.area_privativa && Number(u.area_privativa) > 0) {
+                prices.push(Number(u.valor_total) / Number(u.area_privativa));
+            }
+        }
+    }
+    if (!prices.length) return null;
+    return {
+        min: Math.min(...prices),
+        max: Math.max(...prices),
+        avg: prices.reduce((a, b) => a + b, 0) / prices.length,
+    };
+}
+
+function formatM2(v) {
+    if (v == null) return '—';
+    return Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }) + '/m²';
+}
+
+function hasDocsInfo(mod) {
+    return !!(
+        mod.cef_package_paid_by || mod.cef_package_avg_value != null ||
+        mod.itbi_exempt || mod.itbi_avg_value != null || mod.itbi_exemption_doc_url ||
+        mod.cartorio_prenotacao_value != null || mod.cartorio_registration_value != null || mod.cartorio_paid_by ||
+        (mod.cca_charges_company && mod.cca_cost != null)
+    );
+}
+
+function modCostSummary(mod) {
+    return computeCostSummary(mod);
+}
+
 function formatSnapshotDate(iso) {
     if (!iso) return '';
     return new Date(iso).toLocaleString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
@@ -935,20 +1097,59 @@ function snapshotBlocos(mod) {
     return mod?.unit_snapshot?.data ?? [];
 }
 
+// Espelha Meninger-Back/services/cv/enterpriseUnitsSummaryService.js (classifyUnitStatus)
+// para Conditions e Projections classificarem unidades de forma idêntica.
+function classifySnapshotUnit(unit) {
+    const raw = unit?.situacao_mapa_disponibilidade;
+    const numeric = Number(raw);
+    const statusNum = !Number.isNaN(numeric) && numeric > 0 ? numeric : null;
+
+    let isSold = false;
+    let isReserved = false;
+    let isBlocked = false;
+
+    if (statusNum !== null) {
+        isSold = statusNum === 3;
+        isReserved = statusNum === 2 || statusNum === 5;
+        isBlocked = statusNum === 4;
+    } else {
+        const s = String(raw || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+        if (s.includes('vend')) isSold = true;
+        if (s.includes('reserv')) isReserved = true;
+        if (s.includes('bloq')) isBlocked = true;
+    }
+
+    if (unit?.data_bloqueio) {
+        isBlocked = true;
+        isSold = false;
+        isReserved = false;
+    }
+
+    return { isSold, isReserved, isBlocked };
+}
+
 function snapshotStats(mod) {
     const blocos = snapshotBlocos(mod);
     let disp = 0, res = 0, vend = 0, bloq = 0, total = 0;
     for (const b of blocos) {
         for (const u of (b.unidades ?? [])) {
             total++;
-            const s = u.situacao_mapa_disponibilidade;
-            if (s === 1) disp++;
-            else if (s === 2) res++;
-            else if (s === 3) vend++;
-            else bloq++;
+            const st = classifySnapshotUnit(u);
+            if (st.isSold) vend++;
+            else if (st.isReserved) res++;
+            else if (st.isBlocked) bloq++;
+            else disp++;
         }
     }
     return { disp, res, vend, bloq, total };
+}
+
+function unitStatusClass(unit) {
+    const st = classifySnapshotUnit(unit);
+    if (st.isSold) return 'border-rose-200 bg-rose-50 dark:bg-rose-950/20 dark:border-rose-800';
+    if (st.isReserved) return 'border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-700';
+    if (st.isBlocked) return 'border-gray-200 bg-gray-50 dark:bg-gray-800/30 dark:border-gray-700';
+    return 'border-emerald-200 bg-emerald-50 dark:bg-emerald-950/20 dark:border-emerald-800';
 }
 
 // ── Faixas MCMV ───────────────────────────────────────────────────────────────
@@ -967,21 +1168,1371 @@ function closeDocModal() {
     showDocModal.value = false;
 }
 
-// ── Print ─────────────────────────────────────────────────────────────────────
+// ── Print (janela isolada) ─────────────────────────────────────────────────────
 
-function printModule() {
+
+async function printModule() {
     showDocModal.value = false;
-    isPrinting.value = true;
-    nextTick(() => {
-        window.print();
-        const handler = () => {
-            isPrinting.value = false;
-            window.removeEventListener('afterprint', handler);
-        };
-        window.addEventListener('afterprint', handler);
-        // fallback timeout caso afterprint não dispare
-        setTimeout(() => { isPrinting.value = false; }, 3000);
+
+    const modules = props.localModules;
+    if (!modules.length) return;
+
+    // Pré-gera QR Codes (data URLs) para todos os anexos antes de montar o HTML
+    const qrCache = {};
+    const collectUrls = [];
+    for (const mod of modules) {
+        if (mod.appraisal_file_url) collectUrls.push(mod.appraisal_file_url);
+        if (mod.itbi_exempt && mod.itbi_exemption_doc_url) collectUrls.push(mod.itbi_exemption_doc_url);
+    }
+    for (const url of collectUrls) {
+        try {
+            qrCache[url] = await QRCode.toDataURL(url, { width: 160, margin: 1, errorCorrectionLevel: 'M' });
+        } catch (e) {
+            qrCache[url] = '';
+        }
+    }
+
+    const detail     = props.detail;
+    const enterprise = detail?.enterprise ?? {};
+    const now        = new Date();
+
+    const escapeHtml = (value) => String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+
+    const fmtCurrency = v => (v == null || v === '') ? '—'
+        : Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+    const fmtShort = v => {
+        if (v == null || v === '') return '—';
+        const n = Number(v);
+        if (Number.isNaN(n)) return '—';
+        if (n >= 1_000_000) return `R$ ${(n / 1_000_000).toFixed(n % 1_000_000 === 0 ? 0 : 1)}M`;
+        if (n >= 1_000)     return `R$ ${(n / 1_000).toFixed(n % 1_000 === 0 ? 0 : 1)}K`;
+        return fmtCurrency(n);
+    };
+
+    const fmtDate = d => {
+        if (!d) return '—';
+        const [y, m, day] = String(d).split('T')[0].split('-');
+        if (!y || !m || !day) return '—';
+        return `${day}/${m}/${y}`;
+    };
+
+    const fmtMonth = s => {
+        if (!s) return '—';
+        const [y, m] = String(s).split('-');
+        const months = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+        return `${months[Number(m) - 1] ?? '--'}/${y}`;
+    };
+
+    const fmtFull = d => d.toLocaleDateString('pt-BR', {
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
     });
+
+    const fmtSnap = iso => iso ? new Date(iso).toLocaleString('pt-BR', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+    }) : '';
+
+    const pct = v => v != null ? `${parseFloat(v).toFixed(1)}%` : '—';
+
+    const ni = v => (v != null && v !== '')
+        ? escapeHtml(v)
+        : '<span class="empty">Não informado</span>';
+
+    const field = (label, value) => `
+        <div class="field">
+          <span class="field-label">${escapeHtml(label)}</span>
+          <span class="field-value">${value}</span>
+        </div>`;
+
+    const fieldRow = (...items) => `
+        <div class="field-row">
+          ${items.join('')}
+        </div>`;
+
+    const note = (label, text) => text ? `
+        <div class="note">
+          <span class="note-label">${escapeHtml(label)}</span>
+          <p>${escapeHtml(text)}</p>
+        </div>` : '';
+
+    const card = (icon, title, body, extraClass = '') => `
+        <div class="card ${extraClass}">
+          <div class="card-header">
+            <span class="card-icon">${icon}</span>
+            ${escapeHtml(title)}
+          </div>
+          <div class="card-body">${body}</div>
+        </div>`;
+
+    const kpi = (label, value, sub = '') => `
+        <div class="kpi">
+          <span class="kpi-label">${escapeHtml(label)}</span>
+          <span class="kpi-val">${value}</span>
+          ${sub ? `<span class="kpi-sub">${escapeHtml(sub)}</span>` : ''}
+        </div>`;
+
+    const FAIXA_NAMES = { 1: 'Faixa 1', 2: 'Faixa 2', 3: 'Faixa 3', 4: 'Faixa 4' };
+
+    const STATUS_LABELS_PRINT = {
+        draft:            'Rascunho',
+        pending_approval: 'Em Autorização',
+        approved:         'Autorizado',
+    };
+
+    const STATUS_COLORS = {
+        draft:            '#92400e|#fef3c7',
+        pending_approval: '#1e40af|#dbeafe',
+        approved:         '#065f46|#d1fae5',
+    };
+
+    const stageName = mod => {
+        if (!mod?.idetapa) return null;
+        return props.enterpriseStages?.find(s => Number(s.idetapa) === Number(mod.idetapa))?.nome
+            ?? props.detail?.stages?.find(s => Number(s.idetapa) === Number(mod.idetapa))?.nome
+            ?? `Etapa #${mod.idetapa}`;
+    };
+
+    const manager = mod => {
+        if (mod.manager_mode === 'manual' || (!mod.manager_user_id && mod.manager_name)) {
+            return [mod.manager_name, mod.manager_email, mod.manager_phone].filter(Boolean).join(' · ') || null;
+        }
+        const u = props.officeUsers?.find(u => Number(u.id) === Number(mod.manager_user_id));
+        return u ? (u.username + (u.position ? ` — ${u.position}` : '')) : null;
+    };
+
+    const correspondent = mod =>
+        props.correspondents?.find(c => Number(c.idusuario) === Number(mod.correspondent_id)) ?? null;
+
+    const contractLbl = mod => {
+        if (mod.contract_registration_by === 'cca') {
+            return `CCA${mod.cca_company_name ? ` — ${mod.cca_company_name}` : ''}`;
+        }
+
+        if (mod.contract_registration_by === 'menin') {
+            const u = props.officeUsers?.find(u => Number(u.id) === Number(mod.contract_registered_by_user_id));
+            if (u) return `Menin — ${u.username}`;
+            return mod.outros_contact_name ? `Menin — ${mod.outros_contact_name}` : 'Menin (interno)';
+        }
+
+        if (mod.contract_registration_by === 'outros') {
+            return `Terceiros${mod.outros_contact_name ? ` — ${mod.outros_contact_name}` : ''}`;
+        }
+
+        return mod.contract_registration_by ?? null;
+    };
+
+    const subsidyLabel = mod => {
+        const map = { ms: 'Mato Grosso do Sul', mt: 'Mato Grosso', pr: 'Paraná', sp: 'São Paulo' };
+        const s = mod.state_subsidy_state;
+        if (!s) return '';
+        return s === 'custom'
+            ? (mod.state_subsidy_custom_state || 'Outro Estado')
+            : (map[s] ?? String(s).toUpperCase());
+    };
+
+    const classifyUnitPrint = (unit) => {
+        const raw = unit?.situacao_mapa_disponibilidade;
+        const numeric = Number(raw);
+        const statusNum = !Number.isNaN(numeric) && numeric > 0 ? numeric : null;
+        let isSold = false, isReserved = false, isBlocked = false;
+        if (statusNum !== null) {
+            isSold = statusNum === 3;
+            isReserved = statusNum === 2 || statusNum === 5;
+            isBlocked = statusNum === 4;
+        } else {
+            const s = String(raw || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+            if (s.includes('vend')) isSold = true;
+            if (s.includes('reserv')) isReserved = true;
+            if (s.includes('bloq')) isBlocked = true;
+        }
+        if (unit?.data_bloqueio) { isBlocked = true; isSold = false; isReserved = false; }
+        return { isSold, isReserved, isBlocked };
+    };
+
+    const enabledFaixasPrint = mod =>
+        (mod?.appraisal_faixas ?? []).filter(f => f.enabled);
+
+    const hasMcmvPrint = mod =>
+        enabledFaixasPrint(mod).length > 0 || !!mod.appraisal_note;
+
+    const activeCampaigns = mod =>
+        (mod?.campaigns ?? []).filter(c => c.is_active !== false);
+
+    const priceTables = mod => {
+        const ids = mod.price_table_ids ?? [];
+        return (props.priceTables ?? []).filter(t => ids.includes(t.idtabela));
+    };
+
+    const unitMinPrint = units => {
+        const values = (units ?? []).map(u => u.value).filter(v => v != null);
+        return values.length ? Math.min(...values) : null;
+    };
+
+    const unitMaxPrint = units => {
+        const values = (units ?? []).map(u => u.value).filter(v => v != null);
+        return values.length ? Math.max(...values) : null;
+    };
+
+    const unitAvgPrint = units => {
+        const values = (units ?? []).map(u => u.value).filter(v => v != null);
+        return values.length ? values.reduce((a, b) => a + b, 0) / values.length : null;
+    };
+
+    const renderModule = (mod, idx) => {
+        const faixas = enabledFaixasPrint(mod);
+        const camps  = activeCampaigns(mod);
+        const tables = priceTables(mod);
+        const manual = mod.manual_price_tables ?? [];
+        const blocos = mod?.unit_snapshot?.data ?? [];
+        const hasMcmv = hasMcmvPrint(mod);
+
+        const availStats = (() => {
+            const blocos = mod?.unit_snapshot?.data ?? [];
+            if (!blocos.length) return null;
+            let disp=0, res=0, vend=0, bloq=0, total=0;
+            for (const b of blocos) {
+                for (const u of (b.unidades ?? [])) {
+                    total++;
+                    const st = classifyUnitPrint(u);
+                    if (st.isSold) vend++;
+                    else if (st.isReserved) res++;
+                    else if (st.isBlocked) bloq++;
+                    else disp++;
+                }
+            }
+            return { disp, res, vend, bloq, total };
+        })();
+
+        const kpis = [
+            kpi(
+                'Unidades',
+                mod.total_units ?? '<span class="empty-kpi">—</span>', 
+            ),
+            kpi('Disponíveis', availStats ? String(availStats.disp) : '<span class="empty-kpi">—</span>', 'unidades'),
+            kpi('Vendidas', availStats ? String(availStats.vend) : '<span class="empty-kpi">—</span>', 'unidades'),
+            kpi('% Vendido', availStats && availStats.total > 0 ? `${((availStats.vend / availStats.total) * 100).toFixed(1)}%` : '<span class="empty-kpi">—</span>', 'do total'),
+            kpi('Reservadas', availStats ? String(availStats.res) : '<span class="empty-kpi">—</span>', 'unidades'),
+            ...(availStats && availStats.bloq > 0 ? [kpi('Bloqueadas', String(availStats.bloq), 'unidades')] : []),
+        ];
+
+        const productStage = stageName(mod);
+
+        const commissionLabel = mod.commission_pct != null
+            ? `${pct(mod.commission_pct)} <span style="color:#9ca3af;font-size:9px;">(${mod.commission_source === 'cv' ? 'via CV' : 'manual'})</span>`
+            : '<span class="empty">Não informado</span>';
+
+        const deadlineLabel = mod.delivery_deadline_months != null
+            ? escapeHtml(`${mod.delivery_deadline_months} meses${mod.delivery_deadline_note ? ` — ${mod.delivery_deadline_note}` : ''}`)
+            : '<span class="empty">Não informado</span>';
+
+        const prodBody = `
+            ${fieldRow(
+                field('Etapa do CV', productStage ? escapeHtml(productStage) : '<span class="empty">Sem etapa vinculada</span>'),
+                field('Total de Unidades', ni(mod.total_units)),
+                field('Demanda Mínima', ni(mod.min_demand != null ? `${mod.min_demand} unid. (≥ 20%)` : null)),
+                field('Comissão', commissionLabel),
+                field('Prazo de Entrega', deadlineLabel),
+            )}
+            ${note('Obs. Demanda', mod.min_demand_note)}`;
+
+        const negocBody = `
+            ${fieldRow(
+                field('Parcela mín RP', `<span class="accent">${mod.rp_installment_value != null ? fmtCurrency(mod.rp_installment_value) : '<span class="empty">Não informado</span>'}</span>`),
+                field('Parcela mín Ato', `<span class="accent">${mod.act_installment_value != null ? fmtCurrency(mod.act_installment_value) : '<span class="empty">Não informado</span>'}</span>`),
+                field('Máx. Entrada', ni(mod.max_entry_value != null ? `${parseFloat(mod.max_entry_value).toFixed(0)}%` : null)),
+                field('Máximo Parcelas RP', ni(mod.max_installments != null ? `${mod.max_installments}x` : null)),
+                field('Até Habite-se', ni(mod.installment_until_habite_se)),
+                field('Pós Habite-se', ni(mod.installment_post_habite_se)),
+            )}
+            ${mod.has_state_subsidy
+                ? `<div class="subsidy">Subsídio Estadual${subsidyLabel(mod) ? ` — ${escapeHtml(subsidyLabel(mod))}` : ''}${mod.state_subsidy_program ? ` · ${escapeHtml(mod.state_subsidy_program)}` : ''}</div>`
+                : `<div class="muted-badge">Sem subsídio estadual</div>`}
+            ${note('Regra RP', mod.rp_rule)}
+            ${note('Regras do Subsídio', mod.state_subsidy_rules)}
+            ${note('Condições do Subsídio', mod.state_subsidy_conditions)}`;
+
+        const tablesHtml = `
+            ${tables.length
+                ? `<div style="display: flex; flex-direction: column; gap: 12px;">
+           ${tables.map(t => {
+               // Extrai as séries da primeira unidade se existir
+                const firstUnit = t.unidades?.[0];
+                const seriesHtml = firstUnit?.series?.length 
+                    ? `<p style="font-size: 8px; font-weight: 700; color: #3b82f6; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.05em;">
+                        Fluxo Médio (Ref: ${escapeHtml(firstUnit.unidade)})
+                      </p>
+                      <div style="display: flex; flex-wrap: wrap; gap: 6px; width: 100%; margin-bottom: 8px;">
+                        ${firstUnit.series.map(serie => `
+                            <div style="background: #ffffff; padding: 6px; border-radius: 6px; border: 1px solid #e5e7eb; 
+                                        display: flex; flex-direction: column; justify-content: space-between;
+                                        flex-grow: 1; flex-shrink: 0; flex-basis: 22%; min-width: 100px; min-height: 55px;">
+                                
+                                <span style="font-size: 7px; color: #9ca3af; font-weight: 700; text-transform: uppercase; white-space: normal; line-height: 1.1; margin-bottom: 4px;">
+                                    ${escapeHtml(serie.nome)}
+                                </span>
+                                
+                                <div style="display: flex; flex-direction: column;">
+                                    <span style="font-size: 10px; color: #111827; font-weight: 800; line-height: 1;">
+                                        ${fmtShort(serie.valor)}
+                                    </span>
+                                    <span style="font-size: 8px; color: #6b7280; margin-top: 2px;">
+                                        ${serie.qtd_parcelas}x ${serie.data_vencimento ? `<small>(${serie.data_vencimento.split('/')[2]})</small>` : ''}
+                                    </span>
+                                </div>
+                            </div>
+                        `).join('')}
+                      </div>`
+                    : '';
+
+               return `
+                <div class="price-row" style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 8px; break-inside: avoid;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <span style="font-size: 11px; font-weight: 800; color: #1e40af;">${escapeHtml(t.nome)}</span>
+                        ${t.vigente ? '<span class="badge-green">vigente</span>' : ''}
+                    </div>
+
+                    <div style="display: flex; gap: 12px; font-size: 9px; color: #64748b; padding-bottom: 8px; border-bottom: 1px solid #f1f5f9; margin-bottom: 10px; flex-wrap: wrap;">
+                        <span>🏠 <strong>${t.unit_count}</strong> unid.</span>
+                        <span>🏷️ De <strong>${fmtShort(t.price_min)}</strong> a <strong>${fmtShort(t.price_max)}</strong></span>
+                        <span>📈 Média <strong>${fmtShort(t.price_avg)}</strong></span>
+                        ${(() => {
+                            const am = {};
+                            for (const b of (mod.unit_snapshot?.data ?? [])) {
+                                for (const u of (b.unidades ?? [])) {
+                                    if (u.idunidade) am[String(u.idunidade)] = Number(u.area_privativa) || 0;
+                                }
+                            }
+                            const p = [];
+                            for (const tu of (t.unidades ?? [])) {
+                                if (tu.idunidade == null || tu.valor_total == null) continue;
+                                const area = am[String(tu.idunidade)];
+                                if (area > 0) p.push(Number(tu.valor_total) / area);
+                            }
+                            if (!p.length) return '';
+                            const fmtM2p = v => Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }) + '/m²';
+                            const mn = Math.min(...p), mx = Math.max(...p), av = p.reduce((a,b)=>a+b,0)/p.length;
+                            return `<span style="border-left:1px solid #e2e8f0;padding-left:8px;margin-left:4px;">📐 m²: Mín <strong>${fmtM2p(mn)}</strong> · Máx <strong>${fmtM2p(mx)}</strong> · Média <strong>${fmtM2p(av)}</strong></span>`;
+                        })()}
+                    </div>
+
+                    ${seriesHtml}
+
+                    ${t.forma ? `
+                        <div style="background: #eff6ff; padding: 5px 8px; border-radius: 4px; border-left: 3px solid #3b82f6;">
+                            <p style="font-size: 8px; color: #1d4ed8; font-style: italic; line-height: 1.2;">
+                                ℹ️ ${escapeHtml(t.forma)}
+                            </p>
+                        </div>` : ''}
+                </div>`;
+           }).join('')}
+           </div>`
+        : `<div class="empty-line">Nenhuma tabela do CV selecionada</div>`}
+
+            ${manual.length
+                ? `<p class="section-sublabel manual-label">Manuais</p>
+                   ${manual.map(mt => `
+                    <div class="manual-row">
+                      <div class="manual-top">
+                        <span class="manual-name">${escapeHtml(mt.name || '(sem nome)')}</span>
+                        ${mt.validity_from || mt.validity_to
+                            ? `<span class="manual-date">${fmtDate(mt.validity_from)} → ${fmtDate(mt.validity_to)}</span>`
+                            : ''}
+                      </div>
+                      ${mt.note ? `<p class="manual-note">${escapeHtml(mt.note)}</p>` : ''}
+                      ${mt.units?.length ? `
+                        <div class="price-stats">
+                          <span><strong>${mt.units.filter(u=>u.value!=null).length}</strong>/${mt.units.length} unidades</span>
+                          ${unitMinPrint(mt.units) != null ? `<span>Mín: <strong>${fmtCurrency(unitMinPrint(mt.units))}</strong></span>` : ''}
+                          ${unitMaxPrint(mt.units) != null ? `<span>Máx: <strong>${fmtCurrency(unitMaxPrint(mt.units))}</strong></span>` : ''}
+                          ${unitAvgPrint(mt.units) != null ? `<span>Média: <strong>${fmtCurrency(unitAvgPrint(mt.units))}</strong></span>` : ''}
+                        </div>` : ''}
+                    </div>`).join('')}`
+                : ''}
+
+            ${note('Premissa de Preço', mod.price_premise_note)}`;
+
+        const corr = correspondent(mod);
+
+        const opItems = [
+            {
+                icon: '👤',
+                label: 'Gestor Responsável',
+                main: manager(mod),
+            }, 
+            {
+                icon: '📄',
+                label: 'Registro do Contrato',
+                main: mod.contract_registration_by ? contractLbl(mod) : null,
+            },
+            ...(mod.contract_registration_by === 'cca'
+                ? [{
+                    icon: '🏦',
+                    label: 'CCA',
+                    main: mod.cca_company_name || null,
+                    sub: mod.cca_charges_company
+                        ? `☑ Pago pela Menin: Sim${mod.cca_cost != null ? ` — ${fmtCurrency(mod.cca_cost)}` : ''}`
+                        : '☐ Pago pela Menin: Não',
+                }]
+                : []),
+            {
+                icon: '🤝',
+                label: 'Correspondente Bancário',
+                main: corr?.nome || null,
+                sub: corr?.email,
+            },
+            {
+                icon: '🛡️',
+                label: 'Certificação Digital',
+                main: mod.has_digital_cert ? (mod.digital_cert_provider || 'Sim') : 'Não utiliza',
+                sub: mod.digital_cert_contact,
+            },
+        ];
+
+        const opHtml = `
+            <div class="op-row-print">
+              ${opItems.map(op => `
+                <div class="op-item-print">
+                  <span class="op-icon-print">${op.icon}</span>
+                  <div class="op-text-print">
+                    <span class="field-label">${escapeHtml(op.label)}</span>
+                    <span class="field-value">${op.main ? escapeHtml(op.main) : '<span class="empty">Não informado</span>'}</span>
+                    ${op.sub ? `<span class="op-sub-print">${escapeHtml(op.sub)}</span>` : ''}
+                  </div>
+                </div>`).join('')}
+            </div>
+            ${note('Observações', mod.notes)}`;
+
+        const campHtml = camps.length
+            ? `<div class="campaign-row-print">
+                ${camps.map(c => `
+                  <div class="campaign-card-print">
+                    <p class="campaign-title">${escapeHtml(c.title || 'Campanha')}</p>
+                    ${c.description ? `<p class="campaign-desc">${escapeHtml(c.description)}</p>` : ''}
+                    <div class="campaign-meta">
+                      ${c.value ? `<span class="campaign-value">${fmtCurrency(c.value)}</span>` : ''}
+                      ${c.start_date ? `<span>${fmtDate(c.start_date)}${c.end_date ? ` → ${fmtDate(c.end_date)}` : ''}</span>` : ''}
+                    </div>
+                    ${c.rules ? `<p class="campaign-rules">${escapeHtml(c.rules)}</p>` : ''}
+                  </div>`).join('')}
+               </div>`
+            : `<span class="empty-line">Nenhuma campanha ativa neste módulo</span>`;
+
+        const appraisalQrHtml = (mod.appraisal_file_url && qrCache[mod.appraisal_file_url])
+            ? `<div style="margin-top:10px;display:flex;align-items:center;gap:10px;padding:10px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;break-inside:avoid;">
+                  <img src="${qrCache[mod.appraisal_file_url]}" alt="QR Avaliação" style="width:80px;height:80px;border:1px solid #e5e7eb;background:#fff;padding:4px;border-radius:4px;flex-shrink:0;" />
+                  <div style="flex:1;min-width:0;">
+                    <p style="font-size:10px;font-weight:700;color:#2563eb;margin-bottom:2px;">Avaliação CEF</p>
+                    <p style="font-size:9px;color:#6b7280;">Aponte a câmera no QR Code para acessar o laudo de avaliação.</p>
+                    <p style="font-size:8px;color:#3b82f6;margin-top:2px;word-break:break-all;">${escapeHtml(mod.appraisal_file_url)}</p>
+                  </div>
+                </div>`
+            : '';
+
+        const mcmvHtml = faixas.length
+            ? `<div class="mcmv-row-print">
+                ${faixas.map(f => `
+                  <div class="mcmv-item-print">
+                    <span class="field-label">${escapeHtml(FAIXA_NAMES[f.faixa] ?? `Faixa ${f.faixa}`)}</span>
+                    <div class="mcmv-values">
+                      ${f.appraisal_value != null ? `<span>Avaliação: <strong>${fmtCurrency(f.appraisal_value)}</strong></span>` : ''}
+                      ${f.appraisal_ceiling != null ? `<span>Teto: <strong>${fmtCurrency(f.appraisal_ceiling)}</strong></span>` : ''}
+                      ${f.avg_ticket != null ? `<span class="accent">Ticket Médio: <strong>${fmtCurrency(f.avg_ticket)}</strong></span>` : ''}
+                    </div>
+                  </div>`).join('')}
+               </div>
+               ${note('Obs. Avaliação', mod.appraisal_note)}
+               ${appraisalQrHtml}`
+            : `${note('Obs. Avaliação', mod.appraisal_note)}${appraisalQrHtml}`;
+
+        // ── Documentação ────────────────────────────────────────────────────
+        const docsItems = [];
+        if (mod.cef_package_paid_by || mod.cef_package_avg_value != null) {
+            const val = mod.cef_package_avg_value != null ? fmtCurrency(mod.cef_package_avg_value) : '<span class="empty">Valor não informado</span>';
+            const payer = mod.cef_package_paid_by ? `<span style="display:block;color:#9ca3af;font-size:9px;margin-top:2px;">Pago por: <strong style="color:#4b5563;">${mod.cef_package_paid_by === 'menin' ? 'Menin' : 'Cliente'}</strong></span>` : '';
+            docsItems.push(field('Pacote CEF', `${val}${payer}`));
+        }
+        if (mod.itbi_exempt) {
+            docsItems.push(field('ITBI', `<span style="color:#059669;font-weight:700;">Isento</span>`));
+        } else if (mod.itbi_avg_value != null) {
+            docsItems.push(field('ITBI', `${fmtCurrency(mod.itbi_avg_value)}<span style="display:block;color:#9ca3af;font-size:9px;margin-top:2px;">Pago por: <strong style="color:#4b5563;">Cliente</strong></span>`));
+        }
+        if (mod.cartorio_prenotacao_value != null) {
+            docsItems.push(field('Cartório — Prenotação', fmtCurrency(mod.cartorio_prenotacao_value)));
+        }
+        if (mod.cartorio_registration_value != null) {
+            const payer = mod.cartorio_paid_by ? `<span style="display:block;color:#9ca3af;font-size:9px;margin-top:2px;">Pago por: <strong style="color:#4b5563;">${mod.cartorio_paid_by === 'menin' ? 'Menin' : 'Cliente'}</strong></span>` : '';
+            docsItems.push(field('Cartório — Registro', `${fmtCurrency(mod.cartorio_registration_value)}${payer}`));
+        }
+
+        const itbiQrHtml = (mod.itbi_exempt && mod.itbi_exemption_doc_url && qrCache[mod.itbi_exemption_doc_url])
+            ? `<div style="margin-top:10px;display:flex;align-items:center;gap:10px;padding:10px;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:8px;break-inside:avoid;">
+                  <img src="${qrCache[mod.itbi_exemption_doc_url]}" alt="QR Isenção ITBI" style="width:80px;height:80px;border:1px solid #e5e7eb;background:#fff;padding:4px;border-radius:4px;flex-shrink:0;" />
+                  <div style="flex:1;min-width:0;">
+                    <p style="font-size:10px;font-weight:700;color:#059669;margin-bottom:2px;">Comprovante de Isenção do ITBI</p>
+                    <p style="font-size:9px;color:#6b7280;">Aponte a câmera no QR Code para acessar o documento.</p>
+                    <p style="font-size:8px;color:#10b981;margin-top:2px;word-break:break-all;">${escapeHtml(mod.itbi_exemption_doc_url)}</p>
+                  </div>
+                </div>`
+            : '';
+
+        const cs = computeCostSummary(mod);
+        const renderCostList = (items, totalLabel, totalVal) => `
+            <div style="background:#fff;border:1px solid #f3f4f6;border-radius:8px;padding:10px;">
+              <p style="font-size:8px;font-weight:800;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">${escapeHtml(totalLabel)}</p>
+              ${items.length ? items.map(it => `<div style="display:flex;justify-content:space-between;font-size:9px;margin-bottom:3px;"><span style="color:#6b7280;">${escapeHtml(it.label)}</span><strong style="color:#1f2937;">${fmtCurrency(it.value)}</strong></div>`).join('') : '<p style="font-size:9px;color:#9ca3af;font-style:italic;">—</p>'}
+              <div style="display:flex;justify-content:space-between;margin-top:6px;padding-top:6px;border-top:1px solid #f3f4f6;font-size:10px;"><span style="font-weight:700;color:#374151;">Total</span><strong style="color:#2563eb;">${fmtCurrency(totalVal)}</strong></div>
+            </div>`;
+
+        const costSummaryHtml = `
+            <div style="margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:8px;break-inside:avoid;">
+              ${renderCostList(cs.menin, 'Pago pela Menin', cs.totalMenin)}
+              ${renderCostList(cs.client, 'Pago pelo Cliente', cs.totalClient)}
+            </div>`;
+
+        const hasDocs = docsItems.length || itbiQrHtml || cs.menin.length || cs.client.length;
+        const docsBody = `${docsItems.length ? fieldRow(...docsItems) : ''}${itbiQrHtml}${costSummaryHtml}`;
+
+        let unidadesHtml = '';
+        if (blocos.length) {
+            let disp=0, res=0, vend=0, bloq=0, total=0;
+
+            for (const b of blocos) {
+                for (const u of (b.unidades ?? [])) {
+                    total++;
+                    const st = classifyUnitPrint(u);
+                    if (st.isSold) vend++;
+                    else if (st.isReserved) res++;
+                    else if (st.isBlocked) bloq++;
+                    else disp++;
+                }
+            }
+
+            unidadesHtml = `
+                <div class="card avoid-break">
+                  <div class="card-header">
+                    <span class="card-icon">🏠</span>
+                    Unidades
+                    <span class="snapshot-label">❄️ Congelado em ${escapeHtml(fmtSnap(mod.unit_snapshot.capturedAt))}</span>
+                  </div>
+                  <div class="card-body">
+                    <div class="unit-summary">
+                      <span><span class="dot green"></span><strong>${disp}</strong> Disponíveis</span>
+                      <span><span class="dot yellow"></span><strong>${res}</strong> Reservadas</span>
+                      <span><span class="dot red"></span><strong>${vend}</strong> Vendidas</span>
+                      ${bloq > 0 ? `<span><span class="dot gray"></span><strong>${bloq}</strong> Bloqueadas</span>` : ''}
+                      <span class="muted">· Total: ${total}</span>
+                    </div>
+
+                    ${blocos.map(bloco => `
+                      <div class="block-unit-group">
+                        <p class="block-title">
+                          ${escapeHtml(bloco.nome)}
+                          <span>· ${(bloco.unidades??[]).length} unid.</span>
+                        </p>
+
+                        <div class="unit-row-print">
+                          ${(bloco.unidades??[]).map(u => {
+                              const st = classifyUnitPrint(u);
+                              const statusClass = st.isSold ? 'unit-sold' : st.isReserved ? 'unit-reserved' : st.isBlocked ? 'unit-blocked' : 'unit-available';
+                              return `<div class="unit-card-print ${statusClass}">
+                                <p>${escapeHtml(u.nome)}</p>
+                                ${u.valor_total != null ? `<span class="unit-price">${fmtShort(u.valor_total)}</span>` : ''}
+                                ${u.area_privativa ? `<span class="unit-area">${Number(u.area_privativa).toFixed(2)}m²</span>` : ''}
+                              </div>`;
+                          }).join('')}
+                        </div>
+                      </div>`).join('')}
+                  </div>
+                </div>`;
+        }
+
+        const sepStyle = idx > 0
+            ? `<div class="module-sep">
+                <div></div>
+                <span>${escapeHtml(mod.module_name || `Módulo ${idx + 1}`)}</span>
+                <div></div>
+               </div>`
+            : '';
+
+        return `
+            ${sepStyle}
+
+            <div class="kpi-row-print">
+              ${kpis.join('')}
+            </div>
+
+            ${card('🏢', `Produto — ${mod.module_name || '—'}`, prodBody)}
+
+            <div class="spacer"></div>
+
+            ${card('⚙️', 'Operacional', opHtml)} 
+
+            <div class="spacer"></div>
+
+            ${card('🤝', 'Condições de Negociação', negocBody)}
+
+            <div class="spacer"></div>
+
+            ${hasDocs ? `${card('📋', 'Documentação', docsBody)}<div class="spacer"></div>` : ''}
+
+            ${hasMcmv ? `${card('🏠', 'Avaliação MCMV', mcmvHtml)}<div class="spacer"></div>` : ''}
+
+            <div class="spacer"></div>
+
+            ${card('🏷️', 'Tabelas de Preço', tablesHtml)}
+
+            <div class="spacer"></div>
+
+            ${card('📣', 'Campanhas', campHtml)}
+
+            ${unidadesHtml}`;
+    };
+
+    const statusLabel = props.wasRejected && detail?.status === 'draft'
+        ? 'Reprovada'
+        : (STATUS_LABELS_PRINT[detail?.status] ?? detail?.status ?? '—');
+
+    const statusColor = props.wasRejected && detail?.status === 'draft'
+        ? '#7f1d1d|#fee2e2'
+        : (STATUS_COLORS[detail?.status] ?? '#374151|#f3f4f6');
+
+    const [sfg, sbgc] = statusColor.split('|');
+    const monthLabel = fmtMonth(detail?.reference_month);
+
+    const html = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Ficha Comercial — ${escapeHtml(enterprise.nome ?? '')} — ${escapeHtml(monthLabel)}</title>
+<style>
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  @page {
+    size: A4 portrait;
+    margin: 12mm 14mm 16mm 14mm;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 10px;
+    color: #111827;
+    background: #ffffff;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .accent-bar {
+    height: 5px;
+    background: linear-gradient(90deg, #1d4ed8 0%, #3b82f6 60%, #93c5fd 100%);
+  }
+
+  .header {
+    padding: 14px 20px 12px;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .eyebrow {
+    font-size: 8px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: #1d4ed8;
+    margin-bottom: 4px;
+  }
+
+  .enterprise-name {
+    font-size: 18px;
+    font-weight: 900;
+    color: #111827;
+    line-height: 1.2;
+  }
+
+  .chip-row {
+    margin-top: 6px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 7px;
+    border-radius: 999px;
+    font-size: 9px;
+    font-weight: 600;
+    background: #f3f4f6;
+    color: #4b5563;
+  }
+
+  .status-chip {
+    background: ${sbgc};
+    color: ${sfg};
+  }
+
+  .meta-right {
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  .meta-right p {
+    font-size: 9px;
+    color: #6b7280;
+  }
+
+  .content {
+    padding: 14px 20px;
+  }
+
+  .spacer {
+    height: 10px;
+  }
+
+  .kpi-row-print {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 14px;
+    width: 100%;
+  }
+
+  .kpi-row-print > .kpi {
+    flex: 1 1 105px;
+    min-width: 105px;
+  }
+
+  .kpi {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 54px;
+    padding: 8px 6px;
+    border-radius: 8px;
+    text-align: center;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+  }
+
+  .kpi-label {
+    font-size: 7.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: #9ca3af;
+    margin-bottom: 3px;
+  }
+
+  .kpi-val {
+    font-size: 14px;
+    font-weight: 900;
+    color: #1e40af;
+    line-height: 1.05;
+  }
+
+  .kpi-sub {
+    font-size: 8px;
+    color: #9ca3af;
+    margin-top: 3px;
+  }
+
+  .empty-kpi {
+    color: #cbd5e1;
+  }
+
+  .card-row-print {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: flex-start !important; /* Garante que um card não estique o outro */
+    gap: 10px !important;
+    width: 100% !important;
+  }
+
+  .card-row-print > .card {
+    flex: 1 !important; /* Faz os dois cards dividirem o espaço 50/50 */
+    min-width: 0 !important; /* Evita que o card estoure a largura */
+  }
+
+  .card {
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    overflow: hidden;
+    page-break-inside: avoid;
+    break-inside: avoid;
+    background: #ffffff;
+  }
+
+  .avoid-break {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    font-size: 8px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: #374151;
+    background: #f8fafc;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .card-icon {
+    color: #3b82f6;
+  }
+
+  .card-body {
+    padding: 10px 14px;
+  }
+
+.field-row {
+    display: flex !important;
+    flex-direction: row !important; /* Força ficar um ao lado do outro */
+    flex-wrap: wrap !important;
+    gap: 8px 15px !important;
+    width: 100% !important;
+}
+
+.field-row > .field {
+    /* Divide em 3 colunas iguais no PDF */
+    flex: 1 1 30% !important; 
+    min-width: 30% !important;
+    margin-bottom: 5px !important;
+}
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .field-label {
+    font-size: 8px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: #9ca3af;
+  }
+
+  .field-value {
+    font-size: 10px;
+    font-weight: 600;
+    color: #111827;
+    line-height: 1.35;
+    word-break: break-word;
+  }
+
+  .accent {
+    color: #2563eb;
+    font-weight: 700;
+  }
+
+  .empty,
+  .empty-line {
+    color: #bbbbbb;
+    font-style: italic;
+  }
+
+  .empty-line {
+    font-size: 10px;
+  }
+
+  .note {
+    padding: 8px 12px;
+    border-radius: 5px;
+    background: #f9fafb;
+    border-left: 3px solid #d1d5db;
+    margin-top: 8px;
+  }
+
+  .note-label {
+    font-size: 7px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: #9ca3af;
+    display: block;
+  }
+
+  .note p {
+    font-size: 10px;
+    color: #374151;
+    margin-top: 3px;
+    line-height: 1.35;
+  }
+
+  .subsidy {
+    margin-top: 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    border-radius: 6px;
+    background: #d1fae5;
+    border: 1px solid #6ee7b7;
+    color: #065f46;
+    font-size: 10px;
+    font-weight: 600;
+  }
+
+  .muted-badge {
+    margin-top: 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    border-radius: 6px;
+    background: #f3f4f6;
+    color: #9ca3af;
+    font-size: 10px;
+  }
+
+  .section-sublabel {
+    font-size: 8px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: #9ca3af;
+    margin-bottom: 6px;
+  }
+
+  .manual-label {
+    margin-top: 10px;
+  }
+
+  .price-row,
+  .manual-row {
+    padding: 7px 10px;
+    border-radius: 6px;
+    margin-bottom: 5px;
+  }
+
+  .price-row {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+  }
+
+  .manual-row {
+    background: #fff7ed;
+    border: 1px solid #fed7aa;
+  }
+
+  .price-row-top,
+  .manual-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .price-name,
+  .manual-name {
+    font-size: 11px;
+    font-weight: 700;
+    color: #1f2937;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .price-meta,
+  .manual-date {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    font-size: 8px;
+    color: #9ca3af;
+  }
+
+  .badge-green {
+    background: #d1fae5;
+    color: #065f46;
+    font-size: 8px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 999px;
+  }
+
+  .price-stats {
+    font-size: 9px;
+    color: #6b7280;
+    margin-top: 4px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .manual-note {
+    font-size: 9px;
+    color: #6b7280;
+    margin-top: 3px;
+    font-style: italic;
+  }
+
+  .op-row-print {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    gap: 10px !important;
+  }
+
+  .op-item-print {
+    flex: 1 1 45% !important;
+    min-width: 45% !important;
+  }
+
+  .op-item-print {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .op-icon-print {
+    font-size: 13px;
+    margin-top: 1px;
+    flex-shrink: 0;
+  }
+
+  .op-text-print {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .op-sub-print {
+    display: block;
+    font-size: 9px;
+    font-weight: 400;
+    color: #9ca3af;
+    line-height: 1.25;
+    margin-top: 1px;
+    word-break: break-word;
+  }
+
+  .campaign-row-print {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    width: 100%;
+  }
+
+  .campaign-row-print > .campaign-card-print {
+    flex: 1 1 180px;
+    min-width: 180px;
+  }
+
+  .campaign-card-print {
+    padding: 10px;
+    border-radius: 6px;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+  }
+
+  .campaign-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #111827;
+  }
+
+  .campaign-desc {
+    font-size: 9px;
+    color: #6b7280;
+    margin-top: 3px;
+    line-height: 1.3;
+  }
+
+  .campaign-meta {
+    display: flex;
+    gap: 10px;
+    margin-top: 6px;
+    flex-wrap: wrap;
+    align-items: center;
+    font-size: 9px;
+    color: #9ca3af;
+  }
+
+  .campaign-value {
+    font-size: 11px;
+    font-weight: 700;
+    color: #2563eb;
+  }
+
+  .campaign-rules {
+    font-size: 9px;
+    color: #6b7280;
+    margin-top: 6px;
+    border-top: 1px solid #e5e7eb;
+    padding-top: 6px;
+    font-style: italic;
+    line-height: 1.3;
+  }
+
+  .mcmv-row-print {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 20px;
+  }
+
+  .mcmv-row-print > .mcmv-item-print {
+    flex: 1 1 180px;
+    min-width: 180px;
+  }
+
+  .mcmv-item-print {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .mcmv-values {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 2px;
+    font-size: 10px;
+    color: #374151;
+  }
+
+  .snapshot-label {
+    margin-left: auto;
+    font-size: 9px;
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0;
+    color: #9ca3af;
+  }
+
+  .unit-summary {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+    font-size: 10px;
+  }
+
+  .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    display: inline-block;
+    margin-right: 4px;
+  }
+
+  .green { background: #4ade80; }
+  .yellow { background: #facc15; }
+  .red { background: #f87171; }
+  .gray { background: #9ca3af; }
+  .muted { color: #9ca3af; }
+
+  .block-unit-group {
+    margin-bottom: 14px;
+  }
+
+  .block-title {
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: #6b7280;
+    margin-bottom: 6px;
+  }
+
+  .block-title span {
+    font-weight: 400;
+    text-transform: none;
+  }
+
+  .unit-row-print {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+  }
+
+  .unit-row-print > .unit-card-print {
+    flex: 1 1 58px;
+    min-width: 58px;
+    max-width: 92px;
+  }
+
+  .unit-card-print {
+    border-radius: 4px;
+    border: 1px solid #e5e7eb;
+    background: #f9fafb;
+    padding: 3px 2px;
+    text-align: center;
+    font-size: 9px;
+    line-height: 1.3;
+  }
+
+  .unit-card-print p {
+    font-weight: 700;
+    color: #1f2937;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .unit-price {
+    display: block;
+    color: #2563eb;
+    font-weight: 700;
+    margin-top: 1px;
+    font-size: 8px;
+  }
+
+  .unit-area {
+    display: block;
+    color: #9ca3af;
+    margin-top: 1px;
+    font-size: 7px;
+  }
+
+  .unit-available {
+    border-color: #bbf7d0;
+    background: #f0fdf4;
+  }
+
+  .unit-reserved {
+    border-color: #fef08a;
+    background: #fefce8;
+  }
+
+  .unit-sold {
+    border-color: #fecaca;
+    background: #fef2f2;
+  }
+
+  .unit-blocked {
+    border-color: #e5e7eb;
+    background: #f9fafb;
+  }
+
+  .module-sep {
+    margin: 20px 0 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    page-break-before: always;
+  }
+
+  .module-sep div {
+    flex: 1;
+    height: 1px;
+    background: #bfdbfe;
+  }
+
+  .module-sep span {
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    color: #3b82f6;
+    padding: 0 12px;
+  }
+
+  .footer {
+    margin-top: 14px;
+    padding-top: 8px;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: space-between;
+    font-size: 8px;
+    color: #9ca3af;
+  }
+
+  @media print {
+    body {
+      background: #ffffff;
+    }
+
+    .no-print {
+      display: none !important;
+    }
+  }
+</style>
+</head>
+<body>
+  <div class="accent-bar"></div>
+
+  <div class="header">
+    <div>
+      <p class="eyebrow">Ficha Comercial</p>
+      <h1 class="enterprise-name">${escapeHtml(enterprise.nome ?? '—')}</h1>
+      <div class="chip-row">
+        ${enterprise.cidade ? `<span class="chip">📍 ${escapeHtml(enterprise.cidade)}</span>` : ''}
+        <span class="chip">📅 ${escapeHtml(monthLabel)}</span>
+        <span class="chip status-chip">${escapeHtml(statusLabel)}</span>
+        ${props.wasRejected && detail?.status === 'draft' && props.rejectionNote
+            ? `<span class="chip" style="background:#fee2e2;color:#7f1d1d;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escapeHtml(props.rejectionNote)}">Motivo: ${escapeHtml(props.rejectionNote)}</span>`
+            : ''}
+      </div>
+    </div>
+
+    <div class="meta-right">
+      <p style="font-weight:700;color:#374151">Menin Office</p>
+      <p style="margin-top:2px">${escapeHtml(fmtFull(now))}</p>
+    </div>
+  </div>
+
+  <div class="content">
+    ${modules.map((mod, idx) => renderModule(mod, idx)).join('')}
+
+    <div class="footer">
+      <span>Menin Office — Ficha Comercial Confidencial</span>
+      <span>Gerado em ${escapeHtml(fmtFull(now))}</span>
+    </div>
+  </div>
+</body>
+</html>`;
+
+    const printWin = window.open('', '_blank', 'width=900,height=700,scrollbars=yes');
+
+    if (!printWin) {
+        alert('Popup bloqueado. Permita popups para este site e tente novamente.');
+        return;
+    }
+
+    printWin.document.open();
+    printWin.document.write(html);
+    printWin.document.close();
+
+    printWin.onload = () => {
+        setTimeout(() => {
+            printWin.focus();
+            printWin.print();
+            printWin.addEventListener('afterprint', () => printWin.close());
+        }, 400);
+    };
 }
 
 // ── Formatadores ──────────────────────────────────────────────────────────────
@@ -1031,7 +2582,27 @@ function formatDateFull(date) {
 }
 
 /* ── KPIs ───────────────────────────────────────────────────────────────────── */
-.kpi-row   { @apply grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-3; }
+.kpi-row {
+    @apply flex flex-wrap gap-3;
+}
+.kpi-row > .kpi-card {
+    flex: 1 1 140px;
+    min-width: 140px;
+}
+.kpi-row-print {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.kpi-row-print .kpi {
+  flex: 1 1 110px;
+  min-width: 110px;
+}
+.kpi-row.compact > .kpi-card {
+    flex: 1 1 120px;
+    min-width: 120px;
+}
 .kpi-card  {
     @apply flex flex-col items-center justify-center p-4 rounded-2xl text-center
            bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 shadow-sm;
@@ -1041,6 +2612,30 @@ function formatDateFull(date) {
 .kpi-value.kpi-empty { @apply text-gray-300 dark:text-gray-600; }
 .kpi-sub   { @apply text-xs text-gray-400 dark:text-gray-500 mt-1; }
 .kpi-sub-empty { @apply text-gray-300 dark:text-gray-700 italic; }
+
+/* ── Linhas flex responsivas ────────────────────────────────────────────────── */
+.responsive-card-row {
+    @apply flex flex-wrap gap-4;
+}
+.responsive-card-row > .info-card {
+    flex: 1 1 360px;
+    min-width: min(100%, 360px);
+}
+.campaign-row {
+    @apply flex flex-wrap gap-3;
+}
+.campaign-row > .campaign-card {
+    flex: 1 1 260px;
+    min-width: min(100%, 260px);
+}
+.unit-row {
+    @apply flex flex-wrap gap-1;
+}
+.unit-row > div {
+    flex: 1 1 74px;
+    min-width: 74px;
+    max-width: 120px;
+}
 
 /* ── Cards de informação ─────────────────────────────────────────────────────── */
 .info-card {
@@ -1093,7 +2688,7 @@ function formatDateFull(date) {
 }
 
 /* ── Operacional grid ────────────────────────────────────────────────────────── */
-.op-grid  { @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4; }
+.op-grid  { @apply grid grid-cols-1 sm:grid-cols-2 gap-4; }
 .op-item  { @apply flex items-start gap-3; }
 .op-icon  { @apply text-blue-400 text-sm mt-0.5 w-4 flex-shrink-0; }
 
@@ -1166,11 +2761,16 @@ function formatDateFull(date) {
         border-radius: 99px; padding: 2px 7px; font-size: 9px;
     }
 
-    /* KPIs — cabe até 6 por linha */
+    /* KPIs — flex com wrap */
     .kpi-row {
-        grid-template-columns: repeat(6, 1fr) !important;
+        display: flex !important;
+        flex-wrap: wrap !important;
         gap: 5px !important;
         padding: 8px 20px !important;
+    }
+    .kpi-row > .kpi-card {
+        flex: 1 1 95px !important;
+        min-width: 95px !important;
     }
     .kpi-card {
         background: #f8fafc !important; border: 1px solid #e2e8f0 !important;
@@ -1208,6 +2808,37 @@ function formatDateFull(date) {
     .print-area > .grid    { margin: 0 20px 8px; gap: 8px; }
     .print-area > .info-card { margin: 0 20px 8px; }
 
+    .responsive-card-row {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        gap: 8px !important;
+        margin: 0 20px 8px !important;
+    }
+    .responsive-card-row > .info-card {
+        flex: 1 1 250px !important;
+        min-width: 250px !important;
+        margin: 0 !important;
+    }
+    .campaign-row {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        gap: 8px !important;
+    }
+    .campaign-row > .campaign-card {
+        flex: 1 1 180px !important;
+        min-width: 180px !important;
+    }
+    .unit-row {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        gap: 3px !important;
+    }
+    .unit-row > div {
+        flex: 1 1 58px !important;
+        min-width: 58px !important;
+        max-width: 90px !important;
+    }
+
     .price-table-row { background: #f9fafb !important; border-color: #e5e7eb !important; }
     .manual-table-card { background: #fff7ed !important; border-color: #fed7aa !important; }
     .campaign-card { background: #f9fafb !important; border-color: #e5e7eb !important; }
@@ -1234,7 +2865,6 @@ function formatDateFull(date) {
     .info-card-body .grid-cols-4,
     .info-card-body .grid-cols-6,
     .info-card-body .grid-cols-8 {
-        grid-template-columns: repeat(8, minmax(0, 1fr)) !important;
         gap: 3px !important;
     }
 

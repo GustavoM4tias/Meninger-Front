@@ -319,7 +319,7 @@
                 <label class="lbl">Vincular à Etapa do CV</label>
                 <select
                   :value="activeModule.idetapa ?? ''"
-                  @change="e => { const v = e.target.value; patch('idetapa', v === '' ? null : Number(v)); if (v !== '') nextTick(() => emit('save-silent')); }"
+                  @change="onStageLinkChange"
                   class="inp text-xs"
                   :disabled="readonly"
                 >
@@ -457,13 +457,68 @@
             </div>
             <div>
               <label class="lbl">Arquivo / Laudo Oficial</label>
-              <AttachmentPicker
-                :model-value="activeModule.appraisal_file_url"
-                @update:model-value="patch('appraisal_file_url', $event)"
-                :reference-id="activeModule.id"
-                upload-context="appraisal_laudo"
-                hint="Vincule um arquivo do seu computador, SharePoint ou cole um link direto."
+              <div class="flex items-start gap-3">
+                <div class="flex-1">
+                  <AttachmentPicker
+                    :model-value="activeModule.appraisal_file_url"
+                    @update:model-value="patch('appraisal_file_url', $event)"
+                    :reference-id="activeModule.id"
+                    upload-context="appraisal_laudo"
+                    hint="Vincule um arquivo do seu computador, SharePoint ou cole um link direto. Um QR Code será gerado automaticamente para o resumo."
+                  />
+                </div>
+                <AppraisalQrCode v-if="activeModule.appraisal_file_url" :url="activeModule.appraisal_file_url" :size="120" caption="Avaliação" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Condições Comerciais ───────────────────────────────────────── -->
+        <div>
+          <p class="lbl-section mb-3"><i class="fas fa-percent text-blue-500"></i> Condições Comerciais</p>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <label class="lbl">Comissão (%)</label>
+              <div class="relative">
+                <input type="text"
+                  :value="activeModule.commission_pct != null ? String(Number(activeModule.commission_pct).toFixed(2)).replace('.', ',') : ''"
+                  @focus="e => { e.target.value = activeModule.commission_pct ?? ''; e.target.select(); }"
+                  @blur="e => { const raw = String(e.target.value).replace(',', '.'); const n = parseFloat(raw); patchMulti({ commission_pct: isNaN(n) ? null : Math.round(n * 100) / 100, commission_source: 'manual' }); }"
+                  class="inp pr-9" placeholder="0,00" :disabled="readonly" />
+                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 text-xs pointer-events-none">%</span>
+              </div>
+              <p class="mt-1 text-xs text-gray-400 dark:text-gray-500">
+                Fonte: {{ activeModule.commission_source === 'cv' ? 'tabela do CV' : 'manual' }}
+              </p>
+            </div>
+            <div>
+              <label class="lbl">Prazo de Entrega (meses)</label>
+              <input
+                :value="activeModule.delivery_deadline_months"
+                @input="patch('delivery_deadline_months', numOrNull($event.target.value))"
+                type="number" min="1" max="120" class="inp" placeholder="Ex: 24"
+                :disabled="readonly"
               />
+            </div>
+            <div>
+              <label class="lbl">Observação do Prazo</label>
+              <input
+                :value="activeModule.delivery_deadline_note"
+                @input="patch('delivery_deadline_note', $event.target.value)"
+                type="text" class="inp" placeholder="Ex: a partir da assinatura do contrato CEF"
+                :disabled="readonly"
+              />
+            </div>
+          </div>
+          <div v-if="activeModule.unit_snapshot?.data?.length && snapshotM2Stats" class="mt-4 p-3.5 bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/40 rounded-xl">
+            <p class="text-xs font-semibold text-blue-600 dark:text-blue-400 mb-2 flex items-center gap-1.5">
+              <i class="fas fa-snowflake text-[9px]"></i>
+              Preço/m² congelado em {{ formatSnapshotDate(activeModule.unit_snapshot.capturedAt) }}
+            </p>
+            <div class="flex flex-wrap gap-4 text-xs text-gray-600 dark:text-gray-400">
+              <span>Mín: <strong class="text-gray-800 dark:text-gray-200">{{ formatM2(snapshotM2Stats.min) }}</strong></span>
+              <span>Máx: <strong class="text-gray-800 dark:text-gray-200">{{ formatM2(snapshotM2Stats.max) }}</strong></span>
+              <span>Média: <strong class="text-gray-800 dark:text-gray-200">{{ formatM2(snapshotM2Stats.avg) }}</strong></span>
             </div>
           </div>
         </div>
@@ -739,6 +794,15 @@
         />
       </div>
 
+      <!-- ── Sub-tab: Documentação ──────────────────────────────────────── -->
+      <div v-show="activeSubTab === 'docs'" class="p-5">
+        <DocsSection
+          :form="activeModule"
+          :readonly="readonly"
+          @update="patchMulti"
+        />
+      </div>
+
       <!-- ── Sub-tab: Campanhas ─────────────────────────────────────────── -->
       <div v-show="activeSubTab === 'campaigns'" class="p-5">
         <CampaignManager
@@ -834,19 +898,19 @@
               <div class="flex items-center gap-2 text-xs text-gray-500">
                 <span class="flex items-center gap-1">
                   <span class="w-2 h-2 rounded-full bg-green-400 inline-block"></span>
-                  <strong class="text-gray-700 dark:text-gray-200">{{ bloco.unidades?.filter(u => (u.situacao_mapa_disponibilidade ?? 1) === 1).length ?? 0 }}</strong> Disp.
+                  <strong class="text-gray-700 dark:text-gray-200">{{ countByStatus(bloco.unidades, 'available') }}</strong> Disp.
                 </span>
                 <span class="flex items-center gap-1">
                   <span class="w-2 h-2 rounded-full bg-amber-400 inline-block"></span>
-                  <strong class="text-gray-700 dark:text-gray-200">{{ bloco.unidades?.filter(u => u.situacao_mapa_disponibilidade === 2).length ?? 0 }}</strong> Res.
+                  <strong class="text-gray-700 dark:text-gray-200">{{ countByStatus(bloco.unidades, 'reserved') }}</strong> Res.
                 </span>
                 <span class="flex items-center gap-1">
                   <span class="w-2 h-2 rounded-full bg-red-400 inline-block"></span>
-                  <strong class="text-gray-700 dark:text-gray-200">{{ bloco.unidades?.filter(u => u.situacao_mapa_disponibilidade === 3).length ?? 0 }}</strong> Vend.
+                  <strong class="text-gray-700 dark:text-gray-200">{{ countByStatus(bloco.unidades, 'sold') }}</strong> Vend.
                 </span>
                 <span class="flex items-center gap-1">
                   <span class="w-2 h-2 rounded-full bg-gray-400 inline-block"></span>
-                  <strong class="text-gray-700 dark:text-gray-200">{{ bloco.unidades?.filter(u => u.situacao_mapa_disponibilidade === 4).length ?? 0 }}</strong> Bloq.
+                  <strong class="text-gray-700 dark:text-gray-200">{{ countByStatus(bloco.unidades, 'blocked') }}</strong> Bloq.
                 </span>
               </div>
             </div>
@@ -857,7 +921,7 @@
                 v-for="unit in bloco.unidades"
                 :key="unit.idunidade"
                 :title="`${unit.nome}${unit.tipologia ? ' · ' + unit.tipologia : ''}${unit.area_privativa ? ' · ' + Number(unit.area_privativa).toFixed(0) + 'm²' : ''}${unitDisplayPrice(unit) != null ? ' · ' + fmtCurrency(unitDisplayPrice(unit)) : ''}`"
-                :class="['rounded-lg px-2 py-1.5 text-center text-[11px] font-medium transition cursor-default border', unitStatusClass(unit.situacao_mapa_disponibilidade)]"
+                :class="['rounded-lg px-2 py-1.5 text-center text-[11px] font-medium transition cursor-default border', unitStatusClass(unit)]"
               >
                 <span class="truncate block leading-tight">{{ unit.nome }}</span>
                 <span v-if="unitDisplayPrice(unit)" class="text-[9px] font-bold text-blue-600 dark:text-blue-400 block leading-tight">{{ fmtCurrencyShort(unitDisplayPrice(unit)) }}</span>
@@ -928,9 +992,11 @@
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue';
 import { useConditionsStore } from '@/stores/Comercial/Conditions/conditionsStore';
 import AttachmentPicker from './AttachmentPicker.vue';
+import AppraisalQrCode from './AppraisalQrCode.vue';
 import NegotiationRules from './NegotiationRules.vue';
 import CampaignManager from './CampaignManager.vue';
 import OperationalSection from './OperationalSection.vue';
+import DocsSection from './DocsSection.vue';
 
 const props = defineProps({
     modules:            { type: Array,            default: () => [] },
@@ -1053,12 +1119,13 @@ function patchFaixa(faixa, field, val) {
 }
 
 const BASE_SUB_TABS = [
-    { id: 'data',        label: 'Dados',       icon: 'fas fa-hashtag' },
-    { id: 'prices',      label: 'Preços',       icon: 'fas fa-tag' },
-    { id: 'negotiation', label: 'Negociação',   icon: 'fas fa-handshake' },
-    { id: 'campaigns',   label: 'Campanhas',    icon: 'fas fa-bullhorn' },
-    { id: 'operational', label: 'Operacional',  icon: 'fas fa-gears' },
-    { id: 'units',       label: 'Unidades',     icon: 'fas fa-layer-group' },
+    { id: 'data',        label: 'Dados',         icon: 'fas fa-hashtag' },
+    { id: 'prices',      label: 'Preços',        icon: 'fas fa-tag' },
+    { id: 'negotiation', label: 'Negociação',    icon: 'fas fa-handshake' },
+    { id: 'docs',        label: 'Documentação',  icon: 'fas fa-file-contract' },
+    { id: 'campaigns',   label: 'Campanhas',     icon: 'fas fa-bullhorn' },
+    { id: 'operational', label: 'Operacional',   icon: 'fas fa-gears' },
+    { id: 'units',       label: 'Unidades',      icon: 'fas fa-layer-group' },
 ];
 
 const subTabs = computed(() => {
@@ -1090,6 +1157,30 @@ function captureUnitSnapshot() {
 function formatSnapshotDate(iso) {
     if (!iso) return '';
     return new Date(iso).toLocaleString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+const snapshotM2Stats = computed(() => {
+    const blocos = activeModule.value?.unit_snapshot?.data ?? [];
+    if (!blocos.length) return null;
+    const prices = [];
+    for (const b of blocos) {
+        for (const u of (b.unidades ?? [])) {
+            if (u.valor_total != null && u.area_privativa && Number(u.area_privativa) > 0) {
+                prices.push(Number(u.valor_total) / Number(u.area_privativa));
+            }
+        }
+    }
+    if (!prices.length) return null;
+    return {
+        min: Math.min(...prices),
+        max: Math.max(...prices),
+        avg: prices.reduce((a, b) => a + b, 0) / prices.length,
+    };
+});
+
+function formatM2(v) {
+    if (v == null) return '—';
+    return Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }) + '/m²';
 }
 
 async function loadUnits() {
@@ -1189,6 +1280,30 @@ const unitPriceMap = computed(() => {
     }
     return map;
 });
+
+function onStageLinkChange(event) {
+    const value = event.target.value;
+    const idetapa = value === "" ? null : Number(value);
+ 
+    const updated = props.modules.map((m, i) => {
+        if (i !== activeIdx.value) return m;
+
+        // Buscamos o nome da etapa para atualizar o nome do módulo junto
+        const stage = props.enterpriseStages.find(s => Number(s.idetapa) === idetapa);
+
+        return {
+            ...m,
+            idetapa: idetapa, // Aqui vai null ou o ID correto
+            module_name: idetapa ? (stage?.nome || m.module_name) : m.module_name
+        };
+    });
+
+    emit('update:modules', updated);
+
+    if (idetapa) {
+      emit('save-silent', updated); 
+    }
+}
 
 // Reset sub-tab and close add panel when switching module
 watch(activeIdx, () => {
@@ -1324,12 +1439,20 @@ function unitSituacaoDot(situacao) {
 }
 
 // Auto-seleciona vigentes — separado por fonte para evitar race com patch de idetapa
+// Usa save-silent para persistir imediatamente e não deixar isDirty=true sem motivo
 function autoSelectVigentes() {
     if (!props.priceTables?.length || props.readonly) return;
     const mod = activeModule.value;
     if (!mod || (mod.price_table_ids ?? []).length > 0) return;
     const vigentes = props.priceTables.filter(t => t.vigente).map(t => t.idtabela);
-    if (vigentes.length) patch('price_table_ids', vigentes);
+    if (!vigentes.length) return;
+    // Constrói updated sem usar patch() para poder chamar save-silent sem marcar dirty
+    const updated = props.modules.map((m, i) =>
+        i === activeIdx.value ? { ...m, price_table_ids: vigentes } : m
+    );
+    emit('update:modules', updated);
+    // Persiste silenciosamente para que o auto-select não apareça como alteração não salva
+    nextTick(() => emit('save-silent', updated));
 }
 watch(() => props.priceTables, autoSelectVigentes, { immediate: true });
 // nextTick garante que props.modules já reflete o estado após o módulo ser adicionado
@@ -1394,26 +1517,51 @@ function removeUnit(mi, ui) {
 }
 
 // ── Helpers de disponibilidade de unidades ────────────────────────────────────
+// Espelha Meninger-Back/services/cv/enterpriseUnitsSummaryService.js (classifyUnitStatus)
 
-function unitStatusClass(status) {
-    const map = {
-        1: 'bg-green-50  dark:bg-green-900/20  border-green-200  dark:border-green-700  text-green-800  dark:text-green-300',
-        2: 'bg-amber-50  dark:bg-amber-900/20  border-amber-200  dark:border-amber-700  text-amber-800  dark:text-amber-300',
-        3: 'bg-red-50    dark:bg-red-900/20    border-red-200    dark:border-red-700    text-red-700    dark:text-red-400',
-        4: 'bg-gray-100  dark:bg-gray-800      border-gray-200   dark:border-gray-700   text-gray-400',
-    };
-    return map[status] ?? map[1];
+function classifyUnit(unit) {
+    const raw = unit?.situacao_mapa_disponibilidade;
+    const numeric = Number(raw);
+    const statusNum = !Number.isNaN(numeric) && numeric > 0 ? numeric : null;
+    let isSold = false, isReserved = false, isBlocked = false;
+    if (statusNum !== null) {
+        isSold = statusNum === 3;
+        isReserved = statusNum === 2 || statusNum === 5;
+        isBlocked = statusNum === 4;
+    } else {
+        const s = String(raw || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+        if (s.includes('vend')) isSold = true;
+        if (s.includes('reserv')) isReserved = true;
+        if (s.includes('bloq')) isBlocked = true;
+    }
+    if (unit?.data_bloqueio) { isBlocked = true; isSold = false; isReserved = false; }
+    return { isSold, isReserved, isBlocked };
 }
 
-function pct(units, statusList) {
+function unitStatusClass(unit) {
+    const st = classifyUnit(unit);
+    if (st.isSold)     return 'bg-red-50    dark:bg-red-900/20    border-red-200    dark:border-red-700    text-red-700    dark:text-red-400';
+    if (st.isReserved) return 'bg-amber-50  dark:bg-amber-900/20  border-amber-200  dark:border-amber-700  text-amber-800  dark:text-amber-300';
+    if (st.isBlocked)  return 'bg-gray-100  dark:bg-gray-800      border-gray-200   dark:border-gray-700   text-gray-400';
+    return                    'bg-green-50  dark:bg-green-900/20  border-green-200  dark:border-green-700  text-green-800  dark:text-green-300';
+}
+
+function countByStatus(units, kind) {
     if (!units?.length) return 0;
-    const count = units.filter(u => statusList.includes(u.situacao_mapa_disponibilidade ?? 1)).length;
-    return Math.round((count / units.length) * 100);
+    return units.filter(u => {
+        const st = classifyUnit(u);
+        if (kind === 'available') return !st.isSold && !st.isReserved && !st.isBlocked;
+        if (kind === 'reserved')  return st.isReserved;
+        if (kind === 'sold')      return st.isSold;
+        if (kind === 'blocked')   return st.isBlocked;
+        return false;
+    }).length;
 }
-const pctAvail  = (u) => pct(u, [1]);
-const pctReserv = (u) => pct(u, [2]);
-const pctSold   = (u) => pct(u, [3]);
-const pctBlock  = (u) => pct(u, [4]);
+
+const pctAvail  = (u) => u?.length ? Math.round((countByStatus(u, 'available') / u.length) * 100) : 0;
+const pctReserv = (u) => u?.length ? Math.round((countByStatus(u, 'reserved')  / u.length) * 100) : 0;
+const pctSold   = (u) => u?.length ? Math.round((countByStatus(u, 'sold')      / u.length) * 100) : 0;
+const pctBlock  = (u) => u?.length ? Math.round((countByStatus(u, 'blocked')   / u.length) * 100) : 0;
 
 function unitAvg(units) {
     const vals = (units ?? []).map(u => u.value).filter(v => v != null);

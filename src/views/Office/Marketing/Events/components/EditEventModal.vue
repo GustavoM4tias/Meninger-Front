@@ -376,8 +376,8 @@ const lbl = 'text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tr
 </script>
 
 <template>
-  <div class="fixed inset-0 z-[60] flex justify-end" @click.self="$emit('close')">
-    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="$emit('close')" />
+  <div class="fixed inset-0 z-[60] flex justify-end">
+    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" />
 
     <div class="relative h-full w-full max-w-xl bg-white dark:bg-gray-900 shadow-2xl flex flex-col overflow-hidden"
       style="animation:slideIn .22s cubic-bezier(.4,0,.2,1)">

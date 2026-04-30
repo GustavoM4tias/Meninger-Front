@@ -559,11 +559,24 @@ const form = ref({ notes: '' });
 
 function moduleDefaults(m = {}) {
     const base = {
-        campaigns: [],
+        // Dados do módulo
+        idetapa: null,
+        module_name: '',
+        sort_order: 0,
+        total_units: null,
+        min_demand: null,
+        min_demand_note: '',
+        // Avaliação MCMV
+        appraisal_faixas: null,
+        appraisal_value: null,
+        appraisal_ceiling: null,
+        appraisal_note: '',
+        appraisal_file_url: '',
+        // Preços
         price_table_ids: [],
         manual_price_tables: [],
-        appraisal_faixas: null,
         price_premise_note: '',
+        // Negociação
         max_entry_value: null,
         rp_installment_value: null,
         act_installment_value: null,
@@ -579,6 +592,7 @@ function moduleDefaults(m = {}) {
         state_subsidy_custom_state: '',
         state_subsidy_rules: '',
         state_subsidy_conditions: '',
+        // Operacional
         manager_user_id: null,
         manager_mode: 'sistema',
         manager_name: '',
@@ -601,6 +615,19 @@ function moduleDefaults(m = {}) {
         digital_cert_provider: '',
         digital_cert_contact: '',
         notes: '',
+        // Documentação
+        cef_package_paid_by: null,            // 'client' | 'menin'
+        cef_package_avg_value: null,
+        itbi_exempt: false,
+        itbi_avg_value: null,
+        itbi_exemption_doc_url: '',
+        cartorio_prenotacao_value: null,
+        cartorio_registration_value: null,
+        cartorio_paid_by: null,               // 'client' | 'menin'
+        // Snapshot de unidades
+        unit_snapshot: null,
+        // Campanhas
+        campaigns: [],
     };
     try {
         return structuredClone({ ...base, ...m });
@@ -613,6 +640,9 @@ function populateFromDetail(d) {
     if (!d) return;
     try {
         localModules.value = (d.modules ?? []).map(m => moduleDefaults(m));
+        // Reset + repovoa intendedStageLinks com os vínculos persistidos no DB
+        intendedStageLinks.value = {};
+        for (const mod of localModules.value) rememberStageLink(mod);
     } catch (e) {
         console.error('[Detail] populateFromDetail error:', e);
         localModules.value = [];
@@ -766,11 +796,19 @@ async function handleUnlock() {
 
 async function handleSaveModules() {
     if (isLocked.value) return;
+    // Aguarda qualquer save-silent em voo antes do save explícito (evita race)
+    if (savingSilentPromise) {
+        try { await savingSilentPromise; } catch {}
+    }
     saving.value = true;
     try {
-        const result = await store.saveModules(detail.value.id, localModules.value);
+        const toSave = applyIntendedLinks(localModules.value);
+        localModules.value = toSave;
+        const result = await store.saveModules(detail.value.id, toSave);
         if (result?.modules) {
-            localModules.value = result.modules.map(m => moduleDefaults(m));
+            const fromBackend = result.modules.map(m => moduleDefaults(m));
+            localModules.value = applyIntendedLinks(fromBackend);
+            for (const mod of localModules.value) rememberStageLink(mod);
         }
         isDirty.value = false;
         showToast('Módulos salvos!');
@@ -781,14 +819,81 @@ async function handleSaveModules() {
     finally { saving.value = false; }
 }
 
-async function handleSaveModulesSilent() {
+// ─── Mutex serializa save-silent's concorrentes ──────────────────────────────
+// Sem isso, dois auto-saves em voo (ex: autoSelectVigentes + onStageLinkChange)
+// causavam (a) duplicação de módulos sem id e (b) sobrescrita de idetapa por payload stale.
+let savingSilentPromise = null;
+let pendingSilent = false;
+
+// Mapa de vínculos "intencionais" idetapa por módulo, registrados pelo onStageLinkChange.
+// Atua como fonte da verdade local — qualquer save-silent que tente desvincular é bloqueado.
+const intendedStageLinks = ref({});  // { moduleId|sortOrder: idetapa }
+
+function rememberStageLink(mod) {
+    if (mod?.idetapa == null) return;
+    const key = mod.id != null ? `id:${mod.id}` : `sort:${mod.sort_order}`;
+    intendedStageLinks.value[key] = mod.idetapa;
+}
+
+function applyIntendedLinks(modules) {
+    return modules.map((m) => {
+        const keys = [];
+        if (m.id != null) keys.push(`id:${m.id}`);
+        if (m.sort_order != null) keys.push(`sort:${m.sort_order}`);
+        for (const key of keys) {
+            const intended = intendedStageLinks.value[key];
+            if (intended != null && (m.idetapa == null || m.idetapa !== intended)) {
+                return { ...m, idetapa: intended };
+            }
+        }
+        return m;
+    });
+}
+
+async function handleSaveModulesSilent(modulesPayload = null) {
     if (isLocked.value) return;
-    try {
-        await store.saveModules(detail.value.id, localModules.value);
-        isDirty.value = false;
-    } catch (e) {
-        console.warn('[Detail] auto-save idetapa failed:', e.message);
+
+    // 1) Aplica payload incoming em localModules antes de tudo
+    if (modulesPayload) {
+        const safe = applyIntendedLinks(modulesPayload);
+        // Captura links intencionais que vêm da própria payload (caso onStageLinkChange)
+        for (const m of safe) rememberStageLink(m);
+        localModules.value = safe;
     }
+    isDirty.value = true;
+
+    // 2) Se já tem um save em voo, marca pendente e sai. O loop vai re-saver com state mais recente.
+    if (savingSilentPromise) {
+        pendingSilent = true;
+        return;
+    }
+
+    // 3) Loop: salva, e se durante a saída chegou outro save-silent, salva de novo.
+    do {
+        pendingSilent = false;
+
+        // Reaplica intendedStageLinks no estado mais recente antes de mandar
+        const toSave = applyIntendedLinks(localModules.value);
+        localModules.value = toSave;
+
+        savingSilentPromise = (async () => {
+            try {
+                const result = await store.saveModules(detail.value.id, toSave);
+                if (result?.modules) {
+                    // Reaplica intendedLinks também no resultado, caso o backend tenha falhado em persistir
+                    const fromBackend = result.modules.map(m => moduleDefaults(m));
+                    localModules.value = applyIntendedLinks(fromBackend);
+                    // Reindexa intendedStageLinks por id (módulos novos ganharam id agora)
+                    for (const mod of localModules.value) rememberStageLink(mod);
+                }
+                isDirty.value = false;
+            } catch (e) {
+                console.warn('[Detail] auto-save idetapa failed:', e.message);
+            }
+        })();
+
+        try { await savingSilentPromise; } finally { savingSilentPromise = null; }
+    } while (pendingSilent);
 }
 
 async function handleDeleteModule(moduleId) {

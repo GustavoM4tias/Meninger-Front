@@ -98,8 +98,10 @@ export const useOfficeAIStore = defineStore('officeAI', () => {
         const err = await response.json().catch(() => ({}))
         if (err.code === 'STORAGE_LIMIT') {
           pushAssistantMessage('', 'error', { storageLimit: true })
+        } else if (response.status === 429) {
+          pushAssistantMessage(err.error || 'Limite de mensagens atingido. Aguarde um instante.', 'error', { rateLimit: true })
         } else {
-          pushAssistantMessage('Erro ao processar sua mensagem. Tente novamente.', 'error')
+          pushAssistantMessage(err.error || 'Erro ao processar sua mensagem. Tente novamente.', 'error')
         }
         return
       }
