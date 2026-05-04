@@ -243,21 +243,53 @@
                     </template>
                   </div>
 
+                  <!-- Aviso quando pode selecionar pasta -->
+                  <div v-if="allowFolderSelection && !sp.loading && !sp.isSearching" class="flex items-start gap-2 p-2.5 bg-blue-50/60 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/40 rounded-lg text-[11px] text-blue-700 dark:text-blue-300">
+                    <i class="fas fa-info-circle mt-0.5"></i>
+                    <span>Você pode selecionar uma <strong>pasta inteira</strong> — clique em "Selecionar pasta" ao lado dela. Ou abra a pasta e selecione "Selecionar esta pasta atual" no topo.</span>
+                  </div>
+
+                  <!-- Botão: selecionar a pasta atual (quando navegou para dentro de uma) -->
+                  <button
+                    v-if="allowFolderSelection && currentFolder && !sp.loading && !sp.isSearching"
+                    @click="selectFolder(currentFolder)"
+                    class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition shadow-sm"
+                  >
+                    <i class="fas fa-folder-plus text-xs"></i>
+                    Selecionar esta pasta atual: <strong class="font-bold">{{ currentFolder.name }}</strong>
+                  </button>
+
                   <!-- Lista de arquivos -->
                   <div v-if="sp.loading || sp.isSearching" class="flex items-center justify-center py-8 text-gray-400">
                     <i class="fas fa-spinner fa-spin text-xl"></i>
                   </div>
                   <div v-else class="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden divide-y divide-gray-100 dark:divide-gray-800">
                     <template v-for="item in displayedItems" :key="item.id">
-                      <button
+                      <!-- Pasta -->
+                      <div
                         v-if="item.isFolder"
-                        @click="sp.openFolder(item)"
-                        class="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-gray-50 dark:hover:bg-gray-800/50 transition"
+                        class="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-gray-50 dark:hover:bg-gray-800/50 transition group"
                       >
-                        <i class="fas fa-folder text-yellow-500 w-4 text-sm"></i>
-                        <span class="text-sm text-gray-700 dark:text-gray-200 flex-1 truncate">{{ item.name }}</span>
-                        <i class="fas fa-chevron-right text-gray-300 dark:text-gray-600 text-xs"></i>
-                      </button>
+                        <button
+                          type="button"
+                          @click="enterFolder(item)"
+                          class="flex-1 flex items-center gap-3 min-w-0 text-left"
+                        >
+                          <i class="fas fa-folder text-yellow-500 w-4 text-sm"></i>
+                          <span class="text-sm text-gray-700 dark:text-gray-200 flex-1 truncate">{{ item.name }}</span>
+                          <i class="fas fa-chevron-right text-gray-300 dark:text-gray-600 text-xs"></i>
+                        </button>
+                        <button
+                          v-if="allowFolderSelection"
+                          type="button"
+                          @click.stop="selectFolder(item)"
+                          class="flex-shrink-0 ml-2 px-2.5 py-1 text-[11px] font-semibold rounded bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition"
+                          title="Selecionar esta pasta inteira"
+                        >
+                          <i class="fas fa-folder-plus text-[10px] mr-1"></i>Selecionar pasta
+                        </button>
+                      </div>
+                      <!-- Arquivo -->
                       <button
                         v-else
                         @click="selectSpFile(item)"
@@ -279,7 +311,7 @@
                     </template>
                     <div v-if="!displayedItems.length" class="flex flex-col items-center justify-center py-8 text-gray-400 dark:text-gray-600">
                       <i class="fas fa-folder-open text-2xl mb-2"></i>
-                      <p class="text-sm">Pasta vazia</p>
+                      <p class="text-sm">Pasta vazia{{ allowFolderSelection && currentFolder ? ' — você pode selecioná-la mesmo assim usando o botão acima.' : '' }}</p>
                     </div>
                   </div>
                 </template>
@@ -294,7 +326,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { useUploadStore } from '@/stores/Config/uploadStore';
 import { useMicrosoftStore } from '@/stores/Microsoft/microsoftStore';
 import { useSharepointStore } from '@/stores/Microsoft/sharepointStore';
@@ -305,6 +337,8 @@ const props = defineProps({
     hint: { type: String, default: '' },
     uploadContext: { type: String, default: 'appraisal_laudo' },
     referenceId: { type: [Number, String], default: null },
+    // Quando true, permite selecionar pastas inteiras no SharePoint (não apenas arquivos)
+    allowFolderSelection: { type: Boolean, default: false },
 });
 const emit = defineEmits(['update:modelValue']);
 
@@ -314,6 +348,7 @@ const urlInput    = ref('');
 const uploadFile  = ref(null);
 const uploading   = ref(false);
 const uploadError = ref('');
+const currentFolder = ref(null);  // pasta SharePoint em que estamos dentro (para botão "selecionar pasta atual")
 
 const uploadStore    = useUploadStore();
 const microsoftStore = useMicrosoftStore();
@@ -337,6 +372,7 @@ function openModal() {
     uploadError.value = '';
     activeTab.value   = 'url';
     modalOpen.value   = true;
+    currentFolder.value = null;
     if (microsoftStore.connected && !sp.sites?.length) {
         sp.fetchSites();
     }
@@ -348,7 +384,27 @@ function closeModal() { modalOpen.value = false; }
 function resetSpSite() {
     // In Pinia setup stores, assign directly to the store's reactive state
     sp.$patch({ selectedSite: null, selectedDrive: null, items: [], breadcrumb: [] });
+    currentFolder.value = null;
 }
+
+// ─── SharePoint: navegação e seleção de pastas ───────────────────────────────
+function enterFolder(folder) {
+    currentFolder.value = folder; // memoriza a pasta corrente p/ botão "Selecionar esta pasta atual"
+    sp.openFolder(folder);
+}
+
+function selectFolder(folder) {
+    if (!props.allowFolderSelection) return;
+    const url = folder?.webUrl || folder?.url || '';
+    if (!url) return;
+    emit('update:modelValue', url);
+    closeModal();
+}
+
+// Mantém currentFolder sincronizado com a navegação por breadcrumb (volta = clear)
+watch(() => sp.breadcrumb?.length, (len) => {
+    if (!len) currentFolder.value = null;
+});
 
 // ─── Tab URL ──────────────────────────────────────────────────────────────────
 function confirmUrl() {

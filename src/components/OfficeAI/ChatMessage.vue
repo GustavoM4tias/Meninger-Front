@@ -10,6 +10,10 @@ import ChatEventsActions from './renderers/ChatEventsActions.vue';
 import ChatEnterprisesActions from './renderers/ChatEnterprisesActions.vue';
 import ChatEnterpriseDetail from './renderers/ChatEnterpriseDetail.vue';
 import ChatMcmvActions from './renderers/ChatMcmvActions.vue';
+import ChatPrecadastrosSummary from './renderers/ChatPrecadastrosSummary.vue';
+import ChatPrecadastrosActions from './renderers/ChatPrecadastrosActions.vue';
+import ChatReservasSummary from './renderers/ChatReservasSummary.vue';
+import ChatReservasActions from './renderers/ChatReservasActions.vue';
 
 const props = defineProps({
   message: { type: Object, required: true },
@@ -66,9 +70,17 @@ const isError = computed(() => props.message.response_type === 'error');
         <ChatLeadsActions v-if="action?.context?.source === 'leads'" :context="action.context" />
         <ChatEventsActions v-if="action?.context?.source === 'events'"
           :context="action.context" :rows="action.rows || action.rawRows || []" />
-        <ChatEnterprisesActions v-if="action?.context?.source === 'enterprises'" :context="action.context" />
+        <ChatEnterprisesActions v-if="action?.context?.source === 'enterprises' || action?.type === 'enterprise_detail'" :context="action.context || {}" />
         <ChatEnterpriseDetail v-if="action?.type === 'detail'" :action="action" />
         <ChatMcmvActions v-if="action?.context?.source === 'mcmv'" :context="action.context" />
+
+        <!-- Pré-cadastros -->
+        <ChatPrecadastrosSummary v-if="action?.type === 'precadastros_summary'" :action="action" />
+        <ChatPrecadastrosActions v-if="action?.context?.source === 'precadastros'" :context="action.context" />
+
+        <!-- Reservas -->
+        <ChatReservasSummary v-if="action?.type === 'reservas_summary'" :action="action" />
+        <ChatReservasActions v-if="action?.context?.source === 'reservas'" :context="action.context" />
 
         <!-- Feedback / Retry -->
         <div v-if="!streaming" class="flex items-center gap-1 mt-1.5">
