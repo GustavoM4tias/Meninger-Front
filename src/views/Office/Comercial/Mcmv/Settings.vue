@@ -123,11 +123,11 @@
         <div class="grid grid-cols-2 gap-3">
           <div class="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 text-center">
             <p class="text-xs font-semibold text-blue-600 dark:text-blue-400">Faixa 3 — R$4.700 a R$8.000</p>
-            <p class="text-lg font-bold text-blue-800 dark:text-blue-200 mt-1">R$ 350.000</p>
+            <p class="text-lg font-bold text-blue-800 dark:text-blue-200 mt-1">R$ 400.000</p>
           </div>
           <div class="bg-purple-50 dark:bg-purple-900/20 rounded-xl p-4 text-center">
             <p class="text-xs font-semibold text-purple-600 dark:text-purple-400">Faixa 4 — até R$12.000</p>
-            <p class="text-lg font-bold text-purple-800 dark:text-purple-200 mt-1">R$ 500.000</p>
+            <p class="text-lg font-bold text-purple-800 dark:text-purple-200 mt-1">R$ 600.000</p>
           </div>
         </div>
       </div>

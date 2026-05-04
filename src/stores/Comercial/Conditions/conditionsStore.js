@@ -107,6 +107,19 @@ export const useConditionsStore = defineStore('conditions', () => {
         return result;
     }
 
+    // ─── Encerrar (any → closed, dupla validação) ─────────────────────────────
+
+    async function closeCondition(id, { note = '', confirmation = '' } = {}) {
+        const result = await requestWithAuth(`${API_URL}/conditions/${id}/close`, {
+            method: 'POST',
+            body: JSON.stringify({ note, confirmation }),
+        });
+        if (detail.value?.id === id) {
+            detail.value.status = 'closed';
+        }
+        return result;
+    }
+
     // ─── Publicar (legado — alias de submitForApproval) ───────────────────────
 
     async function publishCondition(id) {
@@ -253,7 +266,7 @@ export const useConditionsStore = defineStore('conditions', () => {
         list, detail, priceTables, priceDistribution, correspondents, officeUsers, correspondentCompanies, settings, error,
         fetchList, fetchDetail,
         createCondition, saveCondition, publishCondition,
-        submitForApproval, unlockCondition, cancelApproval,
+        submitForApproval, unlockCondition, cancelApproval, closeCondition,
         saveModules, deleteModule, copyModule, copyModuleFromSource, fetchModulesForEnterprise, fetchEnterpriseStages,
         saveCampaigns, deleteCampaign,
         fetchPriceTables, fetchPriceDistribution,

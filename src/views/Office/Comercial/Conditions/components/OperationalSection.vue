@@ -278,8 +278,60 @@
             <input :value="form.digital_cert_contact" @input="set('digital_cert_contact', $event.target.value)"
               type="text" class="inp" placeholder="Nome, telefone ou e-mail do suporte..." :disabled="readonly" />
           </div>
+
+          <!-- Toggle: tem custo? + valor (sempre pago pela Menin) -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
+            <div class="flex items-center justify-between gap-4 p-3.5 rounded-md border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/30">
+              <div class="min-w-0">
+                <p class="text-sm font-semibold text-gray-800 dark:text-gray-100">Tem custo?</p>
+                <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Custo é sempre pago pela Menin (entra automaticamente no resumo).</p>
+              </div>
+              <button type="button" @click="set('digital_cert_has_cost', !form.digital_cert_has_cost)"
+                :class="form.digital_cert_has_cost ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-600'"
+                class="relative inline-flex h-6 w-11 flex-shrink-0 rounded-full transition-colors duration-200" :disabled="readonly">
+                <span :class="form.digital_cert_has_cost ? 'translate-x-5' : 'translate-x-1'"
+                  class="pointer-events-none inline-block h-4 w-4 mt-1 rounded-full bg-white shadow-md transition-transform duration-200" />
+              </button>
+            </div>
+            <div v-if="form.digital_cert_has_cost">
+              <label class="lbl">Valor (R$)</label>
+              <div class="relative">
+                <span class="pfx">R$</span>
+                <input type="text" :value="fmtBR(form.digital_cert_cost)"
+                  @focus="e => { e.target.value = form.digital_cert_cost ?? ''; e.target.select(); }"
+                  @blur="e => set('digital_cert_cost', parseBR(e.target.value))"
+                  class="inp-pfx" placeholder="0,00" :disabled="readonly" />
+              </div>
+              <p class="mt-1 text-[11px] text-blue-600 dark:text-blue-400 font-medium">
+                <i class="fas fa-building text-[10px] mr-1"></i>Pago pela Menin
+              </p>
+            </div>
+          </div>
         </div>
 
+      </div>
+    </div>
+
+    <!-- ── Arquivos do Empreendimento ──────────────────────────────────── -->
+    <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+      <div class="px-5 py-3.5 border-b border-gray-100 dark:border-gray-800 bg-gray-50/60 dark:bg-gray-800/40">
+        <p class="lbl-section"><i class="fas fa-folder-open text-blue-500"></i> Arquivos do Empreendimento</p>
+      </div>
+      <div class="p-5">
+        <label class="lbl">Link para a Pasta / Arquivos</label>
+        <div class="flex items-start gap-3">
+          <div class="flex-1">
+            <AttachmentPicker
+              :model-value="form.enterprise_files_url"
+              @update:model-value="set('enterprise_files_url', $event)"
+              :reference-id="form.id"
+              upload-context="enterprise_files"
+              :allow-folder-selection="true"
+              hint="Vincule o link da pasta (SharePoint: pode selecionar pasta inteira), Drive ou faça upload. Um QR Code será gerado para o resumo/PDF."
+            />
+          </div>
+          <AppraisalQrCode v-if="form.enterprise_files_url" :url="form.enterprise_files_url" :size="120" caption="Arquivos" />
+        </div>
       </div>
     </div>
 
@@ -300,6 +352,8 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue';
+import AttachmentPicker from './AttachmentPicker.vue';
+import AppraisalQrCode from './AppraisalQrCode.vue';
 
 const props = defineProps({
   form: { type: Object, required: true },
@@ -390,6 +444,15 @@ function setCertProvider(val) {
 
 function set(field, val) { if (!props.readonly) emit('update', { [field]: val }); }
 function numOrNull(evt) { const v = evt.target.value; return v === '' ? null : Number(v); }
+function fmtBR(val) {
+    if (val == null || val === '') return '';
+    return Number(val).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+function parseBR(str) {
+    if (str === '' || str == null) return null;
+    const n = parseFloat(String(str).replace(/\./g, '').replace(',', '.'));
+    return isNaN(n) ? null : n;
+}
 </script>
 
 <style scoped>

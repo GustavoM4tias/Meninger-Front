@@ -71,6 +71,18 @@ export default [
                         meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Dashboard de Vendas X Projeção de Vendas' },
                     },
                     {
+                        path: 'precadastros',
+                        name: 'Pré-Cadastros',
+                        component: () => import('@/views/Office/Comercial/Precadastros/Index.vue'),
+                        meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Relatório de Pré-Cadastros — análise de crédito, tempo e aprovação por correspondente' },
+                    },
+                    {
+                        path: 'reservas-report',
+                        name: 'Reservas',
+                        component: () => import('@/views/Office/Comercial/Reservas/Index.vue'),
+                        meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Relatório de Reservas — funil pós pré-cadastro até a venda concretizada' },
+                    },
+                    {
                         path: 'faturamento',
                         name: 'Faturamento',
                         component: () => import('@/views/Office/Comercial/Faturamento/Index.vue'),

@@ -45,6 +45,7 @@
             <option v-if="isAdmin" value="draft">Rascunho</option>
             <option v-if="isAdmin" value="pending_approval">Em Autorização</option>
             <option value="approved">Autorizado</option>
+            <option value="closed">Encerrado</option>
           </select>
         </div>
       </div>
@@ -59,11 +60,12 @@
         <i class="fas fa-spinner fa-spin text-2xl"></i>
       </div>
 
-      <!-- Grid agrupado por empreendimento -->
-      <div v-else-if="filteredGroups.length" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+      <!-- Grid agrupado por empreendimento (ATIVOS) -->
+      <div v-else-if="activeGroups.length || closedGroups.length">
+        <div v-if="activeGroups.length" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         <div
-          v-for="group in filteredGroups"
-          :key="group.enterprise.idempreendimento"
+          v-for="group in activeGroups"
+          :key="group.groupKey"
           class="relative group bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md hover:border-blue-200 dark:hover:border-blue-700 transition-all cursor-pointer overflow-hidden"
           @click="openGroup(group)"
         >
@@ -73,11 +75,15 @@
           <div class="p-5">
             <!-- Nome do empreendimento -->
             <div class="mb-3">
-              <p class="font-bold text-gray-900 dark:text-white text-base leading-tight group-hover:text-blue-600 dark:group-hover:text-blue-400 transition truncate">
+              <p class="font-bold text-gray-900 dark:text-white text-base leading-tight group-hover:text-blue-600 dark:group-hover:text-blue-400 transition truncate flex items-center gap-1.5">
+                <i v-if="group.isAvulsa" class="fas fa-cube text-gray-400 text-xs" title="Ficha avulsa"></i>
                 {{ group.enterprise.nome ?? '—' }}
               </p>
               <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                {{ [group.enterprise.cidade, group.enterprise.segmento_nome].filter(Boolean).join(' · ') }}
+                <template v-if="group.isAvulsa">Avulsa · sem CV</template>
+                <template v-else>
+                  {{ [group.enterprise.cidade, group.enterprise.segmento_nome].filter(Boolean).join(' · ') }}
+                </template>
               </p>
             </div>
 
@@ -120,6 +126,67 @@
             <i class="fas fa-arrow-right text-xs text-gray-300 dark:text-gray-600 group-hover:text-blue-500 transition"></i>
           </div>
         </div>
+        </div>
+
+        <!-- Vazio (sem ativos mas com encerrados) -->
+        <div v-else-if="!loading && closedGroups.length" class="flex items-center gap-3 px-5 py-4 bg-gray-50 dark:bg-gray-900/40 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-500 dark:text-gray-400 text-sm">
+          <i class="fas fa-info-circle"></i>
+          <span>Nenhum empreendimento ativo no momento.</span>
+        </div>
+
+        <!-- Seção: Empreendimentos Encerrados -->
+        <div v-if="closedGroups.length" class="mt-8">
+          <button
+            @click="showClosed = !showClosed"
+            class="flex items-center gap-2 mb-3 px-3 py-2 -ml-3 rounded-lg text-sm font-semibold text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+          >
+            <i :class="showClosed ? 'fa-chevron-down' : 'fa-chevron-right'" class="fas text-xs transition-transform"></i>
+            <i class="fas fa-flag-checkered text-gray-400"></i>
+            Encerrados
+            <span class="px-2 py-0.5 rounded-full bg-gray-200 dark:bg-gray-800 text-xs text-gray-600 dark:text-gray-400">
+              {{ closedGroups.length }}
+            </span>
+          </button>
+
+          <div v-if="showClosed" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 opacity-75">
+            <div
+              v-for="group in closedGroups"
+              :key="group.enterprise.idempreendimento"
+              class="relative group bg-gray-50 dark:bg-gray-900/40 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md hover:border-gray-400 dark:hover:border-gray-600 transition-all cursor-pointer overflow-hidden"
+              @click="openGroup(group)"
+            >
+              <div class="h-1 bg-gray-500"></div>
+              <div class="p-5">
+                <div class="mb-3">
+                  <p class="font-bold text-gray-700 dark:text-gray-300 text-base leading-tight group-hover:text-gray-900 dark:group-hover:text-white transition truncate flex items-center gap-2">
+                    <i class="fas fa-flag-checkered text-gray-400 text-xs"></i>
+                    {{ group.enterprise.nome ?? '—' }}
+                  </p>
+                  <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                    {{ [group.enterprise.cidade, group.enterprise.segmento_nome].filter(Boolean).join(' · ') }}
+                  </p>
+                </div>
+                <div class="flex items-center justify-between mb-1">
+                  <div class="flex items-center gap-2">
+                    <i class="fas fa-calendar-alt text-gray-300 dark:text-gray-600 text-xs"></i>
+                    <span class="text-xs font-semibold text-gray-500 dark:text-gray-400">
+                      Encerrado em {{ formatMonth(group.latest.reference_month) }}
+                    </span>
+                  </div>
+                  <span :class="badgeClass('closed')" class="px-2.5 py-0.5 rounded-full text-xs font-semibold">
+                    {{ statusLabel('closed') }}
+                  </span>
+                </div>
+                <p class="text-[11px] text-gray-400 dark:text-gray-600 italic">
+                  {{ group.conditions.length }} ficha{{ group.conditions.length > 1 ? 's' : '' }} no histórico
+                </p>
+              </div>
+              <div class="absolute bottom-4 right-4">
+                <i class="fas fa-arrow-right text-xs text-gray-300 dark:text-gray-600 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition"></i>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Vazio -->
@@ -155,8 +222,43 @@
           <!-- Body -->
           <div class="px-6 py-5 space-y-5 overflow-y-auto flex-1">
 
-            <!-- Empreendimento -->
+            <!-- Tipo: vinculado ao CV ou avulso -->
             <div>
+              <label class="lbl">Tipo de Ficha</label>
+              <div class="flex gap-2">
+                <button
+                  type="button"
+                  @click="setKind('cv')"
+                  :class="[
+                    'flex-1 flex items-center gap-2 px-3.5 py-2.5 rounded-md border text-sm font-medium transition',
+                    newForm.kind === 'cv'
+                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 shadow-sm'
+                      : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-900/60 hover:border-gray-300'
+                  ]"
+                >
+                  <i class="fas fa-link text-xs"></i> Vinculada ao CV
+                </button>
+                <button
+                  type="button"
+                  @click="setKind('avulsa')"
+                  :class="[
+                    'flex-1 flex items-center gap-2 px-3.5 py-2.5 rounded-md border text-sm font-medium transition',
+                    newForm.kind === 'avulsa'
+                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 shadow-sm'
+                      : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-900/60 hover:border-gray-300'
+                  ]"
+                >
+                  <i class="fas fa-cube text-xs"></i> Avulsa (sem CV)
+                </button>
+              </div>
+              <p class="text-[11px] text-gray-400 dark:text-gray-500 mt-1.5">
+                <template v-if="newForm.kind === 'cv'">Ficha vinculada a empreendimento do CV — herda etapas, unidades e auto-evolui mensalmente.</template>
+                <template v-else>Ficha avulsa — produto sem cadastro no CV. Não auto-evolui (você cria manualmente cada mês).</template>
+              </p>
+            </div>
+
+            <!-- Empreendimento (só quando vinculado ao CV) -->
+            <div v-if="newForm.kind === 'cv'">
               <label class="lbl">Empreendimento</label>
               <select
                 v-model="newForm.idempreendimento"
@@ -170,6 +272,20 @@
               </select>
             </div>
 
+            <!-- Nome (só quando avulsa) -->
+            <div v-else>
+              <label class="lbl">Nome da Ficha</label>
+              <input
+                v-model="newForm.display_name"
+                type="text"
+                class="inp"
+                placeholder="Ex: Residencial XYZ"
+              />
+              <p class="text-[11px] text-gray-400 dark:text-gray-500 mt-1.5">
+                Nome livre que identifica este produto no sistema (será também o nome do módulo inicial).
+              </p>
+            </div>
+
             <!-- Mês de Referência -->
             <div>
               <label class="lbl">Mês de Referência</label>
@@ -180,8 +296,8 @@
               />
             </div>
 
-            <!-- Módulos / Etapas do CV -->
-            <div v-if="newForm.idempreendimento">
+            <!-- Módulos / Etapas do CV (apenas no modo vinculado) -->
+            <div v-if="newForm.kind === 'cv' && newForm.idempreendimento">
               <div class="flex items-center justify-between mb-2">
                 <label class="lbl mb-0">Módulos a incluir</label>
                 <div v-if="enterpriseStages.length && !loadingStages" class="flex items-center gap-2">
@@ -327,7 +443,7 @@
             </button>
             <button
               @click="handleCreate"
-              :disabled="creating || !newForm.idempreendimento || !newForm.reference_month || totalSelectedModules === 0"
+              :disabled="creating || !canSubmitCreate"
               class="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 disabled:opacity-50 transition"
             >
               <i :class="creating ? 'fa-spinner fa-spin' : 'fa-plus'" class="fas text-xs"></i>
@@ -357,6 +473,7 @@ const isAdmin = computed(() => auth.hasRole('admin'));
 const loading = ref(true);
 const search = ref('');
 const filterStatus = ref('');
+const showClosed = ref(false);  // colapsa/expande seção de encerrados
 
 // ── Criação ───────────────────────────────────────────────────────────────────
 
@@ -368,11 +485,24 @@ const enterpriseStages = ref([]);
 const loadingStages  = ref(false);
 
 const newForm = ref({
+    kind: 'cv',           // 'cv' (vinculada ao CV) | 'avulsa'
     idempreendimento: '',
+    display_name: '',     // usado quando kind === 'avulsa'
     reference_month: '',
     selectedStageIds: [],
     includeCustom: false,
 });
+
+function setKind(k) {
+    newForm.value.kind = k;
+    if (k === 'avulsa') {
+        newForm.value.idempreendimento = '';
+        newForm.value.selectedStageIds = [];
+        enterpriseStages.value = [];
+    } else {
+        newForm.value.display_name = '';
+    }
+}
 
 const expandedStages = ref(new Set());
 
@@ -387,9 +517,19 @@ const totalSelectedModules = computed(() =>
     newForm.value.selectedStageIds.length + (newForm.value.includeCustom ? 1 : 0)
 );
 
+// Habilita o botão "Criar" — regras diferentes para CV vs Avulsa
+const canSubmitCreate = computed(() => {
+    if (!newForm.value.reference_month) return false;
+    if (newForm.value.kind === 'avulsa') {
+        return !!(newForm.value.display_name || '').trim();
+    }
+    // kind === 'cv'
+    return !!newForm.value.idempreendimento && totalSelectedModules.value > 0;
+});
+
 function closeCreate() {
     openCreate.value = false;
-    newForm.value = { idempreendimento: '', reference_month: '', selectedStageIds: [], includeCustom: false };
+    newForm.value = { kind: 'cv', idempreendimento: '', display_name: '', reference_month: '', selectedStageIds: [], includeCustom: false };
     enterpriseStages.value = [];
     expandedStages.value = new Set();
     createError.value = '';
@@ -418,15 +558,35 @@ async function onEnterpriseChange() {
 
 async function handleCreate() {
     createError.value = '';
+
+    // Validação client-side
+    if (!newForm.value.reference_month) {
+        createError.value = 'Selecione um mês de referência.';
+        return;
+    }
+    if (newForm.value.kind === 'cv' && !newForm.value.idempreendimento) {
+        createError.value = 'Selecione um empreendimento.';
+        return;
+    }
+    if (newForm.value.kind === 'avulsa' && !(newForm.value.display_name || '').trim()) {
+        createError.value = 'Digite um nome para a ficha avulsa.';
+        return;
+    }
+
     creating.value = true;
     try {
-        const payload = {
-            idempreendimento: Number(newForm.value.idempreendimento),
-            reference_month:  newForm.value.reference_month,
-            selectedStageIds: newForm.value.selectedStageIds,
-        };
-        // Se incluiu módulo avulso: manda um módulo vazio extra para o backend criar
-        // O backend ignora selectedStageIds para avulso — adicionamos depois no Detail
+        const isAvulsa = newForm.value.kind === 'avulsa';
+        const payload = isAvulsa
+            ? {
+                idempreendimento: null,
+                display_name: newForm.value.display_name.trim(),
+                reference_month: newForm.value.reference_month,
+            }
+            : {
+                idempreendimento: Number(newForm.value.idempreendimento),
+                reference_month: newForm.value.reference_month,
+                selectedStageIds: newForm.value.selectedStageIds,
+            };
         const result = await store.createCondition(payload);
         closeCreate();
         router.push(`/comercial/conditions/${result.id}`);
@@ -443,14 +603,24 @@ const groups = computed(() => {
     const map = new Map();
     for (const c of (store.list ?? [])) {
         const eid = c.enterprise?.idempreendimento ?? c.idempreendimento;
-        if (!map.has(eid)) {
-            map.set(eid, { enterprise: c.enterprise ?? { idempreendimento: eid }, conditions: [] });
+        // Avulso: cada ficha é seu próprio grupo (eid pode ser null/undefined).
+        // Usamos uma chave sintética para não colapsar todos avulsos juntos.
+        const groupKey = eid != null ? `cv:${eid}` : `avulsa:${c.id}`;
+        if (!map.has(groupKey)) {
+            const enterprise = c.enterprise ?? (eid != null
+                ? { idempreendimento: eid }
+                : { idempreendimento: null, nome: c.display_name || '(Ficha avulsa)', cidade: null, isAvulsa: true });
+            map.set(groupKey, { groupKey, enterprise, isAvulsa: eid == null, conditions: [] });
         }
-        map.get(eid).conditions.push(c);
+        map.get(groupKey).conditions.push(c);
     }
     for (const g of map.values()) {
         g.conditions.sort((a, b) => b.reference_month.localeCompare(a.reference_month));
         g.latest = g.conditions[0];
+        // Para avulso, o nome de display vem de display_name da ficha (se backend retornou) ou de enterprise.nome
+        if (g.isAvulsa && g.latest?.display_name) {
+            g.enterprise = { ...g.enterprise, nome: g.latest.display_name };
+        }
     }
     return [...map.values()].sort((a, b) =>
         (a.enterprise?.nome ?? '').localeCompare(b.enterprise?.nome ?? '', 'pt-BR')
@@ -472,6 +642,15 @@ const filteredGroups = computed(() => {
     return r;
 });
 
+// Empreendimentos ativos vs encerrados — separados visualmente.
+// Se o usuário filtrar explicitamente por "closed", mostra só na seção de Encerrados.
+const activeGroups = computed(() =>
+    filterStatus.value === 'closed' ? [] : filteredGroups.value.filter(g => g.latest?.status !== 'closed')
+);
+const closedGroups = computed(() =>
+    filteredGroups.value.filter(g => g.latest?.status === 'closed')
+);
+
 function openGroup(group) {
     router.push(`/comercial/conditions/${group.latest.id}`);
 }
@@ -483,6 +662,7 @@ const STATUS_MAP = {
     pending_approval: { label: 'Em Autorização', cls: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',    bar: 'bg-blue-500' },
     approved:         { label: 'Autorizado',     cls: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400', bar: 'bg-green-500' },
     published:        { label: 'Autorizado',     cls: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400', bar: 'bg-green-500' },
+    closed:           { label: 'Encerrado',      cls: 'bg-gray-200 text-gray-700 dark:bg-gray-800 dark:text-gray-300',         bar: 'bg-gray-500' },
 };
 
 function badgeClass(s)     { return STATUS_MAP[s]?.cls ?? 'bg-gray-100 text-gray-600'; }

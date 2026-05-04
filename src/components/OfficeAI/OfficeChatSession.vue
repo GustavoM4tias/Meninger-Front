@@ -10,6 +10,10 @@ import ChatEventsActions from './renderers/ChatEventsActions.vue'
 import ChatEnterprisesActions from './renderers/ChatEnterprisesActions.vue'
 import ChatEnterpriseDetail from './renderers/ChatEnterpriseDetail.vue'
 import ChatMcmvActions from './renderers/ChatMcmvActions.vue'
+import ChatPrecadastrosSummary from './renderers/ChatPrecadastrosSummary.vue'
+import ChatPrecadastrosActions from './renderers/ChatPrecadastrosActions.vue'
+import ChatReservasSummary from './renderers/ChatReservasSummary.vue'
+import ChatReservasActions from './renderers/ChatReservasActions.vue'
 import FeedbackModal from './FeedbackModal.vue'
 
 defineOptions({ inheritAttrs: false })
@@ -49,6 +53,25 @@ function onKeydown(e) {
 
 function getAction(msg) {
   return msg.metadata?.action || null
+}
+
+// Detecta se a action é de um determinado módulo, olhando em vários lugares
+// (context.source, source top-level e tipo). Robusto a variações.
+function actionSource(msg) {
+  const a = getAction(msg)
+  if (!a) return null
+  if (a.context?.source) return a.context.source
+  if (a.source)          return a.source
+  if (typeof a.type === 'string') {
+    if (a.type === 'precadastros_summary') return 'precadastros'
+    if (a.type === 'reservas_summary')     return 'reservas'
+    if (a.type === 'enterprise_detail')    return 'enterprises'
+  }
+  return null
+}
+
+function actionContext(msg) {
+  return getAction(msg)?.context || {}
 }
 
 function parseContent(msg) {
@@ -103,23 +126,39 @@ async function confirmFeedback({ comment }) {
               :columns="getAction(msg).columns" :rows="getAction(msg).rows" :total="getAction(msg).total" />
             <ChatChart v-if="getAction(msg)?.type === 'chart'" :chart-type="getAction(msg).chartType"
               :title="getAction(msg).title" :labels="getAction(msg).labels" :data="getAction(msg).data" />
-            <ChatLeadsActions v-if="getAction(msg)?.context?.source === 'leads'" :context="getAction(msg).context" />
+            <ChatLeadsActions v-if="actionSource(msg) === 'leads'" :context="actionContext(msg)" />
             <ChatEventsActions
-              v-if="getAction(msg)?.context?.source === 'events'"
-              :context="getAction(msg).context"
+              v-if="actionSource(msg) === 'events'"
+              :context="actionContext(msg)"
               :rows="getAction(msg).rows || getAction(msg).rawRows || []"
             />
             <ChatEnterprisesActions
-              v-if="getAction(msg)?.context?.source === 'enterprises'"
-              :context="getAction(msg).context"
+              v-if="actionSource(msg) === 'enterprises'"
+              :context="actionContext(msg)"
             />
             <ChatEnterpriseDetail
               v-if="getAction(msg)?.type === 'detail'"
               :action="getAction(msg)"
             />
+            <ChatPrecadastrosSummary
+              v-if="getAction(msg)?.type === 'precadastros_summary'"
+              :action="getAction(msg)"
+            />
+            <ChatReservasSummary
+              v-if="getAction(msg)?.type === 'reservas_summary'"
+              :action="getAction(msg)"
+            />
             <ChatMcmvActions
-              v-if="getAction(msg)?.context?.source === 'mcmv'"
-              :context="getAction(msg).context"
+              v-if="actionSource(msg) === 'mcmv'"
+              :context="actionContext(msg)"
+            />
+            <ChatPrecadastrosActions
+              v-if="actionSource(msg) === 'precadastros'"
+              :context="actionContext(msg)"
+            />
+            <ChatReservasActions
+              v-if="actionSource(msg) === 'reservas'"
+              :context="actionContext(msg)"
             />
             <div v-if="msg.response_type === 'error' && msg.metadata?.storageLimit"
               class="flex items-start gap-2 p-3 rounded-xl bg-orange-500/10 border border-orange-500/20 text-sm text-orange-300 mt-2">
