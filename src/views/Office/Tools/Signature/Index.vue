@@ -295,13 +295,13 @@ watch(activeTab, loadTabData);
     </PageContainer>
 
     <!-- Tabs -->
-    <div class="px-4 sm:px-6 lg:px-8 pb-3">
+    <PageContainer :padded="false" class="px-4 sm:px-6 lg:px-8 pb-3">
       <SegmentedControl v-model="activeTab" :options="tabOptions" />
-    </div>
+    </PageContainer>
 
     <!-- Scrollable content -->
     <div class="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 pb-6">
-      <div class="max-w-5xl mx-auto">
+      <div class="max-w-7xl mx-auto px-2 sm:px-8 lg:px-10 pb-3 ">
 
         <!-- ═══════════════════════════════════════════════════════════
              TAB: CRIAR / ENVIAR

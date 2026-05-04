@@ -25,27 +25,37 @@
         <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md border border-gray-100 dark:border-gray-800">
           <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-800">
             <div class="flex items-center gap-2">
-              <i class="fas fa-lock-open text-amber-500"></i>
-              <h2 class="text-base font-bold text-gray-900 dark:text-white">Desbloquear Ficha</h2>
+              <i :class="isClosed ? 'fa-rotate-left text-emerald-500' : 'fa-pen-to-square text-amber-500'" class="fas"></i>
+              <h2 class="text-base font-bold text-gray-900 dark:text-white">
+                {{ isClosed ? 'Reabrir Empreendimento' : 'Editar Ficha Autorizada' }}
+              </h2>
             </div>
             <button @click="showUnlockModal = false" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 transition">
               <i class="fas fa-times text-sm"></i>
             </button>
           </div>
           <div class="px-6 py-5 space-y-4">
-            <div class="flex items-start gap-3 p-3.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl text-amber-800 dark:text-amber-300 text-sm">
+            <div v-if="isClosed" class="flex items-start gap-3 p-3.5 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl text-emerald-800 dark:text-emerald-300 text-sm">
+              <i class="fas fa-info-circle flex-shrink-0 mt-0.5"></i>
+              <p>
+                Reabrir o empreendimento volta esta ficha para <strong>Rascunho</strong>. A geração mensal automática vai retomar a partir do próximo ciclo.
+              </p>
+            </div>
+            <div v-else class="flex items-start gap-3 p-3.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl text-amber-800 dark:text-amber-300 text-sm">
               <i class="fas fa-exclamation-triangle flex-shrink-0 mt-0.5"></i>
               <p>
-                Desbloquear esta ficha irá <strong>desautorizá-la</strong> e cancelar o processo de assinatura vigente.
+                Ao confirmar a edição, esta ficha <strong>perde a autorização</strong> e o processo de assinatura vigente é cancelado.
                 Ela voltará ao status <strong>Rascunho</strong> e precisará ser enviada para autorização novamente.
               </p>
             </div>
             <div>
-              <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Motivo do desbloqueio (opcional)</label>
+              <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">
+                {{ isClosed ? 'Motivo da reabertura (opcional)' : 'Motivo da edição (opcional)' }}
+              </label>
               <textarea
                 v-model="unlockNote"
                 rows="3"
-                placeholder="Ex: Correção no valor de comissão..."
+                :placeholder="isClosed ? 'Ex: Empreendimento retomado...' : 'Ex: Correção no valor de comissão...'"
                 class="w-full px-3.5 py-2.5 text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900/60 border border-gray-200 dark:border-gray-700 rounded-md shadow-sm placeholder:text-gray-400 outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-500/15 transition resize-none"
               />
             </div>
@@ -57,10 +67,13 @@
             <button
               @click="handleUnlock"
               :disabled="actionLoading"
-              class="flex items-center gap-2 px-5 py-2.5 bg-amber-500 text-white text-sm font-semibold rounded-xl hover:bg-amber-600 disabled:opacity-50 transition"
+              :class="[
+                'flex items-center gap-2 px-5 py-2.5 text-white text-sm font-semibold rounded-xl disabled:opacity-50 transition',
+                isClosed ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-amber-500 hover:bg-amber-600'
+              ]"
             >
-              <i class="fas fa-lock-open text-xs"></i>
-              {{ actionLoading ? 'Desbloqueando...' : 'Confirmar Desbloqueio' }}
+              <i :class="isClosed ? 'fa-rotate-left' : 'fa-pen-to-square'" class="fas text-xs"></i>
+              {{ actionLoading ? 'Processando...' : (isClosed ? 'Confirmar reabertura' : 'Confirmar edição') }}
             </button>
           </div>
         </div>
@@ -162,6 +175,82 @@
       </div>
     </transition>
 
+    <!-- Modal: Encerrar Empreendimento (dupla validação) -->
+    <transition name="fade">
+      <div
+        v-if="showCloseModal"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+        @click.self="closeCloseModal"
+      >
+        <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md border border-gray-100 dark:border-gray-800">
+          <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-800">
+            <div class="flex items-center gap-2">
+              <i class="fas fa-flag-checkered text-gray-500"></i>
+              <h2 class="text-base font-bold text-gray-900 dark:text-white">Encerrar Empreendimento</h2>
+            </div>
+            <button @click="closeCloseModal" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 transition">
+              <i class="fas fa-times text-sm"></i>
+            </button>
+          </div>
+          <div class="px-6 py-5 space-y-4">
+            <!-- Etapa 1: aviso -->
+            <div class="flex items-start gap-3 p-3.5 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl text-red-800 dark:text-red-300 text-sm">
+              <i class="fas fa-triangle-exclamation flex-shrink-0 mt-0.5"></i>
+              <div>
+                <p class="font-semibold mb-1">Esta ação não pode ser desfeita por usuários comuns.</p>
+                <p>
+                  Encerrar o empreendimento significa que ele <strong>não vai mais evoluir</strong>:
+                  esta ficha vira histórico imutável e <strong>nenhuma nova ficha mensal será gerada</strong> automaticamente.
+                </p>
+              </div>
+            </div>
+
+            <!-- Motivo -->
+            <div>
+              <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">
+                Motivo do encerramento (opcional)
+              </label>
+              <textarea
+                v-model="closeNote"
+                rows="2"
+                placeholder="Ex: Empreendimento finalizado, todas as unidades vendidas..."
+                class="w-full px-3.5 py-2.5 text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900/60 border border-gray-200 dark:border-gray-700 rounded-md shadow-sm placeholder:text-gray-400 outline-none focus:border-red-400 focus:ring-2 focus:ring-red-500/15 transition resize-none"
+              />
+            </div>
+
+            <!-- Etapa 2: dupla validação por digitação -->
+            <div>
+              <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">
+                Para confirmar, digite <strong class="text-red-600 dark:text-red-400 tracking-widest">ENCERRAR</strong>
+              </label>
+              <input
+                v-model="closeConfirmation"
+                type="text"
+                placeholder="ENCERRAR"
+                class="w-full px-3.5 py-2.5 text-sm font-mono text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900/60 border-2 rounded-md shadow-sm placeholder:text-gray-400 outline-none focus:ring-2 transition"
+                :class="closeConfirmation === 'ENCERRAR'
+                  ? 'border-emerald-500 focus:border-emerald-600 focus:ring-emerald-500/20'
+                  : 'border-red-300 dark:border-red-800 focus:border-red-500 focus:ring-red-500/15'"
+              />
+            </div>
+          </div>
+          <div class="flex justify-end gap-3 px-6 pb-5">
+            <button @click="closeCloseModal" class="px-4 py-2.5 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white transition">
+              Cancelar
+            </button>
+            <button
+              @click="handleCloseCondition"
+              :disabled="actionLoading || closeConfirmation !== 'ENCERRAR'"
+              class="flex items-center gap-2 px-5 py-2.5 bg-red-600 text-white text-sm font-semibold rounded-xl hover:bg-red-700 disabled:opacity-40 disabled:cursor-not-allowed transition"
+            >
+              <i :class="actionLoading ? 'fa-spinner fa-spin' : 'fa-flag-checkered'" class="fas text-xs"></i>
+              {{ actionLoading ? 'Encerrando...' : 'Encerrar definitivamente' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </transition>
+
     <!-- Erro de carregamento -->
     <div v-if="fetchError && !detail" class="flex flex-col items-center justify-center py-24 text-center px-4">
       <div class="w-14 h-14 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mb-4">
@@ -192,8 +281,9 @@
               </button>
               <div class="min-w-0">
                 <div class="flex items-center gap-2 flex-wrap">
+                  <i v-if="isAvulsa" class="fas fa-cube text-gray-400 text-sm" title="Ficha avulsa (sem CV)"></i>
                   <h1 class="text-lg lg:text-xl font-bold text-gray-900 dark:text-white truncate">
-                    {{ detail.enterprise?.nome ?? '...' }}
+                    {{ headerTitle }}
                   </h1>
                   <!-- Badge: mostra "Reprovada" se foi rejeitada, senão status normal -->
                   <span v-if="wasRejected && detail.status === 'draft'"
@@ -203,10 +293,12 @@
                   <span v-else :class="badgeClass(detail.status)" class="px-2 py-0.5 rounded-full text-xs font-semibold flex-shrink-0">
                     {{ statusLabel(detail.status) }}
                   </span>
+                  <span v-if="isAvulsa" class="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400 flex-shrink-0">
+                    Avulsa
+                  </span>
                 </div>
                 <p class="text-xs text-gray-400 dark:text-gray-500">
-                  {{ detail.enterprise?.cidade }}
-                  <span class="mx-1">·</span>
+                  <template v-if="!isAvulsa">{{ detail.enterprise?.cidade }} <span class="mx-1">·</span></template>
                   Ref: {{ formatMonth(detail.reference_month) }}
                 </p>
               </div>
@@ -253,14 +345,36 @@
                   <span class="hidden sm:inline">Cancelar Autorização</span>
                 </button>
 
-                <!-- approved → Desbloquear -->
+                <!-- approved → Editar (= desbloquear) -->
                 <button
                   v-else-if="detail.status === 'approved'"
                   @click="showUnlockModal = true"
                   class="flex items-center gap-2 px-3.5 py-2 bg-amber-500 text-white text-xs font-semibold rounded-xl hover:bg-amber-600 transition"
                 >
-                  <i class="fas fa-lock-open text-xs"></i>
-                  <span class="hidden sm:inline">Desbloquear</span>
+                  <i class="fas fa-pen-to-square text-xs"></i>
+                  <span class="hidden sm:inline">Editar</span>
+                </button>
+
+                <!-- closed → Reabrir Empreendimento (= desbloquear closed → draft) -->
+                <button
+                  v-else-if="detail.status === 'closed'"
+                  @click="showUnlockModal = true"
+                  class="flex items-center gap-2 px-3.5 py-2 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 text-xs font-semibold rounded-xl border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition"
+                >
+                  <i class="fas fa-rotate-left text-xs"></i>
+                  <span class="hidden sm:inline">Reabrir Empreendimento</span>
+                </button>
+
+                <!-- Encerrar Ficha (admin, qualquer status exceto closed/pending_approval) -->
+                <button
+                  v-if="detail.status !== 'closed' && detail.status !== 'pending_approval'"
+                  @click="showCloseModal = true"
+                  :disabled="actionLoading"
+                  title="Encerrar empreendimento (finalização definitiva)"
+                  class="flex items-center gap-2 px-3.5 py-2 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-xs font-semibold rounded-xl border border-gray-200 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-700 transition"
+                >
+                  <i class="fas fa-flag-checkered text-xs"></i>
+                  <span class="hidden sm:inline">Encerrar</span>
                 </button>
               </template>
 
@@ -310,6 +424,18 @@
           >
             <i class="fas fa-clock"></i>
             <span>Em processo de autorização — aguardando assinaturas dos aprovadores.</span>
+          </div>
+
+          <!-- Banner: Encerrada -->
+          <div
+            v-else-if="detail.status === 'closed'"
+            class="flex items-center gap-2 mb-3 px-3 py-2 bg-gray-100 dark:bg-gray-800/60 border border-gray-300 dark:border-gray-700 rounded-lg text-gray-700 dark:text-gray-300 text-xs"
+          >
+            <i class="fas fa-flag-checkered"></i>
+            <span>
+              Empreendimento encerrado — esta ficha está congelada como histórico.
+              <template v-if="isAdmin"> Use "Reabrir" para retomar a evolução mensal.</template>
+            </span>
           </div>
 
           <!-- Banner: alterações não salvas -->
@@ -488,15 +614,28 @@ const isApprover = computed(() => {
     return uid === store.settings.approver_1_id || uid === store.settings.approver_2_id;
 });
 
-// Ficha bloqueada para edição quando em pending_approval (qualquer usuário) ou se não for admin
+// Ficha bloqueada para edição quando em pending_approval/closed (qualquer usuário) ou se não for admin
 const isLocked = computed(() =>
-    !isAdmin.value || detail.value?.status === 'pending_approval'
+    !isAdmin.value
+    || detail.value?.status === 'pending_approval'
+    || detail.value?.status === 'closed'
 );
 
-// Pode salvar: admin E não está em pending_approval
+// Pode salvar: admin E não está em pending_approval ou closed
 const canSave = computed(() =>
-    isAdmin.value && detail.value?.status !== 'pending_approval'
+    isAdmin.value
+    && detail.value?.status !== 'pending_approval'
+    && detail.value?.status !== 'closed'
 );
+
+const isClosed = computed(() => detail.value?.status === 'closed');
+const isApproved = computed(() => detail.value?.status === 'approved');
+const isAvulsa = computed(() => detail.value && !detail.value.idempreendimento);
+const headerTitle = computed(() => {
+    if (!detail.value) return '...';
+    if (isAvulsa.value) return detail.value.display_name || '(Ficha avulsa sem nome)';
+    return detail.value.enterprise?.nome ?? '...';
+});
 
 // Estado de reprovação: verificar se o último evento de aprovação foi reprovado
 const wasRejected = computed(() => {
@@ -527,6 +666,34 @@ const saving = ref(false);
 const actionLoading = ref(false);
 const showUnlockModal = ref(false);
 const showCancelApprovalModal = ref(false);
+const showCloseModal = ref(false);
+const closeNote = ref('');
+const closeConfirmation = ref('');
+
+function closeCloseModal() {
+    showCloseModal.value = false;
+    closeNote.value = '';
+    closeConfirmation.value = '';
+}
+
+async function handleCloseCondition() {
+    if (closeConfirmation.value !== 'ENCERRAR') return;
+    actionLoading.value = true;
+    try {
+        await store.closeCondition(detail.value.id, {
+            note: closeNote.value || null,
+            confirmation: closeConfirmation.value,
+        });
+        showToast('Empreendimento encerrado. A ficha agora é histórico imutável.');
+        closeCloseModal();
+        await store.fetchDetail(detail.value.id);
+        populateFromDetail(store.detail);
+    } catch (e) {
+        showToast(e.message || 'Erro ao encerrar.', 'error');
+    } finally {
+        actionLoading.value = false;
+    }
+}
 const showSaveApprovedModal = ref(false);
 const unlockNote = ref('');
 const cancelApprovalNote = ref('');
@@ -541,6 +708,7 @@ const STATUS_MAP = {
     pending_approval: { label: 'Em Autorização', cls: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
     approved:         { label: 'Autorizado',     cls: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },
     published:        { label: 'Autorizado',     cls: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },
+    closed:           { label: 'Encerrado',      cls: 'bg-gray-200 text-gray-700 dark:bg-gray-800 dark:text-gray-300' },
 };
 
 const ALL_TABS = [
@@ -602,6 +770,7 @@ function moduleDefaults(m = {}) {
         delivery_deadline_note: '',
         commission_pct: null,
         commission_source: 'cv',
+        commission_note: '',
         contract_registration_by: '',
         contract_registered_by_user_id: null,
         outros_contact_name: '',
@@ -614,6 +783,9 @@ function moduleDefaults(m = {}) {
         has_digital_cert: false,
         digital_cert_provider: '',
         digital_cert_contact: '',
+        digital_cert_has_cost: false,
+        digital_cert_cost: null,
+        enterprise_files_url: '',
         notes: '',
         // Documentação
         cef_package_paid_by: null,            // 'client' | 'menin'
@@ -987,6 +1159,7 @@ const EVENT_META = {
     submitted_for_approval:  { label: 'Enviada para autorização',        icon: 'fa-paper-plane', cls: 'bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30', type: 'approval' },
     approved:                { label: 'Autorizada',                      icon: 'fa-check',       cls: 'bg-green-100 text-green-600 dark:bg-green-900/30', type: 'approval' },
     unlocked:                { label: 'Desbloqueada para edição',        icon: 'fa-lock-open',   cls: 'bg-amber-100 text-amber-600 dark:bg-amber-900/30', type: 'approval' },
+    closed:                  { label: 'Empreendimento encerrado',        icon: 'fa-flag-checkered', cls: 'bg-gray-200 text-gray-700 dark:bg-gray-800 dark:text-gray-300', type: 'approval' },
     approval_cancelled:      { label: 'Autorização cancelada',           icon: 'fa-times',       cls: 'bg-red-100 text-red-600 dark:bg-red-900/30',       type: 'approval' },
     approval_rejected:       { label: 'Autorização reprovada',           icon: 'fa-ban',         cls: 'bg-red-100 text-red-700 dark:bg-red-900/40',       type: 'approval' },
     saved:                   { label: 'Alterações salvas (rascunho)',     icon: 'fa-floppy-disk',   cls: 'bg-gray-100 text-gray-600 dark:bg-gray-800',         type: 'change' },

@@ -69,6 +69,8 @@ export const navRegistry = [
                 icon: 'fas fa-credit-card',
                 pages: [
                     { route: '/comercial/sales-projection',  section: 'Vendas x Projeção', name: 'Vendas X Projeção', icon: 'fas fa-arrow-trend-up' },
+                    { route: '/comercial/precadastros',      section: 'Pré-Cadastros',    name: 'Pré-Cadastros',    icon: 'fas fa-id-card-clip', permissionManaged: false },
+                    { route: '/comercial/reservas-report',   section: 'Reservas',         name: 'Reservas',         icon: 'fas fa-bookmark',     permissionManaged: false },
                     { route: '/comercial/faturamento',       section: 'Faturamento',      name: 'Faturamento',      icon: 'fas fa-file-invoice-dollar' },
                     { route: '/comercial/distratos',         section: 'Distratos',        name: 'Distratos',        icon: 'fas fa-file-circle-xmark' },
                     { route: '/comercial/projections',       section: 'Projeção',         name: 'Projeção',         icon: 'fas fa-chart-line' },
@@ -91,7 +93,6 @@ export const navRegistry = [
         pages: [
             { route: '/comercial/conditions',      section: 'Fichas Comerciais', name: 'Fichas Comerciais', icon: 'fas fa-file-contract' },
             { route: '/comercial/mcmv',            section: 'MCMV',             name: 'MCMV - Limites',             icon: 'fas fa-house-circle-check' },
-            { route: '/comercial/workflow/groups', section: 'Grupos Workflow', name: 'Grupos Workflow', icon: 'fas fa-chart-diagram' },
         ],
     },
 
@@ -145,6 +146,7 @@ export const navRegistry = [
             { route: '/settings/cidades', section: 'Cidades', name: 'Cidades', icon: 'fas fa-city', adminOnly: true },
             { route: '/settings/permissions', section: 'Alçadas', name: 'Alçadas', icon: 'fas fa-shield-halved', adminOnly: true },
             { route: '/settings/management', section: 'Departamentos', name: 'Departamentos', icon: 'fas fa-gears', adminOnly: true },
+            { route: '/comercial/workflow/groups', section: 'Grupos Workflow', name: 'Grupos Workflow', icon: 'fas fa-chart-diagram' },
         ],
     },
 
