@@ -1,192 +1,122 @@
-<!-- src/components/Events/EventCard.vue -->
 <script setup>
 import { computed } from 'vue';
+import Badge from '@/components/UI/Badge.vue';
 
 const props = defineProps({
-    event: {
-        type: Object,
-        required: true,
-    },
+  event: { type: Object, required: true },
+  past: { type: Boolean, default: false },
 });
 
 const emit = defineEmits(['click']);
 
-const showEventDetails = () => {
-    emit('click', props.event);
-};
-
-const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    const options = {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric'
-    };
-    return date.toLocaleDateString('pt-BR', options);
-};
-
-const formatTime = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleTimeString('pt-BR', {
-        hour: '2-digit',
-        minute: '2-digit'
-    });
-};
-
-const isEventPast = computed(() => {
-    return new Date(props.event.event_date) < new Date();
-});
+const formatDate = (s) => new Date(s).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
+const formatTime = (s) => new Date(s).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
 const eventStatus = computed(() => {
-    // A data e hora do evento
-    const eventDate = new Date(props.event.event_date);
-    // A data e hora atual
-    const now = new Date();
-    // 1. Clonar 'now' e zerar a hora/minuto/segundo/milissegundo para o início do dia de hoje.
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    // 2. Clonar 'eventDate' e zerar a hora/minuto/segundo/milissegundo para o início do dia do evento.
-    const eventDayStart = new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate());
-    // 3. Calcular a diferença entre o início do dia do evento e o início do dia atual.
-    const diffTime = eventDayStart - todayStart;
-    // 4. Calcular a diferença em dias (o resultado será um número inteiro).
-    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
-    if (diffDays < 0) return { text: 'Finalizado', color: 'bg-blue-600' };
-    if (diffDays === 0) return { text: 'Hoje', color: 'bg-red-500' };
-    if (diffDays === 1) return { text: 'Amanhã', color: 'bg-orange-500' };
-    if (diffDays <= 7) return { text: `${diffDays} dias`, color: 'bg-yellow-500' };
-    return { text: `${diffDays} dias`, color: 'bg-blue-500' };
+  const ev = new Date(props.event.event_date);
+  const now = new Date();
+  const days = Math.round(
+    (new Date(ev.getFullYear(), ev.getMonth(), ev.getDate()) -
+     new Date(now.getFullYear(), now.getMonth(), now.getDate())) / 86400000
+  );
+  if (days < 0)  return { text: 'Finalizado', variant: 'neutral' };
+  if (days === 0) return { text: 'Hoje',     variant: 'danger',  pulse: true };
+  if (days === 1) return { text: 'Amanhã',   variant: 'warning' };
+  if (days <= 7)  return { text: `${days} dias`, variant: 'warning' };
+  return { text: `em ${days} dias`, variant: 'accent' };
 });
 
-const imageUrl = computed(() => {
-    return (props.event.images && props.event.images.length > 0)
-        ? props.event.images[0]
-        : '/noimg.jpg';
+const imageUrl = computed(() =>
+  props.event.images?.[0] || '/noimg.jpg'
+);
+
+const creatorAvatar = computed(() => {
+  const initials = (props.event.created_by ?? '')
+    .split(' ').slice(0, 2).map(n => n[0]?.toUpperCase()).join(' ');
+  return `https://ui-avatars.com/api/?name=${encodeURIComponent(initials)}&background=random`;
 });
 </script>
 
 <template>
-    <article
-        class="group bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-500 cursor-pointer border border-gray-100 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600 flex flex-col h-full"
-        :class="{ 'opacity-75': isEventPast }" @click="showEventDetails">
-        <!-- Image Container -->
-        <div class="relative h-48 overflow-hidden">
-            <img :src="imageUrl" :alt="event.title"
-                class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+  <article
+    class="group relative flex flex-col bg-surface-raised border border-line rounded-xl overflow-hidden
+           shadow-soft hover:shadow-elevated hover:border-accent/30 hover:-translate-y-0.5
+           transition-all duration-200 ease-out-expo cursor-pointer surface-gradient h-full"
+    :class="{ 'opacity-70 hover:opacity-100': past }"
+    @click="emit('click', event)">
 
-            <!-- Overlay Gradient -->
-            <div
-                class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-            </div>
+    <!-- Imagem -->
+    <div class="relative aspect-[16/10] overflow-hidden bg-surface-sunken">
+      <img :src="imageUrl" :alt="event.title" loading="lazy"
+        class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+      <div class="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"></div>
 
-            <!-- Status Badge -->
-            <div class="absolute top-4 left-4">
-                <span :class="[
-                    'px-3 py-1 rounded-full text-xs font-semibold text-white shadow-lg backdrop-blur-sm',
-                    eventStatus.color
-                ]">
-                    {{ eventStatus.text }}
-                </span>
-            </div>
+      <div class="absolute top-3 left-3">
+        <Badge :variant="eventStatus.variant" dot
+          :class="eventStatus.pulse ? 'animate-pulse-soft' : ''">
+          {{ eventStatus.text }}
+        </Badge>
+      </div>
+    </div>
 
-            <!-- Favorite/Bookmark Icon -->
-            <!-- <div class="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                <button class="p-2 bg-white/20 backdrop-blur-sm rounded-full hover:bg-white/30 transition-colors">
-                    <i class="far fa-bookmark text-white text-sm"></i>
-                </button>
-            </div> -->
+    <!-- Conteúdo -->
+    <div class="flex flex-col flex-1 p-4 gap-3">
+      <h3 class="text-base font-semibold text-ink line-clamp-2 group-hover:text-accent transition-colors">
+        {{ event.title }}
+      </h3>
+
+      <!-- Data + local -->
+      <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-muted">
+        <span class="inline-flex items-center gap-1.5">
+          <i class="far fa-calendar text-accent"></i>
+          {{ formatDate(event.event_date) }}
+        </span>
+        <span class="inline-flex items-center gap-1.5">
+          <i class="far fa-clock text-accent"></i>
+          {{ formatTime(event.event_date) }}
+        </span>
+        <span v-if="event.address?.city" class="inline-flex items-center gap-1.5 truncate">
+          <i class="fas fa-location-dot text-ink-subtle"></i>
+          <span class="truncate">{{ event.address.city }}<span v-if="event.address.state">, {{ event.address.state }}</span></span>
+        </span>
+      </div>
+
+      <!-- Tags -->
+      <div v-if="event.tags?.length" class="flex flex-wrap gap-1">
+        <Badge v-for="tag in event.tags.slice(0, 3)" :key="tag" variant="accent" size="sm">
+          {{ tag }}
+        </Badge>
+        <Badge v-if="event.tags.length > 3" size="sm">
+          +{{ event.tags.length - 3 }}
+        </Badge>
+      </div>
+
+      <!-- Descrição -->
+      <p v-if="event.description"
+         class="text-sm text-ink-muted line-clamp-2 leading-relaxed">
+        {{ event.description }}
+      </p>
+
+      <!-- Footer -->
+      <div class="mt-auto pt-3 border-t border-line flex items-center justify-between gap-2">
+        <div class="flex items-center gap-2 min-w-0">
+          <img :src="creatorAvatar" alt="" class="w-6 h-6 rounded-full ring-1 ring-line shrink-0" />
+          <span class="text-xs text-ink-muted truncate">{{ event.created_by }}</span>
         </div>
-
-        <!-- Content -->
-        <div class="p-6 flex flex-col flex-grow">
-            <!-- Header -->
-            <div class="flex-grow">
-                <div class="mb-4">
-                    <div class="flex items-start justify-between mb-2">
-                        <h3
-                            class="text-xl font-bold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300 line-clamp-2">
-                            {{ event.title }}
-                        </h3>
-                    </div>
-
-                    <!-- Date and Time -->
-                    <div class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mb-3">
-                        <i class="far fa-calendar text-blue-500"></i>
-                        <span class="font-medium">{{ formatDate(event.event_date) }}</span>
-                        <span class="text-gray-300 dark:text-gray-600">•</span>
-                        <i class="far fa-clock text-blue-500"></i>
-                        <span>{{ formatTime(event.event_date) }}</span>
-                    </div>
-                </div>
-
-                <!-- Tags -->
-                <div v-if="event.tags && event.tags.length > 0" class="mb-4">
-                    <div class="flex flex-wrap gap-2">
-                        <span v-for="(tag, index) in event.tags.slice(0, 3)" :key="index"
-                            class="px-2 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-xs font-medium rounded-lg border border-blue-200 dark:border-blue-800">
-                            {{ tag }}
-                        </span>
-                        <span v-if="event.tags.length > 3"
-                            class="px-2 py-1 bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400 text-xs font-medium rounded-lg">
-                            +{{ event.tags.length - 3 }}
-                        </span>
-                    </div>
-                </div>
-
-                <!-- Description Preview -->
-                <div v-if="event.description" class="mb-4">
-                    <p class="text-gray-600 dark:text-gray-300 text-sm line-clamp-2 leading-relaxed">
-                        {{ event.description }}
-                    </p>
-                </div>
-
-                <!-- Location -->
-                <div v-if="event.address" class="mb-4">
-                    <div class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-                        <i class="fas fa-map-marker-alt text-red-500"></i>
-                        <span class="truncate">
-                            {{ event.address.city }}, {{ event.address.state }}
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            <div>
-                <div class="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-700">
-                    <!-- Creator -->
-                    <div class="flex items-center gap-2">
-                        <img class="w-8 h-8 rounded-full" :src="`https://ui-avatars.com/api/?name=${encodeURIComponent(
-                            (event.created_by ?? '')
-                                .split(' ')
-                                .slice(0, 2)
-                                .map(n => n[0]?.toUpperCase())
-                                .join(' ')
-                        )}&background=random`" alt="usuario foto" />
-                        <span class="text-sm text-gray-500 dark:text-gray-400 truncate max-w-24">
-                            {{ event.created_by }}
-                        </span>
-                    </div>
-
-                    <!-- CTA Button -->
-                    <button
-                        class="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white text-sm font-semibold rounded-lg shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-300">
-                        Ver Detalhes
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Hover Effect Overlay -->
-        <div
-            class="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none rounded-2xl">
-        </div>
-    </article>
+        <span class="text-xs text-accent font-medium opacity-0 group-hover:opacity-100 transition-opacity inline-flex items-center gap-1">
+          Detalhes
+          <i class="fas fa-arrow-right text-[10px]"></i>
+        </span>
+      </div>
+    </div>
+  </article>
 </template>
 
 <style scoped>
 .line-clamp-2 {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 </style>

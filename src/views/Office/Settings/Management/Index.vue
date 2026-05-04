@@ -1,530 +1,38 @@
-<template>
-  <div class="h-full py-6 md:py-8 px-4">
-    <div class="max-w-6xl mx-auto">
-      <!-- Header -->
-      <div class="mb-6 md:mb-8">
-        <div class="flex items-center">
-          <h1 class="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
-            Cargos, Departamentos, Categorias e Alçadas
-          </h1>
-          <Favorite class="ml-3" :router="'/settings/management'" :section="'Departamentos'" />
-        </div>
-        <p class="text-gray-600 dark:text-gray-400 mt-1">
-          Configure departamentos, categorias, cargos e as cidades disponíveis para cadastro e gestão dos usuários.
-        </p>
-      </div>
-
-      <!-- Tabs -->
-      <div class="flex flex-wrap gap-3 md:gap-4 mb-6" role="tablist" aria-label="Tipo de configuração">
-        <button v-for="tab in tabs" :key="tab.value" @click="activeTab = tab.value"
-          :aria-pressed="activeTab === tab.value" role="tab" :class="[
-            'inline-flex items-center gap-2 px-4 md:px-5 py-2 rounded-xl font-semibold transition-all duration-300',
-            'border dark:border-gray-700 shadow-sm hover:shadow',
-            activeTab === tab.value
-              ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white border-transparent scale-[1.02]'
-              : 'bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300'
-          ]">
-          <i :class="tab.icon"></i>
-          {{ tab.label }}
-        </button>
-      </div>
-
-      <!-- FAB -->
-      <div class="fixed bottom-6 right-6 z-30">
-        <button @click="openModal(null)"
-          class="group bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-full w-14 h-14 shadow-2xl hover:shadow-3xl transform hover:scale-110 transition-all duration-300 flex items-center justify-center"
-          :title="fabTitle">
-          <i class="fas fa-plus text-xl group-hover:rotate-90 transition-transform duration-300"></i>
-        </button>
-      </div>
-
-      <!--Erro -->
-      <div v-if="store.error" class="mb-4 text-sm text-red-500 dark:text-red-400">
-        {{ store.error }}
-      </div>
-
-      <!-- DEPARTAMENTOS -->
-      <div v-if="activeTab === 'departments'">
-        <div v-if="!store.departments.length" class="px-1 py-10 text-gray-500 dark:text-gray-400 text-sm">
-          Nenhum departamento cadastrado.
-        </div>
-
-        <div v-else class="grid sm:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
-          <article v-for="d in store.departments" :key="d.id"
-            class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
-            <div
-              class="p-4 md:p-5 border-b border-gray-200 dark:border-gray-700 flex items-start justify-between gap-4">
-              <div class="min-w-0">
-                <h2 class="text-base md:text-lg font-semibold text-gray-900 dark:text-white truncate">
-                  {{ d.name }}
-                </h2>
-                <div class="mt-1 flex flex-wrap items-center gap-2 text-xs">
-                  <span
-                    class="inline-flex truncate items-center px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200">
-                    <i class="fas fa-hashtag mr-1.5"></i>
-                    {{ d.code }}
-                  </span>
-                </div>
-              </div>
-
-              <div class="flex flex-col items-end gap-2 shrink-0">
-                <span class="px-2 py-0.5 rounded-full text-[11px]" :class="d.active
-                  ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
-                  : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
-                  ">
-                  {{ d.active ? 'Ativo' : 'Inativo' }}
-                </span>
-                <div class="flex items-center gap-2">
-                  <button @click="openModal(d)"
-                    class="px-3 py-1.5 text-xs font-medium rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-300">
-                    <i class="fas fa-pen mr-1"></i>
-                    Editar
-                  </button>
-                  <button v-if="d.active" @click="deactivateItem(d)"
-                    class="px-3 py-1.5 text-xs font-medium rounded-lg bg-red-50 text-red-700 hover:bg-red-100 dark:bg-red-900/30 dark:text-red-300">
-                    <i class="fas fa-ban mr-1"></i>
-                    Desativar
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div class="p-4 md:p-5 space-y-3 text-sm text-gray-600 dark:text-gray-300">
-              <div>
-                <span class="font-medium">Descrição:</span>
-                <span class="ml-1">
-                  {{ d.description || '—' }}
-                </span>
-              </div>
-            </div>
-          </article>
-        </div>
-      </div>
-
-      <!-- CATEGORIAS -->
-      <div v-else-if="activeTab === 'categories'">
-        <div v-if="!store.departmentCategories.length" class="px-1 py-10 text-gray-500 dark:text-gray-400 text-sm">
-          Nenhuma categoria cadastrada.
-        </div>
-
-        <div v-else class="grid sm:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
-          <article v-for="c in store.departmentCategories" :key="c.id"
-            class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
-            <div
-              class="p-4 md:p-5 border-b border-gray-200 dark:border-gray-700 flex items-start justify-between gap-4">
-              <div class="min-w-0">
-                <h2 class="text-base md:text-lg font-semibold text-gray-900 dark:text-white truncate">
-                  {{ c.name }}
-                </h2>
-
-                <div class="mt-1 flex flex-wrap items-center gap-2 text-xs">
-                  <span
-                    class="inline-flex items-center px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200">
-                    <i class="fas fa-hashtag mr-1.5"></i>
-                    {{ c.code }}
-                  </span>
-
-                  <!-- Departamento da categoria -->
-                  <span v-if="c.department || c.department_id"
-                    class="inline-flex items-center px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300">
-                    <i class="fas fa-sitemap mr-1.5"></i>
-                    {{ c.department?.name || departmentNameById(c.department_id) || 'Sem departamento' }}
-                  </span>
-                </div>
-              </div>
-
-              <div class="flex flex-col items-end gap-2 shrink-0">
-                <span class="px-2 py-0.5 rounded-full text-[11px]" :class="c.active
-                  ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
-                  : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
-                  ">
-                  {{ c.active ? 'Ativo' : 'Inativo' }}
-                </span>
-                <div class="flex items-center gap-2">
-                  <button @click="openModal(c)"
-                    class="px-3 py-1.5 text-xs font-medium rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-300">
-                    <i class="fas fa-pen mr-1"></i>
-                    Editar
-                  </button>
-                  <button v-if="c.active" @click="deactivateItem(c)"
-                    class="px-3 py-1.5 text-xs font-medium rounded-lg bg-red-50 text-red-700 hover:bg-red-100 dark:bg-red-900/30 dark:text-red-300">
-                    <i class="fas fa-ban mr-1"></i>
-                    Desativar
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div class="p-4 md:p-5 space-y-3 text-sm text-gray-600 dark:text-gray-300">
-              <div>
-                <span class="font-medium">Descrição:</span>
-                <span class="ml-1">
-                  {{ c.description || '—' }}
-                </span>
-              </div>
-            </div>
-          </article>
-        </div>
-      </div>
-
-      <!-- CARGOS -->
-      <div v-else-if="activeTab === 'positions'">
-        <div v-if="!store.positions.length" class="px-1 py-10 text-gray-500 dark:text-gray-400 text-sm">
-          Nenhum cargo cadastrado.
-        </div>
-
-        <div v-else class="grid sm:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
-          <article v-for="p in store.positions" :key="p.id"
-            class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
-            <div
-              class="p-4 md:p-5 border-b border-gray-200 dark:border-gray-700 flex items-start justify-between gap-4">
-              <div class="min-w-0">
-                <h2 class="text-base md:text-lg font-semibold text-gray-900 dark:text-white truncate">
-                  {{ p.name }}
-                </h2>
-                <div class="mt-1 flex flex-wrap items-center gap-2 text-xs">
-                  <span
-                    class="inline-flex truncate items-center px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200">
-                    <i class="fas fa-hashtag mr-1.5"></i>
-                    <p class="truncate">{{ p.code }}</p>
-                  </span>
-
-                  <!-- Departamento do cargo -->
-                  <div class="flex gap-2 my-1">
-                    <span v-if="p.department || p.department_id"
-                      class="inline-flex items-center px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300">
-                      <i class="fas fa-sitemap mr-1.5"></i>
-                      {{ p.department?.name || departmentNameById(p.department_id) || 'Sem departamento' }}
-                    </span>
-
-                    <span v-if="p.is_internal"
-                      class="inline-flex items-center px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
-                      <i class="fas fa-building mr-1.5"></i>
-                      Interno
-                    </span>
-                    <span v-if="p.is_partner"
-                      class="inline-flex items-center px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
-                      <i class="fas fa-handshake mr-1.5"></i>
-                      Parceiro
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div class="flex flex-col items-end gap-2 shrink-0">
-                <span class="px-2 py-0.5 rounded-full text-[11px]" :class="p.active
-                  ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
-                  : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
-                  ">
-                  {{ p.active ? 'Ativo' : 'Inativo' }}
-                </span>
-                <div class="flex items-center gap-2">
-                  <button @click="openModal(p)"
-                    class="px-3 py-1.5 text-xs font-medium rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-300">
-                    <i class="fas fa-pen mr-1"></i>
-                    Editar
-                  </button>
-                  <button v-if="p.active" @click="deactivateItem(p)"
-                    class="px-3 py-1.5 text-xs font-medium rounded-lg bg-red-50 text-red-700 hover:bg-red-100 dark:bg-red-900/30 dark:text-red-300">
-                    <i class="fas fa-ban mr-1"></i>
-                    Desativar
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div class="p-4 md:p-5 space-y-3">
-              <div class="text-sm text-gray-600 dark:text-gray-300">
-                <span class="font-medium">Descrição:</span>
-                <span class="ml-1">
-                  {{ p.description || '—' }}
-                </span>
-              </div>
-            </div>
-          </article>
-        </div>
-      </div>
-
-      <!-- CIDADES -->
-      <div v-else>
-        <div v-if="!store.userCities.length" class="px-1 py-10 text-gray-500 dark:text-gray-400 text-sm">
-          Nenhuma cidade cadastrado.
-        </div>
-
-        <div v-else class="grid sm:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
-          <article v-for="c in store.userCities" :key="c.id"
-            class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
-            <div
-              class="p-4 md:p-5 border-b border-gray-200 dark:border-gray-700 flex items-start justify-between gap-4">
-              <div class="min-w-0">
-                <h2 class="text-base md:text-lg font-semibold text-gray-900 dark:text-white truncate">
-                  {{ c.name }}
-                </h2>
-                <div class="mt-1 flex flex-wrap items-center gap-2 text-xs">
-                  <span
-                    class="inline-flex items-center px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200">
-                    <i class="fas fa-map-marker-alt mr-1.5"></i>
-                    {{ c.uf || 'UF não informada' }}
-                  </span>
-                </div>
-              </div>
-
-              <div class="flex flex-col items-end gap-2 shrink-0">
-                <span class="px-2 py-0.5 rounded-full text-[11px]" :class="c.active
-                  ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
-                  : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
-                  ">
-                  {{ c.active ? 'Ativo' : 'Inativo' }}
-                </span>
-                <div class="flex items-center gap-2">
-                  <button @click="openModal(c)"
-                    class="px-3 py-1.5 text-xs font-medium rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-300">
-                    <i class="fas fa-pen mr-1"></i>
-                    Editar
-                  </button>
-                  <button v-if="c.active" @click="deactivateItem(c)"
-                    class="px-3 py-1.5 text-xs font-medium rounded-lg bg-red-50 text-red-700 hover:bg-red-100 dark:bg-red-900/30 dark:text-red-300">
-                    <i class="fas fa-ban mr-1"></i>
-                    Desativar
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div class="p-4 md:p-5 space-y-3 text-sm text-gray-600 dark:text-gray-300">
-              <span class="text-xs text-gray-400 dark:text-gray-500">
-                ID interno: {{ c.id }}
-              </span>
-            </div>
-          </article>
-        </div>
-      </div>
-    </div>
-
-    <!-- MODAL -->
-    <transition name="fade">
-      <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center">
-        <div class="absolute inset-0 bg-gray-900/60" @click="closeModal"></div>
-
-        <div
-          class="relative w-full max-w-lg mx-4 bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden"
-          role="dialog" aria-modal="true">
-          <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-            <div>
-              <h2 class="text-lg md:text-xl font-semibold text-gray-900 dark:text-white">
-                {{ modalTitle }}
-              </h2>
-              <p class="text-xs text-gray-500 dark:text-gray-400">
-                {{
-                  activeTab === 'positions'
-                    ? 'Defina departamento, nome, código e tipo do cargo.'
-                    : activeTab === 'departments'
-                      ? 'Defina nome, código e descrição do departamento.'
-                      : activeTab === 'categories'
-                        ? 'Defina nome, código e descrição da categoria de departamento.'
-                        : 'Defina nome e UF da cidade.'
-                }}
-              </p>
-            </div>
-            <button @click="closeModal"
-              class="text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white text-xl">
-              <i class="fas fa-times"></i>
-            </button>
-          </div>
-
-          <div class="p-6 space-y-4">
-            <!-- FORM CARGOS -->
-            <div v-if="activeTab === 'positions'" class="space-y-3">
-              <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Departamento
-                </label>
-                <select v-model="form.departmentId"
-                  class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                  <option disabled value="">Selecione um departamento</option>
-                  <option v-for="d in store.departments.filter(d => d.active)" :key="d.id" :value="d.id">
-                    {{ d.name }}
-                  </option>
-                </select>
-              </div>
-
-              <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Nome do cargo
-                </label>
-                <input v-model="form.name" type="text"
-                  class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Ex: Gestor Comercial" />
-              </div>
-
-              <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Código (único)
-                </label>
-                <input v-model="form.code" type="text"
-                  class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase"
-                  placeholder="Ex: GESTOR_COMERCIAL" />
-              </div>
-
-              <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Descrição
-                </label>
-                <textarea v-model="form.description" rows="3"
-                  class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Resumo da função deste cargo (opcional)."></textarea>
-              </div>
-
-              <div class="flex items-center gap-4 text-sm">
-                <label class="inline-flex items-center gap-2">
-                  <input type="checkbox" v-model="form.is_internal" />
-                  <span>Interno</span>
-                </label>
-                <label class="inline-flex items-center gap-2">
-                  <input type="checkbox" v-model="form.is_partner" />
-                  <span>Parceiro (Imobiliária / Corretor)</span>
-                </label>
-              </div>
-            </div>
-
-            <!-- FORM DEPARTAMENTOS -->
-            <div v-else-if="activeTab === 'departments'" class="space-y-3">
-              <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Nome do departamento
-                </label>
-                <input v-model="form.name" type="text"
-                  class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Ex: Marketing" />
-              </div>
-
-              <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Código (único)
-                </label>
-                <input v-model="form.code" type="text"
-                  class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase"
-                  placeholder="Ex: MARKETING" />
-              </div>
-
-              <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Descrição
-                </label>
-                <textarea v-model="form.description" rows="3"
-                  class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Ex: Atividades ligadas à divulgação, branding etc."></textarea>
-              </div>
-            </div>
-
-            <!-- FORM CATEGORIAS -->
-            <div v-else-if="activeTab === 'categories'" class="space-y-3">
-              <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Departamento
-                </label>
-                <select v-model="form.departmentId"
-                  class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                  <option disabled value="">Selecione um departamento</option>
-                  <option v-for="d in store.departments.filter(d => d.active)" :key="d.id" :value="d.id">
-                    {{ d.name }}
-                  </option>
-                </select>
-              </div>
-
-              <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Nome da categoria
-                </label>
-                <input v-model="form.name" type="text"
-                  class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Ex: Mídia, Eventos, Taxas..." />
-              </div>
-
-              <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Código (único)
-                </label>
-                <input v-model="form.code" type="text"
-                  class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase"
-                  placeholder="Ex: MIDIA, EVENTOS" />
-              </div>
-
-              <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Descrição
-                </label>
-                <textarea v-model="form.description" rows="3"
-                  class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Ex: Agrupamento de despesas de mídia, anúncios, etc."></textarea>
-              </div>
-            </div>
-
-            <!-- FORM CIDADES -->
-            <div v-else class="space-y-3">
-              <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Nome da cidade
-                </label>
-                <Input v-model="form.name" type="text"
-                  class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Ex: Marília" />
-              </div>
-
-              <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  UF
-                </label>
-                <Input v-model="form.uf" type="text" maxlength="2"
-                  class="w-24 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase"
-                  placeholder="SP" />
-              </div>
-            </div>
-          </div>
-
-          <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-2">
-            <button
-              class="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-sm text-gray-700 dark:text-gray-200"
-              @click="closeModal">
-              Cancelar
-            </button>
-            <button class="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 text-sm" @click="saveItem">
-              <i class="fas fa-save mr-2"></i>
-              Salvar
-            </button>
-          </div>
-        </div>
-      </div>
-    </transition>
-  </div>
-</template>
-
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import Favorite from '@/components/config/Favorite.vue';
-import { useAuthStore } from '@/stores/Settings/Auth/authStore';
-import { useAdminMetaStore } from '@/stores/Settings/Admin/metaStore'; 
 import { useToast } from 'vue-toastification';
+import { useAuthStore } from '@/stores/Settings/Auth/authStore';
+import { useAdminMetaStore } from '@/stores/Settings/Admin/metaStore';
+
+import PageContainer from '@/components/UI/PageContainer.vue';
+import PageHeader from '@/components/UI/PageHeader.vue';
+import Surface from '@/components/UI/Surface.vue';
+import Modal from '@/components/UI/Modal.vue';
 import Input from '@/components/UI/Input.vue';
+import Select from '@/components/UI/Select.vue';
+import Button from '@/components/UI/Button.vue';
+import IconButton from '@/components/UI/IconButton.vue';
+import Badge from '@/components/UI/Badge.vue';
+import Switch from '@/components/UI/Switch.vue';
+import EmptyState from '@/components/UI/EmptyState.vue';
+import SegmentedControl from '@/components/UI/SegmentedControl.vue';
+import Favorite from '@/components/config/Favorite.vue';
 
 const router = useRouter();
 const authStore = useAuthStore();
 const store = useAdminMetaStore();
 
 const toast = (() => {
-  try {
-    return useToast();
-  } catch {
-    return { success: console.log, error: console.error };
-  }
+  try { return useToast(); }
+  catch { return { success: console.log, error: console.error }; }
 })();
 
 const tabs = [
   { value: 'departments', label: 'Departamentos', icon: 'fas fa-sitemap' },
-  { value: 'positions', label: 'Cargos', icon: 'fas fa-id-badge' },
-  { value: 'categories', label: 'Categorias Financeiras', icon: 'fas fa-tags' },
-  { value: 'cities', label: 'Cidades', icon: 'fas fa-city' },
+  { value: 'positions',   label: 'Cargos',        icon: 'fas fa-id-badge' },
+  { value: 'categories',  label: 'Categorias',    icon: 'fas fa-tags' },
+  { value: 'cities',      label: 'Cidades',       icon: 'fas fa-city' },
 ];
 
 const activeTab = ref('departments');
@@ -532,134 +40,101 @@ const showModal = ref(false);
 const editingItem = ref(null);
 
 const form = ref({
-  // comuns
-  name: '',
-  code: '',
-  description: '',
-  // cargo
+  name: '', code: '', description: '',
   departmentId: '',
-  is_internal: true,
-  is_partner: false,
-  // cidade
+  is_internal: true, is_partner: false,
   uf: '',
 });
 
-const modalTitle = computed(() => {
-  if (activeTab.value === 'positions') {
-    return editingItem.value ? 'Editar Cargo' : 'Novo Cargo';
-  }
-  if (activeTab.value === 'departments') {
-    return editingItem.value ? 'Editar Departamento' : 'Novo Departamento';
-  }
-  if (activeTab.value === 'categories') {
-    return editingItem.value ? 'Editar Categoria' : 'Nova Categoria';
-  }
-  return editingItem.value ? 'Editar Cidade' : 'Nova Cidade';
-});
+// ── Computeds ────────────────────────────────────────
+const items = computed(() => ({
+  departments: store.departments,
+  positions:   store.positions,
+  categories:  store.departmentCategories,
+  cities:      store.userCities,
+}[activeTab.value] || []));
 
-const fabTitle = computed(() => {
-  if (activeTab.value === 'positions') return 'Adicionar Cargo';
-  if (activeTab.value === 'departments') return 'Adicionar Departamento';
-  if (activeTab.value === 'categories') return 'Adicionar Categoria';
-  return 'Adicionar Cidade';
-});
+const labelSingular = computed(() => ({
+  departments: 'Departamento',
+  positions:   'Cargo',
+  categories:  'Categoria',
+  cities:      'Cidade',
+}[activeTab.value]));
 
-const resetForm = () => {
-  form.value = {
-    name: '',
-    code: '',
-    description: '',
-    departmentId: '',
-    is_internal: true,
-    is_partner: false,
-    uf: '',
-  };
-};
+const modalTitle = computed(() =>
+  editingItem.value ? `Editar ${labelSingular.value}` : `Novo ${labelSingular.value}`
+);
+
+const departmentOptions = computed(() => [
+  { value: '', label: 'Selecione um departamento' },
+  ...store.departments.filter(d => d.active).map(d => ({ value: d.id, label: d.name })),
+]);
 
 const departmentNameById = (id) => {
   const dep = store.departments.find(d => d.id === id);
   return dep ? dep.name : null;
 };
 
-const openModal = (item) => {
-  editingItem.value = item || null;
+// ── Form ─────────────────────────────────────────────
+function resetForm() {
+  form.value = {
+    name: '', code: '', description: '',
+    departmentId: '',
+    is_internal: true, is_partner: false,
+    uf: '',
+  };
+}
 
-  if (!item) {
-    resetForm();
-  } else if (activeTab.value === 'positions') {
+function openModal(item) {
+  editingItem.value = item || null;
+  if (!item) { resetForm(); }
+  else if (activeTab.value === 'positions') {
     form.value = {
-      name: item.name,
-      code: item.code,
-      description: item.description || '',
+      name: item.name, code: item.code, description: item.description || '',
       departmentId: item.department_id || item.department?.id || '',
-      is_internal: !!item.is_internal,
-      is_partner: !!item.is_partner,
-      uf: '',
+      is_internal: !!item.is_internal, is_partner: !!item.is_partner, uf: '',
     };
   } else if (activeTab.value === 'departments') {
     form.value = {
-      name: item.name,
-      code: item.code,
-      description: item.description || '',
-      departmentId: '',
-      is_internal: true,
-      is_partner: false,
-      uf: '',
+      name: item.name, code: item.code, description: item.description || '',
+      departmentId: '', is_internal: true, is_partner: false, uf: '',
     };
   } else if (activeTab.value === 'categories') {
     form.value = {
-      name: item.name,
-      code: item.code,
-      description: item.description || '',
+      name: item.name, code: item.code, description: item.description || '',
       departmentId: item.department_id || item.department?.id || '',
-      is_internal: true,
-      is_partner: false,
-      uf: '',
+      is_internal: true, is_partner: false, uf: '',
     };
   } else {
-    // cidades
     form.value = {
-      name: item.name,
-      uf: item.uf || '',
-      code: '',
-      description: '',
-      departmentId: '',
-      is_internal: true,
-      is_partner: false,
+      name: item.name, uf: item.uf || '',
+      code: '', description: '',
+      departmentId: '', is_internal: true, is_partner: false,
     };
   }
-
   showModal.value = true;
-};
+}
 
-const closeModal = () => {
-  showModal.value = false;
-};
+function closeModal() { showModal.value = false; }
 
-const saveItem = async () => {
+async function saveItem() {
   try {
     let successMessage = '';
 
     if (activeTab.value === 'positions') {
-      if (!form.value.departmentId) {
-        toast.error('Selecione um departamento.');
-        return;
-      }
+      if (!form.value.departmentId) { toast.error('Selecione um departamento.'); return; }
       if (!form.value.name.trim() || !form.value.code.trim()) {
-        toast.error('Nome e código do cargo são obrigatórios.');
-        return;
+        toast.error('Nome e código do cargo são obrigatórios.'); return;
       }
-
       const payload = {
         name: form.value.name.trim(),
         code: form.value.code.trim().toUpperCase(),
-        description: form.value.description ? form.value.description.trim() : null,
+        description: form.value.description?.trim() || null,
         is_internal: !!form.value.is_internal,
         is_partner: !!form.value.is_partner,
         departmentId: Number(form.value.departmentId),
       };
-
-      if (editingItem.value && editingItem.value.id) {
+      if (editingItem.value?.id) {
         await store.updatePosition(editingItem.value.id, payload);
         successMessage = 'Cargo atualizado com sucesso!';
       } else {
@@ -668,17 +143,14 @@ const saveItem = async () => {
       }
     } else if (activeTab.value === 'departments') {
       if (!form.value.name.trim() || !form.value.code.trim()) {
-        toast.error('Nome e código do departamento são obrigatórios.');
-        return;
+        toast.error('Nome e código do departamento são obrigatórios.'); return;
       }
-
       const payload = {
         name: form.value.name.trim(),
         code: form.value.code.trim().toUpperCase(),
-        description: form.value.description ? form.value.description.trim() : null,
+        description: form.value.description?.trim() || null,
       };
-
-      if (editingItem.value && editingItem.value.id) {
+      if (editingItem.value?.id) {
         await store.updateDepartment(editingItem.value.id, payload);
         successMessage = 'Departamento atualizado com sucesso!';
       } else {
@@ -686,23 +158,17 @@ const saveItem = async () => {
         successMessage = 'Departamento criado com sucesso!';
       }
     } else if (activeTab.value === 'categories') {
-      if (!form.value.departmentId) {
-        toast.error('Selecione um departamento para a categoria.');
-        return;
-      }
+      if (!form.value.departmentId) { toast.error('Selecione um departamento para a categoria.'); return; }
       if (!form.value.name.trim() || !form.value.code.trim()) {
-        toast.error('Nome e código da categoria são obrigatórios.');
-        return;
+        toast.error('Nome e código da categoria são obrigatórios.'); return;
       }
-
       const payload = {
         name: form.value.name.trim(),
         code: form.value.code.trim().toUpperCase(),
-        description: form.value.description ? form.value.description.trim() : null,
+        description: form.value.description?.trim() || null,
         departmentId: Number(form.value.departmentId),
       };
-
-      if (editingItem.value && editingItem.value.id) {
+      if (editingItem.value?.id) {
         await store.updateDepartmentCategory(editingItem.value.id, payload);
         successMessage = 'Categoria atualizada com sucesso!';
       } else {
@@ -710,18 +176,12 @@ const saveItem = async () => {
         successMessage = 'Categoria criada com sucesso!';
       }
     } else {
-      // Cidades
-      if (!form.value.name.trim()) {
-        toast.error('Nome da cidade é obrigatório.');
-        return;
-      }
-
+      if (!form.value.name.trim()) { toast.error('Nome da cidade é obrigatório.'); return; }
       const payload = {
         name: form.value.name.trim(),
         uf: form.value.uf ? form.value.uf.trim().toUpperCase() : null,
       };
-
-      if (editingItem.value && editingItem.value.id) {
+      if (editingItem.value?.id) {
         await store.updateUserCity(editingItem.value.id, payload);
         successMessage = 'Cidade atualizada com sucesso!';
       } else {
@@ -729,49 +189,34 @@ const saveItem = async () => {
         successMessage = 'Cidade criada com sucesso!';
       }
     }
-
     toast.success(successMessage);
     closeModal();
   } catch (e) {
     toast.error(e.message || 'Erro ao salvar dados.');
   }
-};
+}
 
-const deactivateItem = async (item) => {
-  const label =
-    activeTab.value === 'positions'
-      ? `cargo "${item.name}"`
-      : activeTab.value === 'departments'
-        ? `departamento "${item.name}"`
-        : activeTab.value === 'categories'
-          ? `categoria "${item.name}"`
-          : `cidade "${item.name}"`;
-
-  if (!confirm(`Desativar ${label}?`)) {
-    return;
-  }
-
+async function deactivateItem(item) {
+  const label = `${labelSingular.value.toLowerCase()} "${item.name}"`;
+  if (!confirm(`Desativar ${label}?`)) return;
   try {
-    if (activeTab.value === 'positions') {
-      await store.deactivatePosition(item.id);
-    } else if (activeTab.value === 'departments') {
-      await store.deactivateDepartment(item.id);
-    } else if (activeTab.value === 'categories') {
-      await store.deactivateDepartmentCategory(item.id);
-    } else {
-      await store.deactivateUserCity(item.id);
-    }
+    const map = {
+      positions:   store.deactivatePosition,
+      departments: store.deactivateDepartment,
+      categories:  store.deactivateDepartmentCategory,
+      cities:      store.deactivateUserCity,
+    };
+    await map[activeTab.value](item.id);
   } catch (e) {
     toast.error(e.message || 'Erro ao desativar.');
   }
-};
+}
 
 onMounted(async () => {
   if (!authStore.hasRole('admin')) {
     router.push('/');
     return;
   }
-
   await Promise.all([
     store.fetchDepartments(),
     store.fetchPositions(),
@@ -781,14 +226,252 @@ onMounted(async () => {
 });
 </script>
 
-<style scoped>
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.2s ease;
-}
+<template>
+  <div class="min-h-[calc(100vh-3.5rem)]">
+    <PageContainer size="xl">
 
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
-</style>
+      <!-- Header -->
+      <PageHeader
+        title="Cargos, departamentos e categorias"
+        subtitle="Configure departamentos, categorias, cargos e cidades disponíveis para os usuários."
+        icon="fas fa-sliders">
+        <template #title>
+          <span>Cargos, departamentos & categorias</span>
+          <Favorite :router="'/settings/management'" :section="'Departamentos'" />
+        </template>
+        <template #actions>
+          <Button icon="fas fa-plus" @click="openModal(null)">
+            <span class="hidden sm:inline">Novo {{ labelSingular.toLowerCase() }}</span>
+          </Button>
+        </template>
+      </PageHeader>
+
+      <!-- Tabs -->
+      <SegmentedControl v-model="activeTab" :options="tabs" size="md" class="mb-5" />
+
+      <!-- Erro -->
+      <div v-if="store.error"
+        class="mb-4 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2.5 text-sm text-red-700 dark:text-red-300 flex items-center gap-2">
+        <i class="fas fa-circle-exclamation"></i>{{ store.error }}
+      </div>
+
+      <!-- Empty -->
+      <EmptyState v-if="!items.length"
+        :icon="tabs.find(t => t.value === activeTab)?.icon || 'far fa-folder'"
+        :title="`Nenhum ${labelSingular.toLowerCase()} cadastrado`"
+        :description="`Crie o primeiro ${labelSingular.toLowerCase()} para começar.`">
+        <template #actions>
+          <Button icon="fas fa-plus" @click="openModal(null)">
+            Novo {{ labelSingular.toLowerCase() }}
+          </Button>
+        </template>
+      </EmptyState>
+
+      <!-- Lista -->
+      <div v-else class="grid sm:grid-cols-2 xl:grid-cols-3 gap-3">
+
+        <!-- DEPARTAMENTOS -->
+        <template v-if="activeTab === 'departments'">
+          <Surface v-for="d in items" :key="d.id" variant="raised" padding="none" class="overflow-hidden">
+            <div class="flex items-start justify-between gap-3 p-4 border-b border-line">
+              <div class="min-w-0 flex-1">
+                <h3 class="text-sm font-semibold text-ink truncate">{{ d.name }}</h3>
+                <Badge variant="neutral" size="sm" class="mt-1.5">
+                  <i class="fas fa-hashtag text-[9px]"></i>{{ d.code }}
+                </Badge>
+              </div>
+              <Badge :variant="d.active ? 'success' : 'danger'" size="sm">
+                {{ d.active ? 'Ativo' : 'Inativo' }}
+              </Badge>
+            </div>
+            <div class="p-4 space-y-2 text-sm">
+              <p class="text-ink-muted leading-relaxed">{{ d.description || '—' }}</p>
+              <div class="flex items-center gap-1 pt-2 border-t border-line/50">
+                <Button size="sm" variant="ghost" icon="fas fa-pen" @click="openModal(d)">Editar</Button>
+                <Button v-if="d.active" size="sm" variant="ghost" icon="fas fa-ban"
+                  class="text-red-500" @click="deactivateItem(d)">Desativar</Button>
+              </div>
+            </div>
+          </Surface>
+        </template>
+
+        <!-- CATEGORIAS -->
+        <template v-else-if="activeTab === 'categories'">
+          <Surface v-for="c in items" :key="c.id" variant="raised" padding="none" class="overflow-hidden">
+            <div class="flex items-start justify-between gap-3 p-4 border-b border-line">
+              <div class="min-w-0 flex-1">
+                <h3 class="text-sm font-semibold text-ink truncate">{{ c.name }}</h3>
+                <div class="mt-1.5 flex flex-wrap gap-1.5">
+                  <Badge size="sm">
+                    <i class="fas fa-hashtag text-[9px]"></i>{{ c.code }}
+                  </Badge>
+                  <Badge v-if="c.department || c.department_id" variant="accent" size="sm">
+                    <i class="fas fa-sitemap text-[9px]"></i>
+                    {{ c.department?.name || departmentNameById(c.department_id) || 'Sem departamento' }}
+                  </Badge>
+                </div>
+              </div>
+              <Badge :variant="c.active ? 'success' : 'danger'" size="sm">
+                {{ c.active ? 'Ativo' : 'Inativo' }}
+              </Badge>
+            </div>
+            <div class="p-4 space-y-2 text-sm">
+              <p class="text-ink-muted leading-relaxed">{{ c.description || '—' }}</p>
+              <div class="flex items-center gap-1 pt-2 border-t border-line/50">
+                <Button size="sm" variant="ghost" icon="fas fa-pen" @click="openModal(c)">Editar</Button>
+                <Button v-if="c.active" size="sm" variant="ghost" icon="fas fa-ban"
+                  class="text-red-500" @click="deactivateItem(c)">Desativar</Button>
+              </div>
+            </div>
+          </Surface>
+        </template>
+
+        <!-- CARGOS -->
+        <template v-else-if="activeTab === 'positions'">
+          <Surface v-for="p in items" :key="p.id" variant="raised" padding="none" class="overflow-hidden">
+            <div class="flex items-start justify-between gap-3 p-4 border-b border-line">
+              <div class="min-w-0 flex-1">
+                <h3 class="text-sm font-semibold text-ink truncate">{{ p.name }}</h3>
+                <div class="mt-1.5 flex flex-wrap gap-1.5">
+                  <Badge size="sm">
+                    <i class="fas fa-hashtag text-[9px]"></i>{{ p.code }}
+                  </Badge>
+                  <Badge v-if="p.department || p.department_id" variant="accent" size="sm">
+                    <i class="fas fa-sitemap text-[9px]"></i>
+                    {{ p.department?.name || departmentNameById(p.department_id) || 'Sem departamento' }}
+                  </Badge>
+                  <Badge v-if="p.is_internal" variant="info" size="sm">
+                    <i class="fas fa-building text-[9px]"></i>Interno
+                  </Badge>
+                  <Badge v-if="p.is_partner" variant="success" size="sm">
+                    <i class="fas fa-handshake text-[9px]"></i>Parceiro
+                  </Badge>
+                </div>
+              </div>
+              <Badge :variant="p.active ? 'success' : 'danger'" size="sm">
+                {{ p.active ? 'Ativo' : 'Inativo' }}
+              </Badge>
+            </div>
+            <div class="p-4 space-y-2 text-sm">
+              <p class="text-ink-muted leading-relaxed">{{ p.description || '—' }}</p>
+              <div class="flex items-center gap-1 pt-2 border-t border-line/50">
+                <Button size="sm" variant="ghost" icon="fas fa-pen" @click="openModal(p)">Editar</Button>
+                <Button v-if="p.active" size="sm" variant="ghost" icon="fas fa-ban"
+                  class="text-red-500" @click="deactivateItem(p)">Desativar</Button>
+              </div>
+            </div>
+          </Surface>
+        </template>
+
+        <!-- CIDADES -->
+        <template v-else>
+          <Surface v-for="c in items" :key="c.id" variant="raised" padding="none" class="overflow-hidden">
+            <div class="flex items-start justify-between gap-3 p-4 border-b border-line">
+              <div class="min-w-0 flex-1">
+                <h3 class="text-sm font-semibold text-ink truncate">{{ c.name }}</h3>
+                <Badge size="sm" class="mt-1.5">
+                  <i class="fas fa-location-dot text-[9px]"></i>{{ c.uf || 'UF não informada' }}
+                </Badge>
+              </div>
+              <Badge :variant="c.active ? 'success' : 'danger'" size="sm">
+                {{ c.active ? 'Ativo' : 'Inativo' }}
+              </Badge>
+            </div>
+            <div class="p-4 space-y-2 text-sm">
+              <p class="text-[11px] text-ink-subtle font-mono">ID interno: {{ c.id }}</p>
+              <div class="flex items-center gap-1 pt-2 border-t border-line/50">
+                <Button size="sm" variant="ghost" icon="fas fa-pen" @click="openModal(c)">Editar</Button>
+                <Button v-if="c.active" size="sm" variant="ghost" icon="fas fa-ban"
+                  class="text-red-500" @click="deactivateItem(c)">Desativar</Button>
+              </div>
+            </div>
+          </Surface>
+        </template>
+      </div>
+    </PageContainer>
+
+    <!-- Modal -->
+    <Modal :open="showModal" size="md" @close="closeModal">
+      <template #header>
+        <div class="flex items-center gap-3">
+          <div class="h-9 w-9 rounded-lg bg-accent-soft text-accent border border-accent/20 grid place-items-center shrink-0">
+            <i :class="tabs.find(t => t.value === activeTab)?.icon" class="text-sm"></i>
+          </div>
+          <div>
+            <h2 class="text-base font-semibold text-ink">{{ modalTitle }}</h2>
+            <p class="text-xs text-ink-muted mt-0.5">
+              {{ activeTab === 'positions' ? 'Defina departamento, nome, código e tipo do cargo.'
+              : activeTab === 'departments' ? 'Defina nome, código e descrição do departamento.'
+              : activeTab === 'categories' ? 'Defina nome, código e descrição da categoria.'
+              : 'Defina nome e UF da cidade.' }}
+            </p>
+          </div>
+        </div>
+      </template>
+
+      <div class="space-y-4">
+        <!-- Cargos -->
+        <template v-if="activeTab === 'positions'">
+          <Select v-model="form.departmentId" :options="departmentOptions" label="Departamento" required />
+          <Input v-model="form.name" label="Nome do cargo" placeholder="Ex: Gestor Comercial" required />
+          <Input v-model="form.code" label="Código (único)" placeholder="Ex: GESTOR_COMERCIAL"
+            class="uppercase" required />
+          <div>
+            <label class="block text-xs font-medium text-ink-muted mb-1.5">Descrição</label>
+            <textarea v-model="form.description" rows="3"
+              placeholder="Resumo da função deste cargo (opcional)."
+              class="w-full px-3.5 py-2 text-sm bg-surface-raised text-ink border border-line rounded-lg
+                     placeholder:text-ink-subtle outline-none resize-none transition-all shadow-inner-soft
+                     focus:border-accent-ring focus:ring-2 focus:ring-accent-ring/20" />
+          </div>
+          <div class="flex flex-wrap items-center gap-4">
+            <Switch v-model="form.is_internal" size="sm" label="Interno" />
+            <Switch v-model="form.is_partner" size="sm" label="Parceiro (Imobiliária / Corretor)" />
+          </div>
+        </template>
+
+        <!-- Departamentos -->
+        <template v-else-if="activeTab === 'departments'">
+          <Input v-model="form.name" label="Nome do departamento" placeholder="Ex: Marketing" required />
+          <Input v-model="form.code" label="Código (único)" placeholder="Ex: MARKETING"
+            class="uppercase" required />
+          <div>
+            <label class="block text-xs font-medium text-ink-muted mb-1.5">Descrição</label>
+            <textarea v-model="form.description" rows="3"
+              placeholder="Ex: Atividades ligadas à divulgação, branding etc."
+              class="w-full px-3.5 py-2 text-sm bg-surface-raised text-ink border border-line rounded-lg
+                     placeholder:text-ink-subtle outline-none resize-none transition-all shadow-inner-soft
+                     focus:border-accent-ring focus:ring-2 focus:ring-accent-ring/20" />
+          </div>
+        </template>
+
+        <!-- Categorias -->
+        <template v-else-if="activeTab === 'categories'">
+          <Select v-model="form.departmentId" :options="departmentOptions" label="Departamento" required />
+          <Input v-model="form.name" label="Nome da categoria" placeholder="Ex: Mídia, Eventos, Taxas..." required />
+          <Input v-model="form.code" label="Código (único)" placeholder="Ex: MIDIA, EVENTOS"
+            class="uppercase" required />
+          <div>
+            <label class="block text-xs font-medium text-ink-muted mb-1.5">Descrição</label>
+            <textarea v-model="form.description" rows="3"
+              placeholder="Ex: Agrupamento de despesas de mídia, anúncios, etc."
+              class="w-full px-3.5 py-2 text-sm bg-surface-raised text-ink border border-line rounded-lg
+                     placeholder:text-ink-subtle outline-none resize-none transition-all shadow-inner-soft
+                     focus:border-accent-ring focus:ring-2 focus:ring-accent-ring/20" />
+          </div>
+        </template>
+
+        <!-- Cidades -->
+        <template v-else>
+          <Input v-model="form.name" label="Nome da cidade" placeholder="Ex: Marília" required />
+          <Input v-model="form.uf" label="UF" placeholder="SP" maxlength="2" class="w-24 uppercase" />
+        </template>
+      </div>
+
+      <template #footer>
+        <Button variant="ghost" @click="closeModal">Cancelar</Button>
+        <Button icon="fas fa-floppy-disk" @click="saveItem">Salvar</Button>
+      </template>
+    </Modal>
+  </div>
+</template>

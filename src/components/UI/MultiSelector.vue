@@ -127,90 +127,81 @@ function toggleSelectAllFiltered(e) {
 <template>
     <div class="relative w-full" ref="wrapperRef">
         <!-- Label -->
-        <label v-if="label"
-            class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">
+        <label v-if="label" class="block text-xs font-medium text-ink-muted mb-1.5">
             {{ label }}
         </label>
 
         <!-- Trigger button -->
-        <button type="button" :disabled="disabled" @click="toggleOpen" class="w-full flex items-center justify-between gap-2
-             px-3.5 py-2.5 text-sm text-left
-             bg-white dark:bg-gray-900/60
-             border border-gray-200 dark:border-gray-700
-             rounded-md shadow-sm
-             outline-none transition-all duration-150
-             focus:border-blue-400 dark:focus:border-blue-500
-             focus:ring-2 focus:ring-blue-500/15
-             disabled:opacity-50 disabled:cursor-not-allowed">
-            <span class="truncate"
-                :class="selected.length === 0 ? 'text-gray-400 dark:text-gray-500' : 'text-gray-900 dark:text-gray-100'">
+        <button type="button" :disabled="disabled" @click="toggleOpen"
+            class="w-full flex items-center justify-between gap-2 px-3.5 py-2 h-9 text-sm text-left
+                   bg-surface-raised border border-line rounded-lg shadow-inner-soft
+                   outline-none transition-all duration-150 ease-out-expo
+                   hover:border-line-strong
+                   focus:border-accent-ring focus:ring-2 focus:ring-accent-ring/20
+                   disabled:opacity-50 disabled:cursor-not-allowed">
+            <span class="truncate" :class="selected.length === 0 ? 'text-ink-subtle' : 'text-ink'">
                 <slot name="button" :selected="selected">
                     <template v-if="selected.length === 1">{{ selected[0] }}</template>
                     <template v-else-if="selected.length > 1">{{ selected.length }} selecionados</template>
                     <template v-else>{{ placeholder }}</template>
                 </slot>
             </span>
-            <i class="fas fa-chevron-down text-gray-400 text-xs transition-transform duration-200 shrink-0"
+            <i class="fas fa-chevron-down text-ink-subtle text-xs transition-transform duration-200 shrink-0"
                 :class="{ 'rotate-180': open }"></i>
         </button>
 
         <!-- Dropdown panel -->
         <transition name="dropdown">
-            <div v-if="open" class="absolute z-50 mt-1.5 w-full
-               bg-white dark:bg-gray-800
-               border border-gray-200 dark:border-gray-700
-               rounded-md shadow-lg overflow-hidden" role="listbox" aria-multiselectable="true">
+            <div v-if="open"
+                class="absolute z-50 mt-1.5 w-full bg-surface-overlay border border-line
+                       rounded-xl shadow-overlay overflow-hidden"
+                role="listbox" aria-multiselectable="true">
                 <!-- Search -->
-                <div class="p-2 border-b border-gray-100 dark:border-gray-700">
+                <div class="p-2 border-b border-line">
                     <div class="relative">
-                        <i
-                            class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none"></i>
+                        <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-ink-subtle text-xs pointer-events-none"></i>
                         <input ref="searchInputRef" v-model="searchRaw" type="text" placeholder="Filtrar..."
-                            aria-label="Filtro de opções" class="w-full pl-8 pr-3 py-2 text-sm
-                     bg-gray-50 dark:bg-gray-700/60
-                     border border-gray-200 dark:border-gray-600
-                     rounded-lg outline-none
-                     text-gray-900 dark:text-gray-100
-                     placeholder:text-gray-400
-                     focus:border-blue-400 dark:focus:border-blue-500
-                     focus:ring-1 focus:ring-blue-500/15" />
+                            aria-label="Filtro de opções"
+                            class="w-full pl-8 pr-3 py-2 text-sm bg-surface border border-line rounded-lg
+                                   outline-none text-ink placeholder:text-ink-subtle
+                                   focus:border-accent-ring focus:ring-1 focus:ring-accent-ring/20" />
                     </div>
                 </div>
 
                 <!-- Select all row (multi only) -->
                 <div v-if="!single"
-                    class="flex items-center gap-2 px-3 py-2 text-xs text-gray-600 dark:text-gray-400 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/30">
-                    <input ref="masterRef" type="checkbox" class="accent-blue-600 cursor-pointer"
+                    class="flex items-center gap-2 px-3 py-2 text-xs text-ink-muted
+                           border-b border-line bg-surface-sunken/40">
+                    <input ref="masterRef" type="checkbox" class="cursor-pointer"
                         :checked="allFilteredSelected" @change="toggleSelectAllFiltered" />
                     <span class="cursor-pointer select-none" @click="toggleSelectAllFiltered">
                         {{ allFilteredSelected ? 'Remover todos' : 'Selecionar todos' }}
                     </span>
-                    <span class="ml-auto opacity-60">{{ selectedInFiltered }}/{{ filteredCount }}</span>
+                    <span class="ml-auto font-mono text-ink-subtle">{{ selectedInFiltered }}/{{ filteredCount }}</span>
                 </div>
 
                 <!-- Options list -->
                 <div class="max-h-56 overflow-y-auto" @scroll.passive="onScroll">
-                    <label v-for="opt in visibleOptions" :key="opt" class="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer
-                   text-gray-700 dark:text-gray-300
-                   hover:bg-blue-50 dark:hover:bg-blue-900/20
-                   transition-colors duration-100"
-                        :class="{ 'bg-blue-50/60 dark:bg-blue-900/20': single && selectedSet.has(opt) }">
-                        <input v-if="!single" type="checkbox" class="accent-blue-600 cursor-pointer shrink-0"
+                    <label v-for="opt in visibleOptions" :key="opt"
+                        class="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer text-ink
+                               hover:bg-accent-soft/40 transition-colors duration-100"
+                        :class="{ 'bg-accent-soft/60': single && selectedSet.has(opt) }">
+                        <input v-if="!single" type="checkbox" class="cursor-pointer shrink-0"
                             :checked="selectedSet.has(opt)" @change="toggle(opt)" />
                         <i v-else class="fas shrink-0 text-xs w-3"
-                            :class="selectedSet.has(opt) ? 'fa-circle-dot text-blue-500' : 'fa-circle text-gray-300 dark:text-gray-600'"
+                            :class="selectedSet.has(opt) ? 'fa-circle-dot text-accent' : 'fa-circle text-ink-subtle/50'"
                             @click.prevent="toggle(opt)"></i>
                         <slot name="option" :option="opt" :checked="selectedSet.has(opt)">
                             <span class="truncate" @click.prevent="toggle(opt)" :title="opt">{{ opt }}</span>
                         </slot>
                     </label>
 
-                    <div v-if="visibleOptions.length === 0" class="px-3 py-4 text-sm text-center text-gray-400">
+                    <div v-if="visibleOptions.length === 0" class="px-3 py-4 text-sm text-center text-ink-subtle">
                         Nenhum resultado encontrado.
                     </div>
 
                     <div v-if="visibleOptions.length < filteredOptions.length"
-                        class="px-3 py-2 text-xs text-center text-gray-400">
+                        class="px-3 py-2 text-xs text-center text-ink-subtle">
                         Carregando... ({{ visibleOptions.length }}/{{ filteredOptions.length }})
                     </div>
                 </div>

@@ -1,54 +1,44 @@
 <script setup>
 /**
- * LaunchPipelineCard.vue
- * Exibe o status completo da esteira Sienge para um lançamento.
- * Emits: run-pipeline, poll, dismiss-error, retry-contract, open-rid-modal
+ * LaunchPipelineCard — exibe o status completo da esteira Sienge.
  */
 import { computed } from 'vue';
 import { PIPELINE_STAGE_LABELS } from '@/stores/Tools/PaymentFlow/paymentFlowStore';
+import Badge from '@/components/UI/Badge.vue';
+import Button from '@/components/UI/Button.vue';
+import IconButton from '@/components/UI/IconButton.vue';
 
 const props = defineProps({
-    launch: { type: Object, required: true },
-    polling: { type: Boolean, default: false },
-    running: { type: Boolean, default: false }, // este lançamento específico está em processamento
+  launch: { type: Object, required: true },
+  polling: { type: Boolean, default: false },
+  running: { type: Boolean, default: false },
 });
 
 const emit = defineEmits([
-    'run-pipeline',
-    'poll',
-    'dismiss-error',
-    'retry-contract',
-    'open-rid-modal',
-    'register-boleto',
-    'update-boleto',
-    'continue-existing-contract',
-    'abort',
+  'run-pipeline', 'poll', 'dismiss-error', 'retry-contract',
+  'open-rid-modal', 'register-boleto', 'update-boleto',
+  'continue-existing-contract', 'abort',
 ]);
 
 const ridEmailSent = computed(() => !!props.launch.ridEmailSent);
 const ridSentAtLabel = computed(() => {
-    if (!props.launch.ridEmailSentAt) return null;
-    return new Date(props.launch.ridEmailSentAt).toLocaleString('pt-BR', {
-        day: '2-digit', month: '2-digit', year: 'numeric',
-        hour: '2-digit', minute: '2-digit',
-    });
+  if (!props.launch.ridEmailSentAt) return null;
+  return new Date(props.launch.ridEmailSentAt).toLocaleString('pt-BR', {
+    day: '2-digit', month: '2-digit', year: 'numeric',
+    hour: '2-digit', minute: '2-digit',
+  });
 });
 
-// ── Computed de estado ────────────────────────────────────────────────────────
 const stage = computed(() => props.launch.pipelineStage || 'idle');
 const stageMeta = computed(() => PIPELINE_STAGE_LABELS[stage.value] || PIPELINE_STAGE_LABELS.idle);
 
-const stageIconClass = computed(() => {
-    const colorMap = {
-        gray: 'text-gray-400',
-        blue: 'text-blue-500',
-        green: 'text-green-500',
-        emerald: 'text-emerald-500',
-        red: 'text-red-500',
-        orange: 'text-orange-500',
-    };
-    return `fas ${stageMeta.value.icon} text-sm ${colorMap[stageMeta.value.color] || 'text-gray-400'}`;
-});
+const stageColorMap = {
+  gray: 'text-ink-subtle', blue: 'text-accent', green: 'text-emerald-500',
+  emerald: 'text-emerald-500', red: 'text-red-500', orange: 'text-amber-500',
+};
+const stageIconClass = computed(() =>
+  `fas ${stageMeta.value.icon} text-sm ${stageColorMap[stageMeta.value.color] || 'text-ink-subtle'}`
+);
 
 const creditorFound = computed(() => props.launch.siengeCreditorStatus === 'found');
 const creditorMissing = computed(() => props.launch.siengeCreditorStatus === 'not_found');
@@ -59,25 +49,21 @@ const contractCreating = computed(() => props.launch.siengeContractStatus === 'c
 const contractError = computed(() => props.launch.siengeContractStatus === 'error');
 
 const isAuthorized = computed(() => props.launch.siengeContractAuthorized);
-const approval = computed(() => props.launch.siengeContractApproval);
-
 const balanceOk = computed(() => props.launch.siengeItemBalanceOk);
 const balance = computed(() => Number(props.launch.siengeItemBalanceAvailable) || 0);
 const unitPrice = computed(() => Number(props.launch.unitPrice) || 0);
 
 const isRunning = computed(() =>
-    ['searching_creditor', 'searching_contract', 'creating_contract', 'creating_additive',
-        'creating_measurement', 'creating_titulo', 'validating_items']
-        .includes(stage.value)
+  ['searching_creditor', 'searching_contract', 'creating_contract', 'creating_additive',
+   'creating_measurement', 'creating_titulo', 'validating_items'].includes(stage.value)
 );
 const isReady = computed(() => ['ready', 'titulo_pago'].includes(stage.value));
 const hasError = computed(() =>
-    ['contract_error', 'additive_error', 'measurement_error', 'titulo_error'].includes(stage.value) || creditorMissing.value
+  ['contract_error', 'additive_error', 'measurement_error', 'titulo_error'].includes(stage.value) || creditorMissing.value
 );
 
-// ── Título step ────────────────────────────────────────────────────────────────
 const TITULO_STAGES = ['creating_titulo', 'titulo_created', 'titulo_error',
-    'awaiting_titulo_authorization', 'titulo_pago', 'ready'];
+  'awaiting_titulo_authorization', 'titulo_pago', 'ready'];
 const tituloCreating = computed(() => stage.value === 'creating_titulo');
 const tituloCreated = computed(() => TITULO_STAGES.filter(s => s !== 'creating_titulo' && s !== 'titulo_error').includes(stage.value));
 const tituloError = computed(() => stage.value === 'titulo_error');
@@ -85,634 +71,534 @@ const tituloErrorMsg = computed(() => tituloError.value ? (props.launch.siengeTi
 const tituloPago = computed(() => stage.value === 'titulo_pago');
 const tituloAwaiting = computed(() => stage.value === 'awaiting_titulo_authorization');
 
-// Qualquer estágio de título ativo (para ocultar blocos anteriores)
 const inTituloStage = computed(() => tituloCreating.value || tituloCreated.value || tituloError.value);
 
-// Boleto falhou no registro (título criado mas siengeTituloError preenchido)
 const boletoRegisterError = computed(() =>
-    stage.value === 'titulo_created' && !!props.launch.siengeTituloError
+  stage.value === 'titulo_created' && !!props.launch.siengeTituloError
 );
-// Pode enviar novo boleto quando: título existe + está aguardando pagamento ou boleto falhou
 const canUpdateBoleto = computed(() =>
-    !!props.launch.siengeTituloNumber && (tituloAwaiting.value || boletoRegisterError.value)
+  !!props.launch.siengeTituloNumber && (tituloAwaiting.value || boletoRegisterError.value)
 );
 
-const tituloStepClass = computed(() => {
-    if (tituloError.value) return 'bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400';
-    if (tituloCreating.value) return 'bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400';
-    if (tituloPago.value) return 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400';
-    if (tituloCreated.value) return 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400';
-    return 'bg-gray-100 dark:bg-gray-700 text-gray-400';
-});
-const tituloStepTextClass = computed(() => {
-    if (tituloError.value) return 'text-red-600 dark:text-red-400 font-semibold';
-    if (tituloCreating.value) return 'text-blue-600 dark:text-blue-400 font-semibold';
-    if (tituloCreated.value) return 'text-emerald-600 dark:text-emerald-400 font-semibold';
-    return 'text-gray-400';
-});
+const stepBgFor = (state) => ({
+  error: 'bg-red-500/15 text-red-600 dark:text-red-400',
+  loading: 'bg-accent-soft text-accent',
+  done: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400',
+  pending: 'bg-amber-500/15 text-amber-600 dark:text-amber-400',
+  idle: 'bg-surface-sunken text-ink-subtle border border-line',
+}[state] || 'bg-surface-sunken text-ink-subtle border border-line');
 
-// ── Medição step ───────────────────────────────────────────────────────────────
+const stepTextFor = (state) => ({
+  error: 'text-red-600 dark:text-red-400 font-semibold',
+  loading: 'text-accent font-semibold',
+  done: 'text-emerald-600 dark:text-emerald-400 font-semibold',
+  pending: 'text-amber-600 dark:text-amber-400 font-semibold',
+  idle: 'text-ink-subtle',
+}[state] || 'text-ink-subtle');
+
+// ── Medição step ───────────────────────────────────
 const measurementCreating = computed(() => stage.value === 'creating_measurement');
 const measurementCreated = computed(() =>
-    ['measurement_created', 'awaiting_measurement_authorization',
-        ...TITULO_STAGES, 'ready'].includes(stage.value)
+  ['measurement_created', 'awaiting_measurement_authorization', ...TITULO_STAGES, 'ready'].includes(stage.value)
 );
 const measurementError = computed(() => stage.value === 'measurement_error');
-const measurementErrorMsg = computed(() =>
-    measurementError.value ? (props.launch.siengeMeasurementError || null) : null
-);
+const measurementErrorMsg = computed(() => measurementError.value ? (props.launch.siengeMeasurementError || null) : null);
 const measurementAuthorized = computed(() => props.launch.siengeMeasurementAuthorized === true);
 
-const measurementStepClass = computed(() => {
-    if (measurementError.value) return 'bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400';
-    if (measurementCreating.value) return 'bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400';
-    if (measurementCreated.value) return 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400';
-    return 'bg-gray-100 dark:bg-gray-700 text-gray-400';
-});
-const measurementStepTextClass = computed(() => {
-    if (measurementError.value) return 'text-red-600 dark:text-red-400 font-semibold';
-    if (measurementCreating.value) return 'text-blue-600 dark:text-blue-400 font-semibold';
-    if (measurementCreated.value) return 'text-emerald-600 dark:text-emerald-400 font-semibold';
-    return 'text-gray-400';
+const measurementState = computed(() => {
+  if (measurementError.value) return 'error';
+  if (measurementCreating.value) return 'loading';
+  if (measurementCreated.value) return 'done';
+  return 'idle';
 });
 
-// ── Fluxo de aditivo: contrato existia (status 'found') ──────────────────────
+// ── Aditivo step ───────────────────────────────────
 const isAdditivePath = computed(() => props.launch.siengeContractStatus === 'found');
-
-// ── Aditivo step ──────────────────────────────────────────────────────────────
 const additiveCreating = computed(() => stage.value === 'creating_additive');
 const additiveCreated = computed(() =>
-    stage.value === 'additive_created' ||
-    (stage.value === 'awaiting_authorization' && isAdditivePath.value) ||
-    ['creating_measurement', 'measurement_created', 'measurement_error',
-        'awaiting_measurement_authorization', ...TITULO_STAGES, 'ready'].includes(stage.value)
+  stage.value === 'additive_created' ||
+  (stage.value === 'awaiting_authorization' && isAdditivePath.value) ||
+  ['creating_measurement', 'measurement_created', 'measurement_error',
+   'awaiting_measurement_authorization', ...TITULO_STAGES, 'ready'].includes(stage.value)
 );
 const additiveError = computed(() => stage.value === 'additive_error');
-const additiveErrorMsg = computed(() =>
-    additiveError.value ? (props.launch.siengeContractError || null) : null
-);
+const additiveErrorMsg = computed(() => additiveError.value ? (props.launch.siengeContractError || null) : null);
 
-const additiveStepClass = computed(() => {
-    if (additiveError.value) return 'bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400';
-    if (additiveCreating.value) return 'bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400';
-    if (additiveCreated.value) return 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400';
-    return 'bg-gray-100 dark:bg-gray-700 text-gray-400';
-});
-const additiveStepTextClass = computed(() => {
-    if (additiveError.value) return 'text-red-600 dark:text-red-400 font-semibold';
-    if (additiveCreating.value) return 'text-blue-600 dark:text-blue-400 font-semibold';
-    if (additiveCreated.value) return 'text-emerald-600 dark:text-emerald-400 font-semibold';
-    return 'text-gray-400';
+const additiveState = computed(() => {
+  if (additiveError.value) return 'error';
+  if (additiveCreating.value) return 'loading';
+  if (additiveCreated.value) return 'done';
+  return 'idle';
 });
 
-// ── Contrato step ──────────────────────────────────────────────────────────────
-// Quando o caminho foi aditivo: o contrato já está resolvido → verde com check
-// Quando o caminho foi criação de contrato: amarelo aguardando autorização, verde quando autorizado
-const contractStepClass = computed(() => {
-    if (contractError.value) return 'bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400';
-    if (contractCreating.value) return 'bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400';
-    // Contrato resolvido (encontrado e aditivo já criado, ou autorizado)
-    if (isAuthorized.value || (isAdditivePath.value && (additiveCreated.value || additiveCreating.value || additiveError.value)))
-        return 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400';
-    // Contrato criado aguardando autorização (path criação)
-    if (contractFound.value) return 'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-600 dark:text-yellow-400';
-    return 'bg-gray-100 dark:bg-gray-700 text-gray-400';
-});
-const contractStepTextClass = computed(() => {
-    if (contractError.value) return 'text-red-600 dark:text-red-400 font-semibold';
-    if (contractCreating.value) return 'text-blue-600 dark:text-blue-400 font-semibold';
-    if (isAuthorized.value || (isAdditivePath.value && (additiveCreated.value || additiveCreating.value || additiveError.value)))
-        return 'text-emerald-600 dark:text-emerald-400 font-semibold';
-    if (contractFound.value) return 'text-yellow-600 dark:text-yellow-400 font-semibold';
-    return 'text-gray-400';
+// ── Contrato step ──────────────────────────────────
+const contractState = computed(() => {
+  if (contractError.value) return 'error';
+  if (contractCreating.value) return 'loading';
+  if (isAuthorized.value || (isAdditivePath.value && (additiveCreated.value || additiveCreating.value || additiveError.value))) return 'done';
+  if (contractFound.value) return 'pending';
+  return 'idle';
 });
 
-// ── Helpers de formatação ─────────────────────────────────────────────────────
-function fmt(v) {
-    return Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-}
+// ── Título step ────────────────────────────────────
+const tituloState = computed(() => {
+  if (tituloError.value) return 'error';
+  if (tituloCreating.value) return 'loading';
+  if (tituloPago.value) return 'done';
+  if (tituloCreated.value) return 'done';
+  return 'idle';
+});
+
+// ── Helpers ────────────────────────────────────────
+function fmt(v) { return Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
 function fmtDate(d) {
-    if (!d) return '—';
-    const [y, m, day] = String(d).slice(0, 10).split('-');
-    return `${day}/${m}/${y}`;
-}
-function approvalLabel(a) {
-    return a === 'APPROVED' ? 'Aprovado' : a === 'DISAPPROVED' ? 'Reprovado' : 'Pendente';
-}
-function approvalClass(a) {
-    return a === 'APPROVED' ? 'text-green-600 dark:text-green-400' :
-        a === 'DISAPPROVED' ? 'text-red-600 dark:text-red-400' :
-            'text-yellow-600 dark:text-yellow-400';
+  if (!d) return '—';
+  const [y, m, day] = String(d).slice(0, 10).split('-');
+  return `${day}/${m}/${y}`;
 }
 function authLevelLabel(level) {
-    const map = {
-        FIRST_LEVEL: '1° alçada',
-        SECOND_LEVEL: '2° alçada',
-        THIRD_LEVEL: '3° alçada',
-        FOURTH_LEVEL: '4° alçada',
-    };
-    return map[level] || null;
+  return ({
+    FIRST_LEVEL: '1° alçada', SECOND_LEVEL: '2° alçada',
+    THIRD_LEVEL: '3° alçada', FOURTH_LEVEL: '4° alçada',
+  })[level] || null;
 }
+
+const cardBorderClass = computed(() => {
+  if (hasError.value) return 'border-red-500/30';
+  if (isReady.value) return 'border-emerald-500/30';
+  return 'border-line';
+});
 </script>
 
 <template>
-    <div class="rounded-xl border bg-white dark:bg-gray-900 overflow-hidden" :class="hasError
-        ? 'border-red-200 dark:border-red-700'
-        : isReady
-            ? 'border-emerald-200 dark:border-emerald-700'
-            : 'border-gray-200 dark:border-gray-700'">
+  <article class="rounded-xl bg-surface-raised border overflow-hidden surface-gradient transition-colors"
+    :class="cardBorderClass">
 
-        <!-- Header: stage badge + ações -->
-        <div
-            class="flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
-            <div class="flex items-center gap-2">
-                <i :class="stageIconClass"></i>
-                <span class="text-xs font-semibold text-gray-700 dark:text-gray-200">{{ stageMeta.label }}</span>
-                <span v-if="polling" class="text-xs text-blue-400 flex items-center gap-1">
-                    <i class="fas fa-sync fa-spin text-xs"></i> Monitorando
-                </span>
-            </div>
+    <!-- Header -->
+    <div class="flex items-center justify-between gap-3 px-4 py-2.5 bg-surface-sunken/40 border-b border-line">
+      <div class="flex items-center gap-2 min-w-0">
+        <i :class="stageIconClass"></i>
+        <span class="text-xs font-semibold text-ink truncate">{{ stageMeta.label }}</span>
+        <span v-if="polling" class="text-xs text-accent flex items-center gap-1 font-mono">
+          <i class="fas fa-sync fa-spin text-[10px]"></i>Monitorando
+        </span>
+      </div>
 
-            <div class="flex items-center gap-2">
-                <!-- Processar: idle ou erros genéricos -->
-                <button v-if="stage === 'idle' || (hasError && !contractError && !additiveError)"
-                    class="text-xs px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
-                    :disabled="isRunning || running" @click="!running && !isRunning && emit('run-pipeline', launch.id)">
-                    <i :class="running ? 'fas fa-spinner fa-spin text-xs' : 'fas fa-play text-xs'"></i>
-                    {{ running ? 'Processando...' : 'Processar' }}
-                </button>
-                <!-- Abortar: aparece enquanto o pipeline está rodando -->
-                <button v-if="running"
-                    class="text-xs px-2.5 py-1 rounded-lg bg-red-600 hover:bg-red-700 text-white transition flex items-center gap-1"
-                    @click="emit('abort', launch.id)">
-                    <i class="fas fa-stop text-xs"></i>
-                    Abortar
-                </button>
-                <!-- Forçar reprocessar: quando travado em estado creating_* -->
-                <!-- <button v-if="isRunning && !running"
-                    class="text-xs px-2.5 py-1 rounded-lg bg-orange-500 hover:bg-orange-600 text-white transition flex items-center gap-1"
-                    @click="emit('retry-contract', launch.id)">
-                    <i class="fas fa-bolt text-xs"></i>
-                    Forçar reprocessar
-                </button> -->
-                <!-- Retentar: aparece quando há erro de contrato, aditivo ou medição -->
-                <button v-if="contractError || additiveError || measurementError"
-                    class="text-xs px-2.5 py-1 rounded-lg bg-red-500 hover:bg-red-600 text-white transition flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
-                    :disabled="running" @click="!running && emit('retry-contract', launch.id)">
-                    <i :class="running ? 'fas fa-spinner fa-spin text-xs' : 'fas fa-rotate-right text-xs'"></i>
-                    {{ running ? 'Processando...' : 'Retentar' }}
-                </button>
-                <!-- Poll manual: autorização de contrato/aditivo ou medição -->
-                <button
-                    v-if="(contractFound || additiveCreated || measurementCreated) && (!isAuthorized || !measurementAuthorized)"
-                    class="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition disabled:opacity-40 disabled:cursor-not-allowed"
-                    :disabled="polling || running" @click="emit('poll', launch.id)">
-                    <i class="fas fa-arrows-rotate text-xs"></i>
-                </button>
-            </div>
-        </div>
+      <div class="flex items-center gap-1.5 shrink-0">
+        <Button v-if="stage === 'idle' || (hasError && !contractError && !additiveError)"
+          size="sm" :loading="running" :disabled="isRunning || running"
+          icon="fas fa-play"
+          @click="!running && !isRunning && emit('run-pipeline', launch.id)">
+          {{ running ? 'Processando...' : 'Processar' }}
+        </Button>
 
-        <div class="p-4 space-y-4">
+        <Button v-if="running" size="sm" variant="danger" icon="fas fa-stop"
+          @click="emit('abort', launch.id)">
+          Abortar
+        </Button>
 
-            <!-- ── Credor ──────────────────────────────────────────────────── -->
-            <div>
-                <div class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
-                    Credor
-                </div>
-                <div class="flex items-start gap-3">
-                    <div class="mt-0.5 flex-shrink-0">
-                        <i v-if="creditorFound" class="fas fa-circle-check text-green-500"></i>
-                        <i v-else-if="creditorMissing" class="fas fa-circle-xmark text-red-500"></i>
-                        <i v-else class="fas fa-circle text-gray-300"></i>
-                    </div>
-                    <div class="min-w-0 flex-1">
-                        <div class="text-sm font-medium text-gray-900 dark:text-white truncate">
-                            {{ launch.providerName || '—' }}
-                        </div>
-                        <div class="text-xs text-gray-400 font-mono">{{ launch.providerCnpj || '—' }}</div>
-                        <!-- Nome diferente no Sienge -->
-                        <div v-if="creditorFound && launch.siengeCreditorName && launch.siengeCreditorName !== launch.providerName"
-                            class="mt-1 text-xs text-yellow-600 dark:text-yellow-400 flex items-center gap-1">
-                            <i class="fas fa-triangle-exclamation"></i>
-                            Sienge: <span class="font-medium ml-0.5">{{ launch.siengeCreditorName }}</span>
-                        </div>
-                        <!-- Não cadastrado: aguardando RID -->
-                        <div v-if="creditorMissing && ridEmailSent"
-                            class="mt-1 px-2.5 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 text-xs text-blue-700 dark:text-blue-300 space-y-1">
-                            <div class="flex items-center gap-1.5 font-semibold">
-                                <i class="fas fa-envelope-circle-check"></i>
-                                Solicitação de cadastro enviada
-                            </div>
-                            <div class="text-blue-600 dark:text-blue-400">
-                                Email enviado em {{ ridSentAtLabel }}. Verificando automaticamente a cada 20 min.
-                            </div>
-                            <button
-                                class="mt-0.5 text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed disabled:no-underline"
-                                :disabled="running" @click="!running && emit('open-rid-modal', launch)">
-                                <i class="fas fa-arrow-up-right-from-square text-xs"></i>
-                                Ver detalhes / reenviar
-                            </button>
-                        </div>
-                        <!-- Não cadastrado: sem RID enviada -->
-                        <div v-else-if="creditorMissing"
-                            class="mt-1 px-2.5 py-1.5 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 text-xs text-red-700 dark:text-red-300">
-                            <div class="flex items-center gap-1 mb-1">
-                                <i class="fas fa-circle-info"></i>
-                                Fornecedor não encontrado no Sienge.
-                            </div>
-                            <button
-                                class="font-semibold text-red-600 dark:text-red-400 hover:underline flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed"
-                                :disabled="running" @click="!running && emit('open-rid-modal', launch)">
-                                <i class="fas fa-file-arrow-up text-xs"></i>
-                                Solicitar cadastro via formulário RID →
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <Button v-if="contractError || additiveError || measurementError"
+          size="sm" variant="danger" :loading="running" :disabled="running"
+          icon="fas fa-rotate-right"
+          @click="!running && emit('retry-contract', launch.id)">
+          {{ running ? 'Processando...' : 'Retentar' }}
+        </Button>
 
-            <!-- ── Contrato ────────────────────────────────────────────────── -->
-            <div>
-                <div class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
-                    Contrato
-                </div>
-
-                <!-- Criando via Playwright -->
-                <div v-if="contractCreating" class="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400">
-                    <i class="fas fa-spinner fa-spin"></i>
-                    Criando contrato no Sienge via automação...
-                </div>
-
-                <div v-else-if="stage === 'contract_manual_block'"
-                    class="rounded-lg border border-yellow-200 dark:border-yellow-700 bg-yellow-50 dark:bg-yellow-900/20 p-3 text-xs text-yellow-800 dark:text-yellow-200 space-y-2">
-                    <div class="font-semibold flex items-center gap-1.5">
-                        <i class="fas fa-shield-halved"></i> Contrato existente localizado
-                    </div>
-
-                    <div>{{ launch.siengeContractError }}</div>
-
-                    <div class="text-yellow-600 dark:text-yellow-400">
-                        Se o contrato estiver correto, clique em prosseguir para criar o aditivo.
-                    </div>
-
-                    <button
-                        class="text-xs px-2.5 py-1 rounded-lg bg-yellow-600 hover:bg-yellow-700 text-white transition flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
-                        :disabled="running" @click="emit('continue-existing-contract', launch.id)">
-                        <i class="fas fa-play text-xs"></i>
-                        Prosseguir
-                    </button>
-                </div>
-
-                <!-- Erro na criação -->
-                <div v-else-if="contractError"
-                    class="rounded-lg border border-red-200 dark:border-red-700 bg-red-50 dark:bg-red-900/20 p-3 text-xs text-red-700 dark:text-red-300 space-y-1">
-                    <div class="font-semibold flex items-center gap-1">
-                        <i class="fas fa-triangle-exclamation"></i> Falha na criação do contrato
-                    </div>
-                    <div>{{ launch.siengeContractError }}</div>
-                    <div class="pt-1 text-red-500">
-                        Acesse o Sienge e exclua o contrato incompleto antes de tentar novamente.
-                    </div>
-                </div>
-
-                <!-- Sem contrato ainda -->
-                <div v-else-if="contractMissing" class="text-xs text-gray-500 flex items-center gap-2">
-                    <i class="fas fa-file-circle-xmark text-orange-400"></i>
-                    Nenhum contrato encontrado. Será criado automaticamente.
-                </div>
-
-                <!-- Contrato localizado / criado -->
-                <div v-else-if="contractFound" class="space-y-2">
-                    <div class="grid grid-cols-2 gap-2">
-                        <div class="rounded-lg bg-gray-50 dark:bg-gray-800 px-3 py-2">
-                            <div class="text-xs text-gray-400">Documento</div>
-                            <div class="text-sm font-mono font-semibold text-gray-900 dark:text-white">
-                                {{ launch.siengeDocumentId || '—' }}
-                            </div>
-                        </div>
-                        <div class="rounded-lg bg-gray-50 dark:bg-gray-800 px-3 py-2">
-                            <div class="text-xs text-gray-400">Nº Contrato</div>
-                            <div class="text-sm font-mono font-semibold text-gray-900 dark:text-white">
-                                {{ launch.siengeContractNumber || '—' }}
-                            </div>
-                        </div>
-                        <div class="rounded-lg bg-gray-50 dark:bg-gray-800 px-3 py-2">
-                            <div class="text-xs text-gray-400">Vigência</div>
-                            <div class="text-xs text-gray-700 dark:text-gray-300">
-                                {{ fmtDate(launch.contractStartDate) }} → {{ fmtDate(launch.contractEndDate) }}
-                            </div>
-                        </div>
-                        <!-- Flow stage indicator (col-span-2) -->
-                        <div class="col-span-2 rounded-lg bg-gray-50 dark:bg-gray-800 px-3 py-2.5">
-                            <div class="text-xs text-gray-400 mb-2">Etapa do Fluxo</div>
-                            <div class="flex items-center">
-                                <!-- Contrato -->
-                                <div class="flex flex-col items-center text-center flex-1 min-w-0">
-                                    <div class="w-7 h-7 rounded-full flex items-center justify-center mb-1"
-                                        :class="contractStepClass">
-                                        <i v-if="contractCreating" class="fas fa-spinner fa-spin text-xs"></i>
-                                        <i v-else-if="contractError" class="fas fa-xmark text-xs"></i>
-                                        <!-- Contrato resolvido: autorizado OU caminho aditivo (contrato já era existente) -->
-                                        <i v-else-if="isAuthorized || (isAdditivePath && (additiveCreated || additiveCreating || additiveError))"
-                                            class="fas fa-check text-xs"></i>
-                                        <!-- Contrato criado, aguardando autorização -->
-                                        <i v-else-if="contractFound" class="fas fa-lock text-xs"></i>
-                                        <span v-else class="text-xs font-bold">1</span>
-                                    </div>
-                                    <span class="text-xs leading-tight" :class="contractStepTextClass">Contrato</span>
-                                </div>
-                                <div class="flex-1 h-0.5 mx-1 bg-gray-200 dark:bg-gray-700"></div>
-                                <!-- Aditivo -->
-                                <div class="flex flex-col items-center text-center flex-1 min-w-0">
-                                    <div class="w-7 h-7 rounded-full flex items-center justify-center mb-1"
-                                        :class="additiveStepClass">
-                                        <i v-if="additiveCreating" class="fas fa-spinner fa-spin text-xs"></i>
-                                        <i v-else-if="additiveError" class="fas fa-xmark text-xs"></i>
-                                        <i v-else-if="additiveCreated" class="fas fa-check text-xs"></i>
-                                        <span v-else class="text-xs font-bold">2</span>
-                                    </div>
-                                    <span class="text-xs leading-tight" :class="additiveStepTextClass">Aditivo</span>
-                                </div>
-                                <div class="flex-1 h-0.5 mx-1 bg-gray-200 dark:bg-gray-700"></div>
-                                <!-- Medição -->
-                                <div class="flex flex-col items-center text-center flex-1 min-w-0">
-                                    <div class="w-7 h-7 rounded-full flex items-center justify-center mb-1"
-                                        :class="measurementStepClass">
-                                        <i v-if="measurementCreating" class="fas fa-spinner fa-spin text-xs"></i>
-                                        <i v-else-if="measurementError" class="fas fa-xmark text-xs"></i>
-                                        <i v-else-if="measurementCreated" class="fas fa-check text-xs"></i>
-                                        <span v-else class="text-xs font-bold">3</span>
-                                    </div>
-                                    <span class="text-xs leading-tight" :class="measurementStepTextClass">Medição</span>
-                                </div>
-                                <div class="flex-1 h-0.5 mx-1 bg-gray-200 dark:bg-gray-700"></div>
-                                <!-- Título -->
-                                <div class="flex flex-col items-center text-center flex-1 min-w-0">
-                                    <div class="w-7 h-7 rounded-full flex items-center justify-center mb-1"
-                                        :class="tituloStepClass">
-                                        <i v-if="tituloCreating" class="fas fa-spinner fa-spin text-xs"></i>
-                                        <i v-else-if="tituloError" class="fas fa-xmark text-xs"></i>
-                                        <i v-else-if="tituloPago" class="fas fa-check text-xs"></i>
-                                        <i v-else-if="tituloCreated" class="fas fa-file-invoice-dollar text-xs"></i>
-                                        <span v-else class="text-xs font-bold">4</span>
-                                    </div>
-                                    <span class="text-xs leading-tight" :class="tituloStepTextClass">Título</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Criando aditivo via Playwright -->
-                    <div v-if="additiveCreating"
-                        class="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400">
-                        <i class="fas fa-spinner fa-spin"></i>
-                        Criando aditivo no Sienge via automação...
-                    </div>
-
-                    <!-- Erro no aditivo -->
-                    <div v-else-if="additiveError"
-                        class="rounded-lg border border-red-200 dark:border-red-700 bg-red-50 dark:bg-red-900/20 p-3 text-xs text-red-700 dark:text-red-300 space-y-1">
-                        <div class="font-semibold flex items-center gap-1.5">
-                            <i class="fas fa-triangle-exclamation"></i> Falha na criação do aditivo
-                        </div>
-                        <div v-if="additiveErrorMsg" class="break-words leading-relaxed">{{ additiveErrorMsg }}</div>
-                        <div v-else class="italic text-red-400">Detalhes do erro não disponíveis.</div>
-                    </div>
-
-                    <!-- Autorização do contrato/aditivo — oculto quando medição já foi criada/iniciada -->
-                    <div v-else-if="additiveCreated && !measurementCreated && !measurementCreating && !measurementError"
-                        class="flex items-center justify-between px-3 py-2.5 rounded-lg" :class="isAuthorized
-                            ? 'bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-700'
-                            : 'bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700'">
-                        <div class="flex items-center gap-2">
-                            <i
-                                :class="isAuthorized ? 'fas fa-lock-open text-emerald-500' : 'fas fa-lock text-yellow-500'"></i>
-                            <span class="text-xs font-semibold" :class="isAuthorized
-                                ? 'text-emerald-700 dark:text-emerald-300'
-                                : 'text-yellow-700 dark:text-yellow-300'">
-                                {{ isAuthorized
-                                    ? (isAdditivePath ? 'Aditivo autorizado' : 'Contrato autorizado')
-                                    : (isAdditivePath ? 'Aditivo em autorização' : 'Contrato em autorização') }}
-                            </span>
-                        </div>
-                        <span v-if="!isAuthorized && authLevelLabel(launch.siengeContractAuthLevel)"
-                            class="text-xs font-bold px-2 py-0.5 rounded-full bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-200">
-                            {{ authLevelLabel(launch.siengeContractAuthLevel) }}
-                        </span>
-                    </div>
-
-                    <!-- ── Medição ───────────────────────────────────────────── -->
-                    <!-- Criando via Playwright -->
-                    <div v-if="measurementCreating"
-                        class="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400">
-                        <i class="fas fa-spinner fa-spin"></i>
-                        Criando medição no Sienge via automação...
-                    </div>
-
-                    <!-- Erro na medição -->
-                    <div v-else-if="measurementError"
-                        class="rounded-lg border border-red-200 dark:border-red-700 bg-red-50 dark:bg-red-900/20 p-3 text-xs text-red-700 dark:text-red-300 space-y-1">
-                        <div class="font-semibold flex items-center gap-1.5">
-                            <i class="fas fa-triangle-exclamation"></i> Falha na criação da medição
-                        </div>
-                        <div v-if="measurementErrorMsg" class="break-words leading-relaxed">{{ measurementErrorMsg }}
-                        </div>
-                        <div v-else class="italic text-red-400">Detalhes do erro não disponíveis.</div>
-                    </div>
-
-                    <!-- Medição criada — oculto quando já estamos em estágio de título -->
-                    <div v-else-if="measurementCreated && !inTituloStage"
-                        class="flex items-center justify-between px-3 py-2.5 rounded-lg" :class="measurementAuthorized
-                            ? 'bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-700'
-                            : 'bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700'">
-                        <div class="flex items-center gap-2">
-                            <i
-                                :class="measurementAuthorized ? 'fas fa-ruler-combined text-emerald-500' : 'fas fa-lock text-yellow-500'"></i>
-                            <span class="text-xs font-semibold" :class="measurementAuthorized
-                                ? 'text-emerald-700 dark:text-emerald-300'
-                                : 'text-yellow-700 dark:text-yellow-300'">
-                                {{ measurementAuthorized ? 'Medição autorizada' : 'Medição em autorização' }}
-                                <span v-if="launch.siengeMeasurementNumber" class="font-normal opacity-75 ml-1">
-                                    #{{ launch.siengeMeasurementNumber }}
-                                </span>
-                            </span>
-                        </div>
-                        <span v-if="!measurementAuthorized && authLevelLabel(launch.siengeMeasurementAuthLevel)"
-                            class="text-xs font-bold px-2 py-0.5 rounded-full bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-200">
-                            {{ authLevelLabel(launch.siengeMeasurementAuthLevel) }}
-                        </span>
-                    </div>
-                </div>
-
-                <!-- Ainda não processou -->
-                <div v-else class="text-xs text-gray-400 flex items-center gap-2">
-                    <i class="fas fa-circle text-gray-200"></i>
-                    Aguardando processamento
-                </div>
-            </div>
-
-            <!-- ── 4. Título ───────────────────────────────────────────────── -->
-            <div v-if="tituloCreating || tituloCreated || tituloError">
-                <div class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
-                    Título Sienge
-                </div>
-
-                <!-- Criando via Playwright -->
-                <div v-if="tituloCreating" class="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400">
-                    <i class="fas fa-spinner fa-spin"></i>
-                    Criando título no Sienge via automação...
-                </div>
-
-                <!-- Erro no título -->
-                <div v-else-if="tituloError"
-                    class="rounded-lg border border-red-200 dark:border-red-700 bg-red-50 dark:bg-red-900/20 p-3 text-xs text-red-700 dark:text-red-300 space-y-1">
-                    <div class="font-semibold flex items-center gap-1.5">
-                        <i class="fas fa-triangle-exclamation"></i> Falha na criação do título
-                    </div>
-                    <div v-if="tituloErrorMsg" class="break-words leading-relaxed">{{ tituloErrorMsg }}</div>
-                    <div v-else class="italic text-red-400">Detalhes do erro não disponíveis.</div>
-                </div>
-
-                <!-- Título criado / aguardando / pago -->
-                <div v-else-if="tituloCreated" class="rounded-lg border px-3 py-2.5 space-y-2" :class="tituloPago
-                    ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-700'
-                    : tituloAwaiting
-                        ? 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-700'
-                        : 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-700'">
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-2">
-                            <i :class="tituloPago
-                                ? 'fas fa-circle-check text-emerald-500'
-                                : tituloAwaiting
-                                    ? 'fas fa-clock text-orange-500'
-                                    : 'fas fa-file-invoice-dollar text-emerald-500'"></i>
-                            <span class="text-xs font-semibold" :class="tituloPago || !tituloAwaiting
-                                ? 'text-emerald-700 dark:text-emerald-300'
-                                : 'text-orange-700 dark:text-orange-300'">
-                                {{ tituloPago ? 'Título pago' : tituloAwaiting ? 'Aguardando pagamento' : 'Título criado' }}
-                            </span>
-                        </div>
-                        <!-- Número do título -->
-                        <span v-if="launch.siengeTituloNumber"
-                            class="text-xs font-mono font-bold px-2 py-0.5 rounded-full" :class="tituloPago
-                                ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-200'
-                                : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'">
-                            #{{ launch.siengeTituloNumber }}
-                        </span>
-                    </div>
-                    <!-- Status raw do Sienge (para auditoria) -->
-                    <div v-if="launch.siengeTituloStatus" class="text-xs text-gray-400">
-                        Status Sienge: <span class="font-mono">{{ launch.siengeTituloStatus }}</span>
-                    </div>
-                    <!-- Alerta: boleto falhou no registro automático -->
-                    <div v-if="boletoRegisterError"
-                        class="mt-1 rounded-lg border border-orange-200 dark:border-orange-700 bg-orange-50 dark:bg-orange-900/20 px-3 py-2 text-xs text-orange-700 dark:text-orange-300 space-y-1">
-                        <div class="font-semibold flex items-center gap-1.5">
-                            <i class="fas fa-triangle-exclamation"></i> Boleto não registrado
-                        </div>
-                        <div class="break-words opacity-80">{{ launch.siengeTituloError }}</div>
-                        <div class="text-orange-500 text-[11px]">O sistema tentará novamente automaticamente. Use o
-                            botão abaixo para enviar um novo boleto.</div>
-                    </div>
-                    <!-- Botão registrar boleto: quando título existe mas boleto ainda não foi enviado (fluxo antigo) -->
-                    <div v-if="!tituloAwaiting && !tituloPago && launch.siengeTituloNumber && launch.boletoBarcode && !boletoRegisterError"
-                        class="pt-1">
-                        <button
-                            class="text-xs px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition flex items-center gap-1 disabled:opacity-50"
-                            :disabled="running" @click="emit('register-boleto', launch.id)">
-                            <i class="fas fa-barcode text-xs"></i>
-                            Registrar boleto no título
-                        </button>
-                    </div>
-                    <!-- Botão enviar novo boleto: quando pode trocar o boleto -->
-                    <div v-if="canUpdateBoleto && !tituloPago" class="pt-1">
-                        <button
-                            class="text-xs px-2.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white transition flex items-center gap-1 disabled:opacity-50"
-                            :disabled="running" @click="emit('update-boleto', launch)">
-                            <i class="fas fa-file-arrow-up text-xs"></i>
-                            Enviar novo boleto
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ── Documentos do lançamento ────────────────────────────────── -->
-            <div>
-                <div class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
-                    Documentos
-                </div>
-                <div class="grid grid-cols-2 gap-2 text-xs">
-                    <!-- NF -->
-                    <div class="rounded-lg bg-gray-50 dark:bg-gray-800 px-3 py-2 space-y-0.5">
-                        <div class="flex items-center gap-1 font-medium text-gray-600 dark:text-gray-300">
-                            <i class="fas fa-file-invoice text-red-400"></i> Nota Fiscal
-                        </div>
-                        <div v-if="launch.nfUrl" class="space-y-0.5">
-                            <div class="text-gray-500">
-                                {{ [launch.nfType, launch.nfNumber ? `#${launch.nfNumber}` : ''].filter(Boolean).join(' ') || '—' }}
-                            </div>
-                            <div v-if="launch.nfIssueDate" class="text-gray-400">
-                                Emissão: {{ fmtDate(launch.nfIssueDate) }}
-                            </div>
-                            <a :href="launch.nfUrl" target="_blank"
-                                class="text-blue-500 hover:underline flex items-center gap-1 mt-1">
-                                <i class="fas fa-arrow-up-right-from-square text-xs"></i> Abrir
-                            </a>
-                        </div>
-                        <div v-else class="text-gray-400 italic">Não anexada</div>
-                    </div>
-                    <!-- Boleto -->
-                    <div class="rounded-lg bg-gray-50 dark:bg-gray-800 px-3 py-2 space-y-0.5">
-                        <div class="flex items-center gap-1 font-medium text-gray-600 dark:text-gray-300">
-                            <i class="fas fa-barcode text-blue-400"></i> Boleto
-                        </div>
-                        <div v-if="launch.boletoUrl" class="space-y-0.5">
-                            <div v-if="launch.boletoIssueDate" class="text-gray-500">
-                                Emissão: {{ fmtDate(launch.boletoIssueDate) }}
-                            </div>
-                            <div v-if="launch.boletoDueDate" class="text-gray-400">
-                                Vence: {{ fmtDate(launch.boletoDueDate) }}
-                            </div>
-                            <div v-if="launch.boletoBarcode" class="font-mono text-gray-400 truncate">
-                                {{ launch.boletoBarcode.slice(0, 22) }}…
-                            </div>
-                            <a :href="launch.boletoUrl" target="_blank"
-                                class="text-blue-500 hover:underline flex items-center gap-1 mt-1">
-                                <i class="fas fa-arrow-up-right-from-square text-xs"></i> Abrir
-                            </a>
-                        </div>
-                        <div v-else class="text-gray-400 italic">Não anexado</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ── Saldo do contrato ───────────────────────────────────────── -->
-            <div v-if="contractFound && balanceOk !== null && balanceOk !== undefined">
-                <div class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
-                    Saldo
-                </div>
-                <div class="rounded-lg px-3 py-2 flex items-center justify-between" :class="balanceOk
-                    ? 'bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-700'
-                    : 'bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-700'">
-                    <div>
-                        <div class="text-xs" :class="balanceOk
-                            ? 'text-emerald-600 dark:text-emerald-400'
-                            : 'text-orange-600 dark:text-orange-400'">
-                            {{ balanceOk ? 'Saldo suficiente' : 'Saldo insuficiente' }}
-                        </div>
-                        <div class="text-sm font-bold mt-0.5" :class="balanceOk
-                            ? 'text-emerald-700 dark:text-emerald-300'
-                            : 'text-orange-700 dark:text-orange-300'">
-                            Disponível: {{ fmt(balance) }}
-                        </div>
-                    </div>
-                    <div class="text-right">
-                        <div class="text-xs text-gray-400">Valor lançamento</div>
-                        <div class="text-sm font-semibold text-gray-700 dark:text-gray-200">{{ fmt(unitPrice) }}</div>
-                    </div>
-                </div>
-            </div>
-
-        </div>
+        <IconButton v-if="(contractFound || additiveCreated || measurementCreated) && (!isAuthorized || !measurementAuthorized)"
+          icon="fas fa-arrows-rotate" size="sm" label="Atualizar status"
+          :disabled="polling || running"
+          @click="emit('poll', launch.id)" />
+      </div>
     </div>
+
+    <div class="p-4 space-y-4">
+
+      <!-- ── Credor ── -->
+      <div>
+        <p class="text-[10px] font-mono uppercase tracking-wider text-ink-subtle mb-2">Credor</p>
+        <div class="flex items-start gap-3">
+          <div class="mt-0.5 shrink-0">
+            <i v-if="creditorFound" class="fas fa-circle-check text-emerald-500"></i>
+            <i v-else-if="creditorMissing" class="fas fa-circle-xmark text-red-500"></i>
+            <i v-else class="fas fa-circle text-ink-subtle"></i>
+          </div>
+          <div class="min-w-0 flex-1">
+            <p class="text-sm font-medium text-ink truncate">{{ launch.providerName || '—' }}</p>
+            <p class="text-xs text-ink-subtle font-mono">{{ launch.providerCnpj || '—' }}</p>
+
+            <p v-if="creditorFound && launch.siengeCreditorName && launch.siengeCreditorName !== launch.providerName"
+              class="mt-1 text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
+              <i class="fas fa-triangle-exclamation"></i>
+              Sienge: <span class="font-medium ml-0.5">{{ launch.siengeCreditorName }}</span>
+            </p>
+
+            <div v-if="creditorMissing && ridEmailSent"
+              class="mt-2 rounded-lg border border-accent/20 bg-accent-soft/40 px-3 py-2 text-xs text-accent space-y-1">
+              <p class="flex items-center gap-1.5 font-semibold">
+                <i class="fas fa-envelope-circle-check"></i>Solicitação de cadastro enviada
+              </p>
+              <p>Email enviado em {{ ridSentAtLabel }}. Verificando automaticamente a cada 20 min.</p>
+              <button class="text-accent hover:underline flex items-center gap-1 disabled:opacity-40"
+                :disabled="running" @click="!running && emit('open-rid-modal', launch)">
+                <i class="fas fa-arrow-up-right-from-square text-[10px]"></i>Ver detalhes / reenviar
+              </button>
+            </div>
+
+            <div v-else-if="creditorMissing"
+              class="mt-2 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-700 dark:text-red-300 space-y-1.5">
+              <p class="flex items-center gap-1">
+                <i class="fas fa-circle-info"></i>Fornecedor não encontrado no Sienge.
+              </p>
+              <button class="font-semibold hover:underline flex items-center gap-1 disabled:opacity-40"
+                :disabled="running" @click="!running && emit('open-rid-modal', launch)">
+                <i class="fas fa-file-arrow-up text-[10px]"></i>Solicitar cadastro via formulário RID →
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Contrato ── -->
+      <div>
+        <p class="text-[10px] font-mono uppercase tracking-wider text-ink-subtle mb-2">Contrato</p>
+
+        <div v-if="contractCreating" class="flex items-center gap-2 text-sm text-accent">
+          <i class="fas fa-spinner fa-spin"></i>Criando contrato no Sienge via automação...
+        </div>
+
+        <div v-else-if="stage === 'contract_manual_block'"
+          class="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-700 dark:text-amber-300 space-y-2">
+          <p class="font-semibold flex items-center gap-1.5">
+            <i class="fas fa-shield-halved"></i>Contrato existente localizado
+          </p>
+          <p>{{ launch.siengeContractError }}</p>
+          <p>Se o contrato estiver correto, clique em prosseguir para criar o aditivo.</p>
+          <Button size="sm" variant="primary" :disabled="running" icon="fas fa-play"
+            @click="emit('continue-existing-contract', launch.id)">
+            Prosseguir
+          </Button>
+        </div>
+
+        <div v-else-if="contractError"
+          class="rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-xs text-red-700 dark:text-red-300 space-y-1">
+          <p class="font-semibold flex items-center gap-1">
+            <i class="fas fa-triangle-exclamation"></i>Falha na criação do contrato
+          </p>
+          <p>{{ launch.siengeContractError }}</p>
+          <p class="pt-1 italic">Acesse o Sienge e exclua o contrato incompleto antes de tentar novamente.</p>
+        </div>
+
+        <div v-else-if="contractMissing" class="text-xs text-ink-muted flex items-center gap-2">
+          <i class="fas fa-file-circle-xmark text-amber-500"></i>
+          Nenhum contrato encontrado. Será criado automaticamente.
+        </div>
+
+        <div v-else-if="contractFound" class="space-y-2">
+          <div class="grid grid-cols-2 gap-2">
+            <div class="rounded-lg bg-surface-sunken border border-line px-3 py-2">
+              <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono">Documento</p>
+              <p class="text-sm font-mono font-semibold text-ink truncate">
+                {{ launch.siengeDocumentId || '—' }}
+              </p>
+            </div>
+            <div class="rounded-lg bg-surface-sunken border border-line px-3 py-2">
+              <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono">Nº Contrato</p>
+              <p class="text-sm font-mono font-semibold text-ink truncate">
+                {{ launch.siengeContractNumber || '—' }}
+              </p>
+            </div>
+            <div class="rounded-lg bg-surface-sunken border border-line px-3 py-2 col-span-2 sm:col-span-1">
+              <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono">Vigência</p>
+              <p class="text-xs text-ink font-mono">
+                {{ fmtDate(launch.contractStartDate) }} → {{ fmtDate(launch.contractEndDate) }}
+              </p>
+            </div>
+
+            <!-- Stepper do fluxo -->
+            <div class="col-span-2 rounded-lg bg-surface-sunken border border-line px-3 py-2.5">
+              <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono mb-2">Etapa do fluxo</p>
+              <div class="flex items-center">
+                <!-- Contrato -->
+                <div class="flex flex-col items-center text-center flex-1 min-w-0">
+                  <div class="h-7 w-7 rounded-full grid place-items-center mb-1 transition-colors"
+                    :class="stepBgFor(contractState)">
+                    <i v-if="contractCreating" class="fas fa-spinner fa-spin text-xs"></i>
+                    <i v-else-if="contractError" class="fas fa-xmark text-xs"></i>
+                    <i v-else-if="isAuthorized || (isAdditivePath && (additiveCreated || additiveCreating || additiveError))" class="fas fa-check text-xs"></i>
+                    <i v-else-if="contractFound" class="fas fa-lock text-xs"></i>
+                    <span v-else class="text-xs font-bold">1</span>
+                  </div>
+                  <span class="text-[11px] leading-tight" :class="stepTextFor(contractState)">Contrato</span>
+                </div>
+                <div class="flex-1 h-0.5 mx-1 bg-line"></div>
+                <!-- Aditivo -->
+                <div class="flex flex-col items-center text-center flex-1 min-w-0">
+                  <div class="h-7 w-7 rounded-full grid place-items-center mb-1 transition-colors"
+                    :class="stepBgFor(additiveState)">
+                    <i v-if="additiveCreating" class="fas fa-spinner fa-spin text-xs"></i>
+                    <i v-else-if="additiveError" class="fas fa-xmark text-xs"></i>
+                    <i v-else-if="additiveCreated" class="fas fa-check text-xs"></i>
+                    <span v-else class="text-xs font-bold">2</span>
+                  </div>
+                  <span class="text-[11px] leading-tight" :class="stepTextFor(additiveState)">Aditivo</span>
+                </div>
+                <div class="flex-1 h-0.5 mx-1 bg-line"></div>
+                <!-- Medição -->
+                <div class="flex flex-col items-center text-center flex-1 min-w-0">
+                  <div class="h-7 w-7 rounded-full grid place-items-center mb-1 transition-colors"
+                    :class="stepBgFor(measurementState)">
+                    <i v-if="measurementCreating" class="fas fa-spinner fa-spin text-xs"></i>
+                    <i v-else-if="measurementError" class="fas fa-xmark text-xs"></i>
+                    <i v-else-if="measurementCreated" class="fas fa-check text-xs"></i>
+                    <span v-else class="text-xs font-bold">3</span>
+                  </div>
+                  <span class="text-[11px] leading-tight" :class="stepTextFor(measurementState)">Medição</span>
+                </div>
+                <div class="flex-1 h-0.5 mx-1 bg-line"></div>
+                <!-- Título -->
+                <div class="flex flex-col items-center text-center flex-1 min-w-0">
+                  <div class="h-7 w-7 rounded-full grid place-items-center mb-1 transition-colors"
+                    :class="stepBgFor(tituloState)">
+                    <i v-if="tituloCreating" class="fas fa-spinner fa-spin text-xs"></i>
+                    <i v-else-if="tituloError" class="fas fa-xmark text-xs"></i>
+                    <i v-else-if="tituloPago" class="fas fa-check text-xs"></i>
+                    <i v-else-if="tituloCreated" class="fas fa-file-invoice-dollar text-xs"></i>
+                    <span v-else class="text-xs font-bold">4</span>
+                  </div>
+                  <span class="text-[11px] leading-tight" :class="stepTextFor(tituloState)">Título</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Aditivo -->
+          <div v-if="additiveCreating" class="flex items-center gap-2 text-sm text-accent">
+            <i class="fas fa-spinner fa-spin"></i>Criando aditivo no Sienge via automação...
+          </div>
+
+          <div v-else-if="additiveError"
+            class="rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-xs text-red-700 dark:text-red-300 space-y-1">
+            <p class="font-semibold flex items-center gap-1.5">
+              <i class="fas fa-triangle-exclamation"></i>Falha na criação do aditivo
+            </p>
+            <p v-if="additiveErrorMsg" class="break-words leading-relaxed">{{ additiveErrorMsg }}</p>
+            <p v-else class="italic opacity-70">Detalhes do erro não disponíveis.</p>
+          </div>
+
+          <div v-else-if="additiveCreated && !measurementCreated && !measurementCreating && !measurementError"
+            class="flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg border"
+            :class="isAuthorized
+              ? 'bg-emerald-500/10 border-emerald-500/30'
+              : 'bg-amber-500/10 border-amber-500/30'">
+            <div class="flex items-center gap-2">
+              <i :class="isAuthorized ? 'fas fa-lock-open text-emerald-500' : 'fas fa-lock text-amber-500'"></i>
+              <span class="text-xs font-semibold"
+                :class="isAuthorized ? 'text-emerald-700 dark:text-emerald-300' : 'text-amber-700 dark:text-amber-300'">
+                {{ isAuthorized
+                  ? (isAdditivePath ? 'Aditivo autorizado' : 'Contrato autorizado')
+                  : (isAdditivePath ? 'Aditivo em autorização' : 'Contrato em autorização') }}
+              </span>
+            </div>
+            <Badge v-if="!isAuthorized && authLevelLabel(launch.siengeContractAuthLevel)"
+              variant="warning" size="sm">
+              {{ authLevelLabel(launch.siengeContractAuthLevel) }}
+            </Badge>
+          </div>
+
+          <!-- Medição -->
+          <div v-if="measurementCreating" class="flex items-center gap-2 text-sm text-accent">
+            <i class="fas fa-spinner fa-spin"></i>Criando medição no Sienge via automação...
+          </div>
+
+          <div v-else-if="measurementError"
+            class="rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-xs text-red-700 dark:text-red-300 space-y-1">
+            <p class="font-semibold flex items-center gap-1.5">
+              <i class="fas fa-triangle-exclamation"></i>Falha na criação da medição
+            </p>
+            <p v-if="measurementErrorMsg" class="break-words leading-relaxed">{{ measurementErrorMsg }}</p>
+            <p v-else class="italic opacity-70">Detalhes do erro não disponíveis.</p>
+          </div>
+
+          <div v-else-if="measurementCreated && !inTituloStage"
+            class="flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg border"
+            :class="measurementAuthorized
+              ? 'bg-emerald-500/10 border-emerald-500/30'
+              : 'bg-amber-500/10 border-amber-500/30'">
+            <div class="flex items-center gap-2">
+              <i :class="measurementAuthorized
+                ? 'fas fa-ruler-combined text-emerald-500'
+                : 'fas fa-lock text-amber-500'"></i>
+              <span class="text-xs font-semibold"
+                :class="measurementAuthorized
+                  ? 'text-emerald-700 dark:text-emerald-300'
+                  : 'text-amber-700 dark:text-amber-300'">
+                {{ measurementAuthorized ? 'Medição autorizada' : 'Medição em autorização' }}
+                <span v-if="launch.siengeMeasurementNumber" class="font-normal opacity-75 ml-1">
+                  #{{ launch.siengeMeasurementNumber }}
+                </span>
+              </span>
+            </div>
+            <Badge v-if="!measurementAuthorized && authLevelLabel(launch.siengeMeasurementAuthLevel)"
+              variant="warning" size="sm">
+              {{ authLevelLabel(launch.siengeMeasurementAuthLevel) }}
+            </Badge>
+          </div>
+        </div>
+
+        <div v-else class="text-xs text-ink-subtle flex items-center gap-2">
+          <i class="fas fa-circle text-ink-subtle/40"></i>Aguardando processamento
+        </div>
+      </div>
+
+      <!-- ── Título ── -->
+      <div v-if="tituloCreating || tituloCreated || tituloError">
+        <p class="text-[10px] font-mono uppercase tracking-wider text-ink-subtle mb-2">Título Sienge</p>
+
+        <div v-if="tituloCreating" class="flex items-center gap-2 text-sm text-accent">
+          <i class="fas fa-spinner fa-spin"></i>Criando título no Sienge via automação...
+        </div>
+
+        <div v-else-if="tituloError"
+          class="rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-xs text-red-700 dark:text-red-300 space-y-1">
+          <p class="font-semibold flex items-center gap-1.5">
+            <i class="fas fa-triangle-exclamation"></i>Falha na criação do título
+          </p>
+          <p v-if="tituloErrorMsg" class="break-words leading-relaxed">{{ tituloErrorMsg }}</p>
+          <p v-else class="italic opacity-70">Detalhes do erro não disponíveis.</p>
+        </div>
+
+        <div v-else-if="tituloCreated"
+          class="rounded-lg border px-3 py-2.5 space-y-2"
+          :class="tituloPago
+            ? 'bg-emerald-500/10 border-emerald-500/30'
+            : tituloAwaiting
+              ? 'bg-amber-500/10 border-amber-500/30'
+              : 'bg-emerald-500/10 border-emerald-500/30'">
+          <div class="flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2 min-w-0">
+              <i :class="tituloPago
+                ? 'fas fa-circle-check text-emerald-500'
+                : tituloAwaiting
+                  ? 'fas fa-clock text-amber-500'
+                  : 'fas fa-file-invoice-dollar text-emerald-500'"></i>
+              <span class="text-xs font-semibold truncate"
+                :class="tituloPago || !tituloAwaiting
+                  ? 'text-emerald-700 dark:text-emerald-300'
+                  : 'text-amber-700 dark:text-amber-300'">
+                {{ tituloPago ? 'Título pago' : tituloAwaiting ? 'Aguardando pagamento' : 'Título criado' }}
+              </span>
+            </div>
+            <Badge v-if="launch.siengeTituloNumber"
+              :variant="tituloPago ? 'success' : 'neutral'" size="sm" class="font-mono">
+              #{{ launch.siengeTituloNumber }}
+            </Badge>
+          </div>
+
+          <p v-if="launch.siengeTituloStatus" class="text-[11px] text-ink-subtle font-mono">
+            Status Sienge: {{ launch.siengeTituloStatus }}
+          </p>
+
+          <div v-if="boletoRegisterError"
+            class="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-300 space-y-1">
+            <p class="font-semibold flex items-center gap-1.5">
+              <i class="fas fa-triangle-exclamation"></i>Boleto não registrado
+            </p>
+            <p class="break-words opacity-80">{{ launch.siengeTituloError }}</p>
+            <p class="text-[11px] opacity-70">O sistema tentará novamente automaticamente. Use o botão abaixo para enviar um novo boleto.</p>
+          </div>
+
+          <div v-if="!tituloAwaiting && !tituloPago && launch.siengeTituloNumber && launch.boletoBarcode && !boletoRegisterError"
+            class="pt-1">
+            <Button size="sm" :disabled="running" icon="fas fa-barcode"
+              @click="emit('register-boleto', launch.id)">
+              Registrar boleto no título
+            </Button>
+          </div>
+
+          <div v-if="canUpdateBoleto && !tituloPago" class="pt-1">
+            <Button size="sm" variant="secondary" :disabled="running" icon="fas fa-file-arrow-up"
+              @click="emit('update-boleto', launch)">
+              Enviar novo boleto
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Documentos ── -->
+      <div>
+        <p class="text-[10px] font-mono uppercase tracking-wider text-ink-subtle mb-2">Documentos</p>
+        <div class="grid grid-cols-2 gap-2 text-xs">
+          <!-- NF -->
+          <div class="rounded-lg bg-surface-sunken border border-line px-3 py-2 space-y-0.5">
+            <p class="flex items-center gap-1 font-medium text-ink">
+              <i class="fas fa-file-invoice text-red-500"></i> Nota Fiscal
+            </p>
+            <div v-if="launch.nfUrl" class="space-y-0.5">
+              <p class="text-ink-muted">
+                {{ [launch.nfType, launch.nfNumber ? `#${launch.nfNumber}` : ''].filter(Boolean).join(' ') || '—' }}
+              </p>
+              <p v-if="launch.nfIssueDate" class="text-ink-subtle font-mono">
+                Emissão: {{ fmtDate(launch.nfIssueDate) }}
+              </p>
+              <a :href="launch.nfUrl" target="_blank"
+                class="text-accent hover:underline flex items-center gap-1 mt-1">
+                <i class="fas fa-arrow-up-right-from-square text-[10px]"></i> Abrir
+              </a>
+            </div>
+            <p v-else class="text-ink-subtle italic">Não anexada</p>
+          </div>
+          <!-- Boleto -->
+          <div class="rounded-lg bg-surface-sunken border border-line px-3 py-2 space-y-0.5">
+            <p class="flex items-center gap-1 font-medium text-ink">
+              <i class="fas fa-barcode text-accent"></i> Boleto
+            </p>
+            <div v-if="launch.boletoUrl" class="space-y-0.5">
+              <p v-if="launch.boletoIssueDate" class="text-ink-muted font-mono">
+                Emissão: {{ fmtDate(launch.boletoIssueDate) }}
+              </p>
+              <p v-if="launch.boletoDueDate" class="text-ink-subtle font-mono">
+                Vence: {{ fmtDate(launch.boletoDueDate) }}
+              </p>
+              <p v-if="launch.boletoBarcode" class="font-mono text-ink-subtle truncate">
+                {{ launch.boletoBarcode.slice(0, 22) }}…
+              </p>
+              <a :href="launch.boletoUrl" target="_blank"
+                class="text-accent hover:underline flex items-center gap-1 mt-1">
+                <i class="fas fa-arrow-up-right-from-square text-[10px]"></i> Abrir
+              </a>
+            </div>
+            <p v-else class="text-ink-subtle italic">Não anexado</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Saldo ── -->
+      <div v-if="contractFound && balanceOk !== null && balanceOk !== undefined">
+        <p class="text-[10px] font-mono uppercase tracking-wider text-ink-subtle mb-2">Saldo</p>
+        <div class="rounded-lg px-3 py-2.5 flex items-center justify-between gap-3 border"
+          :class="balanceOk
+            ? 'bg-emerald-500/10 border-emerald-500/30'
+            : 'bg-amber-500/10 border-amber-500/30'">
+          <div>
+            <p class="text-xs"
+              :class="balanceOk
+                ? 'text-emerald-600 dark:text-emerald-400'
+                : 'text-amber-600 dark:text-amber-400'">
+              {{ balanceOk ? 'Saldo suficiente' : 'Saldo insuficiente' }}
+            </p>
+            <p class="text-sm font-bold mt-0.5"
+              :class="balanceOk
+                ? 'text-emerald-700 dark:text-emerald-300'
+                : 'text-amber-700 dark:text-amber-300'">
+              Disponível: {{ fmt(balance) }}
+            </p>
+          </div>
+          <div class="text-right">
+            <p class="text-xs text-ink-subtle">Valor lançamento</p>
+            <p class="text-sm font-semibold text-ink">{{ fmt(unitPrice) }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </article>
 </template>

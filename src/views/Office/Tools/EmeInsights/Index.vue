@@ -1,375 +1,335 @@
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
-import { getFeedback } from '@/utils/OfficeAI/apiOfficeChat'
-import dayjs from 'dayjs'
-import relativeTime from 'dayjs/plugin/relativeTime'
-import 'dayjs/locale/pt-br'
-dayjs.extend(relativeTime)
-dayjs.locale('pt-br')
+import { ref, computed, onMounted, watch } from 'vue';
+import { getFeedback } from '@/utils/OfficeAI/apiOfficeChat';
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
+import 'dayjs/locale/pt-br';
 
-const loading = ref(false)
-const feedback = ref([])
-const stats = ref({ up: 0, down: 0, total: 0 })
-const total = ref(0)
-const page = ref(1)
-const filterRating = ref('')
+import PageContainer from '@/components/UI/PageContainer.vue';
+import PageHeader from '@/components/UI/PageHeader.vue';
+import Surface from '@/components/UI/Surface.vue';
+import Button from '@/components/UI/Button.vue';
+import IconButton from '@/components/UI/IconButton.vue';
+import Badge from '@/components/UI/Badge.vue';
+import EmptyState from '@/components/UI/EmptyState.vue';
+import SegmentedControl from '@/components/UI/SegmentedControl.vue';
+import Modal from '@/components/UI/Modal.vue';
 
-const selectedItem = ref(null)
-const detailOpen = ref(false)
+dayjs.extend(relativeTime);
+dayjs.locale('pt-br');
 
-const pages = computed(() => Math.ceil(total.value / 30) || 1)
+const loading = ref(false);
+const feedback = ref([]);
+const stats = ref({ up: 0, down: 0, total: 0 });
+const total = ref(0);
+const page = ref(1);
+const filterRating = ref('');
+
+const selectedItem = ref(null);
+const detailOpen = ref(false);
+
+const pages = computed(() => Math.ceil(total.value / 30) || 1);
 const positiveRate = computed(() =>
   stats.value.total ? Math.round((stats.value.up / stats.value.total) * 100) : 0
-)
+);
+
+const ratingOptions = computed(() => [
+  { value: '',     label: `Todos (${stats.value.total})` },
+  { value: 'up',   label: `Positivos (${stats.value.up})`,   icon: 'fas fa-thumbs-up' },
+  { value: 'down', label: `Negativos (${stats.value.down})`, icon: 'fas fa-thumbs-down' },
+]);
 
 async function load() {
-  loading.value = true
+  loading.value = true;
   try {
-    const data = await getFeedback({ page: page.value, per_page: 30, rating: filterRating.value || undefined })
-    feedback.value = data.feedback
-    stats.value = data.stats
-    total.value = data.total
-  } catch { /* silencioso */ } finally {
-    loading.value = false
-  }
+    const data = await getFeedback({
+      page: page.value, per_page: 30,
+      rating: filterRating.value || undefined,
+    });
+    feedback.value = data.feedback;
+    stats.value = data.stats;
+    total.value = data.total;
+  } catch { /* silencioso */ }
+  finally { loading.value = false; }
 }
 
-onMounted(load)
-watch([page, filterRating], load)
+onMounted(load);
+watch([page, filterRating], () => {
+  if (page.value !== 1 && filterRating.value !== '') page.value = 1;
+  load();
+});
 
-function openDetail(item) {
-  selectedItem.value = item
-  detailOpen.value = true
-}
-
-function closeDetail() {
-  detailOpen.value = false
-  selectedItem.value = null
-}
+function openDetail(item) { selectedItem.value = item; detailOpen.value = true; }
+function closeDetail() { detailOpen.value = false; selectedItem.value = null; }
 
 function truncate(text, n = 120) {
-  if (!text) return '—'
+  if (!text) return '—';
   try {
-    const parsed = JSON.parse(text)
-    text = parsed.text || text
+    const parsed = JSON.parse(text);
+    text = parsed.text || text;
   } catch { /* not json */ }
-  return text.length > n ? text.slice(0, n) + '...' : text
+  return text.length > n ? text.slice(0, n) + '...' : text;
 }
 
-function fromNow(d) {
-  return dayjs(d).fromNow()
-}
-
+function fromNow(d) { return dayjs(d).fromNow(); }
 function formatLatency(ms) {
-  if (ms == null) return '—'
-  return ms < 1000 ? `${ms} ms` : `${(ms / 1000).toFixed(2)} s`
+  if (ms == null) return '—';
+  return ms < 1000 ? `${ms} ms` : `${(ms / 1000).toFixed(2)} s`;
 }
-
 function poolLabel(pool) {
-  if (pool === 'smart') return 'Smart (Pro)'
-  if (pool === 'fast')  return 'Fast (Flash)'
-  return pool || '—'
+  if (pool === 'smart') return 'Smart (Pro)';
+  if (pool === 'fast')  return 'Fast (Flash)';
+  return pool || '—';
+}
+function poolVariant(pool) {
+  if (pool === 'smart') return 'accent';
+  if (pool === 'fast')  return 'info';
+  return 'neutral';
 }
 
-function poolClass(pool) {
-  if (pool === 'smart') return 'bg-purple-500/15 text-purple-600 dark:text-purple-400'
-  if (pool === 'fast')  return 'bg-blue-500/15 text-blue-600 dark:text-blue-400'
-  return 'bg-gray-200 dark:bg-slate-700 text-gray-500'
-}
+const positiveRateColor = computed(() => {
+  if (positiveRate.value >= 70) return 'text-emerald-500 dark:text-emerald-400';
+  if (positiveRate.value >= 40) return 'text-amber-500 dark:text-amber-400';
+  return 'text-red-500 dark:text-red-400';
+});
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-50 dark:bg-slate-950 text-gray-800 dark:text-gray-200 p-6">
-    <div class="max-w-5xl mx-auto space-y-6">
+  <div class="min-h-[calc(100vh-3.5rem)]">
+    <PageContainer size="lg">
 
-      <!-- Header -->
-      <div class="flex items-center justify-between">
-        <div>
-          <h1 class="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-            <img src="/Mlogo.png" class="h-6" alt="Eme" />
-            Eme — Gestão de Respostas
-          </h1>
-          <p class="text-sm text-gray-500 dark:text-slate-500 mt-0.5">Feedbacks dos usuários sobre as respostas do assistente</p>
-        </div>
-        <button
-          @click="load"
-          class="p-2 rounded-xl hover:bg-gray-200 dark:hover:bg-slate-800 text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300 transition"
-          title="Atualizar"
-        >
-          <i class="fas fa-rotate-right" :class="loading ? 'animate-spin' : ''" />
-        </button>
-      </div>
+      <PageHeader
+        title="Eme — Gestão de respostas"
+        subtitle="Feedbacks dos usuários sobre as respostas do assistente"
+        icon="fas fa-comments">
+        <template #title>
+          <img src="/Mlogo.png" class="h-6 invert dark:invert-0" alt="Eme" />
+          <span>Eme — Gestão de respostas</span>
+        </template>
+        <template #actions>
+          <IconButton icon="fas fa-rotate" size="md" label="Atualizar"
+            :class="{ 'animate-spin': loading }" @click="load" />
+        </template>
+      </PageHeader>
 
-      <!-- Stats -->
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div class="bg-white dark:bg-slate-900 border border-gray-200 dark:border-transparent rounded-2xl p-4 space-y-1">
-          <p class="text-xs text-gray-400 dark:text-slate-500 uppercase tracking-wide">Total</p>
-          <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ stats.total }}</p>
-        </div>
-        <div class="bg-white dark:bg-slate-900 border border-gray-200 dark:border-transparent rounded-2xl p-4 space-y-1">
-          <p class="text-xs text-gray-400 dark:text-slate-500 uppercase tracking-wide">Positivos</p>
-          <p class="text-2xl font-bold text-green-500 dark:text-green-400">{{ stats.up }}</p>
-        </div>
-        <div class="bg-white dark:bg-slate-900 border border-gray-200 dark:border-transparent rounded-2xl p-4 space-y-1">
-          <p class="text-xs text-gray-400 dark:text-slate-500 uppercase tracking-wide">Negativos</p>
-          <p class="text-2xl font-bold text-red-500 dark:text-red-400">{{ stats.down }}</p>
-        </div>
-        <div class="bg-white dark:bg-slate-900 border border-gray-200 dark:border-transparent rounded-2xl p-4 space-y-1">
-          <p class="text-xs text-gray-400 dark:text-slate-500 uppercase tracking-wide">Taxa positiva</p>
-          <p class="text-2xl font-bold" :class="positiveRate >= 70 ? 'text-green-500 dark:text-green-400' : positiveRate >= 40 ? 'text-yellow-500 dark:text-yellow-400' : 'text-red-500 dark:text-red-400'">
+      <!-- Stats cards -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+        <Surface variant="raised" padding="sm">
+          <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono">Total</p>
+          <p class="text-2xl font-semibold text-ink mt-1 tabular-nums">{{ stats.total }}</p>
+        </Surface>
+        <Surface variant="raised" padding="sm">
+          <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono">Positivos</p>
+          <p class="text-2xl font-semibold text-emerald-500 dark:text-emerald-400 mt-1 tabular-nums flex items-center gap-1.5">
+            <i class="fas fa-thumbs-up text-base"></i>{{ stats.up }}
+          </p>
+        </Surface>
+        <Surface variant="raised" padding="sm">
+          <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono">Negativos</p>
+          <p class="text-2xl font-semibold text-red-500 dark:text-red-400 mt-1 tabular-nums flex items-center gap-1.5">
+            <i class="fas fa-thumbs-down text-base"></i>{{ stats.down }}
+          </p>
+        </Surface>
+        <Surface variant="raised" padding="sm">
+          <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono">Taxa positiva</p>
+          <p class="text-2xl font-semibold mt-1 tabular-nums" :class="positiveRateColor">
             {{ positiveRate }}%
           </p>
-        </div>
+        </Surface>
       </div>
 
-      <!-- Barra de positivos -->
-      <div v-if="stats.total" class="bg-white dark:bg-slate-900 border border-gray-200 dark:border-transparent rounded-2xl p-4">
-        <div class="flex justify-between text-xs text-gray-400 dark:text-slate-500 mb-2">
-          <span>Distribuição de feedback</span>
-          <span>{{ stats.up }} positivos / {{ stats.down }} negativos</span>
+      <!-- Distribuição -->
+      <Surface v-if="stats.total" variant="raised" padding="sm" class="mb-4">
+        <div class="flex justify-between text-xs text-ink-subtle mb-2 font-mono">
+          <span>Distribuição</span>
+          <span><span class="text-emerald-500">{{ stats.up }}</span> / <span class="text-red-500">{{ stats.down }}</span></span>
         </div>
-        <div class="h-2 rounded-full bg-gray-200 dark:bg-slate-800 overflow-hidden flex">
-          <div
-            class="h-full bg-green-500 transition-all duration-700"
-            :style="{ width: positiveRate + '%' }"
-          />
-          <div
-            class="h-full bg-red-500 transition-all duration-700"
-            :style="{ width: (100 - positiveRate) + '%' }"
-          />
+        <div class="h-2 rounded-full bg-surface-sunken overflow-hidden flex">
+          <div class="h-full bg-emerald-500 transition-all duration-700"
+            :style="{ width: positiveRate + '%' }"></div>
+          <div class="h-full bg-red-500 transition-all duration-700"
+            :style="{ width: (100 - positiveRate) + '%' }"></div>
         </div>
-      </div>
+      </Surface>
 
       <!-- Filtros -->
-      <div class="flex items-center gap-2">
-        <button
-          @click="filterRating = ''; page = 1"
-          class="px-3 py-1.5 rounded-xl text-xs transition"
-          :class="!filterRating ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400' : 'text-gray-400 dark:text-slate-500 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-gray-600 dark:hover:text-slate-300'"
-        >
-          Todos
-        </button>
-        <button
-          @click="filterRating = 'up'; page = 1"
-          class="px-3 py-1.5 rounded-xl text-xs transition flex items-center gap-1.5"
-          :class="filterRating === 'up' ? 'bg-green-500/15 text-green-600 dark:text-green-400' : 'text-gray-400 dark:text-slate-500 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-gray-600 dark:hover:text-slate-300'"
-        >
-          <i class="fas fa-thumbs-up" /> Positivos
-        </button>
-        <button
-          @click="filterRating = 'down'; page = 1"
-          class="px-3 py-1.5 rounded-xl text-xs transition flex items-center gap-1.5"
-          :class="filterRating === 'down' ? 'bg-red-500/15 text-red-600 dark:text-red-400' : 'text-gray-400 dark:text-slate-500 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-gray-600 dark:hover:text-slate-300'"
-        >
-          <i class="fas fa-thumbs-down" /> Negativos
-        </button>
-        <span class="ml-auto text-xs text-gray-400 dark:text-slate-600">{{ total }} resultado{{ total !== 1 ? 's' : '' }}</span>
+      <div class="flex items-center justify-between flex-wrap gap-2 mb-4">
+        <SegmentedControl :model-value="filterRating" :options="ratingOptions" size="sm"
+          @change="(v) => { filterRating = v; page = 1; }" />
+        <span class="text-xs text-ink-subtle font-mono">
+          {{ total }} resultado{{ total !== 1 ? 's' : '' }}
+        </span>
       </div>
 
       <!-- Lista -->
       <div class="space-y-2">
-        <div
-          v-if="loading && !feedback.length"
-          class="py-16 text-center text-gray-400 dark:text-slate-600"
-        >
-          <i class="fas fa-spinner animate-spin text-2xl mb-3 block" />
+        <div v-if="loading && !feedback.length" class="py-16 text-center text-ink-subtle">
+          <i class="fas fa-spinner animate-spin text-2xl mb-3 block"></i>
           Carregando feedbacks...
         </div>
 
-        <div
-          v-else-if="!feedback.length"
-          class="py-16 text-center text-gray-400 dark:text-slate-600 bg-white dark:bg-slate-900 border border-gray-200 dark:border-transparent rounded-2xl"
-        >
-          <i class="far fa-comment-dots text-3xl mb-3 block" />
-          Nenhum feedback encontrado.
-        </div>
+        <EmptyState v-else-if="!feedback.length" size="md"
+          icon="far fa-comment-dots" title="Nenhum feedback encontrado"
+          description="Ajuste os filtros ou aguarde novos feedbacks." />
 
-        <div
-          v-for="item in feedback"
-          :key="item.id"
-          class="bg-white dark:bg-slate-900 border border-gray-200 dark:border-transparent rounded-2xl p-4 flex items-start gap-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-800/80 transition group"
+        <article v-for="item in feedback" :key="item.id"
           @click="openDetail(item)"
-        >
-          <!-- Ícone de rating -->
-          <div
-            class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
-            :class="item.rating === 'up' ? 'bg-green-500/15 text-green-500 dark:text-green-400' : 'bg-red-500/15 text-red-500 dark:text-red-400'"
-          >
-            <i :class="item.rating === 'up' ? 'fas fa-thumbs-up' : 'fas fa-thumbs-down'" class="text-sm" />
+          class="group flex items-start gap-3 p-3 sm:p-4 rounded-xl bg-surface-raised border border-line surface-gradient
+                 hover:border-accent/30 hover:shadow-elevated hover:-translate-y-0.5
+                 transition-all duration-200 ease-out-expo cursor-pointer">
+
+          <div class="h-9 w-9 rounded-lg grid place-items-center shrink-0"
+            :class="item.rating === 'up'
+              ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+              : 'bg-red-500/15 text-red-600 dark:text-red-400 border border-red-500/20'">
+            <i :class="item.rating === 'up' ? 'fas fa-thumbs-up' : 'fas fa-thumbs-down'" class="text-sm"></i>
           </div>
 
-          <div class="flex-1 min-w-0 space-y-1">
+          <div class="flex-1 min-w-0">
             <div class="flex items-center gap-2 flex-wrap">
-              <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ item.user?.username || 'Usuário' }}</span>
-              <span class="text-xs text-gray-400 dark:text-slate-600">{{ item.user?.city || '' }}</span>
-              <span class="text-xs text-gray-300 dark:text-slate-700 ml-auto">{{ fromNow(item.created_at) }}</span>
+              <span class="text-sm font-medium text-ink">{{ item.user?.username || 'Usuário' }}</span>
+              <span v-if="item.user?.city" class="text-xs text-ink-subtle font-mono">{{ item.user.city }}</span>
+              <span class="text-xs text-ink-subtle ml-auto font-mono">{{ fromNow(item.created_at) }}</span>
             </div>
 
-            <!-- Prévia da mensagem do assistente -->
-            <p class="text-xs text-gray-500 dark:text-slate-500 line-clamp-2 leading-relaxed">
+            <p class="text-xs text-ink-muted line-clamp-2 leading-relaxed mt-1">
               {{ truncate(item.message?.content) }}
             </p>
 
-            <!-- Comentário do usuário -->
-            <p v-if="item.comment" class="text-xs text-gray-600 dark:text-slate-400 italic border-l-2 border-gray-200 dark:border-white/10 pl-2 mt-1">
+            <p v-if="item.comment"
+              class="text-xs text-ink italic border-l-2 border-line pl-2 mt-2">
               "{{ item.comment }}"
             </p>
           </div>
 
-          <i class="fas fa-chevron-right text-xs text-gray-300 dark:text-slate-700 group-hover:text-gray-500 dark:group-hover:text-slate-500 transition mt-1 flex-shrink-0" />
-        </div>
+          <i class="fas fa-chevron-right text-ink-subtle text-xs mt-1 group-hover:text-accent transition-colors"></i>
+        </article>
       </div>
 
       <!-- Paginação -->
-      <div v-if="pages > 1" class="flex items-center justify-center gap-2">
-        <button
-          @click="page--"
-          :disabled="page <= 1"
-          class="px-3 py-1.5 rounded-xl text-xs text-gray-400 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed transition"
-        >
-          <i class="fas fa-chevron-left" />
-        </button>
-        <span class="text-xs text-gray-400 dark:text-slate-500">{{ page }} / {{ pages }}</span>
-        <button
-          @click="page++"
-          :disabled="page >= pages"
-          class="px-3 py-1.5 rounded-xl text-xs text-gray-400 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed transition"
-        >
-          <i class="fas fa-chevron-right" />
-        </button>
+      <div v-if="pages > 1" class="flex items-center justify-center gap-2 mt-5">
+        <Button size="sm" variant="ghost" icon="fas fa-chevron-left"
+          :disabled="page <= 1" @click="page--">Anterior</Button>
+        <span class="text-xs text-ink-muted font-mono px-3">
+          {{ page }} / {{ pages }}
+        </span>
+        <Button size="sm" variant="ghost" icon-right="fas fa-chevron-right"
+          :disabled="page >= pages" @click="page++">Próxima</Button>
       </div>
-    </div>
+    </PageContainer>
 
-    <!-- Modal de detalhe -->
-    <Transition name="fade">
-      <div
-        v-if="detailOpen && selectedItem"
-        class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4"
-        @click.self="closeDetail"
-      >
-        <div class="w-full max-w-2xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-2xl shadow-2xl p-5 space-y-4 max-h-[85vh] overflow-y-auto">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2">
-              <div
-                class="w-8 h-8 rounded-full flex items-center justify-center"
-                :class="selectedItem.rating === 'up' ? 'bg-green-500/15 text-green-500 dark:text-green-400' : 'bg-red-500/15 text-red-500 dark:text-red-400'"
-              >
-                <i :class="selectedItem.rating === 'up' ? 'fas fa-thumbs-up' : 'fas fa-thumbs-down'" />
-              </div>
-              <div>
-                <p class="text-sm font-medium text-gray-800 dark:text-gray-200">{{ selectedItem.user?.username }}</p>
-                <p class="text-xs text-gray-400 dark:text-slate-500">{{ selectedItem.user?.email }} · {{ selectedItem.user?.city }}</p>
-              </div>
-            </div>
-            <button @click="closeDetail" class="text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300 transition p-1">
-              <i class="fas fa-xmark" />
-            </button>
+    <!-- Modal detalhe -->
+    <Modal :open="detailOpen" size="lg" @close="closeDetail">
+      <template #header>
+        <div v-if="selectedItem" class="flex items-center gap-3">
+          <div class="h-9 w-9 rounded-lg grid place-items-center shrink-0"
+            :class="selectedItem.rating === 'up'
+              ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+              : 'bg-red-500/15 text-red-600 dark:text-red-400 border border-red-500/20'">
+            <i :class="selectedItem.rating === 'up' ? 'fas fa-thumbs-up' : 'fas fa-thumbs-down'" class="text-sm"></i>
           </div>
+          <div class="min-w-0">
+            <h3 class="text-base font-semibold text-ink truncate">{{ selectedItem.user?.username }}</h3>
+            <p class="text-xs text-ink-muted font-mono truncate">
+              {{ selectedItem.user?.email }}<span v-if="selectedItem.user?.city"> · {{ selectedItem.user.city }}</span>
+            </p>
+          </div>
+        </div>
+      </template>
 
-          <div class="space-y-3">
-            <!-- Pergunta original do usuário -->
-            <div v-if="selectedItem.context?.user_question">
-              <p class="text-xs text-gray-400 dark:text-slate-500 uppercase tracking-wide mb-1.5">Pergunta do usuário</p>
-              <div class="bg-slate-700/30 dark:bg-slate-800 border border-slate-600/30 dark:border-transparent rounded-xl p-3 text-xs text-gray-700 dark:text-gray-200 leading-relaxed whitespace-pre-wrap">
-                {{ selectedItem.context.user_question }}
+      <div v-if="selectedItem" class="space-y-4">
+        <!-- Pergunta -->
+        <section v-if="selectedItem.context?.user_question">
+          <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono mb-1.5">Pergunta do usuário</p>
+          <div class="rounded-lg border border-line bg-surface-sunken p-3 text-sm text-ink leading-relaxed whitespace-pre-wrap">
+            {{ selectedItem.context.user_question }}
+          </div>
+        </section>
+
+        <!-- Resposta -->
+        <section>
+          <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono mb-1.5">Resposta avaliada</p>
+          <div class="rounded-lg border border-line bg-surface-sunken p-3 text-sm text-ink leading-relaxed max-h-48 overflow-y-auto whitespace-pre-wrap">
+            {{ selectedItem.context?.assistant_text || truncate(selectedItem.message?.content, 1000) }}
+          </div>
+        </section>
+
+        <!-- Comentário -->
+        <section v-if="selectedItem.comment">
+          <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono mb-1.5">Comentário do usuário</p>
+          <div class="rounded-lg border border-line bg-surface-sunken p-3 text-sm text-ink italic leading-relaxed">
+            "{{ selectedItem.comment }}"
+          </div>
+        </section>
+
+        <!-- Modelo / Pool / Latência -->
+        <section v-if="selectedItem.context" class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          <div class="rounded-lg bg-surface-sunken border border-line px-3 py-2">
+            <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono">Modelo</p>
+            <p class="text-xs text-ink font-mono truncate mt-0.5">{{ selectedItem.context.model || '—' }}</p>
+          </div>
+          <div class="rounded-lg bg-surface-sunken border border-line px-3 py-2">
+            <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono">Pool</p>
+            <Badge :variant="poolVariant(selectedItem.context.pool)" size="sm" class="mt-0.5">
+              {{ poolLabel(selectedItem.context.pool) }}
+            </Badge>
+          </div>
+          <div class="rounded-lg bg-surface-sunken border border-line px-3 py-2">
+            <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono">Latência</p>
+            <p class="text-xs text-ink font-mono mt-0.5">{{ formatLatency(selectedItem.context.latency_ms) }}</p>
+          </div>
+        </section>
+
+        <!-- Tools -->
+        <section v-if="selectedItem.context?.tool_calls?.length">
+          <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono mb-2">
+            Ferramentas chamadas ({{ selectedItem.context.tool_calls.length }})
+          </p>
+          <div class="space-y-2">
+            <div v-for="(tc, idx) in selectedItem.context.tool_calls" :key="idx"
+              class="rounded-lg border border-line bg-surface-sunken p-3 space-y-2">
+              <div class="flex items-center gap-2 flex-wrap">
+                <Badge variant="accent" size="sm">
+                  <code class="font-mono">{{ tc.name }}</code>
+                </Badge>
+                <Badge v-if="tc.error" variant="danger" size="sm">erro</Badge>
+                <span class="text-[10px] text-ink-subtle ml-auto font-mono">{{ formatLatency(tc.ms) }}</span>
               </div>
-            </div>
 
-            <!-- Resposta avaliada -->
-            <div>
-              <p class="text-xs text-gray-400 dark:text-slate-500 uppercase tracking-wide mb-1.5">Resposta avaliada</p>
-              <div class="bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-transparent rounded-xl p-3 text-xs text-gray-700 dark:text-gray-300 leading-relaxed max-h-48 overflow-y-auto whitespace-pre-wrap">
-                {{ selectedItem.context?.assistant_text || truncate(selectedItem.message?.content, 1000) }}
+              <div v-if="tc.args && Object.keys(tc.args).length">
+                <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono mb-1">Argumentos</p>
+                <pre class="text-[11px] font-mono text-ink-muted bg-surface rounded p-2 overflow-x-auto">{{ JSON.stringify(tc.args, null, 2) }}</pre>
               </div>
-            </div>
 
-            <!-- Comentário do usuário -->
-            <div v-if="selectedItem.comment">
-              <p class="text-xs text-gray-400 dark:text-slate-500 uppercase tracking-wide mb-1.5">Comentário do usuário</p>
-              <div class="bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-transparent rounded-xl p-3 text-sm text-gray-700 dark:text-gray-200 italic leading-relaxed">
-                "{{ selectedItem.comment }}"
-              </div>
-            </div>
+              <div v-if="tc.error" class="text-xs text-red-600 dark:text-red-400">{{ tc.error }}</div>
 
-            <!-- Raciocínio: modelo, pool, latência -->
-            <div v-if="selectedItem.context" class="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              <div class="bg-gray-50 dark:bg-slate-800 rounded-xl px-3 py-2">
-                <p class="text-[10px] text-gray-400 dark:text-slate-500 uppercase tracking-wide">Modelo</p>
-                <p class="text-xs text-gray-700 dark:text-gray-200 font-mono truncate">{{ selectedItem.context.model || '—' }}</p>
-              </div>
-              <div class="bg-gray-50 dark:bg-slate-800 rounded-xl px-3 py-2">
-                <p class="text-[10px] text-gray-400 dark:text-slate-500 uppercase tracking-wide">Pool</p>
-                <span class="inline-block text-[10px] font-medium px-2 py-0.5 rounded-full mt-0.5" :class="poolClass(selectedItem.context.pool)">
-                  {{ poolLabel(selectedItem.context.pool) }}
-                </span>
-              </div>
-              <div class="bg-gray-50 dark:bg-slate-800 rounded-xl px-3 py-2">
-                <p class="text-[10px] text-gray-400 dark:text-slate-500 uppercase tracking-wide">Latência</p>
-                <p class="text-xs text-gray-700 dark:text-gray-200">{{ formatLatency(selectedItem.context.latency_ms) }}</p>
-              </div>
-            </div>
-
-            <!-- Ferramentas chamadas -->
-            <div v-if="selectedItem.context?.tool_calls?.length">
-              <p class="text-xs text-gray-400 dark:text-slate-500 uppercase tracking-wide mb-1.5">
-                Ferramentas chamadas ({{ selectedItem.context.tool_calls.length }})
-              </p>
-              <div class="space-y-2">
-                <div
-                  v-for="(tc, idx) in selectedItem.context.tool_calls"
-                  :key="idx"
-                  class="bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-transparent rounded-xl p-3 space-y-2"
-                >
-                  <div class="flex items-center gap-2 flex-wrap">
-                    <code class="text-xs font-mono px-2 py-0.5 rounded bg-indigo-500/15 text-indigo-600 dark:text-indigo-400">
-                      {{ tc.name }}
-                    </code>
-                    <span v-if="tc.error" class="text-[10px] px-2 py-0.5 rounded-full bg-red-500/15 text-red-600 dark:text-red-400">
-                      erro
-                    </span>
-                    <span class="text-[10px] text-gray-400 dark:text-slate-500 ml-auto">{{ formatLatency(tc.ms) }}</span>
-                  </div>
-
-                  <div v-if="tc.args && Object.keys(tc.args).length">
-                    <p class="text-[10px] text-gray-400 dark:text-slate-500 uppercase tracking-wide mb-1">Argumentos</p>
-                    <pre class="text-[11px] font-mono text-gray-600 dark:text-slate-300 bg-white dark:bg-slate-900 rounded-lg p-2 overflow-x-auto">{{ JSON.stringify(tc.args, null, 2) }}</pre>
-                  </div>
-
-                  <div v-if="tc.error" class="text-xs text-red-600 dark:text-red-400">
-                    {{ tc.error }}
-                  </div>
-
-                  <div v-else-if="tc.result_summary">
-                    <p class="text-[10px] text-gray-400 dark:text-slate-500 uppercase tracking-wide mb-1">Resultado</p>
-                    <div class="text-[11px] text-gray-600 dark:text-slate-300 space-y-0.5">
-                      <div v-if="tc.result_summary.title"><span class="text-gray-400 dark:text-slate-500">Título:</span> {{ tc.result_summary.title }}</div>
-                      <div v-if="tc.result_summary.total != null"><span class="text-gray-400 dark:text-slate-500">Total:</span> {{ tc.result_summary.total }}</div>
-                      <div v-if="tc.result_summary.type"><span class="text-gray-400 dark:text-slate-500">Tipo:</span> {{ tc.result_summary.type }}</div>
-                      <div v-if="tc.result_summary.route"><span class="text-gray-400 dark:text-slate-500">Rota:</span> <code class="font-mono">{{ tc.result_summary.route }}</code></div>
-                    </div>
-                  </div>
+              <div v-else-if="tc.result_summary">
+                <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono mb-1">Resultado</p>
+                <div class="text-[11px] text-ink-muted space-y-0.5">
+                  <div v-if="tc.result_summary.title"><span class="text-ink-subtle">Título:</span> {{ tc.result_summary.title }}</div>
+                  <div v-if="tc.result_summary.total != null"><span class="text-ink-subtle">Total:</span> {{ tc.result_summary.total }}</div>
+                  <div v-if="tc.result_summary.type"><span class="text-ink-subtle">Tipo:</span> {{ tc.result_summary.type }}</div>
+                  <div v-if="tc.result_summary.route"><span class="text-ink-subtle">Rota:</span> <code class="font-mono">{{ tc.result_summary.route }}</code></div>
                 </div>
               </div>
             </div>
-
-            <div v-else-if="selectedItem.context" class="text-xs text-gray-400 dark:text-slate-600 italic">
-              Resposta sem chamada de ferramenta — texto direto do modelo.
-            </div>
-
-            <div class="flex items-center justify-between text-xs text-gray-400 dark:text-slate-600 pt-2 border-t border-gray-100 dark:border-white/5">
-              <span>Tipo: <span class="text-gray-600 dark:text-slate-400">{{ selectedItem.message?.response_type || 'text' }}</span></span>
-              <span>{{ dayjs(selectedItem.created_at).format('DD/MM/YYYY HH:mm') }}</span>
-            </div>
           </div>
+        </section>
+
+        <p v-else-if="selectedItem.context" class="text-xs text-ink-subtle italic">
+          Resposta sem chamada de ferramenta — texto direto do modelo.
+        </p>
+
+        <div class="flex items-center justify-between text-xs text-ink-subtle pt-2 border-t border-line font-mono">
+          <span>Tipo: <span class="text-ink">{{ selectedItem.message?.response_type || 'text' }}</span></span>
+          <span>{{ dayjs(selectedItem.created_at).format('DD/MM/YYYY HH:mm') }}</span>
         </div>
       </div>
-    </Transition>
+    </Modal>
   </div>
 </template>
 
 <style scoped>
-.fade-enter-active, .fade-leave-active { transition: opacity 0.15s ease; }
-.fade-enter-from, .fade-leave-to { opacity: 0; }
 .line-clamp-2 {
   display: -webkit-box;
   -webkit-line-clamp: 2;

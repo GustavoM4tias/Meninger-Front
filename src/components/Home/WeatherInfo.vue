@@ -109,20 +109,11 @@ const subtitle = computed(() => {
 
 
 <template>
-    <div class="w-fit max-w-full">
-        <div v-if="w" class="flex items-center justify-between gap-6 my-2">
-            <!-- Texto -->
-            <div class="min-w-0 text-end">
-                <p class="dark:text-gray-200 text-xl md:text-2xl px-1 font-semibold truncate">
-                    {{ headline }}
-                    <i :class="[weatherIcon, iconColor]" class="text-2xl md:text-3xl drop-shadow" />
-                </p>
-
-                 <p class="dark:text-slate-300 text-xs px-1 md:text-sm truncate">
-                    {{ subtitle }}
-                </p>  
-            </div>
-
-        </div>
+    <div v-if="w" class="w-fit max-w-full text-end">
+        <p class="text-sm md:text-base font-medium text-ink truncate flex items-center gap-2 justify-end">
+            <span class="truncate">{{ headline }}</span>
+            <i :class="[weatherIcon, iconColor]" class="text-base md:text-lg shrink-0"></i>
+        </p>
+        <p class="text-[11px] md:text-xs text-ink-muted truncate font-mono">{{ subtitle }}</p>
     </div>
 </template>

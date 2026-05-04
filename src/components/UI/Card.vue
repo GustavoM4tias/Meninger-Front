@@ -1,39 +1,46 @@
 <script setup>
 const props = defineProps({
-    title: {
-        type: String,
-        required: true,
-    },
-    class: {
-        type: String,
-        required: true,
-    },
-    icon: {
-        type: String,
-        required: true,
-    },
-    value: {
-        type: [String, Number],
-        required: true,
-    },
-    label: {
-        type: String,
-        required: true,
-    },
+  title: { type: String, required: true },
+  class: { type: String, default: '' },
+  icon: { type: String, required: true },
+  value: { type: [String, Number], required: true },
+  label: { type: String, required: true },
+  trend: { type: String, default: '' },        // ex: '+12%'
+  trendUp: { type: Boolean, default: true },
 });
-
 </script>
 
 <template>
-    <div class="card flex flex-col w-full p-4 hover:-translate-y-0.5 transition-all rounded-xl border border-gray-300/70 dark:border-gray-600/50 shadow shadow-black/5 hover:shadow-black/10 dark:shadow-white/5 dark:hover:shadow-white/10 duration-150"
-        :class="props.class">
-        <div class="flex justify-between text-lg w-full cursor-pointer">
-            <h3 v-tippy="`${props.title}`" class="truncate font-semibold">{{ props.title }}</h3>
-            <i class="text-end w-1/6" :class="icon"></i>
-        </div>
-        <h1 class="text-2xl lg:text-3xl flex-1 flex items-center font-bold truncate">
-            {{ props.value }}
-        </h1>
-        <span class="text-xs text-gray-400 truncate">{{ props.label }}</span>
+  <div
+    class="group flex flex-col gap-1 w-full p-4
+           bg-surface-raised border border-line rounded-xl
+           shadow-soft hover:shadow-elevated
+           hover:-translate-y-0.5 hover:border-accent/30
+           transition-all duration-200 ease-out-expo
+           surface-gradient"
+    :class="props.class"
+  >
+    <div class="flex items-center justify-between gap-2 min-w-0">
+      <h3 v-tippy="props.title"
+          class="truncate text-sm font-medium text-ink-muted">
+        {{ props.title }}
+      </h3>
+      <i :class="icon" class="text-ink-subtle group-hover:text-accent transition-colors"></i>
     </div>
+
+    <h1 class="text-2xl lg:text-3xl font-semibold text-ink truncate tracking-tight">
+      {{ props.value }}
+    </h1>
+
+    <div class="flex items-center justify-between gap-2 mt-auto">
+      <span class="text-xs text-ink-subtle truncate">{{ props.label }}</span>
+      <span v-if="trend"
+            class="text-[11px] font-mono px-1.5 py-0.5 rounded-md"
+            :class="trendUp
+              ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+              : 'bg-red-500/10 text-red-600 dark:text-red-400'">
+        {{ trend }}
+      </span>
+    </div>
+  </div>
 </template>

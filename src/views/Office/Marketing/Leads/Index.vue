@@ -1,72 +1,79 @@
 <script setup>
-import { onMounted, ref, toRef } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { useLeadsStore } from '@/stores/Marketing/Lead/leadsStore'
+import { onMounted, ref, toRef, computed } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { useLeadsStore } from '@/stores/Marketing/Lead/leadsStore';
 
-import Favorite from '@/components/config/Favorite.vue'
-import Filas from './components/Filas.vue'
-import SummaryCards from './components/SummaryCards.vue'
-import DashboardCharts from './components/DashboardCharts.vue'
-import FiltersBar from './components/FiltersBar.vue'
-import LeadsTable from './components/LeadsTable.vue'
-import LeadModal from './components/LeadModal.vue'
+import Favorite from '@/components/config/Favorite.vue';
+import PageContainer from '@/components/UI/PageContainer.vue';
+import PageHeader from '@/components/UI/PageHeader.vue';
+import SegmentedControl from '@/components/UI/SegmentedControl.vue';
 
-const store = useLeadsStore()
-const route = useRoute()
-const router = useRouter()
+import Filas from './components/Filas.vue';
+import SummaryCards from './components/SummaryCards.vue';
+import DashboardCharts from './components/DashboardCharts.vue';
+import FiltersBar from './components/FiltersBar.vue';
+import LeadsTable from './components/LeadsTable.vue';
+import LeadModal from './components/LeadModal.vue';
 
-// ✅ Em vez de storeToRefs: faça refs diretas do state
-const leads = toRef(store, 'leads')
-const periodo = toRef(store, 'periodo')
-const filas = toRef(store, 'filas')
-const error = toRef(store, 'error')
-const filtros = toRef(store, 'filtros')
+const store = useLeadsStore();
+const route = useRoute();
+const router = useRouter();
 
-// ✅ Getters como *refs* estáveis (mesma API esperada pelos filhos)
-const kpiSituacoes = toRef(store, 'kpiSituacoes')
-const leadsByEnterprise = toRef(store, 'leadsByEnterprise')
+const leads = toRef(store, 'leads');
+const periodo = toRef(store, 'periodo');
+const filas = toRef(store, 'filas');
+const error = toRef(store, 'error');
+const filtros = toRef(store, 'filtros');
+const kpiSituacoes = toRef(store, 'kpiSituacoes');
+const leadsByEnterprise = toRef(store, 'leadsByEnterprise');
 
-const ARRAY_FIELDS = ['imobiliaria', 'corretor', 'situacao_nome', 'midia_principal', 'origem', 'empreendimento']
+const ARRAY_FIELDS = ['imobiliaria', 'corretor', 'situacao_nome', 'midia_principal', 'origem', 'empreendimento'];
+const STRING_FIELDS = ['nome', 'email', 'telefone', 'data_inicio', 'data_fim', 'cidade'];
 
 function syncFiltersFromUrl() {
-  const q = route.query
-  if (!Object.keys(q).length) return
-  const next = { ...filtros.value }
+  const q = route.query;
+  if (!Object.keys(q).length) return;
+  const next = { ...filtros.value };
   for (const key of ARRAY_FIELDS) {
-    if (q[key]) next[key] = String(q[key]).split(',').map(s => s.trim()).filter(Boolean)
-    else next[key] = []
+    next[key] = q[key]
+      ? String(q[key]).split(',').map(s => s.trim()).filter(Boolean)
+      : [];
   }
-  for (const key of ['nome', 'email', 'telefone', 'data_inicio', 'data_fim', 'cidade']) {
-    next[key] = q[key] ? String(q[key]) : ''
+  for (const key of STRING_FIELDS) {
+    next[key] = q[key] ? String(q[key]) : '';
   }
-  Object.assign(filtros.value, next)
-  if (q.excluir_painel === '1') store.applyDefaultOrigens()
+  Object.assign(filtros.value, next);
+  if (q.excluir_painel === '1') store.applyDefaultOrigens();
 }
 
 function syncUrlFromFilters() {
-  const q = {}
+  const q = {};
   Object.entries(filtros.value).forEach(([k, v]) => {
-    if (Array.isArray(v)) { if (v.length) q[k] = v.join(',') }
-    else if (v && String(v).trim()) q[k] = String(v).trim()
-  })
-  router.replace({ query: q })
+    if (Array.isArray(v)) { if (v.length) q[k] = v.join(','); }
+    else if (v && String(v).trim()) q[k] = String(v).trim();
+  });
+  router.replace({ query: q });
 }
 
-const showCharts = ref(false)
+const view = ref('overview'); // overview | dashboard
+const viewOptions = computed(() => [
+  { value: 'overview',  label: 'Visão geral', icon: 'fas fa-chart-simple' },
+  { value: 'dashboard', label: 'Dashboard',   icon: 'fas fa-chart-line' },
+]);
 
-const modalVisivel = ref(false)
-const modalLeads = ref([])
-const modalMode = ref('list')
+const modalVisivel = ref(false);
+const modalLeads = ref([]);
+const modalMode = ref('list');
 
 function abrirModal([list, mode]) {
-  modalLeads.value = list || []
-  modalMode.value = mode || 'list'
-  modalVisivel.value = true
+  modalLeads.value = list || [];
+  modalMode.value = mode || 'list';
+  modalVisivel.value = true;
 }
 
 function buscar() {
-  syncUrlFromFilters()
-  store.fetchLeads(true)
+  syncUrlFromFilters();
+  store.fetchLeads(true);
 }
 
 function limpar() {
@@ -74,90 +81,83 @@ function limpar() {
     nome: '', email: '', telefone: '',
     imobiliaria: [], corretor: [],
     midia_principal: [], origem: [], empreendimento: [],
-    data_inicio: '', data_fim: '', cidade: ''
-  })
-  // Restaura o default: todas as situações exceto as de painel
-  store.applyDefaultSituacoes()
-  router.replace({ query: {} })
-  store.fetchLeads(true)
+    data_inicio: '', data_fim: '', cidade: '',
+  });
+  store.applyDefaultSituacoes();
+  router.replace({ query: {} });
+  store.fetchLeads(true);
 }
 
 function onFiltrarSituacao(situacao) {
-  const set = new Set(filtros.value.situacao_nome || [])
-  if (situacao && !set.has(situacao)) set.add(situacao)
-  filtros.value.situacao_nome = Array.from(set)
-  syncUrlFromFilters()
-  store.fetchLeads(true)
+  const set = new Set(filtros.value.situacao_nome || []);
+  if (situacao && !set.has(situacao)) set.add(situacao);
+  filtros.value.situacao_nome = Array.from(set);
+  syncUrlFromFilters();
+  store.fetchLeads(true);
 }
 
 onMounted(async () => {
-  syncFiltersFromUrl()
-  await store.fetchFilas()
-  await store.fetchLeads(true)
-  if (route.query.excluir_painel === '1') store.applyDefaultOrigens()
-})
+  syncFiltersFromUrl();
+  await store.fetchFilas();
+  await store.fetchLeads(true);
+  if (route.query.excluir_painel === '1') store.applyDefaultOrigens();
+});
 </script>
 
 <template>
-  <div class="h-full relative overflow-hidden">
-    <div class="px-6 pt-6">
-      <div class="flex">
-        <h1 class="text-2xl md:text-2xl font-bold">Relatório de Leads</h1>
-        <Favorite class="m-auto" :router="'/marketing/leads'" :section="'Leads'" />
-      </div>
-      <p class="mt-1">Acompanhe o desempenho dos Leads</p>
-    </div>
+  <div class="min-h-[calc(100vh-3.5rem)] relative">
+    <PageContainer size="full">
 
-    <div class="px-6 py-4">
-      <FiltersBar v-model:filtros="filtros" :empreendimentos-options="store.empreendimentosOptions"
-        :origens-options="store.origensOptions" :situacoes-options="store.situacoesOptions"
-        :midias-options="store.midiasOptions" :imobiliarias-options="store.imobiliariasOptions"
-        :corretores-options="store.corretoresOptions" @buscar="buscar" @limpar="limpar">
-        <!-- Toggle de visualização -->
-        <template #extra-actions>
-          <button @click="showCharts = !showCharts"
-            v-tippy="showCharts ? 'Voltar para visão geral' : 'Ver dashboard analítico'"
-            :class="['px-3 py-2 rounded-lg font-medium text-sm flex items-center gap-2 transition-all border', showCharts
-              ? 'bg-purple-600 text-white border-purple-600 hover:bg-purple-700'
-              : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-purple-400 hover:text-purple-600']">
-            <i :class="showCharts ? 'fas fa-table-cells' : 'fas fa-chart-area'"></i>
-            <span class="hidden sm:inline">{{ showCharts ? 'Geral' : 'Dashboard' }}</span>
-          </button>
+      <!-- Header -->
+      <PageHeader title="Relatório de Leads"
+        subtitle="Acompanhe o desempenho dos leads em tempo real."
+        icon="fas fa-chart-line">
+        <template #title>
+          <span>Relatório de Leads</span>
+          <Favorite :router="'/marketing/leads'" :section="'Leads'" />
         </template>
-      </FiltersBar>
-    </div>
+        <template #actions>
+          <Filas :filas="filas" />
+          <SegmentedControl v-model="view" :options="viewOptions" size="sm" />
+        </template>
+      </PageHeader>
 
-    <!-- Visão padrão: KPIs + Tabela -->
-    <template v-if="!showCharts">
-      <div class="px-6 pb-6 space-y-4">
-        <SummaryCards :periodo="periodo" :kpi="kpiSituacoes" @filtrarSituacao="onFiltrarSituacao" />
+      <!-- Filtros -->
+      <div class="mb-4">
+        <FiltersBar
+          v-model:filtros="filtros"
+          :empreendimentos-options="store.empreendimentosOptions"
+          :origens-options="store.origensOptions"
+          :situacoes-options="store.situacoesOptions"
+          :midias-options="store.midiasOptions"
+          :imobiliarias-options="store.imobiliariasOptions"
+          :corretores-options="store.corretoresOptions"
+          @buscar="buscar" @limpar="limpar"
+        />
       </div>
 
-      <div v-if="error" class="px-6 py-4">
-        <div class="my-3 p-3 bg-red-500/20 text-red-200 rounded-lg">
-          <i class="fas fa-exclamation-triangle mr-2"></i>{{ error }}
+      <!-- Erro -->
+      <div v-if="error"
+        class="mb-4 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2.5 text-sm text-red-700 dark:text-red-300 flex items-center gap-2">
+        <i class="fas fa-circle-exclamation"></i>{{ error }}
+      </div>
+
+      <!-- Visão geral -->
+      <template v-if="view === 'overview'">
+        <div class="space-y-4">
+          <SummaryCards :periodo="periodo" :kpi="kpiSituacoes" @filtrarSituacao="onFiltrarSituacao" />
+          <LeadsTable :data="leadsByEnterprise" @abrirModal="abrirModal" />
         </div>
-      </div>
-      <div v-else class="px-6 pb-6 space-y-6">
-        <LeadsTable :data="leadsByEnterprise" @abrirModal="abrirModal" />
-      </div>
-    </template>
+      </template>
 
-    <!-- Visão analítica: Dashboard de gráficos -->
-    <template v-else>
-      <div class="px-6 pb-6">
-        <DashboardCharts :leads="leads" :leads-by-enterprise="leadsByEnterprise" @abrirModal="abrirModal"
-          @filtrarSituacao="onFiltrarSituacao" />
-      </div>
-    </template>
+      <!-- Dashboard analítico -->
+      <template v-else>
+        <DashboardCharts :leads="leads" :leads-by-enterprise="leadsByEnterprise"
+          @abrirModal="abrirModal" @filtrarSituacao="onFiltrarSituacao" />
+      </template>
+    </PageContainer>
 
-    <LeadModal :leads="modalLeads" :visivel="modalVisivel" :initial-mode="modalMode" @fechar="modalVisivel = false" />
-    <Filas :filas="filas" class="mt-6" />
+    <LeadModal :leads="modalLeads" :visivel="modalVisivel" :initial-mode="modalMode"
+      @fechar="modalVisivel = false" />
   </div>
 </template>
-
-<style scoped>
-.group:hover {
-  transform: translateX(-18rem);
-}
-</style>

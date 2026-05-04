@@ -6,6 +6,7 @@
  */
 import { ref, computed, reactive, nextTick } from 'vue';
 import { usePaymentFlowStore } from '@/stores/Tools/PaymentFlow/paymentFlowStore';
+import Modal from '@/components/UI/Modal.vue';
 
 const props = defineProps({
     launch: { type: Object, required: true },
@@ -238,43 +239,30 @@ const CLASSIFICACAO_TRIBUTARIA = [
 </script>
 
 <template>
-    <!-- Backdrop fixo -->
-    <div class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm" @click="handleClose"></div>
-
-    <!-- Container de scroll -->
-    <div class="fixed inset-0 z-50 overflow-y-auto" @click.self="handleClose">
-        <div class="flex items-start justify-center p-4 pt-6 min-h-full">
-
-            <!-- Modal -->
-            <div
-                class="relative w-full max-w-2xl rounded-2xl bg-white dark:bg-gray-900 shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden mb-6">
-
-                <!-- Header sticky -->
-                <div
-                    class="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-amber-500 to-orange-500 text-white sticky top-0 z-10">
-                    <div class="flex items-center gap-3">
-                        <i class="fas fa-user-plus text-lg"></i>
-                        <div>
-                            <div class="font-bold text-sm">Solicitar Cadastro de Fornecedor</div>
-                            <div class="text-xs text-amber-100">Formulário RID — Planilha de Qualificação de Fornecedores
-                            </div>
-                        </div>
-                    </div>
-                    <button @click="handleClose"
-                        class="w-8 h-8 rounded-full hover:bg-white/20 flex items-center justify-center transition">
-                        <i class="fas fa-xmark text-sm"></i>
-                    </button>
+    <Modal :open="true" size="lg" @close="handleClose">
+        <template #header>
+            <div class="flex items-center gap-3">
+                <div class="h-9 w-9 rounded-lg bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/20 grid place-items-center shrink-0">
+                    <i class="fas fa-user-plus text-sm"></i>
                 </div>
+                <div class="min-w-0">
+                    <h2 class="text-base font-semibold text-ink truncate">Solicitar cadastro de fornecedor</h2>
+                    <p class="text-xs text-ink-muted mt-0.5">
+                        Formulário RID — Planilha de Qualificação de Fornecedores
+                    </p>
+                </div>
+            </div>
+        </template>
 
                 <!-- Fornecedor info + alerta -->
                 <div class="px-6 pt-5">
                     <div
-                        class="rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 px-4 py-3 flex items-start gap-3">
+                        class="rounded-xl bg-surface-sunken border border-line px-4 py-3 flex items-start gap-3">
                         <i class="fas fa-circle-xmark text-red-500 mt-0.5 flex-shrink-0"></i>
                         <div>
                             <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-0.5">Fornecedor não
                                 encontrado no Sienge</div>
-                            <div class="text-sm font-semibold text-gray-900 dark:text-white">{{ launch.providerName || '—'
+                            <div class="text-sm font-semibold text-ink">{{ launch.providerName || '—'
                                 }}</div>
                             <div class="text-xs font-mono text-gray-500">{{ launch.providerCnpj || '—' }}</div>
                         </div>
@@ -335,7 +323,7 @@ const CLASSIFICACAO_TRIBUTARIA = [
                     </div>
                     <div class="flex justify-end">
                         <button @click="handleClose"
-                            class="px-4 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition">
+                            class="px-4 py-2 rounded-lg text-sm font-medium text-ink-muted hover:bg-gray-100 dark:hover:bg-gray-800 transition">
                             Fechar
                         </button>
                     </div>
@@ -488,8 +476,8 @@ const CLASSIFICACAO_TRIBUTARIA = [
                                         { key: 'fispq', label: 'Apresenta FISPQ ou similar dos produtos?' },
                                         { key: 'fornecedorControle', label: 'É fornecedor de controle tecnológico?' },
                                     ]" :key="item.key"
-                                        class="flex items-center justify-between gap-3 bg-gray-50 dark:bg-gray-800 rounded-lg px-3 py-2">
-                                        <span class="text-xs text-gray-700 dark:text-gray-300 flex-1">{{ item.label }}</span>
+                                        class="flex items-center justify-between gap-3 bg-surface-sunken rounded-lg px-3 py-2">
+                                        <span class="text-xs text-ink flex-1">{{ item.label }}</span>
                                         <div class="radio-row shrink-0">
                                             <label v-for="op in SIM_NAO_NA" :key="op.value" class="radio-opt">
                                                 <input type="radio" v-model="form[item.key]" :value="op.value" />
@@ -516,7 +504,7 @@ const CLASSIFICACAO_TRIBUTARIA = [
                                         class="text-red-500">*</span> (ao menos 1)</label>
                                 <div class="space-y-2">
                                     <div v-for="(emp, idx) in form.empresas" :key="idx"
-                                        class="grid grid-cols-3 gap-2 bg-gray-50 dark:bg-gray-800 rounded-lg p-2">
+                                        class="grid grid-cols-3 gap-2 bg-surface-sunken rounded-lg p-2">
                                         <div>
                                             <label class="field-label text-[10px]">Razão Social</label>
                                             <input v-model="emp.razaoSocial" class="field-input text-xs" :placeholder="idx === 0 ? 'Obrigatório' : 'Opcional'" />
@@ -608,29 +596,29 @@ const CLASSIFICACAO_TRIBUTARIA = [
                             <div class="text-xs font-bold text-gray-500 uppercase tracking-wider">Revisar e Enviar</div>
 
                             <!-- Resumo identificação -->
-                            <div class="rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 space-y-1 text-xs">
+                            <div class="rounded-xl bg-surface-sunken border border-line p-4 space-y-1 text-xs">
                                 <div class="font-semibold text-gray-700 dark:text-gray-200 mb-2">Identificação do Fornecedor
                                 </div>
-                                <div class="grid grid-cols-2 gap-x-4 gap-y-1 text-gray-600 dark:text-gray-400">
-                                    <div><span class="font-medium text-gray-700 dark:text-gray-300">Razão Social:</span> {{ form.razaoSocial }}</div>
-                                    <div><span class="font-medium text-gray-700 dark:text-gray-300">CNPJ:</span> {{ form.cnpj }}</div>
-                                    <div><span class="font-medium text-gray-700 dark:text-gray-300">Insc. Estadual:</span> {{ form.inscricaoEstadual }}</div>
-                                    <div><span class="font-medium text-gray-700 dark:text-gray-300">Telefone:</span> {{ form.telefone }}</div>
-                                    <div class="col-span-2"><span class="font-medium text-gray-700 dark:text-gray-300">Endereço:</span> {{ form.endereco }}, — {{ form.cep }}, {{ form.bairro }} {{ form.cidade }}/{{ form.estado }}</div>
-                                    <div><span class="font-medium text-gray-700 dark:text-gray-300">Classif. Tributária:</span> {{ form.classificacaoTributaria }}</div>
-                                    <div class="col-span-2"><span class="font-medium text-gray-700 dark:text-gray-300">Serviço/Material:</span> {{ form.servicoMaterial }}</div>
-                                    <div class="col-span-2"><span class="font-medium text-gray-700 dark:text-gray-300">E-mail:</span> {{ form.email }}</div>
+                                <div class="grid grid-cols-2 gap-x-4 gap-y-1 text-ink-muted">
+                                    <div><span class="font-medium text-ink">Razão Social:</span> {{ form.razaoSocial }}</div>
+                                    <div><span class="font-medium text-ink">CNPJ:</span> {{ form.cnpj }}</div>
+                                    <div><span class="font-medium text-ink">Insc. Estadual:</span> {{ form.inscricaoEstadual }}</div>
+                                    <div><span class="font-medium text-ink">Telefone:</span> {{ form.telefone }}</div>
+                                    <div class="col-span-2"><span class="font-medium text-ink">Endereço:</span> {{ form.endereco }}, — {{ form.cep }}, {{ form.bairro }} {{ form.cidade }}/{{ form.estado }}</div>
+                                    <div><span class="font-medium text-ink">Classif. Tributária:</span> {{ form.classificacaoTributaria }}</div>
+                                    <div class="col-span-2"><span class="font-medium text-ink">Serviço/Material:</span> {{ form.servicoMaterial }}</div>
+                                    <div class="col-span-2"><span class="font-medium text-ink">E-mail:</span> {{ form.email }}</div>
                                 </div>
                             </div>
 
                             <!-- Outros Anexos -->
-                            <div class="rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 space-y-2">
+                            <div class="rounded-xl bg-surface-sunken border border-line p-4 space-y-2">
                                 <div class="font-semibold text-xs text-gray-700 dark:text-gray-200 flex items-center gap-2">
                                     <i class="fas fa-paperclip text-gray-400"></i>
                                     Outros Anexos
                                     <span class="text-gray-400 font-normal">(opcional)</span>
                                 </div>
-                                <p class="text-xs text-gray-500 dark:text-gray-400">
+                                <p class="text-xs text-ink-muted">
                                     Documentos adicionais que serão enviados junto com a RID no email.
                                 </p>
 
@@ -705,30 +693,27 @@ const CLASSIFICACAO_TRIBUTARIA = [
                     </div><!-- /px-6 py-4 -->
 
                     <!-- Info automação -->
-                    <div class="mx-6 mb-5 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 px-4 py-3 flex items-start gap-3">
+                    <div class="mx-6 mb-5 rounded-xl bg-surface-sunken/50 border border-line px-4 py-3 flex items-start gap-3">
                         <i class="fas fa-robot text-gray-400 mt-0.5 flex-shrink-0 text-sm"></i>
-                        <p class="text-xs text-gray-500 dark:text-gray-400">
+                        <p class="text-xs text-ink-muted">
                             Após o envio, o sistema verificará a cada
-                            <strong class="text-gray-700 dark:text-gray-300">20 minutos</strong>
+                            <strong class="text-ink">20 minutos</strong>
                             se o fornecedor foi cadastrado no Sienge.
                             Quando cadastrado, a esteira continuará automaticamente para contrato.
                         </p>
                     </div>
 
                 </template><!-- /v-else (não enviado) -->
-            </div>
-
-        </div>
-    </div>
+    </Modal>
 </template>
 
 <style scoped>
 .field-label {
-    @apply block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1;
+    @apply block text-xs font-semibold text-ink-muted mb-1;
 }
 
 .field-input {
-    @apply w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-400 transition;
+    @apply w-full rounded-lg border border-line bg-white dark:bg-gray-800 text-ink text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-400 transition;
 }
 
 .form-group {
@@ -740,7 +725,7 @@ const CLASSIFICACAO_TRIBUTARIA = [
 }
 
 .radio-opt {
-    @apply flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 cursor-pointer select-none;
+    @apply flex items-center gap-1.5 text-xs font-medium text-ink cursor-pointer select-none;
 }
 
 .radio-opt input[type="radio"] {
@@ -752,6 +737,6 @@ const CLASSIFICACAO_TRIBUTARIA = [
 }
 
 .btn-secondary {
-    @apply inline-flex items-center px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm font-medium transition;
+    @apply inline-flex items-center px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-ink text-sm font-medium transition;
 }
 </style>
