@@ -6,6 +6,7 @@
 //  - Pacote CEF: segue cef_package_paid_by ('menin' | 'client')
 //  - ITBI: sempre do CLIENTE (e só conta quando NÃO isento)
 //  - Cartório (prenotação + registro): segue cartorio_paid_by ('menin' | 'client')
+//  - Certificação Digital: sempre Menin SE digital_cert_has_cost === true
 
 export function computeCostSummary(mod) {
     const menin = [];
@@ -14,6 +15,10 @@ export function computeCostSummary(mod) {
 
     if (mod.cca_charges_company && num(mod.cca_cost) > 0) {
         menin.push({ label: 'CCA', value: num(mod.cca_cost) });
+    }
+
+    if (mod.digital_cert_has_cost && num(mod.digital_cert_cost) > 0) {
+        menin.push({ label: 'Certificação Digital', value: num(mod.digital_cert_cost) });
     }
 
     const cef = num(mod.cef_package_avg_value);

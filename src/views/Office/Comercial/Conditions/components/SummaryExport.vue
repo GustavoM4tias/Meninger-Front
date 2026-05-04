@@ -368,9 +368,13 @@
                 <span class="note-label">Obs. Demanda</span>
                 <p>{{ mod.min_demand_note }}</p>
               </div>
+              <div v-if="mod.commission_note" class="note-block mt-2">
+                <span class="note-label"><i class="fas fa-percent text-[10px] mr-1"></i>Obs. Comissão</span>
+                <p>{{ mod.commission_note }}</p>
+              </div>
             </div>
           </div>
- 
+
           <!-- ── Operacional — sempre visível ───────────────────────────── -->
           <div class="info-card mb-4">
             <div class="info-card-header">
@@ -470,12 +474,36 @@
                         >
                           {{ mod.digital_cert_contact }}
                         </span>
+                        <span
+                          v-if="mod.digital_cert_has_cost && mod.digital_cert_cost != null"
+                          class="block mt-1 text-xs font-medium text-blue-600 dark:text-blue-400"
+                        >
+                          <i class="fas fa-building text-[9px] mr-1"></i>{{ formatCurrency(mod.digital_cert_cost) }} (Menin)
+                        </span>
+                        <span
+                          v-else-if="mod.has_digital_cert"
+                          class="block mt-1 text-[10px] text-gray-400"
+                        >
+                          Sem custo
+                        </span>
                       </template>
 
                       <template v-else>
                         Não utiliza
                       </template>
                     </span>
+                  </div>
+                </div>
+
+                <!-- Arquivos do Empreendimento (QR Code) -->
+                <div v-if="mod.enterprise_files_url" class="mt-4 flex items-center gap-3 p-3 bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/40 rounded-xl">
+                  <AppraisalQrCode :url="mod.enterprise_files_url" :size="80" />
+                  <div class="flex-1 min-w-0">
+                    <p class="text-xs font-bold text-blue-600 dark:text-blue-400 mb-1">
+                      <i class="fas fa-folder-open text-[10px] mr-1"></i>Arquivos do Empreendimento
+                    </p>
+                    <p class="text-[10px] text-gray-500 dark:text-gray-400">Aponte a câmera no QR Code para acessar a pasta de arquivos.</p>
+                    <a :href="mod.enterprise_files_url" target="_blank" rel="noopener" class="text-[10px] text-blue-500 hover:underline truncate block mt-1">{{ mod.enterprise_files_url }}</a>
                   </div>
                 </div>
               </div>
@@ -485,7 +513,7 @@
                 <p>{{ mod.notes }}</p>
               </div>
             </div>
-          </div> 
+          </div>
 
             <!-- Negociação — sempre visível -->
             <div class="info-card mb-4">
@@ -841,6 +869,53 @@
         </div>
       </template>
 
+      <!-- ── Resumo Total de Custos da FICHA — APENAS NA TELA (oculto no PDF) ──── -->
+      <div v-if="!isPrinting && localModules.length && fichaCosts.totalMenin + fichaCosts.totalClient > 0"
+        class="no-print bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/20 rounded-2xl border-2 border-blue-300 dark:border-blue-700 overflow-hidden mb-4 mt-2">
+        <div class="px-5 py-3 bg-blue-100/60 dark:bg-blue-900/30 border-b border-blue-200 dark:border-blue-800">
+          <p class="text-sm font-bold text-blue-700 dark:text-blue-300 flex items-center gap-2">
+            <i class="fas fa-coins"></i> Resumo Total de Custos da Ficha
+            <span v-if="localModules.length > 1" class="text-[10px] font-medium text-blue-500 dark:text-blue-400">
+              (somando todos os {{ localModules.length }} módulos)
+            </span>
+          </p>
+        </div>
+        <div class="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="bg-white dark:bg-gray-900/60 rounded-xl p-4 border border-blue-100 dark:border-blue-900">
+            <p class="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+              <i class="fas fa-building text-blue-500"></i> Pago pela Menin
+            </p>
+            <ul class="space-y-1 text-xs">
+              <li v-for="item in fichaCosts.menin" :key="`fm-${item.label}`" class="flex justify-between">
+                <span class="text-gray-600 dark:text-gray-400">{{ item.label }}</span>
+                <strong class="text-gray-800 dark:text-gray-200">{{ formatCurrency(item.value) }}</strong>
+              </li>
+              <li v-if="!fichaCosts.menin.length" class="text-gray-400 italic">—</li>
+            </ul>
+            <div class="mt-3 pt-3 border-t-2 border-blue-200 dark:border-blue-800 flex justify-between text-sm">
+              <span class="font-bold text-gray-800 dark:text-gray-100">Total Menin</span>
+              <strong class="text-base text-blue-700 dark:text-blue-400">{{ formatCurrency(fichaCosts.totalMenin) }}</strong>
+            </div>
+          </div>
+          <div class="bg-white dark:bg-gray-900/60 rounded-xl p-4 border border-blue-100 dark:border-blue-900">
+            <p class="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+              <i class="fas fa-user text-blue-500"></i> Pago pelo Cliente
+            </p>
+            <ul class="space-y-1 text-xs">
+              <li v-for="item in fichaCosts.client" :key="`fc-${item.label}`" class="flex justify-between">
+                <span class="text-gray-600 dark:text-gray-400">{{ item.label }}</span>
+                <strong class="text-gray-800 dark:text-gray-200">{{ formatCurrency(item.value) }}</strong>
+              </li>
+              <li v-if="!fichaCosts.client.length" class="text-gray-400 italic">—</li>
+            </ul>
+            <div class="mt-3 pt-3 border-t-2 border-blue-200 dark:border-blue-800 flex justify-between text-sm">
+              <span class="font-bold text-gray-800 dark:text-gray-100">Total Cliente</span>
+              <strong class="text-base text-blue-700 dark:text-blue-400">{{ formatCurrency(fichaCosts.totalClient) }}</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Rodapé — só impresso -->
       <div class="print-only print-footer">
         <div class="flex items-center justify-between text-xs text-gray-400">
@@ -927,6 +1002,7 @@ const STATUS_LABELS = {
     draft:            'Rascunho',
     pending_approval: 'Em Autorização',
     approved:         'Autorizado',
+    closed:           'Encerrado',
 };
 
 function statusChipClass(s) {
@@ -934,6 +1010,7 @@ function statusChipClass(s) {
         draft:            'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
         pending_approval: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
         approved:         'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+        closed:           'bg-gray-200 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
     };
     return map[s] ?? 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400';
 }
@@ -1069,13 +1146,35 @@ function hasDocsInfo(mod) {
         mod.cef_package_paid_by || mod.cef_package_avg_value != null ||
         mod.itbi_exempt || mod.itbi_avg_value != null || mod.itbi_exemption_doc_url ||
         mod.cartorio_prenotacao_value != null || mod.cartorio_registration_value != null || mod.cartorio_paid_by ||
-        (mod.cca_charges_company && mod.cca_cost != null)
+        mod.cca_charges_company ||      // basta o toggle estar ON, mesmo sem valor
+        mod.digital_cert_has_cost       // idem
     );
 }
 
 function modCostSummary(mod) {
     return computeCostSummary(mod);
 }
+
+// Agregação no nível da FICHA — soma os custos de todos os módulos.
+// EXIBIDA APENAS NA VISUALIZAÇÃO (tela) — fica oculta no PDF/impressão.
+function fichaCostSummary(modules) {
+    const out = { menin: [], client: [], totalMenin: 0, totalClient: 0 };
+    const meninAcc = new Map();
+    const clientAcc = new Map();
+    for (const m of (modules ?? [])) {
+        const cs = computeCostSummary(m);
+        for (const it of cs.menin)  meninAcc.set(it.label, (meninAcc.get(it.label) ?? 0) + it.value);
+        for (const it of cs.client) clientAcc.set(it.label, (clientAcc.get(it.label) ?? 0) + it.value);
+    }
+    for (const [label, value] of meninAcc)  out.menin.push({ label, value });
+    for (const [label, value] of clientAcc) out.client.push({ label, value });
+    out.totalMenin  = out.menin.reduce((s, i) => s + i.value, 0);
+    out.totalClient = out.client.reduce((s, i) => s + i.value, 0);
+    return out;
+}
+
+// Reativo: agrega custos de TODOS os módulos da ficha
+const fichaCosts = computed(() => fichaCostSummary(props.localModules));
 
 function formatSnapshotDate(iso) {
     if (!iso) return '';
@@ -1183,6 +1282,7 @@ async function printModule() {
     for (const mod of modules) {
         if (mod.appraisal_file_url) collectUrls.push(mod.appraisal_file_url);
         if (mod.itbi_exempt && mod.itbi_exemption_doc_url) collectUrls.push(mod.itbi_exemption_doc_url);
+        if (mod.enterprise_files_url) collectUrls.push(mod.enterprise_files_url);
     }
     for (const url of collectUrls) {
         try {
@@ -1290,12 +1390,14 @@ async function printModule() {
         draft:            'Rascunho',
         pending_approval: 'Em Autorização',
         approved:         'Autorizado',
+        closed:           'Encerrado',
     };
 
     const STATUS_COLORS = {
         draft:            '#92400e|#fef3c7',
         pending_approval: '#1e40af|#dbeafe',
         approved:         '#065f46|#d1fae5',
+        closed:           '#374151|#e5e7eb',
     };
 
     const stageName = mod => {
@@ -1446,7 +1548,8 @@ async function printModule() {
                 field('Comissão', commissionLabel),
                 field('Prazo de Entrega', deadlineLabel),
             )}
-            ${note('Obs. Demanda', mod.min_demand_note)}`;
+            ${note('Obs. Demanda', mod.min_demand_note)}
+            ${note('Obs. Comissão', mod.commission_note)}`;
 
         const negocBody = `
             ${fieldRow(
@@ -1597,9 +1700,25 @@ async function printModule() {
                 icon: '🛡️',
                 label: 'Certificação Digital',
                 main: mod.has_digital_cert ? (mod.digital_cert_provider || 'Sim') : 'Não utiliza',
-                sub: mod.digital_cert_contact,
+                sub: [
+                    mod.digital_cert_contact || null,
+                    (mod.has_digital_cert && mod.digital_cert_has_cost && mod.digital_cert_cost != null)
+                        ? `${fmtCurrency(mod.digital_cert_cost)} (Menin)`
+                        : (mod.has_digital_cert ? 'Sem custo' : null),
+                ].filter(Boolean).join(' · '),
             },
         ];
+
+        const filesQrHtml = (mod.enterprise_files_url && qrCache[mod.enterprise_files_url])
+            ? `<div style="margin-top:10px;display:flex;align-items:center;gap:10px;padding:10px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;break-inside:avoid;">
+                  <img src="${qrCache[mod.enterprise_files_url]}" alt="QR Arquivos" style="width:80px;height:80px;border:1px solid #e5e7eb;background:#fff;padding:4px;border-radius:4px;flex-shrink:0;" />
+                  <div style="flex:1;min-width:0;">
+                    <p style="font-size:10px;font-weight:700;color:#2563eb;margin-bottom:2px;">📁 Arquivos do Empreendimento</p>
+                    <p style="font-size:9px;color:#6b7280;">Aponte a câmera no QR Code para acessar a pasta de arquivos.</p>
+                    <p style="font-size:8px;color:#3b82f6;margin-top:2px;word-break:break-all;">${escapeHtml(mod.enterprise_files_url)}</p>
+                  </div>
+                </div>`
+            : '';
 
         const opHtml = `
             <div class="op-row-print">
@@ -1613,6 +1732,7 @@ async function printModule() {
                   </div>
                 </div>`).join('')}
             </div>
+            ${filesQrHtml}
             ${note('Observações', mod.notes)}`;
 
         const campHtml = camps.length

@@ -57,11 +57,30 @@
 
             <!-- Seções a copiar -->
             <div v-if="copyFrom.moduleId">
-              <label class="lbl">O que copiar</label>
-              <div class="grid grid-cols-2 gap-2 mt-1">
-                <label v-for="opt in copyFieldOptions" :key="opt.value" class="flex items-center gap-2 cursor-pointer select-none">
-                  <input type="checkbox" :value="opt.value" v-model="copyFrom.fields" class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
-                  <span class="text-sm text-gray-700 dark:text-gray-200">{{ opt.label }}</span>
+              <div class="flex items-center justify-between mb-1.5">
+                <label class="lbl mb-0">O que copiar</label>
+                <div class="flex items-center gap-2">
+                  <button type="button" @click="copyFrom.fields = copyFieldOptions.map(o => o.value)" class="text-xs text-blue-600 dark:text-blue-400 hover:underline">Todos</button>
+                  <span class="text-gray-300 dark:text-gray-600">·</span>
+                  <button type="button" @click="copyFrom.fields = []" class="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:underline">Nenhum</button>
+                </div>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <label
+                  v-for="opt in copyFieldOptions"
+                  :key="opt.value"
+                  :class="[
+                    'flex items-start gap-2.5 cursor-pointer select-none p-3 rounded-lg border transition',
+                    copyFrom.fields.includes(opt.value)
+                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/30'
+                      : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900/40 hover:border-gray-300'
+                  ]"
+                >
+                  <input type="checkbox" :value="opt.value" v-model="copyFrom.fields" class="mt-0.5 w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+                  <div class="min-w-0 flex-1">
+                    <p :class="['text-sm font-semibold', copyFrom.fields.includes(opt.value) ? 'text-blue-700 dark:text-blue-300' : 'text-gray-700 dark:text-gray-200']">{{ opt.label }}</p>
+                    <p class="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5 leading-tight">{{ opt.hint }}</p>
+                  </div>
                 </label>
               </div>
             </div>
@@ -509,6 +528,17 @@
                 :disabled="readonly"
               />
             </div>
+          </div>
+          <!-- Observação da Comissão (linha cheia) -->
+          <div class="mt-4">
+            <label class="lbl">Observações da Comissão</label>
+            <textarea
+              :value="activeModule.commission_note"
+              @input="patch('commission_note', $event.target.value)"
+              rows="2" class="inp resize-none"
+              placeholder="Ex: Comissão extra para venda em caixa de 60 dias, base de cálculo sobre VGV líquido..."
+              :disabled="readonly"
+            />
           </div>
           <div v-if="activeModule.unit_snapshot?.data?.length && snapshotM2Stats" class="mt-4 p-3.5 bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/40 rounded-xl">
             <p class="text-xs font-semibold text-blue-600 dark:text-blue-400 mb-2 flex items-center gap-1.5">
@@ -1654,10 +1684,12 @@ const copySourceModules = computed(() => {
 });
 
 const copyFieldOptions = [
-    { value: 'negotiation', label: 'Negociação' },
-    { value: 'prices',      label: 'Preços' },
-    { value: 'operational', label: 'Operacional' },
-    { value: 'campaigns',   label: 'Campanhas' },
+    { value: 'data',        label: 'Dados (Produto)',   hint: 'Total unidades, MCMV, comissão, prazo de entrega' },
+    { value: 'prices',      label: 'Preços',            hint: 'Tabelas (CV se mesmo empreendimento) + manuais' },
+    { value: 'negotiation', label: 'Negociação',        hint: 'Parcelas, entrada, regras, subsídio' },
+    { value: 'docs',        label: 'Documentação',      hint: 'Pacote CEF, ITBI, Cartório' },
+    { value: 'operational', label: 'Operacional',       hint: 'Gestor, registro do contrato, CCA, certificação' },
+    { value: 'campaigns',   label: 'Campanhas',         hint: 'Campanhas ativas/desativadas' },
 ];
 
 function openCopyModal() {
@@ -1665,7 +1697,7 @@ function openCopyModal() {
         idempreendimento: '',
         conditionId: '',
         moduleId: '',
-        fields: ['negotiation', 'prices', 'operational', 'campaigns'],
+        fields: copyFieldOptions.map(o => o.value), // todas selecionadas por padrão
     };
     copySourceConditions.value = [];
     showCopyModal.value = true;

@@ -15,6 +15,10 @@ import ChatEventsActions from '@/components/OfficeAI/renderers/ChatEventsActions
 import ChatEnterprisesActions from '@/components/OfficeAI/renderers/ChatEnterprisesActions.vue'
 import ChatEnterpriseDetail from '@/components/OfficeAI/renderers/ChatEnterpriseDetail.vue'
 import ChatMcmvActions from '@/components/OfficeAI/renderers/ChatMcmvActions.vue'
+import ChatPrecadastrosSummary from '@/components/OfficeAI/renderers/ChatPrecadastrosSummary.vue'
+import ChatPrecadastrosActions from '@/components/OfficeAI/renderers/ChatPrecadastrosActions.vue'
+import ChatReservasSummary from '@/components/OfficeAI/renderers/ChatReservasSummary.vue'
+import ChatReservasActions from '@/components/OfficeAI/renderers/ChatReservasActions.vue'
 
 const authStore = useAuthStore()
 const buildingStore = useBuildingStore()
@@ -108,6 +112,19 @@ function onKeydown(e) {
 }
 
 function getAction(msg) { return msg.metadata?.action || null }
+
+function actionSource(msg) {
+  const a = getAction(msg)
+  if (!a) return null
+  if (a.context?.source) return a.context.source
+  if (a.source)          return a.source
+  if (a.type === 'precadastros_summary') return 'precadastros'
+  if (a.type === 'reservas_summary')     return 'reservas'
+  if (a.type === 'enterprise_detail')    return 'enterprises'
+  return null
+}
+
+function actionContext(msg) { return getAction(msg)?.context || {} }
 
 const feedbackModal = ref({ open: false, msgId: null, rating: null })
 
@@ -282,25 +299,41 @@ async function confirmFeedback({ comment }) {
                         :data="getAction(msg).data"
                       />
                       <ChatLeadsActions
-                        v-if="getAction(msg)?.context?.source === 'leads'"
-                        :context="getAction(msg).context"
+                        v-if="actionSource(msg) === 'leads'"
+                        :context="actionContext(msg)"
                       />
                       <ChatEventsActions
-                        v-if="getAction(msg)?.context?.source === 'events'"
-                        :context="getAction(msg).context"
+                        v-if="actionSource(msg) === 'events'"
+                        :context="actionContext(msg)"
                         :rows="getAction(msg).rows || getAction(msg).rawRows || []"
                       />
                       <ChatEnterprisesActions
-                        v-if="getAction(msg)?.context?.source === 'enterprises'"
-                        :context="getAction(msg).context"
+                        v-if="actionSource(msg) === 'enterprises'"
+                        :context="actionContext(msg)"
                       />
                       <ChatEnterpriseDetail
                         v-if="getAction(msg)?.type === 'detail'"
                         :action="getAction(msg)"
                       />
+                      <ChatPrecadastrosSummary
+                        v-if="getAction(msg)?.type === 'precadastros_summary'"
+                        :action="getAction(msg)"
+                      />
+                      <ChatReservasSummary
+                        v-if="getAction(msg)?.type === 'reservas_summary'"
+                        :action="getAction(msg)"
+                      />
                       <ChatMcmvActions
-                        v-if="getAction(msg)?.context?.source === 'mcmv'"
-                        :context="getAction(msg).context"
+                        v-if="actionSource(msg) === 'mcmv'"
+                        :context="actionContext(msg)"
+                      />
+                      <ChatPrecadastrosActions
+                        v-if="actionSource(msg) === 'precadastros'"
+                        :context="actionContext(msg)"
+                      />
+                      <ChatReservasActions
+                        v-if="actionSource(msg) === 'reservas'"
+                        :context="actionContext(msg)"
                       />
                       <!-- Feedback + Retry -->
                       <div class="flex items-center gap-1 mt-1.5">

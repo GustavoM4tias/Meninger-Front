@@ -146,6 +146,11 @@ export const useOfficeAIStore = defineStore('officeAI', () => {
         streamingText.value = ''
         break
 
+      case 'replace':
+        // Backend pediu para substituir o texto atual (ex: pós-filtro removeu pseudo-tool-call leak)
+        streamingText.value = evt.text || ''
+        break
+
       case 'action':
         pendingAction.value = evt.action
         if (evt.action.type === 'navigate') {

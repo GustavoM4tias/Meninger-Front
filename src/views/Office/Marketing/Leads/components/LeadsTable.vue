@@ -85,8 +85,8 @@
                                 </button>
                                 <button @click="openSingle(e, 'funnel')" class="inline-flex items-center px-2 py-2 text-xs font-medium rounded-full transition-colors
                    text-purple-700 bg-purple-50 hover:bg-purple-100 dark:text-purple-200 dark:bg-purple-700/30"
-                                    v-tippy="'Ver leads'">
-                                    <i class="fas fa-eye"></i>
+                                    v-tippy="'Funil de situações'">
+                                    <i class="fas fa-filter"></i>
                                 </button>
                                 <button @click="openSingle(e, 'pie')" class="inline-flex items-center px-2 py-2 text-xs font-medium rounded-full transition-colors
                    text-purple-700 bg-purple-50 hover:bg-purple-100 dark:text-purple-200 dark:bg-purple-700/30"
