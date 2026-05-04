@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref } from 'vue'
-import ChartActions from '@/components/config/ChartActions.vue'
+import ChartCard from './ChartCard.vue'
 import VChart from 'vue-echarts'
 import * as echarts from 'echarts/core'
 import { LineChart, BarChart, FunnelChart, PieChart, HeatmapChart } from 'echarts/charts'
@@ -453,138 +453,78 @@ function onChartClick(kind, params) {
 
         <!-- ── Row 1: Trend + Funnel ── -->
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
-            <!-- Trend -->
-            <div class="lg:col-span-8 rounded-xl border border-slate-800 bg-slate-900 overflow-hidden">
-                <div class="h-0.5 bg-gradient-to-r from-indigo-500 to-violet-500"></div>
-                <div class="px-5 py-4 flex items-center justify-between">
-                    <div>
-                        <p class="text-sm font-semibold text-slate-200">Tendência de Entradas</p>
-                        <p class="text-xs text-slate-500">{{ trendBucket==='week' ? 'Agrupado por semana' : 'Agrupado por dia' }}</p>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <span class="text-xs font-mono text-indigo-400 bg-indigo-500/10 px-2 py-1 rounded-md">{{ trend.keys.length }} períodos</span>
-                        <div class="[&_button]:border-slate-700 [&_button]:text-slate-500 [&_button:hover]:bg-slate-700 [&_button:hover]:text-slate-200 [&_button]:transition-colors [&_button]:rounded-md [&_button]:px-2 [&_button]:py-1"><ChartActions filename="trend-leads" bg="#0F172A" /></div>
-                    </div>
-                </div>
-                <VChart :option="optionTrend" autoresize style="height:240px;width:100%;" />
-            </div>
+            <ChartCard class="lg:col-span-8"
+                title="Tendência de Entradas"
+                :subtitle="trendBucket==='week' ? 'Agrupado por semana' : 'Agrupado por dia'"
+                accent="from-indigo-500 to-violet-500"
+                :badge="`${trend.keys.length} períodos`"
+                filename="trend-leads" height="240px">
+                <VChart :option="optionTrend" autoresize style="height:100%;width:100%;" />
+            </ChartCard>
 
-            <!-- Funnel -->
-            <div class="lg:col-span-4 rounded-xl border border-slate-800 bg-slate-900 overflow-hidden">
-                <div class="h-0.5 bg-gradient-to-r from-cyan-500 to-blue-500"></div>
-                <div class="px-5 py-4 flex items-center justify-between">
-                    <div>
-                        <p class="text-sm font-semibold text-slate-200">Funil de Situações</p>
-                        <p class="text-xs text-slate-500">Clique para filtrar</p>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <span class="text-xs font-mono text-cyan-400 bg-cyan-500/10 px-2 py-1 rounded-md">{{ statusCounts.length }} status</span>
-                        <div class="[&_button]:border-slate-700 [&_button]:text-slate-500 [&_button:hover]:bg-slate-700 [&_button:hover]:text-slate-200 [&_button]:transition-colors [&_button]:rounded-md [&_button]:px-2 [&_button]:py-1"><ChartActions filename="funil-situacoes" bg="#0F172A" /></div>
-                    </div>
-                </div>
-                <VChart :option="optionFunnel" autoresize style="height:240px;width:100%;"
+            <ChartCard class="lg:col-span-4"
+                title="Funil de Situações" subtitle="Clique para filtrar"
+                accent="from-cyan-500 to-blue-500"
+                :badge="`${statusCounts.length} status`"
+                filename="funil-situacoes" height="240px">
+                <VChart :option="optionFunnel" autoresize style="height:100%;width:100%;"
                     @click="p => onChartClick('funnel', p)" />
-            </div>
+            </ChartCard>
         </div>
 
         <!-- ── Row 2: Stacked + Donut ── -->
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
-            <!-- Stacked bars -->
-            <div class="lg:col-span-7 rounded-xl border border-slate-800 bg-slate-900 overflow-hidden">
-                <div class="h-0.5 bg-gradient-to-r from-amber-500 to-orange-500"></div>
-                <div class="px-5 py-4 flex items-center justify-between">
-                    <div>
-                        <p class="text-sm font-semibold text-slate-200">Status por Empreendimento</p>
-                        <p class="text-xs text-slate-500">top 8 status</p>
-                    </div>
-                    <div class="[&_button]:border-slate-700 [&_button]:text-slate-500 [&_button:hover]:bg-slate-700 [&_button:hover]:text-slate-200 [&_button]:transition-colors [&_button]:rounded-md [&_button]:px-2 [&_button]:py-1"><ChartActions filename="status-empreendimento" bg="#0F172A" /></div>
-                </div>
-                <VChart :option="optionStackedStatusByEnterprise" autoresize style="height:300px;width:100%;" />
-            </div>
+            <ChartCard class="lg:col-span-7"
+                title="Status por Empreendimento" subtitle="top 8 status"
+                accent="from-amber-500 to-orange-500"
+                filename="status-empreendimento" height="300px">
+                <VChart :option="optionStackedStatusByEnterprise" autoresize style="height:100%;width:100%;" />
+            </ChartCard>
 
-            <!-- Donut -->
-            <div class="lg:col-span-5 rounded-xl border border-slate-800 bg-slate-900 overflow-hidden">
-                <div class="h-0.5 bg-gradient-to-r from-emerald-500 to-teal-500"></div>
-                <div class="px-5 py-4 flex items-center justify-between">
-                    <div>
-                        <p class="text-sm font-semibold text-slate-200">Distribuição — Empreendimentos</p>
-                        <p class="text-xs text-slate-500">Clique para abrir</p>
-                    </div>
-                    <div class="[&_button]:border-slate-700 [&_button]:text-slate-500 [&_button:hover]:bg-slate-700 [&_button:hover]:text-slate-200 [&_button]:transition-colors [&_button]:rounded-md [&_button]:px-2 [&_button]:py-1"><ChartActions filename="distribuicao-empreendimentos" bg="#0F172A" /></div>
-                </div>
-                <VChart :option="optionDonutEnterprise" autoresize style="height:300px;width:100%;"
+            <ChartCard class="lg:col-span-5"
+                title="Distribuição — Empreendimentos" subtitle="Clique para abrir"
+                accent="from-emerald-500 to-teal-500"
+                filename="distribuicao-empreendimentos" height="300px">
+                <VChart :option="optionDonutEnterprise" autoresize style="height:100%;width:100%;"
                     @click="p => onChartClick('donut', p)" />
-            </div>
+            </ChartCard>
         </div>
 
-        <!-- ── Row 3: Heatmap (full) ── -->
-        <div class="rounded-xl border border-slate-800 bg-slate-900 overflow-hidden">
-            <div class="h-0.5 bg-gradient-to-r from-cyan-600 via-sky-400 to-cyan-300"></div>
-            <div class="px-5 py-4 flex items-center justify-between">
-                <div>
-                    <p class="text-sm font-semibold text-slate-200">Mapa de Calor — Horários de Entrada</p>
-                    <p class="text-xs text-slate-500">Dia da semana × hora do dia</p>
-                </div>
-                <div class="flex items-center gap-3">
-                    <span class="text-xs text-cyan-400 bg-cyan-500/10 px-2 py-1 rounded-md font-mono">heatmap</span>
-                    <div class="[&_button]:border-slate-700 [&_button]:text-slate-500 [&_button:hover]:bg-slate-700 [&_button:hover]:text-slate-200 [&_button]:transition-colors [&_button]:rounded-md [&_button]:px-2 [&_button]:py-1"><ChartActions filename="heatmap-horarios" bg="#0F172A" /></div>
-                </div>
-            </div>
-            <VChart :option="optionHeatmap" autoresize style="height:260px;width:100%;" />
-        </div>
+        <!-- ── Row 3: Heatmap ── -->
+        <ChartCard
+            title="Mapa de Calor — Horários de Entrada"
+            subtitle="Dia da semana × hora do dia"
+            accent="from-cyan-600 via-sky-400 to-cyan-300"
+            badge="heatmap"
+            filename="heatmap-horarios" height="260px">
+            <VChart :option="optionHeatmap" autoresize style="height:100%;width:100%;" />
+        </ChartCard>
 
         <!-- ── Row 4: Ranking + Origens + Mídias ── -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            <!-- Ranking -->
-            <div class="rounded-xl border border-slate-800 bg-slate-900 overflow-hidden">
-                <div class="h-0.5 bg-gradient-to-r from-indigo-500 to-purple-500"></div>
-                <div class="px-5 py-4 flex items-center justify-between">
-                    <div>
-                        <p class="text-sm font-semibold text-slate-200">Ranking Empreendimentos</p>
-                        <p class="text-xs text-slate-500">Clique para abrir leads</p>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <i class="fas fa-city text-indigo-400 text-xs"></i>
-                        <div class="[&_button]:border-slate-700 [&_button]:text-slate-500 [&_button:hover]:bg-slate-700 [&_button:hover]:text-slate-200 [&_button]:transition-colors [&_button]:rounded-md [&_button]:px-2 [&_button]:py-1"><ChartActions filename="ranking-empreendimentos" bg="#0F172A" /></div>
-                    </div>
-                </div>
-                <VChart :option="optionTopEnterpriseBars" autoresize style="height:300px;width:100%;"
+            <ChartCard
+                title="Ranking Empreendimentos" subtitle="Clique para abrir leads"
+                accent="from-indigo-500 to-purple-500"
+                filename="ranking-empreendimentos" height="300px">
+                <VChart :option="optionTopEnterpriseBars" autoresize style="height:100%;width:100%;"
                     @click="p => onChartClick('rankEnterprise', p)" />
-            </div>
+            </ChartCard>
 
-            <!-- Origens -->
-            <div class="rounded-xl border border-slate-800 bg-slate-900 overflow-hidden">
-                <div class="h-0.5 bg-gradient-to-r from-emerald-500 to-green-400"></div>
-                <div class="px-5 py-4 flex items-center justify-between">
-                    <div>
-                        <p class="text-sm font-semibold text-slate-200">Origens</p>
-                        <p class="text-xs text-slate-500">Clique para abrir leads</p>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <i class="fas fa-compass text-emerald-400 text-xs"></i>
-                        <div class="[&_button]:border-slate-700 [&_button]:text-slate-500 [&_button:hover]:bg-slate-700 [&_button:hover]:text-slate-200 [&_button]:transition-colors [&_button]:rounded-md [&_button]:px-2 [&_button]:py-1"><ChartActions filename="origens-leads" bg="#0F172A" /></div>
-                    </div>
-                </div>
-                <VChart :option="optionOrigins" autoresize style="height:300px;width:100%;"
+            <ChartCard
+                title="Origens" subtitle="Clique para abrir leads"
+                accent="from-emerald-500 to-green-400"
+                filename="origens-leads" height="300px">
+                <VChart :option="optionOrigins" autoresize style="height:100%;width:100%;"
                     @click="p => onChartClick('origins', p)" />
-            </div>
+            </ChartCard>
 
-            <!-- Mídias -->
-            <div class="rounded-xl border border-slate-800 bg-slate-900 overflow-hidden">
-                <div class="h-0.5 bg-gradient-to-r from-pink-500 to-rose-400"></div>
-                <div class="px-5 py-4 flex items-center justify-between">
-                    <div>
-                        <p class="text-sm font-semibold text-slate-200">Mídias</p>
-                        <p class="text-xs text-slate-500">Clique para abrir leads</p>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <i class="fas fa-bullhorn text-pink-400 text-xs"></i>
-                        <div class="[&_button]:border-slate-700 [&_button]:text-slate-500 [&_button:hover]:bg-slate-700 [&_button:hover]:text-slate-200 [&_button]:transition-colors [&_button]:rounded-md [&_button]:px-2 [&_button]:py-1"><ChartActions filename="midias-leads" bg="#0F172A" /></div>
-                    </div>
-                </div>
-                <VChart :option="optionMedia" autoresize style="height:300px;width:100%;"
+            <ChartCard
+                title="Mídias" subtitle="Clique para abrir leads"
+                accent="from-pink-500 to-rose-400"
+                filename="midias-leads" height="300px">
+                <VChart :option="optionMedia" autoresize style="height:100%;width:100%;"
                     @click="p => onChartClick('media', p)" />
-            </div>
+            </ChartCard>
         </div>
     </div>
 </template>

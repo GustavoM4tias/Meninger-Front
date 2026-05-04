@@ -227,16 +227,23 @@ export const useAuthStore = defineStore('user', {
     openForgotPasswordModal(email = '') {
       this.forgotPassword.open = true;
       this.forgotPassword.loading = false;
-      this.forgotPassword.step = 1;
-      this.forgotPassword.email = email || '';
-      this.forgotPassword.code = '';
-      this.forgotPassword.password = '';
-      this.forgotPassword.confirmPassword = '';
+      this.forgotPassword.message = '';
+      this.forgotPassword.error = '';
+      // Só sobrescreve email se veio um novo (preserva o que estava digitado)
+      if (email) this.forgotPassword.email = email;
+    },
+
+    closeForgotPasswordModal() {
+      // Fecha mas preserva o estado (step, email, code, password)
+      // para o usuário não perder progresso se fechar sem querer.
+      this.forgotPassword.open = false;
+      this.forgotPassword.loading = false;
       this.forgotPassword.message = '';
       this.forgotPassword.error = '';
     },
 
-    closeForgotPasswordModal() {
+    resetForgotPasswordModal() {
+      // Reset completo: usar após sucesso ou quando usuário pedir explicitamente.
       this.forgotPassword.open = false;
       this.forgotPassword.loading = false;
       this.forgotPassword.step = 1;

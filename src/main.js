@@ -48,8 +48,11 @@ app.directive('tippy', {
 
 app.use(router);
  
+// Tema: localStorage > preferência do sistema
+const savedTheme = localStorage.getItem('theme');
 const prefersDark = window.matchMedia?.('(prefers-color-scheme: dark)')?.matches;
-if (prefersDark) document.documentElement.classList.add('dark');
+const isDark = savedTheme ? savedTheme === 'dark' : prefersDark;
+if (isDark) document.documentElement.classList.add('dark');
 
 // ✅ initializeAuth: só aqui, uma vez
 import { useAuthStore } from './stores/Settings/Auth/authStore';

@@ -10,7 +10,11 @@ import LaunchPipelineCard from './components/LaunchPipelineCard.vue';
 import SiengeCredentialsModal from './components/SiengeCredentialsModal.vue';
 import RidRequestModal from './components/RidRequestModal.vue';
 import UpdateBoletoModal from './components/UpdateBoletoModal.vue';
-import Favorite from '@/components/config/Favorite.vue'
+import Favorite from '@/components/config/Favorite.vue';
+
+import Surface from '@/components/UI/Surface.vue';
+import Input from '@/components/UI/Input.vue';
+import Button from '@/components/UI/Button.vue';
 
 const store = usePaymentFlowStore();
 const authStore = useAuthStore();
@@ -201,10 +205,10 @@ async function onBoletoUpdated() {
 
                 <!-- ── Sidebar ─────────────────────────────────────────────── -->
                 <aside class="lg:col-span-1 order-2 lg:order-1">
-                    <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-4">Resumo</h3>
+                    <h3 class="text-xl font-bold text-ink mb-4">Resumo</h3>
 
                     <div
-                        class="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-300 dark:border-gray-700 p-5 sticky top-8 space-y-4">
+                        class="bg-surface-raised rounded-xl shadow-sm border border-line p-5 sticky top-8 space-y-4">
 
                         <!-- Etapas do processo -->
                         <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
@@ -216,10 +220,10 @@ async function onBoletoUpdated() {
                                 : 'hover:bg-gray-50 dark:hover:bg-gray-800'" @click="applyStatusFilter(item.key)">
                             <div class="flex items-center gap-2">
                                 <span class="inline-block w-2 h-2 rounded-full flex-shrink-0" :class="item.dot"></span>
-                                <span class="text-sm text-gray-600 dark:text-gray-400">{{ item.label }}</span>
+                                <span class="text-sm text-ink-muted">{{ item.label }}</span>
                             </div>
                             <div class="text-right">
-                                <div class="font-bold text-sm text-gray-900 dark:text-white">
+                                <div class="font-bold text-sm text-ink">
                                     {{ store.summary[item.key]?.count || 0 }}
                                 </div>
                                 <div v-if="store.summary[item.key]?.totalAmount" class="text-xs text-gray-400">
@@ -229,7 +233,7 @@ async function onBoletoUpdated() {
                         </div>
 
                         <!-- Totalizador -->
-                        <div class="border-t border-gray-200 dark:border-gray-700 pt-3">
+                        <div class="border-t border-line pt-3">
                             <div class="text-xs text-gray-500 mb-1">Em andamento</div>
                             <div class="text-base font-bold text-blue-600 dark:text-blue-400">
                                 {{ formatCurrency(totalActiveAmount) }}
@@ -237,7 +241,7 @@ async function onBoletoUpdated() {
                         </div>
 
                         <!-- Especiais: Título Pago, Cancelados, Erros -->
-                        <div class="border-t border-gray-200 dark:border-gray-700 pt-3 space-y-2">
+                        <div class="border-t border-line pt-3 space-y-2">
                             <div
                                 class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">
                                 Especiais</div>
@@ -252,11 +256,11 @@ async function onBoletoUpdated() {
                                 @click="applyStatusFilter('titulo_pago'); if (!store.showTituloPago) store.toggleShowTituloPago()">
                                 <div class="flex items-center gap-2">
                                     <span class="inline-block w-2 h-2 rounded-full bg-emerald-400 flex-shrink-0"></span>
-                                    <span class="text-sm text-gray-600 dark:text-gray-400">Título Pago</span>
+                                    <span class="text-sm text-ink-muted">Título Pago</span>
                                 </div>
                                 <div class="flex items-center gap-2">
                                     <span v-if="store.showTituloPago"
-                                        class="font-bold text-sm text-gray-900 dark:text-white">
+                                        class="font-bold text-sm text-ink">
                                         {{ store.summary['titulo_pago']?.count || 0 }}
                                     </span>
                                     <button class="text-xs px-1.5 py-0.5 rounded border transition" :class="store.showTituloPago
@@ -278,11 +282,11 @@ async function onBoletoUpdated() {
                                 @click="applyStatusFilter('cancelado'); if (!store.showCancelled) store.toggleShowCancelled()">
                                 <div class="flex items-center gap-2">
                                     <span class="inline-block w-2 h-2 rounded-full bg-slate-400 flex-shrink-0"></span>
-                                    <span class="text-sm text-gray-600 dark:text-gray-400">Cancelados</span>
+                                    <span class="text-sm text-ink-muted">Cancelados</span>
                                 </div>
                                 <div class="flex items-center gap-2">
                                     <span v-if="store.showCancelled"
-                                        class="font-bold text-sm text-gray-900 dark:text-white">
+                                        class="font-bold text-sm text-ink">
                                         {{ store.summary['cancelado']?.count || 0 }}
                                     </span>
                                     <button class="text-xs px-1.5 py-0.5 rounded border transition" :class="store.showCancelled
@@ -304,11 +308,11 @@ async function onBoletoUpdated() {
                                 @click="applyStatusFilter('erro'); if (!store.showErrors) store.toggleShowErrors()">
                                 <div class="flex items-center gap-2">
                                     <span class="inline-block w-2 h-2 rounded-full bg-red-400 flex-shrink-0"></span>
-                                    <span class="text-sm text-gray-600 dark:text-gray-400">Erros</span>
+                                    <span class="text-sm text-ink-muted">Erros</span>
                                 </div>
                                 <div class="flex items-center gap-2">
                                     <span v-if="store.showErrors"
-                                        class="font-bold text-sm text-gray-900 dark:text-white">
+                                        class="font-bold text-sm text-ink">
                                         {{ store.summary['erro']?.count || 0 }}
                                     </span>
                                     <button class="text-xs px-1.5 py-0.5 rounded border transition" :class="store.showErrors
@@ -322,7 +326,7 @@ async function onBoletoUpdated() {
                         </div>
 
                         <!-- Filtro por tipo -->
-                        <div class="border-t border-gray-200 dark:border-gray-700 pt-4">
+                        <div class="border-t border-line pt-4">
                             <div
                                 class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">
                                 Tipo</div>
@@ -331,7 +335,7 @@ async function onBoletoUpdated() {
                                     class="text-xs px-2.5 py-1 rounded-full border transition truncate"
                                     :class="filterType === t.name
                                         ? 'bg-blue-600 text-white border-blue-600'
-                                        : 'border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:border-blue-400'" @click="applyTypeFilter(t.name)">
+                                        : 'border-gray-300 dark:border-gray-600 text-ink-muted hover:border-blue-400'" @click="applyTypeFilter(t.name)">
                                     {{ t.name }}
                                 </button>
                             </div>
@@ -339,7 +343,7 @@ async function onBoletoUpdated() {
 
                         <!-- Pipeline em andamento -->
                         <div v-if="Object.keys(store.pipelinePolling).length"
-                            class="border-t border-gray-200 dark:border-gray-700 pt-4">
+                            class="border-t border-line pt-4">
                             <div
                                 class="text-xs font-medium text-blue-600 dark:text-blue-400 flex items-center gap-1.5 mb-1">
                                 <i class="fas fa-sync fa-spin text-xs"></i>
@@ -359,85 +363,59 @@ async function onBoletoUpdated() {
                     <!-- Header -->
                     <div class="flex items-center justify-between mb-2">
                         <div>
-                            <h1 class="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">Fluxo de pagamento
+                            <h1 class="text-xl md:text-2xl font-bold text-ink">Fluxo de pagamento
                                 <Favorite :router="'/tools/paymentflow'" :section="'Fluxo de Pagamento'" />
                             </h1>
-                            <p class="text-gray-500 dark:text-gray-400 text-sm mt-0.5">
+                            <p class="text-ink-muted text-sm mt-0.5">
                                 Gerenciamento de lançamentos para pagamento
                             </p>
                         </div>
+
                         <button
                             class="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition"
                             @click="store.openCreateModal">
-                            <i class="fas fa-plus"></i> Novo Lançamento
+                            <i class="fas fa-plus"></i> Lançamento
                         </button>
                     </div>
 
-                    <!-- Barra de busca -->
-                    <div
-                        class="bg-white dark:bg-gray-900 rounded-xl border border-gray-300 dark:border-gray-700 px-4 py-3 mb-4 flex flex-wrap items-center gap-3">
-                        <div class="flex-1 min-w-48 relative">
-
-                            <label class="block text-xs font-medium mb-1 text-gray-700 dark:text-gray-300">
-                                <i class="fas fa-money-bill mr-1"></i>Buscar pagamentos
-                            </label>
-                            <i class="fas fa-search absolute left-4 top-2/3 -translate-y-1/2 text-gray-400 text-md"></i>
-                            <input v-model="searchInput" type="text"
-                                :placeholder="isAdmin ? 'Buscar por fornecedor, empresa, documento, criador…' : 'Buscar por fornecedor, empresa, documento…'"
-                                class="w-full px-10 py-[.5rem] border rounded-lg bg-transparent text-gray-400 border-gray-200 dark:border-gray-700 dark:bg-gray-900/60 text-start truncate"
+                    <!-- Barra de filtros -->
+                    <Surface variant="raised" padding="md" class="mb-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1fr_auto_auto_auto_auto] gap-3 items-end">
+                            <Input v-model="searchInput"
+                                label="Buscar pagamentos"
+                                :placeholder="isAdmin ? 'Fornecedor, empresa, documento, criador…' : 'Fornecedor, empresa, documento…'"
+                                iconLeft="fas fa-magnifying-glass"
                                 @keydown.enter="applySearch" />
-                        </div>
 
-                        <!-- Filtro de período -->
-                        <div class="flex items-center gap-2">
-                            <div>
-                                <label class="block text-xs font-medium mb-1 text-gray-700 dark:text-gray-300">
-                                    <i class="fas fa-calendar-day mr-1"></i>Data Início
-                                </label>
-                                <input type="date" :value="store.filters.dateFrom"
-                                    @change="store.applyFilters({ dateFrom: $event.target.value })"
-                                    class="w-full px-2 py-[.5rem] border rounded-lg bg-transparent text-gray-400 border-gray-200 dark:border-gray-700 dark:bg-gray-900/60 text-center" />
-                            </div>
+                            <Input type="date" label="Data início"
+                                :model-value="store.filters.dateFrom"
+                                @update:model-value="(v) => store.applyFilters({ dateFrom: v })" />
 
-                            <div>
-                                <label class="block text-xs font-medium mb-1 text-gray-700 dark:text-gray-300">
-                                    <i class="fas fa-calendar-check mr-1"></i>Data Fim
-                                </label>
-                                <input type="date" :value="store.filters.dateTo"
-                                    @change="store.applyFilters({ dateTo: $event.target.value })"
-                                    class="w-full px-2 py-[.5rem] border rounded-lg bg-transparent text-gray-400 border-gray-200 dark:border-gray-700 dark:bg-gray-900/60 text-center" />
-                            </div>
-                        </div>
+                            <Input type="date" label="Data fim"
+                                :model-value="store.filters.dateTo"
+                                @update:model-value="(v) => store.applyFilters({ dateTo: v })" />
 
-                        <!-- Botão Pesquisar -->
-                        <div class="pt-[1.1rem]">
-                            <button
-                                class="flex px-4 py-2 text-lg font-semibold bg-sky-500 text-white rounded-lg hover:bg-sky-600 focus:outline-none"
-                                @click="applySearch">
-                                <i class="fas fa-filter pe-1 my-auto"></i> <span
-                                    class="text-center w-full">Filtrar</span>
-                            </button>
-                        </div>
+                            <Button icon="fas fa-filter" @click="applySearch">
+                                <span class="hidden sm:inline">Filtrar</span>
+                            </Button>
 
-                        <div class="pt-[1.1rem]">
-                            <button v-if="filterStatus || filterType || searchInput || store.hasNonDefaultFilters"
-                                @click="clearAllFilters"
-                                class="flex px-4 py-2 text-lg font-semibold bg-gray-500 text-white rounded-lg hover:bg-gray-600 focus:outline-none">
-                                <i class="fas fa-eraser pe-1 my-auto"></i><span class="hidden sm:inline">Limpar</span>
-                            </button>
+                            <Button v-if="filterStatus || filterType || searchInput || store.hasNonDefaultFilters"
+                                variant="ghost" icon="fas fa-eraser" @click="clearAllFilters">
+                                <span class="hidden sm:inline">Limpar</span>
+                            </Button>
                         </div>
 
                         <!-- Indicador de live refresh -->
                         <div v-if="store.liveRefreshId || store.hasActivePipelines"
-                            class="flex items-center gap-1.5 text-xs text-blue-500 dark:text-blue-400">
-                            <i class="fas fa-sync fa-spin text-xs"></i>
+                            class="mt-3 flex items-center gap-2 text-xs text-accent font-mono">
+                            <i class="fas fa-sync fa-spin"></i>
+                            Atualizando em tempo real
                         </div>
-
-                    </div>
+                    </Surface>
 
                     <!-- Lista de lançamentos -->
                     <div
-                        class="bg-white dark:bg-gray-900 rounded-xl border border-gray-300 dark:border-gray-700 overflow-hidden">
+                        class="bg-surface-raised rounded-xl border border-line overflow-hidden">
 
                         <!-- Empty state -->
                         <div v-if="!store.hasLaunches" class="text-center py-16 px-6">
@@ -445,7 +423,7 @@ async function onBoletoUpdated() {
                                 class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
                                 <i class="fas fa-file-invoice-dollar text-2xl text-gray-400"></i>
                             </div>
-                            <h3 class="font-semibold text-gray-700 dark:text-gray-300 mb-1">Nenhum lançamento</h3>
+                            <h3 class="font-semibold text-ink mb-1">Nenhum lançamento</h3>
                             <p class="text-sm text-gray-400">
                                 {{ filterStatus || filterType || searchInput
                                     ? 'Tente ajustar os filtros.'
@@ -456,7 +434,7 @@ async function onBoletoUpdated() {
                         <div v-else>
                             <!-- Cabeçalho (desktop) -->
                             <div
-                                class="hidden md:grid grid-cols-12 gap-2 px-4 py-2.5 bg-gray-50 dark:bg-gray-800/50 text-xs font-medium text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
+                                class="hidden md:grid grid-cols-12 gap-2 px-4 py-2.5 bg-surface-sunken/50 text-xs font-medium text-ink-muted border-b border-line">
                                 <div class="col-span-2">Tipo</div>
                                 <div class="col-span-3">Fornecedor</div>
                                 <div class="col-span-2">Empreendimento</div>
@@ -471,7 +449,7 @@ async function onBoletoUpdated() {
 
                                 <!-- Linha principal -->
                                 <div class="grid grid-cols-12 gap-2 px-4 py-3.5 border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/40 transition items-center cursor-pointer"
-                                    :class="expandedId === launch.id ? 'bg-gray-50 dark:bg-gray-800/40' : ''"
+                                    :class="expandedId === launch.id ? 'bg-surface-sunken/40' : ''"
                                     @click="toggleExpand(launch.id)">
 
                                     <!-- Tipo -->
@@ -484,7 +462,7 @@ async function onBoletoUpdated() {
 
                                     <!-- Fornecedor -->
                                     <div class="col-span-12 md:col-span-3">
-                                        <div class="font-medium text-sm text-gray-900 dark:text-white truncate"
+                                        <div class="font-medium text-sm text-ink truncate"
                                             :title="launch.providerName">
                                             {{ launch.providerName || '—' }}
                                         </div>
@@ -503,7 +481,7 @@ async function onBoletoUpdated() {
                                     </div>
 
                                     <!-- Empreendimento -->
-                                    <div class="col-span-12 md:col-span-2 text-sm text-gray-600 dark:text-gray-400 truncate"
+                                    <div class="col-span-12 md:col-span-2 text-sm text-ink-muted truncate"
                                         :title="launch.enterpriseName">
                                         {{ launch.enterpriseName || launch.companyName || '—' }}
                                     </div>
@@ -511,7 +489,7 @@ async function onBoletoUpdated() {
                                     <!-- Documento -->
                                     <div class="col-span-12 md:col-span-1">
                                         <div
-                                            class="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1 flex-wrap justify-center">
+                                            class="text-xs text-ink-muted flex items-center gap-1 flex-wrap justify-center">
                                             <a v-if="launch.nfUrl" :href="launch.nfUrl" target="_blank"
                                                 class="inline-flex items-center gap-1 text-red-400 hover:text-red-600 transition"
                                                 @click.stop>
@@ -529,7 +507,7 @@ async function onBoletoUpdated() {
 
                                     <!-- Valor -->
                                     <div class="col-span-12 md:col-span-2 text-center">
-                                        <span class="font-semibold text-sm text-gray-900 dark:text-white">
+                                        <span class="font-semibold text-sm text-ink">
                                             {{ formatCurrency(launch.unitPrice) }}
                                         </span>
                                     </div>
@@ -562,7 +540,7 @@ async function onBoletoUpdated() {
 
                                 <!-- Painel expandido -->
                                 <div v-if="expandedId === launch.id"
-                                    class="border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/20 px-4 py-4">
+                                    class="border-b border-line bg-gray-50/50 dark:bg-gray-800/20 px-4 py-4">
                                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
                                         <!-- Pipeline card -->
@@ -580,7 +558,7 @@ async function onBoletoUpdated() {
                                         <!-- Ações de status -->
                                         <div class="space-y-3">
                                             <div
-                                                class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                                class="text-xs font-semibold text-ink-muted uppercase tracking-wider">
                                                 Ações
                                             </div>
 
@@ -607,7 +585,7 @@ async function onBoletoUpdated() {
 
                                             <!-- Info extra do lançamento -->
                                             <div
-                                                class="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-3 space-y-2 text-xs">
+                                                class="rounded-xl border border-line bg-surface-raised p-3 space-y-2 text-xs">
                                                 <div class="flex justify-between">
                                                     <span class="text-gray-500">Empreendimento</span>
                                                     <span
@@ -617,17 +595,17 @@ async function onBoletoUpdated() {
                                                 </div>
                                                 <div class="flex justify-between">
                                                     <span class="text-gray-500">ERP ID</span>
-                                                    <span class="font-mono text-gray-600 dark:text-gray-400">{{
+                                                    <span class="font-mono text-ink-muted">{{
                                                         launch.enterpriseId || '—' }}</span>
                                                 </div>
                                                 <div class="flex justify-between">
                                                     <span class="text-gray-500">Empresa Sienge</span>
-                                                    <span class="font-mono text-gray-600 dark:text-gray-400">{{
+                                                    <span class="font-mono text-ink-muted">{{
                                                         launch.companyId || '—' }}</span>
                                                 </div>
                                                 <div v-if="launch.boletoDueDate" class="flex justify-between">
                                                     <span class="text-gray-500">Vencimento boleto</span>
-                                                    <span class="text-gray-700 dark:text-gray-300">{{
+                                                    <span class="text-ink">{{
                                                         formatDate(launch.boletoDueDate) }}</span>
                                                 </div>
                                                 <div v-if="launch.notes"
@@ -644,7 +622,7 @@ async function onBoletoUpdated() {
 
                         <!-- Paginação -->
                         <div v-if="store.pagination.pages > 1"
-                            class="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-700">
+                            class="flex items-center justify-between px-4 py-3 border-t border-line">
                             <span class="text-xs text-gray-500">
                                 {{ store.pagination.total }} lançamentos · pág. {{ store.pagination.page }}/{{
                                     store.pagination.pages }}
@@ -696,7 +674,7 @@ async function onBoletoUpdated() {
             class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
             @click.self="store.conflictLaunch = null">
             <div
-                class="w-full max-w-md bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-orange-200 dark:border-orange-700 p-6 space-y-4">
+                class="w-full max-w-md bg-surface-raised rounded-2xl shadow-2xl border border-orange-200 dark:border-orange-700 p-6 space-y-4">
                 <!-- Cabeçalho -->
                 <div class="flex items-start gap-3">
                     <div
@@ -704,8 +682,8 @@ async function onBoletoUpdated() {
                         <i class="fas fa-triangle-exclamation text-orange-500"></i>
                     </div>
                     <div>
-                        <h3 class="font-bold text-gray-900 dark:text-white">Lançamento duplicado</h3>
-                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                        <h3 class="font-bold text-ink">Lançamento duplicado</h3>
+                        <p class="text-sm text-ink-muted mt-0.5">
                             Já existe um lançamento ativo com o mesmo número de NF e fornecedor.
                         </p>
                     </div>
@@ -713,7 +691,7 @@ async function onBoletoUpdated() {
 
                 <!-- Detalhes do lançamento existente -->
                 <div
-                    class="rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 space-y-2 text-xs">
+                    class="rounded-xl bg-surface-sunken border border-line p-4 space-y-2 text-xs">
                     <div class="flex justify-between">
                         <span class="text-gray-500">Lançamento</span>
                         <span class="font-mono font-semibold text-gray-800 dark:text-gray-200">#{{
@@ -728,27 +706,27 @@ async function onBoletoUpdated() {
                     </div>
                     <div class="flex justify-between">
                         <span class="text-gray-500">Tipo</span>
-                        <span class="text-gray-700 dark:text-gray-300">{{ store.conflictLaunch.launchType || '—'
+                        <span class="text-ink">{{ store.conflictLaunch.launchType || '—'
                             }}</span>
                     </div>
                     <div class="flex justify-between">
                         <span class="text-gray-500">Fornecedor</span>
-                        <span class="text-gray-700 dark:text-gray-300 text-right max-w-48 truncate">{{
+                        <span class="text-ink text-right max-w-48 truncate">{{
                             store.conflictLaunch.providerName || '—' }}</span>
                     </div>
                     <div class="flex justify-between">
                         <span class="text-gray-500">NF</span>
-                        <span class="font-mono text-gray-700 dark:text-gray-300">{{ store.conflictLaunch.nfNumber
+                        <span class="font-mono text-ink">{{ store.conflictLaunch.nfNumber
                             }}</span>
                     </div>
                     <div class="flex justify-between">
                         <span class="text-gray-500">Criado por</span>
-                        <span class="text-gray-700 dark:text-gray-300">{{ store.conflictLaunch.createdByName || '—'
+                        <span class="text-ink">{{ store.conflictLaunch.createdByName || '—'
                             }}</span>
                     </div>
                 </div>
 
-                <p class="text-sm text-gray-600 dark:text-gray-400">
+                <p class="text-sm text-ink-muted">
                     O que deseja fazer?
                 </p>
 
@@ -760,7 +738,7 @@ async function onBoletoUpdated() {
                         Cancelar o lançamento #{{ store.conflictLaunch.id }} e criar o novo
                     </button>
                     <button
-                        class="w-full px-4 py-2.5 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm font-medium transition"
+                        class="w-full px-4 py-2.5 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-ink text-sm font-medium transition"
                         @click="store.conflictLaunch = null">
                         Manter o lançamento existente
                     </button>
@@ -773,8 +751,8 @@ async function onBoletoUpdated() {
             class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
             @click.self="cancelAction">
             <div
-                class="w-full max-w-sm bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 p-6 space-y-4">
-                <h3 class="font-bold text-gray-900 dark:text-white">{{ confirmingAction.label }}</h3>
+                class="w-full max-w-sm bg-surface-raised rounded-2xl shadow-2xl border border-line p-6 space-y-4">
+                <h3 class="font-bold text-ink">{{ confirmingAction.label }}</h3>
                 <p class="text-sm text-gray-500">
                     Confirma a ação <strong>{{ confirmingAction.label }}</strong> para este lançamento?
                 </p>

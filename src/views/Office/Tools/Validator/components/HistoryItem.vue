@@ -1,42 +1,34 @@
-<template>
-  <div class="bg-white dark:bg-gray-700 p-3 rounded-xl shadow hover:shadow-lg hover:shadow-black/20 hover:scale-[101%] transition-all cursor-pointer"
-    @click="emit('open', item)">
-    <div class="flex flex-col justify-between gap-1">
-      <div class="text-xs text-gray-400 dark:text-gray-300 flex justify-between">
-        <span class="text-xs font-bold px-2 py-1 rounded-full" :class="statusBadge(item.status)">
-          {{ item.status }}
-        </span>
-        <span>{{ new Date(item.createdAt).toLocaleDateString() }}</span>
-      </div>
-      <h3 class="text-lg font-bold text-gray-800 dark:text-white leading-tight">
-        {{ item.cliente }}
-      </h3>
-      <p class="text-sm text-gray-500 dark:text-gray-300 truncate">
-        {{ item.empreendimento }}
-      </p>
-      <span class="text-sm text-gray-400 -mb-1.5">{{ item.model }}</span>
-      <span>{{ item.tokens_used }} tokens</span>
-
-    </div>
-
-  </div>
-</template>
-
 <script setup>
-const props = defineProps({ item: Object });
-const emit = defineEmits(['open']);
+import Badge from '@/components/UI/Badge.vue';
 
-const statusBadge = (status) => {
-  switch (status) {
-    case 'APROVADO':
-      return 'bg-green-100 text-green-800';
-    case 'REPROVADO':
-      return 'bg-red-100 text-red-800';
-    case 'ERRO':
-      return 'bg-yellow-100 text-yellow-800';
-    default:
-      return 'bg-gray-100 text-gray-700';
-  }
-};
+defineProps({ item: Object });
+defineEmits(['open']);
+
+const statusVariant = (status) => ({
+  APROVADO: 'success',
+  REPROVADO: 'danger',
+  ERRO: 'warning',
+}[status] || 'neutral');
 </script>
 
+<template>
+  <article @click="$emit('open', item)"
+    class="group rounded-lg bg-surface-raised border border-line surface-gradient
+           p-3 cursor-pointer hover:border-accent/30 hover:shadow-elevated hover:-translate-y-0.5
+           transition-all duration-200 ease-out-expo">
+    <div class="flex items-center justify-between gap-2 mb-1.5">
+      <Badge :variant="statusVariant(item.status)" size="sm">{{ item.status }}</Badge>
+      <span class="text-[10px] text-ink-subtle font-mono">
+        {{ new Date(item.createdAt).toLocaleDateString('pt-BR') }}
+      </span>
+    </div>
+    <h3 class="text-sm font-semibold text-ink truncate group-hover:text-accent transition-colors">
+      {{ item.cliente }}
+    </h3>
+    <p class="text-xs text-ink-muted truncate">{{ item.empreendimento }}</p>
+    <div class="flex items-center justify-between text-[10px] text-ink-subtle mt-2 font-mono">
+      <span class="truncate">{{ item.model }}</span>
+      <span>{{ item.tokens_used }} tokens</span>
+    </div>
+  </article>
+</template>

@@ -1,59 +1,60 @@
 import { fileURLToPath, URL } from 'node:url'
-import { defineConfig } from 'vite'
+import { readFileSync } from 'node:fs'
+import { execSync } from 'node:child_process'
+import { defineConfig, loadEnv } from 'vite'
 import vue from '@vitejs/plugin-vue'
-// opcional: npm i -D rollup-plugin-visualizer
-// import { visualizer } from 'rollup-plugin-visualizer'
 
-export default defineConfig({
-  plugins: [
-    vue(),
-    // visualizer({ filename: 'stats.html', gzipSize: true, brotliSize: true }) // opcional
-  ],
-  resolve: {
-    alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) }
-  },
-  build: {
-    // mantenha esse limite se quiser, mas o que ajuda mesmo é o manualChunks
-    chunkSizeWarningLimit: 1500,
+// ── Versionamento dinâmico ──────────────────────────────────
+// Office: lê do package.json deste repo
+// Academy: vem da env VITE_ACADEMY_VERSION (cada repo seta a sua via CI/.env)
+const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf-8'))
 
-    rollupOptions: {
-      output: {
-        manualChunks: { 
-        // núcleo do framework
-        vue: ['vue'],
+function gitShortSha() {
+  try { return execSync('git rev-parse --short HEAD').toString().trim() }
+  catch { return '' }
+}
 
-        // gráficos (grande): vai pra um chunk separado e só baixa quando alguma rota que usa eCharts for carregada
-        echarts: ['echarts', 'echarts/core'],
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '')
+  const officeVersion = pkg.version || '0.0.0'
+  const academyVersion = env.VITE_ACADEMY_VERSION || pkg.academyVersion || ''
+  const sha = gitShortSha()
 
-        // geração de PDF/imagem (grande): isola jspdf e html2canvas
-        pdf: ['jspdf', 'html2canvas'],
-
-        // toasts (isola para não ir pro index se for usado pontualmente)
-        toast: ['vue-toastification'],
-
-        // exportação de planilhas (lazy — só baixa quando o usuário clica em exportar)
-        excel: ['exceljs/dist/exceljs.min.js', 'file-saver'],
-
-        // você pode criar buckets por feature, ex.:
-        // reservas: ['@/pages/Reservas.vue']  // só se fizer sentido estáticoqq
-      }
+  return {
+    plugins: [vue()],
+    resolve: {
+      alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) }
     },
-    // treeshake já é true por padrão, mas manter explícito não faz mal:
-    // treeshake: 'smallest'
-  },
-
-  // dica: se não precisa suportar browsers muito antigos, isso ajuda treeshaking
-  target: 'es2019',
-  minify: 'esbuild'
-},
-  server: {
-  host: true,
-  proxy: {
-    '/api': {
-      target: 'https://menin.cvcrm.com.br',
-      changeOrigin: true,
-      rewrite: (path) => path.replace(/^\/api/, ''),
+    define: {
+      __APP_VERSION_OFFICE__: JSON.stringify(officeVersion),
+      __APP_VERSION_ACADEMY__: JSON.stringify(academyVersion),
+      __APP_GIT_SHA__: JSON.stringify(sha),
     },
-  },
-},
+    build: {
+      chunkSizeWarningLimit: 1500,
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            vue: ['vue'],
+            echarts: ['echarts', 'echarts/core'],
+            pdf: ['jspdf', 'html2canvas'],
+            toast: ['vue-toastification'],
+            excel: ['exceljs/dist/exceljs.min.js', 'file-saver'],
+          }
+        },
+      },
+      target: 'es2019',
+      minify: 'esbuild'
+    },
+    server: {
+      host: true,
+      proxy: {
+        '/api': {
+          target: 'https://menin.cvcrm.com.br',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/api/, ''),
+        },
+      },
+    },
+  }
 })

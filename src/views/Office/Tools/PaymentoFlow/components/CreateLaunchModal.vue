@@ -3,6 +3,8 @@ import { ref, watch, computed, onMounted } from 'vue';
 import { usePaymentFlowStore } from '@/stores/Tools/PaymentFlow/paymentFlowStore';
 import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 import MultiSelector from '@/components/UI/MultiSelector.vue';
+import Modal from '@/components/UI/Modal.vue';
+import Button from '@/components/UI/Button.vue';
 import { requestWithAuth } from '@/utils/Auth/requestWithAuth';
 import API_URL from '@/config/apiUrl';
 
@@ -588,32 +590,28 @@ onMounted(async () => {
 </script>
 
 <template>
-    <div class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 backdrop-blur-sm p-4 py-8"
-        @click.self="emit('close')">
-        <div
-            class="w-full max-w-2xl bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700">
-            <div
-                class="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700 rounded-t-2xl bg-gray-50 dark:bg-gray-800/50">
-                <div>
-                    <h2 class="text-lg font-bold text-gray-900 dark:text-white">Novo Lançamento</h2>
-                    <p class="text-xs text-gray-500 mt-0.5">Campos preenchidos automaticamente pelo documento</p>
+    <Modal :open="true" size="lg" @close="emit('close')">
+        <template #header>
+            <div class="flex items-center gap-3">
+                <div class="h-9 w-9 rounded-lg bg-accent-soft text-accent border border-accent/20 grid place-items-center shrink-0">
+                    <i class="fas fa-plus text-sm"></i>
                 </div>
-
-                <button class="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition text-gray-500"
-                    @click="emit('close')">
-                    <i class="fas fa-xmark"></i>
-                </button>
-            </div>
-
-            <div class="px-6 py-5 space-y-6">
                 <div>
-                    <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
+                    <h2 class="text-base font-semibold text-ink">Novo lançamento</h2>
+                    <p class="text-xs text-ink-muted mt-0.5">Campos preenchidos automaticamente pelo documento</p>
+                </div>
+            </div>
+        </template>
+
+            <div class="space-y-6">
+                <div>
+                    <h3 class="text-sm font-semibold text-ink mb-3 flex items-center gap-2">
                         <i class="fas fa-paperclip text-gray-400"></i> Documentos
                     </h3>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
-                            <div class="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">
+                            <div class="text-xs font-medium text-ink-muted mb-1.5">
                                 Nota Fiscal
                             </div>
 
@@ -621,11 +619,11 @@ onMounted(async () => {
                                 class="flex flex-col items-center justify-center h-28 rounded-xl border-2 border-dashed cursor-pointer transition"
                                 :class="draggingNf
                                     ? 'border-blue-500 bg-blue-50/70 dark:bg-blue-900/20'
-                                    : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 hover:border-blue-400 hover:bg-blue-50/50 dark:hover:bg-blue-900/10'"
+                                    : 'border-line bg-surface-sunken hover:border-blue-400 hover:bg-blue-50/50 dark:hover:bg-blue-900/10'"
                                 @click="nfInputRef?.click()" @dragover.prevent="draggingNf = true"
                                 @dragleave="draggingNf = false" @drop.prevent="onNfDrop">
                                 <i class="fas fa-file-invoice text-2xl text-gray-300 dark:text-gray-600 mb-1"></i>
-                                <span class="text-xs text-gray-500 dark:text-gray-400">
+                                <span class="text-xs text-ink-muted">
                                     {{ draggingNf ? 'Solte o arquivo aqui' : 'Clique ou arraste' }}
                                 </span>
                                 <span class="text-xs text-gray-400">NFe, NFS, NF, Recibo… (máx. 2 MB)</span>
@@ -642,11 +640,11 @@ onMounted(async () => {
                             </div>
 
                             <div v-else
-                                class="h-28 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-3 flex flex-col justify-between">
+                                class="h-28 rounded-xl border border-line bg-surface-sunken p-3 flex flex-col justify-between">
                                 <div class="flex items-start justify-between gap-2">
                                     <div class="flex items-center gap-2 min-w-0">
                                         <i class="fas fa-file-pdf text-red-400 flex-shrink-0"></i>
-                                        <span class="text-xs font-medium text-gray-700 dark:text-gray-300 truncate">
+                                        <span class="text-xs font-medium text-ink truncate">
                                             {{ store.nfFile?.name }}
                                         </span>
                                     </div>
@@ -696,7 +694,7 @@ onMounted(async () => {
                         </div>
 
                         <div>
-                            <div class="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">
+                            <div class="text-xs font-medium text-ink-muted mb-1.5">
                                 Boleto
                             </div>
 
@@ -704,11 +702,11 @@ onMounted(async () => {
                                 class="flex flex-col items-center justify-center h-28 rounded-xl border-2 border-dashed cursor-pointer transition"
                                 :class="draggingBoleto
                                     ? 'border-blue-500 bg-blue-50/70 dark:bg-blue-900/20'
-                                    : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 hover:border-blue-400 hover:bg-blue-50/50 dark:hover:bg-blue-900/10'"
+                                    : 'border-line bg-surface-sunken hover:border-blue-400 hover:bg-blue-50/50 dark:hover:bg-blue-900/10'"
                                 @click="boletoInputRef?.click()" @dragover.prevent="draggingBoleto = true"
                                 @dragleave="draggingBoleto = false" @drop.prevent="onBoletoDrop">
                                 <i class="fas fa-barcode text-2xl text-gray-300 dark:text-gray-600 mb-1"></i>
-                                <span class="text-xs text-gray-500 dark:text-gray-400">
+                                <span class="text-xs text-ink-muted">
                                     {{ draggingBoleto ? 'Solte o arquivo aqui' : 'Clique ou arraste' }}
                                 </span>
                                 <span class="text-xs text-gray-400">Boleto (máx. 2 MB)</span>
@@ -726,11 +724,11 @@ onMounted(async () => {
                             </div>
 
                             <div v-else
-                                class="h-28 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-3 flex flex-col justify-between">
+                                class="h-28 rounded-xl border border-line bg-surface-sunken p-3 flex flex-col justify-between">
                                 <div class="flex items-start justify-between gap-2">
                                     <div class="flex items-center gap-2 min-w-0">
                                         <i class="fas fa-file-pdf text-red-400 flex-shrink-0"></i>
-                                        <span class="text-xs font-medium text-gray-700 dark:text-gray-300 truncate">
+                                        <span class="text-xs font-medium text-ink truncate">
                                             {{ store.boletoFile?.name }}
                                         </span>
                                     </div>
@@ -770,7 +768,7 @@ onMounted(async () => {
                     </div>
 
                     <div class="mt-3">
-                        <div class="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
+                        <div class="text-xs font-medium text-ink-muted mb-2">
                             Anexos Extras
                             <span class="text-gray-400 font-normal">(PDF, imagem — opcional, máx. 2 MB)</span>
                         </div>
@@ -778,7 +776,7 @@ onMounted(async () => {
                         <div class="flex flex-wrap gap-2 p-2 rounded-xl border-2 border-dashed transition min-h-[44px]"
                             :class="draggingExtra
                                 ? 'border-blue-500 bg-blue-50/70 dark:bg-blue-900/20'
-                                : 'border-gray-200 dark:border-gray-700 bg-transparent'"
+                                : 'border-line bg-transparent'"
                             @dragover.prevent="draggingExtra = true" @dragleave="draggingExtra = false"
                             @drop.prevent="onExtraDrop">
                             <div v-if="draggingExtra && !store.extraFiles.length"
@@ -792,7 +790,7 @@ onMounted(async () => {
                                     ? 'border-red-200 bg-red-50 dark:bg-red-900/20 text-red-600'
                                     : entry.uploading
                                         ? 'border-blue-200 bg-blue-50 dark:bg-blue-900/20 text-blue-600'
-                                        : 'border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400'">
+                                        : 'border-gray-200 dark:border-gray-600 bg-surface-sunken text-ink-muted'">
                                 <i v-if="entry.uploading" class="fas fa-spinner fa-spin"></i>
                                 <i v-else-if="entry.error" class="fas fa-triangle-exclamation"></i>
                                 <i v-else class="fas fa-paperclip"></i>
@@ -805,7 +803,7 @@ onMounted(async () => {
                             </div>
 
                             <button
-                                class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 text-xs text-gray-500 hover:border-blue-400 hover:text-blue-500 transition"
+                                class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border-2 border-dashed border-line text-xs text-gray-500 hover:border-blue-400 hover:text-blue-500 transition"
                                 @click="extraInputRef?.click()">
                                 <i class="fas fa-plus"></i> Adicionar
                             </button>
@@ -821,7 +819,7 @@ onMounted(async () => {
                 </div>
 
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                    <label class="block text-sm font-semibold text-ink mb-2">
                         Tipo de Lançamento <span class="text-red-500">*</span>
                     </label>
 
@@ -831,7 +829,7 @@ onMounted(async () => {
                             <option v-for="t in store.launchTypes" :key="t.id" :value="t.name">{{ t.name }}</option>
                         </select>
                         <button v-if="isAdmin" type="button"
-                            class="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 text-gray-400 hover:border-blue-400 hover:text-blue-500 transition"
+                            class="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-lg border-2 border-dashed border-line text-gray-400 hover:border-blue-400 hover:text-blue-500 transition"
                             title="Adicionar novo tipo (admin)" @click="showAddType = !showAddType">
                             <i class="fas fa-plus text-sm"></i>
                         </button>
@@ -840,17 +838,17 @@ onMounted(async () => {
                     <!-- Tipo de Documento (read-only) -->
                     <div class="flex gap-2">
                         <div v-if="selectedDocumento" class="mt-2 flex items-center gap-2">
-                            <span class="text-xs text-gray-500 dark:text-gray-400">Tipo de documento:</span>
+                            <span class="text-xs text-ink-muted">Tipo de documento:</span>
                             <span
-                                class="px-2 py-0.5 rounded-md bg-gray-100 dark:bg-gray-700 text-xs font-mono font-semibold text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-600">
+                                class="px-2 py-0.5 rounded-md bg-surface-sunken text-xs font-mono font-semibold text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-600">
                                 {{ selectedDocumento }}
                             </span>
                         </div>
                         <!-- Tipo de Documento (read-only) -->
                         <div v-if="selectedDepartment" class="mt-2 flex items-center gap-2">
-                            <span class="text-xs text-gray-500 dark:text-gray-400">Departamento:</span>
+                            <span class="text-xs text-ink-muted">Departamento:</span>
                             <span
-                                class="px-2 py-0.5 rounded-md bg-gray-100 dark:bg-gray-700 text-xs font-mono font-semibold text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-600">
+                                class="px-2 py-0.5 rounded-md bg-surface-sunken text-xs font-mono font-semibold text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-600">
                                 {{ selectedDepartment }}
                             </span>
                         </div>
@@ -885,7 +883,7 @@ onMounted(async () => {
                                 Salvar
                             </button>
                             <button type="button"
-                                class="px-3 py-1.5 text-xs rounded-lg border border-gray-300 dark:border-gray-600 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+                                class="px-3 py-1.5 text-xs rounded-lg border border-line text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
                                 @click="showAddType = false; addTypeError = null">
                                 Cancelar
                             </button>
@@ -894,7 +892,7 @@ onMounted(async () => {
                 </div>
 
                 <div>
-                    <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">
+                    <label class="block text-xs font-medium text-ink-muted mb-1.5">
                         <i class="fas fa-building mr-1 opacity-50"></i>Empreendimento
                     </label>
 
@@ -910,15 +908,15 @@ onMounted(async () => {
 
                         <div class="flex items-center gap-2 mt-1 flex-wrap">
                             <span v-if="enterpriseResolved.companyId"
-                                class="text-[11px] font-mono text-gray-500 dark:text-gray-400">
+                                class="text-[11px] font-mono text-ink-muted">
                                 Empresa:
-                                <span class="text-gray-700 dark:text-gray-300">{{ enterpriseResolved.companyId }}</span>
+                                <span class="text-ink">{{ enterpriseResolved.companyId }}</span>
                             </span>
 
                             <span v-if="enterpriseResolved.erpId"
-                                class="text-[11px] font-mono text-gray-500 dark:text-gray-400">
+                                class="text-[11px] font-mono text-ink-muted">
                                 CC:
-                                <span class="text-gray-700 dark:text-gray-300">{{ enterpriseResolved.erpId }}</span>
+                                <span class="text-ink">{{ enterpriseResolved.erpId }}</span>
                             </span>
 
                             <span v-if="enterpriseResolved.city"
@@ -1019,8 +1017,8 @@ onMounted(async () => {
                 </div>
 
                 <div v-if="store.boletoFile || form.boletoBarcode"
-                    class="rounded-xl border border-gray-200 dark:border-gray-700 p-4 space-y-3 bg-gray-50/50 dark:bg-gray-800/30">
-                    <div class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    class="rounded-xl border border-line p-4 space-y-3 bg-gray-50/50 dark:bg-gray-800/30">
+                    <div class="text-xs font-semibold text-ink-muted uppercase tracking-wider">
                         Dados do Boleto
                     </div>
 
@@ -1041,13 +1039,13 @@ onMounted(async () => {
                     <div>
                         <label class="field-label">Item do Orçamento <span class="text-gray-400">(auto)</span></label>
                         <input v-model="form.budgetItem" type="text" disabled
-                            class="input-field opacity-60 bg-gray-50 dark:bg-gray-800/50" />
+                            class="input-field opacity-60 bg-surface-sunken/50" />
                     </div>
 
                     <div>
                         <label class="field-label">Conta Financeira <span class="text-gray-400">(auto)</span></label>
                         <input v-model="form.financialAccountNumber" type="text" disabled
-                            class="input-field opacity-60 font-mono bg-gray-50 dark:bg-gray-800/50" />
+                            class="input-field opacity-60 font-mono bg-surface-sunken/50" />
                     </div>
                 </div>
 
@@ -1088,30 +1086,22 @@ onMounted(async () => {
                 </div>
             </div>
 
-            <div
-                class="flex items-center justify-between px-6 py-4 border-t border-gray-200 dark:border-gray-700 rounded-b-2xl bg-gray-50 dark:bg-gray-800/50">
-                <button class="text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition"
-                    @click="emit('close')">
-                    Cancelar
-                </button>
-
-                <button
-                    class="px-5 py-2.5 text-sm font-medium rounded-xl bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 dark:disabled:bg-gray-700 text-white transition disabled:cursor-not-allowed"
-                    :disabled="!formValid || store.isProcessing" @click="handleSubmit">
-                    <i v-if="store.isProcessing" class="fas fa-spinner fa-spin mr-2"></i>
-                    {{ store.isProcessing ? 'Processando…' : 'Processar' }}
-                </button>
-            </div>
-        </div>
-    </div>
+        <template #footer>
+            <Button variant="ghost" @click="emit('close')">Cancelar</Button>
+            <Button :loading="store.isProcessing" :disabled="!formValid"
+                icon="fas fa-play" @click="handleSubmit">
+                {{ store.isProcessing ? 'Processando…' : 'Processar' }}
+            </Button>
+        </template>
+    </Modal>
 </template>
 
 <style scoped>
 .input-field {
-    @apply w-full rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900/60 px-3 py-2 text-sm text-gray-900 dark:text-white outline-none transition focus:border-blue-500;
+    @apply w-full rounded border border-gray-300 dark:border-gray-700 bg-surface-raised/60 px-3 py-2 text-sm text-ink outline-none transition focus:border-blue-500;
 }
 
 .field-label {
-    @apply block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1;
+    @apply block text-xs font-medium text-ink-muted mb-1;
 }
 </style>

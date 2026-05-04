@@ -1,49 +1,65 @@
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useAIStore } from '@/stores/Config/aiStore.js';
-import AIHistoryItem from './HistoryItem.vue';
-import ModalDetalhes from './HistoryModal.vue';
+
+import Modal from '@/components/UI/Modal.vue';
+import Button from '@/components/UI/Button.vue';
+import EmptyState from '@/components/UI/EmptyState.vue';
+import HistoryItem from './HistoryItem.vue';
+import HistoryDetailModal from './HistoryModal.vue';
 
 const aiStore = useAIStore();
-const showModal = ref(false);
+
+const open = ref(false);
+const showDetail = ref(false);
 const selectedItem = ref(null);
 
-const openModal = (item) => {
-  selectedItem.value = item;
-  showModal.value = true;
-};
+const total = computed(() => aiStore.validatorHistory?.length ?? 0);
+const aprovados = computed(() => (aiStore.validatorHistory || []).filter(v => v.status === 'APROVADO').length);
+const reprovados = computed(() => (aiStore.validatorHistory || []).filter(v => v.status === 'REPROVADO').length);
 
-onMounted(() => {
-  aiStore.fetchValidatorHistory();
-});
+function openDetail(item) { selectedItem.value = item; showDetail.value = true; }
+
+onMounted(() => aiStore.fetchValidatorHistory());
 </script>
 
 <template>
-  <div
-    class="group bg-gray-100 dark:bg-gray-800 cursor-pointer shadow absolute right-[-18rem] top-0 transform transition-transform duration-300">
-    <div @click="aiStore.fetchValidatorHistory();"
-      class="button absolute top-10 -left-10 md:-left-14 text-2xl md:text-3xl bg-gray-100 dark:bg-gray-800 shadow-[-3px_0_5px_rgba(0,0,0,.05)] cursor-pointer rounded-l-lg p-2 md:p-4">
-      <i class="fas fa-clock-rotate-left"></i>
-    </div>
-    <div class="content w-72 max-w-full h-[calc(100vh-3.6rem)] overflow-hidden p-2 gap-2 flex flex-col justify-between">
-      <h2 class="text-2xl text-center font-semibold text-gray-800 dark:text-gray-100 p-2">
-        Histórico de Validação
-      </h2>
+  <!-- Botão integrado (usado em PageHeader actions) -->
+  <Button variant="secondary" size="sm" icon="fas fa-clock-rotate-left" @click="open = true">
+    <span class="hidden sm:inline">Histórico</span>
+    <span v-if="total"
+      class="font-mono text-[10px] px-1.5 py-0.5 rounded-md bg-accent-soft text-accent">
+      {{ total }}
+    </span>
+  </Button>
 
-      <div class="flex flex-col overflow-auto gap-2 p-1 flex-1">
-        <AIHistoryItem v-for="item in aiStore.validatorHistory" :key="item.id" :item="item" @open="openModal" />
-        <span class="text-center text-xs">
-          Aprovados: {{
-            aiStore.validatorHistory.filter(({ status }) => status === 'APROVADO').length
-          }} |
-          Reprovados: {{
-            aiStore.validatorHistory.filter(({ status }) => status === 'REPROVADO').length
-          }}
-        </span>
-        <p class="text-center text-xs">Total de validações: {{ aiStore.validatorHistory.length }}</p>
+  <Modal :open="open" position="right" size="md" @close="open = false">
+    <template #header>
+      <div class="flex items-center gap-3">
+        <div class="h-9 w-9 rounded-lg bg-accent-soft text-accent border border-accent/20 grid place-items-center shrink-0">
+          <i class="fas fa-clock-rotate-left text-sm"></i>
+        </div>
+        <div>
+          <h2 class="text-base font-semibold text-ink">Histórico de validações</h2>
+          <p class="text-xs text-ink-muted mt-0.5">
+            <span class="text-emerald-600 dark:text-emerald-400">{{ aprovados }}</span> aprovado(s) ·
+            <span class="text-red-600 dark:text-red-400">{{ reprovados }}</span> reprovado(s) ·
+            <span class="font-mono">{{ total }}</span> total
+          </p>
+        </div>
       </div>
+    </template>
+
+    <div v-if="aiStore.validatorHistory?.length" class="space-y-2">
+      <HistoryItem v-for="item in aiStore.validatorHistory" :key="item.id"
+        :item="item" @open="openDetail" />
     </div>
 
-    <ModalDetalhes v-if="selectedItem" :show="showModal" :item="selectedItem" @close="showModal = false" />
-  </div>
+    <EmptyState v-else size="md" icon="far fa-folder-open"
+      title="Nenhuma validação ainda"
+      description="As validações aparecerão aqui após o primeiro uso." />
+  </Modal>
+
+  <HistoryDetailModal v-if="selectedItem" :show="showDetail" :item="selectedItem"
+    @close="showDetail = false" />
 </template>
