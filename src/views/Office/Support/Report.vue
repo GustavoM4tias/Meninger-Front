@@ -1,563 +1,495 @@
 <template>
-    <div class="min-h-screen">
-        <div class="max-w-7xl mx-auto px-6 py-8">
-            <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+  <div class="min-h-[calc(100vh-3.5rem)]">
+    <PageContainer size="full">
+      <PageHeader
+        subtitle="Reporte um problema, sugestão ou bug encontrado no sistema"
+        icon="fas fa-flag">
+        <template #title>Reportar Problema</template>
+      </PageHeader>
 
-                <!-- Sidebar -->
-                <aside class="lg:col-span-1">
-                    <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-4">
-                        Como Reportar
-                    </h3>
+      <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
 
-                    <div
-                        class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-300 dark:border-gray-700 p-6 sticky top-8">
-                        <div class="mb-6">
-                            <h4 class="text-sm font-semibold text-gray-900 dark:text-white mb-3">Dicas Importantes</h4>
-                            <ul class="space-y-2 text-sm text-gray-600 dark:text-gray-400">
-                                <li class="flex items-start">
-                                    <span class="text-green-500 mr-2 mt-0.5">•</span>
-                                    Seja específico sobre o problema
-                                </li>
-                                <li class="flex items-start">
-                                    <span class="text-green-500 mr-2 mt-0.5">•</span>
-                                    Descreva os passos para reproduzir
-                                </li>
-                                <li class="flex items-start">
-                                    <span class="text-green-500 mr-2 mt-0.5">•</span>
-                                    Inclua capturas de tela se possível
-                                </li>
-                                <li class="flex items-start">
-                                    <span class="text-green-500 mr-2 mt-0.5">•</span>
-                                    Mencione o navegador utilizado
-                                </li>
-                            </ul>
-                        </div>
-
-                        <div class="border-t border-gray-300 dark:border-gray-700 pt-6">
-                            <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Estatísticas</h4>
-                            <div class="space-y-2">
-                                <div class="flex justify-between text-sm">
-                                    <span class="text-gray-500">Problemas Reportados</span>
-                                    <span class="font-medium">{{ stats.totalReports }}</span>
-                                </div>
-                                <div class="flex justify-between text-sm">
-                                    <span class="text-gray-500">Finalizados este mês</span>
-                                    <span class="font-medium text-red-600">{{ counts.closed }}</span>
-                                </div> 
-                                <div class="flex justify-between text-sm">
-                                    <span class="text-gray-500">Resolvidos este mês</span>
-                                    <span class="font-medium text-green-600">{{ stats.resolved }}</span>
-                                </div> 
-                            </div>
-                        </div>
-                    </div>
-                </aside>
-
-                <!-- Main Content -->
-                <main class="lg:col-span-3">
-                    <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-4">
-                        Formulário
-                    </h3>
-                    <!-- Form -->
-                    <section class="mb-8">
-                        <div
-                            class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-300 dark:border-gray-700 overflow-hidden">
-                            <div
-                                class="bg-gray-50 dark:bg-gray-900 px-6 py-4 border-b border-gray-300 dark:border-gray-700">
-                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Formulário de Reporte
-                                </h3>
-                                <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">Preencha os campos abaixo com o
-                                    máximo de detalhes possível</p>
-                            </div>
-
-                            <form @submit.prevent="handleSubmit" class="p-6 space-y-6">
-                                <!-- Basic Info -->
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                            Nome Completo <span class="text-red-500">*</span>
-                                        </label>
-                                        <input v-model="form.userName" type="text" placeholder="Seu nome completo"
-                                            required
-                                            class="w-full px-4 py-3 border bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
-                                    </div>
-
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                            E-mail <span class="text-red-500">*</span>
-                                        </label>
-                                        <input v-model="form.email" type="email" placeholder="email@empresa.com"
-                                            required
-                                            class="w-full px-4 py-3 border bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
-                                    </div>
-                                </div>
-
-                                <!-- Problem Classification -->
-                                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                            Tipo de Problema <span class="text-red-500">*</span>
-                                        </label>
-                                        <select v-model="form.problemType" required
-                                            class="w-full px-4 py-3 border text-gray-400 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                            <option value="">Selecione o tipo</option>
-                                            <option value="bug">Bug/Erro</option>
-                                            <option value="performance">Performance</option>
-                                            <option value="ui">Interface/Visual</option>
-                                            <option value="feature">Sugestão</option>
-                                            <option value="security">Segurança</option>
-                                            <option value="other">Outro</option>
-                                        </select>
-                                    </div>
-
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                            Prioridade <span class="text-red-500">*</span>
-                                        </label>
-                                        <select v-model="form.priority" required
-                                            class="w-full px-4 py-3 border text-gray-400 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                            <option value="">Selecione a prioridade</option>
-                                            <option value="critical">Crítica</option>
-                                            <option value="high">Alta</option>
-                                            <option value="medium">Média</option>
-                                            <option value="low">Baixa</option>
-                                        </select>
-                                    </div>
-
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                            Módulo Afetado
-                                        </label>
-                                        <select v-model="form.module"
-                                            class="w-full px-4 py-3 border text-gray-400 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                            <option value="">Selecione o módulo</option>
-                                            <option value="dashboard">Dashboard</option>
-                                            <option value="vendas">Vendas</option>
-                                            <option value="leads">Leads</option>
-                                            <option value="relatorios">Relatórios</option>
-                                            <option value="validador">Validador</option>
-                                            <option value="configuracoes">Configurações</option>
-                                            <option value="geral">Sistema Geral</option>
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <!-- Problem Title -->
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                        Título do Problema <span class="text-red-500">*</span>
-                                    </label>
-                                    <input v-model="form.title" type="text"
-                                        placeholder="Descreva o problema em uma frase" maxlength="100" required
-                                        class="w-full px-4 py-3 border text-gray-400 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
-                                    <p class="text-xs text-gray-500 mt-1">{{ form.title.length }}/100 caracteres</p>
-                                </div>
-
-                                <!-- Detailed Description -->
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                        Descrição Detalhada <span class="text-red-500">*</span>
-                                    </label>
-                                    <textarea v-model="form.description"
-                                        placeholder="Descreva o problema detalhadamente:&#10;- O que você estava fazendo?&#10;- O que esperava que acontecesse?&#10;- O que realmente aconteceu?&#10;- Consegue reproduzir o problema?"
-                                        rows="6" required
-                                        class="w-full px-4 py-3 border bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"></textarea>
-                                </div>
-
-                                <!-- Steps to Reproduce -->
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                        Passos para Reproduzir
-                                    </label>
-                                    <textarea v-model="form.stepsToReproduce"
-                                        placeholder="Liste os passos numerados:&#10;1. Primeiro passo...&#10;2. Segundo passo...&#10;3. Terceiro passo..."
-                                        rows="4"
-                                        class="w-full px-4 py-3 border bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"></textarea>
-                                </div>
-
-                                <!-- System Info -->
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                            Navegador Utilizado
-                                        </label>
-                                        <select v-model="form.browser"
-                                            class="w-full px-4 py-3 border  text-gray-400 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                            <option value="">Selecione o navegador</option>
-                                            <option value="chrome">Google Chrome</option>
-                                            <option value="firefox">Mozilla Firefox</option>
-                                            <option value="safari">Safari</option>
-                                            <option value="edge">Microsoft Edge</option>
-                                            <option value="other">Outro</option>
-                                        </select>
-                                    </div>
-
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                            Sistema Operacional
-                                        </label>
-                                        <select v-model="form.os"
-                                            class="w-full px-4 py-3 border  text-gray-400 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                            <option value="">Selecione o SO</option>
-                                            <option value="windows">Windows</option>
-                                            <option value="macos">macOS</option>
-                                            <option value="linux">Linux</option>
-                                            <option value="ios">iOS</option>
-                                            <option value="android">Android</option>
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <!-- Page URL -->
-                                <!-- <div>
-                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                        URL da Página (onde ocorreu o problema)
-                                    </label>
-                                    <input v-model="form.pageUrl" type="url"
-                                        placeholder="https://sistema.empresa.com/modulo/pagina"
-                                        class="w-full px-4 py-3 border bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
-                                </div> -->
-
-                                <!-- File Upload -->
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                        Capturas de Tela ou Arquivos
-                                    </label>
-                                    <div
-                                        class="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg p-6 text-center bg-gray-50 dark:bg-gray-700">
-                                        <i class="fas fa-cloud-upload-alt text-3xl text-gray-400 mb-2"></i>
-                                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                                            Arraste arquivos aqui ou clique para selecionar
-                                        </p>
-                                        <p class="text-xs text-gray-500">
-                                            Formatos aceitos: PNG, JPG, GIF, PDF (máx. 10MB cada)
-                                        </p>
-                                        <input ref="fileInput" type="file" multiple accept="image/*,.pdf" class="hidden"
-                                            @change="handleFileSelect" />
-                                        <button type="button" @click="$refs.fileInput.click()"
-                                            class="mt-3 px-4 py-2 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors">
-                                            Selecionar Arquivos
-                                        </button>
-                                    </div>
-
-                                    <!-- File List -->
-                                    <div v-if="form.attachments.length > 0" class="mt-3 space-y-2">
-                                        <div v-for="(file, index) in form.attachments" :key="index"
-                                            class="flex items-center justify-between bg-gray-100 dark:bg-gray-700 rounded-lg p-3">
-                                            <div class="flex items-center">
-                                                <i class="fas fa-file text-gray-500 mr-2"></i>
-                                                <span class="text-sm text-gray-700 dark:text-gray-300">{{ file.name
-                                                    }}</span>
-                                                <span class="text-xs text-gray-500 ml-2">({{ formatFileSize(file.size)
-                                                    }})</span>
-                                            </div>
-                                            <button type="button" @click="removeFile(index)"
-                                                class="text-red-500 hover:text-red-700">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Actions -->
-                                <div
-                                    class="flex items-center justify-between pt-6 border-t border-gray-300 dark:border-gray-700">
-                                    <div class="flex items-center space-x-3">
-                                        <input v-model="form.allowContact" type="checkbox" id="allowContact"
-                                            class="w-4 h-4 text-red-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500" />
-                                        <label for="allowContact" class="text-sm text-gray-700 dark:text-gray-300">
-                                            Autorizo contato para esclarecimentos adicionais
-                                        </label>
-                                    </div>
-
-                                    <div class="flex space-x-3">
-                                        <button type="button" @click="resetForm"
-                                            class="px-6 py-3 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                                            Limpar Formulário
-                                        </button>
-                                        <button type="submit" :disabled="isSubmitting"
-                                            class="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center">
-                                            <i v-if="isSubmitting" class="fas fa-spinner fa-spin mr-2"></i>
-                                            <i v-else class="fas fa-paper-plane mr-2"></i>
-                                            {{ isSubmitting ? 'Enviando...' : 'Enviar Reporte' }}
-                                        </button>
-                                    </div>
-                                </div>
-                            </form>
-                        </div>
-                    </section>
-                </main>
-            </div>
-        </div>
-
-        <!-- Success Modal -->
-        <div v-if="showSuccessModal"
-            class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-            @click="showSuccessModal = false">
-            <div class="bg-white dark:bg-gray-800 rounded-xl max-w-md w-full p-6" @click.stop>
-                <div class="text-center">
-                    <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 mb-4">
-                        <i class="fas fa-check text-blue-600 text-4xl pt-1"></i>
-                    </div>
-                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                        Reporte Enviado com Sucesso!
-                    </h3>
-                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                        Seu problema foi reportado e nossa equipe técnica foi notificada.
-                        Você receberá uma resposta em até 48 horas.
-                    </p>
-                    <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 mb-4">
-                        <p class="text-sm text-gray-700 dark:text-gray-300">
-                            <strong>Protocolo:</strong> #{{ reportProtocol }}
-                        </p>
-                    </div>
-                    <button @click="showSuccessModal = false"
-                        class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                        Fechar
-                    </button>
+        <!-- Sidebar -->
+        <aside class="lg:col-span-1 space-y-4">
+          <Surface variant="raised" padding="md" class="surface-gradient lg:sticky lg:top-4">
+            <div class="space-y-5">
+              <!-- Dicas -->
+              <div>
+                <div class="flex items-center gap-2 mb-3">
+                  <i class="fas fa-lightbulb text-amber-500 text-sm"></i>
+                  <h4 class="text-xs uppercase tracking-wider font-mono text-ink-muted">
+                    Dicas Importantes
+                  </h4>
                 </div>
+                <ul class="space-y-2 text-sm text-ink-muted">
+                  <li class="flex items-start gap-2">
+                    <i class="fas fa-check text-emerald-500 mt-1 text-[10px]"></i>
+                    <span>Seja específico sobre o problema</span>
+                  </li>
+                  <li class="flex items-start gap-2">
+                    <i class="fas fa-check text-emerald-500 mt-1 text-[10px]"></i>
+                    <span>Descreva os passos para reproduzir</span>
+                  </li>
+                  <li class="flex items-start gap-2">
+                    <i class="fas fa-check text-emerald-500 mt-1 text-[10px]"></i>
+                    <span>Inclua capturas de tela se possível</span>
+                  </li>
+                  <li class="flex items-start gap-2">
+                    <i class="fas fa-check text-emerald-500 mt-1 text-[10px]"></i>
+                    <span>Mencione o navegador utilizado</span>
+                  </li>
+                </ul>
+              </div>
+
+              <!-- Estatísticas -->
+              <div class="border-t border-line pt-4">
+                <div class="flex items-center gap-2 mb-3">
+                  <i class="fas fa-chart-simple text-accent text-sm"></i>
+                  <h4 class="text-xs uppercase tracking-wider font-mono text-ink-muted">
+                    Estatísticas
+                  </h4>
+                </div>
+                <div class="space-y-2.5">
+                  <div class="flex justify-between text-sm">
+                    <span class="text-ink-muted">Problemas Reportados</span>
+                    <span class="font-mono tabular-nums font-medium text-ink">{{ stats.totalReports || 0 }}</span>
+                  </div>
+                  <div class="flex justify-between text-sm">
+                    <span class="text-ink-muted">Finalizados este mês</span>
+                    <span class="font-mono tabular-nums font-medium text-red-500">{{ counts.closed || 0 }}</span>
+                  </div>
+                  <div class="flex justify-between text-sm">
+                    <span class="text-ink-muted">Resolvidos este mês</span>
+                    <span class="font-mono tabular-nums font-medium text-emerald-500">{{ stats.resolved || 0 }}</span>
+                  </div>
+                </div>
+              </div>
             </div>
+          </Surface>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="lg:col-span-3">
+          <Surface variant="raised" padding="none" class="overflow-hidden surface-gradient">
+            <div class="px-5 sm:px-6 py-4 border-b border-line bg-surface-sunken/40">
+              <h3 class="text-base font-semibold text-ink flex items-center gap-2">
+                <i class="fas fa-file-pen text-accent"></i>
+                Formulário de Reporte
+              </h3>
+              <p class="text-xs text-ink-muted mt-0.5">Preencha os campos abaixo com o máximo de detalhes possível</p>
+            </div>
+
+            <form @submit.prevent="handleSubmit" class="p-5 sm:p-6 space-y-5">
+
+              <!-- Basic Info -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Input
+                  v-model="form.userName"
+                  label="Nome Completo"
+                  required
+                  placeholder="Seu nome completo" />
+
+                <Input
+                  v-model="form.email"
+                  type="email"
+                  label="E-mail"
+                  required
+                  placeholder="email@empresa.com" />
+              </div>
+
+              <!-- Problem Classification -->
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Select
+                  v-model="form.problemType"
+                  label="Tipo de Problema"
+                  required
+                  placeholder="Selecione o tipo"
+                  :options="problemTypeOptions" />
+
+                <Select
+                  v-model="form.priority"
+                  label="Prioridade"
+                  required
+                  placeholder="Selecione a prioridade"
+                  :options="priorityOptions" />
+
+                <Select
+                  v-model="form.module"
+                  label="Módulo Afetado"
+                  placeholder="Selecione o módulo"
+                  :options="moduleOptions" />
+              </div>
+
+              <!-- Problem Title -->
+              <div>
+                <Input
+                  v-model="form.title"
+                  label="Título do Problema"
+                  required
+                  placeholder="Descreva o problema em uma frase"
+                  :hint="`${form.title.length}/100 caracteres`" />
+              </div>
+
+              <!-- Detailed Description -->
+              <div>
+                <label class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1.5 block">
+                  Descrição Detalhada <span class="text-red-500">*</span>
+                </label>
+                <textarea v-model="form.description"
+                  placeholder="Descreva o problema detalhadamente:&#10;- O que você estava fazendo?&#10;- O que esperava que acontecesse?&#10;- O que realmente aconteceu?&#10;- Consegue reproduzir o problema?"
+                  rows="6" required
+                  class="w-full px-3.5 py-2.5 rounded-lg border border-line bg-surface-raised text-sm text-ink placeholder:text-ink-subtle focus:outline-none focus:ring-2 focus:ring-accent-ring/40 focus:border-accent transition-colors resize-none">
+                </textarea>
+              </div>
+
+              <!-- Steps to Reproduce -->
+              <div>
+                <label class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1.5 block">
+                  Passos para Reproduzir
+                </label>
+                <textarea v-model="form.stepsToReproduce"
+                  placeholder="Liste os passos numerados:&#10;1. Primeiro passo...&#10;2. Segundo passo...&#10;3. Terceiro passo..."
+                  rows="4"
+                  class="w-full px-3.5 py-2.5 rounded-lg border border-line bg-surface-raised text-sm text-ink placeholder:text-ink-subtle focus:outline-none focus:ring-2 focus:ring-accent-ring/40 focus:border-accent transition-colors resize-none">
+                </textarea>
+              </div>
+
+              <!-- System Info -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Select
+                  v-model="form.browser"
+                  label="Navegador Utilizado"
+                  placeholder="Selecione o navegador"
+                  :options="browserOptions" />
+
+                <Select
+                  v-model="form.os"
+                  label="Sistema Operacional"
+                  placeholder="Selecione o SO"
+                  :options="osOptions" />
+              </div>
+
+              <!-- File Upload -->
+              <div>
+                <label class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1.5 block">
+                  Capturas de Tela ou Arquivos
+                </label>
+                <div class="border-2 border-dashed border-line rounded-xl p-6 text-center bg-surface-sunken/40 hover:border-accent/40 transition-colors">
+                  <i class="fas fa-cloud-arrow-up text-3xl text-ink-subtle mb-2"></i>
+                  <p class="text-sm text-ink-muted mb-1">
+                    Arraste arquivos aqui ou clique para selecionar
+                  </p>
+                  <p class="text-xs text-ink-subtle mb-3">
+                    Formatos aceitos: PNG, JPG, GIF, PDF (máx. 10MB cada)
+                  </p>
+                  <input ref="fileInput" type="file" multiple accept="image/*,.pdf" class="hidden"
+                    @change="handleFileSelect" />
+                  <Button type="button" variant="secondary" size="sm" icon="fas fa-paperclip"
+                    @click="$refs.fileInput.click()">
+                    Selecionar Arquivos
+                  </Button>
+                </div>
+
+                <!-- File List -->
+                <div v-if="form.attachments.length > 0" class="mt-3 space-y-2">
+                  <div v-for="(file, index) in form.attachments" :key="index"
+                    class="flex items-center justify-between bg-surface-sunken rounded-lg px-3 py-2 border border-line">
+                    <div class="flex items-center gap-2 min-w-0">
+                      <i class="fas fa-file text-ink-subtle"></i>
+                      <span class="text-sm text-ink truncate">{{ file.name }}</span>
+                      <span class="text-xs text-ink-subtle font-mono">({{ formatFileSize(file.size) }})</span>
+                    </div>
+                    <IconButton
+                      icon="fas fa-trash"
+                      label="Remover anexo"
+                      variant="danger"
+                      size="sm"
+                      class="!h-7 !w-7"
+                      @click="removeFile(index)" />
+                  </div>
+                </div>
+              </div>
+
+              <!-- Actions -->
+              <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-5 border-t border-line">
+                <label class="flex items-center gap-2 text-sm text-ink-muted cursor-pointer">
+                  <input v-model="form.allowContact" type="checkbox"
+                    class="w-4 h-4 text-accent bg-surface-raised border-line rounded focus:ring-accent-ring/40" />
+                  Autorizo contato para esclarecimentos adicionais
+                </label>
+
+                <div class="flex gap-2 w-full sm:w-auto">
+                  <Button type="button" variant="ghost" @click="resetForm">
+                    Limpar
+                  </Button>
+                  <Button type="submit" variant="primary" icon="fas fa-paper-plane"
+                    :loading="isSubmitting" :disabled="isSubmitting">
+                    {{ isSubmitting ? 'Enviando...' : 'Enviar Reporte' }}
+                  </Button>
+                </div>
+              </div>
+            </form>
+          </Surface>
+        </main>
+      </div>
+    </PageContainer>
+
+    <!-- Success Modal -->
+    <Modal :open="showSuccessModal"
+      size="sm"
+      title="Reporte enviado!"
+      @close="showSuccessModal = false">
+      <div class="text-center space-y-4">
+        <div class="mx-auto flex items-center justify-center h-14 w-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/30">
+          <i class="fas fa-check text-emerald-500 text-2xl"></i>
         </div>
-    </div>
+        <p class="text-sm text-ink-muted">
+          Seu problema foi reportado e nossa equipe técnica foi notificada.
+          Você receberá uma resposta em até 48 horas.
+        </p>
+        <div class="rounded-xl bg-surface-sunken border border-line p-3">
+          <p class="text-sm text-ink">
+            <strong>Protocolo:</strong>
+            <span class="font-mono">#{{ reportProtocol }}</span>
+          </p>
+        </div>
+      </div>
+      <template #footer>
+        <Button variant="primary" @click="showSuccessModal = false">Fechar</Button>
+      </template>
+    </Modal>
+  </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
-import { storeToRefs } from 'pinia'
+import { ref, reactive, onMounted } from 'vue';
+import { storeToRefs } from 'pinia';
 import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 import { useSupportStore } from '@/stores/Support/supportStore';
 import { useToast } from 'vue-toastification';
 import API_URL from '@/config/apiUrl';
 
+import PageContainer from '@/components/UI/PageContainer.vue';
+import PageHeader from '@/components/UI/PageHeader.vue';
+import Surface from '@/components/UI/Surface.vue';
+import Button from '@/components/UI/Button.vue';
+import IconButton from '@/components/UI/IconButton.vue';
+import Modal from '@/components/UI/Modal.vue';
+import Input from '@/components/UI/Input.vue';
+import Select from '@/components/UI/Select.vue';
+
 const toast = useToast();
 const authStore = useAuthStore();
 const supportStore = useSupportStore();
-const { stats } = storeToRefs(supportStore); // ← PEGA DA STORE
-const { counts } = storeToRefs(supportStore); // ← PEGA DA STORE
+const { stats } = storeToRefs(supportStore);
+const { counts } = storeToRefs(supportStore);
 
 // State
-const isSubmitting = ref(false)
-const showSuccessModal = ref(false)
-const reportProtocol = ref('')
+const isSubmitting = ref(false);
+const showSuccessModal = ref(false);
+const reportProtocol = ref('');
 
-// sem estado local; usar stats da store
+// ── Options ───────────────────────────────────────────────────────────────────
+const problemTypeOptions = [
+  { value: 'bug',         label: 'Bug/Erro' },
+  { value: 'performance', label: 'Performance' },
+  { value: 'ui',          label: 'Interface/Visual' },
+  { value: 'feature',     label: 'Sugestão' },
+  { value: 'security',    label: 'Segurança' },
+  { value: 'other',       label: 'Outro' },
+];
+
+const priorityOptions = [
+  { value: 'critical', label: 'Crítica' },
+  { value: 'high',     label: 'Alta' },
+  { value: 'medium',   label: 'Média' },
+  { value: 'low',      label: 'Baixa' },
+];
+
+const moduleOptions = [
+  { value: 'dashboard',     label: 'Dashboard' },
+  { value: 'vendas',        label: 'Vendas' },
+  { value: 'leads',         label: 'Leads' },
+  { value: 'relatorios',    label: 'Relatórios' },
+  { value: 'validador',     label: 'Validador' },
+  { value: 'configuracoes', label: 'Configurações' },
+  { value: 'geral',         label: 'Sistema Geral' },
+];
+
+const browserOptions = [
+  { value: 'chrome',  label: 'Google Chrome' },
+  { value: 'firefox', label: 'Mozilla Firefox' },
+  { value: 'safari',  label: 'Safari' },
+  { value: 'edge',    label: 'Microsoft Edge' },
+  { value: 'other',   label: 'Outro' },
+];
+
+const osOptions = [
+  { value: 'windows', label: 'Windows' },
+  { value: 'macos',   label: 'macOS' },
+  { value: 'linux',   label: 'Linux' },
+  { value: 'ios',     label: 'iOS' },
+  { value: 'android', label: 'Android' },
+];
+
 onMounted(async () => {
-    try {
-        await Promise.all([supportStore.fetchStats(), supportStore.fetchCounts()]);
-    } catch (e) {
-        console.warn('Falha ao buscar estatísticas:', e);
-    }
-})
+  try {
+    await Promise.all([supportStore.fetchStats(), supportStore.fetchCounts()]);
+  } catch (e) {
+    console.warn('Falha ao buscar estatísticas:', e);
+  }
+});
 
 const form = reactive({
-    userName: authStore.user?.username || '',
-    email: authStore.user?.email || '',
-    problemType: '',
-    priority: '',
-    module: '',
-    title: '',
-    description: '',
-    stepsToReproduce: '',
-    browser: '',
-    os: '',
-    pageUrl: '',
-    attachments: [],
-    allowContact: true
-})
+  userName:         authStore.user?.username || '',
+  email:            authStore.user?.email || '',
+  problemType:      '',
+  priority:         '',
+  module:           '',
+  title:            '',
+  description:      '',
+  stepsToReproduce: '',
+  browser:          '',
+  os:               '',
+  pageUrl:          '',
+  attachments:      [],
+  allowContact:     true,
+});
 
 // Methods
 const validateForm = () => {
-    const requiredFields = [
-        { field: 'userName', label: 'Nome Completo' },
-        { field: 'email', label: 'E-mail' },
-        { field: 'problemType', label: 'Tipo de Problema' },
-        { field: 'priority', label: 'Prioridade' },
-        { field: 'title', label: 'Título do Problema' },
-        { field: 'description', label: 'Descrição Detalhada' }
-    ]
+  const requiredFields = [
+    { field: 'userName',    label: 'Nome Completo' },
+    { field: 'email',       label: 'E-mail' },
+    { field: 'problemType', label: 'Tipo de Problema' },
+    { field: 'priority',    label: 'Prioridade' },
+    { field: 'title',       label: 'Título do Problema' },
+    { field: 'description', label: 'Descrição Detalhada' },
+  ];
 
-    for (const { field, label } of requiredFields) {
-        if (!form[field] || form[field].trim() === '') {
-            alert(`Por favor, preencha o campo: ${label}`)
-            return false
-        }
+  for (const { field, label } of requiredFields) {
+    if (!form[field] || form[field].trim() === '') {
+      toast.warning(`Por favor, preencha o campo: ${label}`);
+      return false;
     }
+  }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(form.email)) {
-        alert('Por favor, insira um e-mail válido')
-        return false
-    }
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(form.email)) {
+    toast.warning('Por favor, insira um e-mail válido');
+    return false;
+  }
 
-    return true
-}
-
-const generateProtocol = () => {
-    const timestamp = Date.now().toString()
-    const random = Math.random().toString(36).substr(2, 4).toUpperCase()
-    return `${timestamp.substr(-6)}${random}`
-}
-
-const generateEmailBody = () => {
-    const priorityLabels = {
-        critical: 'Crítica',
-        high: 'Alta',
-        medium: 'Média',
-        low: 'Baixa'
-    }
-
-    const typeLabels = {
-        bug: 'Bug/Erro',
-        performance: 'Performance',
-        ui: 'Interface/Visual',
-        feature: 'Sugestão',
-        security: 'Segurança',
-        other: 'Outro'
-    }
-
-    return `RELATÓRIO DE PROBLEMA - PROTOCOLO #${reportProtocol.value}
-================================================================
-
-INFORMAÇÕES DO USUÁRIO:
-- Nome: ${form.userName}
-- E-mail: ${form.email}
-- Data/Hora: ${new Date().toLocaleString('pt-BR')}
-
-CLASSIFICAÇÃO DO PROBLEMA:
-- Tipo: ${typeLabels[form.problemType] || form.problemType}
-- Prioridade: ${priorityLabels[form.priority] || form.priority}
-- Módulo Afetado: ${form.module || 'Não especificado'}
-
-DESCRIÇÃO DO PROBLEMA:
-- Título: ${form.title}
-
-- Descrição Detalhada:
-${form.description}
-
-${form.stepsToReproduce ? `- Passos para Reproduzir:
-${form.stepsToReproduce}` : ''}
-
-INFORMAÇÕES TÉCNICAS:
-- URL da Página: ${form.pageUrl || 'Não informada'}
-- Navegador: ${form.browser || 'Não especificado'}
-- Sistema Operacional: ${form.os || 'Não especificado'}
-- Anexos: ${form.attachments.length} arquivo(s)
-
-CONTATO:
-- Permitir contato para esclarecimentos: ${form.allowContact ? 'Sim' : 'Não'}
-
-================================================================
-Este relatório foi gerado automaticamente pelo sistema.`
-}
+  return true;
+};
 
 const uploadAttachment = async (file) => {
-    const token = localStorage.getItem('token');
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('context', 'support_attachment');
+  const token = localStorage.getItem('token');
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('context', 'support_attachment');
 
-    const response = await fetch(`${API_URL}/uploads`, {
-        method: 'POST',
-        headers: { Authorization: token ? `Bearer ${token}` : '' },
-        body: formData,
-    });
+  const response = await fetch(`${API_URL}/uploads`, {
+    method: 'POST',
+    headers: { Authorization: token ? `Bearer ${token}` : '' },
+    body: formData,
+  });
 
-    const data = await response.json();
-    if (!response.ok) throw new Error(data?.message || `Falha ao enviar ${file.name}`);
+  const data = await response.json();
+  if (!response.ok) throw new Error(data?.message || `Falha ao enviar ${file.name}`);
 
-    return { url: data.url, name: file.name, mimeType: data.mimeType, size: data.size };
+  return { url: data.url, name: file.name, mimeType: data.mimeType, size: data.size };
 };
 
 const handleSubmit = async () => {
-    if (!validateForm()) return;
-    isSubmitting.value = true;
+  if (!validateForm()) return;
+  isSubmitting.value = true;
 
-    try {
-        let uploadedAttachments = [];
-        if (form.attachments.length > 0) {
-            for (const file of form.attachments) {
-                const att = await uploadAttachment(file);
-                uploadedAttachments.push(att);
-            }
-        }
-
-        const payload = {
-            userName: form.userName,
-            email: form.email,
-            problemType: form.problemType,
-            priority: form.priority,
-            module: form.module,
-            title: form.title,
-            description: form.description,
-            stepsToReproduce: form.stepsToReproduce,
-            browser: form.browser,
-            os: form.os,
-            pageUrl: form.pageUrl,
-            attachments: uploadedAttachments,
-            allowContact: form.allowContact,
-        };
-
-        const res = await supportStore.openTicket(payload);
-        reportProtocol.value = res.protocol;
-
-        // A store já atualiza stats/counts em openTicket; se quiser garantir:
-        await Promise.all([supportStore.fetchStats(), supportStore.fetchCounts()]);
-
-        toast.success('Reporte enviado com sucesso!');
-        showSuccessModal.value = true;
-        resetForm();
-    } catch (e) {
-        toast.error('Erro ao enviar o reporte. Tente novamente.');
-    } finally {
-        isSubmitting.value = false;
+  try {
+    let uploadedAttachments = [];
+    if (form.attachments.length > 0) {
+      for (const file of form.attachments) {
+        const att = await uploadAttachment(file);
+        uploadedAttachments.push(att);
+      }
     }
+
+    const payload = {
+      userName:         form.userName,
+      email:            form.email,
+      problemType:      form.problemType,
+      priority:         form.priority,
+      module:           form.module,
+      title:            form.title,
+      description:      form.description,
+      stepsToReproduce: form.stepsToReproduce,
+      browser:          form.browser,
+      os:               form.os,
+      pageUrl:          form.pageUrl,
+      attachments:      uploadedAttachments,
+      allowContact:     form.allowContact,
+    };
+
+    const res = await supportStore.openTicket(payload);
+    reportProtocol.value = res.protocol;
+
+    await Promise.all([supportStore.fetchStats(), supportStore.fetchCounts()]);
+
+    toast.success('Reporte enviado com sucesso!');
+    showSuccessModal.value = true;
+    resetForm();
+  } catch (e) {
+    toast.error('Erro ao enviar o reporte. Tente novamente.');
+  } finally {
+    isSubmitting.value = false;
+  }
 };
 
 const resetForm = () => {
-    Object.assign(form, {
-        userName: '',
-        email: '',
-        problemType: '',
-        priority: '',
-        module: '',
-        title: '',
-        description: '',
-        stepsToReproduce: '',
-        browser: '',
-        os: '',
-        pageUrl: '',
-        attachments: [],
-        allowContact: true
-    })
-}
+  Object.assign(form, {
+    userName:         authStore.user?.username || '',
+    email:            authStore.user?.email || '',
+    problemType:      '',
+    priority:         '',
+    module:           '',
+    title:            '',
+    description:      '',
+    stepsToReproduce: '',
+    browser:          '',
+    os:               '',
+    pageUrl:          '',
+    attachments:      [],
+    allowContact:     true,
+  });
+};
 
 const handleFileSelect = (event) => {
-    const selectedFiles = Array.from(event.target.files)
-    const maxSize = 10 * 1024 * 1024
+  const selectedFiles = Array.from(event.target.files);
+  const maxSize = 10 * 1024 * 1024;
 
-    for (const file of selectedFiles) {
-        if (file.size > maxSize) {
-            toast.warning(`O arquivo "${file.name}" excede o tamanho máximo de 10MB`)
-            continue
-        }
-
-        if (!form.attachments.find(f => f.name === file.name)) {
-            form.attachments.push(file)
-        }
+  for (const file of selectedFiles) {
+    if (file.size > maxSize) {
+      toast.warning(`O arquivo "${file.name}" excede o tamanho máximo de 10MB`);
+      continue;
     }
 
-    event.target.value = ''
-}
+    if (!form.attachments.find(f => f.name === file.name)) {
+      form.attachments.push(file);
+    }
+  }
+
+  event.target.value = '';
+};
 
 const removeFile = (index) => {
-    form.attachments.splice(index, 1)
-}
+  form.attachments.splice(index, 1);
+};
 
 const formatFileSize = (bytes) => {
-    if (bytes === 0) return '0 Bytes'
-    const k = 1024
-    const sizes = ['Bytes', 'KB', 'MB', 'GB']
-    const i = Math.floor(Math.log(bytes) / Math.log(k))
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
-}
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+};
 </script>

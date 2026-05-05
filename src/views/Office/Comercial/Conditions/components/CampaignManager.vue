@@ -2,18 +2,18 @@
   <div class="space-y-4">
 
     <!-- ── Header ───────────────────────────────────────────────────────── -->
-    <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
-      <div class="px-5 py-3.5 border-b border-gray-100 dark:border-gray-800 bg-gray-50/60 dark:bg-gray-800/40 flex items-center justify-between gap-4">
+    <div class="bg-surface-raised rounded-2xl border border-line shadow-sm overflow-hidden">
+      <div class="px-5 py-3.5 border-b border-line bg-gray-50/60 dark:bg-gray-800/40 flex items-center justify-between gap-4">
         <div class="flex items-center gap-2">
           <p class="lbl-section"><i class="fas fa-bullhorn text-blue-500"></i> Campanhas</p>
-          <span class="px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 text-xs font-semibold">
+          <span class="px-2 py-0.5 rounded-full bg-accent-soft text-accent text-xs font-semibold">
             {{ campaigns.length }}
           </span>
         </div>
         <button
           v-if="!readonly"
           @click="addCampaign"
-          class="flex items-center gap-2 px-3.5 py-2 text-xs font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+          class="flex items-center gap-2 px-3.5 py-2 text-xs font-semibold bg-blue-600 text-white rounded-lg hover:bg-accent-hover transition"
         >
           <i class="fas fa-plus text-xs"></i> Nova Campanha
         </button>
@@ -25,7 +25,7 @@
 
           <!-- Cabeçalho da campanha (clicável) -->
           <div
-            class="flex items-center gap-3 px-5 py-3.5 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition select-none"
+            class="flex items-center gap-3 px-5 py-3.5 cursor-pointer hover:bg-surface-hover/50 transition select-none"
             @click="toggleExpanded(i)"
           >
             <span
@@ -33,40 +33,40 @@
               class="w-2 h-2 rounded-full flex-shrink-0"
             ></span>
             <div class="flex-1 min-w-0">
-              <p class="text-sm font-semibold text-gray-800 dark:text-gray-100 truncate">
+              <p class="text-sm font-semibold text-ink truncate">
                 {{ camp.title || 'Nova Campanha' }}
               </p>
-              <p v-if="camp.start_date" class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+              <p v-if="camp.start_date" class="text-xs text-ink-subtle mt-0.5">
                 {{ formatDateRange(camp.start_date, camp.end_date) }}
               </p>
             </div>
             <div class="flex items-center gap-2 flex-shrink-0">
-              <span v-if="camp.value" class="text-xs font-semibold text-blue-600 dark:text-blue-400">
+              <span v-if="camp.value" class="text-xs font-semibold text-accent">
                 {{ formatCurrency(camp.value) }}
               </span>
               <span
                 :class="camp.is_active
                   ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-                  : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'"
+                  : 'bg-surface-sunken text-ink-muted'"
                 class="px-2 py-0.5 rounded-full text-xs font-semibold"
               >
                 {{ camp.is_active ? 'Ativa' : 'Inativa' }}
               </span>
               <button
                 @click.stop="removeCampaign(i)"
-                class="w-7 h-7 flex items-center justify-center rounded-md text-gray-300 dark:text-gray-600 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition"
+                class="w-7 h-7 flex items-center justify-center rounded-md text-ink-subtle hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition"
               >
                 <i class="fas fa-trash text-xs"></i>
               </button>
               <i
                 :class="expanded.has(i) ? 'fa-chevron-up' : 'fa-chevron-down'"
-                class="fas text-gray-400 dark:text-gray-500 text-xs w-4"
+                class="fas text-ink-subtle text-xs w-4"
               ></i>
             </div>
           </div>
 
           <!-- Corpo da campanha -->
-          <div v-show="expanded.has(i)" class="px-5 pb-5 pt-4 bg-gray-50/40 dark:bg-gray-800/20 border-t border-gray-100 dark:border-gray-800">
+          <div v-show="expanded.has(i)" class="px-5 pb-5 pt-4 bg-gray-50/40 dark:bg-gray-800/20 border-t border-line">
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
               <div class="sm:col-span-2">
@@ -122,12 +122,12 @@
                     class="flex-1 flex items-center gap-2 px-4 py-2.5 rounded-md border cursor-pointer transition-all text-sm font-medium select-none"
                     :class="camp.is_active === true
                       ? 'border-green-500 bg-green-50 dark:bg-green-950/40 text-green-700 dark:text-green-300 shadow-sm'
-                      : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-900/60 hover:border-gray-300 dark:hover:border-gray-600'"
+                      : 'border-line text-ink-muted bg-surface-raised/60 hover:border-gray-300 dark:hover:border-gray-600'"
                   >
                     <input type="radio" :checked="camp.is_active === true" @change="patchCamp(i, 'is_active', true)" class="sr-only" />
                     <span
                       class="w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all"
-                      :class="camp.is_active === true ? 'border-green-500 bg-green-500' : 'border-gray-300 dark:border-gray-600'"
+                      :class="camp.is_active === true ? 'border-green-500 bg-green-500' : 'border-line'"
                     >
                       <span v-if="camp.is_active === true" class="w-1.5 h-1.5 rounded-full bg-white"></span>
                     </span>
@@ -136,13 +136,13 @@
                   <label
                     class="flex-1 flex items-center gap-2 px-4 py-2.5 rounded-md border cursor-pointer transition-all text-sm font-medium select-none"
                     :class="camp.is_active !== true
-                      ? 'border-gray-500 bg-gray-100 dark:bg-gray-800/60 text-gray-700 dark:text-gray-300 shadow-sm'
-                      : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-900/60 hover:border-gray-300 dark:hover:border-gray-600'"
+                      ? 'border-gray-500 bg-surface-sunken/60 text-ink-muted shadow-sm'
+                      : 'border-line text-ink-muted bg-surface-raised/60 hover:border-gray-300 dark:hover:border-gray-600'"
                   >
                     <input type="radio" :checked="camp.is_active !== true" @change="patchCamp(i, 'is_active', false)" class="sr-only" />
                     <span
                       class="w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all"
-                      :class="camp.is_active !== true ? 'border-gray-500 bg-gray-500' : 'border-gray-300 dark:border-gray-600'"
+                      :class="camp.is_active !== true ? 'border-gray-500 bg-gray-500' : 'border-line'"
                     >
                       <span v-if="camp.is_active !== true" class="w-1.5 h-1.5 rounded-full bg-white"></span>
                     </span>
@@ -179,14 +179,14 @@
       </div>
 
       <!-- Vazio -->
-      <div v-else class="flex flex-col items-center justify-center py-14 text-gray-400 dark:text-gray-600">
+      <div v-else class="flex flex-col items-center justify-center py-14 text-ink-subtle">
         <i class="fas fa-bullhorn text-3xl mb-3"></i>
         <p class="text-sm font-medium">Nenhuma campanha cadastrada</p>
         <p class="text-xs mt-1">Clique em "Nova Campanha" para começar</p>
       </div>
 
       <!-- Footer -->
-      <div class="flex justify-end px-5 py-4 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30">
+      <div class="flex justify-end px-5 py-4 border-t border-line bg-gray-50/50 dark:bg-gray-800/30">
         <button @click="$emit('save')" :disabled="saving" class="btn-primary">
           <i :class="saving ? 'fa-spinner fa-spin' : 'fa-floppy-disk'" class="fas text-xs"></i>
           {{ saving ? 'Salvando...' : 'Salvar Campanhas' }}
@@ -255,10 +255,10 @@ function formatDateRange(start, end) {
 </script>
 
 <style scoped>
-.lbl-section { @apply text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide flex items-center gap-2; }
-.lbl     { @apply block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5; }
-.inp     { @apply w-full px-3.5 py-2.5 text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900/60 border border-gray-200 dark:border-gray-700 rounded-md shadow-sm placeholder:text-gray-400 dark:placeholder:text-gray-500 outline-none focus:border-blue-400 dark:focus:border-blue-500 focus:ring-2 focus:ring-blue-500/15 transition-all duration-150; }
-.inp-pfx { @apply w-full pl-9 pr-3.5 py-2.5 text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900/60 border border-gray-200 dark:border-gray-700 rounded-md shadow-sm placeholder:text-gray-400 dark:placeholder:text-gray-500 outline-none focus:border-blue-400 dark:focus:border-blue-500 focus:ring-2 focus:ring-blue-500/15 transition-all duration-150; }
-.pfx     { @apply absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 text-xs pointer-events-none; }
-.btn-primary { @apply flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 disabled:opacity-50 transition; }
+.lbl-section { @apply text-xs font-semibold text-ink-muted uppercase tracking-wide flex items-center gap-2; }
+.lbl     { @apply block text-xs font-semibold text-ink-muted uppercase tracking-wide mb-1.5; }
+.inp     { @apply w-full px-3.5 py-2.5 text-sm text-ink bg-surface-raised/60 border border-line rounded-md shadow-sm placeholder:text-gray-400 dark:placeholder:text-gray-500 outline-none focus:border-blue-400 dark:focus:border-accent focus:ring-2 focus:ring-blue-500/15 transition-all duration-150; }
+.inp-pfx { @apply w-full pl-9 pr-3.5 py-2.5 text-sm text-ink bg-surface-raised/60 border border-line rounded-md shadow-sm placeholder:text-gray-400 dark:placeholder:text-gray-500 outline-none focus:border-blue-400 dark:focus:border-accent focus:ring-2 focus:ring-blue-500/15 transition-all duration-150; }
+.pfx     { @apply absolute left-3 top-1/2 -translate-y-1/2 text-ink-subtle text-xs pointer-events-none; }
+.btn-primary { @apply flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-accent-hover disabled:opacity-50 transition; }
 </style>

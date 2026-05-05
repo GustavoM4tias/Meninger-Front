@@ -1,75 +1,82 @@
-<template>
-    <div class="grid grid-cols-1 xl:grid-cols-3 gap-4">
-        <!-- Total de Vendas -->
-        <Card title="Total de Vendas" :value="metrics.totalSales" label="Total de vendas realizadas"
-            icon="fas fa-chart-line" class="!bg-blue-300/30 !border-blue-400/30" />
-
-        <!-- Total de Contratos -->
-        <!-- <Card title="Total Contratos" :value="metrics.totalContracts" label="Quantidade total de contratos"
-            icon="fas fa-file-signature" class="!bg-indigo-300/30 !border-indigo-400/30" /> -->
-
-        <!-- Valor Total (dinâmico: VGV/VGV+DC) -->
-        <Card :title="valueTitle" :value="formatCurrency(totalValueDynamic)" :label="valueLabel" :icon="valueIcon"
-            :class="valueCardColorClass" />
-
-        <!-- Ticket Médio (dinâmico: VGV/VGV+DC) -->
-        <Card :title="ticketTitle" :value="formatCurrency(avgTicketDynamic)" :label="ticketLabel" :icon="ticketIcon"
-            :class="ticketCardColorClass" />
-
-        <!-- Empreendimentos -->
-        <!-- <Card title="Empreendimentos" :value="metrics.totalEnterprises" label="Quantidade de empreendimentos"
-            icon="fas fa-building" class="!bg-orange-300/30 !border-orange-400/30" /> -->
-    </div>
-</template>
-
 <script setup>
-import { computed } from 'vue'
-import { useContractsStore } from '@/stores/Comercial/Contracts/contractsStore'
-import Card from '@/components/UI/Card.vue'
+import { computed } from 'vue';
+import { useContractsStore } from '@/stores/Comercial/Contracts/contractsStore';
 
 const props = defineProps({
-    metrics: { type: Object, required: true }
-})
+  metrics: { type: Object, required: true },
+});
 
-const contractsStore = useContractsStore()
+const contractsStore = useContractsStore();
 
-// Títulos / rótulos dinâmicos
-const valueModeLabel = computed(() => contractsStore.valueModeLabel)
-const valueTitle = computed(() => `Valor ${valueModeLabel.value}`)
-const ticketTitle = computed(() => `Ticket Médio ${valueModeLabel.value}`)
+const valueModeLabel = computed(() => contractsStore.valueModeLabel);
+const isNet = computed(() => contractsStore.isNet);
 
-const valueLabel = computed(() =>
-    contractsStore.isNet
-        ? 'VGV (descontos ignorados)'
-        : 'VGV + DC (descontos somam)'
-)
-const ticketLabel = computed(() =>
-    contractsStore.isNet
-        ? 'VGV médio por venda'
-        : 'VGV + DC médio por venda'
-)
-
-// Ícones dinâmicos
-const valueIcon = computed(() => contractsStore.isNet ? 'fas fa-money-bill-wave' : 'fas fa-sack-dollar')
-const ticketIcon = computed(() => contractsStore.isNet ? 'fas fa-receipt' : 'fas fa-file-invoice-dollar')
-
-// Cores dinâmicas (opcional, só pra manter o mesmo “tema” visual de antes)
-const valueCardColorClass = computed(() =>
-    contractsStore.isNet ? '!bg-green-300/30 !border-green-400/30' : '!bg-amber-300/30 !border-amber-400/30'
-)
-const ticketCardColorClass = computed(() =>
-    contractsStore.isNet ? '!bg-purple-300/30 !border-purple-400/30' : '!bg-cyan-300/30 !border-cyan-400/30'
-)
-
-// Valores exibidos conforme o modo global
-const totalValueDynamic = computed(() =>
-    contractsStore.isNet ? props.metrics.totalValueNet : props.metrics.totalValueGross
-)
-const avgTicketDynamic = computed(() =>
-    contractsStore.isNet ? props.metrics.avgSaleValueNet : props.metrics.avgSaleValueGross
-)
-
-// Util
 const formatCurrency = (value) =>
-    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value || 0)
+  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value || 0);
+
+const formatNumber = (value) =>
+  new Intl.NumberFormat('pt-BR').format(value || 0);
+
+const totalValue = computed(() =>
+  isNet.value ? props.metrics.totalValueNet : props.metrics.totalValueGross
+);
+const avgTicket = computed(() =>
+  isNet.value ? props.metrics.avgSaleValueNet : props.metrics.avgSaleValueGross
+);
+
+const cards = computed(() => [
+  {
+    key: 'totalSales',
+    label: 'Total de vendas',
+    value: formatNumber(props.metrics.totalSales),
+    sub: 'no período',
+    icon: 'fas fa-chart-line',
+    accent: 'text-accent bg-accent-soft',
+    tooltip: 'Quantidade de vendas únicas no período filtrado',
+  },
+  {
+    key: 'totalValue',
+    label: `Valor ${valueModeLabel.value}`,
+    value: formatCurrency(totalValue.value),
+    sub: isNet.value ? 'VGV (descontos ignorados)' : 'VGV + DC (descontos somam)',
+    icon: isNet.value ? 'fas fa-money-bill-wave' : 'fas fa-sack-dollar',
+    accent: isNet.value
+      ? 'text-emerald-500 bg-emerald-500/10'
+      : 'text-amber-500 bg-amber-500/10',
+    tooltip: isNet.value
+      ? 'Soma do VGV das vendas (descontos não somam)'
+      : 'Soma do VGV+DC (descontos somam ao valor total)',
+  },
+  {
+    key: 'avgTicket',
+    label: `Ticket médio ${valueModeLabel.value}`,
+    value: formatCurrency(avgTicket.value),
+    sub: isNet.value ? 'VGV médio por venda' : 'VGV + DC médio por venda',
+    icon: isNet.value ? 'fas fa-receipt' : 'fas fa-file-invoice-dollar',
+    accent: isNet.value
+      ? 'text-purple-500 bg-purple-500/10'
+      : 'text-cyan-500 bg-cyan-500/10',
+    tooltip: 'Valor total dividido pela quantidade de vendas',
+  },
+]);
 </script>
+
+<template>
+  <section class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+    <div v-for="k in cards" :key="k.key" v-tippy="k.tooltip"
+      class="flex items-center gap-3 p-4 rounded-xl border border-line bg-surface-raised
+             shadow-soft hover:shadow-elevated hover:border-accent/30 hover:-translate-y-0.5
+             transition-all duration-200 ease-out-expo surface-gradient">
+      <span class="h-11 w-11 rounded-xl grid place-items-center text-base shrink-0" :class="k.accent">
+        <i :class="k.icon"></i>
+      </span>
+      <div class="min-w-0 flex-1">
+        <p class="text-[10px] uppercase tracking-wider font-mono text-ink-subtle">{{ k.label }}</p>
+        <p class="text-2xl font-semibold text-ink tabular-nums tracking-tight leading-tight mt-0.5 truncate">
+          {{ k.value }}
+        </p>
+        <p class="text-[11px] text-ink-muted mt-0.5 truncate" :title="k.sub">{{ k.sub }}</p>
+      </div>
+    </div>
+  </section>
+</template>

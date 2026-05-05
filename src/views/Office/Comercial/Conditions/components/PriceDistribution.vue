@@ -1,11 +1,11 @@
 <template>
-  <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
+  <div class="bg-surface-raised rounded-xl border border-line p-5">
     <div class="flex items-center justify-between mb-4">
-      <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-200">Distribuição de Preços</h3>
+      <h3 class="text-sm font-semibold text-ink">Distribuição de Preços</h3>
       <div class="flex items-center gap-2">
         <select
           v-model="selectedStage"
-          class="text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200"
+          class="text-xs px-2 py-1 border border-line rounded bg-white dark:bg-gray-700 text-ink"
           @change="$emit('filter-stage', selectedStage)"
         >
           <option value="">Todos os módulos</option>
@@ -28,11 +28,11 @@
           'px-3 py-1.5 rounded-lg border text-xs',
           t.vigente
             ? 'border-green-300 bg-green-50 dark:bg-green-900/20 dark:border-green-700 text-green-700 dark:text-green-300'
-            : 'border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
+            : 'border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-ink-muted'
         ]"
       >
         <div class="font-medium">{{ t.nome }}</div>
-        <div class="text-gray-400 dark:text-gray-500 mt-0.5">
+        <div class="text-ink-subtle mt-0.5">
           {{ formatDate(t.data_vigencia_de) }} – {{ formatDate(t.data_vigencia_ate) }}
           <span v-if="t.porcentagem_comissao"> · {{ t.porcentagem_comissao }}% comissão</span>
         </div>
@@ -65,16 +65,16 @@
           />
           <div class="flex-1 min-w-0">
             <div class="flex items-center gap-2 flex-wrap">
-              <span class="text-sm font-semibold text-gray-800 dark:text-gray-100">
+              <span class="text-sm font-semibold text-ink">
                 {{ formatCurrency(group.bucket_value) }}
               </span>
-              <span class="text-xs text-gray-500 dark:text-gray-400">
+              <span class="text-xs text-ink-muted">
                 {{ group.unit_count }} unidades ({{ pct(group.unit_count) }})
               </span>
               <!-- Valores exatos se diferem do bucket -->
               <span
                 v-if="group.exact_values.length > 1"
-                class="text-xs text-gray-400 dark:text-gray-500"
+                class="text-xs text-ink-subtle"
               >
                 — {{ group.exact_values.map(v => formatCurrency(v)).join(', ') }}
               </span>
@@ -87,7 +87,7 @@
               <span
                 v-for="u in group.units"
                 :key="u.idunidade"
-                class="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded text-xs text-gray-600 dark:text-gray-300"
+                class="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded text-xs text-ink-muted"
                 :title="formatCurrency(u.valor)"
               >
                 {{ u.nome }}
@@ -104,7 +104,7 @@
       </div>
     </div>
 
-    <div v-else class="text-center py-6 text-xs text-gray-400 dark:text-gray-500">
+    <div v-else class="text-center py-6 text-xs text-ink-subtle">
       Sem dados de preço disponíveis. Execute o sync de tabelas de preço.
     </div>
   </div>

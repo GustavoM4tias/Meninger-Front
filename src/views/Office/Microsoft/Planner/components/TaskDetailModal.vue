@@ -1,10 +1,10 @@
 <template>
   <Teleport to="body">
     <div class="fixed inset-0 z-50 flex items-start justify-end bg-black/40 backdrop-blur-sm" @click.self="$emit('close')">
-      <div class="bg-white dark:bg-gray-900 h-full w-full max-w-lg shadow-2xl border-l border-gray-200 dark:border-gray-800 flex flex-col overflow-hidden">
+      <div class="bg-surface-raised h-full w-full max-w-lg shadow-2xl border-l border-line flex flex-col overflow-hidden">
 
         <!-- Header -->
-        <div class="flex items-start justify-between gap-3 p-5 border-b border-gray-100 dark:border-gray-800 shrink-0">
+        <div class="flex items-start justify-between gap-3 p-5 border-b border-line shrink-0">
           <div class="flex-1 min-w-0">
             <input
               v-if="editingTitle"
@@ -13,11 +13,11 @@
               @blur="saveTitle"
               @keydown.enter="saveTitle"
               @keydown.escape="editingTitle = false"
-              class="w-full text-base font-semibold text-gray-900 dark:text-white bg-transparent border-b-2 border-blue-500 outline-none pb-0.5"
+              class="w-full text-base font-semibold text-ink bg-transparent border-b-2 border-blue-500 outline-none pb-0.5"
             />
             <h2
               v-else
-              class="text-base font-semibold text-gray-900 dark:text-white cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition"
+              class="text-base font-semibold text-ink cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition"
               @click="startEditTitle"
             >
               {{ task.title }}
@@ -26,7 +26,7 @@
               {{ bucketName }} · {{ planName }}
             </p>
           </div>
-          <button @click="$emit('close')" class="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 transition shrink-0">
+          <button @click="$emit('close')" class="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-surface-hover transition shrink-0">
             <i class="fas fa-xmark text-sm"></i>
           </button>
         </div>
@@ -78,7 +78,7 @@
                 type="date"
                 v-model="form.dueDate"
                 @change="saveDueDate"
-                class="w-full px-2 py-2 text-xs rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/60 text-gray-900 dark:text-gray-100 outline-none focus:border-blue-400 transition"
+                class="w-full px-2 py-2 text-xs rounded-lg border border-line bg-surface-raised/60 text-ink outline-none focus:border-blue-400 transition"
               />
             </div>
           </div>
@@ -89,7 +89,7 @@
             <select
               v-model="form.bucketId"
               @change="saveBucket"
-              class="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/60 text-gray-900 dark:text-gray-100 outline-none focus:border-blue-400 transition"
+              class="w-full px-3 py-2 text-sm rounded-lg border border-line bg-surface-raised/60 text-ink outline-none focus:border-blue-400 transition"
             >
               <option v-for="b in store.bucketsOrdered" :key="b.id" :value="b.id">{{ b.name }}</option>
             </select>
@@ -103,7 +103,7 @@
               @blur="saveDescription"
               rows="3"
               placeholder="Adicione uma descrição..."
-              class="w-full px-3 py-2.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/60 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/10 resize-none transition"
+              class="w-full px-3 py-2.5 text-sm rounded-lg border border-line bg-surface-raised/60 text-ink placeholder:text-gray-400 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/10 resize-none transition"
             ></textarea>
           </div>
 
@@ -117,7 +117,7 @@
             </div>
 
             <!-- Barra de progresso -->
-            <div v-if="checklist.length > 0" class="w-full h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+            <div v-if="checklist.length > 0" class="w-full h-1.5 bg-surface-sunken rounded-full overflow-hidden">
               <div
                 class="h-full bg-blue-500 rounded-full transition-all duration-300"
                 :style="{ width: `${checklistProgress}%` }"
@@ -138,8 +138,8 @@
                   class="rounded accent-blue-600 shrink-0 cursor-pointer"
                 />
                 <span
-                  class="flex-1 text-sm text-gray-700 dark:text-gray-300 min-w-0"
-                  :class="item.isChecked ? 'line-through text-gray-400 dark:text-gray-500' : ''"
+                  class="flex-1 text-sm text-ink-muted min-w-0"
+                  :class="item.isChecked ? 'line-through text-ink-subtle' : ''"
                 >{{ item.title }}</span>
                 <button
                   @click="removeChecklistItem(item.id)"
@@ -157,12 +157,12 @@
                 type="text"
                 placeholder="Adicionar item..."
                 @keydown.enter="addChecklistItem"
-                class="flex-1 px-3 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/60 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 outline-none focus:border-blue-400 transition"
+                class="flex-1 px-3 py-1.5 text-sm rounded-lg border border-line bg-surface-raised/60 text-ink placeholder:text-gray-400 outline-none focus:border-blue-400 transition"
               />
               <button
                 @click="addChecklistItem"
                 :disabled="!newChecklistItem.trim()"
-                class="px-3 py-1.5 text-sm rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition disabled:opacity-40"
+                class="px-3 py-1.5 text-sm rounded-lg bg-accent hover:bg-accent-hover text-white transition disabled:opacity-40"
               >
                 <i class="fas fa-plus text-xs"></i>
               </button>
@@ -170,7 +170,7 @@
           </div>
 
           <!-- Rodapé com info -->
-          <div class="pt-2 border-t border-gray-100 dark:border-gray-800 space-y-1">
+          <div class="pt-2 border-t border-line space-y-1">
             <p v-if="task.createdDateTime" class="text-xs text-gray-400">
               Criada em {{ formatDate(task.createdDateTime) }}
             </p>
@@ -178,7 +178,7 @@
         </div>
 
         <!-- Footer -->
-        <div class="shrink-0 p-4 border-t border-gray-100 dark:border-gray-800 flex justify-between items-center">
+        <div class="shrink-0 p-4 border-t border-line flex justify-between items-center">
           <button
             @click="confirmDelete"
             class="flex items-center gap-1.5 text-xs text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 px-3 py-2 rounded-lg transition"

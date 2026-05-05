@@ -1,398 +1,377 @@
 <script setup>
 import { onMounted, ref, computed } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { useRoute, useRouter, RouterLink } from 'vue-router';
 import { useSupportStore } from '@/stores/Support/supportStore';
 import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 import { useToast } from 'vue-toastification';
 
-//
-// ===== THEME CENTRALIZADO POR STATUS =====
+import PageContainer from '@/components/UI/PageContainer.vue';
+import Surface from '@/components/UI/Surface.vue';
+import Button from '@/components/UI/Button.vue';
+import Badge from '@/components/UI/Badge.vue';
+import Select from '@/components/UI/Select.vue';
+import EmptyState from '@/components/UI/EmptyState.vue';
+
+// ===== TEMA POR STATUS (semântico) =====
 const statusTheme = {
-    pending: {
-        solid: 'bg-orange-600 hover:bg-orange-700 text-white',
-        soft: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300',
-        ring: 'ring-orange-500/30',
-        border: 'border-orange-300 dark:border-orange-600/70',
-        header: 'bg-orange-600',
-        avatar: 'bg-orange-600 text-white',
-        icon: 'text-orange-600',
-    },
-    in_progress: {
-        solid: 'bg-yellow-500/80 hover:bg-yellow-600 text-white',
-        soft: 'bg-yellow-100 text-yellow-500 dark:bg-yellow-900/30 dark:text-yellow-300',
-        ring: 'ring-yellow-500/30',
-        border: 'border-yellow-300 dark:border-yellow-500/70',
-        header: 'bg-yellow-500/80',
-        avatar: 'bg-yellow-500/80 text-white',
-        icon: 'text-yellow-500/80',
-    },
-    resolved: {
-        solid: 'bg-emerald-600 hover:bg-emerald-700 text-white',
-        soft: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
-        ring: 'ring-emerald-500/30',
-        border: 'border-emerald-300 dark:border-emerald-600/70',
-        header: 'bg-emerald-600',
-        avatar: 'bg-emerald-600 text-white',
-        icon: 'text-emerald-600',
-    },
-    closed: {
-        solid: 'bg-red-700 hover:bg-red-800 text-white',
-        soft: 'bg-red-100 text-red-700 dark:bg-red-700 dark:text-red-300',
-        ring: 'ring-red-500/30',
-        border: 'border-red-300 dark:border-red-700',
-        header: 'bg-red-700',
-        avatar: 'bg-red-700 text-white',
-        icon: 'text-red-600',
-    },
+  pending: {
+    accent: 'text-amber-600 dark:text-amber-400',
+    avatar: 'bg-amber-500 text-white',
+    badge:  'warning',
+    bar:    'from-amber-500/15 to-amber-500/5 border-amber-500/30',
+  },
+  in_progress: {
+    accent: 'text-yellow-600 dark:text-yellow-400',
+    avatar: 'bg-yellow-500 text-white',
+    badge:  'warning',
+    bar:    'from-yellow-500/15 to-yellow-500/5 border-yellow-500/30',
+  },
+  resolved: {
+    accent: 'text-emerald-600 dark:text-emerald-400',
+    avatar: 'bg-emerald-500 text-white',
+    badge:  'success',
+    bar:    'from-emerald-500/15 to-emerald-500/5 border-emerald-500/30',
+  },
+  closed: {
+    accent: 'text-red-600 dark:text-red-400',
+    avatar: 'bg-red-500 text-white',
+    badge:  'danger',
+    bar:    'from-red-500/15 to-red-500/5 border-red-500/30',
+  },
 };
 
 const themeFor = (status) => statusTheme[status] ?? statusTheme.pending;
-//
-// =========================================
 
-const route = useRoute();
-const router = useRouter();
-const toast = useToast();
-
+const route   = useRoute();
+const router  = useRouter();
+const toast   = useToast();
 const support = useSupportStore();
-const auth = useAuthStore();
+const auth    = useAuthStore();
 
-const ticket = computed(() => support.current);
+const ticket   = computed(() => support.current);
 const messages = computed(() => ticket.value?.messages ?? []);
-const isAdmin = computed(() => auth.user?.role === 'admin');
+const isAdmin  = computed(() => auth.user?.role === 'admin');
 
-// tema reativo do ticket atual (fallback = pending)
 const currentTheme = computed(() => themeFor(ticket.value?.status || 'pending'));
 
 const statusMap = {
-    pending: 'Pendente',
-    in_progress: 'Em andamento',
-    resolved: 'Resolvido',
-    closed: 'Fechado',
+  pending:     'Pendente',
+  in_progress: 'Em andamento',
+  resolved:    'Resolvido',
+  closed:      'Fechado',
 };
+
+const statusOptions = [
+  { value: 'pending',     label: 'Pendente' },
+  { value: 'in_progress', label: 'Em andamento' },
+  { value: 'resolved',    label: 'Resolvido' },
+  { value: 'closed',      label: 'Fechado' },
+];
 
 const nextStatus = ref('pending');
-const replyText = ref('');
-const sending = ref(false);
+const replyText  = ref('');
+const sending    = ref(false);
 
-const priorityClass = (priority) => {
-    const map = {
-        critical: 'bg-red-500/20 text-red-200 border border-red-400/30',
-        high: 'bg-orange-500/20 text-orange-200 border border-orange-400/30',
-        medium: 'bg-yellow-500/20 text-yellow-200 border border-yellow-400/30',
-        low: 'bg-green-500/20 text-green-200 border border-green-400/30',
-    };
-    return map[priority] || 'bg-gray-500/20 text-gray-200 border border-gray-400/30';
+const priorityVariant = (priority) => {
+  const map = {
+    critical: 'danger',
+    high:     'warning',
+    medium:   'warning',
+    low:      'success',
+  };
+  return map[priority] || 'neutral';
 };
 
-// usa SEMPRE a paleta centralizada
-const statusChipClass = (status) => themeFor(status).soft;
-
 const formatProblemType = (type) => {
-    const map = {
-        bug: 'Bug/Erro',
-        performance: 'Performance',
-        ui: 'Interface/Visual',
-        feature: 'Sugestão',
-        security: 'Segurança',
-        other: 'Outro',
-    };
-    return map[type] || type;
+  const map = {
+    bug:         'Bug/Erro',
+    performance: 'Performance',
+    ui:          'Interface/Visual',
+    feature:     'Sugestão',
+    security:    'Segurança',
+    other:       'Outro',
+  };
+  return map[type] || type;
 };
 
 const formatFullDate = (date) => {
-    return new Date(date).toLocaleString('pt-BR', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-    });
+  return new Date(date).toLocaleString('pt-BR', {
+    day:    '2-digit',
+    month:  'short',
+    year:   'numeric',
+    hour:   '2-digit',
+    minute: '2-digit',
+  });
 };
 
 const load = async () => {
-    const rawId = route.params.id;
-    const id = Number(rawId);
-    if (!Number.isInteger(id)) {
-        toast.error('ID inválido');
-        router.push({ name: 'Suporte' });
-        return;
-    }
-    try {
-        await support.fetchTicket(id);
-        nextStatus.value = ticket.value?.status || 'pending';
-    } catch {
-        toast.error('Falha ao carregar ticket');
-        router.push({ name: 'Suporte' });
-    } finally {
-        // noop
-    }
+  const rawId = route.params.id;
+  const id = Number(rawId);
+  if (!Number.isInteger(id)) {
+    toast.error('ID inválido');
+    router.push({ name: 'Suporte' });
+    return;
+  }
+  try {
+    await support.fetchTicket(id);
+    nextStatus.value = ticket.value?.status || 'pending';
+  } catch {
+    toast.error('Falha ao carregar ticket');
+    router.push({ name: 'Suporte' });
+  }
 };
 
 onMounted(load);
 
 const sendReply = async () => {
-    if (!isAdmin.value) {
-        toast.warning('Apenas administradores podem responder.');
-        return;
-    }
-    try {
-        sending.value = true;
-        await support.reply(ticket.value.id, replyText.value);
-        replyText.value = '';
-        toast.success('Resposta enviada e e-mail encaminhado ao solicitante.');
-    } catch (e) {
-        toast.error(e.message || 'Falha ao enviar resposta');
-    } finally {
-        sending.value = false;
-    }
+  if (!isAdmin.value) {
+    toast.warning('Apenas administradores podem responder.');
+    return;
+  }
+  try {
+    sending.value = true;
+    await support.reply(ticket.value.id, replyText.value);
+    replyText.value = '';
+    toast.success('Resposta enviada e e-mail encaminhado ao solicitante.');
+  } catch (e) {
+    toast.error(e.message || 'Falha ao enviar resposta');
+  } finally {
+    sending.value = false;
+  }
 };
 
 const changeStatus = async () => {
-    try {
-        await support.updateStatus(ticket.value.id, nextStatus.value);
-        toast.success('Status atualizado (o solicitante será notificado).');
-    } catch (e) {
-        toast.error(e.message || 'Falha ao atualizar status');
-    }
+  try {
+    await support.updateStatus(ticket.value.id, nextStatus.value);
+    toast.success('Status atualizado (o solicitante será notificado).');
+  } catch (e) {
+    toast.error(e.message || 'Falha ao atualizar status');
+  }
 };
 </script>
 
 <template>
-    <div class="min-h-screen bg-gray-50 dark:bg-gray-900">
-        <div class="max-w-6xl mx-auto px-6 py-8">
-            <!-- Back Button -->
-            <RouterLink :to="{ name: 'Suporte' }"
-                class="inline-flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white mb-6 transition-colors">
-                <i class="fas fa-arrow-left"></i>
-                <span>Voltar para lista</span>
-            </RouterLink>
+  <div class="min-h-[calc(100vh-3.5rem)]">
+    <PageContainer size="full">
 
-            <div v-if="ticket" class="space-y-6">
-                <!-- Header Card -->
-                <div
-                    class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
-                    <div class="px-6 py-4" :class="currentTheme.header">
-                        <div class="flex items-start justify-between gap-4">
-                            <div class="flex-1">
-                                <div class="flex items-center gap-3 mb-2">
-                                    <span class="text-white/90 font-mono text-sm">#{{ ticket.protocol }}</span>
-                                    <span class="px-2.5 py-1 rounded-full text-xs font-semibold capitalize shadow"
-                                        :class="priorityClass(ticket.priority)">
-                                        {{ ticket.priority }}
-                                    </span>
-                                </div>
-                                <h1 class="text-2xl font-bold text-white mb-2">{{ ticket.title }}</h1>
-                                <div class="flex items-center gap-4 text-sm text-white/80">
-                                    <div class="flex items-center gap-2">
-                                        <i class="fas fa-user"></i>
-                                        <span>{{ ticket.requester?.username }}</span>
-                                    </div>
-                                    <div class="flex items-center gap-2">
-                                        <i class="fas fa-envelope"></i>
-                                        <span>{{ ticket.requester?.email }}</span>
-                                    </div>
-                                    <div class="flex items-center gap-2">
-                                        <i class="fas fa-clock"></i>
-                                        <span>{{ formatFullDate(ticket.created_at) }}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+      <!-- Back Button -->
+      <RouterLink :to="{ name: 'Suporte' }"
+        class="inline-flex items-center gap-2 text-sm text-ink-muted hover:text-ink mb-5 transition-colors">
+        <i class="fas fa-arrow-left text-xs"></i>
+        <span>Voltar para lista</span>
+      </RouterLink>
 
-                    <!-- Info Grid -->
-                    <div class="p-6">
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
-                            <div>
-                                <label
-                                    class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1 block">
-                                    Status
-                                </label>
+      <div v-if="ticket" class="space-y-5">
 
-                                <!-- Admin: seletor + botão themed -->
-                                <div v-if="isAdmin" class="flex items-center gap-2">
-                                    <select v-model="nextStatus"
-                                        class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg text-sm focus:ring-2"
-                                        :class="currentTheme.ring">
-                                        <option value="pending">Pendente</option>
-                                        <option value="in_progress">Em andamento</option>
-                                        <option value="resolved">Resolvido</option>
-                                        <option value="closed">Fechado</option>
-                                    </select>
-                                    <button v-if="nextStatus !== ticket.status" @click="changeStatus"
-                                        class="px-3 py-2 rounded-lg transition-colors" :class="currentTheme.solid">
-                                        <i class="fas fa-check"></i>
-                                    </button>
-                                </div>
+        <!-- Header Card -->
+        <Surface variant="raised" padding="none" class="overflow-hidden surface-gradient">
+          <!-- Status bar -->
+          <div class="px-5 sm:px-6 py-4 border-b bg-gradient-to-r"
+            :class="currentTheme.bar">
+            <div class="flex flex-wrap items-start justify-between gap-3">
+              <div class="min-w-0 flex-1">
+                <div class="flex items-center gap-3 mb-2 flex-wrap">
+                  <span class="text-sm font-mono text-ink-muted">#{{ ticket.protocol }}</span>
+                  <Badge :variant="priorityVariant(ticket.priority)" size="sm" class="capitalize">
+                    {{ ticket.priority }}
+                  </Badge>
+                  <Badge :variant="currentTheme.badge" size="sm">
+                    {{ statusMap[ticket.status] || ticket.status }}
+                  </Badge>
+                </div>
+                <h1 class="text-xl sm:text-2xl font-semibold text-ink mb-2">{{ ticket.title }}</h1>
+                <div class="flex items-center gap-x-4 gap-y-1 text-xs text-ink-muted flex-wrap">
+                  <div class="flex items-center gap-1.5">
+                    <i class="fas fa-user text-ink-subtle"></i>
+                    <span>{{ ticket.requester?.username }}</span>
+                  </div>
+                  <div class="flex items-center gap-1.5">
+                    <i class="fas fa-envelope text-ink-subtle"></i>
+                    <span>{{ ticket.requester?.email }}</span>
+                  </div>
+                  <div class="flex items-center gap-1.5">
+                    <i class="fas fa-clock text-ink-subtle"></i>
+                    <span>{{ formatFullDate(ticket.created_at) }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
 
-                                <!-- Viewer: chip themed -->
-                                <div v-else class="px-3 py-2 rounded-lg text-sm font-medium"
-                                    :class="statusChipClass(ticket.status)">
-                                    {{ statusMap[ticket.status] || ticket.status }}
-                                </div>
-                            </div>
+          <!-- Info Grid -->
+          <div class="p-5 sm:p-6">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-5">
+              <div>
+                <label class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1.5 block">
+                  Status
+                </label>
 
-                            <div v-if="ticket.module">
-                                <label
-                                    class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1 block">
-                                    Módulo
-                                </label>
-                                <p class="text-sm font-medium text-gray-900 dark:text-white capitalize">
-                                    {{ ticket.module }}
-                                </p>
-                            </div>
-
-                            <div v-if="ticket.problemType">
-                                <label
-                                    class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1 block">
-                                    Tipo
-                                </label>
-                                <p class="text-sm font-medium text-gray-900 dark:text-white capitalize">
-                                    {{ formatProblemType(ticket.problemType) }}
-                                </p>
-                            </div>
-
-                            <div v-if="ticket.browser || ticket.os">
-                                <label
-                                    class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1 block">
-                                    Ambiente
-                                </label>
-                                <p class="text-sm text-gray-700 dark:text-gray-300">
-                                    {{ ticket.browser || 'N/A' }} · {{ ticket.os || 'N/A' }}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
+                <!-- Admin: seletor + botão -->
+                <div v-if="isAdmin" class="flex items-center gap-2">
+                  <Select
+                    v-model="nextStatus"
+                    :options="statusOptions"
+                    size="sm" />
+                  <Button v-if="nextStatus !== ticket.status"
+                    variant="primary"
+                    size="sm"
+                    icon="fas fa-check"
+                    @click="changeStatus" />
                 </div>
 
-                <!-- Description Card -->
-                <div v-if="ticket.description"
-                    class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-6">
-                    <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                        <i class="fas fa-file-alt" :class="currentTheme.icon"></i>
-                        Descrição do Problema
-                    </h2>
-                    <div class="prose prose-sm max-w-none dark:prose-invert">
-                        <pre
-                            class="whitespace-pre-wrap text-gray-700 dark:text-gray-300 font-sans">{{ ticket.description }}</pre>
-                    </div>
+                <!-- Viewer: badge -->
+                <Badge v-else :variant="currentTheme.badge" size="md">
+                  {{ statusMap[ticket.status] || ticket.status }}
+                </Badge>
+              </div>
 
-                    <div v-if="ticket.stepsToReproduce" class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-                        <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-3">Passos para Reproduzir</h3>
-                        <pre class="whitespace-pre-wrap text-sm text-gray-700 dark:text-gray-300 font-sans">
-{{ ticket.stepsToReproduce }}
-            </pre>
-                    </div>
+              <div v-if="ticket.module">
+                <label class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1.5 block">
+                  Módulo
+                </label>
+                <p class="text-sm font-medium text-ink capitalize">{{ ticket.module }}</p>
+              </div>
 
-                    <div v-if="ticket.pageUrl" class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                        <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-2">URL da Página</h3>
-                        <a :href="ticket.pageUrl" target="_blank" class="text-sm hover:underline break-all"
-                            :class="currentTheme.soft">
-                            {{ ticket.pageUrl }}
-                        </a>
-                    </div>
+              <div v-if="ticket.problemType">
+                <label class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1.5 block">
+                  Tipo
+                </label>
+                <p class="text-sm font-medium text-ink">{{ formatProblemType(ticket.problemType) }}</p>
+              </div>
+
+              <div v-if="ticket.browser || ticket.os">
+                <label class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1.5 block">
+                  Ambiente
+                </label>
+                <p class="text-sm text-ink-muted">
+                  {{ ticket.browser || 'N/A' }} · {{ ticket.os || 'N/A' }}
+                </p>
+              </div>
+            </div>
+          </div>
+        </Surface>
+
+        <!-- Description Card -->
+        <Surface v-if="ticket.description" variant="raised" padding="md" class="surface-gradient">
+          <h2 class="text-base font-semibold text-ink mb-3 flex items-center gap-2">
+            <i class="fas fa-file-lines" :class="currentTheme.accent"></i>
+            Descrição do Problema
+          </h2>
+          <pre class="whitespace-pre-wrap text-sm text-ink-muted font-sans leading-relaxed">{{ ticket.description }}</pre>
+
+          <div v-if="ticket.stepsToReproduce" class="mt-5 pt-5 border-t border-line">
+            <h3 class="text-sm font-semibold text-ink mb-2 flex items-center gap-2">
+              <i class="fas fa-list-ol text-ink-subtle text-xs"></i>
+              Passos para Reproduzir
+            </h3>
+            <pre class="whitespace-pre-wrap text-sm text-ink-muted font-sans leading-relaxed">{{ ticket.stepsToReproduce }}</pre>
+          </div>
+
+          <div v-if="ticket.pageUrl" class="mt-4 pt-4 border-t border-line">
+            <h3 class="text-sm font-semibold text-ink mb-2 flex items-center gap-2">
+              <i class="fas fa-link text-ink-subtle text-xs"></i>
+              URL da Página
+            </h3>
+            <a :href="ticket.pageUrl" target="_blank"
+              class="text-sm text-accent hover:underline break-all">
+              {{ ticket.pageUrl }}
+            </a>
+          </div>
+        </Surface>
+
+        <!-- Messages Thread -->
+        <Surface variant="raised" padding="none" class="overflow-hidden surface-gradient">
+          <div class="px-5 sm:px-6 py-3.5 border-b border-line bg-surface-sunken/40">
+            <h2 class="text-base font-semibold text-ink flex items-center gap-2">
+              <i class="fas fa-comments" :class="currentTheme.accent"></i>
+              Conversas
+              <span class="text-xs font-normal text-ink-subtle font-mono tabular-nums">({{ messages.length }})</span>
+            </h2>
+          </div>
+
+          <div class="p-5 sm:p-6">
+            <div v-if="messages.length" class="space-y-3">
+              <div v-for="m in messages" :key="m.id"
+                class="flex gap-3 sm:gap-4 p-4 rounded-xl border border-line bg-surface-sunken/40">
+                <div class="shrink-0">
+                  <div class="w-10 h-10 rounded-full grid place-items-center font-semibold text-sm"
+                    :class="currentTheme.avatar">
+                    {{ (m.author_name || 'U')[0].toUpperCase() }}
+                  </div>
                 </div>
-
-                <!-- Messages Thread -->
-                <div
-                    class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
-                    <div class="bg-gray-50 dark:bg-gray-900 px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-                        <h2 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                            <i class="fas fa-comments" :class="currentTheme.icon"></i>
-                            Conversas
-                            <span class="text-sm font-normal text-gray-500">({{ messages.length }})</span>
-                        </h2>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-start justify-between gap-3 mb-2 flex-wrap">
+                    <div class="min-w-0">
+                      <p class="font-semibold text-ink text-sm">
+                        {{ m.author_name || 'Usuário' }}
+                      </p>
+                      <p v-if="m.author_email" class="text-xs text-ink-subtle">
+                        {{ m.author_email }}
+                      </p>
                     </div>
-
-                    <div class="p-6">
-                        <div v-if="messages.length" class="space-y-4">
-                            <div v-for="m in messages" :key="m.id"
-                                class="flex gap-4 p-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
-                                <div class="flex-shrink-0">
-                                    <div class="w-10 h-10 rounded-full flex items-center justify-center font-semibold"
-                                        :class="currentTheme.avatar">
-                                        {{ (m.author_name || 'U')[0].toUpperCase() }}
-                                    </div>
-                                </div>
-                                <div class="flex-1 min-w-0">
-                                    <div class="flex items-start justify-between gap-4 mb-2">
-                                        <div>
-                                            <p class="font-semibold text-gray-900 dark:text-white">
-                                                {{ m.author_name || 'Usuário' }}
-                                            </p>
-                                            <p v-if="m.author_email" class="text-xs text-gray-500 dark:text-gray-400">
-                                                {{ m.author_email }}
-                                            </p>
-                                        </div>
-                                        <span class="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                                            {{ formatFullDate(m.created_at) }}
-                                        </span>
-                                    </div>
-                                    <pre
-                                        class="whitespace-pre-wrap text-sm text-gray-700 dark:text-gray-300 font-sans">{{ m.body }}</pre>
-                                    <div v-if="m.attachments?.length"
-                                        class="mt-3 flex items-center gap-2 text-xs text-gray-500">
-                                        <i class="fas fa-paperclip"></i>
-                                        <span>{{ m.attachments.length }} anexo(s)</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div v-else class="text-center py-12">
-                            <i class="fas fa-comment-slash text-4xl text-gray-300 dark:text-gray-600 mb-3"></i>
-                            <p class="text-gray-500 dark:text-gray-400">Nenhuma mensagem ainda</p>
-                        </div>
-                    </div>
+                    <span class="text-xs text-ink-subtle whitespace-nowrap">
+                      {{ formatFullDate(m.created_at) }}
+                    </span>
+                  </div>
+                  <pre class="whitespace-pre-wrap text-sm text-ink-muted font-sans leading-relaxed">{{ m.body }}</pre>
+                  <div v-if="m.attachments?.length"
+                    class="mt-3 flex items-center gap-2 text-xs text-ink-subtle">
+                    <i class="fas fa-paperclip"></i>
+                    <span><span class="font-mono tabular-nums">{{ m.attachments.length }}</span> anexo(s)</span>
+                  </div>
                 </div>
-
-                <!-- Reply Form (Admin Only) -->
-                <div v-if="isAdmin"
-                    class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
-                    <div class="px-6 py-4" :class="currentTheme.header">
-                        <h2 class="text-lg font-semibold text-white flex items-center gap-2">
-                            <i class="fas fa-reply"></i>
-                            Responder ao Solicitante
-                        </h2>
-                    </div>
-
-                    <div class="p-6">
-                        <textarea v-model="replyText" rows="5"
-                            class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:border-transparent resize-none"
-                            :class="currentTheme.ring"
-                            placeholder="Digite sua resposta detalhada para o usuário..."></textarea>
-
-                        <div class="mt-4 flex items-center justify-between">
-                            <p class="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-2">
-                                <i class="fas fa-info-circle"></i>
-                                O usuário receberá um e-mail com esta resposta
-                            </p>
-                            <button @click="sendReply" :disabled="!replyText.trim() || sending"
-                                class="px-6 py-2.5 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-sm"
-                                :class="currentTheme.solid">
-                                <i v-if="sending" class="fas fa-spinner fa-spin"></i>
-                                <i v-else class="fas fa-paper-plane"></i>
-                                <span>{{ sending ? 'Enviando...' : 'Enviar Resposta' }}</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
+              </div>
             </div>
 
-            <!-- Empty -->
-            <div v-else
-                class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-12 text-center">
-                <i class="fas fa-exclamation-circle text-4xl" :class="currentTheme.icon + ' mb-4'"></i>
-                <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">Ticket não encontrado</h2>
-                <p class="text-gray-500 dark:text-gray-400 mb-6">O ticket solicitado não existe ou foi removido.</p>
-                <RouterLink :to="{ name: 'Suporte' }"
-                    class="inline-flex items-center gap-2 px-4 py-2 rounded-lg transition-colors"
-                    :class="currentTheme.solid">
-                    <i class="fas fa-arrow-left"></i>
-                    <span>Voltar para lista</span>
-                </RouterLink>
+            <EmptyState v-else
+              icon="fas fa-comment-slash"
+              title="Sem mensagens"
+              description="Nenhuma mensagem registrada neste ticket ainda." />
+          </div>
+        </Surface>
+
+        <!-- Reply Form (Admin Only) -->
+        <Surface v-if="isAdmin" variant="raised" padding="none" class="overflow-hidden surface-gradient">
+          <div class="px-5 sm:px-6 py-3.5 border-b border-line bg-surface-sunken/40">
+            <h2 class="text-base font-semibold text-ink flex items-center gap-2">
+              <i class="fas fa-reply" :class="currentTheme.accent"></i>
+              Responder ao Solicitante
+            </h2>
+          </div>
+
+          <div class="p-5 sm:p-6">
+            <textarea v-model="replyText" rows="5"
+              placeholder="Digite sua resposta detalhada para o usuário..."
+              class="w-full px-3.5 py-2.5 rounded-lg border border-line bg-surface-raised text-sm text-ink placeholder:text-ink-subtle focus:outline-none focus:ring-2 focus:ring-accent-ring/40 focus:border-accent transition-colors resize-none">
+            </textarea>
+
+            <div class="mt-4 flex items-center justify-between flex-wrap gap-3">
+              <p class="text-xs text-ink-subtle flex items-center gap-1.5">
+                <i class="fas fa-circle-info"></i>
+                O usuário receberá um e-mail com esta resposta
+              </p>
+              <Button
+                variant="primary"
+                icon="fas fa-paper-plane"
+                :loading="sending"
+                :disabled="!replyText.trim() || sending"
+                @click="sendReply">
+                {{ sending ? 'Enviando...' : 'Enviar Resposta' }}
+              </Button>
             </div>
-        </div>
-    </div>
+          </div>
+        </Surface>
+      </div>
+
+      <!-- Empty -->
+      <Surface v-else variant="raised" padding="lg" class="text-center surface-gradient">
+        <i class="fas fa-circle-exclamation text-4xl text-ink-subtle mb-3 block"></i>
+        <h2 class="text-lg font-semibold text-ink mb-1">Ticket não encontrado</h2>
+        <p class="text-sm text-ink-muted mb-5">O ticket solicitado não existe ou foi removido.</p>
+        <RouterLink :to="{ name: 'Suporte' }">
+          <Button variant="primary" icon="fas fa-arrow-left">Voltar para lista</Button>
+        </RouterLink>
+      </Surface>
+    </PageContainer>
+  </div>
 </template>

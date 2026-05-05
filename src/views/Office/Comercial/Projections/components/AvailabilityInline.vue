@@ -99,37 +99,37 @@ function cancel() {
     <div v-if="mode === 'full'" class="mt-3">
         <div class="flex flex-wrap pb-1 gap-1">
             <span
-                class="inline-flex items-center ps-1 pe-1.5 py-0.5 rounded-full bg-gray-50 text-gray-500 border border-gray-100 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-500 text-[10px] font-medium cursor-pointer"
+                class="inline-flex items-center ps-1 pe-1.5 py-0.5 rounded-full bg-surface-sunken text-ink-muted border border-line text-[10px] font-medium cursor-pointer"
                 v-tippy="'Carga total de unidades do empreendimento'">
-                <span class="w-2 h-2 rounded-full bg-gray-400 mr-1"></span>
+                <span class="w-2 h-2 rounded-full bg-ink-subtle mr-1"></span>
                 {{ total }}
             </span>
 
             <span
-                class="inline-flex items-center ps-1 pe-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-300 dark:border-emerald-800 text-[10px] font-medium cursor-pointer"
+                class="inline-flex items-center ps-1 pe-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 border border-emerald-500/20 text-[10px] font-medium cursor-pointer"
                 v-tippy="'Unidades livres para comercialização imediata'">
                 <span class="w-2 h-2 rounded-full bg-emerald-500 mr-1"></span>
                 {{ available }}
             </span>
 
             <span
-                class="inline-flex items-center ps-1 pe-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-800 text-[10px] font-medium cursor-pointer"
+                class="inline-flex items-center ps-1 pe-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-300 border border-amber-500/20 text-[10px] font-medium cursor-pointer"
                 v-tippy="'Unidades com reserva ativa ou em processo de proposta'">
                 <span class="w-2 h-2 rounded-full bg-amber-500 mr-1"></span>
                 {{ reserved }}
             </span>
 
             <span
-                class="inline-flex items-center ps-1 pe-1.5 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-900/20 dark:text-rose-300 dark:border-rose-800 text-[10px] font-medium cursor-pointer"
+                class="inline-flex items-center ps-1 pe-1.5 py-0.5 rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-300 border border-rose-500/20 text-[10px] font-medium cursor-pointer"
                 v-tippy="'Contratos de venda finalizados'">
                 <span class="w-2 h-2 rounded-full bg-rose-500 mr-1"></span>
                 {{ sold }}
             </span>
 
             <span
-                class="inline-flex items-center ps-1 pe-1.5 py-0.5 rounded-full bg-gray-50 text-gray-700 border border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700 text-[10px] font-medium cursor-pointer"
+                class="inline-flex items-center ps-1 pe-1.5 py-0.5 rounded-full bg-surface-sunken text-ink-muted border border-line text-[10px] font-medium cursor-pointer"
                 v-tippy="'Unidades bloqueadas administrativamente'">
-                <span class="w-2 h-2 rounded-full bg-gray-500 mr-1"></span>
+                <span class="w-2 h-2 rounded-full bg-slate-500 mr-1"></span>
                 {{ blocked }}
             </span>
         </div>
@@ -162,26 +162,25 @@ function cancel() {
         <div class="flex flex-wrap pb-1 gap-1">
             <!-- quando NÃO está editando: chip clicável -->
             <span v-if="!editing"
-                class="inline-flex items-center px-1.5 py-0.5 rounded-full bg-gray-50 text-gray-500 border border-gray-100 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-500 text-[10px] font-medium"
-                :class="editable ? 'cursor-pointer hover:text-indigo-600' : ''"
+                class="inline-flex items-center px-1.5 py-0.5 rounded-full bg-surface-sunken text-ink-muted border border-line text-[10px] font-medium"
+                :class="editable ? 'cursor-pointer hover:text-accent hover:border-accent/40 transition-colors' : ''"
                 v-tippy="editable ? 'Clique para editar o total de unidades' : 'Carga total de unidades do empreendimento'"
                 @click="startEdit">
-                <span class="w-2 h-2 rounded-full bg-gray-400 mr-1"></span>
+                <span class="w-2 h-2 rounded-full bg-ink-subtle mr-1"></span>
                 {{ total }}
-                <!-- <span v-if="editable" class="ml-1 underline decoration-dotted">(editar)</span> -->
             </span>
 
             <!-- quando está editando: input + botões -->
             <div v-else class="flex items-center gap-2">
                 <input id="ai-total-units" type="number" min="0" v-model="temp"
-                    class="w-28 h-8 px-2 rounded border border-gray-200 dark:border-gray-700 bg-white/90 dark:bg-gray-900/70 text-[11px] focus:outline-none"
+                    class="w-28 h-8 px-2 rounded border border-line bg-surface-raised text-ink text-[11px] focus:outline-none focus:ring-2 focus:ring-accent/40"
                     placeholder="Total" @keyup.enter="commit" @keyup.esc="cancel" />
-                <button class="h-8 px-2 rounded bg-indigo-600 text-white text-[11px] hover:bg-indigo-500"
+                <button class="h-8 px-2 rounded bg-accent text-white text-[11px] hover:bg-accent-hover transition-colors"
                     @mousedown.prevent @click="commit">
                     OK
                 </button>
                 <button
-                    class="h-8 px-2 rounded border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 text-[11px] hover:bg-gray-50 dark:hover:bg-gray-800"
+                    class="h-8 px-2 rounded border border-line text-ink-muted text-[11px] hover:bg-surface-hover hover:text-ink transition-colors"
                     @mousedown.prevent @click="cancel">
                     Cancelar
                 </button>
@@ -190,20 +189,19 @@ function cancel() {
     </div>
 
     <!-- ✅ EMPTY -->
-    <div v-else class="mt-2 p-1 rounded-lg border border-dashed border-gray-300 dark:border-gray-700 text-center">
+    <div v-else class="mt-2 p-1 rounded-lg border border-dashed border-line text-center">
         <template v-if="!editing">
-            <p class="text-[10px] text-gray-500" :class="editable ? 'cursor-pointer hover:text-indigo-600' : ''"
+            <p class="text-[10px] text-ink-subtle" :class="editable ? 'cursor-pointer hover:text-accent transition-colors' : ''"
                 @click="startEdit"><i class="fas fa-circle-info mr-1.5"></i> Dados de disponibilidade indisponíveis.
-                <!-- <span v-if="editable" class="ml-1 underline decoration-dotted">(clique para informar total)</span> -->
             </p>
         </template>
 
         <template v-else>
             <div class="flex items-center justify-center gap-2">
                 <input id="ai-total-units" type="number" min="0" v-model="temp"
-                    class="w-28 h-8 px-2 rounded border border-gray-200 dark:border-gray-700 bg-white/90 dark:bg-gray-900/70 text-[11px] focus:outline-none"
+                    class="w-28 h-8 px-2 rounded border border-line bg-surface-raised text-ink text-[11px] focus:outline-none focus:ring-2 focus:ring-accent/40"
                     placeholder="Total" @keyup.enter="commit" @keyup.esc="cancel" @blur="commit" />
-                <button class="h-8 px-2 rounded bg-indigo-600 text-white text-[11px] hover:bg-indigo-500"
+                <button class="h-8 px-2 rounded bg-accent text-white text-[11px] hover:bg-accent-hover transition-colors"
                     @mousedown.prevent @click="commit">
                     OK
                 </button>

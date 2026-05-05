@@ -5,7 +5,7 @@
         class="fixed inset-0 z-[8500] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
         @click.self="$emit('close')">
 
-        <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col" @click.stop>
+        <div class="bg-surface-raised rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col" @click.stop>
 
           <!-- Color bar -->
           <div :class="event.isOnlineMeeting ? 'bg-purple-600' : 'bg-blue-500'" class="h-1.5 rounded-t-2xl shrink-0"></div>
@@ -24,14 +24,14 @@
                     Cancelado
                   </span>
                   <span v-if="event.isRecurring"
-                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500 text-xs">
+                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-surface-sunken text-gray-500 text-xs">
                     <i class="fas fa-rotate text-xs"></i> Recorrente
                   </span>
                 </div>
-                <h2 class="text-lg font-bold text-gray-900 dark:text-white leading-snug">{{ event.subject }}</h2>
+                <h2 class="text-lg font-bold text-ink leading-snug">{{ event.subject }}</h2>
               </div>
               <button @click="$emit('close')"
-                class="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors shrink-0 mt-0.5">
+                class="w-8 h-8 rounded-lg bg-surface-sunken flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors shrink-0 mt-0.5">
                 <i class="fas fa-xmark text-sm"></i>
               </button>
             </div>
@@ -41,22 +41,22 @@
           <div class="flex-1 overflow-y-auto px-6 pb-4 space-y-4">
 
             <!-- Time -->
-            <div class="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400">
+            <div class="flex items-center gap-3 text-sm text-ink-muted">
               <i class="fas fa-clock w-4 text-center shrink-0"></i>
               <span>
-                <span class="font-medium text-gray-800 dark:text-gray-200">{{ fmtDate(event.start) }}</span>
+                <span class="font-medium text-ink">{{ fmtDate(event.start) }}</span>
                 · {{ fmtTime(event.start) }} – {{ fmtTime(event.end) }}
               </span>
             </div>
 
             <!-- Location -->
-            <div v-if="event.location" class="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400">
+            <div v-if="event.location" class="flex items-center gap-3 text-sm text-ink-muted">
               <i class="fas fa-location-dot w-4 text-center shrink-0"></i>
               <span>{{ event.location }}</span>
             </div>
 
             <!-- Organizer -->
-            <div v-if="event.organizer?.name" class="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400">
+            <div v-if="event.organizer?.name" class="flex items-center gap-3 text-sm text-ink-muted">
               <i class="fas fa-user w-4 text-center shrink-0"></i>
               <span>{{ event.organizer.name }}
                 <span v-if="event.organizer.email" class="text-gray-400 text-xs ml-1">{{ event.organizer.email }}</span>
@@ -67,14 +67,14 @@
             <div v-if="event.attendees?.length" class="flex items-start gap-3 text-sm">
               <i class="fas fa-users w-4 text-center text-gray-400 shrink-0 mt-0.5"></i>
               <div>
-                <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Participantes</p>
+                <p class="text-xs font-semibold text-ink-muted uppercase tracking-wide mb-1.5">Participantes</p>
                 <div class="flex flex-col gap-1">
                   <div v-for="a in event.attendees" :key="a.email"
                     class="flex items-center gap-2">
-                    <div class="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center shrink-0">
-                      <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">{{ (a.name || a.email).charAt(0).toUpperCase() }}</span>
+                    <div class="w-6 h-6 rounded-full bg-surface-sunken flex items-center justify-center shrink-0">
+                      <span class="text-xs font-semibold text-ink-muted">{{ (a.name || a.email).charAt(0).toUpperCase() }}</span>
                     </div>
-                    <span class="text-gray-700 dark:text-gray-300 text-sm">{{ a.name || a.email }}</span>
+                    <span class="text-ink-muted text-sm">{{ a.name || a.email }}</span>
                     <span :class="statusClass(a.status)" class="text-xs ml-auto">{{ statusLabel(a.status) }}</span>
                   </div>
                 </div>
@@ -84,13 +84,13 @@
             <!-- Body preview -->
             <div v-if="event.bodyPreview" class="flex items-start gap-3 text-sm">
               <i class="fas fa-align-left w-4 text-center text-gray-400 shrink-0 mt-0.5"></i>
-              <p class="text-gray-600 dark:text-gray-400 leading-relaxed line-clamp-4">{{ event.bodyPreview }}</p>
+              <p class="text-ink-muted leading-relaxed line-clamp-4">{{ event.bodyPreview }}</p>
             </div>
 
           </div>
 
           <!-- Actions -->
-          <div class="px-6 py-4 border-t border-gray-100 dark:border-gray-800 flex flex-wrap gap-2 shrink-0">
+          <div class="px-6 py-4 border-t border-line flex flex-wrap gap-2 shrink-0">
 
             <!-- Join Teams -->
             <a v-if="event.joinUrl" :href="event.joinUrl" target="_blank" rel="noopener"
@@ -100,19 +100,19 @@
 
             <!-- Open in Outlook -->
             <a v-if="event.webLink" :href="event.webLink" target="_blank" rel="noopener"
-              class="flex items-center gap-2 px-3 py-2 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm transition-colors">
+              class="flex items-center gap-2 px-3 py-2 rounded-xl bg-surface-sunken hover:bg-surface-hover text-ink text-sm transition-colors">
               <i class="fas fa-external-link-alt text-xs"></i> Abrir no Outlook
             </a>
 
             <!-- Copy link -->
             <button v-if="event.joinUrl" @click="copyLink"
-              class="flex items-center gap-2 px-3 py-2 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm transition-colors">
+              class="flex items-center gap-2 px-3 py-2 rounded-xl bg-surface-sunken hover:bg-surface-hover text-ink text-sm transition-colors">
               <i class="fas fa-link text-xs"></i> Copiar link
             </button>
 
             <!-- Share by email -->
             <a v-if="event.joinUrl" :href="mailtoLink"
-              class="flex items-center gap-2 px-3 py-2 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm transition-colors">
+              class="flex items-center gap-2 px-3 py-2 rounded-xl bg-surface-sunken hover:bg-surface-hover text-ink text-sm transition-colors">
               <i class="fas fa-envelope text-xs"></i> Convidar
             </a>
 
@@ -137,10 +137,10 @@
             <div v-if="confirmCancel" class="px-6 py-4 border-t border-red-100 dark:border-red-900 bg-red-50 dark:bg-red-900/20 rounded-b-2xl shrink-0">
               <p class="text-sm text-red-700 dark:text-red-300 font-medium mb-3">Cancelar e notificar participantes?</p>
               <input v-model="cancelComment" type="text" placeholder="Motivo (opcional)"
-                class="w-full px-3 py-1.5 rounded-lg border border-red-200 dark:border-red-700 bg-white dark:bg-gray-800 text-sm text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-red-400 mb-3" />
+                class="w-full px-3 py-1.5 rounded-lg border border-red-200 dark:border-red-700 bg-surface-raised text-sm text-ink focus:outline-none focus:ring-2 focus:ring-red-400 mb-3" />
               <div class="flex gap-2 justify-end">
                 <button @click="confirmCancel = false"
-                  class="px-3 py-1.5 rounded-lg text-sm text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                  class="px-3 py-1.5 rounded-lg text-sm text-ink-muted border border-line hover:bg-surface-hover transition-colors">
                   Voltar
                 </button>
                 <button @click="doCancel" :disabled="cancelling"

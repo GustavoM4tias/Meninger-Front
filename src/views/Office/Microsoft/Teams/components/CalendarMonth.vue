@@ -11,18 +11,18 @@
     </div>
 
     <!-- Day-of-week headers -->
-    <div class="grid grid-cols-7 border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50">
+    <div class="grid grid-cols-7 border-b border-line bg-surface-sunken/50">
       <div v-for="(name, i) in DAY_NAMES" :key="name"
-        class="py-2 text-center text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">
+        class="py-2 text-center text-xs font-semibold uppercase tracking-wide text-ink-subtle">
         <span class="hidden sm:inline">{{ name }}</span>
         <span class="sm:hidden">{{ name[0] }}</span>
       </div>
     </div>
 
     <!-- Month grid -->
-    <div class="grid grid-cols-7 divide-x divide-gray-100 dark:divide-gray-800">
+    <div class="grid grid-cols-7 divide-x divide-line">
       <div v-for="day in monthDays" :key="fmtYMD(day)"
-        class="relative min-h-[80px] sm:min-h-[108px] border-b border-gray-100 dark:border-gray-800 transition-colors cursor-pointer group/cell"
+        class="relative min-h-[80px] sm:min-h-[108px] border-b border-line transition-colors cursor-pointer group/cell"
         :class="[
           !isCurMonth(day)
             ? 'bg-gray-50/60 dark:bg-gray-800/20'
@@ -40,8 +40,8 @@
               isToday(day)
                 ? 'w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-blue-600 text-white shadow-sm'
                 : isCurMonth(day)
-                  ? 'text-gray-700 dark:text-gray-300'
-                  : 'text-gray-300 dark:text-gray-600',
+                  ? 'text-ink-muted'
+                  : 'text-ink-subtle',
             ]">
             {{ day.getDate() }}
           </span>
@@ -81,7 +81,7 @@
 
     <!-- Empty state -->
     <div v-if="!loading && !hasAnyEvent" class="py-16 text-center pointer-events-none">
-      <i class="fas fa-calendar-xmark text-4xl text-gray-200 dark:text-gray-700 mb-3 block"></i>
+      <i class="fas fa-calendar-xmark text-4xl text-ink-subtle mb-3 block"></i>
       <p class="text-sm text-gray-400">Nenhum evento neste mês</p>
     </div>
 
@@ -92,15 +92,15 @@
     <Transition name="popup">
       <div v-if="popupDay" class="fixed inset-0 z-[9990]" @click="closePopup">
         <div
-          class="absolute bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-800 w-56 max-h-72 overflow-hidden flex flex-col"
+          class="absolute bg-surface-raised rounded-xl shadow-2xl border border-line w-56 max-h-72 overflow-hidden flex flex-col"
           :style="popupStyle"
           @click.stop>
 
           <!-- Header -->
-          <div class="flex items-center justify-between px-3 py-2 border-b border-gray-100 dark:border-gray-800 shrink-0">
-            <span class="text-xs font-semibold text-gray-700 dark:text-gray-200">{{ popupDayLabel }}</span>
+          <div class="flex items-center justify-between px-3 py-2 border-b border-line shrink-0">
+            <span class="text-xs font-semibold text-ink">{{ popupDayLabel }}</span>
             <button @click="closePopup"
-              class="w-5 h-5 rounded flex items-center justify-center text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+              class="w-5 h-5 rounded flex items-center justify-center text-gray-400 hover:bg-surface-hover transition-colors">
               <i class="fas fa-times text-[9px]"></i>
             </button>
           </div>
@@ -110,14 +110,14 @@
             <div
               v-for="ev in popupEvents" :key="ev.id"
               @click="onPopupEventClick(ev)"
-              class="flex items-start gap-2 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800/60 cursor-pointer transition-colors">
+              class="flex items-start gap-2 px-3 py-2 hover:bg-surface-hover/60 cursor-pointer transition-colors">
               <div class="w-2 h-2 rounded-full mt-1.5 shrink-0" :class="dotClass(ev)"></div>
               <div class="min-w-0 flex-1">
-                <p class="text-xs font-medium text-gray-800 dark:text-gray-200 leading-snug"
-                  :class="{ 'line-through text-gray-400 dark:text-gray-500': ev.isCancelled }">
+                <p class="text-xs font-medium text-ink leading-snug"
+                  :class="{ 'line-through text-ink-subtle': ev.isCancelled }">
                   {{ ev.subject }}
                 </p>
-                <p class="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">
+                <p class="text-[10px] text-ink-subtle mt-0.5">
                   <i v-if="ev.isOnlineMeeting" class="fas fa-video mr-1 text-[8px]"></i>
                   <span v-if="ev.isAllDay">Dia inteiro</span>
                   <span v-else>{{ fmtTime(ev.start) }}{{ ev.end ? ' – ' + fmtTime(ev.end) : '' }}</span>
@@ -193,10 +193,10 @@ function overflowCount(day) {
 
 // ── Chip / dot colors ─────────────────────────────────────────────────────────
 function chipClass(ev) {
-  if (ev.isCancelled)     return 'bg-gray-100 dark:bg-gray-800 text-gray-400 line-through';
+  if (ev.isCancelled)     return 'bg-surface-sunken text-gray-400 line-through';
   if (ev.isAllDay)        return 'bg-blue-500 text-white';
   if (ev.isOnlineMeeting) return 'bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300';
-  return 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300';
+  return 'bg-accent-soft text-accent';
 }
 
 function dotClass(ev) {

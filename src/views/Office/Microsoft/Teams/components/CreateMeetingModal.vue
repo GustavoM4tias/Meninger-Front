@@ -5,7 +5,7 @@
         class="fixed inset-0 z-[8500] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
         @click.self="close">
 
-        <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-xl max-h-[90vh] flex flex-col overflow-hidden" @click.stop>
+        <div class="bg-surface-raised rounded-2xl shadow-2xl w-full max-w-xl max-h-[90vh] flex flex-col overflow-hidden" @click.stop>
 
           <!-- ── Colored header ── -->
           <div :class="headerGradient" class="px-6 pt-5 pb-4 shrink-0">
@@ -71,12 +71,12 @@
               <!-- All-day toggle -->
               <label class="flex items-center gap-3 cursor-pointer group select-none">
                 <button @click="form.isAllDay = !form.isAllDay" type="button"
-                  :class="form.isAllDay ? 'bg-purple-600' : 'bg-gray-200 dark:bg-gray-700'"
+                  :class="form.isAllDay ? 'bg-purple-600' : 'bg-surface-sunken'"
                   class="relative w-10 h-5 rounded-full transition-colors shrink-0 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-1">
                   <div :class="form.isAllDay ? 'translate-x-5' : 'translate-x-0.5'"
                     class="absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-transform duration-150"></div>
                 </button>
-                <span class="text-sm text-gray-600 dark:text-gray-300 group-hover:text-gray-800 dark:group-hover:text-gray-100 transition-colors">
+                <span class="text-sm text-ink-muted group-hover:text-gray-800 dark:group-hover:text-gray-100 transition-colors">
                   Evento de dia inteiro
                 </span>
               </label>
@@ -174,7 +174,7 @@
                       class="field-input pl-9" />
                   </div>
                   <button @click="addAttendee" type="button"
-                    class="px-3.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-sm">
+                    class="px-3.5 rounded-xl border border-line bg-surface-sunken text-ink-muted hover:bg-surface-hover transition-colors text-sm">
                     <i class="fas fa-plus"></i>
                   </button>
                 </div>
@@ -207,9 +207,9 @@
           </div>
 
           <!-- ── Footer ── -->
-          <div class="flex items-center gap-3 px-6 py-4 shrink-0 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900">
+          <div class="flex items-center gap-3 px-6 py-4 shrink-0 border-t border-line bg-gray-50/50 dark:bg-gray-900">
             <button @click="close"
-              class="px-4 py-2 rounded-xl text-sm text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+              class="px-4 py-2 rounded-xl text-sm text-ink-muted border border-line hover:bg-surface-hover transition-colors">
               Cancelar
             </button>
             <div class="flex-1"></div>
@@ -361,7 +361,7 @@ const headerIcon = computed(() => {
 
 const submitBtnClass = computed(() => {
   if (form.value.type === 'instant') return 'bg-green-600 hover:bg-green-700';
-  if (form.value.type === 'event')   return 'bg-blue-600 hover:bg-blue-700';
+  if (form.value.type === 'event')   return 'bg-accent hover:bg-accent-hover';
   return 'bg-purple-600 hover:bg-purple-700';
 });
 
@@ -452,10 +452,10 @@ async function submit() {
 
 <style scoped>
 .field-label {
-  @apply block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1;
+  @apply block text-xs font-semibold text-ink-muted uppercase tracking-wide mb-1;
 }
 .field-input {
-  @apply w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-shadow;
+  @apply w-full px-3 py-2 rounded-xl border border-line bg-surface-raised text-sm text-ink focus:outline-none focus:ring-2 focus:ring-purple-500 transition-shadow;
 }
 
 .modal-enter-active { transition: opacity 0.15s, transform 0.15s; }

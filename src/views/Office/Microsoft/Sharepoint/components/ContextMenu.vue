@@ -5,14 +5,14 @@
         v-if="visible"
         ref="menuEl"
         :style="menuStyle"
-        class="fixed z-[9999] bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 py-1.5 min-w-[210px] select-none"
+        class="fixed z-[9999] bg-surface-raised rounded-xl shadow-2xl border border-line py-1.5 min-w-[210px] select-none"
         @contextmenu.prevent
       >
         <!-- File name header -->
-        <div class="px-3 py-2 mb-0.5 border-b border-gray-100 dark:border-gray-800">
+        <div class="px-3 py-2 mb-0.5 border-b border-line">
           <div class="flex items-center gap-2 min-w-0">
             <i :class="item?.isFolder ? 'fas fa-folder text-yellow-400' : fileIconClass(item?.ext)" class="text-sm shrink-0"></i>
-            <span class="text-xs font-semibold text-gray-700 dark:text-gray-300 truncate">{{ item?.name }}</span>
+            <span class="text-xs font-semibold text-ink-muted truncate">{{ item?.name }}</span>
           </div>
         </div>
 
@@ -58,7 +58,7 @@ const CtxItem = defineComponent({
         'flex items-center gap-3 w-full px-3 py-1.5 text-sm transition-colors text-left',
         props.danger
           ? 'text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20'
-          : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800',
+          : 'text-ink hover:bg-surface-hover',
       ],
       onClick: () => emit('click'),
     }, [
@@ -70,7 +70,7 @@ const CtxItem = defineComponent({
 
 const CtxDivider = defineComponent({
   setup() {
-    return () => h('div', { class: 'my-1 border-t border-gray-100 dark:border-gray-800' });
+    return () => h('div', { class: 'my-1 border-t border-line' });
   },
 });
 

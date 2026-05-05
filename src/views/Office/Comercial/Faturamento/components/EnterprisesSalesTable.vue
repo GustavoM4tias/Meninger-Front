@@ -1,464 +1,271 @@
-<template>
-  <div class="bg-gray-50 dark:bg-gray-900 rounded-lg shadow-sm border dark:border-gray-700 overflow-hidden">
-
-    <!-- Header -->
-    <div class="p-6 border-b border-gray-200 dark:border-gray-700">
-      <div class="flex items-center justify-between">
-        <div>
-          <h3 class="text-lg font-semibold">Vendas por Empreendimento</h3>
-          <p class="text-sm">Performance de cada empreendimento</p>
-        </div>
-
-        <div class="flex items-center gap-2">
-          <button v-if="isAdmin"
-            class="inline-flex items-center justify-center p-2 rounded-full text-gray-600 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
-            v-tippy="'Configurar regras'" @click="emit('open-land-sync')">
-            <i class="fas fa-cog"></i>
-          </button>
-
-          <!-- VGV / VGV+DC -->
-          <div class="inline-flex rounded-md border dark:border-gray-700 overflow-hidden">
-            <button @click="contractsStore.setValueMode('net')" :class="[
-              'px-3 py-1 text-sm font-medium',
-              contractsStore.valueMode === 'net'
-                ? 'bg-blue-600 dark:bg-blue-700 text-white dark:text-gray-100'
-                : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-100'
-            ]">
-              VGV
-            </button>
-            <button @click="contractsStore.setValueMode('gross')" :class="[
-              'px-3 py-1 text-sm font-medium border-l border-gray-300 dark:border-gray-700',
-              contractsStore.valueMode === 'gross'
-                ? 'bg-blue-600 dark:bg-blue-700 text-white dark:text-gray-100'
-                : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-100'
-            ]">
-              VGV+DC
-            </button>
-          </div>
-
-          <!-- Ações (1..N) -->
-          <div class="inline-flex rounded-md border dark:border-gray-700 overflow-hidden">
-            <button @click="openGroup('list')" :disabled="disabledOpen"
-              class="px-3 py-1 text-sm font-medium bg-white dark:bg-gray-700 hover:bg-purple-600 dark:hover:bg-purple-600 hover:text-white disabled:opacity-50">
-              Listagem
-            </button>
-            <button @click="openGroup('pie')" :disabled="disabledOpen"
-              class="px-3 py-1 text-sm font-medium border-l border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-700 hover:bg-purple-600 dark:hover:bg-purple-600 hover:text-white disabled:opacity-50">
-              Pizza
-            </button>
-            <button @click="openGroup('bar')" :disabled="disabledOpen"
-              class="px-3 py-1 text-sm font-medium border-l border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-700 hover:bg-purple-600 dark:hover:bg-purple-600 hover:text-white disabled:opacity-50">
-              Colunas
-            </button>
-          </div>
-
-          <!-- GroupBy -->
-          <div class="inline-flex rounded-md border dark:border-gray-700 overflow-hidden">
-            <button @click="contractsStore.setGroupBy('enterprise')" :class="[
-              'px-3 py-1 text-sm font-medium',
-              contractsStore.groupBy === 'enterprise'
-                ? 'bg-blue-600 dark:bg-blue-700 text-white dark:text-gray-100'
-                : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-100'
-            ]">
-              Empreendimento
-            </button>
-            <button @click="contractsStore.setGroupBy('company')" :class="[
-              'px-3 py-1 text-sm font-medium border-l border-gray-300 dark:border-gray-700',
-              contractsStore.groupBy === 'company'
-                ? 'bg-blue-600 dark:bg-blue-700 text-white dark:text-gray-100'
-                : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-100'
-            ]">
-              Empresa
-            </button>
-          </div>
-
-          <button class="text-2xl ps-2" v-tippy="'Exportar Dados'" @click="open = true">
-            <i class="fas fa-download"></i>
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Empty -->
-    <div v-if="sortedData.length === 0" class="p-12 text-center">
-      <svg class="w-12 h-12 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-          d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-      </svg>
-      <p>Nenhum empreendimento encontrado</p>
-    </div>
-
-    <!-- Table -->
-    <div v-else class="overflow-x-auto">
-      <table class="w-full">
-        <thead class="bg-gray-50 dark:bg-gray-800/60 border-b border-gray-200 dark:border-gray-700">
-          <tr>
-            <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider w-10">
-              <input type="checkbox" :checked="allVisibleChecked" @change="toggleAllVisible($event)" />
-            </th>
-            <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
-              {{ contractsStore.groupBy === 'company' ? 'Empresa' : 'Empreendimento' }}
-            </th>
-            <th class="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider">Vendas</th>
-            <th class="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider">
-              Valor Total <span class="text-gray-400">({{ valueModeLabel }})</span>
-            </th>
-            <th class="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider">
-              Ticket Médio <span class="text-gray-400">({{ valueModeLabel }})</span>
-            </th>
-            <th class="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider">Ações</th>
-          </tr>
-        </thead>
-
-        <tbody class="bg-white dark:bg-gray-800/40 divide-y divide-gray-200 dark:divide-gray-600">
-          <tr v-for="(enterprise, index) in sortedData" :key="enterprise.key" :class="enterprise.onlyProjectionRow
-            ? 'bg-green-50/70 dark:bg-green-900/20 hover:bg-green-100/70 dark:hover:bg-green-900/30'
-            : 'hover:bg-gray-50 dark:hover:bg-gray-800/70'">
-            <td class="px-6 py-4">
-              <input type="checkbox" :checked="selectedKeys.has(enterprise.key)"
-                @change="toggleOne(enterprise.key, $event)" />
-            </td>
-
-            <td class="px-6 py-4">
-              <div class="flex items-center">
-                <div :style="{ backgroundColor: getColor(index) }" class="w-3 h-3 rounded-full mr-3"></div>
-                <div class="flex text-sm font-medium line-clamp-2">
-                  <span class="max-w-96 truncate">{{ enterprise.name }}</span>
-                  
-                  <div v-if="!enterprise.onlyProjectionRow && enterprise.proj_count > 0"
-                    class="w-2 h-2 rounded-full ml-2 my-auto cursor-pointer bg-emerald-400 animate-pulse"
-                    v-tippy="'Projeção vinculada'" />
-                </div>
-              </div>
-            </td>
-
-            <td class="px-6 py-4 text-right">
-              <div class="text-sm font-semibold relative">
-                {{ enterprise.count - distratoCount(enterprise) }}
-
-                <span v-if="!enterprise.onlyProjectionRow && enterprise.proj_count"
-                  class="font-bold text-emerald-600 absolute -top-3">
-                  +{{ enterprise.proj_count }}
-                </span>
-
-                <span v-if="!enterprise.onlyProjectionRow && distratoCount(enterprise) > 0"
-                  class="font-bold text-red-600 absolute -top-4 right-2" v-tippy="'Distratos (não contabilizados)'">
-                  -{{ distratoCount(enterprise) }}
-                </span>
-              </div>
-            </td>
-
-            <td class="px-6 py-4 text-right">
-              <div class="text-sm font-semibold text-green-600">
-                {{ formatCurrency(baseValue(enterprise)) }}
-
-                <span v-if="!enterprise.onlyProjectionRow && appendedValue(enterprise) > 0"
-                  class="text-emerald-600 font-semibold text-xs">
-                  <br />+{{ formatCurrency(appendedValue(enterprise)) }}
-                </span>
-
-                <span v-if="!enterprise.onlyProjectionRow && distratoValue(enterprise) > 0"
-                  class="text-red-600 font-semibold text-xs" v-tippy="'Distratos (não contabilizados)'">
-                  <br />-{{ formatCurrency(distratoValue(enterprise)) }}
-                </span>
-              </div>
-            </td>
-
-            <td class="px-6 py-4 text-right">
-              <div class="text-sm">
-                {{ formatCurrency(ticketMedio(enterprise)) }}
-              </div>
-            </td>
-
-            <td class="w-fit">
-              <div class="flex gap-1 pe-2 justify-center items-center">
-                <button @click="openSingle(enterprise, 'list')"
-                  class="inline-flex items-center px-2 py-2 text-xs font-medium rounded-full transition-colors text-purple-700 bg-purple-50 hover:bg-purple-100 dark:text-purple-200 dark:bg-purple-700/30"
-                  v-tippy="'Relatório de Vendas'">
-                  <i class="fas fa-eye"></i>
-                </button>
-                <button @click="openSingle(enterprise, 'pie')"
-                  class="inline-flex items-center px-2 py-2 text-xs font-medium rounded-full transition-colors text-purple-700 bg-purple-50 hover:bg-purple-100 dark:text-purple-200 dark:bg-purple-700/30"
-                  v-tippy="'Relatório de Pizza por imobiliária'">
-                  <i class="fas fa-chart-pie"></i>
-                </button>
-                <button @click="openSingle(enterprise, 'bar')"
-                  class="inline-flex items-center px-2 py-2 text-xs font-medium rounded-full transition-colors text-purple-700 bg-purple-50 hover:bg-purple-100 dark:text-purple-200 dark:bg-purple-700/30"
-                  v-tippy="'Relatório de Barra por imobiliária'">
-                  <i class="fas fa-chart-bar"></i>
-                </button>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <Export v-model="open" :source="sortedData" title="Exportação de vendas" filename="Relatório de Faturamento"
-      initial-delimiter=";" initial-array-mode="join" :preselect="[]" />
-
-    <EnterpriseDetailModal v-if="showModal" :enterprise="modalEnterprise" :sales="modalSales"
-      :initial-mode="initialMode" @close="closeModal" />
-  </div>
-</template>
-
 <script setup>
-import { ref, computed, watchEffect } from 'vue'
-import { useContractsStore } from '@/stores/Comercial/Contracts/contractsStore'
-import EnterpriseDetailModal from './EnterpriseDetailModal.vue'
-import Export from '@/components/config/Export.vue'
+import { ref, computed, watchEffect } from 'vue';
+import { useContractsStore } from '@/stores/Comercial/Contracts/contractsStore';
+import EnterpriseDetailModal from './EnterpriseDetailModal.vue';
+import Export from '@/components/config/Export.vue';
 
-const props = defineProps({ data: { type: Array, required: true } })
-const emit = defineEmits(['open-land-sync', 'selection-metrics'])
+import IconButton from '@/components/UI/IconButton.vue';
+import EmptyState from '@/components/UI/EmptyState.vue';
+import SegmentedControl from '@/components/UI/SegmentedControl.vue';
+import Select from '@/components/UI/Select.vue';
+import Badge from '@/components/UI/Badge.vue';
 
-const contractsStore = useContractsStore()
-const sortBy = ref('value-desc')
-const open = ref(false)
+const props = defineProps({ data: { type: Array, required: true } });
+const emit = defineEmits(['open-land-sync', 'selection-metrics']);
 
-/* seleção (usando keys únicas) */
-const selectedKeys = ref(new Set())
+const contractsStore = useContractsStore();
+const sortBy = ref('value-desc');
+const open = ref(false);
 
-/* modal */
-const showModal = ref(false)
-const modalSales = ref([])
-const modalTitle = ref('')
-const initialMode = ref('list')
-const modalEnterprise = ref({ name: '' })
+const selectedKeys = ref(new Set());
 
-const valueModeLabel = computed(() => contractsStore.valueModeLabel)
+const showModal = ref(false);
+const modalSales = ref([]);
+const modalTitle = ref('');
+const initialMode = ref('list');
+const modalEnterprise = ref({ name: '' });
+
+const valueModeLabel = computed(() => contractsStore.valueModeLabel);
 
 const isAdmin = computed(() => {
-  try { return localStorage.getItem('role') === 'admin' } catch { return false }
-})
+  try { return localStorage.getItem('role') === 'admin'; } catch { return false; }
+});
+
+const valueModeOptions = [
+  { value: 'net', label: 'VGV' },
+  { value: 'gross', label: 'VGV+DC' },
+];
+
+const groupByOptions = [
+  { value: 'enterprise', label: 'Empreendimento', icon: 'fas fa-building' },
+  { value: 'company', label: 'Empresa', icon: 'fas fa-city' },
+];
+
+const viewOptions = [
+  { value: 'list', label: 'Listagem', icon: 'fas fa-list' },
+  { value: 'pie', label: 'Pizza', icon: 'fas fa-chart-pie' },
+  { value: 'bar', label: 'Colunas', icon: 'fas fa-chart-column' },
+];
+
+const sortOptions = [
+  { value: 'value-desc', label: 'Valor ↓' },
+  { value: 'value', label: 'Valor ↑' },
+  { value: 'count-desc', label: 'Vendas ↓' },
+  { value: 'count', label: 'Vendas ↑' },
+];
 
 const colors = [
   '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6',
-  '#06B6D4', '#84CC16', '#F97316', '#EC4899', '#6366F1'
-]
+  '#06B6D4', '#84CC16', '#F97316', '#EC4899', '#6366F1',
+];
 
-const getColor = (i) => colors[i % colors.length]
+const getColor = (i) => colors[i % colors.length];
 
 const formatCurrency = (v) =>
   new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0
-  }).format(v || 0)
+    style: 'currency', currency: 'BRL',
+    minimumFractionDigits: 0, maximumFractionDigits: 0,
+  }).format(v || 0);
 
 const appendedValue = (e) => {
-  if (e.onlyProjectionRow) return 0
-  return contractsStore.valueMode === 'net' ? (e.proj_value_net || 0) : (e.proj_value_gross || 0)
-}
+  if (e.onlyProjectionRow) return 0;
+  return contractsStore.valueMode === 'net' ? (e.proj_value_net || 0) : (e.proj_value_gross || 0);
+};
 
-const totalCombined = (e) => baseValue(e) + appendedValue(e)
+const totalCombined = (e) => baseValue(e) + appendedValue(e);
 
-/* ===================== DISTRATO (dashboard) ===================== */
-const norm = (v) => String(v ?? '').trim().toLowerCase()
+/* ===================== DISTRATO ===================== */
+const norm = (v) => String(v ?? '').trim().toLowerCase();
 
 const repasseStatusOfSale = (sale) => {
-  const first = sale?.contracts?.[0] || {}
-  const r = first?.repasse?.[0]
+  const first = sale?.contracts?.[0] || {};
+  const r = first?.repasse?.[0];
   if (r) {
-    const sr = (r.status_repasse ?? r.statusRepasse ?? '').toString().trim()
-    if (sr) return sr
+    const sr = (r.status_repasse ?? r.statusRepasse ?? '').toString().trim();
+    if (sr) return sr;
   }
-  const res = first?.reserva
+  const res = first?.reserva;
   if (res) {
-    const srr = (res.status_repasse ?? res.statusRepasse ?? '').toString().trim()
-    if (srr) return srr
+    const srr = (res.status_repasse ?? res.statusRepasse ?? '').toString().trim();
+    if (srr) return srr;
   }
-  return null
-}
+  return null;
+};
 
-const saleIsDistrato = (sale) => norm(repasseStatusOfSale(sale)) === 'distrato'
+const saleIsDistrato = (sale) => norm(repasseStatusOfSale(sale)) === 'distrato';
 
 const distratoMetaForRow = (row) => {
-  const snapshot = Array.isArray(contractsStore.uniqueSales) ? contractsStore.uniqueSales : []
-  const sales = salesForRowFrom(snapshot, row)
+  const snapshot = Array.isArray(contractsStore.uniqueSales) ? contractsStore.uniqueSales : [];
+  const sales = salesForRowFrom(snapshot, row);
 
-  let count = 0
-  let value = 0
+  let count = 0;
+  let value = 0;
 
   for (const s of sales) {
-    if (!saleIsDistrato(s)) continue
-    if (row.onlyProjectionRow) continue
-    count += 1
-    value += Number(contractsStore.valuePicker(s) || 0)
+    if (!saleIsDistrato(s)) continue;
+    if (row.onlyProjectionRow) continue;
+    count += 1;
+    value += Number(contractsStore.valuePicker(s) || 0);
   }
+  return { count, value };
+};
 
-  return { count, value }
-}
-
-const distratoCount = (row) => distratoMetaForRow(row).count
-const distratoValue = (row) => distratoMetaForRow(row).value
+const distratoCount = (row) => distratoMetaForRow(row).count;
+const distratoValue = (row) => distratoMetaForRow(row).value;
 
 const baseValue = (e) => {
   if (e.onlyProjectionRow) {
-    return contractsStore.isNet ? Number(e.total_value_net || 0) : Number(e.total_value_gross || 0)
+    return contractsStore.isNet ? Number(e.total_value_net || 0) : Number(e.total_value_gross || 0);
   }
-  const base = Number(contractsStore.valuePicker(e) || 0)
-  const dv = Number(distratoValue(e) || 0)
-  return (Number.isFinite(base) ? base : 0) - (Number.isFinite(dv) ? dv : 0)
-}
+  const base = Number(contractsStore.valuePicker(e) || 0);
+  const dv = Number(distratoValue(e) || 0);
+  return (Number.isFinite(base) ? base : 0) - (Number.isFinite(dv) ? dv : 0);
+};
 
 const ticketMedio = (e) => {
-  const denom = (e.count || 0) - distratoCount(e)
-  const safeDenom = denom > 0 ? denom : 1
-  return baseValue(e) / safeDenom
-}
+  const denom = (e.count || 0) - distratoCount(e);
+  const safeDenom = denom > 0 ? denom : 1;
+  return baseValue(e) / safeDenom;
+};
 
 /* ===================== SORT ===================== */
 const sortedData = computed(() => {
-  const data = [...props.data]
+  const data = [...props.data];
   switch (sortBy.value) {
     case 'count':
       return data.sort(
         (a, b) =>
           ((a.count - distratoCount(a)) + (a.onlyProjectionRow ? 0 : a.proj_count)) -
           ((b.count - distratoCount(b)) + (b.onlyProjectionRow ? 0 : b.proj_count))
-      )
+      );
     case 'count-desc':
       return data.sort(
         (a, b) =>
           ((b.count - distratoCount(b)) + (b.onlyProjectionRow ? 0 : b.proj_count)) -
           ((a.count - distratoCount(a)) + (a.onlyProjectionRow ? 0 : a.proj_count))
-      )
+      );
     case 'value':
-      return data.sort((a, b) => totalCombined(a) - totalCombined(b))
+      return data.sort((a, b) => totalCombined(a) - totalCombined(b));
     case 'value-desc':
     default:
-      return data.sort((a, b) => totalCombined(b) - totalCombined(a))
+      return data.sort((a, b) => totalCombined(b) - totalCombined(a));
   }
-})
+});
+
+const totalCount = computed(() =>
+  sortedData.value.reduce((s, e) => s + (e.count || 0) - distratoCount(e), 0)
+);
+const totalValueAll = computed(() =>
+  sortedData.value.reduce((s, e) => s + totalCombined(e), 0)
+);
 
 /* ===================== seleção ===================== */
-const visibleKeys = computed(() => sortedData.value.map((e) => e.key))
+const visibleKeys = computed(() => sortedData.value.map((e) => e.key));
 const allVisibleChecked = computed(
   () => visibleKeys.value.every((k) => selectedKeys.value.has(k)) && visibleKeys.value.length > 0
-)
-const disabledOpen = computed(() => props.data.length === 0)
+);
+const disabledOpen = computed(() => props.data.length === 0);
 
 const toggleAllVisible = (evt) => {
-  const next = new Set(selectedKeys.value)
-  if (evt.target.checked) visibleKeys.value.forEach((k) => next.add(k))
-  else visibleKeys.value.forEach((k) => next.delete(k))
-  selectedKeys.value = next
-}
+  const next = new Set(selectedKeys.value);
+  if (evt.target.checked) visibleKeys.value.forEach((k) => next.add(k));
+  else visibleKeys.value.forEach((k) => next.delete(k));
+  selectedKeys.value = next;
+};
 
 const toggleOne = (key, evt) => {
-  const next = new Set(selectedKeys.value)
-  evt.target.checked ? next.add(key) : next.delete(key)
-  selectedKeys.value = next
-}
+  const next = new Set(selectedKeys.value);
+  evt.target.checked ? next.add(key) : next.delete(key);
+  selectedKeys.value = next;
+};
 
-/* =====================
-   FILTRO POR ROW (NÃO MEXER - TABELA/DASHBOARD)
-   ===================== */
+/* ===================== FILTRO POR ROW ===================== */
 const toNum = (v) => {
-  if (v === null || v === undefined || v === '') return null
-  const n = Number(v)
-  return Number.isFinite(n) ? n : null
-}
+  if (v === null || v === undefined || v === '') return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+};
 
 const salesForRowFrom = (sales, row) => {
-  const byCompany = contractsStore.groupBy === 'company'
-  const onlyProjRow = !!row.onlyProjectionRow
-
-  const rowCompanyId = toNum(row.company_id ?? row.id ?? null)
-  const rowEnterpriseId = toNum(row.enterprise_id ?? row.id ?? null)
+  const byCompany = contractsStore.groupBy === 'company';
+  const onlyProjRow = !!row.onlyProjectionRow;
+  const rowCompanyId = toNum(row.company_id ?? row.id ?? null);
+  const rowEnterpriseId = toNum(row.enterprise_id ?? row.id ?? null);
 
   return (sales || []).filter((sale) => {
-    const contracts = Array.isArray(sale?.contracts) ? sale.contracts : []
-    if (!contracts.length) return false
+    const contracts = Array.isArray(sale?.contracts) ? sale.contracts : [];
+    if (!contracts.length) return false;
 
-    let belongs = false
+    let belongs = false;
     if (byCompany) {
-      if (rowCompanyId != null) belongs = contracts.some((c) => toNum(c.company_id) === rowCompanyId)
-      else belongs = contracts.some((c) => c.company_id == null)
+      if (rowCompanyId != null) belongs = contracts.some((c) => toNum(c.company_id) === rowCompanyId);
+      else belongs = contracts.some((c) => c.company_id == null);
     } else {
-      if (rowEnterpriseId != null) belongs = contracts.some((c) => toNum(c.enterprise_id) === rowEnterpriseId)
-      else belongs = false
+      if (rowEnterpriseId != null) belongs = contracts.some((c) => toNum(c.enterprise_id) === rowEnterpriseId);
+      else belongs = false;
     }
 
-    if (!belongs) return false
-    if (onlyProjRow) return contracts.every((c) => !!c._projection)
-    return true
-  })
-}
+    if (!belongs) return false;
+    if (onlyProjRow) return contracts.every((c) => !!c._projection);
+    return true;
+  });
+};
 
-/* =====================
-   FILTRO DO MODAL — inclui projeções vinculadas por nome quando o backend
-   não resolveu o idemp_erp_resolvido (enterprise_id = null nas projeções).
-   Garante que o modal mostre as mesmas vendas que o dashboard conta no +N.
-   ===================== */
 const salesForModalRowFrom = (sales, row, ctx = {}) => {
-  const byCompany = contractsStore.groupBy === 'company'
-  const onlyProjRow = !!row.onlyProjectionRow
+  const byCompany = contractsStore.groupBy === 'company';
+  const onlyProjRow = !!row.onlyProjectionRow;
 
-  // ── Empresa + linha de projeção pura ────────────────────────────────
   if (byCompany && onlyProjRow) {
-    const allowed = Array.isArray(ctx.enterpriseIds) ? ctx.enterpriseIds : []
-    const allowedSet = new Set(allowed.map(Number).filter(Number.isFinite))
+    const allowed = Array.isArray(ctx.enterpriseIds) ? ctx.enterpriseIds : [];
+    const allowedSet = new Set(allowed.map(Number).filter(Number.isFinite));
 
     return (sales || []).filter((sale) => {
-      const contracts = Array.isArray(sale?.contracts) ? sale.contracts : []
-      if (!contracts.length) return false
-      if (!contracts.every((c) => !!c._projection)) return false
-      if (allowedSet.size > 0) return contracts.some((c) => allowedSet.has(Number(c.enterprise_id)))
-      return true
-    })
+      const contracts = Array.isArray(sale?.contracts) ? sale.contracts : [];
+      if (!contracts.length) return false;
+      if (!contracts.every((c) => !!c._projection)) return false;
+      if (allowedSet.size > 0) return contracts.some((c) => allowedSet.has(Number(c.enterprise_id)));
+      return true;
+    });
   }
 
-  // ── Empreendimento + linha real (inclui projeções vinculadas) ────────
   if (!byCompany && !onlyProjRow) {
-    const rowEnterpriseId = toNum(row.enterprise_id ?? row.id ?? null)
-    const rowName = (row.name || '').toUpperCase().trim()
+    const rowEnterpriseId = toNum(row.enterprise_id ?? row.id ?? null);
+    const rowName = (row.name || '').toUpperCase().trim();
 
     return (sales || []).filter((sale) => {
-      const contracts = Array.isArray(sale?.contracts) ? sale.contracts : []
-      if (!contracts.length) return false
+      const contracts = Array.isArray(sale?.contracts) ? sale.contracts : [];
+      if (!contracts.length) return false;
 
-      // A) contratos reais: filtro padrão por enterprise_id
-      const hasReal = contracts.some((c) => !c._projection)
+      const hasReal = contracts.some((c) => !c._projection);
       if (hasReal) {
         return rowEnterpriseId != null
           ? contracts.some((c) => !c._projection && toNum(c.enterprise_id) === rowEnterpriseId)
-          : false
+          : false;
       }
 
-      // B) projeções puras: aceita se enterprise_id bate OU se nome do empreendimento da projeção
-      //    é prefixo/subconjunto do nome da linha real (resolve o caso "TERRAS DE SÃO PAULO V"
-      //    vs "MARILIA/SP - TERRAS DE SÃO PAULO V - FASE 3 ...")
       if (rowEnterpriseId != null) {
-        const matchById = contracts.some((c) => toNum(c.enterprise_id) === rowEnterpriseId)
-        if (matchById) return true
+        const matchById = contracts.some((c) => toNum(c.enterprise_id) === rowEnterpriseId);
+        if (matchById) return true;
       }
 
-      // Name-prefix fallback para projeções sem enterprise_id resolvido
       if (rowName) {
         return contracts.some((c) => {
-          const projName = (c.enterprise_name || '').toUpperCase().trim()
-          return projName && (rowName.includes(projName) || projName.includes(rowName))
-        })
+          const projName = (c.enterprise_name || '').toUpperCase().trim();
+          return projName && (rowName.includes(projName) || projName.includes(rowName));
+        });
       }
-
-      return false
-    })
+      return false;
+    });
   }
 
-  // ── Tudo o mais: regra original ──────────────────────────────────────
-  return salesForRowFrom(sales, row)
-}
+  return salesForRowFrom(sales, row);
+};
 
-/* =====================
-   MODAL - SINGLE (CORRIGIDO)
-   ===================== */
+/* ===================== MODAL - SINGLE ===================== */
 const openSingle = async (row, mode = 'list') => {
-  const dashboardSalesSnapshot = Array.isArray(contractsStore.uniqueSales) ? [...contractsStore.uniqueSales] : []
-  const targetSales = salesForRowFrom(dashboardSalesSnapshot, row)
+  const dashboardSalesSnapshot = Array.isArray(contractsStore.uniqueSales) ? [...contractsStore.uniqueSales] : [];
+  const targetSales = salesForRowFrom(dashboardSalesSnapshot, row);
 
-  // regra: company usa enterpriseIds do próprio row (mais confiável)
   const enterpriseIds =
     (contractsStore.groupBy === 'company' && Array.isArray(row.enterpriseIds) && row.enterpriseIds.length > 0)
       ? [...new Set(row.enterpriseIds.map(Number).filter(Number.isFinite))]
@@ -467,33 +274,32 @@ const openSingle = async (row, mode = 'list') => {
           targetSales
             .flatMap((s) => (s.contracts || []).map((c) => Number(c?.enterprise_id)))
             .filter((id) => Number.isFinite(id) && id > 0)
-        )
-      ]
+        ),
+      ];
 
   if (enterpriseIds.length > 0) {
-    await contractsStore.fetchContracts({ view: 'detail', enterpriseIds })
+    await contractsStore.fetchContracts({ view: 'detail', enterpriseIds });
   } else if (contractsStore.groupBy === 'enterprise' && row.id != null) {
-    await contractsStore.fetchContracts({ view: 'detail', enterpriseId: row.id })
+    await contractsStore.fetchContracts({ view: 'detail', enterpriseId: row.id });
   } else {
-    await contractsStore.fetchContracts({ view: 'detail' })
+    await contractsStore.fetchContracts({ view: 'detail' });
   }
 
-  const detailSalesSnapshot = Array.isArray(contractsStore.uniqueSales) ? [...contractsStore.uniqueSales] : []
+  const detailSalesSnapshot = Array.isArray(contractsStore.uniqueSales) ? [...contractsStore.uniqueSales] : [];
 
-  // ✅ aqui: usa filtro do MODAL, sem mexer na regra da tabela
-  modalSales.value = salesForModalRowFrom(detailSalesSnapshot, row, { enterpriseIds })
+  modalSales.value = salesForModalRowFrom(detailSalesSnapshot, row, { enterpriseIds });
 
   modalTitle.value =
     (contractsStore.groupBy === 'company' ? `Empresa: ${row.name}` : row.name) +
-    (row.onlyProjectionRow ? ' • Projeções' : '')
+    (row.onlyProjectionRow ? ' • Projeções' : '');
 
-  initialMode.value = mode
-  modalEnterprise.value = { ...row, name: modalTitle.value }
-  showModal.value = true
-}
+  initialMode.value = mode;
+  modalEnterprise.value = { ...row, name: modalTitle.value };
+  showModal.value = true;
+};
 
 const saleDedupeKey = (s) => {
-  const first = s?.contracts?.[0] || {}
+  const first = s?.contracts?.[0] || {};
   return [
     s.customer_id ?? '',
     s.unit_id ?? s.unit_name ?? '',
@@ -501,52 +307,51 @@ const saleDedupeKey = (s) => {
     (contractsStore.groupBy === 'company'
       ? (first.company_id ?? first.company_name ?? '')
       : (first.enterprise_id ?? first.enterprise_name ?? s.enterprise_name ?? '')
-    )
-  ].map(v => String(v ?? '').trim()).join('|')
-}
+    ),
+  ].map(v => String(v ?? '').trim()).join('|');
+};
 
 const selectedRows = computed(() => {
-  if (selectedKeys.value.size === 0) return []
-  const keys = selectedKeys.value
-  return props.data.filter(r => keys.has(r.key))
-})
+  if (selectedKeys.value.size === 0) return [];
+  const keys = selectedKeys.value;
+  return props.data.filter(r => keys.has(r.key));
+});
 
 const selectedSales = computed(() => {
-  if (selectedRows.value.length === 0) return []
+  if (selectedRows.value.length === 0) return [];
 
-  const snapshot = Array.isArray(contractsStore.uniqueSales) ? contractsStore.uniqueSales : []
-  const dedupe = new Map()
+  const snapshot = Array.isArray(contractsStore.uniqueSales) ? contractsStore.uniqueSales : [];
+  const dedupe = new Map();
 
   for (const r of selectedRows.value) {
-    const list = salesForRowFrom(snapshot, r)
+    const list = salesForRowFrom(snapshot, r);
     for (const s of list) {
-      const k = saleDedupeKey(s)
-      if (!dedupe.has(k)) dedupe.set(k, s)
+      const k = saleDedupeKey(s);
+      if (!dedupe.has(k)) dedupe.set(k, s);
     }
   }
-
-  return [...dedupe.values()]
-})
+  return [...dedupe.values()];
+});
 
 const selectionMetricsComputed = computed(() => {
-  if (selectedSales.value.length === 0) return null
+  if (selectedSales.value.length === 0) return null;
 
-  const sales = selectedSales.value
-  const totalSales = sales.length
+  const sales = selectedSales.value;
+  const totalSales = sales.length;
 
-  const totalValueNet = sales.reduce((sum, s) => sum + (Number(s.total_value_net) || 0), 0)
-  const totalValueGross = sales.reduce((sum, s) => sum + (Number(s.total_value_gross) || 0), 0)
+  const totalValueNet = sales.reduce((sum, s) => sum + (Number(s.total_value_net) || 0), 0);
+  const totalValueGross = sales.reduce((sum, s) => sum + (Number(s.total_value_gross) || 0), 0);
 
-  const avgSaleValueNet = totalSales > 0 ? totalValueNet / totalSales : 0
-  const avgSaleValueGross = totalSales > 0 ? totalValueGross / totalSales : 0
+  const avgSaleValueNet = totalSales > 0 ? totalValueNet / totalSales : 0;
+  const avgSaleValueGross = totalSales > 0 ? totalValueGross / totalSales : 0;
 
-  const totalContracts = sales.reduce((sum, s) => sum + (Array.isArray(s.contracts) ? s.contracts.length : 0), 0)
+  const totalContracts = sales.reduce((sum, s) => sum + (Array.isArray(s.contracts) ? s.contracts.length : 0), 0);
 
-  const entSet = new Set()
+  const entSet = new Set();
   for (const s of sales) {
     for (const c of (s.contracts || [])) {
-      const eid = Number(c.enterprise_id)
-      if (Number.isFinite(eid) && eid > 0) entSet.add(eid)
+      const eid = Number(c.enterprise_id);
+      if (Number.isFinite(eid) && eid > 0) entSet.add(eid);
     }
   }
 
@@ -560,81 +365,292 @@ const selectionMetricsComputed = computed(() => {
     totalValue: totalValueNet,
     avgSaleValue: avgSaleValueNet,
     totalEnterprises: entSet.size,
-    totalSalesWithProjections: null
-  }
-})
+    totalSalesWithProjections: null,
+  };
+});
 
 watchEffect(() => {
-  emit('selection-metrics', selectionMetricsComputed.value)
-})
+  emit('selection-metrics', selectionMetricsComputed.value);
+});
 
-/* =====================
-   MODAL - GROUP (CORRIGIDO)
-   ===================== */
+/* ===================== MODAL - GROUP ===================== */
 const openGroup = async (mode = 'list') => {
   const keysSet =
-    selectedKeys.value.size > 0 ? new Set(selectedKeys.value) : new Set(props.data.map((e) => e.key))
+    selectedKeys.value.size > 0 ? new Set(selectedKeys.value) : new Set(props.data.map((e) => e.key));
 
-  const rows = props.data.filter((r) => keysSet.has(r.key))
+  const rows = props.data.filter((r) => keysSet.has(r.key));
 
-  const dashboardSalesSnapshot = Array.isArray(contractsStore.uniqueSales) ? [...contractsStore.uniqueSales] : []
-  const allSales = []
-  for (const r of rows) allSales.push(...salesForRowFrom(dashboardSalesSnapshot, r))
+  const dashboardSalesSnapshot = Array.isArray(contractsStore.uniqueSales) ? [...contractsStore.uniqueSales] : [];
+  const allSales = [];
+  for (const r of rows) allSales.push(...salesForRowFrom(dashboardSalesSnapshot, r));
 
   const enterpriseIds =
     (contractsStore.groupBy === 'company')
       ? [...new Set(rows.flatMap(r => (r.enterpriseIds || [])).map(Number).filter(Number.isFinite))]
-      : [...new Set(allSales.flatMap(s => (s.contracts || []).map(c => Number(c.enterprise_id))).filter(Number.isFinite))]
+      : [...new Set(allSales.flatMap(s => (s.contracts || []).map(c => Number(c.enterprise_id))).filter(Number.isFinite))];
 
   if (enterpriseIds.length > 0) {
-    await contractsStore.fetchContracts({ view: 'detail', enterpriseIds })
+    await contractsStore.fetchContracts({ view: 'detail', enterpriseIds });
   } else if (contractsStore.groupBy === 'enterprise' && rows.length === 1 && rows[0]?.id != null) {
-    await contractsStore.fetchContracts({ view: 'detail', enterpriseId: rows[0].id })
+    await contractsStore.fetchContracts({ view: 'detail', enterpriseId: rows[0].id });
   } else {
-    await contractsStore.fetchContracts({ view: 'detail' })
+    await contractsStore.fetchContracts({ view: 'detail' });
   }
 
-  const salesSnapshot = Array.isArray(contractsStore.uniqueSales) ? [...contractsStore.uniqueSales] : []
+  const salesSnapshot = Array.isArray(contractsStore.uniqueSales) ? [...contractsStore.uniqueSales] : [];
 
-  // ✅ dedupe mantendo regra do seu key
-  const dedupe = new Map()
+  const dedupe = new Map();
   for (const r of rows) {
-    // ✅ aqui: filtro do MODAL por row (resolve linhas de projeção em company)
-    const list = salesForModalRowFrom(salesSnapshot, r, { enterpriseIds: (r.enterpriseIds || enterpriseIds) })
-
+    const list = salesForModalRowFrom(salesSnapshot, r, { enterpriseIds: (r.enterpriseIds || enterpriseIds) });
     for (const s of list) {
-      const first = s?.contracts?.[0] || {}
-      const key =
-        [
-          s.customer_id ?? '',
-          s.unit_id ?? s.unit_name ?? '',
-          s.financial_institution_date ?? first.financial_institution_date ?? '',
-          (contractsStore.groupBy === 'company'
-            ? (first.company_id ?? first.company_name ?? '')
-            : (first.enterprise_id ?? first.enterprise_name ?? s.enterprise_name ?? '')
-          )
-        ]
-          .map((v) => String(v ?? '').trim())
-          .join('|')
+      const first = s?.contracts?.[0] || {};
+      const key = [
+        s.customer_id ?? '',
+        s.unit_id ?? s.unit_name ?? '',
+        s.financial_institution_date ?? first.financial_institution_date ?? '',
+        (contractsStore.groupBy === 'company'
+          ? (first.company_id ?? first.company_name ?? '')
+          : (first.enterprise_id ?? first.enterprise_name ?? s.enterprise_name ?? '')
+        ),
+      ].map((v) => String(v ?? '').trim()).join('|');
 
-      if (!dedupe.has(key)) dedupe.set(key, s)
+      if (!dedupe.has(key)) dedupe.set(key, s);
     }
   }
 
-  modalSales.value = [...dedupe.values()]
+  modalSales.value = [...dedupe.values()];
   modalTitle.value =
     rows.length === 1
       ? (contractsStore.groupBy === 'company' ? `Empresa: ${rows[0].name}` : rows[0].name)
-      : `Conjunto de ${rows.length} ${contractsStore.groupBy === 'company' ? 'empresas' : 'empreendimentos'}`
+      : `Conjunto de ${rows.length} ${contractsStore.groupBy === 'company' ? 'empresas' : 'empreendimentos'}`;
 
-  initialMode.value = mode
-  modalEnterprise.value = { name: modalTitle.value }
-  showModal.value = true
-}
+  initialMode.value = mode;
+  modalEnterprise.value = { name: modalTitle.value };
+  showModal.value = true;
+};
 
 const closeModal = () => {
-  showModal.value = false
-  const ok = contractsStore.restoreDashboardFromCache()
-  if (!ok) contractsStore.fetchContracts({ view: 'dashboard' })
-}
+  showModal.value = false;
+  const ok = contractsStore.restoreDashboardFromCache();
+  if (!ok) contractsStore.fetchContracts({ view: 'dashboard' });
+};
+
+// ── Bridges para SegmentedControl ────────────────────────
+const valueModeProxy = computed({
+  get: () => contractsStore.valueMode,
+  set: (v) => contractsStore.setValueMode(v),
+});
+const groupByProxy = computed({
+  get: () => contractsStore.groupBy,
+  set: (v) => contractsStore.setGroupBy(v),
+});
+const lastView = ref('list');
+const onViewChange = (mode) => {
+  lastView.value = mode;
+  openGroup(mode);
+};
 </script>
+
+<template>
+  <section class="rounded-xl border border-line bg-surface-raised shadow-soft surface-gradient overflow-hidden">
+
+    <!-- Header -->
+    <div class="flex flex-col gap-3 p-3 sm:p-4 border-b border-line">
+      <div class="flex items-start sm:items-center justify-between gap-3 flex-wrap">
+        <div class="flex items-center gap-2 min-w-0 w-full">
+          <h3 class="text-sm font-semibold text-ink">
+            Vendas por {{ contractsStore.groupBy === 'company' ? 'empresa' : 'empreendimento' }}
+          </h3>
+          <p class="text-xs text-ink-muted mt-0.5">
+            <span class="font-mono text-ink">{{ sortedData.length }}</span>
+            {{ contractsStore.groupBy === 'company' ? 'empresa(s)' : 'empreendimento(s)' }} ·
+            <span class="font-mono text-ink">{{ totalCount }}</span> venda(s) ·
+            <span class="font-mono text-ink">{{ formatCurrency(totalValueAll) }}</span>
+            <span v-if="selectedKeys.size" class="text-accent">
+              · <span class="font-mono">{{ selectedKeys.size }}</span> selecionado(s)
+            </span>
+          </p>
+        </div>
+
+      </div>
+
+      <!-- Toolbar de toggles -->
+      <div class="flex items-center gap-2 flex-wrap">
+        <SegmentedControl v-model="groupByProxy" :options="groupByOptions" size="sm" />
+        <IconButton v-if="isAdmin" icon="fas fa-cog" size="sm" label="Configurar regras" class="md:max-w-20"
+          @click="emit('open-land-sync')" />
+        <IconButton icon="fas fa-download" size="md" label="Exportar dados" @click="open = true" />
+        <div class="ml-auto flex items-center gap-2 flex-wrap">
+          <Select v-model="sortBy" :options="sortOptions" size="sm" class="md:max-w-20" />
+          <SegmentedControl v-model="valueModeProxy" :options="valueModeOptions" size="sm" />
+          <SegmentedControl :model-value="lastView" :options="viewOptions" size="sm" @change="onViewChange" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty -->
+    <EmptyState v-if="sortedData.length === 0" icon="fas fa-building" title="Nenhum empreendimento encontrado"
+      description="Ajuste os filtros para ver resultados." />
+
+    <!-- Mobile: cards -->
+    <div v-else class="md:hidden divide-y divide-line">
+      <article v-for="(enterprise, idx) in sortedData" :key="enterprise.key"
+        class="flex items-start gap-3 p-3 cursor-pointer hover:bg-surface-sunken/40 transition-colors"
+        :class="enterprise.onlyProjectionRow ? 'bg-emerald-500/5' : ''" @click="openSingle(enterprise)">
+        <input type="checkbox" :checked="selectedKeys.has(enterprise.key)" @click.stop
+          @change="toggleOne(enterprise.key, $event)" class="mt-1 shrink-0 accent-accent" />
+
+        <div :style="{ backgroundColor: getColor(idx) }" class="mt-1.5 w-2.5 h-2.5 rounded-full shrink-0"></div>
+
+        <div class="min-w-0 flex-1">
+          <div class="flex items-start justify-between gap-2">
+            <p class="text-sm font-medium text-ink truncate flex items-center gap-1.5">
+              {{ enterprise.name }}
+              <span v-if="!enterprise.onlyProjectionRow && enterprise.proj_count > 0" v-tippy="'Projeção vinculada'"
+                class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
+            </p>
+            <i class="fas fa-chevron-right text-xs text-ink-subtle mt-1 shrink-0"></i>
+          </div>
+
+          <div class="flex items-center gap-3 mt-1.5 flex-wrap text-[11px]">
+            <span class="text-ink-muted font-mono">
+              <span class="text-ink font-semibold">{{ enterprise.count - distratoCount(enterprise) }}</span> venda(s)
+              <span v-if="!enterprise.onlyProjectionRow && enterprise.proj_count"
+                class="text-emerald-500 font-semibold">+{{ enterprise.proj_count }}</span>
+              <span v-if="!enterprise.onlyProjectionRow && distratoCount(enterprise) > 0"
+                class="text-red-500 font-semibold" v-tippy="'Distratos (não contabilizados)'">−{{
+                  distratoCount(enterprise) }}</span>
+            </span>
+          </div>
+
+          <div class="flex items-baseline gap-2 mt-1">
+            <span class="text-sm font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
+              {{ formatCurrency(baseValue(enterprise)) }}
+            </span>
+            <span v-if="!enterprise.onlyProjectionRow && appendedValue(enterprise) > 0"
+              class="text-[11px] text-emerald-500 font-mono tabular-nums">
+              +{{ formatCurrency(appendedValue(enterprise)) }}
+            </span>
+          </div>
+          <p class="text-[10px] text-ink-subtle font-mono mt-0.5">
+            ticket {{ formatCurrency(ticketMedio(enterprise)) }}
+          </p>
+        </div>
+      </article>
+    </div>
+
+    <!-- Desktop: tabela -->
+    <div v-if="sortedData.length" class="hidden md:block overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead class="bg-surface-sunken/40 border-b border-line">
+          <tr>
+            <th class="px-4 py-2.5 w-10">
+              <input type="checkbox" :checked="allVisibleChecked" @change="toggleAllVisible($event)"
+                class="accent-accent" />
+            </th>
+            <th class="px-4 py-2.5 text-left text-[10px] font-mono uppercase tracking-wider text-ink-subtle">
+              {{ contractsStore.groupBy === 'company' ? 'Empresa' : 'Empreendimento' }}
+            </th>
+            <th class="px-4 py-2.5 text-right text-[10px] font-mono uppercase tracking-wider text-ink-subtle">Vendas
+            </th>
+            <th class="px-4 py-2.5 text-right text-[10px] font-mono uppercase tracking-wider text-ink-subtle">
+              Valor total
+              <span class="text-ink-subtle/70">({{ valueModeLabel }})</span>
+            </th>
+            <th class="px-4 py-2.5 text-right text-[10px] font-mono uppercase tracking-wider text-ink-subtle">
+              Ticket médio
+              <span class="text-ink-subtle/70">({{ valueModeLabel }})</span>
+            </th>
+            <th class="px-4 py-2.5 text-center text-[10px] font-mono uppercase tracking-wider text-ink-subtle">Ações
+            </th>
+          </tr>
+        </thead>
+
+        <tbody class="divide-y divide-line">
+          <tr v-for="(enterprise, idx) in sortedData" :key="enterprise.key" class="transition-colors" :class="enterprise.onlyProjectionRow
+            ? 'bg-emerald-500/5 hover:bg-emerald-500/10'
+            : 'hover:bg-surface-sunken/40'">
+            <td class="px-4 py-3">
+              <input type="checkbox" :checked="selectedKeys.has(enterprise.key)"
+                @change="toggleOne(enterprise.key, $event)" class="accent-accent" />
+            </td>
+
+            <!-- Nome -->
+            <td class="px-4 py-3">
+              <div class="flex items-center gap-2.5 min-w-0">
+                <div :style="{ backgroundColor: getColor(idx) }" class="w-2.5 h-2.5 rounded-full shrink-0"></div>
+                <span class="text-sm font-medium text-ink truncate max-w-[28rem]">
+                  {{ enterprise.name }}
+                </span>
+                <span v-if="!enterprise.onlyProjectionRow && enterprise.proj_count > 0" v-tippy="'Projeção vinculada'"
+                  class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
+                <Badge v-if="enterprise.onlyProjectionRow" variant="success" size="sm">
+                  <i class="fas fa-chart-line text-[9px]"></i>Projeção
+                </Badge>
+              </div>
+            </td>
+
+            <!-- Vendas -->
+            <td class="px-4 py-3 text-right">
+              <div class="text-sm font-semibold text-ink tabular-nums relative inline-block">
+                {{ enterprise.count - distratoCount(enterprise) }}
+
+                <span v-if="!enterprise.onlyProjectionRow && enterprise.proj_count"
+                  class="absolute -top-3 -right-2 text-[10px] font-bold text-emerald-500 font-mono"
+                  v-tippy="'Projeção'">
+                  +{{ enterprise.proj_count }}
+                </span>
+
+                <span v-if="!enterprise.onlyProjectionRow && distratoCount(enterprise) > 0"
+                  class="absolute -bottom-3 -right-2 text-[10px] font-bold text-red-500 font-mono"
+                  v-tippy="'Distratos (não contabilizados)'">
+                  −{{ distratoCount(enterprise) }}
+                </span>
+              </div>
+            </td>
+
+            <!-- Valor -->
+            <td class="px-4 py-3 text-right">
+              <div class="text-sm font-semibold text-emerald-600 dark:text-emerald-400 tabular-nums">
+                {{ formatCurrency(baseValue(enterprise)) }}
+              </div>
+              <div v-if="!enterprise.onlyProjectionRow && appendedValue(enterprise) > 0"
+                class="text-[11px] text-emerald-500 font-mono tabular-nums">
+                +{{ formatCurrency(appendedValue(enterprise)) }}
+              </div>
+              <div v-if="!enterprise.onlyProjectionRow && distratoValue(enterprise) > 0"
+                class="text-[11px] text-red-500 font-mono tabular-nums" v-tippy="'Distratos (não contabilizados)'">
+                −{{ formatCurrency(distratoValue(enterprise)) }}
+              </div>
+            </td>
+
+            <!-- Ticket -->
+            <td class="px-4 py-3 text-right">
+              <span class="text-sm text-ink-muted tabular-nums font-mono">
+                {{ formatCurrency(ticketMedio(enterprise)) }}
+              </span>
+            </td>
+
+            <!-- Ações -->
+            <td class="px-4 py-3">
+              <div class="flex gap-1 justify-center">
+                <IconButton icon="fas fa-eye" size="sm" label="Relatório de vendas"
+                  @click.stop="openSingle(enterprise, 'list')" />
+                <IconButton icon="fas fa-chart-pie" size="sm" label="Pizza por imobiliária"
+                  @click.stop="openSingle(enterprise, 'pie')" />
+                <IconButton icon="fas fa-chart-column" size="sm" label="Colunas por imobiliária"
+                  @click.stop="openSingle(enterprise, 'bar')" />
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <Export v-model="open" :source="sortedData" title="Exportação de vendas" filename="Relatório de Faturamento"
+      initial-delimiter=";" initial-array-mode="join" :preselect="[]" />
+
+    <EnterpriseDetailModal v-if="showModal" :enterprise="modalEnterprise" :sales="modalSales"
+      :initial-mode="initialMode" @close="closeModal" />
+  </section>
+</template>

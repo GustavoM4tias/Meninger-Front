@@ -65,12 +65,6 @@ export default [
                 meta: { requiresAuth: true },
                 children: [
                     {
-                        path: 'sales-projection',
-                        name: 'Vendas X Projeção',
-                        component: () => import('@/views/Office/Comercial/Sales-Projection/Index.vue'),
-                        meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Dashboard de Vendas X Projeção de Vendas' },
-                    },
-                    {
                         path: 'precadastros',
                         name: 'Pré-Cadastros',
                         component: () => import('@/views/Office/Comercial/Precadastros/Index.vue'),
@@ -87,6 +81,12 @@ export default [
                         name: 'Faturamento',
                         component: () => import('@/views/Office/Comercial/Faturamento/Index.vue'),
                         meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Dashboard de faturamento e contratos' },
+                    },
+                    {
+                        path: 'sales-projection',
+                        name: 'Vendas X Projeção',
+                        component: () => import('@/views/Office/Comercial/Sales-Projection/Index.vue'),
+                        meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Dashboard de Vendas X Projeção de Vendas' },
                     },
                     {
                         path: 'distratos',

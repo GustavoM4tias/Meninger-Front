@@ -1,221 +1,212 @@
-<template>
-    <div class="p-4 rounded-lg shadow bg-white dark:bg-gray-900">
-        <div class="flex flex-wrap items-end gap-4">
-
-            <!-- Data Inicial -->
-            <div class="flex-1 lg:flex-initial lg:min-w-44">
-                <label class="block text-xs font-medium mb-1 text-gray-700 dark:text-gray-300">
-                    <i class="fas fa-calendar-day mr-1"></i>Data Início
-                </label>
-                <input v-model="localFilters.startDate" type="date"
-                    class="w-full px-2 py-2 border rounded-md text-gray-400 dark:text-gray-500 border-gray-200 dark:border-gray-700 dark:bg-gray-900/60 text-center" />
-            </div>
-
-            <!-- Data Final -->
-            <div class="flex-1 lg:flex-initial lg:min-w-44">
-                <label class="block text-xs font-medium mb-1 text-gray-700 dark:text-gray-300">
-                    <i class="fas fa-calendar-check mr-1"></i>Data Fim
-                </label>
-                <input v-model="localFilters.endDate" type="date"
-                    class="w-full px-2 py-2 border rounded-md text-gray-400 dark:text-gray-500 border-gray-200 dark:border-gray-700 dark:bg-gray-900/60 text-center" />
-            </div>
-
-            <!-- Situação -->
-            <!-- <div class="flex-1 min-w-32">
-                <label class="block text-xs font-medium mb-1 text-gray-700 dark:text-gray-300">
-                    <i class="fas fa-chart-pie mr-1"></i>Situação
-                </label>
-                <select v-model="localFilters.situation"
-                    class="w-full px-2 py-2 border rounded-lg bg-transparent text-gray-400 border-gray-200 dark:border-gray-600 dark:bg-gray-900/60 text-center">
-                    <option class="text-gray-600" value="">Todas</option>
-                    <option class="text-gray-600" value="Emitido">Emitido</option>
-                    <option class="text-gray-600" value="Autorizado">Autorizado</option>
-                    <option class="text-gray-600" value="Cancelado">Cancelado</option>
-                </select>
-            </div> -->
-
-            <!-- ✅ Grupos de Workflow (agora como strings) -->
-            <div v-if="groupsOptions.length" class="flex-1 max-w-full">
-                <label class="block text-xs font-medium truncate mb-1">Grupos Workflow (Projeção)</label>
-                <MultiSelector class="" :model-value="localFilters.groupIds"
-                    @update:modelValue="v => localFilters.groupIds = Array.isArray(v) ? v : []" :options="groupsOptions"
-                    placeholder="Selecione grupos" :page-size="200" />
-            </div>
-
-            <!-- Empresas com seu MultiSelector -->
-            <div class="flex-1 max-w-96">
-                <label class="block text-xs font-medium mb-1 text-gray-700 dark:text-gray-300">
-                    <i class="fas fa-city mr-1"></i>Empresa(s)
-                </label>
-
-                <MultiSelector :model-value="localFilters.selectedCompanyNames"
-                    @update:modelValue="v => localFilters.selectedCompanyNames = Array.isArray(v) ? v : []"
-                    :options="companiesOptions" placeholder="Empresas" :page-size="150" :select-all="true" />
-            </div>
-
-            <!-- Botões -->
-            <div class="flex flex-1 gap-4">
-                <button @click="clearFilters"
-                    class="flex w-full px-4 py-2 text-lg font-semibold bg-gray-500 text-white rounded-lg hover:bg-gray-600 focus:outline-none">
-                    <i class="fas fa-broom pe-1 my-auto"></i> <span class="text-center w-full">Limpar</span>
-                </button>
-                <button @click="applyFilters"
-                    class="flex w-full px-4 py-2 text-lg font-semibold bg-sky-500 text-white rounded-lg hover:bg-sky-600 focus:outline-none">
-                    <i class="fas fa-filter pe-1 my-auto"></i> <span class="text-center w-full">Filtrar</span>
-                </button>
-            </div>
-        </div>
-    </div>
-</template>
-
 <script setup>
-import { onMounted, ref, computed, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import dayjs from 'dayjs'
-import { useContractsStore } from '@/stores/Comercial/Contracts/contractsStore'
-import MultiSelector from '@/components/UI/MultiSelector.vue'
+import { onMounted, ref, computed, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import dayjs from 'dayjs';
+import { useContractsStore } from '@/stores/Comercial/Contracts/contractsStore';
 
-const emit = defineEmits(['filter-changed'])
-const contractsStore = useContractsStore()
-const route = useRoute()
-const router = useRouter()
+import MultiSelector from '@/components/UI/MultiSelector.vue';
+import Input from '@/components/UI/Input.vue';
+import Button from '@/components/UI/Button.vue';
+import Badge from '@/components/UI/Badge.vue';
+
+const emit = defineEmits(['filter-changed']);
+const contractsStore = useContractsStore();
+const route = useRoute();
+const router = useRouter();
 
 const localFilters = ref({
-    startDate: dayjs().startOf('month').format('YYYY-MM-DD'),
-    endDate: dayjs().endOf('month').format('YYYY-MM-DD'),
-    situation: '',
-    selectedCompanyNames: [],
-    // ⚠️ Aqui guardaremos os LABELS selecionados (string[])
-    groupIds: []
-})
+  startDate: dayjs().startOf('month').format('YYYY-MM-DD'),
+  endDate: dayjs().endOf('month').format('YYYY-MM-DD'),
+  situation: '',
+  selectedCompanyNames: [],
+  groupIds: [],
+});
 
-/* Empresas (por company_id) */
+// Empresas
 const companiesOptions = computed(() =>
-    (contractsStore.companies || []).map(c => c.name)
-)
+  (contractsStore.companies || []).map(c => c.name)
+);
 
-/* Mapa nome -> id para converter na hora de filtrar */
 const companyIdByName = computed(() => {
-    const m = new Map()
-    for (const c of contractsStore.companies || []) {
-        m.set(c.name, Number(c.id))
-    }
-    return m
-})
+  const m = new Map();
+  for (const c of contractsStore.companies || []) {
+    m.set(c.name, Number(c.id));
+  }
+  return m;
+});
 
-/* ---------- GRUPOS: LABELS e MAPEAMENTOS ---------- */
+// Grupos workflow
 const groupLabelOf = (g) =>
-    `${g.tipo === 'reservas' ? 'Reserva' : 'Repasse'} • ${g.nome}`
+  `${g.tipo === 'reservas' ? 'Reserva' : 'Repasse'} • ${g.nome}`;
 
-// Options para o MultiSelector: SOMENTE strings (labels)
 const groupsOptions = computed(() =>
-    (contractsStore.workflowGroups || []).map(groupLabelOf)
-)
+  (contractsStore.workflowGroups || []).map(groupLabelOf)
+);
 
-// label -> id
 const groupIdByLabel = computed(() => {
-    const m = new Map()
-    for (const g of contractsStore.workflowGroups || []) {
-        m.set(groupLabelOf(g), Number(g.idgroup))
-    }
-    return m
-})
+  const m = new Map();
+  for (const g of contractsStore.workflowGroups || []) {
+    m.set(groupLabelOf(g), Number(g.idgroup));
+  }
+  return m;
+});
 
-/* ---------- URL SYNC ---------- */
+// ── URL sync ─────────────────────────────────────────
 function syncFiltersFromUrl() {
-    const q = route.query
-    if (!Object.keys(q).length) return
-    const next = { ...localFilters.value }
-    if (q.companyNames) next.selectedCompanyNames = String(q.companyNames).split(',').map(s => s.trim()).filter(Boolean)
-    else next.selectedCompanyNames = []
-    if (q.groupIds) next.groupIds = String(q.groupIds).split(',').map(s => s.trim()).filter(Boolean)
-    else next.groupIds = []
-    if (q.startDate) next.startDate = String(q.startDate)
-    if (q.endDate) next.endDate = String(q.endDate)
-    if (q.situation) next.situation = String(q.situation)
-    localFilters.value = next
-    emit('filter-changed')
+  const q = route.query;
+  if (!Object.keys(q).length) return;
+  const next = { ...localFilters.value };
+  if (q.companyNames) next.selectedCompanyNames = String(q.companyNames).split(',').map(s => s.trim()).filter(Boolean);
+  else next.selectedCompanyNames = [];
+  if (q.groupIds) next.groupIds = String(q.groupIds).split(',').map(s => s.trim()).filter(Boolean);
+  else next.groupIds = [];
+  if (q.startDate) next.startDate = String(q.startDate);
+  if (q.endDate) next.endDate = String(q.endDate);
+  if (q.situation) next.situation = String(q.situation);
+  localFilters.value = next;
+  emit('filter-changed');
 }
 
 function syncUrlFromFilters() {
-    const q = {}
-    if (localFilters.value.startDate) q.startDate = localFilters.value.startDate
-    if (localFilters.value.endDate) q.endDate = localFilters.value.endDate
-    if (localFilters.value.situation) q.situation = localFilters.value.situation
-    if (localFilters.value.selectedCompanyNames?.length) q.companyNames = localFilters.value.selectedCompanyNames.join(',')
-    if (localFilters.value.groupIds?.length) q.groupIds = localFilters.value.groupIds.join(',')
-    router.replace({ query: q })
+  const q = {};
+  if (localFilters.value.startDate) q.startDate = localFilters.value.startDate;
+  if (localFilters.value.endDate) q.endDate = localFilters.value.endDate;
+  if (localFilters.value.situation) q.situation = localFilters.value.situation;
+  if (localFilters.value.selectedCompanyNames?.length) q.companyNames = localFilters.value.selectedCompanyNames.join(',');
+  if (localFilters.value.groupIds?.length) q.groupIds = localFilters.value.groupIds.join(',');
+  router.replace({ query: q });
 }
 
-/* ---------- APPLY / WATCH: converte labels -> ids ---------- */
+// ── Apply / Watch ────────────────────────────────────
 const applyFilters = () => {
-    // Converte nomes de empresas selecionados em IDs numéricos
-    const companyIds = (localFilters.value.selectedCompanyNames || [])
-        .map(name => companyIdByName.value.get(name))
-        .filter(id => Number.isFinite(id))
+  const companyIds = (localFilters.value.selectedCompanyNames || [])
+    .map(name => companyIdByName.value.get(name))
+    .filter(id => Number.isFinite(id));
 
-    contractsStore.setFilters({
-        startDate: localFilters.value.startDate,
-        endDate: localFilters.value.endDate,
-        situation: localFilters.value.situation,
-        companyIds
-    })
+  contractsStore.setFilters({
+    startDate: localFilters.value.startDate,
+    endDate: localFilters.value.endDate,
+    situation: localFilters.value.situation,
+    companyIds,
+  });
 
-    // Converte labels de grupos em ids numéricos
-    const groupIds = (localFilters.value.groupIds || [])
-        .map(lbl => groupIdByLabel.value.get(lbl))
-        .filter(n => Number.isFinite(n))
+  const groupIds = (localFilters.value.groupIds || [])
+    .map(lbl => groupIdByLabel.value.get(lbl))
+    .filter(n => Number.isFinite(n));
 
-    contractsStore.setSelectedGroups(groupIds)
-    syncUrlFromFilters()
-    emit('filter-changed')
-}
+  contractsStore.setSelectedGroups(groupIds);
+  syncUrlFromFilters();
+  emit('filter-changed');
+};
 
-const isActive = v => Array.isArray(v) ? v.length > 0 : (v !== '' && v != null)
+const isActive = v => Array.isArray(v) ? v.length > 0 : (v !== '' && v != null);
 const hasActiveFilters = computed(() =>
-    Object.values(localFilters.value).some(isActive)
-)
+  Object.values(localFilters.value).some(isActive)
+);
+
+const activeFiltersCount = computed(() => {
+  let n = 0;
+  if (localFilters.value.selectedCompanyNames?.length) n++;
+  if (localFilters.value.groupIds?.length) n++;
+  if (localFilters.value.situation) n++;
+  // Datas só contam quando diferentes do default do mês atual
+  const defaultStart = dayjs().startOf('month').format('YYYY-MM-DD');
+  const defaultEnd = dayjs().endOf('month').format('YYYY-MM-DD');
+  if (localFilters.value.startDate && localFilters.value.startDate !== defaultStart) n++;
+  if (localFilters.value.endDate && localFilters.value.endDate !== defaultEnd) n++;
+  return n;
+});
 
 watch(localFilters, () => {
-    if (!hasActiveFilters.value) return
-
-    const companyIds = (localFilters.value.selectedCompanyNames || [])
-        .map(name => companyIdByName.value.get(name))
-        .filter(id => Number.isFinite(id))
-
-    contractsStore.setFilters({
-        startDate: localFilters.value.startDate,
-        endDate: localFilters.value.endDate,
-        situation: localFilters.value.situation,
-        companyIds
-    })
-
-    const groupIds = (localFilters.value.groupIds || [])
-        .map(lbl => groupIdByLabel.value.get(lbl))
-        .filter(n => Number.isFinite(n))
-
-    contractsStore.setSelectedGroups(groupIds)
-}, { deep: true })
+  if (!hasActiveFilters.value) return;
+  const companyIds = (localFilters.value.selectedCompanyNames || [])
+    .map(name => companyIdByName.value.get(name))
+    .filter(id => Number.isFinite(id));
+  contractsStore.setFilters({
+    startDate: localFilters.value.startDate,
+    endDate: localFilters.value.endDate,
+    situation: localFilters.value.situation,
+    companyIds,
+  });
+  const groupIds = (localFilters.value.groupIds || [])
+    .map(lbl => groupIdByLabel.value.get(lbl))
+    .filter(n => Number.isFinite(n));
+  contractsStore.setSelectedGroups(groupIds);
+}, { deep: true });
 
 const clearFilters = () => {
-    localFilters.value = {
-        startDate: '',
-        endDate: '',
-        situation: '',
-        selectedCompanyNames: [],
-        groupIds: []
-    }
-    contractsStore.clearFilters()
-    router.replace({ query: {} })
-    emit('filter-changed')
-}
+  localFilters.value = {
+    startDate: '', endDate: '', situation: '',
+    selectedCompanyNames: [], groupIds: [],
+  };
+  contractsStore.clearFilters();
+  router.replace({ query: {} });
+  emit('filter-changed');
+};
+
+// ── Expandir / colapsar ──────────────────────────────
+const isExpanded = ref(typeof window !== 'undefined' && window.innerWidth >= 1024);
+function toggle() { isExpanded.value = !isExpanded.value; }
 
 onMounted(async () => {
-    await Promise.all([
-        contractsStore.fetchCompanies(),
-        contractsStore.fetchWorkflowGroups()
-    ])
-    syncFiltersFromUrl()
-    console.log('Contracts Store Value Mode:', contractsStore.valueMode)
-})
+  await Promise.all([
+    contractsStore.fetchCompanies(),
+    contractsStore.fetchWorkflowGroups(),
+  ]);
+  syncFiltersFromUrl();
+});
 </script>
+
+<template>
+  <section class="rounded-xl border border-line bg-surface-raised shadow-soft surface-gradient">
+    <!-- Toolbar -->
+    <div class="flex items-center gap-2 px-3 sm:px-4 py-2.5 border-b border-line bg-surface-sunken/40 rounded-t-xl">
+      <button @click="toggle"
+        class="flex items-center gap-2 text-sm font-medium text-ink hover:text-accent transition-colors">
+        <i class="fas fa-filter text-xs text-ink-muted"></i>
+        <span>Filtros</span>
+        <Badge v-if="activeFiltersCount" variant="accent" size="sm">
+          {{ activeFiltersCount }} ativo{{ activeFiltersCount > 1 ? 's' : '' }}
+        </Badge>
+        <i class="fas fa-chevron-down text-[10px] text-ink-subtle transition-transform duration-200"
+          :class="{ 'rotate-180': isExpanded }"></i>
+      </button>
+
+      <div class="ml-auto flex items-center gap-1.5">
+        <Button variant="ghost" size="sm" icon="fas fa-eraser" @click="clearFilters">
+          <span class="hidden sm:inline">Limpar</span>
+        </Button>
+        <Button size="sm" icon="fas fa-magnifying-glass" @click="applyFilters">
+          <span class="hidden sm:inline">Filtrar</span>
+        </Button>
+      </div>
+    </div>
+
+    <!-- Campos -->
+    <div v-show="isExpanded"
+      class="p-3 sm:p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 animate-fade-in"
+      style="overflow:visible">
+
+      <Input v-model="localFilters.startDate" type="date" label="Data início" />
+      <Input v-model="localFilters.endDate" type="date" label="Data fim" />
+
+      <div v-if="groupsOptions.length">
+        <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+          <i class="fas fa-diagram-project text-[10px] mr-1 text-ink-subtle"></i>Grupos workflow (projeção)
+        </label>
+        <MultiSelector :model-value="localFilters.groupIds"
+          @update:modelValue="v => localFilters.groupIds = Array.isArray(v) ? v : []"
+          :options="groupsOptions" placeholder="Selecione grupos" :page-size="200" />
+      </div>
+
+      <div>
+        <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+          <i class="fas fa-city text-[10px] mr-1 text-ink-subtle"></i>Empresa(s)
+        </label>
+        <MultiSelector :model-value="localFilters.selectedCompanyNames"
+          @update:modelValue="v => localFilters.selectedCompanyNames = Array.isArray(v) ? v : []"
+          :options="companiesOptions" placeholder="Empresas" :page-size="150" :select-all="true" />
+      </div>
+    </div>
+  </section>
+</template>

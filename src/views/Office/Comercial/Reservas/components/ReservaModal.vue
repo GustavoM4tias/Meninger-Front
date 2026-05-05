@@ -1,595 +1,615 @@
-<template>
-    <div v-if="visivel" class="fixed inset-0 z-50 overflow-y-auto" @click="emit('fechar')">
-        <div class="flex items-start justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:p-0">
-            <div class="fixed inset-0 bg-gray-900/60 transition-opacity"></div>
-
-            <div class="relative inline-block w-full max-w-7xl my-8 overflow-hidden text-left align-middle transition-all transform bg-gray-50 dark:bg-gray-800 shadow-xl rounded-2xl"
-                @click.stop>
-
-                <!-- Header -->
-                <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <h3 class="text-xl font-bold">Reservas</h3>
-                            <p class="text-sm text-gray-500">{{ kpis.total }} reserva(s) — {{ kpis.empreendimentos }} empreendimento(s) — {{ kpis.clientes }} cliente(s)</p>
-                        </div>
-                        <div class="flex items-center gap-2 flex-wrap">
-                            <div class="inline-flex rounded-md border dark:border-gray-600 overflow-hidden">
-                                <button v-for="m in viewModes" :key="m.k" type="button" @click="viewMode = m.k"
-                                    :class="['px-3 py-1 text-sm font-medium', viewMode === m.k ? 'bg-purple-600 text-white' : 'bg-white dark:bg-gray-600', m.border ? 'border-l border-gray-300 dark:border-gray-700' : '']">
-                                    {{ m.label }}
-                                </button>
-                            </div>
-                            <button class="text-2xl ps-2 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400"
-                                v-tippy="'Exportar'" @click="exportOpen = true">
-                                <i class="fas fa-download"></i>
-                            </button>
-                            <button type="button" @click="emit('fechar')"
-                                class="text-dark hover:text-gray-700 ps-3 pt-1 dark:text-white dark:hover:text-blue-100 text-2xl">
-                                <i class="fas fa-times"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="max-h-[80vh] overflow-y-auto bg-gray-50 dark:bg-gray-900/40">
-
-                    <!-- KPI Cards (4 cards) -->
-                    <div class="p-4 border-b border-gray-200 dark:border-gray-700">
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                            <div class="bg-white dark:bg-gray-900/80 rounded-lg p-4 border-l-4 shadow-sm border-blue-500">
-                                <div class="flex items-center justify-between h-full">
-                                    <div>
-                                        <p class="text-sm font-medium">Total</p>
-                                        <p class="text-2xl font-bold text-blue-400">{{ kpis.total }}</p>
-                                        <p class="text-xs text-gray-500">Em curso: <b>{{ kpis.ativas }}</b></p>
-                                    </div>
-                                    <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center text-2xl">
-                                        <i class="fas fa-bookmark text-blue-600"></i>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="bg-white dark:bg-gray-900/80 rounded-lg p-4 border-l-4 shadow-sm border-amber-500">
-                                <div class="flex items-center justify-between h-full">
-                                    <div>
-                                        <p class="text-sm font-medium">Tempo até finalizar</p>
-                                        <p class="text-lg font-bold text-amber-400">{{ kpis.tempoMedioFin.toFixed(1) }}<span class="text-sm font-normal"> dias</span></p>
-                                        <p class="text-xs text-gray-500">{{ kpis.totalFin }} finalizada(s)</p>
-                                    </div>
-                                    <div class="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center text-2xl">
-                                        <i class="fas fa-stopwatch text-amber-600"></i>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="bg-white dark:bg-gray-900/80 rounded-lg p-4 border-l-4 shadow-sm border-emerald-500"
-                                v-tippy="'% das reservas na etapa &quot;Vendida&quot; do CRM. NÃO é venda concretizada (ver Faturamento).'">
-                                <div class="flex items-center justify-between h-full">
-                                    <div>
-                                        <p class="text-sm font-medium">% Vendida (CRM)</p>
-                                        <p class="text-2xl font-bold text-emerald-500">{{ pctStr(kpis.pctVendidas) }}</p>
-                                        <p class="text-xs text-gray-500">{{ kpis.vendidas }} de {{ kpis.total }}</p>
-                                    </div>
-                                    <div class="w-12 h-12 bg-emerald-100 rounded-lg flex items-center justify-center text-2xl">
-                                        <i class="fas fa-flag-checkered text-emerald-600"></i>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="bg-white dark:bg-gray-900/80 rounded-lg p-4 border-l-4 shadow-sm border-red-500">
-                                <div class="flex items-center justify-between h-full">
-                                    <div>
-                                        <p class="text-sm font-medium">% Canceladas</p>
-                                        <p class="text-2xl font-bold text-red-500">{{ pctStr(kpis.pctCanceladas) }}</p>
-                                        <p class="text-xs text-gray-500">{{ kpis.canceladas }} de {{ kpis.total }}</p>
-                                    </div>
-                                    <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center text-2xl">
-                                        <i class="fas fa-ban text-red-600"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Filtros draft -->
-                    <div class="p-4 border-b border-gray-200 dark:border-gray-700 bg-white/70 dark:bg-gray-900/40">
-                        <div class="flex flex-wrap gap-3 items-end">
-                            <div class="flex-1 min-w-44">
-                                <label class="block text-xs font-medium mb-1">Empreendimento</label>
-                                <MultiSelector v-model="draftEmpreendimentoArr" :options="opcoesEmpreendimento" placeholder="..." :page-size="200" :select-all="true" :close-on-outside="true" />
-                            </div>
-                            <div class="flex-1 min-w-44">
-                                <label class="block text-xs font-medium mb-1">Situação</label>
-                                <MultiSelector v-model="draftSituacaoArr" :options="opcoesSituacao" placeholder="..." :page-size="150" :select-all="true" :close-on-outside="true" />
-                            </div>
-                            <div class="flex-1 min-w-44">
-                                <label class="block text-xs font-medium mb-1">Status Repasse</label>
-                                <MultiSelector v-model="draftStatusRepArr" :options="opcoesStatusRep" placeholder="..." :page-size="150" :select-all="true" :close-on-outside="true" />
-                            </div>
-                            <div class="flex-1 min-w-44">
-                                <label class="block text-xs font-medium mb-1">Imobiliária</label>
-                                <MultiSelector v-model="draftImobArr" :options="opcoesImob" placeholder="..." :page-size="150" :select-all="true" :close-on-outside="true" />
-                            </div>
-                            <div class="flex-1 min-w-44">
-                                <label class="block text-xs font-medium mb-1">Corretor</label>
-                                <MultiSelector v-model="draftCorretorArr" :options="opcoesCorretor" placeholder="..." :page-size="150" :select-all="true" :close-on-outside="true" />
-                            </div>
-                            <div class="flex gap-2">
-                                <button @click="onLimparModal"
-                                    class="flex items-center px-3 py-2 text-sm font-semibold bg-gray-500 text-white rounded-lg hover:bg-gray-600">
-                                    <i class="fas fa-broom pe-1 my-auto"></i> Limpar
-                                </button>
-                                <button @click="onAplicarModal"
-                                    class="flex items-center px-3 py-2 text-sm font-semibold bg-sky-500 text-white rounded-lg hover:bg-sky-600">
-                                    <i class="fas fa-filter pe-1 my-auto"></i> Filtrar
-                                </button>
-                            </div>
-                        </div>
-                        <div v-if="hasFiltrosAplicados" class="mt-2 text-xs text-purple-600 dark:text-purple-300">
-                            <i class="fas fa-info-circle mr-1"></i>{{ activeFiltrosCount }} filtro(s) aplicado(s) — {{ reservasFiltradas.length }} de {{ reservas.length }} reserva(s)
-                        </div>
-                    </div>
-
-                    <!-- Busca + paginação -->
-                    <div class="p-6 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900/40">
-                        <div class="flex flex-wrap gap-4 items-end justify-between">
-                            <div class="flex-1">
-                                <label class="block text-sm font-medium mb-2">Cliente | CPF | Empreendimento | Situação | Unidade</label>
-                                <div class="relative">
-                                    <input v-model="search" type="text" placeholder="Digite para buscar..."
-                                        class="w-full px-2 py-1.5 border rounded-lg bg-transparent text-gray-400 border-gray-200 dark:border-gray-500 text-start" />
-                                    <button v-if="search" @click="search = ''"
-                                        class="absolute right-2 top-2 text-gray-400 hover:text-gray-600">
-                                        <i class="fas fa-times-circle"></i>
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="flex-none">
-                                <label class="block text-sm font-medium mb-2">Itens por página</label>
-                                <select v-model="itemsPerPage"
-                                    class="w-full px-2 py-1.5 border rounded-lg bg-transparent text-gray-400 border-gray-200 dark:border-gray-500 text-center">
-                                    <option :value="10">10</option>
-                                    <option :value="25">25</option>
-                                    <option :value="50">50</option>
-                                    <option :value="100">100</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Charts -->
-                    <div v-if="viewMode !== 'list'"
-                        class="p-6 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-                        <div class="flex justify-between items-center mb-4">
-                            <div class="text-sm text-gray-500">
-                                <span v-if="search" class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">
-                                    Filtro ativo: {{ search }}
-                                    <button @click="search = ''" class="ml-1 hover:text-blue-900 font-bold">x</button>
-                                </span>
-                                <span v-else>Clique no gráfico para filtrar a lista abaixo.</span>
-                            </div>
-                            <select v-model="chartGroup"
-                                class="px-2 py-1 text-xs border rounded bg-white dark:bg-gray-700 dark:border-gray-600">
-                                <option value="empreendimento">Por Empreendimento</option>
-                                <option value="situacao">Por Situação</option>
-                                <option value="status_repasse">Por Status Repasse</option>
-                                <option value="imobiliaria">Por Imobiliária</option>
-                                <option value="corretor">Por Corretor</option>
-                                <option value="bucket">Por Grupo (Funil)</option>
-                            </select>
-                        </div>
-                        <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700">
-                            <VChart :option="chartOption" autoresize style="height: 400px; width: 100%;" @click="onChartClick" />
-                        </div>
-                    </div>
-
-                    <!-- Tabela -->
-                    <div class="overflow-x-auto">
-                        <table class="w-full">
-                            <thead class="border-b border-gray-200 dark:border-gray-700">
-                                <tr>
-                                    <th class="px-4 py-3 text-left text-xs font-medium uppercase">Cliente</th>
-                                    <th class="px-4 py-3 text-center text-xs font-medium uppercase">CPF</th>
-                                    <th class="px-4 py-3 text-center text-xs font-medium uppercase">Empreendimento / Unidade</th>
-                                    <th class="px-4 py-3 text-center text-xs font-medium uppercase">Situação</th>
-                                    <th class="px-4 py-3 text-center text-xs font-medium uppercase">Repasse</th>
-                                    <th class="px-4 py-3 text-center text-xs font-medium uppercase">Dias</th>
-                                    <th class="px-4 py-3 text-center text-xs font-medium uppercase">Reserva</th>
-                                    <th class="px-4 py-3 text-center text-xs font-medium uppercase">Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200 dark:bg-gray-700/40 dark:divide-gray-700">
-                                <template v-for="r in paginated" :key="r.idreserva">
-                                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer"
-                                        @click="toggleExpand(r)" :class="r.vendida === 'S' ? 'bg-emerald-50/40 dark:bg-emerald-900/10' : ''">
-                                        <td class="px-3 py-3">
-                                            <div class="text-sm font-medium">{{ r.titular?.nome || '—' }}</div>
-                                            <div class="text-gray-400 text-xs">#{{ r.idreserva }}</div>
-                                        </td>
-                                        <td class="px-3 py-3 text-center text-xs font-mono">{{ r.documento || '—' }}</td>
-                                        <td class="px-3 py-3 text-center">
-                                            <div class="text-sm truncate max-w-40">{{ r.empreendimento || '—' }}</div>
-                                            <div class="text-[10px] text-gray-400 truncate max-w-40">{{ [r.bloco, r.unidade].filter(Boolean).join(' / ') }}</div>
-                                        </td>
-                                        <td class="px-3 py-3 text-center">
-                                            <span :class="['px-2 py-0.5 rounded text-[11px] inline-flex items-center gap-1', clsForStage(r.situacao?.nome)]">
-                                                <i :class="iconForStage(r.situacao?.nome)"></i>
-                                                <span class="truncate max-w-32">{{ r.situacao?.nome || '—' }}</span>
-                                            </span>
-                                        </td>
-                                        <td class="px-3 py-3 text-center text-xs">{{ r.status_repasse || '—' }}</td>
-                                        <td class="px-3 py-3 text-center text-sm tabular-nums">{{ Number(r.dias_em_reserva || 0).toFixed(0) }}</td>
-                                        <td class="px-3 py-3 text-center text-xs">{{ fmtDate(r.data_reserva) }}</td>
-                                        <td class="px-3 py-3 text-center">
-                                            <a v-if="cvLink(r)" :href="cvLink(r)" target="_blank" rel="noopener" @click.stop
-                                                v-tippy="'Abrir no CV CRM'"
-                                                class="inline-block group">
-                                                <img src="/CVLogo.png" alt="CV CRM" class="w-5 inline grayscale group-hover:grayscale-0" />
-                                            </a>
-                                            <button @click.stop="abrirDetalhe(r)"
-                                                class="ml-2 text-sm font-medium text-blue-600 hover:text-blue-900 dark:hover:text-blue-400">
-                                                Detalhes
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    <tr v-show="expanded.has(r.idreserva)" class="bg-gray-50 dark:bg-gray-900/60">
-                                        <td colspan="8">
-                                            <div class="p-4 space-y-3">
-                                                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 text-sm">
-                                                    <div><span class="text-xs text-gray-500">Vendida</span><div :class="r.vendida === 'S' ? 'text-emerald-600 font-bold' : ''">{{ r.vendida === 'S' ? 'Sim' : 'Não' }}</div></div>
-                                                    <div><span class="text-xs text-gray-500">Tipo Venda</span><div>{{ r.tipovenda || '—' }}</div></div>
-                                                    <div><span class="text-xs text-gray-500">Imobiliária</span><div>{{ r.imobiliaria?.nome || '—' }}</div></div>
-                                                    <div><span class="text-xs text-gray-500">Corretor</span><div>{{ r.corretor?.nome || '—' }}</div></div>
-                                                    <div><span class="text-xs text-gray-500">Empresa Corresp.</span><div>{{ r.empresa_correspondente?.nome || '—' }}</div></div>
-                                                    <div><span class="text-xs text-gray-500">Pré-cadastro #</span><div>{{ r.idprecadastro || '—' }}</div></div>
-                                                    <div><span class="text-xs text-gray-500">Data Reserva</span><div>{{ fmtDateTime(r.data_reserva) }}</div></div>
-                                                    <div><span class="text-xs text-gray-500">Data Contrato</span><div>{{ fmtDateTime(r.data_contrato) }}</div></div>
-                                                    <div><span class="text-xs text-gray-500">Data Venda</span><div>{{ fmtDateTime(r.data_venda) }}</div></div>
-                                                    <div><span class="text-xs text-gray-500">Etapa / Bloco / Unidade</span><div>{{ [r.etapa, r.bloco, r.unidade].filter(Boolean).join(' / ') || '—' }}</div></div>
-                                                    <div><span class="text-xs text-gray-500">Última msg</span><div class="text-xs">{{ r.ultima_mensagem || '—' }}</div></div>
-                                                </div>
-                                                <div class="flex justify-end gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
-                                                    <button @click.stop="abrirDetalhe(r)"
-                                                        class="px-3 py-1.5 rounded text-xs bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 hover:bg-purple-600 hover:text-white">
-                                                        <i class="fas fa-list-check mr-1"></i>Contratos / Histórico / Leads
-                                                    </button>
-                                                    <a v-if="cvLink(r)" :href="cvLink(r)" target="_blank" rel="noopener"
-                                                        class="px-3 py-1.5 rounded text-xs bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 hover:bg-blue-600 hover:text-white">
-                                                        <i class="fas fa-arrow-up-right-from-square mr-1"></i>Administrar no CV
-                                                    </a>
-                                                </div>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                </template>
-                                <tr v-if="!paginated.length">
-                                    <td colspan="8" class="text-center py-12 text-gray-400">
-                                        <i class="fas fa-inbox text-4xl mb-2"></i>
-                                        <p>Nenhuma reserva encontrada</p>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <div v-if="totalPages > 1" class="m-4 flex items-center justify-between">
-                        <div class="text-sm text-gray-500">
-                            Mostrando {{ startItem }} a {{ endItem }} de {{ filtered.length }} reserva(s)
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <button @click="currentPage = 1" :disabled="currentPage === 1"
-                                class="px-3 py-1 text-sm border border-gray-300 dark:border-gray-500 rounded-md hover:bg-gray-50 dark:hover:bg-gray-900 disabled:opacity-50">
-                                Primeira
-                            </button>
-                            <button @click="currentPage--" :disabled="currentPage === 1"
-                                class="px-3 py-1 text-sm border border-gray-300 dark:border-gray-500 rounded-md hover:bg-gray-50 dark:hover:bg-gray-900 disabled:opacity-50">
-                                <i class="fas fa-chevron-left"></i>
-                            </button>
-                            <div class="flex gap-1">
-                                <button v-for="page in visiblePages" :key="page" @click="currentPage = page"
-                                    :class="['px-3 py-1 text-sm border rounded-md', page === currentPage ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-300 dark:border-gray-500 hover:bg-gray-50 dark:hover:bg-gray-900']">
-                                    {{ page }}
-                                </button>
-                            </div>
-                            <button @click="currentPage++" :disabled="currentPage === totalPages"
-                                class="px-3 py-1 text-sm border border-gray-300 dark:border-gray-500 rounded-md hover:bg-gray-50 dark:hover:bg-gray-900 disabled:opacity-50">
-                                <i class="fas fa-chevron-right"></i>
-                            </button>
-                            <button @click="currentPage = totalPages" :disabled="currentPage === totalPages"
-                                class="px-3 py-1 text-sm border border-gray-300 dark:border-gray-500 rounded-md hover:bg-gray-50 dark:hover:bg-gray-900 disabled:opacity-50">
-                                Última
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <Export v-model="exportOpen" :source="filtered" title="Exportação de Reservas"
-        filename="reservas" initial-delimiter=";" initial-array-mode="join"
-        :preselect="[
-            'idreserva', 'documento', 'titular.nome',
-            'empreendimento', 'etapa', 'bloco', 'unidade',
-            'situacao.nome', 'status_repasse', 'tipovenda',
-            'vendida', 'data_reserva', 'data_contrato', 'data_venda',
-            'imobiliaria.nome', 'corretor.nome', 'empresa_correspondente.nome',
-            'dias_em_reserva', 'idprecadastro'
-        ]" />
-
-    <ReservaDetailModal :reserva="detailItem" :visivel="detailVisible" @fechar="detailVisible = false" />
-</template>
-
 <script setup>
-import { computed, ref, watch } from 'vue'
-import VChart from 'vue-echarts'
-import * as echarts from 'echarts/core'
-import { PieChart, BarChart, FunnelChart } from 'echarts/charts'
+import { computed, ref, watch } from 'vue';
+import VChart from 'vue-echarts';
+import * as echarts from 'echarts/core';
+import { PieChart, BarChart, FunnelChart } from 'echarts/charts';
 import {
-    TooltipComponent, LegendComponent, GridComponent, TitleComponent, DataZoomComponent
-} from 'echarts/components'
-import { CanvasRenderer } from 'echarts/renderers'
-import Export from '@/components/config/Export.vue'
-import MultiSelector from '@/components/UI/MultiSelector.vue'
-import ReservaDetailModal from './ReservaDetailModal.vue'
-import { iconForStage, clsForStage, bucketOf, STAGE_GROUPS } from '../stages.js'
+  TooltipComponent, LegendComponent, GridComponent, TitleComponent, DataZoomComponent
+} from 'echarts/components';
+import { CanvasRenderer } from 'echarts/renderers';
 
-echarts.use([PieChart, BarChart, FunnelChart, TooltipComponent, LegendComponent, GridComponent, TitleComponent, DataZoomComponent, CanvasRenderer])
+import Export from '@/components/config/Export.vue';
+import ChartActions from '@/components/config/ChartActions.vue';
+
+import Modal from '@/components/UI/Modal.vue';
+import MultiSelector from '@/components/UI/MultiSelector.vue';
+import Button from '@/components/UI/Button.vue';
+import IconButton from '@/components/UI/IconButton.vue';
+import Badge from '@/components/UI/Badge.vue';
+import Input from '@/components/UI/Input.vue';
+import Select from '@/components/UI/Select.vue';
+import EmptyState from '@/components/UI/EmptyState.vue';
+import SegmentedControl from '@/components/UI/SegmentedControl.vue';
+
+import ReservaDetailModal from './ReservaDetailModal.vue';
+import { iconForStage, bucketOf, STAGE_GROUPS } from '../stages.js';
+
+echarts.use([PieChart, BarChart, FunnelChart, TooltipComponent, LegendComponent, GridComponent, TitleComponent, DataZoomComponent, CanvasRenderer]);
 
 const props = defineProps({
-    reservas: { type: Array, default: () => [] },
-    visivel: { type: Boolean, default: false },
-    initialMode: { type: String, default: 'list' },
-})
-const emit = defineEmits(['fechar'])
+  reservas: { type: Array, default: () => [] },
+  visivel: { type: Boolean, default: false },
+  initialMode: { type: String, default: 'list' },
+});
+const emit = defineEmits(['fechar']);
 
-const viewModes = [
-    { k: 'list',   label: 'Listagem', border: false },
-    { k: 'pie',    label: 'Pizza',    border: true },
-    { k: 'bar',    label: 'Colunas',  border: true },
-    { k: 'funnel', label: 'Funil',    border: true },
-]
-const normalizeMode = (m) => ['list','pie','bar','funnel'].includes(m) ? m : 'list'
-const viewMode = ref(normalizeMode(props.initialMode))
-const chartGroup = ref('empreendimento')
+// ── Tema ─────────────────────────────────────────────
+const isDark = computed(() => document.documentElement.classList.contains('dark'));
+const txt = computed(() => isDark.value ? '#E5E7EB' : '#374151');
+const sub = computed(() => isDark.value ? '#94A3B8' : '#64748B');
+const gridLine = computed(() => isDark.value ? '#334155' : '#E2E8F0');
 
-watch(() => props.initialMode, (m) => { viewMode.value = normalizeMode(m) })
-watch(() => props.visivel, (v) => { if (v) viewMode.value = normalizeMode(props.initialMode) })
+// ── View modes ───────────────────────────────────────
+const viewOptions = [
+  { value: 'list',   label: 'Listagem', icon: 'fas fa-list' },
+  { value: 'pie',    label: 'Pizza',    icon: 'fas fa-chart-pie' },
+  { value: 'bar',    label: 'Colunas',  icon: 'fas fa-chart-column' },
+  { value: 'funnel', label: 'Funil',    icon: 'fas fa-filter' },
+];
+const normalizeMode = (m) => ['list', 'pie', 'bar', 'funnel'].includes(m) ? m : 'list';
+const viewMode = ref(normalizeMode(props.initialMode));
+const chartGroup = ref('empreendimento');
 
-const search = ref('')
-const itemsPerPage = ref(25)
-const currentPage = ref(1)
-const expanded = ref(new Set())
-const exportOpen = ref(false)
-const detailVisible = ref(false)
-const detailItem = ref(null)
+watch(() => props.initialMode, (m) => { viewMode.value = normalizeMode(m); });
+watch(() => props.visivel, (v) => { if (v) viewMode.value = normalizeMode(props.initialMode); });
 
-// ── Filtros draft (estilo LeadModal) ─────────────────────────────────────
-const draftEmpreendimento = ref(new Set())
-const draftSituacao       = ref(new Set())
-const draftStatusRep      = ref(new Set())
-const draftImob           = ref(new Set())
-const draftCorretor       = ref(new Set())
-const aplEmpreendimento   = ref(new Set())
-const aplSituacao         = ref(new Set())
-const aplStatusRep        = ref(new Set())
-const aplImob             = ref(new Set())
-const aplCorretor         = ref(new Set())
+// ── State ────────────────────────────────────────────
+const search = ref('');
+const itemsPerPage = ref(25);
+const currentPage = ref(1);
+const expanded = ref(new Set());
+const exportOpen = ref(false);
+const filtersOpen = ref(false);
+const detailVisible = ref(false);
+const detailItem = ref(null);
 
-const setSet = (r, arr) => { r.value = new Set(Array.isArray(arr) ? arr : []) }
-const toArr  = (r) => ({ get: () => Array.from(r.value), set: (v) => setSet(r, v) })
-const draftEmpreendimentoArr = computed(toArr(draftEmpreendimento))
-const draftSituacaoArr       = computed(toArr(draftSituacao))
-const draftStatusRepArr      = computed(toArr(draftStatusRep))
-const draftImobArr           = computed(toArr(draftImob))
-const draftCorretorArr       = computed(toArr(draftCorretor))
+const itemsPerPageOptions = [
+  { value: 10, label: '10 por página' },
+  { value: 25, label: '25 por página' },
+  { value: 50, label: '50 por página' },
+  { value: 100, label: '100 por página' },
+];
+
+const chartGroupOptions = [
+  { value: 'empreendimento',  label: 'Por empreendimento' },
+  { value: 'situacao',        label: 'Por situação' },
+  { value: 'status_repasse',  label: 'Por status repasse' },
+  { value: 'imobiliaria',     label: 'Por imobiliária' },
+  { value: 'corretor',        label: 'Por corretor' },
+  { value: 'bucket',          label: 'Por grupo (funil)' },
+];
+
+// ── Filtros draft + aplicados ────────────────────────
+const draftEmpreendimento = ref(new Set());
+const draftSituacao       = ref(new Set());
+const draftStatusRep      = ref(new Set());
+const draftImob           = ref(new Set());
+const draftCorretor       = ref(new Set());
+
+const aplEmpreendimento = ref(new Set());
+const aplSituacao       = ref(new Set());
+const aplStatusRep      = ref(new Set());
+const aplImob           = ref(new Set());
+const aplCorretor       = ref(new Set());
+
+const setSet = (r, arr) => { r.value = new Set(Array.isArray(arr) ? arr : []); };
+const toArr  = (r) => ({ get: () => Array.from(r.value), set: (v) => setSet(r, v) });
+
+const draftEmpreendimentoArr = computed(toArr(draftEmpreendimento));
+const draftSituacaoArr       = computed(toArr(draftSituacao));
+const draftStatusRepArr      = computed(toArr(draftStatusRep));
+const draftImobArr           = computed(toArr(draftImob));
+const draftCorretorArr       = computed(toArr(draftCorretor));
 
 const _extract = (list, accessor) => {
-    const set = new Set()
-    for (const r of (list || [])) {
-        const v = accessor(r)
-        if (v) set.add(String(v).trim())
-    }
-    return Array.from(set).sort((a, b) => a.localeCompare(b, 'pt-BR'))
-}
-const opcoesEmpreendimento = computed(() => _extract(props.reservas, r => r?.empreendimento))
-const opcoesSituacao       = computed(() => _extract(props.reservas, r => r?.situacao?.nome))
-const opcoesStatusRep      = computed(() => _extract(props.reservas, r => r?.status_repasse))
-const opcoesImob           = computed(() => _extract(props.reservas, r => r?.imobiliaria?.nome))
-const opcoesCorretor       = computed(() => _extract(props.reservas, r => r?.corretor?.nome))
+  const set = new Set();
+  for (const r of (list || [])) {
+    const v = accessor(r);
+    if (v) set.add(String(v).trim());
+  }
+  return Array.from(set).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+};
+const opcoesEmpreendimento = computed(() => _extract(props.reservas, r => r?.empreendimento));
+const opcoesSituacao       = computed(() => _extract(props.reservas, r => r?.situacao?.nome));
+const opcoesStatusRep      = computed(() => _extract(props.reservas, r => r?.status_repasse));
+const opcoesImob           = computed(() => _extract(props.reservas, r => r?.imobiliaria?.nome));
+const opcoesCorretor       = computed(() => _extract(props.reservas, r => r?.corretor?.nome));
 
-const hasFiltrosAplicados = computed(() =>
-    aplEmpreendimento.value.size + aplSituacao.value.size + aplStatusRep.value.size +
-    aplImob.value.size + aplCorretor.value.size > 0
-)
 const activeFiltrosCount = computed(() =>
-    [aplEmpreendimento, aplSituacao, aplStatusRep, aplImob, aplCorretor]
-        .filter(r => r.value.size > 0).length
-)
+  [aplEmpreendimento, aplSituacao, aplStatusRep, aplImob, aplCorretor]
+    .filter(r => r.value.size > 0).length
+);
 
 const reservasFiltradas = computed(() => {
-    return (props.reservas || []).filter(r => {
-        if (aplEmpreendimento.value.size && !aplEmpreendimento.value.has(String(r?.empreendimento || '').trim())) return false
-        if (aplSituacao.value.size       && !aplSituacao.value.has(String(r?.situacao?.nome || '').trim())) return false
-        if (aplStatusRep.value.size      && !aplStatusRep.value.has(String(r?.status_repasse || '').trim())) return false
-        if (aplImob.value.size           && !aplImob.value.has(String(r?.imobiliaria?.nome || '').trim())) return false
-        if (aplCorretor.value.size       && !aplCorretor.value.has(String(r?.corretor?.nome || '').trim())) return false
-        return true
-    })
-})
+  return (props.reservas || []).filter(r => {
+    if (aplEmpreendimento.value.size && !aplEmpreendimento.value.has(String(r?.empreendimento || '').trim())) return false;
+    if (aplSituacao.value.size       && !aplSituacao.value.has(String(r?.situacao?.nome || '').trim())) return false;
+    if (aplStatusRep.value.size      && !aplStatusRep.value.has(String(r?.status_repasse || '').trim())) return false;
+    if (aplImob.value.size           && !aplImob.value.has(String(r?.imobiliaria?.nome || '').trim())) return false;
+    if (aplCorretor.value.size       && !aplCorretor.value.has(String(r?.corretor?.nome || '').trim())) return false;
+    return true;
+  });
+});
 
 function onAplicarModal() {
-    aplEmpreendimento.value = new Set(draftEmpreendimento.value)
-    aplSituacao.value       = new Set(draftSituacao.value)
-    aplStatusRep.value      = new Set(draftStatusRep.value)
-    aplImob.value           = new Set(draftImob.value)
-    aplCorretor.value       = new Set(draftCorretor.value)
-    currentPage.value = 1
+  aplEmpreendimento.value = new Set(draftEmpreendimento.value);
+  aplSituacao.value       = new Set(draftSituacao.value);
+  aplStatusRep.value      = new Set(draftStatusRep.value);
+  aplImob.value           = new Set(draftImob.value);
+  aplCorretor.value       = new Set(draftCorretor.value);
+  currentPage.value = 1;
 }
 function onLimparModal() {
-    [draftEmpreendimento, draftSituacao, draftStatusRep, draftImob, draftCorretor,
-     aplEmpreendimento, aplSituacao, aplStatusRep, aplImob, aplCorretor].forEach(r => r.value = new Set())
-    currentPage.value = 1
+  [draftEmpreendimento, draftSituacao, draftStatusRep, draftImob, draftCorretor,
+    aplEmpreendimento, aplSituacao, aplStatusRep, aplImob, aplCorretor]
+    .forEach(r => r.value = new Set());
+  currentPage.value = 1;
 }
 
 watch(() => props.visivel, v => {
-    if (!v) { search.value = ''; currentPage.value = 1; expanded.value = new Set(); onLimparModal() }
-})
-watch(search,        () => { currentPage.value = 1 })
-watch(itemsPerPage,  () => { currentPage.value = 1 })
-watch(reservasFiltradas, () => { currentPage.value = 1 })
+  if (!v) { search.value = ''; currentPage.value = 1; expanded.value = new Set(); onLimparModal(); }
+});
+watch(search, () => { currentPage.value = 1; });
+watch(itemsPerPage, () => { currentPage.value = 1; });
+watch(reservasFiltradas, () => { currentPage.value = 1; });
 
+// ── Search & paginação ───────────────────────────────
 const filtered = computed(() => {
-    const term = search.value.trim().toLowerCase()
-    const base = reservasFiltradas.value
-    if (!term) return base
-    return base.filter(r =>
-        String(r.idreserva).includes(term) ||
-        (r.titular?.nome || '').toLowerCase().includes(term) ||
-        (r.documento || '').toLowerCase().includes(term) ||
-        (r.empreendimento || '').toLowerCase().includes(term) ||
-        (r.situacao?.nome || '').toLowerCase().includes(term) ||
-        (r.unidade || '').toLowerCase().includes(term)
-    )
-})
+  const term = search.value.trim().toLowerCase();
+  const base = reservasFiltradas.value;
+  if (!term) return base;
+  return base.filter(r =>
+    String(r.idreserva).includes(term) ||
+    (r.titular?.nome || '').toLowerCase().includes(term) ||
+    (r.documento || '').toLowerCase().includes(term) ||
+    (r.empreendimento || '').toLowerCase().includes(term) ||
+    (r.situacao?.nome || '').toLowerCase().includes(term) ||
+    (r.unidade || '').toLowerCase().includes(term)
+  );
+});
 
-const totalPages = computed(() => Math.max(1, Math.ceil(filtered.value.length / Number(itemsPerPage.value))))
-const startItem  = computed(() => (currentPage.value - 1) * Number(itemsPerPage.value) + 1)
-const endItem    = computed(() => Math.min(currentPage.value * Number(itemsPerPage.value), filtered.value.length))
-const paginated  = computed(() => {
-    const ipp = Number(itemsPerPage.value)
-    const start = (currentPage.value - 1) * ipp
-    return filtered.value.slice(start, start + ipp)
-})
+const totalPages = computed(() => Math.max(1, Math.ceil(filtered.value.length / Number(itemsPerPage.value))));
+const startItem = computed(() => (currentPage.value - 1) * Number(itemsPerPage.value) + 1);
+const endItem   = computed(() => Math.min(currentPage.value * Number(itemsPerPage.value), filtered.value.length));
+const paginated = computed(() => {
+  const ipp = Number(itemsPerPage.value);
+  const start = (currentPage.value - 1) * ipp;
+  return filtered.value.slice(start, start + ipp);
+});
 const visiblePages = computed(() => {
-    const tp = totalPages.value, cp = currentPage.value, pages = [], show = 5
-    let start = Math.max(1, cp - Math.floor(show / 2))
-    let end = Math.min(tp, start + show - 1)
-    if (end - start + 1 < show) start = Math.max(1, end - show + 1)
-    for (let i = start; i <= end; i++) pages.push(i)
-    return pages
-})
+  const tp = totalPages.value, cp = currentPage.value, pages = [], show = 5;
+  let start = Math.max(1, cp - Math.floor(show / 2));
+  let end = Math.min(tp, start + show - 1);
+  if (end - start + 1 < show) start = Math.max(1, end - show + 1);
+  for (let i = start; i <= end; i++) pages.push(i);
+  return pages;
+});
 
-// KPIs
+// ── KPIs ─────────────────────────────────────────────
 const kpis = computed(() => {
-    const list = reservasFiltradas.value || []
-    let vendidas = 0, canceladas = 0, ativas = 0, qtdFin = 0, somaDias = 0
-    const empreendimentos = new Set(), clientes = new Set()
-    for (const r of list) {
-        const isV = r?.vendida === 'S' || /vendid/i.test(r?.situacao?.nome || '')
-        const isC = /cancelad|distrato/i.test(r?.situacao?.nome || '') || /cancelad|distrato/i.test(r?.status_repasse || '')
-        if (isV) vendidas++
-        else if (isC) canceladas++
-        else ativas++
-        if (r?.data_venda || r?.data_contrato || isV) {
-            const d = Number(r?.dias_em_reserva)
-            if (Number.isFinite(d)) { somaDias += d; qtdFin++ }
-        }
-        if (r?.empreendimento) empreendimentos.add(r.empreendimento)
-        if (r?.documento) clientes.add(r.documento)
+  const list = reservasFiltradas.value || [];
+  let vendidas = 0, canceladas = 0, ativas = 0, qtdFin = 0, somaDias = 0;
+  const empreendimentos = new Set(), clientes = new Set();
+  for (const r of list) {
+    const isV = r?.vendida === 'S' || /vendid/i.test(r?.situacao?.nome || '');
+    const isC = /cancelad|distrato/i.test(r?.situacao?.nome || '') || /cancelad|distrato/i.test(r?.status_repasse || '');
+    if (isV) vendidas++;
+    else if (isC) canceladas++;
+    else ativas++;
+    if (r?.data_venda || r?.data_contrato || isV) {
+      const d = Number(r?.dias_em_reserva);
+      if (Number.isFinite(d)) { somaDias += d; qtdFin++; }
     }
-    const total = list.length
-    return {
-        total, ativas, vendidas, canceladas,
-        totalFin: vendidas + canceladas,
-        pctVendidas:    total ? vendidas   / total : 0,
-        pctCanceladas:  total ? canceladas / total : 0,
-        pctAtivas:      total ? ativas     / total : 0,
-        tempoMedioFin: qtdFin ? somaDias / qtdFin : 0,
-        empreendimentos: empreendimentos.size,
-        clientes: clientes.size,
-    }
-})
+    if (r?.empreendimento) empreendimentos.add(r.empreendimento);
+    if (r?.documento) clientes.add(r.documento);
+  }
+  const total = list.length;
+  return {
+    total, ativas, vendidas, canceladas, totalFin: vendidas + canceladas,
+    pctVendidas:   total ? vendidas / total : 0,
+    pctCanceladas: total ? canceladas / total : 0,
+    pctAtivas:     total ? ativas / total : 0,
+    tempoMedioFin: qtdFin ? somaDias / qtdFin : 0,
+    empreendimentos: empreendimentos.size,
+    clientes: clientes.size,
+  };
+});
 
-// Charts
-const palette = ['#8B5CF6', '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#06B6D4', '#84CC16', '#F97316', '#EC4899', '#6366F1']
-const baseTooltip = { confine: true, extraCssText: 'max-width:320px; white-space:normal; font-size:12px; padding:6px 8px;' }
+const kpiCards = computed(() => [
+  { label: 'Total',           value: kpis.value.total,                             sub: `Em curso: ${kpis.value.ativas}`,           icon: 'fas fa-bookmark',          accent: 'text-accent bg-accent-soft' },
+  { label: 'Tempo finalizar', value: `${kpis.value.tempoMedioFin.toFixed(1)}d`,    sub: `${kpis.value.totalFin} finalizadas`,       icon: 'fas fa-stopwatch',         accent: 'text-amber-500 bg-amber-500/10' },
+  { label: '% Vendida (CRM)', value: `${(kpis.value.pctVendidas * 100).toFixed(1)}%`, sub: `${kpis.value.vendidas} de ${kpis.value.total}`, icon: 'fas fa-flag-checkered', accent: 'text-emerald-500 bg-emerald-500/10' },
+  { label: '% Canceladas',    value: `${(kpis.value.pctCanceladas * 100).toFixed(1)}%`, sub: `${kpis.value.canceladas} de ${kpis.value.total}`, icon: 'fas fa-ban',          accent: 'text-red-500 bg-red-500/10' },
+]);
+
+// ── Charts ───────────────────────────────────────────
+const palette = ['#6366F1', '#06B6D4', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#F97316', '#3B82F6', '#22C55E'];
+const baseTooltip = computed(() => ({
+  confine: true,
+  extraCssText: `background:${isDark.value ? 'rgba(2,6,23,0.96)' : 'rgba(255,255,255,0.98)'};border:1px solid rgba(99,102,241,0.25);border-radius:12px;color:${isDark.value ? '#E2E8F0' : '#0F172A'};padding:8px 10px;font-size:12px;`,
+}));
 
 function groupByKey(list) {
-    const map = new Map()
-    for (const r of list) {
-        let key
-        if (chartGroup.value === 'empreendimento')   key = r?.empreendimento || 'Sem empreendimento'
-        else if (chartGroup.value === 'situacao')    key = r?.situacao?.nome || 'Sem situação'
-        else if (chartGroup.value === 'status_repasse') key = r?.status_repasse || 'Sem repasse'
-        else if (chartGroup.value === 'imobiliaria') key = r?.imobiliaria?.nome || 'Sem imobiliária'
-        else if (chartGroup.value === 'corretor')    key = r?.corretor?.nome || 'Sem corretor'
-        else if (chartGroup.value === 'bucket')      key = bucketOf(r).label
-        const cur = map.get(key) || { name: key, value: 0 }
-        cur.value++
-        map.set(key, cur)
-    }
-    return Array.from(map.values()).sort((a, b) => b.value - a.value)
+  const map = new Map();
+  for (const r of list) {
+    let key;
+    if (chartGroup.value === 'empreendimento')      key = r?.empreendimento || 'Sem empreendimento';
+    else if (chartGroup.value === 'situacao')       key = r?.situacao?.nome || 'Sem situação';
+    else if (chartGroup.value === 'status_repasse') key = r?.status_repasse || 'Sem repasse';
+    else if (chartGroup.value === 'imobiliaria')    key = r?.imobiliaria?.nome || 'Sem imobiliária';
+    else if (chartGroup.value === 'corretor')       key = r?.corretor?.nome || 'Sem corretor';
+    else if (chartGroup.value === 'bucket')         key = bucketOf(r).label;
+    const cur = map.get(key) || { name: key, value: 0 };
+    cur.value++;
+    map.set(key, cur);
+  }
+  return Array.from(map.values()).sort((a, b) => b.value - a.value);
 }
-const chartData = computed(() => groupByKey(reservasFiltradas.value))
+const chartData = computed(() => groupByKey(reservasFiltradas.value));
 
 const chartOption = computed(() => {
-    if (viewMode.value === 'pie') {
-        return {
-            color: palette,
-            tooltip: { ...baseTooltip, trigger: 'item', formatter: p => `${p.name}<br/><b>${p.value}</b> (${p.percent}%)` },
-            legend: { type: 'scroll', orient: 'vertical', left: 'left', top: 'middle', textStyle: { fontSize: 11 } },
-            series: [{
-                type: 'pie', radius: ['40%', '70%'], padAngle: 1,
-                itemStyle: { borderRadius: 6 }, label: { show: false },
-                emphasis: { label: { show: true, fontWeight: 'bold' } },
-                data: chartData.value,
-            }],
-        }
-    }
-    if (viewMode.value === 'funnel') {
-        const data = STAGE_GROUPS.filter(g => g.key !== 'outros').map(g => ({
-            name: g.label,
-            value: reservasFiltradas.value.filter(r => bucketOf(r).key === g.key).length,
-        })).filter(d => d.value > 0)
-        return {
-            color: palette,
-            tooltip: { ...baseTooltip, trigger: 'item', formatter: '{b}: <b>{c}</b>' },
-            series: [{
-                type: 'funnel', left: '10%', width: '80%', sort: 'descending',
-                label: { color: '#888', formatter: '{b}: {c}' },
-                data,
-            }],
-        }
-    }
+  if (viewMode.value === 'pie') {
     return {
-        color: palette,
-        tooltip: { ...baseTooltip, trigger: 'axis', axisPointer: { type: 'shadow' } },
-        grid: { left: 32, right: 32, top: 30, bottom: 80, containLabel: true },
-        dataZoom: [{ type: 'inside' }, { type: 'slider', height: 18, bottom: 20 }],
-        xAxis: {
-            type: 'category', data: chartData.value.map(r => r.name),
-            axisLabel: { interval: 0, rotate: 25, fontSize: 10, formatter: v => v.length > 18 ? v.slice(0, 18) + '…' : v },
-        },
-        yAxis: { type: 'value' },
-        series: [{
-            name: 'Quantidade', type: 'bar', barWidth: '60%',
-            data: chartData.value.map(r => r.value),
-            itemStyle: { borderRadius: [6, 6, 0, 0] },
-            label: { show: true, position: 'top', fontSize: 10 },
-        }],
-    }
-})
+      backgroundColor: 'transparent', color: palette,
+      tooltip: { ...baseTooltip.value, trigger: 'item', formatter: p => `${p.name}<br/><b>${p.value}</b> (${p.percent}%)` },
+      legend: { type: 'scroll', orient: 'vertical', left: 'left', top: 'middle', textStyle: { fontSize: 11, color: txt.value } },
+      series: [{
+        type: 'pie', radius: ['40%', '70%'], padAngle: 1,
+        itemStyle: { borderRadius: 6 }, label: { show: false },
+        emphasis: { label: { show: true, fontWeight: 'bold', color: txt.value } },
+        data: chartData.value,
+      }],
+    };
+  }
+  if (viewMode.value === 'funnel') {
+    const data = STAGE_GROUPS.filter(g => g.key !== 'outros').map(g => ({
+      name: g.label,
+      value: reservasFiltradas.value.filter(r => bucketOf(r).key === g.key).length,
+    })).filter(d => d.value > 0);
+    return {
+      backgroundColor: 'transparent', color: palette,
+      tooltip: { ...baseTooltip.value, trigger: 'item', formatter: '{b}: <b>{c}</b>' },
+      series: [{
+        type: 'funnel', left: '10%', width: '80%', sort: 'descending', gap: 2,
+        label: { color: '#FFFFFF', fontWeight: 600, formatter: '{b}: {c}' },
+        itemStyle: { borderRadius: 6 },
+        data,
+      }],
+    };
+  }
+  return {
+    backgroundColor: 'transparent', color: palette,
+    tooltip: { ...baseTooltip.value, trigger: 'axis', axisPointer: { type: 'shadow' } },
+    grid: { left: 32, right: 24, top: 30, bottom: 80, containLabel: true },
+    dataZoom: [{ type: 'inside' }, { type: 'slider', height: 18, bottom: 20, textStyle: { color: sub.value } }],
+    xAxis: {
+      type: 'category', data: chartData.value.map(r => r.name),
+      axisLabel: { interval: 0, rotate: 25, fontSize: 10, color: txt.value, formatter: v => v.length > 18 ? v.slice(0, 18) + '…' : v },
+      axisLine: { lineStyle: { color: gridLine.value } },
+    },
+    yAxis: { type: 'value', axisLabel: { color: txt.value, fontSize: 11 }, splitLine: { lineStyle: { color: gridLine.value, type: 'dashed' } } },
+    series: [{
+      name: 'Quantidade', type: 'bar', barWidth: '60%',
+      data: chartData.value.map(r => r.value),
+      itemStyle: { borderRadius: [6, 6, 0, 0] },
+      label: { show: true, position: 'top', fontSize: 10, color: txt.value },
+    }],
+  };
+});
 
-function onChartClick(params) { if (params && params.name) search.value = params.name }
+function onChartClick(params) { if (params && params.name) search.value = params.name; }
 
 function toggleExpand(r) {
-    const next = new Set(expanded.value)
-    if (next.has(r.idreserva)) next.delete(r.idreserva); else next.add(r.idreserva)
-    expanded.value = next
+  const next = new Set(expanded.value);
+  if (next.has(r.idreserva)) next.delete(r.idreserva);
+  else next.add(r.idreserva);
+  expanded.value = next;
 }
-function abrirDetalhe(r) { detailItem.value = r; detailVisible.value = true }
+function abrirDetalhe(r) { detailItem.value = r; detailVisible.value = true; }
 
 function cvLink(r) {
-    if (!r?.idreserva) return null
-    return `https://menin.cvcrm.com.br/gestor/comercial/reservas/${r.idreserva}/administrar`
+  if (!r?.idreserva) return null;
+  return `https://menin.cvcrm.com.br/gestor/comercial/reservas/${r.idreserva}/administrar`;
 }
 
-const fmtDate = (d) => {
-    if (!d) return '—'
-    const dt = new Date(d); return isNaN(dt) ? '—' : dt.toLocaleDateString('pt-BR')
-}
-const fmtDateTime = (d) => {
-    if (!d) return '—'
-    const dt = new Date(d); return isNaN(dt) ? '—' : dt.toLocaleString('pt-BR')
-}
-const pctStr = (v) => `${(v * 100).toFixed(1)}%`
+const fmtDate = (d) => { if (!d) return '—'; const dt = new Date(d); return isNaN(dt) ? '—' : dt.toLocaleDateString('pt-BR'); };
+const fmtDateTime = (d) => { if (!d) return '—'; const dt = new Date(d); return isNaN(dt) ? '—' : dt.toLocaleString('pt-BR'); };
+
+const stageVariant = (r) => {
+  if (r?.vendida === 'S') return 'success';
+  const s = r?.situacao?.nome || '';
+  const rep = r?.status_repasse || '';
+  if (/cancelad|distrato/i.test(s) || /cancelad|distrato/i.test(rep)) return 'danger';
+  if (/vendid/i.test(s)) return 'success';
+  if (rep) return 'info';
+  if (/contrato/i.test(s)) return 'accent';
+  return 'warning';
+};
 </script>
+
+<template>
+  <Modal :open="visivel" size="full" @close="emit('fechar')">
+    <template #header>
+      <div class="flex items-center gap-3 min-w-0">
+        <div class="h-9 w-9 rounded-lg bg-accent-soft text-accent border border-accent/20 grid place-items-center shrink-0">
+          <i class="fas fa-bookmark text-sm"></i>
+        </div>
+        <div class="min-w-0">
+          <h2 class="text-base font-semibold text-ink truncate">Reservas</h2>
+          <p class="text-xs text-ink-muted mt-0.5">
+            <span class="font-mono text-ink">{{ kpis.total }}</span> reserva(s) ·
+            <span class="font-mono">{{ kpis.empreendimentos }}</span> empreendimento(s) ·
+            <span class="font-mono">{{ kpis.clientes }}</span> cliente(s)
+          </p>
+        </div>
+        <IconButton icon="fas fa-download" size="sm" label="Exportar"
+          class="ml-auto shrink-0" @click="exportOpen = true" />
+      </div>
+    </template>
+
+    <div class="-m-4 sm:-m-5 flex flex-col">
+
+      <!-- Toolbar -->
+      <div class="flex flex-col sm:flex-row sm:items-center gap-2 px-4 sm:px-5 py-3 border-b border-line bg-surface-sunken/40">
+        <SegmentedControl v-model="viewMode" :options="viewOptions" size="sm" class="overflow-x-auto" />
+
+        <div class="ml-auto flex items-center gap-1.5">
+          <Button size="sm" :variant="filtersOpen ? 'primary' : 'secondary'"
+            icon="fas fa-filter" @click="filtersOpen = !filtersOpen">
+            <span class="hidden sm:inline">Filtros</span>
+            <span v-if="activeFiltrosCount" class="font-mono text-[10px]">{{ activeFiltrosCount }}</span>
+          </Button>
+        </div>
+      </div>
+
+      <!-- Filtros -->
+      <transition
+        enter-active-class="transition-all duration-200 ease-out-expo overflow-hidden"
+        enter-from-class="opacity-0 max-h-0"
+        enter-to-class="opacity-100 max-h-[500px]"
+        leave-active-class="transition-all duration-150 ease-in overflow-hidden"
+        leave-from-class="opacity-100 max-h-[500px]"
+        leave-to-class="opacity-0 max-h-0">
+        <div v-show="filtersOpen" class="px-4 sm:px-5 py-3 border-b border-line bg-surface-sunken/30 space-y-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div>
+              <label class="block text-[11px] font-medium text-ink-muted mb-1.5">Empreendimento</label>
+              <MultiSelector v-model="draftEmpreendimentoArr" :options="opcoesEmpreendimento" placeholder="Selecione..." :page-size="200" :select-all="true" />
+            </div>
+            <div>
+              <label class="block text-[11px] font-medium text-ink-muted mb-1.5">Situação</label>
+              <MultiSelector v-model="draftSituacaoArr" :options="opcoesSituacao" placeholder="Selecione..." :page-size="150" :select-all="true" />
+            </div>
+            <div>
+              <label class="block text-[11px] font-medium text-ink-muted mb-1.5">Status repasse</label>
+              <MultiSelector v-model="draftStatusRepArr" :options="opcoesStatusRep" placeholder="Selecione..." :page-size="150" :select-all="true" />
+            </div>
+            <div>
+              <label class="block text-[11px] font-medium text-ink-muted mb-1.5">Imobiliária</label>
+              <MultiSelector v-model="draftImobArr" :options="opcoesImob" placeholder="Selecione..." :page-size="150" :select-all="true" />
+            </div>
+            <div>
+              <label class="block text-[11px] font-medium text-ink-muted mb-1.5">Corretor</label>
+              <MultiSelector v-model="draftCorretorArr" :options="opcoesCorretor" placeholder="Selecione..." :page-size="150" :select-all="true" />
+            </div>
+          </div>
+          <div class="flex justify-end gap-2">
+            <Button variant="ghost" size="sm" icon="fas fa-eraser" @click="onLimparModal">Limpar</Button>
+            <Button size="sm" icon="fas fa-magnifying-glass" @click="onAplicarModal">Aplicar filtros</Button>
+          </div>
+        </div>
+      </transition>
+
+      <!-- Conteúdo -->
+      <div class="flex-1 overflow-y-auto max-h-[68vh]">
+
+        <!-- KPI Strip -->
+        <div class="px-4 sm:px-5 py-4 border-b border-line">
+          <div class="-mx-4 sm:mx-0 px-4 sm:px-0 overflow-x-auto sm:overflow-visible no-scrollbar">
+            <div class="flex sm:grid gap-2.5 sm:gap-3 sm:grid-cols-2 lg:grid-cols-4 min-w-max sm:min-w-0">
+              <div v-for="k in kpiCards" :key="k.label"
+                class="flex flex-col gap-1 p-3 rounded-xl border border-line bg-surface-raised
+                       shadow-soft hover:shadow-elevated hover:border-accent/30 hover:-translate-y-0.5
+                       transition-all duration-200 ease-out-expo
+                       w-44 sm:w-auto shrink-0 surface-gradient">
+                <div class="flex items-center justify-between gap-2">
+                  <span class="h-7 w-7 rounded-lg grid place-items-center text-xs" :class="k.accent">
+                    <i :class="k.icon"></i>
+                  </span>
+                  <span class="text-[10px] uppercase tracking-wider font-mono text-ink-subtle">{{ k.label }}</span>
+                </div>
+                <span class="text-xl font-semibold text-ink tabular-nums tracking-tight leading-none mt-1">{{ k.value }}</span>
+                <span class="text-[11px] text-ink-muted truncate" :title="k.sub">{{ k.sub }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Charts -->
+        <div v-if="viewMode !== 'list'" class="p-4 sm:p-5 border-b border-line">
+          <div class="flex flex-wrap items-center gap-2 mb-3">
+            <span v-if="search" class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs bg-accent-soft text-accent border border-accent/20">
+              Filtro: {{ search }}
+              <button @click="search = ''" class="hover:text-accent-hover">
+                <i class="fas fa-times text-[10px]"></i>
+              </button>
+            </span>
+            <span v-else class="text-xs text-ink-subtle">Clique no gráfico para filtrar a lista abaixo.</span>
+
+            <Select v-model="chartGroup" :options="chartGroupOptions" size="sm" class="ml-auto w-56" />
+            <ChartActions :filename="`reservas-${viewMode}-${chartGroup}`" />
+          </div>
+          <div class="rounded-xl border border-line bg-surface-raised p-3 surface-gradient">
+            <VChart :option="chartOption" autoresize style="height: 400px; width: 100%;" @click="onChartClick" />
+          </div>
+        </div>
+
+        <!-- Search -->
+        <div class="px-4 sm:px-5 py-3 border-b border-line bg-surface-sunken/30 flex flex-wrap gap-3 items-end">
+          <div class="flex-1 min-w-[200px]">
+            <Input v-model="search" placeholder="Cliente · CPF · Empreendimento · Situação · Unidade"
+              iconLeft="fas fa-magnifying-glass" />
+          </div>
+          <div class="w-44">
+            <Select v-model="itemsPerPage" :options="itemsPerPageOptions" />
+          </div>
+        </div>
+
+        <!-- Lista -->
+        <div class="p-4 sm:p-5">
+          <EmptyState v-if="!paginated.length"
+            icon="fas fa-inbox" title="Nenhuma reserva encontrada"
+            description="Ajuste os filtros ou a busca para ver resultados." />
+
+          <div v-else class="space-y-2">
+            <article v-for="r in paginated" :key="r.idreserva"
+              class="bg-surface-raised border border-line rounded-xl overflow-hidden surface-gradient
+                     hover:shadow-elevated hover:border-accent/30 transition-all duration-200 ease-out-expo"
+              :class="{ 'ring-1 ring-emerald-500/30': r.vendida === 'S' }">
+
+              <div class="px-3 sm:px-4 py-3 cursor-pointer" @click="toggleExpand(r)">
+                <div class="flex items-start gap-3">
+                  <div class="h-9 w-9 shrink-0 rounded-lg grid place-items-center text-sm border"
+                    :class="{
+                      'bg-emerald-500/10 text-emerald-500 border-emerald-500/20': stageVariant(r) === 'success',
+                      'bg-yellow-500/10 text-yellow-500 border-yellow-500/20': stageVariant(r) === 'warning',
+                      'bg-red-500/10 text-red-500 border-red-500/20': stageVariant(r) === 'danger',
+                      'bg-accent-soft text-accent border-accent/20': stageVariant(r) === 'accent',
+                      'bg-blue-500/10 text-blue-500 border-blue-500/20': stageVariant(r) === 'info',
+                    }">
+                    <i :class="iconForStage(r.situacao?.nome)"></i>
+                  </div>
+
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-start justify-between gap-2 flex-wrap">
+                      <div class="min-w-0">
+                        <h4 class="text-sm font-semibold text-ink truncate">
+                          {{ r.titular?.nome || '—' }}
+                          <span class="ml-1 text-[11px] text-ink-subtle font-mono">#{{ r.idreserva }}</span>
+                        </h4>
+                        <p class="text-[11px] text-ink-subtle font-mono mt-0.5">{{ r.documento || '—' }}</p>
+                      </div>
+                      <div class="flex items-center gap-2 shrink-0">
+                        <Badge :variant="stageVariant(r)" size="sm">
+                          {{ r.situacao?.nome || '—' }}
+                        </Badge>
+                        <Badge v-if="r.vendida === 'S'" variant="success" size="sm">
+                          <i class="fas fa-flag-checkered text-[9px]"></i>Vendida
+                        </Badge>
+                        <a v-if="cvLink(r)" :href="cvLink(r)" target="_blank" rel="noopener"
+                          @click.stop class="opacity-70 hover:opacity-100 transition" v-tippy="'Abrir no CV CRM'">
+                          <img src="/CVLogo.png" alt="CV CRM" class="h-4" />
+                        </a>
+                      </div>
+                    </div>
+
+                    <div class="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-ink-muted">
+                      <span class="inline-flex items-center gap-1.5 max-w-[200px] truncate">
+                        <i class="fas fa-building text-[10px] text-indigo-500"></i>
+                        {{ r.empreendimento || '—' }}
+                      </span>
+                      <span v-if="r.bloco || r.unidade" class="inline-flex items-center gap-1.5">
+                        <i class="fas fa-hashtag text-[10px] text-cyan-500"></i>
+                        <span class="font-mono">{{ [r.bloco, r.unidade].filter(Boolean).join(' / ') }}</span>
+                      </span>
+                      <span v-if="r.status_repasse" class="inline-flex items-center gap-1.5 max-w-[180px] truncate">
+                        <i class="fas fa-money-bill-transfer text-[10px] text-sky-500"></i>
+                        {{ r.status_repasse }}
+                      </span>
+                      <span class="inline-flex items-center gap-1.5">
+                        <i class="far fa-calendar text-[10px] text-orange-500"></i>
+                        <span class="font-mono">{{ fmtDate(r.data_reserva) }}</span>
+                      </span>
+                      <span class="inline-flex items-center gap-1.5">
+                        <i class="fas fa-stopwatch text-[10px] text-amber-500"></i>
+                        <span class="font-mono tabular-nums">{{ Number(r.dias_em_reserva || 0).toFixed(0) }}d</span>
+                      </span>
+                    </div>
+                  </div>
+
+                  <i class="fas fa-chevron-down text-xs text-ink-subtle mt-2 transition-transform"
+                    :class="{ 'rotate-180': expanded.has(r.idreserva) }"></i>
+                </div>
+              </div>
+
+              <!-- Expandido -->
+              <div v-if="expanded.has(r.idreserva)"
+                class="border-t border-line bg-surface-sunken/40 px-3 sm:px-4 py-3 space-y-3 animate-fade-in">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 text-xs">
+                  <div v-for="(v, lab) in {
+                    'Tipo venda': r.tipovenda || '—',
+                    'Imobiliária': r.imobiliaria?.nome || '—',
+                    'Corretor': r.corretor?.nome || '—',
+                    'Empresa Corresp.': r.empresa_correspondente?.nome || '—',
+                    'Pré-cadastro #': r.idprecadastro || '—',
+                    'Etapa / Bloco / Unidade': [r.etapa, r.bloco, r.unidade].filter(Boolean).join(' / ') || '—',
+                    'Data Reserva': fmtDateTime(r.data_reserva),
+                    'Data Contrato': fmtDateTime(r.data_contrato),
+                    'Data Venda': fmtDateTime(r.data_venda),
+                  }" :key="lab" class="min-w-0">
+                    <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono">{{ lab }}</p>
+                    <p class="text-ink truncate">{{ v }}</p>
+                  </div>
+                </div>
+
+                <div v-if="r.ultima_mensagem" class="rounded-lg p-2.5 border border-line bg-surface-raised">
+                  <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono mb-1">Última mensagem</p>
+                  <p class="text-xs text-ink leading-relaxed whitespace-pre-line">{{ r.ultima_mensagem }}</p>
+                </div>
+
+                <div class="flex justify-end gap-2 pt-2 border-t border-line">
+                  <Button variant="secondary" size="sm" icon="fas fa-list-check" @click.stop="abrirDetalhe(r)">
+                    Contratos / Histórico
+                  </Button>
+                </div>
+              </div>
+            </article>
+          </div>
+        </div>
+
+        <!-- Paginação -->
+        <div v-if="totalPages > 1"
+          class="px-4 sm:px-5 py-3 border-t border-line bg-surface-sunken/40 flex flex-wrap items-center justify-between gap-2">
+          <div class="text-xs text-ink-muted font-mono">
+            {{ startItem }}–{{ endItem }} de {{ filtered.length }}
+          </div>
+          <div class="flex items-center gap-1">
+            <IconButton icon="fas fa-angles-left" size="sm" label="Primeira"
+              :disabled="currentPage === 1" @click="currentPage = 1" />
+            <IconButton icon="fas fa-chevron-left" size="sm" label="Anterior"
+              :disabled="currentPage === 1" @click="currentPage--" />
+            <button v-for="page in visiblePages" :key="page" @click="currentPage = page"
+              class="min-w-[32px] h-8 px-2 rounded-md text-xs font-mono transition-colors"
+              :class="page === currentPage
+                ? 'bg-accent text-white'
+                : 'text-ink-muted hover:bg-surface-hover'">
+              {{ page }}
+            </button>
+            <IconButton icon="fas fa-chevron-right" size="sm" label="Próxima"
+              :disabled="currentPage === totalPages" @click="currentPage++" />
+            <IconButton icon="fas fa-angles-right" size="sm" label="Última"
+              :disabled="currentPage === totalPages" @click="currentPage = totalPages" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <Export v-model="exportOpen" :source="filtered" title="Exportação de Reservas"
+      filename="reservas" initial-delimiter=";" initial-array-mode="join"
+      :preselect="[
+        'idreserva', 'documento', 'titular.nome',
+        'empreendimento', 'etapa', 'bloco', 'unidade',
+        'situacao.nome', 'status_repasse', 'tipovenda',
+        'vendida', 'data_reserva', 'data_contrato', 'data_venda',
+        'imobiliaria.nome', 'corretor.nome', 'empresa_correspondente.nome',
+        'dias_em_reserva', 'idprecadastro'
+      ]" />
+
+    <ReservaDetailModal :reserva="detailItem" :visivel="detailVisible" @fechar="detailVisible = false" />
+  </Modal>
+</template>
+
+<style scoped>
+.no-scrollbar { scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+</style>

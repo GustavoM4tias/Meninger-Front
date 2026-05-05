@@ -2,16 +2,16 @@
   <div class="flex flex-col min-h-0">
 
     <!-- Day headers -->
-    <div class="grid grid-cols-[48px_repeat(var(--cols),1fr)] border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 shrink-0"
+    <div class="grid grid-cols-[48px_repeat(var(--cols),1fr)] border-b border-line bg-surface-sunken/50 shrink-0"
       :style="{ '--cols': weekDays.length }">
       <div></div>
       <div v-for="day in weekDays" :key="fmtYMD(day)"
-        :class="isToday(day) ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400'"
-        class="py-2 text-center text-xs font-semibold uppercase tracking-wide border-l border-gray-100 dark:border-gray-800">
+        :class="isToday(day) ? 'text-accent' : 'text-ink-muted'"
+        class="py-2 text-center text-xs font-semibold uppercase tracking-wide border-l border-line">
         <div>{{ DAY_NAMES[day.getDay()] }}</div>
         <div :class="isToday(day)
           ? 'w-7 h-7 rounded-full bg-blue-600 text-white flex items-center justify-center mx-auto mt-0.5 text-sm font-bold'
-          : 'text-base font-bold text-gray-800 dark:text-gray-200 mt-0.5'">
+          : 'text-base font-bold text-ink mt-0.5'">
           {{ day.getDate() }}
         </div>
       </div>
@@ -19,17 +19,17 @@
 
     <!-- All-day events row -->
     <div v-if="hasAllDay"
-      class="grid border-b border-gray-200 dark:border-gray-800 shrink-0 bg-white dark:bg-gray-900"
+      class="grid border-b border-line shrink-0 bg-surface-raised"
       :style="{ gridTemplateColumns: `48px repeat(${weekDays.length}, 1fr)` }">
       <div class="text-xs text-gray-400 flex items-center justify-end pr-2 py-1">Todo dia</div>
       <div v-for="day in weekDays" :key="fmtYMD(day)"
-        class="border-l border-gray-100 dark:border-gray-800 p-0.5 min-h-[28px]">
+        class="border-l border-line p-0.5 min-h-[28px]">
         <div v-for="ev in allDayByDay[fmtYMD(day)]" :key="ev.id"
           @click="$emit('event-click', ev)"
           class="truncate text-xs px-1.5 py-0.5 rounded-md cursor-pointer mb-0.5 font-medium transition-all hover:shadow-sm hover:scale-[1.01]"
           :class="ev.isOnlineMeeting
             ? 'bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 hover:bg-purple-200 dark:hover:bg-purple-800/60'
-            : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800/40'">
+            : 'bg-accent-soft text-accent hover:bg-blue-200 dark:hover:bg-blue-800/40'">
           {{ ev.subject }}
         </div>
       </div>
@@ -47,7 +47,7 @@
             <div v-for="h in hours" :key="h"
               class="absolute left-0 right-0 flex items-start"
               :style="{ top: ((h - HOUR_START) * SLOT_PX) + 'px' }">
-              <span class="text-xs text-gray-400 dark:text-gray-500 w-11 text-right pr-2 -mt-2 select-none">
+              <span class="text-xs text-ink-subtle w-11 text-right pr-2 -mt-2 select-none">
                 {{ h === 12 ? '12:00' : h > 12 ? `${h - 12}pm` : `${h}am` }}
               </span>
             </div>
@@ -56,7 +56,7 @@
           <!-- Day columns -->
           <div
             v-for="day in weekDays" :key="fmtYMD(day)"
-            class="relative border-l border-gray-100 dark:border-gray-800 cursor-pointer"
+            class="relative border-l border-line cursor-pointer"
             :class="isToday(day) ? 'bg-blue-50/30 dark:bg-blue-900/5' : ''"
             @click.self="onColumnClick($event, day)"
             @mousemove="onColumnMouseMove($event, day)"
@@ -64,12 +64,12 @@
 
             <!-- Half-hour dividers (pontilhados) -->
             <div v-for="h in hours" :key="h"
-              class="absolute left-0 right-0 border-t border-dashed border-gray-100 dark:border-gray-800/80 pointer-events-none"
+              class="absolute left-0 right-0 border-t border-dashed border-line/80 pointer-events-none"
               :style="{ top: ((h - HOUR_START) * SLOT_PX + SLOT_PX / 2) + 'px' }" />
 
             <!-- Hour dividers (sólidos) -->
             <div v-for="h in hours" :key="'hr' + h"
-              class="absolute left-0 right-0 border-t border-gray-100 dark:border-gray-800 pointer-events-none"
+              class="absolute left-0 right-0 border-t border-line pointer-events-none"
               :style="{ top: ((h - HOUR_START) * SLOT_PX) + 'px' }" />
 
             <!-- Ghost preview (hover em slot vazio) -->
@@ -116,14 +116,14 @@
     <!-- Empty state -->
     <div v-if="!loading && !hasAnyEvent"
       class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none mt-24">
-      <i class="fas fa-calendar-xmark text-4xl text-gray-200 dark:text-gray-700 mb-3"></i>
+      <i class="fas fa-calendar-xmark text-4xl text-ink-subtle mb-3"></i>
       <p class="text-sm text-gray-400">Nenhum evento nesta semana</p>
     </div>
 
     <!-- Loading overlay -->
     <div v-if="loading"
       class="absolute inset-0 flex items-center justify-center bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm">
-      <div class="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+      <div class="flex items-center gap-2 text-ink-muted">
         <i class="fas fa-circle-notch animate-spin"></i>
         <span class="text-sm">Carregando...</span>
       </div>
@@ -277,10 +277,10 @@ function eventStyle(ev) {
 
 function eventClass(ev) {
   if (ev.isCancelled)
-    return 'bg-gray-100 dark:bg-gray-800 text-gray-400 line-through border border-gray-200 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-700';
+    return 'bg-surface-sunken text-gray-400 line-through border border-line hover:bg-surface-hover';
   if (ev.isOnlineMeeting)
     return 'bg-purple-100 dark:bg-purple-900/50 text-purple-800 dark:text-purple-200 border border-purple-200 dark:border-purple-700/50 hover:bg-purple-200 dark:hover:bg-purple-800/70';
-  return 'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200 border border-blue-200 dark:border-blue-700/50 hover:bg-blue-200 dark:hover:bg-blue-800/60';
+  return 'bg-accent-soft text-blue-800 dark:text-blue-200 border border-accent/30/50 hover:bg-blue-200 dark:hover:bg-blue-800/60';
 }
 </script>
 
