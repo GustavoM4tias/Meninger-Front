@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-full bg-gray-50 dark:bg-gray-950">
+  <div class="min-h-full bg-surface">
 
     <!-- Toast -->
     <transition name="fade">
@@ -22,15 +22,15 @@
         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
         @click.self="showUnlockModal = false"
       >
-        <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md border border-gray-100 dark:border-gray-800">
-          <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-800">
+        <div class="bg-surface-raised rounded-2xl shadow-2xl w-full max-w-md border border-line">
+          <div class="flex items-center justify-between px-6 py-4 border-b border-line">
             <div class="flex items-center gap-2">
               <i :class="isClosed ? 'fa-rotate-left text-emerald-500' : 'fa-pen-to-square text-amber-500'" class="fas"></i>
-              <h2 class="text-base font-bold text-gray-900 dark:text-white">
+              <h2 class="text-base font-bold text-ink">
                 {{ isClosed ? 'Reabrir Empreendimento' : 'Editar Ficha Autorizada' }}
               </h2>
             </div>
-            <button @click="showUnlockModal = false" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 transition">
+            <button @click="showUnlockModal = false" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-surface-hover transition">
               <i class="fas fa-times text-sm"></i>
             </button>
           </div>
@@ -49,19 +49,19 @@
               </p>
             </div>
             <div>
-              <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">
+              <label class="block text-xs font-semibold text-ink-muted uppercase tracking-wide mb-1.5">
                 {{ isClosed ? 'Motivo da reabertura (opcional)' : 'Motivo da edição (opcional)' }}
               </label>
               <textarea
                 v-model="unlockNote"
                 rows="3"
                 :placeholder="isClosed ? 'Ex: Empreendimento retomado...' : 'Ex: Correção no valor de comissão...'"
-                class="w-full px-3.5 py-2.5 text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900/60 border border-gray-200 dark:border-gray-700 rounded-md shadow-sm placeholder:text-gray-400 outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-500/15 transition resize-none"
+                class="w-full px-3.5 py-2.5 text-sm text-ink bg-surface-raised/60 border border-line rounded-md shadow-sm placeholder:text-gray-400 outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-500/15 transition resize-none"
               />
             </div>
           </div>
           <div class="flex justify-end gap-3 px-6 pb-5">
-            <button @click="showUnlockModal = false" class="px-4 py-2.5 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white transition">
+            <button @click="showUnlockModal = false" class="px-4 py-2.5 text-sm font-medium text-ink-muted hover:text-gray-800 dark:hover:text-white transition">
               Cancelar
             </button>
             <button
@@ -87,13 +87,13 @@
         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
         @click.self="showCancelApprovalModal = false"
       >
-        <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md border border-gray-100 dark:border-gray-800">
-          <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-800">
+        <div class="bg-surface-raised rounded-2xl shadow-2xl w-full max-w-md border border-line">
+          <div class="flex items-center justify-between px-6 py-4 border-b border-line">
             <div class="flex items-center gap-2">
               <i class="fas fa-ban text-red-500"></i>
-              <h2 class="text-base font-bold text-gray-900 dark:text-white">Cancelar Autorização</h2>
+              <h2 class="text-base font-bold text-ink">Cancelar Autorização</h2>
             </div>
-            <button @click="showCancelApprovalModal = false" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 transition">
+            <button @click="showCancelApprovalModal = false" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-surface-hover transition">
               <i class="fas fa-times text-sm"></i>
             </button>
           </div>
@@ -106,17 +106,17 @@
               </p>
             </div>
             <div>
-              <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Motivo do cancelamento (opcional)</label>
+              <label class="block text-xs font-semibold text-ink-muted uppercase tracking-wide mb-1.5">Motivo do cancelamento (opcional)</label>
               <textarea
                 v-model="cancelApprovalNote"
                 rows="3"
                 placeholder="Ex: Necessário ajustar valor de entrada..."
-                class="w-full px-3.5 py-2.5 text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900/60 border border-gray-200 dark:border-gray-700 rounded-md shadow-sm placeholder:text-gray-400 outline-none focus:border-red-400 focus:ring-2 focus:ring-red-500/15 transition resize-none"
+                class="w-full px-3.5 py-2.5 text-sm text-ink bg-surface-raised/60 border border-line rounded-md shadow-sm placeholder:text-gray-400 outline-none focus:border-red-400 focus:ring-2 focus:ring-red-500/15 transition resize-none"
               />
             </div>
           </div>
           <div class="flex justify-end gap-3 px-6 pb-5">
-            <button @click="showCancelApprovalModal = false" class="px-4 py-2.5 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white transition">
+            <button @click="showCancelApprovalModal = false" class="px-4 py-2.5 text-sm font-medium text-ink-muted hover:text-gray-800 dark:hover:text-white transition">
               Voltar
             </button>
             <button
@@ -139,13 +139,13 @@
         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
         @click.self="showSaveApprovedModal = false"
       >
-        <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md border border-gray-100 dark:border-gray-800">
-          <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-800">
+        <div class="bg-surface-raised rounded-2xl shadow-2xl w-full max-w-md border border-line">
+          <div class="flex items-center justify-between px-6 py-4 border-b border-line">
             <div class="flex items-center gap-2">
               <i class="fas fa-triangle-exclamation text-amber-500"></i>
-              <h2 class="text-base font-bold text-gray-900 dark:text-white">Atenção — Ficha Autorizada</h2>
+              <h2 class="text-base font-bold text-ink">Atenção — Ficha Autorizada</h2>
             </div>
-            <button @click="showSaveApprovedModal = false" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 transition">
+            <button @click="showSaveApprovedModal = false" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-surface-hover transition">
               <i class="fas fa-times text-sm"></i>
             </button>
           </div>
@@ -159,7 +159,7 @@
             </div>
           </div>
           <div class="flex justify-end gap-3 px-6 pb-5">
-            <button @click="showSaveApprovedModal = false" class="px-4 py-2.5 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white transition">
+            <button @click="showSaveApprovedModal = false" class="px-4 py-2.5 text-sm font-medium text-ink-muted hover:text-gray-800 dark:hover:text-white transition">
               Cancelar
             </button>
             <button
@@ -182,13 +182,13 @@
         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
         @click.self="closeCloseModal"
       >
-        <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md border border-gray-100 dark:border-gray-800">
-          <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-800">
+        <div class="bg-surface-raised rounded-2xl shadow-2xl w-full max-w-md border border-line">
+          <div class="flex items-center justify-between px-6 py-4 border-b border-line">
             <div class="flex items-center gap-2">
               <i class="fas fa-flag-checkered text-gray-500"></i>
-              <h2 class="text-base font-bold text-gray-900 dark:text-white">Encerrar Empreendimento</h2>
+              <h2 class="text-base font-bold text-ink">Encerrar Empreendimento</h2>
             </div>
-            <button @click="closeCloseModal" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 transition">
+            <button @click="closeCloseModal" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-surface-hover transition">
               <i class="fas fa-times text-sm"></i>
             </button>
           </div>
@@ -207,27 +207,27 @@
 
             <!-- Motivo -->
             <div>
-              <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">
+              <label class="block text-xs font-semibold text-ink-muted uppercase tracking-wide mb-1.5">
                 Motivo do encerramento (opcional)
               </label>
               <textarea
                 v-model="closeNote"
                 rows="2"
                 placeholder="Ex: Empreendimento finalizado, todas as unidades vendidas..."
-                class="w-full px-3.5 py-2.5 text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900/60 border border-gray-200 dark:border-gray-700 rounded-md shadow-sm placeholder:text-gray-400 outline-none focus:border-red-400 focus:ring-2 focus:ring-red-500/15 transition resize-none"
+                class="w-full px-3.5 py-2.5 text-sm text-ink bg-surface-raised/60 border border-line rounded-md shadow-sm placeholder:text-gray-400 outline-none focus:border-red-400 focus:ring-2 focus:ring-red-500/15 transition resize-none"
               />
             </div>
 
             <!-- Etapa 2: dupla validação por digitação -->
             <div>
-              <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">
+              <label class="block text-xs font-semibold text-ink-muted uppercase tracking-wide mb-1.5">
                 Para confirmar, digite <strong class="text-red-600 dark:text-red-400 tracking-widest">ENCERRAR</strong>
               </label>
               <input
                 v-model="closeConfirmation"
                 type="text"
                 placeholder="ENCERRAR"
-                class="w-full px-3.5 py-2.5 text-sm font-mono text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900/60 border-2 rounded-md shadow-sm placeholder:text-gray-400 outline-none focus:ring-2 transition"
+                class="w-full px-3.5 py-2.5 text-sm font-mono text-ink bg-surface-raised/60 border-2 rounded-md shadow-sm placeholder:text-gray-400 outline-none focus:ring-2 transition"
                 :class="closeConfirmation === 'ENCERRAR'
                   ? 'border-emerald-500 focus:border-emerald-600 focus:ring-emerald-500/20'
                   : 'border-red-300 dark:border-red-800 focus:border-red-500 focus:ring-red-500/15'"
@@ -235,7 +235,7 @@
             </div>
           </div>
           <div class="flex justify-end gap-3 px-6 pb-5">
-            <button @click="closeCloseModal" class="px-4 py-2.5 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white transition">
+            <button @click="closeCloseModal" class="px-4 py-2.5 text-sm font-medium text-ink-muted hover:text-gray-800 dark:hover:text-white transition">
               Cancelar
             </button>
             <button
@@ -256,9 +256,9 @@
       <div class="w-14 h-14 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mb-4">
         <i class="fas fa-exclamation-triangle text-red-500 text-xl"></i>
       </div>
-      <p class="text-base font-semibold text-gray-800 dark:text-gray-200">Erro ao carregar ficha</p>
-      <p class="text-sm text-gray-400 dark:text-gray-500 mt-1 max-w-sm">{{ fetchError }}</p>
-      <button @click="retryFetch" class="mt-5 flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition">
+      <p class="text-base font-semibold text-ink">Erro ao carregar ficha</p>
+      <p class="text-sm text-ink-subtle mt-1 max-w-sm">{{ fetchError }}</p>
+      <button @click="retryFetch" class="mt-5 flex items-center gap-2 px-5 py-2.5 bg-accent text-white text-sm font-semibold rounded-xl hover:bg-accent-hover transition">
         <i class="fas fa-arrows-rotate text-xs"></i>
         Tentar novamente
       </button>
@@ -271,18 +271,18 @@
 
     <template v-if="detail">
       <!-- ─── Header ─────────────────────────────────────────────────────── -->
-      <div class="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-20">
+      <div class="bg-surface-raised border-b border-gray-200 dark:border-gray-800 sticky top-0 z-20">
         <div class="max-w-7xl mx-auto px-4">
           <!-- Top bar -->
           <div class="flex items-center justify-between pb-4 pt-6 gap-4">
             <div class="flex items-center gap-3 min-w-0">
-              <button @click="$router.back()" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition flex-shrink-0">
+              <button @click="$router.back()" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-surface-hover transition flex-shrink-0">
                 <i class="fas fa-arrow-left text-sm"></i>
               </button>
               <div class="min-w-0">
                 <div class="flex items-center gap-2 flex-wrap">
                   <i v-if="isAvulsa" class="fas fa-cube text-gray-400 text-sm" title="Ficha avulsa (sem CV)"></i>
-                  <h1 class="text-lg lg:text-xl font-bold text-gray-900 dark:text-white truncate">
+                  <h1 class="text-lg lg:text-xl font-bold text-ink truncate">
                     {{ headerTitle }}
                   </h1>
                   <!-- Badge: mostra "Reprovada" se foi rejeitada, senão status normal -->
@@ -297,7 +297,7 @@
                     Avulsa
                   </span>
                 </div>
-                <p class="text-xs text-gray-400 dark:text-gray-500">
+                <p class="text-xs text-ink-subtle">
                   <template v-if="!isAvulsa">{{ detail.enterprise?.cidade }} <span class="mx-1">·</span></template>
                   Ref: {{ formatMonth(detail.reference_month) }}
                 </p>
@@ -311,7 +311,7 @@
                 <select
                   :value="detail.id"
                   @change="navigateToMonth($event.target.value)"
-                  class="text-xs text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 border-0 rounded-lg px-2.5 py-1.5 outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer"
+                  class="text-xs text-ink-muted bg-surface-sunken border-0 rounded-lg px-2.5 py-1.5 outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer"
                   title="Navegar pelo histórico"
                 >
                   <option v-for="h in detail.history" :key="h.id" :value="h.id">
@@ -371,7 +371,7 @@
                   @click="showCloseModal = true"
                   :disabled="actionLoading"
                   title="Encerrar empreendimento (finalização definitiva)"
-                  class="flex items-center gap-2 px-3.5 py-2 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-xs font-semibold rounded-xl border border-gray-200 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-700 transition"
+                  class="flex items-center gap-2 px-3.5 py-2 bg-surface-sunken text-ink-muted text-xs font-semibold rounded-xl border border-line hover:bg-surface-hover transition"
                 >
                   <i class="fas fa-flag-checkered text-xs"></i>
                   <span class="hidden sm:inline">Encerrar</span>
@@ -383,7 +383,7 @@
                 v-if="canSave"
                 @click="handleSaveAll"
                 :disabled="saving || actionLoading"
-                class="flex items-center gap-2 px-3.5 py-2 bg-blue-600 text-white text-xs font-semibold rounded-xl hover:bg-blue-700 disabled:opacity-50 transition"
+                class="flex items-center gap-2 px-3.5 py-2 bg-accent text-white text-xs font-semibold rounded-xl hover:bg-accent-hover disabled:opacity-50 transition"
               >
                 <i :class="saving ? 'fa-spinner fa-spin' : 'fa-floppy-disk'" class="fas"></i>
                 <span class="hidden sm:inline">{{ saving ? 'Salvando...' : 'Salvar Tudo' }}</span>
@@ -420,7 +420,7 @@
           <!-- Banner: Em Autorização -->
           <div
             v-else-if="detail.status === 'pending_approval'"
-            class="flex items-center gap-2 mb-3 px-3 py-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg text-blue-700 dark:text-blue-400 text-xs"
+            class="flex items-center gap-2 mb-3 px-3 py-2 bg-accent-soft border border-accent/30 rounded-lg text-accent text-xs"
           >
             <i class="fas fa-clock"></i>
             <span>Em processo de autorização — aguardando assinaturas dos aprovadores.</span>
@@ -429,7 +429,7 @@
           <!-- Banner: Encerrada -->
           <div
             v-else-if="detail.status === 'closed'"
-            class="flex items-center gap-2 mb-3 px-3 py-2 bg-gray-100 dark:bg-gray-800/60 border border-gray-300 dark:border-gray-700 rounded-lg text-gray-700 dark:text-gray-300 text-xs"
+            class="flex items-center gap-2 mb-3 px-3 py-2 bg-surface-sunken/60 border border-gray-300 dark:border-gray-700 rounded-lg text-ink-muted text-xs"
           >
             <i class="fas fa-flag-checkered"></i>
             <span>
@@ -458,8 +458,8 @@
               :class="[
                 'flex items-center gap-1.5 px-4 py-2.5 text-xs font-semibold whitespace-nowrap border-b-2 transition',
                 activeTab === tab.id
-                  ? 'border-blue-600 text-blue-600 dark:text-blue-400'
-                  : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+                  ? 'border-blue-600 text-accent'
+                  : 'border-transparent text-ink-muted hover:text-gray-700 dark:hover:text-gray-200'
               ]"
             >
               <i :class="tab.icon" class="text-xs"></i>
@@ -524,8 +524,8 @@
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
             <!-- Histórico de Aprovação -->
-            <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm p-6">
-              <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-4 flex items-center gap-2">
+            <div class="bg-surface-raised rounded-2xl border border-line shadow-sm p-6">
+              <p class="text-xs font-semibold text-ink-muted uppercase tracking-wide mb-4 flex items-center gap-2">
                 <i class="fas fa-shield-check text-indigo-500"></i> Histórico de Aprovação
               </p>
               <div v-if="approvalHistory.length" class="space-y-3">
@@ -539,24 +539,24 @@
                     <i :class="eventIcon(ev.action)" class="fas"></i>
                   </div>
                   <div class="flex-1 min-w-0">
-                    <p class="text-sm font-medium text-gray-800 dark:text-gray-200">{{ eventLabel(ev.action) }}</p>
-                    <p class="text-xs text-gray-400 dark:text-gray-500">
+                    <p class="text-sm font-medium text-ink">{{ eventLabel(ev.action) }}</p>
+                    <p class="text-xs text-ink-subtle">
                       {{ ev.username || 'Sistema' }}
                       <span class="mx-1">·</span>
                       {{ formatDateFull(ev.at) }}
                     </p>
-                    <p v-if="ev.note" class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 italic">{{ ev.note }}</p>
+                    <p v-if="ev.note" class="text-xs text-ink-muted mt-0.5 italic">{{ ev.note }}</p>
                   </div>
                 </div>
               </div>
-              <div v-else class="flex items-center justify-center py-10 text-gray-400 dark:text-gray-600 text-sm">
+              <div v-else class="flex items-center justify-center py-10 text-ink-subtle text-sm">
                 Nenhum evento de aprovação registrado.
               </div>
             </div>
 
             <!-- Histórico de Alterações -->
-            <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm p-6">
-              <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-4 flex items-center gap-2">
+            <div class="bg-surface-raised rounded-2xl border border-line shadow-sm p-6">
+              <p class="text-xs font-semibold text-ink-muted uppercase tracking-wide mb-4 flex items-center gap-2">
                 <i class="fas fa-pen-to-square text-amber-500"></i> Histórico de Alterações
               </p>
               <div v-if="changeHistory.length" class="space-y-3">
@@ -570,17 +570,17 @@
                     <i :class="eventIcon(ev.action)" class="fas"></i>
                   </div>
                   <div class="flex-1 min-w-0">
-                    <p class="text-sm font-medium text-gray-800 dark:text-gray-200">{{ eventLabel(ev.action) }}</p>
-                    <p class="text-xs text-gray-400 dark:text-gray-500">
+                    <p class="text-sm font-medium text-ink">{{ eventLabel(ev.action) }}</p>
+                    <p class="text-xs text-ink-subtle">
                       {{ ev.username || 'Sistema' }}
                       <span class="mx-1">·</span>
                       {{ formatDateFull(ev.at) }}
                     </p>
-                    <p v-if="ev.note" class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 italic break-words">{{ ev.note }}</p>
+                    <p v-if="ev.note" class="text-xs text-ink-muted mt-0.5 italic break-words">{{ ev.note }}</p>
                   </div>
                 </div>
               </div>
-              <div v-else class="flex items-center justify-center py-10 text-gray-400 dark:text-gray-600 text-sm">
+              <div v-else class="flex items-center justify-center py-10 text-ink-subtle text-sm">
                 Nenhuma alteração registrada.
               </div>
             </div>

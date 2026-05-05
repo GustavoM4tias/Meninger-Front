@@ -125,7 +125,7 @@ const formattedTime = computed(() => {
       </div>
 
       <!-- Tooltip bonito e clean -->
-      <div class="absolute -left-12 bottom-full -translate-x-1/2 mb-3 hidden group-hover:flex flex-col items-center gap-2 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 shadow-lg rounded-lg px-4 py-3 w-52 text-sm z-50">
+      <div class="absolute -left-12 bottom-full -translate-x-1/2 mb-3 hidden group-hover:flex flex-col items-center gap-2 bg-surface-raised text-ink shadow-lg rounded-lg px-4 py-3 w-52 text-sm z-50">
         <p class="text-xl font-semibold text-center">{{ weatherText }}</p>
 
         <div class="flex items-center justify-center gap-2 text-lg">

@@ -2,8 +2,8 @@
   <div class="relative">
     <!-- Toolbar: view toggle + count -->
     <div v-if="items.length && !loading"
-      class="flex items-center justify-between px-5 py-2.5 border-b border-gray-100 dark:border-gray-800">
-      <span class="text-xs text-gray-400 dark:text-gray-500">
+      class="flex items-center justify-between px-5 py-2.5 border-b border-line">
+      <span class="text-xs text-ink-subtle">
         {{ folders.length }} pasta(s) · {{ files.length }} arquivo(s)
       </span>
       <div class="flex items-center gap-1">
@@ -24,15 +24,15 @@
     <div v-if="loading"
       :class="viewMode === 'grid'
         ? 'p-5 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3'
-        : 'divide-y divide-gray-100 dark:divide-gray-800'">
+        : 'divide-y divide-line'">
       <div v-for="n in 12" :key="n"
         :class="viewMode === 'grid' ? 'h-24 rounded-xl' : 'h-10 mx-4 my-1 rounded-lg'"
-        class="bg-gray-100 dark:bg-gray-800 animate-pulse" />
+        class="bg-surface-sunken animate-pulse" />
     </div>
 
     <!-- Empty -->
     <div v-else-if="!items.length"
-      class="py-14 text-center text-sm text-gray-400 dark:text-gray-600">
+      class="py-14 text-center text-sm text-ink-subtle">
       <i class="fas fa-folder-open text-3xl mb-3 block"></i>
       Esta pasta está vazia.
     </div>
@@ -76,12 +76,12 @@
         </div>
 
         <!-- Name -->
-        <span class="text-xs text-center text-gray-700 dark:text-gray-300 leading-tight line-clamp-2 w-full text-center">
+        <span class="text-xs text-center text-ink-muted leading-tight line-clamp-2 w-full text-center">
           {{ item.name }}
         </span>
 
         <!-- Badge -->
-        <span class="text-[10px] text-gray-400 dark:text-gray-500">
+        <span class="text-[10px] text-ink-subtle">
           <template v-if="item.isFolder && item.childCount !== null">
             {{ item.childCount }} {{ item.childCount === 1 ? 'item' : 'itens' }}
           </template>
@@ -106,7 +106,7 @@
     </div>
 
     <!-- LIST mode -->
-    <div v-else class="divide-y divide-gray-100 dark:divide-gray-800">
+    <div v-else class="divide-y divide-line">
       <div
         v-for="item in sortedItems"
         :key="item.id"
@@ -122,8 +122,8 @@
         class="group flex items-center gap-3 px-5 py-2.5 cursor-pointer select-none transition-colors"
         :class="[
           dragOverId === item.id && item.isFolder
-            ? 'bg-blue-50 dark:bg-blue-900/20'
-            : 'hover:bg-gray-50 dark:hover:bg-gray-800/60',
+            ? 'bg-accent-soft'
+            : 'hover:bg-surface-hover/60',
           draggingId === item.id ? 'opacity-40' : '',
         ]">
 
@@ -134,17 +134,17 @@
         </div>
 
         <!-- Name -->
-        <span class="flex-1 text-sm text-gray-800 dark:text-gray-200 truncate">{{ item.name }}</span>
+        <span class="flex-1 text-sm text-ink truncate">{{ item.name }}</span>
 
         <!-- Favorite -->
         <i v-if="sp.isFavorited(item.id)" class="fas fa-star text-amber-400 text-xs shrink-0"></i>
 
         <!-- Meta -->
-        <span class="text-xs text-gray-400 dark:text-gray-500 w-20 text-right shrink-0 hidden sm:block">
+        <span class="text-xs text-ink-subtle w-20 text-right shrink-0 hidden sm:block">
           <template v-if="item.isFolder && item.childCount !== null">{{ item.childCount }} itens</template>
           <template v-else-if="!item.isFolder">{{ formatSize(item.size) }}</template>
         </span>
-        <span class="text-xs text-gray-400 dark:text-gray-500 w-28 text-right shrink-0 hidden md:block">
+        <span class="text-xs text-ink-subtle w-28 text-right shrink-0 hidden md:block">
           {{ formatDate(item.lastModified) }}
         </span>
 
@@ -159,7 +159,7 @@
             <i class="fas fa-download text-xs"></i>
           </button>
           <button @click.stop="openCtx({ clientX: $event.clientX, clientY: $event.clientY }, item)"
-            class="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+            class="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-surface-hover transition-colors">
             <i class="fas fa-ellipsis-vertical text-xs"></i>
           </button>
         </div>

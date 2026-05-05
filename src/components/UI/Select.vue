@@ -54,8 +54,7 @@ const fieldClasses = computed(() => [
           {{ option.label }}
         </option>
       </select>
-
-      <i class="fas fa-chevron-down absolute right-3.5 top-1/2 -translate-y-1/2 text-ink-subtle text-xs pointer-events-none"></i>
+ 
     </div>
 
     <p v-if="error" class="mt-1.5 text-xs text-red-500 flex items-center gap-1">

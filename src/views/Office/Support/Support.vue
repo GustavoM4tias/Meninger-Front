@@ -1,189 +1,186 @@
 <template>
-    <div class="min-h-screen">
-        <div class="max-w-7xl mx-auto px-6 py-8">
-            <!-- Header -->
-            <div class="mb-8">
-                <div class="flex items-center justify-between mb-6">
-                    <div>
-                        <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Tickets de Suporte</h1>
-                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                            Gerencie e acompanhe todos os tickets do sistema
-                        </p>
-                    </div>
-                    <!-- <RouterLink :to="{ name: 'Reportar' }"
-                        class="px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all flex items-center gap-2 shadow-sm">
-                        <i class="fas fa-plus"></i>
-                        <span>Novo Chamado</span>
-                    </RouterLink> -->
-                </div>
+  <div class="min-h-[calc(100vh-3.5rem)]">
+    <PageContainer size="full">
+      <PageHeader
+        subtitle="Gerencie e acompanhe todos os tickets do sistema"
+        icon="fas fa-headset">
+        <template #title>Tickets de Suporte</template>
+        <template #actions>
+          <RouterLink :to="{ name: 'Reportar' }">
+            <Button variant="primary" icon="fas fa-plus">Novo Chamado</Button>
+          </RouterLink>
+        </template>
+      </PageHeader>
 
-                <!-- Tabs/Filters -->
-                <div class="flex items-center gap-3 overflow-x-auto pb-2">
-                    <button v-for="tab in tabs" :key="tab.key" @click="active = tab.key"
-                        class="px-5 py-2.5 rounded-lg font-medium text-sm whitespace-nowrap transition-all"
-                        :class="active === tab.key
-                            ? `${tab.color} text-white shadow-md`
-                            : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700'">
-                        {{ tab.label }}
-                        <span class="ml-2 px-2 py-0.5 rounded-full text-xs font-semibold"
-                            :class="active === tab.key ? 'bg-white/20' : 'bg-gray-100 dark:bg-gray-700'">
-                            {{ counts[tab.key] || 0 }}
-                        </span>
-                    </button>
+      <!-- Tabs/Filters -->
+      <div class="mb-6">
+        <SegmentedControl
+          v-model="active"
+          :options="tabOptions"
+          size="md" />
+      </div>
+
+      <!-- Tickets List -->
+      <div class="grid gap-4">
+        <Surface v-for="t in filtered" :key="t.id"
+          variant="raised"
+          padding="none"
+          class="border-l-4 hover:shadow-md transition-all overflow-hidden surface-gradient"
+          :class="borderClass(t.status)">
+          <div class="p-5 sm:p-6">
+            <div class="flex items-start justify-between gap-4 mb-4 flex-wrap">
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-3 mb-2 flex-wrap">
+                  <span class="text-sm font-mono text-ink-muted">
+                    #{{ t.protocol }}
+                  </span>
+                  <Badge :variant="priorityVariant(t.priority)" size="sm" class="capitalize">
+                    {{ t.priority }}
+                  </Badge>
+                  <Badge :variant="statusVariant(t.status)" size="sm">
+                    {{ statusMap[t.status] || t.status }}
+                  </Badge>
                 </div>
+                <h3 class="text-lg font-semibold text-ink mb-1">
+                  {{ t.title }}
+                </h3>
+                <p v-if="t.description" class="text-sm text-ink-muted line-clamp-2">
+                  {{ t.description }}
+                </p>
+              </div>
+
+              <RouterLink :to="{ name: 'Detalhes Suporte', params: { id: t.id } }">
+                <Button variant="secondary" size="sm" icon-right="fas fa-arrow-right">
+                  Ver Detalhes
+                </Button>
+              </RouterLink>
             </div>
 
-            <!-- Tickets Grid -->
-            <div class="grid gap-4">
-                <div v-for="t in filtered" :key="t.id"
-                    class="bg-white dark:bg-gray-800 rounded-xl border-s-4 hover:shadow-lg transition-all overflow-hidden"
-                    :class="borderBorderClass(t.status)">
-                    <div class="p-6">
-                        <div class="flex items-start justify-between gap-4 mb-4">
-                            <div class="flex-1">
-                                <div class="flex items-center gap-3 mb-2">
-                                    <span class="text-sm font-mono text-gray-500 dark:text-gray-400">
-                                        #{{ t.protocol }}
-                                    </span>
-                                    <span class="px-2.5 py-1 rounded-full text-xs font-semibold capitalize"
-                                        :class="priorityClass(t.priority)">
-                                        {{ t.priority }}
-                                    </span>
-                                    <span class="px-2.5 py-1 rounded-full text-xs font-semibold"
-                                        :class="statusClass(t.status)">
-                                        {{ statusMap[t.status] || t.status }}
-                                    </span>
-                                </div>
-                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-1">
-                                    {{ t.title }}
-                                </h3>
-                                <p v-if="t.description" class="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
-                                    {{ t.description }}
-                                </p>
-                            </div>
-
-                            <RouterLink :to="{ name: 'Detalhes Suporte', params: { id: t.id } }"
-                                class="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-sm font-medium flex items-center gap-2 whitespace-nowrap">
-                                <span>Ver Detalhes</span>
-                                <i class="fas fa-arrow-right text-xs"></i>
-                            </RouterLink>
-                        </div>
-
-                        <!-- Meta Info -->
-                        <div class="flex items-center gap-6 text-xs text-gray-500 dark:text-gray-400">
-                            <div class="flex items-center gap-2">
-                                <i class="fas fa-user"></i>
-                                <span>{{ t.requester?.username || 'Usuário' }}</span>
-                            </div>
-                            <div v-if="t.module" class="flex items-center gap-2">
-                                <i class="fas fa-cube"></i>
-                                <span class="capitalize">{{ t.module }}</span>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <i class="fas fa-clock"></i>
-                                <span>{{ formatDate(t.created_at) }}</span>
-                            </div>
-                            <div v-if="t.messages_count > 0" class="flex items-center gap-2">
-                                <i class="fas fa-comments"></i>
-                                <span>{{ t.messages_count }} mensagens</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Empty State -->
-                <div v-if="!filtered.length"
-                    class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-12 text-center">
-                    <div
-                        class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-700 mb-4">
-                        <i class="fas fa-inbox text-2xl text-gray-400"></i>
-                    </div>
-                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                        Nenhum chamado encontrado
-                    </h3>
-                    <p class="text-sm text-gray-500 dark:text-gray-400">
-                        Não há chamados com status "{{tabs.find(t => t.key === active)?.label}}" no momento.
-                    </p>
-                </div>
+            <!-- Meta Info -->
+            <div class="flex items-center gap-4 sm:gap-6 text-xs text-ink-muted flex-wrap">
+              <div class="flex items-center gap-2">
+                <i class="fas fa-user text-ink-subtle"></i>
+                <span>{{ t.requester?.username || 'Usuário' }}</span>
+              </div>
+              <div v-if="t.module" class="flex items-center gap-2">
+                <i class="fas fa-cube text-ink-subtle"></i>
+                <span class="capitalize">{{ t.module }}</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <i class="fas fa-clock text-ink-subtle"></i>
+                <span>{{ formatDate(t.created_at) }}</span>
+              </div>
+              <div v-if="t.messages_count > 0" class="flex items-center gap-2">
+                <i class="fas fa-comments text-ink-subtle"></i>
+                <span><span class="font-mono tabular-nums">{{ t.messages_count }}</span> mensagens</span>
+              </div>
             </div>
-        </div>
-    </div>
+          </div>
+        </Surface>
+
+        <!-- Empty State -->
+        <EmptyState v-if="!filtered.length"
+          icon="fas fa-inbox"
+          title="Nenhum chamado encontrado"
+          :description="`Não há chamados com status “${tabs.find(t => t.key === active)?.label}” no momento.`" />
+      </div>
+    </PageContainer>
+  </div>
 </template>
 
 <script setup>
 import { onMounted, ref, computed, watch } from 'vue';
+import { RouterLink } from 'vue-router';
 import { useSupportStore } from '@/stores/Support/supportStore';
+
+import PageContainer from '@/components/UI/PageContainer.vue';
+import PageHeader from '@/components/UI/PageHeader.vue';
+import Surface from '@/components/UI/Surface.vue';
+import Button from '@/components/UI/Button.vue';
+import Badge from '@/components/UI/Badge.vue';
+import SegmentedControl from '@/components/UI/SegmentedControl.vue';
+import EmptyState from '@/components/UI/EmptyState.vue';
 
 const support = useSupportStore();
 const active = ref('pending');
 
 const tabs = [
-    { key: 'pending', label: 'Pendentes', color: 'bg-orange-500' },
-    { key: 'in_progress', label: 'Em Andamento', color: 'bg-yellow-500' },
-    { key: 'resolved', label: 'Resolvidos', color: 'bg-emerald-500' },
-    { key: 'closed', label: 'Fechados', color: 'bg-red-500' },
+  { key: 'pending',     label: 'Pendentes',    icon: 'fas fa-circle-half-stroke' },
+  { key: 'in_progress', label: 'Em Andamento', icon: 'fas fa-spinner' },
+  { key: 'resolved',    label: 'Resolvidos',   icon: 'fas fa-circle-check' },
+  { key: 'closed',      label: 'Fechados',     icon: 'fas fa-lock' },
 ];
 
+const counts = computed(() => support.counts || {});
+
+const tabOptions = computed(() =>
+  tabs.map(t => ({
+    value: t.key,
+    label: t.label,
+    icon: t.icon,
+    count: counts.value[t.key] || 0,
+  }))
+);
+
 const statusMap = {
-    pending: 'Pendente',
-    in_progress: 'Em andamento',
-    resolved: 'Resolvido',
-    closed: 'Fechado',
+  pending:     'Pendente',
+  in_progress: 'Em andamento',
+  resolved:    'Resolvido',
+  closed:      'Fechado',
 };
 
-const counts = computed(() => support.counts);
 const filtered = computed(() => support.list.filter(t => t.status === active.value));
 
-const priorityClass = (priority) => {
-    const map = {
-        critical: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
-        high: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
-        medium: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
-        low: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-    };
-    return map[priority] || 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300';
+const priorityVariant = (priority) => {
+  const map = {
+    critical: 'danger',
+    high:     'warning',
+    medium:   'warning',
+    low:      'success',
+  };
+  return map[priority] || 'neutral';
 };
 
-const borderBorderClass = (priority) => {
-    const map = {
-        pending: 'border-orange-300 dark:border-orange-600/70 ',
-        in_progress: 'border-yellow-300 dark:border-yellow-600/70',
-        resolved: 'border-emerald-300 dark:border-emerald-600/70',
-        closed: 'border-red-300 dark:border-red-600/70',
-    };
-    return map[priority] || 'border-gray-100  dark:border-gray-700';
+const statusVariant = (status) => {
+  const map = {
+    pending:     'warning',
+    in_progress: 'info',
+    resolved:    'success',
+    closed:      'danger',
+  };
+  return map[status] || 'neutral';
 };
 
-const statusClass = (status) => {
-    const map = {
-        pending: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
-        in_progress: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
-        resolved: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
-        closed: 'bg-red-100 text-red-700 dark:bg-red-700 dark:text-red-400',
-    };
-    return map[status] || 'bg-gray-100 text-gray-700';
+const borderClass = (status) => {
+  const map = {
+    pending:     'border-l-amber-400 dark:border-l-amber-500',
+    in_progress: 'border-l-yellow-400 dark:border-l-yellow-500',
+    resolved:    'border-l-emerald-400 dark:border-l-emerald-500',
+    closed:      'border-l-red-400 dark:border-l-red-500',
+  };
+  return map[status] || 'border-l-line';
 };
 
 const formatDate = (date) => {
-    const d = new Date(date);
-    const now = new Date();
-    const diff = now - d;
-    const hours = Math.floor(diff / (1000 * 60 * 60));
+  const d = new Date(date);
+  const now = new Date();
+  const diff = now - d;
+  const hours = Math.floor(diff / (1000 * 60 * 60));
 
-    if (hours < 1) return 'Agora mesmo';
-    if (hours < 24) return `Há ${hours}h`;
-    if (hours < 48) return 'Ontem';
-    return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+  if (hours < 1) return 'Agora mesmo';
+  if (hours < 24) return `Há ${hours}h`;
+  if (hours < 48) return 'Ontem';
+  return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
 };
 
 onMounted(async () => {
-    await Promise.all([
-        support.fetchCounts(),
-        support.fetchTickets({ status: active.value }),
-    ]);
+  await Promise.all([
+    support.fetchCounts(),
+    support.fetchTickets({ status: active.value }),
+  ]);
 });
 
 watch(active, async (st) => {
-    await support.fetchTickets({ status: st });
+  await support.fetchTickets({ status: st });
 });
 </script>

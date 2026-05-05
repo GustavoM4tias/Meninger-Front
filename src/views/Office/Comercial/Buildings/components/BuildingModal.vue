@@ -1,771 +1,528 @@
 <script setup>
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useBuildingStore } from '@/stores/Comercial/Building/buildingStore';
-import WeatherInfo from './UI/WeatherInfo.vue'
-import Flag from './UI/Flag.vue';
 
-// Store
-const buildingStore = useBuildingStore();
+import Modal from '@/components/UI/Modal.vue';
+import Surface from '@/components/UI/Surface.vue';
+import Button from '@/components/UI/Button.vue';
+import Badge from '@/components/UI/Badge.vue';
 
-// Reactive states
-const isActionsMenuOpen = ref(false);
-const isAvailabilityOpen = ref(false);
+import WeatherInfo from './UI/WeatherInfo.vue';
 
 const props = defineProps({
-    building: {
-        type: Object,
-        required: true,
-    },
+  building: { type: Object, required: true },
 });
-
-console.log(props.building)
-
 const emit = defineEmits(['close']);
 
-const closeModal = () => { emit('close'); };
+const buildingStore = useBuildingStore();
+const isAvailabilityOpen = ref(false);
+
+const closeModal = () => emit('close');
 
 const fetchWeather = async () => {
-    if (props.building?.latitude && props.building?.longitude) {
-        try {
-            await buildingStore.getWeather(props.building.latitude, props.building.longitude);
-        } catch (error) {
-            console.error('Erro ao buscar o clima:', error);
-        }
-    } else {
-        console.log('Latitude e longitude não encontradas no empreendimento.');
-        buildingStore.weather = null;
-    }
+  if (props.building?.latitude && props.building?.longitude) {
+    try { await buildingStore.getWeather(props.building.latitude, props.building.longitude); }
+    catch (e) { console.error('Erro ao buscar o clima:', e); }
+  } else {
+    buildingStore.weather = null;
+  }
 };
 
-const formatDate = (dateString) => {
-    if (!dateString) return 'Não informado';
-    return dateString;
+const formatDate = (d) => d || 'Não informado';
+const fmtMoney = (v) => {
+  const n = Number(v);
+  return Number.isFinite(n)
+    ? n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+    : 'R$ —';
 };
 
-const getUnitStatus = (unidade) => {
-    const situacao = unidade.situacao?.situacao_mapa_disponibilidade;
-
-    switch (situacao) {
-        case 1:
-            return {
-                text: 'Disponível',
-                class: 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300'
-            };
-
-        case 2:
-            return {
-                text: 'Reserva Início',
-                class: 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300'
-            };
-
-        case 3:
-            return {
-                text: 'Vendido',
-                class: 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-300'
-            };
-
-        case 4:
-            // Não considerar mais motivo/integração, apenas que está bloqueado
-            return {
-                text: 'Bloqueado',
-                class: 'bg-gray-200 text-gray-700 dark:bg-gray-900/20 dark:text-gray-300'
-            };
-
-        case 5:
-            return {
-                text: 'Reserva Ativa',
-                class: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300'
-            };
-
-        default:
-            return {
-                text: 'Não informado',
-                class: 'bg-slate-100 text-slate-700 dark:bg-slate-900/20 dark:text-slate-300'
-            };
-    }
+// ── Status helpers ─────────────────────────────────────────
+const UNIT_STATUS = {
+  1: { text: 'Disponível',     dot: 'bg-emerald-500', cls: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 border-emerald-500/20' },
+  2: { text: 'Reserva início', dot: 'bg-blue-500',    cls: 'bg-blue-500/10 text-blue-600 dark:text-blue-300 border-blue-500/20' },
+  3: { text: 'Vendido',        dot: 'bg-rose-500',    cls: 'bg-rose-500/10 text-rose-600 dark:text-rose-300 border-rose-500/20' },
+  4: { text: 'Bloqueado',      dot: 'bg-slate-400',   cls: 'bg-surface-sunken text-ink-muted border-line' },
+  5: { text: 'Reserva ativa',  dot: 'bg-yellow-500',  cls: 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-300 border-yellow-500/20' },
+};
+const getUnitStatus = (u) => UNIT_STATUS[u.situacao?.situacao_mapa_disponibilidade] || {
+  text: 'Não informado', dot: 'bg-slate-400', cls: 'bg-surface-sunken text-ink-muted border-line',
 };
 
-const getTotalUnits = () => {
-    if (!props.building.etapas) return 0;
-    return props.building.etapas.reduce((total, etapa) => {
-        return total + (etapa.blocos?.reduce((blocoTotal, bloco) => {
-            return blocoTotal + (bloco.paginacao_unidade?.total || 0);
-        }, 0) || 0);
-    }, 0);
-};
-
-const getTotalBlocks = () => {
-    if (!props.building.etapas) return 0;
-    return props.building.etapas.reduce((total, etapa) => {
-        return total + (etapa.blocos?.length || 0);
-    }, 0);
-};
-
-const getUnitStatusCounts = () => {
-    if (!props.building.etapas)
-        return { disponivel: 0, reserva_inicio: 0, vendido: 0, bloqueado: 0, reserva_ativa: 0 };
-
-    let counts = { disponivel: 0, reserva_inicio: 0, vendido: 0, bloqueado: 0, reserva_ativa: 0 };
-
-    props.building.etapas.forEach(etapa => {
-        etapa.blocos?.forEach(bloco => {
-            bloco.unidades?.forEach(unidade => {
-                const s = unidade.situacao?.situacao_mapa_disponibilidade;
-
-                switch (s) {
-                    case 1: counts.disponivel++; break;
-                    case 2: counts.reserva_inicio++; break;
-                    case 3: counts.vendido++; break;
-                    case 4: counts.bloqueado++; break;
-                    case 5: counts.reserva_ativa++; break;
-                }
-            });
-        });
-    });
-
-    return counts;
-};
-
-const toggleActionsMenu = () => {
-    isActionsMenuOpen.value = !isActionsMenuOpen.value;
-};
-
-const toggleAvailability = () => {
-    isAvailabilityOpen.value = !isAvailabilityOpen.value;
-};
-
-const closeActionsMenu = () => {
-    isActionsMenuOpen.value = false;
-};
-
-onMounted(() => {
-    fetchWeather();
+// ── Resumo ─────────────────────────────────────────────────
+const totalUnits = computed(() => {
+  if (!props.building.etapas) return 0;
+  return props.building.etapas.reduce((total, etapa) =>
+    total + (etapa.blocos?.reduce((b, bloco) =>
+      b + (bloco.paginacao_unidade?.total || 0), 0) || 0), 0);
 });
+
+const totalBlocks = computed(() => {
+  if (!props.building.etapas) return 0;
+  return props.building.etapas.reduce((total, etapa) => total + (etapa.blocos?.length || 0), 0);
+});
+
+const unitStatusCounts = computed(() => {
+  const c = { disponivel: 0, reserva_inicio: 0, vendido: 0, bloqueado: 0, reserva_ativa: 0 };
+  if (!props.building.etapas) return c;
+  props.building.etapas.forEach(etapa => {
+    etapa.blocos?.forEach(bloco => {
+      bloco.unidades?.forEach(u => {
+        const s = u.situacao?.situacao_mapa_disponibilidade;
+        if (s === 1) c.disponivel++;
+        else if (s === 2) c.reserva_inicio++;
+        else if (s === 3) c.vendido++;
+        else if (s === 4) c.bloqueado++;
+        else if (s === 5) c.reserva_ativa++;
+      });
+    });
+  });
+  return c;
+});
+
+const kpiCards = computed(() => [
+  { label: 'Unidades',       value: totalUnits.value, icon: 'fas fa-house', accent: 'text-accent bg-accent-soft' },
+  { label: 'Blocos',         value: totalBlocks.value, icon: 'fas fa-building', accent: 'text-emerald-500 bg-emerald-500/10' },
+  { label: 'Etapas',         value: props.building.etapas?.length || 0, icon: 'fas fa-layer-group', accent: 'text-purple-500 bg-purple-500/10' },
+  { label: 'Materiais',      value: props.building.materiais_campanha?.length || 0, icon: 'fas fa-images', accent: 'text-amber-500 bg-amber-500/10' },
+]);
+
+const statusBreakdown = computed(() => [
+  { key: 'disponivel',     label: 'Disponíveis',    value: unitStatusCounts.value.disponivel,     dot: 'bg-emerald-500', text: 'text-emerald-600 dark:text-emerald-400' },
+  { key: 'reserva_inicio', label: 'Reserva início', value: unitStatusCounts.value.reserva_inicio, dot: 'bg-blue-500',    text: 'text-blue-600 dark:text-blue-400' },
+  { key: 'reserva_ativa',  label: 'Reservas ativas', value: unitStatusCounts.value.reserva_ativa, dot: 'bg-yellow-500',  text: 'text-yellow-600 dark:text-yellow-400' },
+  { key: 'vendido',        label: 'Vendidas',       value: unitStatusCounts.value.vendido,        dot: 'bg-rose-500',    text: 'text-rose-600 dark:text-rose-400' },
+  { key: 'bloqueado',      label: 'Bloqueadas',     value: unitStatusCounts.value.bloqueado,      dot: 'bg-slate-400',   text: 'text-ink-muted' },
+]);
+
+// Stage banner gradient
+const bannerGradient = computed(() => {
+  const s = props.building.situacao_comercial?.[0]?.nome;
+  if (s === 'Pré-Lançamento')     return 'from-emerald-700 via-emerald-600 to-teal-600';
+  if (s === 'Lançamento')         return 'from-sky-700 via-sky-600 to-blue-600';
+  if (s === 'Em construção')      return 'from-amber-700 via-orange-600 to-amber-600';
+  if (s === 'Finalizado')         return 'from-rose-700 via-red-600 to-rose-600';
+  if (s === 'Portal do Cliente')  return 'from-purple-700 via-violet-600 to-purple-600';
+  return 'from-slate-700 via-slate-600 to-slate-700';
+});
+
+const cvLink = computed(() =>
+  `https://menin.cvcrm.com.br/gestor/cadastros/empreendimentos/${props.building.idempreendimento}/cadastro_simplificado`
+);
+
+const stage = computed(() => props.building.situacao_comercial?.[0]?.nome ?? null);
+const stageChips = computed(() => [
+  props.building.situacao_comercial?.[0]?.nome,
+  props.building.tipo_empreendimento?.[0]?.nome,
+  props.building.situacao_obra?.[0]?.nome,
+  props.building.segmento?.[0]?.nome,
+].filter(Boolean));
+
+onMounted(fetchWeather);
 </script>
 
 <template>
-    <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-        @click.self="closeModal">
-        <div
-            class="bg-white dark:bg-gray-800 max-w-7xl w-full rounded-2xl shadow-2xl overflow-hidden relative max-h-[90vh] overflow-y-auto">
-            <!-- Header com imagem e informações principais -->
-            <div class="relative h-80 lg:h-96">
-                <img :src="props.building.foto ? props.building.foto : '/noimg.jpg'" class="w-full h-full object-cover"
-                    :alt="props.building.nome" />
+  <Modal :open="true" size="full" hide-close @close="closeModal">
+    <template #header><div class="hidden"></div></template>
 
-                <!-- Overlay gradient -->
-                <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+    <div class="-m-4 sm:-m-5">
 
-                <!-- Botão fechar -->
-                <button @click="closeModal"
-                    class="absolute top-4 right-4 w-10 h-10 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full flex items-center justify-center transition-all duration-200 group">
-                    <i class="fas fa-xmark text-white text-xl group-hover:scale-110 transition-transform"></i>
-                </button>
+      <!-- Hero com foto + gradient -->
+      <div class="relative h-64 sm:h-80 overflow-hidden">
+        <img :src="building.foto || '/noimg.jpg'" :alt="building.nome"
+          class="absolute inset-0 w-full h-full object-cover" />
 
-                <!-- Informações principais sobrepostas -->
-                <div class="absolute bottom-6 left-6 right-6">
-                    <div class="flex items-end justify-between">
-                        <div class="flex-1">
-                            <h1 class="text-3xl lg:text-4xl font-bold text-white mb-3 drop-shadow-lg">
-                                {{ props.building.nome }}
-                            </h1>
+        <!-- Overlay gradient (cor por status) -->
+        <div class="absolute inset-0 bg-gradient-to-t opacity-90"
+          :class="bannerGradient"
+          style="mix-blend-mode: multiply"></div>
+        <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent"></div>
 
-                            <!-- Tags de status -->
-                            <div class="flex flex-wrap gap-2 mb-4">
-                                <span
-                                    class="px-3 py-1.5 bg-white/20 backdrop-blur-sm text-white text-sm font-medium rounded-full border border-white/30"
-                                    v-if="props.building.situacao_comercial?.[0]?.nome">
-                                    {{ props.building.situacao_comercial[0].nome }}
-                                </span>
-                                <span
-                                    class="px-3 py-1.5 bg-white/20 backdrop-blur-sm text-white text-sm font-medium rounded-full border border-white/30"
-                                    v-if="props.building.tipo_empreendimento?.[0]?.nome">
-                                    {{ props.building.tipo_empreendimento[0].nome }}
-                                </span>
-                                <span
-                                    class="px-3 py-1.5 bg-white/20 backdrop-blur-sm text-white text-sm font-medium rounded-full border border-white/30"
-                                    v-if="props.building.situacao_obra?.[0]?.nome">
-                                    {{ props.building.situacao_obra[0].nome }}
-                                </span>
-                                <span
-                                    class="px-3 py-1.5 bg-white/20 backdrop-blur-sm text-white text-sm font-medium rounded-full border border-white/30"
-                                    v-if="props.building.segmento?.[0]?.nome">
-                                    {{ props.building.segmento[0].nome }}
-                                </span>
-                            </div>
-                        </div>
+        <!-- Decoração: pontinhos -->
+        <div class="pointer-events-none absolute inset-0 opacity-20"
+          style="background-image:radial-gradient(circle, rgba(255,255,255,0.3) 1px, transparent 1px); background-size: 18px 18px;"></div>
 
-                        <!-- Weather -->
-                        <WeatherInfo :weather="buildingStore.weather" :city="props.building.cidade" />
-                    </div>
-                </div>
+        <!-- Close button -->
+        <button @click="closeModal" aria-label="Fechar"
+          class="absolute top-4 right-4 h-9 w-9 grid place-items-center rounded-lg
+                 bg-white/15 hover:bg-white/30 backdrop-blur-md text-white border border-white/20
+                 transition-colors z-10">
+          <i class="fas fa-xmark text-sm"></i>
+        </button>
 
-                <!-- Flag -->
-                <Flag :stage="props.building.situacao_comercial?.[0]?.nome" :rotate="true"
-                    class="top-5 left-0 text-2xl pb-2 pe-10" v-if="props.building.situacao_comercial?.[0]?.nome" />
-            </div>
-
-            <!-- Conteúdo principal -->
-            <div class="p-4 lg:p-8">
-                <!-- Resumo estatístico -->
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                    <div
-                        class="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 border border-blue-200 dark:border-blue-800">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-                                <i class="fas fa-home text-white text-sm"></i>
-                            </div>
-                            <div>
-                                <p class="text-2xl font-bold text-blue-700 dark:text-blue-300">{{ getTotalUnits() }}</p>
-                                <p class="text-sm text-blue-600 dark:text-blue-400">Unidades</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div
-                        class="bg-green-50 dark:bg-green-900/20 rounded-xl p-4 border border-green-200 dark:border-green-800">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center">
-                                <i class="fas fa-building text-white text-sm"></i>
-                            </div>
-                            <div>
-                                <p class="text-2xl font-bold text-green-700 dark:text-green-300">{{ getTotalBlocks() }}
-                                </p>
-                                <p class="text-sm text-green-600 dark:text-green-400">Blocos</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div
-                        class="bg-purple-50 dark:bg-purple-900/20 rounded-xl p-4 border border-purple-200 dark:border-purple-800">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 bg-purple-600 rounded-lg flex items-center justify-center">
-                                <i class="fas fa-layer-group text-white text-sm"></i>
-                            </div>
-                            <div>
-                                <p class="text-2xl font-bold text-purple-700 dark:text-purple-300">{{
-                                    props.building.etapas?.length || 0 }}</p>
-                                <p class="text-sm text-purple-600 dark:text-purple-400">Etapas</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div
-                        class="bg-orange-50 dark:bg-orange-900/20 rounded-xl p-4 border border-orange-200 dark:border-orange-800">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 bg-orange-600 rounded-lg flex items-center justify-center">
-                                <i class="fas fa-images text-white text-sm"></i>
-                            </div>
-                            <div>
-                                <p class="text-2xl font-bold text-orange-700 dark:text-orange-300">{{
-                                    props.building.materiais_campanha?.length || 0 }}</p>
-                                <p class="text-sm text-orange-600 dark:text-orange-400">Materiais</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Status de Disponibilidade - Resumo -->
-                <div class="mb-8" v-if="props.building.etapas && props.building.etapas.length > 0">
-                    <div
-                        class="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-700 dark:to-gray-600 rounded-xl p-4 md:p-6 border border-blue-200 dark:border-gray-600">
-                        <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-3">
-                            <i class="fas fa-chart-pie text-blue-600"></i>
-                            Status das Unidades
-                        </h3>
-
-                        <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
-
-                            <div class="text-center">
-                                <div class="text-2xl font-bold text-green-600 dark:text-green-400">
-                                    {{ getUnitStatusCounts().disponivel }}
-                                </div>
-                                <div class="text-sm text-gray-600 dark:text-gray-400">Disponíveis</div>
-                            </div>
-
-                            <div class="text-center">
-                                <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                                    {{ getUnitStatusCounts().reserva_inicio }}
-                                </div>
-                                <div class="text-sm text-gray-600 dark:text-gray-400">Reserva Início</div>
-                            </div>
-
-                            <div class="text-center">
-                                <div class="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
-                                    {{ getUnitStatusCounts().reserva_ativa }}
-                                </div>
-                                <div class="text-sm text-gray-600 dark:text-gray-400">Reservas Ativas</div>
-                            </div>
-
-                            <div class="text-center">
-                                <div class="text-2xl font-bold text-red-600 dark:text-red-400">
-                                    {{ getUnitStatusCounts().vendido }}
-                                </div>
-                                <div class="text-sm text-gray-600 dark:text-gray-400">Vendidas</div>
-                            </div>
-
-                            <div class="text-center">
-                                <div class="text-2xl font-bold text-gray-600 dark:text-gray-400">
-                                    {{ getUnitStatusCounts().bloqueado }}
-                                </div>
-                                <div class="text-sm text-gray-600 dark:text-gray-400">Bloqueadas</div>
-                            </div>
-
-                        </div>
-
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    <!-- Coluna 1 - Informações do Sienge e Empresa -->
-                    <div class="space-y-6">
-                        <!-- Card Sienge -->
-                        <div
-                            class="bg-red-50 dark:bg-gray-700 rounded-xl p-4 md:p-6 border border-red-200 dark:border-gray-600">
-                            <div class="flex items-center gap-3 mb-4">
-                                <div class="w-10 h-10 bg-red-600 rounded-lg flex items-center justify-center">
-                                    <i class="fas fa-building text-white"></i>
-                                </div>
-                                <h3 class="text-xl font-bold text-red-900 dark:text-white">Sienge</h3>
-                            </div>
-
-                            <div class="space-y-3">
-                                <div
-                                    class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-red-200 dark:border-gray-500">
-                                    <p class="text-gray-600 dark:text-gray-300 text-sm font-medium mb-1">Empresa</p>
-                                    <p class="text-gray-900 dark:text-white font-semibold">{{
-                                        props.building?.nome_empresa || 'Não informado' }}</p>
-                                </div>
-
-                                <div class="grid grid-cols-2 gap-3">
-                                    <div
-                                        class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-red-200 dark:border-gray-500">
-                                        <p class="text-gray-600 dark:text-gray-300 text-sm font-medium mb-1">ID Empresa
-                                        </p>
-                                        <p class="text-red-700 dark:text-red-300 font-bold text-lg">{{
-                                            props.building?.idempresa_int || '-' }}</p>
-                                    </div>
-
-                                    <div
-                                        class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-red-200 dark:border-gray-500">
-                                        <p class="text-gray-600 dark:text-gray-300 text-sm font-medium mb-1">CDC Sienge
-                                        </p>
-                                        <p class="text-red-700 dark:text-red-300 font-bold text-lg">{{
-                                            props.building?.idempreendimento_int || '-' }}</p>
-                                    </div>
-                                </div>
-
-                                <div
-                                    class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-red-200 dark:border-gray-500">
-                                    <p class="text-gray-600 dark:text-gray-300 text-sm font-medium mb-1">Matrícula</p>
-                                    <p class="text-gray-900 dark:text-white font-semibold">{{ props.building?.matricula
-                                        || 'Não informado' }}</p>
-                                </div>
-
-                                <div
-                                    class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-red-200 dark:border-gray-500">
-                                    <p class="text-gray-600 dark:text-gray-300 text-sm font-medium mb-1">CNPJ</p>
-                                    <p class="text-gray-900 dark:text-white font-semibold">{{
-                                        props.building?.cnpj_empesa || 'Não informado' }}</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Card Tabela de Preços -->
-                        <div class="bg-amber-50 dark:bg-gray-700 rounded-xl p-4 md:p-6 border border-amber-200 dark:border-gray-600"
-                            v-if="props.building.tabela">
-                            <div class="flex items-center gap-3 mb-4">
-                                <div class="w-10 h-10 bg-amber-600 rounded-lg flex items-center justify-center">
-                                    <i class="fas fa-tags text-white"></i>
-                                </div>
-                                <h3 class="text-xl font-bold text-amber-900 dark:text-white">Tabela de Preços</h3>
-                            </div>
-
-                            <div class="space-y-3">
-                                <div
-                                    class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-amber-200 dark:border-gray-500">
-                                    <p class="text-gray-600 dark:text-gray-300 text-sm font-medium mb-1">Nome</p>
-                                    <p class="text-gray-900 dark:text-white font-semibold">{{ props.building.tabela.nome
-                                    }}</p>
-                                </div>
-
-                                <div class="grid grid-cols-2 gap-3">
-                                    <div
-                                        class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-amber-200 dark:border-gray-500">
-                                        <p class="text-gray-600 dark:text-gray-300 text-sm font-medium mb-1">Vigência
-                                        </p>
-                                        <p class="text-amber-700 dark:text-amber-300 font-semibold text-sm">{{
-                                            props.building.tabela.data_vigencia_de }}</p>
-                                        <p class="text-amber-700 dark:text-amber-300 font-semibold text-sm">até {{
-                                            props.building.tabela.data_vigencia_ate }}</p>
-                                    </div>
-
-                                    <div
-                                        class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-amber-200 dark:border-gray-500">
-                                        <p class="text-gray-600 dark:text-gray-300 text-sm font-medium mb-1">Status</p>
-                                        <span
-                                            class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium"
-                                            :class="props.building.tabela.aprovado === 'S' ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300' : 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-300'">
-                                            {{ props.building.tabela.aprovado === 'S' ? 'Aprovada' : 'Pendente' }}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Coluna 2 - Localização e Entrega -->
-                    <div class="space-y-6">
-                        <!-- Card Localização -->
-                        <div
-                            class="bg-green-50 dark:bg-gray-700 rounded-xl p-4 md:p-6 border border-green-200 dark:border-gray-600">
-                            <div class="flex items-center gap-3 mb-4">
-                                <div class="w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center">
-                                    <i class="fas fa-map-marker-alt text-white"></i>
-                                </div>
-                                <h3 class="text-xl font-bold text-green-900 dark:text-white">Localização</h3>
-                            </div>
-
-                            <div class="space-y-2 text-gray-700 dark:text-gray-300">
-                                <p class="flex items-start gap-2">
-                                    <i class="fas fa-road text-green-600 mt-0.5 text-sm"></i>
-                                    <span>{{ props.building?.endereco_emp || 'Não informado' }}{{ props.building?.numero
-                                        ? ', ' + props.building.numero : '' }}</span>
-                                </p>
-                                <p class="flex items-center gap-2" v-if="props.building?.bairro">
-                                    <i class="fas fa-location-dot text-green-600 text-sm"></i>
-                                    <span>{{ props.building.bairro }}</span>
-                                </p>
-                                <p class="flex items-center gap-2">
-                                    <i class="fas fa-city text-green-600 text-sm"></i>
-                                    <span>{{ props.building?.cidade || 'Não informado' }}
-                                        {{ props.building?.estado ? ' - ' + props.building.estado : '' }}</span>
-                                </p>
-                                <p class="flex items-center gap-2" v-if="props.building?.cep">
-                                    <i class="fas fa-mail-bulk text-green-600 text-sm"></i>
-                                    <span>{{ props.building.cep }}</span>
-                                </p>
-                                <p class="flex items-center gap-2" v-if="props.building?.regiao">
-                                    <i class="fas fa-globe-americas text-green-600 text-sm"></i>
-                                    <span>{{ props.building.regiao }}</span>
-                                </p>
-                            </div>
-                        </div>
-
-                        <!-- Card Data de Entrega -->
-                        <div
-                            class="bg-orange-50 dark:bg-gray-700 rounded-xl p-4 md:p-6 border border-orange-200 dark:border-gray-600">
-                            <div class="flex items-center gap-3 mb-4">
-                                <div class="w-10 h-10 bg-orange-600 rounded-lg flex items-center justify-center">
-                                    <i class="fas fa-calendar-check text-white"></i>
-                                </div>
-                                <h3 class="text-xl font-bold text-orange-900 dark:text-white">Cronograma</h3>
-                            </div>
-
-                            <div class="space-y-3">
-                                <div
-                                    class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-orange-200 dark:border-gray-500">
-                                    <p class="text-gray-600 dark:text-gray-300 text-sm font-medium mb-1">Previsão de
-                                        Entrega</p>
-                                    <p class="text-2xl font-bold text-orange-700 dark:text-orange-300">{{
-                                        formatDate(props.building.data_entrega) }}</p>
-                                </div>
-
-                                <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-orange-200 dark:border-gray-500"
-                                    v-if="props.building.periodo_venda_inicio">
-                                    <p class="text-gray-600 dark:text-gray-300 text-sm font-medium mb-1">Início das
-                                        Vendas</p>
-                                    <p class="text-orange-700 dark:text-orange-300 font-semibold">{{
-                                        formatDate(props.building.periodo_venda_inicio) }}</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Card Etapas -->
-                        <div class="bg-purple-50 dark:bg-gray-700 rounded-xl p-4 md:p-6 border border-purple-200 dark:border-gray-600"
-                            v-if="props.building.etapas && props.building.etapas.length > 0">
-                            <div class="flex items-center gap-3 mb-4">
-                                <div class="w-10 h-10 bg-purple-600 rounded-lg flex items-center justify-center">
-                                    <i class="fas fa-layer-group text-white"></i>
-                                </div>
-                                <h3 class="text-xl font-bold text-purple-900 dark:text-white">Etapas</h3>
-                            </div>
-
-                            <div class="space-y-3">
-                                <div v-for="etapa in props.building.etapas" :key="etapa.idetapa"
-                                    class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-purple-200 dark:border-gray-500">
-                                    <div class="flex justify-between items-center mb-2">
-                                        <h4 class="font-semibold text-gray-900 dark:text-white">{{ etapa.nome }}</h4>
-                                        <span class="text-sm text-purple-700 dark:text-purple-300">{{
-                                            etapa.blocos?.length || 0 }} blocos</span>
-                                    </div>
-                                    <div class="text-sm text-gray-600 dark:text-gray-300" v-if="etapa.blocos">
-                                        <p>Total de unidades: {{etapa.blocos.reduce((total, bloco) => total +
-                                            (bloco.paginacao_unidade?.total || 0), 0)}}</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Card Materiais de Campanha -->
-                        <div class="bg-rose-50 dark:bg-gray-700 rounded-xl p-4 md:p-6 border border-rose-200 dark:border-gray-600"
-                            v-if="props.building.materiais_campanha && props.building.materiais_campanha.length > 0">
-                            <div class="flex items-center gap-3 mb-4">
-                                <div class="w-10 h-10 bg-rose-600 rounded-lg flex items-center justify-center">
-                                    <i class="fas fa-images text-white"></i>
-                                </div>
-                                <h3 class="text-xl font-bold text-rose-900 dark:text-white">Materiais de Campanha</h3>
-                            </div>
-
-                            <div class="space-y-3 max-h-60 overflow-y-auto">
-                                <div v-for="material in props.building.materiais_campanha" :key="material.idarquivo"
-                                    class="bg-white dark:bg-gray-800 rounded-lg p-3 border border-rose-200 dark:border-gray-500">
-                                    <div class="flex items-center justify-between">
-                                        <div class="flex-1 min-w-0">
-                                            <h4 class="font-medium text-gray-900 dark:text-white text-sm truncate">{{
-                                                material.nome }}</h4>
-                                            <div class="flex items-center gap-3 mt-1">
-                                                <span class="text-xs text-gray-500 dark:text-gray-400">{{ material.tipo
-                                                }}</span>
-                                                <span class="text-xs text-rose-600 dark:text-rose-400"
-                                                    v-if="material.tamanho > 0">
-                                                    {{ (material.tamanho / 1024 / 1024).toFixed(2) }} MB
-                                                </span>
-                                            </div>
-                                        </div>
-                                        <a v-if="material.tipo === 'youtube'" :href="material.servidor" target="_blank"
-                                            class="text-rose-600 hover:text-rose-700 dark:text-rose-400 dark:hover:text-rose-300 ml-2">
-                                            <i class="fab fa-youtube text-lg"></i>
-                                        </a>
-                                        <a v-else :href="`${material.arquivo}`" target="_blank"
-                                            class="text-rose-600 hover:text-rose-700 dark:text-rose-400 dark:hover:text-rose-300 ml-2"
-                                            @click.stop>
-                                            <i class="fas fa-external-link-alt"></i>
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Coluna 3 - Mapa e Links -->
-                    <div class="space-y-6">
-                        <!-- Card Mapa -->
-                        <div class="bg-slate-50 dark:bg-gray-700 rounded-xl p-4 md:p-6 border border-slate-200 dark:border-gray-600"
-                            v-if="props.building.latitude && props.building.longitude">
-                            <div class="flex items-center gap-3 mb-4">
-                                <div class="w-10 h-10 bg-slate-600 rounded-lg flex items-center justify-center">
-                                    <i class="fas fa-map text-white"></i>
-                                </div>
-                                <h3 class="text-xl font-bold text-slate-900 dark:text-white">Mapa</h3>
-                            </div>
-
-                            <div
-                                class="bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden border border-slate-200 dark:border-gray-600">
-                                <iframe
-                                    :src="`https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d1579.2792625838822!2d${props.building.longitude}!3d${props.building.latitude}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e1!3m2!1spt-BR!2sbr!4v1738328467636!5m2!1spt-BR!2sbr`"
-                                    allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"
-                                    class="w-full h-64"></iframe>
-                            </div>
-
-                            <div class="mt-4 flex justify-center">
-                                <a :href="`https://www.google.com/maps?q=${props.building.latitude},${props.building.longitude}`"
-                                    target="_blank"
-                                    class="inline-flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 font-medium transition-colors">
-                                    <i class="fas fa-map-location-dot"></i>
-                                    Abrir no Google Maps
-                                    <i class="fas fa-external-link-alt text-sm"></i>
-                                </a>
-                            </div>
-                        </div>
-
-                        <!-- Card Plantas Mapeadas -->
-                        <div class="bg-teal-50 dark:bg-gray-700 rounded-xl p-4 md:p-6 border border-teal-200 dark:border-gray-600"
-                            v-if="props.building.plantas_mapeadas && props.building.plantas_mapeadas.length > 0">
-                            <div class="flex items-center gap-3 mb-4">
-                                <div class="w-10 h-10 bg-teal-600 rounded-lg flex items-center justify-center">
-                                    <i class="fas fa-drafting-compass text-white"></i>
-                                </div>
-                                <h3 class="text-xl font-bold text-teal-900 dark:text-white">Plantas Mapeadas</h3>
-                            </div>
-
-                            <div class="space-y-3">
-                                <div v-for="planta in props.building.plantas_mapeadas" :key="planta.idplanta_mapeada"
-                                    class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-teal-200 dark:border-gray-500">
-                                    <div class="flex justify-between items-center">
-                                        <h4 class="font-semibold text-gray-900 dark:text-white">{{ planta.nome }}</h4>
-                                        <a :href="planta.link" target="_blank"
-                                            class="text-teal-600 hover:text-teal-700 dark:text-teal-400 dark:hover:text-teal-300">
-                                            <i class="fas fa-external-link-alt"></i>
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Link CV CRM -->
-                        <div class="flex justify-center">
-                            <a :href="`https://menin.cvcrm.com.br/gestor/cadastros/empreendimentos/${props.building.idempreendimento}/cadastro_simplificado`"
-                                target="_blank" v-tippy="'Abrir no CV CRM'"
-                                class="inline-flex items-center gap-3 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 px-6 py-3 rounded-xl border border-gray-200 dark:border-gray-600 shadow-sm hover:shadow-md transition-all duration-200">
-                                <img src="/CVLogo.png" alt="CV CRM" class="h-8 w-8 drop-shadow">
-                                <span class="font-semibold text-gray-700 dark:text-gray-200">Abrir no CV CRM</span>
-                                <i class="fas fa-external-link-alt text-gray-400 text-sm"></i>
-                            </a>
-                        </div>
-
-                    </div>
-                </div>
-
-                <!-- Seção de Disponibilidade -->
-                <div class="mt-8" v-if="props.building.etapas && props.building.etapas.length > 0">
-                    <div
-                        class="bg-white dark:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-600 overflow-hidden">
-                        <!-- Header clicável -->
-                        <div @click="toggleAvailability"
-                            class="flex items-center justify-between p-2 md:p-6 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors">
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-                                    <i class="fas fa-building text-white"></i>
-                                </div>
-                                <h2 class="text-sm md:text-2xl font-bold text-gray-900 dark:text-white">Disponibilidade
-                                </h2>
-                            </div>
-
-                            <div class="flex items-center gap-4">
-                                <div class="text-right">
-                                    <p class=" text-sm md:text-lg font-bold text-blue-600 dark:text-blue-400">{{
-                                        getTotalUnits() }}
-                                        unidades</p>
-                                </div>
-                                <i class="fas fa-chevron-down text-gray-400 transform transition-transform duration-300"
-                                    :class="{ 'rotate-180': isAvailabilityOpen }"></i>
-                            </div>
-                        </div>
-
-                        <!-- Conteúdo expansível -->
-                        <transition name="slide-down">
-                            <div v-if="isAvailabilityOpen" class="border-t dark:border-gray-600">
-                                <div class="p-4 md:p-6 space-y-6">
-                                    <div v-for="etapa in props.building.etapas" :key="etapa.idetapa"
-                                        class="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 md:p-6">
-                                        <div class="flex items-center justify-between mb-4">
-                                            <h3 class="text-xl font-bold text-gray-900 dark:text-white">{{ etapa.nome }}
-                                            </h3>
-                                            <span
-                                                class="text-sm bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 px-3 py-1 rounded-full">
-                                                {{ etapa.blocos?.length || 0 }} blocos
-                                            </span>
-                                        </div>
-
-                                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6" v-if="etapa.blocos">
-                                            <div v-for="bloco in etapa.blocos" :key="bloco.idbloco"
-                                                class="bg-white dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
-                                                <!-- Header do Bloco -->
-                                                <div class="p-2 md:p-4 border-b border-gray-200 dark:border-gray-600">
-                                                    <div class="flex items-center justify-between">
-                                                        <h4 class="font-bold text-lg text-gray-900 dark:text-white">{{
-                                                            bloco.nome }}</h4>
-                                                        <span
-                                                            class="text-sm bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-300 px-2 py-1 rounded-full">
-                                                            {{ bloco.paginacao_unidade?.total || 0 }} unidades
-                                                        </span>
-                                                    </div>
-                                                </div>
-
-                                                <!-- Lista de Unidades -->
-                                                <div class="p-2 md:p-4">
-                                                    <div class="max-h-80 overflow-y-auto space-y-2"
-                                                        v-if="bloco.unidades && bloco.unidades.length > 0">
-                                                        <div v-for="unidade in bloco.unidades" :key="unidade.idunidade"
-                                                            class="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-600 hover:shadow-sm transition-shadow">
-                                                            <div class="flex justify-between items-start">
-                                                                <div class="flex-1">
-                                                                    <h5
-                                                                        class="font-semibold text-gray-900 dark:text-white">
-                                                                        {{ unidade.nome }}</h5>
-                                                                    <div class="flex flex-wrap items-center gap-4 mt-1">
-                                                                        <span
-                                                                            class="text-sm text-gray-600 dark:text-gray-400"
-                                                                            v-if="unidade.area_privativa">
-                                                                            <i
-                                                                                class="fas fa-ruler-combined text-xs mr-1"></i>
-                                                                            {{
-                                                                                parseFloat(unidade.area_privativa).toFixed(2)
-                                                                            }}m² privativa
-                                                                        </span>
-                                                                        <span
-                                                                            class="text-xs text-gray-500 dark:text-gray-400"
-                                                                            v-if="unidade.idunidade_int">
-                                                                            ID: {{ unidade.idunidade_int }}
-                                                                        </span>
-                                                                    </div>
-                                                                    <div class="flex items-center gap-4 mt-2"
-                                                                        v-if="unidade.valor || unidade.vagas_garagem">
-                                                                        <span
-                                                                            class="text-sm font-semibold text-blue-600 dark:text-blue-400"
-                                                                            v-if="unidade.valor">
-                                                                            <i
-                                                                                class="fas fa-dollar-sign text-xs mr-1"></i>
-                                                                            R$ {{
-                                                                                parseFloat(unidade.valor).toLocaleString('pt-BR',
-                                                                                    { minimumFractionDigits: 2 }) }}
-                                                                        </span>
-                                                                        <span
-                                                                            class="text-sm text-gray-600 dark:text-gray-400"
-                                                                            v-if="unidade.vagas_garagem">
-                                                                            <i class="fas fa-car text-xs mr-1"></i>
-                                                                            {{ unidade.vagas_garagem }} vaga(s)
-                                                                        </span>
-                                                                    </div>
-                                                                </div>
-
-                                                                <!-- Status da Unidade -->
-                                                                <div class="ml-3 flex-shrink-0">
-                                                                    <span
-                                                                        class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium"
-                                                                        :class="getUnitStatus(unidade).class">
-                                                                        {{ getUnitStatus(unidade).text }}
-                                                                    </span>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-
-                                                    <div v-else class="text-center py-4">
-                                                        <p class="text-gray-500 dark:text-gray-400">Nenhuma unidade
-                                                            encontrada</p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </transition>
-                    </div>
-                </div>
-            </div>
+        <!-- Weather (hover tooltip) -->
+        <div class="absolute bottom-4 right-4 z-10 text-3xl z-20">
+          <WeatherInfo :weather="buildingStore.weather" :city="building.cidade" />
         </div>
+
+        <!-- Title + Chips -->
+        <div class="absolute bottom-0 left-0 right-0 p-5 sm:p-6 z-10">
+          <div class="flex flex-wrap gap-1.5 mb-3">
+            <span v-if="stage"
+              class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md
+                     bg-white/20 backdrop-blur-md border border-white/30
+                     text-white text-xs font-semibold">
+              <span class="h-1.5 w-1.5 rounded-full bg-white"></span>
+              {{ stage }}
+            </span>
+            <span v-for="chip in stageChips.slice(1)" :key="chip"
+              class="inline-flex items-center px-2 py-0.5 rounded-md
+                     bg-white/15 backdrop-blur-md border border-white/20
+                     text-white/90 text-[11px] font-medium">
+              {{ chip }}
+            </span> 
+          </div>
+          <h1 class="text-2xl sm:text-3xl font-semibold text-white tracking-tight leading-tight drop-shadow-lg">
+            {{ building.nome }}
+          </h1>
+          <p class="text-sm text-white/85 mt-1 inline-flex items-center gap-1.5 drop-shadow">
+            <i class="fas fa-location-dot text-xs"></i>
+            {{ building.cidade }}<template v-if="building.estado">/{{ building.estado }}</template>
+          </p>
+        </div>
+      </div>
+
+      <!-- Conteúdo scrollável -->
+      <div class="max-h-[68vh] overflow-y-auto">
+        <div class="p-4 sm:p-6 space-y-5">
+
+          <!-- KPI Strip -->
+          <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
+            <div v-for="k in kpiCards" :key="k.label"
+              class="flex items-center gap-3 p-3 rounded-xl border border-line bg-surface-raised
+                     shadow-soft surface-gradient">
+              <span class="h-10 w-10 rounded-lg grid place-items-center text-base shrink-0" :class="k.accent">
+                <i :class="k.icon"></i>
+              </span>
+              <div class="min-w-0">
+                <p class="text-2xl font-semibold text-ink tabular-nums leading-none">{{ k.value }}</p>
+                <p class="text-[11px] uppercase tracking-wider font-mono text-ink-subtle mt-1">{{ k.label }}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Status das unidades (resumo) -->
+          <Surface v-if="building.etapas?.length" variant="raised" padding="md">
+            <div class="flex items-center gap-2 mb-3">
+              <i class="fas fa-chart-pie text-accent text-sm"></i>
+              <h3 class="text-xs uppercase tracking-wider font-mono text-ink-muted">Status das unidades</h3>
+            </div>
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+              <div v-for="s in statusBreakdown" :key="s.key"
+                class="flex flex-col items-center text-center p-2 rounded-lg bg-surface-sunken border border-line">
+                <span class="inline-flex items-center gap-1.5 mb-1">
+                  <span class="h-2 w-2 rounded-full" :class="s.dot"></span>
+                  <span class="text-[10px] uppercase tracking-wider font-mono text-ink-subtle">{{ s.label }}</span>
+                </span>
+                <span class="text-2xl font-semibold tabular-nums" :class="s.text">{{ s.value }}</span>
+              </div>
+            </div>
+          </Surface>
+
+          <!-- Grid de informações: 3 colunas (Sienge / Localização / Cronograma) -->
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+            <!-- Sienge / Empresa -->
+            <Surface variant="raised" padding="md" class="space-y-3">
+              <div class="flex items-center gap-2 mb-1">
+                <i class="fas fa-building-circle-check text-accent text-sm"></i>
+                <h3 class="text-xs uppercase tracking-wider font-mono text-ink-muted">Sienge / Empresa</h3>
+              </div>
+              <div class="space-y-2">
+                <div class="rounded-lg border border-line bg-surface-sunken p-2.5">
+                  <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono">Empresa</p>
+                  <p class="text-sm font-semibold text-ink truncate">{{ building.nome_empresa || '—' }}</p>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                  <div class="rounded-lg border border-line bg-surface-sunken p-2.5">
+                    <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono">ID Empresa</p>
+                    <p class="text-base font-bold text-accent tabular-nums">{{ building.idempresa_int || '—' }}</p>
+                  </div>
+                  <div class="rounded-lg border border-line bg-surface-sunken p-2.5">
+                    <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono">CDC Sienge</p>
+                    <p class="text-base font-bold text-accent tabular-nums">{{ building.idempreendimento_int || '—' }}</p>
+                  </div>
+                </div>
+                <div class="rounded-lg border border-line bg-surface-sunken p-2.5">
+                  <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono">Matrícula</p>
+                  <p class="text-sm text-ink font-mono truncate">{{ building.matricula || '—' }}</p>
+                </div>
+                <div class="rounded-lg border border-line bg-surface-sunken p-2.5">
+                  <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono">CNPJ</p>
+                  <p class="text-sm text-ink font-mono truncate">{{ building.cnpj_empesa || '—' }}</p>
+                </div>
+              </div>
+            </Surface>
+
+            <!-- Localização -->
+            <Surface variant="raised" padding="md" class="space-y-3">
+              <div class="flex items-center gap-2 mb-1">
+                <i class="fas fa-location-dot text-accent text-sm"></i>
+                <h3 class="text-xs uppercase tracking-wider font-mono text-ink-muted">Localização</h3>
+              </div>
+              <ul class="space-y-2 text-sm">
+                <li class="flex items-start gap-2.5">
+                  <i class="fas fa-road text-[11px] text-ink-subtle mt-1 w-4 text-center"></i>
+                  <span class="text-ink-muted">
+                    {{ building.endereco_emp || 'Endereço não informado' }}<template v-if="building.numero">, {{ building.numero }}</template>
+                  </span>
+                </li>
+                <li v-if="building.bairro" class="flex items-start gap-2.5">
+                  <i class="fas fa-map-pin text-[11px] text-ink-subtle mt-1 w-4 text-center"></i>
+                  <span class="text-ink-muted">{{ building.bairro }}</span>
+                </li>
+                <li class="flex items-start gap-2.5">
+                  <i class="fas fa-city text-[11px] text-ink-subtle mt-1 w-4 text-center"></i>
+                  <span class="text-ink-muted">
+                    {{ building.cidade || '—' }}<template v-if="building.estado"> · {{ building.estado }}</template>
+                  </span>
+                </li>
+                <li v-if="building.cep" class="flex items-start gap-2.5">
+                  <i class="fas fa-mailbox text-[11px] text-ink-subtle mt-1 w-4 text-center"></i>
+                  <span class="text-ink-muted font-mono">{{ building.cep }}</span>
+                </li>
+                <li v-if="building.regiao" class="flex items-start gap-2.5">
+                  <i class="fas fa-globe-americas text-[11px] text-ink-subtle mt-1 w-4 text-center"></i>
+                  <span class="text-ink-muted">{{ building.regiao }}</span>
+                </li>
+              </ul>
+
+              <!-- Botão Google Maps -->
+              <a v-if="building.latitude && building.longitude"
+                :href="`https://www.google.com/maps?q=${building.latitude},${building.longitude}`"
+                target="_blank" rel="noopener"
+                class="inline-flex items-center gap-1.5 mt-1 text-xs text-accent hover:text-accent-hover transition-colors">
+                <i class="fas fa-arrow-up-right-from-square text-[10px]"></i>
+                Abrir no Google Maps
+              </a>
+            </Surface>
+
+            <!-- Cronograma + Tabela de preços -->
+            <Surface variant="raised" padding="md" class="space-y-3">
+              <div class="flex items-center gap-2 mb-1">
+                <i class="far fa-calendar-check text-accent text-sm"></i>
+                <h3 class="text-xs uppercase tracking-wider font-mono text-ink-muted">Cronograma</h3>
+              </div>
+              <div class="space-y-2">
+                <div class="rounded-lg border border-line bg-surface-sunken p-2.5">
+                  <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono">Previsão de entrega</p>
+                  <p class="text-base font-bold text-amber-500 dark:text-amber-300 tabular-nums">
+                    {{ formatDate(building.data_entrega) }}
+                  </p>
+                </div>
+                <div v-if="building.periodo_venda_inicio" class="rounded-lg border border-line bg-surface-sunken p-2.5">
+                  <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono">Início das vendas</p>
+                  <p class="text-sm font-semibold text-ink font-mono">{{ formatDate(building.periodo_venda_inicio) }}</p>
+                </div>
+              </div>
+
+              <!-- Tabela de preços (se existir) -->
+              <template v-if="building.tabela">
+                <div class="border-t border-line pt-3 flex items-center gap-2">
+                  <i class="fas fa-tags text-accent text-sm"></i>
+                  <h4 class="text-xs uppercase tracking-wider font-mono text-ink-muted">Tabela de preços</h4>
+                  <Badge :variant="building.tabela.aprovado === 'S' ? 'success' : 'danger'" size="sm" class="ml-auto">
+                    {{ building.tabela.aprovado === 'S' ? 'Aprovada' : 'Pendente' }}
+                  </Badge>
+                </div>
+                <div class="rounded-lg border border-line bg-surface-sunken p-2.5">
+                  <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono">Nome</p>
+                  <p class="text-sm font-semibold text-ink truncate">{{ building.tabela.nome }}</p>
+                </div>
+                <div class="rounded-lg border border-line bg-surface-sunken p-2.5">
+                  <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono">Vigência</p>
+                  <p class="text-xs text-ink font-mono">
+                    {{ building.tabela.data_vigencia_de }} <span class="text-ink-subtle">→</span> {{ building.tabela.data_vigencia_ate }}
+                  </p>
+                </div>
+              </template>
+            </Surface>
+          </div>
+
+          <!-- Etapas (resumo) + Materiais + Plantas -->
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+            <!-- Etapas -->
+            <Surface v-if="building.etapas?.length" variant="raised" padding="md" class="space-y-3">
+              <div class="flex items-center gap-2 mb-1">
+                <i class="fas fa-layer-group text-purple-500 text-sm"></i>
+                <h3 class="text-xs uppercase tracking-wider font-mono text-ink-muted">Etapas</h3>
+                <Badge variant="neutral" size="sm" class="ml-auto">{{ building.etapas.length }}</Badge>
+              </div>
+              <div class="space-y-2">
+                <div v-for="etapa in building.etapas" :key="etapa.idetapa"
+                  class="rounded-lg border border-line bg-surface-sunken p-3">
+                  <div class="flex items-center justify-between gap-2">
+                    <h4 class="text-sm font-semibold text-ink truncate">{{ etapa.nome }}</h4>
+                    <Badge variant="accent" size="sm">{{ etapa.blocos?.length || 0 }} bloco{{ (etapa.blocos?.length || 0) === 1 ? '' : 's' }}</Badge>
+                  </div>
+                  <p class="text-xs text-ink-muted mt-1 font-mono tabular-nums">
+                    {{ etapa.blocos?.reduce((t, b) => t + (b.paginacao_unidade?.total || 0), 0) || 0 }} unidades
+                  </p>
+                </div>
+              </div>
+            </Surface>
+
+            <!-- Materiais campanha -->
+            <Surface v-if="building.materiais_campanha?.length" variant="raised" padding="md" class="space-y-3">
+              <div class="flex items-center gap-2 mb-1">
+                <i class="fas fa-images text-amber-500 text-sm"></i>
+                <h3 class="text-xs uppercase tracking-wider font-mono text-ink-muted">Materiais de campanha</h3>
+                <Badge variant="neutral" size="sm" class="ml-auto">{{ building.materiais_campanha.length }}</Badge>
+              </div>
+              <div class="space-y-2 max-h-72 overflow-y-auto pr-1">
+                <a v-for="mat in building.materiais_campanha" :key="mat.idarquivo"
+                  :href="mat.tipo === 'youtube' ? mat.servidor : mat.arquivo"
+                  target="_blank" rel="noopener" @click.stop
+                  class="flex items-center gap-2.5 rounded-lg border border-line bg-surface-sunken p-2.5
+                         hover:bg-surface-hover hover:border-accent/30 transition-colors group">
+                  <i :class="mat.tipo === 'youtube' ? 'fab fa-youtube text-rose-500' : 'fas fa-file text-accent'"
+                    class="text-base shrink-0"></i>
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium text-ink truncate group-hover:text-accent transition-colors">{{ mat.nome }}</p>
+                    <p class="text-[11px] text-ink-subtle font-mono">
+                      {{ mat.tipo }}<span v-if="mat.tamanho > 0"> · {{ (mat.tamanho / 1024 / 1024).toFixed(2) }} MB</span>
+                    </p>
+                  </div>
+                  <i class="fas fa-arrow-up-right-from-square text-[10px] text-ink-subtle group-hover:text-accent transition-colors"></i>
+                </a>
+              </div>
+            </Surface>
+
+            <!-- Plantas / Mapa preview -->
+            <Surface v-if="building.plantas_mapeadas?.length || (building.latitude && building.longitude)"
+              variant="raised" padding="md" class="space-y-3">
+              <div v-if="building.plantas_mapeadas?.length" class="space-y-3">
+                <div class="flex items-center gap-2">
+                  <i class="fas fa-drafting-compass text-teal-500 text-sm"></i>
+                  <h3 class="text-xs uppercase tracking-wider font-mono text-ink-muted">Plantas mapeadas</h3>
+                  <Badge variant="neutral" size="sm" class="ml-auto">{{ building.plantas_mapeadas.length }}</Badge>
+                </div>
+                <div class="space-y-2">
+                  <a v-for="planta in building.plantas_mapeadas" :key="planta.idplanta_mapeada"
+                    :href="planta.link" target="_blank" rel="noopener"
+                    class="flex items-center justify-between gap-2 rounded-lg border border-line bg-surface-sunken p-2.5
+                           hover:bg-surface-hover hover:border-accent/30 transition-colors group">
+                    <span class="text-sm font-medium text-ink truncate group-hover:text-accent transition-colors">
+                      {{ planta.nome }}
+                    </span>
+                    <i class="fas fa-arrow-up-right-from-square text-[10px] text-ink-subtle group-hover:text-accent transition-colors"></i>
+                  </a>
+                </div>
+              </div>
+
+              <div v-if="building.latitude && building.longitude" class="space-y-2">
+                <div class="flex items-center gap-2">
+                  <i class="fas fa-map-location-dot text-sky-500 text-sm"></i>
+                  <h3 class="text-xs uppercase tracking-wider font-mono text-ink-muted">Mapa</h3>
+                </div>
+                <div class="rounded-lg overflow-hidden border border-line">
+                  <iframe
+                    :src="`https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d1579.2792625838822!2d${building.longitude}!3d${building.latitude}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e1!3m2!1spt-BR!2sbr!4v1738328467636!5m2!1spt-BR!2sbr`"
+                    allowfullscreen="" loading="lazy"
+                    referrerpolicy="no-referrer-when-downgrade"
+                    class="w-full h-48"></iframe>
+                </div>
+              </div>
+            </Surface>
+          </div>
+
+          <!-- Disponibilidade (collapsible) -->
+          <Surface v-if="building.etapas?.length" variant="raised" padding="none" class="overflow-hidden">
+            <button @click="isAvailabilityOpen = !isAvailabilityOpen"
+              class="w-full flex items-center justify-between gap-3 px-4 sm:px-5 py-3 hover:bg-surface-hover transition-colors">
+              <div class="flex items-center gap-2 min-w-0">
+                <i class="fas fa-table-list text-accent text-sm"></i>
+                <h3 class="text-sm font-semibold text-ink">Disponibilidade detalhada</h3>
+                <Badge variant="accent" size="sm" class="ml-1">
+                  <span class="font-mono tabular-nums">{{ totalUnits }}</span> unidade{{ totalUnits === 1 ? '' : 's' }}
+                </Badge>
+              </div>
+              <i class="fas fa-chevron-down text-xs text-ink-subtle transition-transform duration-200"
+                :class="{ 'rotate-180': isAvailabilityOpen }"></i>
+            </button>
+
+            <transition
+              enter-active-class="transition-all duration-300 ease-out-expo"
+              enter-from-class="opacity-0 max-h-0"
+              enter-to-class="opacity-100 max-h-[3000px]"
+              leave-active-class="transition-all duration-200 ease-in"
+              leave-from-class="opacity-100 max-h-[3000px]"
+              leave-to-class="opacity-0 max-h-0">
+              <div v-show="isAvailabilityOpen" class="border-t border-line overflow-hidden">
+                <div class="p-4 sm:p-5 space-y-5">
+                  <div v-for="etapa in building.etapas" :key="etapa.idetapa">
+                    <div class="flex items-center gap-2 mb-3">
+                      <i class="fas fa-layer-group text-purple-500 text-xs"></i>
+                      <h4 class="text-sm font-semibold text-ink">{{ etapa.nome }}</h4>
+                      <Badge variant="accent" size="sm">{{ etapa.blocos?.length || 0 }} bloco{{ (etapa.blocos?.length || 0) === 1 ? '' : 's' }}</Badge>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-3" v-if="etapa.blocos?.length">
+                      <div v-for="bloco in etapa.blocos" :key="bloco.idbloco"
+                        class="rounded-xl border border-line bg-surface-sunken overflow-hidden">
+                        <div class="px-3 py-2.5 border-b border-line flex items-center justify-between gap-2">
+                          <h5 class="text-sm font-semibold text-ink truncate">{{ bloco.nome }}</h5>
+                          <Badge variant="success" size="sm">
+                            <span class="font-mono tabular-nums">{{ bloco.paginacao_unidade?.total || 0 }}</span> un.
+                          </Badge>
+                        </div>
+
+                        <div class="p-2.5 max-h-72 overflow-y-auto space-y-1.5"
+                          v-if="bloco.unidades?.length">
+                          <div v-for="unidade in bloco.unidades" :key="unidade.idunidade"
+                            class="rounded-lg border border-line bg-surface-raised p-2.5
+                                   hover:border-accent/30 transition-colors">
+                            <div class="flex items-start justify-between gap-2">
+                              <div class="flex-1 min-w-0">
+                                <p class="text-sm font-semibold text-ink">{{ unidade.nome }}</p>
+                                <div class="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1 text-[11px] text-ink-muted">
+                                  <span v-if="unidade.area_privativa" class="inline-flex items-center gap-1 font-mono">
+                                    <i class="fas fa-ruler-combined text-[9px] text-ink-subtle"></i>
+                                    {{ parseFloat(unidade.area_privativa).toFixed(2) }} m²
+                                  </span>
+                                  <span v-if="unidade.vagas_garagem" class="inline-flex items-center gap-1 font-mono">
+                                    <i class="fas fa-car text-[9px] text-ink-subtle"></i>
+                                    {{ unidade.vagas_garagem }} vaga(s)
+                                  </span>
+                                  <span v-if="unidade.idunidade_int" class="inline-flex items-center gap-1 font-mono text-ink-subtle">
+                                    ID {{ unidade.idunidade_int }}
+                                  </span>
+                                </div>
+                                <p v-if="unidade.valor"
+                                  class="text-sm font-semibold text-emerald-600 dark:text-emerald-400 mt-1 tabular-nums">
+                                  {{ fmtMoney(unidade.valor) }}
+                                </p>
+                              </div>
+                              <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-medium border shrink-0"
+                                :class="getUnitStatus(unidade).cls">
+                                <span class="h-1.5 w-1.5 rounded-full" :class="getUnitStatus(unidade).dot"></span>
+                                {{ getUnitStatus(unidade).text }}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        <p v-else class="text-xs text-ink-subtle text-center py-4">
+                          Nenhuma unidade encontrada
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </transition>
+          </Surface>
+        </div>
+      </div>
     </div>
+
+    <template #footer>
+      <Button variant="ghost" @click="closeModal">Fechar</Button>
+      <a :href="cvLink" target="_blank" rel="noopener" v-tippy="'Abrir no CV CRM'"
+        class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-accent hover:bg-accent-hover text-white text-sm font-medium transition-colors shadow-soft">
+        <img src="/CVLogo.png" alt="CV CRM" class="h-4 brightness-0 invert" />
+        <span>Abrir no CV CRM</span>
+        <i class="fas fa-arrow-up-right-from-square text-[10px]"></i>
+      </a>
+    </template>
+  </Modal>
 </template>
-
-<style scoped>
-.slide-down-enter-active,
-.slide-down-leave-active {
-    transition: all 0.3s ease-in-out;
-    overflow: hidden;
-}
-
-.slide-down-enter-from,
-.slide-down-leave-to {
-    opacity: 0;
-    max-height: 0;
-}
-
-.slide-down-enter-to,
-.slide-down-leave-from {
-    opacity: 1;
-    max-height: 2000px;
-}
-</style>

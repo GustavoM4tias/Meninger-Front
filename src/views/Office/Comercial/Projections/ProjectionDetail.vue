@@ -1156,21 +1156,21 @@ const filterPanelOpen = ref(true)
     <div class="p-4 md:p-6 space-y-4 w-full mx-auto">
         <!-- Header -->
         <div
-            class="relative rounded-2xl border dark:border-gray-700 bg-white/90 dark:bg-gray-900/90 p-4 md:p-5 shadow-sm dark:shadow-lg">
+            class="relative rounded-2xl border border-line bg-surface-raised/90 p-4 md:p-5 shadow-sm dark:shadow-lg">
             <div
-                class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-gray-100 dark:border-gray-800 pb-3 mb-3">
+                class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-line pb-3 mb-3">
                 <div class="min-w-0">
                     <h1
-                        class="text-xl font-semibold leading-tight text-gray-900 dark:text-white flex items-center gap-2 flex-wrap">
+                        class="text-xl font-semibold leading-tight text-ink flex items-center gap-2 flex-wrap">
                         <span v-if="!editingName" @click="startEditName"
                             class="cursor-text hover:underline decoration-dotted underline-offset-4 flex items-center gap-2">
-                            <i class="fas fa-chart-line text-indigo-500"></i>
+                            <i class="fas fa-chart-line text-accent"></i>
                             <span class="truncate max-w-[260px]">{{ store.detail?.projection?.name }}</span>
                         </span>
 
                         <input v-else id="proj-name-input" v-model="tempName" @keyup.enter="commitName"
                             @keyup.esc="cancelName" @blur="commitName" type="text"
-                            class="h-9 px-3 rounded-lg border border-indigo-200 dark:border-indigo-500/60 bg-white/95 dark:bg-gray-900/90 focus:outline-none focus:ring-2 focus:ring-indigo-400/60 text-sm"
+                            class="h-9 px-3 rounded-lg border border-accent/30 bg-surface-raised focus:outline-none focus:ring-2 focus:ring-indigo-400/60 text-sm"
                             :maxlength="120" />
                     </h1>
 
@@ -1193,8 +1193,8 @@ const filterPanelOpen = ref(true)
 
                     <!-- Show zero -->
                     <label
-                        class="mt-2 inline-flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300 select-none">
-                        <input type="checkbox" v-model="showZero" class="accent-indigo-600" />
+                        class="mt-2 inline-flex items-center gap-2 text-xs text-ink-muted select-none">
+                        <input type="checkbox" v-model="showZero" class="accent-accent" />
                         Mostrar empreendimentos sem projeção
                     </label>
                 </div>
@@ -1204,32 +1204,32 @@ const filterPanelOpen = ref(true)
                     <!-- Período -->
                     <div class="flex items-end gap-2">
                         <div class="flex flex-col">
-                            <span class="text-[11px] text-gray-500 dark:text-gray-400 font-medium mb-1">Mês inicial</span>
+                            <span class="text-[11px] text-ink-muted font-medium mb-1">Mês inicial</span>
                             <input type="month" v-model="startMonth"
-                                class="h-9 border dark:border-gray-700 rounded-lg px-3 bg-white/90 dark:bg-gray-900/70 focus:outline-none focus:ring-2 focus:ring-indigo-400/30 text-sm" />
+                                class="h-9 border border-line rounded-lg px-3 bg-surface-raised focus:outline-none focus:ring-2 focus:ring-indigo-400/30 text-sm" />
                         </div>
                         <div class="flex flex-col">
-                            <span class="text-[11px] text-gray-500 dark:text-gray-400 font-medium mb-1">Mês final</span>
+                            <span class="text-[11px] text-ink-muted font-medium mb-1">Mês final</span>
                             <input type="month" v-model="endMonth"
-                                class="h-9 border dark:border-gray-700 rounded-lg px-3 bg-white/90 dark:bg-gray-900/70 focus:outline-none focus:ring-2 focus:ring-indigo-400/30 text-sm" />
+                                class="h-9 border border-line rounded-lg px-3 bg-surface-raised focus:outline-none focus:ring-2 focus:ring-indigo-400/30 text-sm" />
                         </div>
                     </div>
 
                     <!-- Ações -->
                     <div class="flex items-center gap-2 flex-wrap">
                         <!-- Status group: Ativar + Bloquear -->
-                        <div v-if="isAdmin" class="flex items-center rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm divide-x divide-gray-200 dark:divide-gray-700">
+                        <div v-if="isAdmin" class="flex items-center rounded-lg border border-line overflow-hidden shadow-sm divide-x divide-line">
                             <button
                                 @click="store.updateMeta(id, { is_active: !Boolean(store.detail?.projection?.is_active) })"
-                                class="h-9 px-3 bg-white dark:bg-gray-900/80 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs font-medium flex items-center gap-1.5 transition-colors"
-                                :class="store.detail?.projection?.is_active ? 'text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300'"
+                                class="h-9 px-3 bg-surface-raised/80 hover:bg-surface-hover text-xs font-medium flex items-center gap-1.5 transition-colors"
+                                :class="store.detail?.projection?.is_active ? 'text-blue-600 dark:text-blue-400' : 'text-ink-muted'"
                                 v-tippy="store.detail?.projection?.is_active ? 'Inativar projeção' : 'Ativar projeção'">
                                 <i class="fas" :class="store.detail?.projection?.is_active ? 'fa-toggle-off' : 'fa-toggle-on'"></i>
                                 <span class="hidden sm:inline">{{ store.detail?.projection?.is_active ? 'Inativar' : 'Ativar' }}</span>
                             </button>
                             <button
                                 @click="toggleLock"
-                                class="h-9 px-3 bg-white dark:bg-gray-900/80 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs font-medium flex items-center gap-1.5 transition-colors"
+                                class="h-9 px-3 bg-surface-raised/80 hover:bg-surface-hover text-xs font-medium flex items-center gap-1.5 transition-colors"
                                 :class="store.detail?.projection?.is_locked ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400'"
                                 v-tippy="store.detail?.projection?.is_locked ? 'Desbloquear edição' : 'Bloquear edição'">
                                 <i class="fas" :class="store.detail?.projection?.is_locked ? 'fa-lock-open' : 'fa-lock'"></i>
@@ -1238,29 +1238,29 @@ const filterPanelOpen = ref(true)
                         </div>
 
                         <!-- Divider -->
-                        <div v-if="isAdmin" class="hidden sm:block w-px h-6 bg-gray-200 dark:bg-gray-700"></div>
+                        <div v-if="isAdmin" class="hidden sm:block w-px h-6 bg-surface-sunken"></div>
 
                         <!-- Adicionar empreendimento -->
                         <button v-if="isAdmin && !store.detail?.projection?.is_locked" @click="openAddModal"
-                            class="h-9 px-3 rounded-lg bg-indigo-600 text-white hover:bg-indigo-500 shadow-sm text-xs font-semibold flex items-center gap-1.5 transition-colors">
+                            class="h-9 px-3 rounded-lg bg-accent text-white hover:bg-accent-hover shadow-sm text-xs font-semibold flex items-center gap-1.5 transition-colors">
                             <i class="fas fa-plus text-[10px]"></i>
                             <span>Empreendimento</span>
                         </button>
 
                         <!-- Exportar -->
                         <button
-                            class="h-9 px-3 rounded-lg border dark:border-gray-700 bg-white/90 dark:bg-gray-900/80 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs font-medium flex items-center gap-1.5 transition-colors disabled:opacity-40"
+                            class="h-9 px-3 rounded-lg border border-line bg-surface-raised hover:bg-surface-hover text-xs font-medium flex items-center gap-1.5 transition-colors disabled:opacity-40"
                             v-tippy="'Exportar dados (CSV/Excel)'" @click="exportOpen = true"
                             :disabled="!monthKeys.length || !filteredRows.length">
-                            <i class="fas fa-download text-gray-500 dark:text-gray-400"></i>
-                            <span class="hidden sm:inline text-gray-600 dark:text-gray-300">Exportar</span>
+                            <i class="fas fa-download text-ink-muted"></i>
+                            <span class="hidden sm:inline text-ink-muted">Exportar</span>
                         </button>
 
                         <!-- Cancelar + Salvar (só quando dirty) -->
                         <template v-if="isAdmin && !store.detail?.projection?.is_locked && dirty">
                             <button
                                 @click="discardChangesAndReloadFromBackend"
-                                class="h-9 px-3 rounded-lg border dark:border-gray-700 bg-white/90 dark:bg-gray-900/80 hover:bg-red-50 dark:hover:bg-red-950/20 text-xs font-medium flex items-center gap-1.5 text-gray-600 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400 transition-colors">
+                                class="h-9 px-3 rounded-lg border border-line bg-surface-raised hover:bg-red-50 dark:hover:bg-red-950/20 text-xs font-medium flex items-center gap-1.5 text-ink-muted hover:text-red-600 dark:hover:text-red-400 transition-colors">
                                 <i class="fas fa-rotate-left text-[10px]"></i>
                                 <span class="hidden sm:inline">Cancelar</span>
                             </button>
@@ -1279,52 +1279,52 @@ const filterPanelOpen = ref(true)
             <!-- KPIs -->
             <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-2">
                 <!-- Unidades -->
-                <div class="p-3 rounded-xl border dark:border-gray-700 bg-gradient-to-br from-indigo-50 to-white dark:from-indigo-950/30 dark:to-gray-900/60 shadow-sm flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-600 dark:text-indigo-300 shrink-0">
+                <div class="p-3 rounded-xl border border-line bg-gradient-to-br from-indigo-50 to-white dark:from-indigo-950/30 dark:to-gray-900/60 shadow-sm flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-accent-soft flex items-center justify-center text-accent shrink-0">
                         <i class="fas fa-cubes"></i>
                     </div>
                     <div class="min-w-0">
-                        <p class="text-[10px] uppercase tracking-widest text-gray-400 font-semibold">Unidades</p>
-                        <p class="text-2xl font-bold text-gray-900 dark:text-white leading-none mt-0.5 tabular-nums">{{ totals.units.toLocaleString('pt-BR') }}</p>
-                        <p class="text-[10px] text-gray-400 mt-0.5">no período</p>
+                        <p class="text-[10px] uppercase tracking-widest text-ink-subtle font-semibold">Unidades</p>
+                        <p class="text-2xl font-bold text-ink leading-none mt-0.5 tabular-nums">{{ totals.units.toLocaleString('pt-BR') }}</p>
+                        <p class="text-[10px] text-ink-subtle mt-0.5">no período</p>
                     </div>
                 </div>
 
                 <!-- Receita total -->
-                <div class="p-3 rounded-xl border dark:border-gray-700 bg-gradient-to-br from-emerald-50 to-white dark:from-emerald-950/30 dark:to-gray-900/60 shadow-sm flex items-center gap-3">
+                <div class="p-3 rounded-xl border border-line bg-gradient-to-br from-emerald-50 to-white dark:from-emerald-950/30 dark:to-gray-900/60 shadow-sm flex items-center gap-3">
                     <div class="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center text-emerald-600 dark:text-emerald-300 shrink-0">
                         <i class="fas fa-sack-dollar"></i>
                     </div>
                     <div class="min-w-0">
-                        <p class="text-[10px] uppercase tracking-widest text-gray-400 font-semibold">VGV Total</p>
+                        <p class="text-[10px] uppercase tracking-widest text-ink-subtle font-semibold">VGV Total</p>
                         <p class="text-lg font-bold text-emerald-700 dark:text-emerald-400 leading-none mt-0.5 tabular-nums truncate">{{ fmtBRL(totals.revenue) }}</p>
-                        <p class="text-[10px] text-gray-400 mt-0.5">no período</p>
+                        <p class="text-[10px] text-ink-subtle mt-0.5">no período</p>
                         <!-- <p class="text-lg font-bold text-emerald-700 dark:text-emerald-400 leading-none mt-0.5 tabular-nums truncate">{{ brlCompact(totals.revenue) }}</p>
-                        <p class="text-[10px] text-gray-400 mt-0.5 tabular-nums truncate">{{ fmtBRL(totals.revenue) }}</p> -->
+                        <p class="text-[10px] text-ink-subtle mt-0.5 tabular-nums truncate">{{ fmtBRL(totals.revenue) }}</p> -->
                     </div>
                 </div>
 
                 <!-- Ticket médio -->
-                <div class="p-3 rounded-xl border dark:border-gray-700 bg-gradient-to-br from-violet-50 to-white dark:from-violet-950/30 dark:to-gray-900/60 shadow-sm flex items-center gap-3">
+                <div class="p-3 rounded-xl border border-line bg-gradient-to-br from-violet-50 to-white dark:from-violet-950/30 dark:to-gray-900/60 shadow-sm flex items-center gap-3">
                     <div class="w-10 h-10 rounded-xl bg-violet-100 dark:bg-violet-900/50 flex items-center justify-center text-violet-600 dark:text-violet-300 shrink-0">
                         <i class="fas fa-tag"></i>
                     </div>
                     <div class="min-w-0">
-                        <p class="text-[10px] uppercase tracking-widest text-gray-400 font-semibold">Ticket Médio</p>
+                        <p class="text-[10px] uppercase tracking-widest text-ink-subtle font-semibold">Ticket Médio</p>
                         <p class="text-lg font-bold text-violet-700 dark:text-violet-400 leading-none mt-0.5 tabular-nums truncate">{{ brlCompact(globalTotals.avgTicket) }}</p>
-                        <p class="text-[10px] text-gray-400 mt-0.5 tabular-nums truncate">{{ fmtBRL(globalTotals.avgTicket) }}</p>
+                        <p class="text-[10px] text-ink-subtle mt-0.5 tabular-nums truncate">{{ fmtBRL(globalTotals.avgTicket) }}</p>
                     </div>
                 </div>
 
                 <!-- Empreendimentos -->
-                <div class="p-3 rounded-xl border dark:border-gray-700 bg-gradient-to-br from-sky-50 to-white dark:from-sky-950/30 dark:to-gray-900/60 shadow-sm flex items-center gap-3">
+                <div class="p-3 rounded-xl border border-line bg-gradient-to-br from-sky-50 to-white dark:from-sky-950/30 dark:to-gray-900/60 shadow-sm flex items-center gap-3">
                     <div class="w-10 h-10 rounded-xl bg-sky-100 dark:bg-sky-900/50 flex items-center justify-center text-sky-600 dark:text-sky-300 shrink-0">
                         <i class="fas fa-city"></i>
                     </div>
                     <div class="min-w-0">
-                        <p class="text-[10px] uppercase tracking-widest text-gray-400 font-semibold">Empreendimentos</p>
-                        <p class="text-2xl font-bold text-gray-900 dark:text-white leading-none mt-0.5 tabular-nums">{{ filteredRows.length }}</p>
-                        <p class="text-[10px] text-gray-400 mt-0.5">
+                        <p class="text-[10px] uppercase tracking-widest text-ink-subtle font-semibold">Empreendimentos</p>
+                        <p class="text-2xl font-bold text-ink leading-none mt-0.5 tabular-nums">{{ filteredRows.length }}</p>
+                        <p class="text-[10px] text-ink-subtle mt-0.5">
                             <span v-if="activeFilterCount" class="text-amber-500 font-semibold">{{ activeFilterCount }} filtro{{ activeFilterCount > 1 ? 's' : '' }} ativo{{ activeFilterCount > 1 ? 's' : '' }}</span>
                             <span v-else>de {{ rows.length }} total</span>
                         </p>
@@ -1333,23 +1333,23 @@ const filterPanelOpen = ref(true)
             </div>
 
             <!-- Barra de filtros -->
-            <div class="mt-3 rounded-xl border dark:border-gray-700 bg-gray-50/60 dark:bg-gray-800/30">
+            <div class="mt-3 rounded-xl border border-line bg-surface-sunken/60">
                 <!-- Cabeçalho da barra -->
                 <button type="button" @click="filterPanelOpen = !filterPanelOpen"
-                    class="w-full flex items-center justify-between px-4 py-2.5 text-left hover:bg-gray-100/80 dark:hover:bg-gray-700/40 transition-colors rounded-xl"
+                    class="w-full flex items-center justify-between px-4 py-2.5 text-left hover:bg-surface-hover transition-colors rounded-xl"
                     :class="filterPanelOpen ? 'rounded-b-none' : ''">
                     <div class="flex items-center gap-2 flex-wrap">
                         <div class="flex items-center gap-1.5">
-                            <i class="fas fa-sliders text-[11px]" :class="activeFilterCount ? 'text-indigo-500' : 'text-gray-400'"></i>
-                            <span class="text-xs font-semibold" :class="activeFilterCount ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-600 dark:text-gray-300'">
+                            <i class="fas fa-sliders text-[11px]" :class="activeFilterCount ? 'text-accent' : 'text-ink-subtle'"></i>
+                            <span class="text-xs font-semibold" :class="activeFilterCount ? 'text-accent' : 'text-ink-muted'">
                                 Filtros
                             </span>
                         </div>
                         <span v-if="activeFilterCount"
-                            class="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1.5 rounded-full bg-indigo-600 text-white text-[10px] font-bold leading-none">
+                            class="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1.5 rounded-full bg-accent text-white text-[10px] font-bold leading-none">
                             {{ activeFilterCount }}
                         </span>
-                        <span v-if="activeFilterCount" class="text-[10px] text-indigo-500 dark:text-indigo-400 font-medium hidden sm:inline">
+                        <span v-if="activeFilterCount" class="text-[10px] text-accent dark:text-indigo-400 font-medium hidden sm:inline">
                             {{ filteredRows.length }} de {{ rows.length }} empreendimentos
                         </span>
                         <button v-if="activeFilterCount" type="button" @click.stop="clearAllFilters"
@@ -1357,18 +1357,18 @@ const filterPanelOpen = ref(true)
                             <i class="fas fa-xmark text-[9px]"></i> Limpar filtros
                         </button>
                     </div>
-                    <i class="fas text-[10px] text-gray-400 transition-transform duration-200 ml-2 shrink-0"
+                    <i class="fas text-[10px] text-ink-subtle transition-transform duration-200 ml-2 shrink-0"
                         :class="filterPanelOpen ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
                 </button>
 
                 <!-- Conteúdo dos filtros -->
-                <div v-show="filterPanelOpen" class="px-4 pb-4 pt-3 grid grid-cols-1 md:grid-cols-2 gap-3 border-t border-gray-200 dark:border-gray-700">
+                <div v-show="filterPanelOpen" class="px-4 pb-4 pt-3 grid grid-cols-1 md:grid-cols-2 gap-3 border-t border-line">
                     <!-- Empreendimentos -->
                     <div>
-                        <label class="text-[11px] font-semibold text-gray-500 dark:text-gray-400 flex items-center gap-1.5 mb-1.5">
+                        <label class="text-[11px] font-semibold text-ink-muted flex items-center gap-1.5 mb-1.5">
                             <i class="fas fa-building text-indigo-400 text-[10px]"></i>
                             Empreendimentos
-                            <span v-if="selectedEnterpriseLabels.length" class="ml-auto px-1.5 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 text-[9px] font-bold">
+                            <span v-if="selectedEnterpriseLabels.length" class="ml-auto px-1.5 py-0.5 rounded-full bg-accent-soft text-accent text-[9px] font-bold">
                                 {{ selectedEnterpriseLabels.length }} selecionado(s)
                             </span>
                         </label>
@@ -1379,10 +1379,10 @@ const filterPanelOpen = ref(true)
 
                     <!-- Cidades -->
                     <div>
-                        <label class="text-[11px] font-semibold text-gray-500 dark:text-gray-400 flex items-center gap-1.5 mb-1.5">
+                        <label class="text-[11px] font-semibold text-ink-muted flex items-center gap-1.5 mb-1.5">
                             <i class="fas fa-location-dot text-indigo-400 text-[10px]"></i>
                             Cidades
-                            <span v-if="selectedCityLabels.length" class="ml-auto px-1.5 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 text-[9px] font-bold">
+                            <span v-if="selectedCityLabels.length" class="ml-auto px-1.5 py-0.5 rounded-full bg-accent-soft text-accent text-[9px] font-bold">
                                 {{ selectedCityLabels.length }} selecionada(s)
                             </span>
                         </label>
@@ -1398,15 +1398,15 @@ const filterPanelOpen = ref(true)
         <div class="flex items-center justify-between gap-4 px-1">
             <!-- Chips de resumo rápido -->
             <div class="flex flex-wrap items-center gap-2">
-                <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-950/40">
+                <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-accent/30 bg-accent-soft">
                     <i class="fas fa-building text-indigo-400 text-[10px]"></i>
-                    <span class="text-xs font-semibold text-indigo-700 dark:text-indigo-300 tabular-nums">{{ filteredRows.length }}</span>
-                    <span class="text-[10px] text-indigo-500 dark:text-indigo-400">empreend.</span>
+                    <span class="text-xs font-semibold text-accent tabular-nums">{{ filteredRows.length }}</span>
+                    <span class="text-[10px] text-accent dark:text-indigo-400">empreend.</span>
                 </div>
-                <div v-if="globalTotals.units" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
-                    <i class="fas fa-cubes text-gray-400 text-[10px]"></i>
-                    <span class="text-xs font-semibold text-gray-700 dark:text-gray-200 tabular-nums">{{ globalTotals.units.toLocaleString('pt-BR') }}</span>
-                    <span class="text-[10px] text-gray-400">unidades</span>
+                <div v-if="globalTotals.units" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-line bg-surface-raised">
+                    <i class="fas fa-cubes text-ink-subtle text-[10px]"></i>
+                    <span class="text-xs font-semibold text-ink tabular-nums">{{ globalTotals.units.toLocaleString('pt-BR') }}</span>
+                    <span class="text-[10px] text-ink-subtle">unidades</span>
                 </div>
                 <div v-if="globalTotals.revenue" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40">
                     <i class="fas fa-dollar-sign text-emerald-500 text-[10px]"></i>
@@ -1423,18 +1423,18 @@ const filterPanelOpen = ref(true)
             </div>
 
             <!-- Toggle cards / tabela -->
-            <div class="flex bg-gray-100 dark:bg-gray-800 rounded-xl p-1 gap-0.5 shrink-0 border border-gray-200 dark:border-gray-700">
+            <div class="flex bg-surface-sunken rounded-xl p-1 gap-0.5 shrink-0 border border-line">
                 <button @click="viewMode = 'cards'"
                     class="h-8 px-3 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all duration-150"
                     :class="viewMode === 'cards'
-                        ? 'bg-white dark:bg-gray-900 text-indigo-700 dark:text-indigo-300 shadow-sm border border-gray-200 dark:border-gray-700'
+                        ? 'bg-surface-raised text-accent shadow-sm border border-line'
                         : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-200'">
                     <i class="fas fa-table-cells-large text-[11px]"></i> Cards
                 </button>
                 <button @click="viewMode = 'table'"
                     class="h-8 px-3 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all duration-150"
                     :class="viewMode === 'table'
-                        ? 'bg-white dark:bg-gray-900 text-indigo-700 dark:text-indigo-300 shadow-sm border border-gray-200 dark:border-gray-700'
+                        ? 'bg-surface-raised text-accent shadow-sm border border-line'
                         : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-200'">
                     <i class="fas fa-table text-[11px]"></i> Tabela
                 </button>
@@ -1447,11 +1447,11 @@ const filterPanelOpen = ref(true)
             <!-- Empty state -->
             <div v-if="!filteredRows.length"
                 class="flex flex-col items-center justify-center py-24 text-center">
-                <div class="w-16 h-16 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-4">
-                    <i class="fas fa-building-circle-xmark text-gray-300 dark:text-gray-600 text-2xl"></i>
+                <div class="w-16 h-16 rounded-2xl bg-surface-sunken flex items-center justify-center mb-4">
+                    <i class="fas fa-building-circle-xmark text-ink-subtle text-2xl"></i>
                 </div>
-                <p class="font-medium text-gray-500 dark:text-gray-400">Nenhum empreendimento nesta projeção</p>
-                <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                <p class="font-medium text-ink-muted">Nenhum empreendimento nesta projeção</p>
+                <p class="text-xs text-ink-subtle dark:text-gray-500 mt-1">
                     {{ isAdmin ? 'Clique em "+ Empreendimentos" para adicionar' : 'Ajuste os filtros' }}
                 </p>
             </div>
@@ -1459,25 +1459,25 @@ const filterPanelOpen = ref(true)
             <!-- Card grid -->
             <div v-else class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
                 <div v-for="row in filteredRows" :key="rowPairKey(row)"
-                    class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm flex flex-col hover:shadow-lg hover:border-indigo-200 dark:hover:border-indigo-800/60 transition-all duration-200 group overflow-hidden">
+                    class="bg-surface-raised rounded-2xl border border-line shadow-sm flex flex-col hover:shadow-lg hover:border-indigo-200 dark:hover:border-indigo-800/60 transition-all duration-200 group overflow-hidden">
 
                     <!-- ── Card Header ────────────────────────────────────── -->
-                    <div class="p-4 border-b border-gray-100 dark:border-gray-800">
+                    <div class="p-4 border-b border-line">
                         <div class="flex items-start justify-between gap-3">
                             <div class="min-w-0 flex-1">
-                                <h3 class="font-bold text-sm text-gray-900 dark:text-white leading-snug truncate" :title="row.name">
+                                <h3 class="font-bold text-sm text-ink leading-snug truncate" :title="row.name">
                                     {{ row.name || '—' }}
                                 </h3>
                                 <div class="flex items-center gap-1.5 mt-2 flex-wrap">
                                     <span v-if="row.erp_id"
-                                        class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-800/60">
+                                        class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-accent-soft text-accent border border-accent/20">
                                         <i class="fas fa-hashtag text-[8px]"></i>CC {{ row.erp_id }}
                                     </span>
                                     <span v-else
                                         class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border border-amber-100 dark:border-amber-800/60">
                                         <i class="fas fa-circle-info text-[8px]"></i>Manual
                                     </span>
-                                    <span v-if="row.city" class="inline-flex items-center gap-1 text-[10px] text-gray-400 dark:text-gray-500 font-medium">
+                                    <span v-if="row.city" class="inline-flex items-center gap-1 text-[10px] text-ink-subtle dark:text-gray-500 font-medium">
                                         <i class="fas fa-location-dot text-[9px]"></i>{{ row.city }}
                                     </span>
                                 </div>
@@ -1486,12 +1486,12 @@ const filterPanelOpen = ref(true)
                             <div class="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                                 <button @click="openRowDefaultsModal(row)"
                                     v-tippy="'Configurar ticket médio · % Mkt · % Comissão'"
-                                    class="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                                    class="w-8 h-8 rounded-lg flex items-center justify-center text-ink-subtle hover:text-gray-700 dark:hover:text-gray-200 hover:bg-surface-hover transition-colors">
                                     <i class="fas fa-sliders text-xs"></i>
                                 </button>
                                 <button v-if="!rowDisabled" @click="openCardEdit(row)"
                                     v-tippy="'Editar metas mensais'"
-                                    class="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors">
+                                    class="w-8 h-8 rounded-lg flex items-center justify-center text-ink-subtle hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-accent-soft transition-colors">
                                     <i class="fas fa-pen text-xs"></i>
                                 </button>
                             </div>
@@ -1499,10 +1499,10 @@ const filterPanelOpen = ref(true)
 
                         <!-- KPIs compactos do card -->
                         <div class="mt-4 grid grid-cols-2 gap-2">
-                            <div class="rounded-xl bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/50 px-3 py-2">
-                                <p class="text-[9px] uppercase tracking-widest text-indigo-400 dark:text-indigo-500 font-bold">Unidades</p>
-                                <p class="text-2xl font-black text-indigo-700 dark:text-indigo-300 tabular-nums leading-none mt-0.5">{{ rowSumUnits(row) }}</p>
-                                <p class="text-[9px] text-indigo-400 dark:text-indigo-500 mt-0.5">no período</p>
+                            <div class="rounded-xl bg-accent-soft border border-accent/20 px-3 py-2">
+                                <p class="text-[9px] uppercase tracking-widest text-indigo-400 dark:text-accent font-bold">Unidades</p>
+                                <p class="text-2xl font-black text-accent tabular-nums leading-none mt-0.5">{{ rowSumUnits(row) }}</p>
+                                <p class="text-[9px] text-indigo-400 dark:text-accent mt-0.5">no período</p>
                             </div>
                             <div class="rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900/50 px-3 py-2 min-w-0">
                                 <p class="text-[9px] uppercase tracking-widest text-emerald-500 dark:text-emerald-600 font-bold">VGV</p>
@@ -1522,11 +1522,11 @@ const filterPanelOpen = ref(true)
                     </div>
 
                     <!-- ── Estoque ─────────────────────────────────────────── -->
-                    <div class="p-4 border-b border-gray-50 dark:border-gray-800/60">
+                    <div class="p-4 border-b border-line">
                         <div class="flex items-center justify-between mb-2.5">
-                            <span class="text-[10px] font-bold text-gray-400 dark:text-gray-600 uppercase tracking-widest">Estoque atual</span>
+                            <span class="text-[10px] font-bold text-ink-subtle dark:text-gray-600 uppercase tracking-widest">Estoque atual</span>
                             <span v-if="stockOf(row).total"
-                                class="text-[10px] font-semibold text-gray-500 dark:text-gray-400 tabular-nums bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full">
+                                class="text-[10px] font-semibold text-ink-muted tabular-nums bg-surface-sunken px-2 py-0.5 rounded-full">
                                 {{ stockOf(row).total }} total
                             </span>
                         </div>
@@ -1565,8 +1565,8 @@ const filterPanelOpen = ref(true)
                             </div>
                         </template>
                         <template v-else-if="stockOf(row).total">
-                            <div class="h-3 w-full rounded-full bg-gray-100 dark:bg-gray-800 mb-2"></div>
-                            <p class="text-[10px] text-gray-400 dark:text-gray-600 italic">Dados detalhados do ERP indisponíveis · {{ stockOf(row).total }} unid. total</p>
+                            <div class="h-3 w-full rounded-full bg-surface-sunken mb-2"></div>
+                            <p class="text-[10px] text-ink-subtle dark:text-gray-600 italic">Dados detalhados do ERP indisponíveis · {{ stockOf(row).total }} unid. total</p>
                         </template>
                         <template v-else>
                             <!-- Manual: sem summary nem total → permite informar total de unidades -->
@@ -1581,19 +1581,19 @@ const filterPanelOpen = ref(true)
                     <!-- ── Metas mensais ─────────────────────────────────── -->
                     <div class="p-4 flex-1 flex flex-col">
                         <div class="flex items-center justify-between mb-3">
-                            <span class="text-[10px] font-bold text-gray-400 dark:text-gray-600 uppercase tracking-widest">Metas mensais</span>
+                            <span class="text-[10px] font-bold text-ink-subtle dark:text-gray-600 uppercase tracking-widest">Metas mensais</span>
                             <button v-if="!rowDisabled" @click="openCardEdit(row)"
-                                class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] text-indigo-600 dark:text-indigo-400 font-semibold hover:bg-indigo-50 dark:hover:bg-indigo-900/20 opacity-0 group-hover:opacity-100 transition-all">
+                                class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] text-accent font-semibold hover:bg-accent-soft opacity-0 group-hover:opacity-100 transition-all">
                                 <i class="fas fa-pen text-[9px]"></i> Editar
                             </button>
                         </div>
 
                         <!-- Headers colunas -->
                         <div class="flex items-center gap-2 px-1 mb-1">
-                            <span class="text-[9px] text-gray-300 dark:text-gray-700 font-bold uppercase w-14 shrink-0">Mês</span>
+                            <span class="text-[9px] text-ink-subtle font-bold uppercase w-14 shrink-0">Mês</span>
                             <div class="flex-1"></div>
-                            <span class="text-[9px] text-gray-300 dark:text-gray-700 font-bold uppercase w-8 text-right shrink-0">Un.</span>
-                            <span class="text-[9px] text-gray-300 dark:text-gray-700 font-bold uppercase w-28 text-right shrink-0">VGV</span>
+                            <span class="text-[9px] text-ink-subtle font-bold uppercase w-8 text-right shrink-0">Un.</span>
+                            <span class="text-[9px] text-ink-subtle font-bold uppercase w-28 text-right shrink-0">VGV</span>
                         </div>
 
                         <!-- Linhas mensais -->
@@ -1601,31 +1601,31 @@ const filterPanelOpen = ref(true)
                             <div v-for="ym in monthKeys" :key="ym"
                                 class="flex items-center gap-0 py-1 px-1 rounded-lg cursor-pointer hover:bg-indigo-50/60 dark:hover:bg-indigo-900/10 transition-colors"
                                 @click="!rowDisabled && openCardEdit(row)">
-                                <span class="text-[10px] font-semibold text-gray-500 dark:text-gray-400 w-14 shrink-0 tabular-nums">
+                                <span class="text-[10px] font-semibold text-ink-muted w-14 shrink-0 tabular-nums">
                                     {{ shortMonthLabel(ym) }}
                                 </span>
-                                <div class="flex-1 h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                                <div class="flex-1 h-1.5 bg-surface-sunken rounded-full overflow-hidden">
                                     <div class="h-full rounded-full transition-all duration-500"
                                         :class="(row.values?.[ym]?.units || 0) > 0 ? 'bg-indigo-400 dark:bg-indigo-500' : ''"
                                         :style="{ width: rowMaxUnits(row) > 0 ? Math.round((row.values?.[ym]?.units || 0) / rowMaxUnits(row) * 100) + '%' : '0%' }" />
                                 </div>
                                 <span class="text-xs font-bold w-8 text-right shrink-0 tabular-nums"
-                                    :class="(row.values?.[ym]?.units || 0) > 0 ? 'text-indigo-700 dark:text-indigo-300' : 'text-gray-200 dark:text-gray-800'">
+                                    :class="(row.values?.[ym]?.units || 0) > 0 ? 'text-accent' : 'text-ink-subtle'">
                                     {{ row.values?.[ym]?.units || 0 }}
-                                    <!-- <span v-if="vgvValue(row, ym) > 0" class="text-[9px] text-gray-400 ml-1">({{ brlShortFmt(vgvValue(row, ym)) }} VGV)</span> -->
+                                    <!-- <span v-if="vgvValue(row, ym) > 0" class="text-[9px] text-ink-subtle ml-1">({{ brlShortFmt(vgvValue(row, ym)) }} VGV)</span> -->
                                 </span>
                                 <span class="text-[10px] w-28 text-right shrink-0 tabular-nums font-semibold truncate"
-                                    :class="vgvValue(row, ym) > 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-gray-200 dark:text-gray-800'">
+                                    :class="vgvValue(row, ym) > 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-ink-subtle'">
                                     {{ vgvValue(row, ym) > 0 ? brlShortFmt(vgvValue(row, ym)) : '—' }}
                                 </span>
                             </div>
                         </div>
 
                         <!-- Total row -->
-                        <div class="flex items-center gap-2 mt-3 pt-3 border-t border-gray-100 dark:border-gray-800 px-1">
-                            <span class="text-xs font-bold text-gray-700 dark:text-gray-300 w-14 shrink-0">Total</span>
-                            <div class="flex-1 h-px bg-gray-100 dark:bg-gray-800"></div>
-                            <span class="text-sm font-black text-gray-900 dark:text-white w-8 text-right shrink-0 tabular-nums">{{ rowSumUnits(row) }}</span>
+                        <div class="flex items-center gap-2 mt-3 pt-3 border-t border-line px-1">
+                            <span class="text-xs font-bold text-ink-muted w-14 shrink-0">Total</span>
+                            <div class="flex-1 h-px bg-surface-sunken"></div>
+                            <span class="text-sm font-black text-ink w-8 text-right shrink-0 tabular-nums">{{ rowSumUnits(row) }}</span>
                             <span class="text-xs font-black text-emerald-700 dark:text-emerald-400 w-28 text-right shrink-0 tabular-nums truncate">{{ brlShortFmt(rowSumVgv(row)) }}</span>
                         </div>
 
@@ -1633,15 +1633,15 @@ const filterPanelOpen = ref(true)
                         <div v-if="row.defaultPrice || row.defaultMarketingPct || row.defaultCommissionPct"
                             class="flex items-center gap-1.5 mt-3 flex-wrap">
                             <span v-if="row.defaultPrice"
-                                class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-[9px] text-gray-500 dark:text-gray-400 font-semibold tabular-nums">
+                                class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-surface-sunken border border-line text-[9px] text-ink-muted font-semibold tabular-nums">
                                 <i class="fas fa-tag text-[8px]"></i>{{ brlShortFmt(row.defaultPrice) }}
                             </span>
                             <span v-if="row.defaultMarketingPct"
-                                class="inline-flex items-center px-2 py-0.5 rounded-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-[9px] text-gray-500 dark:text-gray-400 font-semibold">
+                                class="inline-flex items-center px-2 py-0.5 rounded-full bg-surface-sunken border border-line text-[9px] text-ink-muted font-semibold">
                                 Mkt {{ Number(row.defaultMarketingPct).toFixed(1) }}%
                             </span>
                             <span v-if="row.defaultCommissionPct"
-                                class="inline-flex items-center px-2 py-0.5 rounded-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-[9px] text-gray-500 dark:text-gray-400 font-semibold">
+                                class="inline-flex items-center px-2 py-0.5 rounded-full bg-surface-sunken border border-line text-[9px] text-ink-muted font-semibold">
                                 Com {{ Number(row.defaultCommissionPct).toFixed(1) }}%
                             </span>
                         </div>
@@ -1653,11 +1653,11 @@ const filterPanelOpen = ref(true)
 
         <!-- ── Tabela (Grade) ──────────────────────────────────────────────── -->
         <div v-if="viewMode === 'table'"
-            class="rounded-xl border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/50 shadow-sm overflow-auto max-h-[80vh]">
+            class="rounded-xl border border-line bg-white/80 dark:bg-gray-900/50 shadow-sm overflow-auto max-h-[80vh]">
             <table class="min-w-[1100px] w-full text-sm">
                 <thead
                     class="bg-gray-50/95 dark:bg-gray-900/85 sticky top-0 z-20 backdrop-blur supports-[backdrop-filter]:bg-gray-50/80">
-                    <tr class="text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-900">
+                    <tr class="text-ink-muted bg-surface-sunken">
                         <th
                             class="px-4 py-3 text-left sticky left-0 top-0 z-[70] bg-inherit border dark:border-gray-800">
                             Empreendimento
@@ -1666,11 +1666,11 @@ const filterPanelOpen = ref(true)
                         <th v-for="ym in monthKeys" :key="ym"
                             class="px-4 py-2 text-center font-medium tracking-wide sticky top-0 z-[50] bg-inherit border dark:border-gray-800">
                             <div class="flex flex-col items-center gap-1">
-                                <div class="text-sm font-semibold text-gray-800 dark:text-gray-100">
+                                <div class="text-sm font-semibold text-ink">
                                     {{ monthLabel(ym) }}
                                 </div>
 
-                                <div class="flex items-center gap-3 text-[10px] text-gray-600 dark:text-gray-300">
+                                <div class="flex items-center gap-3 text-[10px] text-ink-muted">
                                     <span class="inline-flex items-center gap-1">
                                         <i class="fas fa-cubes text-[10px]"></i>
                                         <span class="font-semibold">{{ monthTotals[ym]?.units || 0 }}</span>
@@ -1694,11 +1694,11 @@ const filterPanelOpen = ref(true)
                 <tbody>
                     <tr v-for="(r, idx) in filteredRows"
                         :key="`${r.enterprise_key}@@${r.erp_id}@@${r.alias_id}@@${idx}`"
-                        :class="idx % 2 ? 'bg-gray-100 dark:bg-gray-900' : 'bg-white dark:bg-[#19222e]'">
+                        :class="idx % 2 ? 'bg-surface-sunken' : 'bg-white dark:bg-[#19222e]'">
 
                         <!-- Coluna fixa -->
                         <td class="px-3 py-3 align-top sticky left-0 z-[5] border dark:border-gray-800"
-                            :class="idx % 2 ? 'bg-gray-100 dark:bg-gray-900' : 'bg-white dark:bg-[#19222e]'">
+                            :class="idx % 2 ? 'bg-surface-sunken' : 'bg-white dark:bg-[#19222e]'">
                             <div class="w-[280px] max-w-[280px]">
                                 <div class="flex items-start justify-between gap-3">
                                     <div class="min-w-0 flex-1">
@@ -1720,15 +1720,15 @@ const filterPanelOpen = ref(true)
 
                                     <div class="flex flex-col items-center gap-2">
                                         <div
-                                            class="hidden sm:flex flex-col gap-1 px-2 py-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-white/70 dark:bg-gray-900/40">
+                                            class="hidden sm:flex flex-col gap-1 px-2 py-1 rounded-lg border border-line bg-white/70 dark:bg-gray-900/40">
                                             <div v-tippy="'Comissão'"
-                                                class="h-54 w-8 flex items-center justify-between cursor-pointer gap-1 text-[12px] text-gray-600 dark:text-gray-300">
+                                                class="h-54 w-8 flex items-center justify-between cursor-pointer gap-1 text-[12px] text-ink-muted">
                                                 {{ Number(r.defaultCommissionPct || 0).toFixed(2) }}%
                                             </div>
                                         </div>
 
                                         <button type="button" @click="openRowDefaultsModal(r)" :disabled="rowDisabled"
-                                            class="h-7 w-12 inline-flex items-center justify-center rounded-lg border dark:border-gray-700 bg-white/90 dark:bg-gray-900/40 hover:bg-gray-50 dark:hover:bg-gray-800/70"
+                                            class="h-7 w-12 inline-flex items-center justify-center rounded-lg border border-line bg-surface-raised/40 hover:bg-surface-hover/70"
                                             v-tippy="'Editar ticket médio / % mkt / % comissão / cidade'">
                                             <i class="fas fa-pen-to-square"></i>
                                         </button>
@@ -1744,7 +1744,7 @@ const filterPanelOpen = ref(true)
                                     <label class="text-[10px] text-gray-500 block text-center">Qtd. Uni</label>
                                     <input :disabled="rowDisabled" v-model.number="ensureCell(r, ym).units"
                                         @input="onUnitsInput(r, ym)" type="number" min="0"
-                                        class="w-14 h-8 border text-center border-gray-200 dark:border-gray-800 rounded px-2 bg-white/90 dark:bg-gray-900/70 focus:outline-none"
+                                        class="w-14 h-8 border text-center border-line rounded px-2 bg-surface-raised focus:outline-none"
                                         placeholder="Uds" />
                                 </div>
 
@@ -1753,7 +1753,7 @@ const filterPanelOpen = ref(true)
                                     <input :disabled="rowDisabled" type="text" inputmode="numeric"
                                         :value="moneyBR(vgvValue(r, ym))"
                                         @input="(e) => { const c = ensureCell(r, ym); c.total_manual = true; c.total = parseMoneyBR(e.target.value); setMaskedInputValue(e.target, vgvValue(r, ym)); r.values = { ...r.values }; }"
-                                        class="w-32 h-8 border border-gray-200 dark:border-gray-800 rounded px-2 bg-white/90 dark:bg-gray-900/70 focus:outline-none" />
+                                        class="w-32 h-8 border border-line rounded px-2 bg-surface-raised focus:outline-none" />
 
                                     <div class="text-[10px] text-gray-500 flex items-center justify-between">
                                         <span>{{ fmtBRL((r.values[ym]?.price || 0) || (r.defaultPrice || 0)) }}</span>
@@ -1769,10 +1769,10 @@ const filterPanelOpen = ref(true)
 
                         <!-- TOTAL linha -->
                         <td class="px-3 py-2 text-center sticky right-0 z-10 border-l dark:border-gray-700"
-                            :class="idx % 2 ? 'bg-gray-100 dark:bg-gray-900' : 'bg-white dark:bg-[#19222e]'">
+                            :class="idx % 2 ? 'bg-surface-sunken' : 'bg-white dark:bg-[#19222e]'">
                             <div class="flex flex-col items-center">
                                 <div
-                                    class="inline-flex items-center gap-1 text-[11px] text-gray-600 dark:text-gray-300">
+                                    class="inline-flex items-center gap-1 text-[11px] text-ink-muted">
                                     <i class="fas fa-cubes text-[11px]"></i>
                                     <span class="font-semibold">{{ rowSumUnits(r) }}</span>
                                 </div>
@@ -1805,22 +1805,22 @@ const filterPanelOpen = ref(true)
                 <div v-if="showRowDefaults" class="fixed inset-0 z-[80] flex items-center justify-center p-4">
                     <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="closeRowDefaultsModal"></div>
 
-                    <div class="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-lg flex flex-col overflow-hidden border border-gray-200 dark:border-gray-800"
+                    <div class="relative bg-surface-raised rounded-2xl shadow-2xl w-full max-w-lg flex flex-col overflow-hidden border border-line"
                         @click.stop>
 
                         <!-- Header -->
-                        <div class="px-6 py-5 border-b border-gray-100 dark:border-gray-800 bg-gradient-to-r from-slate-50 to-transparent dark:from-slate-800/30 flex items-start justify-between shrink-0">
+                        <div class="px-6 py-5 border-b border-line bg-gradient-to-r from-slate-50 to-transparent dark:from-slate-800/30 flex items-start justify-between shrink-0">
                             <div class="min-w-0 flex-1">
                                 <div class="flex items-center gap-2 mb-1">
                                     <div class="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0">
                                         <i class="fas fa-sliders text-slate-500 dark:text-slate-400 text-sm"></i>
                                     </div>
-                                    <h3 class="font-bold text-gray-900 dark:text-white">Configurações do empreendimento</h3>
+                                    <h3 class="font-bold text-ink">Configurações do empreendimento</h3>
                                 </div>
-                                <p class="text-xs text-gray-400 dark:text-gray-500 ml-10 truncate">{{ rowDefaultsTarget?.name }}</p>
+                                <p class="text-xs text-ink-subtle dark:text-gray-500 ml-10 truncate">{{ rowDefaultsTarget?.name }}</p>
                             </div>
                             <button @click="closeRowDefaultsModal"
-                                class="w-8 h-8 rounded-xl flex items-center justify-center text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors shrink-0 ml-3">
+                                class="w-8 h-8 rounded-xl flex items-center justify-center text-ink-subtle hover:text-gray-700 dark:hover:text-gray-200 hover:bg-surface-hover transition-colors shrink-0 ml-3">
                                 <i class="fas fa-times text-sm"></i>
                             </button>
                         </div>
@@ -1830,20 +1830,20 @@ const filterPanelOpen = ref(true)
 
                             <!-- Identidade -->
                             <div>
-                                <p class="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-600 mb-3">Identidade</p>
+                                <p class="text-[10px] font-bold uppercase tracking-widest text-ink-subtle dark:text-gray-600 mb-3">Identidade</p>
                                 <div class="space-y-3">
                                     <div>
-                                        <label class="text-xs font-semibold text-gray-600 dark:text-gray-300 block mb-1.5">Nome de exibição</label>
+                                        <label class="text-xs font-semibold text-ink-muted block mb-1.5">Nome de exibição</label>
                                         <input id="row-default-name" v-model="rowDefaultsForm.name"
-                                            class="w-full h-10 border border-gray-200 dark:border-gray-700 rounded-xl px-3.5 bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/40 focus:border-indigo-300 dark:focus:border-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                            class="w-full h-10 border border-line rounded-xl px-3.5 bg-white dark:bg-gray-800 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-indigo-400/40 focus:border-indigo-300 dark:focus:border-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                                             :disabled="rowDisabled" placeholder="Nome do empreendimento" />
                                     </div>
                                     <div>
-                                        <label class="text-xs font-semibold text-gray-600 dark:text-gray-300 block mb-1.5">
+                                        <label class="text-xs font-semibold text-ink-muted block mb-1.5">
                                             <i class="fas fa-location-dot text-indigo-400 mr-1 text-[10px]"></i>Cidade
                                         </label>
                                         <input id="row-default-city" v-model="rowDefaultsForm.city"
-                                            class="w-full h-10 border border-gray-200 dark:border-gray-700 rounded-xl px-3.5 bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/40 focus:border-indigo-300 dark:focus:border-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                            class="w-full h-10 border border-line rounded-xl px-3.5 bg-white dark:bg-gray-800 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-indigo-400/40 focus:border-indigo-300 dark:focus:border-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                                             placeholder="Ex.: São Paulo" :disabled="rowDisabled" />
                                     </div>
 
@@ -1852,58 +1852,58 @@ const filterPanelOpen = ref(true)
 
                             <!-- Defaults financeiros -->
                             <div>
-                                <p class="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-600 mb-3">Defaults financeiros</p>
+                                <p class="text-[10px] font-bold uppercase tracking-widest text-ink-subtle dark:text-gray-600 mb-3">Defaults financeiros</p>
                                 <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
                                     <div>
-                                        <label class="text-xs font-semibold text-gray-600 dark:text-gray-300 block mb-1.5">
+                                        <label class="text-xs font-semibold text-ink-muted block mb-1.5">
                                             <i class="fas fa-tag text-indigo-400 mr-1 text-[9px]"></i>Ticket médio
                                         </label>
                                         <input id="row-default-price" type="text" inputmode="numeric" :disabled="rowDisabled"
                                             :value="moneyBR(rowDefaultsForm.defaultPrice)"
                                             @input="(e) => { rowDefaultsForm.defaultPrice = parseMoneyBR(e.target.value); setMaskedInputValue(e.target, rowDefaultsForm.defaultPrice); }"
-                                            class="w-full h-10 border border-gray-200 dark:border-gray-700 rounded-xl px-3.5 bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/40 focus:border-indigo-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-right tabular-nums" />
+                                            class="w-full h-10 border border-line rounded-xl px-3.5 bg-white dark:bg-gray-800 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-indigo-400/40 focus:border-indigo-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-right tabular-nums" />
                                     </div>
                                     
                                     <!-- Total de unidades — só empreendimentos manuais -->
                                     <div v-if="!rowDefaultsTarget?.erp_id">
-                                        <label class="text-xs font-semibold text-gray-600 dark:text-gray-300 block mb-1.5">
+                                        <label class="text-xs font-semibold text-ink-muted block mb-1.5">
                                             <i class="fas fa-cubes text-indigo-400 mr-1 text-[10px]"></i>Total unidades
                                         </label>
                                         <input
                                             type="number" min="0" step="1"
                                             v-model.number="rowDefaultsForm.totalUnits"
                                             :disabled="rowDisabled"
-                                            class="w-full h-10 border border-gray-200 dark:border-gray-700 rounded-xl px-3.5 bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/40 focus:border-indigo-300 dark:focus:border-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-right tabular-nums"
+                                            class="w-full h-10 border border-line rounded-xl px-3.5 bg-white dark:bg-gray-800 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-indigo-400/40 focus:border-indigo-300 dark:focus:border-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-right tabular-nums"
                                             placeholder="0" /> 
                                     </div>
 
                                     <div>
-                                        <label class="text-xs font-semibold text-gray-600 dark:text-gray-300 block mb-1.5">
+                                        <label class="text-xs font-semibold text-ink-muted block mb-1.5">
                                             <i class="fas fa-bullhorn text-violet-400 mr-1 text-[9px]"></i>% Marketing
                                         </label>
                                         <div class="relative">
                                             <input type="number" min="0" max="100" step="0.01"
                                                 v-model.number="rowDefaultsForm.defaultMarketingPct" :disabled="rowDisabled"
-                                                class="w-full h-10 border border-gray-200 dark:border-gray-700 rounded-xl px-3.5 pr-7 bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-400/40 focus:border-violet-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-right tabular-nums" />
-                                            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none">%</span>
+                                                class="w-full h-10 border border-line rounded-xl px-3.5 pr-7 bg-white dark:bg-gray-800 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-violet-400/40 focus:border-violet-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-right tabular-nums" />
+                                            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-ink-subtle pointer-events-none">%</span>
                                         </div>
                                     </div>
                                     <div>
-                                        <label class="text-xs font-semibold text-gray-600 dark:text-gray-300 block mb-1.5">
+                                        <label class="text-xs font-semibold text-ink-muted block mb-1.5">
                                             <i class="fas fa-handshake text-emerald-400 mr-1 text-[9px]"></i>% Comissão
                                         </label>
                                         <div class="relative">
                                             <input type="number" min="0" max="100" step="0.01"
                                                 v-model.number="rowDefaultsForm.defaultCommissionPct" :disabled="rowDisabled"
-                                                class="w-full h-10 border border-gray-200 dark:border-gray-700 rounded-xl px-3.5 pr-7 bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-400/40 focus:border-emerald-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-right tabular-nums" />
-                                            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none">%</span>
+                                                class="w-full h-10 border border-line rounded-xl px-3.5 pr-7 bg-white dark:bg-gray-800 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-emerald-400/40 focus:border-emerald-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-right tabular-nums" />
+                                            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-ink-subtle pointer-events-none">%</span>
                                         </div>
                                     </div>
                                 </div>
                                 <!-- Preview valores -->
                                 <div v-if="rowDefaultsForm.defaultPrice || rowDefaultsForm.defaultMarketingPct || rowDefaultsForm.defaultCommissionPct"
                                     class="mt-3 flex items-center gap-2 flex-wrap">
-                                    <span v-if="rowDefaultsForm.defaultPrice" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900 text-[10px] font-semibold text-indigo-700 dark:text-indigo-400 tabular-nums">
+                                    <span v-if="rowDefaultsForm.defaultPrice" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-accent-soft border border-accent/20 text-[10px] font-semibold text-accent tabular-nums">
                                         <i class="fas fa-tag text-[8px]"></i> {{ brlShortFmt(rowDefaultsForm.defaultPrice) }}/un.
                                     </span>
                                     <span v-if="rowDefaultsForm.defaultMarketingPct" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-violet-50 dark:bg-violet-950/30 border border-violet-100 dark:border-violet-900 text-[10px] font-semibold text-violet-700 dark:text-violet-400">
@@ -1917,41 +1917,41 @@ const filterPanelOpen = ref(true)
 
                             <!-- CC vinculado -->
                             <div>
-                                <p class="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-600 mb-3">Centro de custo (ERP)</p>
+                                <p class="text-[10px] font-bold uppercase tracking-widest text-ink-subtle dark:text-gray-600 mb-3">Centro de custo (ERP)</p>
                                 <button type="button" :disabled="rowDisabled" @click="openEditEnterpriseModal(rowDefaultsTarget)"
                                     class="w-full flex items-center justify-between px-4 py-3 rounded-xl border-2 transition-all"
                                     :class="rowDefaultsTarget?.erp_id
-                                        ? 'border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-950/30 hover:border-indigo-400 dark:hover:border-indigo-600'
+                                        ? 'border-accent/30 bg-accent-soft hover:border-indigo-400 dark:hover:border-indigo-600'
                                         : 'border-dashed border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/20 hover:border-amber-400'">
                                     <div class="flex items-center gap-3">
                                         <div class="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
                                             :class="rowDefaultsTarget?.erp_id ? 'bg-indigo-100 dark:bg-indigo-900' : 'bg-amber-100 dark:bg-amber-900/50'">
                                             <i class="fas text-sm"
-                                                :class="rowDefaultsTarget?.erp_id ? 'fa-hashtag text-indigo-500' : 'fa-triangle-exclamation text-amber-500'"></i>
+                                                :class="rowDefaultsTarget?.erp_id ? 'fa-hashtag text-accent' : 'fa-triangle-exclamation text-amber-500'"></i>
                                         </div>
                                         <div class="text-left">
                                             <p class="text-xs font-bold"
-                                                :class="rowDefaultsTarget?.erp_id ? 'text-indigo-700 dark:text-indigo-300' : 'text-amber-700 dark:text-amber-400'">
+                                                :class="rowDefaultsTarget?.erp_id ? 'text-accent' : 'text-amber-700 dark:text-amber-400'">
                                                 {{ rowDefaultsTarget?.erp_id ? `CC ${rowDefaultsTarget.erp_id}` : 'Sem centro de custo' }}
                                             </p>
-                                            <p class="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">
+                                            <p class="text-[10px] text-ink-subtle dark:text-gray-500 mt-0.5">
                                                 {{ rowDefaultsTarget?.erp_id ? 'Clique para trocar o vínculo ERP' : 'Empreendimento manual — clique para vincular' }}
                                             </p>
                                         </div>
                                     </div>
-                                    <i class="fas fa-chevron-right text-xs text-gray-300 dark:text-gray-600 shrink-0"></i>
+                                    <i class="fas fa-chevron-right text-xs text-ink-subtle shrink-0"></i>
                                 </button>
                             </div>
 
                             <!-- Zona destrutiva -->
-                            <div v-if="!rowDisabled" class="pt-1 border-t border-gray-100 dark:border-gray-800">
-                                <p class="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-600 mb-3">Ações</p>
+                            <div v-if="!rowDisabled" class="pt-1 border-t border-line">
+                                <p class="text-[10px] font-bold uppercase tracking-widest text-ink-subtle dark:text-gray-600 mb-3">Ações</p>
                                 <div class="flex items-center gap-2">
                                     <button type="button"
-                                        class="flex-1 h-9 px-3 rounded-xl border border-gray-200 dark:border-gray-700 text-xs font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center justify-center gap-2 transition-colors"
+                                        class="flex-1 h-9 px-3 rounded-xl border border-line text-xs font-semibold text-ink-muted hover:bg-surface-hover flex items-center justify-center gap-2 transition-colors"
                                         @click="rowDefaultsTarget && duplicateRow(rowDefaultsTarget)"
                                         :disabled="!rowDefaultsTarget">
-                                        <i class="fas fa-copy text-gray-400"></i> Duplicar
+                                        <i class="fas fa-copy text-ink-subtle"></i> Duplicar
                                     </button>
                                     <button type="button"
                                         class="flex-1 h-9 px-3 rounded-xl border border-red-200 dark:border-red-900 text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 flex items-center justify-center gap-2 transition-colors"
@@ -1964,18 +1964,18 @@ const filterPanelOpen = ref(true)
                         </div>
 
                         <!-- Footer -->
-                        <div class="px-6 py-4 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/20 flex items-center justify-between shrink-0">
-                            <p class="text-[10px] text-gray-400 dark:text-gray-600">
+                        <div class="px-6 py-4 border-t border-line bg-gray-50/50 dark:bg-gray-800/20 flex items-center justify-between shrink-0">
+                            <p class="text-[10px] text-ink-subtle dark:text-gray-600">
                                 <i class="fas fa-circle-info mr-1"></i>Salvo ao confirmar na tela principal
                             </p>
                             <div class="flex items-center gap-2">
                                 <button type="button"
-                                    class="h-9 px-4 rounded-xl border border-gray-200 dark:border-gray-700 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                                    class="h-9 px-4 rounded-xl border border-line text-sm font-medium text-ink-muted hover:bg-surface-hover transition-colors"
                                     @click="closeRowDefaultsModal">
                                     Cancelar
                                 </button>
                                 <button type="button"
-                                    class="h-9 px-5 rounded-xl bg-indigo-600 text-white text-sm font-bold hover:bg-indigo-500 transition-colors shadow-sm shadow-indigo-200 dark:shadow-indigo-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    class="h-9 px-5 rounded-xl bg-accent text-white text-sm font-bold hover:bg-indigo-500 transition-colors shadow-sm shadow-indigo-200 dark:shadow-indigo-900 disabled:opacity-50 disabled:cursor-not-allowed"
                                     @click="applyRowDefaultsModal" :disabled="rowDisabled">
                                     Aplicar
                                 </button>
@@ -1993,45 +1993,45 @@ const filterPanelOpen = ref(true)
                 <div v-if="showAdd" class="fixed inset-0 z-[90] flex items-center justify-center p-4">
                     <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="closeAddModal"></div>
 
-                    <div class="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden border border-gray-200 dark:border-gray-800"
+                    <div class="relative bg-surface-raised rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden border border-line"
                         @click.stop>
 
                         <!-- Header -->
-                        <div class="px-6 py-5 border-b border-gray-100 dark:border-gray-800 bg-gradient-to-r from-indigo-50 to-transparent dark:from-indigo-950/20 flex items-start justify-between shrink-0">
+                        <div class="px-6 py-5 border-b border-line bg-gradient-to-r from-indigo-50 to-transparent dark:from-indigo-950/20 flex items-start justify-between shrink-0">
                             <div class="min-w-0 flex-1">
                                 <div class="flex items-center gap-2 mb-0.5">
-                                    <div class="w-8 h-8 rounded-xl bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center shrink-0">
-                                        <i class="fas fa-building text-indigo-500 dark:text-indigo-400 text-sm"></i>
+                                    <div class="w-8 h-8 rounded-xl bg-accent-soft flex items-center justify-center shrink-0">
+                                        <i class="fas fa-building text-accent dark:text-indigo-400 text-sm"></i>
                                     </div>
-                                    <h3 class="font-bold text-gray-900 dark:text-white">
+                                    <h3 class="font-bold text-ink">
                                         {{ pickerMode === 'add' ? 'Adicionar empreendimentos' : 'Vincular centro de custo' }}
                                     </h3>
                                 </div>
-                                <p class="text-xs text-gray-400 dark:text-gray-500 ml-10">
+                                <p class="text-xs text-ink-subtle dark:text-gray-500 ml-10">
                                     {{ pickerMode === 'add' ? 'Selecione do ERP ou cadastre manualmente' : 'Selecione o novo vínculo de centro de custo ERP' }}
                                 </p>
                             </div>
 
                             <!-- Tab toggle ERP / Manual (modo add) -->
                             <div class="flex items-center gap-2 shrink-0 ml-4">
-                                <div v-if="pickerMode === 'add'" class="flex bg-gray-100 dark:bg-gray-800 rounded-xl p-1 gap-0.5 border border-gray-200 dark:border-gray-700">
+                                <div v-if="pickerMode === 'add'" class="flex bg-surface-sunken rounded-xl p-1 gap-0.5 border border-line">
                                     <button type="button" @click="showManualInAdd = false"
                                         class="h-7 px-3 rounded-lg text-xs font-semibold transition-all"
                                         :class="!showManualInAdd
-                                            ? 'bg-white dark:bg-gray-900 text-indigo-700 dark:text-indigo-300 shadow-sm border border-gray-200 dark:border-gray-700'
+                                            ? 'bg-surface-raised text-accent shadow-sm border border-line'
                                             : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'">
                                         <i class="fas fa-database mr-1 text-[9px]"></i>ERP
                                     </button>
                                     <button type="button" @click="showManualInAdd = true"
                                         class="h-7 px-3 rounded-lg text-xs font-semibold transition-all"
                                         :class="showManualInAdd
-                                            ? 'bg-white dark:bg-gray-900 text-amber-700 dark:text-amber-400 shadow-sm border border-gray-200 dark:border-gray-700'
+                                            ? 'bg-surface-raised text-amber-700 dark:text-amber-400 shadow-sm border border-line'
                                             : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'">
                                         <i class="fas fa-pen mr-1 text-[9px]"></i>Manual
                                     </button>
                                 </div>
                                 <button @click="closeAddModal"
-                                    class="w-8 h-8 rounded-xl flex items-center justify-center text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                                    class="w-8 h-8 rounded-xl flex items-center justify-center text-ink-subtle hover:text-gray-700 dark:hover:text-gray-200 hover:bg-surface-hover transition-colors">
                                     <i class="fas fa-times text-sm"></i>
                                 </button>
                             </div>
@@ -2040,32 +2040,32 @@ const filterPanelOpen = ref(true)
                         <!-- ── ERP picker ──────────────────────────────────── -->
                         <template v-if="!showManualInAdd">
                             <!-- Barra de busca -->
-                            <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/20 space-y-3 shrink-0">
+                            <div class="px-6 py-4 border-b border-line bg-gray-50/50 dark:bg-gray-800/20 space-y-3 shrink-0">
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                                     <div class="relative">
-                                        <i class="fas fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none"></i>
+                                        <i class="fas fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-subtle text-sm pointer-events-none"></i>
                                         <input v-model="search" @focus="store.fetchEnterprisePicker()"
                                             placeholder="Buscar por nome ou ID do ERP…"
-                                            class="w-full border border-gray-200 dark:border-gray-700 rounded-md h-10 pl-10 pr-3 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-400/40 focus:border-indigo-300 transition-colors" />
+                                            class="w-full border border-line rounded-md h-10 pl-10 pr-3 bg-surface-raised text-sm text-gray-900 dark:text-ink-subtle focus:outline-none focus:ring-2 focus:ring-indigo-400/40 focus:border-indigo-300 transition-colors" />
                                     </div>
                                     <div class="relative">
-                                        <i class="fas fa-location-dot absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none"></i>
+                                        <i class="fas fa-location-dot absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-subtle text-sm pointer-events-none"></i>
                                         <input v-model="citySearch" placeholder="Buscar por cidade…"
-                                            class="w-full border border-gray-200 dark:border-gray-700 rounded-md h-10 pl-10 pr-3 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-400/40 focus:border-indigo-300 transition-colors" />
+                                            class="w-full border border-line rounded-md h-10 pl-10 pr-3 bg-surface-raised text-sm text-gray-900 dark:text-ink-subtle focus:outline-none focus:ring-2 focus:ring-indigo-400/40 focus:border-indigo-300 transition-colors" />
                                     </div>
                                 </div>
                                 <div>
-                                    <label class="text-[10px] font-bold uppercase tracking-widest text-gray-400 block mb-1.5">Filtrar por cidades</label>
+                                    <label class="text-[10px] font-bold uppercase tracking-widest text-ink-subtle block mb-1.5">Filtrar por cidades</label>
                                     <MultiSelector :model-value="modalSelectedCities"
                                         @update:modelValue="v => modalSelectedCities = Array.isArray(v) ? v : []"
                                         :options="store.enterprisePickerCities" placeholder="Todas as cidades" :page-size="400" :select-all="true" />
                                 </div>
                                 <!-- Contagem + seleção -->
                                 <div class="flex items-center justify-between">
-                                    <span class="text-[10px] text-gray-400">
-                                        <span class="font-semibold text-gray-600 dark:text-gray-300">{{ enterprisesFilteredInModal.length }}</span> resultado(s)
+                                    <span class="text-[10px] text-ink-subtle">
+                                        <span class="font-semibold text-ink-muted">{{ enterprisesFilteredInModal.length }}</span> resultado(s)
                                     </span>
-                                    <span v-if="selectedToAdd.length" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 text-[10px] font-bold text-indigo-700 dark:text-indigo-400">
+                                    <span v-if="selectedToAdd.length" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-accent-soft border border-accent/30 text-[10px] font-bold text-accent">
                                         <i class="fas fa-check-circle text-[9px]"></i>{{ selectedToAdd.length }} selecionado(s)
                                     </span>
                                 </div>
@@ -2077,20 +2077,20 @@ const filterPanelOpen = ref(true)
                                     class="flex items-center gap-3 px-6 py-3.5 hover:bg-indigo-50/40 dark:hover:bg-indigo-950/10 cursor-pointer transition-colors group"
                                     :class="selectedToAdd.some(s => String(s.id) === String(e.id)) ? 'bg-indigo-50/60 dark:bg-indigo-950/20' : ''">
                                     <input type="checkbox" :value="e" v-model="selectedToAdd"
-                                        class="w-4 h-4 accent-indigo-600 shrink-0"
+                                        class="w-4 h-4 accent-accent shrink-0"
                                         :disabled="pickerMode === 'edit' && selectedToAdd.length > 0 && String(selectedToAdd[0]?.id) !== String(e.id)" />
-                                    <div class="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center shrink-0 group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/40 transition-colors">
-                                        <i class="fas fa-building text-gray-400 dark:text-gray-600 group-hover:text-indigo-500 text-xs transition-colors"></i>
+                                    <div class="w-8 h-8 rounded-lg bg-surface-sunken flex items-center justify-center shrink-0 group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/40 transition-colors">
+                                        <i class="fas fa-building text-ink-subtle dark:text-gray-600 group-hover:text-accent text-xs transition-colors"></i>
                                     </div>
                                     <div class="min-w-0 flex-1">
-                                        <p class="font-semibold text-sm text-gray-800 dark:text-gray-100 truncate">{{ e.name }}</p>
+                                        <p class="font-semibold text-sm text-ink truncate">{{ e.name }}</p>
                                         <div class="flex items-center gap-2 mt-0.5 flex-wrap">
-                                            <span v-if="e.city" class="text-[10px] text-gray-400 flex items-center gap-1">
+                                            <span v-if="e.city" class="text-[10px] text-ink-subtle flex items-center gap-1">
                                                 <i class="fas fa-location-dot text-[9px]"></i>{{ e.city }}
                                             </span>
                                         </div>
                                     </div>
-                                    <span class="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 shrink-0">
+                                    <span class="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full bg-surface-sunken text-ink-muted shrink-0">
                                         ERP {{ e.id }}
                                     </span>
                                 </label>
@@ -2103,26 +2103,26 @@ const filterPanelOpen = ref(true)
                                     <p class="text-sm font-medium text-red-600 dark:text-red-400">{{ store.enterprisePickerError }}</p>
                                 </div>
                                 <div v-else-if="!enterprisesFilteredInModal.length" class="flex flex-col items-center justify-center py-12 px-6 text-center">
-                                    <div class="w-12 h-12 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-3">
-                                        <i class="fas fa-magnifying-glass text-gray-300 dark:text-gray-600 text-lg"></i>
+                                    <div class="w-12 h-12 rounded-2xl bg-surface-sunken flex items-center justify-center mb-3">
+                                        <i class="fas fa-magnifying-glass text-ink-subtle text-lg"></i>
                                     </div>
-                                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Nenhum resultado encontrado</p>
-                                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">Tente ajustar os filtros de busca</p>
+                                    <p class="text-sm font-medium text-ink-muted">Nenhum resultado encontrado</p>
+                                    <p class="text-xs text-ink-subtle dark:text-gray-500 mt-1">Tente ajustar os filtros de busca</p>
                                 </div>
                             </div>
 
                             <!-- Footer ERP -->
-                            <div class="px-6 py-4 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/20 flex items-center justify-between shrink-0">
-                                <span class="text-xs text-gray-400">
+                            <div class="px-6 py-4 border-t border-line bg-gray-50/50 dark:bg-gray-800/20 flex items-center justify-between shrink-0">
+                                <span class="text-xs text-ink-subtle">
                                     {{ selectedToAdd.length ? `${selectedToAdd.length} empreendimento(s) selecionado(s)` : 'Selecione ao menos um' }}
                                 </span>
                                 <div class="flex items-center gap-2">
                                     <button @click="closeAddModal"
-                                        class="h-9 px-4 rounded-xl border border-gray-200 dark:border-gray-700 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                                        class="h-9 px-4 rounded-xl border border-line text-sm font-medium text-ink-muted hover:bg-surface-hover transition-colors">
                                         Cancelar
                                     </button>
                                     <button @click="addSelected" :disabled="!selectedToAdd.length"
-                                        class="h-9 px-5 rounded-xl bg-indigo-600 text-white text-sm font-bold hover:bg-indigo-500 transition-colors shadow-sm shadow-indigo-200 dark:shadow-indigo-900 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+                                        class="h-9 px-5 rounded-xl bg-accent text-white text-sm font-bold hover:bg-indigo-500 transition-colors shadow-sm shadow-indigo-200 dark:shadow-indigo-900 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
                                         <i class="fas fa-plus text-xs"></i>
                                         {{ pickerMode === 'add' ? 'Adicionar' : 'Confirmar vínculo' }}
                                     </button>
@@ -2142,20 +2142,20 @@ const filterPanelOpen = ref(true)
 
                                 <!-- Identidade -->
                                 <div>
-                                    <p class="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-600 mb-3">Identidade</p>
+                                    <p class="text-[10px] font-bold uppercase tracking-widest text-ink-subtle dark:text-gray-600 mb-3">Identidade</p>
                                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                                         <div>
-                                            <label class="text-xs font-semibold text-gray-600 dark:text-gray-300 block mb-1.5">Nome <span class="text-red-400">*</span></label>
+                                            <label class="text-xs font-semibold text-ink-muted block mb-1.5">Nome <span class="text-red-400">*</span></label>
                                             <input v-model="manualForm.name"
-                                                class="w-full h-10 border border-gray-200 dark:border-gray-700 rounded-xl px-3.5 bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/40 focus:border-indigo-300 transition-colors"
+                                                class="w-full h-10 border border-line rounded-xl px-3.5 bg-white dark:bg-gray-800 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-indigo-400/40 focus:border-indigo-300 transition-colors"
                                                 placeholder="Ex.: Residencial Sol Nascente" />
                                         </div>
                                         <div>
-                                            <label class="text-xs font-semibold text-gray-600 dark:text-gray-300 block mb-1.5">
+                                            <label class="text-xs font-semibold text-ink-muted block mb-1.5">
                                                 <i class="fas fa-location-dot text-indigo-400 mr-1 text-[9px]"></i>Cidade <span class="text-red-400">*</span>
                                             </label>
                                             <input v-model="manualForm.city"
-                                                class="w-full h-10 border border-gray-200 dark:border-gray-700 rounded-xl px-3.5 bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/40 focus:border-indigo-300 transition-colors"
+                                                class="w-full h-10 border border-line rounded-xl px-3.5 bg-white dark:bg-gray-800 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-indigo-400/40 focus:border-indigo-300 transition-colors"
                                                 placeholder="Ex.: Campinas" />
                                         </div>
                                     </div>
@@ -2163,36 +2163,36 @@ const filterPanelOpen = ref(true)
 
                                 <!-- Financeiros -->
                                 <div>
-                                    <p class="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-600 mb-3">Dados financeiros (opcionais)</p>
+                                    <p class="text-[10px] font-bold uppercase tracking-widest text-ink-subtle dark:text-gray-600 mb-3">Dados financeiros (opcionais)</p>
                                     <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
                                         <div>
-                                            <label class="text-xs font-semibold text-gray-600 dark:text-gray-300 block mb-1.5">Total de unidades</label>
+                                            <label class="text-xs font-semibold text-ink-muted block mb-1.5">Total de unidades</label>
                                             <input type="number" min="0" v-model.number="manualForm.totalUnits"
-                                                class="w-full h-10 border border-gray-200 dark:border-gray-700 rounded-xl px-3.5 bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/40 text-right tabular-nums transition-colors"
+                                                class="w-full h-10 border border-line rounded-xl px-3.5 bg-white dark:bg-gray-800 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-indigo-400/40 text-right tabular-nums transition-colors"
                                                 placeholder="0" />
                                         </div>
                                         <div>
-                                            <label class="text-xs font-semibold text-gray-600 dark:text-gray-300 block mb-1.5">
+                                            <label class="text-xs font-semibold text-ink-muted block mb-1.5">
                                                 <i class="fas fa-tag text-indigo-400 mr-1 text-[9px]"></i>Ticket médio
                                             </label>
                                             <input type="text" inputmode="numeric" :value="moneyBR(manualForm.defaultPrice)"
                                                 @input="(e) => { manualForm.defaultPrice = parseMoneyBR(e.target.value); setMaskedInputValue(e.target, manualForm.defaultPrice); }"
-                                                class="w-full h-10 border border-gray-200 dark:border-gray-700 rounded-xl px-3.5 bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/40 text-right tabular-nums transition-colors" />
+                                                class="w-full h-10 border border-line rounded-xl px-3.5 bg-white dark:bg-gray-800 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-indigo-400/40 text-right tabular-nums transition-colors" />
                                         </div>
                                         <div>
-                                            <label class="text-xs font-semibold text-gray-600 dark:text-gray-300 block mb-1.5">% Marketing</label>
+                                            <label class="text-xs font-semibold text-ink-muted block mb-1.5">% Marketing</label>
                                             <div class="relative">
                                                 <input type="number" min="0" max="100" step="0.01" v-model.number="manualForm.defaultMarketingPct"
-                                                    class="w-full h-10 border border-gray-200 dark:border-gray-700 rounded-xl px-3.5 pr-7 bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-400/40 text-right tabular-nums transition-colors" />
-                                                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none">%</span>
+                                                    class="w-full h-10 border border-line rounded-xl px-3.5 pr-7 bg-white dark:bg-gray-800 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-violet-400/40 text-right tabular-nums transition-colors" />
+                                                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-ink-subtle pointer-events-none">%</span>
                                             </div>
                                         </div>
                                         <div>
-                                            <label class="text-xs font-semibold text-gray-600 dark:text-gray-300 block mb-1.5">% Comissão</label>
+                                            <label class="text-xs font-semibold text-ink-muted block mb-1.5">% Comissão</label>
                                             <div class="relative">
                                                 <input type="number" min="0" max="100" step="0.01" v-model.number="manualForm.defaultCommissionPct"
-                                                    class="w-full h-10 border border-gray-200 dark:border-gray-700 rounded-xl px-3.5 pr-7 bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-400/40 text-right tabular-nums transition-colors" />
-                                                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none">%</span>
+                                                    class="w-full h-10 border border-line rounded-xl px-3.5 pr-7 bg-white dark:bg-gray-800 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-emerald-400/40 text-right tabular-nums transition-colors" />
+                                                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-ink-subtle pointer-events-none">%</span>
                                             </div>
                                         </div>
                                     </div>
@@ -2200,13 +2200,13 @@ const filterPanelOpen = ref(true)
                             </div>
 
                             <!-- Footer Manual -->
-                            <div class="px-6 py-4 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/20 flex items-center justify-between shrink-0">
-                                <p class="text-[10px] text-gray-400 dark:text-gray-600">
+                            <div class="px-6 py-4 border-t border-line bg-gray-50/50 dark:bg-gray-800/20 flex items-center justify-between shrink-0">
+                                <p class="text-[10px] text-ink-subtle dark:text-gray-600">
                                     <i class="fas fa-circle-info mr-1"></i>Campos obrigatórios: Nome e Cidade
                                 </p>
                                 <div class="flex items-center gap-2">
                                     <button @click="closeAddModal"
-                                        class="h-9 px-4 rounded-xl border border-gray-200 dark:border-gray-700 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                                        class="h-9 px-4 rounded-xl border border-line text-sm font-medium text-ink-muted hover:bg-surface-hover transition-colors">
                                         Cancelar
                                     </button>
                                     <button @click="addManualEnterprise" :disabled="!manualForm.name || !manualForm.city"
@@ -2229,7 +2229,7 @@ const filterPanelOpen = ref(true)
                 <div v-if="confirmOpen" class="fixed inset-0 z-[95] flex items-center justify-center p-4">
                     <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="confirmOpen = false"></div>
 
-                    <div class="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-lg flex flex-col overflow-hidden border border-gray-200 dark:border-gray-800"
+                    <div class="relative bg-surface-raised rounded-2xl shadow-2xl w-full max-w-lg flex flex-col overflow-hidden border border-line"
                         @click.stop>
 
                         <!-- Header destrutivo -->
@@ -2238,20 +2238,20 @@ const filterPanelOpen = ref(true)
                                 <i class="fas fa-trash text-red-500 dark:text-red-400"></i>
                             </div>
                             <div class="min-w-0 flex-1">
-                                <h3 class="font-bold text-gray-900 dark:text-white">Confirmar exclusão</h3>
-                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                <h3 class="font-bold text-ink">Confirmar exclusão</h3>
+                                <p class="text-xs text-ink-muted mt-0.5">
                                     Esta ação removerá <strong class="text-red-600 dark:text-red-400">{{ pairsToRemove.length }} empreendimento{{ pairsToRemove.length > 1 ? 's' : '' }}</strong> permanentemente da projeção.
                                 </p>
                             </div>
                             <button @click="confirmOpen = false"
-                                class="w-8 h-8 rounded-xl flex items-center justify-center text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors shrink-0">
+                                class="w-8 h-8 rounded-xl flex items-center justify-center text-ink-subtle hover:text-gray-700 dark:hover:text-gray-200 hover:bg-surface-hover transition-colors shrink-0">
                                 <i class="fas fa-times text-sm"></i>
                             </button>
                         </div>
 
                         <!-- Lista de itens a remover -->
                         <div class="px-6 py-4 max-h-64 overflow-y-auto">
-                            <p class="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-600 mb-3">Serão excluídos</p>
+                            <p class="text-[10px] font-bold uppercase tracking-widest text-ink-subtle dark:text-gray-600 mb-3">Serão excluídos</p>
                             <ul class="space-y-2">
                                 <li v-for="p in pairsToRemove"
                                     :key="p.enterprise_key + '|' + p.alias_id + '|' + (p.erp_id || '')"
@@ -2260,11 +2260,11 @@ const filterPanelOpen = ref(true)
                                         <i class="fas fa-minus text-red-500 text-[10px]"></i>
                                     </div>
                                     <div class="min-w-0 flex-1">
-                                        <p class="text-sm font-semibold text-gray-800 dark:text-gray-100 truncate">{{ p.name }}</p>
-                                        <p class="text-[10px] text-gray-400 font-mono mt-0.5 truncate">
+                                        <p class="text-sm font-semibold text-ink truncate">{{ p.name }}</p>
+                                        <p class="text-[10px] text-ink-subtle font-mono mt-0.5 truncate">
                                             <span v-if="p.erp_id">CC {{ p.erp_id }}</span>
                                             <span v-else class="text-amber-500">Manual</span>
-                                            <span class="mx-1 text-gray-300 dark:text-gray-700">·</span>
+                                            <span class="mx-1 text-ink-subtle">·</span>
                                             alias: {{ p.alias_id }}
                                         </p>
                                     </div>
@@ -2283,9 +2283,9 @@ const filterPanelOpen = ref(true)
                         </div>
 
                         <!-- Footer -->
-                        <div class="px-6 py-4 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/20 flex items-center justify-end gap-2 shrink-0">
+                        <div class="px-6 py-4 border-t border-line bg-gray-50/50 dark:bg-gray-800/20 flex items-center justify-end gap-2 shrink-0">
                             <button @click="confirmOpen = false"
-                                class="h-9 px-4 rounded-xl border border-gray-200 dark:border-gray-700 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                                class="h-9 px-4 rounded-xl border border-line text-sm font-medium text-ink-muted hover:bg-surface-hover transition-colors">
                                 Cancelar
                             </button>
                             <button @click="confirmRemovalAndSave"
@@ -2307,37 +2307,37 @@ const filterPanelOpen = ref(true)
                     <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="closeCardEdit"></div>
 
                     <!-- Panel -->
-                    <div class="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-xl max-h-[90vh] flex flex-col overflow-hidden border border-gray-200 dark:border-gray-800">
+                    <div class="relative bg-surface-raised rounded-2xl shadow-2xl w-full max-w-xl max-h-[90vh] flex flex-col overflow-hidden border border-line">
 
                         <!-- Header -->
-                        <div class="px-6 py-5 border-b border-gray-100 dark:border-gray-800 flex items-start justify-between shrink-0 bg-gradient-to-r from-indigo-50/50 to-transparent dark:from-indigo-950/20">
+                        <div class="px-6 py-5 border-b border-line flex items-start justify-between shrink-0 bg-gradient-to-r from-indigo-50/50 to-transparent dark:from-indigo-950/20">
                             <div class="min-w-0 flex-1">
-                                <h2 class="font-bold text-gray-900 dark:text-white truncate text-base">{{ cardEditRow.name }}</h2>
+                                <h2 class="font-bold text-ink truncate text-base">{{ cardEditRow.name }}</h2>
                                 <div class="flex items-center gap-2 mt-1.5 flex-wrap">
                                     <span v-if="cardEditRow.erp_id"
-                                        class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
+                                        class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-accent-soft text-accent border border-accent/30">
                                         <i class="fas fa-hashtag text-[8px]"></i>CC {{ cardEditRow.erp_id }}
                                     </span>
-                                    <span v-if="cardEditRow.city" class="flex items-center gap-1 text-[11px] text-gray-500 dark:text-gray-400">
+                                    <span v-if="cardEditRow.city" class="flex items-center gap-1 text-[11px] text-ink-muted">
                                         <i class="fas fa-location-dot text-[9px]"></i>{{ cardEditRow.city }}
                                     </span>
                                 </div>
                                 <!-- KPIs rápidos no header do modal -->
                                 <div class="flex items-center gap-4 mt-3">
                                     <div>
-                                        <p class="text-[9px] uppercase tracking-widest text-gray-400 font-bold">Total un.</p>
-                                        <p class="text-lg font-black text-indigo-700 dark:text-indigo-300 tabular-nums leading-none">{{ rowSumUnits(cardEditRow) }}</p>
+                                        <p class="text-[9px] uppercase tracking-widest text-ink-subtle font-bold">Total un.</p>
+                                        <p class="text-lg font-black text-accent tabular-nums leading-none">{{ rowSumUnits(cardEditRow) }}</p>
                                     </div>
-                                    <div class="w-px h-8 bg-gray-200 dark:bg-gray-700"></div>
+                                    <div class="w-px h-8 bg-surface-sunken"></div>
                                     <div>
-                                        <p class="text-[9px] uppercase tracking-widest text-gray-400 font-bold">VGV total</p>
+                                        <p class="text-[9px] uppercase tracking-widest text-ink-subtle font-bold">VGV total</p>
                                         <p class="text-lg font-black text-emerald-700 dark:text-emerald-400 tabular-nums leading-none">{{ brlShortFmt(rowSumVgv(cardEditRow)) }}</p>
-                                        <p class="text-[9px] text-gray-400 tabular-nums mt-0.5">{{ fmtBRL(rowSumVgv(cardEditRow)) }}</p>
+                                        <p class="text-[9px] text-ink-subtle tabular-nums mt-0.5">{{ fmtBRL(rowSumVgv(cardEditRow)) }}</p>
                                     </div>
                                 </div>
                             </div>
                             <button @click="closeCardEdit"
-                                class="w-8 h-8 rounded-xl flex items-center justify-center text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors shrink-0 ml-4">
+                                class="w-8 h-8 rounded-xl flex items-center justify-center text-ink-subtle hover:text-gray-700 dark:hover:text-gray-200 hover:bg-surface-hover transition-colors shrink-0 ml-4">
                                 <i class="fas fa-times"></i>
                             </button>
                         </div>
@@ -2345,21 +2345,21 @@ const filterPanelOpen = ref(true)
                         <!-- Months list -->
                         <div class="overflow-y-auto flex-1">
                             <!-- Col headers -->
-                            <div class="sticky top-0 z-10 flex items-center gap-3 px-6 py-2 bg-gray-50 dark:bg-gray-800/60 border-b border-gray-100 dark:border-gray-800">
-                                <span class="text-[9px] font-bold uppercase tracking-widest text-gray-400 w-24 shrink-0">Mês</span>
-                                <span class="text-[9px] font-bold uppercase tracking-widest text-gray-400 flex-1 text-center">Unidades</span>
-                                <span class="text-[9px] font-bold uppercase tracking-widest text-gray-400 flex-1 text-center">Ticket médio</span>
-                                <span class="text-[9px] font-bold uppercase tracking-widest text-gray-400 w-32 text-right shrink-0">VGV</span>
+                            <div class="sticky top-0 z-10 flex items-center gap-3 px-6 py-2 bg-surface-sunken/60 border-b border-line">
+                                <span class="text-[9px] font-bold uppercase tracking-widest text-ink-subtle w-24 shrink-0">Mês</span>
+                                <span class="text-[9px] font-bold uppercase tracking-widest text-ink-subtle flex-1 text-center">Unidades</span>
+                                <span class="text-[9px] font-bold uppercase tracking-widest text-ink-subtle flex-1 text-center">Ticket médio</span>
+                                <span class="text-[9px] font-bold uppercase tracking-widest text-ink-subtle w-32 text-right shrink-0">VGV</span>
                             </div>
 
                             <div v-for="ym in monthKeys" :key="ym"
-                                class="flex items-center gap-3 px-6 py-3 border-b border-gray-50 dark:border-gray-800/50 hover:bg-indigo-50/40 dark:hover:bg-indigo-950/10 transition-colors"
+                                class="flex items-center gap-3 px-6 py-3 border-b border-line hover:bg-indigo-50/40 dark:hover:bg-indigo-950/10 transition-colors"
                                 :class="(ensureCell(cardEditRow, ym).units || 0) > 0 ? 'bg-white dark:bg-transparent' : 'opacity-75'">
 
                                 <!-- Month label -->
                                 <div class="w-24 shrink-0">
-                                    <p class="text-sm font-bold text-gray-800 dark:text-gray-100">{{ shortMonthLabel(ym) }}</p>
-                                    <p class="text-[10px] text-gray-400 tabular-nums font-mono">{{ ym }}</p>
+                                    <p class="text-sm font-bold text-ink">{{ shortMonthLabel(ym) }}</p>
+                                    <p class="text-[10px] text-ink-subtle tabular-nums font-mono">{{ ym }}</p>
                                 </div>
 
                                 <!-- Units -->
@@ -2369,8 +2369,8 @@ const filterPanelOpen = ref(true)
                                         @input="onUnitsInput(cardEditRow, ym)"
                                         class="w-full h-10 px-3 rounded-xl border-2 text-center font-bold text-base tabular-nums transition-all focus:outline-none"
                                         :class="(ensureCell(cardEditRow, ym).units || 0) > 0
-                                            ? 'border-indigo-300 dark:border-indigo-700 bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-300 focus:border-indigo-400'
-                                            : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-400 focus:border-indigo-300'"
+                                            ? 'border-accent/40 bg-accent-soft text-accent focus:border-indigo-400'
+                                            : 'border-line bg-white dark:bg-gray-800 text-ink-subtle focus:border-indigo-300'"
                                         placeholder="0" />
                                 </div>
 
@@ -2379,31 +2379,31 @@ const filterPanelOpen = ref(true)
                                     <input type="text" inputmode="numeric"
                                         :value="moneyBR(ensureCell(cardEditRow, ym).price || (Number(ensureCell(cardEditRow, ym).units) > 0 ? cardEditRow.defaultPrice : 0))"
                                         @input="e => { const c = ensureCell(cardEditRow, ym); const p = parseMoneyBR(e.target.value); c.price = p; if (!c.total_manual) c.total = Number(c.units) * p; cardEditRow.values = { ...cardEditRow.values }; }"
-                                        class="w-full h-10 px-3 rounded-xl border-2 text-right font-semibold text-sm tabular-nums transition-all focus:outline-none border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 focus:border-emerald-300 dark:focus:border-emerald-700" />
+                                        class="w-full h-10 px-3 rounded-xl border-2 text-right font-semibold text-sm tabular-nums transition-all focus:outline-none border-line bg-white dark:bg-gray-800 text-ink focus:border-emerald-300 dark:focus:border-emerald-700" />
                                 </div>
 
                                 <!-- VGV display -->
                                 <div class="w-32 text-right shrink-0">
                                     <p class="text-sm font-bold tabular-nums"
-                                        :class="vgvValue(cardEditRow, ym) > 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-gray-200 dark:text-gray-800'">
+                                        :class="vgvValue(cardEditRow, ym) > 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-ink-subtle'">
                                         {{ vgvValue(cardEditRow, ym) > 0 ? brlShortFmt(vgvValue(cardEditRow, ym)) : '—' }}
                                     </p>
-                                    <p v-if="vgvValue(cardEditRow, ym) > 0" class="text-[9px] text-gray-400 tabular-nums mt-0.5">{{ fmtBRL(vgvValue(cardEditRow, ym)) }}</p>
+                                    <p v-if="vgvValue(cardEditRow, ym) > 0" class="text-[9px] text-ink-subtle tabular-nums mt-0.5">{{ fmtBRL(vgvValue(cardEditRow, ym)) }}</p>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Footer -->
-                        <div class="px-6 py-4 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between shrink-0 bg-gray-50/50 dark:bg-gray-800/30">
-                            <div class="text-sm text-gray-600 dark:text-gray-300 font-medium">
-                                <span class="font-black text-indigo-700 dark:text-indigo-300 tabular-nums text-base">{{ rowSumUnits(cardEditRow) }}</span>
-                                <span class="text-gray-400 mx-1 text-xs">un. ·</span>
+                        <div class="px-6 py-4 border-t border-line flex items-center justify-between shrink-0 bg-gray-50/50 dark:bg-gray-800/30">
+                            <div class="text-sm text-ink-muted font-medium">
+                                <span class="font-black text-accent tabular-nums text-base">{{ rowSumUnits(cardEditRow) }}</span>
+                                <span class="text-ink-subtle mx-1 text-xs">un. ·</span>
                                 <span class="font-black text-emerald-700 dark:text-emerald-400 tabular-nums text-base">{{ brlShortFmt(rowSumVgv(cardEditRow)) }}</span>
-                                <span class="text-[9px] text-gray-400 block tabular-nums mt-0.5">{{ fmtBRL(rowSumVgv(cardEditRow)) }}</span>
+                                <span class="text-[9px] text-ink-subtle block tabular-nums mt-0.5">{{ fmtBRL(rowSumVgv(cardEditRow)) }}</span>
                             </div>
                             <div class="flex items-center gap-2">
                                 <button @click="closeCardEdit"
-                                    class="h-9 px-4 rounded-xl border border-gray-200 dark:border-gray-700 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                                    class="h-9 px-4 rounded-xl border border-line text-sm font-medium text-ink-muted hover:bg-surface-hover transition-colors">
                                     Fechar
                                 </button>
                                 <button v-if="dirty" @click="onSaveClick" :disabled="saving"

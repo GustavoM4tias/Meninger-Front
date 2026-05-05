@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted, onUnmounted } from 'vue'
 import ChartCard from './ChartCard.vue'
 import VChart from 'vue-echarts'
 import * as echarts from 'echarts/core'
@@ -24,27 +24,47 @@ const props = defineProps({
 
 const emit = defineEmits(['abrirModal', 'filtrarSituacao'])
 
-// ═══════════════════════ THEME (always dark) ═══════════════════════
-const txt   = '#CBD5E1'   // slate-300
-const sub   = '#475569'   // slate-600
-const dim   = '#334155'   // slate-700 – gridlines
-const muted = '#1E293B'   // slate-800 – bg strips
+// ═══════════════════════ THEME (reactive light/dark) ═══════════════════════
+const isDark = ref(false)
+let themeObserver = null
+
+onMounted(() => {
+    isDark.value = document.documentElement.classList.contains('dark')
+    themeObserver = new MutationObserver(() => {
+        isDark.value = document.documentElement.classList.contains('dark')
+    })
+    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
+})
+
+onUnmounted(() => themeObserver?.disconnect())
+
+// Tokens reativos
+const txt     = computed(() => isDark.value ? '#E2E8F0' : '#0F172A')   // textos primários
+const sub     = computed(() => isDark.value ? '#94A3B8' : '#64748B')   // textos secundários
+const dim     = computed(() => isDark.value ? '#334155' : '#E2E8F0')   // gridlines
+const muted   = computed(() => isDark.value ? '#1E293B' : '#F1F5F9')   // bg de barras
+const surface = computed(() => isDark.value ? '#0F172A' : '#FFFFFF')   // bg da carta (borda de fatias/heatmap)
+const sliceBd = computed(() => isDark.value ? '#0F172A' : '#FFFFFF')   // borda entre fatias
 
 const palette = [
-    '#818CF8', // indigo
-    '#22D3EE', // cyan
-    '#34D399', // emerald
-    '#FBBF24', // amber
-    '#F87171', // red
-    '#A78BFA', // violet
-    '#F472B6', // pink
-    '#FB923C', // orange
-    '#60A5FA', // blue
-    '#4ADE80', // green
+    '#6366F1', // indigo
+    '#06B6D4', // cyan
+    '#10B981', // emerald
+    '#F59E0B', // amber
+    '#EF4444', // red
+    '#8B5CF6', // violet
+    '#EC4899', // pink
+    '#F97316', // orange
+    '#3B82F6', // blue
+    '#22C55E', // green
 ]
 
-// tooltip style – dark glass
-const TT = `background:rgba(2,6,23,0.96);border:1px solid rgba(129,140,248,0.25);border-radius:12px;font-size:12px;color:#E2E8F0;box-shadow:0 8px 32px rgba(0,0,0,0.5);padding:10px 14px;`
+// tooltip style – reativo
+const TT = computed(() =>
+    isDark.value
+        ? `background:rgba(2,6,23,0.96);border:1px solid rgba(99,102,241,0.25);border-radius:12px;font-size:12px;color:#E2E8F0;box-shadow:0 8px 32px rgba(0,0,0,0.5);padding:10px 14px;`
+        : `background:rgba(255,255,255,0.98);border:1px solid rgba(99,102,241,0.2);border-radius:12px;font-size:12px;color:#0F172A;box-shadow:0 8px 32px rgba(15,23,42,0.12);padding:10px 14px;`
+)
 
 // ═══════════════════════ HELPERS ═══════════════════════
 const safeStr  = (v, fb = '—') => (v == null || String(v).trim() === '' ? fb : String(v).trim())
@@ -163,11 +183,11 @@ const kpiCards = computed(() => {
     const topMid = mediaCounts.value.filter(([n]) => n !== 'Outros')[0]       || ['—', 0]
     const topOri = originCounts.value.filter(([n]) => n !== 'Outros')[0]      || ['—', 0]
     return [
-        { label: 'Total de Leads',   value: total,      sub: 'no período',   icon: 'fas fa-users',    color: '#818CF8', glow: 'rgba(129,140,248,0.35)' },
-        { label: 'Top Status',       value: topSt[1],   sub: topSt[0],       icon: 'fas fa-chart-pie',color: '#22D3EE', glow: 'rgba(34,211,238,0.35)'  },
-        { label: 'Top Empreend.',    value: topEmp[1],  sub: topEmp[0],      icon: 'fas fa-city',     color: '#34D399', glow: 'rgba(52,211,153,0.35)'  },
-        { label: 'Top Mídia',        value: topMid[1],  sub: topMid[0],      icon: 'fas fa-bullhorn', color: '#FBBF24', glow: 'rgba(251,191,36,0.35)'  },
-        { label: 'Top Origem',       value: topOri[1],  sub: topOri[0],      icon: 'fas fa-compass',  color: '#F472B6', glow: 'rgba(244,114,182,0.35)' },
+        { label: 'Total de Leads',   value: total,      sub: 'no período',   icon: 'fas fa-users',    color: '#6366F1' },
+        { label: 'Top Status',       value: topSt[1],   sub: topSt[0],       icon: 'fas fa-chart-pie',color: '#06B6D4' },
+        { label: 'Top Empreend.',    value: topEmp[1],  sub: topEmp[0],      icon: 'fas fa-city',     color: '#10B981' },
+        { label: 'Top Mídia',        value: topMid[1],  sub: topMid[0],      icon: 'fas fa-bullhorn', color: '#F59E0B' },
+        { label: 'Top Origem',       value: topOri[1],  sub: topOri[0],      icon: 'fas fa-compass',  color: '#EC4899' },
     ]
 })
 
@@ -179,26 +199,26 @@ const optionTrend = computed(() => {
         : 0
     return {
         backgroundColor: 'transparent',
-        tooltip: { trigger:'axis', confine:true, appendToBody:true, extraCssText: TT,
-            formatter: ps => `<span style="color:${sub}">${ps[0].name}</span><br/><span style="color:#818CF8;font-weight:600;font-size:14px">${ps[0].value}</span> leads` },
+        tooltip: { trigger:'axis', confine:true, appendToBody:true, extraCssText: TT.value,
+            formatter: ps => `<span style="color:${sub.value}">${ps[0].name}</span><br/><span style="color:#6366F1;font-weight:600;font-size:14px">${ps[0].value}</span> leads` },
         grid: { left:8, right:16, top:12, bottom: trend.value.keys.length>25 ? 52:32, containLabel:true },
         dataZoom: trend.value.keys.length > 25
-            ? [{ type:'inside' },{ type:'slider', height:18, bottom:6, borderColor:'transparent', fillerColor:'rgba(129,140,248,0.15)', handleStyle:{color:'#818CF8'}, textStyle:{color:sub} }]
+            ? [{ type:'inside' },{ type:'slider', height:18, bottom:6, borderColor:'transparent', fillerColor:'rgba(99,102,241,0.15)', handleStyle:{color:'#6366F1'}, textStyle:{color:sub.value} }]
             : [],
         xAxis: { type:'category', data:trend.value.keys, boundaryGap:false,
-            axisLabel:{ color:sub, fontSize:11, rotate: trend.value.keys.length>20?30:0 },
-            axisLine:{ lineStyle:{color:dim} }, axisTick:{show:false}, splitLine:{show:false} },
-        yAxis: { type:'value', axisLabel:{color:sub,fontSize:11}, splitLine:{lineStyle:{color:dim,type:'dashed'}}, axisLine:{show:false} },
+            axisLabel:{ color:sub.value, fontSize:11, rotate: trend.value.keys.length>20?30:0 },
+            axisLine:{ lineStyle:{color:dim.value} }, axisTick:{show:false}, splitLine:{show:false} },
+        yAxis: { type:'value', axisLabel:{color:sub.value,fontSize:11}, splitLine:{lineStyle:{color:dim.value,type:'dashed'}}, axisLine:{show:false} },
         series: [{
             name:'Leads', type:'line', smooth:0.45,
             symbolSize:6, symbol:'circle',
             data: trend.value.values,
-            lineStyle:{ color:'#818CF8', width:2.5, shadowColor:'rgba(129,140,248,0.4)', shadowBlur:8 },
-            itemStyle:{ color:'#818CF8', borderWidth:2, borderColor:'#0F172A' },
+            lineStyle:{ color:'#6366F1', width:2.5, shadowColor:'rgba(99,102,241,0.4)', shadowBlur:8 },
+            itemStyle:{ color:'#6366F1', borderWidth:2, borderColor:surface.value },
             areaStyle:{ color:{ type:'linear',x:0,y:0,x2:0,y2:1,
-                colorStops:[{offset:0,color:'rgba(129,140,248,0.35)'},{offset:1,color:'rgba(129,140,248,0.01)'}] } },
-            markLine:{ silent:true, lineStyle:{color:'rgba(129,140,248,0.4)',type:'dashed',width:1.5},
-                data:[{ type:'average', label:{color:sub,fontSize:10,formatter:`μ ${avg}`} }] }
+                colorStops:[{offset:0,color:'rgba(99,102,241,0.35)'},{offset:1,color:'rgba(99,102,241,0.01)'}] } },
+            markLine:{ silent:true, lineStyle:{color:'rgba(99,102,241,0.4)',type:'dashed',width:1.5},
+                data:[{ type:'average', label:{color:sub.value,fontSize:10,formatter:`μ ${avg}`} }] }
         }]
     }
 })
@@ -208,12 +228,12 @@ const optionFunnel = computed(() => {
     return {
         backgroundColor: 'transparent',
         color: palette,
-        tooltip: { trigger:'item', confine:true, appendToBody:true, extraCssText:TT,
-            formatter: p => `<b style="color:${palette[0]}">${p.name}</b><br/>${p.value} leads · <span style="color:${sub}">${total?((p.value/total)*100).toFixed(1):0}%</span>` },
+        tooltip: { trigger:'item', confine:true, appendToBody:true, extraCssText:TT.value,
+            formatter: p => `<b style="color:${palette[0]}">${p.name}</b><br/>${p.value} leads · <span style="color:${sub.value}">${total?((p.value/total)*100).toFixed(1):0}%</span>` },
         series: [{
             type:'funnel', left:'8%', right:'8%', top:8, bottom:8,
             sort:'descending', gap:4, minSize:'6%', maxSize:'96%',
-            label:{ position:'inside', color:'#0F172A', fontSize:11, fontWeight:600,
+            label:{ position:'inside', color:'#FFFFFF', fontSize:11, fontWeight:600,
                 formatter: p => `${p.name}\n${p.value}` },
             labelLine:{show:false},
             itemStyle:{ borderColor:'transparent', borderRadius:8 },
@@ -228,24 +248,24 @@ const optionDonutEnterprise = computed(() => {
     return {
         backgroundColor: 'transparent',
         color: palette,
-        tooltip: { trigger:'item', confine:true, appendToBody:true, extraCssText:TT,
-            formatter: p => `<b>${p.name}</b><br/>${p.value} leads · <span style="color:${sub}">${total?((p.value/total)*100).toFixed(1):0}%</span>` },
+        tooltip: { trigger:'item', confine:true, appendToBody:true, extraCssText:TT.value,
+            formatter: p => `<b>${p.name}</b><br/>${p.value} leads · <span style="color:${sub.value}">${total?((p.value/total)*100).toFixed(1):0}%</span>` },
         legend:{ type:'scroll', orient:'vertical', left:4, top:'middle',
-            textStyle:{color:sub,fontSize:10}, icon:'circle', itemWidth:7, itemHeight:7, itemGap:6 },
+            textStyle:{color:sub.value,fontSize:10}, icon:'circle', itemWidth:7, itemHeight:7, itemGap:6 },
         graphic:[{
             type:'text', left:'69%', top:'46%', style:{
-                text:`${total}`, fill:txt, fontSize:20, fontWeight:'bold', textAlign:'center'
+                text:`${total}`, fill:txt.value, fontSize:20, fontWeight:'bold', textAlign:'center'
             }
         },{
             type:'text', left:'69%', top:'55%', style:{
-                text:'leads', fill:sub, fontSize:11, textAlign:'center'
+                text:'leads', fill:sub.value, fontSize:11, textAlign:'center'
             }
         }],
         series:[{
             type:'pie', radius:['44%','68%'], center:['70%','50%'], padAngle:2,
             label:{show:false}, labelLine:{show:false},
             emphasis:{ scale:true, scaleSize:6, label:{show:false} },
-            itemStyle:{ borderColor:'#0F172A', borderWidth:2 },
+            itemStyle:{ borderColor:sliceBd.value, borderWidth:2 },
             data: enterpriseCounts.value.map(([name,value]) => ({name,value}))
         }]
     }
@@ -255,17 +275,17 @@ const optionTopEnterpriseBars = computed(() => {
     const entries = enterpriseCounts.value
     return {
         backgroundColor: 'transparent',
-        tooltip:{ trigger:'axis', confine:true, appendToBody:true, extraCssText:TT, axisPointer:{type:'none'},
+        tooltip:{ trigger:'axis', confine:true, appendToBody:true, extraCssText:TT.value, axisPointer:{type:'none'},
             formatter: ps => `<b>${ps[0].name}</b><br/><span style="color:${palette[0]};font-size:14px;font-weight:600">${ps[0].value}</span> leads` },
         grid:{ left:8, right:52, top:8, bottom:8, containLabel:true },
-        xAxis:{ type:'value', axisLabel:{show:false}, splitLine:{lineStyle:{color:dim,type:'dashed'}}, axisLine:{show:false} },
+        xAxis:{ type:'value', axisLabel:{show:false}, splitLine:{lineStyle:{color:dim.value,type:'dashed'}}, axisLine:{show:false} },
         yAxis:{ type:'category', data:entries.map(([n])=>n), inverse:true,
-            axisLabel:{color:sub,fontSize:11,width:130,overflow:'truncate'},
+            axisLabel:{color:sub.value,fontSize:11,width:130,overflow:'truncate'},
             axisLine:{show:false}, axisTick:{show:false} },
         series:[{
             name:'Leads', type:'bar', barWidth:14,
-            showBackground:true, backgroundStyle:{color:muted,borderRadius:[0,8,8,0]},
-            label:{ show:true, position:'right', color:sub, fontSize:11 },
+            showBackground:true, backgroundStyle:{color:muted.value,borderRadius:[0,8,8,0]},
+            label:{ show:true, position:'right', color:sub.value, fontSize:11 },
             data: entries.map(([,v],i) => ({
                 value: v,
                 itemStyle:{ borderRadius:[0,8,8,0],
@@ -279,37 +299,41 @@ const optionTopEnterpriseBars = computed(() => {
 const optionStackedStatusByEnterprise = computed(() => ({
     backgroundColor: 'transparent',
     color: palette,
-    tooltip:{ trigger:'axis', confine:true, appendToBody:true, extraCssText:TT, axisPointer:{type:'shadow'} },
-    legend:{ type:'scroll', top:4, textStyle:{color:sub,fontSize:10}, icon:'circle', itemWidth:7, itemHeight:7, itemGap:6 },
+    tooltip:{ trigger:'axis', confine:true, appendToBody:true, extraCssText:TT.value, axisPointer:{type:'shadow'} },
+    legend:{ type:'scroll', top:4, textStyle:{color:sub.value,fontSize:10}, icon:'circle', itemWidth:7, itemHeight:7, itemGap:6 },
     grid:{ left:8, right:12, top:48, bottom: stackedByEnterprise.value.x.length>8?52:32, containLabel:true },
     dataZoom: stackedByEnterprise.value.x.length > 8
-        ? [{type:'inside'},{type:'slider',height:16,bottom:10,borderColor:'transparent',fillerColor:'rgba(129,140,248,0.15)',handleStyle:{color:'#818CF8'},textStyle:{color:sub}}]
+        ? [{type:'inside'},{type:'slider',height:16,bottom:10,borderColor:'transparent',fillerColor:'rgba(99,102,241,0.15)',handleStyle:{color:'#6366F1'},textStyle:{color:sub.value}}]
         : [],
     xAxis:{ type:'category', data:stackedByEnterprise.value.x,
-        axisLabel:{color:sub,rotate:18,fontSize:10,width:80,overflow:'truncate'},
-        axisLine:{lineStyle:{color:dim}}, axisTick:{show:false} },
-    yAxis:{ type:'value', axisLabel:{color:sub,fontSize:11},
-        splitLine:{lineStyle:{color:dim,type:'dashed'}}, axisLine:{show:false} },
+        axisLabel:{color:sub.value,rotate:18,fontSize:10,width:80,overflow:'truncate'},
+        axisLine:{lineStyle:{color:dim.value}}, axisTick:{show:false} },
+    yAxis:{ type:'value', axisLabel:{color:sub.value,fontSize:11},
+        splitLine:{lineStyle:{color:dim.value,type:'dashed'}}, axisLine:{show:false} },
     series: stackedByEnterprise.value.series
 }))
 
 const optionHeatmap = computed(() => ({
     backgroundColor: 'transparent',
-    tooltip:{ position:'top', confine:true, appendToBody:true, extraCssText:TT,
-        formatter: p => `<b style="color:${txt}">${heatmap.value.days[p.value[1]]}</b> · ${heatmap.value.hours[p.value[0]]}<br/><span style="color:#22D3EE;font-size:15px;font-weight:700">${p.value[2]}</span> lead(s)` },
+    tooltip:{ position:'top', confine:true, appendToBody:true, extraCssText:TT.value,
+        formatter: p => `<b style="color:${txt.value}">${heatmap.value.days[p.value[1]]}</b> · ${heatmap.value.hours[p.value[0]]}<br/><span style="color:#06B6D4;font-size:15px;font-weight:700">${p.value[2]}</span> lead(s)` },
     grid:{ left:36, right:8, top:8, bottom:60, containLabel:true },
     xAxis:{ type:'category', data:heatmap.value.hours,
-        axisLabel:{color:sub,fontSize:9}, axisLine:{show:false}, axisTick:{show:false}, splitLine:{show:false} },
+        axisLabel:{color:sub.value,fontSize:9}, axisLine:{show:false}, axisTick:{show:false}, splitLine:{show:false} },
     yAxis:{ type:'category', data:heatmap.value.days,
-        axisLabel:{color:sub,fontSize:11}, axisLine:{show:false}, axisTick:{show:false} },
+        axisLabel:{color:sub.value,fontSize:11}, axisLine:{show:false}, axisTick:{show:false} },
     visualMap:{ min:0, max:Math.max(1,heatmap.value.max),
         calculable:true, orient:'horizontal', left:'center', bottom:4,
-        textStyle:{color:sub,fontSize:10},
-        inRange:{ color:['#0F172A','#164E63','#22D3EE','#A5F3FC'] } },
+        textStyle:{color:sub.value,fontSize:10},
+        inRange:{
+            color: isDark.value
+                ? ['#0F172A','#164E63','#06B6D4','#A5F3FC']
+                : ['#F1F5F9','#A5F3FC','#06B6D4','#0E7490']
+        } },
     series:[{
         type:'heatmap', data:heatmap.value.data,
-        itemStyle:{ borderRadius:4, borderWidth:3, borderColor:'#0F172A' },
-        emphasis:{ itemStyle:{ shadowBlur:10, shadowColor:'rgba(34,211,238,0.6)' } }
+        itemStyle:{ borderRadius:4, borderWidth:3, borderColor:surface.value },
+        emphasis:{ itemStyle:{ shadowBlur:10, shadowColor:'rgba(6,182,212,0.6)' } }
     }]
 }))
 
@@ -317,17 +341,17 @@ const optionOrigins = computed(() => {
     const entries = originCounts.value
     return {
         backgroundColor:'transparent',
-        tooltip:{ trigger:'axis', confine:true, appendToBody:true, extraCssText:TT, axisPointer:{type:'none'},
+        tooltip:{ trigger:'axis', confine:true, appendToBody:true, extraCssText:TT.value, axisPointer:{type:'none'},
             formatter: ps => `<b>${ps[0].name}</b><br/><span style="color:${palette[2]};font-size:14px;font-weight:600">${ps[0].value}</span> leads` },
         grid:{ left:8, right:52, top:8, bottom:8, containLabel:true },
-        xAxis:{ type:'value', axisLabel:{show:false}, splitLine:{lineStyle:{color:dim,type:'dashed'}}, axisLine:{show:false} },
+        xAxis:{ type:'value', axisLabel:{show:false}, splitLine:{lineStyle:{color:dim.value,type:'dashed'}}, axisLine:{show:false} },
         yAxis:{ type:'category', data:entries.map(([n])=>n), inverse:true,
-            axisLabel:{color:sub,fontSize:11,width:130,overflow:'truncate'},
+            axisLabel:{color:sub.value,fontSize:11,width:130,overflow:'truncate'},
             axisLine:{show:false}, axisTick:{show:false} },
         series:[{
             name:'Leads', type:'bar', barWidth:14,
-            showBackground:true, backgroundStyle:{color:muted,borderRadius:[0,8,8,0]},
-            label:{show:true,position:'right',color:sub,fontSize:11},
+            showBackground:true, backgroundStyle:{color:muted.value,borderRadius:[0,8,8,0]},
+            label:{show:true,position:'right',color:sub.value,fontSize:11},
             data: entries.map(([,v],i) => ({
                 value:v,
                 itemStyle:{ borderRadius:[0,8,8,0], color:palette[(i+2)%palette.length] }
@@ -340,17 +364,17 @@ const optionMedia = computed(() => {
     const entries = mediaCounts.value
     return {
         backgroundColor:'transparent',
-        tooltip:{ trigger:'axis', confine:true, appendToBody:true, extraCssText:TT, axisPointer:{type:'none'},
+        tooltip:{ trigger:'axis', confine:true, appendToBody:true, extraCssText:TT.value, axisPointer:{type:'none'},
             formatter: ps => `<b>${ps[0].name}</b><br/><span style="color:${palette[1]};font-size:14px;font-weight:600">${ps[0].value}</span> leads` },
         grid:{ left:8, right:52, top:8, bottom:8, containLabel:true },
-        xAxis:{ type:'value', axisLabel:{show:false}, splitLine:{lineStyle:{color:dim,type:'dashed'}}, axisLine:{show:false} },
+        xAxis:{ type:'value', axisLabel:{show:false}, splitLine:{lineStyle:{color:dim.value,type:'dashed'}}, axisLine:{show:false} },
         yAxis:{ type:'category', data:entries.map(([n])=>n), inverse:true,
-            axisLabel:{color:sub,fontSize:11,width:130,overflow:'truncate'},
+            axisLabel:{color:sub.value,fontSize:11,width:130,overflow:'truncate'},
             axisLine:{show:false}, axisTick:{show:false} },
         series:[{
             name:'Leads', type:'bar', barWidth:14,
-            showBackground:true, backgroundStyle:{color:muted,borderRadius:[0,8,8,0]},
-            label:{show:true,position:'right',color:sub,fontSize:11},
+            showBackground:true, backgroundStyle:{color:muted.value,borderRadius:[0,8,8,0]},
+            label:{show:true,position:'right',color:sub.value,fontSize:11},
             data: entries.map(([,v],i) => ({
                 value:v,
                 itemStyle:{ borderRadius:[0,8,8,0], color:palette[(i+5)%palette.length] }
@@ -393,60 +417,65 @@ function onChartClick(kind, params) {
 </script>
 
 <template>
-    <!-- Dark tech wrapper -->
-    <div class="bg-slate-950 rounded-2xl p-5 space-y-5 border border-slate-800/60">
+    <!-- Wrapper com tokens semânticos (claro/escuro) -->
+    <div class="bg-surface-raised rounded-2xl p-5 space-y-5 border border-line">
 
         <!-- ── Header bar ── -->
         <div class="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
             <div class="flex items-center gap-3">
                 <!-- Pulse dot -->
                 <span class="relative flex h-3 w-3">
-                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-50"></span>
-                    <span class="relative inline-flex rounded-full h-3 w-3 bg-indigo-500"></span>
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-50"></span>
+                    <span class="relative inline-flex rounded-full h-3 w-3 bg-accent"></span>
                 </span>
                 <div>
-                    <p class="font-bold text-slate-100 tracking-tight leading-none">Dashboard Analítico</p>
-                    <p class="text-xs text-slate-500 mt-0.5">
-                        <span class="text-indigo-400 font-semibold">{{ leads?.length || 0 }}</span> leads no período selecionado
+                    <p class="font-bold text-ink tracking-tight leading-none">Dashboard Analítico</p>
+                    <p class="text-xs text-ink-subtle mt-0.5">
+                        <span class="text-accent font-semibold">{{ leads?.length || 0 }}</span> leads no período selecionado
                     </p>
                 </div>
             </div>
 
             <div class="flex flex-wrap items-center gap-2 mt-1 sm:mt-0">
                 <!-- Trend bucket -->
-                <div class="inline-flex rounded-lg overflow-hidden border border-slate-700 text-xs font-medium">
+                <div class="inline-flex rounded-lg overflow-hidden border border-line text-xs font-medium">
                     <button class="px-3 py-1.5 transition-colors"
-                        :class="trendBucket==='day' ? 'bg-indigo-600 text-white' : 'bg-slate-900 text-slate-400 hover:bg-slate-800'"
+                        :class="trendBucket==='day'
+                            ? 'bg-accent text-white'
+                            : 'bg-surface-sunken text-ink-muted hover:bg-surface-hover'"
                         @click="trendBucket='day'">Diário</button>
-                    <button class="px-3 py-1.5 border-l border-slate-700 transition-colors"
-                        :class="trendBucket==='week' ? 'bg-indigo-600 text-white' : 'bg-slate-900 text-slate-400 hover:bg-slate-800'"
+                    <button class="px-3 py-1.5 border-l border-line transition-colors"
+                        :class="trendBucket==='week'
+                            ? 'bg-accent text-white'
+                            : 'bg-surface-sunken text-ink-muted hover:bg-surface-hover'"
                         @click="trendBucket='week'">Semanal</button>
                 </div>
 
                 <!-- Others toggle -->
                 <button class="px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors"
-                    :class="showOthers ? 'bg-slate-700 border-slate-600 text-slate-200' : 'bg-slate-900 border-slate-700 text-slate-500'"
+                    :class="showOthers
+                        ? 'bg-accent-soft border-accent/30 text-accent'
+                        : 'bg-surface-sunken border-line text-ink-subtle hover:text-ink-muted'"
                     @click="showOthers=!showOthers">
                     + Outros
                 </button>
-
             </div>
         </div>
 
         <!-- ── KPI Strip ── -->
         <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3">
             <div v-for="k in kpiCards" :key="k.label"
-                class="relative rounded-xl border border-slate-800 bg-slate-900 p-4 overflow-hidden">
+                class="relative rounded-xl border border-line bg-surface-sunken p-4 overflow-hidden">
                 <!-- glow -->
                 <div class="absolute -top-4 -right-4 w-16 h-16 rounded-full blur-2xl opacity-30"
                     :style="{ backgroundColor: k.color }"></div>
                 <div class="relative">
                     <div class="flex items-center justify-between mb-2">
-                        <span class="text-[10px] font-semibold uppercase tracking-widest text-slate-500">{{ k.label }}</span>
+                        <span class="text-[10px] font-semibold uppercase tracking-widest text-ink-subtle">{{ k.label }}</span>
                         <i :class="k.icon" class="text-xs" :style="{ color: k.color }"></i>
                     </div>
-                    <p class="text-2xl font-bold text-slate-100 leading-none tabular-nums">{{ k.value ?? '—' }}</p>
-                    <p class="mt-1 text-[11px] text-slate-500 truncate">{{ k.sub }}</p>
+                    <p class="text-2xl font-bold text-ink leading-none tabular-nums">{{ k.value ?? '—' }}</p>
+                    <p class="mt-1 text-[11px] text-ink-subtle truncate">{{ k.sub }}</p>
                 </div>
             </div>
         </div>

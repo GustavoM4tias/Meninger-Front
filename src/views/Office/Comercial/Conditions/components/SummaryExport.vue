@@ -8,12 +8,12 @@
         class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-start justify-center overflow-y-auto py-8 px-4"
         @click.self="closeDocModal"
       >
-        <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-4xl">
+        <div class="bg-surface-raised rounded-2xl shadow-2xl w-full max-w-4xl">
           <!-- Header fixo da modal -->
-          <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-800 sticky top-0 bg-white dark:bg-gray-900 rounded-t-2xl z-10">
+          <div class="flex items-center justify-between px-6 py-4 border-b border-line sticky top-0 bg-surface-raised rounded-t-2xl z-10">
             <div class="flex items-center gap-2">
               <i class="fas fa-file-contract text-blue-500"></i>
-              <span class="text-sm font-bold text-gray-900 dark:text-white">
+              <span class="text-sm font-bold text-ink">
                 Ficha Comercial — {{ detail?.enterprise?.nome }}
                 <span class="ml-2 text-xs font-normal text-gray-400">{{ currentMonthLabel }}</span>
               </span>
@@ -34,11 +34,11 @@
             <div v-for="(mod, idx) in localModules" :key="mod.id ?? idx">
               <!-- Separador entre módulos -->
               <div v-if="localModules.length > 1" class="flex items-center gap-3 mb-5" :class="idx > 0 ? 'mt-4' : ''">
-                <div class="h-px flex-1 bg-blue-100 dark:bg-blue-900/40"></div>
+                <div class="h-px flex-1 bg-accent-soft"></div>
                 <span class="text-xs font-bold text-blue-500 uppercase tracking-widest px-3">
                   {{ mod.module_name || `Módulo ${idx + 1}` }}
                 </span>
-                <div class="h-px flex-1 bg-blue-100 dark:bg-blue-900/40"></div>
+                <div class="h-px flex-1 bg-accent-soft"></div>
               </div>
               <!-- KPIs do módulo -->
               <div class="kpi-row compact mb-4">
@@ -95,7 +95,7 @@
                 <div class="info-card-body space-y-2">
                   <div v-for="t in modSelectedPriceTables(mod)" :key="t.idtabela" class="price-table-row flex-col items-start gap-1">
                     <div class="flex items-center justify-between w-full gap-2">
-                      <span class="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">{{ t.nome }}</span>
+                      <span class="text-sm font-medium text-ink truncate">{{ t.nome }}</span>
                       <div class="flex items-center gap-2 flex-shrink-0">
                         <span v-if="t.vigente" class="badge-green">vigente</span>
                         <span class="text-xs text-gray-400">{{ formatDate(t.data_vigencia_de) }} → {{ formatDate(t.data_vigencia_ate) }}</span>
@@ -113,7 +113,7 @@
                 <div class="info-card-header"><i class="fas fa-bullhorn text-blue-500"></i> Campanhas Ativas</div>
                 <div class="info-card-body campaign-row">
                   <div v-for="(camp, ci) in modActiveCampaigns(mod)" :key="camp.id ?? ci" class="campaign-card">
-                    <p class="text-sm font-bold text-gray-900 dark:text-white">{{ camp.title }}</p>
+                    <p class="text-sm font-bold text-ink">{{ camp.title }}</p>
                     <p v-if="camp.description" class="text-xs text-gray-500 mt-0.5">{{ camp.description }}</p>
                     <div class="flex gap-3 mt-1 flex-wrap">
                       <span v-if="camp.value" class="campaign-value">{{ formatCurrency(camp.value) }}</span>
@@ -129,15 +129,15 @@
     </transition>
 
     <!-- ── Controles (não imprime) ──────────────────────────────────────────── -->
-    <div class="no-print bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden mb-5">
+    <div class="no-print bg-surface-raised rounded-2xl border border-line shadow-sm overflow-hidden mb-5">
 
       <!-- Barra superior: mês + ações -->
-      <div class="flex items-center justify-between gap-3 px-5 py-4 bg-gradient-to-r from-slate-50 to-blue-50/40 dark:from-gray-800/60 dark:to-blue-950/20 border-b border-gray-100 dark:border-gray-800 flex-wrap">
+      <div class="flex items-center justify-between gap-3 px-5 py-4 bg-gradient-to-r from-slate-50 to-blue-50/40 dark:from-gray-800/60 dark:to-blue-950/20 border-b border-line flex-wrap">
         <div class="flex items-center gap-2">
           <button @click="navigatePrev" :disabled="!prevItem"
             :class="['w-7 h-7 flex items-center justify-center rounded-lg transition text-xs',
-              prevItem ? 'text-gray-500 hover:text-gray-800 dark:hover:text-white hover:bg-white dark:hover:bg-gray-700 shadow-sm border border-gray-200 dark:border-gray-700'
-                       : 'text-gray-300 dark:text-gray-600 cursor-not-allowed']">
+              prevItem ? 'text-gray-500 hover:text-gray-800 dark:hover:text-white hover:bg-white dark:hover:bg-gray-700 shadow-sm border border-line'
+                       : 'text-ink-subtle cursor-not-allowed']">
             <i class="fas fa-chevron-left"></i>
           </button>
           <div class="flex items-center gap-2">
@@ -154,17 +154,17 @@
           </div>
           <button @click="navigateNext" :disabled="!nextItem"
             :class="['w-7 h-7 flex items-center justify-center rounded-lg transition text-xs',
-              nextItem ? 'text-gray-500 hover:text-gray-800 dark:hover:text-white hover:bg-white dark:hover:bg-gray-700 shadow-sm border border-gray-200 dark:border-gray-700'
-                       : 'text-gray-300 dark:text-gray-600 cursor-not-allowed']">
+              nextItem ? 'text-gray-500 hover:text-gray-800 dark:hover:text-white hover:bg-white dark:hover:bg-gray-700 shadow-sm border border-line'
+                       : 'text-ink-subtle cursor-not-allowed']">
             <i class="fas fa-chevron-right"></i>
           </button>
-          <span v-if="history.length > 1" class="text-xs text-gray-400 dark:text-gray-600">{{ currentHistoryPos }}/{{ history.length }}</span>
+          <span v-if="history.length > 1" class="text-xs text-ink-subtle">{{ currentHistoryPos }}/{{ history.length }}</span>
         </div>
 
         <div class="flex items-center gap-2 flex-wrap">
           <!-- Ver documento (só aprovadores, quando em autorização) -->
           <button v-if="isApprover && detail?.status === 'pending_approval'" @click="showDocModal = true"
-            class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white text-xs font-semibold rounded-lg hover:bg-blue-700 transition">
+            class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white text-xs font-semibold rounded-lg hover:bg-accent-hover transition">
             <i class="fas fa-file-contract text-xs"></i> Ver Documento
           </button>
 
@@ -183,7 +183,7 @@
             <i class="fas fa-ban text-xs"></i> Cancelar Autorização
           </button>
           <div v-else-if="!isAdmin && detail?.status === 'pending_approval'"
-            class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 text-xs font-semibold rounded-lg border border-blue-200 dark:border-blue-800">
+            class="flex items-center gap-1.5 px-3 py-1.5 bg-accent-soft text-accent text-xs font-semibold rounded-lg border border-accent/30">
             <i class="fas fa-signature text-xs"></i> Aguardando Assinaturas
           </div>
           <button v-else-if="isAdmin && detail?.status === 'approved'" @click="$emit('unlock')"
@@ -196,17 +196,17 @@
       <!-- Pills de módulo -->
       <div v-if="localModules.length" class="flex overflow-x-auto scrollbar-hide">
         <button v-for="(mod, i) in localModules" :key="mod.id ?? i" @click="activeIdx = i"
-          :class="['flex flex-col items-center gap-1 px-8 py-2.5 transition border-r border-gray-100 dark:border-gray-800 flex-shrink-0 relative text-xs font-semibold',
-            activeIdx === i ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400 hover:bg-blue-50 dark:hover:bg-blue-950/20 hover:text-blue-600']">
+          :class="['flex flex-col items-center gap-1 px-8 py-2.5 transition border-r border-line flex-shrink-0 relative text-xs font-semibold',
+            activeIdx === i ? 'bg-blue-600 text-white' : 'bg-surface-raised text-ink-muted hover:bg-accent-soft hover:text-blue-600']">
           <span class="truncate max-w-[120px]">{{ mod.module_name || `Módulo ${i+1}` }}</span>
           <span class="flex items-center gap-0.5 ml-1 flex-shrink-0">
             <span v-for="(filled, k) in moduleCompleteness(mod)" :key="k"
-              :class="['w-1.5 h-1.5 rounded-full', activeIdx===i ? (filled?'bg-white':'bg-white/30') : (filled?'bg-blue-400':'bg-gray-200 dark:bg-gray-700')]">
+              :class="['w-1.5 h-1.5 rounded-full', activeIdx===i ? (filled?'bg-white':'bg-white/30') : (filled?'bg-blue-400':'bg-surface-sunken')]">
             </span>
           </span>
           <span v-if="activeIdx === i" class="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-400 rounded-t"></span>
         </button>
-        <div class="flex-1 bg-white dark:bg-gray-900"></div>
+        <div class="flex-1 bg-surface-raised"></div>
       </div>
     </div>
 
@@ -241,8 +241,8 @@
               </div>
             </div>
             <div class="text-right shrink-0">
-              <p class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Menin Office</p>
-              <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{{ formatDateFull(new Date()) }}</p>
+              <p class="text-xs font-bold text-ink-muted uppercase tracking-wider">Menin Office</p>
+              <p class="text-xs text-ink-subtle mt-0.5">{{ formatDateFull(new Date()) }}</p>
             </div>
           </div>
         </div>
@@ -260,7 +260,7 @@
       </div>
 
       <!-- Sem módulo -->
-      <div v-if="!localModules.length" class="flex flex-col items-center justify-center py-16 text-gray-400 dark:text-gray-600 text-center">
+      <div v-if="!localModules.length" class="flex flex-col items-center justify-center py-16 text-ink-subtle text-center">
         <i class="fas fa-layer-group text-3xl mb-3 opacity-40"></i>
         <p class="text-sm">Nenhum módulo encontrado</p>
       </div>
@@ -420,10 +420,10 @@
                     <span class="field-label block mb-1">CCA</span>
                     <span class="field-value block leading-snug break-words" :class="!mod.cca_company_name ? 'field-empty' : ''">
                       {{ mod.cca_company_name || 'Nome não informado' }}
-                      <span class="block mt-1 text-xs font-medium" :class="mod.cca_charges_company ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400'">
+                      <span class="block mt-1 text-xs font-medium" :class="mod.cca_charges_company ? 'text-accent' : 'text-gray-400'">
                         <i :class="mod.cca_charges_company ? 'fa-square-check' : 'fa-square'" class="far mr-1"></i>
                         Pago pela Menin: <strong>{{ mod.cca_charges_company ? 'Sim' : 'Não' }}</strong>
-                        <span v-if="mod.cca_charges_company && mod.cca_cost != null" class="ml-1 text-gray-500 dark:text-gray-400">— {{ formatCurrency(mod.cca_cost) }}</span>
+                        <span v-if="mod.cca_charges_company && mod.cca_cost != null" class="ml-1 text-ink-muted">— {{ formatCurrency(mod.cca_cost) }}</span>
                       </span>
                     </span>
                   </div>
@@ -476,7 +476,7 @@
                         </span>
                         <span
                           v-if="mod.digital_cert_has_cost && mod.digital_cert_cost != null"
-                          class="block mt-1 text-xs font-medium text-blue-600 dark:text-blue-400"
+                          class="block mt-1 text-xs font-medium text-accent"
                         >
                           <i class="fas fa-building text-[9px] mr-1"></i>{{ formatCurrency(mod.digital_cert_cost) }} (Menin)
                         </span>
@@ -496,13 +496,13 @@
                 </div>
 
                 <!-- Arquivos do Empreendimento (QR Code) -->
-                <div v-if="mod.enterprise_files_url" class="mt-4 flex items-center gap-3 p-3 bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/40 rounded-xl">
+                <div v-if="mod.enterprise_files_url" class="mt-4 flex items-center gap-3 p-3 bg-blue-50/50 dark:bg-blue-950/20 border border-accent/20 rounded-xl">
                   <AppraisalQrCode :url="mod.enterprise_files_url" :size="80" />
                   <div class="flex-1 min-w-0">
-                    <p class="text-xs font-bold text-blue-600 dark:text-blue-400 mb-1">
+                    <p class="text-xs font-bold text-accent mb-1">
                       <i class="fas fa-folder-open text-[10px] mr-1"></i>Arquivos do Empreendimento
                     </p>
-                    <p class="text-[10px] text-gray-500 dark:text-gray-400">Aponte a câmera no QR Code para acessar a pasta de arquivos.</p>
+                    <p class="text-[10px] text-ink-muted">Aponte a câmera no QR Code para acessar a pasta de arquivos.</p>
                     <a :href="mod.enterprise_files_url" target="_blank" rel="noopener" class="text-[10px] text-blue-500 hover:underline truncate block mt-1">{{ mod.enterprise_files_url }}</a>
                   </div>
                 </div>
@@ -568,7 +568,7 @@
                   <span v-if="modSubsidyLabel(mod)" class="opacity-80">— {{ modSubsidyLabel(mod) }}</span>
                   <span v-if="mod.state_subsidy_program" class="opacity-80">· {{ mod.state_subsidy_program }}</span>
                 </div>
-                <div v-else class="mt-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs bg-gray-50 dark:bg-gray-800/40 text-gray-400 dark:text-gray-600 border border-gray-100 dark:border-gray-800">
+                <div v-else class="mt-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs bg-surface-sunken/40 text-ink-subtle border border-line">
                   <i class="fas fa-hand-holding-usd text-xs"></i>
                   Sem subsídio estadual
                 </div>
@@ -602,13 +602,13 @@
                     <div class="field-item col-span-1">
                       <span class="field-label">{{ faixaLabel(f.faixa) }}</span>
                       <div class="flex flex-wrap gap-x-4 gap-y-0.5 mt-0.5">
-                        <span v-if="f.appraisal_value != null" class="text-xs text-gray-700 dark:text-gray-300">
+                        <span v-if="f.appraisal_value != null" class="text-xs text-ink-muted">
                           Avaliação: <strong>{{ formatCurrency(f.appraisal_value) }}</strong>
                         </span>
                         <span v-if="f.appraisal_ceiling != null" class="text-xs text-gray-500">
                           Teto: <strong>{{ formatCurrency(f.appraisal_ceiling) }}</strong>
                         </span>
-                        <span v-if="f.avg_ticket != null" class="text-xs text-blue-600 dark:text-blue-400">
+                        <span v-if="f.avg_ticket != null" class="text-xs text-accent">
                           Ticket Médio: <strong>{{ formatCurrency(f.avg_ticket) }}</strong>
                         </span>
                       </div>
@@ -618,7 +618,7 @@
               </div>
 
               <div v-else class="empty-info-row">
-                  <i class="fas fa-table text-gray-300 dark:text-gray-600 text-sm"></i>
+                  <i class="fas fa-table text-ink-subtle text-sm"></i>
                   <span>Nenhuma faixa Minha Casa Minha Vida selecionada.</span>
                 </div>
                 
@@ -628,11 +628,11 @@
               </div>
 
               <!-- QR Code do laudo de avaliação -->
-              <div v-if="mod.appraisal_file_url" class="mt-3 flex items-center gap-3 p-3 bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/40 rounded-xl">
+              <div v-if="mod.appraisal_file_url" class="mt-3 flex items-center gap-3 p-3 bg-blue-50/50 dark:bg-blue-950/20 border border-accent/20 rounded-xl">
                 <AppraisalQrCode :url="mod.appraisal_file_url" :size="120" />
                 <div class="flex-1 min-w-0">
-                  <p class="text-xs font-bold text-blue-600 dark:text-blue-400 mb-1">Avaliação CEF</p>
-                  <p class="text-[10px] text-gray-500 dark:text-gray-400">Aponte a câmera no QR Code para acessar o laudo de avaliação.</p>
+                  <p class="text-xs font-bold text-accent mb-1">Avaliação CEF</p>
+                  <p class="text-[10px] text-ink-muted">Aponte a câmera no QR Code para acessar o laudo de avaliação.</p>
                   <a :href="mod.appraisal_file_url" target="_blank" rel="noopener" class="text-[10px] text-blue-500 hover:underline truncate block mt-1">{{ mod.appraisal_file_url }}</a>
                 </div>
               </div>
@@ -652,7 +652,7 @@
                   <span class="field-label">Pacote CEF</span>
                   <span class="field-value">
                     {{ mod.cef_package_avg_value != null ? formatCurrency(mod.cef_package_avg_value) : 'Valor não informado' }}
-                    <span v-if="mod.cef_package_paid_by" class="block text-xs text-gray-400 mt-0.5">Pago por: <strong class="text-gray-600 dark:text-gray-300">{{ mod.cef_package_paid_by === 'menin' ? 'Menin' : 'Cliente' }}</strong></span>
+                    <span v-if="mod.cef_package_paid_by" class="block text-xs text-gray-400 mt-0.5">Pago por: <strong class="text-ink-muted">{{ mod.cef_package_paid_by === 'menin' ? 'Menin' : 'Cliente' }}</strong></span>
                   </span>
                 </div>
                 <div class="field-item">
@@ -663,7 +663,7 @@
                     </template>
                     <template v-else-if="mod.itbi_avg_value != null">
                       {{ formatCurrency(mod.itbi_avg_value) }}
-                      <span class="block text-xs text-gray-400 mt-0.5">Pago por: <strong class="text-gray-600 dark:text-gray-300">Cliente</strong></span>
+                      <span class="block text-xs text-gray-400 mt-0.5">Pago por: <strong class="text-ink-muted">Cliente</strong></span>
                     </template>
                     <template v-else>
                       <span class="field-empty">Não informado</span>
@@ -678,7 +678,7 @@
                   <span class="field-label">Cartório — Registro</span>
                   <span class="field-value">
                     {{ formatCurrency(mod.cartorio_registration_value) }}
-                    <span v-if="mod.cartorio_paid_by" class="block text-xs text-gray-400 mt-0.5">Pago por: <strong class="text-gray-600 dark:text-gray-300">{{ mod.cartorio_paid_by === 'menin' ? 'Menin' : 'Cliente' }}</strong></span>
+                    <span v-if="mod.cartorio_paid_by" class="block text-xs text-gray-400 mt-0.5">Pago por: <strong class="text-ink-muted">{{ mod.cartorio_paid_by === 'menin' ? 'Menin' : 'Cliente' }}</strong></span>
                   </span>
                 </div>
               </div>
@@ -688,39 +688,39 @@
                 <AppraisalQrCode :url="mod.itbi_exemption_doc_url" :size="120" />
                 <div class="flex-1 min-w-0">
                   <p class="text-xs font-bold text-emerald-600 dark:text-emerald-400 mb-1">Comprovante de Isenção do ITBI</p>
-                  <p class="text-[10px] text-gray-500 dark:text-gray-400">Aponte a câmera no QR Code para acessar o documento.</p>
+                  <p class="text-[10px] text-ink-muted">Aponte a câmera no QR Code para acessar o documento.</p>
                   <a :href="mod.itbi_exemption_doc_url" target="_blank" rel="noopener" class="text-[10px] text-emerald-500 hover:underline truncate block mt-1">{{ mod.itbi_exemption_doc_url }}</a>
                 </div>
               </div>
 
               <!-- Resumo de Custos por Pagador -->
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div class="bg-white dark:bg-gray-900/60 rounded-xl p-3 border border-gray-100 dark:border-gray-800">
-                  <p class="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Pago pela Menin</p>
+                <div class="bg-surface-raised/60 rounded-xl p-3 border border-line">
+                  <p class="text-[10px] font-bold text-ink-muted uppercase tracking-wider mb-2">Pago pela Menin</p>
                   <ul class="space-y-1 text-xs">
                     <li v-for="item in modCostSummary(mod).menin" :key="`m-${item.label}`" class="flex justify-between">
-                      <span class="text-gray-600 dark:text-gray-400">{{ item.label }}</span>
-                      <strong class="text-gray-800 dark:text-gray-200">{{ formatCurrency(item.value) }}</strong>
+                      <span class="text-ink-muted">{{ item.label }}</span>
+                      <strong class="text-ink">{{ formatCurrency(item.value) }}</strong>
                     </li>
                     <li v-if="!modCostSummary(mod).menin.length" class="text-gray-400 italic">—</li>
                   </ul>
-                  <div class="mt-2 pt-2 border-t border-gray-100 dark:border-gray-800 flex justify-between text-xs">
-                    <span class="font-semibold text-gray-700 dark:text-gray-200">Total</span>
-                    <strong class="text-blue-600 dark:text-blue-400">{{ formatCurrency(modCostSummary(mod).totalMenin) }}</strong>
+                  <div class="mt-2 pt-2 border-t border-line flex justify-between text-xs">
+                    <span class="font-semibold text-ink">Total</span>
+                    <strong class="text-accent">{{ formatCurrency(modCostSummary(mod).totalMenin) }}</strong>
                   </div>
                 </div>
-                <div class="bg-white dark:bg-gray-900/60 rounded-xl p-3 border border-gray-100 dark:border-gray-800">
-                  <p class="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Pago pelo Cliente</p>
+                <div class="bg-surface-raised/60 rounded-xl p-3 border border-line">
+                  <p class="text-[10px] font-bold text-ink-muted uppercase tracking-wider mb-2">Pago pelo Cliente</p>
                   <ul class="space-y-1 text-xs">
                     <li v-for="item in modCostSummary(mod).client" :key="`c-${item.label}`" class="flex justify-between">
-                      <span class="text-gray-600 dark:text-gray-400">{{ item.label }}</span>
-                      <strong class="text-gray-800 dark:text-gray-200">{{ formatCurrency(item.value) }}</strong>
+                      <span class="text-ink-muted">{{ item.label }}</span>
+                      <strong class="text-ink">{{ formatCurrency(item.value) }}</strong>
                     </li>
                     <li v-if="!modCostSummary(mod).client.length" class="text-gray-400 italic">—</li>
                   </ul>
-                  <div class="mt-2 pt-2 border-t border-gray-100 dark:border-gray-800 flex justify-between text-xs">
-                    <span class="font-semibold text-gray-700 dark:text-gray-200">Total</span>
-                    <strong class="text-blue-600 dark:text-blue-400">{{ formatCurrency(modCostSummary(mod).totalClient) }}</strong>
+                  <div class="mt-2 pt-2 border-t border-line flex justify-between text-xs">
+                    <span class="font-semibold text-ink">Total</span>
+                    <strong class="text-accent">{{ formatCurrency(modCostSummary(mod).totalClient) }}</strong>
                   </div>
                 </div>
               </div>
@@ -735,12 +735,12 @@
               </div>
               <div v-if="modSelectedPriceTables(mod).length"> 
                 <div class="space-y-4 flex flex-col gap-4 p-4"> <div v-for="t in modSelectedPriceTables(mod)" :key="t.idtabela"
-                    class="price-table-row flex-col items-start gap-3 p-4 bg-gray-50 dark:bg-gray-800/40 rounded-xl border border-gray-100 dark:border-gray-800">
+                    class="price-table-row flex-col items-start gap-3 p-4 bg-surface-sunken/40 rounded-xl border border-line">
                     
                     <div class="flex items-center justify-between w-full gap-2">
                       <div class="flex items-center gap-2 min-w-0">
                         <i class="fas fa-table text-blue-400 text-xs flex-shrink-0"></i>
-                        <span class="text-sm text-gray-800 dark:text-gray-200 font-bold truncate">{{ t.nome }}</span>
+                        <span class="text-sm text-ink font-bold truncate">{{ t.nome }}</span>
                       </div>
                       <div class="flex items-center gap-2 flex-shrink-0">
                         <span v-if="t.vigente" class="badge-green">vigente</span>
@@ -748,12 +748,12 @@
                       </div>
                     </div>
 
-                    <div v-if="t.unit_count > 0" class="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400 flex-wrap border-b border-gray-200/50 dark:border-gray-700/50 pb-3 w-full">
+                    <div v-if="t.unit_count > 0" class="flex items-center gap-4 text-xs text-ink-muted flex-wrap border-b border-gray-200/50 dark:border-gray-700/50 pb-3 w-full">
                       <span><i class="fas fa-home mr-1"></i><strong>{{ t.unit_count }}</strong> unidades</span>
                       <span><i class="fas fa-tag mr-1"></i>De <strong>{{ formatCurrencyShort(t.price_min) }}</strong> até <strong>{{ formatCurrencyShort(t.price_max) }}</strong></span>
                       <span><i class="fas fa-chart-line mr-1"></i>Média <strong>{{ formatCurrencyShort(t.price_avg) }}</strong></span>
                       <template v-if="tableM2Stats(mod, t)">
-                        <span class="border-l border-gray-200 dark:border-gray-700 pl-4"><i class="fas fa-ruler-combined mr-1"></i>m²: Mín <strong>{{ formatM2(tableM2Stats(mod, t).min) }}</strong> · Máx <strong>{{ formatM2(tableM2Stats(mod, t).max) }}</strong> · Média <strong>{{ formatM2(tableM2Stats(mod, t).avg) }}</strong></span>
+                        <span class="border-l border-line pl-4"><i class="fas fa-ruler-combined mr-1"></i>m²: Mín <strong>{{ formatM2(tableM2Stats(mod, t).min) }}</strong> · Máx <strong>{{ formatM2(tableM2Stats(mod, t).max) }}</strong> · Média <strong>{{ formatM2(tableM2Stats(mod, t).avg) }}</strong></span>
                       </template>
                     </div>
 
@@ -761,14 +761,14 @@
                       <p class="text-[10px] font-bold text-blue-500 uppercase tracking-wider mb-2">Fluxo Médio (Ref: {{ t.unidades[0].unidade }})</p>
                       <div class="flex flex-wrap gap-2 w-full">
                         <div v-for="serie in t.unidades[0].series" :key="serie.nome" 
-                          class="bg-white dark:bg-gray-900/60 p-2 rounded-lg border border-gray-100 dark:border-gray-800 flex flex-col justify-between flex-grow flex-shrink-0 basis-[calc(25%-0.5rem)] min-w-[120px] max-w-full">
+                          class="bg-surface-raised/60 p-2 rounded-lg border border-line flex flex-col justify-between flex-grow flex-shrink-0 basis-[calc(25%-0.5rem)] min-w-[120px] max-w-full">
                           
                           <p class="text-[9px] text-gray-400 uppercase font-bold whitespace-normal leading-tight mb-1">
                             {{ serie.nome }}
                           </p>
                           
                           <div>
-                            <p class="text-sm font-black text-gray-700 dark:text-gray-200">{{ formatCurrencyShort(serie.valor) }}</p>
+                            <p class="text-sm font-black text-ink">{{ formatCurrencyShort(serie.valor) }}</p>
                             <p class="text-[10px] text-gray-500">
                               {{ serie.qtd_parcelas }}x 
                               <span v-if="serie.data_vencimento" class="text-[9px]">({{ serie.data_vencimento.split('/')[2] }})</span>
@@ -779,7 +779,7 @@
                     </div>
 
                     <div v-if="t.forma" class="bg-blue-50/50 dark:bg-blue-900/10 p-2 rounded-lg w-full">
-                      <p class="text-[10px] text-blue-600 dark:text-blue-400 font-medium italic">
+                      <p class="text-[10px] text-accent font-medium italic">
                         <i class="fas fa-info-circle mr-1"></i>{{ t.forma }}
                       </p>
                     </div>
@@ -797,19 +797,19 @@
             <div class="info-card-body">
               <div v-if="modActiveCampaigns(mod).length" class="campaign-row">
                 <div v-for="(camp, ci) in modActiveCampaigns(mod)" :key="camp.id ?? ci" class="campaign-card">
-                  <p class="text-sm font-bold text-gray-900 dark:text-white">{{ camp.title || `Campanha ${ci + 1}` }}</p>
-                  <p v-if="camp.description" class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{{ camp.description }}</p>
+                  <p class="text-sm font-bold text-ink">{{ camp.title || `Campanha ${ci + 1}` }}</p>
+                  <p v-if="camp.description" class="text-xs text-ink-muted mt-0.5">{{ camp.description }}</p>
                   <div class="flex items-center gap-3 mt-2 flex-wrap">
                     <span v-if="camp.value" class="campaign-value">{{ formatCurrency(camp.value) }}</span>
                     <span v-if="camp.start_date" class="text-xs text-gray-400">
                       {{ formatDate(camp.start_date) }}{{ camp.end_date ? ` → ${formatDate(camp.end_date)}` : '' }}
                     </span>
                   </div>
-                  <p v-if="camp.rules" class="text-xs text-gray-500 dark:text-gray-400 mt-2 italic border-t border-gray-100 dark:border-gray-800 pt-2">{{ camp.rules }}</p>
+                  <p v-if="camp.rules" class="text-xs text-ink-muted mt-2 italic border-t border-line pt-2">{{ camp.rules }}</p>
                 </div>
               </div>
               <div v-else class="empty-info-row">
-                <i class="fas fa-bullhorn text-gray-300 dark:text-gray-600 text-sm"></i>
+                <i class="fas fa-bullhorn text-ink-subtle text-sm"></i>
                 <span>Nenhuma campanha ativa neste módulo</span>
               </div>
             </div>
@@ -847,15 +847,15 @@
               </div>
               <div class="space-y-4">
                 <div v-for="bloco in snapshotBlocos(mod)" :key="bloco.idbloco">
-                  <p class="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">
+                  <p class="text-[10px] font-bold text-ink-muted uppercase tracking-wider mb-1.5">
                     {{ bloco.nome }}
                     <span class="font-normal normal-case">· {{ (bloco.unidades ?? []).length }} unid.</span>
                   </p>
                   <div class="unit-row">
                     <div v-for="u in (bloco.unidades ?? [])" :key="u.idunidade"
                       :class="['rounded px-1.5 py-1 text-center border text-[10px] leading-tight', unitStatusClass(u)]">
-                      <p class="font-semibold text-gray-800 dark:text-gray-200 truncate">{{ u.nome }}</p>
-                      <p v-if="u.valor_total != null" class="text-blue-600 dark:text-blue-400 font-bold">{{ formatCurrencyShort(u.valor_total) }}</p>
+                      <p class="font-semibold text-ink truncate">{{ u.nome }}</p>
+                      <p v-if="u.valor_total != null" class="text-accent font-bold">{{ formatCurrencyShort(u.valor_total) }}</p>
                       <p v-if="u.area_privativa" class="text-gray-400">{{ Number(u.area_privativa).toFixed(2) }}m²</p>
                     </div>
                   </div>
@@ -871,9 +871,9 @@
 
       <!-- ── Resumo Total de Custos da FICHA — APENAS NA TELA (oculto no PDF) ──── -->
       <div v-if="!isPrinting && localModules.length && fichaCosts.totalMenin + fichaCosts.totalClient > 0"
-        class="no-print bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/20 rounded-2xl border-2 border-blue-300 dark:border-blue-700 overflow-hidden mb-4 mt-2">
-        <div class="px-5 py-3 bg-blue-100/60 dark:bg-blue-900/30 border-b border-blue-200 dark:border-blue-800">
-          <p class="text-sm font-bold text-blue-700 dark:text-blue-300 flex items-center gap-2">
+        class="no-print bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/20 rounded-2xl border-2 border-accent/40 overflow-hidden mb-4 mt-2">
+        <div class="px-5 py-3 bg-blue-100/60 dark:bg-blue-900/30 border-b border-accent/30">
+          <p class="text-sm font-bold text-accent flex items-center gap-2">
             <i class="fas fa-coins"></i> Resumo Total de Custos da Ficha
             <span v-if="localModules.length > 1" class="text-[10px] font-medium text-blue-500 dark:text-blue-400">
               (somando todos os {{ localModules.length }} módulos)
@@ -881,36 +881,36 @@
           </p>
         </div>
         <div class="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div class="bg-white dark:bg-gray-900/60 rounded-xl p-4 border border-blue-100 dark:border-blue-900">
-            <p class="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+          <div class="bg-surface-raised/60 rounded-xl p-4 border border-accent/20">
+            <p class="text-[10px] font-bold text-ink-muted uppercase tracking-wider mb-2 flex items-center gap-1.5">
               <i class="fas fa-building text-blue-500"></i> Pago pela Menin
             </p>
             <ul class="space-y-1 text-xs">
               <li v-for="item in fichaCosts.menin" :key="`fm-${item.label}`" class="flex justify-between">
-                <span class="text-gray-600 dark:text-gray-400">{{ item.label }}</span>
-                <strong class="text-gray-800 dark:text-gray-200">{{ formatCurrency(item.value) }}</strong>
+                <span class="text-ink-muted">{{ item.label }}</span>
+                <strong class="text-ink">{{ formatCurrency(item.value) }}</strong>
               </li>
               <li v-if="!fichaCosts.menin.length" class="text-gray-400 italic">—</li>
             </ul>
-            <div class="mt-3 pt-3 border-t-2 border-blue-200 dark:border-blue-800 flex justify-between text-sm">
-              <span class="font-bold text-gray-800 dark:text-gray-100">Total Menin</span>
-              <strong class="text-base text-blue-700 dark:text-blue-400">{{ formatCurrency(fichaCosts.totalMenin) }}</strong>
+            <div class="mt-3 pt-3 border-t-2 border-accent/30 flex justify-between text-sm">
+              <span class="font-bold text-ink">Total Menin</span>
+              <strong class="text-base text-accent">{{ formatCurrency(fichaCosts.totalMenin) }}</strong>
             </div>
           </div>
-          <div class="bg-white dark:bg-gray-900/60 rounded-xl p-4 border border-blue-100 dark:border-blue-900">
-            <p class="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+          <div class="bg-surface-raised/60 rounded-xl p-4 border border-accent/20">
+            <p class="text-[10px] font-bold text-ink-muted uppercase tracking-wider mb-2 flex items-center gap-1.5">
               <i class="fas fa-user text-blue-500"></i> Pago pelo Cliente
             </p>
             <ul class="space-y-1 text-xs">
               <li v-for="item in fichaCosts.client" :key="`fc-${item.label}`" class="flex justify-between">
-                <span class="text-gray-600 dark:text-gray-400">{{ item.label }}</span>
-                <strong class="text-gray-800 dark:text-gray-200">{{ formatCurrency(item.value) }}</strong>
+                <span class="text-ink-muted">{{ item.label }}</span>
+                <strong class="text-ink">{{ formatCurrency(item.value) }}</strong>
               </li>
               <li v-if="!fichaCosts.client.length" class="text-gray-400 italic">—</li>
             </ul>
-            <div class="mt-3 pt-3 border-t-2 border-blue-200 dark:border-blue-800 flex justify-between text-sm">
-              <span class="font-bold text-gray-800 dark:text-gray-100">Total Cliente</span>
-              <strong class="text-base text-blue-700 dark:text-blue-400">{{ formatCurrency(fichaCosts.totalClient) }}</strong>
+            <div class="mt-3 pt-3 border-t-2 border-accent/30 flex justify-between text-sm">
+              <span class="font-bold text-ink">Total Cliente</span>
+              <strong class="text-base text-accent">{{ formatCurrency(fichaCosts.totalClient) }}</strong>
             </div>
           </div>
         </div>
@@ -926,7 +926,7 @@
     </div>
 
     <!-- Rodapé de tela -->
-    <p class="no-print text-center text-xs text-gray-400 dark:text-gray-600 mt-4">
+    <p class="no-print text-center text-xs text-ink-subtle mt-4">
       Gerado em {{ formatDateFull(new Date()) }}
     </p>
   </div>
@@ -1247,7 +1247,7 @@ function unitStatusClass(unit) {
     const st = classifySnapshotUnit(unit);
     if (st.isSold) return 'border-rose-200 bg-rose-50 dark:bg-rose-950/20 dark:border-rose-800';
     if (st.isReserved) return 'border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-700';
-    if (st.isBlocked) return 'border-gray-200 bg-gray-50 dark:bg-gray-800/30 dark:border-gray-700';
+    if (st.isBlocked) return 'border-gray-200 bg-surface-sunken/30 dark:border-gray-700';
     return 'border-emerald-200 bg-emerald-50 dark:bg-emerald-950/20 dark:border-emerald-800';
 }
 
@@ -2691,14 +2691,14 @@ function formatDateFull(date) {
 <style scoped>
 /* ── Cabeçalho do documento ─────────────────────────────────────────────────── */
 .doc-header {
-    @apply bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden;
+    @apply bg-surface-raised rounded-2xl border border-line shadow-sm overflow-hidden;
 }
 .doc-header-body { @apply px-6 py-5; }
 .doc-eyebrow { @apply text-xs font-bold text-blue-500 uppercase tracking-widest mb-1; }
-.doc-title   { @apply text-2xl font-bold text-gray-900 dark:text-white leading-tight; }
+.doc-title   { @apply text-2xl font-bold text-ink leading-tight; }
 .doc-meta-chip {
     @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium
-           bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400;
+           bg-surface-sunken text-ink-muted;
 }
 
 /* ── KPIs ───────────────────────────────────────────────────────────────────── */
@@ -2725,13 +2725,13 @@ function formatDateFull(date) {
 }
 .kpi-card  {
     @apply flex flex-col items-center justify-center p-4 rounded-2xl text-center
-           bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 shadow-sm;
+           bg-surface-raised border border-line shadow-sm;
 }
-.kpi-label { @apply text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1; }
-.kpi-value { @apply text-2xl font-black text-gray-900 dark:text-white leading-none; }
-.kpi-value.kpi-empty { @apply text-gray-300 dark:text-gray-600; }
-.kpi-sub   { @apply text-xs text-gray-400 dark:text-gray-500 mt-1; }
-.kpi-sub-empty { @apply text-gray-300 dark:text-gray-700 italic; }
+.kpi-label { @apply text-[10px] font-bold text-ink-subtle uppercase tracking-wider mb-1; }
+.kpi-value { @apply text-2xl font-black text-ink leading-none; }
+.kpi-value.kpi-empty { @apply text-ink-subtle; }
+.kpi-sub   { @apply text-xs text-ink-subtle mt-1; }
+.kpi-sub-empty { @apply text-ink-subtle italic; }
 
 /* ── Linhas flex responsivas ────────────────────────────────────────────────── */
 .responsive-card-row {
@@ -2759,26 +2759,26 @@ function formatDateFull(date) {
 
 /* ── Cards de informação ─────────────────────────────────────────────────────── */
 .info-card {
-    @apply bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden;
+    @apply bg-surface-raised rounded-2xl border border-line shadow-sm overflow-hidden;
 }
 .info-card-header {
-    @apply flex items-center gap-2 px-5 py-3 text-xs font-bold text-gray-500 dark:text-gray-400
+    @apply flex items-center gap-2 px-5 py-3 text-xs font-bold text-ink-muted
            uppercase tracking-wider bg-gray-50/70 dark:bg-gray-800/40
-           border-b border-gray-100 dark:border-gray-800;
+           border-b border-line;
 }
 .info-card-body { @apply p-5; }
 
 /* ── Grade de campos ─────────────────────────────────────────────────────────── */
 .field-grid { @apply grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-3; }
 .field-item { @apply flex flex-col; }
-.field-label { @apply text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-0.5; }
-.field-value { @apply text-sm font-semibold text-gray-800 dark:text-gray-200; }
-.field-value.accent { @apply text-blue-600 dark:text-blue-400; }
-.field-value.field-empty { @apply text-gray-300 dark:text-gray-600 italic font-normal; }
+.field-label { @apply text-[10px] font-bold text-ink-subtle uppercase tracking-wider mb-0.5; }
+.field-value { @apply text-sm font-semibold text-ink; }
+.field-value.accent { @apply text-accent; }
+.field-value.field-empty { @apply text-ink-subtle italic font-normal; }
 
 /* ── Linha vazia de info ─────────────────────────────────────────────────────── */
 .empty-info-row {
-    @apply flex items-center gap-2 text-xs text-gray-400 dark:text-gray-600 italic py-1;
+    @apply flex items-center gap-2 text-xs text-ink-subtle italic py-1;
 }
 
 /* ── Subsídio ────────────────────────────────────────────────────────────────── */
@@ -2790,13 +2790,13 @@ function formatDateFull(date) {
 
 /* ── Sublabel ────────────────────────────────────────────────────────────────── */
 .section-sublabel {
-    @apply text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2;
+    @apply text-[10px] font-bold text-ink-subtle uppercase tracking-wider mb-2;
 }
 
 /* ── Tabela de preço row ─────────────────────────────────────────────────────── */
 .price-table-row {
     @apply flex gap-2 px-3 py-2 rounded-lg
-           bg-gray-50 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-800;
+           bg-surface-sunken/40 border border-line;
 }
 .badge-green {
     @apply px-2 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-700
@@ -2814,16 +2814,16 @@ function formatDateFull(date) {
 
 /* ── Campanhas ───────────────────────────────────────────────────────────────── */
 .campaign-card {
-    @apply p-4 rounded-xl border border-gray-100 dark:border-gray-800
+    @apply p-4 rounded-xl border border-line
            bg-gray-50/60 dark:bg-gray-800/20;
 }
-.campaign-value { @apply text-sm font-bold text-blue-600 dark:text-blue-400; }
+.campaign-value { @apply text-sm font-bold text-accent; }
 
 /* ── Notas ───────────────────────────────────────────────────────────────────── */
 .note-block {
-    @apply p-3 rounded-lg bg-gray-50 dark:bg-gray-800/40 border-l-2 border-gray-200 dark:border-gray-700;
+    @apply p-3 rounded-lg bg-surface-sunken/40 border-l-2 border-line;
 }
-.note-block p { @apply text-sm text-gray-700 dark:text-gray-300 mt-0.5; }
+.note-block p { @apply text-sm text-ink-muted mt-0.5; }
 .note-label   { @apply block text-[10px] font-bold text-gray-400 uppercase tracking-wider; }
 
 /* ── Separador de módulo no print ────────────────────────────────────────────── */
@@ -2836,7 +2836,7 @@ function formatDateFull(date) {
     @apply flex-1 h-px bg-blue-200 dark:bg-blue-800;
 }
 .print-module-sep span {
-    @apply text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest px-3;
+    @apply text-xs font-bold text-accent uppercase tracking-widest px-3;
 }
 
 /* ── Print-only ──────────────────────────────────────────────────────────────── */

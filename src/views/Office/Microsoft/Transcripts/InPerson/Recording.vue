@@ -1,6 +1,6 @@
 <template>
   <!-- ── Tela de gravação ───────────────────────────────────────────────────────── -->
-  <div class="min-h-screen flex flex-col relative overflow-hidden bg-gray-50 dark:bg-gray-950">
+  <div class="min-h-screen flex flex-col relative overflow-hidden bg-surface-base">
 
     <!-- Gradientes de fundo -->
     <div class="absolute inset-0 pointer-events-none">
@@ -11,25 +11,24 @@
     <div class="absolute inset-0 bg-[linear-gradient(rgba(0,0,0,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,0,0,0.03)_1px,transparent_1px)] dark:bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:60px_60px] pointer-events-none" />
 
     <!-- Header -->
-    <header class="relative z-10 flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-white/5 bg-white/70 dark:bg-transparent backdrop-blur-sm">
-      <button @click="handleMinimize"
-        class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors px-3 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5">
-        <i class="fas fa-chevron-left text-xs"></i> Continuar trabalhando
-      </button>
-      <div class="text-center">
-        <h1 class="font-bold text-sm text-gray-900 dark:text-white truncate max-w-[200px]">{{ store.title }}</h1>
-        <p v-if="store.location" class="text-xs text-gray-400 dark:text-gray-500">
+    <header class="relative z-10 flex items-center justify-between px-4 sm:px-6 py-4 border-b border-line bg-surface-raised/70 backdrop-blur-sm">
+      <Button variant="ghost" size="sm" icon="fas fa-chevron-left" @click="handleMinimize">
+        <span class="hidden sm:inline">Continuar trabalhando</span>
+      </Button>
+      <div class="text-center min-w-0">
+        <h1 class="font-semibold text-sm text-ink truncate max-w-[260px]">{{ store.title }}</h1>
+        <p v-if="store.location" class="text-xs text-ink-subtle">
           <i class="fas fa-location-dot mr-1"></i>{{ store.location }}
         </p>
       </div>
       <div class="flex items-center gap-3">
-        <span class="text-xs text-gray-400 dark:text-gray-500">
-          <i class="fas fa-users mr-1"></i>{{ store.attendees.length || 1 }}
+        <span class="hidden sm:inline-flex items-center gap-1 text-xs text-ink-subtle">
+          <i class="fas fa-users"></i>
+          <span class="font-mono tabular-nums">{{ store.attendees.length || 1 }}</span>
         </span>
-        <button @click="confirmStop = true"
-          class="px-3 py-1.5 rounded-lg text-xs text-red-500 dark:text-red-400 border border-red-200 dark:border-red-500/20 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors">
-          <i class="fas fa-stop mr-1"></i>Encerrar
-        </button>
+        <Button variant="danger" size="sm" icon="fas fa-stop" @click="confirmStop = true">
+          Encerrar
+        </Button>
       </div>
     </header>
 
@@ -41,25 +40,25 @@
         <!-- Badge de status -->
         <transition name="fade">
           <div v-if="store.isRecording"
-            class="flex items-center gap-2 px-4 py-1.5 rounded-full bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/25 text-red-500 dark:text-red-400 text-xs font-semibold tracking-wide uppercase">
+            class="flex items-center gap-2 px-4 py-1.5 rounded-full bg-red-500/10 border border-red-500/25 text-red-500 dark:text-red-400 text-xs font-semibold tracking-wide uppercase">
             <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
             Gravando
           </div>
           <div v-else-if="store.isPaused"
-            class="flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/25 text-amber-600 dark:text-amber-400 text-xs font-semibold tracking-wide uppercase">
+            class="flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/25 text-amber-600 dark:text-amber-400 text-xs font-semibold tracking-wide uppercase">
             <i class="fas fa-pause text-[10px]"></i>
             Pausado
           </div>
         </transition>
 
         <!-- Timer digital -->
-        <div class="font-mono text-7xl font-bold tracking-widest tabular-nums select-none text-gray-900 dark:text-white"
+        <div class="font-mono text-7xl font-bold tracking-widest tabular-nums select-none text-ink"
           :class="{ 'opacity-40': store.isPaused }">
           {{ store.timerDisplay }}
         </div>
 
         <!-- Subtítulo -->
-        <p class="text-xs text-gray-400 dark:text-gray-600 tracking-widest uppercase">
+        <p class="text-xs text-ink-subtle tracking-widest uppercase">
           {{ store.isRecording ? 'em andamento' : store.isPaused ? 'gravação pausada' : '' }}
         </p>
       </div>
@@ -77,7 +76,7 @@
           :class="store.isRecording ? 'orb-spin' : ''">
           <div class="absolute inset-0 rounded-full orb-gradient-ring" />
           <!-- Fundo interno sempre escuro para o canvas funcionar -->
-          <div class="absolute inset-[3px] rounded-full bg-gray-100 dark:bg-gray-900" />
+          <div class="absolute inset-[3px] rounded-full bg-surface-sunken" />
 
           <!-- Canvas de visualização de áudio -->
           <canvas ref="canvasEl" width="196" height="196"
@@ -85,7 +84,7 @@
 
           <!-- Ícone central (quando não está gravando) -->
           <div v-if="!store.isRecording" class="absolute flex flex-col items-center gap-1">
-            <i class="fas fa-microphone-slash text-gray-400 darK:text-gray-600 text-3xl"></i>
+            <i class="fas fa-microphone-slash text-ink-subtle text-3xl"></i>
           </div>
 
           <!-- Ponto central pulsante (quando gravando) -->
@@ -109,88 +108,93 @@
       <!-- ── Transcrição ao vivo ─────────────────────────────────────────── -->
       <div class="w-full max-w-2xl">
         <div class="flex items-center justify-between mb-3">
-          <h3 class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-widest flex items-center gap-2">
+          <h3 class="text-xs font-semibold text-ink-subtle uppercase tracking-widest flex items-center gap-2">
             <i class="fas fa-wave-square text-violet-500 text-[10px]"></i>
             Transcrição ao vivo
           </h3>
-          <span class="text-xs text-gray-400 dark:text-gray-600 tabular-nums">{{ store.cues.length }} segmentos</span>
+          <span class="text-xs text-ink-subtle font-mono tabular-nums">{{ store.cues.length }} segmentos</span>
         </div>
         <div ref="transcriptEl"
-          class="h-44 overflow-y-auto space-y-2 p-4 rounded-2xl border border-gray-200 dark:border-white/5 bg-white dark:bg-white/[0.02] scroll-smooth">
+          class="h-44 overflow-y-auto space-y-2 p-4 rounded-2xl border border-line bg-surface-raised scroll-smooth">
           <div v-if="!store.cues.length && !store.interimText"
-            class="h-full flex items-center justify-center text-gray-400 dark:text-gray-700 text-sm">
+            class="h-full flex items-center justify-center text-ink-subtle text-sm">
             {{ store.isRecording ? 'Aguardando fala...' : 'Inicie a gravação' }}
           </div>
           <TransitionGroup name="cue">
             <div v-for="(cue, i) in store.cues" :key="i"
               class="flex gap-3 text-sm leading-relaxed">
-              <span class="text-violet-500 dark:text-violet-500/70 shrink-0 font-mono text-xs mt-0.5 tabular-nums">{{ cue.startStr }}</span>
-              <span class="text-gray-700 dark:text-gray-300">{{ cue.text }}</span>
+              <span class="text-violet-500 dark:text-violet-400 shrink-0 font-mono text-xs mt-0.5 tabular-nums">{{ cue.startStr }}</span>
+              <span class="text-ink-muted">{{ cue.text }}</span>
             </div>
           </TransitionGroup>
           <!-- Resultado interim -->
           <div v-if="store.interimText" class="flex gap-3 text-sm leading-relaxed">
             <span class="text-violet-400/50 shrink-0 font-mono text-xs mt-0.5">{{ store.timerDisplay }}</span>
-            <span class="text-gray-400 dark:text-gray-600 italic">{{ store.interimText }}<span class="animate-pulse">▌</span></span>
+            <span class="text-ink-subtle italic">{{ store.interimText }}<span class="animate-pulse">▌</span></span>
           </div>
         </div>
       </div>
 
       <!-- ── Controles ───────────────────────────────────────────────────── -->
-      <div class="flex items-center gap-4">
-        <button v-if="store.isPaused" @click="store.resume()"
-          class="flex items-center gap-2.5 px-6 py-3 rounded-xl bg-violet-50 dark:bg-violet-600/20 border border-violet-200 dark:border-violet-500/30 text-violet-600 dark:text-violet-300 hover:bg-violet-100 dark:hover:bg-violet-600/30 transition-all">
-          <i class="fas fa-play text-sm"></i> Retomar
-        </button>
-        <button v-if="store.isRecording" @click="store.pause()"
-          class="flex items-center gap-2.5 px-6 py-3 rounded-xl border border-gray-200 dark:border-white/8 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/4 transition-all">
-          <i class="fas fa-pause text-sm"></i> Pausar
-        </button>
-        <button @click="confirmStop = true"
-          class="flex items-center gap-2.5 px-6 py-3 rounded-xl bg-red-50 dark:bg-red-600/15 border border-red-200 dark:border-red-500/25 text-red-500 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-600/25 transition-all">
-          <i class="fas fa-stop text-sm"></i> Encerrar
-        </button>
+      <div class="flex items-center gap-3 flex-wrap justify-center">
+        <Button v-if="store.isPaused"
+          variant="primary"
+          icon="fas fa-play"
+          class="!bg-violet-600 hover:!bg-violet-700"
+          @click="store.resume()">
+          Retomar
+        </Button>
+        <Button v-if="store.isRecording"
+          variant="secondary"
+          icon="fas fa-pause"
+          @click="store.pause()">
+          Pausar
+        </Button>
+        <Button variant="danger" icon="fas fa-stop" @click="confirmStop = true">
+          Encerrar
+        </Button>
       </div>
 
       <!-- Aviso Web Speech API -->
-      <div v-if="!store.hasMicSupport"
-        class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-50 dark:bg-red-500/[0.08] border border-red-200 dark:border-red-500/20 text-red-500 dark:text-red-400 text-xs">
-        <i class="fas fa-circle-exclamation"></i>
-        Microfone não disponível ou não permitido. Verifique as permissões do navegador.
-      </div>
+      <Surface v-if="!store.hasMicSupport"
+        variant="raised"
+        padding="sm"
+        class="border-red-500/30 bg-red-500/10">
+        <div class="flex items-center gap-2 text-red-600 dark:text-red-400 text-xs">
+          <i class="fas fa-circle-exclamation"></i>
+          Microfone não disponível ou não permitido. Verifique as permissões do navegador.
+        </div>
+      </Surface>
     </main>
 
     <!-- ── Modal de confirmação de encerramento ───────────────────────── -->
-    <Transition name="modal">
-      <div v-if="confirmStop" class="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div class="absolute inset-0 bg-black/30 dark:bg-black/50 backdrop-blur-sm" @click="confirmStop = false" />
-        <div class="relative bg-white dark:bg-gray-900 border border-gray-200 dark:border-white/10 rounded-2xl p-6 w-full max-w-sm shadow-2xl">
-          <div class="flex justify-center mb-4">
-            <div class="w-12 h-12 rounded-xl bg-red-50 dark:bg-red-500/15 border border-red-200 dark:border-red-500/25 flex items-center justify-center">
-              <i class="fas fa-stop text-red-500 dark:text-red-400"></i>
-            </div>
+    <Modal :open="confirmStop"
+      size="sm"
+      title="Encerrar gravação?"
+      @close="confirmStop = false">
+      <div class="text-center space-y-4">
+        <div class="flex justify-center">
+          <div class="w-12 h-12 rounded-xl bg-red-500/10 border border-red-500/30 grid place-items-center">
+            <i class="fas fa-stop text-red-500"></i>
           </div>
-          <h3 class="text-base font-bold text-center text-gray-900 dark:text-white mb-1">Encerrar gravação?</h3>
-          <p class="text-sm text-gray-500 text-center mb-6">
-            A transcrição será salva. Você poderá gerar o resumo de IA depois.
-          </p>
-          <div class="flex gap-3">
-            <button @click="confirmStop = false"
-              class="flex-1 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/4 transition-colors text-sm">
-              Continuar
-            </button>
-            <button @click="handleStop"
-              class="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white transition-colors text-sm font-semibold">
-              Encerrar e Salvar
-            </button>
-          </div>
-          <button @click="handleDiscard"
-            class="w-full mt-2 py-2 text-xs text-gray-400 dark:text-gray-600 hover:text-gray-600 dark:hover:text-gray-400 transition-colors">
-            Descartar sem salvar
-          </button>
         </div>
+        <p class="text-sm text-ink-muted">
+          A transcrição será salva. Você poderá gerar o resumo de IA depois.
+        </p>
       </div>
-    </Transition>
+      <template #footer>
+        <Button variant="ghost" @click="confirmStop = false">Continuar</Button>
+        <Button variant="danger" icon="fas fa-stop" @click="handleStop">
+          Encerrar e Salvar
+        </Button>
+      </template>
+      <div class="text-center -mt-1">
+        <button @click="handleDiscard"
+          class="text-xs text-ink-subtle hover:text-red-500 transition-colors">
+          Descartar sem salvar
+        </button>
+      </div>
+    </Modal>
   </div>
 </template>
 
@@ -198,6 +202,10 @@
 import { ref, watch, onMounted, onUnmounted, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { useInPersonRecordingStore } from '@/stores/Microsoft/inPersonRecording';
+
+import Modal from '@/components/UI/Modal.vue';
+import Button from '@/components/UI/Button.vue';
+import Surface from '@/components/UI/Surface.vue';
 
 const router = useRouter();
 const store  = useInPersonRecordingStore();
@@ -360,10 +368,6 @@ function orbitalStyle(p) {
 }
 .cue-enter-active { transition: all 0.3s ease; }
 .cue-enter-from   { opacity: 0; transform: translateY(8px); }
-.modal-enter-active { transition: opacity 0.2s, transform 0.2s; }
-.modal-leave-active { transition: opacity 0.15s; }
-.modal-enter-from   { opacity: 0; transform: scale(0.97); }
-.modal-leave-to     { opacity: 0; }
 .fade-enter-active, .fade-leave-active { transition: opacity 0.3s; }
 .fade-enter-from, .fade-leave-to       { opacity: 0; }
 </style>

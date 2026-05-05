@@ -1,144 +1,142 @@
 <template>
-  <div class="p-4 md:p-6 max-w-7xl mx-auto space-y-6">
-    <!-- Header Card -->
-    <div
-      class="rounded-2xl border dark:border-gray-700 bg-gradient-to-r from-indigo-500 to-purple-600 shadow-lg overflow-hidden">
-      <div class="p-6 text-white">
-        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <h1 class="text-3xl font-bold mb-2 flex items-center gap-3">
-              <i class="fas fa-file-invoice-dollar"></i>
-              Gerenciamento de Títulos e Custos
-                <Favorite :router="'/financeiro/titulos'" :section="'Títulos'" />
-            </h1>
-            <p class="text-indigo-50 text-sm">
-              Busque títulos no Sienge — parcelas e custos gerados automaticamente por data de vencimento
-            </p>
+  <div class="min-h-[calc(100vh-3.5rem)]">
+    <PageContainer size="full">
+
+      <PageHeader
+        subtitle="Busque títulos no Sienge — parcelas e custos gerados automaticamente por data de vencimento"
+        icon="fas fa-file-invoice-dollar">
+        <template #title>
+          Gerenciamento de Títulos e Custos
+          <Favorite :router="'/financeiro/titulos'" :section="'Títulos'" />
+        </template>
+      </PageHeader>
+
+      <!-- Filtros Card -->
+      <Surface variant="raised" padding="md" class="mb-5 surface-gradient">
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+          <!-- Empreendimento -->
+          <div class="md:col-span-4">
+            <label class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1.5 flex items-center gap-1.5">
+              <i class="fas fa-city text-accent text-[10px]"></i>
+              Empreendimento / Centro de Custo
+              <span class="text-[10px] text-ink-subtle font-normal normal-case">(máx. 3)</span>
+            </label>
+            <MultiSelector :model-value="selectedCostCenterNames" @update:modelValue="handleCostCenterChange"
+              :options="costCenterOptions" placeholder="Selecione empreendimentos" :page-size="200"
+              :disabled="isSyncing" />
+          </div>
+
+          <!-- Data Inicial -->
+          <div class="md:col-span-2">
+            <label class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1.5 flex items-center gap-1.5">
+              <i class="fas fa-calendar-day text-accent text-[10px]"></i>
+              Data Inicial
+            </label>
+            <Input v-model="store.startDate" type="date" :disabled="isSyncing" />
+          </div>
+
+          <!-- Data Final -->
+          <div class="md:col-span-2">
+            <label class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1.5 flex items-center gap-1.5">
+              <i class="fas fa-calendar-check text-accent text-[10px]"></i>
+              Data Final
+            </label>
+            <Input v-model="store.endDate" type="date" :disabled="isSyncing" />
+          </div>
+
+          <!-- Departamentos -->
+          <div class="md:col-span-2">
+            <label class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1.5 flex items-center gap-1.5">
+              <i class="fas fa-sitemap text-accent text-[10px]"></i>
+              Departamento(s)
+            </label>
+            <MultiSelector :model-value="store.selectedDepartments"
+              @update:modelValue="v => store.selectedDepartments = Array.isArray(v) ? v : []"
+              :options="store.departmentsOptions" placeholder="Departamento" :page-size="200" :disabled="isSyncing" />
+          </div>
+
+          <!-- Botões -->
+          <div class="md:col-span-2 flex flex-col gap-2">
+            <Button variant="primary" icon="fas fa-filter" block
+              :loading="store.isLoading"
+              :disabled="store.isLoading || !store.costCenterIds.length || isSyncing"
+              @click="store.fetchBills">
+              {{ store.isLoading ? 'Carregando...' : 'Filtrar' }}
+            </Button>
+
+            <!-- Sincronizar Tudo — aparece só quando 1 empreendimento selecionado -->
+            <Button v-if="canSyncEnterprise"
+              variant="primary"
+              size="sm"
+              block
+              class="!bg-emerald-600 hover:!bg-emerald-700"
+              :icon="isSyncing ? 'fas fa-spinner fa-spin' : 'fas fa-cloud-arrow-down'"
+              :disabled="isSyncing || store.isLoading"
+              @click="startEnterpriseSync">
+              {{ isSyncing ? 'Sincronizando...' : 'Sincronizar Tudo' }}
+            </Button>
           </div>
         </div>
-      </div>
-    </div>
 
-    <!-- Filtros Card -->
-    <div class="rounded-2xl border dark:border-gray-700 bg-white/90 dark:bg-gray-800 p-6 shadow-lg">
-      <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
-        <!-- Empreendimento -->
-        <div class="md:col-span-4">
-          <label class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-            <i class="fas fa-city text-indigo-600"></i>
-            Empreendimento / Centro de Custo
-            <span class="text-[10px] text-gray-400 font-normal">(máx. 3)</span>
-          </label>
-          <MultiSelector :model-value="selectedCostCenterNames" @update:modelValue="handleCostCenterChange"
-            :options="costCenterOptions" placeholder="Selecione empreendimentos" :page-size="200"
-            :disabled="isSyncing" />
-        </div>
+        <!-- Aviso de range excessivo -->
+        <Surface v-if="store.dateRangeWarning" variant="raised" padding="sm"
+          class="mt-3 border-amber-500/30 bg-amber-500/10">
+          <div class="text-sm text-amber-700 dark:text-amber-400 flex items-center gap-2">
+            <i class="fas fa-triangle-exclamation"></i>
+            {{ store.dateRangeWarning }}
+          </div>
+        </Surface>
 
-        <!-- Data Inicial -->
-        <div class="md:col-span-2">
-          <label class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-            <i class="fas fa-calendar-day text-indigo-600"></i>
-            Data Inicial
-          </label>
-          <input v-model="store.startDate" type="date" :disabled="isSyncing"
-            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-gray-50 dark:bg-gray-900/60 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/60 transition-all disabled:opacity-50 disabled:cursor-not-allowed" />
-        </div>
+        <Surface v-if="store.error" variant="raised" padding="sm"
+          class="mt-3 border-red-500/30 bg-red-500/10">
+          <div class="text-sm text-red-600 dark:text-red-400 flex items-center gap-2">
+            <i class="fas fa-circle-exclamation"></i>{{ store.error }}
+          </div>
+        </Surface>
+      </Surface>
 
-        <!-- Data Final -->
-        <div class="md:col-span-2">
-          <label class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-            <i class="fas fa-calendar-check text-indigo-600"></i>
-            Data Final
-          </label>
-          <input v-model="store.endDate" type="date" :disabled="isSyncing"
-            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-gray-50 dark:bg-gray-900/60 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/60 transition-all disabled:opacity-50 disabled:cursor-not-allowed" />
-        </div>
-
-        <!-- Departamentos -->
-        <div class="md:col-span-2">
-          <label class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-            <i class="fas fa-sitemap text-indigo-600"></i>
-            Departamento(s)
-          </label>
-          <MultiSelector :model-value="store.selectedDepartments"
-            @update:modelValue="v => store.selectedDepartments = Array.isArray(v) ? v : []"
-            :options="store.departmentsOptions" placeholder="Departamento" :page-size="200" :disabled="isSyncing" />
-        </div>
-
-        <!-- Botão Filtrar -->
-        <div class="md:col-span-2 flex flex-col gap-2">
-          <button @click="store.fetchBills"
-            class="w-full px-6 py-2.5 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold rounded-lg hover:from-indigo-600 hover:to-purple-700 focus:outline-none focus:ring-4 focus:ring-indigo-300/50 transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-            :disabled="store.isLoading || !store.costCenterIds.length || isSyncing">
-            <i class="fas fa-filter"></i>
-            <span v-if="!store.isLoading">Filtrar</span>
-            <span v-else>Carregando...</span>
-          </button>
-
-          <!-- Sincronizar Tudo — aparece só quando 1 empreendimento selecionado -->
-          <button v-if="canSyncEnterprise" @click="startEnterpriseSync"
-            class="w-full px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-semibold rounded-lg hover:from-emerald-600 hover:to-teal-700 focus:outline-none focus:ring-4 focus:ring-emerald-300/50 transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-            :disabled="isSyncing || store.isLoading">
-            <i :class="isSyncing ? 'fas fa-spinner fa-spin' : 'fas fa-cloud-download-alt'"></i>
-            <span>{{ isSyncing ? 'Sincronizando...' : 'Sincronizar Tudo' }}</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- Aviso de range excessivo -->
-      <div v-if="store.dateRangeWarning"
-        class="mt-3 flex items-center gap-2 text-sm text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 px-4 py-2.5 rounded-lg">
-        <i class="fas fa-exclamation-triangle flex-none"></i>
-        {{ store.dateRangeWarning }}
-      </div>
-
-      <p v-if="store.error" class="mt-4 text-sm text-red-600 bg-red-50 dark:bg-red-900/20 px-4 py-2 rounded-lg">
-        <i class="fas fa-exclamation-circle mr-2"></i>{{ store.error }}
-      </p>
-    </div>
-
-    <!-- Painel de Sync Completo -->
-    <transition name="slide-down">
-      <div v-if="syncStatus && syncStatus.phase !== null" class="rounded-2xl border shadow-lg overflow-hidden" :class="{
-        'border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-900/20': syncStatus.phase === 'done',
-        'border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900/20': syncStatus.phase === 'error',
-        'border-indigo-300 dark:border-indigo-700 bg-indigo-50 dark:bg-indigo-900/20': syncStatus.running,
-      }">
-        <div class="p-5">
+      <!-- Painel de Sync Completo -->
+      <transition name="slide-down">
+        <Surface v-if="syncStatus && syncStatus.phase !== null"
+          variant="raised"
+          padding="md"
+          class="mb-5 border-2 surface-gradient"
+          :class="{
+            'border-emerald-500/40 bg-emerald-500/10': syncStatus.phase === 'done',
+            'border-red-500/40 bg-red-500/10': syncStatus.phase === 'error',
+            'border-accent/40 bg-accent-soft': syncStatus.running,
+          }">
           <div class="flex items-start justify-between gap-4">
             <div class="flex-1 min-w-0">
-              <!-- Cabeçalho do painel -->
               <div class="flex items-center gap-3 mb-3">
-                <div class="w-9 h-9 rounded-xl flex items-center justify-center text-white shadow-sm flex-none" :class="{
-                  'bg-emerald-500': syncStatus.phase === 'done',
-                  'bg-red-500': syncStatus.phase === 'error',
-                  'bg-indigo-500': syncStatus.running,
-                }">
+                <div class="h-9 w-9 rounded-xl grid place-items-center text-white shrink-0"
+                  :class="{
+                    'bg-emerald-500': syncStatus.phase === 'done',
+                    'bg-red-500': syncStatus.phase === 'error',
+                    'bg-accent': syncStatus.running,
+                  }">
                   <i :class="{
                     'fas fa-check': syncStatus.phase === 'done',
                     'fas fa-times': syncStatus.phase === 'error',
-                    'fas fa-sync-alt fa-spin': syncStatus.running,
+                    'fas fa-arrows-rotate fa-spin': syncStatus.running,
                   }"></i>
                 </div>
-                <div>
-                  <h3 class="font-semibold text-gray-900 dark:text-white text-sm">
+                <div class="min-w-0">
+                  <h3 class="font-semibold text-ink text-sm">
                     Sincronização Completa do Empreendimento
                   </h3>
-                  <p class="text-xs text-gray-500 dark:text-gray-400">
-                    {{ syncPhaseLabel }}
-                  </p>
+                  <p class="text-xs text-ink-muted">{{ syncPhaseLabel }}</p>
                 </div>
               </div>
 
               <!-- Barra de progresso -->
               <div v-if="syncStatus.running" class="mb-3">
-                <div class="h-2 bg-white/60 dark:bg-gray-700 rounded-full overflow-hidden">
-                  <div
-                    class="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full transition-all duration-500"
+                <div class="h-2 bg-surface-sunken rounded-full overflow-hidden">
+                  <div class="h-full bg-accent rounded-full transition-all duration-500"
                     :style="{ width: syncProgressPct + '%' }">
                   </div>
                 </div>
-                <div class="flex justify-between text-[11px] text-gray-500 dark:text-gray-400 mt-1">
+                <div class="flex justify-between text-[11px] text-ink-muted mt-1 font-mono tabular-nums">
                   <span>{{ syncProgressLabel }}</span>
                   <span>{{ syncProgressPct }}%</span>
                 </div>
@@ -146,183 +144,163 @@
 
               <!-- Resultado final (done) -->
               <div v-if="syncStatus.phase === 'done' && syncStatus.result" class="grid grid-cols-3 gap-3 text-center">
-                <div class="bg-white/70 dark:bg-gray-800/70 rounded-lg px-3 py-2">
-                  <div class="text-lg font-bold text-emerald-600">{{ syncStatus.result.total }}</div>
-                  <div class="text-[10px] text-gray-500">Títulos</div>
-                </div>
-                <div class="bg-white/70 dark:bg-gray-800/70 rounded-lg px-3 py-2">
-                  <div class="text-lg font-bold text-indigo-600">{{ syncStatus.result.missingDeps }}</div>
-                  <div class="text-[10px] text-gray-500">Departamentos novos</div>
-                </div>
-                <div class="bg-white/70 dark:bg-gray-800/70 rounded-lg px-3 py-2">
-                  <div class="text-lg font-bold text-purple-600">{{ syncStatus.result.missingInst }}</div>
-                  <div class="text-[10px] text-gray-500">Parcelas novas</div>
-                </div>
+                <Surface variant="raised" padding="sm">
+                  <div class="text-lg font-bold text-emerald-600 dark:text-emerald-400 font-mono tabular-nums">
+                    {{ syncStatus.result.total }}
+                  </div>
+                  <div class="text-[10px] text-ink-subtle uppercase tracking-wider">Títulos</div>
+                </Surface>
+                <Surface variant="raised" padding="sm">
+                  <div class="text-lg font-bold text-accent font-mono tabular-nums">
+                    {{ syncStatus.result.missingDeps }}
+                  </div>
+                  <div class="text-[10px] text-ink-subtle uppercase tracking-wider">Departamentos novos</div>
+                </Surface>
+                <Surface variant="raised" padding="sm">
+                  <div class="text-lg font-bold text-purple-600 dark:text-purple-400 font-mono tabular-nums">
+                    {{ syncStatus.result.missingInst }}
+                  </div>
+                  <div class="text-[10px] text-ink-subtle uppercase tracking-wider">Parcelas novas</div>
+                </Surface>
               </div>
 
               <!-- Erro -->
-              <p v-if="syncStatus.phase === 'error'"
-                class="text-sm text-red-700 dark:text-red-400 bg-red-100/80 dark:bg-red-900/30 px-3 py-2 rounded-lg">
-                <i class="fas fa-exclamation-circle mr-2"></i>{{ syncStatus.error }}
-              </p>
+              <Surface v-if="syncStatus.phase === 'error'" variant="raised" padding="sm"
+                class="border-red-500/30 bg-red-500/10">
+                <p class="text-sm text-red-700 dark:text-red-400 flex items-center gap-2">
+                  <i class="fas fa-circle-exclamation"></i>{{ syncStatus.error }}
+                </p>
+              </Surface>
             </div>
 
             <!-- Botão fechar (só quando finalizado) -->
-            <button v-if="!syncStatus.running" @click="syncStatus = null"
-              class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors flex-none mt-0.5">
-              <i class="fas fa-times text-base"></i>
-            </button>
+            <IconButton v-if="!syncStatus.running"
+              icon="fas fa-times"
+              label="Fechar"
+              variant="ghost"
+              size="sm"
+              @click="syncStatus = null" />
           </div>
-        </div>
-      </div>
-    </transition>
+        </Surface>
+      </transition>
 
-    <!-- Summary & Actions Card -->
-    <div class="rounded-2xl border dark:border-gray-700 bg-white/90 dark:bg-gray-800 p-6 shadow-lg">
-      <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-        <div class="flex flex-col md:flex-row md:items-center gap-4">
-          <div class="flex items-center gap-3">
-            <div
-              class="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white shadow-md">
-              <i class="fas fa-list text-xl"></i>
+      <!-- Summary Card -->
+      <Surface variant="raised" padding="md" class="mb-5 surface-gradient">
+        <div class="flex items-center gap-4">
+          <div class="h-12 w-12 rounded-xl bg-accent-soft border border-accent/20 grid place-items-center text-accent shrink-0">
+            <i class="fas fa-list text-xl"></i>
+          </div>
+          <div>
+            <div class="text-2xl font-bold text-ink font-mono tabular-nums">
+              {{ store.visibleBills.length }}
             </div>
-            <div>
-              <div class="text-2xl font-bold text-gray-900 dark:text-white">
-                {{ store.visibleBills.length }}
-              </div>
-              <div class="text-xs text-gray-500 dark:text-gray-400">
-                de {{ store.bills.length }} carregados
-              </div>
+            <div class="text-xs text-ink-muted">
+              de <span class="font-mono tabular-nums">{{ store.bills.length }}</span> carregados
             </div>
           </div>
         </div>
-      </div>
-    </div>
+      </Surface>
 
-    <!-- Table Card -->
-    <div class="rounded-2xl border dark:border-gray-700 bg-white/90 dark:bg-gray-800 shadow-lg overflow-hidden">
-      <!-- Table Header -->
-      <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-900/40">
-        <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-          <i class="fas fa-table text-indigo-600"></i>
-          Títulos Disponíveis
-        </h3>
-      </div>
+      <!-- Table Card -->
+      <Surface variant="raised" padding="none" class="overflow-hidden surface-gradient">
+        <!-- Table Header -->
+        <div class="px-5 sm:px-6 py-3.5 border-b border-line bg-surface-sunken/40">
+          <h3 class="text-base font-semibold text-ink flex items-center gap-2">
+            <i class="fas fa-table text-accent"></i>
+            Títulos Disponíveis
+          </h3>
+        </div>
 
-      <!-- Table -->
-      <div class="overflow-x-auto">
-        <table class="min-w-full table-auto">
-          <thead class="bg-gray-50 dark:bg-gray-900/60 border-b border-gray-200 dark:border-gray-700">
-            <tr>
-              <th
-                class="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                Fornecedor
-              </th>
-              <th
-                class="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                Documento
-              </th>
-              <th
-                class="px-4 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                Parcelas
-              </th>
-              <th
-                class="px-4 py-3 text-right text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                Valor Total
-              </th>
-              <th
-                class="px-4 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                Emissão
-              </th>
-              <th
-                class="px-4 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                Departamento
-              </th>
-            </tr>
-          </thead>
+        <!-- Table -->
+        <div class="overflow-x-auto">
+          <table class="min-w-full table-auto">
+            <thead class="bg-surface-sunken/60 border-b border-line">
+              <tr>
+                <th class="px-4 py-3 text-left text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Fornecedor</th>
+                <th class="px-4 py-3 text-left text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Documento</th>
+                <th class="px-4 py-3 text-center text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Parcelas</th>
+                <th class="px-4 py-3 text-right text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Valor Total</th>
+                <th class="px-4 py-3 text-center text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Emissão</th>
+                <th class="px-4 py-3 text-center text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Departamento</th>
+              </tr>
+            </thead>
 
-          <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-            <tr v-for="bill in store.visibleBills" :key="bill.id"
-              class="hover:bg-indigo-50/50 dark:hover:bg-indigo-900/10 transition-colors">
+            <tbody class="divide-y divide-line">
+              <tr v-for="bill in store.visibleBills" :key="bill.id"
+                class="hover:bg-surface-hover/40 transition-colors">
 
-              <!-- Fornecedor -->
-              <td class="px-4 py-3 align-middle">
-                <div class="space-y-0.5 max-w-56">
-                  <div class="text-sm font-semibold text-gray-900 dark:text-white truncate">
-                    {{ bill.creditor_json ? (bill.creditor_json.tradeName || bill.creditor_json.name || 'Sem nome') :
-                    '—' }}
+                <!-- Fornecedor -->
+                <td class="px-4 py-3 align-middle">
+                  <div class="space-y-0.5 max-w-56">
+                    <div class="text-sm font-semibold text-ink truncate">
+                      {{ bill.creditor_json ? (bill.creditor_json.tradeName || bill.creditor_json.name || 'Sem nome') : '—' }}
+                    </div>
+                    <div v-if="bill.creditor_json?.cnpj" class="text-[10px] text-ink-subtle truncate font-mono">
+                      CNPJ: {{ bill.creditor_json.cnpj }}
+                    </div>
                   </div>
-                  <div v-if="bill.creditor_json?.cnpj" class="text-[10px] text-gray-400 truncate">
-                    CNPJ: {{ bill.creditor_json.cnpj }}
+                </td>
+
+                <!-- Documento -->
+                <td class="px-4 py-3 align-middle">
+                  <div class="space-y-0.5">
+                    <div class="text-xs font-medium text-ink-muted">
+                      {{ bill.document_identification_id }} {{ bill.document_number }}
+                    </div>
+                    <div class="text-[10px] text-ink-subtle font-mono">#{{ bill.id }}</div>
+                    <div v-if="bill.notes" class="text-[10px] text-ink-subtle truncate max-w-40" :title="bill.notes">
+                      {{ bill.notes }}
+                    </div>
                   </div>
-                </div>
-              </td>
+                </td>
 
-              <!-- Documento -->
-              <td class="px-4 py-3 align-middle">
-                <div class="space-y-0.5">
-                  <div class="text-xs font-medium text-gray-700 dark:text-gray-300">
-                    {{ bill.document_identification_id }} {{ bill.document_number }}
+                <!-- Parcelas -->
+                <td class="px-4 py-3 whitespace-nowrap text-center align-middle">
+                  <Badge v-if="bill.installments_number && bill.installments_number > 1"
+                    variant="accent" size="sm" class="font-mono">
+                    {{ bill.installments_number }}x
+                  </Badge>
+                  <Badge v-else variant="neutral" size="sm" class="font-mono">1x</Badge>
+                </td>
+
+                <!-- Valor -->
+                <td class="px-4 py-3 whitespace-nowrap text-right align-middle">
+                  <div class="text-sm font-bold text-accent font-mono tabular-nums">
+                    {{ Number(bill.total_invoice_amount || 0).toLocaleString('pt-BR', {
+                      style: 'currency', currency: 'BRL'
+                    }) }}
                   </div>
-                  <div class="text-[10px] text-gray-400">#{{ bill.id }}</div>
-                  <div v-if="bill.notes" class="text-[10px] text-gray-400 truncate max-w-40" :title="bill.notes">
-                    {{ bill.notes }}
+                </td>
+
+                <!-- Emissão -->
+                <td class="px-4 py-3 whitespace-nowrap text-center align-middle">
+                  <div class="text-sm text-ink-muted font-mono tabular-nums">
+                    {{ bill.issue_date ? new Date(bill.issue_date + 'T12:00:00').toLocaleDateString('pt-BR') : '—' }}
                   </div>
-                </div>
-              </td>
+                </td>
 
-              <!-- Parcelas -->
-              <td class="px-4 py-3 whitespace-nowrap text-center align-middle">
-                <span v-if="bill.installments_number && bill.installments_number > 1"
-                  class="inline-flex items-center px-2 py-1 text-xs font-semibold text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/30 rounded-full border border-purple-200 dark:border-purple-800">
-                  {{ bill.installments_number }}x
-                </span>
-                <span v-else
-                  class="inline-flex items-center px-2.5 py-1 text-xs font-semibold text-gray-500 bg-gray-100 dark:bg-gray-800 rounded-full">
-                  1x
-                </span>
-              </td>
+                <!-- Departamento -->
+                <td class="px-4 py-3 text-center align-middle">
+                  <Badge v-if="bill.main_department_name" variant="info" size="sm">
+                    {{ bill.main_department_name }}
+                  </Badge>
+                  <span v-else class="text-xs text-ink-subtle">—</span>
+                </td>
+              </tr>
 
-              <!-- Valor -->
-              <td class="px-4 py-3 whitespace-nowrap text-right align-middle">
-                <div class="text-sm font-bold text-indigo-600 dark:text-indigo-400">
-                  {{ Number(bill.total_invoice_amount || 0).toLocaleString('pt-BR', {
-                    style: 'currency', currency: 'BRL'
-                  }) }}
-                </div>
-              </td>
-
-              <!-- Emissão -->
-              <td class="px-4 py-3 whitespace-nowrap text-center align-middle">
-                <div class="text-sm text-gray-700 dark:text-gray-300">
-                  {{ bill.issue_date ? new Date(bill.issue_date + 'T12:00:00').toLocaleDateString('pt-BR') : '—' }}
-                </div>
-              </td>
-
-              <!-- Departamento -->
-              <td class="px-4 py-3 text-center align-middle">
-                <span v-if="bill.main_department_name"
-                  class="inline-flex items-center px-2 py-1 text-xs font-medium text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/30 rounded-full border border-blue-200 dark:border-blue-800">
-                  {{ bill.main_department_name }}
-                </span>
-                <span v-else class="text-xs text-gray-400">—</span>
-              </td>
-            </tr>
-
-            <tr v-if="!store.visibleBills.length && !store.isLoading">
-              <td colspan="6" class="px-6 py-12 text-center">
-                <div class="flex flex-col items-center gap-3 text-gray-500 dark:text-gray-400">
-                  <i class="fas fa-inbox text-4xl opacity-50"></i>
-                  <p class="text-sm font-medium">Nenhum título encontrado</p>
-                  <p class="text-xs">Ajuste os filtros e clique em "Filtrar"</p>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
+              <tr v-if="!store.visibleBills.length && !store.isLoading">
+                <td colspan="6" class="px-6 py-12">
+                  <EmptyState
+                    icon="fas fa-inbox"
+                    title="Nenhum título encontrado"
+                    description="Ajuste os filtros e clique em 'Filtrar'." />
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </Surface>
+    </PageContainer>
   </div>
 </template>
 
@@ -330,10 +308,19 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useBillsStore } from '@/stores/Financeiro/Bills/billsStore';
 import { useContractsStore } from '@/stores/Comercial/Contracts/contractsStore';
-import MultiSelector from '@/components/UI/MultiSelector.vue';
 import API_URL from '@/config/apiUrl';
 import { requestWithAuth } from '@/utils/Auth/requestWithAuth';
-import Favorite from '@/components/config/Favorite.vue'
+
+import PageContainer from '@/components/UI/PageContainer.vue';
+import PageHeader from '@/components/UI/PageHeader.vue';
+import Surface from '@/components/UI/Surface.vue';
+import Button from '@/components/UI/Button.vue';
+import IconButton from '@/components/UI/IconButton.vue';
+import Badge from '@/components/UI/Badge.vue';
+import Input from '@/components/UI/Input.vue';
+import EmptyState from '@/components/UI/EmptyState.vue';
+import MultiSelector from '@/components/UI/MultiSelector.vue';
+import Favorite from '@/components/config/Favorite.vue';
 
 const store = useBillsStore();
 const contractsStore = useContractsStore();
@@ -362,25 +349,20 @@ function handleCostCenterChange(v) {
 }
 
 // ── Sync completo de empreendimento ───────────────────────────────────────────
-
-/** Estado do sync vindo do backend */
 const syncStatus = ref(null);
-
-/** Apenas 1 empreendimento selecionado → habilita "Sincronizar Tudo" */
 const canSyncEnterprise = computed(() => store.costCenterIds.length === 1);
-
 const isSyncing = computed(() => syncStatus.value?.running === true);
 
 let pollTimer = null;
 
 const syncPhaseLabels = {
-  starting: 'Iniciando...',
-  fetching: 'Buscando títulos no Sienge...',
-  upserting: 'Salvando títulos no banco...',
-  departments: 'Processando departamentos...',
+  starting:     'Iniciando...',
+  fetching:     'Buscando títulos no Sienge...',
+  upserting:    'Salvando títulos no banco...',
+  departments:  'Processando departamentos...',
   installments: 'Processando parcelas e despesas...',
-  done: 'Sincronização concluída!',
-  error: 'Erro durante a sincronização',
+  done:         'Sincronização concluída!',
+  error:        'Erro durante a sincronização',
 };
 
 const syncPhaseLabel = computed(() =>
@@ -391,7 +373,6 @@ const syncProgressPct = computed(() => {
   const s = syncStatus.value;
   if (!s?.running) return 100;
 
-  // Pesos por fase (estimativa visual)
   if (s.phase === 'fetching') {
     if (!s.total) return 5;
     return Math.min(20, Math.round((s.fetched / s.total) * 20));
@@ -479,10 +460,8 @@ async function startEnterpriseSync() {
   }
 }
 
-// Para o polling quando sai da página
 onUnmounted(() => stopPolling());
 
-// Se mudar de empreendimento enquanto syncing, para o polling do anterior
 watch(() => store.costCenterIds, () => {
   if (!isSyncing.value) {
     stopPolling();

@@ -8,13 +8,13 @@
         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
         @click.self="showCopyModal = false"
       >
-        <div class="bg-white z-50 dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-lg border border-gray-100 dark:border-gray-800">
-          <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-800">
+        <div class="bg-white z-50 dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-lg border border-line">
+          <div class="flex items-center justify-between px-6 py-4 border-b border-line">
             <div class="flex items-center gap-2">
               <i class="fas fa-copy text-blue-500"></i>
-              <h2 class="text-base font-bold text-gray-900 dark:text-white">Copiar Dados de Módulo</h2>
+              <h2 class="text-base font-bold text-ink">Copiar Dados de Módulo</h2>
             </div>
-            <button @click="showCopyModal = false" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 transition">
+            <button @click="showCopyModal = false" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-surface-hover transition">
               <i class="fas fa-times text-sm"></i>
             </button>
           </div>
@@ -60,8 +60,8 @@
               <div class="flex items-center justify-between mb-1.5">
                 <label class="lbl mb-0">O que copiar</label>
                 <div class="flex items-center gap-2">
-                  <button type="button" @click="copyFrom.fields = copyFieldOptions.map(o => o.value)" class="text-xs text-blue-600 dark:text-blue-400 hover:underline">Todos</button>
-                  <span class="text-gray-300 dark:text-gray-600">·</span>
+                  <button type="button" @click="copyFrom.fields = copyFieldOptions.map(o => o.value)" class="text-xs text-accent hover:underline">Todos</button>
+                  <span class="text-ink-subtle">·</span>
                   <button type="button" @click="copyFrom.fields = []" class="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:underline">Nenhum</button>
                 </div>
               </div>
@@ -72,14 +72,14 @@
                   :class="[
                     'flex items-start gap-2.5 cursor-pointer select-none p-3 rounded-lg border transition',
                     copyFrom.fields.includes(opt.value)
-                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/30'
-                      : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900/40 hover:border-gray-300'
+                      ? 'border-accent bg-accent-soft'
+                      : 'border-line bg-surface-raised/40 hover:border-gray-300'
                   ]"
                 >
                   <input type="checkbox" :value="opt.value" v-model="copyFrom.fields" class="mt-0.5 w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
                   <div class="min-w-0 flex-1">
-                    <p :class="['text-sm font-semibold', copyFrom.fields.includes(opt.value) ? 'text-blue-700 dark:text-blue-300' : 'text-gray-700 dark:text-gray-200']">{{ opt.label }}</p>
-                    <p class="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5 leading-tight">{{ opt.hint }}</p>
+                    <p :class="['text-sm font-semibold', copyFrom.fields.includes(opt.value) ? 'text-accent' : 'text-ink']">{{ opt.label }}</p>
+                    <p class="text-[10px] text-ink-subtle mt-0.5 leading-tight">{{ opt.hint }}</p>
                   </div>
                 </label>
               </div>
@@ -87,13 +87,13 @@
           </div>
 
           <div class="flex justify-end gap-3 px-6 pb-5">
-            <button @click="showCopyModal = false" class="px-4 py-2.5 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white transition">
+            <button @click="showCopyModal = false" class="px-4 py-2.5 text-sm font-medium text-ink-muted hover:text-gray-800 dark:hover:text-white transition">
               Cancelar
             </button>
             <button
               @click="handleCopyFromEnterprise"
               :disabled="!copyFrom.moduleId || !copyFrom.fields.length || copying"
-              class="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 disabled:opacity-50 transition"
+              class="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-accent-hover disabled:opacity-50 transition"
             >
               <i class="fas fa-arrows-rotate text-xs"></i>
               {{ copying ? 'Copiando...' : 'Copiar' }}
@@ -104,10 +104,10 @@
     </transition>
 
     <!-- ── HEADER principal ──────────────────────────────────────────────── -->
-    <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm">
+    <div class="bg-surface-raised rounded-2xl border border-line shadow-sm">
 
       <!-- Linha 1: Navegação de mês + status + ações -->
-      <div class="flex items-center justify-between px-5 py-3.5 bg-gradient-to-r from-slate-50 to-blue-50/40 dark:from-gray-800/60 dark:to-blue-950/20 border-b border-gray-100 dark:border-gray-800">
+      <div class="flex items-center justify-between px-5 py-3.5 bg-gradient-to-r from-slate-50 to-blue-50/40 dark:from-gray-800/60 dark:to-blue-950/20 border-b border-line">
 
         <!-- Navegador de mês -->
         <div class="flex items-center gap-2">
@@ -117,8 +117,8 @@
             :class="[
               'w-7 h-7 flex items-center justify-center rounded-lg transition text-xs',
               prevItem
-                ? 'text-gray-500 hover:text-gray-800 dark:hover:text-white hover:bg-white dark:hover:bg-gray-700 shadow-sm border border-gray-200 dark:border-gray-700'
-                : 'text-gray-300 dark:text-gray-600 cursor-not-allowed'
+                ? 'text-gray-500 hover:text-gray-800 dark:hover:text-white hover:bg-white dark:hover:bg-gray-700 shadow-sm border border-line'
+                : 'text-ink-subtle cursor-not-allowed'
             ]"
             title="Mês anterior"
           >
@@ -126,7 +126,7 @@
           </button>
 
           <div class="flex items-center gap-2">
-            <span class="text-xs text-gray-400 dark:text-gray-500 font-medium">Ref:</span>
+            <span class="text-xs text-ink-subtle font-medium">Ref:</span>
             <span class="text-sm font-bold text-gray-800 dark:text-white tracking-wide">{{ currentMonthLabel }}</span>
             <span
               :class="statusChipClass(conditionStatus)"
@@ -142,8 +142,8 @@
             :class="[
               'w-7 h-7 flex items-center justify-center rounded-lg transition text-xs',
               nextItem
-                ? 'text-gray-500 hover:text-gray-800 dark:hover:text-white hover:bg-white dark:hover:bg-gray-700 shadow-sm border border-gray-200 dark:border-gray-700'
-                : 'text-gray-300 dark:text-gray-600 cursor-not-allowed'
+                ? 'text-gray-500 hover:text-gray-800 dark:hover:text-white hover:bg-white dark:hover:bg-gray-700 shadow-sm border border-line'
+                : 'text-ink-subtle cursor-not-allowed'
             ]"
             title="Próximo mês"
           >
@@ -151,7 +151,7 @@
           </button>
 
           <!-- Indicador de histórico total -->
-          <span v-if="history.length > 1" class="text-xs text-gray-400 dark:text-gray-600 ml-1">
+          <span v-if="history.length > 1" class="text-xs text-ink-subtle ml-1">
             {{ currentHistoryPos }}/{{ history.length }}
           </span>
         </div>
@@ -163,7 +163,7 @@
             <div class="flex items-center gap-1.5">
               <select
                 v-model="copySourceId"
-                class="text-xs text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-2.5 py-1.5 outline-none focus:ring-2 focus:ring-blue-500/20 max-w-[160px]"
+                class="text-xs text-ink bg-surface-raised border border-line rounded-lg px-2.5 py-1.5 outline-none focus:ring-2 focus:ring-blue-500/20 max-w-[160px]"
               >
                 <option value="">Copiar de módulo...</option>
                 <option v-for="m in otherModules" :key="m.id ?? m.module_name" :value="m.id">
@@ -173,13 +173,13 @@
               <button
                 @click="handleCopyIntra"
                 :disabled="!copySourceId || copying"
-                class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-gray-700 dark:bg-gray-600 text-white rounded-lg hover:bg-gray-800 disabled:opacity-40 transition"
+                class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-surface-sunken text-white rounded-lg hover:bg-gray-800 disabled:opacity-40 transition"
               >
                 <i class="fas fa-arrows-rotate text-xs"></i>
                 Copiar
               </button>
             </div>
-            <div class="w-px h-5 bg-gray-200 dark:bg-gray-700 mx-1"></div>
+            <div class="w-px h-5 bg-surface-sunken mx-1"></div>
           </template>
 
           <!-- Copiar de outro empreendimento / outro mês -->
@@ -196,16 +196,16 @@
 
       <!-- Linha 2: Módulos como pills + botão de adicionar -->
       <div class="relative">
-        <div class="flex items-stretch overflow-x-auto scrollbar-hide border-b border-gray-100 dark:border-gray-800">
+        <div class="flex items-stretch overflow-x-auto scrollbar-hide border-b border-line">
           <button
             v-for="(mod, i) in modules"
             :key="mod.id ?? i"
             @click="activeIdx = i"
             :class="[
-              'group flex flex-col items-center justify-center px-4 py-2.5 text-center transition border-r border-gray-100 dark:border-gray-800 flex-shrink-0 relative',
+              'group flex flex-col items-center justify-center px-4 py-2.5 text-center transition border-r border-line flex-shrink-0 relative',
               activeIdx === i
                 ? 'bg-blue-600 text-white'
-                : 'bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400 hover:bg-blue-50 dark:hover:bg-blue-950/20 hover:text-blue-600 dark:hover:text-blue-400'
+                : 'bg-surface-raised text-ink-muted hover:bg-accent-soft hover:text-blue-600 dark:hover:text-blue-400'
             ]"
             style="min-width: 110px"
           >
@@ -222,7 +222,7 @@
                   'w-1.5 h-1.5 rounded-full transition',
                   activeIdx === i
                     ? (filled ? 'bg-white' : 'bg-white/25')
-                    : (filled ? 'bg-blue-500 dark:bg-blue-400' : 'bg-gray-200 dark:bg-gray-700')
+                    : (filled ? 'bg-blue-500 dark:bg-blue-400' : 'bg-surface-sunken')
                 ]"
               ></span>
             </div>
@@ -243,49 +243,49 @@
             v-if="!readonly"
             @click="showAddPanel = !showAddPanel"
             :class="[
-              'flex items-center gap-1 px-3 py-2 border-r border-gray-100 dark:border-gray-800 flex-shrink-0 text-xs font-medium transition',
+              'flex items-center gap-1 px-3 py-2 border-r border-line flex-shrink-0 text-xs font-medium transition',
               showAddPanel
-                ? 'bg-blue-50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400'
-                : 'bg-white dark:bg-gray-900 text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/10'
+                ? 'bg-accent-soft text-accent'
+                : 'bg-surface-raised text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/10'
             ]"
             title="Adicionar módulo"
           >
             <i class="fas fa-plus text-[10px]"></i>
           </button>
 
-          <div class="flex-1 bg-white dark:bg-gray-900"></div>
+          <div class="flex-1 bg-surface-raised"></div>
         </div>
 
         <!-- Painel de adição (dropdown inline) -->
         <transition name="slide-down">
           <div
             v-if="showAddPanel && !readonly"
-            class="absolute left-0 top-full z-30 min-w-[240px] bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-b-xl shadow-xl"
+            class="absolute left-0 top-full z-30 min-w-[240px] bg-surface-raised border border-line rounded-b-xl shadow-xl"
           >
             <!-- Etapas do CV disponíveis -->
             <div v-if="availableStages.length" class="p-2">
-              <p class="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider px-2 mb-1">Etapas do CV</p>
+              <p class="text-[10px] font-semibold text-ink-subtle uppercase tracking-wider px-2 mb-1">Etapas do CV</p>
               <button
                 v-for="stage in availableStages"
                 :key="stage.idetapa"
                 @click="addStageModule(stage)"
-                class="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 dark:text-gray-200 hover:bg-blue-50 dark:hover:bg-blue-950/20 hover:text-blue-600 dark:hover:text-blue-400 rounded-lg transition text-left"
+                class="w-full flex items-center gap-2 px-3 py-2 text-xs text-ink hover:bg-accent-soft hover:text-blue-600 dark:hover:text-blue-400 rounded-lg transition text-left"
               >
                 <i class="fas fa-layer-group text-blue-400 text-[10px] flex-shrink-0"></i>
                 {{ stage.nome }}
               </button>
             </div>
             <div v-else-if="enterpriseStages.length" class="px-4 py-3">
-              <p class="text-xs text-gray-400 dark:text-gray-600 italic">Todas as etapas do CV já estão adicionadas</p>
+              <p class="text-xs text-ink-subtle italic">Todas as etapas do CV já estão adicionadas</p>
             </div>
             <div v-else class="px-4 py-3">
-              <p class="text-xs text-gray-400 dark:text-gray-600 italic">Nenhuma etapa no CV para este empreendimento</p>
+              <p class="text-xs text-ink-subtle italic">Nenhuma etapa no CV para este empreendimento</p>
             </div>
 
-            <div class="border-t border-gray-100 dark:border-gray-800 p-2">
+            <div class="border-t border-line p-2">
               <button
                 @click="addCustomModule"
-                class="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition text-left"
+                class="w-full flex items-center gap-2 px-3 py-2 text-xs text-ink-muted hover:bg-surface-hover rounded-lg transition text-left"
               >
                 <i class="fas fa-cube text-gray-400 text-[10px] flex-shrink-0"></i>
                 Módulo avulso (sem etapa CV)
@@ -304,8 +304,8 @@
           :class="[
             'flex items-center gap-1.5 px-4 py-2 text-xs font-semibold whitespace-nowrap border-b-2 transition',
             activeSubTab === st.id
-              ? 'border-blue-600 text-blue-600 dark:text-blue-400 bg-white dark:bg-gray-900/50'
-              : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+              ? 'border-blue-600 text-accent bg-surface-raised/50'
+              : 'border-transparent text-ink-muted hover:text-gray-700 dark:hover:text-gray-200'
           ]"
         >
           <i :class="st.icon" class="text-xs"></i>
@@ -315,7 +315,7 @@
     </div>
 
     <!-- ── Conteúdo do módulo ────────────────────────────────────────────── -->
-    <div v-if="activeModule" class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+    <div v-if="activeModule" class="bg-surface-raised rounded-2xl border border-line shadow-sm overflow-hidden">
 
       <!-- ── Sub-tab: Dados ──────────────────────────────────────────────── -->
       <div v-show="activeSubTab === 'data'" class="p-5 space-y-5">
@@ -348,9 +348,9 @@
                   </option>
                 </select>
               </div>
-              <div v-else-if="activeModule.idetapa" class="mt-1.5 flex items-center gap-1 text-[11px] text-gray-400 dark:text-gray-500">
+              <div v-else-if="activeModule.idetapa" class="mt-1.5 flex items-center gap-1 text-[11px] text-ink-subtle">
                 <i class="fas fa-layer-group text-blue-400"></i>
-                Etapa do CV: <span class="font-medium text-gray-600 dark:text-gray-300">{{ enterpriseStages.find(s => s.idetapa === activeModule.idetapa)?.nome ?? `#${activeModule.idetapa}` }}</span>
+                Etapa do CV: <span class="font-medium text-ink-muted">{{ enterpriseStages.find(s => s.idetapa === activeModule.idetapa)?.nome ?? `#${activeModule.idetapa}` }}</span>
               </div>
             </div>
             <div>
@@ -368,7 +368,7 @@
             <div>
               <label class="lbl">
                 Demanda Mínima
-                <span class="text-gray-400 dark:text-gray-500 font-normal normal-case tracking-normal ml-1">(≥ 20%)</span>
+                <span class="text-ink-subtle font-normal normal-case tracking-normal ml-1">(≥ 20%)</span>
               </label>
               <input
                 :value="activeModule.min_demand"
@@ -402,31 +402,31 @@
             <div
               v-for="fc in FAIXAS_CONFIG"
               :key="fc.faixa"
-              :class="['rounded-xl border overflow-hidden transition-all', faixaEnabled(fc.faixa) ? fc.borderActive : 'border-gray-200 dark:border-gray-700']"
+              :class="['rounded-xl border overflow-hidden transition-all', faixaEnabled(fc.faixa) ? fc.borderActive : 'border-line']"
             >
               <!-- Toggle header -->
               <div
                 :class="['flex items-center gap-3 px-4 py-3 transition select-none', readonly ? 'cursor-default' : 'cursor-pointer',
-                  faixaEnabled(fc.faixa) ? fc.bgActive : 'bg-white dark:bg-gray-900/40 hover:bg-gray-50 dark:hover:bg-gray-800/40']"
+                  faixaEnabled(fc.faixa) ? fc.bgActive : 'bg-surface-raised/40 hover:bg-surface-hover/40']"
                 @click="!readonly && toggleFaixa(fc.faixa)"
               >
                 <span
                   :class="['flex-shrink-0 w-[18px] h-[18px] rounded border-2 flex items-center justify-center transition-all',
-                    faixaEnabled(fc.faixa) ? fc.checkActive : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900']"
+                    faixaEnabled(fc.faixa) ? fc.checkActive : 'border-line bg-surface-raised']"
                 >
                   <svg v-if="faixaEnabled(fc.faixa)" class="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 10 8" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M1 4l2.5 2.5L9 1" />
                   </svg>
                 </span>
                 <div class="flex-1 min-w-0">
-                  <span :class="['text-sm font-semibold', faixaEnabled(fc.faixa) ? fc.textActive : 'text-gray-800 dark:text-gray-100']">{{ fc.label }}</span>
-                  <!-- <span class="ml-2 text-xs text-gray-400 dark:text-gray-500">{{ fc.desc }}</span> -->
+                  <span :class="['text-sm font-semibold', faixaEnabled(fc.faixa) ? fc.textActive : 'text-ink']">{{ fc.label }}</span>
+                  <!-- <span class="ml-2 text-xs text-ink-subtle">{{ fc.desc }}</span> -->
                 </div>
-                <i v-if="faixaEnabled(fc.faixa)" class="fas fa-chevron-down text-xs text-gray-400 dark:text-gray-500"></i>
+                <i v-if="faixaEnabled(fc.faixa)" class="fas fa-chevron-down text-xs text-ink-subtle"></i>
               </div>
 
               <!-- Expanded fields -->
-              <div v-if="faixaEnabled(fc.faixa)" class="border-t border-gray-100 dark:border-gray-800 p-4 grid grid-cols-1 sm:grid-cols-3 gap-4 bg-gray-50/40 dark:bg-gray-800/10">
+              <div v-if="faixaEnabled(fc.faixa)" class="border-t border-line p-4 grid grid-cols-1 sm:grid-cols-3 gap-4 bg-gray-50/40 dark:bg-gray-800/10">
                 <div>
                   <label class="lbl">Valor de Avaliação</label>
                   <div class="relative">
@@ -504,9 +504,9 @@
                   @focus="e => { e.target.value = activeModule.commission_pct ?? ''; e.target.select(); }"
                   @blur="e => { const raw = String(e.target.value).replace(',', '.'); const n = parseFloat(raw); patchMulti({ commission_pct: isNaN(n) ? null : Math.round(n * 100) / 100, commission_source: 'manual' }); }"
                   class="inp pr-9" placeholder="0,00" :disabled="readonly" />
-                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 text-xs pointer-events-none">%</span>
+                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-ink-subtle text-xs pointer-events-none">%</span>
               </div>
-              <p class="mt-1 text-xs text-gray-400 dark:text-gray-500">
+              <p class="mt-1 text-xs text-ink-subtle">
                 Fonte: {{ activeModule.commission_source === 'cv' ? 'tabela do CV' : 'manual' }}
               </p>
             </div>
@@ -540,15 +540,15 @@
               :disabled="readonly"
             />
           </div>
-          <div v-if="activeModule.unit_snapshot?.data?.length && snapshotM2Stats" class="mt-4 p-3.5 bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/40 rounded-xl">
-            <p class="text-xs font-semibold text-blue-600 dark:text-blue-400 mb-2 flex items-center gap-1.5">
+          <div v-if="activeModule.unit_snapshot?.data?.length && snapshotM2Stats" class="mt-4 p-3.5 bg-blue-50/50 dark:bg-blue-950/20 border border-accent/20 rounded-xl">
+            <p class="text-xs font-semibold text-accent mb-2 flex items-center gap-1.5">
               <i class="fas fa-snowflake text-[9px]"></i>
               Preço/m² congelado em {{ formatSnapshotDate(activeModule.unit_snapshot.capturedAt) }}
             </p>
-            <div class="flex flex-wrap gap-4 text-xs text-gray-600 dark:text-gray-400">
-              <span>Mín: <strong class="text-gray-800 dark:text-gray-200">{{ formatM2(snapshotM2Stats.min) }}</strong></span>
-              <span>Máx: <strong class="text-gray-800 dark:text-gray-200">{{ formatM2(snapshotM2Stats.max) }}</strong></span>
-              <span>Média: <strong class="text-gray-800 dark:text-gray-200">{{ formatM2(snapshotM2Stats.avg) }}</strong></span>
+            <div class="flex flex-wrap gap-4 text-xs text-ink-muted">
+              <span>Mín: <strong class="text-ink">{{ formatM2(snapshotM2Stats.min) }}</strong></span>
+              <span>Máx: <strong class="text-ink">{{ formatM2(snapshotM2Stats.max) }}</strong></span>
+              <span>Média: <strong class="text-ink">{{ formatM2(snapshotM2Stats.avg) }}</strong></span>
             </div>
           </div>
         </div>
@@ -559,7 +559,7 @@
         <!-- Tabelas do CV -->
         <div>
           <p class="lbl-section mb-3"><i class="fas fa-table text-blue-500"></i> Tabelas do CV</p>
-          <p class="text-xs text-gray-400 dark:text-gray-500 mb-3">Selecione as tabelas que valem para este módulo.</p>
+          <p class="text-xs text-ink-subtle mb-3">Selecione as tabelas que valem para este módulo.</p>
           <!-- Aviso de tabelas selecionadas mas inativas no CV -->
           <div v-if="orphanedPriceTableIds.length" class="flex items-start gap-2.5 px-4 py-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-md mb-3">
             <i class="fas fa-exclamation-triangle text-amber-500 text-sm flex-shrink-0 mt-0.5"></i>
@@ -587,7 +587,7 @@
                 'rounded-xl border overflow-hidden transition-all',
                 (activeModule.price_table_ids ?? []).includes(t.idtabela)
                   ? 'border-blue-400 dark:border-blue-600 shadow-sm'
-                  : 'border-gray-200 dark:border-gray-700'
+                  : 'border-line'
               ]"
             >
               <!-- Card header -->
@@ -596,8 +596,8 @@
                   'flex items-center gap-3 px-4 py-3 transition-all select-none',
                   readonly ? 'cursor-default' : 'cursor-pointer',
                   (activeModule.price_table_ids ?? []).includes(t.idtabela)
-                    ? 'bg-blue-50 dark:bg-blue-950/30'
-                    : 'bg-white dark:bg-gray-900/40 hover:bg-gray-50 dark:hover:bg-gray-800/40'
+                    ? 'bg-accent-soft'
+                    : 'bg-surface-raised/40 hover:bg-surface-hover/40'
                 ]"
                 @click="!readonly && togglePriceTable(t.idtabela)"
               >
@@ -605,8 +605,8 @@
                 <span
                   class="flex-shrink-0 rounded border-2 flex items-center justify-center transition-all"
                   :class="(activeModule.price_table_ids ?? []).includes(t.idtabela)
-                    ? 'border-blue-500 bg-blue-500'
-                    : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900'"
+                    ? 'border-accent bg-blue-500'
+                    : 'border-line bg-surface-raised'"
                   style="width:18px;height:18px;"
                 >
                   <svg v-if="(activeModule.price_table_ids ?? []).includes(t.idtabela)" class="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 10 8" stroke="currentColor" stroke-width="2">
@@ -617,26 +617,26 @@
                 <!-- Name + stats -->
                 <div class="flex-1 min-w-0">
                   <div class="flex items-center gap-2 flex-wrap">
-                    <span class="text-sm font-semibold" :class="(activeModule.price_table_ids ?? []).includes(t.idtabela) ? 'text-blue-700 dark:text-blue-300' : 'text-gray-800 dark:text-gray-100'">
+                    <span class="text-sm font-semibold" :class="(activeModule.price_table_ids ?? []).includes(t.idtabela) ? 'text-accent' : 'text-ink'">
                       {{ t.nome }}
                     </span>
                     <span v-if="t.vigente" class="px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">vigente</span>
                   </div>
                   <div class="flex items-center gap-3 mt-0.5 flex-wrap">
-                    <span class="text-xs text-gray-400 dark:text-gray-500">{{ formatDate(t.data_vigencia_de) }} – {{ formatDate(t.data_vigencia_ate) }}</span>
+                    <span class="text-xs text-ink-subtle">{{ formatDate(t.data_vigencia_de) }} – {{ formatDate(t.data_vigencia_ate) }}</span>
                     <template v-if="t.unit_count > 0">
-                      <span class="text-xs text-gray-500 dark:text-gray-400">
-                        <strong class="text-gray-700 dark:text-gray-200">{{ t.unit_count }}</strong> unidades
+                      <span class="text-xs text-ink-muted">
+                        <strong class="text-ink">{{ t.unit_count }}</strong> unidades
                       </span>
-                      <span v-if="t.price_min != null" class="text-xs text-gray-500 dark:text-gray-400">
-                        De <strong class="text-gray-700 dark:text-gray-200">{{ fmtCurrencyShort(t.price_min) }}</strong>
-                        até <strong class="text-gray-700 dark:text-gray-200">{{ fmtCurrencyShort(t.price_max) }}</strong>
+                      <span v-if="t.price_min != null" class="text-xs text-ink-muted">
+                        De <strong class="text-ink">{{ fmtCurrencyShort(t.price_min) }}</strong>
+                        até <strong class="text-ink">{{ fmtCurrencyShort(t.price_max) }}</strong>
                       </span>
-                      <span v-if="t.price_avg != null" class="text-xs text-gray-500 dark:text-gray-400">
-                        · Média <strong class="text-gray-700 dark:text-gray-200">{{ fmtCurrencyShort(t.price_avg) }}</strong>
+                      <span v-if="t.price_avg != null" class="text-xs text-ink-muted">
+                        · Média <strong class="text-ink">{{ fmtCurrencyShort(t.price_avg) }}</strong>
                       </span>
                     </template>
-                    <span v-else class="text-xs text-gray-400 dark:text-gray-600 italic">Sem dados de unidades</span>
+                    <span v-else class="text-xs text-ink-subtle italic">Sem dados de unidades</span>
                   </div>
                 </div>
 
@@ -644,7 +644,7 @@
                 <button
                   v-if="t.unit_count > 0"
                   @click.stop="togglePriceTableExpand(t.idtabela)"
-                  class="flex-shrink-0 w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/20 transition"
+                  class="flex-shrink-0 w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-blue-500 hover:bg-accent-soft transition"
                   :title="expandedPriceTables.has(t.idtabela) ? 'Fechar unidades' : 'Ver unidades'"
                 >
                   <i :class="expandedPriceTables.has(t.idtabela) ? 'fas fa-chevron-up' : 'fas fa-chevron-down'" class="text-xs"></i>
@@ -652,20 +652,20 @@
               </div>
 
               <!-- Expanded unit list -->
-              <div v-if="expandedPriceTables.has(t.idtabela) && t.unidades?.length" class="border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/20 p-4 space-y-3">
+              <div v-if="expandedPriceTables.has(t.idtabela) && t.unidades?.length" class="border-t border-line bg-gray-50/50 dark:bg-gray-800/20 p-4 space-y-3">
                 <div v-for="group in groupByBloco(t.unidades)" :key="group.bloco">
-                  <p class="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1.5">Bloco {{ group.bloco }}</p>
+                  <p class="text-[10px] font-semibold text-ink-subtle uppercase tracking-wider mb-1.5">Bloco {{ group.bloco }}</p>
                   <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-1.5">
                     <div
                       v-for="u in group.units"
                       :key="u.idunidade ?? u.numerounidade"
                       :title="`${u.numerounidade}${u.situacao ? ' · ' + u.situacao : ''}${u.valor_total ? ' · ' + fmtCurrency(u.valor_total) : ''}`"
-                      class="flex items-center gap-1.5 px-2 py-1.5 rounded-lg border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-900/40 text-xs"
+                      class="flex items-center gap-1.5 px-2 py-1.5 rounded-lg border border-line bg-surface-raised/40 text-xs"
                     >
                       <span :class="['w-2 h-2 rounded-full flex-shrink-0', unitSituacaoDot(u.situacao)]"></span>
                       <div class="min-w-0">
-                        <span class="font-mono font-medium text-gray-700 dark:text-gray-200 truncate block leading-tight">{{ u.numerounidade }}</span>
-                        <span v-if="u.valor_total" class="text-[10px] text-blue-600 dark:text-blue-400 font-semibold leading-tight">{{ fmtCurrencyShort(u.valor_total) }}</span>
+                        <span class="font-mono font-medium text-ink truncate block leading-tight">{{ u.numerounidade }}</span>
+                        <span v-if="u.valor_total" class="text-[10px] text-accent font-semibold leading-tight">{{ fmtCurrencyShort(u.valor_total) }}</span>
                       </div>
                     </div>
                   </div>
@@ -673,7 +673,7 @@
               </div>
             </div>
           </div>
-          <div v-else class="flex flex-col items-center justify-center py-8 text-gray-400 dark:text-gray-600 text-center">
+          <div v-else class="flex flex-col items-center justify-center py-8 text-ink-subtle text-center">
             <i class="fas fa-exclamation-circle text-xl mb-2"></i>
             <p class="text-sm">Nenhuma tabela disponível</p>
           </div>
@@ -691,21 +691,21 @@
             <div
               v-for="(mt, mi) in (activeModule.manual_price_tables ?? [])"
               :key="mi"
-              class="border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50/40 dark:bg-gray-800/20 overflow-hidden"
+              class="border border-line rounded-xl bg-gray-50/40 dark:bg-gray-800/20 overflow-hidden"
             >
               <!-- Cabeçalho da tabela manual -->
-              <div class="flex items-center justify-between gap-3 px-4 py-3 bg-white dark:bg-gray-900/50 border-b border-gray-100 dark:border-gray-800">
+              <div class="flex items-center justify-between gap-3 px-4 py-3 bg-surface-raised/50 border-b border-line">
                 <input :value="mt.name" @input="patchManualTable(mi, 'name', $event.target.value)"
                   type="text" class="inp-inline flex-1 font-semibold" :disabled="readonly"
                   placeholder="Nome da tabela..." />
                 <div class="flex items-center gap-2 flex-shrink-0">
                   <input :value="mt.validity_from" @input="patchManualTable(mi, 'validity_from', $event.target.value)"
                     type="date" class="inp-sm" :disabled="readonly" title="Vigência de" />
-                  <span class="text-gray-300 dark:text-gray-600 text-xs">→</span>
+                  <span class="text-ink-subtle text-xs">→</span>
                   <input :value="mt.validity_to" @input="patchManualTable(mi, 'validity_to', $event.target.value)"
                     type="date" class="inp-sm" :disabled="readonly" title="Vigência até" />
                   <button v-if="!readonly" @click="removeManualTable(mi)"
-                    class="w-6 h-6 flex items-center justify-center rounded text-gray-300 dark:text-gray-600 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition flex-shrink-0">
+                    class="w-6 h-6 flex items-center justify-center rounded text-ink-subtle hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition flex-shrink-0">
                     <i class="fas fa-trash text-xs"></i>
                   </button>
                 </div>
@@ -717,21 +717,21 @@
                   type="text" class="inp text-xs" :disabled="readonly" placeholder="Observação da tabela..." />
 
                 <!-- Quick fill de unidades -->
-                <div class="flex items-center gap-2 flex-wrap p-3 bg-blue-50/60 dark:bg-blue-950/10 border border-blue-100 dark:border-blue-900/30 rounded-lg">
+                <div class="flex items-center gap-2 flex-wrap p-3 bg-blue-50/60 dark:bg-blue-950/10 border border-accent/20/30 rounded-lg">
                   <i class="fas fa-bolt text-blue-400 text-xs flex-shrink-0"></i>
-                  <span class="text-xs text-gray-600 dark:text-gray-400 font-medium flex-shrink-0">Preenchimento rápido:</span>
+                  <span class="text-xs text-ink-muted font-medium flex-shrink-0">Preenchimento rápido:</span>
 
                   <!-- Gerar unidades (a partir do total_units do módulo) -->
                   <button v-if="!readonly" @click="generateUnits(mi)"
                     :disabled="!activeModule.total_units"
-                    class="flex items-center gap-1 p-3 text-xs font-semibold bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-40 transition flex-shrink-0">
+                    class="flex items-center gap-1 p-3 text-xs font-semibold bg-blue-600 text-white rounded-md hover:bg-accent-hover disabled:opacity-40 transition flex-shrink-0">
                     <i class="fas fa-list text-[10px]"></i>
                     Gerar {{ activeModule.total_units ?? 0 }} unidades
                   </button>
 
                   <!-- Ticket médio -->
                   <div class="flex items-center gap-1 flex-shrink-0">
-                    <span class="text-xs text-gray-500 dark:text-gray-400">Ticket médio:</span>
+                    <span class="text-xs text-ink-muted">Ticket médio:</span>
                     <div class="relative">
                       <span class="pfx">R$</span>
                       <input type="text" :value="fmtBR(mt.avg_ticket)"
@@ -742,19 +742,19 @@
 
                     <button v-if="!readonly" @click="applyAvgTicket(mi)"
                       :disabled="!mt.avg_ticket || !(mt.units?.length)"
-                      class="flex items-center gap-1 p-3 text-xs font-semibold bg-gray-700 dark:bg-gray-600 text-white rounded-md hover:bg-gray-800 disabled:opacity-40 transition">
+                      class="flex items-center gap-1 p-3 text-xs font-semibold bg-surface-sunken text-white rounded-md hover:bg-gray-800 disabled:opacity-40 transition">
                       Aplicar
                     </button>
                   </div>
 
                   <!-- Estatísticas das unidades preenchidas -->
                   <template v-if="mt.units?.length">
-                    <span class="text-xs text-gray-400 dark:text-gray-500 ml-1">
+                    <span class="text-xs text-ink-subtle ml-1">
                       {{ mt.units.filter(u => u.value != null).length }}/{{ mt.units.length }} preenchidas
                       <template v-if="unitAvg(mt.units) != null">
-                        · Mín <strong class="text-gray-600 dark:text-gray-300">{{ fmtCurrency(unitMin(mt.units)) }}</strong>
-                        · Máx <strong class="text-gray-600 dark:text-gray-300">{{ fmtCurrency(unitMax(mt.units)) }}</strong>
-                        · Média <strong class="text-gray-600 dark:text-gray-300">{{ fmtCurrency(unitAvg(mt.units)) }}</strong>
+                        · Mín <strong class="text-ink-muted">{{ fmtCurrency(unitMin(mt.units)) }}</strong>
+                        · Máx <strong class="text-ink-muted">{{ fmtCurrency(unitMax(mt.units)) }}</strong>
+                        · Média <strong class="text-ink-muted">{{ fmtCurrency(unitAvg(mt.units)) }}</strong>
                       </template>
                     </span>
                   </template>
@@ -762,8 +762,8 @@
 
                 <!-- Lista de unidades -->
                 <div v-if="mt.units?.length">
-                  <div class="max-h-56 overflow-y-auto rounded-lg border border-gray-100 dark:border-gray-800">
-                    <div class="grid grid-cols-[auto_1fr_auto] items-center text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider px-3 py-1.5 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-800">
+                  <div class="max-h-56 overflow-y-auto rounded-lg border border-line">
+                    <div class="grid grid-cols-[auto_1fr_auto] items-center text-[10px] font-semibold text-ink-subtle uppercase tracking-wider px-3 py-1.5 bg-surface-sunken/50 border-b border-line">
                       <span class="w-10">Unid.</span>
                       <span>Valor</span>
                       <span></span>
@@ -773,7 +773,7 @@
                       :key="ui"
                       class="grid grid-cols-[auto_1fr_auto] items-center gap-2 px-3 py-1.5 border-b border-gray-50 dark:border-gray-800/50 last:border-0 hover:bg-gray-50/50 dark:hover:bg-gray-800/20"
                     >
-                      <span class="w-10 text-xs font-mono text-gray-500 dark:text-gray-400 flex-shrink-0">{{ u.label }}</span>
+                      <span class="w-10 text-xs font-mono text-ink-muted flex-shrink-0">{{ u.label }}</span>
                       <div class="relative">
                         <span class="pfx">R$</span>
                         <input type="text" :value="fmtBR(u.value)"
@@ -782,19 +782,19 @@
                           class="inp-pfx pl-8 w-full" :disabled="readonly" placeholder="—" />
                       </div>
                       <button v-if="!readonly" @click="removeUnit(mi, ui)"
-                        class="w-5 h-5 flex items-center justify-center rounded text-gray-300 dark:text-gray-600 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition flex-shrink-0">
+                        class="w-5 h-5 flex items-center justify-center rounded text-ink-subtle hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition flex-shrink-0">
                         <i class="fas fa-times text-[9px]"></i>
                       </button>
                     </div>
                   </div>
                 </div>
-                <div v-else-if="!activeModule.total_units" class="text-xs text-gray-400 dark:text-gray-500 italic">
+                <div v-else-if="!activeModule.total_units" class="text-xs text-ink-subtle italic">
                   Defina o total de unidades no módulo (aba Dados) para gerar automaticamente.
                 </div>
               </div>
             </div>
 
-            <div v-if="!(activeModule.manual_price_tables ?? []).length" class="flex flex-col items-center justify-center py-6 text-gray-400 dark:text-gray-600 text-center">
+            <div v-if="!(activeModule.manual_price_tables ?? []).length" class="flex flex-col items-center justify-center py-6 text-ink-subtle text-center">
               <i class="fas fa-file-invoice-dollar text-xl mb-2"></i>
               <p class="text-sm">Nenhuma tabela manual cadastrada</p>
             </div>
@@ -867,14 +867,14 @@
                 :class="['flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border transition',
                   showingSnapshot
                     ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-700 text-amber-700 dark:text-amber-400'
-                    : 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700 text-blue-600 dark:text-blue-400']"
+                    : 'bg-accent-soft border-accent/30 text-accent']"
               >
                 <i :class="showingSnapshot ? 'fas fa-snowflake' : 'fas fa-circle-dot'" class="text-[10px]"></i>
                 {{ showingSnapshot ? 'Snapshot: ' + formatSnapshotDate(activeModule.unit_snapshot.capturedAt) : 'Ao vivo' }}
               </button>
             </template>
             <template v-else>
-              <span class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 text-blue-600 dark:text-blue-400">
+              <span class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-accent-soft border border-accent/30 text-accent">
                 <i class="fas fa-circle-dot text-[10px]"></i> Ao vivo
               </span>
             </template>
@@ -882,7 +882,7 @@
           <button
             v-if="!readonly && unitsData.length"
             @click="captureUnitSnapshot"
-            class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-gray-700 dark:bg-gray-600 text-white rounded-lg hover:bg-gray-800 transition"
+            class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-surface-sunken text-white rounded-lg hover:bg-gray-800 transition"
             title="Congela o estado atual das unidades para referência histórica"
           >
             <i class="fas fa-snowflake text-[10px]"></i> Capturar estado
@@ -897,7 +897,7 @@
         <!-- Seletor de tabela de preços -->
         <template v-else-if="displayUnits.length">
         <div v-if="selectedTablesWithPrices.length" class="flex items-center gap-2 mb-3 flex-wrap">
-          <span class="text-xs text-gray-400 dark:text-gray-500 font-medium flex-shrink-0">Preços de:</span>
+          <span class="text-xs text-ink-subtle font-medium flex-shrink-0">Preços de:</span>
           <div class="flex items-center gap-1 flex-wrap">
             <button
               v-for="t in selectedTablesWithPrices"
@@ -907,7 +907,7 @@
                 'px-2.5 py-1 text-xs font-semibold rounded-lg border transition',
                 (selectedPriceTableForUnits ?? selectedTablesWithPrices[0]?.idtabela) === t.idtabela
                   ? 'bg-blue-600 border-blue-600 text-white'
-                  : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-blue-300'
+                  : 'bg-surface-raised border-line text-ink-muted hover:border-blue-300'
               ]"
             >
               {{ t.nome }}
@@ -928,19 +928,19 @@
               <div class="flex items-center gap-2 text-xs text-gray-500">
                 <span class="flex items-center gap-1">
                   <span class="w-2 h-2 rounded-full bg-green-400 inline-block"></span>
-                  <strong class="text-gray-700 dark:text-gray-200">{{ countByStatus(bloco.unidades, 'available') }}</strong> Disp.
+                  <strong class="text-ink">{{ countByStatus(bloco.unidades, 'available') }}</strong> Disp.
                 </span>
                 <span class="flex items-center gap-1">
                   <span class="w-2 h-2 rounded-full bg-amber-400 inline-block"></span>
-                  <strong class="text-gray-700 dark:text-gray-200">{{ countByStatus(bloco.unidades, 'reserved') }}</strong> Res.
+                  <strong class="text-ink">{{ countByStatus(bloco.unidades, 'reserved') }}</strong> Res.
                 </span>
                 <span class="flex items-center gap-1">
                   <span class="w-2 h-2 rounded-full bg-red-400 inline-block"></span>
-                  <strong class="text-gray-700 dark:text-gray-200">{{ countByStatus(bloco.unidades, 'sold') }}</strong> Vend.
+                  <strong class="text-ink">{{ countByStatus(bloco.unidades, 'sold') }}</strong> Vend.
                 </span>
                 <span class="flex items-center gap-1">
                   <span class="w-2 h-2 rounded-full bg-gray-400 inline-block"></span>
-                  <strong class="text-gray-700 dark:text-gray-200">{{ countByStatus(bloco.unidades, 'blocked') }}</strong> Bloq.
+                  <strong class="text-ink">{{ countByStatus(bloco.unidades, 'blocked') }}</strong> Bloq.
                 </span>
               </div>
             </div>
@@ -954,7 +954,7 @@
                 :class="['rounded-lg px-2 py-1.5 text-center text-[11px] font-medium transition cursor-default border', unitStatusClass(unit)]"
               >
                 <span class="truncate block leading-tight">{{ unit.nome }}</span>
-                <span v-if="unitDisplayPrice(unit)" class="text-[9px] font-bold text-blue-600 dark:text-blue-400 block leading-tight">{{ fmtCurrencyShort(unitDisplayPrice(unit)) }}</span>
+                <span v-if="unitDisplayPrice(unit)" class="text-[9px] font-bold text-accent block leading-tight">{{ fmtCurrencyShort(unitDisplayPrice(unit)) }}</span>
                 <span v-if="unit.area_privativa" class="text-[9px] opacity-60 font-normal">{{ Number(unit.area_privativa).toFixed(0) }}m²</span>
               </div>
             </div>
@@ -973,19 +973,19 @@
 
         <!-- Vazio -->
         <div v-else-if="!loadingUnits" class="flex flex-col items-center justify-center py-10 text-gray-400 text-sm">
-          <i class="fas fa-layer-group text-2xl mb-2 text-gray-300 dark:text-gray-700"></i>
+          <i class="fas fa-layer-group text-2xl mb-2 text-ink-subtle"></i>
           <p>Nenhuma unidade encontrada para esta etapa.</p>
         </div>
       </div>
     </div>
 
     <!-- Vazio -->
-    <div v-else class="flex flex-col items-center justify-center py-12 bg-white dark:bg-gray-900 rounded-2xl border border-dashed border-gray-200 dark:border-gray-700 text-center px-6">
-      <div class="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-3">
-        <i class="fas fa-layer-group text-gray-400 dark:text-gray-500 text-lg"></i>
+    <div v-else class="flex flex-col items-center justify-center py-12 bg-surface-raised rounded-2xl border border-dashed border-line text-center px-6">
+      <div class="w-12 h-12 rounded-full bg-surface-sunken flex items-center justify-center mb-3">
+        <i class="fas fa-layer-group text-ink-subtle text-lg"></i>
       </div>
-      <p class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Nenhum módulo adicionado</p>
-      <p class="text-xs text-gray-400 dark:text-gray-500 max-w-xs mb-4">
+      <p class="text-sm font-semibold text-ink-muted mb-1">Nenhum módulo adicionado</p>
+      <p class="text-xs text-ink-subtle max-w-xs mb-4">
         Adicione etapas do CV pelo botão <strong>+</strong> acima, ou crie um módulo avulso.
       </p>
       <div v-if="!readonly && (availableStages.length || true)" class="flex flex-wrap gap-2 justify-center">
@@ -993,14 +993,14 @@
           v-for="stage in availableStages.slice(0, 4)"
           :key="stage.idetapa"
           @click="addStageModule(stage)"
-          class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-blue-50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition"
+          class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-accent-soft text-accent border border-accent/30 rounded-lg hover:bg-accent-soft transition"
         >
           <i class="fas fa-layer-group text-[10px]"></i>
           {{ stage.nome }}
         </button>
         <button
           @click="addCustomModule"
-          class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition"
+          class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-surface-sunken text-ink-muted border border-line rounded-lg hover:bg-surface-hover transition"
         >
           <i class="fas fa-cube text-[10px]"></i>
           Módulo avulso
@@ -1066,9 +1066,9 @@ const FAIXAS_CONFIG = [
     {
         faixa: 1, label: 'Faixa 1',
         borderActive: 'border-blue-400 dark:border-blue-600 shadow-sm',
-        bgActive: 'bg-blue-50 dark:bg-blue-950/30',
-        checkActive: 'border-blue-500 bg-blue-500',
-        textActive: 'text-blue-700 dark:text-blue-300',
+        bgActive: 'bg-accent-soft',
+        checkActive: 'border-accent bg-blue-500',
+        textActive: 'text-accent',
         placeholders: {
             appraisal_value: 'Ex: R$ 210.000 – R$ 275.000',
             appraisal_ceiling: 'Ex: R$ 230.000 (cidades médias)',
@@ -1784,14 +1784,14 @@ function formatMonth(dateStr) {
 </script>
 
 <style scoped>
-.lbl-section { @apply text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide flex items-center gap-2; }
-.lbl     { @apply block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5; }
-.inp     { @apply w-full px-3.5 py-2.5 text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900/60 border border-gray-200 dark:border-gray-700 rounded-md shadow-sm placeholder:text-gray-400 dark:placeholder:text-gray-500 outline-none focus:border-blue-400 dark:focus:border-blue-500 focus:ring-2 focus:ring-blue-500/15 transition-all duration-150 disabled:opacity-60 disabled:cursor-default; }
-.inp-pfx { @apply w-full pl-9 pr-3.5 py-2.5 text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900/60 border border-gray-200 dark:border-gray-700 rounded-md shadow-sm placeholder:text-gray-400 dark:placeholder:text-gray-500 outline-none focus:border-blue-400 dark:focus:border-blue-500 focus:ring-2 focus:ring-blue-500/15 transition-all duration-150 disabled:opacity-60 disabled:cursor-default; }
-.inp-sm  { @apply px-2.5 py-1.5 text-xs text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900/60 border border-gray-200 dark:border-gray-700 rounded-md shadow-sm placeholder:text-gray-400 outline-none focus:border-blue-400 dark:focus:border-blue-500 focus:ring-1 focus:ring-blue-500/15 transition-all duration-150 disabled:opacity-60 disabled:cursor-default; }
-.inp-inline { @apply px-2 py-1.5 text-sm text-gray-900 dark:text-gray-100 bg-transparent border border-transparent rounded-md placeholder:text-gray-400 outline-none focus:border-blue-400 dark:focus:border-blue-500 focus:bg-white dark:focus:bg-gray-900/60 focus:ring-1 focus:ring-blue-500/15 transition-all duration-150 disabled:opacity-60 disabled:cursor-default; }
-.pfx     { @apply absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 text-xs pointer-events-none; }
-.btn-primary { @apply flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 disabled:opacity-50 transition; }
+.lbl-section { @apply text-xs font-semibold text-ink-muted uppercase tracking-wide flex items-center gap-2; }
+.lbl     { @apply block text-xs font-semibold text-ink-muted uppercase tracking-wide mb-1.5; }
+.inp     { @apply w-full px-3.5 py-2.5 text-sm text-ink bg-surface-raised/60 border border-line rounded-md shadow-sm placeholder:text-gray-400 dark:placeholder:text-gray-500 outline-none focus:border-blue-400 dark:focus:border-accent focus:ring-2 focus:ring-blue-500/15 transition-all duration-150 disabled:opacity-60 disabled:cursor-default; }
+.inp-pfx { @apply w-full pl-9 pr-3.5 py-2.5 text-sm text-ink bg-surface-raised/60 border border-line rounded-md shadow-sm placeholder:text-gray-400 dark:placeholder:text-gray-500 outline-none focus:border-blue-400 dark:focus:border-accent focus:ring-2 focus:ring-blue-500/15 transition-all duration-150 disabled:opacity-60 disabled:cursor-default; }
+.inp-sm  { @apply px-2.5 py-1.5 text-xs text-ink bg-surface-raised/60 border border-line rounded-md shadow-sm placeholder:text-gray-400 outline-none focus:border-blue-400 dark:focus:border-accent focus:ring-1 focus:ring-blue-500/15 transition-all duration-150 disabled:opacity-60 disabled:cursor-default; }
+.inp-inline { @apply px-2 py-1.5 text-sm text-ink bg-transparent border border-transparent rounded-md placeholder:text-gray-400 outline-none focus:border-blue-400 dark:focus:border-accent focus:bg-white dark:focus:bg-gray-900/60 focus:ring-1 focus:ring-blue-500/15 transition-all duration-150 disabled:opacity-60 disabled:cursor-default; }
+.pfx     { @apply absolute left-3 top-1/2 -translate-y-1/2 text-ink-subtle text-xs pointer-events-none; }
+.btn-primary { @apply flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-accent-hover disabled:opacity-50 transition; }
 .fade-enter-active, .fade-leave-active { transition: opacity .2s; }
 .fade-enter-from, .fade-leave-to { opacity: 0; }
 .slide-down-enter-active { transition: all .15s ease-out; }

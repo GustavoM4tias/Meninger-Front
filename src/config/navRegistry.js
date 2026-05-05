@@ -68,10 +68,10 @@ export const navRegistry = [
                 name: 'Vendas',
                 icon: 'fas fa-credit-card',
                 pages: [
-                    { route: '/comercial/sales-projection',  section: 'Vendas x Projeção', name: 'Vendas X Projeção', icon: 'fas fa-arrow-trend-up' },
                     { route: '/comercial/precadastros',      section: 'Pré-Cadastros',    name: 'Pré-Cadastros',    icon: 'fas fa-id-card-clip', permissionManaged: false },
                     { route: '/comercial/reservas-report',   section: 'Reservas',         name: 'Reservas',         icon: 'fas fa-bookmark',     permissionManaged: false },
                     { route: '/comercial/faturamento',       section: 'Faturamento',      name: 'Faturamento',      icon: 'fas fa-file-invoice-dollar' },
+                    { route: '/comercial/sales-projection',  section: 'Vendas x Projeção', name: 'Vendas X Projeção', icon: 'fas fa-arrow-trend-up' },
                     { route: '/comercial/distratos',         section: 'Distratos',        name: 'Distratos',        icon: 'fas fa-file-circle-xmark' },
                     { route: '/comercial/projections',       section: 'Projeção',         name: 'Projeção',         icon: 'fas fa-chart-line' },
                 ],

@@ -1,300 +1,282 @@
 <template>
   <div
-    class="min-h-full py-8 px-4 relative"
+    class="min-h-[calc(100vh-3.5rem)]"
     @dragover="onWindowDragOver"
     @dragleave="onWindowDragLeave"
     @drop.prevent="onWindowDrop"
   >
-
     <!-- Drop zone overlay (for uploading files from desktop) -->
     <Transition name="dropzone">
       <div v-if="showDropZone"
-        class="fixed inset-0 z-50 bg-blue-600/20 backdrop-blur-sm border-4 border-dashed border-blue-500 flex items-center justify-center pointer-events-none">
-        <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl px-10 py-8 text-center pointer-events-none">
-          <i class="fas fa-cloud-arrow-up text-5xl text-blue-500 mb-3 block"></i>
-          <p class="text-xl font-bold text-gray-800 dark:text-white">Soltar para fazer upload</p>
-          <p class="text-sm text-gray-500 mt-1">Os arquivos serão enviados para a pasta atual</p>
+        class="fixed inset-0 z-50 bg-accent/20 backdrop-blur-sm border-4 border-dashed border-accent flex items-center justify-center pointer-events-none">
+        <div class="bg-surface-raised border border-line rounded-2xl shadow-overlay px-10 py-8 text-center pointer-events-none">
+          <i class="fas fa-cloud-arrow-up text-5xl text-accent mb-3 block"></i>
+          <p class="text-xl font-semibold text-ink">Soltar para fazer upload</p>
+          <p class="text-sm text-ink-muted mt-1">Os arquivos serão enviados para a pasta atual</p>
         </div>
       </div>
     </Transition>
 
-    <div class="max-w-7xl mx-auto space-y-5">
-
-      <!-- ── Header ── -->
-      <div class="flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-sky-700 flex items-center justify-center shrink-0 shadow-sm">
-            <img class="p-2" src="https://luna1.co/71d453.png" alt="Teams">
-          </div>
-          <div>
-            <h1 class="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">SharePoint</h1>
-            <p class="text-xs text-gray-500 dark:text-gray-400">Navegue, visualize e gerencie seus arquivos</p>
-          </div>
-        </div>
-
-        <div class="flex items-center gap-2">
-          <!-- Upload button -->
-          <button v-if="sp.selectedDrive"
-            @click="triggerUpload"
+    <PageContainer size="full">
+      <PageHeader
+        subtitle="Navegue, visualize e gerencie seus arquivos"
+        icon="fas fa-folder-tree">
+        <template #title>SharePoint</template>
+        <template #actions>
+          <Button v-if="sp.selectedDrive"
+            variant="primary"
+            size="sm"
+            icon="fas fa-cloud-arrow-up"
             :disabled="sp.uploading"
-            class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 transition-colors">
-            <i class="fas fa-cloud-arrow-up text-xs"></i>
+            @click="triggerUpload">
             Upload
-          </button>
+          </Button>
           <input ref="fileInputEl" type="file" multiple class="hidden" @change="onFileInputChange" />
-
-          <!-- Reload -->
-          <button v-if="sp.selectedDrive"
-            @click="reloadCurrent"
+          <IconButton v-if="sp.selectedDrive"
+            icon="fas fa-rotate-right"
+            label="Atualizar"
+            variant="secondary"
+            size="sm"
             :disabled="sp.loading"
-            class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-50">
-            <i class="fas fa-rotate-right text-xs" :class="{ 'animate-spin': sp.loading }"></i>
-            Atualizar
-          </button>
-        </div>
-      </div>
+            :class="sp.loading ? 'animate-spin' : ''"
+            @click="reloadCurrent" />
+        </template>
+      </PageHeader>
 
-      <!-- ── Selectors ── -->
-      <div class="flex flex-wrap gap-3">
-        <div class="flex-1 min-w-48">
-          <label class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1 block">Site SharePoint</label>
-          <select
-            class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            :disabled="sp.loading || !sp.sites.length"
-            @change="e => onSelectSite(e.target.value)">
-            <option value="">{{ sp.sites.length ? 'Selecione um site...' : 'Carregando sites...' }}</option>
-            <option v-for="site in sp.sites" :key="site.id" :value="site.id">{{ site.name }}</option>
-          </select>
-        </div>
+      <div class="space-y-5">
 
-        <div class="flex-1 min-w-48">
-          <label class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1 block">Biblioteca</label>
-          <select
-            class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            :disabled="sp.loading || !sp.drives.length"
-            @change="e => onSelectDrive(e.target.value)">
-            <option value="">{{ sp.selectedSite ? (sp.drives.length ? 'Selecione uma biblioteca...' : 'Carregando...') : 'Selecione um site primeiro' }}</option>
-            <option v-for="drive in sp.drives" :key="drive.id" :value="drive.id">{{ drive.name }}</option>
-          </select>
-        </div>
+        <!-- ── Selectors ── -->
+        <Surface variant="raised" padding="md" class="surface-gradient">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div>
+              <label class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1 block">
+                Site SharePoint
+              </label>
+              <Select
+                :model-value="sp.selectedSite?.id || ''"
+                :options="siteOptions"
+                :placeholder="sp.sites.length ? 'Selecione um site...' : 'Carregando sites...'"
+                :disabled="sp.loading || !sp.sites.length"
+                @update:model-value="onSelectSite" />
+            </div>
 
-        <div v-if="sp.selectedDrive" class="flex-1 min-w-48">
-          <label class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1 block">Buscar</label>
-          <div class="relative">
-            <input
-              v-model="sp.searchQuery"
-              @keydown.enter="sp.doSearch()"
-              @input="sp.searchQuery ? null : sp.clearSearch()"
-              type="text"
-              placeholder="Nome do arquivo ou pasta..."
-              class="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            <i class="fas fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
-          </div>
-        </div>
-      </div>
+            <div>
+              <label class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1 block">
+                Biblioteca
+              </label>
+              <Select
+                :model-value="sp.selectedDrive?.id || ''"
+                :options="driveOptions"
+                :placeholder="sp.selectedSite ? (sp.drives.length ? 'Selecione uma biblioteca...' : 'Carregando...') : 'Selecione um site primeiro'"
+                :disabled="sp.loading || !sp.drives.length"
+                @update:model-value="onSelectDrive" />
+            </div>
 
-      <!-- ── Upload progress ── -->
-      <Transition name="slide">
-        <div v-if="sp.uploadProgress"
-          class="flex items-center gap-3 p-3 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
-          <i class="fas fa-cloud-arrow-up text-blue-500 text-sm shrink-0"></i>
-          <div class="flex-1 min-w-0">
-            <p class="text-xs font-medium text-blue-700 dark:text-blue-300 truncate">{{ sp.uploadProgress.filename }}</p>
-            <div class="mt-1 h-1.5 rounded-full bg-blue-200 dark:bg-blue-800 overflow-hidden">
-              <div class="h-full rounded-full bg-blue-500 transition-all duration-300"
-                :style="{ width: `${sp.uploadProgress.percent}%` }" />
+            <div v-if="sp.selectedDrive">
+              <label class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1 block">
+                Buscar
+              </label>
+              <Input
+                v-model="sp.searchQuery"
+                placeholder="Nome do arquivo ou pasta..."
+                icon-left="fas fa-magnifying-glass"
+                @keydown.enter="sp.doSearch()"
+                @input="sp.searchQuery ? null : sp.clearSearch()" />
             </div>
           </div>
-          <span class="text-xs font-bold text-blue-600 dark:text-blue-400 shrink-0">{{ sp.uploadProgress.percent }}%</span>
-        </div>
-      </Transition>
+        </Surface>
 
-      <!-- Toast movido para fixed (ver fora do max-w-7xl) -->
+        <!-- ── Upload progress ── -->
+        <Transition name="slide">
+          <Surface v-if="sp.uploadProgress"
+            variant="raised"
+            padding="sm"
+            class="border-accent/30 bg-accent-soft flex items-center gap-3">
+            <i class="fas fa-cloud-arrow-up text-accent text-sm shrink-0"></i>
+            <div class="flex-1 min-w-0">
+              <p class="text-xs font-medium text-accent truncate">{{ sp.uploadProgress.filename }}</p>
+              <div class="mt-1 h-1.5 rounded-full bg-accent/20 overflow-hidden">
+                <div class="h-full rounded-full bg-accent transition-all duration-300"
+                  :style="{ width: `${sp.uploadProgress.percent}%` }" />
+              </div>
+            </div>
+            <span class="text-xs font-bold text-accent shrink-0 font-mono tabular-nums">
+              {{ sp.uploadProgress.percent }}%
+            </span>
+          </Surface>
+        </Transition>
 
-      <!-- ── File explorer ── -->
-      <div v-if="sp.selectedDrive"
-        class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-sm">
+        <!-- ── File explorer ── -->
+        <section v-if="sp.selectedDrive"
+          class="rounded-xl border border-line bg-surface-raised shadow-soft overflow-hidden surface-gradient">
 
-        <!-- Breadcrumb (com suporte a drop para mover itens) -->
-        <div class="px-5 py-3 border-b border-gray-100 dark:border-gray-800 flex items-center gap-1 flex-wrap text-sm bg-gray-50 dark:bg-gray-800/50">
-          <button
-            @click="sp.navigateToBreadcrumb(-1)"
-            @dragover.prevent="breadcrumbDragOver = 'root'"
-            @dragleave="breadcrumbDragOver = null"
-            @drop.prevent="onBreadcrumbDrop('root')"
-            :class="breadcrumbDragOver === 'root' ? 'bg-blue-100 dark:bg-blue-900/30 rounded px-1' : ''"
-            class="flex items-center gap-1.5 text-blue-600 dark:text-blue-400 hover:underline font-medium transition-colors">
-            <i class="fas fa-hard-drive text-xs"></i>
-            {{ sp.selectedDrive?.name }}
-          </button>
-          <template v-for="(crumb, idx) in sp.breadcrumb" :key="crumb.id">
-            <i class="fas fa-chevron-right text-gray-300 dark:text-gray-600 text-xs"></i>
+          <!-- Breadcrumb (drop target) -->
+          <div class="px-4 sm:px-5 py-3 border-b border-line flex items-center gap-1 flex-wrap text-sm bg-surface-sunken/50">
             <button
-              @click="sp.navigateToBreadcrumb(idx)"
-              @dragover.prevent="breadcrumbDragOver = crumb.id"
+              @click="sp.navigateToBreadcrumb(-1)"
+              @dragover.prevent="breadcrumbDragOver = 'root'"
               @dragleave="breadcrumbDragOver = null"
-              @drop.prevent="onBreadcrumbDrop(crumb.id)"
-              :class="[
-                idx === sp.breadcrumb.length - 1
-                  ? 'text-gray-700 dark:text-gray-200 font-semibold'
-                  : 'text-blue-600 dark:text-blue-400 hover:underline',
-                breadcrumbDragOver === crumb.id ? 'bg-blue-100 dark:bg-blue-900/30 rounded px-1' : ''
-              ]"
-              class="transition-colors">
-              {{ crumb.name }}
+              @drop.prevent="onBreadcrumbDrop('root')"
+              :class="breadcrumbDragOver === 'root' ? 'bg-accent-soft rounded px-1' : ''"
+              class="flex items-center gap-1.5 text-accent hover:underline font-medium transition-colors">
+              <i class="fas fa-hard-drive text-xs"></i>
+              {{ sp.selectedDrive?.name }}
             </button>
-          </template>
-        </div>
-
-        <!-- Search results banner -->
-        <template v-if="sp.searchResults.length || sp.isSearching">
-          <div class="px-5 py-2 bg-blue-50 dark:bg-blue-900/20 border-b border-blue-100 dark:border-blue-900 flex items-center justify-between text-xs text-blue-700 dark:text-blue-300">
-            <span><i class="fas fa-magnifying-glass mr-1.5"></i>{{ sp.searchResults.length }} resultado(s) para "{{ sp.searchQuery }}"</span>
-            <button @click="sp.clearSearch()" class="hover:underline">Limpar busca</button>
+            <template v-for="(crumb, idx) in sp.breadcrumb" :key="crumb.id">
+              <i class="fas fa-chevron-right text-ink-subtle text-xs"></i>
+              <button
+                @click="sp.navigateToBreadcrumb(idx)"
+                @dragover.prevent="breadcrumbDragOver = crumb.id"
+                @dragleave="breadcrumbDragOver = null"
+                @drop.prevent="onBreadcrumbDrop(crumb.id)"
+                :class="[
+                  idx === sp.breadcrumb.length - 1
+                    ? 'text-ink font-semibold'
+                    : 'text-accent hover:underline',
+                  breadcrumbDragOver === crumb.id ? 'bg-accent-soft rounded px-1' : ''
+                ]"
+                class="transition-colors">
+                {{ crumb.name }}
+              </button>
+            </template>
           </div>
-          <FileGrid
-            :items="sp.searchResults"
-            :loading="sp.isSearching"
-            @open-folder="sp.openFolder($event)"
-            @action="handleAction"
-            @move="handleMove"
-          />
-        </template>
 
-        <template v-else>
-          <FileGrid
-            :items="sp.items"
-            :loading="sp.loading"
-            @open-folder="sp.openFolder($event)"
-            @action="handleAction"
-            @move="handleMove"
-          />
-        </template>
+          <!-- Search results banner -->
+          <template v-if="sp.searchResults.length || sp.isSearching">
+            <div class="px-4 sm:px-5 py-2 bg-accent-soft border-b border-accent/20 flex items-center justify-between text-xs text-accent">
+              <span><i class="fas fa-magnifying-glass mr-1.5"></i>{{ sp.searchResults.length }} resultado(s) para "{{ sp.searchQuery }}"</span>
+              <button @click="sp.clearSearch()" class="hover:underline font-medium">Limpar busca</button>
+            </div>
+            <FileGrid
+              :items="sp.searchResults"
+              :loading="sp.isSearching"
+              @open-folder="sp.openFolder($event)"
+              @action="handleAction"
+              @move="handleMove"
+            />
+          </template>
+
+          <template v-else>
+            <FileGrid
+              :items="sp.items"
+              :loading="sp.loading"
+              @open-folder="sp.openFolder($event)"
+              @action="handleAction"
+              @move="handleMove"
+            />
+          </template>
+        </section>
+
+        <!-- ── Initial empty state ── -->
+        <EmptyState v-else-if="!sp.loading"
+          icon="fas fa-folder-open"
+          title="Nenhuma biblioteca selecionada"
+          description="Selecione um site e uma biblioteca para navegar pelos arquivos." />
       </div>
-
-      <!-- ── Initial empty state ── -->
-      <div v-else-if="!sp.loading" class="text-center py-16 text-gray-400 dark:text-gray-600">
-        <div class="w-16 h-16 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center mx-auto mb-4">
-          <i class="fas fa-folder-open text-2xl text-gray-300 dark:text-gray-600"></i>
-        </div>
-        <p class="text-sm">Selecione um site e uma biblioteca para navegar pelos arquivos</p>
-      </div>
-
-    </div>
+    </PageContainer>
 
     <!-- ── Modals ── -->
 
     <!-- Rename modal -->
-    <Transition name="modal">
-      <div v-if="renameModal.show" class="fixed inset-0 z-[8000] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-        <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-sm p-6" @click.stop>
-          <h2 class="text-base font-bold text-gray-900 dark:text-white mb-1">Renomear</h2>
-          <p class="text-xs text-gray-500 dark:text-gray-400 mb-4 truncate">{{ renameModal.item?.name }}</p>
-          <input
-            ref="renameInputEl"
-            v-model="renameModal.newName"
-            @keydown.enter="confirmRename"
-            @keydown.esc="renameModal.show = false"
-            class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
-          />
-          <div class="flex gap-2 justify-end">
-            <button @click="renameModal.show = false"
-              class="px-4 py-2 rounded-xl text-sm text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-              Cancelar
-            </button>
-            <button @click="confirmRename" :disabled="!renameModal.newName.trim() || renameModal.loading"
-              class="px-4 py-2 rounded-xl text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 transition-colors">
-              <i v-if="renameModal.loading" class="fas fa-circle-notch animate-spin mr-1"></i>
-              Renomear
-            </button>
-          </div>
-        </div>
-      </div>
-    </Transition>
+    <Modal :open="renameModal.show"
+      size="sm"
+      title="Renomear"
+      :subtitle="renameModal.item?.name"
+      @close="renameModal.show = false">
+      <Input
+        ref="renameInputEl"
+        v-model="renameModal.newName"
+        placeholder="Novo nome"
+        @keydown.enter="confirmRename"
+        @keydown.esc="renameModal.show = false" />
+      <template #footer>
+        <Button variant="ghost" @click="renameModal.show = false">Cancelar</Button>
+        <Button
+          variant="primary"
+          icon="fas fa-pen"
+          :loading="renameModal.loading"
+          :disabled="!renameModal.newName.trim()"
+          @click="confirmRename">
+          Renomear
+        </Button>
+      </template>
+    </Modal>
 
     <!-- Delete confirm modal -->
-    <Transition name="modal">
-      <div v-if="deleteModal.show" class="fixed inset-0 z-[8000] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-        <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-sm p-6" @click.stop>
-          <div class="w-12 h-12 rounded-2xl bg-red-50 dark:bg-red-900/20 flex items-center justify-center mb-4">
-            <i class="fas fa-trash text-red-500 text-xl"></i>
-          </div>
-          <h2 class="text-base font-bold text-gray-900 dark:text-white mb-1">Excluir {{ deleteModal.item?.isFolder ? 'pasta' : 'arquivo' }}</h2>
-          <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
-            Tem certeza que deseja excluir <strong class="text-gray-700 dark:text-gray-200">{{ deleteModal.item?.name }}</strong>?
-            Esta ação não pode ser desfeita.
-          </p>
-          <div v-if="!deleteModal.confirmed" class="flex gap-2 justify-end">
-            <button @click="deleteModal.show = false"
-              class="px-4 py-2 rounded-xl text-sm text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-              Cancelar
-            </button>
-            <button @click="deleteModal.confirmed = true"
-              class="px-4 py-2 rounded-xl text-sm font-medium text-white bg-red-500 hover:bg-red-600 transition-colors">
-              Excluir
-            </button>
-          </div>
-          <div v-else class="flex flex-col gap-2">
-            <p class="text-xs text-red-600 dark:text-red-400 font-medium text-center">Confirme a exclusão definitiva:</p>
-            <div class="flex gap-2 justify-end">
-              <button @click="deleteModal.show = false; deleteModal.confirmed = false"
-                class="px-4 py-2 rounded-xl text-sm text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                Cancelar
-              </button>
-              <button @click="confirmDelete" :disabled="deleteModal.loading"
-                class="px-4 py-2 rounded-xl text-sm font-bold text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 transition-colors">
-                <i v-if="deleteModal.loading" class="fas fa-circle-notch animate-spin mr-1"></i>
-                Sim, excluir permanentemente
-              </button>
-            </div>
-          </div>
+    <Modal :open="deleteModal.show"
+      size="sm"
+      :title="`Excluir ${deleteModal.item?.isFolder ? 'pasta' : 'arquivo'}`"
+      @close="deleteModal.show = false; deleteModal.confirmed = false">
+      <div class="space-y-3">
+        <div class="w-12 h-12 rounded-2xl bg-red-500/10 grid place-items-center">
+          <i class="fas fa-trash text-red-500 text-xl"></i>
         </div>
+        <p class="text-sm text-ink-muted">
+          Tem certeza que deseja excluir <strong class="text-ink">{{ deleteModal.item?.name }}</strong>?
+          Esta ação não pode ser desfeita.
+        </p>
+        <p v-if="deleteModal.confirmed" class="text-xs text-red-500 font-medium">
+          Confirme a exclusão definitiva:
+        </p>
       </div>
-    </Transition>
+      <template #footer>
+        <Button variant="ghost" @click="deleteModal.show = false; deleteModal.confirmed = false">
+          Cancelar
+        </Button>
+        <Button
+          v-if="!deleteModal.confirmed"
+          variant="danger"
+          icon="fas fa-trash"
+          @click="deleteModal.confirmed = true">
+          Excluir
+        </Button>
+        <Button
+          v-else
+          variant="danger"
+          icon="fas fa-triangle-exclamation"
+          :loading="deleteModal.loading"
+          @click="confirmDelete">
+          Sim, excluir permanentemente
+        </Button>
+      </template>
+    </Modal>
 
     <!-- Share link modal -->
-    <Transition name="modal">
-      <div v-if="shareModal.show" class="fixed inset-0 z-[8000] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-        <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md p-6" @click.stop>
-          <h2 class="text-base font-bold text-gray-900 dark:text-white mb-1">Compartilhar</h2>
-          <p class="text-xs text-gray-500 dark:text-gray-400 mb-4 truncate">{{ shareModal.item?.name }}</p>
-          <div v-if="shareModal.loading" class="flex items-center justify-center py-6 text-gray-400">
-            <i class="fas fa-circle-notch animate-spin mr-2"></i> Gerando link...
-          </div>
-          <div v-else-if="shareModal.link">
-            <div class="flex gap-2 mb-4">
-              <input :value="shareModal.link" readonly
-                class="flex-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-xs text-gray-700 dark:text-gray-300 focus:outline-none" />
-              <button @click="copyShareLink"
-                class="px-3 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium transition-colors whitespace-nowrap">
-                <i class="fas fa-copy mr-1"></i> Copiar
-              </button>
-            </div>
-            <p class="text-xs text-gray-400">Link de visualização válido para membros da organização.</p>
-          </div>
-          <div class="flex justify-end mt-4">
-            <button @click="shareModal.show = false"
-              class="px-4 py-2 rounded-xl text-sm text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-              Fechar
-            </button>
-          </div>
-        </div>
+    <Modal :open="shareModal.show"
+      size="md"
+      title="Compartilhar"
+      :subtitle="shareModal.item?.name"
+      @close="shareModal.show = false">
+      <div v-if="shareModal.loading" class="flex items-center justify-center py-6 text-ink-muted">
+        <i class="fas fa-circle-notch animate-spin mr-2"></i> Gerando link...
       </div>
-    </Transition>
+      <div v-else-if="shareModal.link" class="space-y-3">
+        <div class="flex gap-2">
+          <input :value="shareModal.link" readonly
+            class="flex-1 px-3 py-2 rounded-lg border border-line bg-surface-sunken text-xs text-ink-muted focus:outline-none" />
+          <Button variant="primary" icon="fas fa-copy" size="sm" @click="copyShareLink">
+            Copiar
+          </Button>
+        </div>
+        <p class="text-xs text-ink-subtle">Link de visualização válido para membros da organização.</p>
+      </div>
+      <template #footer>
+        <Button variant="ghost" @click="shareModal.show = false">Fechar</Button>
+      </template>
+    </Modal>
 
     <!-- File preview -->
     <FilePreview :item="previewItem" @close="previewItem = null" />
 
-    <!-- Toast: fixed bottom-right, acima de tudo -->
+    <!-- Toast: fixed bottom-right -->
     <Teleport to="body">
       <Transition name="toast">
         <div v-if="toast.show"
-          class="fixed bottom-5 right-5 z-[99999] flex items-center gap-3 px-4 py-3 rounded-xl shadow-2xl border text-sm max-w-sm"
+          class="fixed bottom-5 right-5 z-[99999] flex items-center gap-3 px-4 py-3 rounded-xl shadow-overlay border bg-surface-raised text-sm max-w-sm"
           :class="toast.type === 'success'
-            ? 'bg-white dark:bg-gray-900 border-green-200 dark:border-green-800 text-green-700 dark:text-green-300'
-            : 'bg-white dark:bg-gray-900 border-red-200 dark:border-red-800 text-red-700 dark:text-red-300'">
-          <i :class="toast.type === 'success' ? 'fas fa-circle-check text-green-500' : 'fas fa-circle-exclamation text-red-500'" class="text-base shrink-0"></i>
+            ? 'border-emerald-500/30 text-emerald-600 dark:text-emerald-400'
+            : 'border-red-500/30 text-red-600 dark:text-red-400'">
+          <i :class="toast.type === 'success' ? 'fas fa-circle-check text-emerald-500' : 'fas fa-circle-exclamation text-red-500'" class="text-base shrink-0"></i>
           <span>{{ toast.message }}</span>
         </div>
       </Transition>
@@ -304,14 +286,24 @@
 </template>
 
 <script setup>
-import { ref, reactive, nextTick, onMounted, watch } from 'vue';
+import { ref, reactive, computed, nextTick, onMounted, watch } from 'vue';
 import API_URL from '@/config/apiUrl';
 
-const breadcrumbDragOver = ref(null);
 import { useSharepointStore } from '@/stores/Microsoft/sharepointStore';
 import FileGrid from './components/FileGrid.vue';
 import FilePreview from './components/FilePreview.vue';
 
+import PageContainer from '@/components/UI/PageContainer.vue';
+import PageHeader from '@/components/UI/PageHeader.vue';
+import Surface from '@/components/UI/Surface.vue';
+import Button from '@/components/UI/Button.vue';
+import IconButton from '@/components/UI/IconButton.vue';
+import Modal from '@/components/UI/Modal.vue';
+import Input from '@/components/UI/Input.vue';
+import Select from '@/components/UI/Select.vue';
+import EmptyState from '@/components/UI/EmptyState.vue';
+
+const breadcrumbDragOver = ref(null);
 const sp = useSharepointStore();
 
 onMounted(() => sp.fetchSites());
@@ -323,6 +315,14 @@ watch(() => sp.error, (msg) => {
     sp.error = null;
   }
 });
+
+// ── Select options ────────────────────────────────────────────────────────────
+const siteOptions = computed(() =>
+  (sp.sites || []).map(s => ({ value: s.id, label: s.name }))
+);
+const driveOptions = computed(() =>
+  (sp.drives || []).map(d => ({ value: d.id, label: d.name }))
+);
 
 // ── Selectors ─────────────────────────────────────────────────────────────────
 function onSelectSite(siteId) {
@@ -509,7 +509,7 @@ function openRenameModal(item) {
   renameModal.newName = item.name;
   renameModal.loading = false;
   renameModal.show = true;
-  nextTick(() => renameInputEl.value?.focus());
+  nextTick(() => renameInputEl.value?.focus?.());
 }
 
 async function confirmRename() {
@@ -584,9 +584,6 @@ function showToast(message, type = 'success') {
 
 .slide-enter-active, .slide-leave-active { transition: opacity 0.2s, transform 0.2s; }
 .slide-enter-from, .slide-leave-to { opacity: 0; transform: translateY(-8px); }
-
-.modal-enter-active, .modal-leave-active { transition: opacity 0.15s; }
-.modal-enter-from, .modal-leave-to { opacity: 0; }
 
 .toast-enter-active { transition: opacity 0.2s, transform 0.2s; }
 .toast-leave-active { transition: opacity 0.15s, transform 0.15s; }

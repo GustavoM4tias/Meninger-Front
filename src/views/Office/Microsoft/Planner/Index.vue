@@ -1,91 +1,80 @@
 <template>
-  <div class="min-h-full flex flex-col bg-gray-50 dark:bg-gray-950">
+  <div class="min-h-[calc(100vh-3.5rem)] flex flex-col">
 
     <!-- Top bar -->
-    <div class="shrink-0 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-4 py-3">
-      <div class="max-w-full flex items-center gap-3 flex-wrap">
+    <div class="shrink-0 bg-surface-raised border-b border-line px-4 sm:px-6 py-3">
+      <div class="flex items-center gap-3 flex-wrap">
 
-        <!-- Ícone Microsoft Planner -->
-        <div class="flex items-center gap-2 mr-2">
-          <div class="w-7 h-7 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-            <i class="fas fa-table-columns text-green-600 dark:text-green-400 text-xs"></i>
+        <!-- Identidade Planner -->
+        <div class="flex items-center gap-2 mr-2 min-w-0">
+          <div class="h-9 w-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 grid place-items-center shrink-0">
+            <i class="fas fa-table-columns text-emerald-500 text-sm"></i>
           </div>
-          <span class="text-sm font-semibold text-gray-900 dark:text-white hidden sm:block">Planner</span>
+          <div class="hidden sm:block min-w-0">
+            <p class="text-sm font-semibold text-ink leading-tight">Microsoft Planner</p>
+            <p class="text-[10px] font-mono uppercase tracking-wider text-ink-subtle">Quadro Kanban</p>
+          </div>
         </div>
 
         <!-- Seletor de Grupo -->
-        <div class="relative">
-          <select
+        <div class="min-w-[180px]">
+          <Select
             v-model="selectedGroupId"
-            @change="onGroupChange"
+            :options="groupOptions"
+            :placeholder="store.loadingGroups ? 'Carregando...' : 'Selecionar grupo'"
             :disabled="store.loadingGroups"
-            class="pl-3 pr-8 py-1.5 text-sm bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg outline-none focus:border-blue-400 text-gray-900 dark:text-gray-100 transition appearance-none cursor-pointer min-w-[160px]"
-          >
-            <option value="">
-              {{ store.loadingGroups ? 'Carregando...' : 'Selecionar grupo' }}
-            </option>
-            <option v-for="g in store.groups" :key="g.id" :value="g.id">{{ g.displayName }}</option>
-          </select>
-          <i class="fas fa-chevron-down absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none"></i>
+            size="sm"
+            @change="onGroupChange" />
         </div>
 
         <!-- Seletor de Plano -->
         <template v-if="selectedGroupId">
-          <i class="fas fa-chevron-right text-gray-300 dark:text-gray-600 text-xs"></i>
-          <div class="relative">
-            <select
+          <i class="fas fa-chevron-right text-ink-subtle text-xs"></i>
+          <div class="min-w-[180px]">
+            <Select
               v-model="selectedPlanId"
-              @change="onPlanChange"
+              :options="planOptions"
+              :placeholder="store.plans.length ? 'Selecionar plano' : 'Sem planos neste grupo'"
               :disabled="store.loadingGroups || !store.plans.length"
-              class="pl-3 pr-8 py-1.5 text-sm bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg outline-none focus:border-blue-400 text-gray-900 dark:text-gray-100 transition appearance-none cursor-pointer min-w-[160px]"
-            >
-              <option value="">{{ store.plans.length ? 'Selecionar plano' : 'Sem planos neste grupo' }}</option>
-              <option v-for="p in store.plans" :key="p.id" :value="p.id">{{ p.title }}</option>
-            </select>
-            <i class="fas fa-chevron-down absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none"></i>
+              size="sm"
+              @change="onPlanChange" />
           </div>
 
-          <!-- Criar plano -->
-          <button
-            @click="showCreatePlan = true"
-            v-tippy="'Criar novo plano neste grupo'"
-            class="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition"
-          >
-            <i class="fas fa-plus text-xs"></i>
-          </button>
+          <IconButton
+            icon="fas fa-plus"
+            label="Criar novo plano neste grupo"
+            variant="ghost"
+            size="sm"
+            @click="showCreatePlan = true" />
         </template>
 
         <!-- Refresh -->
-        <button
+        <IconButton
           v-if="store.selectedPlan"
-          @click="store.refreshPlan()"
+          icon="fas fa-rotate-right"
+          label="Recarregar"
+          variant="ghost"
+          size="sm"
           :disabled="store.loadingPlan"
-          v-tippy="'Recarregar'"
-          class="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition ml-auto"
-        >
-          <i class="fas fa-rotate-right text-xs" :class="{ 'animate-spin': store.loadingPlan }"></i>
-        </button>
+          :class="['ml-auto', store.loadingPlan ? 'animate-spin' : '']"
+          @click="store.refreshPlan()" />
       </div>
     </div>
 
     <!-- Estado vazio: sem grupo/plano selecionado -->
     <div
       v-if="!store.selectedPlan && !store.loadingPlan"
-      class="flex-1 flex items-center justify-center p-8"
-    >
-      <div class="text-center max-w-xs">
-        <div class="w-16 h-16 rounded-2xl bg-green-100 dark:bg-green-900/20 flex items-center justify-center mx-auto mb-4">
-          <i class="fas fa-table-columns text-green-500 text-2xl"></i>
-        </div>
-        <p class="text-sm font-semibold text-gray-900 dark:text-white mb-1">Selecione um plano</p>
-        <p class="text-xs text-gray-400">Escolha um grupo e um plano do Microsoft Planner para ver o quadro Kanban.</p>
-      </div>
+      class="flex-1 flex items-center justify-center p-8">
+      <EmptyState
+        icon="fas fa-table-columns"
+        title="Selecione um plano"
+        description="Escolha um grupo e um plano do Microsoft Planner para ver o quadro Kanban." />
     </div>
 
     <!-- Loading do plano -->
     <div v-else-if="store.loadingPlan" class="flex-1 flex items-center justify-center">
-      <div class="flex items-center gap-3 text-gray-400">
-        <i class="fas fa-spinner animate-spin"></i>
+      <div class="flex items-center gap-3 text-ink-muted">
+        <Spinner size="sm" />
         <span class="text-sm">Carregando plano...</span>
       </div>
     </div>
@@ -98,59 +87,53 @@
         <div
           v-for="bucket in store.bucketsOrdered"
           :key="bucket.id"
-          class="w-72 shrink-0 flex flex-col bg-gray-100 dark:bg-gray-800/50 rounded-2xl overflow-hidden"
-        >
+          class="w-72 shrink-0 flex flex-col bg-surface-sunken/60 border border-line rounded-2xl overflow-hidden">
           <!-- Header da coluna -->
-          <div class="flex items-center justify-between px-3 py-2.5 gap-2">
+          <div class="flex items-center justify-between px-3 py-2.5 gap-2 border-b border-line/60">
             <div class="flex items-center gap-2 min-w-0">
-              <span class="text-xs font-semibold text-gray-700 dark:text-gray-200 truncate">{{ bucket.name }}</span>
-              <span class="text-[10px] text-gray-400 bg-gray-200 dark:bg-gray-700 px-1.5 py-0.5 rounded-full">
-                {{ (store.tasksByBucket[bucket.id] ?? []).length }}
-              </span>
+              <span class="text-xs font-semibold text-ink truncate">{{ bucket.name }}</span>
+              <Badge variant="neutral" size="xs">
+                <span class="font-mono tabular-nums">{{ (store.tasksByBucket[bucket.id] ?? []).length }}</span>
+              </Badge>
             </div>
             <div class="flex items-center gap-1 shrink-0">
-              <!-- Renomear coluna -->
-              <button
-                @click="startRenameBucket(bucket)"
-                v-tippy="'Renomear coluna'"
-                class="p-1 rounded text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition"
-              >
-                <i class="fas fa-pen text-[10px]"></i>
-              </button>
-              <!-- Excluir coluna -->
-              <button
-                @click="deleteBucket(bucket)"
-                v-tippy="'Excluir coluna'"
-                class="p-1 rounded text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition"
-              >
-                <i class="fas fa-trash text-[10px]"></i>
-              </button>
+              <IconButton
+                icon="fas fa-pen"
+                label="Renomear coluna"
+                variant="ghost"
+                size="sm"
+                class="!h-7 !w-7"
+                @click="startRenameBucket(bucket)" />
+              <IconButton
+                icon="fas fa-trash"
+                label="Excluir coluna"
+                variant="danger"
+                size="sm"
+                class="!h-7 !w-7"
+                @click="deleteBucket(bucket)" />
             </div>
           </div>
 
           <!-- Tasks -->
-          <div class="flex flex-col gap-2 px-2 pb-2 min-h-[60px] max-h-[calc(100vh-200px)] overflow-y-auto">
+          <div class="flex flex-col gap-2 p-2 min-h-[60px] max-h-[calc(100vh-220px)] overflow-y-auto">
             <div
               v-for="task in (store.tasksByBucket[bucket.id] ?? [])"
               :key="task.id"
               @click="openTask(task, bucket)"
-              class="bg-white dark:bg-gray-900 rounded-xl p-3 shadow-sm border border-gray-100 dark:border-gray-800 cursor-pointer hover:shadow-md hover:border-blue-200 dark:hover:border-blue-700 transition-all duration-150 group"
-            >
+              class="bg-surface-raised rounded-xl p-3 shadow-soft border border-line cursor-pointer hover:shadow-md hover:border-accent/40 transition-all duration-150 group">
               <!-- Título + checkbox -->
               <div class="flex items-start gap-2">
                 <button
                   @click.stop="store.toggleTaskComplete(task)"
                   class="mt-0.5 shrink-0 w-4 h-4 rounded border flex items-center justify-center transition"
                   :class="task.percentComplete === 100
-                    ? 'bg-green-500 border-green-500 text-white'
-                    : 'border-gray-300 dark:border-gray-600 hover:border-green-400'"
-                >
+                    ? 'bg-emerald-500 border-emerald-500 text-white'
+                    : 'border-line hover:border-emerald-400'">
                   <i v-if="task.percentComplete === 100" class="fas fa-check text-[8px]"></i>
                 </button>
                 <span
-                  class="text-sm text-gray-800 dark:text-gray-200 leading-snug flex-1 min-w-0"
-                  :class="task.percentComplete === 100 ? 'line-through text-gray-400 dark:text-gray-500' : ''"
-                >
+                  class="text-sm text-ink leading-snug flex-1 min-w-0"
+                  :class="task.percentComplete === 100 ? 'line-through text-ink-subtle' : ''">
                   {{ task.title }}
                 </span>
               </div>
@@ -166,8 +149,7 @@
                 <span
                   v-if="task.dueDateTime"
                   class="text-[10px] flex items-center gap-1"
-                  :class="isOverdue(task) ? 'text-red-500' : 'text-gray-400'"
-                >
+                  :class="isOverdue(task) ? 'text-red-500' : 'text-ink-subtle'">
                   <i class="fas fa-calendar text-[9px]"></i>
                   {{ formatShortDate(task.dueDateTime) }}
                 </span>
@@ -175,8 +157,7 @@
                 <!-- Progresso em progresso -->
                 <span
                   v-if="task.percentComplete === 50"
-                  class="text-[10px] text-blue-500 flex items-center gap-1"
-                >
+                  class="text-[10px] text-accent flex items-center gap-1">
                   <i class="fas fa-circle-half-stroke text-[9px]"></i>
                   Em progresso
                 </span>
@@ -184,10 +165,9 @@
                 <!-- Checklist count -->
                 <span
                   v-if="task.checklistItemCount > 0"
-                  class="text-[10px] text-gray-400 flex items-center gap-1 ml-auto"
-                >
+                  class="text-[10px] text-ink-subtle flex items-center gap-1 ml-auto">
                   <i class="fas fa-list-check text-[9px]"></i>
-                  {{ task.activeChecklistItemCount }}/{{ task.checklistItemCount }}
+                  <span class="font-mono tabular-nums">{{ task.activeChecklistItemCount }}/{{ task.checklistItemCount }}</span>
                 </span>
               </div>
             </div>
@@ -195,16 +175,15 @@
             <!-- Empty -->
             <div
               v-if="!(store.tasksByBucket[bucket.id] ?? []).length"
-              class="text-center py-4"
-            >
-              <p class="text-[11px] text-gray-400">Sem tarefas</p>
+              class="text-center py-4">
+              <p class="text-[11px] text-ink-subtle">Sem tarefas</p>
             </div>
           </div>
 
           <!-- Add task -->
           <div class="px-2 pb-2">
             <template v-if="addingTaskBucketId === bucket.id">
-              <div class="bg-white dark:bg-gray-900 rounded-xl p-2.5 border border-blue-300 dark:border-blue-700 shadow-sm space-y-2">
+              <div class="bg-surface-raised rounded-xl p-2.5 border border-accent/40 shadow-soft space-y-2">
                 <input
                   ref="newTaskInput"
                   v-model="newTaskTitle"
@@ -212,23 +191,17 @@
                   placeholder="Título da tarefa..."
                   @keydown.enter="saveNewTask(bucket.id)"
                   @keydown.escape="cancelNewTask"
-                  class="w-full text-sm text-gray-900 dark:text-gray-100 bg-transparent outline-none placeholder:text-gray-400"
-                />
+                  class="w-full text-sm text-ink bg-transparent outline-none placeholder:text-ink-subtle" />
                 <div class="flex gap-2">
-                  <button @click="saveNewTask(bucket.id)" class="px-3 py-1 text-xs font-medium rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition">
-                    Adicionar
-                  </button>
-                  <button @click="cancelNewTask" class="px-3 py-1 text-xs rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition">
-                    Cancelar
-                  </button>
+                  <Button variant="primary" size="xs" @click="saveNewTask(bucket.id)">Adicionar</Button>
+                  <Button variant="ghost" size="xs" @click="cancelNewTask">Cancelar</Button>
                 </div>
               </div>
             </template>
             <button
               v-else
               @click="startAddTask(bucket.id)"
-              class="w-full flex items-center gap-1.5 px-3 py-2 text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700/50 rounded-xl transition"
-            >
+              class="w-full flex items-center gap-1.5 px-3 py-2 text-xs text-ink-muted hover:text-ink hover:bg-surface-hover/60 rounded-xl transition">
               <i class="fas fa-plus text-[10px]"></i>
               Adicionar tarefa
             </button>
@@ -238,7 +211,7 @@
         <!-- Adicionar nova coluna -->
         <div class="w-72 shrink-0">
           <template v-if="addingBucket">
-            <div class="bg-gray-100 dark:bg-gray-800/50 rounded-2xl p-3 space-y-2">
+            <div class="bg-surface-sunken/60 border border-line rounded-2xl p-3 space-y-2">
               <input
                 ref="bucketInput"
                 v-model="newBucketName"
@@ -246,23 +219,17 @@
                 placeholder="Nome da coluna..."
                 @keydown.enter="saveNewBucket"
                 @keydown.escape="addingBucket = false"
-                class="w-full text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900 rounded-lg px-3 py-2 border border-gray-200 dark:border-gray-700 outline-none focus:border-blue-400"
-              />
+                class="w-full text-sm text-ink bg-surface-raised rounded-lg px-3 py-2 border border-line outline-none focus:border-accent" />
               <div class="flex gap-2">
-                <button @click="saveNewBucket" class="px-3 py-1.5 text-xs font-medium rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition">
-                  Criar
-                </button>
-                <button @click="addingBucket = false" class="px-3 py-1.5 text-xs rounded-lg text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 transition">
-                  Cancelar
-                </button>
+                <Button variant="primary" size="sm" @click="saveNewBucket">Criar</Button>
+                <Button variant="ghost" size="sm" @click="addingBucket = false">Cancelar</Button>
               </div>
             </div>
           </template>
           <button
             v-else
             @click="startAddBucket"
-            class="w-full flex items-center justify-center gap-2 py-3 text-sm text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 border-2 border-dashed border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 rounded-2xl transition"
-          >
+            class="w-full flex items-center justify-center gap-2 py-3 text-sm text-ink-muted hover:text-ink border-2 border-dashed border-line hover:border-accent/40 rounded-2xl transition">
             <i class="fas fa-plus text-xs"></i>
             Nova coluna
           </button>
@@ -278,56 +245,62 @@
       :plan-name="store.selectedPlan?.title ?? ''"
       :bucket-name="selectedTaskBucketName"
       @close="selectedTask = null"
-      @deleted="selectedTask = null"
-    />
+      @deleted="selectedTask = null" />
 
     <!-- Modal criar plano -->
-    <Teleport to="body">
-      <div v-if="showCreatePlan" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-        <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 w-full max-w-sm p-6 space-y-4">
-          <h3 class="text-base font-semibold text-gray-900 dark:text-white">Criar novo plano</h3>
-          <input
-            v-model="newPlanTitle"
-            type="text"
-            placeholder="Nome do plano..."
-            @keydown.enter="saveNewPlan"
-            class="w-full px-3 py-2.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 outline-none focus:border-blue-400"
-          />
-          <div class="flex gap-3">
-            <button @click="showCreatePlan = false" class="flex-1 py-2 rounded-lg text-sm border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition">Cancelar</button>
-            <button @click="saveNewPlan" :disabled="!newPlanTitle.trim()" class="flex-1 py-2 rounded-lg text-sm bg-blue-600 hover:bg-blue-700 text-white transition disabled:opacity-40">Criar</button>
-          </div>
-        </div>
-      </div>
-    </Teleport>
+    <Modal :open="showCreatePlan"
+      size="sm"
+      title="Criar novo plano"
+      @close="showCreatePlan = false">
+      <Input
+        v-model="newPlanTitle"
+        placeholder="Nome do plano..."
+        @keydown.enter="saveNewPlan" />
+      <template #footer>
+        <Button variant="ghost" @click="showCreatePlan = false">Cancelar</Button>
+        <Button
+          variant="primary"
+          icon="fas fa-plus"
+          :disabled="!newPlanTitle.trim()"
+          @click="saveNewPlan">Criar</Button>
+      </template>
+    </Modal>
 
     <!-- Modal renomear bucket -->
-    <Teleport to="body">
-      <div v-if="renamingBucket" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-        <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 w-full max-w-sm p-6 space-y-4">
-          <h3 class="text-base font-semibold text-gray-900 dark:text-white">Renomear coluna</h3>
-          <input
-            v-model="renameBucketName"
-            type="text"
-            @keydown.enter="confirmRenameBucket"
-            class="w-full px-3 py-2.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 outline-none focus:border-blue-400"
-          />
-          <div class="flex gap-3">
-            <button @click="renamingBucket = null" class="flex-1 py-2 rounded-lg text-sm border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition">Cancelar</button>
-            <button @click="confirmRenameBucket" class="flex-1 py-2 rounded-lg text-sm bg-blue-600 hover:bg-blue-700 text-white transition">Salvar</button>
-          </div>
-        </div>
-      </div>
-    </Teleport>
+    <Modal :open="!!renamingBucket"
+      size="sm"
+      title="Renomear coluna"
+      @close="renamingBucket = null">
+      <Input
+        v-model="renameBucketName"
+        placeholder="Nome da coluna..."
+        @keydown.enter="confirmRenameBucket" />
+      <template #footer>
+        <Button variant="ghost" @click="renamingBucket = null">Cancelar</Button>
+        <Button
+          variant="primary"
+          icon="fas fa-check"
+          @click="confirmRenameBucket">Salvar</Button>
+      </template>
+    </Modal>
 
   </div>
 </template>
 
 <script setup>
-import { ref, nextTick, onMounted } from 'vue';
+import { ref, computed, nextTick, onMounted } from 'vue';
 import { useToast } from 'vue-toastification';
 import { usePlannerStore } from '@/stores/Microsoft/plannerStore';
 import TaskDetailModal from './components/TaskDetailModal.vue';
+
+import Modal from '@/components/UI/Modal.vue';
+import Button from '@/components/UI/Button.vue';
+import IconButton from '@/components/UI/IconButton.vue';
+import Input from '@/components/UI/Input.vue';
+import Select from '@/components/UI/Select.vue';
+import Badge from '@/components/UI/Badge.vue';
+import EmptyState from '@/components/UI/EmptyState.vue';
+import Spinner from '@/components/UI/Spinner.vue';
 
 const store = usePlannerStore();
 const toast = useToast();
@@ -335,6 +308,13 @@ const toast = useToast();
 // ── Seleção ───────────────────────────────────────────────────────────────────
 const selectedGroupId = ref('');
 const selectedPlanId  = ref('');
+
+const groupOptions = computed(() =>
+  (store.groups || []).map(g => ({ value: g.id, label: g.displayName }))
+);
+const planOptions = computed(() =>
+  (store.plans || []).map(p => ({ value: p.id, label: p.title }))
+);
 
 async function onGroupChange() {
   selectedPlanId.value = '';
@@ -356,7 +336,7 @@ const renameBucketName = ref('');
 
 function startAddBucket() {
   addingBucket.value = true;
-  nextTick(() => bucketInput.value?.focus());
+  nextTick(() => bucketInput.value?.focus?.());
 }
 
 async function saveNewBucket() {
@@ -403,7 +383,7 @@ const selectedTaskBucketName = ref('');
 function startAddTask(bucketId) {
   addingTaskBucketId.value = bucketId;
   newTaskTitle.value = '';
-  nextTick(() => newTaskInput.value?.focus());
+  nextTick(() => newTaskInput.value?.focus?.());
 }
 
 function cancelNewTask() {
@@ -452,10 +432,10 @@ function priorityLabel(p) {
 }
 
 function priorityBadge(p) {
-  if (p <= 1) return 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400';
-  if (p <= 3) return 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400';
-  if (p <= 6) return 'bg-yellow-100 text-yellow-600 dark:bg-yellow-900/30 dark:text-yellow-400';
-  return 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400';
+  if (p <= 1) return 'bg-red-500/10 text-red-600 dark:text-red-400';
+  if (p <= 3) return 'bg-orange-500/10 text-orange-600 dark:text-orange-400';
+  if (p <= 6) return 'bg-amber-500/10 text-amber-600 dark:text-amber-400';
+  return 'bg-surface-sunken text-ink-muted';
 }
 
 function isOverdue(task) {

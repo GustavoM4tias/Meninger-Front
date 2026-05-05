@@ -6,20 +6,20 @@
         <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="$emit('close')" />
 
         <!-- Modal -->
-        <div class="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 w-full max-w-lg flex flex-col max-h-[90vh]">
+        <div class="relative bg-surface-raised rounded-2xl shadow-2xl border border-line w-full max-w-lg flex flex-col max-h-[90vh]">
 
           <!-- Header -->
-          <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-800 shrink-0">
+          <div class="flex items-center justify-between px-6 py-4 border-b border-line shrink-0">
             <div class="flex items-center gap-3">
               <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-600 to-violet-700 flex items-center justify-center">
                 <i class="fas fa-envelope text-white text-sm"></i>
               </div>
               <div>
-                <h2 class="text-base font-bold text-gray-900 dark:text-white">Enviar Relatório por E-mail</h2>
-                <p class="text-xs text-gray-500 dark:text-gray-400 truncate max-w-xs">{{ meeting?.subject }}</p>
+                <h2 class="text-base font-bold text-ink">Enviar Relatório por E-mail</h2>
+                <p class="text-xs text-ink-muted truncate max-w-xs">{{ meeting?.subject }}</p>
               </div>
             </div>
-            <button @click="$emit('close')" class="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+            <button @click="$emit('close')" class="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:bg-surface-hover transition-colors">
               <i class="fas fa-times"></i>
             </button>
           </div>
@@ -29,7 +29,7 @@
 
             <!-- Destinatários -->
             <div>
-              <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-2">
+              <label class="block text-xs font-semibold text-ink-muted mb-2">
                 <i class="fas fa-users mr-1 text-purple-500"></i> Destinatários
               </label>
               <!-- Chips -->
@@ -51,7 +51,7 @@
                   @keydown.tab.prevent="addEmail"
                   type="email"
                   placeholder="nome@empresa.com"
-                  class="flex-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent placeholder:text-gray-400"
+                  class="flex-1 px-3 py-2 rounded-xl border border-line bg-surface-sunken text-sm text-ink focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent placeholder:text-gray-400"
                 />
                 <button @click="addEmail" :disabled="!newEmail.trim()"
                   class="px-3 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium transition-colors disabled:opacity-40 shrink-0">
@@ -63,40 +63,40 @@
 
             <!-- Assunto -->
             <div>
-              <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-2">
+              <label class="block text-xs font-semibold text-ink-muted mb-2">
                 <i class="fas fa-pen mr-1 text-purple-500"></i> Assunto
               </label>
               <input v-model="subject" type="text"
-                class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent" />
+                class="w-full px-3 py-2 rounded-xl border border-line bg-surface-sunken text-sm text-ink focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent" />
             </div>
 
             <!-- Observações -->
             <div>
-              <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-2">
+              <label class="block text-xs font-semibold text-ink-muted mb-2">
                 <i class="fas fa-comment-alt mr-1 text-purple-500"></i> Observações <span class="font-normal text-gray-400">(opcional)</span>
               </label>
               <textarea v-model="observations" rows="3"
                 placeholder="Adicione um comentário ou nota que será incluído no e-mail..."
-                class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent placeholder:text-gray-400 resize-none" />
+                class="w-full px-3 py-2 rounded-xl border border-line bg-surface-sunken text-sm text-ink focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent placeholder:text-gray-400 resize-none" />
             </div>
 
             <!-- Preview do que será enviado -->
-            <div class="bg-gray-50 dark:bg-gray-800/60 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
-              <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2">O e-mail incluirá:</p>
+            <div class="bg-surface-sunken/60 rounded-xl border border-line p-4">
+              <p class="text-xs font-semibold text-ink-muted mb-2">O e-mail incluirá:</p>
               <ul class="space-y-1">
-                <li v-if="report?.resumo" class="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300">
+                <li v-if="report?.resumo" class="flex items-center gap-2 text-xs text-ink-muted">
                   <i class="fas fa-check text-green-500 w-3"></i> Resumo executivo
                 </li>
-                <li v-if="report?.decisoes?.length" class="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300">
+                <li v-if="report?.decisoes?.length" class="flex items-center gap-2 text-xs text-ink-muted">
                   <i class="fas fa-check text-green-500 w-3"></i> {{ report.decisoes.length }} decisões
                 </li>
-                <li v-if="report?.acoes?.length" class="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300">
+                <li v-if="report?.acoes?.length" class="flex items-center gap-2 text-xs text-ink-muted">
                   <i class="fas fa-check text-green-500 w-3"></i> {{ report.acoes.length }} ações & responsabilidades
                 </li>
-                <li v-if="report?.kpis?.length" class="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300">
+                <li v-if="report?.kpis?.length" class="flex items-center gap-2 text-xs text-ink-muted">
                   <i class="fas fa-check text-green-500 w-3"></i> {{ report.kpis.length }} KPIs
                 </li>
-                <li v-if="report?.proximos_passos?.length" class="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300">
+                <li v-if="report?.proximos_passos?.length" class="flex items-center gap-2 text-xs text-ink-muted">
                   <i class="fas fa-check text-green-500 w-3"></i> Próximos passos
                 </li>
               </ul>
@@ -111,11 +111,11 @@
           </div>
 
           <!-- Footer -->
-          <div class="flex items-center justify-between gap-3 px-6 py-4 border-t border-gray-100 dark:border-gray-800 shrink-0">
+          <div class="flex items-center justify-between gap-3 px-6 py-4 border-t border-line shrink-0">
             <p class="text-xs text-gray-400">{{ recipients.length }} destinatário(s)</p>
             <div class="flex gap-2">
               <button @click="$emit('close')"
-                class="px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                class="px-4 py-2 rounded-xl border border-line text-sm text-ink-muted hover:bg-surface-hover transition-colors">
                 Cancelar
               </button>
               <button @click="send" :disabled="sending || !recipients.length"

@@ -119,7 +119,7 @@ onBeforeUnmount(() => {
         >
         <div
           :class="[
-            'relative w-full bg-surface-raised border-line surface-gradient',
+            'relative w-full border-none bg-surface-raised border-line surface-gradient',
             'flex flex-col overflow-hidden',
             sizeClass, panelClass,
           ]"
@@ -127,7 +127,7 @@ onBeforeUnmount(() => {
         >
           <!-- Header -->
           <div v-if="$slots.header || title || !hideClose"
-               class="flex items-center justify-between gap-3 px-4 sm:px-5 py-3.5 sm:py-4 border-b border-line shrink-0">
+               class="flex items-center justify-between gap-3 px-4 sm:px-5 py-3 sm:py-4 border-b border-line shrink-0">
             <div class="flex-1 min-w-0">
               <slot name="header">
                 <h2 v-if="title" class="text-base font-semibold text-ink truncate">{{ title }}</h2>

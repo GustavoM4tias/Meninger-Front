@@ -10,7 +10,7 @@
         {{ sentimentLabel(report.sentimento_geral) }}
       </span>
       <span v-if="report.duracao_real_min"
-        class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-xs">
+        class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-surface-sunken text-ink-muted text-xs">
         <i class="fas fa-clock"></i> {{ report.duracao_real_min }} min
       </span>
       <div class="flex flex-wrap gap-1 ml-auto">
@@ -24,17 +24,17 @@
     <!-- Resumo executivo -->
     <section v-if="report.resumo">
       <h3 class="section-title"><i class="fas fa-align-left text-blue-500"></i> Resumo Executivo</h3>
-      <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4">
-        <p class="text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">{{ report.resumo }}</p>
+      <div class="bg-surface-raised rounded-xl border border-line p-4">
+        <p class="text-sm text-ink-muted leading-relaxed whitespace-pre-wrap">{{ report.resumo }}</p>
       </div>
     </section>
 
     <!-- Pauta -->
     <section v-if="report.pauta?.length">
       <h3 class="section-title"><i class="fas fa-list-check text-indigo-500"></i> Pauta Discutida</h3>
-      <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 divide-y divide-gray-100 dark:divide-gray-800">
+      <div class="bg-surface-raised rounded-xl border border-line divide-y divide-line">
         <div v-for="(item, i) in report.pauta" :key="i"
-          class="flex items-start gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
+          class="flex items-start gap-3 px-4 py-3 text-sm text-ink-muted">
           <span class="w-5 h-5 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-300 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">{{ i+1 }}</span>
           {{ item }}
         </div>
@@ -46,11 +46,11 @@
       <h3 class="section-title"><i class="fas fa-chart-bar text-green-500"></i> KPIs & Métricas</h3>
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         <div v-for="(kpi, i) in report.kpis" :key="i"
-          class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4">
-          <p class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-1 truncate">{{ kpi.nome }}</p>
-          <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ kpi.valor }}</p>
-          <p v-if="kpi.referencia" class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Meta: {{ kpi.referencia }}</p>
-          <p v-if="kpi.contexto" class="text-xs text-gray-400 dark:text-gray-500 mt-2 leading-relaxed">{{ kpi.contexto }}</p>
+          class="bg-surface-raised rounded-xl border border-line p-4">
+          <p class="text-xs font-semibold text-ink-subtle uppercase tracking-wide mb-1 truncate">{{ kpi.nome }}</p>
+          <p class="text-2xl font-bold text-ink">{{ kpi.valor }}</p>
+          <p v-if="kpi.referencia" class="text-xs text-ink-muted mt-0.5">Meta: {{ kpi.referencia }}</p>
+          <p v-if="kpi.contexto" class="text-xs text-ink-subtle mt-2 leading-relaxed">{{ kpi.contexto }}</p>
         </div>
       </div>
     </section>
@@ -58,9 +58,9 @@
     <!-- Decisões -->
     <section v-if="report.decisoes?.length">
       <h3 class="section-title"><i class="fas fa-gavel text-amber-500"></i> Decisões Tomadas</h3>
-      <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 divide-y divide-gray-100 dark:divide-gray-800">
+      <div class="bg-surface-raised rounded-xl border border-line divide-y divide-line">
         <div v-for="(dec, i) in report.decisoes" :key="i"
-          class="flex items-start gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
+          class="flex items-start gap-3 px-4 py-3 text-sm text-ink-muted">
           <i class="fas fa-check-circle text-amber-500 mt-0.5 shrink-0"></i>
           {{ dec }}
         </div>
@@ -70,22 +70,22 @@
     <!-- Ações -->
     <section v-if="report.acoes?.length">
       <h3 class="section-title"><i class="fas fa-bolt text-red-500"></i> Ações & Responsabilidades</h3>
-      <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+      <div class="bg-surface-raised rounded-xl border border-line overflow-hidden">
         <table class="w-full text-sm">
           <thead>
-            <tr class="bg-gray-50 dark:bg-gray-800/60 text-left">
+            <tr class="bg-surface-sunken/60 text-left">
               <th class="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">Tarefa</th>
               <th class="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide hidden sm:table-cell">Responsável</th>
               <th class="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide hidden md:table-cell">Prazo</th>
               <th class="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">Prioridade</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+          <tbody class="divide-y divide-line">
             <tr v-for="(acao, i) in report.acoes" :key="i"
-              class="hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors">
-              <td class="px-4 py-3 text-gray-800 dark:text-gray-200">{{ acao.tarefa }}</td>
-              <td class="px-4 py-3 text-gray-500 dark:text-gray-400 hidden sm:table-cell">{{ acao.responsavel || '—' }}</td>
-              <td class="px-4 py-3 text-gray-500 dark:text-gray-400 hidden md:table-cell">{{ acao.prazo || '—' }}</td>
+              class="hover:bg-surface-hover/30 transition-colors">
+              <td class="px-4 py-3 text-ink">{{ acao.tarefa }}</td>
+              <td class="px-4 py-3 text-ink-muted hidden sm:table-cell">{{ acao.responsavel || '—' }}</td>
+              <td class="px-4 py-3 text-ink-muted hidden md:table-cell">{{ acao.prazo || '—' }}</td>
               <td class="px-4 py-3">
                 <span :class="priorityClass(acao.prioridade)"
                   class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold">
@@ -101,12 +101,12 @@
     <!-- Checklist -->
     <section v-if="report.checklist?.length">
       <h3 class="section-title"><i class="fas fa-square-check text-teal-500"></i> Checklist</h3>
-      <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 divide-y divide-gray-100 dark:divide-gray-800">
+      <div class="bg-surface-raised rounded-xl border border-line divide-y divide-line">
         <div v-for="(item, i) in checklistLocal" :key="i"
           class="flex items-center gap-3 px-4 py-3">
           <input type="checkbox" v-model="item.concluido"
             class="w-4 h-4 accent-teal-500 cursor-pointer shrink-0" />
-          <span :class="item.concluido ? 'line-through text-gray-400' : 'text-gray-700 dark:text-gray-300'"
+          <span :class="item.concluido ? 'line-through text-gray-400' : 'text-ink-muted'"
             class="text-sm flex-1 transition-all">
             {{ item.item }}
           </span>
@@ -118,9 +118,9 @@
     <!-- Próximos passos -->
     <section v-if="report.proximos_passos?.length">
       <h3 class="section-title"><i class="fas fa-arrow-right text-purple-500"></i> Próximos Passos</h3>
-      <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 divide-y divide-gray-100 dark:divide-gray-800">
+      <div class="bg-surface-raised rounded-xl border border-line divide-y divide-line">
         <div v-for="(step, i) in report.proximos_passos" :key="i"
-          class="flex items-start gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
+          class="flex items-start gap-3 px-4 py-3 text-sm text-ink-muted">
           <span class="w-5 h-5 rounded-full bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-300 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">{{ i+1 }}</span>
           {{ step }}
         </div>
@@ -144,15 +144,15 @@
       <h3 class="section-title"><i class="fas fa-users text-sky-500"></i> Participantes</h3>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div v-for="(p, i) in report.participantes" :key="i"
-          class="flex items-start gap-3 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4">
+          class="flex items-start gap-3 bg-surface-raised rounded-xl border border-line p-4">
           <div class="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0"
             :style="{ background: avatarColor(p.nome, i) }">
             {{ (p.nome || '?').charAt(0).toUpperCase() }}
           </div>
           <div class="min-w-0">
-            <p class="text-sm font-semibold text-gray-800 dark:text-gray-200 truncate">{{ p.nome }}</p>
-            <p v-if="p.papel" class="text-xs text-gray-500 dark:text-gray-400">{{ p.papel }}</p>
-            <p v-if="p.contribuicao" class="text-xs text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">{{ p.contribuicao }}</p>
+            <p class="text-sm font-semibold text-ink truncate">{{ p.nome }}</p>
+            <p v-if="p.papel" class="text-xs text-ink-muted">{{ p.papel }}</p>
+            <p v-if="p.contribuicao" class="text-xs text-ink-muted mt-1 leading-relaxed">{{ p.contribuicao }}</p>
           </div>
         </div>
       </div>
@@ -161,11 +161,11 @@
     <!-- Ações do relatório -->
     <div class="flex items-center justify-end gap-2 pt-2 flex-wrap">
       <button @click="$emit('email')"
-        class="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+        class="flex items-center gap-2 px-4 py-2 rounded-xl border border-line text-sm text-ink-muted hover:bg-surface-hover transition-colors">
         <i class="fas fa-envelope text-purple-500"></i> Enviar por e-mail
       </button>
       <button @click="printReport"
-        class="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+        class="flex items-center gap-2 px-4 py-2 rounded-xl border border-line text-sm text-ink-muted hover:bg-surface-hover transition-colors">
         <i class="fas fa-file-pdf text-red-500"></i> Exportar PDF
       </button>
     </div>
@@ -201,7 +201,7 @@ function sentimentIcon(s) {
 function sentimentClass(s) {
   const m = {
     positivo: 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300',
-    neutro:   'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300',
+    neutro:   'bg-surface-sunken text-ink-muted',
     negativo: 'bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400',
     misto:    'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-300',
   };
@@ -217,7 +217,7 @@ function priorityClass(p) {
   const m = {
     alta:  'bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400',
     media: 'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-300',
-    baixa: 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400',
+    baixa: 'bg-surface-sunken text-ink-muted',
   };
   return m[p] || m.baixa;
 }
@@ -358,6 +358,6 @@ function printReport() {
 
 <style scoped>
 .section-title {
-  @apply flex items-center gap-2 text-sm font-bold text-gray-700 dark:text-gray-200 mb-2;
+  @apply flex items-center gap-2 text-sm font-bold text-ink mb-2;
 }
 </style>
