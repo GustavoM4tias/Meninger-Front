@@ -33,7 +33,7 @@ const form = ref({
   webhook_verify_token: '',
 });
 
-const testForm = ref({ to: '', templateName: '', variables: '' });
+const testForm = ref({ to: '', templateName: 'hello_world', language: 'en_US', variables: '' });
 const testResult = ref(null);
 const saving = ref(false);
 const message = ref(null); // {type, text}
@@ -118,6 +118,7 @@ const onTestSend = async () => {
     const r = await store.testSend({
       to: testForm.value.to,
       templateName: testForm.value.templateName,
+      language: testForm.value.language || 'pt_BR',
       variables,
     });
     testResult.value = { ok: true, text: `Enviado. id: ${r.id || '—'}` };
@@ -236,10 +237,14 @@ const onTestSend = async () => {
 
       <section class="rounded-xl border border-line bg-surface-raised p-5 shadow-soft space-y-3">
         <h3 class="text-sm font-semibold text-ink">Envio de teste</h3>
+        <p class="text-[11px] text-ink-muted">
+          Use <code class="font-mono">hello_world</code> em <code class="font-mono">en_US</code> sem variáveis pra testar agora — esse template já vem aprovado.
+        </p>
         <Input v-model="testForm.to"           label="Para (E.164)"   placeholder="+5511999999999" size="sm" />
         <Input v-model="testForm.templateName" label="Template name"  placeholder="hello_world" size="sm" />
+        <Input v-model="testForm.language"     label="Idioma"          placeholder="en_US" size="sm" />
         <Input v-model="testForm.variables"    label="Variáveis"
-          hint="Separe com | (pipe). Ex: João|Workshop|10/05 14h"
+          hint="Separe com | (pipe). hello_world não tem variáveis."
           size="sm" />
         <Button block size="sm" variant="secondary" icon="fas fa-paper-plane" @click="onTestSend">
           Enviar teste

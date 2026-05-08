@@ -53,6 +53,12 @@ export const listTemplates = (params = {}) =>
     fetch(`${API_URL}/whatsapp/templates${qs(params)}`, { headers: headers() }).then(handle);
 export const getTemplate = (id) =>
     fetch(`${API_URL}/whatsapp/templates/${id}`, { headers: headers() }).then(handle);
+export const createTemplate = (payload) => fetch(`${API_URL}/whatsapp/templates`, {
+    method: 'POST', headers: headers(), body: JSON.stringify(payload),
+}).then(handle);
+export const deleteTemplate = (name) => fetch(`${API_URL}/whatsapp/templates/${encodeURIComponent(name)}`, {
+    method: 'DELETE', headers: headers(),
+}).then(handle);
 
 // ── Mensagens / log (admin) ──────────────────────────────────────────────
 export const listMessages = (params = {}) =>
