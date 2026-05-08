@@ -30,6 +30,8 @@ export const useSalesProjectionReportStore = defineStore('salesProjectionReport'
         endDate:        '',
         situation:      'Emitido',
         enterpriseName: [],
+        companyIds:     [],
+        enterpriseIds:  [],
     });
 
     // ── Getters básicos ───────────────────────────────────────────────────────
@@ -123,7 +125,7 @@ export const useSalesProjectionReportStore = defineStore('salesProjectionReport'
 
     /**
      * fetchReport — aceita os MESMOS parâmetros do Faturamento:
-     *   { startDate, endDate, situation, enterpriseName[], projection_id }
+     *   { startDate, endDate, situation, enterpriseName[], companyIds[], enterpriseIds[], projection_id }
      */
     async function fetchReport(params = {}) {
         error.value   = null;
@@ -143,6 +145,16 @@ export const useSalesProjectionReportStore = defineStore('salesProjectionReport'
             if (Array.isArray(f.enterpriseName) && f.enterpriseName.length > 0) {
                 q.set('enterpriseName', f.enterpriseName.join(','));
             }
+
+            const cids = Array.isArray(f.companyIds)
+                ? f.companyIds.map(Number).filter((n) => Number.isFinite(n) && n > 0)
+                : [];
+            if (cids.length > 0) q.set('companyIds', cids.join(','));
+
+            const eids = Array.isArray(f.enterpriseIds)
+                ? f.enterpriseIds.map(Number).filter((n) => Number.isFinite(n) && n > 0)
+                : [];
+            if (eids.length > 0) q.set('enterpriseIds', eids.join(','));
 
             const token = localStorage.getItem('token');
             const res = await fetch(`${API_URL}/projections/report?${q.toString()}`, {
@@ -165,16 +177,21 @@ export const useSalesProjectionReportStore = defineStore('salesProjectionReport'
     }
 
     function clearFilters() {
-        filters.value = { startDate: '', endDate: '', situation: 'Emitido', enterpriseName: [] };
+        filters.value = {
+            startDate: '', endDate: '', situation: 'Emitido',
+            enterpriseName: [], companyIds: [], enterpriseIds: [],
+        };
         selectedGroupIds.value = [];
         setValueMode('net');
     }
 
-    /** Busca empreendimentos disponíveis — igual ao contractsStore */
+    /** Busca empreendimentos disponíveis — igual ao contractsStore.
+     *  Usa /sienge/contracts/enterprises (já filtrado por cidade no backend
+     *  para usuários não-admin). */
     async function fetchEnterprises() {
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch(`${API_URL}/sienge/enterprises`, {
+            const res = await fetch(`${API_URL}/sienge/contracts/enterprises`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             if (!res.ok) throw new Error('Erro ao buscar empreendimentos');
@@ -185,12 +202,14 @@ export const useSalesProjectionReportStore = defineStore('salesProjectionReport'
         }
     }
 
-    /** Busca a lista de projeções disponíveis */
+    /** Busca apenas projeções ATIVAS (o sistema garante só 1 ativa por vez).
+     *  O Vendas × Projeção sempre opera sobre a projeção ativa — projeções
+     *  inativas só aparecem no painel admin de projeções. */
     async function fetchProjectionsList() {
         try {
             const token = localStorage.getItem('token');
             const res = await fetch(
-                `${API_URL}/projections?start_month=1900-01&end_month=2999-12`,
+                `${API_URL}/projections?start_month=1900-01&end_month=2999-12&only_active=true`,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             if (!res.ok) throw new Error('Erro ao buscar projeções');

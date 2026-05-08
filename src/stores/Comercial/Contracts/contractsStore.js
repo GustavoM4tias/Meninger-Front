@@ -4,6 +4,7 @@ import { useCarregamentoStore } from '@/stores/Config/carregamento'
 import API_URL from '@/config/apiUrl'
 import { useHiddenEnterprisesStore } from '@/stores/Comercial/Contracts/hiddenEnterprisesStore'
 import { useStageCommissionRulesStore } from '@/stores/Comercial/Contracts/stageCommissionRulesStore'
+import { useTrSatelliteStore } from '@/stores/Comercial/Contracts/trSatelliteStore'
 
 // ─── Debug helpers ──────────────────────────────────────────────────────────
 const DEBUG = true
@@ -76,6 +77,29 @@ function contractTotals(contract) {
         else full += v
     }
     return { net: full, gross: full + dcAbs }
+}
+
+// ─── Distrato detection ──────────────────────────────────────────────────────
+// Vendas onde o repasse no CV foi marcado como "distrato" — mesmo que o contrato
+// no Sienge ainda esteja com situation='Emitido'. São excluídas dos totais para
+// alinhar com a regra de negócio aplicada na tabela.
+function repasseStatusOfSale(sale) {
+    const first = sale?.contracts?.[0] || {}
+    const r = first?.repasse?.[0]
+    if (r) {
+        const sr = (r.status_repasse ?? r.statusRepasse ?? '').toString().trim()
+        if (sr) return sr
+    }
+    const res = first?.reserva
+    if (res) {
+        const srr = (res.status_repasse ?? res.statusRepasse ?? '').toString().trim()
+        if (srr) return srr
+    }
+    return null
+}
+
+function saleIsDistrato(sale) {
+    return String(repasseStatusOfSale(sale) ?? '').trim().toLowerCase() === 'distrato'
 }
 
 function overrideRuleFor(c) {
@@ -212,12 +236,49 @@ export const useContractsStore = defineStore('contracts', {
             (s.valueMode === 'net' ? obj?.total_value_net : obj?.total_value_gross) ?? 0,
 
         // ── Totals ─────────────────────────────────────────────────────────
-        totalSales() { return this.uniqueSales.length },
+        // Distratos (vendas com repasse status_repasse='distrato') são excluídos
+        // dos totais para manter paridade com a tabela do dashboard, que já
+        // subtrai distratos linha a linha.
+        saleIsDistrato: () => (sale) => saleIsDistrato(sale),
+        nonDistratoSales() { return this.uniqueSales.filter((s) => !saleIsDistrato(s)) },
+
+        // Conta quantas vendas distratadas pertencem à row (empreendimento ou
+        // empresa) do dashboard. Usado por todas as tabelas do Faturamento e
+        // do Sales-Projection para subtrair distratos sem duplicar lógica.
+        distratoMetaForRow() {
+            return (row) => {
+                if (!row || row.onlyProjectionRow) return { count: 0, value: 0 }
+                const sales = this.uniqueSales
+                const valuePicker = this.valuePicker
+                const rowEntId = row.enterprise_id != null ? Number(row.enterprise_id) : null
+                const rowCompanyId = row.company_id != null ? Number(row.company_id) : null
+                let count = 0
+                let value = 0
+                for (const s of sales) {
+                    if (!saleIsDistrato(s)) continue
+                    const contracts = Array.isArray(s?.contracts) ? s.contracts : []
+                    if (!contracts.length) continue
+                    let belongs = false
+                    if (rowEntId != null) {
+                        belongs = contracts.some((c) => Number(c.enterprise_id) === rowEntId)
+                    } else if (rowCompanyId != null) {
+                        belongs = contracts.some((c) => Number(c.company_id) === rowCompanyId)
+                    }
+                    if (!belongs) continue
+                    count += 1
+                    value += Number(valuePicker(s) || 0)
+                }
+                return { count, value }
+            }
+        },
+        distratoCountForRow() { return (row) => this.distratoMetaForRow(row).count },
+        distratoValueForRow() { return (row) => this.distratoMetaForRow(row).value },
+        totalSales() { return this.nonDistratoSales.length },
         totalValueNet() {
-            return this.uniqueSales.reduce((s, x) => s + (Number(x.total_value_net) || 0), 0)
+            return this.nonDistratoSales.reduce((s, x) => s + (Number(x.total_value_net) || 0), 0)
         },
         totalValueGross() {
-            return this.uniqueSales.reduce((s, x) => s + (Number(x.total_value_gross) || 0), 0)
+            return this.nonDistratoSales.reduce((s, x) => s + (Number(x.total_value_gross) || 0), 0)
         },
         projectionContractsCount: (s) => s.contracts.filter((c) => c._projection).length,
         projectionItemsCount() {
@@ -279,6 +340,57 @@ export const useContractsStore = defineStore('contracts', {
                     visibleContracts = this.contracts.filter(
                         (c) => !hiddenStore.hiddenIds.has(Number(c.enterprise_id))
                     )
+                }
+            } catch { /* store may not be ready yet */ }
+
+            // TR-satellite merge rule (admin-configured).
+            // Empreendimentos que carregam apenas o contrato de Terreno (TR) — separado
+            // dos contratos de incorporação/repasse — têm seu enterprise_id reescrito
+            // para o partner correspondente, casando por (customer + unit_name). Sem
+            // partner match, o contrato satélite é descartado para evitar contagem
+            // dupla. Aplicado somente a contratos REAIS (projeções passam intactas).
+            try {
+                const trSatStore = useTrSatelliteStore()
+                if (trSatStore.satelliteIds.size > 0) {
+                    const partnerIdsBySat = trSatStore.partnerIdsBySatellite
+                    const satIds = trSatStore.satelliteIds
+
+                    const partnerIndex = new Map()
+                    for (const c of visibleContracts) {
+                        if (c?._projection) continue
+                        const eid = Number(c?.enterprise_id)
+                        if (!Number.isFinite(eid) || satIds.has(eid)) continue
+                        const cust = c.customer_id ?? 'NULL'
+                        const unitName = (c.unit_name || '').trim().toUpperCase() || 'NULL'
+                        const k = `${cust}__${unitName}`
+                        if (!partnerIndex.has(k)) partnerIndex.set(k, [])
+                        partnerIndex.get(k).push(c)
+                    }
+
+                    visibleContracts = visibleContracts
+                        .map((c) => {
+                            if (c?._projection) return c
+                            const eid = Number(c?.enterprise_id)
+                            if (!Number.isFinite(eid) || !satIds.has(eid)) return c
+                            const partners = partnerIdsBySat.get(eid)
+                            if (!partners || partners.size === 0) return c
+                            const cust = c.customer_id ?? 'NULL'
+                            const unitName = (c.unit_name || '').trim().toUpperCase() || 'NULL'
+                            const candidates = partnerIndex.get(`${cust}__${unitName}`) || []
+                            const match = candidates.find((p) => partners.has(Number(p.enterprise_id)))
+                            if (!match) return null
+                            return {
+                                ...c,
+                                enterprise_id: match.enterprise_id,
+                                enterprise_name: match.enterprise_name,
+                                company_id: match.company_id ?? c.company_id,
+                                company_name: match.company_name ?? c.company_name,
+                                _tr_satellite_merged: true,
+                                _tr_satellite_origin_id: c.enterprise_id,
+                                _tr_satellite_origin_name: c.enterprise_name
+                            }
+                        })
+                        .filter((c) => c != null)
                 }
             } catch { /* store may not be ready yet */ }
 
@@ -751,8 +863,10 @@ export const useContractsStore = defineStore('contracts', {
         },
 
         metrics() {
-            const unique = this.uniqueSales
-            const totalSales = this.totalSales
+            // Distratos excluídos para alinhar com a tabela do dashboard
+            // (que subtrai distratos linha a linha via distratoCount/distratoValue).
+            const unique = this.nonDistratoSales
+            const totalSales = unique.length
             const totalValueNet = unique.reduce((s, x) => s + (Number(x.total_value_net) || 0), 0)
             const totalValueGross = unique.reduce((s, x) => s + (Number(x.total_value_gross) || 0), 0)
             return {
@@ -798,13 +912,19 @@ export const useContractsStore = defineStore('contracts', {
             this.clearContractsCache()
         },
         setFilters(filters) {
+            const prevCompanyIds = [...(this.filters.companyIds || [])].sort((a, b) => a - b).join(',')
             this.filters = { ...this.filters, ...filters }
+            const nextCompanyIds = [...(this.filters.companyIds || [])].sort((a, b) => a - b).join(',')
+            // Drop projection cache when companyIds change — backend response is now
+            // scoped to that filter, so prior entries belong to a different context.
+            if (prevCompanyIds !== nextCompanyIds) this._projCache.clear()
             this.clearContractsCache()
             this.clearDetailCache()
         },
         clearFilters() {
             this.filters = { startDate: '', endDate: '', situation: 'Emitido', enterpriseName: [], companyIds: [] }
             this.selectedGroupIds = []
+            this._projCache.clear()
             this.clearContractsCache()
             this.clearDetailCache()
         },
@@ -815,9 +935,6 @@ export const useContractsStore = defineStore('contracts', {
             const changed = newIds.join(',') !== prevIds.join(',')
 
             this.selectedGroupIds = newIds
-            // Only clear projection cache when the actual group selection changes.
-            // This preserves cached projections when only dates/company change,
-            // avoiding redundant re-fetches of the heavy projection queries.
             if (changed) this._projCache.clear()
             this.clearDetailCache()
             this.clearContractsCache()
@@ -1035,11 +1152,34 @@ export const useContractsStore = defineStore('contracts', {
         },
 
         // ── Projection fetching ──────────────────────────────────────────
-        async _fetchProjectionsForGroup(idgroup) {
-            if (this._projCache.has(idgroup)) return this._projCache.get(idgroup)
+        _buildProjectionCacheKey(idgroup, { companyIds = [], enterpriseIds = [] } = {}) {
+            const cids = [...new Set(companyIds.map(Number).filter(Number.isFinite))]
+                .sort((a, b) => a - b).join(',')
+            const eids = [...new Set(enterpriseIds.map(Number).filter(Number.isFinite))]
+                .sort((a, b) => a - b).join(',')
+            return `g=${idgroup};c=${cids};e=${eids}`
+        },
 
-            const url = `${API_URL}/cv/workflow-grupos/${idgroup}/projecoes`
-            logProj('fetch start:', { idgroup, url })
+        async _fetchProjectionsForGroup(idgroup, { enterpriseIds = null } = {}) {
+            const companyIds = Array.isArray(this.filters.companyIds)
+                ? this.filters.companyIds.map(Number).filter((n) => Number.isFinite(n) && n > 0)
+                : []
+            const entIds = Array.isArray(enterpriseIds)
+                ? enterpriseIds.map(Number).filter((n) => Number.isFinite(n) && n > 0)
+                : []
+
+            const cacheKey = this._buildProjectionCacheKey(idgroup, {
+                companyIds,
+                enterpriseIds: entIds
+            })
+            if (this._projCache.has(cacheKey)) return this._projCache.get(cacheKey)
+
+            const params = new URLSearchParams()
+            if (companyIds.length) params.append('companyIds', companyIds.join(','))
+            if (entIds.length) params.append('enterpriseIds', entIds.join(','))
+            const qs = params.toString()
+            const url = `${API_URL}/cv/workflow-grupos/${idgroup}/projecoes${qs ? `?${qs}` : ''}`
+            logProj('fetch start:', { idgroup, url, cacheKey })
 
             const res = await fetch(url, {
                 headers: {
@@ -1080,7 +1220,7 @@ export const useContractsStore = defineStore('contracts', {
                 pcs: c.payment_conditions?.length
             })))
 
-            this._projCache.set(idgroup, normalized)
+            this._projCache.set(cacheKey, normalized)
             return normalized
         },
 
@@ -1171,13 +1311,23 @@ export const useContractsStore = defineStore('contracts', {
             let cachedBeforeRequest = []
             let requestedIds = null
 
+            // For detail views, scope projection fetches to the requested enterprise(s).
+            const detailEntIds = isDetail
+                ? (enterpriseId != null
+                    ? [Number(enterpriseId)].filter(Number.isFinite)
+                    : (Array.isArray(enterpriseIds)
+                        ? enterpriseIds.map(Number).filter(Number.isFinite)
+                        : []))
+                : []
+            const projFetchOpts = detailEntIds.length ? { enterpriseIds: detailEntIds } : {}
+
             // Serve from detail cache when possible
             if (isDetail && !force && enterpriseId != null) {
                 const ctxKey = this._buildDetailCtxKey()
                 const cached = this._getDetailFromCache(ctxKey, enterpriseId)
                 if (cached) {
                     const projs = this.selectedGroupIds.length > 0
-                        ? (await Promise.all(this.selectedGroupIds.map((id) => this._fetchProjectionsForGroup(id).catch(() => [])))).flat()
+                        ? (await Promise.all(this.selectedGroupIds.map((id) => this._fetchProjectionsForGroup(id, projFetchOpts).catch(() => [])))).flat()
                         : []
                     this.contracts = [...cached, ...projs]
                     this.total = this.contracts.length
@@ -1193,7 +1343,7 @@ export const useContractsStore = defineStore('contracts', {
                 if (missing.length === 0) {
                     const allCached = ids.flatMap((id) => this._getDetailFromCache(ctxKey, id) || [])
                     const projs = this.selectedGroupIds.length > 0
-                        ? (await Promise.all(this.selectedGroupIds.map((id) => this._fetchProjectionsForGroup(id).catch(() => [])))).flat()
+                        ? (await Promise.all(this.selectedGroupIds.map((id) => this._fetchProjectionsForGroup(id, projFetchOpts).catch(() => [])))).flat()
                         : []
                     this.contracts = [...allCached, ...projs]
                     this.total = this.contracts.length
@@ -1239,10 +1389,11 @@ export const useContractsStore = defineStore('contracts', {
                 const url = `${API_URL}/sienge/contracts?${params.toString()}`
                 log('fetchContracts request:', url)
 
-                // Start projections fetch IN PARALLEL with real contracts processing
-                // (projections from cache are instant; uncached ones hit the API simultaneously)
+                // Start projections fetch IN PARALLEL with real contracts processing.
+                // Filters (companyIds, dates, enterpriseIds when in detail mode) are applied
+                // server-side; the response is already scoped to the active filter context.
                 const projsFetchPromise = this.selectedGroupIds.length > 0
-                    ? Promise.all(this.selectedGroupIds.map((id) => this._fetchProjectionsForGroup(id).catch(() => [])))
+                    ? Promise.all(this.selectedGroupIds.map((id) => this._fetchProjectionsForGroup(id, projFetchOpts).catch(() => [])))
                         .then(all => all.flat())
                     : Promise.resolve([])
 
@@ -1278,32 +1429,12 @@ export const useContractsStore = defineStore('contracts', {
                     this._indexDetailIntoCache(this._buildDetailCtxKey(), normalized)
                 }
 
-                // Await the already-started projections fetch
+                // Projections already filtered server-side by companyIds/enterpriseIds.
                 const projs = await projsFetchPromise
 
-                // Apply company filter to projections when active.
-                // By this point _enterpriseCompanyMap is built from normalized contracts,
-                // so we can resolve company_id for projections that don't have it directly.
-                const companyFilter = Array.isArray(this.filters.companyIds) && this.filters.companyIds.length > 0
-                    ? new Set(this.filters.companyIds.map(Number))
-                    : null
-
-                const filteredProjs = companyFilter
-                    ? projs.filter((p) => {
-                        let cid = p.company_id != null ? Number(p.company_id) : null
-                        if (cid == null && p.enterprise_id != null) {
-                            const mapped = this._enterpriseCompanyMap.get(Number(p.enterprise_id))
-                            cid = mapped?.company_id != null ? Number(mapped.company_id) : null
-                        }
-                        // If company is resolved, check membership; if unresolvable, keep it
-                        if (cid != null) return companyFilter.has(cid)
-                        return true
-                    })
-                    : projs
-
                 let merged = isDetail && requestedIds && cachedBeforeRequest.length > 0
-                    ? [...cachedBeforeRequest, ...normalized, ...filteredProjs]
-                    : [...normalized, ...filteredProjs]
+                    ? [...cachedBeforeRequest, ...normalized, ...projs]
+                    : [...normalized, ...projs]
 
                 // Deduplicate by contract_id
                 const dedup = new Map()

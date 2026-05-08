@@ -10,6 +10,7 @@ import ProfileSection from './ProfileSection.vue';
 import PasswordSection from './PasswordSection.vue';
 import MicrosoftSection from './MicrosoftSection.vue';
 import SiengeSection from './SiengeSection.vue';
+import WhatsappOptIn from './WhatsappOptIn.vue';
 
 const authStore = useAuthStore();
 
@@ -34,6 +35,7 @@ onMounted(async () => {
       <div class="space-y-3">
         <ProfileSection />
         <PasswordSection />
+        <WhatsappOptIn />
         <MicrosoftSection />
         <SiengeSection />
       </div>
