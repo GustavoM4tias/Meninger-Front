@@ -88,6 +88,18 @@ export const useWhatsappStore = defineStore('whatsappStore', {
             } finally { this.syncing = false; }
         },
 
+        async createTemplate(payload) {
+            const r = await api.createTemplate(payload);
+            await this.fetchTemplates();
+            return r;
+        },
+
+        async deleteTemplate(name) {
+            const r = await api.deleteTemplate(name);
+            await this.fetchTemplates();
+            return r;
+        },
+
         // ── Mensagens ────────────────────────────────────────────────
         async fetchMessages(params = {}) {
             this.loadingMessages = true;
