@@ -28,61 +28,9 @@ const isAdmin = computed(() => {
 });
 
 // ── Distrato ──────────────────────────────
-const norm = (v) => String(v ?? '').trim().toLowerCase();
-
-function repasseStatusOfSale(sale) {
-  const first = sale?.contracts?.[0] || {};
-  const r = first?.repasse?.[0];
-  if (r) {
-    const sr = (r.status_repasse ?? r.statusRepasse ?? '').toString().trim();
-    if (sr) return sr;
-  }
-  const res = first?.reserva;
-  if (res) {
-    const srr = (res.status_repasse ?? res.statusRepasse ?? '').toString().trim();
-    if (srr) return srr;
-  }
-  return null;
-}
-
-const saleIsDistrato = (sale) => norm(repasseStatusOfSale(sale)) === 'distrato';
-
-const toNum = (v) => {
-  if (v === null || v === undefined || v === '') return null;
-  const n = Number(v);
-  return Number.isFinite(n) ? n : null;
-};
-
-function salesForRow(sales, row) {
-  const rowEnterpriseId = toNum(row.enterprise_id ?? row.id ?? null);
-  if (rowEnterpriseId == null) return [];
-  const onlyProjRow = !!row.onlyProjectionRow;
-  return (sales || []).filter(sale => {
-    const contracts = Array.isArray(sale?.contracts) ? sale.contracts : [];
-    if (!contracts.length) return false;
-    const belongs = contracts.some(c => toNum(c.enterprise_id) === rowEnterpriseId);
-    if (!belongs) return false;
-    if (onlyProjRow) return contracts.every(c => !!c._projection);
-    return true;
-  });
-}
-
-function distratoMetaForRow(row) {
-  const snapshot = Array.isArray(contractsStore.uniqueSales) ? contractsStore.uniqueSales : [];
-  const sales = salesForRow(snapshot, row);
-  let count = 0;
-  let value = 0;
-  for (const s of sales) {
-    if (!saleIsDistrato(s)) continue;
-    if (row.onlyProjectionRow) continue;
-    count += 1;
-    value += Number(contractsStore.valuePicker(s) || 0);
-  }
-  return { count, value };
-}
-
-const distratoCount = (row) => distratoMetaForRow(row).count;
-const distratoValue = (row) => distratoMetaForRow(row).value;
+// Detecção e agregação centralizadas no contractsStore.
+const distratoCount = (row) => contractsStore.distratoCountForRow(row);
+const distratoValue = (row) => contractsStore.distratoValueForRow(row);
 
 function baseValue(row) {
   const base = Number(contractsStore.isNet ? (row.total_value_net || 0) : (row.total_value_gross || 0));
@@ -146,13 +94,54 @@ const selectionMetricsComputed = computed(() => {
   const avgProjectedTicket = projectedUnits > 0 ? projectedVgv / projectedUnits : 0;
 
   const realizedVgv = useNet ? effectiveValueNet : effectiveValueGross;
-  const achievementPct = projectedVgv > 0
+  const achievementPctVgv = projectedVgv > 0
     ? parseFloat((realizedVgv / projectedVgv * 100).toFixed(1))
     : null;
 
   const realizedUnits = rows.reduce((s, r) => s + Math.max(0, (r.count || 0) - distratoCount(r)), 0);
   const achievementPctUnits = projectedUnits > 0
     ? parseFloat((realizedUnits / projectedUnits * 100).toFixed(1))
+    : null;
+
+  // Modo agregado: 'units' / 'vgv' / 'mixed'
+  let aggregateMode = null;
+  for (const r of rows) {
+    if ((r.projectedVgv || 0) <= 0 && (r.projectedUnits || 0) <= 0) continue;
+    const eid = r.enterprise_id ?? r.id ?? null;
+    const mode = goalStore.modeForEnterprise(eid);
+    if (aggregateMode == null) aggregateMode = mode;
+    else if (aggregateMode !== mode) { aggregateMode = 'mixed'; break; }
+  }
+  aggregateMode = aggregateMode || goalStore.globalMode || 'vgv';
+
+  // % Atingida mode-aware — média ponderada das %s por linha (peso = projectedVgv)
+  let weightSum = 0, weightedPct = 0;
+  for (const r of rows) {
+    const eid = r.enterprise_id ?? r.id ?? null;
+    const mode = goalStore.modeForEnterprise(eid);
+    let pct = null;
+    if (mode === 'units') {
+      const proj = r.projectedUnits || 0;
+      if (proj > 0) {
+        const realized = Math.max(0, ((r.count || 0) > 0 ? (r.count || 0) : (r.proj_count || 0)) - distratoCount(r));
+        pct = (realized / proj) * 100;
+      }
+    } else {
+      const projVgv = r.projectedVgv || 0;
+      if (projVgv > 0) {
+        const baseReal = useNet ? (r.total_value_net || 0) : (r.total_value_gross || 0);
+        const wfVgv = r.onlyProjectionRow ? 0 : (useNet ? (r.proj_value_net || 0) : (r.proj_value_gross || 0));
+        pct = ((baseReal + wfVgv) / projVgv) * 100;
+      }
+    }
+    if (pct == null) continue;
+    const w = r.projectedVgv || 0;
+    if (w <= 0) continue;
+    weightedPct += pct * w;
+    weightSum += w;
+  }
+  const achievementPct = weightSum > 0
+    ? parseFloat((weightedPct / weightSum).toFixed(1))
     : null;
 
   return {
@@ -168,7 +157,9 @@ const selectionMetricsComputed = computed(() => {
     projectedVgv, projectedUnits,
     avgProjectedTicket,
     achievementPct,
+    achievementPctVgv,
     achievementPctUnits,
+    aggregateMode,
     timeElapsedPct: props.timeElapsedPct,
   };
 });

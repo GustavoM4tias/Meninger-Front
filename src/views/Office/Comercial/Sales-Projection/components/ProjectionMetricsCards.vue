@@ -32,16 +32,32 @@ const achievementStr = computed(() => {
   return `${a.toFixed(1)}%`;
 });
 
+const aggregateModeLabel = computed(() => {
+  const mode = props.metrics.aggregateMode;
+  if (mode === 'units') return 'Unidades';
+  if (mode === 'vgv')   return 'VGV';
+  if (mode === 'mixed') return 'Misto';
+  return null;
+});
+
 const achievementLabel = computed(() => {
   const pct = props.metrics.achievementPct;
   const elapsed = props.metrics.timeElapsedPct ?? 0;
   if (pct == null) return 'Sem projeção definida';
-  if (elapsed === 0) return pct >= 100 ? 'Acima da meta' : 'Abaixo da meta';
-  const ratio = pct / elapsed;
-  if (ratio >= 1.1) return 'Acima da meta';
-  if (ratio >= 0.8) return 'Na meta';
-  if (ratio >= 0.4) return 'Em alerta';
-  return 'Em risco';
+
+  let status;
+  if (elapsed === 0) {
+    status = pct >= 100 ? 'Acima da meta' : 'Abaixo da meta';
+  } else {
+    const ratio = pct / elapsed;
+    if (ratio >= 1.1) status = 'Acima da meta';
+    else if (ratio >= 0.8) status = 'Na meta';
+    else if (ratio >= 0.4) status = 'Em alerta';
+    else status = 'Em risco';
+  }
+
+  const mode = aggregateModeLabel.value;
+  return mode ? `${status} · base ${mode}` : status;
 });
 
 const achievementAccent = computed(() => {

@@ -296,7 +296,26 @@ export default [
                         component: () => import('@/views/Office/Settings/Permissions/Index.vue'),
                         meta: { requiresAuth: true, allowedRole: 'admin', searchable: true, content: 'Gestão de alçadas: controle de acesso por usuário e departamento' },
                     },
+                    {
+                        path: 'notifications',
+                        name: 'Notificações',
+                        component: () => import('@/views/Office/Settings/Notifications/Index.vue'),
+                        meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Preferências de notificação por canal e tipo' },
+                    },
+                    {
+                        path: 'whatsapp',
+                        name: 'WhatsApp',
+                        component: () => import('@/views/Office/Settings/Whatsapp/Index.vue'),
+                        meta: { requiresAuth: true, allowedRole: 'admin', searchable: true, content: 'Integração WhatsApp Business: config, templates, mensagens' },
+                    },
                 ],
+            },
+
+            {
+                path: 'notifications',
+                name: 'Caixa de Notificações',
+                component: () => import('@/views/Office/Notifications/Index.vue'),
+                meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Histórico completo de notificações' },
             },
 
             {

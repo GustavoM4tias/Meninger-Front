@@ -1,96 +1,140 @@
-// src/stores/notificationStore.js
+// src/stores/Config/notificationStore.js
 import { defineStore } from 'pinia';
-import { useAuthStore } from '@/stores/Settings/Auth/authStore';
-import { useEventStore } from '@/stores/Marketing/Event/eventStore';
-
-const startOfDay = (d) => {
-    const dt = new Date(d);
-    dt.setHours(0, 0, 0, 0);
-    return dt;
-};
-const isSameDay = (a, b) => startOfDay(a).getTime() === startOfDay(b).getTime();
+import {
+    fetchNotifications,
+    fetchUnreadCount,
+    markNotificationRead,
+    markAllNotificationsRead,
+    deleteNotification,
+    fetchNotificationPreferences,
+    saveNotificationPreference,
+} from '@/utils/Config/apiNotification';
 
 export const useNotificationStore = defineStore('notificationStore', {
     state: () => ({
         notifications: [],
+        unread: 0,
+        total: 0,
+        loading: false,
+        // preferências
+        preferences: [],
+        prefsLoading: false,
+        // polling
+        _pollHandle: null,
     }),
+    getters: {
+        unreadList: (state) => state.notifications.filter(n => !n.read_at),
+        hasUnread: (state) => state.unread > 0,
+    },
     actions: {
-        async fetchNotifications() {
+        async fetchNotifications({ unread = false, limit = 30, offset = 0, append = false } = {}) {
+            this.loading = true;
             try {
-                const now = new Date();
+                const result = await fetchNotifications({ unread, limit, offset });
+                const items = Array.isArray(result?.items) ? result.items : [];
+                this.notifications = append ? [...this.notifications, ...items] : items;
+                this.total = Number(result?.total ?? 0);
+                if (typeof result?.unread === 'number') this.unread = result.unread;
+            } catch (err) {
+                console.error('[notificationStore] fetchNotifications', err);
+                if (!append) this.notifications = [];
+            } finally {
+                this.loading = false;
+            }
+        },
 
-                // ==== Aniversários ====
-                const authStore = useAuthStore();
-                if (!authStore.users || authStore.users.length === 0) {
-                    await authStore.getAllUsers();
-                }
+        async refreshUnreadCount() {
+            try {
+                const r = await fetchUnreadCount();
+                this.unread = Number(r?.count ?? 0);
+            } catch (err) {
+                console.error('[notificationStore] refreshUnreadCount', err);
+            }
+        },
 
-                const birthdayNotifications = (authStore.usuariosComAniversarioValido || [])
-                    .map(user => {
-                        if (!user.birth_date) return null;
-                        const birth = new Date(user.birth_date);
-                        // aniversário deste ano (para ordenar/proximidade)
-                        const thisYear = new Date(now.getFullYear(), birth.getMonth(), birth.getDate());
-                        const diffDays = (thisYear - now) / (1000 * 60 * 60 * 24); // pode ser negativo se já passou
-                        if (diffDays < -1 || diffDays > 3) return null; // janela -1 a +3
+        async markRead(id) {
+            // otimista
+            const item = this.notifications.find(n => n.id === id);
+            if (item && !item.read_at) {
+                item.read_at = new Date().toISOString();
+                this.unread = Math.max(0, this.unread - 1);
+            }
+            try {
+                await markNotificationRead(id);
+            } catch (err) {
+                console.error('[notificationStore] markRead', err);
+                // rollback
+                if (item) item.read_at = null;
+                this.refreshUnreadCount();
+            }
+        },
 
-                        return {
-                            title: user.username,
-                            type: 'Aniversário',
-                            date: thisYear,             // usado para ordenação e exibição
-                            importance: isSameDay(thisYear, now) ? 10 : 6,
-                            birth: thisYear,            // usado para render do badge (dia/mês)
-                            image: user.avatar_url || user.profile_image || null,
-                            link: '/',                  // ajuste se quiser ir pra um perfil
-                        };
-                    })
-                    .filter(Boolean);
+        async markAllRead() {
+            const prev = this.notifications.map(n => ({ ...n }));
+            const now = new Date().toISOString();
+            this.notifications = this.notifications.map(n => ({ ...n, read_at: n.read_at || now }));
+            this.unread = 0;
+            try {
+                await markAllNotificationsRead();
+            } catch (err) {
+                console.error('[notificationStore] markAllRead', err);
+                this.notifications = prev;
+                this.refreshUnreadCount();
+            }
+        },
 
-                // ==== Eventos ====
-                const eventStore = useEventStore();
-                if (eventStore.events.length === 0) {
-                    await eventStore.fetchEvents();
-                }
+        async remove(id) {
+            const idx = this.notifications.findIndex(n => n.id === id);
+            const removed = idx >= 0 ? this.notifications.splice(idx, 1)[0] : null;
+            if (removed && !removed.read_at) this.unread = Math.max(0, this.unread - 1);
+            try {
+                await deleteNotification(id);
+            } catch (err) {
+                console.error('[notificationStore] remove', err);
+                if (removed) this.notifications.splice(idx, 0, removed);
+                this.refreshUnreadCount();
+            }
+        },
 
-                const eventNotifications = eventStore.events
-                    .filter(e => e?.event_date)
-                    .map(e => {
-                        const eventDate = new Date(e.event_date);
-                        const diffDays = (eventDate - now) / (1000 * 60 * 60 * 24);
-                        if (diffDays < -1 || diffDays > 3) return null; // janela -1 a +3
-                        const important =
-                            isSameDay(eventDate, now) ? 9 : (diffDays >= 0 ? 7 : 5); // hoje > próximos > já passaram ontem
-                        return {
-                            title: e.title,
-                            type: 'Evento',
-                            date: eventDate, // Date real
-                            importance: important,
-                            image: e.images?.[0] || '/noimg.jpg',
-                            link: `/events?search=${encodeURIComponent(e.title)}`,
-                        };
-                    })
-                    .filter(Boolean);
+        // ─── Preferências ────────────────────────────────────
+        async fetchPreferences() {
+            this.prefsLoading = true;
+            try {
+                const r = await fetchNotificationPreferences();
+                this.preferences = Array.isArray(r?.preferences) ? r.preferences : [];
+            } catch (err) {
+                console.error('[notificationStore] fetchPreferences', err);
+                this.preferences = [];
+            } finally {
+                this.prefsLoading = false;
+            }
+        },
 
-                // ==== Combina e ordena ====
-                const all = [...birthdayNotifications, ...eventNotifications];
-                all.sort((a, b) => {
-                    // 1) maior importância primeiro
-                    if (b.importance !== a.importance) return b.importance - a.importance;
-                    // 2) data mais próxima de agora (absoluto)
-                    const da = Math.abs(a.date - now);
-                    const db = Math.abs(b.date - now);
-                    if (da !== db) return da - db;
-                    // 3) desempate: eventos do dia primeiro
-                    const aToday = isSameDay(a.date, now);
-                    const bToday = isSameDay(b.date, now);
-                    if (aToday !== bToday) return aToday ? -1 : 1;
-                    // 4) fallback por data asc
-                    return a.date - b.date;
-                });
+        async setPreference(type, { inapp, email }) {
+            const local = this.preferences.find(p => p.type === type);
+            if (local) {
+                if (typeof inapp === 'boolean') local.inapp = inapp;
+                if (typeof email === 'boolean') local.email = email;
+            }
+            try {
+                await saveNotificationPreference({ type, inapp, email });
+            } catch (err) {
+                console.error('[notificationStore] setPreference', err);
+                this.fetchPreferences();
+            }
+        },
 
-                this.notifications = all;
-            } catch (error) {
-                console.error('Erro ao carregar notificações:', error);
+        // ─── Polling simples (60s) ──────────────────────────
+        startPolling(intervalMs = 60_000) {
+            this.stopPolling();
+            this.refreshUnreadCount();
+            this._pollHandle = setInterval(() => this.refreshUnreadCount(), intervalMs);
+        },
+
+        stopPolling() {
+            if (this._pollHandle) {
+                clearInterval(this._pollHandle);
+                this._pollHandle = null;
             }
         },
     },

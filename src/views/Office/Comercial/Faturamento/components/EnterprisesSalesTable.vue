@@ -75,43 +75,9 @@ const appendedValue = (e) => {
 const totalCombined = (e) => baseValue(e) + appendedValue(e);
 
 /* ===================== DISTRATO ===================== */
-const norm = (v) => String(v ?? '').trim().toLowerCase();
-
-const repasseStatusOfSale = (sale) => {
-  const first = sale?.contracts?.[0] || {};
-  const r = first?.repasse?.[0];
-  if (r) {
-    const sr = (r.status_repasse ?? r.statusRepasse ?? '').toString().trim();
-    if (sr) return sr;
-  }
-  const res = first?.reserva;
-  if (res) {
-    const srr = (res.status_repasse ?? res.statusRepasse ?? '').toString().trim();
-    if (srr) return srr;
-  }
-  return null;
-};
-
-const saleIsDistrato = (sale) => norm(repasseStatusOfSale(sale)) === 'distrato';
-
-const distratoMetaForRow = (row) => {
-  const snapshot = Array.isArray(contractsStore.uniqueSales) ? contractsStore.uniqueSales : [];
-  const sales = salesForRowFrom(snapshot, row);
-
-  let count = 0;
-  let value = 0;
-
-  for (const s of sales) {
-    if (!saleIsDistrato(s)) continue;
-    if (row.onlyProjectionRow) continue;
-    count += 1;
-    value += Number(contractsStore.valuePicker(s) || 0);
-  }
-  return { count, value };
-};
-
-const distratoCount = (row) => distratoMetaForRow(row).count;
-const distratoValue = (row) => distratoMetaForRow(row).value;
+// Detecção e agregação centralizadas no contractsStore.
+const distratoCount = (row) => contractsStore.distratoCountForRow(row);
+const distratoValue = (row) => contractsStore.distratoValueForRow(row);
 
 const baseValue = (e) => {
   if (e.onlyProjectionRow) {

@@ -522,6 +522,15 @@ const comparisonChartOption = computed(() => {
   };
 });
 
+// ── Aggregate mode label (units|vgv|mixed) ───
+const aggregateModeLabel = computed(() => {
+  const mode = props.metrics?.aggregateMode;
+  if (mode === 'units') return 'Unidades';
+  if (mode === 'vgv')   return 'VGV';
+  if (mode === 'mixed') return 'Misto';
+  return null;
+});
+
 // ── KPI Cards ─────────────────────────────
 const overviewKpis = computed(() => [
   {
@@ -538,7 +547,9 @@ const overviewKpis = computed(() => [
     value: props.metrics?.achievementPct != null
       ? `${props.metrics.achievementPct.toFixed(1)}%`
       : '—',
-    sub: `${props.timeElapsedPct?.toFixed(0) ?? 0}% do tempo decorrido`,
+    sub: aggregateModeLabel.value
+      ? `Base ${aggregateModeLabel.value} · ${props.timeElapsedPct?.toFixed(0) ?? 0}% do tempo`
+      : `${props.timeElapsedPct?.toFixed(0) ?? 0}% do tempo decorrido`,
     icon: 'fas fa-trophy',
     accent: gaugeAccentClass.value,
   },
@@ -666,14 +677,20 @@ const openDetail = (row) => {
 
             <!-- Achievement Gauge -->
             <Surface variant="raised" padding="md">
-              <div class="flex items-center justify-between gap-2 mb-3">
+              <div class="flex items-center justify-between gap-2 mb-3 flex-wrap">
                 <div class="flex items-center gap-2 min-w-0">
                   <i class="fas fa-bullseye text-accent text-sm"></i>
                   <h3 class="text-xs uppercase tracking-wider font-mono text-ink-muted">% Atingida geral</h3>
                 </div>
-                <Badge :variant="gaugeBadgeVariant" size="sm">
-                  {{ timeElapsedPct?.toFixed(0) ?? 0 }}% do tempo
-                </Badge>
+                <div class="flex items-center gap-2">
+                  <Badge v-if="aggregateModeLabel" variant="accent" size="sm">
+                    <i class="fas fa-sliders text-[9px] mr-1"></i>
+                    Base {{ aggregateModeLabel }}
+                  </Badge>
+                  <Badge :variant="gaugeBadgeVariant" size="sm">
+                    {{ timeElapsedPct?.toFixed(0) ?? 0 }}% do tempo
+                  </Badge>
+                </div>
               </div>
 
               <!-- Sem dados → estado vazio -->

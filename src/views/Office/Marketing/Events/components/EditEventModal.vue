@@ -93,7 +93,7 @@ async function submit() {
       payload.images = [payload.enterprise_logo];
     }
 
-    await updateEvent(form.value.id, payload);
+    await updateEvent(payload);
     clearPersisted(persistKey.value);
     emit('close');
   } catch {

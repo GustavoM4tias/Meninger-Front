@@ -7,6 +7,7 @@ import { useSalesProjectionReportStore } from '@/stores/Comercial/Projections/sa
 import { useProjectionGoalModeStore } from '@/stores/Comercial/Projections/projectionGoalModeStore';
 import { useStageCommissionRulesStore } from '@/stores/Comercial/Contracts/stageCommissionRulesStore';
 import { useHiddenEnterprisesStore } from '@/stores/Comercial/Contracts/hiddenEnterprisesStore';
+import { useTrSatelliteStore } from '@/stores/Comercial/Contracts/trSatelliteStore';
 
 import Favorite from '@/components/config/Favorite.vue';
 import PageContainer from '@/components/UI/PageContainer.vue';
@@ -24,9 +25,10 @@ import LandSyncConfigModal from '@/views/Office/Comercial/Faturamento/components
 
 const contractsStore = useContractsStore();
 const projStore = useSalesProjectionReportStore();
-const goalStore = useProjectionGoalModeStore();  // eslint-disable-line no-unused-vars
+const goalStore = useProjectionGoalModeStore();
 const stageRulesStore = useStageCommissionRulesStore();
 const hiddenStore = useHiddenEnterprisesStore();
+const trSatelliteStore = useTrSatelliteStore();
 
 // Padrão: por empreendimento (garante que projeções sem vendas apareçam)
 contractsStore.groupBy = 'enterprise';
@@ -111,18 +113,15 @@ function statusOf(realizedVgv, projectedVgv, achievementPct) {
   return 'at_risk';
 }
 
-// ── Filter projStore enterprises: hidden + selected company ──────────────────
+// ── Filter projStore enterprises: hidden enterprises (admin-only setting) ────
+// O filtro de empresa é aplicado server-side em /projections/report (companyIds).
+// Aqui só precisamos remover empreendimentos ocultos por configuração admin.
 const filteredProjEnterprises = computed(() => {
   const all = projStore.enterprisesResolved ?? [];
-
+  if (hiddenStore.hiddenIds.size === 0) return all;
   return all.filter(ent => {
     const eid = ent.erp_id != null ? Number(ent.erp_id) : null;
-    if (eid != null && hiddenStore.hiddenIds.has(eid)) return false;
-    if (selectedCompanyIds.value.length) {
-      const cid = ent.company_id != null ? Number(ent.company_id) : null;
-      if (cid != null && !selectedCompanyIds.value.includes(cid)) return false;
-    }
-    return true;
+    return eid == null || !hiddenStore.hiddenIds.has(eid);
   });
 });
 
@@ -132,8 +131,13 @@ const combinedData = computed(() => {
   const isNet = contractsStore.isNet;
 
   if (isCompany) {
+    // Mapeia empresa -> projeções e identifica os empreendimentos COM projeção,
+    // para excluir vendas órfãs (de empreendimentos sem projeção) da agregação
+    // por empresa. Sem essa exclusão, a venda órfã infla o numerador (realizado)
+    // sem inflar o denominador (projetado), distorcendo o % Atingida.
     const projByCompanyId = new Map();
     const companyNameMap = new Map();
+    const projectedEnterpriseIds = new Set();
     for (const ent of filteredProjEnterprises.value) {
       const cid = ent.company_id != null ? Number(ent.company_id) : null;
       if (!cid) continue;
@@ -142,6 +146,32 @@ const combinedData = computed(() => {
       prev.projected_units += ent.summary?.projected_units ?? 0;
       projByCompanyId.set(cid, prev);
       if (!companyNameMap.has(cid) && ent.company_name) companyNameMap.set(cid, ent.company_name);
+      const eid = ent.erp_id != null ? Number(ent.erp_id) : null;
+      if (eid != null && Number.isFinite(eid)) projectedEnterpriseIds.add(eid);
+    }
+
+    // Agrega salesByEnterprise por company_id, considerando apenas empreendimentos
+    // que têm projeção. Empresas 100% órfãs continuam usando o agregado total
+    // (fallback abaixo), mantendo visibilidade.
+    const entToCompanyMap = contractsStore.enterpriseToCompanyMap;
+    const projOnlyAggByCompany = new Map();
+    for (const entRow of contractsStore.salesByEnterprise) {
+      const eid = entRow.enterprise_id != null ? Number(entRow.enterprise_id) : null;
+      if (eid == null || !projectedEnterpriseIds.has(eid)) continue;
+      const cid = entToCompanyMap.get(eid)?.company_id != null
+        ? Number(entToCompanyMap.get(eid).company_id) : null;
+      if (cid == null) continue;
+      const prev = projOnlyAggByCompany.get(cid) ?? {
+        count: 0, total_value_net: 0, total_value_gross: 0,
+        proj_count: 0, proj_value_net: 0, proj_value_gross: 0,
+      };
+      prev.count += entRow.count || 0;
+      prev.total_value_net += entRow.total_value_net || 0;
+      prev.total_value_gross += entRow.total_value_gross || 0;
+      prev.proj_count += entRow.proj_count || 0;
+      prev.proj_value_net += entRow.proj_value_net || 0;
+      prev.proj_value_gross += entRow.proj_value_gross || 0;
+      projOnlyAggByCompany.set(cid, prev);
     }
 
     const seenCompanyIds = new Set();
@@ -152,8 +182,14 @@ const combinedData = computed(() => {
       if (cid != null) seenCompanyIds.add(cid);
 
       const proj = cid != null ? projByCompanyId.get(cid) : null;
-      const wfVgv = isNet ? (row.proj_value_net || 0) : (row.proj_value_gross || 0);
-      const realizedVgvBase = isNet ? (row.total_value_net || 0) : (row.total_value_gross || 0);
+      // Quando a empresa tem ao menos um empreendimento com projeção, usa o
+      // agregado restrito (sem órfãos). Caso contrário, mantém o agregado total
+      // do salesByCompany — assim empresas 100% órfãs continuam aparecendo.
+      const restricted = (proj && cid != null) ? projOnlyAggByCompany.get(cid) : null;
+      const effectiveRow = restricted ? { ...row, ...restricted } : row;
+
+      const wfVgv = isNet ? (effectiveRow.proj_value_net || 0) : (effectiveRow.proj_value_gross || 0);
+      const realizedVgvBase = isNet ? (effectiveRow.total_value_net || 0) : (effectiveRow.total_value_gross || 0);
       const realizedVgv = realizedVgvBase > 0 ? realizedVgvBase : wfVgv;
       const projectedVgv = proj?.projected_vgv ?? 0;
       const projectedUnits = proj?.projected_units ?? 0;
@@ -162,7 +198,7 @@ const combinedData = computed(() => {
         : null;
 
       result.push({
-        ...row,
+        ...effectiveRow,
         _key: `COMP:${cid ?? row.name}`,
         company_id: cid,
         realizedVgv,
@@ -249,7 +285,32 @@ const combinedData = computed(() => {
   }
 });
 
+// ── % Atingida por linha (respeita modo de meta units|vgv) ───────────────
+// Distratos são subtraídos via contractsStore.distratoCountForRow para alinhar
+// com a tabela (effectiveAchievementPct no EnterpriseComparisonTable).
+function rowEffectivePct(row, useNet) {
+  const eid = row.enterprise_id ?? row.id ?? null;
+  const mode = goalStore.modeForEnterprise(eid);
+  if (mode === 'units') {
+    const projected = row.projectedUnits || 0;
+    if (projected <= 0) return null;
+    const effectiveCount = (row.count || 0) > 0 ? (row.count || 0) : (row.proj_count || 0);
+    const realized = Math.max(0, effectiveCount - contractsStore.distratoCountForRow(row));
+    return (realized / projected) * 100;
+  }
+  const projectedVgv = row.projectedVgv || 0;
+  if (projectedVgv <= 0) return null;
+  const baseReal = useNet ? (row.total_value_net || 0) : (row.total_value_gross || 0);
+  const wfVgv = row.onlyProjectionRow ? 0 : (useNet ? (row.proj_value_net || 0) : (row.proj_value_gross || 0));
+  const realizedVgv = baseReal + wfVgv;
+  return (realizedVgv / projectedVgv) * 100;
+}
+
 // ── Métricas completas ────────────────────────────────────────────────────
+// % Atingida e aggregateMode são SEMPRE calculados no nível de empreendimento,
+// respeitando o goal-mode individual (units|vgv) configurado para cada um.
+// Isso garante que o KPI seja idêntico entre as views Empreendimento e Empresa
+// (a regra é por empreendimento — agrupar por empresa não muda o cálculo).
 const fullSummaryMetrics = computed(() => {
   const list = combinedData.value;
   const m = contractsStore.metrics;
@@ -258,15 +319,72 @@ const fullSummaryMetrics = computed(() => {
   const projectedVgv = list.reduce((s, e) => s + e.projectedVgv, 0);
   const projectedUnits = list.reduce((s, e) => s + e.projectedUnits, 0);
 
-  const realizedVgv = list.reduce((s, e) => {
-    const baseReal = useNet ? (e.total_value_net || 0) : (e.total_value_gross || 0);
-    const wfVgv = useNet ? (e.proj_value_net || 0) : (e.proj_value_gross || 0);
-    return s + baseReal + wfVgv;
-  }, 0);
+  // Buckets por mode — ratio de somas (não média ponderada de %s) para evitar
+  // o paradoxo de Jensen. Numerador inclui TODAS as vendas (mesmo de órfãos
+  // sem projeção) para alinhar com o card "Total de vendas". Denominador
+  // só inclui empreendimentos com projeção (que é o que faz sentido como meta).
+  let aggregateMode = null;
+  // Bucket "units": numerador em UNIDADES, denominador em UNIDADES
+  let unitsRealized = 0, unitsProjected = 0, unitsWeightVgv = 0;
+  // Bucket "vgv": numerador em REAIS, denominador em REAIS
+  let vgvRealized = 0, vgvProjected = 0, vgvWeightVgv = 0;
 
-  const achievementPct = projectedVgv > 0
-    ? parseFloat((realizedVgv / projectedVgv * 100).toFixed(1))
-    : null;
+  // 1) Numerador — soma realizado (em unidades OU vgv) de TODOS os
+  //    empreendimentos com vendas, no mode efetivo de cada um.
+  for (const entRow of contractsStore.salesByEnterprise) {
+    const eid = entRow.enterprise_id != null ? Number(entRow.enterprise_id) : null;
+    const mode = goalStore.modeForEnterprise(eid);
+    if (mode === 'units') {
+      const distratoCount = contractsStore.distratoCountForRow(entRow);
+      const effectiveCount = (entRow.count || 0) > 0 ? (entRow.count || 0) : (entRow.proj_count || 0);
+      const realizedUnits = Math.max(0, effectiveCount - distratoCount);
+      unitsRealized += realizedUnits;
+    } else {
+      const baseReal = useNet ? (entRow.total_value_net || 0) : (entRow.total_value_gross || 0);
+      const wfVgv = entRow.onlyProjectionRow ? 0 : (useNet ? (entRow.proj_value_net || 0) : (entRow.proj_value_gross || 0));
+      vgvRealized += baseReal + wfVgv;
+    }
+  }
+
+  // 2) Denominador — soma projetado SOMENTE dos empreendimentos com projeção.
+  //    Determina aggregateMode aqui também (baseado nos com projeção).
+  for (const ent of filteredProjEnterprises.value) {
+    const projEntVgv = ent.summary?.projected_vgv ?? 0;
+    const projEntUnits = ent.summary?.projected_units ?? 0;
+    if (projEntVgv <= 0 && projEntUnits <= 0) continue;
+
+    const eid = ent.erp_id != null ? Number(ent.erp_id) : null;
+    const mode = goalStore.modeForEnterprise(eid);
+    if (aggregateMode == null) aggregateMode = mode;
+    else if (aggregateMode !== mode) aggregateMode = 'mixed';
+
+    if (mode === 'units' && projEntUnits > 0) {
+      unitsProjected += projEntUnits;
+      unitsWeightVgv += projEntVgv;
+    } else if (mode !== 'units' && projEntVgv > 0) {
+      vgvProjected += projEntVgv;
+      vgvWeightVgv += projEntVgv;
+    }
+  }
+  aggregateMode = aggregateMode || goalStore.globalMode || 'vgv';
+
+  // Ratio de somas dentro de cada mode (corretos individualmente).
+  const unitsPct = unitsProjected > 0 ? (unitsRealized / unitsProjected) * 100 : null;
+  const vgvPct   = vgvProjected   > 0 ? (vgvRealized   / vgvProjected)   * 100 : null;
+
+  // Consolidação entre modes: média ponderada pelo peso em VGV de cada bucket
+  // (denominador comum). Quando há só um mode, retorna o ratio puro daquele mode.
+  let achievementPct = null;
+  if (unitsPct != null && vgvPct != null) {
+    const totalW = unitsWeightVgv + vgvWeightVgv;
+    achievementPct = totalW > 0
+      ? parseFloat(((unitsPct * unitsWeightVgv + vgvPct * vgvWeightVgv) / totalW).toFixed(1))
+      : null;
+  } else if (unitsPct != null) {
+    achievementPct = parseFloat(unitsPct.toFixed(1));
+  } else if (vgvPct != null) {
+    achievementPct = parseFloat(vgvPct.toFixed(1));
+  }
   const avgProjectedTicket = projectedUnits > 0 ? projectedVgv / projectedUnits : 0;
 
   return {
@@ -274,6 +392,7 @@ const fullSummaryMetrics = computed(() => {
     projectedVgv, projectedUnits,
     avgProjectedTicket,
     achievementPct,
+    aggregateMode,
     timeElapsedPct: projStore.timeElapsedPct ?? 0,
   };
 });
@@ -316,6 +435,7 @@ async function handleFilterChange(filters) {
         startDate: filters.startDate,
         endDate: filters.endDate,
         situation: 'Emitido',
+        companyIds: filters.companyIds ?? [],
       }),
     ]);
   } finally {
@@ -338,6 +458,7 @@ onMounted(async () => {
     projStore.fetchProjectionsList(),
     projStore.fetchEnterprises(),
     stageRulesStore.fetchAll(),
+    trSatelliteStore.fetchAll(),
     ...(isAdmin ? [hiddenStore.fetchAll()] : []),
   ]);
 

@@ -3,6 +3,7 @@ import { onMounted, ref, computed } from 'vue';
 import { useContractsStore } from '@/stores/Comercial/Contracts/contractsStore';
 import { useHiddenEnterprisesStore } from '@/stores/Comercial/Contracts/hiddenEnterprisesStore';
 import { useStageCommissionRulesStore } from '@/stores/Comercial/Contracts/stageCommissionRulesStore';
+import { useTrSatelliteStore } from '@/stores/Comercial/Contracts/trSatelliteStore';
 
 import Favorite from '@/components/config/Favorite.vue';
 import PageContainer from '@/components/UI/PageContainer.vue';
@@ -18,6 +19,7 @@ import LandSyncConfigModal from './components/LandSyncConfigModal.vue';
 const contractsStore = useContractsStore();
 const hiddenStore = useHiddenEnterprisesStore();
 const stageCommissionRulesStore = useStageCommissionRulesStore();
+const trSatelliteStore = useTrSatelliteStore();
 const isLandSyncModalOpen = ref(false);
 const selectionMetrics = ref(null);
 const loading = ref(false);
@@ -46,6 +48,7 @@ onMounted(() => {
   loadData();
   if (isAdmin.value) hiddenStore.fetchAll();
   stageCommissionRulesStore.fetchAll();
+  trSatelliteStore.fetchAll();
 });
 </script>
 

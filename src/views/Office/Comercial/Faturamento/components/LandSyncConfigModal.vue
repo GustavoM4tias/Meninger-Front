@@ -4,6 +4,7 @@ import { useLandSyncStore } from '@/stores/Comercial/Contracts/landSyncStore';
 import { useContractsStore } from '@/stores/Comercial/Contracts/contractsStore';
 import { useHiddenEnterprisesStore } from '@/stores/Comercial/Contracts/hiddenEnterprisesStore';
 import { useStageCommissionRulesStore } from '@/stores/Comercial/Contracts/stageCommissionRulesStore';
+import { useTrSatelliteStore } from '@/stores/Comercial/Contracts/trSatelliteStore';
 
 import Modal from '@/components/UI/Modal.vue';
 import Surface from '@/components/UI/Surface.vue';
@@ -24,12 +25,14 @@ const landSyncStore = useLandSyncStore();
 const contractsStore = useContractsStore();
 const hiddenStore = useHiddenEnterprisesStore();
 const commissionRulesStore = useStageCommissionRulesStore();
+const trSatStore = useTrSatelliteStore();
 
 const activeTab = ref('obstit');
 const tabOptions = [
   { value: 'obstit',     label: 'Terreno externo',     icon: 'fas fa-mountain' },
   { value: 'hidden',     label: 'Ocultar empreend.',   icon: 'fas fa-eye-slash' },
   { value: 'commission', label: 'Comissão por etapa',  icon: 'fas fa-percent' },
+  { value: 'trsat',      label: 'Satélite de TR',      icon: 'fas fa-link' },
 ];
 
 const selectedLandNames = ref([]);
@@ -42,6 +45,31 @@ const newRule = ref({
   commission_pct_display: null,
   stage_name: '',
   description: '',
+});
+
+// ── TR-satellite form ──────────────────────────────────────────────
+const newTrSat = ref({
+  satellite_enterprise_id: '',
+  partner_names: [],
+  description: '',
+});
+
+const isNewTrSatValid = computed(() => {
+  const sid = Number(newTrSat.value.satellite_enterprise_id);
+  if (!Number.isInteger(sid) || sid <= 0) return false;
+  const partners = (newTrSat.value.partner_names || [])
+    .map(n => contractsStore.enterprises.find(e => e.name === n)?.id)
+    .map(Number)
+    .filter(n => Number.isFinite(n) && n > 0);
+  if (!partners.length) return false;
+  if (partners.includes(sid)) return false;
+  return true;
+});
+
+const enterpriseNameById = computed(() => {
+  const m = new Map();
+  for (const e of contractsStore.enterprises || []) m.set(Number(e.id), e.name);
+  return m;
 });
 
 const isNewRuleValid = computed(() =>
@@ -75,9 +103,15 @@ watch(() => props.open, async (isOpen) => {
   selectedLandNames.value = [];
   selectedHiddenNames.value = [];
   newRule.value = { enterprise_id: '', stage_id: null, commission_pct_display: null, stage_name: '', description: '' };
+  newTrSat.value = { satellite_enterprise_id: '', partner_names: [], description: '' };
 
   if (!contractsStore.enterprises.length) await contractsStore.fetchEnterprises();
-  await Promise.all([landSyncStore.fetchAll(), hiddenStore.fetchAll(), commissionRulesStore.fetchAll()]);
+  await Promise.all([
+    landSyncStore.fetchAll(),
+    hiddenStore.fetchAll(),
+    commissionRulesStore.fetchAll(),
+    trSatStore.fetchAll(),
+  ]);
 });
 
 // ── OBSTIT handlers ────────────────────────────────────────────────
@@ -159,6 +193,34 @@ async function handleCommissionAdd() {
 async function handleCommissionRemove(id) {
   if (!window.confirm('Remover esta regra de comissão por etapa?')) return;
   await commissionRulesStore.removeRule(id);
+  contractsStore.clearContractsCache();
+}
+
+// ── TR-satellite handlers ──────────────────────────────────────────
+async function handleTrSatAdd() {
+  if (!isNewTrSatValid.value) return;
+  const sid = Number(newTrSat.value.satellite_enterprise_id);
+  const satEnt = contractsStore.enterprises.find(e => Number(e.id) === sid);
+  const partnerIds = (newTrSat.value.partner_names || [])
+    .map(n => Number(contractsStore.enterprises.find(e => e.name === n)?.id))
+    .filter(Number.isFinite);
+  try {
+    await trSatStore.addItem({
+      satellite_enterprise_id: sid,
+      satellite_enterprise_name: satEnt?.name || null,
+      partner_enterprise_ids: partnerIds,
+      description: newTrSat.value.description || null,
+    });
+    newTrSat.value = { satellite_enterprise_id: '', partner_names: [], description: '' };
+    contractsStore.clearContractsCache();
+  } catch (e) {
+    window.alert(e?.message || 'Erro ao adicionar satélite de TR.');
+  }
+}
+
+async function handleTrSatRemove(id) {
+  if (!window.confirm('Remover este vínculo de satélite de TR?')) return;
+  await trSatStore.removeItem(id);
   contractsStore.clearContractsCache();
 }
 
@@ -462,6 +524,118 @@ const closeModal = () => emit('close');
             </Surface>
           </div>
         </div>
+
+        <!-- ═══════════════ TAB: SATÉLITE DE TR ═══════════════ -->
+        <div v-if="activeTab === 'trsat'" class="p-4 sm:p-5 space-y-4">
+
+          <div class="rounded-xl border border-accent/30 bg-accent-soft p-3 text-xs text-ink-muted flex items-start gap-2">
+            <i class="fas fa-circle-info text-accent mt-0.5 shrink-0"></i>
+            <span>
+              Quando o Sienge emite o contrato de Terreno (TR) num empreendimento separado dos contratos
+              de incorporação, configure aqui o vínculo: as vendas do <strong>satélite</strong> serão
+              mescladas com as do(s) <strong>partner(s)</strong> casando por <code class="font-mono text-[10px] bg-surface-sunken px-1.5 py-0.5 rounded">cliente + unidade</code>.
+              Sem partner correspondente, o contrato satélite é descartado para evitar contagem dupla.
+            </span>
+          </div>
+
+          <div v-if="trSatStore.error"
+            class="rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2.5 text-xs text-red-700 dark:text-red-300 flex items-center gap-2">
+            <i class="fas fa-circle-exclamation"></i>{{ trSatStore.error }}
+          </div>
+          <div v-if="trSatStore.loading"
+            class="flex items-center gap-2 text-xs text-ink-muted">
+            <Spinner size="sm" /> Carregando vínculos...
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+            <!-- Lista de vínculos -->
+            <Surface variant="raised" padding="md" class="space-y-3">
+              <div class="flex items-center justify-between gap-2">
+                <div class="min-w-0">
+                  <h3 class="text-sm font-semibold text-ink">Vínculos configurados</h3>
+                  <p class="text-[11px] text-ink-muted">Satélite → partner(s) que recebem o merge.</p>
+                </div>
+                <Badge variant="accent" size="sm">
+                  <span class="font-mono tabular-nums">{{ trSatStore.items.length }}</span>
+                </Badge>
+              </div>
+
+              <div class="rounded-lg border border-line bg-surface-sunken max-h-72 overflow-y-auto">
+                <EmptyState v-if="!trSatStore.items.length && !trSatStore.loading"
+                  size="sm" icon="fas fa-link"
+                  title="Nenhum vínculo"
+                  description="Use o painel ao lado para adicionar." />
+                <ul v-else class="divide-y divide-line">
+                  <li v-for="item in trSatStore.items" :key="item.id"
+                    class="px-3 py-2.5 flex items-start justify-between gap-2 hover:bg-surface-hover transition-colors">
+                    <div class="min-w-0 flex-1">
+                      <p class="text-xs font-medium text-ink truncate">
+                        {{ item.satellite_enterprise_name || `Empreendimento ${item.satellite_enterprise_id}` }}
+                      </p>
+                      <p class="text-[10px] text-ink-subtle font-mono mt-0.5">
+                        ID satélite: {{ item.satellite_enterprise_id }}
+                      </p>
+                      <p class="text-[10px] text-ink-muted mt-1">
+                        <i class="fas fa-arrow-right text-accent mr-1"></i>
+                        <span class="text-ink">Partners:</span>
+                        <span v-for="(pid, idx) in item.partner_enterprise_ids" :key="pid">
+                          <span v-if="idx > 0">, </span>
+                          <span class="font-medium">{{ enterpriseNameById.get(Number(pid)) || `ERP ${pid}` }}</span>
+                          <span class="font-mono text-ink-subtle">({{ pid }})</span>
+                        </span>
+                      </p>
+                      <p v-if="item.description"
+                        class="text-[10px] text-ink-subtle mt-0.5 italic truncate">{{ item.description }}</p>
+                    </div>
+                    <Button variant="ghost" size="sm" icon="fas fa-trash"
+                      class="!text-red-500 hover:!bg-red-500/10 shrink-0"
+                      @click="handleTrSatRemove(item.id)">
+                      <span class="hidden sm:inline">Remover</span>
+                    </Button>
+                  </li>
+                </ul>
+              </div>
+            </Surface>
+
+            <!-- Adicionar vínculo -->
+            <Surface variant="raised" padding="md" class="space-y-3">
+              <div>
+                <h3 class="text-sm font-semibold text-ink">Adicionar vínculo</h3>
+                <p class="text-[11px] text-ink-muted">
+                  Selecione o empreendimento <em>satélite</em> (que carrega o TR) e os <em>partners</em> de incorporação.
+                </p>
+              </div>
+
+              <Select v-model="newTrSat.satellite_enterprise_id"
+                :options="enterpriseSelectOptions"
+                label="Empreendimento satélite (TR)" />
+
+              <div>
+                <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+                  <i class="fas fa-handshake text-[10px] mr-1 text-ink-subtle"></i>
+                  Partners (incorporação)
+                </label>
+                <MultiSelector :model-value="newTrSat.partner_names"
+                  @update:modelValue="newTrSat.partner_names = Array.isArray($event) ? $event : []"
+                  :options="enterprisesOptions" placeholder="Selecione um ou mais partners"
+                  :page-size="150" :select-all="false" />
+              </div>
+
+              <Input v-model="newTrSat.description"
+                label="Descrição (opcional)"
+                placeholder="ex: Parque dos Ipês — TR no pai, incorporação nos módulos" />
+
+              <div class="flex justify-end pt-1">
+                <Button size="sm" icon="fas fa-plus"
+                  :disabled="!isNewTrSatValid"
+                  @click="handleTrSatAdd">
+                  Adicionar vínculo
+                </Button>
+              </div>
+            </Surface>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -472,6 +646,10 @@ const closeModal = () => emit('close');
       </p>
       <p v-else-if="activeTab === 'commission'" class="text-[10px] text-ink-subtle mr-auto hidden sm:block">
         Alterações são aplicadas imediatamente. Recarregue os contratos para ver os novos valores.
+      </p>
+      <p v-else-if="activeTab === 'trsat'" class="text-[10px] text-ink-subtle leading-tight mr-auto hidden sm:block">
+        Match por <code class="font-mono">customer_id + unit_name</code>.<br>
+        Satélites sem partner correspondente são descartados do relatório.
       </p>
       <p v-else class="text-[10px] text-ink-subtle leading-tight mr-auto hidden sm:block">
         Alterações são aplicadas imediatamente no dashboard.<br>
