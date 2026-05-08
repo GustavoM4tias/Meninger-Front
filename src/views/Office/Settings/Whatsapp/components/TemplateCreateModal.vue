@@ -58,6 +58,28 @@ const previewBody = computed(() => {
   return txt;
 });
 
+// Conta palavras "puras" (descartando os {{N}}). Meta exige proporção mínima
+// de palavras por variável — caso contrário rejeita com error_subcode 2388293.
+const wordCount = computed(() => {
+  const stripped = form.value.body
+    .replace(/\{\{\s*\d+\s*\}\}/g, '')   // remove placeholders
+    .replace(/[*_~`]/g, '')               // remove markdown WhatsApp
+    .trim();
+  if (!stripped) return 0;
+  return stripped.split(/\s+/).filter(Boolean).length;
+});
+
+// Limite empírico observado: ~5 palavras úteis por variável é seguro
+const ratioWarning = computed(() => {
+  const v = variables.value.length;
+  if (!v) return null;
+  const ratio = wordCount.value / v;
+  if (ratio < 5) {
+    return `Apenas ${wordCount.value} palavras para ${v} variável(is) — Meta provavelmente vai rejeitar. Mire 5+ palavras por variável.`;
+  }
+  return null;
+});
+
 const isValid = computed(() => {
   if (!slugifyName.value) return false;
   if (!form.value.body.trim()) return false;
@@ -102,31 +124,33 @@ const onSubmit = async () => {
   }
 };
 
-// Templates prontos pro NotificationService — atalho
+// Templates prontos pro NotificationService — atalho.
+// Importante: a Meta rejeita templates com poucas palavras por variável (regra
+// de proporção). Manter pelo menos ~5 palavras por {{N}} pra passar na revisão.
 const presets = [
   {
     name: 'event_created_v1',
     label: 'Novo evento',
-    body: 'Olá *{{1}}*, um novo evento foi cadastrado: *{{2}}* — começa em {{3}}.',
+    body: 'Olá *{{1}}*! Um novo evento foi adicionado à sua agenda no Menin Office: *{{2}}*. Acontece em {{3}}. Acesse o sistema para ver todos os detalhes.',
     examples: ['Maria', 'Workshop de Vendas', '09/05 14h'],
   },
   {
     name: 'event_reminder_v1',
     label: 'Lembrete de evento',
-    body: 'Olá *{{1}}*, lembrete: o evento *{{2}}* começa em {{3}}.',
+    body: 'Olá *{{1}}*! Passando para lembrar que o evento *{{2}}* está chegando — ele acontece em {{3}}. Não esqueça de comparecer e bons estudos!',
     examples: ['Maria', 'Workshop de Vendas', '09/05 14h'],
   },
   {
     name: 'support_opened_v1',
     label: 'Chamado aberto',
-    body: 'Seu chamado *{{1}}* foi aberto. Resumo: {{2}}.',
-    examples: ['#123456', 'Erro na integração Sienge'],
+    body: 'Olá! Confirmamos a abertura do seu chamado de suporte *{{1}}* no Menin Office. Resumo do problema: {{2}}. Em breve nosso time entrará em contato com você.',
+    examples: ['#123456', 'Erro ao gerar boleto na integração Sienge'],
   },
   {
     name: 'support_updated_v1',
     label: 'Atualização em chamado',
-    body: 'Atualização no chamado *{{1}}*: {{2}}.',
-    examples: ['#123456', 'Status alterado para in_progress'],
+    body: 'Houve uma atualização no seu chamado de suporte *{{1}}* no Menin Office: {{2}}. Acesse o sistema para acompanhar todos os detalhes do andamento.',
+    examples: ['#123456', 'Status alterado para Em andamento'],
   },
 ];
 
@@ -188,9 +212,18 @@ const applyPreset = (p) => {
           placeholder="Olá {{1}}, lembrete: o evento {{2}} começa em {{3}}."
           class="w-full px-3 py-2 rounded-md border border-line bg-surface-raised text-sm text-ink
                  focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-ring/20 resize-y"></textarea>
-        <p class="text-[11px] text-ink-subtle mt-1">
-          Use <code class="font-mono" v-pre>{{1}}</code>, <code class="font-mono" v-pre>{{2}}</code>... para variáveis.
-          Negrito com <code class="font-mono">*texto*</code>, itálico com <code class="font-mono">_texto_</code>.
+        <div class="flex items-center justify-between gap-2 mt-1">
+          <p class="text-[11px] text-ink-subtle">
+            Use <code class="font-mono" v-pre>{{1}}</code>, <code class="font-mono" v-pre>{{2}}</code>... para variáveis.
+            Negrito <code class="font-mono">*texto*</code>, itálico <code class="font-mono">_texto_</code>.
+          </p>
+          <p class="text-[11px] text-ink-subtle whitespace-nowrap">
+            <span class="font-mono">{{ wordCount }}</span> palavras
+            <span v-if="variables.length"> · <span class="font-mono">{{ variables.length }}</span> var{{ variables.length === 1 ? '' : 's' }}</span>
+          </p>
+        </div>
+        <p v-if="ratioWarning" class="text-[11px] text-amber-600 dark:text-amber-400 mt-1">
+          <i class="fas fa-triangle-exclamation mr-1"></i>{{ ratioWarning }}
         </p>
       </div>
 
