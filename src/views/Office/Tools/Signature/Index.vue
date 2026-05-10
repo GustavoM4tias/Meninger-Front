@@ -119,7 +119,7 @@ function signerDotIcon(status) {
 const currentUserId = computed(() => String(authStore.user?.id ?? ''));
 
 const userIdOptions = computed(() =>
-  (authStore.users || []).filter(u => u.status === true || u.status === 1).map(u => String(u.id))
+  authStore.activeUsers.map(u => String(u.id))
 );
 
 const userMap = computed(() => {

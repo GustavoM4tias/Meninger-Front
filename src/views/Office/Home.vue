@@ -20,7 +20,11 @@ const authStore = useAuthStore();
 const buildingStore = useBuildingStore();
 const aiStore = useOfficeAIStore();
 
-const messageInput = ref('');
+// Texto do composer compartilhado com o float — permite pré-preencher de fora
+const messageInput = computed({
+  get: () => aiStore.composerDraft,
+  set: (v) => aiStore.setDraft(v),
+});
 const messagesEl = ref(null);
 
 const isChatMode = computed(() => aiStore.messages.length > 0 || aiStore.isStreaming);

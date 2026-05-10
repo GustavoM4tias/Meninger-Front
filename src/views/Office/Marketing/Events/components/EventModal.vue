@@ -199,7 +199,7 @@ const creatorAvatar = computed(() => {
     </div>
 
     <!-- Edit -->
-    <EditEventModal v-if="isEditOpen" :event="event" :users="authStore.users"
+    <EditEventModal v-if="isEditOpen" :event="event" :users="authStore.activeUsers"
       @close="isEditOpen = false" />
   </Modal>
 </template>

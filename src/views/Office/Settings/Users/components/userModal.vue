@@ -24,6 +24,7 @@ const baseUser = {
   id: undefined, username: '', email: '', phone: '', position: '', city: '',
   birth_date: '', status: true, role: 'user',
   manager_id: null, face_enabled: false, show_in_organogram: false,
+  daily_alert_limit: 5,
 };
 
 const editableUser = ref(props.user ? { ...props.user } : { ...baseUser });
@@ -144,6 +145,7 @@ async function saveUser() {
         position: u.position, manager_id: u.manager_id, city: u.city,
         birth_date: u.birth_date, status: u.status, role: u.role,
         show_in_organogram: u.show_in_organogram ?? false,
+        daily_alert_limit: Math.max(0, Number(u.daily_alert_limit) || 5),
       });
       toast.success('Usuário atualizado com sucesso!');
     } else {
@@ -277,6 +279,24 @@ async function saveUser() {
               </div>
             </div>
             <Switch v-model="editableUser.show_in_organogram" size="sm" />
+          </div>
+
+          <div v-if="isAdmin && isEdit"
+            class="flex items-center justify-between gap-3 p-3 rounded-lg border border-line bg-surface-sunken">
+            <div class="flex items-center gap-2.5 min-w-0">
+              <div class="h-8 w-8 rounded-lg bg-accent-soft text-accent border border-accent/20 grid place-items-center shrink-0">
+                <i class="fas fa-bell-concierge text-xs"></i>
+              </div>
+              <div class="min-w-0">
+                <p class="text-sm font-medium text-ink">Limite diário de alertas</p>
+                <p class="text-xs text-ink-muted">
+                  Máximo de disparos por dia somando todos os alertas do usuário
+                </p>
+              </div>
+            </div>
+            <input v-model.number="editableUser.daily_alert_limit" type="number" min="0" max="200"
+              class="w-20 px-2 py-1 text-sm text-center bg-surface-raised text-ink border border-line rounded-md
+                     focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-ring/20" />
           </div>
 
           <div class="flex items-center justify-between gap-3 p-3 rounded-lg border border-line bg-surface-sunken">

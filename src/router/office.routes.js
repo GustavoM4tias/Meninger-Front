@@ -308,6 +308,12 @@ export default [
                         component: () => import('@/views/Office/Settings/Whatsapp/Index.vue'),
                         meta: { requiresAuth: true, allowedRole: 'admin', searchable: true, content: 'Integração WhatsApp Business: config, templates, mensagens' },
                     },
+                    {
+                        path: 'alerts',
+                        name: 'Alertas',
+                        component: () => import('@/views/Office/Settings/Alerts/Index.vue'),
+                        meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Gestão de alertas recorrentes criados via Eme' },
+                    },
                 ],
             },
 

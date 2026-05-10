@@ -57,6 +57,15 @@ export const useAuthStore = defineStore('user', {
     isExternal: (state) => normalizeProvider(state.user) !== 'INTERNAL',
     isInternal: (state) => normalizeProvider(state.user) === 'INTERNAL',
 
+    /**
+     * Usuários do sistema ATIVOS — usar em todo picker/seletor de usuário
+     * (notificação de evento, organizadores, signatários, etc.).
+     * Backend já filtra auth_provider != 'CVCRM' em /auth/users.
+     * Aqui filtramos apenas os ativos (status === true).
+     */
+    activeUsers: (state) =>
+      (state.users || []).filter(u => u.status === true || u.status === 1),
+
     usuariosComAniversarioValido: (state) =>
       state.users.filter((u) => u.birth_date && !isNaN(new Date(u.birth_date))),
 

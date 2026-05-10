@@ -20,6 +20,7 @@ const form = ref({
   examples: [],         // array de strings (1 por variável)
   headerText: '',
   footerText: '',
+  buttons: [],          // até 3 botões Quick Reply [{ text }]
 });
 
 const isSubmitting = ref(false);
@@ -92,10 +93,17 @@ const closeModal = () => emit('update:open', false);
 const reset = () => {
   form.value = {
     name: '', category: 'UTILITY', language: 'pt_BR',
-    body: '', examples: [], headerText: '', footerText: '',
+    body: '', examples: [], headerText: '', footerText: '', buttons: [],
   };
   error.value = '';
 };
+
+// Botões — gerenciamento simples (max 3, max 25 chars cada)
+function addButton() {
+  if (form.value.buttons.length >= 3) return;
+  form.value.buttons.push({ text: '' });
+}
+function removeButton(idx) { form.value.buttons.splice(idx, 1); }
 
 const onSubmit = async () => {
   error.value = '';
@@ -103,6 +111,11 @@ const onSubmit = async () => {
     error.value = 'Preencha nome, corpo e todos os exemplos das variáveis.';
     return;
   }
+  // Filtra botões vazios e trunca textos
+  const cleanButtons = (form.value.buttons || [])
+    .map(b => ({ text: String(b?.text || '').trim().slice(0, 25) }))
+    .filter(b => b.text);
+
   isSubmitting.value = true;
   try {
     await store.createTemplate({
@@ -113,6 +126,7 @@ const onSubmit = async () => {
       examples: form.value.examples,
       headerText: form.value.headerText || undefined,
       footerText: form.value.footerText || undefined,
+      buttons: cleanButtons,
     });
     emit('created');
     reset();
@@ -152,6 +166,13 @@ const presets = [
     body: 'Houve uma atualização no seu chamado de suporte *{{1}}* no Menin Office: {{2}}. Acesse o sistema para acompanhar todos os detalhes do andamento.',
     examples: ['#123456', 'Status alterado para Em andamento'],
   },
+  {
+    name: 'alert_generic_v1',
+    label: 'Alerta genérico (Eme)',
+    body: 'Olá *{{1}}*! Você tem um novo alerta no Menin Office: *{{2}}*. Resumo: {{3}}. Toque em SIM abaixo para receber o relatório completo ou em NÃO para descartar este alerta.',
+    examples: ['Maria', 'Resumo de Leads da Semana', '127 leads, +12% vs semana anterior'],
+    buttons: [{ text: 'SIM' }, { text: 'NÃO' }],
+  },
 ];
 
 const applyPreset = (p) => {
@@ -160,6 +181,7 @@ const applyPreset = (p) => {
   form.value.examples = [...p.examples];
   form.value.category = 'UTILITY';
   form.value.language = 'pt_BR';
+  form.value.buttons = Array.isArray(p.buttons) ? p.buttons.map(b => ({ ...b })) : [];
 };
 </script>
 
@@ -242,6 +264,32 @@ const applyPreset = (p) => {
         </div>
       </div>
 
+      <!-- Botões Quick Reply -->
+      <div>
+        <div class="flex items-center justify-between mb-2">
+          <p class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle">
+            Botões de resposta rápida (opcional, até 3)
+          </p>
+          <button v-if="form.buttons.length < 3" type="button" @click="addButton"
+            class="text-[11px] text-accent hover:underline">
+            <i class="fas fa-plus text-[9px] mr-1"></i>Adicionar botão
+          </button>
+        </div>
+        <p class="text-[11px] text-ink-subtle mb-2">
+          Quando o usuário toca o botão, ele envia o texto exato como resposta.
+          Pra alertas: use <code class="font-mono">SIM</code> e <code class="font-mono">NÃO</code>.
+        </p>
+        <div v-if="form.buttons.length" class="space-y-2">
+          <div v-for="(btn, i) in form.buttons" :key="i" class="flex items-center gap-2">
+            <Input v-model="btn.text" :placeholder="`Botão ${i + 1} (max 25 chars)`" size="sm" class="flex-1" />
+            <button type="button" @click="removeButton(i)"
+              class="h-9 w-9 grid place-items-center rounded-md text-ink-subtle hover:text-red-500 hover:bg-red-500/10 transition-colors">
+              <i class="fas fa-trash text-[11px]"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
       <!-- Header / Footer opcionais -->
       <details class="border border-line rounded-lg">
         <summary class="cursor-pointer px-3 py-2 text-xs text-ink-muted hover:bg-surface-sunken/50 select-none">
@@ -262,6 +310,12 @@ const applyPreset = (p) => {
           <p v-if="form.headerText" class="font-bold mb-1">{{ form.headerText }}</p>
           <p>{{ previewBody || 'Digite o corpo para ver a prévia.' }}</p>
           <p v-if="form.footerText" class="text-xs text-ink-muted mt-2 italic">{{ form.footerText }}</p>
+          <div v-if="form.buttons.filter(b => b.text).length" class="mt-2 pt-2 border-t border-emerald-500/20 flex flex-wrap gap-1.5">
+            <span v-for="(btn, i) in form.buttons.filter(b => b.text)" :key="i"
+              class="px-3 py-1.5 rounded-md text-xs font-medium bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300">
+              {{ btn.text }}
+            </span>
+          </div>
         </div>
       </div>
 

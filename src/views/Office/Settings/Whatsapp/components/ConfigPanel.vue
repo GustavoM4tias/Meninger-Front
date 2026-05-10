@@ -115,13 +115,13 @@ const onTestSend = async () => {
   testResult.value = null;
   try {
     const variables = (testForm.value.variables || '').split('|').map(s => s.trim()).filter(Boolean);
-    const r = await store.testSend({
+    await store.testSend({
       to: testForm.value.to,
       templateName: testForm.value.templateName,
       language: testForm.value.language || 'pt_BR',
       variables,
     });
-    testResult.value = { ok: true, text: `Enviado. id: ${r.id || '—'}` };
+    testResult.value = { ok: true, text: 'Enviado com sucesso.' };
   } catch (e) {
     testResult.value = { ok: false, text: e.message };
   }

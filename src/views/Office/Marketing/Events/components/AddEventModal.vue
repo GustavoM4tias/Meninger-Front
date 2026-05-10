@@ -127,7 +127,7 @@ watch(form, () => { hasDraft.value = !!localStorage.getItem(PERSIST_KEY); }, { d
       </div>
     </template>
 
-    <EventFormFields ref="fieldsRef" :form="form" :errors="errors" :users="authStore.users" />
+    <EventFormFields ref="fieldsRef" :form="form" :errors="errors" :users="authStore.activeUsers" />
 
     <p v-if="errors.submit"
       class="mt-4 text-xs text-red-500 text-center flex items-center justify-center gap-1">

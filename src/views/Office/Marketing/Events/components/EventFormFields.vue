@@ -100,6 +100,11 @@ function removeImg(i) { props.form.images.splice(i, 1); }
 
 // ── Sections ─────────────────────────────────────────
 const sections = ref({ location: false, media: false, organizers: false });
+
+// Helper para fechar a lista de empreendimentos com leve atraso (deixa o click dar tempo de selecionar)
+function delayedHideEnterpriseResults() {
+  window.setTimeout(() => { ent.showResults.value = false; }, 120);
+}
 </script>
 
 <template>
@@ -116,7 +121,7 @@ const sections = ref({ location: false, media: false, organizers: false });
           placeholder="Buscar por nome, cidade ou bairro"
           iconLeft="fas fa-magnifying-glass"
           @focus="ent.showResults.value = true"
-          @blur="setTimeout(() => ent.showResults.value = false, 120)" />
+          @blur="delayedHideEnterpriseResults" />
 
         <div v-if="ent.showResults.value"
           class="absolute z-20 mt-1 w-full rounded-lg border border-line bg-surface-overlay shadow-elevated overflow-hidden">
