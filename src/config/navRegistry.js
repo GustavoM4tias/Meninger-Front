@@ -144,6 +144,7 @@ export const navRegistry = [
         ],
         pages: [
             { route: '/settings/notifications', section: 'Notificações', name: 'Notificações', icon: 'fas fa-bell', permissionManaged: false },
+            { route: '/settings/alerts', section: 'Alertas', name: 'Alertas', icon: 'fas fa-bell-concierge', permissionManaged: false },
             { route: '/settings/whatsapp', section: 'WhatsApp', name: 'WhatsApp', icon: 'fa-brands fa-whatsapp', adminOnly: true },
             { route: '/settings/cidades', section: 'Cidades', name: 'Cidades', icon: 'fas fa-city', adminOnly: true },
             { route: '/settings/permissions', section: 'Alçadas', name: 'Alçadas', icon: 'fas fa-shield-halved', adminOnly: true },

@@ -110,17 +110,42 @@ export const useNotificationStore = defineStore('notificationStore', {
             }
         },
 
-        async setPreference(type, { inapp, email }) {
-            const local = this.preferences.find(p => p.type === type);
-            if (local) {
-                if (typeof inapp === 'boolean') local.inapp = inapp;
-                if (typeof email === 'boolean') local.email = email;
+        async setPreference(type, { inapp, email, whatsapp }) {
+            // 1) snapshot pra reverter em caso de erro
+            const idx = this.preferences.findIndex(p => p.type === type);
+            const snapshot = idx >= 0 ? { ...this.preferences[idx] } : null;
+
+            // 2) update otimista local
+            if (idx >= 0) {
+                const updated = { ...this.preferences[idx] };
+                if (typeof inapp === 'boolean')    updated.inapp = inapp;
+                if (typeof email === 'boolean')    updated.email = email;
+                if (typeof whatsapp === 'boolean') updated.whatsapp = whatsapp;
+                this.preferences.splice(idx, 1, updated);
             }
+
+            // 3) salva no back e usa a resposta como verdade
             try {
-                await saveNotificationPreference({ type, inapp, email });
+                const r = await saveNotificationPreference({ type, inapp, email, whatsapp });
+                const saved = r?.preference;
+                if (idx >= 0 && saved) {
+                    const merged = {
+                        ...this.preferences[idx],
+                        inapp:    !!saved.inapp,
+                        email:    !!saved.email,
+                        whatsapp: !!saved.whatsapp,
+                        isCustom: true,
+                    };
+                    this.preferences.splice(idx, 1, merged);
+                }
+                return saved;
             } catch (err) {
                 console.error('[notificationStore] setPreference', err);
-                this.fetchPreferences();
+                // 4) rollback se houve erro
+                if (idx >= 0 && snapshot) {
+                    this.preferences.splice(idx, 1, snapshot);
+                }
+                throw err;
             }
         },
 

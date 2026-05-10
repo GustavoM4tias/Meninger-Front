@@ -57,11 +57,11 @@ export const fetchNotificationPreferences = async () => {
     return handle(resp);
 };
 
-export const saveNotificationPreference = async ({ type, inapp, email }) => {
+export const saveNotificationPreference = async ({ type, inapp, email, whatsapp }) => {
     const resp = await fetch(`${API_URL}/notifications/preferences`, {
         method: 'PUT',
         headers: authHeaders(),
-        body: JSON.stringify({ type, inapp, email }),
+        body: JSON.stringify({ type, inapp, email, whatsapp }),
     });
     return handle(resp);
 };

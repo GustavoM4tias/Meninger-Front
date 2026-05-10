@@ -23,6 +23,11 @@ export const useOfficeAIStore = defineStore('officeAI', () => {
   const storageUsage = ref(null)
   const historyOpen = ref(false)
 
+  // Texto compartilhado da caixa de envio (permite pré-preencher de fora —
+  // ex: botão "Criar via Eme" na página de alertas dispara eme:open com prompt)
+  const composerDraft = ref('')
+  function setDraft(text) { composerDraft.value = String(text || '') }
+
   // ── Computed ──────────────────────────────────────────────────────────────
   const isAtStorageLimit = computed(() => storageUsage.value?.percent >= 100)
   const hasSession = computed(() => !!currentSessionId.value)
@@ -239,24 +244,36 @@ export const useOfficeAIStore = defineStore('officeAI', () => {
 
   // ── Helpers ───────────────────────────────────────────────────────────────
   function parseMessage(m) {
-    if (m.role === 'assistant' && m.response_type !== 'text') {
-      try {
-        const parsed = JSON.parse(m.content)
-        return { ...m, content: parsed.text || '', metadata: { ...m.metadata, action: parsed.action } }
-      } catch {
-        return m
+    if (m.role !== 'assistant' || !m.content) return m
+
+    // Caso normal: response_type indica que é estruturado (chart, table, action, ...)
+    // Caso defensivo: response_type='text' MAS content parece JSON {text, action} —
+    // cobre mensagens salvas antes do fix server-side.
+    const looksJson = typeof m.content === 'string' && m.content.trimStart().startsWith('{')
+    if (m.response_type === 'text' && !looksJson) return m
+
+    try {
+      const parsed = JSON.parse(m.content)
+      if (parsed && typeof parsed === 'object' && ('text' in parsed || 'action' in parsed)) {
+        return {
+          ...m,
+          content: parsed.text || '',
+          metadata: { ...m.metadata, action: parsed.action || m.metadata?.action },
+        }
       }
+      return m
+    } catch {
+      return m
     }
-    return m
   }
 
   return {
     mode, sessions, currentSessionId, messages, isStreaming, streamingText,
-    pendingAction, storageUsage, historyOpen,
+    pendingAction, storageUsage, historyOpen, composerDraft,
     isAtStorageLimit, hasSession,
     loadSessions, loadMessages, newSession, favoriteSession, deleteSession,
     loadStorageUsage, sendMessage, retryMessage, renameSession, sendFeedback,
-    setMode, minimize, expand,
+    setMode, minimize, expand, setDraft,
     currentSessionTitle,
   }
 })
