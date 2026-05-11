@@ -436,9 +436,18 @@
                 </td>
 
                 <td class="px-3 py-3 whitespace-nowrap text-right">
-                  <span class="font-bold text-emerald-600 dark:text-emerald-400 font-mono tabular-nums">
+                  <span class="font-bold font-mono tabular-nums"
+                    :class="{
+                      'text-emerald-600 dark:text-emerald-400': exp.status !== 'cancelled',
+                      'text-ink-subtle line-through': exp.status === 'cancelled',
+                    }">
                     {{ Number(exp.amount || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) }}
                   </span>
+                  <div class="mt-1">
+                    <Badge :variant="expStatusVariant(exp.status)" size="sm">
+                      {{ expStatusLabel(exp.status) }}
+                    </Badge>
+                  </div>
                 </td>
 
                 <td class="px-3 py-3 whitespace-nowrap text-right text-xs text-ink-muted font-mono tabular-nums">
@@ -558,14 +567,6 @@
             </div>
           </div>
         </Surface>
-
-        <!-- Valor -->
-        <div>
-          <label class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1.5 block">
-            <i class="fas fa-dollar-sign text-emerald-500 mr-1"></i> Valor da Parcela
-          </label>
-          <Input v-model.number="editForm.amount" type="number" step="0.01" min="0" />
-        </div>
 
         <!-- Departamento -->
         <Select
@@ -1000,7 +1001,6 @@ async function applyBulkDepartment() {
 const editingExpense = ref(null);
 const editSaving = ref(false);
 const editForm = ref({
-  amount: 0,
   departmentName: '',
   departmentCategoryId: null,
   description: '',
@@ -1009,7 +1009,6 @@ const editForm = ref({
 function openEditModal(exp) {
   editingExpense.value = exp;
   editForm.value = {
-    amount: Number(exp.amount),
     departmentName: exp.departmentName || exp.bill?.mainDepartmentName || '',
     departmentCategoryId: exp.departmentCategoryId ?? null,
     description: exp.description || '',
@@ -1029,7 +1028,6 @@ async function saveEdit() {
     const found = catId ? categoryOptions.value.find(c => c.id === catId) : null;
 
     await store.updateExpense(editingExpense.value.id, {
-      amount: Number(editForm.value.amount),
       description: editForm.value.description || null,
       departmentName: editForm.value.departmentName || null,
       departmentCategoryId: catId,
@@ -1086,6 +1084,23 @@ async function refreshAfterEdit() {
   if (selectedGroup.value) {
     const updated = store.groups.find(g => g.costCenterId === selectedGroup.value.costCenterId);
     selectedGroup.value = updated?.expenses?.length ? updated : null;
+  }
+}
+
+// ── Status helpers ────────────────────────────────────────
+function expStatusVariant(status) {
+  switch (status) {
+    case 'paid':      return 'success';
+    case 'cancelled': return 'danger';
+    default:          return 'neutral';
+  }
+}
+function expStatusLabel(status) {
+  switch (status) {
+    case 'paid':      return 'Pago';
+    case 'cancelled': return 'Cancelado';
+    case 'open':      return 'Em aberto';
+    default:          return '—';
   }
 }
 

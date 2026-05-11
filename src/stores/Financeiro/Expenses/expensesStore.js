@@ -13,8 +13,10 @@ function getToken() {
 export const useExpensesStore = defineStore('expenses', () => {
     const carregamento = useCarregamentoStore();
 
-    const startDate = ref(dayjs().startOf('month').format('YYYY-MM-DD'));
-    const endDate = ref(dayjs().endOf('month').format('YYYY-MM-DD'));
+    // Período padrão: 1º de janeiro do ano anterior → hoje.
+    // Mostra o panorama completo recente, alimentado pelo auto-sync diário.
+    const startDate = ref(dayjs().subtract(1, 'year').startOf('year').format('YYYY-MM-DD'));
+    const endDate = ref(dayjs().format('YYYY-MM-DD'));
     const data = ref(null);                       // { startDate, endDate, total, groups: [...] }
     const error = ref(null);
 

@@ -11,7 +11,9 @@ export const useBillsStore = defineStore('bills', () => {
 
     const today = dayjs();
     const costCenterIds = ref([]);
-    const startDate = ref(today.subtract(1, 'month').date(15).format('YYYY-MM-DD'));
+    // Período padrão: 1º de janeiro do ano anterior → hoje.
+    // O auto-sync diário mantém o banco populado, então a consulta é barata mesmo em janela longa.
+    const startDate = ref(today.subtract(1, 'year').startOf('year').format('YYYY-MM-DD'));
     const endDate = ref(today.format('YYYY-MM-DD'));
 
     const bills = ref([]);
@@ -36,27 +38,15 @@ export const useBillsStore = defineStore('bills', () => {
         return bills.value.filter(b => sel.has((b.main_department_name || '').toLowerCase()));
     });
 
-    const MAX_MONTHS = 6;
-
-    const dateRangeWarning = computed(() => {
-        if (!startDate.value || !endDate.value) return null;
-        const s = new Date(startDate.value);
-        const e = new Date(endDate.value);
-        const diff = (e.getFullYear() - s.getFullYear()) * 12 + (e.getMonth() - s.getMonth());
-        if (diff > MAX_MONTHS) return `Período máximo é ${MAX_MONTHS} meses. Ajuste as datas.`;
-        return null;
-    });
+    // dateRangeWarning preservado para compatibilidade com a tela, mas hoje sempre null —
+    // o auto-sync diário tornou desnecessário limitar o range de consulta.
+    const dateRangeWarning = computed(() => null);
 
     async function fetchBills() {
         error.value = null;
 
         if (!costCenterIds.value.length || !startDate.value || !endDate.value) {
             error.value = 'Informe ao menos um centro de custo, data inicial e final.';
-            return;
-        }
-
-        if (dateRangeWarning.value) {
-            error.value = dateRangeWarning.value;
             return;
         }
 

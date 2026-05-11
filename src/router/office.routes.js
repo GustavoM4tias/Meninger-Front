@@ -186,6 +186,12 @@ export default [
                         component: () => import('@/views/Office/Tools/PaymentoFlow/Index.vue'),
                         meta: { searchable: true, content: 'Lançamentos de pagamento Sienge.' },
                     },
+                    {
+                        path: 'auto-sync',
+                        name: 'Auto-Sync Bills',
+                        component: () => import('@/views/Office/Financeiro/AutoSync/Index.vue'),
+                        meta: { requiresAuth: true, requiresAdmin: true, searchable: false, content: 'Monitoramento do auto-sync diário de títulos do Sienge' },
+                    },
                 ],
             },
 
@@ -313,6 +319,12 @@ export default [
                         name: 'Alertas',
                         component: () => import('@/views/Office/Settings/Alerts/Index.vue'),
                         meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Gestão de alertas recorrentes criados via Eme' },
+                    },
+                    {
+                        path: 'backup-sienge',
+                        name: 'Backup Sienge',
+                        component: () => import('@/views/Office/Settings/BackupSienge/Index.vue'),
+                        meta: { requiresAuth: true, allowedRole: 'admin', searchable: true, content: 'Acompanhamento e controle manual do backup diário do banco Sienge' },
                     },
                 ],
             },

@@ -149,6 +149,7 @@ export const navRegistry = [
             { route: '/settings/cidades', section: 'Cidades', name: 'Cidades', icon: 'fas fa-city', adminOnly: true },
             { route: '/settings/permissions', section: 'Alçadas', name: 'Alçadas', icon: 'fas fa-shield-halved', adminOnly: true },
             { route: '/settings/management', section: 'Departamentos', name: 'Departamentos', icon: 'fas fa-gears', adminOnly: true },
+            { route: '/settings/backup-sienge', section: 'Backup Sienge', name: 'Backup Sienge', icon: 'fas fa-database', adminOnly: true },
             { route: '/comercial/workflow/groups', section: 'Grupos Workflow', name: 'Grupos Workflow', icon: 'fas fa-chart-diagram' },
         ],
     },
