@@ -1,48 +1,46 @@
 // utils/apiFavorite.js
-import API_URL from '@/config/apiUrl'; // Define a URL base da sua API
+import API_URL from '@/config/apiUrl';
+
+function authHeaders(includeJson = false) {
+    const h = { 'Authorization': `Bearer ${localStorage.getItem('token')}` };
+    if (includeJson) h['Content-Type'] = 'application/json';
+    return h;
+}
+
+// Lança erro com mensagem útil quando o backend retorna 4xx/5xx,
+// para que o store/componente possa exibir toast e reverter UI otimista.
+async function parseOrThrow(response, action) {
+    if (response.ok) return response.status === 204 ? null : response.json().catch(() => null);
+    let detail = '';
+    try {
+        const body = await response.json();
+        detail = body?.detail || body?.message || '';
+    } catch { /* ignore */ }
+    throw new Error(`Falha ao ${action} (${response.status}${detail ? ': ' + detail : ''})`);
+}
 
 export const addFavorite = async (router, section) => {
-    try {
-        await fetch(`${API_URL}/favorite`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`, // Acesso com o token JWT
-            },
-            body: JSON.stringify({ router, section })
-        });
-    } catch (error) {
-        console.error('Erro ao adicionar favorito', error);
-    }
+    const response = await fetch(`${API_URL}/favorite`, {
+        method: 'POST',
+        headers: authHeaders(true),
+        body: JSON.stringify({ router, section }),
+    });
+    return parseOrThrow(response, 'adicionar favorito');
 };
 
 export const removeFavorite = async (router, section) => {
-    try {
-        const response = await fetch(`${API_URL}/favorite/${encodeURIComponent(router)}/${encodeURIComponent(section)}`, {
-            method: 'DELETE',
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`,
-            }
-        });
-        if (response.ok) {
-            console.log("Favorito removido");
-        }
-    } catch (error) {
-        console.error('Erro ao remover favorito', error);
-    }
+    const response = await fetch(
+        `${API_URL}/favorite/${encodeURIComponent(router)}/${encodeURIComponent(section)}`,
+        { method: 'DELETE', headers: authHeaders() },
+    );
+    return parseOrThrow(response, 'remover favorito');
 };
 
 export const getFavorites = async () => {
-    try {
-        const response = await fetch(`${API_URL}/favorite`, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`,
-            }
-        });
-        const favorites = await response.json();
-        return favorites;
-    } catch (error) {
-        console.error('Erro ao obter favoritos', error);
-    }
+    const response = await fetch(`${API_URL}/favorite`, {
+        method: 'GET',
+        headers: authHeaders(),
+    });
+    const data = await parseOrThrow(response, 'obter favoritos');
+    return Array.isArray(data) ? data : [];
 };
