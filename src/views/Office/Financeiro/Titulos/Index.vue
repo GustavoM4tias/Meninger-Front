@@ -19,7 +19,6 @@
             <label class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1.5 flex items-center gap-1.5">
               <i class="fas fa-city text-accent text-[10px]"></i>
               Empreendimento / Centro de Custo
-              <span class="text-[10px] text-ink-subtle font-normal normal-case">(máx. 3)</span>
             </label>
             <MultiSelector :model-value="selectedCostCenterNames" @update:modelValue="handleCostCenterChange"
               :options="costCenterOptions" placeholder="Selecione empreendimentos" :page-size="200"
@@ -222,6 +221,7 @@
                 <th class="px-4 py-3 text-right text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Valor Total</th>
                 <th class="px-4 py-3 text-center text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Emissão</th>
                 <th class="px-4 py-3 text-center text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Departamento</th>
+                <th class="px-4 py-3 text-center text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Status</th>
               </tr>
             </thead>
 
@@ -286,10 +286,17 @@
                   </Badge>
                   <span v-else class="text-xs text-ink-subtle">—</span>
                 </td>
+
+                <!-- Status -->
+                <td class="px-4 py-3 text-center align-middle">
+                  <Badge :variant="statusBadgeVariant(bill.current_status)" size="sm">
+                    {{ statusBadgeLabel(bill.current_status) }}
+                  </Badge>
+                </td>
               </tr>
 
               <tr v-if="!store.visibleBills.length && !store.isLoading">
-                <td colspan="6" class="px-6 py-12">
+                <td colspan="7" class="px-6 py-12">
                   <EmptyState
                     icon="fas fa-inbox"
                     title="Nenhum título encontrado"
@@ -341,7 +348,7 @@ const costCenterIdByName = computed(() => {
 });
 
 function handleCostCenterChange(v) {
-  const arr = Array.isArray(v) ? v.slice(0, 3) : [];
+  const arr = Array.isArray(v) ? v : [];
   selectedCostCenterNames.value = arr;
   store.costCenterIds = arr
     .map(name => costCenterIdByName.value.get(name))
@@ -468,6 +475,25 @@ watch(() => store.costCenterIds, () => {
     syncStatus.value = null;
   }
 });
+
+// ── Status badge ──────────────────────────────────────────────────────────────
+function statusBadgeVariant(status) {
+  switch (status) {
+    case 'paid':      return 'success';
+    case 'partial':   return 'warning';
+    case 'cancelled': return 'danger';
+    default:          return 'neutral';   // open ou null
+  }
+}
+function statusBadgeLabel(status) {
+  switch (status) {
+    case 'paid':      return 'Pago';
+    case 'partial':   return 'Parcial';
+    case 'cancelled': return 'Cancelado';
+    case 'open':      return 'Em aberto';
+    default:          return '—';
+  }
+}
 
 onMounted(async () => {
   try {
