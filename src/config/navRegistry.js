@@ -106,6 +106,7 @@ export const navRegistry = [
             { route: '/financeiro/custos', section: 'Custos', name: 'Custos', icon: 'fas fa-coins' },
             { route: '/financeiro/boleto-caixa', name: 'Boleto Caixa', icon: 'fas fa-barcode', adminOnly: true },
             { route: '/financeiro/paymentflow', section: 'Fluxo de Pagamento', name: 'Fluxo de Pagamento', icon: 'fas fa-diagram-project' },
+            { route: '/financeiro/auto-sync', name: 'Auto-Sync Títulos', icon: 'fas fa-arrows-rotate', adminOnly: true },
         ],
     },
 
