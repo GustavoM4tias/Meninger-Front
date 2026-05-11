@@ -45,17 +45,54 @@
         <div class="px-6 pt-4">
             <div
                 v-if="isRunning"
-                class="rounded-2xl border border-indigo-200 bg-indigo-50/60 dark:bg-indigo-900/20 dark:border-indigo-700 p-4 flex items-center gap-4 shadow-sm">
-                <div class="text-indigo-600 dark:text-indigo-300 text-2xl">
-                    <i class="fas fa-circle-notch fa-spin"></i>
+                class="rounded-2xl border border-indigo-200 bg-indigo-50/60 dark:bg-indigo-900/20 dark:border-indigo-700 shadow-sm overflow-hidden">
+                <!-- Header -->
+                <div class="p-4 flex items-center gap-4">
+                    <div class="text-indigo-600 dark:text-indigo-300 text-2xl">
+                        <i class="fas fa-circle-notch fa-spin"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="font-semibold text-indigo-900 dark:text-indigo-100">
+                            Backup em execução — {{ currentStageInfo.label }}
+                        </p>
+                        <p class="text-xs text-indigo-700 dark:text-indigo-200 mt-0.5">
+                            Iniciado em {{ formatDate(store.runningBackup.started_at) }} • atualizando a cada 5s
+                        </p>
+                    </div>
+                    <button
+                        type="button"
+                        class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-indigo-700 dark:text-indigo-200 hover:bg-white/70 dark:hover:bg-black/20 transition"
+                        @click="showTimeline = !showTimeline">
+                        {{ showTimeline ? 'Ocultar etapas' : 'Ver etapas' }}
+                        <i :class="showTimeline ? 'fas fa-chevron-up' : 'fas fa-chevron-down'"></i>
+                    </button>
                 </div>
-                <div class="flex-1">
-                    <p class="font-semibold text-indigo-900 dark:text-indigo-100">
-                        Backup em execução — etapa: <code class="px-1.5 py-0.5 rounded bg-white/70 dark:bg-black/30 text-xs">{{ runningStage }}</code>
-                    </p>
-                    <p class="text-xs text-indigo-700 dark:text-indigo-200 mt-0.5">
-                        Iniciado em {{ formatDate(store.runningBackup.started_at) }} • atualizando a cada 5s
-                    </p>
+
+                <!-- Timeline -->
+                <div
+                    v-if="showTimeline"
+                    class="px-4 pb-4 pt-3 border-t border-indigo-200/60 dark:border-indigo-700/40 bg-white/40 dark:bg-black/10">
+                    <ol class="space-y-3">
+                        <li
+                            v-for="stage in PIPELINE_STAGES"
+                            :key="stage.key"
+                            class="flex items-center gap-3"
+                            :class="stageRowClass(stage.key)">
+                            <div :class="stageDotClass(stage.key)">
+                                <i :class="stageDotIcon(stage.key)"></i>
+                            </div>
+                            <div class="flex-1 flex items-center justify-between gap-3 min-w-0">
+                                <div class="min-w-0 flex items-center gap-2">
+                                    <i :class="stage.icon" class="opacity-70 w-4 text-center"></i>
+                                    <p class="text-sm truncate">{{ stage.label }}</p>
+                                </div>
+                                <div class="text-xs text-right whitespace-nowrap">
+                                    <span class="opacity-75">{{ stageStateLabel(stage.key) }}</span>
+                                    <span v-if="stage.estimate" class="ml-2 opacity-50">• {{ stage.estimate }}</span>
+                                </div>
+                            </div>
+                        </li>
+                    </ol>
                 </div>
             </div>
 
@@ -162,7 +199,7 @@
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, onMounted } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useToast } from 'vue-toastification'
 import { useSiengeBackupStore } from '@/stores/Sienge/backupStore'
 
@@ -173,6 +210,74 @@ let pollTimer = null
 
 const isRunning = computed(() => !!store.runningBackup)
 const runningStage = computed(() => store.runningBackup?.stage || 'starting')
+
+// ─── Pipeline stages (ordenadas) ────────────────────────────────────────────
+// Mantém em sincronia com SiengeBackupService.runDailyBackup() no backend.
+const PIPELINE_STAGES = [
+    { key: 'fetching_md5',  label: 'Validação inicial (MD5)', icon: 'fas fa-fingerprint',      estimate: '~5s' },
+    { key: 'downloading',   label: 'Download do Sienge',      icon: 'fas fa-cloud-arrow-down', estimate: '5–20 min' },
+    { key: 'decompressing', label: 'Descompactação local',    icon: 'fas fa-file-zipper',      estimate: '~30s' },
+    { key: 'restoring',     label: 'pg_restore no Postgres',  icon: 'fas fa-database',         estimate: '5–25 min' },
+]
+
+const showTimeline = ref(true)
+
+const currentStageInfo = computed(() => {
+    const cur = runningStage.value
+    if (cur === 'starting') return { label: 'Inicializando…' }
+    if (cur === 'done')     return { label: 'Finalizando…' }
+    return PIPELINE_STAGES.find(s => s.key === cur) ?? { label: cur }
+})
+
+function stageState(key) {
+    const running = store.runningBackup
+    if (!running) return 'pending'
+    const order = PIPELINE_STAGES.map(s => s.key)
+    const cur   = running.stage
+    const curIdx = cur === 'done' ? order.length : order.indexOf(cur)
+    const thisIdx = order.indexOf(key)
+    if (running.status === 'failed' && thisIdx === curIdx) return 'failed'
+    if (thisIdx < curIdx)  return 'done'
+    if (thisIdx === curIdx) return 'current'
+    return 'pending'
+}
+
+function stageStateLabel(key) {
+    return {
+        done:    'concluído',
+        current: 'em andamento',
+        pending: 'aguardando',
+        failed:  'falhou',
+    }[stageState(key)]
+}
+
+function stageRowClass(key) {
+    return {
+        done:    'text-emerald-700 dark:text-emerald-300',
+        current: 'text-indigo-700 dark:text-indigo-200 font-medium',
+        pending: 'text-gray-500 dark:text-gray-400',
+        failed:  'text-red-700 dark:text-red-300 font-medium',
+    }[stageState(key)]
+}
+
+function stageDotClass(key) {
+    const base = 'w-7 h-7 rounded-full flex items-center justify-center text-xs flex-shrink-0'
+    return {
+        done:    `${base} bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300`,
+        current: `${base} bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-200 ring-2 ring-indigo-300 dark:ring-indigo-600`,
+        pending: `${base} bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-500`,
+        failed:  `${base} bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300`,
+    }[stageState(key)]
+}
+
+function stageDotIcon(key) {
+    return {
+        done:    'fas fa-check',
+        current: 'fas fa-circle-notch fa-spin',
+        pending: 'far fa-circle',
+        failed:  'fas fa-xmark',
+    }[stageState(key)]
+}
 
 function startPolling() {
     stopPolling()

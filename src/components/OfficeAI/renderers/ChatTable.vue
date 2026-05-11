@@ -214,13 +214,13 @@ async function copyTable() {
               <!-- Status badge -->
               <span
                 v-if="statusClass(col, row[col.key])"
-                class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium"
-                :class="statusClass(col, row[col.key])"
+                class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium w-24"
+                :class="statusClass(col, row[col.key])" :title="row[col.key]"
               >
-                {{ row[col.key] }}
+                <p class="truncate">{{ row[col.key] }}</p>
               </span>
               <!-- Normal value -->
-              <span v-else-if="formatCell(row[col.key], col) !== null">
+              <span class="truncate" v-else-if="formatCell(row[col.key], col) !== null">
                 {{ formatCell(row[col.key], col) }}
               </span>
               <span v-else class="text-gray-300 dark:text-slate-600">—</span>

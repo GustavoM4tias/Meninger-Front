@@ -3,28 +3,45 @@
     <PageContainer size="full">
 
       <PageHeader
+        title="Auto-Sync de Títulos"
         subtitle="Status do auto-sync diário de títulos do Sienge — execução automática às 04:00"
         icon="fas fa-arrows-rotate">
-        <template #title>
-          Auto-Sync de Títulos
-        </template>
         <template #actions>
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-2 flex-wrap">
             <Button variant="ghost" icon="fas fa-rotate" size="sm" :loading="loading" @click="load">
               Recarregar
             </Button>
+            <template v-if="selectedIds.size > 0">
+              <Button variant="ghost" size="sm" icon="fas fa-star"
+                class="!text-amber-500"
+                :disabled="recurringActionBusy"
+                @click="toggleRecurringSelected(true)">
+                Tornar {{ selectedIds.size }} recorrente(s)
+              </Button>
+              <Button variant="ghost" size="sm" icon="far fa-star"
+                :disabled="recurringActionBusy"
+                @click="toggleRecurringSelected(false)">
+                Remover dos recorrentes
+              </Button>
+              <Button variant="secondary" icon="fas fa-play" size="sm"
+                :disabled="!!currentRun?.running"
+                @click="runSelected">
+                Rodar {{ selectedIds.size }} selecionado(s)
+              </Button>
+            </template>
             <Button variant="primary" icon="fas fa-play" size="sm"
               :loading="triggering"
               :disabled="!!currentRun?.running"
               @click="runAll">
-              Rodar agora (todos)
+              Rodar todos
             </Button>
           </div>
         </template>
       </PageHeader>
 
       <!-- Execução em andamento -->
-      <Surface v-if="currentRun?.running" variant="raised" padding="md" class="mb-5 border-2 border-accent/40 bg-accent-soft surface-gradient">
+      <Surface v-if="currentRun?.running" variant="raised" padding="md"
+        class="mb-5 border-2 border-accent/40 bg-accent-soft surface-gradient">
         <div class="flex items-start justify-between gap-4">
           <div class="flex-1 min-w-0">
             <div class="flex items-center gap-3 mb-2">
@@ -45,9 +62,9 @@
               </div>
             </div>
             <div class="flex justify-between text-[11px] text-ink-muted mt-1 font-mono tabular-nums">
-              <span>{{ currentRun.done }} / {{ currentRun.total }} empreendimentos</span>
+              <span>{{ currentRun.done }} / {{ currentRun.total }} CCs</span>
               <span v-if="currentRun.current">
-                Em curso: {{ currentRun.current.name }} ({{ currentRun.current.costCenterId }})
+                Em curso: {{ currentRun.current.name }} (CC {{ currentRun.current.costCenterId }})
               </span>
             </div>
           </div>
@@ -55,10 +72,18 @@
       </Surface>
 
       <!-- Resumo -->
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-5">
+      <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-5">
         <Surface variant="raised" padding="md" class="surface-gradient">
-          <div class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono mb-1">Empreendimentos</div>
-          <div class="text-2xl font-bold font-mono tabular-nums">{{ enterprises.length }}</div>
+          <div class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono mb-1">Empresas / CCs</div>
+          <div class="text-2xl font-bold font-mono tabular-nums">
+            {{ companies.length }} <span class="text-sm text-ink-subtle">/ {{ enterprises.length }}</span>
+          </div>
+        </Surface>
+        <Surface variant="raised" padding="md" class="surface-gradient border-amber-500/30 bg-amber-500/5">
+          <div class="text-[10px] uppercase tracking-wider text-amber-700 dark:text-amber-300 font-mono mb-1 flex items-center gap-1">
+            <i class="fas fa-star text-[10px]"></i> No sync diário
+          </div>
+          <div class="text-2xl font-bold font-mono tabular-nums text-amber-600 dark:text-amber-400">{{ recurringCount }}</div>
         </Surface>
         <Surface variant="raised" padding="md" class="surface-gradient border-emerald-500/30 bg-emerald-500/5">
           <div class="text-[10px] uppercase tracking-wider text-emerald-700 dark:text-emerald-300 font-mono mb-1">Último sync OK</div>
@@ -69,76 +94,140 @@
           <div class="text-2xl font-bold font-mono tabular-nums text-red-600 dark:text-red-400">{{ statusCounts.error }}</div>
         </Surface>
         <Surface variant="raised" padding="md" class="surface-gradient">
-          <div class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono mb-1">Sem execução</div>
+          <div class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono mb-1">Nunca rodado</div>
           <div class="text-2xl font-bold font-mono tabular-nums">{{ statusCounts.none }}</div>
         </Surface>
       </div>
 
-      <!-- Tabela de empreendimentos -->
-      <Surface variant="raised" padding="none" class="overflow-hidden surface-gradient">
-        <div class="px-5 py-3 border-b border-line bg-surface-sunken/40">
-          <h3 class="text-base font-semibold text-ink flex items-center gap-2">
-            <i class="fas fa-list-check text-accent"></i> Status por empreendimento
-          </h3>
-        </div>
-
-        <div class="overflow-x-auto">
-          <table class="min-w-full">
-            <thead class="bg-surface-sunken/60 border-b border-line">
-              <tr>
-                <th class="px-4 py-3 text-left text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Empreendimento</th>
-                <th class="px-4 py-3 text-left text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Cidade</th>
-                <th class="px-4 py-3 text-center text-[11px] font-mono uppercase tracking-wider text-ink-subtle">CC ERP</th>
-                <th class="px-4 py-3 text-center text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Último sync</th>
-                <th class="px-4 py-3 text-center text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Status</th>
-                <th class="px-4 py-3 text-right text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Resumo</th>
-                <th class="px-4 py-3 text-right text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Ações</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-line">
-              <tr v-for="ec in enterprises" :key="ec.id" class="hover:bg-surface-hover/40 transition-colors">
-                <td class="px-4 py-3 align-middle">
-                  <div class="text-sm font-semibold text-ink">{{ ec.name || '—' }}</div>
-                </td>
-                <td class="px-4 py-3 align-middle text-xs text-ink-muted">{{ ec.city || '—' }}</td>
-                <td class="px-4 py-3 align-middle text-center text-xs font-mono tabular-nums">{{ ec.erpId }}</td>
-                <td class="px-4 py-3 align-middle text-center text-xs font-mono tabular-nums">
-                  {{ ec.lastRunAt ? new Date(ec.lastRunAt).toLocaleString('pt-BR') : '—' }}
-                </td>
-                <td class="px-4 py-3 align-middle text-center">
-                  <Badge :variant="statusVariant(ec.lastStatus)" size="sm">
-                    {{ statusLabel(ec.lastStatus) }}
-                  </Badge>
-                </td>
-                <td class="px-4 py-3 align-middle text-right text-xs text-ink-muted">
-                  <div v-if="ec.lastSummary && !ec.lastSummary.error" class="space-y-0.5">
-                    <div><span class="font-mono tabular-nums">{{ ec.lastSummary.totalBills || 0 }}</span> bills</div>
-                    <div class="text-[10px] text-ink-subtle">
-                      +{{ ec.lastSummary.newBills || 0 }} novos · {{ ec.lastSummary.installmentsSynced || 0 }} parc.
-                    </div>
-                  </div>
-                  <span v-else-if="ec.lastSummary?.error" class="text-red-500 text-xs truncate max-w-[200px] inline-block" :title="ec.lastSummary.error">
-                    {{ ec.lastSummary.error }}
-                  </span>
-                  <span v-else class="text-ink-subtle">—</span>
-                </td>
-                <td class="px-4 py-3 align-middle text-right">
-                  <Button variant="secondary" size="sm" icon="fas fa-play"
-                    :disabled="!!currentRun?.running"
-                    @click="runOne(ec)">
-                    Rodar
-                  </Button>
-                </td>
-              </tr>
-              <tr v-if="!enterprises.length">
-                <td colspan="7" class="px-6 py-12">
-                  <EmptyState icon="fas fa-inbox" title="Nenhum empreendimento" description="Aguardando carga." />
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+      <!-- Busca -->
+      <Surface variant="raised" padding="sm" class="mb-3 surface-gradient">
+        <Input v-model="search" placeholder="Buscar empresa, empreendimento, CC ou cidade..."
+          icon-left="fas fa-magnifying-glass" />
       </Surface>
+
+      <!-- Lista por empresa -->
+      <div class="space-y-3">
+        <Surface v-for="comp in filteredCompanies" :key="comp.companyKey"
+          variant="raised" padding="none" class="overflow-hidden surface-gradient">
+
+          <!-- Header da empresa -->
+          <div class="px-4 py-3 border-b border-line bg-surface-sunken/40 flex items-center gap-3">
+            <button @click="toggleExpand(comp.companyKey)"
+              class="h-8 w-8 grid place-items-center rounded-lg hover:bg-surface-hover transition-colors">
+              <i :class="expanded.has(comp.companyKey) ? 'fas fa-chevron-down' : 'fas fa-chevron-right'"
+                class="text-ink-muted text-xs"></i>
+            </button>
+
+            <div class="h-10 w-10 rounded-lg bg-accent/10 border border-accent/20 grid place-items-center text-accent shrink-0">
+              <i class="fas fa-building"></i>
+            </div>
+
+            <div class="flex-1 min-w-0">
+              <div class="text-sm font-semibold text-ink truncate">
+                {{ comp.companyName || `Empresa #${comp.companyId || '?'}` }}
+              </div>
+              <div class="text-xs text-ink-subtle">
+                <span class="font-mono tabular-nums">{{ comp.enterprises.length }}</span> CC(s) ·
+                Empresa ID <span class="font-mono">{{ comp.companyId ?? '—' }}</span>
+              </div>
+            </div>
+
+            <!-- Status agregado -->
+            <div class="flex items-center gap-2 mr-2">
+              <Badge v-if="comp.recurringCount > 0" variant="warning" size="sm">
+                <i class="fas fa-star text-[9px] mr-0.5"></i>
+                {{ comp.recurringCount }} no diário
+              </Badge>
+              <Badge v-if="comp.statusSummary.success > 0" variant="success" size="sm">
+                {{ comp.statusSummary.success }} OK
+              </Badge>
+              <Badge v-if="comp.statusSummary.error > 0" variant="danger" size="sm">
+                {{ comp.statusSummary.error }} erro
+              </Badge>
+              <Badge v-if="comp.statusSummary.none > 0" variant="neutral" size="sm">
+                {{ comp.statusSummary.none }} nunca
+              </Badge>
+            </div>
+
+            <Button variant="primary" size="sm" icon="fas fa-play"
+              :disabled="!!currentRun?.running"
+              @click="runCompany(comp)">
+              Rodar empresa
+            </Button>
+          </div>
+
+          <!-- Linhas de CC (mostradas quando expandido) -->
+          <div v-if="expanded.has(comp.companyKey)" class="overflow-x-auto">
+            <table class="min-w-full text-sm">
+              <thead class="bg-surface-sunken/30 border-b border-line">
+                <tr>
+                  <th class="px-4 py-2 text-left w-10">
+                    <input type="checkbox" :checked="isAllSelected(comp)" @change="toggleSelectAll(comp)" />
+                  </th>
+                  <th class="px-4 py-2 text-center text-[11px] font-mono uppercase tracking-wider text-ink-subtle w-12" title="No cron diário">
+                    <i class="fas fa-star text-amber-500"></i>
+                  </th>
+                  <th class="px-4 py-2 text-left text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Centro de custo</th>
+                  <th class="px-4 py-2 text-left text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Cidade</th>
+                  <th class="px-4 py-2 text-center text-[11px] font-mono uppercase tracking-wider text-ink-subtle">CC ERP</th>
+                  <th class="px-4 py-2 text-center text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Último sync</th>
+                  <th class="px-4 py-2 text-center text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Status</th>
+                  <th class="px-4 py-2 text-right text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Resumo</th>
+                  <th class="px-4 py-2 text-right text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Ações</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-line/60">
+                <tr v-for="ec in comp.enterprises" :key="ec.id" class="hover:bg-surface-hover/40">
+                  <td class="px-4 py-2">
+                    <input type="checkbox" :checked="selectedIds.has(ec.id)" @change="toggleSelect(ec.id)" />
+                  </td>
+                  <td class="px-4 py-2 text-center">
+                    <button @click="toggleRecurringOne(ec)"
+                      :disabled="recurringActionBusy"
+                      class="h-7 w-7 grid place-items-center rounded-md hover:bg-surface-hover transition-colors disabled:opacity-50"
+                      :title="ec.isRecurring ? 'Remover do sync diário' : 'Incluir no sync diário'">
+                      <i :class="ec.isRecurring ? 'fas fa-star text-amber-500' : 'far fa-star text-ink-subtle'"></i>
+                    </button>
+                  </td>
+                  <td class="px-4 py-2 truncate max-w-[300px]">{{ ec.name || '—' }}</td>
+                  <td class="px-4 py-2 text-xs text-ink-muted">{{ ec.city || '—' }}</td>
+                  <td class="px-4 py-2 text-center text-xs font-mono tabular-nums">{{ ec.erpId }}</td>
+                  <td class="px-4 py-2 text-center text-xs font-mono tabular-nums">
+                    {{ ec.lastRunAt ? new Date(ec.lastRunAt).toLocaleString('pt-BR') : '—' }}
+                  </td>
+                  <td class="px-4 py-2 text-center">
+                    <Badge :variant="statusVariant(ec.lastStatus)" size="sm">
+                      {{ statusLabel(ec.lastStatus) }}
+                    </Badge>
+                  </td>
+                  <td class="px-4 py-2 text-right text-xs text-ink-muted">
+                    <div v-if="ec.lastSummary && !ec.lastSummary.error">
+                      <span class="font-mono tabular-nums">{{ ec.lastSummary.totalBills || 0 }}</span> bills
+                      <span class="text-ink-subtle">· +{{ ec.lastSummary.newBills || 0 }} novos</span>
+                    </div>
+                    <span v-else-if="ec.lastSummary?.error"
+                      class="text-red-500 truncate max-w-[180px] inline-block"
+                      :title="ec.lastSummary.error">{{ ec.lastSummary.error }}</span>
+                    <span v-else class="text-ink-subtle">—</span>
+                  </td>
+                  <td class="px-4 py-2 text-right">
+                    <Button variant="secondary" size="sm" icon="fas fa-play"
+                      :disabled="!!currentRun?.running"
+                      @click="runOne(ec)">
+                      Rodar
+                    </Button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </Surface>
+
+        <Surface v-if="!filteredCompanies.length && !loading" variant="raised" padding="md" class="surface-gradient">
+          <EmptyState icon="fas fa-inbox" title="Nenhum resultado"
+            :description="search ? 'Nenhuma empresa/CC bate com a busca.' : 'Aguardando carga.'" />
+        </Surface>
+      </div>
     </PageContainer>
   </div>
 </template>
@@ -154,6 +243,7 @@ import PageHeader from '@/components/UI/PageHeader.vue';
 import Surface from '@/components/UI/Surface.vue';
 import Button from '@/components/UI/Button.vue';
 import Badge from '@/components/UI/Badge.vue';
+import Input from '@/components/UI/Input.vue';
 import EmptyState from '@/components/UI/EmptyState.vue';
 
 const toast = (() => {
@@ -165,64 +255,144 @@ const enterprises = ref([]);
 const currentRun = ref(null);
 const loading = ref(false);
 const triggering = ref(false);
+const recurringActionBusy = ref(false);
+const search = ref('');
+const expanded = ref(new Set());
+const selectedIds = ref(new Set());
 let pollTimer = null;
+
+// ── Agrupa empreendimentos por company ─────────────────────────
+const companies = computed(() => {
+  const map = new Map();
+  for (const ec of enterprises.value) {
+    const key = ec.companyId != null ? `c-${ec.companyId}` : 'sem-empresa';
+    if (!map.has(key)) {
+      map.set(key, {
+        companyKey: key,
+        companyId: ec.companyId,
+        companyName: ec.companyName,
+        enterprises: [],
+        statusSummary: { success: 0, error: 0, running: 0, none: 0 },
+        recurringCount: 0,
+      });
+    }
+    const group = map.get(key);
+    group.enterprises.push(ec);
+    if (ec.isRecurring) group.recurringCount++;
+    if (!ec.lastStatus) group.statusSummary.none++;
+    else if (ec.lastStatus === 'success') group.statusSummary.success++;
+    else if (ec.lastStatus === 'error') group.statusSummary.error++;
+    else if (ec.lastStatus === 'running') group.statusSummary.running++;
+  }
+  // Ordena: empresas com nome primeiro, "sem empresa" no fim
+  return [...map.values()].sort((a, b) => {
+    if (!a.companyName && !b.companyName) return 0;
+    if (!a.companyName) return 1;
+    if (!b.companyName) return -1;
+    return a.companyName.localeCompare(b.companyName);
+  });
+});
+
+const filteredCompanies = computed(() => {
+  const q = search.value.trim().toLowerCase();
+  if (!q) return companies.value;
+  return companies.value
+    .map(c => {
+      const compMatch = (c.companyName || '').toLowerCase().includes(q)
+        || String(c.companyId).includes(q);
+      const ecs = c.enterprises.filter(ec =>
+        compMatch
+        || (ec.name || '').toLowerCase().includes(q)
+        || (ec.city || '').toLowerCase().includes(q)
+        || String(ec.erpId).includes(q)
+      );
+      return ecs.length ? { ...c, enterprises: ecs } : null;
+    })
+    .filter(Boolean);
+});
 
 const statusCounts = computed(() => {
   const out = { success: 0, error: 0, running: 0, none: 0 };
   for (const e of enterprises.value) {
-    if (!e.lastStatus)             out.none++;
+    if (!e.lastStatus) out.none++;
     else if (e.lastStatus === 'success') out.success++;
-    else if (e.lastStatus === 'error')   out.error++;
+    else if (e.lastStatus === 'error') out.error++;
     else if (e.lastStatus === 'running') out.running++;
   }
   return out;
 });
 
-function statusVariant(status) {
-  switch (status) {
-    case 'success': return 'success';
-    case 'error':   return 'danger';
-    case 'running': return 'info';
-    default:        return 'neutral';
-  }
+const recurringCount = computed(() =>
+  enterprises.value.filter(e => e.isRecurring).length
+);
+
+// ── Status badge ────────────────────────────────────────────────
+function statusVariant(s) {
+  return s === 'success' ? 'success'
+       : s === 'error'   ? 'danger'
+       : s === 'running' ? 'info'
+       : 'neutral';
 }
-function statusLabel(status) {
-  switch (status) {
-    case 'success': return 'OK';
-    case 'error':   return 'Erro';
-    case 'running': return 'Em curso';
-    default:        return 'Nunca';
-  }
+function statusLabel(s) {
+  return s === 'success' ? 'OK'
+       : s === 'error'   ? 'Erro'
+       : s === 'running' ? 'Em curso'
+       : 'Nunca';
 }
 
+// ── Expand / collapse ──────────────────────────────────────────
+function toggleExpand(key) {
+  if (expanded.value.has(key)) expanded.value.delete(key);
+  else expanded.value.add(key);
+  // forçar reatividade do Set
+  expanded.value = new Set(expanded.value);
+}
+
+// ── Selection ──────────────────────────────────────────────────
+function toggleSelect(id) {
+  if (selectedIds.value.has(id)) selectedIds.value.delete(id);
+  else selectedIds.value.add(id);
+  selectedIds.value = new Set(selectedIds.value);
+}
+
+function toggleSelectAll(comp) {
+  const ids = comp.enterprises.map(e => e.id);
+  const allSelected = ids.every(id => selectedIds.value.has(id));
+  if (allSelected) ids.forEach(id => selectedIds.value.delete(id));
+  else ids.forEach(id => selectedIds.value.add(id));
+  selectedIds.value = new Set(selectedIds.value);
+}
+
+function isAllSelected(comp) {
+  return comp.enterprises.every(e => selectedIds.value.has(e.id));
+}
+
+// ── Run actions ────────────────────────────────────────────────
 async function load() {
   loading.value = true;
   try {
     const data = await requestWithAuth(`${API_URL}/sienge/bills/auto-sync`);
     enterprises.value = data.enterprises || [];
-    currentRun.value  = data.currentRun || null;
-
-    // Se estava polling e a execução terminou, para
+    currentRun.value = data.currentRun || null;
     if (pollTimer && !currentRun.value?.running) {
       stopPolling();
       toast.success('Auto-sync concluído.');
     }
   } catch (err) {
-    toast.error('Falha ao carregar status: ' + err.message);
+    toast.error('Falha ao carregar: ' + err.message);
   } finally {
     loading.value = false;
   }
 }
 
-async function runAll() {
-  if (!confirm('Disparar auto-sync para TODOS os empreendimentos agora? Pode levar minutos.')) return;
+async function postRunNow(payload, msgOk) {
   triggering.value = true;
   try {
     await requestWithAuth(`${API_URL}/sienge/bills/auto-sync/run-now`, {
       method: 'POST',
-      body: JSON.stringify({ mode: 'default' }),
+      body: JSON.stringify(payload),
     });
-    toast.success('Auto-sync iniciado em background.');
+    toast.success(msgOk);
     startPolling();
   } catch (err) {
     toast.error('Falha ao disparar: ' + err.message);
@@ -231,20 +401,72 @@ async function runAll() {
   }
 }
 
+async function runAll() {
+  if (!confirm(`Disparar auto-sync para TODOS os ${enterprises.value.length} centros de custo? Pode levar muito tempo.`)) return;
+  await postRunNow({ mode: 'default' }, 'Auto-sync (todos) iniciado.');
+}
+
 async function runOne(ec) {
-  if (!confirm(`Disparar auto-sync apenas para "${ec.name}" (CC ${ec.erpId})?`)) return;
-  try {
-    await requestWithAuth(`${API_URL}/sienge/bills/auto-sync/run-now`, {
-      method: 'POST',
-      body: JSON.stringify({ enterpriseCityId: ec.id, mode: 'full' }),
-    });
-    toast.success(`Sync iniciado para ${ec.name}.`);
-    startPolling();
-  } catch (err) {
-    toast.error('Falha ao disparar: ' + err.message);
+  if (!confirm(`Disparar auto-sync para "${ec.name}" (CC ${ec.erpId})?`)) return;
+  await postRunNow({ enterpriseCityId: ec.id, mode: 'full' }, `Sync iniciado para ${ec.name}.`);
+}
+
+async function runCompany(comp) {
+  const label = comp.companyName || `Empresa #${comp.companyId}`;
+  if (!confirm(`Disparar auto-sync para TODOS os ${comp.enterprises.length} CCs de "${label}"?`)) return;
+  if (comp.companyId) {
+    await postRunNow({ companyId: comp.companyId, mode: 'full' }, `Sync iniciado para ${label}.`);
+  } else {
+    // "sem empresa" — manda como lista de ids
+    const ids = comp.enterprises.map(e => e.id);
+    await postRunNow({ enterpriseCityIds: ids, mode: 'full' }, `Sync iniciado para ${ids.length} CCs sem empresa.`);
   }
 }
 
+async function runSelected() {
+  const ids = [...selectedIds.value];
+  if (!ids.length) return;
+  if (!confirm(`Disparar auto-sync para ${ids.length} CC(s) selecionado(s)?`)) return;
+  await postRunNow({ enterpriseCityIds: ids, mode: 'full' }, `Sync iniciado para ${ids.length} CCs.`);
+  selectedIds.value = new Set();
+}
+
+// ── Toggle de recorrência (inscrição no cron diário) ───────────
+async function setRecurringBulk(ids, enabled) {
+  recurringActionBusy.value = true;
+  try {
+    await requestWithAuth(`${API_URL}/sienge/bills/auto-sync/recurring`, {
+      method: 'POST',
+      body: JSON.stringify({ enterpriseCityIds: ids, enabled }),
+    });
+    // Atualização otimista local
+    const set = new Set(ids);
+    for (const ec of enterprises.value) {
+      if (set.has(ec.id)) ec.isRecurring = enabled;
+    }
+    toast.success(enabled
+      ? `${ids.length} CC(s) adicionado(s) ao sync diário.`
+      : `${ids.length} CC(s) removido(s) do sync diário.`);
+  } catch (err) {
+    toast.error('Falha ao atualizar: ' + err.message);
+    await load(); // ressincroniza em caso de divergência
+  } finally {
+    recurringActionBusy.value = false;
+  }
+}
+
+async function toggleRecurringOne(ec) {
+  await setRecurringBulk([ec.id], !ec.isRecurring);
+}
+
+async function toggleRecurringSelected(enabled) {
+  const ids = [...selectedIds.value];
+  if (!ids.length) return;
+  await setRecurringBulk(ids, enabled);
+  selectedIds.value = new Set();
+}
+
+// ── Polling ────────────────────────────────────────────────────
 function startPolling() {
   stopPolling();
   pollTimer = setInterval(load, 3000);
@@ -257,6 +479,5 @@ onMounted(async () => {
   await load();
   if (currentRun.value?.running) startPolling();
 });
-
 onUnmounted(stopPolling);
 </script>

@@ -15,7 +15,6 @@ export const useFavoritesStore = defineStore('favorites', {
         },
     },
     actions: {
-        // Carrega os favoritos
         async loadFavorites() {
             this.errorMessage = '';
             try {
@@ -24,26 +23,17 @@ export const useFavoritesStore = defineStore('favorites', {
             } catch (error) {
                 console.error('Erro ao carregar favoritos:', error);
                 this.favorites = [];
-                this.errorMessage = 'Erro ao carregar favoritos.';
+                this.errorMessage = error.message || 'Erro ao carregar favoritos.';
             }
         },
-        // Adiciona um favorito
+        // Propaga erro para o componente decidir UI (toast etc.)
         async addFavorite(router, section) {
-            try {
-                await addFavorite(router, section);
-                await this.loadFavorites();  // Recarrega os favoritos após adicionar
-            } catch (error) {
-                console.error('Erro ao adicionar favorito:', error);
-            }
+            await addFavorite(router, section);
+            await this.loadFavorites();
         },
-        // Remove um favorito
         async removeFavorite(router, section) {
-            try {
-                await removeFavorite(router, section);
-                await this.loadFavorites();  // Recarrega os favoritos após remover
-            } catch (error) {
-                console.error('Erro ao remover favorito:', error);
-            }
+            await removeFavorite(router, section);
+            await this.loadFavorites();
         },
     },
 });
