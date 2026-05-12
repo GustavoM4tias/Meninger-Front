@@ -31,9 +31,9 @@
             </template>
             <Button variant="primary" icon="fas fa-play" size="sm"
               :loading="triggering"
-              :disabled="!!currentRun?.running"
+              :disabled="!!currentRun?.running || recurringCount === 0"
               @click="runAll">
-              Rodar todos
+              Rodar do sync diário ({{ recurringCount }})
             </Button>
           </div>
         </template>
@@ -189,7 +189,7 @@
                       <i :class="ec.isRecurring ? 'fas fa-star text-amber-500' : 'far fa-star text-ink-subtle'"></i>
                     </button>
                   </td>
-                  <td class="px-4 py-2 truncate max-w-[300px]">{{ ec.name || '—' }}</td>
+                  <td class="px-4 py-2 truncate max-w-[300px]" :title="ec.name">{{ ec.name || '—' }}</td>
                   <td class="px-4 py-2 text-xs text-ink-muted">{{ ec.city || '—' }}</td>
                   <td class="px-4 py-2 text-center text-xs font-mono tabular-nums">{{ ec.erpId }}</td>
                   <td class="px-4 py-2 text-center text-xs font-mono tabular-nums">
@@ -402,8 +402,12 @@ async function postRunNow(payload, msgOk) {
 }
 
 async function runAll() {
-  if (!confirm(`Disparar auto-sync para TODOS os ${enterprises.value.length} centros de custo? Pode levar muito tempo.`)) return;
-  await postRunNow({ mode: 'default' }, 'Auto-sync (todos) iniciado.');
+  if (!recurringCount.value) {
+    toast.error('Nenhum CC marcado no sync diário.');
+    return;
+  }
+  if (!confirm(`Disparar auto-sync para os ${recurringCount.value} CC(s) marcados como recorrentes?`)) return;
+  await postRunNow({ mode: 'default' }, `Auto-sync iniciado (${recurringCount.value} CCs do sync diário).`);
 }
 
 async function runOne(ec) {

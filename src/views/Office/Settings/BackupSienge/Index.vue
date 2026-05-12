@@ -76,19 +76,39 @@
                         <li
                             v-for="stage in PIPELINE_STAGES"
                             :key="stage.key"
-                            class="flex items-center gap-3"
+                            class="flex items-start gap-3"
                             :class="stageRowClass(stage.key)">
                             <div :class="stageDotClass(stage.key)">
                                 <i :class="stageDotIcon(stage.key)"></i>
                             </div>
-                            <div class="flex-1 flex items-center justify-between gap-3 min-w-0">
-                                <div class="min-w-0 flex items-center gap-2">
-                                    <i :class="stage.icon" class="opacity-70 w-4 text-center"></i>
-                                    <p class="text-sm truncate">{{ stage.label }}</p>
+                            <div class="flex-1 flex items-start justify-between gap-3 min-w-0">
+                                <div class="min-w-0 flex-1">
+                                    <div class="flex items-center gap-2">
+                                        <i :class="stage.icon" class="opacity-70 w-4 text-center"></i>
+                                        <p class="text-sm truncate">{{ stage.label }}</p>
+                                    </div>
+                                    <!-- Detalhe live por etapa -->
+                                    <p v-if="stageDetail(stage.key)" class="text-xs mt-1 ml-6 opacity-75 truncate">
+                                        {{ stageDetail(stage.key) }}
+                                    </p>
+                                    <!-- Barra de progresso (só pra download e restore quando current) -->
+                                    <div
+                                        v-if="stageState(stage.key) === 'current' && stageProgress(stage.key) !== null"
+                                        class="ml-6 mt-1.5 h-1.5 w-full max-w-xs rounded-full bg-indigo-100 dark:bg-indigo-900/40 overflow-hidden">
+                                        <div
+                                            class="h-full bg-indigo-500 dark:bg-indigo-400 transition-all duration-500"
+                                            :style="{ width: stageProgress(stage.key) + '%' }">
+                                        </div>
+                                    </div>
                                 </div>
                                 <div class="text-xs text-right whitespace-nowrap">
-                                    <span class="opacity-75">{{ stageStateLabel(stage.key) }}</span>
-                                    <span v-if="stage.estimate" class="ml-2 opacity-50">• {{ stage.estimate }}</span>
+                                    <div>
+                                        <span class="opacity-75">{{ stageStateLabel(stage.key) }}</span>
+                                    </div>
+                                    <div class="opacity-60 mt-0.5">
+                                        <span v-if="stageDurationMs(stage.key)">{{ formatDuration(stageDurationMs(stage.key)) }}</span>
+                                        <span v-else-if="stage.estimate">~ {{ stage.estimate }}</span>
+                                    </div>
                                 </div>
                             </div>
                         </li>
@@ -214,13 +234,17 @@ const runningStage = computed(() => store.runningBackup?.stage || 'starting')
 // ─── Pipeline stages (ordenadas) ────────────────────────────────────────────
 // Mantém em sincronia com SiengeBackupService.runDailyBackup() no backend.
 const PIPELINE_STAGES = [
-    { key: 'fetching_md5',  label: 'Validação inicial (MD5)', icon: 'fas fa-fingerprint',      estimate: '~5s' },
+    { key: 'fetching_md5',  label: 'Validação inicial (MD5)', icon: 'fas fa-fingerprint',      estimate: '5s' },
     { key: 'downloading',   label: 'Download do Sienge',      icon: 'fas fa-cloud-arrow-down', estimate: '5–20 min' },
-    { key: 'decompressing', label: 'Descompactação local',    icon: 'fas fa-file-zipper',      estimate: '~30s' },
+    { key: 'decompressing', label: 'Descompactação local',    icon: 'fas fa-file-zipper',      estimate: '30s' },
     { key: 'restoring',     label: 'pg_restore no Postgres',  icon: 'fas fa-database',         estimate: '5–25 min' },
 ]
 
 const showTimeline = ref(true)
+
+// Ticker de 1s pra atualizar duração da etapa em andamento sem esperar o poll de 5s
+const nowTick = ref(Date.now())
+let tickInterval = null
 
 const currentStageInfo = computed(() => {
     const cur = runningStage.value
@@ -277,6 +301,69 @@ function stageDotIcon(key) {
         pending: 'far fa-circle',
         failed:  'fas fa-xmark',
     }[stageState(key)]
+}
+
+// Duração da etapa em ms (live se current, total se done)
+function stageDurationMs(key) {
+    const t = store.runningBackup?.stage_timings?.[key]
+    if (!t?.started_at) return null
+    const start = new Date(t.started_at).getTime()
+    const end = t.finished_at ? new Date(t.finished_at).getTime() : nowTick.value
+    return Math.max(0, end - start)
+}
+
+// % progresso pra etapa atual (download tem; demais retornam null)
+function stageProgress(key) {
+    const log = store.runningBackup
+    if (!log) return null
+    if (key === 'downloading') {
+        const done = Number(log.bytes_downloaded || 0)
+        const total = Number(log.file_size_bytes || 0)
+        if (!total || !done) return null
+        return Math.min(100, (done / total) * 100)
+    }
+    return null
+}
+
+// Texto secundário por etapa: bytes baixados, tabela atual do restore, retry count
+function stageDetail(key) {
+    const log = store.runningBackup
+    if (!log) return null
+    const state = stageState(key)
+    if (state !== 'current') return null
+
+    if (key === 'downloading') {
+        const done = Number(log.bytes_downloaded || 0)
+        const total = Number(log.file_size_bytes || 0)
+        const attempts = Number(log.download_attempts || 1)
+        const parts = []
+        if (done) parts.push(`${formatBytes(done)}${total ? ` / ${formatBytes(total)}` : ''}`)
+        if (attempts > 1) parts.push(`tentativa ${attempts}/3`)
+        return parts.join(' • ') || null
+    }
+
+    if (key === 'restoring') {
+        return parseRestoreActivity(log.restore_log_tail)
+    }
+
+    return null
+}
+
+// Extrai a última atividade visível do stderr do pg_restore
+function parseRestoreActivity(tail) {
+    if (!tail) return null
+    const lines = tail.split(/\r?\n/).map(l => l.trim()).filter(Boolean)
+    // Procura "processing data for table" (mais útil)
+    for (let i = lines.length - 1; i >= 0; i--) {
+        const m = lines[i].match(/processing data for table "?([^"]+)"?\.?"?([^"]+)"?/i)
+        if (m) {
+            const table = m[2] || m[1]
+            return `processando tabela ${table}`
+        }
+    }
+    // Fallback: última linha não-vazia
+    const last = lines[lines.length - 1]
+    return last ? last.slice(0, 90) : null
 }
 
 function startPolling() {
@@ -359,6 +446,10 @@ function statusIcon(status) {
 onMounted(async () => {
     await store.fetchBackups({ withSpinner: true })
     startPolling()
+    tickInterval = setInterval(() => { nowTick.value = Date.now() }, 1000)
 })
-onBeforeUnmount(() => stopPolling())
+onBeforeUnmount(() => {
+    stopPolling()
+    if (tickInterval) clearInterval(tickInterval)
+})
 </script>
