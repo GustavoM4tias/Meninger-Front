@@ -1,5 +1,6 @@
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, watch, nextTick } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { useSignatureDocumentStore } from '@/stores/Signature/signatureDocumentStore';
 import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 import { uploadSignatureDocApi } from '@/utils/Signature/signatureDocumentApi';
@@ -19,9 +20,12 @@ import SegmentedControl from '@/components/UI/SegmentedControl.vue';
 // ── Stores ───────────────────────────────────────────────────────────────────
 const sigDocStore = useSignatureDocumentStore();
 const authStore = useAuthStore();
+const route = useRoute();
+const router = useRouter();
 
 // ── Tabs ─────────────────────────────────────────────────────────────────────
-const activeTab = ref('create');
+// Aceita query params: ?tab=pending&docId=123 (vindo de notificação)
+const activeTab = ref(route.query.tab === 'pending' || route.query.tab === 'history' ? route.query.tab : 'create');
 
 const tabOptions = computed(() => [
   { value: 'create', label: 'Criar / Enviar', icon: 'fas fa-paper-plane' },
@@ -230,14 +234,36 @@ function refreshPending() {
 const rejectingIds = ref(new Set());
 const rejectErrors = ref({});
 
-async function rejectSignerItem(item) {
-  if (!confirm(`Recusar a solicitação para "${item.document?.document_name ?? 'este documento'}"?`)) return;
+// Modal de justificativa de rejeição
+const showRejectModal = ref(false);
+const rejectingItem = ref(null);
+const rejectReason = ref('');
+
+function openRejectModal(item) {
+  rejectingItem.value = item;
+  rejectReason.value = '';
+  showRejectModal.value = true;
+}
+
+function closeRejectModal() {
+  showRejectModal.value = false;
+  rejectingItem.value = null;
+  rejectReason.value = '';
+}
+
+async function confirmRejectSigner() {
+  const item = rejectingItem.value;
+  if (!item) return;
+  const reason = (rejectReason.value || '').trim();
+  if (!reason) return; // exige justificativa
+
   rejectingIds.value = new Set([...rejectingIds.value, item.id]);
   delete rejectErrors.value[item.id];
   try {
-    await sigDocStore.rejectSigner(item.id, 'Recusado pelo assinante');
+    await sigDocStore.rejectSigner(item.id, reason);
     await sigDocStore.fetchMySigningItems();
     await sigDocStore.fetchPendingCount();
+    closeRejectModal();
   } catch (err) {
     rejectErrors.value = { ...rejectErrors.value, [item.id]: sigDocStore.error || err?.message || 'Erro ao recusar.' };
   } finally {
@@ -269,7 +295,20 @@ async function loadTabData() {
   if (!authStore.users?.length) await authStore.getAllUsers();
 }
 
-onMounted(loadTabData);
+onMounted(async () => {
+    await loadTabData();
+    // Se veio de notificação (?docId=X), localiza o item pending e abre o modal de assinatura
+    const docId = Number(route.query.docId);
+    if (docId && activeTab.value === 'pending') {
+        await nextTick();
+        const item = pendingSigningItems.value.find(s => Number(s.document?.id ?? s.document_id) === docId);
+        if (item) {
+            openSignModal(item);
+        }
+        // Limpa query params da URL para não reabrir ao recarregar a página
+        router.replace({ query: {} });
+    }
+});
 watch(activeTab, loadTabData);
 </script>
 
@@ -641,7 +680,7 @@ watch(activeTab, loadTabData);
                     :icon="rejectingIds.has(item.id) ? 'fas fa-circle-notch fa-spin' : 'fas fa-times'"
                     :disabled="rejectingIds.has(item.id)"
                     class="border-red-200 dark:border-red-500/30 text-red-500 hover:bg-red-500/10"
-                    @click="rejectSignerItem(item)">
+                    @click="openRejectModal(item)">
                     {{ rejectingIds.has(item.id) ? 'Recusando...' : 'Recusar' }}
                   </Button>
                   <Button variant="primary" size="sm" icon="fas fa-pen-nib" @click="openSignModal(item)">
@@ -773,6 +812,75 @@ watch(activeTab, loadTabData);
 
     <!-- Modal de assinatura -->
     <SignatureModal v-model="showSignModal" :signer-item="activeSignerItem" @signed="onSigned" @cancel="onSignCancel" />
+
+    <!-- Modal de Justificativa de Recusa -->
+    <teleport to="body">
+      <transition name="fade">
+        <div
+          v-if="showRejectModal"
+          class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+          @click.self="closeRejectModal"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md border border-gray-100 dark:border-gray-800">
+            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-800">
+              <div class="flex items-center gap-2">
+                <i class="fas fa-ban text-red-500"></i>
+                <h2 class="text-base font-bold text-gray-900 dark:text-white">Recusar assinatura</h2>
+              </div>
+              <button @click="closeRejectModal" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 transition">
+                <i class="fas fa-times text-sm"></i>
+              </button>
+            </div>
+            <div class="px-6 py-5 space-y-4">
+              <div class="flex items-start gap-3 p-3.5 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl text-red-800 dark:text-red-300 text-sm">
+                <i class="fas fa-triangle-exclamation flex-shrink-0 mt-0.5"></i>
+                <div>
+                  <p class="font-semibold mb-0.5">Esta ação cancela o processo de assinatura.</p>
+                  <p class="text-[12px] leading-relaxed">
+                    Todos os outros assinantes pendentes serão notificados. Se este documento estiver vinculado a uma ficha, ela voltará para <strong>Rascunho</strong> com sua justificativa registrada para o admin ajustar.
+                  </p>
+                </div>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">
+                  Justificativa <span class="text-red-500">*</span>
+                </label>
+                <textarea
+                  v-model="rejectReason"
+                  rows="4"
+                  placeholder="Ex: O valor de comissão não confere com o aprovado em diretoria, ajustar para 4,5%..."
+                  class="w-full px-3.5 py-2.5 text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900/60 border border-gray-200 dark:border-gray-700 rounded-md shadow-sm placeholder:text-gray-400 outline-none focus:border-red-400 focus:ring-2 focus:ring-red-500/15 transition resize-none"
+                  autofocus
+                />
+                <p v-if="!rejectReason.trim()" class="mt-1.5 text-[11px] text-gray-400">
+                  Obrigatório — explique o motivo para que quem ajustar saiba o que mudar.
+                </p>
+              </div>
+              <div v-if="rejectingItem && rejectErrors[rejectingItem.id]"
+                class="flex items-center gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md text-red-700 dark:text-red-400 text-xs">
+                <i class="fas fa-exclamation-circle"></i>
+                {{ rejectErrors[rejectingItem.id] }}
+              </div>
+            </div>
+            <div class="flex justify-end gap-3 px-6 pb-5">
+              <button @click="closeRejectModal" class="px-4 py-2.5 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white transition">
+                Cancelar
+              </button>
+              <button
+                @click="confirmRejectSigner"
+                :disabled="!rejectReason.trim() || (rejectingItem && rejectingIds.has(rejectingItem.id))"
+                class="flex items-center gap-2 px-5 py-2.5 bg-red-600 text-white text-sm font-semibold rounded-xl hover:bg-red-700 disabled:opacity-40 disabled:cursor-not-allowed transition"
+              >
+                <i :class="rejectingItem && rejectingIds.has(rejectingItem.id) ? 'fa-spinner fa-spin' : 'fa-ban'" class="fas text-xs"></i>
+                {{ rejectingItem && rejectingIds.has(rejectingItem.id) ? 'Recusando...' : 'Recusar com justificativa' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </transition>
+    </teleport>
 
   </div>
 </template>

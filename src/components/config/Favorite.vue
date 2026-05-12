@@ -32,7 +32,6 @@ const toggleFavorite = async () => {
     } else {
       await favoritesStore.addFavorite(props.router, props.section);
     }
-    // loadFavorites já foi chamado dentro do store — não precisa chamar de novo
   } catch (error) {
     console.error("Erro ao atualizar favorito:", error);
     toast.error(error.message || 'Erro ao atualizar favorito.');
