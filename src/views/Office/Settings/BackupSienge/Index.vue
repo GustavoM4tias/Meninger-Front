@@ -91,7 +91,7 @@
                                     <p v-if="stageDetail(stage.key)" class="text-xs mt-1 ml-6 opacity-75 truncate">
                                         {{ stageDetail(stage.key) }}
                                     </p>
-                                    <!-- Barra de progresso (só pra download e restore quando current) -->
+                                    <!-- Barra de progresso (download tem; restore tem painel detalhado abaixo) -->
                                     <div
                                         v-if="stageState(stage.key) === 'current' && stageProgress(stage.key) !== null"
                                         class="ml-6 mt-1.5 h-1.5 w-full max-w-xs rounded-full bg-indigo-100 dark:bg-indigo-900/40 overflow-hidden">
@@ -99,6 +99,63 @@
                                             class="h-full bg-indigo-500 dark:bg-indigo-400 transition-all duration-500"
                                             :style="{ width: stageProgress(stage.key) + '%' }">
                                         </div>
+                                    </div>
+
+                                    <!-- Mensagem antes do TOC ser parseado -->
+                                    <p
+                                        v-if="stage.key === 'restoring' && stageState('restoring') === 'current' && restoreTotal.total === 0"
+                                        class="text-xs mt-1 ml-6 opacity-60 italic">
+                                        Calculando totais do dump…
+                                    </p>
+
+                                    <!-- Painel detalhado das 5 sub-fases do pg_restore -->
+                                    <div
+                                        v-if="stage.key === 'restoring' && stageState('restoring') === 'current' && restoreTotal.total > 0"
+                                        class="ml-6 mt-2 space-y-2">
+                                        <!-- TOTAL geral consolidado -->
+                                        <div>
+                                            <div class="flex items-center justify-between text-xs mb-0.5">
+                                                <span class="font-semibold opacity-90">Progresso total do restore</span>
+                                                <span class="font-mono opacity-90">
+                                                    {{ restoreTotal.donePct.toFixed(1) }}%
+                                                    <span class="opacity-50">·</span>
+                                                    {{ restoreTotal.done }}/{{ restoreTotal.total }}
+                                                    <span v-if="restoreTotal.etaMs" class="opacity-50">· ETA {{ formatDuration(restoreTotal.etaMs) }}</span>
+                                                </span>
+                                            </div>
+                                            <div class="h-2 w-full rounded-full bg-indigo-100 dark:bg-indigo-900/40 overflow-hidden">
+                                                <div
+                                                    class="h-full bg-indigo-500 dark:bg-indigo-400 transition-all duration-500"
+                                                    :style="{ width: restoreTotal.donePct + '%' }">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!-- 5 sub-fases -->
+                                        <div
+                                            v-for="phase in RESTORE_PHASES"
+                                            :key="phase.key"
+                                            class="grid grid-cols-[7rem_1fr_auto] items-center gap-2 text-xs">
+                                            <span class="opacity-75 truncate">
+                                                <i :class="phase.icon" class="mr-1 opacity-60"></i>
+                                                {{ phase.label }}
+                                            </span>
+                                            <div class="h-1.5 rounded-full bg-gray-100 dark:bg-gray-700 overflow-hidden">
+                                                <div
+                                                    class="h-full transition-all duration-500"
+                                                    :class="phaseBarColor(phase.key)"
+                                                    :style="{ width: phasePct(phase.key) + '%' }">
+                                                </div>
+                                            </div>
+                                            <span class="font-mono whitespace-nowrap opacity-75">
+                                                {{ phasePct(phase.key).toFixed(0) }}%
+                                                <span class="opacity-50">({{ phaseDone(phase.key) }}/{{ phaseTotal(phase.key) }})</span>
+                                                <span v-if="phaseEta(phase.key)" class="opacity-50">· {{ formatDuration(phaseEta(phase.key)) }}</span>
+                                            </span>
+                                        </div>
+                                        <!-- Atividade textual: tabela/item atual -->
+                                        <p v-if="restoreCurrentActivity" class="text-[11px] opacity-60 truncate font-mono">
+                                            {{ restoreCurrentActivity }}
+                                        </p>
                                     </div>
                                 </div>
                                 <div class="text-xs text-right whitespace-nowrap">
@@ -237,7 +294,16 @@ const PIPELINE_STAGES = [
     { key: 'fetching_md5',  label: 'Validação inicial (MD5)', icon: 'fas fa-fingerprint',      estimate: '5s' },
     { key: 'downloading',   label: 'Download do Sienge',      icon: 'fas fa-cloud-arrow-down', estimate: '5–20 min' },
     { key: 'decompressing', label: 'Descompactação local',    icon: 'fas fa-file-zipper',      estimate: '30s' },
-    { key: 'restoring',     label: 'pg_restore no Postgres',  icon: 'fas fa-database',         estimate: '5–25 min' },
+    { key: 'restoring',     label: 'pg_restore no Postgres',  icon: 'fas fa-database',         estimate: '15–40 min' },
+]
+
+// Sub-fases do pg_restore (corresponde a `log.phase_progress` no backend).
+const RESTORE_PHASES = [
+    { key: 'data',       label: 'Dados',       icon: 'fas fa-table',         barColor: 'bg-blue-500 dark:bg-blue-400' },
+    { key: 'index',      label: 'Índices',     icon: 'fas fa-key',           barColor: 'bg-violet-500 dark:bg-violet-400' },
+    { key: 'constraint', label: 'Constraints', icon: 'fas fa-shield-halved', barColor: 'bg-amber-500 dark:bg-amber-400' },
+    { key: 'fk',         label: 'FKs',         icon: 'fas fa-link',          barColor: 'bg-rose-500 dark:bg-rose-400' },
+    { key: 'trigger',    label: 'Triggers',    icon: 'fas fa-bolt',          barColor: 'bg-emerald-500 dark:bg-emerald-400' },
 ]
 
 const showTimeline = ref(true)
@@ -325,6 +391,73 @@ function stageProgress(key) {
     return null
 }
 
+// ─── Sub-fases do pg_restore (data/index/constraint/fk/trigger) ─────────────
+// Os campos vêm do backend em `log.phase_progress`. Cada fase tem
+// { done, total, current, started_at, finished_at }.
+const restorePhases = computed(() => store.runningBackup?.phase_progress || null)
+
+function phaseDone(key)  { return Number(restorePhases.value?.[key]?.done  || 0) }
+function phaseTotal(key) { return Number(restorePhases.value?.[key]?.total || 0) }
+function phasePct(key) {
+    const total = phaseTotal(key)
+    if (!total) return 0
+    return Math.min(100, (phaseDone(key) / total) * 100)
+}
+function phaseStartedAt(key) {
+    const t = restorePhases.value?.[key]?.started_at
+    return t ? new Date(t).getTime() : null
+}
+function phaseFinishedAt(key) {
+    const t = restorePhases.value?.[key]?.finished_at
+    return t ? new Date(t).getTime() : null
+}
+// ETA por fase: extrapola pelo throughput até agora. Retorna null se não dá pra calcular.
+function phaseEta(key) {
+    const ph = restorePhases.value?.[key]
+    if (!ph || ph.finished_at || !ph.started_at) return null
+    const done = phaseDone(key)
+    const total = phaseTotal(key)
+    if (!done || done >= total) return null
+    const elapsed = nowTick.value - phaseStartedAt(key)
+    if (elapsed <= 0) return null
+    const rate = done / elapsed // items por ms
+    const remaining = total - done
+    return remaining / rate
+}
+function phaseBarColor(key) {
+    return RESTORE_PHASES.find(p => p.key === key)?.barColor || 'bg-indigo-500'
+}
+
+// % total consolidado + ETA agregado (soma de ETAs das fases pendentes).
+const restoreTotal = computed(() => {
+    if (!restorePhases.value) return { done: 0, total: 0, donePct: 0, etaMs: null }
+    let done = 0, total = 0, etaSum = 0
+    for (const p of RESTORE_PHASES) {
+        done  += phaseDone(p.key)
+        total += phaseTotal(p.key)
+        const eta = phaseEta(p.key)
+        if (eta) etaSum += eta
+    }
+    return {
+        done,
+        total,
+        donePct: total ? Math.min(100, (done / total) * 100) : 0,
+        etaMs: etaSum > 0 ? etaSum : null,
+    }
+})
+
+// Atividade textual: "data: public.tabelaX · index: public.idx_y · ..."
+const restoreCurrentActivity = computed(() => {
+    const phases = restorePhases.value
+    if (!phases) return null
+    const parts = []
+    for (const p of RESTORE_PHASES) {
+        const cur = phases[p.key]?.current
+        if (cur && !phases[p.key]?.finished_at) parts.push(`${p.label.toLowerCase()}: ${cur}`)
+    }
+    return parts.length ? parts.join(' · ') : null
+})
+
 // Texto secundário por etapa: bytes baixados, tabela atual do restore, retry count
 function stageDetail(key) {
     const log = store.runningBackup
@@ -343,6 +476,8 @@ function stageDetail(key) {
     }
 
     if (key === 'restoring') {
+        // Se temos phase_progress, painel detalhado já cobre — não duplica.
+        if (restorePhases.value && Object.keys(restorePhases.value).length) return null
         return parseRestoreActivity(log.restore_log_tail)
     }
 
@@ -383,7 +518,7 @@ async function refresh() {
 }
 
 async function onTriggerFullBackup() {
-    if (!confirm('Disparar pipeline completo (download Sienge + pg_restore)?\n\nDuração estimada: 25-45 min.')) return
+    if (!confirm('Disparar pipeline completo (download Sienge + pg_restore)?\n\nDuração estimada: 20-50 min.')) return
     try {
         await store.triggerFullBackup()
         toast.success('Backup iniciado. Acompanhe o status abaixo.')
