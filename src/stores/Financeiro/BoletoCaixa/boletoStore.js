@@ -97,6 +97,76 @@ export const useBoletoStore = defineStore('boletoCaixa', () => {
         fetchHistory();
     }
 
+    async function retryHistoryItem(id) {
+        try {
+            await requestWithAuth(`/boleto-caixa/history/${id}/retry`, { method: 'POST' });
+            return true;
+        } catch (err) {
+            historyError.value = err.message || 'Erro ao re-disparar processamento.';
+            return false;
+        }
+    }
+
+    // ── Regras de comissão por empreendimento ─────────────────────────────────
+    const rules = ref([]);
+    const rulesLoading = ref(false);
+    const rulesError = ref(null);
+
+    async function fetchComissionRules() {
+        rulesLoading.value = true;
+        rulesError.value = null;
+        try {
+            const data = await requestWithAuth('/boleto-caixa/comission-rules');
+            rules.value = data.rows || [];
+        } catch (err) {
+            rulesError.value = err.message || 'Erro ao carregar regras de comissão.';
+        } finally {
+            rulesLoading.value = false;
+        }
+    }
+
+    async function createComissionRule(payload) {
+        rulesError.value = null;
+        try {
+            await requestWithAuth('/boleto-caixa/comission-rules', {
+                method: 'POST',
+                body: JSON.stringify(payload),
+            });
+            await fetchComissionRules();
+            return true;
+        } catch (err) {
+            rulesError.value = err.message || 'Erro ao criar regra.';
+            return false;
+        }
+    }
+
+    async function updateComissionRule(id, payload) {
+        rulesError.value = null;
+        try {
+            await requestWithAuth(`/boleto-caixa/comission-rules/${id}`, {
+                method: 'PATCH',
+                body: JSON.stringify(payload),
+            });
+            await fetchComissionRules();
+            return true;
+        } catch (err) {
+            rulesError.value = err.message || 'Erro ao atualizar regra.';
+            return false;
+        }
+    }
+
+    async function deleteComissionRule(id) {
+        rulesError.value = null;
+        try {
+            await requestWithAuth(`/boleto-caixa/comission-rules/${id}`, { method: 'DELETE' });
+            await fetchComissionRules();
+            return true;
+        } catch (err) {
+            rulesError.value = err.message || 'Erro ao excluir regra.';
+            return false;
+        }
+    }
+
     return {
         // settings
         settings, settingsLoading, settingsError, settingsSaved,
@@ -107,6 +177,9 @@ export const useBoletoStore = defineStore('boletoCaixa', () => {
         // history
         history, historyTotal, historyPage, historyLimit,
         historyLoading, historyError, historyFilter,
-        fetchHistory, setPage, totalPages,
+        fetchHistory, setPage, totalPages, retryHistoryItem,
+        // comission rules
+        rules, rulesLoading, rulesError,
+        fetchComissionRules, createComissionRule, updateComissionRule, deleteComissionRule,
     };
 });

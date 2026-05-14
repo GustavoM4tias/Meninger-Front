@@ -34,7 +34,7 @@
       </div>
 
       <!-- ── TAB: Configurações ───────────────────────────────────────────────── -->
-      <div v-if="activeTab === 'settings'" class="space-y-5">
+      <div v-if="activeTab === 'settings' && isAdmin" class="space-y-5">
 
         <!-- Card: Credenciais Ecobrança -->
         <Surface variant="raised" padding="md" class="space-y-4 surface-gradient">
@@ -167,6 +167,143 @@
               hint="Etapa de Erro CV." />
           </div>
         </Surface>
+
+        <!-- Card: Regras de Comissão Embutida por Empreendimento -->
+        <Surface variant="raised" padding="md" class="space-y-4 surface-gradient">
+          <div class="flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+              <div class="h-9 w-9 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 grid place-items-center">
+                <i class="fas fa-percent"></i>
+              </div>
+              <div>
+                <h2 class="font-semibold text-ink text-sm">Comissão Embutida por Empreendimento</h2>
+                <p class="text-xs text-ink-muted">
+                  Quando o valor da série já inclui a comissão, defina aqui o % do valor que deve ir para o boleto.
+                </p>
+              </div>
+            </div>
+            <Button variant="primary" size="sm" icon="fas fa-plus" @click="openRuleModal()">
+              Nova regra
+            </Button>
+          </div>
+
+          <p v-if="store.rulesError" class="text-xs text-red-500 flex items-center gap-1.5">
+            <i class="fas fa-circle-exclamation"></i>{{ store.rulesError }}
+          </p>
+
+          <div v-if="store.rulesLoading" class="text-xs text-ink-muted py-2">
+            <i class="fas fa-spinner fa-spin mr-1"></i> Carregando regras...
+          </div>
+
+          <div v-else-if="!store.rules.length" class="text-xs text-ink-subtle italic py-2">
+            Nenhuma regra cadastrada. Todos os empreendimentos usam o valor cheio da série.
+          </div>
+
+          <div v-else class="overflow-x-auto -mx-3">
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="bg-surface-sunken/60 border-b border-line">
+                  <th class="text-left px-3 py-2 text-[11px] font-mono uppercase tracking-wider text-ink-subtle">ID Emp.</th>
+                  <th class="text-left px-3 py-2 text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Empreendimento</th>
+                  <th class="text-right px-3 py-2 text-[11px] font-mono uppercase tracking-wider text-ink-subtle">% Boleto</th>
+                  <th class="text-left px-3 py-2 text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Observação</th>
+                  <th class="text-center px-3 py-2 text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Ativo</th>
+                  <th class="px-3 py-2"></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="rule in store.rules" :key="rule.id"
+                  class="border-b border-line/60 hover:bg-surface-hover/40 transition-colors">
+                  <td class="px-3 py-2 font-mono text-accent">{{ rule.idempreendimento_cv }}</td>
+                  <td class="px-3 py-2 text-ink">{{ rule.empreendimento_nome || '—' }}</td>
+                  <td class="px-3 py-2 text-right font-mono tabular-nums font-semibold">
+                    {{ Number(rule.percentual_boleto).toFixed(2) }}%
+                  </td>
+                  <td class="px-3 py-2 text-xs text-ink-muted">{{ rule.observacao || '—' }}</td>
+                  <td class="px-3 py-2 text-center">
+                    <Badge :variant="rule.active ? 'success' : 'neutral'" size="sm">
+                      {{ rule.active ? 'Sim' : 'Não' }}
+                    </Badge>
+                  </td>
+                  <td class="px-3 py-2 text-right whitespace-nowrap">
+                    <button @click="openRuleModal(rule)"
+                      class="text-accent hover:text-accent/80 text-xs mr-3">
+                      <i class="fas fa-pen-to-square"></i> Editar
+                    </button>
+                    <button @click="confirmDeleteRule(rule)"
+                      class="text-red-500 hover:text-red-600 text-xs">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </Surface>
+
+        <!-- Modal: Criar/Editar regra de comissão -->
+        <div v-if="ruleModal.open"
+          class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          @click.self="closeRuleModal">
+          <div class="bg-surface rounded-xl shadow-xl border border-line w-full max-w-md p-5 space-y-4">
+            <div class="flex items-center justify-between gap-3">
+              <h3 class="font-semibold text-ink">
+                {{ ruleModal.id ? 'Editar regra' : 'Nova regra' }}
+              </h3>
+              <button @click="closeRuleModal" class="text-ink-muted hover:text-ink">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+
+            <Input
+              v-model.number="ruleModal.form.idempreendimento_cv"
+              type="number"
+              label="ID do Empreendimento no CV"
+              placeholder="Ex: 38"
+              :disabled="!!ruleModal.id"
+              hint="idempreendimento_cv da reserva." />
+
+            <Input
+              v-model="ruleModal.form.empreendimento_nome"
+              label="Nome (opcional)"
+              placeholder="Ex: RESIDENCIAL INGÁ" />
+
+            <Input
+              v-model.number="ruleModal.form.percentual_boleto"
+              type="number"
+              step="0.01"
+              min="0"
+              max="100"
+              label="% do valor da série que vai para o boleto"
+              placeholder="Ex: 20 (boleto recebe 20% do valor da série)"
+              hint="Ex.: série R$ 10.000 + 20% = boleto de R$ 2.000. Use 100 para emitir valor cheio." />
+
+            <div>
+              <label class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1.5 block">
+                Observação
+              </label>
+              <textarea v-model="ruleModal.form.observacao" rows="2"
+                class="w-full px-3 py-2 rounded-lg border border-line bg-surface-sunken text-sm text-ink focus:outline-none focus:border-accent"
+                placeholder="Anotações internas (opcional)"></textarea>
+            </div>
+
+            <label class="flex items-center gap-2 text-sm text-ink cursor-pointer">
+              <input type="checkbox" v-model="ruleModal.form.active" />
+              Regra ativa
+            </label>
+
+            <p v-if="ruleModal.error" class="text-xs text-red-500">{{ ruleModal.error }}</p>
+
+            <div class="flex items-center justify-end gap-2 pt-2">
+              <Button variant="ghost" size="sm" @click="closeRuleModal">Cancelar</Button>
+              <Button variant="primary" size="sm" icon="fas fa-save"
+                :loading="ruleModal.saving" :disabled="ruleModal.saving"
+                @click="saveRule">
+                Salvar
+              </Button>
+            </div>
+          </div>
+        </div>
 
         <!-- Card: Controle de ativação -->
         <Surface variant="raised" padding="md" class="surface-gradient">
@@ -328,6 +465,11 @@
                   </td>
                   <td class="px-4 py-3 text-right font-semibold text-ink whitespace-nowrap font-mono tabular-nums">
                     {{ item.valor ? formatCurrency(item.valor) : '—' }}
+                    <div v-if="item.valor_original && Number(item.valor_original) !== Number(item.valor)"
+                      class="text-[10px] font-normal text-ink-subtle"
+                      :title="`Valor original: ${formatCurrency(item.valor_original)} — aplicado ${item.comissao_percentual_aplicada}%`">
+                      orig. {{ formatCurrency(item.valor_original) }}
+                    </div>
                   </td>
                   <td class="px-4 py-3 text-center text-ink-muted whitespace-nowrap font-mono tabular-nums">
                     {{ item.vencimento ? formatDate(item.vencimento) : '—' }}
@@ -346,10 +488,17 @@
                       class="inline-flex items-center gap-1 px-2 py-1 text-xs bg-accent-soft text-accent rounded-lg hover:bg-accent/15 transition-colors">
                       <i class="fas fa-file-pdf"></i> PDF
                     </a>
-                    <span v-else-if="item.status === 'error'" class="text-xs text-red-500" :title="item.error_message">
-                      <i class="fas fa-circle-exclamation"></i>
-                      <span class="hidden md:inline ml-1">{{ truncate(item.error_message, 30) }}</span>
-                    </span>
+                    <template v-else-if="item.status === 'error'">
+                      <span class="text-xs text-red-500 inline-flex items-center" :title="item.error_message">
+                        <i class="fas fa-circle-exclamation"></i>
+                        <span class="hidden md:inline ml-1">{{ truncate(item.error_message, 30) }}</span>
+                      </span>
+                      <button v-if="isAdmin" @click="handleRetry(item)"
+                        class="ml-2 inline-flex items-center gap-1 px-2 py-1 text-[11px] bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20 rounded-lg hover:bg-amber-500/20 transition-colors"
+                        :title="`Re-disparar processamento da reserva ${item.idreserva}`">
+                        <i class="fas fa-rotate-right"></i> Reprocessar
+                      </button>
+                    </template>
                     <span v-else class="text-ink-subtle">—</span>
                   </td>
                 </tr>
@@ -383,6 +532,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useBoletoStore } from '@/stores/Financeiro/BoletoCaixa/boletoStore';
+import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 import API_URL from '@/config/apiUrl';
 
 import PageContainer from '@/components/UI/PageContainer.vue';
@@ -396,14 +546,20 @@ import SegmentedControl from '@/components/UI/SegmentedControl.vue';
 import EmptyState from '@/components/UI/EmptyState.vue';
 
 const store = useBoletoStore();
+const auth = useAuthStore();
+const isAdmin = computed(() => auth.hasRole('admin'));
 
 // ── Tabs ──────────────────────────────────────────────────────────────────────
-const activeTab = ref('settings');
+// Não-admins só veem a aba "Histórico" — a aba de configurações nem aparece.
+const activeTab = ref(isAdmin.value ? 'settings' : 'history');
 
-const tabOptions = [
-  { value: 'settings', label: 'Configurações', icon: 'fas fa-gear' },
-  { value: 'history',  label: 'Histórico',     icon: 'fas fa-clock-rotate-left' },
-];
+const tabOptions = computed(() => {
+  const base = [{ value: 'history', label: 'Histórico', icon: 'fas fa-clock-rotate-left' }];
+  if (isAdmin.value) {
+    base.unshift({ value: 'settings', label: 'Configurações', icon: 'fas fa-gear' });
+  }
+  return base;
+});
 
 const statusOptions = [
   { value: '',           label: 'Todos' },
@@ -512,18 +668,88 @@ function statusLabel(status) {
   return { processing: 'Processando', success: 'Sucesso', error: 'Erro' }[status] || status;
 }
 
+// ── Regras de Comissão por Empreendimento ─────────────────────────────────────
+const ruleModal = ref({
+  open: false,
+  id: null,
+  saving: false,
+  error: '',
+  form: { idempreendimento_cv: null, empreendimento_nome: '', percentual_boleto: 100, observacao: '', active: true },
+});
+
+function openRuleModal(rule = null) {
+  if (rule) {
+    ruleModal.value = {
+      open: true,
+      id: rule.id,
+      saving: false,
+      error: '',
+      form: {
+        idempreendimento_cv: rule.idempreendimento_cv,
+        empreendimento_nome: rule.empreendimento_nome || '',
+        percentual_boleto: Number(rule.percentual_boleto),
+        observacao: rule.observacao || '',
+        active: rule.active,
+      },
+    };
+  } else {
+    ruleModal.value = {
+      open: true, id: null, saving: false, error: '',
+      form: { idempreendimento_cv: null, empreendimento_nome: '', percentual_boleto: 100, observacao: '', active: true },
+    };
+  }
+}
+
+function closeRuleModal() {
+  ruleModal.value.open = false;
+}
+
+async function saveRule() {
+  const f = ruleModal.value.form;
+  if (!f.idempreendimento_cv) {
+    ruleModal.value.error = 'Informe o ID do empreendimento.';
+    return;
+  }
+  if (f.percentual_boleto == null || f.percentual_boleto < 0 || f.percentual_boleto > 100) {
+    ruleModal.value.error = 'Percentual deve estar entre 0 e 100.';
+    return;
+  }
+  ruleModal.value.saving = true;
+  ruleModal.value.error = '';
+  const ok = ruleModal.value.id
+    ? await store.updateComissionRule(ruleModal.value.id, f)
+    : await store.createComissionRule(f);
+  ruleModal.value.saving = false;
+  if (ok) closeRuleModal();
+  else ruleModal.value.error = store.rulesError || 'Erro ao salvar.';
+}
+
+async function confirmDeleteRule(rule) {
+  if (!confirm(`Excluir regra do empreendimento ${rule.empreendimento_nome || rule.idempreendimento_cv}?`)) return;
+  await store.deleteComissionRule(rule.id);
+}
+
+async function handleRetry(item) {
+  if (!confirm(`Re-disparar emissão de boleto para a reserva ${item.idreserva}?`)) return;
+  const ok = await store.retryHistoryItem(item.id);
+  if (ok) setTimeout(() => store.fetchHistory(), 1500);
+}
+
 // ── Mount ─────────────────────────────────────────────────────────────────────
 onMounted(async () => {
-  await store.fetchSettings();
-  if (store.settings) {
-    form.value.eco_usuario = store.settings.eco_usuario || '';
-    const rawSerie = store.settings.idserie_ra;
-    form.value.idserie_ra = Array.isArray(rawSerie) ? rawSerie
-      : rawSerie ? [Number(rawSerie)] : [21];
-    form.value.cv_idtipo_documento = store.settings.cv_idtipo_documento || null;
-    form.value.situacao_sucesso_id = store.settings.situacao_sucesso_id || null;
-    form.value.situacao_erro_id = store.settings.situacao_erro_id || null;
-    form.value.active = store.settings.active ?? false;
+  if (isAdmin.value) {
+    await store.fetchSettings();
+    if (store.settings) {
+      form.value.eco_usuario = store.settings.eco_usuario || '';
+      const rawSerie = store.settings.idserie_ra;
+      form.value.idserie_ra = Array.isArray(rawSerie) ? rawSerie
+        : rawSerie ? [Number(rawSerie)] : [21];
+      form.value.cv_idtipo_documento = store.settings.cv_idtipo_documento || null;
+      form.value.situacao_sucesso_id = store.settings.situacao_sucesso_id || null;
+      form.value.situacao_erro_id = store.settings.situacao_erro_id || null;
+      form.value.active = store.settings.active ?? false;
+    }
+    await store.fetchComissionRules();
   }
   await store.fetchHistory();
 });
