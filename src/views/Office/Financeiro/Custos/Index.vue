@@ -19,9 +19,18 @@
               <label class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1 block">Até</label>
               <Input v-model="store.endDate" type="date" size="sm" />
             </div>
+            <Button v-if="isAdmin" variant="ghost" icon="fas fa-gear" size="sm"
+              @click="adminSettingsOpen = true">
+              Configurações
+            </Button>
           </div>
         </template>
       </PageHeader>
+
+      <AdminSettingsModal v-if="isAdmin" :open="adminSettingsOpen"
+        :cost-center-groups="store.rawGroups"
+        @close="adminSettingsOpen = false"
+        @changed="store.fetchExpenses()" />
 
       <!-- Filtros Card -->
       <Surface variant="raised" padding="md" class="mb-5 surface-gradient">
@@ -155,7 +164,7 @@
                     </div>
                     <div class="min-w-0">
                       <div class="text-sm font-semibold text-ink">
-                        {{ resolveEnterpriseName(group.costCenterId) || group.costCenterName || '—' }}
+                        {{ group.costCenterName || resolveEnterpriseName(group.costCenterId) || '—' }}
                       </div>
                       <div class="text-xs text-ink-subtle font-mono">
                         CC {{ group.costCenterId }} · {{ group.expenses.length }} item(ns)
@@ -612,7 +621,10 @@ import { ref, computed, onMounted } from 'vue';
 import { useExpensesStore } from '@/stores/Financeiro/Expenses/expensesStore';
 import { useAdminMetaStore } from '@/stores/Settings/Admin/metaStore';
 import { useContractsStore } from '@/stores/Comercial/Contracts/contractsStore';
+import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 import { useToast } from 'vue-toastification';
+
+import AdminSettingsModal from './AdminSettingsModal.vue';
 
 import PageContainer from '@/components/UI/PageContainer.vue';
 import PageHeader from '@/components/UI/PageHeader.vue';
@@ -630,6 +642,9 @@ import Favorite from '@/components/config/Favorite.vue';
 const store = useExpensesStore();
 const adminMeta = useAdminMetaStore();
 const contractsStore = useContractsStore();
+const auth = useAuthStore();
+const isAdmin = computed(() => auth?.user?.role === 'admin');
+const adminSettingsOpen = ref(false);
 
 const toast = (() => {
   try { return useToast(); }
@@ -731,10 +746,10 @@ const sortedGroups = computed(() => {
 
   groups.sort((a, b) => {
     let aVal = key === 'total' ? Number(a.total || 0)
-      : key === 'name' ? (resolveEnterpriseName(a.costCenterId) || a.costCenterName || '').toLowerCase()
+      : key === 'name' ? (a.costCenterName || resolveEnterpriseName(a.costCenterId) || '').toLowerCase()
         : a[key];
     let bVal = key === 'total' ? Number(b.total || 0)
-      : key === 'name' ? (resolveEnterpriseName(b.costCenterId) || b.costCenterName || '').toLowerCase()
+      : key === 'name' ? (b.costCenterName || resolveEnterpriseName(b.costCenterId) || '').toLowerCase()
         : b[key];
     if (direction === 'asc') return aVal > bVal ? 1 : -1;
     return aVal < bVal ? 1 : -1;
@@ -781,10 +796,11 @@ const bulkDepartment = ref('');
 
 const modalDeptOptions = computed(() => {
   if (!selectedGroup.value) return [];
+  const hidden = new Set((store.data?.hiddenDepartments || []).map(d => (d || '').toLowerCase()));
   const set = new Set();
   for (const exp of selectedGroup.value.expenses || []) {
     const d = exp.departmentName || exp.bill?.mainDepartmentName;
-    if (d) set.add(d);
+    if (d && !hidden.has(d.toLowerCase())) set.add(d);
   }
   return Array.from(set).sort();
 });

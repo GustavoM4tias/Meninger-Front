@@ -15,7 +15,7 @@ export const useExpensesStore = defineStore('expenses', () => {
 
     // Período padrão: 1º de janeiro do ano anterior → hoje.
     // Mostra o panorama completo recente, alimentado pelo auto-sync diário.
-    const startDate = ref(dayjs().subtract(1, 'year').startOf('year').format('YYYY-MM-DD'));
+    const startDate = ref(dayjs().startOf('month').format('YYYY-MM-DD'));
     const endDate = ref(dayjs().format('YYYY-MM-DD'));
     const data = ref(null);                       // { startDate, endDate, total, groups: [...] }
     const error = ref(null);
@@ -26,17 +26,22 @@ export const useExpensesStore = defineStore('expenses', () => {
     const isLoading = computed(() => carregamento.carregando);
     const rawTotal = computed(() => Number(data.value?.total || 0));
     const rawGroups = computed(() => data.value?.groups || []);
+    // Departamentos marcados como ocultos pelo admin (vem do backend)
+    const hiddenDepartments = computed(() =>
+        new Set((data.value?.hiddenDepartments || []).map(d => (d || '').toLowerCase()))
+    );
 
-    // 🔹 departamentos existentes (dinâmico, sem lista fixa)
+    // 🔹 departamentos existentes (dinâmico) — exclui os marcados como ocultos pelo admin
     const departmentOptions = computed(() => {
         const set = new Set();
         const groups = rawGroups.value;
+        const hidden = hiddenDepartments.value;
 
         for (const g of groups) {
             const exps = g.expenses || [];
             for (const exp of exps) {
                 const name = exp.departmentName || exp.bill?.mainDepartmentName;
-                if (name) set.add(name);
+                if (name && !hidden.has(name.toLowerCase())) set.add(name);
             }
         }
 
