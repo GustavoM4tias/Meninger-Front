@@ -23,6 +23,16 @@
                     </button>
 
                     <button
+                        v-if="isRunning"
+                        class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-red-200 text-red-700 bg-red-50 hover:bg-red-100 dark:border-red-700 dark:text-red-200 dark:bg-red-900/30 dark:hover:bg-red-900/50 transition disabled:opacity-50"
+                        :disabled="cancelling"
+                        title="Use somente se o processo morreu (ex: após deploy). Marca o log como falho — não mata processo nenhum."
+                        @click="onCancelRunning">
+                        <i class="fas fa-circle-stop" :class="{ 'animate-pulse': cancelling }"></i>
+                        Forçar cancelar
+                    </button>
+
+                    <button
                         class="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
                         :disabled="isRunning || store.triggering"
                         @click="onTriggerFullBackup">
@@ -526,6 +536,28 @@ async function onTriggerFullBackup() {
         startPolling()
     } catch (err) {
         toast.error(err.message || 'Falha ao disparar backup')
+    }
+}
+
+const cancelling = ref(false)
+async function onCancelRunning() {
+    const running = store.runningBackup
+    if (!running) return
+    const msg = 'Marcar este backup como FALHO?\n\n' +
+        'Use somente se o processo morreu fora do controle ' +
+        '(ex: redeploy do Railway durante o restore). ' +
+        'Não mata processo nenhum — apenas libera o estado pra rodar de novo.\n\n' +
+        'Se o pg_restore ainda estiver rodando no servidor, ele continua até terminar.'
+    if (!confirm(msg)) return
+    cancelling.value = true
+    try {
+        await store.cancelBackup(running.id)
+        toast.success('Backup marcado como falho. Pode disparar de novo.')
+        await store.fetchBackups()
+    } catch (err) {
+        toast.error(err.message || 'Falha ao cancelar')
+    } finally {
+        cancelling.value = false
     }
 }
 
