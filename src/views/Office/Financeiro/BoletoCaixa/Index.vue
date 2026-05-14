@@ -255,18 +255,25 @@
               </button>
             </div>
 
-            <Input
-              v-model.number="ruleModal.form.idempreendimento_cv"
-              type="number"
-              label="ID do Empreendimento no CV"
-              placeholder="Ex: 38"
-              :disabled="!!ruleModal.id"
-              hint="idempreendimento_cv da reserva." />
+            <Select
+              v-if="!ruleModal.id"
+              :model-value="ruleModal.form.idempreendimento_cv || ''"
+              :options="enterpriseOptions"
+              label="Empreendimento"
+              :placeholder="store.enterprisesLoading ? 'Carregando...' : 'Selecione um empreendimento'"
+              hint="Lista vinda do CV (mesma fonte das demais telas)."
+              @update:model-value="onSelectEnterprise" />
 
-            <Input
-              v-model="ruleModal.form.empreendimento_nome"
-              label="Nome (opcional)"
-              placeholder="Ex: RESIDENCIAL INGÁ" />
+            <div v-else>
+              <label class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1.5 block">
+                Empreendimento
+              </label>
+              <div class="px-3 py-2 rounded-lg border border-line bg-surface-sunken text-sm text-ink">
+                <span class="font-mono text-accent">#{{ ruleModal.form.idempreendimento_cv }}</span>
+                <span class="ml-2">{{ ruleModal.form.empreendimento_nome || '—' }}</span>
+              </div>
+              <p class="text-xs text-ink-subtle mt-1">O empreendimento não pode ser alterado em uma regra existente.</p>
+            </div>
 
             <Input
               v-model.number="ruleModal.form.percentual_boleto"
@@ -677,7 +684,28 @@ const ruleModal = ref({
   form: { idempreendimento_cv: null, empreendimento_nome: '', percentual_boleto: 100, observacao: '', active: true },
 });
 
+// Opções para o select de empreendimentos no modal.
+// Filtra empreendimentos já vinculados a uma regra (exceto o da regra atual).
+const enterpriseOptions = computed(() => {
+  const usedIds = new Set(
+    store.rules
+      .filter(r => r.id !== ruleModal.value.id)
+      .map(r => Number(r.idempreendimento_cv))
+  );
+  return store.enterprises
+    .filter(e => !usedIds.has(e.idempreendimento))
+    .map(e => ({ value: e.idempreendimento, label: `#${e.idempreendimento} — ${e.nome}` }));
+});
+
+function onSelectEnterprise(value) {
+  const id = Number(value);
+  ruleModal.value.form.idempreendimento_cv = id;
+  const ent = store.enterprises.find(e => e.idempreendimento === id);
+  if (ent) ruleModal.value.form.empreendimento_nome = ent.nome;
+}
+
 function openRuleModal(rule = null) {
+  store.fetchEnterprises();
   if (rule) {
     ruleModal.value = {
       open: true,
