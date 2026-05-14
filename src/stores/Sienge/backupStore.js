@@ -68,5 +68,28 @@ export const useSiengeBackupStore = defineStore('siengeBackup', {
                 this.triggering = false
             }
         },
+
+        /**
+         * Marca um backup zumbi (status=running mas processo morto, ex: após
+         * deploy do Railway) como failed. Não mata processo nenhum — só
+         * libera o estado pra UI permitir novo trigger.
+         */
+        async cancelBackup(id) {
+            this.error = null
+            try {
+                const res = await fetch(`${API_URL}/sienge/backups/${id}/cancel`, {
+                    method: 'POST',
+                    headers: authHeaders(),
+                })
+                if (!res.ok) {
+                    const body = await res.json().catch(() => ({}))
+                    throw new Error(body.error || 'Erro ao cancelar backup')
+                }
+                return await res.json()
+            } catch (err) {
+                this.error = err.message
+                throw err
+            }
+        },
     },
 })
