@@ -261,7 +261,7 @@
               :options="enterpriseOptions"
               label="Empreendimento"
               :placeholder="store.enterprisesLoading ? 'Carregando...' : 'Selecione um empreendimento'"
-              hint="Lista vinda do CV (mesma fonte das demais telas)."
+              hint="Lista de Empreendimentos do CV."
               @update:model-value="onSelectEnterprise" />
 
             <div v-else>
@@ -694,7 +694,7 @@ const enterpriseOptions = computed(() => {
   );
   return store.enterprises
     .filter(e => !usedIds.has(e.idempreendimento))
-    .map(e => ({ value: e.idempreendimento, label: `#${e.idempreendimento} — ${e.nome}` }));
+    .map(e => ({ value: e.idempreendimento, label: `${e.nome}` }));
 });
 
 function onSelectEnterprise(value) {
