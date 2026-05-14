@@ -107,6 +107,28 @@ export const useBoletoStore = defineStore('boletoCaixa', () => {
         }
     }
 
+    // ── Empreendimentos do CV (para o picker das regras) ──────────────────────
+    const enterprises = ref([]);
+    const enterprisesLoading = ref(false);
+
+    async function fetchEnterprises() {
+        if (enterprises.value.length) return;
+        enterprisesLoading.value = true;
+        try {
+            const data = await requestWithAuth('/cv/empreendimentos');
+            const rows = Array.isArray(data) ? data : (data?.results ?? []);
+            enterprises.value = rows
+                .map(r => ({ idempreendimento: Number(r.idempreendimento), nome: r.nome }))
+                .filter(r => Number.isFinite(r.idempreendimento))
+                .sort((a, b) => (a.nome || '').localeCompare(b.nome || '', 'pt-BR'));
+        } catch (err) {
+            console.warn('[boletoStore] fetchEnterprises:', err.message);
+            enterprises.value = [];
+        } finally {
+            enterprisesLoading.value = false;
+        }
+    }
+
     // ── Regras de comissão por empreendimento ─────────────────────────────────
     const rules = ref([]);
     const rulesLoading = ref(false);
@@ -181,5 +203,7 @@ export const useBoletoStore = defineStore('boletoCaixa', () => {
         // comission rules
         rules, rulesLoading, rulesError,
         fetchComissionRules, createComissionRule, updateComissionRule, deleteComissionRule,
+        // enterprises picker
+        enterprises, enterprisesLoading, fetchEnterprises,
     };
 });
