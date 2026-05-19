@@ -210,11 +210,18 @@
                       :title="ec.lastSummary.error">{{ ec.lastSummary.error }}</span>
                     <span v-else class="text-ink-subtle">—</span>
                   </td>
-                  <td class="px-4 py-2 text-right">
+                  <td class="px-4 py-2 text-right whitespace-nowrap">
                     <Button variant="secondary" size="sm" icon="fas fa-play"
                       :disabled="!!currentRun?.running"
                       @click="runOne(ec)">
                       Rodar
+                    </Button>
+                    <Button variant="ghost" size="sm" icon="fas fa-trash-can"
+                      class="!text-red-500 ml-1"
+                      :disabled="!!currentRun?.running"
+                      title="Apagar todos os dados deste empreendimento e re-sincronizar do zero"
+                      @click="purgeEnterprise(ec)">
+                      Limpar
                     </Button>
                   </td>
                 </tr>
@@ -413,6 +420,28 @@ async function runAll() {
 async function runOne(ec) {
   if (!confirm(`Disparar auto-sync para "${ec.name}" (CC ${ec.erpId})?`)) return;
   await postRunNow({ enterpriseCityId: ec.id, mode: 'full' }, `Sync iniciado para ${ec.name}.`);
+}
+
+async function purgeEnterprise(ec) {
+  const ok = confirm(
+    `⚠️ APAGAR TODOS os dados de "${ec.name}" (CC ${ec.erpId})?\n\n` +
+    `Isso remove TODOS os títulos, parcelas e custos deste empreendimento do banco. ` +
+    `Edições manuais (categoria/departamento) serão perdidas. Irreversível.\n\n` +
+    `Após apagar, clique em "Rodar" para repopular do zero.`
+  );
+  if (!ok) return;
+  if (!confirm(`Confirma novamente: apagar tudo de CC ${ec.erpId}?`)) return;
+
+  try {
+    await requestWithAuth(`${API_URL}/sienge/bills/auto-sync/purge`, {
+      method: 'POST',
+      body: JSON.stringify({ enterpriseCityId: ec.id }),
+    });
+    toast.success(`Dados de "${ec.name}" apagados. Rode o sync para repopular.`);
+    await load();
+  } catch (err) {
+    toast.error('Falha ao apagar: ' + err.message);
+  }
 }
 
 async function runCompany(comp) {

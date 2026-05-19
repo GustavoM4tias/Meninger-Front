@@ -60,12 +60,13 @@ const isError = computed(() => props.message.response_type === 'error');
         <ChatText v-if="message.content" :content="message.content" :streaming="streaming" />
 
         <ChatTable v-if="action?.type === 'table'"
-          :title="action.title" :columns="action.columns"
-          :rows="action.rows" :total="action.total" />
+          :title="action.title" :subtitle="action.subtitle"
+          :columns="action.columns" :rows="action.rows" :total="action.total" />
 
         <ChatChart v-if="action?.type === 'chart'"
-          :chart-type="action.chartType" :title="action.title"
-          :labels="action.labels" :data="action.data" />
+          :chart-type="action.chartType" :title="action.title" :subtitle="action.subtitle"
+          :labels="action.labels" :data="action.data"
+          :total="action.total" :top-breakdown="action.top_breakdown || []" />
 
         <ChatLeadsActions v-if="action?.context?.source === 'leads'" :context="action.context" />
         <ChatEventsActions v-if="action?.context?.source === 'events'"

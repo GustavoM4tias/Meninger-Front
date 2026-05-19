@@ -5,10 +5,11 @@ import ExcelJS from 'exceljs/dist/exceljs.min.js'
 import saveAs from 'file-saver'
 
 const props = defineProps({
-  title:   { type: String, default: '' },
-  columns: { type: Array,  default: () => [] },
-  rows:    { type: Array,  default: () => [] },
-  total:   { type: Number, default: 0 },
+  title:    { type: String, default: '' },
+  subtitle: { type: String, default: '' },
+  columns:  { type: Array,  default: () => [] },
+  rows:     { type: Array,  default: () => [] },
+  total:    { type: Number, default: 0 },
 })
 
 // ── Sort ──────────────────────────────────────────────────────────────────────
@@ -147,10 +148,15 @@ async function copyTable() {
     <div class="px-4 py-3 bg-gray-50 dark:bg-slate-800/60 flex items-center justify-between gap-2 border-b border-gray-200 dark:border-white/5">
       <div class="flex items-center gap-2 min-w-0">
         <span class="w-1.5 h-5 rounded-full bg-indigo-500 flex-shrink-0" />
-        <span class="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">{{ title || 'Resultados' }}</span>
-        <span class="text-xs text-gray-400 dark:text-slate-500 flex-shrink-0">
-          {{ total }} registro{{ total !== 1 ? 's' : '' }}
-        </span>
+        <div class="min-w-0">
+          <div class="flex items-baseline gap-2">
+            <span class="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">{{ title || 'Resultados' }}</span>
+            <span class="text-xs text-indigo-600 dark:text-indigo-400 font-semibold tabular-nums whitespace-nowrap">
+              {{ total }} registro{{ total !== 1 ? 's' : '' }}
+            </span>
+          </div>
+          <p v-if="subtitle" class="text-[11px] text-gray-500 dark:text-slate-500 truncate mt-0.5">{{ subtitle }}</p>
+        </div>
       </div>
 
       <div class="flex items-center gap-1.5 flex-shrink-0">

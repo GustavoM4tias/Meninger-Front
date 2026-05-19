@@ -8,8 +8,9 @@
                         <i class="fas fa-database text-indigo-500"></i> Backup Sienge
                     </h1>
                     <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">
-                        Backup diário automatizado do banco Sienge (5h da manhã). Pipeline: download da
-                        API Sienge → descompactação → pg_restore no Postgres dedicado.
+                        Backup diário automatizado do banco Sienge (5h da manhã). Pipeline blue-green:
+                        restore acontece em banco staging — produção só é trocada por rename atômico após
+                        validação. Em caso de falha, o dado antigo é preservado.
                     </p>
                 </div>
 
@@ -300,11 +301,19 @@ const runningStage = computed(() => store.runningBackup?.stage || 'starting')
 
 // ─── Pipeline stages (ordenadas) ────────────────────────────────────────────
 // Mantém em sincronia com SiengeBackupService.runDailyBackup() no backend.
+//
+// Blue-green: o restore acontece em um database "staging" virgem, e o banco
+// de produção só é trocado por rename atômico após validação OK. Em caso de
+// falha, staging é descartado e produção fica intocada.
 const PIPELINE_STAGES = [
-    { key: 'fetching_md5',  label: 'Validação inicial (MD5)', icon: 'fas fa-fingerprint',      estimate: '5s' },
-    { key: 'downloading',   label: 'Download do Sienge',      icon: 'fas fa-cloud-arrow-down', estimate: '5–20 min' },
-    { key: 'decompressing', label: 'Descompactação local',    icon: 'fas fa-file-zipper',      estimate: '30s' },
-    { key: 'restoring',     label: 'pg_restore no Postgres',  icon: 'fas fa-database',         estimate: '15–40 min' },
+    { key: 'fetching_md5',      label: 'Validação inicial (MD5)',   icon: 'fas fa-fingerprint',      estimate: '5s' },
+    { key: 'downloading',       label: 'Download do Sienge',        icon: 'fas fa-cloud-arrow-down', estimate: '5–20 min' },
+    { key: 'decompressing',     label: 'Descompactação local',      icon: 'fas fa-file-zipper',      estimate: '30s' },
+    { key: 'preparing_staging', label: 'Preparando banco staging',  icon: 'fas fa-flask',            estimate: '5s' },
+    { key: 'restoring',         label: 'pg_restore no staging',     icon: 'fas fa-database',         estimate: '15–30 min' },
+    { key: 'validating',        label: 'Validando staging',         icon: 'fas fa-check-double',     estimate: '5s' },
+    { key: 'swapping',          label: 'Swap atômico (rename)',     icon: 'fas fa-rotate',           estimate: '1s' },
+    { key: 'applying_grants',   label: 'Reaplicando permissões',    icon: 'fas fa-user-shield',      estimate: '2s' },
 ]
 
 // Sub-fases do pg_restore (corresponde a `log.phase_progress` no backend).
@@ -528,7 +537,14 @@ async function refresh() {
 }
 
 async function onTriggerFullBackup() {
-    if (!confirm('Disparar pipeline completo (download Sienge + pg_restore)?\n\nDuração estimada: 20-50 min.')) return
+    if (!confirm('Disparar pipeline completo?\n\n' +
+                 '• Download do Sienge (~5-20 min)\n' +
+                 '• pg_restore no banco staging (~15-30 min)\n' +
+                 '• Validação + swap atômico (~1s)\n' +
+                 '• Reaplicação de permissões\n\n' +
+                 'Banco de produção fica intocado até validação OK. ' +
+                 'Em caso de falha, dado antigo é preservado.\n\n' +
+                 'Duração total estimada: 20-50 min.')) return
     try {
         await store.triggerFullBackup()
         toast.success('Backup iniciado. Acompanhe o status abaixo.')

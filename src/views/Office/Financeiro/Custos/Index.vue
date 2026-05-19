@@ -309,31 +309,25 @@
               </span>
               <span class="opacity-40">|</span>
 
-              <div class="flex items-center gap-2">
-                <select v-model.number="bulkCategoryId"
-                  class="px-3 py-1.5 rounded-lg bg-white/20 border border-white/30 text-white text-sm focus:outline-none focus:ring-2 focus:ring-white/50">
-                  <option :value="null" class="text-gray-800">Aplicar categoria...</option>
-                  <option v-for="cat in categoryOptions" :key="cat.id" :value="cat.id" class="text-gray-800">
-                    {{ cat.name }}
-                  </option>
-                </select>
-                <button @click="applyBulkCategory" :disabled="bulkCategoryId === null"
-                  class="px-3 py-1.5 bg-white text-emerald-700 font-semibold rounded-lg text-sm hover:bg-emerald-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
-                  <i class="fas fa-tag mr-1"></i> Aplicar
-                </button>
-              </div>
-
-              <div class="flex items-center gap-2">
+              <div class="flex items-center gap-2 flex-wrap">
                 <select v-model="bulkDepartment"
                   class="px-3 py-1.5 rounded-lg bg-white/20 border border-white/30 text-white text-sm focus:outline-none focus:ring-2 focus:ring-white/50">
-                  <option value="" class="text-gray-800">Aplicar departamento...</option>
+                  <option value="" class="text-gray-800">Departamento (opcional)...</option>
                   <option v-for="d in store.departmentOptions" :key="d" :value="d" class="text-gray-800">
                     {{ d }}
                   </option>
                 </select>
-                <button @click="applyBulkDepartment" :disabled="!bulkDepartment"
+                <select v-model.number="bulkCategoryId"
+                  class="px-3 py-1.5 rounded-lg bg-white/20 border border-white/30 text-white text-sm focus:outline-none focus:ring-2 focus:ring-white/50">
+                  <option :value="null" class="text-gray-800">Categoria (opcional)...</option>
+                  <option v-for="cat in categoryOptions" :key="cat.id" :value="cat.id" class="text-gray-800">
+                    {{ cat.name }}
+                  </option>
+                </select>
+                <button @click="applyBulkBoth"
+                  :disabled="bulkCategoryId === null && !bulkDepartment"
                   class="px-3 py-1.5 bg-white text-emerald-700 font-semibold rounded-lg text-sm hover:bg-emerald-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
-                  <i class="fas fa-sitemap mr-1"></i> Aplicar
+                  <i class="fas fa-check mr-1"></i> Aplicar
                 </button>
               </div>
 
@@ -969,47 +963,43 @@ function toggleSelectAllExpenses() {
   selectedExpenseIds.value = selectedExpenseIds.value.length === allIds.length ? [] : allIds;
 }
 
-// ── Bulk actions ──────────────────────────────────────────
-async function applyBulkCategory() {
-  if (bulkCategoryId.value === null || !selectedExpenseIds.value.length) return;
-  const catId = Number(bulkCategoryId.value);
-  const found = categoryOptions.value.find(c => c.id === catId);
-  if (!confirm(`Aplicar categoria "${found?.name}" em ${selectedExpenseIds.value.length} lançamento(s)?`)) return;
+// ── Bulk action unificada: aplica departamento E/OU categoria de uma vez ──────
+async function applyBulkBoth() {
+  const n = selectedExpenseIds.value.length;
+  if (!n) return;
+  const hasDept = !!bulkDepartment.value;
+  const hasCat = bulkCategoryId.value !== null;
+  if (!hasDept && !hasCat) return;
 
-  try {
-    await Promise.all(
-      selectedExpenseIds.value.map(id =>
-        store.updateExpense(id, {
-          departmentCategoryId: catId,
-          departmentCategoryName: found?.name || null,
-        })
-      )
-    );
-    toast.success(`Categoria aplicada em ${selectedExpenseIds.value.length} lançamento(s)!`);
-    bulkCategoryId.value = null;
-    selectedExpenseIds.value = [];
-    await refreshAfterEdit();
-  } catch (e) {
-    toast.error(e.message || 'Erro ao aplicar categoria.');
+  const catId = hasCat ? Number(bulkCategoryId.value) : null;
+  const foundCat = hasCat ? categoryOptions.value.find(c => c.id === catId) : null;
+
+  const partes = [
+    hasDept ? `departamento "${bulkDepartment.value}"` : null,
+    hasCat ? `categoria "${foundCat?.name}"` : null,
+  ].filter(Boolean).join(' e ');
+
+  if (!confirm(`Aplicar ${partes} em ${n} lançamento(s)?`)) return;
+
+  // Monta 1 único payload por expense — backend grava ambos numa só requisição
+  const payload = {};
+  if (hasDept) payload.departmentName = bulkDepartment.value;
+  if (hasCat) {
+    payload.departmentCategoryId = catId;
+    payload.departmentCategoryName = foundCat?.name || null;
   }
-}
-
-async function applyBulkDepartment() {
-  if (!bulkDepartment.value || !selectedExpenseIds.value.length) return;
-  if (!confirm(`Aplicar departamento "${bulkDepartment.value}" em ${selectedExpenseIds.value.length} lançamento(s)?`)) return;
 
   try {
     await Promise.all(
-      selectedExpenseIds.value.map(id =>
-        store.updateExpense(id, { departmentName: bulkDepartment.value })
-      )
+      selectedExpenseIds.value.map(id => store.updateExpense(id, { ...payload }))
     );
-    toast.success(`Departamento aplicado em ${selectedExpenseIds.value.length} lançamento(s)!`);
+    toast.success(`Aplicado em ${n} lançamento(s)!`);
+    bulkCategoryId.value = null;
     bulkDepartment.value = '';
     selectedExpenseIds.value = [];
     await refreshAfterEdit();
   } catch (e) {
-    toast.error(e.message || 'Erro ao aplicar departamento.');
+    toast.error(e.message || 'Erro ao aplicar.');
   }
 }
 
