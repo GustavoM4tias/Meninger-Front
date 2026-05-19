@@ -163,10 +163,26 @@ async function confirmFeedback({ comment }) {
           <div class="flex-1 min-w-0">
             <ChatNavAction v-if="getAction(msg)?.type === 'navigate'" :action="getAction(msg)" />
             <ChatText v-if="parseContent(msg)" :content="parseContent(msg)" />
+            <!-- Warning anti-alucinação: detectou número/nome não verificado no texto -->
+            <div
+              v-if="msg.metadata?.warning"
+              class="mt-2 flex items-start gap-2 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-700 dark:text-amber-300"
+            >
+              <i class="fas fa-triangle-exclamation mt-0.5 text-amber-500" />
+              <div>
+                <p>{{ msg.metadata.warning.message }}</p>
+                <p v-if="msg.metadata.warning.details?.length" class="text-[10px] opacity-80 mt-0.5">
+                  Valor(es) suspeito(s): {{ msg.metadata.warning.details.map(d => d.value).join(', ') }}
+                </p>
+              </div>
+            </div>
             <ChatTable v-if="getAction(msg)?.type === 'table'" :title="getAction(msg).title"
+              :subtitle="getAction(msg).subtitle"
               :columns="getAction(msg).columns" :rows="getAction(msg).rows" :total="getAction(msg).total" />
             <ChatChart v-if="getAction(msg)?.type === 'chart'" :chart-type="getAction(msg).chartType"
-              :title="getAction(msg).title" :labels="getAction(msg).labels" :data="getAction(msg).data" />
+              :title="getAction(msg).title" :subtitle="getAction(msg).subtitle"
+              :labels="getAction(msg).labels" :data="getAction(msg).data"
+              :total="getAction(msg).total" :top-breakdown="getAction(msg).top_breakdown || []" />
             <ChatLeadsActions v-if="actionSource(msg) === 'leads'" :context="actionContext(msg)" />
             <ChatEventsActions
               v-if="actionSource(msg) === 'events'"

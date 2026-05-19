@@ -20,6 +20,7 @@ export const useOfficeAIStore = defineStore('officeAI', () => {
   const isStreaming = ref(false)
   const streamingText = ref('')
   const pendingAction = ref(null)
+  const pendingWarning = ref(null)
   const storageUsage = ref(null)
   const historyOpen = ref(false)
 
@@ -156,6 +157,15 @@ export const useOfficeAIStore = defineStore('officeAI', () => {
         streamingText.value = evt.text || ''
         break
 
+      case 'warning':
+        // Validador anti-alucinação detectou número/nome suspeito — anexa flag
+        // ao último/próximo assistant message (será exibido como tag amarela)
+        pendingWarning.value = {
+          message: evt.message || 'Possível inconsistência na resposta.',
+          details: evt.details || [],
+        }
+        break
+
       case 'action':
         pendingAction.value = evt.action
         if (evt.action.type === 'navigate') {
@@ -168,11 +178,16 @@ export const useOfficeAIStore = defineStore('officeAI', () => {
           currentSessionId.value = evt.sessionId
           if (!sessions.value.find(s => s.id === evt.sessionId)) loadSessions()
         }
-        pushAssistantMessage(
-          streamingText.value,
-          pendingAction.value?.type || 'text',
-          pendingAction.value ? { action: pendingAction.value } : {}
-        )
+        {
+          const meta = {}
+          if (pendingAction.value)  meta.action  = pendingAction.value
+          if (pendingWarning.value) meta.warning = pendingWarning.value
+          pushAssistantMessage(
+            streamingText.value,
+            pendingAction.value?.type || 'text',
+            meta
+          )
+        }
         // Replace temp Date.now() ID with the real DB UUID so feedback works
         if (evt.msgId) {
           const last = messages.value[messages.value.length - 1]
@@ -180,6 +195,7 @@ export const useOfficeAIStore = defineStore('officeAI', () => {
         }
         streamingText.value = ''
         pendingAction.value = null
+        pendingWarning.value = null
         loadStorageUsage()
         break
 

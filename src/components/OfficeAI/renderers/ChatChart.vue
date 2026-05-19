@@ -23,11 +23,16 @@ const PALETTE = [
 ]
 
 const props = defineProps({
-  chartType: { type: String, default: 'bar' },
-  title:     { type: String, default: '' },
-  labels:    { type: Array,  default: () => [] },
-  data:      { type: Array,  default: () => [] },
+  chartType:    { type: String, default: 'bar' },
+  title:        { type: String, default: '' },
+  subtitle:     { type: String, default: '' },
+  labels:       { type: Array,  default: () => [] },
+  data:         { type: Array,  default: () => [] },
+  total:        { type: [Number, null], default: null },
+  topBreakdown: { type: Array,  default: () => [] },
 })
+
+const fmtNumber = (v) => v == null ? '—' : new Intl.NumberFormat('pt-BR').format(v)
 
 const chartRef   = ref(null)
 const loading    = ref(props.data.length === 0)
@@ -232,7 +237,15 @@ function downloadCSV() {
     <div class="px-4 py-3 bg-slate-300/20 dark:bg-slate-800/60 flex items-center justify-between gap-2 border-b border-white/5">
       <div class="flex items-center gap-2 min-w-0">
         <span class="w-1.5 h-5 rounded-full bg-indigo-500 flex-shrink-0" />
-        <span class="text-sm font-medium dark:text-gray-200 truncate">{{ title || 'Gráfico' }}</span>
+        <div class="min-w-0">
+          <div class="flex items-baseline gap-2">
+            <span class="text-sm font-medium dark:text-gray-200 truncate">{{ title || 'Gráfico' }}</span>
+            <span v-if="total != null" class="text-xs text-indigo-600 dark:text-indigo-400 font-semibold tabular-nums whitespace-nowrap">
+              Total: {{ fmtNumber(total) }}
+            </span>
+          </div>
+          <p v-if="subtitle" class="text-[11px] text-gray-500 dark:text-slate-500 truncate mt-0.5">{{ subtitle }}</p>
+        </div>
       </div>
 
       <div class="flex items-center gap-1.5 flex-shrink-0">
@@ -271,6 +284,22 @@ function downloadCSV() {
           <span>CSV</span>
         </button>
       </div>
+    </div>
+
+    <!-- Top breakdown (chips com top 3 categorias) -->
+    <div
+      v-if="topBreakdown.length"
+      class="px-4 py-2 flex flex-wrap gap-1.5 border-b border-white/5 bg-slate-50/50 dark:bg-slate-800/30"
+    >
+      <span
+        v-for="(t, i) in topBreakdown"
+        :key="i"
+        class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] bg-white dark:bg-slate-700/60 ring-1 ring-slate-200 dark:ring-slate-600/40"
+      >
+        <span class="font-medium text-gray-700 dark:text-gray-200">{{ t.label }}</span>
+        <span class="tabular-nums text-indigo-600 dark:text-indigo-400">{{ fmtNumber(t.value) }}</span>
+        <span v-if="t.percent != null" class="tabular-nums text-gray-400 dark:text-slate-500">{{ t.percent }}%</span>
+      </span>
     </div>
 
     <!-- Chart / Skeleton -->
