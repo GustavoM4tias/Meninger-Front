@@ -10,6 +10,7 @@ import {
   resetPassword,
 } from '@/utils/Auth/apiAuth';
 import { usePermissionStore } from '@/stores/Settings/Permissions/permissionStore';
+import { isAcademyContext } from '@/utils/appContext';
 
 function safeJsonParse(v, fallback = null) {
   try {
@@ -155,8 +156,9 @@ export const useAuthStore = defineStore('user', {
 
     logout() {
       this.clearUser();
-      const isAcademy = window.location.host === 'academy.menin.com.br';
-      router.push(isAcademy ? { name: 'AcademyLogin' } : { name: 'login' });
+      // Decide o login pelo contexto (academy.* / env), não pelo host fixo —
+      // assim funciona igual em produção e em dev local.
+      router.push(isAcademyContext() ? { name: 'AcademyLogin' } : { name: 'login' });
     },
 
     academyLogout() {

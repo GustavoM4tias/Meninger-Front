@@ -22,6 +22,10 @@ function normalizeAttempt(raw) {
         allCorrect: !!(raw.allCorrect ?? raw.all_correct ?? raw.correct),
         attemptCount: Number(raw.attemptCount ?? raw.attempt_count ?? 1),
         submittedAt: raw.submittedAt ?? raw.submitted_at ?? raw.created_at ?? raw.updated_at ?? null,
+        // ✅ Dados enriquecidos vindos do servidor (gabarito privado).
+        totalQuestions: Number.isFinite(Number(raw.totalQuestions)) ? Number(raw.totalQuestions) : undefined,
+        correctCount: Number.isFinite(Number(raw.correctCount)) ? Number(raw.correctCount) : undefined,
+        perQuestion: Array.isArray(raw.perQuestion) ? raw.perQuestion : undefined,
     };
 }
 
@@ -101,15 +105,16 @@ export const useAcademyTracksStore = defineStore('academyTracks', {
             return data;
         },
 
-        async submitQuiz(slug, { itemId, answers, allCorrect } = {}) {
+        async submitQuiz(slug, { itemId, answers } = {}) {
             this.error = null;
 
+            // allCorrect é calculado server-side a partir do gabarito privado.
+            // Não enviamos do cliente — o backend ignora qualquer valor recebido.
             const data = await requestWithAuth(`/academy/tracks/${encodeURIComponent(slug)}/quiz`, {
                 method: 'POST',
                 body: JSON.stringify({
                     itemId: Number(itemId),
                     answers: answers || {},
-                    allCorrect: !!allCorrect,
                 }),
             });
 
@@ -117,6 +122,31 @@ export const useAcademyTracksStore = defineStore('academyTracks', {
             if (normalized) this.detail = normalized;
 
             return data;
+        },
+
+        // S5.2: tracking de vídeo. Chamado pelo VideoPlayer periodicamente.
+        // Quando o backend auto-completa o item (>=85%), devolve o detail
+        // atualizado — sincronizamos o estado local.
+        async trackVideoWatch(slug, { itemId, currentSec, durationSec } = {}) {
+            try {
+                const data = await requestWithAuth(`/academy/tracks/${encodeURIComponent(slug)}/watch`, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        itemId: Number(itemId),
+                        currentSec: Number(currentSec) || 0,
+                        durationSec: Number(durationSec) || 0,
+                    }),
+                });
+                // se auto-completou, recarrega o detail pra refletir o progresso
+                if (data?.autoCompleted) {
+                    await this.fetchTrack(slug).catch(() => { });
+                }
+                return data;
+            } catch (e) {
+                // tracking de vídeo nunca deve quebrar a experiência — falha silenciosa
+                console.warn('[academyTracks.trackVideoWatch]', e?.message);
+                return null;
+            }
         },
     },
 });

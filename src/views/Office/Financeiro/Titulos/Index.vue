@@ -315,6 +315,7 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useBillsStore } from '@/stores/Financeiro/Bills/billsStore';
 import { useContractsStore } from '@/stores/Comercial/Contracts/contractsStore';
+import { useCostCenterNamesStore } from '@/stores/Financeiro/costCenterNamesStore';
 import API_URL from '@/config/apiUrl';
 import { requestWithAuth } from '@/utils/Auth/requestWithAuth';
 
@@ -331,18 +332,24 @@ import Favorite from '@/components/config/Favorite.vue';
 
 const store = useBillsStore();
 const contractsStore = useContractsStore();
+const ccNames = useCostCenterNamesStore();
 
 // ── MultiSelector de centro de custo ──────────────────────────────────────────
 const selectedCostCenterNames = ref([]);
 
+// Nome efetivo = override admin (se houver) senão o nome do enterprise_cities
+function effectiveName(e) {
+  return ccNames.displayName(e.erp_id, e.name);
+}
+
 const costCenterOptions = computed(() =>
-  (contractsStore.enterpriseCities || []).map(e => e.name)
+  (contractsStore.enterpriseCities || []).map(effectiveName)
 );
 
 const costCenterIdByName = computed(() => {
   const m = new Map();
   for (const e of contractsStore.enterpriseCities || []) {
-    m.set(e.name, Number(e.erp_id));
+    m.set(effectiveName(e), Number(e.erp_id));
   }
   return m;
 });
@@ -497,7 +504,10 @@ function statusBadgeLabel(status) {
 
 onMounted(async () => {
   try {
-    await contractsStore.fetchEnterpriseCities();
+    await Promise.all([
+      contractsStore.fetchEnterpriseCities(),
+      ccNames.fetchOverrideMap(),
+    ]);
   } catch (e) {
     console.error('Erro ao carregar empreendimentos:', e);
   }

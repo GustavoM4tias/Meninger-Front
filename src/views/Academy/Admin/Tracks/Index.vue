@@ -1,97 +1,119 @@
 <template>
-    <div class="space-y-4">
-        <AcademyPageHeader title="Admin | Trilhas" subtitle="Criar, publicar, itens e vínculos"
+    <div class="mx-auto max-w-6xl space-y-5 pb-6">
+        <AcademyPageHeader title="Admin · Trilhas" subtitle="Criar, publicar, itens e vínculos"
             :backTo="{ name: 'AcademyAdmin' }" :breadcrumbs="[
                 { label: 'Academy', to: { name: 'AcademyPanel' } },
                 { label: 'Admin', to: { name: 'AcademyAdmin' } },
                 { label: 'Trilhas' }
             ]">
             <template #actions>
-                <button
-                    class="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2.5 text-sm font-medium text-slate-900 dark:text-slate-100 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
-                    @click="reload">
+                <button type="button" @click="reload"
+                    class="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-900 shadow-sm transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700">
+                    <i class="fa-solid fa-rotate-right text-xs"></i>
                     Recarregar
                 </button>
 
-                <button
-                    class="rounded-xl bg-slate-900 dark:bg-white px-4 py-2.5 text-sm font-semibold text-white dark:text-slate-900 shadow-sm hover:opacity-90 transition"
-                    @click="openCreate">
+                <button type="button" @click="openCreate"
+                    class="inline-flex items-center gap-2 rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-indigo-500/25 transition hover:opacity-95 active:scale-95">
+                    <i class="fa-solid fa-plus text-xs"></i>
                     Nova trilha
                 </button>
             </template>
         </AcademyPageHeader>
 
         <div v-if="store.error"
-            class="rounded-2xl border border-rose-200 dark:border-rose-900/50 bg-white dark:bg-slate-900 p-4 text-sm text-rose-700 dark:text-rose-400">
+            class="flex items-center gap-2 rounded-2xl border border-rose-200 bg-white p-4 text-sm text-rose-700 shadow-sm dark:border-rose-900/50 dark:bg-slate-900 dark:text-rose-400">
+            <i class="fa-solid fa-circle-exclamation"></i>
             {{ store.error }}
         </div>
 
-        <div class="grid grid-cols-1 gap-4 lg:grid-cols-12">
-            <aside
-                class="lg:col-span-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
-                <h3 class="text-sm font-semibold text-slate-900 dark:text-white">Filtros</h3>
+        <div class="grid grid-cols-1 gap-5 lg:grid-cols-12">
+            <aside class="lg:col-span-4">
+                <div
+                    class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                    <h3 class="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-white">
+                        <i class="fa-solid fa-filter text-indigo-500"></i>
+                        Filtros
+                    </h3>
 
-                <div class="mt-3 space-y-3">
-                    <label class="block">
-                        <div class="text-xs font-medium text-slate-500 dark:text-slate-400">Status</div>
-                        <select v-model="filters.status"
-                            class="mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm">
-                            <option value="">Todos</option>
-                            <option value="DRAFT">Rascunhos</option>
-                            <option value="PUBLISHED">Publicados</option>
-                        </select>
-                    </label> 
+                    <div class="mt-4 space-y-3">
+                        <label class="block">
+                            <div class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                Status
+                            </div>
+                            <select v-model="filters.status"
+                                class="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 transition focus:border-indigo-400 focus:outline-none focus:ring-4 focus:ring-indigo-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:focus:border-indigo-700 dark:focus:ring-indigo-950/60">
+                                <option value="">Todos</option>
+                                <option value="DRAFT">Rascunhos</option>
+                                <option value="PUBLISHED">Publicados</option>
+                            </select>
+                        </label>
 
-                    <button
-                        class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2.5 text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-700 transition"
-                        @click="reload">
-                        Aplicar
-                    </button>
+                        <button type="button" @click="reload"
+                            class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700">
+                            Aplicar
+                        </button>
+                    </div>
                 </div>
             </aside>
 
-            <section
-                class="lg:col-span-8 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
-                <div class="border-b border-slate-100 dark:border-slate-800 px-5 py-4">
-                    <h2 class="text-base font-semibold text-slate-900 dark:text-white">Trilhas</h2>
-                    <p class="text-sm text-slate-500 dark:text-slate-400">Clique para abrir o detalhe</p>
-                </div>
-
-                <div class="p-3">
-                    <div v-if="!store.list?.length"
-                        class="rounded-xl border border-dashed border-slate-200 dark:border-slate-700 p-10 text-center text-sm text-slate-500 dark:text-slate-400">
-                        Nenhuma trilha encontrada.
+            <section class="lg:col-span-8">
+                <div
+                    class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                    <div class="border-b border-slate-100 px-5 py-4 dark:border-slate-800">
+                        <h2 class="flex items-center gap-2 text-base font-semibold text-slate-900 dark:text-white">
+                            <i class="fa-solid fa-route text-indigo-500"></i>
+                            Trilhas
+                        </h2>
+                        <p class="mt-0.5 text-sm text-slate-500 dark:text-slate-400">Clique para abrir o detalhe</p>
                     </div>
 
-                    <ul v-else class="space-y-3">
-                        <li v-for="t in store.list" :key="t.slug"
-                            class="cursor-pointer rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:border-slate-300 dark:hover:border-slate-600 transition-all group"
-                            @click="openDetail(t.slug)">
-                            <div class="flex items-start justify-between gap-3">
-                                <div class="min-w-0">
-                                    <p class="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">
+                    <div class="p-3">
+                        <div v-if="!store.list?.length"
+                            class="rounded-xl border border-dashed border-slate-300 p-12 text-center dark:border-slate-700">
+                            <i class="fa-solid fa-compass text-3xl text-slate-300 dark:text-slate-700"></i>
+                            <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">Nenhuma trilha encontrada.</p>
+                            <button type="button" @click="openCreate"
+                                class="mt-3 inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-500">
+                                <i class="fa-solid fa-plus text-xs"></i>
+                                Criar primeira trilha
+                            </button>
+                        </div>
+
+                        <ul v-else class="space-y-3">
+                            <li v-for="t in store.list" :key="t.slug" @click="openDetail(t.slug)"
+                                class="group flex cursor-pointer items-start gap-3 rounded-2xl border border-slate-200 bg-white p-5 transition-all hover:-translate-y-0.5 hover:border-indigo-300 hover:shadow-md dark:border-slate-800 dark:bg-slate-900 dark:hover:border-indigo-800">
+                                <span
+                                    class="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-100 text-indigo-600 dark:bg-indigo-950/60 dark:text-indigo-300">
+                                    <i class="fa-solid fa-route"></i>
+                                </span>
+                                <div class="min-w-0 flex-1">
+                                    <p class="truncate text-sm font-semibold text-slate-900 transition-colors group-hover:text-indigo-600 dark:text-slate-100 dark:group-hover:text-indigo-400">
                                         {{ t.title }}
                                     </p>
-                                    <p class="mt-1 text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
+                                    <p v-if="t.description"
+                                        class="mt-1 line-clamp-2 text-sm leading-relaxed text-slate-500 dark:text-slate-400">
                                         {{ t.description }}
                                     </p>
 
                                     <div class="mt-3 flex flex-wrap items-center gap-2 text-xs">
                                         <span
-                                            class="rounded-full border border-slate-200 dark:border-slate-700 px-2 py-1 font-mono text-slate-600 dark:text-slate-300">{{
-                                            t.slug }}</span> 
-                                        <span class="rounded-full border px-2 py-1 font-mono" :class="t.status === 'PUBLISHED'
-                                            ? 'border-emerald-200 text-emerald-700 dark:border-emerald-900/50 dark:text-emerald-400'
-                                            : 'border-amber-200 text-amber-700 dark:border-amber-900/50 dark:text-amber-400'">
-                                            {{ t.status }}
+                                            class="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 font-mono text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                                            <i class="fa-solid fa-hashtag text-[9px] text-slate-400"></i>
+                                            {{ t.slug }}
+                                        </span>
+                                        <span class="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider"
+                                            :class="t.status === 'PUBLISHED'
+                                                ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300'
+                                                : 'bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300'">
+                                            {{ t.status === 'PUBLISHED' ? 'publicado' : 'rascunho' }}
                                         </span>
                                     </div>
                                 </div>
-                                <span
-                                    class="text-slate-400 dark:text-slate-600 group-hover:translate-x-1 transition-transform">›</span>
-                            </div>
-                        </li>
-                    </ul>
+                                <i class="fa-solid fa-chevron-right mt-2 text-xs text-slate-300 transition-transform group-hover:translate-x-0.5 group-hover:text-indigo-500 dark:text-slate-600"></i>
+                            </li>
+                        </ul>
+                    </div>
                 </div>
             </section>
         </div>

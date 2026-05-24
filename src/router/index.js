@@ -6,14 +6,33 @@ import { allManagedRoutes } from '@/config/navRegistry';
 
 import officeRoutes from './office.routes.js';
 import academyRoutes from './academy.routes.js';
+import lpRoutes from './lp.routes.js';
 
+// Decide se a aplicação roda como Academy ou Office.
+// Produção: pelo subdomínio (academy.menin.com.br → Academy; demais → Office).
+// Dev: também aceita `academy.localhost` (navegadores resolvem *.localhost
+// automaticamente, sem mexer no arquivo hosts) ou a env VITE_APP_CONTEXT.
 function isAcademyHost() {
-  return window.location.host === 'academy.menin.com.br';
+  const ctx = String(import.meta.env.VITE_APP_CONTEXT || '').toLowerCase();
+  if (ctx === 'academy') return true;
+  if (ctx === 'office') return false;
+
+  const host = String(window.location.host || '').toLowerCase();
+  return host === 'academy.menin.com.br' || host.startsWith('academy.');
+}
+
+// Roteamento por host pras landing pages públicas em lp.menin.com.br.
+// Dev: aceita `lp.localhost` ou a env VITE_APP_CONTEXT=lp.
+function isLpHost() {
+  const ctx = String(import.meta.env.VITE_APP_CONTEXT || '').toLowerCase();
+  if (ctx === 'lp') return true;
+  const host = String(window.location.host || '').toLowerCase();
+  return host === 'lp.menin.com.br' || host.startsWith('lp.');
 }
 
 const router = createRouter({
   history: createWebHistory(),
-  routes: isAcademyHost() ? academyRoutes : officeRoutes,
+  routes: isLpHost() ? lpRoutes : (isAcademyHost() ? academyRoutes : officeRoutes),
 });
 
 // ✅ Guard unificado: autenticação + role + permissões de alçada
@@ -39,8 +58,9 @@ router.beforeEach(async (to, from, next) => {
     return next({ path: '/error', query: { message: 'Você não tem permissão para acessar esta página!' } });
   }
 
-  // 3. Check de alçada — só para rotas gerenciadas e usuários autenticados
-  if (requiresAuth && authStore.isAuthenticated() && !isAcademyHost()) {
+  // 3. Check de alçada — só para rotas gerenciadas e usuários autenticados.
+  //    Não roda no contexto Academy nem LP (lp não usa auth).
+  if (requiresAuth && authStore.isAuthenticated() && !isAcademyHost() && !isLpHost()) {
     const permStore = usePermissionStore();
     await permStore.ensureLoaded();
 

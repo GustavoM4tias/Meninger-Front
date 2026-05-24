@@ -1,0 +1,145 @@
+/* ============================================================
+   Tour de apresentação do Academy — popover com a identidade
+   do tutor Eme. Estilizado para modo claro e escuro
+   (a aplicação alterna a classe .dark no <html>).
+   ============================================================ */
+
+.driver-popover.driver-eme {
+    background: #ffffff;
+    color: #475569;
+    border-radius: 16px;
+    padding: 18px;
+    max-width: 348px;
+    box-shadow: 0 24px 48px -12px rgba(15, 23, 42, .35);
+}
+
+.driver-popover.driver-eme .driver-popover-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0 0 8px;
+}
+
+.driver-popover.driver-eme .driver-popover-description {
+    color: #475569;
+    margin: 0;
+}
+
+/* Bloco de "fala" do Eme (avatar + texto) */
+.eme-pop {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+}
+
+.eme-pop-ava {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 9px;
+    background: linear-gradient(135deg, #6366f1, #7c3aed);
+    color: #fff;
+    font-size: 13px;
+}
+
+.eme-pop-text {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.55;
+}
+
+/* Progresso e botões de navegação */
+.driver-popover.driver-eme .driver-popover-progress-text {
+    color: #94a3b8;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.driver-popover.driver-eme .driver-popover-footer button {
+    border-radius: 9px;
+    padding: 6px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    text-shadow: none;
+    transition: filter .15s ease, background-color .15s ease;
+}
+
+.driver-popover.driver-eme .driver-popover-next-btn {
+    background: linear-gradient(135deg, #6366f1, #7c3aed);
+    color: #fff;
+    border: none;
+}
+
+.driver-popover.driver-eme .driver-popover-next-btn:hover {
+    filter: brightness(1.08);
+}
+
+.driver-popover.driver-eme .driver-popover-prev-btn {
+    background: transparent;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+}
+
+.driver-popover.driver-eme .driver-popover-prev-btn:hover {
+    background: #f8fafc;
+}
+
+.driver-popover.driver-eme .driver-popover-close-btn {
+    color: #94a3b8;
+}
+
+.driver-popover.driver-eme .driver-popover-close-btn:hover {
+    color: #0f172a;
+}
+
+/* ---------------------- Modo escuro ---------------------- */
+.dark .driver-popover.driver-eme {
+    background: #1e293b;
+    color: #cbd5e1;
+    box-shadow: 0 24px 48px -12px rgba(0, 0, 0, .65);
+}
+
+.dark .driver-popover.driver-eme .driver-popover-title {
+    color: #f8fafc;
+}
+
+.dark .driver-popover.driver-eme .driver-popover-description {
+    color: #cbd5e1;
+}
+
+.dark .driver-popover.driver-eme .driver-popover-prev-btn {
+    color: #cbd5e1;
+    border-color: #334155;
+}
+
+.dark .driver-popover.driver-eme .driver-popover-prev-btn:hover {
+    background: #334155;
+}
+
+.dark .driver-popover.driver-eme .driver-popover-close-btn {
+    color: #64748b;
+}
+
+.dark .driver-popover.driver-eme .driver-popover-close-btn:hover {
+    color: #f8fafc;
+}
+
+/* A seta do popover acompanha o fundo (claro/escuro) */
+.dark .driver-popover.driver-eme .driver-popover-arrow-side-left.driver-popover-arrow {
+    border-left-color: #1e293b;
+}
+
+.dark .driver-popover.driver-eme .driver-popover-arrow-side-right.driver-popover-arrow {
+    border-right-color: #1e293b;
+}
+
+.dark .driver-popover.driver-eme .driver-popover-arrow-side-top.driver-popover-arrow {
+    border-top-color: #1e293b;
+}
+
+.dark .driver-popover.driver-eme .driver-popover-arrow-side-bottom.driver-popover-arrow {
+    border-bottom-color: #1e293b;
+}

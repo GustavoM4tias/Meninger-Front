@@ -10,43 +10,33 @@
           <Favorite :router="'/financeiro/custos'" :section="'Custos'" />
         </template>
         <template #actions>
-          <div class="flex flex-wrap items-end gap-2">
-            <div>
-              <label class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1 block">De</label>
-              <Input v-model="store.startDate" type="date" size="sm" />
-            </div>
-            <div>
-              <label class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1 block">Até</label>
-              <Input v-model="store.endDate" type="date" size="sm" />
-            </div>
-            <Button v-if="isAdmin" variant="ghost" icon="fas fa-gear" size="sm"
-              @click="adminSettingsOpen = true">
-              Configurações
-            </Button>
-          </div>
+          <Button v-if="isAdmin" variant="ghost" icon="fas fa-gear" size="sm"
+            @click="adminSettingsOpen = true">
+            Configurações
+          </Button>
         </template>
       </PageHeader>
 
       <AdminSettingsModal v-if="isAdmin" :open="adminSettingsOpen"
         :cost-center-groups="store.rawGroups"
         @close="adminSettingsOpen = false"
-        @changed="store.fetchExpenses()" />
+        @changed="onAdminSettingsChanged" />
 
       <!-- Filtros Card -->
       <Surface variant="raised" padding="md" class="mb-5 surface-gradient">
-        <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
-          <div class="md:col-span-3">
-            <label class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1.5 flex items-center gap-1.5">
-              <i class="fas fa-city text-emerald-500 text-[10px]"></i>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 items-end">
+          <div>
+            <label class="text-[11px] font-medium text-ink-muted mb-1.5 flex items-center gap-1.5">
+              <i class="fas fa-city text-ink-subtle text-[10px]"></i>
               Empreendimento
             </label>
             <MultiSelector :model-value="selectedEnterpriseNames" @update:modelValue="handleEnterpriseChange"
               :options="enterpriseOptions" placeholder="Todos os empreendimentos" :page-size="200" />
           </div>
 
-          <div class="md:col-span-3">
-            <label class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1.5 flex items-center gap-1.5">
-              <i class="fas fa-sitemap text-emerald-500 text-[10px]"></i>
+          <div>
+            <label class="text-[11px] font-medium text-ink-muted mb-1.5 flex items-center gap-1.5">
+              <i class="fas fa-sitemap text-ink-subtle text-[10px]"></i>
               Departamento(s)
             </label>
             <MultiSelector :model-value="store.selectedDepartments"
@@ -54,19 +44,34 @@
               :options="store.departmentOptions" placeholder="Todos os departamentos" :page-size="200" />
           </div>
 
-          <div class="md:col-span-3">
-            <label class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1.5 flex items-center gap-1.5">
-              <i class="fas fa-tags text-emerald-500 text-[10px]"></i>
+          <div>
+            <label class="text-[11px] font-medium text-ink-muted mb-1.5 flex items-center gap-1.5">
+              <i class="fas fa-tags text-ink-subtle text-[10px]"></i>
               Categoria
             </label>
             <Select
               v-model.number="categoryFilterId"
               :options="categoryFilterOptions"
-              placeholder="Todas as categorias"
-              size="sm" />
+              placeholder="Todas as categorias" />
           </div>
 
-          <div class="md:col-span-3">
+          <div>
+            <label class="text-[11px] font-medium text-ink-muted mb-1.5 flex items-center gap-1.5">
+              <i class="fas fa-calendar-day text-ink-subtle text-[10px]"></i>
+              De
+            </label>
+            <Input v-model="store.startDate" type="date" />
+          </div>
+
+          <div>
+            <label class="text-[11px] font-medium text-ink-muted mb-1.5 flex items-center gap-1.5">
+              <i class="fas fa-calendar-check text-ink-subtle text-[10px]"></i>
+              Até
+            </label>
+            <Input v-model="store.endDate" type="date" />
+          </div>
+
+          <div>
             <Button variant="primary" icon="fas fa-filter" block
               class="!bg-emerald-600 hover:!bg-emerald-700"
               :loading="store.isLoading"
@@ -86,7 +91,7 @@
       </Surface>
 
       <!-- Summary Cards -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-5">
         <Surface variant="raised" padding="md" class="border-emerald-500/30 bg-emerald-500/10 surface-gradient">
           <div class="flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-emerald-700 dark:text-emerald-300 mb-2">
             <i class="fas fa-dollar-sign"></i> Total de Gastos
@@ -94,7 +99,17 @@
           <div class="text-2xl font-bold text-emerald-700 dark:text-emerald-200 font-mono tabular-nums">
             {{ filteredTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) }}
           </div>
-          <div class="text-[10px] text-emerald-700/70 dark:text-emerald-300/70 mt-1">Período selecionado</div>
+          <div class="text-[10px] text-emerald-700/70 dark:text-emerald-300/70 mt-1">Ativos (exclui cancelados)</div>
+        </Surface>
+
+        <Surface variant="raised" padding="md" class="border-red-500/30 bg-red-500/10 surface-gradient">
+          <div class="flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-red-700 dark:text-red-300 mb-2">
+            <i class="fas fa-ban"></i> Cancelados
+          </div>
+          <div class="text-2xl font-bold text-red-700 dark:text-red-300 font-mono tabular-nums">
+            {{ filteredCancelledTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) }}
+          </div>
+          <div class="text-[10px] text-red-700/70 dark:text-red-300/70 mt-1">Não somam no total</div>
         </Surface>
 
         <Surface variant="raised" padding="md" class="surface-gradient">
@@ -178,6 +193,10 @@
                       style: 'currency', currency: 'BRL'
                     }) }}
                   </div>
+                  <div v-if="Number(group.cancelledTotal) > 0"
+                    class="text-[10px] text-red-500 font-mono tabular-nums mt-0.5">
+                    <i class="fas fa-ban mr-0.5"></i>{{ Number(group.cancelledTotal).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) }} cancelado
+                  </div>
                 </td>
                 <td class="px-5 py-3 whitespace-nowrap text-center">
                   <Badge variant="info" size="sm">
@@ -223,59 +242,77 @@
             <i class="fas fa-dollar-sign text-[10px] mr-1"></i>
             <span class="font-mono tabular-nums">{{ modalTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) }}</span>
           </span>
+          <template v-if="modalCancelledTotal > 0">
+            <span class="opacity-50">|</span>
+            <span class="font-semibold text-red-500">
+              <i class="fas fa-ban text-[10px] mr-1"></i>Cancelado
+              <span class="font-mono tabular-nums">{{ modalCancelledTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) }}</span>
+            </span>
+          </template>
         </div>
       </template>
 
-      <div v-if="selectedGroup" class="space-y-4 -m-4 sm:-m-5">
+      <div v-if="selectedGroup" class="-m-4 sm:-m-5">
 
         <!-- Toolbar: busca + filtros -->
         <div class="border-b border-line bg-surface-sunken/40 px-4 sm:px-5 py-3 space-y-3">
 
-          <div class="flex flex-col md:flex-row gap-2 items-stretch md:items-center">
+          <div class="flex flex-col md:flex-row gap-2 items-stretch md:items-end">
             <div class="flex-1 min-w-0">
+              <label class="text-[11px] font-medium text-ink-muted mb-1.5 flex items-center gap-1.5">
+                <i class="fas fa-magnifying-glass text-ink-subtle text-[10px]"></i>
+                Buscar
+              </label>
               <Input
                 v-model="modalSearch"
-                placeholder="Buscar por fornecedor, documento, CNPJ, observação..."
+                placeholder="Fornecedor, documento, CNPJ, observação..."
                 icon-left="fas fa-magnifying-glass" />
             </div>
 
-            <div class="w-full md:w-44">
+            <div class="w-full md:w-48">
+              <label class="text-[11px] font-medium text-ink-muted mb-1.5 flex items-center gap-1.5">
+                <i class="fas fa-sitemap text-ink-subtle text-[10px]"></i>
+                Departamento
+              </label>
               <Select
                 v-model="modalFilterDept"
                 :options="modalDeptSelectOptions"
-                placeholder="Todos departamentos"
-                size="sm" />
+                placeholder="Todos departamentos" />
             </div>
 
-            <div class="w-full md:w-44">
+            <div class="w-full md:w-48">
+              <label class="text-[11px] font-medium text-ink-muted mb-1.5 flex items-center gap-1.5">
+                <i class="fas fa-tags text-ink-subtle text-[10px]"></i>
+                Categoria
+              </label>
               <Select
                 v-model.number="modalFilterCat"
                 :options="categoryFilterOptions"
-                placeholder="Todas categorias"
-                size="sm" />
+                placeholder="Todas categorias" />
             </div>
 
-            <label class="flex items-center gap-2 text-sm text-ink-muted whitespace-nowrap cursor-pointer select-none px-1">
+            <label class="flex items-center gap-2 text-sm text-ink-muted whitespace-nowrap cursor-pointer select-none px-1 md:pb-2.5">
               <input type="checkbox" v-model="modalFilterNoCat"
                 class="w-4 h-4 text-emerald-600 border-line rounded focus:ring-emerald-500" />
               Sem categoria
             </label>
 
-            <Button v-if="hasModalFilters" variant="ghost" size="sm" icon="fas fa-times" @click="clearModalFilters">
+            <Button v-if="hasModalFilters" variant="ghost" size="sm" icon="fas fa-times"
+              class="md:mb-1" @click="clearModalFilters">
               Limpar
             </Button>
           </div>
 
           <!-- Filtro de data -->
           <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-            <span class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle whitespace-nowrap flex items-center gap-1.5">
-              <i class="fas fa-calendar-days text-emerald-500 text-[10px]"></i>
+            <span class="text-[11px] font-medium text-ink-muted whitespace-nowrap flex items-center gap-1.5">
+              <i class="fas fa-calendar-days text-ink-subtle text-[10px]"></i>
               Vencimento entre
             </span>
             <div class="flex items-center gap-2 flex-1">
-              <Input v-model="modalFilterDateFrom" type="date" size="sm" />
+              <Input v-model="modalFilterDateFrom" type="date" />
               <span class="text-ink-subtle text-sm">até</span>
-              <Input v-model="modalFilterDateTo" type="date" size="sm" />
+              <Input v-model="modalFilterDateTo" type="date" />
               <IconButton v-if="modalFilterDateFrom || modalFilterDateTo"
                 icon="fas fa-times-circle"
                 label="Limpar datas"
@@ -301,7 +338,7 @@
         <!-- Bulk action bar -->
         <transition name="slide-down">
           <div v-if="selectedExpenseIds.length"
-            class="bg-emerald-600 text-white px-4 sm:px-5 py-3 -mt-4">
+            class="bg-emerald-600 text-white px-4 sm:px-5 py-3 border-b border-emerald-700">
             <div class="flex flex-wrap items-center gap-3">
               <span class="text-sm font-semibold">
                 <i class="fas fa-square-check mr-1"></i>
@@ -439,14 +476,14 @@
                 </td>
 
                 <td class="px-3 py-3 whitespace-nowrap text-right">
-                  <span class="font-bold font-mono tabular-nums"
-                    :class="{
-                      'text-emerald-600 dark:text-emerald-400': exp.status !== 'cancelled',
-                      'text-ink-subtle line-through': exp.status === 'cancelled',
-                    }">
-                    {{ Number(exp.amount || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) }}
-                  </span>
-                  <div class="mt-1">
+                  <div class="flex items-center justify-end gap-2">
+                    <span class="font-bold font-mono tabular-nums"
+                      :class="{
+                        'text-emerald-600 dark:text-emerald-400': exp.status !== 'cancelled',
+                        'text-ink-subtle line-through': exp.status === 'cancelled',
+                      }">
+                      {{ Number(exp.amount || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) }}
+                    </span>
                     <Badge :variant="expStatusVariant(exp.status)" size="sm">
                       {{ expStatusLabel(exp.status) }}
                     </Badge>
@@ -521,10 +558,15 @@
           <div class="text-xs text-ink-muted">
             Mostrando <span class="font-mono tabular-nums">{{ modalExpenses.length }}</span>
             de <span class="font-mono tabular-nums">{{ selectedGroup?.expenses.length }}</span> lançamentos
-            · Total filtrado:
+            · Total ativo:
             <span class="font-semibold text-emerald-600 dark:text-emerald-400 font-mono tabular-nums">
               {{ modalTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) }}
             </span>
+            <template v-if="modalCancelledTotal > 0">
+              · <span class="text-red-500">Cancelado:
+                <span class="font-mono tabular-nums">{{ modalCancelledTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) }}</span>
+              </span>
+            </template>
           </div>
           <Button variant="ghost" @click="closeDetails">Fechar</Button>
         </div>
@@ -587,8 +629,8 @@
 
         <!-- Observação -->
         <div>
-          <label class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1.5 block">
-            <i class="fas fa-note-sticky text-accent mr-1"></i> Observação
+          <label class="text-[11px] font-medium text-ink-muted mb-1.5 block">
+            <i class="fas fa-note-sticky text-ink-subtle mr-1"></i> Observação
           </label>
           <textarea v-model="editForm.description" rows="3"
             placeholder="Digite uma observação sobre este lançamento..."
@@ -616,6 +658,7 @@ import { useExpensesStore } from '@/stores/Financeiro/Expenses/expensesStore';
 import { useAdminMetaStore } from '@/stores/Settings/Admin/metaStore';
 import { useContractsStore } from '@/stores/Comercial/Contracts/contractsStore';
 import { useAuthStore } from '@/stores/Settings/Auth/authStore';
+import { useCostCenterNamesStore } from '@/stores/Financeiro/costCenterNamesStore';
 import { useToast } from 'vue-toastification';
 
 import AdminSettingsModal from './AdminSettingsModal.vue';
@@ -637,6 +680,7 @@ const store = useExpensesStore();
 const adminMeta = useAdminMetaStore();
 const contractsStore = useContractsStore();
 const auth = useAuthStore();
+const ccNames = useCostCenterNamesStore();
 const isAdmin = computed(() => auth?.user?.role === 'admin');
 const adminSettingsOpen = ref(false);
 
@@ -648,14 +692,19 @@ const toast = (() => {
 // ── Empreendimento filter ─────────────────────────────────
 const selectedEnterpriseNames = ref([]);
 
+// Nome efetivo = override admin (se houver) senão o nome do enterprise_cities
+function effectiveName(e) {
+  return ccNames.displayName(e.erp_id, e.name);
+}
+
 const enterpriseOptions = computed(() =>
-  (contractsStore.enterpriseCities || []).map(e => e.name)
+  (contractsStore.enterpriseCities || []).map(effectiveName)
 );
 
 const enterpriseIdByName = computed(() => {
   const m = new Map();
   for (const e of contractsStore.enterpriseCities || []) {
-    m.set(e.name, Number(e.erp_id));
+    m.set(effectiveName(e), Number(e.erp_id));
   }
   return m;
 });
@@ -663,13 +712,14 @@ const enterpriseIdByName = computed(() => {
 const enterpriseNameById = computed(() => {
   const m = new Map();
   for (const e of contractsStore.enterpriseCities || []) {
-    m.set(Number(e.erp_id), e.name);
+    m.set(Number(e.erp_id), effectiveName(e));
   }
   return m;
 });
 
 function resolveEnterpriseName(costCenterId) {
-  return enterpriseNameById.value.get(Number(costCenterId)) || null;
+  // override tem prioridade mesmo que enterprise_cities não tenha o CC
+  return ccNames.displayName(costCenterId, enterpriseNameById.value.get(Number(costCenterId)) || null);
 }
 
 function handleEnterpriseChange(v) {
@@ -723,8 +773,12 @@ const filteredGroups = computed(() => {
     .map(g => {
       let exps = g.expenses || [];
       if (catId) exps = exps.filter(e => e.departmentCategoryId === catId);
-      const total = exps.reduce((sum, e) => sum + Number(e.amount || 0), 0);
-      return { ...g, expenses: exps, total };
+      // Cancelados continuam na lista, mas NÃO somam no total ativo — vão num total à parte
+      const total = exps.reduce(
+        (sum, e) => sum + (e.status === 'cancelled' ? 0 : Number(e.amount || 0)), 0);
+      const cancelledTotal = exps.reduce(
+        (sum, e) => sum + (e.status === 'cancelled' ? Number(e.amount || 0) : 0), 0);
+      return { ...g, expenses: exps, total, cancelledTotal };
     })
     .filter(g => g.expenses.length > 0)
     .filter(g => !selIds.length || selIds.includes(Number(g.costCenterId)));
@@ -732,6 +786,10 @@ const filteredGroups = computed(() => {
 
 const filteredTotal = computed(() =>
   filteredGroups.value.reduce((sum, g) => sum + Number(g.total || 0), 0)
+);
+
+const filteredCancelledTotal = computed(() =>
+  filteredGroups.value.reduce((sum, g) => sum + Number(g.cancelledTotal || 0), 0)
 );
 
 const sortedGroups = computed(() => {
@@ -919,7 +977,13 @@ const modalExpenses = computed(() => {
 });
 
 const modalTotal = computed(() =>
-  modalExpenses.value.reduce((sum, e) => sum + Number(e.amount || 0), 0)
+  modalExpenses.value.reduce(
+    (sum, e) => sum + (e.status === 'cancelled' ? 0 : Number(e.amount || 0)), 0)
+);
+
+const modalCancelledTotal = computed(() =>
+  modalExpenses.value.reduce(
+    (sum, e) => sum + (e.status === 'cancelled' ? Number(e.amount || 0) : 0), 0)
 );
 
 function handleModalSort(key) {
@@ -1126,11 +1190,18 @@ function formatMonth(d) {
 }
 
 // ── Mount ─────────────────────────────────────────────────
+async function onAdminSettingsChanged() {
+  // Recarrega mapa de overrides + dados (nome de exibição pode ter mudado)
+  await ccNames.fetchOverrideMap({ force: true });
+  await store.fetchExpenses();
+}
+
 onMounted(async () => {
   store.selectedDepartments = [];
   await Promise.all([
     adminMeta.fetchDepartmentCategories(),
     contractsStore.fetchEnterpriseCities(),
+    ccNames.fetchOverrideMap(),
     store.fetchExpenses(),
   ]);
 });

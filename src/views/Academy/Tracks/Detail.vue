@@ -1,5 +1,5 @@
 <template>
-    <div class="space-y-4">
+    <div class="mx-auto max-w-6xl space-y-5 pb-6">
         <AcademyPageHeader :title="data?.track?.title || 'Trilha'"
             :subtitle="data?.track?.description || 'Conteúdo e progresso'" :backTo="{ name: 'AcademyTracks' }"
             :breadcrumbs="[
@@ -9,24 +9,32 @@
             ]" />
 
         <div v-if="tracks.error"
-            class="rounded-2xl border border-rose-200 dark:border-rose-900/50 bg-white dark:bg-slate-900 p-4 text-sm text-rose-700 dark:text-rose-400">
+            class="flex items-center gap-2 rounded-2xl border border-rose-200 bg-white p-4 text-sm text-rose-700 shadow-sm dark:border-rose-900/50 dark:bg-slate-900 dark:text-rose-400">
+            <i class="fa-solid fa-circle-exclamation"></i>
             {{ tracks.error }}
         </div>
 
-        <div v-if="!data?.track"
-            class="rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-10 text-center text-sm text-slate-500 dark:text-slate-400">
-            Carregando trilha...
+        <!-- Trilha bloqueada por pré-requisito (S3.3) -->
+        <LockBanner v-else-if="data?.locked" :blocked-by="data.blockedBy || []" @open="goToTrack" />
+
+        <div v-else-if="!data?.track"
+            class="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            <i class="fa-solid fa-spinner fa-spin text-indigo-500"></i>
+            <p class="text-sm text-slate-500 dark:text-slate-400">Carregando trilha...</p>
         </div>
 
-        <div v-else class="grid grid-cols-1 gap-4 lg:grid-cols-12">
+        <div v-else class="grid grid-cols-1 gap-5 lg:grid-cols-12">
             <!-- Itens -->
             <section
-                class="lg:col-span-8 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm transition-colors">
+                class="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900 lg:col-span-8">
                 <div
-                    class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 border-b border-slate-100 dark:border-slate-800 px-5 py-4">
+                    class="flex flex-col gap-3 border-b border-slate-100 px-5 py-4 dark:border-slate-800 md:flex-row md:items-center md:justify-between">
                     <div class="min-w-0">
-                        <h2 class="text-base font-semibold text-slate-900 dark:text-white">Itens da jornada</h2>
-                        <p class="text-sm text-slate-500 dark:text-slate-400">
+                        <h2 class="flex items-center gap-2 text-base font-semibold text-slate-900 dark:text-white">
+                            <i class="fa-solid fa-list-check text-indigo-500"></i>
+                            Itens da jornada
+                        </h2>
+                        <p class="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
                             Progresso considera apenas itens obrigatórios
                         </p>
                     </div>
@@ -37,7 +45,7 @@
                         </div>
 
                         <button
-                            class="rounded-xl bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 px-4 py-2.5 text-sm font-bold"
+                            class="rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm shadow-indigo-500/25 transition hover:opacity-95 active:scale-95"
                             type="button" @click="startOrContinue">
                             {{
                                 seq.nextRequiredIndex === -1
@@ -49,94 +57,150 @@
                 </div>
 
                 <div class="p-5">
-                    <div class="h-3 w-full rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
-                        <div class="h-3 rounded-full bg-slate-900 dark:bg-slate-100 transition-all duration-500"
+                    <div class="h-3 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                        <div class="h-full rounded-full bg-gradient-to-r from-indigo-500 to-violet-500 transition-all duration-500"
                             :style="{ width: `${clampPercent(progressPercent)}%` }" />
                     </div>
 
                     <ul class="mt-6 space-y-3">
-                        <li v-for="(it, idx) in items" :key="it.id"
-                            class="flex items-start justify-between gap-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 transition-all"
-                            :class="[
-                                it.completed ? 'bg-slate-50/50 dark:bg-slate-800/30' : '',
-                                seq.isCurrent(it, idx) && !it.completed ? 'ring-2 ring-slate-200 dark:ring-slate-700' : '',
-                                seq.isLocked(it, idx) && !it.completed ? 'opacity-75' : ''
-                            ]">
-                            <div class="min-w-0">
-                                <div class="flex items-center flex-wrap gap-2">
-                                    <p class="text-sm font-semibold text-slate-900 dark:text-slate-100"
-                                        :class="it.completed ? 'text-slate-500 dark:text-slate-400 line-through' : ''">
-                                        {{ it.title }}
+                        <template v-for="(it, idx) in items" :key="it.id">
+                            <!-- Cabeçalho de módulo (S2.1) -->
+                            <li v-if="moduleHeaderFor(idx)" class="pt-3 first:pt-0">
+                                <div class="flex items-center gap-2.5">
+                                    <span
+                                        class="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 text-xs font-bold text-white">
+                                        {{ moduleHeaderFor(idx).order }}
+                                    </span>
+                                    <div class="text-sm font-bold text-slate-900 dark:text-white">
+                                        {{ moduleHeaderFor(idx).title }}
+                                    </div>
+                                </div>
+                                <p v-if="moduleHeaderFor(idx).description"
+                                    class="ml-9 mt-1 text-xs text-slate-500 dark:text-slate-400">
+                                    {{ moduleHeaderFor(idx).description }}
+                                </p>
+                            </li>
+
+                            <li class="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white p-4 transition dark:border-slate-800 dark:bg-slate-900"
+                                :class="[
+                                    it.completed ? '!border-emerald-200 bg-emerald-50/40 dark:!border-emerald-900/40 dark:bg-emerald-950/20' : '',
+                                    seq.isCurrent(it, idx) && !it.completed ? '!border-indigo-300 ring-2 ring-indigo-100 dark:!border-indigo-800 dark:ring-indigo-950/60' : '',
+                                    seq.isLocked(it, idx) && !it.completed ? 'opacity-70' : ''
+                                ]">
+                                <span class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-sm"
+                                    :class="it.completed
+                                        ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-300'
+                                        : (seq.isLocked(it, idx)
+                                            ? 'bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500'
+                                            : (seq.isCurrent(it, idx)
+                                                ? 'bg-indigo-100 text-indigo-600 dark:bg-indigo-950/60 dark:text-indigo-300'
+                                                : 'bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500'))">
+                                    <i v-if="it.completed" class="fa-solid fa-check"></i>
+                                    <i v-else-if="seq.isLocked(it, idx)" class="fa-solid fa-lock text-xs"></i>
+                                    <i v-else-if="seq.isCurrent(it, idx)" class="fa-solid fa-play text-xs"></i>
+                                    <i v-else class="fa-regular fa-circle"></i>
+                                </span>
+
+                                <div class="min-w-0 flex-1">
+                                    <div class="flex flex-wrap items-center gap-2">
+                                        <p class="text-sm font-semibold text-slate-900 dark:text-slate-100"
+                                            :class="it.completed ? 'text-slate-500 line-through dark:text-slate-400' : ''">
+                                            {{ it.title }}
+                                        </p>
+
+                                        <span v-if="seq.isLocked(it, idx) && !it.completed"
+                                            class="rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-rose-700 dark:bg-rose-950/50 dark:text-rose-300">
+                                            bloqueado
+                                        </span>
+
+                                        <span v-else-if="seq.isCurrent(it, idx) && !it.completed"
+                                            class="rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300">
+                                            atual
+                                        </span>
+
+                                        <span v-if="!it.required"
+                                            class="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                                            opcional
+                                        </span>
+                                    </div>
+
+                                    <p class="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+                                        <span
+                                            class="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                                            {{ it.type || 'ITEM' }}
+                                        </span>
+                                        <span class="inline-flex items-center gap-1">
+                                            <i class="fa-regular fa-clock"></i>
+                                            ~{{ Number(it.estimatedMinutes || 0) }} min
+                                        </span>
                                     </p>
 
-                                    <span v-if="seq.isLocked(it, idx) && !it.completed"
-                                        class="rounded-full bg-rose-50 dark:bg-rose-900/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-rose-700 dark:text-rose-300">
-                                        bloqueado
-                                    </span>
+                                    <div class="mt-3 flex flex-wrap items-center gap-2">
+                                        <button
+                                            class="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-bold text-slate-900 transition hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-indigo-800 dark:hover:bg-indigo-950/50"
+                                            type="button" @click="openItem(it)"
+                                            :disabled="seq.isLocked(it, idx) && !it.completed">
+                                            <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+                                            Abrir
+                                        </button>
 
-                                    <span v-else-if="seq.isCurrent(it, idx) && !it.completed"
-                                        class="rounded-full bg-blue-50 dark:bg-blue-900/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-blue-700 dark:text-blue-300">
-                                        atual
-                                    </span>
+                                        <span v-if="it.completed"
+                                            class="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-bold text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
+                                            <i class="fa-solid fa-circle-check"></i> concluído
+                                        </span>
 
-                                    <span v-if="!it.required"
-                                        class="rounded-full bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-500">
-                                        opcional
-                                    </span>
+                                        <span v-else-if="seq.isCurrent(it, idx)"
+                                            class="inline-flex items-center gap-1 rounded-full bg-indigo-100 px-2.5 py-1 text-[11px] font-bold text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300">
+                                            <i class="fa-solid fa-hourglass-half"></i> em andamento
+                                        </span>
+                                    </div>
                                 </div>
-
-                                <p class="mt-1 text-xs text-slate-500 dark:text-slate-500">
-                                    {{ it.type || 'ITEM' }} • ~{{ Number(it.estimatedMinutes || 0) }} min
-                                </p>
-
-                                <div class="mt-4 flex flex-wrap gap-2">
-                                    <button
-                                        class="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 text-xs font-bold text-slate-900 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                                        type="button" @click="openItem(it)"
-                                        :disabled="seq.isLocked(it, idx) && !it.completed">
-                                        Abrir
-                                    </button>
-
-                                    <span v-if="it.completed"
-                                        class="self-center rounded-full bg-emerald-50 dark:bg-emerald-900/20 px-2 py-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-300">
-                                        concluído
-                                    </span>
-
-                                    <span v-else-if="seq.isCurrent(it, idx)"
-                                        class="self-center rounded-full bg-blue-50 dark:bg-blue-900/20 px-2 py-1 text-[11px] font-bold text-blue-700 dark:text-blue-300">
-                                        em andamento
-                                    </span>
-                                </div>
-                            </div>
-                        </li>
+                            </li>
+                        </template>
                     </ul>
                 </div>
             </section>
 
             <!-- Sidebar -->
-            <aside class="lg:col-span-4 space-y-4">
+            <aside class="space-y-5 lg:col-span-4">
                 <section
-                    class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm transition-colors">
-                    <h3 class="text-sm font-semibold text-slate-900 dark:text-white mb-4">Resumo do progresso</h3>
+                    class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                    <h3 class="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-white">
+                        <i class="fa-solid fa-chart-simple text-indigo-500"></i>
+                        Resumo do progresso
+                    </h3>
 
-                    <div class="space-y-3 text-sm">
-                        <div class="flex justify-between items-center text-slate-600 dark:text-slate-400">
-                            <span>Total de itens</span>
+                    <div class="mt-4 space-y-2">
+                        <div
+                            class="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2 text-sm dark:bg-slate-800/50">
+                            <span class="flex items-center gap-2 text-slate-600 dark:text-slate-400">
+                                <i class="fa-solid fa-layer-group text-slate-400"></i> Total de itens
+                            </span>
                             <span class="font-bold text-slate-900 dark:text-slate-100">{{ items.length }}</span>
                         </div>
 
-                        <div class="flex justify-between items-center text-slate-600 dark:text-slate-400">
-                            <span>Obrigatórios</span>
+                        <div
+                            class="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2 text-sm dark:bg-slate-800/50">
+                            <span class="flex items-center gap-2 text-slate-600 dark:text-slate-400">
+                                <i class="fa-solid fa-star text-slate-400"></i> Obrigatórios
+                            </span>
                             <span class="font-bold text-slate-900 dark:text-slate-100">{{ requiredCount }}</span>
                         </div>
 
-                        <div class="flex justify-between items-center text-emerald-600 dark:text-emerald-400">
-                            <span>Concluídos</span>
-                            <span class="font-bold">{{ completedRequiredCount }}</span>
+                        <div
+                            class="flex items-center justify-between rounded-lg bg-emerald-50 px-3 py-2 text-sm dark:bg-emerald-950/30">
+                            <span class="flex items-center gap-2 text-emerald-700 dark:text-emerald-400">
+                                <i class="fa-solid fa-circle-check"></i> Concluídos
+                            </span>
+                            <span class="font-bold text-emerald-700 dark:text-emerald-400">{{ completedRequiredCount
+                                }}</span>
                         </div>
 
-                        <div class="flex justify-between items-center text-slate-600 dark:text-slate-400">
-                            <span>Restantes</span>
+                        <div
+                            class="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2 text-sm dark:bg-slate-800/50">
+                            <span class="flex items-center gap-2 text-slate-600 dark:text-slate-400">
+                                <i class="fa-solid fa-hourglass-half text-slate-400"></i> Restantes
+                            </span>
                             <span class="font-bold text-slate-900 dark:text-slate-100">{{ remainingRequiredCount
                                 }}</span>
                         </div>
@@ -144,11 +208,12 @@
                 </section>
 
                 <section
-                    class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm transition-colors">
-                    <h3 class="text-sm font-semibold text-slate-900 dark:text-white flex items-center gap-2">
-                        <span class="text-blue-500">ℹ</span> Regra de ordem
+                    class="rounded-2xl border border-indigo-100 bg-indigo-50/60 p-5 dark:border-indigo-900/40 dark:bg-indigo-950/30">
+                    <h3 class="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-white">
+                        <i class="fa-solid fa-circle-info text-indigo-500"></i>
+                        Regra de ordem
                     </h3>
-                    <p class="mt-2 text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                    <p class="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-400">
                         Você precisa concluir os itens obrigatórios em ordem. Itens concluídos podem ser reabertos.
                     </p>
                 </section>
@@ -169,6 +234,7 @@ import { useToast } from 'vue-toastification';
 
 import AcademyPageHeader from '@/views/Academy/components/AcademyPageHeader.vue';
 import TrackItemModal from '@/views/Academy/Tracks/components/TrackItemModal.vue';
+import LockBanner from '@/views/Academy/components/LockBanner.vue';
 
 import { useAcademyTracksStore } from '@/stores/Academy/academyTracksStore';
 import { useTrackSequence } from '@/views/Academy/Tracks/composables/useTrackSequence';
@@ -190,6 +256,31 @@ function clampPercent(v) {
     const n = Number(v);
     if (!Number.isFinite(n)) return 0;
     return Math.max(0, Math.min(100, Math.round(n)));
+}
+
+// S2.1: módulos da trilha. Mapa itemId → módulo, para mostrar cabeçalho de
+// módulo na lista de itens. moduleHeaderFor(idx) devolve o módulo SE o item
+// na posição idx é o PRIMEIRO daquele módulo (senão null).
+const modules = computed(() => (Array.isArray(data.value?.modules) ? data.value.modules : []));
+
+function moduleHeaderFor(idx) {
+    const it = items.value[idx];
+    if (!it || it.moduleId == null) return null;
+    // só mostra o header se for o primeiro item desse módulo na lista
+    const prev = items.value[idx - 1];
+    if (prev && prev.moduleId === it.moduleId) return null;
+    const mod = modules.value.find((m) => Number(m.id) === Number(it.moduleId));
+    if (!mod) return null;
+    return {
+        title: mod.title,
+        description: mod.description,
+        order: mod.orderIndex || (modules.value.indexOf(mod) + 1),
+    };
+}
+
+function goToTrack(trackSlug) {
+    if (!trackSlug) return;
+    router.push({ name: 'AcademyTrackDetail', params: { trackSlug } });
 }
 
 const requiredCount = computed(() => items.value.filter((i) => !!i.required).length);

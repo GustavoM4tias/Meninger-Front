@@ -116,26 +116,11 @@ async function requestExternalCode() {
     }
 }
 
-function academyOrigin() {
-    return 'https://academy.menin.com.br';
-}
-
-function isAcademyHost() {
-    return window.location.host === 'academy.menin.com.br';
-}
-
-function hardGoToAcademy(path) {
-    window.location.replace(`${academyOrigin()}${path}`);
-}
-
 async function goToAcademyPanel() {
-    // ✅ garante domínio correto SEM depender do match do router
-    if (!isAcademyHost()) {
-        hardGoToAcademy('/panel');
-        return;
-    }
-
-    // ✅ evita voltar pro login no botão voltar
+    // Esta tela (AcademyLogin) só é montada quando o router já está em
+    // contexto Academy — então navegação interna basta, em produção e local.
+    // (Antes havia hard-redirect para https://academy.menin.com.br, que
+    // quebrava em dev com ERR_SSL_PROTOCOL_ERROR.)
     await router.replace({ name: 'AcademyPanel' });
 }
 
@@ -259,7 +244,7 @@ const splideOptions = {
                 <!-- brand corner -->
                 <div class="pointer-events-none absolute left-8 top-8 z-20">
                     <div class="rounded-2xl bg-white/10 px-4 py-3 text-white ring-1 ring-white/15 backdrop-blur">
-                        <img src="/ACADEMY.png" class="h-10 invert dark:invert-0" alt="Menin Academy">
+                        <img src="/Mlogotext.png" class="h-9 invert dark:invert-0" alt="Menin Academy">
                         <div class="text-xs text-white/75">Trilhas e materiais oficiais</div>
                     </div>
                 </div>
@@ -273,7 +258,7 @@ const splideOptions = {
                             {{ modeLabel }}
                         </div>
 
-                        <img src="/ACADEMY.png" class="h-16 invert dark:invert-0" alt="Menin Academy">
+                        <img src="/Mlogotext.png" class="h-12 invert dark:invert-0" alt="Menin Academy">
 
                         <!-- <h1 class="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
                             {{ headline }}
