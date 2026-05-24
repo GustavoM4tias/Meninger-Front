@@ -23,7 +23,7 @@
                                 :class="{ 'fa-rotate-180': desktopCollapsed }">
                             </i>
                         </button>
-                        <img src="/ACADEMY.png" class="h-10 invert dark:invert-0" alt="Menin Academy">
+                        <img src="/Mlogotext.png" class="h-9 invert dark:invert-0" alt="Menin Academy">
 
                     </div>
 
@@ -87,18 +87,19 @@
                             </NavItem>
 
                             <NavItem :to="{ name: 'AcademyKB' }" label="Base de conhecimento"
-                                :collapsed="desktopCollapsed">
+                                data-tour="nav-kb" :collapsed="desktopCollapsed">
                                 <template #icon><i
                                         class="fa-solid fa-book text-slate-500 dark:text-slate-400"></i></template>
                             </NavItem>
 
                             <NavItem :to="{ name: 'AcademyCommunity' }" label="Comunidade"
-                                :collapsed="desktopCollapsed">
+                                data-tour="nav-community" :collapsed="desktopCollapsed">
                                 <template #icon><i
                                         class="fa-solid fa-comments text-slate-500 dark:text-slate-400"></i></template>
                             </NavItem>
 
-                            <NavItem :to="{ name: 'AcademyTracks' }" label="Trilhas" :collapsed="desktopCollapsed">
+                            <NavItem :to="{ name: 'AcademyTracks' }" label="Trilhas" data-tour="nav-tracks"
+                                :collapsed="desktopCollapsed">
                                 <template #icon><i
                                         class="fa-solid fa-route text-slate-500 dark:text-slate-400"></i></template>
                             </NavItem>
@@ -133,7 +134,7 @@
                     </aside>
 
                     <!-- Main: SEM scroll -->
-                    <main class="flex-1 min-w-0 min-h-0 overflow-hidden">
+                    <main class="relative flex-1 min-w-0 min-h-0 overflow-hidden">
                         <!-- Card do conteúdo -->
                         <div class="h-full min-h-0 p-1 pe-2 pb-2 bg-white dark:bg-slate-900">
                             <div
@@ -143,11 +144,16 @@
                                     class="h-full min-h-0 rounded-2xl ring-1 ring-inset ring-slate-100 dark:ring-slate-950">
                                     <!-- ÚNICO lugar com scroll -->
                                     <div class="h-full min-h-0 overflow-y-auto p-4">
-                                        <router-view />
+                                        <!-- Largura consistente em todas as telas do Academy -->
+                                        <div class="mx-auto max-w-6xl">
+                                            <router-view />
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
+                        <!-- Tutor Eme — preenche a área de conteúdo; a nav permanece -->
+                        <AcademyTutorChat />
                     </main>
 
                 </div>
@@ -163,6 +169,8 @@ import NavItem from '@/views/Academy/components/NavItem.vue';
 import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 import InputSearch from '@/views/Academy/layouts/InputSearch.vue'
 import Profile from '@/views/Academy/components/Profile.vue';
+import AcademyTutorChat from '@/views/Academy/components/AcademyTutorChat.vue';
+import { officeUrl } from '@/utils/appContext';
 
 const authStore = useAuthStore();
 const router = useRouter();
@@ -183,7 +191,8 @@ function goSearch() {
 }
 
 function goOffice() {
-    window.location.href = 'https://office.menin.com.br/';
+    // Resolve produção vs local automaticamente (não força domínio fixo).
+    window.location.href = officeUrl('/');
 }
 
 function lockScroll(lock) {

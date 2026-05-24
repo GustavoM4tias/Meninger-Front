@@ -1,6 +1,6 @@
 <template>
-    <div class="space-y-4">
-        <AcademyPageHeader title="Admin | Nova trilha"
+    <div class="mx-auto max-w-6xl space-y-5 pb-6">
+        <AcademyPageHeader title="Admin · Nova trilha"
             subtitle="Crie a trilha. Depois adicione etapas (itens) e vínculos."
             :backTo="{ name: 'AcademyTracksAdmin' }" :breadcrumbs="[
                 { label: 'Academy', to: { name: 'AcademyPanel' } },
@@ -9,120 +9,159 @@
                 { label: 'Nova' }
             ]">
             <template #actions>
-                <button
-                    class="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2.5 text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-60 disabled:cursor-not-allowed"
-                    :disabled="saving" @click="cancel">
+                <button type="button" :disabled="saving" @click="cancel"
+                    class="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-900 shadow-sm transition-colors hover:bg-slate-50 disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700">
                     Cancelar
                 </button>
 
-                <button
-                    class="rounded-xl bg-slate-900 dark:bg-white px-4 py-2.5 text-sm font-semibold text-white dark:text-slate-900 hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed"
-                    :disabled="saving" @click="save">
+                <button type="button" :disabled="saving" @click="save"
+                    class="inline-flex items-center gap-2 rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-indigo-500/25 transition hover:opacity-95 active:scale-95 disabled:opacity-60">
+                    <i class="fa-solid" :class="saving ? 'fa-spinner fa-spin text-xs' : 'fa-plus text-xs'"></i>
                     {{ saving ? 'Salvando...' : 'Criar trilha' }}
                 </button>
             </template>
         </AcademyPageHeader>
 
         <div v-if="error"
-            class="rounded-2xl border border-rose-200 dark:border-rose-900/50 bg-white dark:bg-slate-900 p-4 text-sm text-rose-700 dark:text-rose-400">
+            class="flex items-center gap-2 rounded-2xl border border-rose-200 bg-white p-4 text-sm text-rose-700 shadow-sm dark:border-rose-900/50 dark:bg-slate-900 dark:text-rose-400">
+            <i class="fa-solid fa-circle-exclamation"></i>
             {{ error }}
         </div>
 
-        <!-- Layout: form + painel de dicas -->
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        <div class="grid grid-cols-1 gap-5 lg:grid-cols-12">
             <!-- Form -->
             <section
-                class="lg:col-span-8 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
-                <div class="border-b border-slate-100 dark:border-slate-800 px-6 py-5">
-                    <h2 class="text-base font-semibold text-slate-900 dark:text-white">Dados da trilha</h2>
-                    <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                class="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900 lg:col-span-8">
+                <div class="border-b border-slate-100 px-6 py-5 dark:border-slate-800">
+                    <h2 class="flex items-center gap-2 text-base font-semibold text-slate-900 dark:text-white">
+                        <i class="fa-solid fa-route text-indigo-500"></i>
+                        Dados da trilha
+                    </h2>
+                    <p class="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
                         Preencha o mínimo necessário. Você pode publicar depois.
                     </p>
                 </div>
 
-                <div class="p-6 space-y-6">
-                    <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
+                <div class="space-y-5 p-6">
+                    <div class="grid grid-cols-1 gap-4 md:grid-cols-12">
                         <label class="md:col-span-8">
-                            <div class="text-xs font-medium text-slate-500 dark:text-slate-400">Título *</div>
-                            <input v-model="form.title"
-                                class="mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm"
-                                placeholder="Ex: Onboarding Comercial" @keydown.enter.prevent="save" />
+                            <div class="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+                                Título *
+                            </div>
+                            <input v-model="form.title" placeholder="Ex: Onboarding Comercial"
+                                @keydown.enter.prevent="save"
+                                class="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-4 focus:ring-indigo-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-indigo-700 dark:focus:ring-indigo-950/60" />
                             <div class="mt-1 text-[11px] text-slate-400 dark:text-slate-500">
-                                Use um nome claro (pessoa entende sem contexto).
+                                Use um nome claro — a pessoa entende sem contexto.
                             </div>
                         </label>
 
                         <label class="md:col-span-4">
-                            <div class="text-xs font-medium text-slate-500 dark:text-slate-400">Status</div>
+                            <div class="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+                                Status
+                            </div>
                             <select v-model="form.status"
-                                class="mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm">
+                                class="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-4 focus:ring-indigo-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:focus:border-indigo-700 dark:focus:ring-indigo-950/60">
                                 <option value="DRAFT">Rascunho</option>
                                 <option value="PUBLISHED">Publicado</option>
                             </select>
                             <div class="mt-1 text-[11px] text-slate-400 dark:text-slate-500">
-                                Recomendo criar como "Rascunho" e publicar no detalhe.
+                                Recomendado começar como rascunho.
                             </div>
                         </label>
 
                         <label class="md:col-span-12">
-                            <div class="text-xs font-medium text-slate-500 dark:text-slate-400">Descrição</div>
+                            <div class="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+                                Descrição
+                            </div>
                             <textarea v-model="form.description" rows="5"
-                                class="mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm"
-                                placeholder="Objetivo da trilha, o que a pessoa vai aprender e o resultado esperado." />
+                                placeholder="Objetivo da trilha, o que a pessoa vai aprender e o resultado esperado."
+                                class="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-4 focus:ring-indigo-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-indigo-700 dark:focus:ring-indigo-950/60" />
                         </label>
- 
                     </div>
 
                     <!-- CTA secundário -->
                     <div
-                        class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/30 px-4 py-3">
+                        class="flex flex-col gap-3 rounded-2xl border border-indigo-100 bg-indigo-50/60 px-4 py-3 dark:border-indigo-900/40 dark:bg-indigo-950/30 sm:flex-row sm:items-center sm:justify-between">
                         <div class="text-sm text-slate-600 dark:text-slate-300">
-                            Próximo passo após criar: <span class="font-semibold">vínculos</span>
-                            (cargos/cidades/departamentos/usuários) e <span class="font-semibold">itens</span>.
+                            <i class="fa-solid fa-arrow-right text-[10px] text-indigo-500"></i>
+                            Após criar: <span class="font-semibold">vínculos</span> e
+                            <span class="font-semibold">itens</span>.
                         </div>
-                        <button
-                            class="rounded-xl bg-slate-900 dark:bg-white px-4 py-2 text-sm font-semibold text-white dark:text-slate-900 hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed"
-                            :disabled="saving" @click="save">
-                            {{ saving ? 'Salvando...' : 'Criar e configurar vínculos' }}
+                        <button type="button" :disabled="saving" @click="save"
+                            class="inline-flex shrink-0 items-center gap-2 rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-indigo-500/25 transition hover:opacity-95 disabled:opacity-60">
+                            <i class="fa-solid" :class="saving ? 'fa-spinner fa-spin text-xs' : 'fa-arrow-right text-xs'"></i>
+                            {{ saving ? 'Salvando...' : 'Criar e configurar' }}
                         </button>
                     </div>
                 </div>
             </section>
 
             <!-- Side help -->
-            <aside
-                class="lg:col-span-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
-                <div class="border-b border-slate-100 dark:border-slate-800 px-6 py-5">
-                    <h3 class="text-sm font-semibold text-slate-900 dark:text-white">Checklist rápido</h3>
-                    <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Para publicar com qualidade.</p>
+            <aside class="space-y-5 lg:col-span-4">
+                <div
+                    class="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                    <div class="border-b border-slate-100 px-5 py-4 dark:border-slate-800">
+                        <h3 class="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-white">
+                            <i class="fa-solid fa-list-check text-indigo-500"></i>
+                            Checklist rápido
+                        </h3>
+                        <p class="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
+                            Para publicar com qualidade.
+                        </p>
+                    </div>
+
+                    <ol class="space-y-3 p-5 text-sm">
+                        <li class="flex gap-3">
+                            <span
+                                class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300">
+                                1
+                            </span>
+                            <div>
+                                <div class="font-semibold text-slate-900 dark:text-white">Vínculos</div>
+                                <div class="mt-0.5 text-slate-600 dark:text-slate-400">
+                                    Defina cargos / cidade / depto, ou vincule usuários direto.
+                                </div>
+                            </div>
+                        </li>
+                        <li class="flex gap-3">
+                            <span
+                                class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300">
+                                2
+                            </span>
+                            <div>
+                                <div class="font-semibold text-slate-900 dark:text-white">Etapas (itens)</div>
+                                <div class="mt-0.5 text-slate-600 dark:text-slate-400">
+                                    Introdução (TEXT) + 3 a 7 itens. Marque os obrigatórios.
+                                </div>
+                            </div>
+                        </li>
+                        <li class="flex gap-3">
+                            <span
+                                class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300">
+                                3
+                            </span>
+                            <div>
+                                <div class="font-semibold text-slate-900 dark:text-white">Publicação</div>
+                                <div class="mt-0.5 text-slate-600 dark:text-slate-400">
+                                    Publique só quando a trilha estiver consistente.
+                                </div>
+                            </div>
+                        </li>
+                    </ol>
                 </div>
 
-                <div class="p-6 space-y-4 text-sm">
-                    <div class="rounded-2xl border border-slate-200 dark:border-slate-800 p-4">
-                        <div class="font-semibold text-slate-900 dark:text-white">1) Vínculos</div>
-                        <div class="mt-1 text-slate-600 dark:text-slate-300">
-                            Defina cargos / cidade / depto. Se não existir, vincule usuários.
-                        </div>
+                <div
+                    class="rounded-2xl border border-indigo-100 bg-indigo-50/60 p-5 dark:border-indigo-900/40 dark:bg-indigo-950/30">
+                    <div class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-indigo-700 dark:text-indigo-300">
+                        <i class="fa-solid fa-circle-info"></i>
+                        Audiência × Vínculos
                     </div>
-
-                    <div class="rounded-2xl border border-slate-200 dark:border-slate-800 p-4">
-                        <div class="font-semibold text-slate-900 dark:text-white">2) Etapas (itens)</div>
-                        <div class="mt-1 text-slate-600 dark:text-slate-300">
-                            Comece por uma introdução (TEXT) + 3 a 7 itens. Marque o que é obrigatório.
-                        </div>
-                    </div>
-
-                    <div class="rounded-2xl border border-slate-200 dark:border-slate-800 p-4">
-                        <div class="font-semibold text-slate-900 dark:text-white">3) Publicação</div>
-                        <div class="mt-1 text-slate-600 dark:text-slate-300">
-                            Publique só quando a trilha estiver consistente.
-                        </div>
-                    </div>
-
-                    <div class="text-[11px] text-slate-400 dark:text-slate-500 leading-relaxed">
-                        Observação: a “Audiência” é um filtro do módulo. Os “Vínculos” são o controle fino
-                        (cargos/cidade/depto/usuários).
-                    </div>
+                    <p class="mt-2 text-xs leading-relaxed text-slate-600 dark:text-slate-300">
+                        A <span class="font-semibold">audiência</span> é o filtro amplo do módulo.
+                        Os <span class="font-semibold">vínculos</span> são o controle fino
+                        (cargos / cidade / depto / usuários).
+                    </p>
                 </div>
             </aside>
         </div>

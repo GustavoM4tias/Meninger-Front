@@ -3,6 +3,8 @@ export default [
     // públicas
     { path: '/', name: 'AcademyHome', component: () => import('@/views/Academy/Home.vue'), meta: { requiresAuth: false } },
     { path: '/login', name: 'AcademyLogin', component: () => import('@/views/Academy/Login.vue'), meta: { requiresAuth: false } },
+    // verificação pública de certificado — sem login, acessível via QR code do PDF
+    { path: '/cert/:code', name: 'AcademyCertVerify', component: () => import('@/views/Academy/CertVerify.vue'), props: true, meta: { requiresAuth: false } },
 
     // privadas (shell)
     {
@@ -34,6 +36,9 @@ export default [
             { path: 'admin/tracks', name: 'AcademyTracksAdmin', component: () => import('@/views/Academy/Admin/Tracks/Index.vue'), meta: { requiresAuth: true, allowedRole: 'admin' } },
             { path: 'admin/tracks/new', name: 'AcademyTracksAdminCreate', component: () => import('@/views/Academy/Admin/Tracks/Create.vue'), meta: { requiresAuth: true, allowedRole: 'admin' } },
             { path: 'admin/tracks/:slug', name: 'AcademyTracksAdminDetail', component: () => import('@/views/Academy/Admin/Tracks/Detail.vue'), props: true, meta: { requiresAuth: true, allowedRole: 'admin' } },
+            { path: 'admin/adherence', name: 'AcademyAdherence', component: () => import('@/views/Academy/Admin/Adherence.vue'), meta: { requiresAuth: true, allowedRole: 'admin' } },
+            { path: 'admin/questions', name: 'AcademyAdminQuestions', component: () => import('@/views/Academy/Admin/Questions/Index.vue'), meta: { requiresAuth: true, allowedRole: 'admin' } },
+            { path: 'admin/onboarding', name: 'AcademyAdminOnboarding', component: () => import('@/views/Academy/Admin/Onboarding/Index.vue'), meta: { requiresAuth: true, allowedRole: 'admin' } },
 
             { path: 'users', name: 'AcademyUsers', component: () => import('@/views/Academy/Users/Index.vue'), meta: { requiresAuth: true } },
             { path: 'users/:id', name: 'AcademyUserProfile', component: () => import('@/views/Academy/Users/Profile.vue'), props: true, meta: { requiresAuth: true } },

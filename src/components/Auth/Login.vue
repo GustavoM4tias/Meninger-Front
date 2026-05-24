@@ -12,6 +12,7 @@ import ForgotPasswordModal from './ForgotPasswordModal.vue';
 import FaceLoginModal from './FaceLoginModal.vue';
 import { sanitizeEmail } from './composables/useForgotPassword';
 import { usePersistedRef, clearPersisted } from '@/utils/usePersistedRef';
+import { academyUrl, officeUrl } from '@/utils/appContext';
 
 const toast = useToast();
 const authStore = useAuthStore();
@@ -40,15 +41,11 @@ const versions = {
 const currentVersion = computed(() => versions[loginType.value] || '');
 
 // ─── Helpers ────────────────────────────────────────
-function isLocal() {
-  const h = window.location.hostname;
-  return h === 'localhost' || h.endsWith('.localhost');
-}
-
+// academyUrl/officeUrl resolvem a URL certa para produção E local
+// (dev: academy.localhost ou mesma origem conforme VITE_APP_CONTEXT).
 function resolveRedirectUrl(selectedPath) {
   const isAcademy = selectedPath === '/panel';
-  if (isLocal()) return isAcademy ? 'http://localhost:5174/panel' : 'http://localhost:5173/';
-  return isAcademy ? 'https://academy.menin.com.br/panel' : 'https://office.menin.com.br/';
+  return isAcademy ? academyUrl('/panel') : officeUrl('/');
 }
 
 async function redirectAfterLogin() {

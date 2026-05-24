@@ -52,6 +52,18 @@ export default [
                         meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Dashboard de leads' },
                     },
                     {
+                        path: 'captacao',
+                        name: 'Captação de Leads',
+                        component: () => import('@/views/Office/Marketing/Captacao/Index.vue'),
+                        meta: { requiresAuth: true, requiresAdmin: true, searchable: false, content: 'Inbox de captação de leads — formulários e Meta Lead Ads' },
+                    },
+                    {
+                        path: 'formularios',
+                        name: 'Formulários de Captação',
+                        component: () => import('@/views/Office/Marketing/Formularios/Index.vue'),
+                        meta: { requiresAuth: true, requiresAdmin: true, searchable: false, content: 'Gestão dos formulários de captação de leads' },
+                    },
+                    {
                         path: 'viability',
                         name: 'Viabilidade',
                         component: () => import('@/views/Office/Marketing/Viability/ViabilityDashboard.vue'),

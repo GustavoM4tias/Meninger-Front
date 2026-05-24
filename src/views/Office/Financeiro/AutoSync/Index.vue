@@ -189,7 +189,29 @@
                       <i :class="ec.isRecurring ? 'fas fa-star text-amber-500' : 'far fa-star text-ink-subtle'"></i>
                     </button>
                   </td>
-                  <td class="px-4 py-2 truncate max-w-[300px]" :title="ec.name">{{ ec.name || '—' }}</td>
+                  <td class="px-4 py-2 max-w-[320px]">
+                    <div v-if="editingNameId === ec.id" class="flex items-center gap-1">
+                      <Input v-model="editNameValue" size="sm" class="flex-1"
+                        @keyup.enter="saveName(ec)" @keyup.esc="cancelEditName" />
+                      <button class="h-7 w-7 grid place-items-center rounded-md text-emerald-600 hover:bg-emerald-500/10"
+                        :disabled="nameSaving" title="Salvar" @click="saveName(ec)">
+                        <i class="fas fa-check text-xs"></i>
+                      </button>
+                      <button class="h-7 w-7 grid place-items-center rounded-md text-ink-muted hover:bg-surface-hover"
+                        title="Cancelar" @click="cancelEditName">
+                        <i class="fas fa-times text-xs"></i>
+                      </button>
+                    </div>
+                    <div v-else class="flex items-center gap-1.5 group/name">
+                      <span class="truncate" :title="ec.name">{{ ec.name || '—' }}</span>
+                      <button
+                        class="h-6 w-6 grid place-items-center rounded text-ink-subtle opacity-0 group-hover/name:opacity-100 hover:text-accent hover:bg-surface-hover transition-opacity shrink-0"
+                        title="Editar nome de exibição"
+                        @click="startEditName(ec)">
+                        <i class="fas fa-pen text-[10px]"></i>
+                      </button>
+                    </div>
+                  </td>
                   <td class="px-4 py-2 text-xs text-ink-muted">{{ ec.city || '—' }}</td>
                   <td class="px-4 py-2 text-center text-xs font-mono tabular-nums">{{ ec.erpId }}</td>
                   <td class="px-4 py-2 text-center text-xs font-mono tabular-nums">
@@ -252,11 +274,14 @@ import Button from '@/components/UI/Button.vue';
 import Badge from '@/components/UI/Badge.vue';
 import Input from '@/components/UI/Input.vue';
 import EmptyState from '@/components/UI/EmptyState.vue';
+import { useCostCenterNamesStore } from '@/stores/Financeiro/costCenterNamesStore';
 
 const toast = (() => {
   try { return useToast(); }
   catch { return { success: console.log, error: console.error }; }
 })();
+
+const ccNames = useCostCenterNamesStore();
 
 const enterprises = ref([]);
 const currentRun = ref(null);
@@ -267,6 +292,42 @@ const search = ref('');
 const expanded = ref(new Set());
 const selectedIds = ref(new Set());
 let pollTimer = null;
+
+// ── Edição inline do nome de exibição (override) ───────────────
+const editingNameId = ref(null);
+const editNameValue = ref('');
+const nameSaving = ref(false);
+
+function startEditName(ec) {
+  editingNameId.value = ec.id;
+  editNameValue.value = ec.name || '';
+}
+function cancelEditName() {
+  editingNameId.value = null;
+  editNameValue.value = '';
+}
+async function saveName(ec) {
+  const name = (editNameValue.value || '').trim();
+  if (!name) { toast.error('Informe um nome.'); return; }
+  const ccId = Number(ec.erpId);
+  if (!Number.isFinite(ccId)) { toast.error('CC inválido.'); return; }
+  nameSaving.value = true;
+  try {
+    await requestWithAuth(`${API_URL}/expenses/admin/cost-center-overrides/${ccId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ displayName: name }),
+    });
+    // reflete imediatamente: tabela local + store compartilhado (Custos/Títulos)
+    ec.name = name;
+    ccNames.setLocal(ccId, name);
+    toast.success(`Nome do CC ${ccId} atualizado.`);
+    cancelEditName();
+  } catch (err) {
+    toast.error('Falha ao salvar: ' + (err.message || ''));
+  } finally {
+    nameSaving.value = false;
+  }
+}
 
 // ── Agrupa empreendimentos por company ─────────────────────────
 const companies = computed(() => {

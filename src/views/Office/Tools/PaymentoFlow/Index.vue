@@ -438,7 +438,7 @@ async function onBoletoUpdated() {
                                 <div class="col-span-2">Tipo</div>
                                 <div class="col-span-3">Fornecedor</div>
                                 <div class="col-span-2">Empreendimento</div>
-                                <div class="col-span-1">Documento</div>
+                                <div class="col-span-1 truncate">Documento</div>
                                 <div class="col-span-2 text-center">Valor</div>
                                 <div class="col-span-1 text-center">Status</div>
                                 <div class="col-span-1"></div>

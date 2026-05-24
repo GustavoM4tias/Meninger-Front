@@ -48,6 +48,13 @@
             </button>
 
             <button class="rounded-full px-4 py-2 text-sm border transition"
+                :class="tab === 'modules'
+                    ? 'border-slate-700 dark:border-slate-300 text-slate-600 dark:text-slate-300'
+                    : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'" @click="tab = 'modules'">
+                Módulos
+            </button>
+
+            <button class="rounded-full px-4 py-2 text-sm border transition"
                 :class="tab === 'assignments'
                     ? 'border-slate-700 dark:border-slate-300 text-slate-600 dark:text-slate-300'
                     : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'" @click="tab = 'assignments'">
@@ -151,6 +158,12 @@
             </div>
         </section>
 
+        <!-- MÓDULOS -->
+        <section v-else-if="tab === 'modules'"
+            class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm p-4">
+            <ModulesPanel :slug="slug" :items="items" @changed="reload" />
+        </section>
+
         <!-- VÍNCULOS -->
         <section v-else-if="tab === 'assignments'"
             class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm p-4">
@@ -226,6 +239,7 @@ import AssignmentsPanel from '@/views/Academy/Admin/Tracks/components/Assignment
 import TrackEditorModal from '@/views/Academy/Admin/Tracks/components/TrackEditorModal.vue';
 import ItemEditorModal from '@/views/Academy/Admin/Tracks/components/ItemEditorModal.vue';
 import TrackPreviewPanel from '@/views/Academy/Admin/Tracks/components/TrackPreviewPanel.vue';
+import ModulesPanel from '@/views/Academy/Admin/Tracks/components/ModulesPanel.vue';
 
 defineProps({
   slug: {

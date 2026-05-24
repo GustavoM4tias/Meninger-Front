@@ -141,7 +141,7 @@
                       {{ opt }}
                     </span>
 
-                    <span v-if="quizSubmitted && oi === correctIndexOf(q)" class="ml-2 rounded-full px-2 py-0.5 text-[11px] font-mono border
+                    <span v-if="quizSubmitted && correctIndexOf(q, qi) != null && oi === correctIndexOf(q, qi)" class="ml-2 rounded-full px-2 py-0.5 text-[11px] font-mono border
                              border-emerald-200 dark:border-emerald-900/40
                              bg-emerald-50/60 dark:bg-emerald-900/10
                              text-emerald-700 dark:text-emerald-300">
@@ -149,10 +149,10 @@
                     </span>
                   </label>
 
-                  <div v-if="quizSubmitted && !questionCorrect(qi)"
+                  <div v-if="quizSubmitted && !questionCorrect(qi) && correctIndexOf(q, qi) != null"
                     class="mt-2 text-xs text-slate-600 dark:text-slate-300">
                     Sua resposta: <span class="font-mono">{{ labelOf(q, answers[qi]) }}</span> •
-                    Correta: <span class="font-mono">{{ labelOf(q, correctIndexOf(q)) }}</span>
+                    Correta: <span class="font-mono">{{ labelOf(q, correctIndexOf(q, qi)) }}</span>
                   </div>
                 </div>
               </div>
@@ -529,15 +529,26 @@ function normalizeOptions(q) {
   return [];
 }
 
-function correctIndexOf(q) {
+// Resolve correctIndex priorizando o que veio do servidor (quizAttempt.perQuestion).
+// Em produção, o payload PÚBLICO não traz correctIndex (gabarito é privado server-side).
+// Só após o submit o servidor devolve perQuestion[qi].expected.
+function correctIndexOf(q, qi) {
+  const attempt = attemptNormalized.value;
+  if (attempt && Array.isArray(attempt.perQuestion)) {
+    const pq = attempt.perQuestion[qi];
+    if (pq && Number.isFinite(Number(pq.expected))) return Number(pq.expected);
+  }
+
+  // Fallback: payload com gabarito embarcado (modo admin / preview).
   const ci = Number(q?.correctIndex);
   if (Number.isFinite(ci)) return ci;
   const c2 = Number(q?.correct_index);
   if (Number.isFinite(c2)) return c2;
-  return 0;
+  return null;
 }
 
 function labelOf(q, idx) {
+  if (idx == null) return '-';
   const opts = normalizeOptions(q);
   const i = Number(idx);
   if (!Number.isFinite(i) || i < 0 || i >= opts.length) return '-';
@@ -611,9 +622,19 @@ watch(
 
 /* submit */
 function questionCorrect(qi) {
+  // Fonte de verdade: perQuestion vinda do servidor após submit.
+  const attempt = attemptNormalized.value;
+  if (attempt && Array.isArray(attempt.perQuestion)) {
+    const pq = attempt.perQuestion[qi];
+    if (pq && typeof pq.correct === 'boolean') return pq.correct;
+  }
+
+  // Fallback (admin/preview com gabarito): compara local.
   const q = resolvedQuiz.value?.questions?.[qi];
   if (!q) return false;
-  return Number(answers.value[qi]) === correctIndexOf(q);
+  const expected = correctIndexOf(q, qi);
+  if (expected == null) return false;
+  return Number(answers.value[qi]) === expected;
 }
 
 const quizCanSubmit = computed(() => {
@@ -625,14 +646,16 @@ const quizCanSubmit = computed(() => {
 function submitQuiz() {
   if (!quizCanSubmit.value) return;
 
-  const qs = Array.isArray(resolvedQuiz.value?.questions) ? resolvedQuiz.value.questions : [];
-  quizAllCorrect.value = qs.every((_, qi) => questionCorrect(qi));
+  // O servidor é a fonte de verdade: ele calcula allCorrect e devolve perQuestion.
+  // Aqui só travamos o UI e emitimos as respostas. O componente pai recebe o
+  // quizResult do servidor e atualiza props.quizAttempt — que recarrega esse
+  // componente via watcher.
   quizSubmitted.value = true;
+  quizAllCorrect.value = false; // será sobrescrito pelo attempt do servidor
 
   emit('quiz-submit', {
     itemKey: quizKey.value,
     answers: { ...answers.value },
-    allCorrect: quizAllCorrect.value,
   });
 }
 
@@ -658,11 +681,11 @@ function optionClass(qi, oi) {
   if (!quizSubmitted.value) return 'text-slate-700 dark:text-slate-200';
 
   const q = resolvedQuiz.value?.questions?.[qi];
-  const correct = correctIndexOf(q);
+  const correct = correctIndexOf(q, qi);
   const selected = Number(answers.value[qi]);
 
-  if (oi === correct) return 'text-emerald-700 dark:text-emerald-300 font-semibold';
-  if (oi === selected && selected !== correct) return 'text-rose-700 dark:text-rose-300';
+  if (correct != null && oi === correct) return 'text-emerald-700 dark:text-emerald-300 font-semibold';
+  if (correct != null && oi === selected && selected !== correct) return 'text-rose-700 dark:text-rose-300';
   return 'text-slate-700 dark:text-slate-200 opacity-90';
 }
 </script>

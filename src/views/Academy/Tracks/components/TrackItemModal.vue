@@ -86,7 +86,12 @@
                                     </div>
                                 </div>
 
-                                <div class="p-6">
+                                <div class="p-6 space-y-4">
+                                    <!-- S5.2: Player de vídeo com tracking real de % -->
+                                    <VideoPlayer v-if="isVideoStep && item" :src="item.target || ''"
+                                        :track-slug="trackSlug" :item-id="item.id"
+                                        @progress="onVideoProgress" @completed="onVideoCompleted" />
+
                                     <TokenRenderer v-if="item" :content="String(item.content || '')"
                                         :payload="item.payload || null" :itemType="String(item.type || '')"
                                         :itemKey="String(item.id || '')" :target="item.target || null"
@@ -95,6 +100,34 @@
                                         @open-topic="(ref) => emit('navigate-topic', ref)" @quiz-state="onQuizState"
                                         @quiz-submit="onQuizSubmit" />
 
+                                    <!-- Erro de quiz (cooldown / limite / já aprovado) -->
+                                    <div v-if="quizError"
+                                        class="rounded-2xl border border-amber-200 dark:border-amber-900/50 bg-amber-50/60 dark:bg-amber-900/10 px-4 py-3 text-sm text-amber-800 dark:text-amber-300">
+                                        <i class="fa-solid fa-triangle-exclamation mr-1.5"></i>{{ quizError }}
+                                    </div>
+
+                                    <!-- Resultado do quiz após submit -->
+                                    <div v-if="quizResult"
+                                        class="rounded-2xl border p-4"
+                                        :class="quizResult.passed
+                                            ? 'border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/60 dark:bg-emerald-900/10'
+                                            : 'border-rose-200 dark:border-rose-900/50 bg-rose-50/60 dark:bg-rose-900/10'">
+                                        <div class="flex items-center gap-2">
+                                            <i class="fa-solid text-lg"
+                                                :class="quizResult.passed ? 'fa-circle-check text-emerald-500' : 'fa-circle-xmark text-rose-500'"></i>
+                                            <span class="text-sm font-bold"
+                                                :class="quizResult.passed ? 'text-emerald-800 dark:text-emerald-300' : 'text-rose-800 dark:text-rose-300'">
+                                                {{ quizResult.passed ? 'Aprovado!' : 'Não atingiu a nota mínima' }}
+                                            </span>
+                                        </div>
+                                        <div class="mt-1.5 text-sm text-slate-600 dark:text-slate-400">
+                                            Você acertou {{ quizResult.correctCount }}/{{ quizResult.totalQuestions }}
+                                            ({{ quizResult.scorePercent }}%) — nota mínima {{ quizResult.passingScore }}%.
+                                            <template v-if="!quizResult.passed && quizResult.attemptsRemaining != null">
+                                                Tentativas restantes: <strong>{{ quizResult.attemptsRemaining }}</strong>.
+                                            </template>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -103,6 +136,38 @@
                     <!-- Sidebar -->
                     <aside class="lg:col-span-4 min-h-0 overflow-auto">
                         <div class="flex flex-col gap-4 p-6">
+                            <!-- Quiz info (S2.3) -->
+                            <div v-if="isQuizStep && quizMeta"
+                                class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5">
+                                <div class="text-sm font-semibold text-slate-900 dark:text-white mb-3">
+                                    <i class="fa-solid fa-clipboard-question mr-1.5 text-slate-400"></i>Avaliação
+                                </div>
+                                <div class="space-y-2 text-sm">
+                                    <div class="flex justify-between text-slate-600 dark:text-slate-400">
+                                        <span>Nota mínima</span>
+                                        <span class="font-bold text-slate-900 dark:text-slate-100">{{ quizMeta.passingScore }}%</span>
+                                    </div>
+                                    <div class="flex justify-between text-slate-600 dark:text-slate-400">
+                                        <span>Tentativas</span>
+                                        <span class="font-bold text-slate-900 dark:text-slate-100">
+                                            {{ quizMeta.maxAttempts == null
+                                                ? 'ilimitadas'
+                                                : `${quizMeta.attemptsRemaining} de ${quizMeta.maxAttempts}` }}
+                                        </span>
+                                    </div>
+                                    <div v-if="quizMeta.cooldownMinutes > 0" class="flex justify-between text-slate-600 dark:text-slate-400">
+                                        <span>Intervalo entre tentativas</span>
+                                        <span class="font-bold text-slate-900 dark:text-slate-100">{{ quizMeta.cooldownMinutes }} min</span>
+                                    </div>
+                                    <div v-if="bestScore != null" class="flex justify-between pt-1 border-t border-slate-100 dark:border-slate-800">
+                                        <span class="text-slate-600 dark:text-slate-400">Sua melhor nota</span>
+                                        <span class="font-bold" :class="quizPassed ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'">
+                                            {{ bestScore }}%
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
                             <!-- progress -->
                             <div
                                 class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5">
@@ -182,6 +247,7 @@
 <script setup>
 import { computed, watch, onBeforeUnmount, ref } from 'vue';
 import TokenRenderer from '@/views/Academy/components/TokenRenderer.vue';
+import VideoPlayer from '@/views/Academy/components/VideoPlayer.vue';
 import { useAcademyTracksStore } from '@/stores/Academy/academyTracksStore';
 
 const tracksStore = useAcademyTracksStore();
@@ -229,6 +295,27 @@ function onQuizState(e) {
 }
 
 /* -------------------------
+   S2.3: metadados e resultado do quiz
+------------------------- */
+const isVideoStep = computed(() => String(item.value?.type || '').toUpperCase() === 'VIDEO');
+
+// quizMeta vem do backend no item (passingScore, maxAttempts, attemptsRemaining, cooldownMinutes)
+const quizMeta = computed(() => item.value?.quizMeta || null);
+
+// melhor nota e flag passed (vem do quizAttempt enriquecido pelo backend)
+const bestScore = computed(() => {
+    const a = item.value?.quizAttempt;
+    if (!a) return null;
+    const v = a.bestScorePercent ?? a.scorePercent;
+    return Number.isFinite(Number(v)) ? Number(v) : null;
+});
+const quizPassed = computed(() => !!item.value?.quizAttempt?.passed);
+
+// resultado do último submit (mostrado no painel de feedback)
+const quizResult = ref(null);
+const quizError = ref('');
+
+/* -------------------------
    Salvar quiz no backend + patch local
 ------------------------- */
 async function onQuizSubmit(e) {
@@ -241,20 +328,45 @@ async function onQuizSubmit(e) {
         return;
     }
 
-    console.log('[TrackItemModal] submitQuiz()', { slug, itemId: it.id, answers: e?.answers });
+    quizError.value = '';
+    quizResult.value = null;
 
-    await tracksStore.submitQuiz(slug, {
-        itemId: it.id,
-        answers: e?.answers || {},
-        allCorrect: !!e?.allCorrect,
-    });
+    try {
+        // Servidor é a fonte de verdade: passa apenas as respostas.
+        const resp = await tracksStore.submitQuiz(slug, {
+            itemId: it.id,
+            answers: e?.answers || {},
+        });
 
-    it.quizAttempt = {
-        answers: e?.answers || {},
-        allCorrect: !!e?.allCorrect,
-        submittedAt: new Date().toISOString(),
-    };
+        const serverResult = resp?.quizResult || null;
+        it.quizAttempt = {
+            answers: e?.answers || {},
+            allCorrect: !!serverResult?.allCorrect,
+            totalQuestions: serverResult?.totalQuestions,
+            correctCount: serverResult?.correctCount,
+            scorePercent: serverResult?.scorePercent,
+            passed: !!serverResult?.passed,
+            perQuestion: serverResult?.perQuestion,
+            submittedAt: new Date().toISOString(),
+        };
 
+        quizResult.value = serverResult;
+        quizPending.value = false;
+    } catch (err) {
+        // S2.3: erros de política — cooldown (429), limite (429), já aprovado (409).
+        quizError.value = err?.message || 'Não foi possível enviar o quiz.';
+        quizPending.value = false;
+    }
+}
+
+function onVideoProgress(payload) {
+    const slug = String(props.trackSlug || '').trim();
+    if (!slug) return;
+    tracksStore.trackVideoWatch(slug, payload);
+}
+
+function onVideoCompleted() {
+    // vídeo atingiu o threshold — resolve a pendência de gating
     quizPending.value = false;
 }
 
@@ -325,6 +437,8 @@ watch(
     () => props.index,
     () => {
         justCompleted.value = false;
+        quizResult.value = null;
+        quizError.value = '';
         tick.value++;
     }
 );
