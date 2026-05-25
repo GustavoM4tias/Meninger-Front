@@ -55,6 +55,7 @@ export const navRegistry = [
             { route: '/marketing/leads', section: 'Leads', name: 'Leads', icon: 'fas fa-user-plus' },
             { route: '/marketing/captacao', name: 'Captação de Leads', icon: 'fas fa-inbox', adminOnly: true },
             { route: '/marketing/formularios', name: 'Formulários', icon: 'fas fa-square-poll-vertical', adminOnly: true },
+            { route: '/marketing/settings', name: 'Config. Captação', icon: 'fas fa-gear', adminOnly: true },
             { route: '/marketing/viability', section: 'Viabilidade', name: 'Viabilidade', icon: 'fas fa-scale-balanced' },
         ],
     },

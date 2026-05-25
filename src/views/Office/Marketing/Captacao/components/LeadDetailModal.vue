@@ -4,6 +4,7 @@ import { useCaptureStore } from '@/stores/Marketing/Capture/captureStore';
 import Modal from '@/components/UI/Modal.vue';
 import Button from '@/components/UI/Button.vue';
 import Input from '@/components/UI/Input.vue';
+import EnterpriseMultiSelect from '@/components/Marketing/EnterpriseMultiSelect.vue';
 
 defineProps({ open: { type: Boolean, default: false } });
 const emit = defineEmits(['update:open']);
@@ -22,15 +23,15 @@ const CV_ORIGEM_OPTIONS = [
   { v: 'OU', label: 'Outros' },
 ];
 
-// Formulário de roteamento (leads "held").
-const routeForm = ref({ midia_slug: '', cv_origem: 'SI', empreendimentos: '', tags: '' });
+// Formulário de roteamento (leads "held"). bound_empreendimentos = array de IDs.
+const routeForm = ref({ midia_slug: '', cv_origem: 'SI', bound_empreendimentos: [], tags: '' });
 
 watch(lead, (l) => {
   if (!l) return;
   routeForm.value = {
     midia_slug: l.midia_slug || '',
     cv_origem: l.cv_origem || 'SI',
-    empreendimentos: Array.isArray(l.bound_empreendimentos) ? l.bound_empreendimentos.join(', ') : '',
+    bound_empreendimentos: Array.isArray(l.bound_empreendimentos) ? [...l.bound_empreendimentos] : [],
     tags: Array.isArray(l.tags) ? l.tags.join(', ') : '',
   };
 });
@@ -39,9 +40,6 @@ function close() { emit('update:open', false); }
 
 const fmt = (d) => d ? new Date(d).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : '—';
 
-function parseIds(s) {
-  return String(s || '').split(',').map(x => parseInt(x.trim(), 10)).filter(n => Number.isFinite(n));
-}
 function parseTags(s) {
   return String(s || '').split(',').map(x => x.trim()).filter(Boolean);
 }
@@ -54,7 +52,7 @@ async function doRoute() {
   const ok = await store.routeLead(lead.value.id, {
     midia_slug: routeForm.value.midia_slug.trim(),
     cv_origem: routeForm.value.cv_origem,
-    bound_empreendimentos: parseIds(routeForm.value.empreendimentos),
+    bound_empreendimentos: Array.isArray(routeForm.value.bound_empreendimentos) ? routeForm.value.bound_empreendimentos : [],
     tags: parseTags(routeForm.value.tags),
   });
   if (ok) window.alert('Lead roteado — em despacho para o CV.');
@@ -121,7 +119,7 @@ async function doUnmarkSpam() {
         <h3 class="text-sm font-semibold text-ink mb-3">
           <i class="fas fa-route mr-1.5 text-amber-500"></i>Resolver vínculo e rotear
         </h3>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
           <Input v-model="routeForm.midia_slug" label="Mídia (slug)" placeholder="ex: meta-mond-marilia" size="sm" />
           <div>
             <label class="block text-xs font-medium text-ink-muted mb-1">Origem CV</label>
@@ -130,9 +128,12 @@ async function doUnmarkSpam() {
               <option v-for="o in CV_ORIGEM_OPTIONS" :key="o.v" :value="o.v">{{ o.label }} ({{ o.v }})</option>
             </select>
           </div>
-          <Input v-model="routeForm.empreendimentos" label="Empreendimentos (IDs CV, separados por vírgula)" placeholder="ex: 10, 12" size="sm" />
-          <Input v-model="routeForm.tags" label="Tags (separadas por vírgula)" placeholder="ex: feirao, alto-padrao" size="sm" />
         </div>
+        <div class="mb-3">
+          <label class="block text-xs font-medium text-ink-muted mb-1">Empreendimentos (do CV)</label>
+          <EnterpriseMultiSelect v-model="routeForm.bound_empreendimentos" />
+        </div>
+        <Input v-model="routeForm.tags" label="Tags (separadas por vírgula)" placeholder="ex: feirao, alto-padrao" size="sm" />
         <div class="mt-3 flex justify-end">
           <Button variant="primary" size="sm" icon="fas fa-paper-plane" :loading="store.actionBusy" @click="doRoute">
             Rotear e despachar
