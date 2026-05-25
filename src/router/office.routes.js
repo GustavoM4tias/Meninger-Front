@@ -64,6 +64,12 @@ export default [
                         meta: { requiresAuth: true, requiresAdmin: true, searchable: false, content: 'Gestão dos formulários de captação de leads' },
                     },
                     {
+                        path: 'settings',
+                        name: 'Configurações de Captação',
+                        component: () => import('@/views/Office/Marketing/Settings/Index.vue'),
+                        meta: { requiresAuth: true, requiresAdmin: true, searchable: false, content: 'Configurações da captação de marketing (Geral + Meta Lead Ads)' },
+                    },
+                    {
                         path: 'viability',
                         name: 'Viabilidade',
                         component: () => import('@/views/Office/Marketing/Viability/ViabilityDashboard.vue'),

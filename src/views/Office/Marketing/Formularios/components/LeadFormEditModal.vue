@@ -1,10 +1,12 @@
 <script setup>
 import { computed, ref, watch } from 'vue';
+import QRCode from 'qrcode';
 import { useLeadFormsStore } from '@/stores/Marketing/Capture/leadFormsStore';
 import API_URL from '@/config/apiUrl';
 import Modal from '@/components/UI/Modal.vue';
 import Button from '@/components/UI/Button.vue';
 import Input from '@/components/UI/Input.vue';
+import EnterpriseMultiSelect from '@/components/Marketing/EnterpriseMultiSelect.vue';
 
 const LP_HOST = 'https://lp.menin.com.br';
 
@@ -69,7 +71,8 @@ function buildPage(stored) {
 const empty = () => ({
   slug: '', name: '', active: true,
   midia_slug: '', cv_origem: 'SI',
-  bound_empreendimentos_str: '', tags_str: '',
+  bound_empreendimentos: [],            // array de IDs (multiselect)
+  tags_str: '',
   consent_required: true, consent_text: '', consent_text_version: 'v1',
   allowed_origins_str: '', redirect_url: '',
   fields_config: buildFieldsConfig(null),
@@ -86,7 +89,7 @@ watch(() => props.open, (v) => {
       slug: f.slug, name: f.name, active: !!f.active,
       midia_slug: f.midia_slug || '',
       cv_origem: f.cv_origem || 'SI',
-      bound_empreendimentos_str: Array.isArray(f.bound_empreendimentos) ? f.bound_empreendimentos.join(', ') : '',
+      bound_empreendimentos: Array.isArray(f.bound_empreendimentos) ? [...f.bound_empreendimentos] : [],
       tags_str: Array.isArray(f.tags) ? f.tags.join(', ') : '',
       consent_required: !!f.consent_required,
       consent_text: f.consent_text || '',
@@ -103,7 +106,6 @@ watch(() => props.open, (v) => {
 
 function close() { emit('update:open', false); }
 
-function parseIds(s)  { return String(s || '').split(',').map(x => parseInt(x.trim(), 10)).filter(n => Number.isFinite(n)); }
 function parseList(s) { return String(s || '').split(',').map(x => x.trim()).filter(Boolean); }
 
 function cleanPage(p) {
@@ -130,7 +132,7 @@ async function save() {
     active: d.active,
     midia_slug: d.midia_slug.trim() || null,
     cv_origem: d.cv_origem,
-    bound_empreendimentos: parseIds(d.bound_empreendimentos_str),
+    bound_empreendimentos: Array.isArray(d.bound_empreendimentos) ? d.bound_empreendimentos : [],
     tags: parseList(d.tags_str),
     consent_required: d.consent_required,
     consent_text: d.consent_text.trim() || null,
@@ -169,6 +171,49 @@ const lpUrl = computed(() => isEdit.value
   ? `${LP_HOST}/${props.form.slug}`
   : '');
 
+// ── QR code ─────────────────────────────────────────────────────────────────
+const qrDataUrl = ref('');
+
+watch([() => props.open, lpUrl], async ([isOpen, url]) => {
+  if (isOpen && url) {
+    try {
+      qrDataUrl.value = await QRCode.toDataURL(url, {
+        width: 480,
+        margin: 2,
+        errorCorrectionLevel: 'M',
+        color: { dark: '#0f172a', light: '#ffffff' },
+      });
+    } catch {
+      qrDataUrl.value = '';
+    }
+  } else {
+    qrDataUrl.value = '';
+  }
+}, { immediate: true });
+
+async function copyQrImage() {
+  if (!qrDataUrl.value) return;
+  try {
+    const r = await fetch(qrDataUrl.value);
+    const blob = await r.blob();
+    await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
+    window.alert('Imagem do QR copiada — cole em Word, e-mail, post, etc.');
+  } catch {
+    window.alert('Seu navegador não suporta copiar imagem direto. Use "Baixar PNG" e anexe.');
+  }
+}
+
+function downloadQrImage() {
+  if (!qrDataUrl.value) return;
+  const a = document.createElement('a');
+  a.href = qrDataUrl.value;
+  a.download = `qr-${props.form?.slug || 'lp'}.png`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
+// ── Snippet HTML ─────────────────────────────────────────────────────────────
 const htmlSnippet = computed(() => {
   if (!isEdit.value) return '';
   const url = submitUrl.value;
@@ -250,7 +295,7 @@ async function copy(text, label) {
       <div class="rounded-xl border border-line bg-surface-sunken/30 p-4">
         <h3 class="text-sm font-semibold text-ink mb-1">Vínculo (roteamento para o CV)</h3>
         <p class="text-xs text-ink-muted mb-3">Esses campos vão direto no payload do lead pro CV CRM.</p>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
           <Input v-model="data.midia_slug" label="Mídia (slug)" placeholder="ex: site-mond-marilia" size="sm"
             hint="Vira o campo 'midia' no CV. Use slug estável (minúsculo, sem espaço)." />
           <div>
@@ -260,9 +305,12 @@ async function copy(text, label) {
               <option v-for="o in CV_ORIGEM_OPTIONS" :key="o.v" :value="o.v">{{ o.label }} ({{ o.v }})</option>
             </select>
           </div>
-          <Input v-model="data.bound_empreendimentos_str" label="Empreendimentos (IDs CV, vírgula)" placeholder="ex: 10, 12" size="sm" />
-          <Input v-model="data.tags_str" label="Tags (vírgula)" placeholder="ex: feirao, alto-padrao" size="sm" />
         </div>
+        <div class="mb-3">
+          <label class="block text-xs font-medium text-ink-muted mb-1">Empreendimentos (do CV)</label>
+          <EnterpriseMultiSelect v-model="data.bound_empreendimentos" />
+        </div>
+        <Input v-model="data.tags_str" label="Tags (separadas por vírgula)" placeholder="ex: feirao, alto-padrao" size="sm" />
       </div>
 
       <!-- Página (LP) -->
@@ -356,6 +404,29 @@ async function copy(text, label) {
               class="inline-flex items-center gap-1 text-xs text-accent hover:underline px-2 py-1.5">
               <i class="fas fa-arrow-up-right-from-square"></i>Abrir
             </a>
+          </div>
+        </div>
+
+        <!-- QR code -->
+        <div>
+          <div class="text-xs text-ink-muted mb-1.5">QR code da landing page (imprima e cole onde quiser — não expira):</div>
+          <div class="flex items-start gap-3">
+            <img v-if="qrDataUrl" :src="qrDataUrl" alt="QR code"
+              class="h-32 w-32 rounded border border-line bg-white shrink-0" />
+            <div v-else class="h-32 w-32 rounded border border-line bg-surface-sunken grid place-items-center text-ink-subtle text-xs shrink-0">
+              <i class="fas fa-circle-notch fa-spin"></i>
+            </div>
+            <div class="flex flex-col gap-2">
+              <Button variant="ghost" size="sm" icon="fas fa-copy" @click="copyQrImage" :disabled="!qrDataUrl">
+                Copiar imagem
+              </Button>
+              <Button variant="ghost" size="sm" icon="fas fa-download" @click="downloadQrImage" :disabled="!qrDataUrl">
+                Baixar PNG
+              </Button>
+              <p class="text-[10px] text-ink-subtle leading-tight max-w-[180px]">
+                "Copiar" cola direto em Word/e-mail. Se o navegador bloquear, use "Baixar".
+              </p>
+            </div>
           </div>
         </div>
 

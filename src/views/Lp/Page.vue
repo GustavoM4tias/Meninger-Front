@@ -13,6 +13,7 @@ const slug = computed(() => route.params.slug);
 
 const loading = ref(true);
 const error = ref(null);
+const inactive = ref(false);   // true = página existe mas foi desativada (410)
 const form = ref(null);
 const submitting = ref(false);
 const success = ref(false);
@@ -68,10 +69,15 @@ const accent = computed(() => pageConfig.value.accent_color || '#3b82f6');
 async function load() {
   loading.value = true;
   error.value = null;
+  inactive.value = false;
   try {
     const resp = await fetch(`${API_URL}/marketing/public/forms/${encodeURIComponent(slug.value)}/page`);
     const d = await resp.json().catch(() => ({}));
-    if (!resp.ok || !d.ok) throw new Error(d.error || 'Formulário não encontrado ou inativo.');
+    if (!resp.ok || !d.ok) {
+      // 410 (inactive) tem UX próprio; demais (404 etc.) caem no "não encontrada".
+      inactive.value = !!d.inactive || resp.status === 410;
+      throw new Error(d.error || (inactive.value ? 'Esta página foi desativada.' : 'Página não encontrada.'));
+    }
     form.value = d.form;
 
     const init = {};
@@ -147,7 +153,20 @@ watch(slug, load);
       <i class="fas fa-circle-notch fa-spin mr-2"></i>Carregando...
     </div>
 
-    <!-- 404 / inativo -->
+    <!-- Página desativada (410) -->
+    <div v-else-if="inactive" class="max-w-md w-full bg-white rounded-2xl shadow-2xl p-8 text-center">
+      <div class="h-14 w-14 rounded-full bg-amber-100 mx-auto mb-4 grid place-items-center text-amber-600">
+        <i class="fas fa-pause text-2xl"></i>
+      </div>
+      <div class="text-slate-900 text-xl font-semibold mb-2">Cadastro indisponível</div>
+      <p class="text-slate-500 text-sm leading-relaxed mb-5">{{ error }}</p>
+      <a href="https://menin.com.br"
+        class="inline-block rounded-lg bg-slate-900 text-white px-5 py-2.5 text-sm font-medium hover:opacity-90 transition-opacity">
+        Conheça a Menin Engenharia
+      </a>
+    </div>
+
+    <!-- Página não encontrada (404 e outros erros) -->
     <div v-else-if="error" class="max-w-md w-full bg-white rounded-2xl shadow-2xl p-8 text-center">
       <div class="h-14 w-14 rounded-full bg-slate-100 mx-auto mb-4 grid place-items-center text-slate-400">
         <i class="fas fa-circle-question text-2xl"></i>
