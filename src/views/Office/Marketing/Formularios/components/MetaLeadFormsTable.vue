@@ -95,14 +95,39 @@ function fmtDate(iso) {
 
     <!-- Resultado do último sync -->
     <div v-if="store.lastSync"
-      class="rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-3 py-2 text-sm text-emerald-700 dark:text-emerald-300">
-      <i class="fas fa-circle-check mr-1.5"></i>
-      Sincronizado: <b>{{ store.lastSync.pages_count }}</b> Página(s),
-      <b>{{ store.lastSync.forms_total }}</b> formulário(s)
-      ({{ store.lastSync.forms_new }} novo(s), {{ store.lastSync.forms_updated }} atualizado(s))
-      <span v-if="store.lastSync.errors?.length" class="text-amber-700 dark:text-amber-300">
-        · {{ store.lastSync.errors.length }} erro(s)
-      </span>
+      :class="['rounded-lg border px-3 py-2.5 text-sm',
+        store.lastSync.errors?.length
+          ? 'border-amber-500/30 bg-amber-500/5 text-amber-800 dark:text-amber-200'
+          : 'border-emerald-500/20 bg-emerald-500/5 text-emerald-700 dark:text-emerald-300']">
+      <div class="flex items-start gap-2">
+        <i :class="store.lastSync.errors?.length ? 'fas fa-triangle-exclamation' : 'fas fa-circle-check'" class="mt-0.5"></i>
+        <div class="flex-1 min-w-0">
+          <div>
+            Sincronizado: <b>{{ store.lastSync.pages_count }}</b> Página(s),
+            <b>{{ store.lastSync.forms_total }}</b> formulário(s)
+            ({{ store.lastSync.forms_new }} novo(s), {{ store.lastSync.forms_updated }} atualizado(s))
+          </div>
+
+          <!-- Lista de erros por Página -->
+          <div v-if="store.lastSync.errors?.length" class="mt-1.5 space-y-1">
+            <div v-for="(e, i) in store.lastSync.errors" :key="i"
+              class="text-xs rounded border border-amber-500/30 bg-amber-500/10 px-2 py-1.5">
+              <div class="font-medium">
+                <i class="fas fa-circle-exclamation mr-1"></i>
+                {{ e.page_name || 'Página' }} <span class="text-ink-subtle font-mono">#{{ e.page_id }}</span>
+              </div>
+              <div class="text-amber-700 dark:text-amber-300 mt-0.5 font-mono text-[11px] break-words">{{ e.error }}</div>
+            </div>
+          </div>
+
+          <!-- Hint quando 0 forms mas 0 erros — Página sem forms criados ainda -->
+          <div v-else-if="store.lastSync.forms_total === 0 && store.lastSync.pages_count > 0"
+            class="mt-1 text-xs text-ink-subtle italic">
+            A Página foi acessada com sucesso mas não tem nenhum lead form criado.
+            Crie um em <a href="https://business.facebook.com/adsmanager" target="_blank" class="text-accent underline">Ads Manager → Instant Forms</a> e clique em Sincronizar novamente.
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Erro -->
