@@ -64,6 +64,12 @@ export default [
                         meta: { requiresAuth: true, requiresAdmin: true, searchable: false, content: 'Gestão dos formulários de captação de leads' },
                     },
                     {
+                        path: 'campanhas',
+                        name: 'Campanhas Meta',
+                        component: () => import('@/views/Office/Marketing/Campanhas/Index.vue'),
+                        meta: { requiresAuth: true, requiresAdmin: true, searchable: false, content: 'Campanhas Meta Lead Ads — investimento, leads e CAC' },
+                    },
+                    {
                         path: 'settings',
                         name: 'Configurações de Captação',
                         component: () => import('@/views/Office/Marketing/Settings/Index.vue'),

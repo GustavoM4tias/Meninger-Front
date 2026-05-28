@@ -80,7 +80,12 @@ export const useCaptureStore = defineStore('marketingCapture', () => {
         error.value = null;
         try {
             const data = await apiFetch(`/inbound-leads/${id}`);
-            detail.value = { lead: data.lead, events: data.events || [] };
+            detail.value = {
+                lead: data.lead,
+                events: data.events || [],
+                meta_form: data.meta_form || null,
+                lead_form: data.lead_form || null,
+            };
         } catch (e) {
             error.value = e.message;
         } finally {
@@ -141,9 +146,26 @@ export const useCaptureStore = defineStore('marketingCapture', () => {
         }
     }
 
+    /** Busca esse lead no CV via email/telefone — grava cv_idlead se achar. */
+    async function reconcileCv(id) {
+        actionBusy.value = true;
+        error.value = null;
+        try {
+            const d = await apiFetch(`/inbound-leads/${id}/reconcile-cv`, { method: 'POST' });
+            await refreshAround(id);
+            return d;
+        } catch (e) {
+            error.value = e.message;
+            return null;
+        } finally {
+            actionBusy.value = false;
+        }
+    }
+
     return {
         leads, total, page, pageSize, filters, health, loading, error,
         detail, detailLoading, actionBusy,
         fetchLeads, fetchHealth, fetchDetail, routeLead, redispatchLead, setSpam,
+        reconcileCv,
     };
 });

@@ -12,6 +12,15 @@ const emit = defineEmits(['update:open']);
 const store = useCaptureStore();
 const lead = computed(() => store.detail?.lead || null);
 const events = computed(() => store.detail?.events || []);
+const metaForm = computed(() => store.detail?.meta_form || null);
+const leadForm = computed(() => store.detail?.lead_form || null);
+
+// Nome de exibição com fallback ao email/telefone.
+const displayName = computed(() => {
+    const l = lead.value;
+    if (!l) return '—';
+    return l.nome || l.email || l.telefone || '(sem nome ou contato)';
+});
 
 // Opções de origem (enum CV de 2 letras).
 const CV_ORIGEM_OPTIONS = [
@@ -71,6 +80,16 @@ async function doMarkSpam() {
 async function doUnmarkSpam() {
   await store.setSpam(lead.value.id, false);
 }
+
+async function doReconcileCv() {
+  const result = await store.reconcileCv(lead.value.id);
+  if (!result) return;
+  if (result.matched) {
+    window.alert(`✅ Encontrado no CV!\n\ncv_idlead: ${result.cv_idlead}\nVia: ${result.via} (${result.confidence})`);
+  } else {
+    window.alert(`Nenhum match encontrado no CV.\nCandidatos: ${result.candidates_count}`);
+  }
+}
 </script>
 
 <template>
@@ -80,6 +99,39 @@ async function doUnmarkSpam() {
     </div>
 
     <div v-else-if="lead" class="space-y-5">
+      <!-- Origem (form Meta / form interno) -->
+      <div v-if="metaForm || leadForm"
+        class="rounded-lg border border-line/60 bg-surface-sunken/30 px-3 py-2.5">
+        <div class="text-[10px] uppercase tracking-wider text-ink-subtle mb-1">
+          <i class="fas fa-square-poll-vertical mr-1"></i>Origem
+        </div>
+        <template v-if="metaForm">
+          <div class="text-sm font-medium text-ink">{{ metaForm.name || '(sem nome)' }}</div>
+          <div class="text-[11px] text-ink-subtle font-mono">
+            #{{ metaForm.id }}<span v-if="metaForm.page_name"> · {{ metaForm.page_name }}</span>
+            <span v-if="metaForm.status"> · {{ metaForm.status }}</span>
+          </div>
+          <details v-if="Array.isArray(metaForm.questions) && metaForm.questions.length" class="mt-1.5">
+            <summary class="text-[11px] text-accent cursor-pointer">
+              Ver {{ metaForm.questions.length }} pergunta(s) do form
+            </summary>
+            <ul class="mt-1.5 ml-3 space-y-0.5 text-[11px] text-ink-muted list-disc list-inside">
+              <li v-for="(q, i) in metaForm.questions" :key="i">
+                <span class="font-medium text-ink">{{ q.label || q.key }}</span>
+                <span v-if="q.type" class="text-ink-subtle"> · {{ q.type }}</span>
+                <span v-if="q.key !== q.label" class="text-ink-subtle font-mono"> ({{ q.key }})</span>
+              </li>
+            </ul>
+          </details>
+        </template>
+        <template v-else-if="leadForm">
+          <div class="text-sm font-medium text-ink">{{ leadForm.name }}</div>
+          <div class="text-[11px] text-ink-subtle font-mono">
+            /{{ leadForm.slug }}<span v-if="leadForm.midia_slug"> · {{ leadForm.midia_slug }}</span>
+          </div>
+        </template>
+      </div>
+
       <!-- Dados -->
       <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
         <div>
@@ -106,6 +158,20 @@ async function doUnmarkSpam() {
           <div class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono">idlead CV</div>
           <div class="text-sm text-ink">{{ lead.cv_idlead || '—' }}</div>
         </div>
+      </div>
+
+      <!-- Respostas do form (extra_fields) -->
+      <div v-if="lead.extra_fields && Object.keys(lead.extra_fields).length"
+        class="rounded-lg border border-line/60 bg-surface-sunken/30 px-3 py-2.5">
+        <div class="text-[10px] uppercase tracking-wider text-ink-subtle mb-1.5">
+          <i class="fas fa-list-check mr-1"></i>Respostas do formulário ({{ Object.keys(lead.extra_fields).length }})
+        </div>
+        <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
+          <template v-for="(v, k) in lead.extra_fields" :key="k">
+            <dt class="text-ink-subtle font-mono truncate" :title="k">{{ k }}</dt>
+            <dd class="text-ink break-words">{{ Array.isArray(v) ? v.join(', ') : v }}</dd>
+          </template>
+        </dl>
       </div>
 
       <!-- Erro atual -->
@@ -146,6 +212,11 @@ async function doUnmarkSpam() {
         <Button v-if="['failed', 'rejected'].includes(lead.status)"
           variant="primary" size="sm" icon="fas fa-arrows-rotate" :loading="store.actionBusy" @click="doRedispatch">
           Redisparar ao CV
+        </Button>
+        <Button v-if="!lead.cv_idlead"
+          variant="secondary" size="sm" icon="fas fa-link" :loading="store.actionBusy" @click="doReconcileCv"
+          title="Busca esse lead no CV pelo email/telefone e grava o cv_idlead se encontrar.">
+          Buscar no CV
         </Button>
         <Button v-if="lead.status !== 'spam' && lead.status !== 'delivered'"
           variant="danger" size="sm" icon="fas fa-ban" :loading="store.actionBusy" @click="doMarkSpam">

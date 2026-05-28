@@ -1,16 +1,179 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useOfficeAIStore } from '@/stores/officeAIStore';
+import { usePermissionStore } from '@/stores/Settings/Permissions/permissionStore';
+import { initEmeVoice, useEmeVoice, enqueueSpeech, onAllSpeechDone, cancelSpeech, markConversationActive } from '@/composables/useEmeVoice';
 import OfficeChatSession from './OfficeChatSession.vue';
 import OfficeChatHistory from './OfficeChatHistory.vue';
 import ChatTitleEditor from './ChatTitleEditor.vue';
 import IconButton from '@/components/UI/IconButton.vue';
 
 const aiStore = useOfficeAIStore();
+const permStore = usePermissionStore();
 const router = useRouter();
 const route  = useRoute();
 const expanded = ref(false);
+
+// ── Inicialização da voz da Eme (admin only) ───────────────────────────────
+// Preferências persistidas.
+const TTS_KEY = 'eme:voice:tts';
+const ALWAYS_ON_KEY = 'eme:voice:always-on';
+const ttsEnabled  = ref(localStorage.getItem(TTS_KEY) !== 'false');
+// Default OFF — ngm é ouvido sem querer. Usuário ativa 1x e fica ativo até desativar.
+const alwaysOn    = ref(localStorage.getItem(ALWAYS_ON_KEY) === 'true');
+watch(ttsEnabled, v => localStorage.setItem(TTS_KEY, v ? 'true' : 'false'));
+watch(alwaysOn,   v => localStorage.setItem(ALWAYS_ON_KEY, v ? 'true' : 'false'));
+
+const pendingSpeak = ref(false);
+const voice = useEmeVoice();
+const { arm, resumeAfterSpeaking, toggleArmed, finishProcessing, state: voiceState } = voice;
+
+function setupVoice() {
+  initEmeVoice({
+    ttsEnabled,
+    alwaysOn,   // push-to-talk após resposta → continua armado pra "Olá Eme"
+    onCapture: (text, { willSpeak }) => {
+      // Garante que o float está aberto pra mostrar a interação
+      if (route.path !== '/' && route.name !== 'Home') {
+        expanded.value = true;
+      }
+      pendingSpeak.value = willSpeak;
+      aiStore.sendMessage(text, { viaVoice: true });
+    },
+  });
+}
+
+// Tenta armar a voz. Se falhar por falta de permissão de mic ou autoplay,
+// engata um listener "uma única vez" pro primeiro click/keydown.
+let autoArmFallbackInstalled = false;
+async function tryAutoArm() {
+  if (!permStore.isAdmin) return;
+  if (!alwaysOn.value) return;
+  if (!voice.isSupported) {
+    console.warn('[Eme Voice] Reconhecimento de voz não suportado nesse navegador');
+    return;
+  }
+  if (voiceState.value !== 'OFF') return;
+
+  let permission = 'prompt';
+  try {
+    const status = await navigator.permissions?.query?.({ name: 'microphone' });
+    permission = status?.state || 'prompt';
+  } catch { /* Firefox e outros — permissions API limitada */ }
+
+  if (permission === 'granted') {
+    arm({ silent: true });
+    return;
+  }
+  if (permission === 'denied') {
+    console.warn('[Eme Voice] Permissão de microfone NEGADA — libere no cadeado da URL');
+    return;
+  }
+
+  if (autoArmFallbackInstalled) return;
+  autoArmFallbackInstalled = true;
+
+  const handler = () => {
+    autoArmFallbackInstalled = false;
+    window.removeEventListener('click', handler, true);
+    window.removeEventListener('keydown', handler, true);
+    if (alwaysOn.value && voiceState.value === 'OFF' && permStore.isAdmin) {
+      arm({ silent: true });
+    }
+  };
+  window.addEventListener('click', handler, { once: false, capture: true });
+  window.addEventListener('keydown', handler, { once: false, capture: true });
+}
+
+// Roda quando admin é confirmado (permissões carregam async no boot)
+watch(() => permStore.isAdmin, (v) => {
+  if (v) {
+    setupVoice();
+    tryAutoArm();
+  }
+}, { immediate: true });
+
+// Se o user habilitar "sempre-ativo" depois, tenta armar.
+// Se desabilitar, desliga.
+watch(alwaysOn, (on) => {
+  if (on) tryAutoArm();
+  else if (voiceState.value === 'ARMED') voice.stop();
+});
+
+// ── TTS após streaming terminar ──────────────────────────────────────────────
+// Estratégia simples e robusta: espera a resposta INTEIRA chegar, depois
+// extrai as frases e enfileira em ordem. Sem sobreposição, sem cortes pelo
+// meio, sem problemas com 'replace' events do backend.
+function stripMarkdown(text) {
+  return String(text || '')
+    .replace(/```[\s\S]*?```/g, '')
+    .replace(/`([^`]+)`/g, '$1')
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/\*([^*]+)\*/g, '$1')
+    .replace(/#+\s*/g, '')
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/\n+/g, '. ');
+}
+
+// Divide o texto em até N frases pra enfileirar.
+function splitIntoSentences(text, max = 6) {
+  const clean = stripMarkdown(text).trim();
+  if (!clean) return [];
+  // Quebra por pontuação forte (.!?) seguida de espaço/fim
+  const raw = clean.split(/(?<=[.!?])\s+/).filter(s => s.trim().length >= 3);
+  return raw.slice(0, max);
+}
+
+watch(() => aiStore.isStreaming, (now, prev) => {
+  if (!(prev && !now)) return;
+
+  // Resposta chegou — entramos em "conversa ativa": próxima pergunta aceita só "Eme"
+  markConversationActive();
+
+  if (voiceState.value !== 'PROCESSING') return;
+
+  const willSpeak = pendingSpeak.value;
+  pendingSpeak.value = false;
+  console.log('[Eme Voice] Streaming terminou. TTS habilitado:', willSpeak);
+
+  if (!willSpeak) {
+    cancelSpeech();
+    finishProcessing();
+    return;
+  }
+
+  // Pega o texto da última mensagem da assistente (já filtrado anti-alucinação)
+  const last = aiStore.messages[aiStore.messages.length - 1];
+  const sentences = last?.role === 'assistant'
+    ? splitIntoSentences(last.content, 6)
+    : [];
+
+  console.log('[Eme Voice] Frases pra TTS:', sentences.length);
+  for (const s of sentences) {
+    enqueueSpeech(s.trim());
+  }
+
+  // Vai pra SPEAKING; quando a fila esvaziar, libera o mic
+  finishProcessing();
+  onAllSpeechDone(() => {
+    console.log('[Eme Voice] Fala terminada — re-armando');
+    resumeAfterSpeaking();
+  });
+});
+
+// Atalho global Alt+Shift+E — modo hands-free (ARMED, espera "Olá Eme")
+function onVoiceShortcut(e) {
+  // Match: Alt+Shift+E (Windows/Linux) ou Option+Shift+E (Mac)
+  // Em alguns layouts, Alt+Shift produz outro char no e.key; o e.code é mais confiável.
+  const isE = e.code === 'KeyE' || e.key === 'E' || e.key === 'e' || e.key === '´' || e.key === 'É';
+  if (!(e.altKey && e.shiftKey && isE)) return;
+  e.preventDefault();
+  e.stopPropagation();
+
+  if (!permStore.isAdmin) return;
+  toggleArmed();
+}
 
 // ── Visibilidade ────────────────────────────────────────────────────────────
 // Mostra como pill em qualquer rota EXCETO a home (que tem UI própria da Eme).
@@ -121,12 +284,15 @@ onMounted(() => {
   window.addEventListener('eme:navigate', onEmeNavigate);
   window.addEventListener('eme:open',     onEmeOpen);
   window.addEventListener('resize',       onResize);
+  // capture:true pra pegar antes de qualquer input absorver
+  window.addEventListener('keydown',      onVoiceShortcut, true);
   aiStore.loadStorageUsage();
 });
 onUnmounted(() => {
   window.removeEventListener('eme:navigate', onEmeNavigate);
   window.removeEventListener('eme:open',     onEmeOpen);
   window.removeEventListener('resize',       onResize);
+  window.removeEventListener('keydown',      onVoiceShortcut, true);
   window.removeEventListener('pointermove',  onPointerMove);
   window.removeEventListener('pointerup',    onPointerUp);
 });
