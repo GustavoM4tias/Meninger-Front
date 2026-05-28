@@ -81,6 +81,21 @@ export const submitFeedback = async (messageId, rating, comment = null) => {
   return response.json()
 }
 
+// Síntese de voz via Gemini TTS (admin only no backend)
+// Retorna Blob de audio/wav ou lança erro.
+export const synthesizeSpeech = async (text, { voice } = {}) => {
+  const response = await fetch(`${BASE}/tts`, {
+    method: 'POST',
+    headers: { ...authHeader(), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text, voice }),
+  })
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}))
+    throw new Error(err.error || `Erro ${response.status} ao sintetizar áudio.`)
+  }
+  return response.blob()
+}
+
 export const getFeedback = async ({ page = 1, per_page = 30, rating } = {}) => {
   const params = new URLSearchParams({ page, per_page })
   if (rating) params.set('rating', rating)

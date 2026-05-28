@@ -1,73 +1,131 @@
 <script setup>
-// Modal de mapping de um Lead Form da Meta — define empreendimento(s), mídia
-// e origem (FB/IG) que serão aplicados a leads que entrarem por esse form.
-// Quando mapping_active=true + midia_slug preenchidos, leads novos viram
-// 'routed' direto (sem precisar roteamento manual).
+// Modal do Lead Form Meta — visão por form (não confunde com mapping de
+// roteamento, que vive na campanha agora).
+//
+// Tabs:
+//   1. Estrutura & Mapeamento — perguntas do form e pra qual campo CV vão
+//   2. Gestão interna — descrição, prioridade, referência de campanha
+//   3. Comparativo — Meta × Office × CV (números + funil)
+//   4. Leads recentes — últimos 20 + CSV export
+//
+// Vínculo CV (empreendimento, mídia, UTMs, extras) MIGROU pra MetaCampaign.
 
 import { ref, watch, computed } from 'vue';
 import { useMetaFormsStore } from '@/stores/Marketing/Capture/metaFormsStore';
-import EnterpriseMultiSelect from '@/components/Marketing/EnterpriseMultiSelect.vue';
 import Button from '@/components/UI/Button.vue';
 
 const props = defineProps({
     open: { type: Boolean, default: false },
-    form: { type: Object, default: null }, // o meta form do banco (com mapping)
+    form: { type: Object, default: null },
 });
 const emit = defineEmits(['update:open', 'saved']);
 
 const store = useMetaFormsStore();
 
-// Form state
-const bound = ref([]);
-const midia = ref('');
-const origem = ref('FB');
-const tagsRaw = ref('');
-const active = ref(true);
+const activeSection = ref('estrutura');
 
-const localError = ref(null);
+// Gestão (editável)
+const description = ref('');
+const priority    = ref('normal');
+const campaignRef = ref('');
+const savingMeta  = ref(false);
+const localError  = ref(null);
+
+// Field mappings (editável)
+const fmLoading = ref(false);
+const fmSaving  = ref(false);
+const fmEditor  = ref(null);          // { form, items, available_targets }
+const fmDraft   = ref({});            // { questionKey: cvField | '' }
+
+// Comparativo
+const comparison = ref(null);
+const loadingComp = ref(false);
+const downloadingCsv = ref(false);
+
+// Leads recentes
+const recentLeads = ref([]);
+const loadingLeads = ref(false);
 
 function close() { emit('update:open', false); }
 
-// Carrega quando abre / form muda
-watch([() => props.open, () => props.form], ([isOpen, f]) => {
-    if (!isOpen) return;
-    bound.value = Array.isArray(f?.bound_empreendimentos) ? [...f.bound_empreendimentos] : [];
-    midia.value = f?.midia_slug || '';
-    origem.value = f?.cv_origem || 'FB';
-    tagsRaw.value = Array.isArray(f?.tags) ? f.tags.join(', ') : '';
-    active.value = f?.mapping_active !== false;
+watch([() => props.open, () => props.form], async ([isOpen, f]) => {
+    if (!isOpen || !f) return;
+
+    description.value = f.description || '';
+    priority.value    = f.priority || 'normal';
+    campaignRef.value = f.campaign_ref || '';
+
     localError.value = null;
+    activeSection.value = 'estrutura';
+
+    fmEditor.value = null;
+    fmDraft.value = {};
+    comparison.value = null;
+    recentLeads.value = [];
+
+    // Pré-carrega o editor de mapeamento (tab default)
+    fmLoading.value = true;
+    try {
+        const d = await store.fetchFieldMappings(f.id);
+        if (d?.ok) {
+            fmEditor.value = d;
+            // Popula draft com current ou vazio (= usa auto)
+            for (const item of d.items) {
+                fmDraft.value[item.question_key] = item.current_mapping || '';
+            }
+        }
+    } finally {
+        fmLoading.value = false;
+    }
+
+    // Pré-carrega leads em paralelo
+    loadingLeads.value = true;
+    try {
+        recentLeads.value = await store.fetchRecentLeads(f.id, { limit: 20 });
+    } finally {
+        loadingLeads.value = false;
+    }
 }, { immediate: true });
 
-const tagsArray = computed(() => {
-    return String(tagsRaw.value || '')
-        .split(',')
-        .map(t => t.trim())
-        .filter(Boolean);
+// ── Lazy load do comparativo ───────────────────────────────────────────────
+async function loadComparison() {
+    if (!props.form?.id || comparison.value) return;
+    loadingComp.value = true;
+    try {
+        const d = await store.fetchComparison(props.form.id);
+        if (d?.ok) comparison.value = d;
+    } finally {
+        loadingComp.value = false;
+    }
+}
+watch(activeSection, (s) => {
+    if (s === 'comparativo' && !comparison.value) loadComparison();
 });
 
-const willRoute = computed(() => active.value && !!midia.value.trim());
+// ── Helpers ───────────────────────────────────────────────────────────────
+function fmtMoney(v) { return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(v) || 0); }
+function fmtInt(v)   { return new Intl.NumberFormat('pt-BR').format(Number(v) || 0); }
+function fmtRelative(iso) {
+    if (!iso) return '—';
+    const ms = Date.now() - new Date(iso).getTime();
+    if (ms < 0) return 'agora';
+    const min = Math.floor(ms / 60000);
+    if (min < 1)    return 'agora';
+    if (min < 60)   return `${min}min`;
+    const h = Math.floor(min / 60);
+    if (h < 24)     return `${h}h`;
+    const d = Math.floor(h / 24);
+    if (d < 7)      return `${d}d`;
+    return new Date(iso).toLocaleDateString('pt-BR');
+}
 
-async function save() {
-    localError.value = null;
-    if (active.value && !midia.value.trim()) {
-        localError.value = 'Mídia é obrigatória para ativar o roteamento automático. Desative o mapping ou informe a mídia.';
-        return;
-    }
-    const patch = {
-        bound_empreendimentos: bound.value,
-        midia_slug: midia.value.trim() || null,
-        cv_origem: origem.value || 'FB',
-        tags: tagsArray.value.length ? tagsArray.value : null,
-        mapping_active: active.value,
-    };
-    const updated = await store.updateMapping(props.form.id, patch);
-    if (updated) {
-        emit('saved', updated);
-        close();
-    } else {
-        localError.value = store.error || 'Erro ao salvar.';
-    }
+function statusColor(s) {
+    if (s === 'delivered')               return 'text-emerald-600 dark:text-emerald-300';
+    if (s === 'held')                    return 'text-amber-600 dark:text-amber-300';
+    if (s === 'historical')              return 'text-violet-600 dark:text-violet-300';
+    if (s === 'spam')                    return 'text-red-500';
+    if (s === 'failed' || s === 'rejected') return 'text-red-600 dark:text-red-300';
+    return 'text-ink-muted';
 }
 
 const statusBadge = computed(() => {
@@ -78,123 +136,420 @@ const statusBadge = computed(() => {
     if (s === 'DRAFT')    return { label: 'Rascunho',       cls: 'bg-slate-500/10 text-slate-500 border-slate-500/20' };
     return { label: s || '—', cls: 'bg-slate-500/10 text-slate-500 border-slate-500/20' };
 });
+
+const stats = computed(() => props.form?.stats || { total: 0, last_30d: 0, delivered: 0, held: 0, spam: 0, failed: 0, last_lead_at: null });
+
+// ── Field mapping ──────────────────────────────────────────────────────────
+const fmGrouped = computed(() => {
+    if (!fmEditor.value?.available_targets) return [];
+    const byGroup = new Map();
+    for (const t of fmEditor.value.available_targets) {
+        if (!byGroup.has(t.group)) byGroup.set(t.group, []);
+        byGroup.get(t.group).push(t);
+    }
+    return [...byGroup.entries()].map(([group, items]) => ({ group, items }));
+});
+
+function effectiveMapping(item) {
+    const draft = fmDraft.value[item.question_key];
+    return draft || item.auto_detected || 'extra';
+}
+
+function targetLabel(targetKey) {
+    if (!targetKey) return '—';
+    const target = fmEditor.value?.available_targets?.find(t => t.key === targetKey);
+    return target?.label || targetKey;
+}
+
+async function saveFieldMappings() {
+    if (!props.form?.id) return;
+    fmSaving.value = true;
+    try {
+        // Só envia o que tá explicitamente setado (string truthy). Vazios → null no backend = "usa auto".
+        const payload = {};
+        for (const [k, v] of Object.entries(fmDraft.value)) {
+            if (v && v.trim()) payload[k] = v;
+        }
+        await store.saveFieldMappings(props.form.id, payload);
+        // Recarrega o editor pra refletir estado salvo
+        const d = await store.fetchFieldMappings(props.form.id);
+        if (d?.ok) {
+            fmEditor.value = d;
+            for (const item of d.items) {
+                fmDraft.value[item.question_key] = item.current_mapping || '';
+            }
+        }
+    } finally {
+        fmSaving.value = false;
+    }
+}
+
+function resetMappingToAuto(questionKey) {
+    fmDraft.value[questionKey] = '';
+}
+
+// ── Gestão ─────────────────────────────────────────────────────────────────
+async function saveGestao() {
+    localError.value = null;
+    savingMeta.value = true;
+    try {
+        const ok = await store.updateMapping(props.form.id, {
+            description: description.value.trim() || null,
+            priority: priority.value || 'normal',
+            campaign_ref: campaignRef.value.trim() || null,
+        });
+        if (!ok) localError.value = store.error || 'Erro ao salvar.';
+        else emit('saved');
+    } finally {
+        savingMeta.value = false;
+    }
+}
+
+// ── Export ─────────────────────────────────────────────────────────────────
+async function exportCsv(filter) {
+    downloadingCsv.value = true;
+    try {
+        await store.downloadLeadsCsv(props.form.id, { cv: filter });
+    } catch (e) {
+        alert('Erro ao exportar: ' + e.message);
+    } finally {
+        downloadingCsv.value = false;
+    }
+}
+
+const sections = [
+    { key: 'estrutura',   label: 'Estrutura & Mapeamento', icon: 'fas fa-list-check' },
+    { key: 'gestao',      label: 'Gestão interna',         icon: 'fas fa-clipboard-list' },
+    { key: 'comparativo', label: 'Comparativo',            icon: 'fas fa-scale-balanced' },
+    { key: 'leads',       label: 'Leads recentes',         icon: 'fas fa-users' },
+];
 </script>
 
 <template>
   <div v-if="open" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" @click.self="close">
-    <div class="bg-surface text-ink w-full max-w-2xl rounded-xl shadow-xl border border-line max-h-[90vh] overflow-y-auto">
+    <div class="bg-surface text-ink w-full max-w-4xl rounded-xl shadow-xl border border-line max-h-[92vh] flex flex-col">
 
       <!-- Header -->
-      <header class="flex items-start gap-3 px-5 pt-5 pb-4 border-b border-line">
+      <header class="flex items-start gap-3 px-5 pt-5 pb-3 border-b border-line shrink-0">
         <div class="shrink-0 w-10 h-10 rounded-lg bg-accent/10 text-accent flex items-center justify-center">
           <i class="fab fa-meta text-lg"></i>
         </div>
         <div class="flex-1 min-w-0">
-          <h3 class="text-base font-semibold text-ink leading-tight">Mapeamento — {{ form?.name || 'Formulário Meta' }}</h3>
-          <p class="text-xs text-ink-subtle mt-0.5">
+          <h3 class="text-base font-semibold text-ink leading-tight truncate">{{ form?.name || 'Formulário Meta' }}</h3>
+          <p class="text-xs text-ink-subtle mt-0.5 flex flex-wrap gap-x-2 gap-y-0.5">
             <span class="font-mono">#{{ form?.id }}</span>
-            <span v-if="form?.page_name"> · {{ form.page_name }}</span>
+            <span v-if="form?.page_name">· {{ form.page_name }}</span>
+            <span v-if="form?.locale">· {{ form.locale }}</span>
+            <span v-if="form?.created_time">· Criado {{ new Date(form.created_time).toLocaleDateString('pt-BR') }}</span>
           </p>
         </div>
         <span :class="['inline-flex shrink-0 rounded-md border px-2 py-0.5 text-[11px] font-medium', statusBadge.cls]">
           {{ statusBadge.label }}
         </span>
-        <button @click="close" class="shrink-0 text-ink-subtle hover:text-ink p-1">
-          <i class="fas fa-times"></i>
-        </button>
+        <button @click="close" class="shrink-0 text-ink-subtle hover:text-ink p-1"><i class="fas fa-times"></i></button>
       </header>
 
-      <!-- Body -->
-      <div class="p-5 space-y-5">
+      <!-- KPI bar -->
+      <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 px-5 py-3 border-b border-line bg-surface-sunken/30 shrink-0">
+        <div class="text-center">
+          <div class="text-[10px] uppercase tracking-wider text-ink-subtle">Total</div>
+          <div class="text-lg font-semibold text-ink">{{ fmtInt(stats.total) }}</div>
+        </div>
+        <div class="text-center">
+          <div class="text-[10px] uppercase tracking-wider text-ink-subtle">Últimos 30d</div>
+          <div class="text-lg font-semibold text-ink">{{ fmtInt(stats.last_30d) }}</div>
+        </div>
+        <div class="text-center">
+          <div class="text-[10px] uppercase tracking-wider text-ink-subtle">Entregues</div>
+          <div class="text-lg font-semibold text-emerald-600 dark:text-emerald-300">{{ fmtInt(stats.delivered) }}</div>
+        </div>
+        <div class="text-center">
+          <div class="text-[10px] uppercase tracking-wider text-ink-subtle">Pendentes</div>
+          <div class="text-lg font-semibold text-amber-600 dark:text-amber-300">{{ fmtInt(stats.held) }}</div>
+        </div>
+        <div class="text-center col-span-2 sm:col-span-1">
+          <div class="text-[10px] uppercase tracking-wider text-ink-subtle">Último lead</div>
+          <div class="text-sm font-medium text-ink">{{ fmtRelative(stats.last_lead_at) }}</div>
+        </div>
+      </div>
 
-        <!-- Info do form (read-only) -->
-        <section class="rounded-lg border border-line/60 bg-surface-sunken/30 px-3 py-2.5">
-          <div class="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
-            <div><span class="text-ink-subtle">Página:</span> <span class="text-ink">{{ form?.page_name || '—' }}</span></div>
-            <div><span class="text-ink-subtle">Locale:</span> <span class="text-ink">{{ form?.locale || '—' }}</span></div>
-            <div class="col-span-2"><span class="text-ink-subtle">Criado em:</span> <span class="text-ink">{{ form?.created_time ? new Date(form.created_time).toLocaleString('pt-BR') : '—' }}</span></div>
-            <div class="col-span-2"><span class="text-ink-subtle">Última sync:</span> <span class="text-ink">{{ form?.last_synced_at ? new Date(form.last_synced_at).toLocaleString('pt-BR') : '—' }}</span></div>
+      <!-- Tabs -->
+      <nav class="px-5 border-b border-line shrink-0 overflow-x-auto">
+        <div class="flex gap-0">
+          <button v-for="s in sections" :key="s.key" @click="activeSection = s.key"
+            :class="['px-3 py-2 text-xs font-medium border-b-2 transition-colors whitespace-nowrap flex items-center gap-1.5',
+              activeSection === s.key
+                ? 'border-accent text-accent'
+                : 'border-transparent text-ink-muted hover:text-ink']">
+            <i :class="s.icon" class="text-[10px]"></i>
+            {{ s.label }}
+          </button>
+        </div>
+      </nav>
+
+      <!-- Body -->
+      <div class="flex-1 overflow-y-auto px-5 py-4 space-y-5">
+
+        <!-- ── Estrutura & Mapeamento ────────────────────────────────────── -->
+        <section v-show="activeSection === 'estrutura'" class="space-y-3">
+          <div class="rounded-lg border border-line/60 bg-surface-sunken/30 px-3 py-2.5">
+            <div class="text-sm font-medium text-ink mb-0.5">
+              <i class="fas fa-list-check text-accent mr-1.5"></i>Perguntas do form → campo CV
+            </div>
+            <p class="text-xs text-ink-subtle">
+              Pra cada pergunta da Meta, escolha qual campo do CV vai receber a resposta.
+              Em branco = o sistema usa <b>auto-detecção</b> (sugestão mostrada em cinza).
+              <span class="text-violet-700 dark:text-violet-300">extra_fields</span> = mantém em JSONB custom.
+              <span class="text-red-600 dark:text-red-300">Ignorar</span> = não envia ao CV.
+            </p>
           </div>
-          <div v-if="Array.isArray(form?.questions) && form.questions.length" class="mt-2 pt-2 border-t border-line/60">
-            <div class="text-[10px] uppercase tracking-wider text-ink-subtle mb-1">Campos do form</div>
-            <div class="flex flex-wrap gap-1">
-              <span v-for="q in form.questions" :key="q.key" class="inline-flex rounded bg-surface px-1.5 py-0.5 text-[11px] text-ink-muted border border-line/60 font-mono">
-                {{ q.key }}<span v-if="q.label && q.label !== q.key" class="text-ink-subtle"> · {{ q.label }}</span>
-              </span>
+
+          <div v-if="fmLoading" class="text-center py-8 text-ink-subtle">
+            <i class="fas fa-circle-notch fa-spin mr-2"></i>Carregando estrutura...
+          </div>
+
+          <div v-else-if="!fmEditor || !fmEditor.items?.length"
+            class="text-center py-8 text-ink-subtle text-sm rounded-lg border border-dashed border-line">
+            <i class="fas fa-circle-info text-xl mb-1 block"></i>
+            Sem perguntas no form ainda. Sincronize em <span class="font-mono">/marketing/formularios → Meta → Sincronizar</span>.
+          </div>
+
+          <div v-else class="space-y-2">
+            <div v-for="item in fmEditor.items" :key="item.question_key"
+              class="rounded-lg border border-line bg-surface px-3 py-2.5 grid grid-cols-1 md:grid-cols-[1fr,auto] gap-3 items-start">
+
+              <!-- Pergunta -->
+              <div class="min-w-0">
+                <div class="text-sm font-medium text-ink leading-tight">{{ item.question_label }}</div>
+                <div class="text-[10px] font-mono text-ink-subtle mt-0.5">
+                  key: {{ item.question_key }}<span v-if="item.question_type"> · type: {{ item.question_type }}</span>
+                </div>
+              </div>
+
+              <!-- Mapping -->
+              <div class="flex items-center gap-2 shrink-0 min-w-[280px]">
+                <select v-model="fmDraft[item.question_key]"
+                  class="rounded border border-line bg-surface px-2.5 py-1.5 text-xs text-ink focus:outline-none focus:border-accent/40">
+                  <option value="">— Auto ({{ targetLabel(item.auto_detected) || 'extra_fields' }}) —</option>
+                  <optgroup v-for="grp in fmGrouped" :key="grp.group" :label="grp.group">
+                    <option v-for="t in grp.items" :key="t.key" :value="t.key">{{ t.label }}</option>
+                  </optgroup>
+                </select>
+
+                <button v-if="fmDraft[item.question_key]"
+                  @click="resetMappingToAuto(item.question_key)"
+                  class="text-[10px] text-ink-subtle hover:text-red-500" title="Voltar ao automático">
+                  <i class="fas fa-rotate-left"></i>
+                </button>
+              </div>
+
+              <!-- Preview do que vai acontecer -->
+              <div class="md:col-span-2 text-[10px] flex items-center gap-1.5 pt-1 border-t border-line/40">
+                <i class="fas fa-arrow-right text-ink-subtle"></i>
+                <span class="text-ink-subtle">Vai pra:</span>
+                <span class="font-mono px-1.5 py-0.5 rounded"
+                  :class="effectiveMapping(item) === 'ignore'
+                    ? 'bg-red-500/10 text-red-600 dark:text-red-300'
+                    : effectiveMapping(item) === 'extra'
+                      ? 'bg-violet-500/10 text-violet-700 dark:text-violet-300'
+                      : 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'">
+                  {{ targetLabel(effectiveMapping(item)) }}
+                </span>
+                <span v-if="!fmDraft[item.question_key] && item.auto_detected" class="text-[9px] text-ink-subtle italic">
+                  · via auto-detect
+                </span>
+                <span v-else-if="!fmDraft[item.question_key]" class="text-[9px] text-ink-subtle italic">
+                  · sem match no parser → vira extra_fields
+                </span>
+              </div>
+            </div>
+
+            <div class="flex justify-end pt-2">
+              <Button variant="primary" size="sm" icon="fas fa-save" :loading="fmSaving" @click="saveFieldMappings">
+                Salvar mapeamentos
+              </Button>
             </div>
           </div>
         </section>
 
-        <!-- Toggle: ativo -->
-        <section>
-          <label class="flex items-center gap-2.5 cursor-pointer select-none">
-            <input type="checkbox" v-model="active" class="h-4 w-4 rounded border-line accent-emerald-500" />
-            <span class="text-sm text-ink font-medium">Roteamento automático ativo</span>
-          </label>
-          <p class="text-xs text-ink-subtle mt-1 ml-6">
-            Quando ativo + mídia configurada, leads desse formulário são roteados direto ao CV.
-            Quando inativo, ficam em <span class="font-mono">held</span> aguardando roteamento manual.
-          </p>
-        </section>
-
-        <!-- Empreendimentos -->
-        <section>
-          <label class="text-sm font-medium text-ink block mb-1.5">Empreendimentos vinculados</label>
-          <p class="text-xs text-ink-subtle mb-2">
-            Leads desse formulário serão associados a esses empreendimentos no CV. Deixe vazio se for genérico (lead vai sem vínculo de empreendimento).
-          </p>
-          <EnterpriseMultiSelect v-model="bound" />
-        </section>
-
-        <!-- Mídia + origem -->
-        <section class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div class="sm:col-span-2">
-            <label class="text-sm font-medium text-ink block mb-1.5">Mídia (midia_slug)</label>
-            <input v-model="midia" type="text" placeholder="ex: meta-lancamento-wish"
-              class="w-full rounded border border-line bg-surface px-3 py-1.5 text-sm text-ink placeholder-ink-subtle focus:outline-none focus:border-accent/40 font-mono" />
-            <p class="text-[11px] text-ink-subtle mt-1">Slug que aparece como "mídia" no CV. Use kebab-case.</p>
+        <!-- ── Gestão interna ────────────────────────────────────────────── -->
+        <section v-show="activeSection === 'gestao'" class="space-y-3">
+          <div class="rounded-lg border border-line/60 bg-surface-sunken/30 px-3 py-2.5 text-xs text-ink-subtle">
+            <i class="fas fa-circle-info mr-1"></i>
+            Vínculo CV (empreendimento, mídia, UTMs, extras) agora vive nas <b>campanhas</b>, não nos forms.
+            Aqui só ficam metadados internos.
           </div>
+
           <div>
-            <label class="text-sm font-medium text-ink block mb-1.5">Origem CV</label>
-            <select v-model="origem" class="w-full rounded border border-line bg-surface px-3 py-1.5 text-sm text-ink focus:outline-none focus:border-accent/40">
-              <option value="FB">FB (Facebook)</option>
-              <option value="IG">IG (Instagram)</option>
-            </select>
-            <p class="text-[11px] text-ink-subtle mt-1">Origem (2 letras, enum CV).</p>
+            <label class="text-sm font-medium text-ink block mb-1">Descrição interna</label>
+            <textarea v-model="description" rows="3"
+              placeholder="Notas pra equipe — ex: form do lançamento Wish, criado em 03/2026"
+              class="w-full rounded border border-line bg-surface px-3 py-2 text-sm text-ink placeholder-ink-subtle focus:outline-none focus:border-accent/40 resize-y" />
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="text-sm font-medium text-ink block mb-1">Prioridade</label>
+              <select v-model="priority" class="w-full rounded border border-line bg-surface px-3 py-1.5 text-sm text-ink focus:outline-none focus:border-accent/40">
+                <option value="low">Baixa</option>
+                <option value="normal">Normal</option>
+                <option value="high">Alta</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-sm font-medium text-ink block mb-1">Referência da campanha</label>
+              <input v-model="campaignRef" type="text" placeholder="LANC-WISH-OUT-2026"
+                class="w-full rounded border border-line bg-surface px-3 py-1.5 text-sm text-ink placeholder-ink-subtle focus:outline-none focus:border-accent/40 font-mono" />
+            </div>
+          </div>
+
+          <div v-if="localError" class="rounded border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-300">
+            <i class="fas fa-circle-exclamation mr-1.5"></i>{{ localError }}
+          </div>
+
+          <div class="flex justify-end">
+            <Button variant="primary" size="sm" icon="fas fa-save" :loading="savingMeta" @click="saveGestao">Salvar</Button>
           </div>
         </section>
 
-        <!-- Tags -->
-        <section>
-          <label class="text-sm font-medium text-ink block mb-1.5">Tags <span class="text-ink-subtle font-normal">(opcional)</span></label>
-          <input v-model="tagsRaw" type="text" placeholder="lancamento, vip, sp"
-            class="w-full rounded border border-line bg-surface px-3 py-1.5 text-sm text-ink placeholder-ink-subtle focus:outline-none focus:border-accent/40" />
-          <p class="text-[11px] text-ink-subtle mt-1">Separe por vírgula. Vão no lead pra facilitar filtros.</p>
-        </section>
+        <!-- ── Comparativo ───────────────────────────────────────────────── -->
+        <section v-show="activeSection === 'comparativo'" class="space-y-4">
+          <div v-if="loadingComp" class="text-center py-8 text-ink-subtle">
+            <i class="fas fa-circle-notch fa-spin mr-2"></i>Calculando comparativo...
+          </div>
 
-        <!-- Preview do comportamento -->
-        <section class="rounded-lg border px-3 py-2.5"
-          :class="willRoute ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-amber-500/30 bg-amber-500/5'">
-          <div class="text-xs font-medium" :class="willRoute ? 'text-emerald-700 dark:text-emerald-300' : 'text-amber-700 dark:text-amber-300'">
-            <i :class="willRoute ? 'fas fa-bolt' : 'fas fa-hand'" class="mr-1.5"></i>
-            <template v-if="willRoute">
-              Novo lead vai direto pra <span class="font-mono">routed</span> e despacha pro CV.
-            </template>
-            <template v-else>
-              Novo lead fica em <span class="font-mono">held</span> aguardando roteamento manual.
-            </template>
+          <template v-else-if="comparison">
+            <div class="grid grid-cols-3 gap-2">
+              <div class="rounded-lg border border-blue-500/30 bg-blue-500/5 p-3 text-center">
+                <div class="text-[10px] uppercase tracking-wider text-blue-700 dark:text-blue-300 flex items-center justify-center gap-1">
+                  <i class="fab fa-meta"></i>Meta
+                </div>
+                <div class="text-3xl font-semibold text-ink mt-1">{{ fmtInt(comparison.meta.leads) }}</div>
+                <div class="text-[10px] text-ink-subtle mt-0.5">leads (insights)</div>
+                <div class="text-[10px] text-ink-subtle mt-2">{{ fmtMoney(comparison.meta.spend) }} · {{ comparison.meta.ads_count }} ads</div>
+              </div>
+              <div class="rounded-lg border border-violet-500/30 bg-violet-500/5 p-3 text-center">
+                <div class="text-[10px] uppercase tracking-wider text-violet-700 dark:text-violet-300 flex items-center justify-center gap-1">
+                  <i class="fas fa-database"></i>Office
+                </div>
+                <div class="text-3xl font-semibold text-ink mt-1">{{ fmtInt(comparison.office.total) }}</div>
+                <div class="text-[10px] text-ink-subtle mt-0.5">no nosso DB</div>
+                <div class="text-[10px] mt-2">
+                  <span :class="comparison.rates.office_vs_meta_pct >= 95 ? 'text-emerald-600 dark:text-emerald-300' : 'text-amber-600 dark:text-amber-300'">
+                    {{ comparison.rates.office_vs_meta_pct ?? '—' }}% da Meta
+                  </span>
+                </div>
+              </div>
+              <div class="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-3 text-center">
+                <div class="text-[10px] uppercase tracking-wider text-emerald-700 dark:text-emerald-300 flex items-center justify-center gap-1">
+                  <i class="fas fa-check-circle"></i>CV
+                </div>
+                <div class="text-3xl font-semibold text-ink mt-1">{{ fmtInt(comparison.cv.matched) }}</div>
+                <div class="text-[10px] text-ink-subtle mt-0.5">com cv_idlead</div>
+                <div class="text-[10px] mt-2">
+                  <span :class="comparison.rates.cv_vs_meta_pct >= 80 ? 'text-emerald-600 dark:text-emerald-300' : 'text-amber-600 dark:text-amber-300'">
+                    {{ comparison.rates.cv_vs_meta_pct ?? '—' }}% da Meta
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Gaps -->
+            <div class="rounded-lg border border-line/60 bg-surface-sunken/30 p-3">
+              <div class="text-[10px] uppercase tracking-wider text-ink-subtle mb-2">Onde se perdem os leads</div>
+              <div class="space-y-2 text-xs">
+                <div class="flex justify-between"><span class="text-ink-muted">Meta → Office</span>
+                  <span class="font-mono font-medium" :class="comparison.gaps.meta_minus_office > 0 ? 'text-amber-600 dark:text-amber-300' : 'text-ink-subtle'">
+                    −{{ fmtInt(comparison.gaps.meta_minus_office) }}
+                  </span>
+                </div>
+                <div class="flex justify-between"><span class="text-ink-muted">Office → CV</span>
+                  <span class="font-mono font-medium" :class="comparison.gaps.office_minus_cv > 0 ? 'text-amber-600 dark:text-amber-300' : 'text-ink-subtle'">
+                    −{{ fmtInt(comparison.gaps.office_minus_cv) }}
+                  </span>
+                </div>
+                <div class="flex justify-between pt-2 border-t border-line/60">
+                  <span class="font-medium text-ink">Perda total Meta → CV</span>
+                  <span class="font-mono font-semibold" :class="comparison.gaps.meta_minus_cv > 0 ? 'text-red-600 dark:text-red-300' : 'text-emerald-600 dark:text-emerald-300'">
+                    −{{ fmtInt(comparison.gaps.meta_minus_cv) }} ({{ (100 - (comparison.rates.cv_vs_meta_pct ?? 0)).toFixed(1) }}%)
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2">
+              <Button variant="secondary" size="sm" icon="fas fa-download" :loading="downloadingCsv" @click="exportCsv(null)">
+                Exportar todos ({{ comparison.office.total }})
+              </Button>
+              <Button v-if="comparison.cv.matched > 0" variant="ghost" size="sm" icon="fas fa-download" :loading="downloadingCsv" @click="exportCsv('matched')">
+                Só com CV ({{ comparison.cv.matched }})
+              </Button>
+              <Button v-if="comparison.cv.unmatched > 0" variant="ghost" size="sm" icon="fas fa-download" :loading="downloadingCsv" @click="exportCsv('unmatched')">
+                Sem CV ({{ comparison.cv.unmatched }})
+              </Button>
+            </div>
+          </template>
+
+          <div v-else class="text-center py-8 text-ink-subtle text-sm">
+            <i class="fas fa-scale-balanced text-2xl mb-2 block"></i>
+            Aguardando dados.
           </div>
         </section>
 
-        <div v-if="localError" class="rounded border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-300">
-          <i class="fas fa-circle-exclamation mr-1.5"></i>{{ localError }}
-        </div>
+        <!-- ── Leads recentes ────────────────────────────────────────────── -->
+        <section v-show="activeSection === 'leads'" class="space-y-2">
+          <div class="flex justify-between items-center">
+            <div class="text-[11px] text-ink-subtle">Últimos 20 — pra ver todos, exporte CSV.</div>
+            <Button variant="ghost" size="sm" icon="fas fa-download" :loading="downloadingCsv" @click="exportCsv(null)">Exportar CSV</Button>
+          </div>
+
+          <div v-if="loadingLeads" class="text-center py-8 text-ink-subtle">
+            <i class="fas fa-circle-notch fa-spin mr-2"></i>Carregando leads...
+          </div>
+          <div v-else-if="!recentLeads.length" class="text-center py-8 text-ink-subtle text-sm">
+            <i class="fas fa-inbox text-2xl mb-2 block"></i>Nenhum lead chegou por esse form ainda.
+          </div>
+          <div v-else class="rounded-lg border border-line overflow-hidden">
+            <table class="min-w-full text-sm">
+              <thead class="bg-surface-sunken/30 border-b border-line">
+                <tr>
+                  <th class="px-3 py-2 text-left  text-[10px] font-mono uppercase tracking-wider text-ink-subtle">Quando</th>
+                  <th class="px-3 py-2 text-left  text-[10px] font-mono uppercase tracking-wider text-ink-subtle">Contato</th>
+                  <th class="px-3 py-2 text-left  text-[10px] font-mono uppercase tracking-wider text-ink-subtle">Mídia</th>
+                  <th class="px-3 py-2 text-center text-[10px] font-mono uppercase tracking-wider text-ink-subtle">CV</th>
+                  <th class="px-3 py-2 text-center text-[10px] font-mono uppercase tracking-wider text-ink-subtle">Status</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-line/60">
+                <tr v-for="l in recentLeads" :key="l.id" class="hover:bg-surface-hover/40">
+                  <td class="px-3 py-2 text-[11px] text-ink-subtle whitespace-nowrap">{{ fmtRelative(l.created_at) }}</td>
+                  <td class="px-3 py-2">
+                    <div class="text-ink text-xs">{{ l.nome || '(sem nome)' }}</div>
+                    <div class="text-[10px] text-ink-subtle">{{ l.email || l.telefone || '' }}</div>
+                  </td>
+                  <td class="px-3 py-2 text-[11px] font-mono text-ink-muted">{{ l.midia_slug || '—' }}</td>
+                  <td class="px-3 py-2 text-center">
+                    <span v-if="l.cv_idlead" class="inline-flex items-center gap-1 text-[10px] font-mono text-emerald-600 dark:text-emerald-300">
+                      <i class="fas fa-check-circle text-[9px]"></i>#{{ l.cv_idlead }}
+                    </span>
+                    <span v-else class="text-[10px] text-ink-subtle italic">sem match</span>
+                  </td>
+                  <td class="px-3 py-2 text-center">
+                    <span :class="['text-[11px] font-medium', statusColor(l.status)]">{{ l.status }}</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
       </div>
 
       <!-- Footer -->
-      <footer class="px-5 py-3 border-t border-line flex items-center justify-end gap-2 bg-surface-sunken/30">
-        <Button variant="secondary" size="sm" @click="close" :disabled="store.saving">Cancelar</Button>
-        <Button variant="primary" size="sm" icon="fas fa-save" :loading="store.saving" @click="save">Salvar mapping</Button>
+      <footer class="px-5 py-3 border-t border-line flex items-center justify-between gap-2 bg-surface-sunken/30 shrink-0">
+        <div class="text-[10px] text-ink-subtle">
+          Última sync: {{ form?.last_synced_at ? new Date(form.last_synced_at).toLocaleString('pt-BR') : '—' }}
+        </div>
+        <Button variant="secondary" size="sm" @click="close">Fechar</Button>
       </footer>
     </div>
   </div>

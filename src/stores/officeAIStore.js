@@ -76,8 +76,17 @@ export const useOfficeAIStore = defineStore('officeAI', () => {
   }
 
   // ── Envio de mensagem com SSE streaming ───────────────────────────────────
-  async function sendMessage(text) {
-    if (!text?.trim() || isStreaming.value) return
+  async function sendMessage(text, { viaVoice = false } = {}) {
+    if (!text?.trim()) {
+      console.warn('[officeAIStore] sendMessage ignorada — texto vazio')
+      return
+    }
+    if (isStreaming.value) {
+      console.warn('[officeAIStore] sendMessage ignorada — já está em streaming')
+      return
+    }
+
+    console.log('[officeAIStore] → enviando:', text.slice(0, 80), viaVoice ? '(VOZ)' : '')
 
     messages.value.push({
       id: Date.now(),
@@ -90,6 +99,7 @@ export const useOfficeAIStore = defineStore('officeAI', () => {
     streamingText.value = ''
     pendingAction.value = null
 
+    const t0 = performance.now()
     try {
       const response = await fetch(`${API_URL}/office-chat/stream`, {
         method: 'POST',
@@ -97,11 +107,17 @@ export const useOfficeAIStore = defineStore('officeAI', () => {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
-        body: JSON.stringify({ message: text, session_id: currentSessionId.value }),
+        body: JSON.stringify({
+          message: text,
+          session_id: currentSessionId.value,
+          via_voice: viaVoice,
+        }),
       })
+      console.log('[officeAIStore] HTTP', response.status, 'em', Math.round(performance.now() - t0), 'ms')
 
       if (!response.ok) {
         const err = await response.json().catch(() => ({}))
+        console.error('[officeAIStore] erro HTTP:', response.status, err)
         if (err.code === 'STORAGE_LIMIT') {
           pushAssistantMessage('', 'error', { storageLimit: true })
         } else if (response.status === 429) {
@@ -134,9 +150,10 @@ export const useOfficeAIStore = defineStore('officeAI', () => {
         }
       }
     } catch (err) {
-      console.error('[officeAIStore] SSE error:', err)
+      console.error('[officeAIStore] SSE error:', err, '— após', Math.round(performance.now() - t0), 'ms')
       pushAssistantMessage('Erro de conexão. Tente novamente.', 'error')
     } finally {
+      console.log('[officeAIStore] ✓ streaming finalizado em', Math.round(performance.now() - t0), 'ms')
       isStreaming.value = false
     }
   }

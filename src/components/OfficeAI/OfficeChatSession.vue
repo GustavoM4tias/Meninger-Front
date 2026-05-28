@@ -2,6 +2,8 @@
 import { ref, computed, nextTick, watch } from 'vue'
 import { useOfficeAIStore } from '@/stores/officeAIStore'
 import { useAuthStore } from '@/stores/Settings/Auth/authStore'
+import { usePermissionStore } from '@/stores/Settings/Permissions/permissionStore'
+import { useEmeVoice } from '@/composables/useEmeVoice'
 import ChatText from './renderers/ChatText.vue'
 import ChatTable from './renderers/ChatTable.vue'
 import ChatChart from './renderers/ChatChart.vue'
@@ -27,6 +29,61 @@ const emit = defineEmits(['minimize'])
 
 const aiStore = useOfficeAIStore()
 const authStore = useAuthStore()
+const permStore = usePermissionStore()
+
+// ── Voz ──────────────────────────────────────────────────────────────────────
+const voice = useEmeVoice()
+const voiceAvailable = computed(() => permStore.isAdmin && voice.isSupported)
+
+const composerPlaceholder = computed(() => {
+  // Prioridade: estados de voz (incluindo PROCESSING) > streaming genérico
+  const fromVoice = ({
+    ARMED:      'Diga "Olá Eme"…',
+    LISTENING:  voice.interimText.value || 'Te ouvindo…',
+    PROCESSING: 'Eme está pensando…',
+    SPEAKING:   'Respondendo… (microfone pausado)',
+  }[voice.state.value])
+  if (fromVoice) return fromVoice
+  if (aiStore.isStreaming) return 'Aguarde…'
+  return 'Pergunte ao Eme…'
+})
+
+const composerStateClass = computed(() => ({
+  OFF:        'border-line focus-within:border-accent focus-within:ring-2 focus-within:ring-accent-ring/20',
+  ARMED:      'border-blue-500/50 ring-2 ring-blue-500/20',
+  LISTENING:  'border-red-500/60 ring-2 ring-red-500/20',
+  PROCESSING: 'border-purple-500/60 ring-2 ring-purple-500/20',
+  SPEAKING:   'border-amber-500/50 ring-2 ring-amber-500/20',
+}[voice.state.value] || ''))
+
+const alwaysOnPersisted = computed(() =>
+  localStorage.getItem('eme:voice:always-on') === 'true'
+)
+
+const micIconClass = computed(() => {
+  if (voice.state.value === 'OFF' && alwaysOnPersisted.value) {
+    return 'fas fa-microphone text-amber-500 animate-pulse'
+  }
+  return ({
+    OFF:        'fas fa-microphone text-ink-subtle',
+    ARMED:      'fas fa-microphone text-blue-500',
+    LISTENING:  'fas fa-waveform-lines text-red-500 animate-pulse',
+    PROCESSING: 'fas fa-circle-notch fa-spin text-purple-500',
+    SPEAKING:   'fas fa-volume-high text-amber-500',
+  }[voice.state.value])
+})
+
+const micTitle = computed(() => {
+  const base = voice.statusLabel.value
+  if (voice.state.value === 'OFF') return `${base} · Clique para ATIVAR voz (fica ligada até desativar)`
+  return `${base} · Clique para DESATIVAR voz`
+})
+
+function onMicClick() {
+  if (!voiceAvailable.value) return
+  if (voice.state.value === 'OFF') voice.wakeUp()
+  else voice.sleepUntilWoken()
+}
 
 // Texto do composer vem da store — permite pré-preencher de fora
 // (ex: "Criar via Eme" na página de alertas).
@@ -267,16 +324,34 @@ async function confirmFeedback({ comment }) {
     <!-- Input -->
     <div class="border-t border-line px-3 py-3 bg-surface">
       <div
-        class="relative bg-surface-sunken border border-line rounded-2xl flex items-end gap-2 px-2 py-1
-               focus-within:border-accent focus-within:ring-2 focus-within:ring-accent-ring/20 transition">
+        class="relative bg-surface-sunken border rounded-2xl flex items-end gap-2 px-2 py-1 transition"
+        :class="composerStateClass">
         <textarea v-model="messageInput" @keydown="onKeydown"
-          :placeholder="aiStore.isStreaming ? 'Aguarde…' : 'Pergunte ao Eme…'"
+          :placeholder="composerPlaceholder"
           :disabled="aiStore.isStreaming || aiStore.isAtStorageLimit" rows="1"
-          class="flex-1 bg-transparent border-none outline-none resize-none text-sm text-ink placeholder:text-ink-subtle
-                 max-h-32 min-h-[1.5rem] leading-relaxed py-2 px-2" />
+          :class="[
+            'flex-1 bg-transparent border-none outline-none resize-none text-sm text-ink placeholder:text-ink-subtle',
+            'max-h-32 min-h-[1.5rem] leading-relaxed py-2 px-2',
+            voice.state.value === 'LISTENING' ? 'placeholder:text-ink placeholder:italic' : '',
+          ]" />
 
-        <div class="flex justify-end h-full my-auto pr-1 pb-1">
-          <button @click="send" :disabled="!messageInput.trim() || aiStore.isStreaming || aiStore.isAtStorageLimit"
+        <div class="flex items-center gap-1.5 h-full my-auto pr-1 pb-1">
+          <button v-if="voiceAvailable" type="button" @click="onMicClick"
+            :title="micTitle"
+            :class="[
+              'w-8 h-8 rounded-full flex items-center justify-center transition',
+              'bg-surface-raised hover:bg-accent-soft border border-line',
+              voice.isActive.value ? 'ring-2 ring-offset-1 ring-offset-surface' : '',
+              voice.state.value === 'LISTENING' ? 'ring-red-500/40' : '',
+              voice.state.value === 'ARMED' ? 'ring-blue-500/40' : '',
+              voice.state.value === 'PROCESSING' ? 'ring-purple-500/40' : '',
+              voice.state.value === 'SPEAKING' ? 'ring-amber-500/40' : '',
+            ]">
+            <i :class="micIconClass" class="text-xs" />
+          </button>
+
+          <button type="button" @click="send"
+            :disabled="!messageInput.trim() || aiStore.isStreaming || aiStore.isAtStorageLimit"
             class="w-8 h-8 rounded-full flex items-center justify-center transition-colors"
             :class="messageInput.trim() && !aiStore.isStreaming
               ? 'bg-accent text-white hover:bg-accent-hover'

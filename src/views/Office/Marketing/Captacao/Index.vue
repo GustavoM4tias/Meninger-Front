@@ -22,12 +22,14 @@ const STATUS_META = {
   rejected:    { label: 'Recusado',           cls: 'bg-red-500/10 text-red-600 dark:text-red-300 border-red-500/20' },
   failed:      { label: 'Falhou',             cls: 'bg-red-500/10 text-red-600 dark:text-red-300 border-red-500/20' },
   spam:        { label: 'Spam',               cls: 'bg-slate-500/10 text-slate-500 border-slate-500/20' },
+  historical:  { label: 'Histórico (Meta)',   cls: 'bg-violet-500/10 text-violet-600 dark:text-violet-300 border-violet-500/20' },
 };
 const CHANNEL_LABEL = { meta_lead_ads: 'Meta', site_form: 'Site' };
 
 const FILTER_CHIPS = [
   { key: '',                  label: 'Todos' },
   { key: 'held',              label: 'Inbox (aguardando)' },
+  { key: 'historical',        label: 'Histórico Meta' },
   { key: 'failed,rejected',   label: 'Com erro' },
   { key: 'routed,dispatching', label: 'Em despacho' },
   { key: 'delivered',         label: 'Entregues' },
@@ -173,7 +175,10 @@ onMounted(async () => {
                   </span>
                 </td>
                 <td class="px-4 py-2.5 text-ink-muted">{{ channelLabel(lead.channel) }}</td>
-                <td class="px-4 py-2.5 text-ink font-medium">{{ lead.nome || '—' }}</td>
+                <td class="px-4 py-2.5">
+                  <div v-if="lead.nome" class="text-ink font-medium">{{ lead.nome }}</div>
+                  <div v-else class="text-ink-subtle italic text-xs">(sem nome — só contato)</div>
+                </td>
                 <td class="px-4 py-2.5 text-ink-muted">{{ contato(lead) }}</td>
                 <td class="px-4 py-2.5 text-ink-muted">{{ lead.midia_slug || '—' }}</td>
                 <td class="px-4 py-2.5 text-ink-subtle font-mono text-xs whitespace-nowrap">{{ fmtDate(lead.created_at) }}</td>

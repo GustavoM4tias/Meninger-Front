@@ -84,5 +84,33 @@ export const useLeadFormsStore = defineStore('marketingLeadForms', () => {
         }
     }
 
-    return { forms, loading, saving, error, fetchAll, create, update };
+    /** Toggle rápido do active (sem abrir o modal). */
+    async function toggleActive(id, desired) {
+        error.value = null;
+        try {
+            const body = typeof desired === 'boolean' ? JSON.stringify({ active: desired }) : '{}';
+            const d = await apiFetch(`/lead-forms/${id}/toggle-active`, { method: 'POST', body });
+            // Atualiza in-place pra UX responsiva (mantém stats).
+            const idx = forms.value.findIndex(f => f.id === id);
+            if (idx >= 0 && d.form) {
+                forms.value[idx] = { ...forms.value[idx], active: d.form.active };
+            }
+            return d.form?.active;
+        } catch (e) {
+            error.value = e.message;
+            return null;
+        }
+    }
+
+    async function fetchRecentLeads(formId, { limit = 20 } = {}) {
+        try {
+            const d = await apiFetch(`/lead-forms/${formId}/leads?limit=${limit}`);
+            return Array.isArray(d.results) ? d.results : [];
+        } catch (e) {
+            error.value = e.message;
+            return [];
+        }
+    }
+
+    return { forms, loading, saving, error, fetchAll, create, update, toggleActive, fetchRecentLeads };
 });
