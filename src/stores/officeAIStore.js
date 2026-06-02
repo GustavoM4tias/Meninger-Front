@@ -188,6 +188,8 @@ export const useOfficeAIStore = defineStore('officeAI', () => {
         if (evt.action.type === 'navigate') {
           window.dispatchEvent(new CustomEvent('eme:navigate', { detail: evt.action }))
         }
+        // open_alert_editor é renderizado inline no chat (ChatAlertEditor),
+        // não dispara evento — o ChatMessage detecta via action.type.
         break
 
       case 'done':
