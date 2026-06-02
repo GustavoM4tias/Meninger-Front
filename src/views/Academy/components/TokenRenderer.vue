@@ -10,7 +10,7 @@
     <template v-else>
       <div v-for="(p, i) in parts" :key="i">
         <div v-if="p.kind === 'md'" class="markdown text-sm leading-7 text-slate-700 dark:text-slate-200"
-          v-html="p.html" />
+          @click="onArticleLinkClick" @mouseover="onLinkHover" @mouseout="onLinkLeave" v-html="p.html" />
 
         <div v-else class="not-prose">
           <!-- ARTICLE -->
@@ -202,14 +202,47 @@
         </div>
       </div>
     </template>
+
+    <Teleport to="body">
+      <Transition name="kb-preview">
+        <div v-if="preview.visible && preview.entry"
+          class="kb-preview-card fixed z-[80] w-[340px] cursor-pointer overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-900"
+          :style="{ left: preview.x + 'px', top: preview.y + 'px' }"
+          @mouseenter="onPreviewEnter" @mouseleave="onPreviewLeave" @click="openPreview">
+          <div class="border-b border-slate-100 px-4 py-3 dark:border-slate-800">
+            <div class="flex items-center gap-2">
+              <span class="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
+                <i class="fa-regular fa-folder text-[9px]"></i>
+                {{ preview.entry.categorySlug }}
+              </span>
+            </div>
+            <div class="mt-1.5 text-sm font-bold text-slate-900 dark:text-white">
+              {{ preview.entry.title }}
+            </div>
+          </div>
+          <div class="px-4 py-3 text-xs leading-relaxed text-slate-600 dark:text-slate-300">
+            {{ preview.entry.snippet || 'Sem prévia disponível.' }}
+          </div>
+          <div class="flex items-center justify-between border-t border-slate-100 px-4 py-2 text-[11px] text-slate-400 dark:border-slate-800 dark:text-slate-500">
+            <span class="inline-flex items-center gap-1">
+              <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i>
+              Clique para abrir
+            </span>
+            <span class="truncate font-mono">{{ preview.entry.slug }}</span>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
 <script setup>
-import { computed, ref, watch } from 'vue';
+import { computed, reactive, ref, watch, onMounted, onBeforeUnmount } from 'vue';
+import { useRouter } from 'vue-router';
 import MarkdownIt from 'markdown-it';
 import anchor from 'markdown-it-anchor';
 import linkAttrs from 'markdown-it-link-attributes';
+import { useAcademyKbIndexStore } from '@/stores/Academy/academyKbIndexStore';
 
 const DEBUG = false;
 function dwarn(...args) { console.warn('[TrackTokenRenderer]', ...args); }
@@ -226,6 +259,117 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['open-article', 'open-topic', 'quiz-state', 'quiz-submit']);
+
+// Intercepta cliques em links internos do Academy (ex.: `[texto](/academy/kb/...)`
+// que o admin vinculou pelo botão "🔗 Artigo") para navegar via SPA.
+// Ctrl/Cmd/Shift/botão do meio: deixa o browser tratar (nova aba etc.).
+const router = useRouter();
+const kbIndex = useAcademyKbIndexStore();
+
+onMounted(() => {
+  kbIndex.ensureLoaded().catch(() => { /* silencioso */ });
+});
+
+function onArticleLinkClick(e) {
+  if (e.defaultPrevented) return;
+  if (e.ctrlKey || e.metaKey || e.shiftKey) return;
+  if (typeof e.button === 'number' && e.button !== 0) return;
+  const a = e.target?.closest?.('a');
+  if (!a) return;
+  const href = a.getAttribute('href') || '';
+  if (!href.startsWith('/academy/')) return;
+  e.preventDefault();
+  router.push(href).catch(() => { /* rota repetida — ignora */ });
+}
+
+// ── Preview no hover de links internos ───────────────────────────────
+// Quando o mouse passa sobre `<a href="/academy/kb/..." />`, mostra um
+// cartão flutuante com título + trecho do artigo. Sem requisição extra:
+// puxa do índice já carregado.
+const preview = reactive({
+  visible: false,
+  x: 0,
+  y: 0,
+  entry: null,
+  linkEl: null,
+});
+let showTimer = null;
+let hideTimer = null;
+
+function positionPreview(linkEl) {
+  const rect = linkEl.getBoundingClientRect();
+  const w = 340;
+  const approxH = 180;
+  const margin = 10;
+  let x = rect.left;
+  let y = rect.bottom + 8;
+  if (x + w + margin > window.innerWidth) x = window.innerWidth - w - margin;
+  if (x < margin) x = margin;
+  if (y + approxH + margin > window.innerHeight) {
+    y = rect.top - approxH - 8;
+    if (y < margin) y = margin;
+  }
+  preview.x = x;
+  preview.y = y;
+}
+
+function onLinkHover(e) {
+  const a = e.target?.closest?.('a');
+  if (!a) return;
+  const href = a.getAttribute('href') || '';
+  if (!href.startsWith('/academy/kb/')) return;
+  // já mostrando para este link?
+  if (preview.linkEl === a && preview.visible) {
+    clearTimeout(hideTimer);
+    return;
+  }
+  clearTimeout(showTimer);
+  clearTimeout(hideTimer);
+  showTimer = setTimeout(() => {
+    const entry = kbIndex.findByHref(href);
+    if (!entry) return; // não encontrado no índice
+    preview.entry = entry;
+    preview.linkEl = a;
+    positionPreview(a);
+    preview.visible = true;
+  }, 280);
+}
+
+function onLinkLeave(e) {
+  const a = e.target?.closest?.('a');
+  if (!a) return;
+  // se está entrando num filho do mesmo <a>, ignora
+  const to = e.relatedTarget;
+  if (to && a.contains && a.contains(to)) return;
+  clearTimeout(showTimer);
+  hideTimer = setTimeout(() => {
+    preview.visible = false;
+    preview.entry = null;
+    preview.linkEl = null;
+  }, 220);
+}
+
+function onPreviewEnter() {
+  clearTimeout(hideTimer);
+}
+function onPreviewLeave() {
+  hideTimer = setTimeout(() => {
+    preview.visible = false;
+    preview.entry = null;
+    preview.linkEl = null;
+  }, 120);
+}
+function openPreview() {
+  if (!preview.entry) return;
+  const href = `/academy/kb/${encodeURIComponent(preview.entry.categorySlug)}/${encodeURIComponent(preview.entry.slug)}`;
+  preview.visible = false;
+  router.push(href).catch(() => { /* ignora */ });
+}
+
+onBeforeUnmount(() => {
+  clearTimeout(showTimer);
+  clearTimeout(hideTimer);
+});
 
 function isObj(x) {
   return x && typeof x === 'object' && !Array.isArray(x);
@@ -804,5 +948,17 @@ function optionClass(qi, oi) {
   border-radius: .75rem;
   overflow: auto;
   background: rgba(148, 163, 184, .14);
+}
+
+/* Preview no hover de links internos */
+.kb-preview-enter-active,
+.kb-preview-leave-active {
+  transition: opacity .15s ease, transform .15s ease;
+}
+
+.kb-preview-enter-from,
+.kb-preview-leave-to {
+  opacity: 0;
+  transform: translateY(4px);
 }
 </style>

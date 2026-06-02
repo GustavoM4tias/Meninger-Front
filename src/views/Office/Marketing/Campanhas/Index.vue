@@ -3,23 +3,46 @@
 // filtros (status, conta, datas, busca) e tabela com investimento + leads + CAC.
 
 import { onMounted, ref, computed } from 'vue';
-import { RouterLink } from 'vue-router';
+import dayjs from 'dayjs';
 import { useCampaignsStore } from '@/stores/Marketing/Campaigns/campaignsStore';
+import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 import PageContainer from '@/components/UI/PageContainer.vue';
 import PageHeader from '@/components/UI/PageHeader.vue';
 import Surface from '@/components/UI/Surface.vue';
 import Button from '@/components/UI/Button.vue';
 import CampaignDetailModal from './components/CampaignDetailModal.vue';
+import CampaignsCardsView from './components/CampaignsCardsView.vue';
+import CampaignsTimelineView from './components/CampaignsTimelineView.vue';
+import CampaignsAdminModal from './components/CampaignsAdminModal.vue';
+import CampaignsFiltersBar from './components/CampaignsFiltersBar.vue';
+import CampaignsSummaryCards from './components/CampaignsSummaryCards.vue';
 
 const store = useCampaignsStore();
+const authStore = useAuthStore();
+const isAdmin = computed(() => authStore?.user?.role === 'admin');
 
-const search = ref('');
-const filterStatus  = ref('ALL');  // ALL | ACTIVE | PAUSED | OTHER
-const filterAccount = ref('ALL');
-const filterDateFrom = ref('');
-const filterDateTo   = ref('');
-const showArchived  = ref(false);
-const sortBy        = ref('spend'); // spend | leads | cac | start | name
+// ── Filtros (objeto único pra simplificar) ────────────────────────────────
+// Defaults: mês atual, sem nada selecionado → mostra tudo do mês
+const filtros = ref({
+    status: [],
+    conta: [],
+    midia: [],
+    objetivo: [],
+    busca: '',
+    sort: 'spend',
+    incluir_arquivadas: false,
+    data_inicio: dayjs().startOf('month').format('YYYY-MM-DD'),
+    data_fim: dayjs().endOf('month').format('YYYY-MM-DD'),
+});
+
+const adminModalOpen = ref(false);
+
+// View mode: 'list' | 'cards' | 'timeline' (persiste por usuário)
+const viewMode = ref(localStorage.getItem('marketing.campaigns.viewMode') || 'list');
+function setViewMode(mode) {
+    viewMode.value = mode;
+    localStorage.setItem('marketing.campaigns.viewMode', mode);
+}
 
 const detailOpen = ref(false);
 const detailId   = ref(null);
@@ -31,92 +54,125 @@ function openDetail(c) {
     detailOpen.value = true;
 }
 
-onMounted(() => store.fetchAll());
-
-async function doSync() {
-    await store.syncFromMeta({ sinceDays: Number(syncDays.value) || 90 });
-}
-
-async function doImportHistorical() {
-    const days = Number(syncDays.value) || 90;
-    if (!confirm(`Importar leads históricos dos últimos ${days} dias da Meta?\n\n` +
-        `Eles entram em Captação de Leads com status "histórico" e NÃO são enviados ao CV (só ficam visíveis).\n` +
-        `Operação idempotente — leads já importados são ignorados.`)) return;
-    const result = await store.importHistorical({ sinceDays: days });
-    if (result) {
-        alert(`✅ Import concluído.\n\n${result.inserted} novos · ${result.duplicates} duplicados · ${result.errors?.length || 0} erro(s).\n\nVeja em /marketing/captacao filtrando por status "historical".`);
-    }
-}
-
-async function doMigrateMappings() {
-    if (!confirm('Migrar mapping (empreendimento, mídia, UTMs, extras) dos forms para as campanhas que os usam?\n\n' +
-        'Pra cada form com mapping configurado, copia pra TODAS as campanhas que rodam ads com ele. ' +
-        'Idempotente — só preenche campos vazios na campanha. Não sobrescreve dados existentes.\n\n' +
-        'Recomendado rodar 1 vez quando estiver migrando o fluxo.')) return;
-    const result = await store.migrateMappings();
-    if (result) {
-        alert(`✅ Migração concluída.\n\n${result.forms_processed} form(s) processado(s) → ${result.campaigns_updated} campanha(s) atualizada(s).\n\nAjuste cada campanha em "Vínculo CV" dentro do modal.`);
-    }
-}
-
-async function doReparse() {
-    if (!confirm('Re-processar nomes/email/telefone dos leads Meta que ficaram com campos null?\n\n' +
-        'Vamos ler o raw_payload original e rodar o parser atualizado. Atualiza só campos que estão null — não sobrescreve dados existentes.')) return;
-    const result = await store.reparseExistingLeads();
-    if (result) {
-        alert(`✅ Re-parse concluído.\n\n${result.updated} leads atualizados (de ${result.scanned} escaneados)\n${result.skipped_no_payload} sem payload · ${result.skipped_no_change} sem mudanças\n${result.errors?.length || 0} erro(s).`);
-    }
-}
-
-async function doReconcileBatch() {
-    if (!confirm('Buscar correspondência no CV pra os leads históricos sem cv_idlead?\n\n' +
-        'Vamos consultar o CV por email/telefone de cada um e gravar o cv_idlead quando achar. Não envia nada — só lê.')) return;
-    const result = await store.reconcileBatch({ limit: 200 });
-    if (result) {
-        alert(`✅ Reconciliação concluída.\n\n${result.matched} encontrados · ${result.unmatched} sem match · ${result.errors} erro(s) (de ${result.processed} processados).`);
-    }
-}
-
-const accountOptions = computed(() => {
-    const set = new Map();
-    for (const c of store.campaigns) {
-        if (c.account_id) set.set(c.account_id, c.account_name || c.account_id);
-    }
-    return [...set.entries()].map(([id, name]) => ({ id, name }));
+onMounted(() => {
+    store.fetchAll();
 });
 
-function inRange(iso) {
-    if (!iso) return false;
-    const dt = new Date(iso);
-    if (filterDateFrom.value && dt < new Date(filterDateFrom.value)) return false;
-    if (filterDateTo.value) {
-        const to = new Date(filterDateTo.value);
-        to.setHours(23, 59, 59, 999);
-        if (dt > to) return false;
+// Reset pro mês atual
+function resetFilters() {
+    filtros.value = {
+        status: [],
+        conta: [],
+        midia: [],
+        objetivo: [],
+        busca: '',
+        sort: 'spend',
+        incluir_arquivadas: false,
+        data_inicio: dayjs().startOf('month').format('YYYY-MM-DD'),
+        data_fim: dayjs().endOf('month').format('YYYY-MM-DD'),
+    };
+}
+
+function buscar() {
+    // Filtragem é client-side e reativa; este botão serve só pra refresh do server.
+    store.fetchAll();
+}
+
+// ── Opções dinâmicas pros MultiSelectors ──────────────────────────────────
+const contasOptions = computed(() => {
+    const set = new Set();
+    for (const c of store.campaigns) if (c.account_name) set.add(c.account_name);
+    return [...set].sort();
+});
+
+const midiasOptions = computed(() => {
+    const set = new Set();
+    for (const c of store.campaigns) if (c.midia_slug) set.add(c.midia_slug);
+    return [...set].sort();
+});
+
+const objetivosOptions = computed(() => {
+    const set = new Set();
+    for (const c of store.campaigns) if (c.objective) set.add(c.objective);
+    return [...set].sort();
+});
+
+// Mapeia rótulo em pt-BR → token de status na Meta
+const STATUS_TOKENS = {
+    'Ativas':     'ACTIVE',
+    'Pausadas':   'PAUSED',
+    'Arquivadas': 'ARCHIVED',
+    'Excluídas':  'DELETED',
+    'Rascunho':   'DRAFT',
+};
+
+function statusMatches(c, selectedLabels) {
+    if (!selectedLabels?.length) return true;
+    const s = String(c.effective_status || c.status || '').toUpperCase();
+    return selectedLabels.some(label => {
+        const tok = STATUS_TOKENS[label];
+        return tok && s.includes(tok);
+    });
+}
+
+/**
+ * Overlap: campanha rodou ads no período selecionado?
+ *
+ * Regras (conservadoras, evitam falso-positivo):
+ *   1. start_time depois do fim do período → fora
+ *   2. Tem stop_time → overlap padrão (start ≤ to E stop ≥ from)
+ *   3. Status ATIVA sem stop_time → rodando até hoje
+ *   4. Pausada/Arquivada/Excluída SEM stop_time → EXCLUI
+ *      (Meta não diz quando foi pausada; assumir que rodou até hoje é falso-
+ *      positivo. Pra ver essas, remova o filtro de data.)
+ */
+function campaignOverlapsPeriod(c) {
+    const f = filtros.value;
+    if (!f.data_inicio && !f.data_fim) return true;
+
+    const from = f.data_inicio ? new Date(f.data_inicio) : null;
+    const to   = f.data_fim    ? new Date(f.data_fim)    : null;
+    if (to) to.setHours(23, 59, 59, 999);
+
+    const start = c.start_time ? new Date(c.start_time) : null;
+    if (!start) return false;                                  // sem start = não avalia → fora
+    if (to && start > to) return false;                        // começou depois do fim
+
+    const isActive = String(c.effective_status || c.status || '').toUpperCase().includes('ACTIVE');
+
+    let effectiveEnd;
+    if (c.stop_time) {
+        effectiveEnd = new Date(c.stop_time);
+    } else if (isActive) {
+        effectiveEnd = new Date();                             // ativa = rodando até agora
+    } else if (c.updated_time) {
+        // Pausada/arquivada SEM stop_time: updated_time é o melhor proxy
+        // (toda mudança — incluindo pausar — atualiza esse campo).
+        effectiveEnd = new Date(c.updated_time);
+    } else {
+        // Sem nada que indique quando parou → exclui.
+        return false;
     }
+
+    if (from && effectiveEnd < from) return false;             // parou antes do início
     return true;
 }
 
 const filtered = computed(() => {
-    const q = search.value.trim().toLowerCase();
+    const f = filtros.value;
+    const q = (f.busca || '').trim().toLowerCase();
+    const sortBy = f.sort || 'spend';
+
     let arr = store.campaigns.filter(c => {
-        if (!showArchived.value && c.archived) return false;
-
-        if (filterStatus.value === 'ACTIVE' && !String(c.effective_status || c.status).toUpperCase().includes('ACTIVE')) return false;
-        if (filterStatus.value === 'PAUSED' && !String(c.effective_status || c.status).toUpperCase().includes('PAUSED')) return false;
-        if (filterStatus.value === 'OTHER') {
-            const s = String(c.effective_status || c.status).toUpperCase();
-            if (s.includes('ACTIVE') || s.includes('PAUSED')) return false;
-        }
-
-        if (filterAccount.value !== 'ALL' && c.account_id !== filterAccount.value) return false;
-
-        if (filterDateFrom.value || filterDateTo.value) {
-            if (!inRange(c.start_time)) return false;
-        }
+        if (!f.incluir_arquivadas && c.archived) return false;
+        if (!statusMatches(c, f.status)) return false;
+        if (f.conta?.length && !f.conta.includes(c.account_name)) return false;
+        if (f.midia?.length && !f.midia.includes(c.midia_slug)) return false;
+        if (f.objetivo?.length && !f.objetivo.includes(c.objective)) return false;
+        if (!campaignOverlapsPeriod(c)) return false;
 
         if (q) {
-            const txt = [c.name, c.id, c.account_name, c.objective, c.notes]
+            const txt = [c.name, c.id, c.account_name, c.objective, c.notes, c.midia_slug]
                 .filter(Boolean).join(' ').toLowerCase();
             if (!txt.includes(q)) return false;
         }
@@ -124,19 +180,19 @@ const filtered = computed(() => {
     });
 
     arr = [...arr];
-    if (sortBy.value === 'spend') {
+    if (sortBy === 'spend') {
         arr.sort((a, b) => (Number(b.spend) || 0) - (Number(a.spend) || 0));
-    } else if (sortBy.value === 'leads') {
+    } else if (sortBy === 'leads') {
         arr.sort((a, b) => (b.lead_stats?.total || 0) - (a.lead_stats?.total || 0));
-    } else if (sortBy.value === 'cac') {
+    } else if (sortBy === 'cac') {
         arr.sort((a, b) => (Number(a.cac) || Infinity) - (Number(b.cac) || Infinity));
-    } else if (sortBy.value === 'start') {
+    } else if (sortBy === 'start') {
         arr.sort((a, b) => {
             const ta = a.start_time ? new Date(a.start_time).getTime() : 0;
             const tb = b.start_time ? new Date(b.start_time).getTime() : 0;
             return tb - ta;
         });
-    } else if (sortBy.value === 'name') {
+    } else if (sortBy === 'name') {
         arr.sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')));
     }
     return arr;
@@ -226,106 +282,38 @@ function periodEnd(c) {
     <PageContainer size="full">
       <PageHeader
         title="Campanhas Meta"
-        subtitle="Investimento, leads e CAC por campanha. Dados sincronizados da Marketing API."
+        subtitle="Investimento, leads e desempenho por campanha. Sync automático a cada 2h em horário comercial."
         icon="fab fa-meta">
         <template #actions>
-          <select v-model="syncDays" class="rounded border border-line bg-surface px-2.5 py-1.5 text-xs text-ink focus:outline-none">
-            <option :value="30">Últimos 30d</option>
-            <option :value="60">Últimos 60d</option>
-            <option :value="90">Últimos 90d</option>
-            <option :value="180">Últimos 180d</option>
-            <option :value="365">Último ano</option>
-          </select>
           <Button variant="secondary" size="sm" icon="fas fa-arrows-rotate" :loading="store.loading" @click="store.fetchAll">
             Atualizar
           </Button>
-          <Button variant="secondary" size="sm" icon="fas fa-cloud-arrow-down" :loading="store.importing" @click="doImportHistorical"
-            title="Importa leads históricos da Meta pra Captação (não envia ao CV).">
-            Importar histórico
-          </Button>
-          <Button variant="secondary" size="sm" icon="fas fa-wand-magic-sparkles" @click="doReparse"
-            title="Re-processa raw_payload de leads sem nome com o parser atualizado.">
-            Re-processar nomes
-          </Button>
-          <Button variant="secondary" size="sm" icon="fas fa-shuffle" @click="doMigrateMappings"
-            title="Copia mapping de forms pra campanhas (executa 1 vez na migração).">
-            Migrar mapping form→camp
-          </Button>
-          <Button variant="secondary" size="sm" icon="fas fa-link" :loading="store.reconciling" @click="doReconcileBatch"
-            title="Busca correspondência no CV pra os históricos sem cv_idlead.">
-            Reconciliar com CV
-          </Button>
-          <Button variant="primary" size="sm" icon="fab fa-meta" :loading="store.syncing" @click="doSync">
-            Sincronizar com Meta
-          </Button>
+          <!-- Gear admin — só pra admin -->
+          <button v-if="isAdmin" @click="adminModalOpen = true"
+            title="Ferramentas admin (sincronizar, importar histórico, reconciliar com CV, etc.)"
+            class="inline-flex items-center justify-center w-8 h-8 rounded-md border border-line bg-surface hover:bg-surface-hover hover:border-accent/40 text-ink-muted hover:text-ink transition-colors">
+            <i class="fas fa-screwdriver-wrench text-xs"></i>
+          </button>
         </template>
       </PageHeader>
 
-      <!-- Resumo agregado -->
-      <Surface variant="raised" padding="sm" class="grid grid-cols-2 sm:grid-cols-6 gap-3 mb-3">
-        <div>
-          <div class="text-[10px] uppercase tracking-wider text-ink-subtle">Campanhas</div>
-          <div class="text-xl font-semibold text-ink">{{ filtered.length }}</div>
-        </div>
-        <div>
-          <div class="text-[10px] uppercase tracking-wider text-ink-subtle">Investimento</div>
-          <div class="text-xl font-semibold text-ink">{{ fmtMoney(summary.spend) }}</div>
-        </div>
-        <div>
-          <div class="text-[10px] uppercase tracking-wider text-ink-subtle">Leads (Meta)</div>
-          <div class="text-xl font-semibold text-ink">{{ fmtInt(summary.leadsMeta) }}</div>
-          <div class="text-[10px] text-ink-subtle">Office: {{ fmtInt(summary.leadsOffice) }} · {{ summary.delivered }} entreg.</div>
-        </div>
-        <div>
-          <div class="text-[10px] uppercase tracking-wider text-ink-subtle">CAC médio</div>
-          <div class="text-xl font-semibold text-ink">{{ summary.cacMedio ? fmtMoney(summary.cacMedio) : '—' }}</div>
-        </div>
-        <div>
-          <div class="text-[10px] uppercase tracking-wider text-ink-subtle">Cliques</div>
-          <div class="text-xl font-semibold text-ink">{{ fmtInt(summary.clicks) }}</div>
-        </div>
-        <div>
-          <div class="text-[10px] uppercase tracking-wider text-ink-subtle">CTR agreg.</div>
-          <div class="text-xl font-semibold text-ink">{{ fmtPct(summary.ctrAgg) }}</div>
-        </div>
-      </Surface>
+      <!-- KPIs -->
+      <div class="mb-4">
+        <CampaignsSummaryCards
+          :periodo="{ data_inicio: filtros.data_inicio, data_fim: filtros.data_fim }"
+          :summary="summary"
+          :total-campaigns="filtered.length" />
+      </div>
 
-      <!-- Filtros -->
-      <div class="flex flex-wrap items-center gap-2 mb-3">
-        <input v-model="search" type="text" placeholder="Buscar por nome, objetivo, conta..."
-          class="flex-1 min-w-[200px] rounded border border-line bg-surface px-3 py-1.5 text-sm text-ink placeholder-ink-subtle focus:outline-none focus:border-accent/40" />
-
-        <select v-model="filterStatus" class="rounded border border-line bg-surface px-2.5 py-1.5 text-xs text-ink focus:outline-none">
-          <option value="ALL">Todos status</option>
-          <option value="ACTIVE">Ativas</option>
-          <option value="PAUSED">Pausadas</option>
-          <option value="OTHER">Outros</option>
-        </select>
-
-        <select v-model="filterAccount" class="rounded border border-line bg-surface px-2.5 py-1.5 text-xs text-ink focus:outline-none">
-          <option value="ALL">Todas contas</option>
-          <option v-for="a in accountOptions" :key="a.id" :value="a.id">{{ a.name }}</option>
-        </select>
-
-        <div class="flex items-center gap-1 text-xs text-ink-subtle">
-          <span>Início de:</span>
-          <input v-model="filterDateFrom" type="date" class="rounded border border-line bg-surface px-2 py-1 text-xs text-ink focus:outline-none" />
-          <span>até:</span>
-          <input v-model="filterDateTo"   type="date" class="rounded border border-line bg-surface px-2 py-1 text-xs text-ink focus:outline-none" />
-        </div>
-
-        <select v-model="sortBy" class="rounded border border-line bg-surface px-2.5 py-1.5 text-xs text-ink focus:outline-none">
-          <option value="spend">Maior gasto</option>
-          <option value="leads">Mais leads</option>
-          <option value="cac">Menor CAC</option>
-          <option value="start">Mais recentes</option>
-          <option value="name">Nome A-Z</option>
-        </select>
-
-        <label class="flex items-center gap-1.5 text-xs text-ink-muted cursor-pointer ml-auto">
-          <input type="checkbox" v-model="showArchived" />
-          Mostrar arquivadas
-        </label>
+      <!-- FiltersBar (mesmo padrão de Leads) -->
+      <div class="mb-3">
+        <CampaignsFiltersBar
+          v-model:filtros="filtros"
+          :contas-options="contasOptions"
+          :midias-options="midiasOptions"
+          :objetivos-options="objetivosOptions"
+          @buscar="buscar"
+          @limpar="resetFilters" />
       </div>
 
       <!-- Resultado do sync -->
@@ -354,8 +342,8 @@ function periodEnd(c) {
         </div>
       </div>
 
-      <!-- ── Log de operações ─────────────────────────────────────────────── -->
-      <div v-if="store.ops.length" class="mb-3 rounded-lg border border-line bg-surface overflow-hidden">
+      <!-- ── Log de operações (só admin) ─────────────────────────────────── -->
+      <div v-if="isAdmin && store.ops.length" class="mb-3 rounded-lg border border-line bg-surface overflow-hidden">
         <div class="flex items-center justify-between px-3 py-2 border-b border-line bg-surface-sunken/30">
           <div class="text-xs font-semibold text-ink flex items-center gap-2">
             <i class="fas fa-clock-rotate-left text-ink-subtle"></i>
@@ -472,8 +460,46 @@ function periodEnd(c) {
         <div>{{ store.error }}</div>
       </div>
 
-      <!-- Tabela -->
-      <Surface variant="raised" padding="none" class="overflow-hidden">
+      <!-- Seletor de view mode -->
+      <div class="mb-3 flex items-center justify-between flex-wrap gap-2">
+        <div class="inline-flex rounded-lg border border-line bg-surface p-0.5">
+          <button @click="setViewMode('list')"
+            :class="['px-3 py-1.5 rounded-md text-xs font-medium transition-colors flex items-center gap-1.5',
+              viewMode === 'list' ? 'bg-accent text-white' : 'text-ink-muted hover:text-ink hover:bg-surface-hover']">
+            <i class="fas fa-list text-[10px]"></i>Lista
+          </button>
+          <button @click="setViewMode('cards')"
+            :class="['px-3 py-1.5 rounded-md text-xs font-medium transition-colors flex items-center gap-1.5',
+              viewMode === 'cards' ? 'bg-accent text-white' : 'text-ink-muted hover:text-ink hover:bg-surface-hover']">
+            <i class="fas fa-grip text-[10px]"></i>Cards
+          </button>
+          <button @click="setViewMode('timeline')"
+            :class="['px-3 py-1.5 rounded-md text-xs font-medium transition-colors flex items-center gap-1.5',
+              viewMode === 'timeline' ? 'bg-accent text-white' : 'text-ink-muted hover:text-ink hover:bg-surface-hover']">
+            <i class="fas fa-chart-gantt text-[10px]"></i>Timeline
+          </button>
+        </div>
+        <div class="text-[11px] text-ink-subtle">
+          <b>{{ filtered.length }}</b> de {{ store.campaigns.length }} campanha(s)
+        </div>
+      </div>
+
+      <!-- View: Cards -->
+      <div v-if="viewMode === 'cards'">
+        <CampaignsCardsView :campaigns="filtered" @select="openDetail" />
+      </div>
+
+      <!-- View: Timeline (Gantt) — janela = período do filtro -->
+      <div v-else-if="viewMode === 'timeline'">
+        <CampaignsTimelineView
+          :campaigns="filtered"
+          :period-start="filtros.data_inicio"
+          :period-end="filtros.data_fim"
+          @select="openDetail" />
+      </div>
+
+      <!-- View: Lista (tabela atual) -->
+      <Surface v-else variant="raised" padding="none" class="overflow-hidden">
         <div class="overflow-x-auto">
           <table class="min-w-full text-sm">
             <thead class="bg-surface-sunken/30 border-b border-line">
@@ -587,6 +613,9 @@ function periodEnd(c) {
         v-model:open="detailOpen"
         :campaign-id="detailId"
         @saved="store.fetchAll()" />
+
+      <!-- Ferramentas admin (gear icon no header) -->
+      <CampaignsAdminModal v-if="isAdmin" v-model:open="adminModalOpen" />
     </PageContainer>
   </div>
 </template>

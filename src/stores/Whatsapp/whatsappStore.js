@@ -59,6 +59,7 @@ export const useWhatsappStore = defineStore('whatsappStore', {
             } finally { this.healthRunning = false; }
         },
         async testSend(payload) { return api.testSend(payload); },
+        async registerPhone(pin) { return api.registerPhone(pin); },
 
         // Setup Wizard
         async discoverFromToken(payload) { return api.discoverFromToken(payload); },

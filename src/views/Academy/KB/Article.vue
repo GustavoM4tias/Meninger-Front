@@ -7,6 +7,12 @@
                     <FollowButton v-if="article?.categorySlug" target-type="CATEGORY"
                         :target-ref="`kb:${article.categorySlug}`" />
 
+                    <button type="button" @click="copyLink" :title="copied ? 'Copiado!' : 'Copiar link do artigo'"
+                        class="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-900 shadow-sm transition hover:bg-slate-50 active:scale-95 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700">
+                        <i class="fa-solid text-xs" :class="copied ? 'fa-check text-emerald-500' : 'fa-link'"></i>
+                        {{ copied ? 'Copiado' : 'Copiar link' }}
+                    </button>
+
                     <button type="button" @click="goBack"
                         class="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-900 shadow-sm transition hover:bg-slate-50 active:scale-95 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700">
                         <i class="fa-solid fa-chevron-left text-[10px]"></i>
@@ -41,6 +47,11 @@
                     <span v-if="article?.slug"
                         class="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 font-mono text-xs text-slate-500 dark:bg-slate-800 dark:text-slate-400">
                         {{ article.slug }}
+                    </span>
+                    <span v-if="readingMinutes"
+                        class="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-0.5 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-400">
+                        <i class="fa-regular fa-clock text-[10px]"></i>
+                        {{ readingMinutes }} min de leitura
                     </span>
                     <span v-if="store.article.loaded && !article"
                         class="text-xs font-semibold text-slate-500 dark:text-slate-400">
@@ -85,6 +96,33 @@
                 </div>
             </header>
 
+            <!-- Nesta página (TOC) -->
+            <details v-if="outline.length >= 2" open
+                class="article-toc border-b border-slate-100 px-6 py-3 dark:border-slate-800">
+                <summary class="flex cursor-pointer list-none items-center justify-between">
+                    <span
+                        class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                        <i class="fa-solid fa-list-tree text-indigo-500"></i>
+                        Nesta página
+                        <span class="font-normal text-slate-400 dark:text-slate-500">({{ outline.length }})</span>
+                    </span>
+                    <i class="fa-solid fa-chevron-down toc-chev text-xs text-slate-400"></i>
+                </summary>
+                <ul class="mt-3 space-y-0.5">
+                    <li v-for="o in outline" :key="o.id">
+                        <button type="button" @click="scrollToHeading(o.id)"
+                            class="group/item flex w-full items-start gap-1.5 rounded-md py-1 text-left text-sm transition hover:text-indigo-600 dark:hover:text-indigo-400"
+                            :class="o.level === 1 ? 'pl-1 font-semibold text-slate-800 dark:text-slate-100'
+                                : o.level === 2 ? 'pl-5 text-slate-700 dark:text-slate-300'
+                                : 'pl-10 text-xs text-slate-500 dark:text-slate-400'">
+                            <i
+                                class="fa-solid fa-angle-right mt-1 text-[9px] text-slate-300 transition-transform group-hover/item:translate-x-0.5"></i>
+                            <span>{{ o.text }}</span>
+                        </button>
+                    </li>
+                </ul>
+            </details>
+
             <!-- Corpo -->
             <div class="px-6 py-6">
                 <div v-if="!store.article.loaded"
@@ -97,7 +135,7 @@
                     Artigo não encontrado ou indisponível para seu perfil.
                 </div>
 
-                <div v-else class="prose prose-slate max-w-none dark:prose-invert">
+                <div v-else ref="proseRef" class="prose prose-slate max-w-none dark:prose-invert">
                     <TokenRenderer :content="article.body || ''" :payload="article.payload || null" item-type=""
                         item-key="" />
                 </div>
@@ -119,6 +157,40 @@
                 </div>
             </div>
 
+            <!-- Mencionado em (backlinks) -->
+            <div v-if="article && backlinks.length"
+                class="border-t border-slate-100 px-6 py-4 dark:border-slate-800">
+                <h3 class="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-white">
+                    <i class="fa-solid fa-link text-indigo-500"></i>
+                    Mencionado em
+                    <span class="ml-1 text-xs font-normal text-slate-400 dark:text-slate-500">
+                        ({{ backlinks.length }})
+                    </span>
+                </h3>
+                <ul class="mt-3 space-y-2">
+                    <li v-for="b in backlinks" :key="`${b.categorySlug}/${b.slug}`">
+                        <button type="button" @click="openBacklink(b)"
+                            class="group flex w-full items-center gap-3 rounded-xl border border-slate-200 bg-white p-3 text-left transition hover:-translate-y-0.5 hover:border-indigo-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:hover:border-indigo-800 dark:hover:bg-slate-700/50">
+                            <span
+                                class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-100 text-indigo-600 dark:bg-indigo-950/60 dark:text-indigo-300">
+                                <i class="fa-solid fa-file-lines"></i>
+                            </span>
+                            <span class="min-w-0 flex-1">
+                                <span
+                                    class="block truncate text-sm font-medium text-slate-900 transition-colors group-hover:text-indigo-600 dark:text-slate-100 dark:group-hover:text-indigo-400">
+                                    {{ b.title }}
+                                </span>
+                                <span class="text-xs text-slate-500 dark:text-slate-400">
+                                    {{ b.categorySlug }}
+                                </span>
+                            </span>
+                            <i
+                                class="fa-solid fa-arrow-up-right-from-square text-xs text-slate-300 transition-transform group-hover:translate-x-0.5 group-hover:text-indigo-500 dark:text-slate-600"></i>
+                        </button>
+                    </li>
+                </ul>
+            </div>
+
             <div class="flex items-center justify-between border-t border-slate-100 px-6 py-4 dark:border-slate-800">
                 <button type="button" @click="goBack"
                     class="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 active:scale-95 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700">
@@ -135,9 +207,10 @@
 </template>
 
 <script setup>
-import { computed, onMounted, watch, ref } from 'vue';
+import { computed, nextTick, onMounted, watch, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import AcademyPageHeader from '@/views/Academy/components/AcademyPageHeader.vue';
+import { requestWithAuth } from '@/utils/Auth/requestWithAuth';
 import { useAcademyKbStore } from '@/stores/Academy/academyKbStore';
 import { useAcademyRatingsStore } from '@/stores/Academy/academyRatingsStore';
 import TokenRenderer from '@/views/Academy/components/TokenRenderer.vue';
@@ -229,6 +302,84 @@ async function loadRating() {
     if (stats?.myRating?.stars) myStars.value = stats.myRating.stars;
 }
 
+// ── Tempo estimado de leitura ────────────────────────────────────────
+const readingMinutes = computed(() => {
+    const raw = String(article.value?.body || '');
+    if (!raw.trim()) return 0;
+    // Tira embeds @[X:y] e símbolos de markdown antes de contar palavras
+    const clean = raw
+        .replace(/@\[[A-Z_]+:[^\]]+\]/g, ' ')
+        .replace(/[*_#>()`\[\]]/g, ' ');
+    const words = clean.split(/\s+/).filter(Boolean).length;
+    return Math.max(1, Math.round(words / 200));
+});
+
+// ── Copiar link do artigo ────────────────────────────────────────────
+const copied = ref(false);
+async function copyLink() {
+    const url = window.location.href;
+    try {
+        await navigator.clipboard.writeText(url);
+        copied.value = true;
+        setTimeout(() => { copied.value = false; }, 2000);
+    } catch {
+        window.prompt('Copie o link:', url);
+    }
+}
+
+// ── Estrutura "Nesta página" — extraída do DOM já renderizado ────────
+const proseRef = ref(null);
+const outline = ref([]);
+
+async function extractOutline() {
+    await nextTick();
+    if (!proseRef.value) {
+        outline.value = [];
+        return;
+    }
+    const headings = proseRef.value.querySelectorAll('h1, h2, h3');
+    outline.value = Array.from(headings)
+        .map((h) => ({
+            level: Number(h.tagName.replace('H', '')),
+            text: (h.textContent || '').trim(),
+            id: h.id || '',
+        }))
+        .filter((o) => o.id && o.text);
+}
+
+function scrollToHeading(id) {
+    if (!id) return;
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ── Backlinks ("Mencionado em") ──────────────────────────────────────
+const backlinks = ref([]);
+
+async function loadBacklinks() {
+    const a = article.value;
+    if (!a?.slug || !a?.categorySlug) {
+        backlinks.value = [];
+        return;
+    }
+    try {
+        const data = await requestWithAuth(
+            `/academy/kb/articles/${encodeURIComponent(a.categorySlug)}/${encodeURIComponent(a.slug)}/backlinks`
+        );
+        backlinks.value = Array.isArray(data?.backlinks) ? data.backlinks : [];
+    } catch {
+        backlinks.value = [];
+    }
+}
+
+function openBacklink(b) {
+    router.push({
+        name: 'AcademyKBArticle',
+        params: { categorySlug: b.categorySlug, articleSlug: b.slug },
+    });
+}
+
 async function load() {
     await store.fetchArticle({
         categorySlug: categorySlug.value,
@@ -238,8 +389,33 @@ async function load() {
     await loadRating();
 }
 
-// Recarrega rating quando o artigo trocar (navegação entre artigos).
-watch(() => article.value?.id, (id) => { if (id) loadRating(); });
+// Quando o artigo troca: recarrega rating + backlinks + outline (após o render).
+watch(() => article.value?.id, (id) => {
+    if (!id) {
+        outline.value = [];
+        backlinks.value = [];
+        return;
+    }
+    loadRating();
+    loadBacklinks();
+    nextTick(() => setTimeout(extractOutline, 150));
+});
 
 onMounted(load);
 </script>
+
+<style scoped>
+/* Esconde o triângulo nativo do <details> */
+.article-toc summary::-webkit-details-marker {
+    display: none;
+}
+
+/* Rotaciona a seta quando o <details> está aberto */
+.toc-chev {
+    transition: transform .15s ease;
+}
+
+.article-toc[open]>summary .toc-chev {
+    transform: rotate(180deg);
+}
+</style>

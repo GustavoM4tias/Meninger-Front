@@ -208,10 +208,39 @@ export const useCampaignsStore = defineStore('marketingCampaigns', () => {
         });
     }
 
+    // ── Ads globais (pra view "Anúncios" da tela principal) ─────────────────
+    const allAds = ref([]);
+    const loadingAllAds = ref(false);
+
+    async function fetchAllAds() {
+        loadingAllAds.value = true;
+        error.value = null;
+        try {
+            const d = await apiFetch('/meta-ads');
+            allAds.value = Array.isArray(d.results) ? d.results : [];
+        } catch (e) {
+            error.value = e.message;
+            allAds.value = [];
+        } finally {
+            loadingAllAds.value = false;
+        }
+    }
+
     async function fetchAds(campaignId, { activeOnly = false } = {}) {
         try {
             const qs = activeOnly ? '?active=true' : '';
             const d = await apiFetch(`/meta-campaigns/${encodeURIComponent(campaignId)}/ads${qs}`);
+            return Array.isArray(d.results) ? d.results : [];
+        } catch (e) {
+            error.value = e.message;
+            return [];
+        }
+    }
+
+    // ── Ad Sets (conjuntos de anúncio) — hierarquia Meta ────────────────────
+    async function fetchAdSets(campaignId) {
+        try {
+            const d = await apiFetch(`/meta-campaigns/${encodeURIComponent(campaignId)}/adsets`);
             return Array.isArray(d.results) ? d.results : [];
         } catch (e) {
             error.value = e.message;
@@ -230,6 +259,34 @@ export const useCampaignsStore = defineStore('marketingCampaigns', () => {
             } catch (e) {
                 error.value = e.message;
                 return null;
+            }
+        });
+    }
+
+    // ── Full sync (varre tudo: forms + campanhas + ads + histórico + reconcile) ──
+    const fullSyncing = ref(false);
+    const lastFullSync = ref(null);
+
+    async function runFullSync(opts = {}) {
+        if (fullSyncing.value) return null;
+        fullSyncing.value = true;
+        error.value = null;
+        lastFullSync.value = null;
+        return withOp({ type: 'fullsync', label: 'Sincronizar TUDO (forms + campanhas + ads + histórico + CV)', details: opts }, async () => {
+            try {
+                const d = await apiFetch('/sync/full', {
+                    method: 'POST',
+                    body: JSON.stringify(opts),
+                });
+                lastFullSync.value = d;
+                await fetchAll();
+                await fetchAllAds();
+                return d;
+            } catch (e) {
+                error.value = e.message;
+                return null;
+            } finally {
+                fullSyncing.value = false;
             }
         });
     }
@@ -291,6 +348,8 @@ export const useCampaignsStore = defineStore('marketingCampaigns', () => {
         ops, clearOps,
         fetchAll, syncFromMeta, fetchDetail, fetchLeads, fetchDaily, updateInternal,
         importHistorical, reconcileBatch, reparseExistingLeads, migrateMappings,
-        fetchAds, syncAds,
+        runFullSync, fullSyncing, lastFullSync,
+        fetchAds, syncAds, fetchAdSets,
+        allAds, loadingAllAds, fetchAllAds,
     };
 });

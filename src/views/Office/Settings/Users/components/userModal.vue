@@ -262,7 +262,7 @@ async function saveUser() {
                 <p class="text-xs text-ink-muted">Define o nível administrativo</p>
               </div>
             </div>
-            <UiSelect v-model="editableUser.role" :options="roleOptions" size="sm" class="w-32 shrink-0" />
+            <UiSelect v-model="editableUser.role" :options="roleOptions" size="sm" class="max-w-24 md:max-w-32 shrink-0" />
           </div>
 
           <div v-if="isAdmin && isEdit"
