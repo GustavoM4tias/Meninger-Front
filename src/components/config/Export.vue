@@ -47,75 +47,114 @@
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-0">
                     <!-- LEFT: Controls -->
                     <div
-                        class="lg:border-r flex flex-col h-full justify-between border-gray-200 dark:border-gray-700 p-4 space-y-4 bg-white/60 dark:bg-gray-900/30">
-                        <div class="flex flex-col gap-4">
-                            <div>
-                                <label class="block text-xs font-semibold mb-1">Buscar campos</label>
+                        class="lg:border-r flex flex-col h-full justify-between border-gray-200 dark:border-gray-700 p-5 gap-5 bg-white/60 dark:bg-gray-900/30">
+                        <div class="flex flex-col gap-5">
+                            <!-- Filtro -->
+                            <section aria-labelledby="exp-section-filter" class="flex flex-col gap-1.5">
+                                <label id="exp-section-filter" class="block text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                                    Filtrar campos
+                                </label>
                                 <input v-model="fieldSearch" type="text"
                                     placeholder="Digite para filtrar pelo caminho do campo…"
-                                    class="w-full px-2 py-1.5 border rounded-lg bg-transparent text-gray-700 dark:text-gray-100 border-gray-200 dark:border-gray-600" />
-                            </div>
+                                    aria-label="Filtrar campos por caminho"
+                                    class="w-full px-3 py-2 border rounded-lg bg-transparent text-sm text-gray-700 dark:text-gray-100 border-gray-200 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500/40 focus:border-purple-500" />
+                            </section>
 
-                            <div class="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label class="block text-xs font-semibold mb-1">Delimitador</label>
-                                    <select v-model="delimiter"
-                                        class="w-full px-2 py-1.5 border rounded-lg bg-transparent text-gray-700 dark:text-gray-100 border-gray-200 dark:border-gray-600">
-                                        <option value=",">Vírgula (,)</option>
-                                        <option value=";">Ponto e vírgula (;)</option>
-                                        <option :value="'\t'">Tabulação (Tab)</option>
-                                        <option value="|">Barra vertical (|)</option>
-                                    </select>
+                            <!-- Formato -->
+                            <section aria-labelledby="exp-section-format" class="flex flex-col gap-3">
+                                <h4 id="exp-section-format" class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                                    Formato do arquivo
+                                </h4>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label for="exp-delimiter" class="block text-xs font-medium mb-1">Delimitador</label>
+                                        <select id="exp-delimiter" v-model="delimiter"
+                                            class="w-full px-2 py-1.5 border rounded-lg bg-transparent text-sm text-gray-700 dark:text-gray-100 border-gray-200 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500/40 focus:border-purple-500">
+                                            <option value=",">Vírgula (,)</option>
+                                            <option value=";">Ponto e vírgula (;)</option>
+                                            <option :value="'\t'">Tabulação (Tab)</option>
+                                            <option value="|">Barra vertical (|)</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label for="exp-array-mode" class="block text-xs font-medium mb-1">Tratamento de arrays</label>
+                                        <select id="exp-array-mode" v-model="arrayMode"
+                                            class="w-full px-2 py-1.5 border rounded-lg bg-transparent text-sm text-gray-700 dark:text-gray-100 border-gray-200 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500/40 focus:border-purple-500">
+                                            <option value="join">Juntar valores (" | ")</option>
+                                            <option value="expand-rows">Quebrar em linhas (1 por elemento)</option>
+                                            <option value="expand-cols">Quebrar em colunas (campo[1], campo[2]…)</option>
+                                            <option value="first">Apenas o primeiro</option>
+                                            <option value="count">Somente quantidade</option>
+                                        </select>
+                                    </div>
                                 </div>
+                                <p v-if="arrayMode === 'expand-rows'" class="text-[11px] text-gray-500 leading-snug">
+                                    Cada registro com array vira N linhas, uma por elemento. Campos escalares se repetem em cada linha.
+                                </p>
+                                <p v-else-if="arrayMode === 'expand-cols'" class="text-[11px] text-gray-500 leading-snug">
+                                    Cada índice do array vira uma coluna separada. Mantém uma linha por registro.
+                                </p>
+
                                 <div>
-                                    <label class="block text-xs font-semibold mb-1">Tratamento de arrays</label>
-                                    <select v-model="arrayMode"
-                                        class="w-full px-2 py-1.5 border rounded-lg bg-transparent text-gray-700 dark:text-gray-100 border-gray-200 dark:border-gray-600">
-                                        <option value="join">Juntar valores (" | ")</option>
-                                        <option value="first">Apenas o primeiro</option>
-                                        <option value="count">Somente quantidade</option>
-                                    </select>
+                                    <label for="exp-filename" class="block text-xs font-medium mb-1">Nome do arquivo</label>
+                                    <div class="flex items-stretch border rounded-lg overflow-hidden border-gray-200 dark:border-gray-600 focus-within:ring-2 focus-within:ring-purple-500/40 focus-within:border-purple-500">
+                                        <input id="exp-filename" v-model="baseFilename" type="text" placeholder="ex.: export-vendas"
+                                            class="flex-1 px-2 py-1.5 bg-transparent text-sm text-gray-700 dark:text-gray-100 focus:outline-none" />
+                                        <span class="px-2 py-1.5 text-xs text-gray-500 bg-gray-100 dark:bg-gray-800/60 border-l border-gray-200 dark:border-gray-600 select-none">.csv</span>
+                                    </div>
                                 </div>
-                            </div>
+                            </section>
 
-                            <div>
-                                <label class="block text-xs font-semibold mb-1">Nome do arquivo</label>
-                                <input v-model="baseFilename" type="text" placeholder="ex.: export-vendas"
-                                    class="w-full px-2 py-1.5 border rounded-lg bg-transparent text-gray-700 dark:text-gray-100 border-gray-200 dark:border-gray-600" />
-                            </div>
+                            <!-- Seleção rápida -->
+                            <section aria-labelledby="exp-section-quick" class="flex flex-col gap-2">
+                                <h4 id="exp-section-quick" class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                                    Seleção rápida
+                                </h4>
+                                <div class="flex flex-wrap gap-2">
+                                    <button type="button" @click="selectAllVisible()"
+                                        class="px-3 py-1.5 text-xs rounded-md border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500/40">
+                                        Selecionar visíveis
+                                    </button>
+                                    <button type="button" @click="clearSelection()"
+                                        class="px-3 py-1.5 text-xs rounded-md border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500/40">
+                                        Limpar
+                                    </button>
+                                    <button type="button" @click="selectCommon()"
+                                        class="px-3 py-1.5 text-xs rounded-md border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500/40">
+                                        Somente comuns
+                                    </button>
+                                    <button type="button" @click="selectRecommended()"
+                                        class="px-3 py-1.5 text-xs rounded-md border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500/40">
+                                        Recomendado
+                                    </button>
+                                </div>
+                            </section>
 
-                            <div class="flex flex-wrap gap-2">
-                                <button @click="selectAllVisible()"
-                                    class="px-3 py-1.5 text-xs rounded-md border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-900">
-                                    Selecionar visíveis
-                                </button>
-                                <button @click="clearSelection()"
-                                    class="px-3 py-1.5 text-xs rounded-md border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-900">
-                                    Limpar
-                                </button>
-                                <button @click="selectCommon()"
-                                    class="px-3 py-1.5 text-xs rounded-md border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-900">
-                                    Somente comuns
-                                </button>
-                                <button @click="selectRecommended()"
-                                    class="px-3 py-1.5 text-xs rounded-md border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-900">
-                                    Recomendado
-                                </button>
-                            </div>
-
-                            <div class="text-xs text-gray-500">
-                                {{ selection.size }} campos selecionados de {{ filteredPaths.length }} (cobertura média
-                                {{ Math.round(coverageAvg * 100) }}%)
-                            </div>
+                            <!-- Status -->
+                            <section aria-live="polite" class="rounded-md bg-gray-100/70 dark:bg-gray-900/40 p-2.5 text-[11px] text-gray-600 dark:text-gray-300 leading-relaxed">
+                                <div>
+                                    <span class="font-semibold">{{ selection.size }}</span> campos selecionados de
+                                    <span class="font-semibold">{{ filteredPaths.length }}</span>
+                                    · cobertura média <span class="font-semibold">{{ Math.round(coverageAvg * 100) }}%</span>
+                                </div>
+                                <div class="mt-0.5">
+                                    Exportação gerará
+                                    <span class="font-semibold">{{ exportedRowCount.toLocaleString('pt-BR') }}</span>
+                                    {{ exportedRowCount === 1 ? 'linha' : 'linhas' }}
+                                    <template v-if="arrayMode === 'expand-cols'">
+                                        · <span class="font-semibold">{{ previewPaths.length }}</span> colunas
+                                    </template>
+                                </div>
+                            </section>
                         </div>
 
                         <div class="flex gap-2">
-                            <button @click="exportCSV('csv')"
-                                class="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-3 py-2 rounded-md shadow">
+                            <button type="button" @click="exportCSV('csv')" :disabled="!selection.size"
+                                class="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white text-sm font-semibold px-3 py-2 rounded-md shadow focus:outline-none focus:ring-2 focus:ring-blue-500/40">
                                 <i class="fas fa-file-zipper"></i> Exportar CSV
                             </button>
-                            <button @click="exportCSV('excel')"
-                                class="flex-1 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold px-3 py-2 rounded-md shadow">
+                            <button type="button" @click="exportCSV('excel')" :disabled="!selection.size"
+                                class="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white text-sm font-semibold px-3 py-2 rounded-md shadow focus:outline-none focus:ring-2 focus:ring-green-500/40">
                                 <i class="fas fa-table"></i> Exportar p/ Excel
                             </button>
                         </div>
@@ -127,16 +166,16 @@
                             <div
                                 class="min-h-[70vh] max-h-[70vh] overflow-y-auto rounded-lg border border-gray-200 dark:border-gray-700">
                                 <div
-                                    class="text-xs px-3 py-2 bg-gray-100 dark:bg-gray-900/60 border-b border-gray-200 dark:border-gray-700 flex items-center gap-3">
-                                    <label class="inline-flex items-center gap-2">
+                                    class="text-xs px-3 py-2 bg-gray-100 dark:bg-gray-900/60 border-b border-gray-200 dark:border-gray-700 flex items-center gap-3 sticky top-0 z-10">
+                                    <label class="inline-flex items-center gap-2 cursor-pointer">
                                         <input type="checkbox" :checked="allVisibleChecked"
                                             @change="toggleAllVisible($event)" />
                                         Marcar todos os visíveis
                                     </label>
-                                    <button class="underline" @click="expandAll">Expandir tudo</button>
-                                    <button class="underline" @click="collapseAll">Recolher tudo</button>
+                                    <button type="button" class="underline" @click="expandAll">Expandir tudo</button>
+                                    <button type="button" class="underline" @click="collapseAll">Recolher tudo</button>
 
-                                    <label class="inline-flex items-center gap-2 ml-auto">
+                                    <label class="inline-flex items-center gap-2 ml-auto cursor-pointer">
                                         <input type="checkbox" v-model="showFullPaths" />
                                         Mostrar caminho completo
                                     </label>
@@ -153,13 +192,16 @@
                         </template>
 
                         <template v-else>
-                            <div class="mb-2 text-xs text-gray-500">Prévia (máx. {{ maxPreviewRows }} linhas)</div>
+                            <div class="mb-2 text-xs text-gray-500 flex items-center justify-between">
+                                <span>Prévia (máx. {{ maxPreviewRows }} linhas-fonte)</span>
+                                <span v-if="previewPaths.length">{{ previewPaths.length }} colunas · {{ previewRows.length }} linhas</span>
+                            </div>
                             <div
-                                class="overflow-x-auto border border-gray-200 dark:border-gray-700 rounded-lg min-h-[70vh] max-h-[70vh]">
+                                class="overflow-auto border border-gray-200 dark:border-gray-700 rounded-lg min-h-[70vh] max-h-[70vh]">
                                 <table class="w-full text-xs">
                                     <thead class="bg-gray-100 dark:bg-gray-900/60 sticky top-0">
                                         <tr>
-                                            <th v-for="p in selectedPaths" :key="p"
+                                            <th v-for="p in previewPaths" :key="p"
                                                 class="px-3 py-2 text-left font-semibold whitespace-nowrap" :title="p">
                                                 {{ shortLabel(p) }}
                                             </th>
@@ -168,7 +210,7 @@
                                     <tbody>
                                         <tr v-for="(row, i) in previewRows" :key="i"
                                             class="border-b border-gray-100 dark:border-gray-800">
-                                            <td v-for="p in selectedPaths" :key="p"
+                                            <td v-for="p in previewPaths" :key="p"
                                                 class="px-3 py-1 align-top whitespace-pre-wrap">
                                                 {{ formatCell(row[p]) }}
                                             </td>
