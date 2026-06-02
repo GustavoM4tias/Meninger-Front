@@ -111,6 +111,24 @@ const onHealth = async () => {
   }
 };
 
+const registeringPhone = ref(false);
+const onRegisterPhone = async () => {
+  const pin = window.prompt(
+    'Digite um PIN de 6 dígitos (qualquer combinação — anote em local seguro, vai ser usado se precisar re-registrar):'
+  );
+  if (!pin) return;
+  if (!/^\d{6}$/.test(pin)) return flash('error', 'PIN inválido — precisa ter exatamente 6 dígitos.');
+  registeringPhone.value = true;
+  try {
+    await store.registerPhone(pin);
+    flash('success', 'Número registrado na Cloud API. Pode testar envio agora.');
+  } catch (e) {
+    flash('error', e.message || 'Falha ao registrar.');
+  } finally {
+    registeringPhone.value = false;
+  }
+};
+
 const onTestSend = async () => {
   testResult.value = null;
   try {
@@ -212,6 +230,10 @@ const onTestSend = async () => {
         <Button variant="secondary" :loading="store.healthRunning"
           :disabled="!canTest" icon="fas fa-heart-pulse" @click="onHealth">
           Testar conexão
+        </Button>
+        <Button variant="secondary" :loading="registeringPhone"
+          :disabled="!canTest" icon="fas fa-mobile-screen-button" @click="onRegisterPhone">
+          Registrar número
         </Button>
         <span v-if="testHint" class="text-[11px] text-ink-subtle">{{ testHint }}</span>
       </div>

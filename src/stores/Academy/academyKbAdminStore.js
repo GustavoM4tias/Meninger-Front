@@ -50,20 +50,23 @@ export const useAcademyKbAdminStore = defineStore('academyKbAdmin', {
             }
         },
 
-        async createArticle({ title, categorySlug, body, payload = null }) {
-            this.error = null; 
+        async createArticle({ title, categorySlug, body, payload = null, aliases }) {
+            this.error = null;
 
             try {
                 carregamento.iniciarCarregamento();
 
+                const requestBody = {
+                    title,
+                    categorySlug,
+                    body,
+                    payload: asObjOrNull(payload),
+                };
+                if (Array.isArray(aliases)) requestBody.aliases = aliases;
+
                 const data = await requestWithAuth('/academy/kb/articles', {
                     method: 'POST',
-                    body: JSON.stringify({
-                        title,
-                        categorySlug,
-                        body,
-                        payload: asObjOrNull(payload), // ✅ novo
-                    }),
+                    body: JSON.stringify(requestBody),
                 });
 
                 const article = data?.article || null;
@@ -81,8 +84,8 @@ export const useAcademyKbAdminStore = defineStore('academyKbAdmin', {
             }
         },
 
-        async updateArticle(id, { title, categorySlug, body, payload = null }) {
-            this.error = null; 
+        async updateArticle(id, { title, categorySlug, body, payload = null, aliases }) {
+            this.error = null;
 
             const safeId = safeNumber(id, 0);
             if (!safeId) throw new Error('ID inválido.');
@@ -90,14 +93,17 @@ export const useAcademyKbAdminStore = defineStore('academyKbAdmin', {
             try {
                 carregamento.iniciarCarregamento();
 
+                const requestBody = {
+                    title,
+                    categorySlug,
+                    body,
+                    payload: asObjOrNull(payload),
+                };
+                if (Array.isArray(aliases)) requestBody.aliases = aliases;
+
                 const data = await requestWithAuth(`/academy/kb/articles/${safeId}`, {
                     method: 'PATCH',
-                    body: JSON.stringify({
-                        title,
-                        categorySlug,
-                        body,
-                        payload: asObjOrNull(payload), // ✅ novo
-                    }),
+                    body: JSON.stringify(requestBody),
                 });
 
                 const article = data?.article || null;

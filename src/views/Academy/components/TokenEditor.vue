@@ -38,7 +38,11 @@
             <button class="tool-btn" type="button" @click="prefixLine('> ')" title="Citação">❝</button>
             <button class="tool-btn" type="button" @click="wrapSelection('`', '`')" title="Código inline">{ "<>"
                     }</button>
-            <button class="tool-btn" type="button" @click="insertLink()" title="Link markdown">🔗</button>
+            <button class="tool-btn" type="button" @click="insertLink()" title="Link externo (URL)">🔗</button>
+            <button class="tool-btn" type="button" @click="openArticleLinkPicker"
+                title="Selecione a(s) palavra(s) e vincule a um artigo existente">
+                🔗 Artigo
+            </button>
 
             <div class="h-6 w-px bg-slate-200 dark:bg-slate-800 mx-1"></div>
 
@@ -585,6 +589,11 @@ const taskDraft = reactive({ title: '', tasks: [] });
 
 const atRange = reactive({ start: null, end: null });
 
+// "Vincular artigo" — guarda a seleção atual da textarea e, depois que o usuário
+// escolhe o artigo no painel, substitui essa seleção por `[texto](/academy/kb/...)`.
+const linkMode = ref(false);
+const selectionSnapshot = reactive({ start: 0, end: 0, text: '' });
+
 function closeMenu() {
     showMenu.value = false;
     kbQ.value = '';
@@ -597,8 +606,39 @@ function closeMenu() {
     taskDraft.tasks = [];
     atRange.start = null;
     atRange.end = null;
+    linkMode.value = false;
+    selectionSnapshot.start = 0;
+    selectionSnapshot.end = 0;
+    selectionSnapshot.text = '';
     clearTimeout(kbTmr);
     clearTimeout(comTmr);
+}
+
+function openArticleLinkPicker() {
+    const ta = textAreaRef.value;
+    if (!ta) return;
+    const start = ta.selectionStart ?? 0;
+    const end = ta.selectionEnd ?? 0;
+    const val = String(contentLocal.value || '');
+    const selected = val.substring(start, end);
+
+    selectionSnapshot.start = start;
+    selectionSnapshot.end = end;
+    selectionSnapshot.text = selected;
+
+    if (isPreview.value) isPreview.value = false;
+
+    linkMode.value = true;
+    showMenu.value = true;
+    activeTab.value = 'ARTICLE';
+    kbQ.value = selected || '';
+    atRange.start = null;
+    atRange.end = null;
+
+    nextTick(async () => {
+        syncMenuPosition();
+        await preloadActiveTab();
+    });
 }
 
 async function onTabOpen() {
@@ -862,12 +902,34 @@ function insertArticle(a) {
     const id = Number(a?.id);
     if (!Number.isFinite(id) || id <= 0) return;
 
-    ensurePayloadShape();
-
-    const ref = String(id);
     const categorySlug = String(a.categorySlug || a.category_slug || '').trim();
     const slug = String(a.slug || '').trim();
 
+    // Modo "vincular artigo" — substitui a seleção por um link markdown
+    // inline, apontando para a página do artigo. Não cria embed card.
+    if (linkMode.value) {
+        const url = `/academy/kb/${encodeURIComponent(categorySlug)}/${encodeURIComponent(slug)}`;
+        const textRaw = String(selectionSnapshot.text || a.title || 'artigo').trim();
+        const text = textRaw || 'artigo';
+        const snippet = `[${text}](${url})`;
+
+        withTextArea((ta) => {
+            const val = String(contentLocal.value || '');
+            const s = selectionSnapshot.start;
+            const e = selectionSnapshot.end;
+            contentLocal.value = replaceRange(val, s, e, snippet);
+            const pos = s + snippet.length;
+            ta.setSelectionRange(pos, pos);
+        });
+
+        closeMenu();
+        return;
+    }
+
+    // Modo "embed card" — comportamento padrão (@[ARTICLE:id]).
+    ensurePayloadShape();
+
+    const ref = String(id);
     const embed = {
         type: 'ARTICLE',
         ref,

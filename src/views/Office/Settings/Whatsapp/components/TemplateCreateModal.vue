@@ -168,9 +168,16 @@ const presets = [
   },
   {
     name: 'alert_generic_v1',
-    label: 'Alerta genérico (Eme)',
+    label: 'Alerta genérico v1 (com resumo)',
     body: 'Olá *{{1}}*! Você tem um novo alerta no Menin Office: *{{2}}*. Resumo: {{3}}. Toque em SIM abaixo para receber o relatório completo ou em NÃO para descartar este alerta.',
     examples: ['Maria', 'Resumo de Leads da Semana', '127 leads, +12% vs semana anterior'],
+    buttons: [{ text: 'SIM' }, { text: 'NÃO' }],
+  },
+  {
+    name: 'alert_generic_v2',
+    label: 'Alerta genérico v2 (sem resumo) — usado pelo sistema',
+    body: 'Olá *{{1}}*! Você tem um novo alerta no Menin Office: *{{2}}*. Toque em *SIM* para receber o relatório ou em *NÃO* para descartar este alerta.',
+    examples: ['Maria', 'Resumo de Leads da Semana'],
     buttons: [{ text: 'SIM' }, { text: 'NÃO' }],
   },
 ];

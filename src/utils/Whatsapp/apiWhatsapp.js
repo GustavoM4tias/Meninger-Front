@@ -39,6 +39,9 @@ export const syncTemplates = () => fetch(`${API_URL}/whatsapp/config/sync-templa
 export const testSend = (payload) => fetch(`${API_URL}/whatsapp/config/test-send`, {
     method: 'POST', headers: headers(), body: JSON.stringify(payload),
 }).then(handle);
+export const registerPhone = (pin) => fetch(`${API_URL}/whatsapp/config/register-phone`, {
+    method: 'POST', headers: headers(), body: JSON.stringify({ pin }),
+}).then(handle);
 
 // Setup Wizard — descobre Business → WABA → Phone a partir de um access_token
 export const discoverFromToken = (payload) => fetch(`${API_URL}/whatsapp/config/discover`, {

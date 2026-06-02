@@ -21,6 +21,12 @@
                         Histórico
                     </button>
 
+                    <button v-if="isAdmin" type="button" @click="aiOpen = true"
+                        class="inline-flex items-center gap-1.5 rounded-xl border border-violet-200 bg-gradient-to-br from-violet-50 to-indigo-50 px-3.5 py-2 text-sm font-semibold text-violet-700 shadow-sm transition hover:from-violet-100 hover:to-indigo-100 dark:border-violet-900/60 dark:from-violet-950/40 dark:to-indigo-950/40 dark:text-violet-300 dark:hover:from-violet-950/60 dark:hover:to-indigo-950/60">
+                        <i class="fa-solid fa-wand-magic-sparkles text-xs"></i>
+                        Gerar com IA
+                    </button>
+
                     <button type="button" :disabled="!canSave || saving" @click="saveAndCreateAnother"
                         class="inline-flex items-center gap-1.5 rounded-xl border border-indigo-200 bg-white px-3.5 py-2 text-sm font-semibold text-indigo-700 shadow-sm transition hover:bg-indigo-50 disabled:opacity-40 dark:border-indigo-900/60 dark:bg-slate-800 dark:text-indigo-300 dark:hover:bg-indigo-950/40">
                         <i class="fa-solid fa-plus text-xs"></i>
@@ -43,7 +49,7 @@
         </div>
 
         <div class="grid grid-cols-1 gap-5 lg:grid-cols-12">
-            <!-- ─────────────── Dados + Status ─────────────── -->
+            <!-- ─────────────── Dados + Estrutura + Validação ─────────────── -->
             <aside class="space-y-5 lg:col-span-4">
                 <!-- Dados -->
                 <section
@@ -75,9 +81,8 @@
                                 Categoria
                             </label>
                             <div class="relative mt-1.5">
-                                <input v-model="categorySlug" type="text"
-                                    @focus="categoryFocused = true" @blur="onCategoryBlur"
-                                    placeholder="Ex: processos-comerciais"
+                                <input v-model="categorySlug" type="text" @focus="categoryFocused = true"
+                                    @blur="onCategoryBlur" placeholder="Ex: processos-comerciais"
                                     class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-4 focus:ring-indigo-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-indigo-700 dark:focus:ring-indigo-950/60" />
                                 <span v-if="categorySlug && !isExistingCategory"
                                     class="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300">
@@ -85,7 +90,6 @@
                                 </span>
                             </div>
 
-                            <!-- Sugestões -->
                             <Transition name="ate-pop">
                                 <div v-if="categoryFocused && categoryMatches.length"
                                     class="absolute left-0 right-0 top-full z-10 mt-1 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-800">
@@ -108,38 +112,85 @@
                     </div>
                 </section>
 
-                <!-- Status -->
+                <!-- Estrutura (outline) -->
                 <section
-                    class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-                    <div class="flex items-center justify-between">
-                        <span class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                            Status
-                        </span>
-                        <span class="rounded-full px-2.5 py-1 text-xs font-bold uppercase tracking-tight" :class="isPublished
-                            ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300'
-                            : 'bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300'">
-                            {{ isPublished ? 'publicado' : 'rascunho' }}
+                    class="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                    <div class="border-b border-slate-100 px-5 py-4 dark:border-slate-800">
+                        <h2 class="flex items-center gap-2 text-base font-semibold text-slate-900 dark:text-white">
+                            <i class="fa-solid fa-list-tree text-indigo-500"></i>
+                            Estrutura
+                        </h2>
+                        <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                            Resumo dos títulos do artigo.
+                        </p>
+                    </div>
+                    <div class="p-3">
+                        <ul v-if="outline.length" class="space-y-0.5">
+                            <li v-for="(o, i) in outline" :key="i"
+                                class="truncate rounded-md px-2 py-1 text-sm"
+                                :class="[
+                                    o.level === 1 ? 'pl-2 font-semibold text-slate-900 dark:text-white' : '',
+                                    o.level === 2 ? 'pl-5 text-slate-700 dark:text-slate-300' : '',
+                                    o.level === 3 ? 'pl-8 text-xs text-slate-500 dark:text-slate-400' : ''
+                                ]">
+                                <span class="mr-1.5 font-mono text-[10px] text-slate-400 dark:text-slate-500">
+                                    {{ '#'.repeat(o.level) }}
+                                </span>
+                                {{ o.text }}
+                            </li>
+                        </ul>
+                        <p v-else class="px-2 py-3 text-xs text-slate-400 dark:text-slate-500">
+                            Adicione títulos (## Seção) para organizar.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Validação ("testes") -->
+                <section
+                    class="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                    <div class="flex items-center justify-between border-b border-slate-100 px-5 py-4 dark:border-slate-800">
+                        <h2 class="flex items-center gap-2 text-base font-semibold text-slate-900 dark:text-white">
+                            <i class="fa-solid fa-shield-halved text-indigo-500"></i>
+                            Validação
+                        </h2>
+                        <span class="text-xs font-semibold"
+                            :class="validationScore.passed === validationScore.total
+                                ? 'text-emerald-600 dark:text-emerald-400'
+                                : 'text-slate-500 dark:text-slate-400'">
+                            {{ validationScore.passed }}/{{ validationScore.total }}
                         </span>
                     </div>
-                    <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">
-                        Rascunhos não aparecem para outros usuários. Publique quando estiver pronto.
-                    </p>
+                    <ul class="space-y-1 p-3 text-xs">
+                        <li v-for="c in validation" :key="c.label"
+                            class="flex items-start gap-2 rounded-md px-2 py-1"
+                            :class="c.pass ? 'text-slate-700 dark:text-slate-300' : 'text-slate-500 dark:text-slate-500'">
+                            <i class="fa-solid mt-0.5 shrink-0"
+                                :class="c.pass ? 'fa-circle-check text-emerald-500' : 'fa-circle text-slate-300 dark:text-slate-600'"></i>
+                            <span class="flex-1">
+                                {{ c.label }}
+                                <span v-if="c.warn" class="ml-1 text-amber-600 dark:text-amber-400">
+                                    — {{ c.warn }}
+                                </span>
+                            </span>
+                        </li>
+                    </ul>
                 </section>
 
                 <!-- Atalhos -->
                 <section
                     class="rounded-2xl border border-indigo-100 bg-indigo-50/60 p-5 dark:border-indigo-900/40 dark:bg-indigo-950/30">
-                    <span class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-indigo-700 dark:text-indigo-300">
+                    <span
+                        class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-indigo-700 dark:text-indigo-300">
                         <i class="fa-solid fa-keyboard"></i> Atalhos
                     </span>
                     <ul class="mt-3 space-y-1.5 text-xs text-slate-600 dark:text-slate-300">
                         <li class="flex items-center justify-between gap-3">
                             <span>Salvar</span>
-                            <kbd class="kb-key">{{ modKeyLabel }}</kbd><kbd class="kb-key">S</kbd>
+                            <span><kbd class="kb-key">{{ modKeyLabel }}</kbd><kbd class="kb-key">S</kbd></span>
                         </li>
                         <li class="flex items-center justify-between gap-3">
                             <span>Salvar e criar outro</span>
-                            <kbd class="kb-key">{{ modKeyLabel }}</kbd><kbd class="kb-key">Enter</kbd>
+                            <span><kbd class="kb-key">{{ modKeyLabel }}</kbd><kbd class="kb-key">Enter</kbd></span>
                         </li>
                         <li class="text-[11px] text-slate-500 dark:text-slate-400">
                             Auto-save a cada 2s enquanto você edita.
@@ -148,13 +199,14 @@
                 </section>
             </aside>
 
-            <!-- ─────────────── Editor + Templates ─────────────── -->
+            <!-- ─────────────── Editor + Templates + Preview ─────────────── -->
             <section class="space-y-3 lg:col-span-8">
                 <!-- Templates -->
                 <div
                     class="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-900">
                     <div class="mb-2 flex items-center justify-between px-2">
-                        <span class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                        <span
+                            class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                             <i class="fa-solid fa-shapes text-violet-500"></i> Comece com um modelo
                         </span>
                         <span v-if="body && body.trim()"
@@ -179,18 +231,46 @@
                 <!-- Editor -->
                 <section
                     class="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-                    <div class="flex items-center justify-between border-b border-slate-100 px-5 py-4 dark:border-slate-800">
-                        <h2 class="flex items-center gap-2 text-base font-semibold text-slate-900 dark:text-white">
-                            <i class="fa-solid fa-pen-nib text-indigo-500"></i>
-                            Conteúdo
-                        </h2>
+                    <div
+                        class="flex items-center justify-between gap-3 border-b border-slate-100 px-3 py-2.5 dark:border-slate-800">
+                        <div class="flex items-center gap-1">
+                            <button type="button" @click="previewMode = false"
+                                class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-semibold transition"
+                                :class="!previewMode
+                                    ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300'
+                                    : 'text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800'">
+                                <i class="fa-solid fa-pen-nib text-xs"></i>
+                                Editar
+                            </button>
+                            <button type="button" @click="previewMode = true"
+                                class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-semibold transition"
+                                :class="previewMode
+                                    ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300'
+                                    : 'text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800'">
+                                <i class="fa-solid fa-eye text-xs"></i>
+                                Pré-visualizar
+                            </button>
+                        </div>
                         <span class="text-xs text-slate-400 dark:text-slate-500">
-                            Markdown · embeds com <code class="rounded bg-slate-100 px-1 dark:bg-slate-800">@</code>
+                            Markdown · embeds com
+                            <code class="rounded bg-slate-100 px-1 dark:bg-slate-800">@</code>
                         </span>
                     </div>
                     <div class="p-5">
-                        <TokenEditor v-model="body" v-model:modelPayload="payload" :rows="20"
+                        <TokenEditor v-if="!previewMode" v-model="body" v-model:modelPayload="payload" :rows="20"
                             placeholder="# Objetivo&#10;&#10;## Pré-requisitos&#10;- ...&#10;&#10;## Passo a passo&#10;1) ...&#10;" />
+                        <div v-else class="min-h-[400px]">
+                            <div v-if="body && body.trim()" class="prose prose-slate max-w-none dark:prose-invert">
+                                <TokenRenderer :content="body || ''" :payload="payload" item-type="" item-key="" />
+                            </div>
+                            <div v-else
+                                class="flex min-h-[400px] flex-col items-center justify-center gap-2 text-center">
+                                <i class="fa-regular fa-eye text-3xl text-slate-300 dark:text-slate-700"></i>
+                                <p class="text-sm text-slate-500 dark:text-slate-400">
+                                    Comece a escrever para ver a pré-visualização.
+                                </p>
+                            </div>
+                        </div>
                     </div>
                 </section>
             </section>
@@ -198,6 +278,10 @@
 
         <!-- Histórico de versões (S2.4) -->
         <ArticleVersionsModal v-model:open="versionsOpen" :article-id="articleId" @restored="onVersionRestored" />
+
+        <!-- Modal: Gerar com IA (admin) -->
+        <AiArticleModal v-model:open="aiOpen" :categories="kb.categories" :default-category-slug="categorySlug"
+            @apply="onAiApply" />
     </div>
 </template>
 
@@ -207,18 +291,23 @@ import { useRoute, useRouter } from 'vue-router';
 
 import AcademyPageHeader from '@/views/Academy/components/AcademyPageHeader.vue';
 import TokenEditor from '@/views/Academy/components/TokenEditor.vue';
+import TokenRenderer from '@/views/Academy/components/TokenRenderer.vue';
 import ArticleVersionsModal from '@/views/Academy/KB/ArticleVersionsModal.vue';
+import AiArticleModal from '@/views/Academy/KB/AiArticleModal.vue';
 
 import { useAcademyKbAdminStore } from '@/stores/Academy/academyKbAdminStore';
 import { useAcademyKbStore } from '@/stores/Academy/academyKbStore';
+import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 
 const route = useRoute();
 const router = useRouter();
 const admin = useAcademyKbAdminStore();
 const kb = useAcademyKbStore();
+const auth = useAuthStore();
 
 const articleId = ref(route.params.id ? Number(route.params.id) : null);
 const isEdit = computed(() => !!articleId.value);
+const isAdmin = computed(() => String(auth.user?.role || '').toLowerCase() === 'admin');
 
 const title = ref('');
 const categorySlug = ref('');
@@ -227,6 +316,8 @@ const payload = ref({ embeds: [], widgets: { quiz: {}, task: {} } });
 
 const titleInputEl = ref(null);
 const versionsOpen = ref(false);
+const aiOpen = ref(false);
+const previewMode = ref(false);
 
 // ── Categoria (combobox) ─────────────────────────────────────────────
 const categoryFocused = ref(false);
@@ -249,7 +340,6 @@ function pickCategory(c) {
     categoryFocused.value = false;
 }
 function onCategoryBlur() {
-    // Atrasa para dar tempo do click na sugestão (que usa @mousedown.prevent)
     setTimeout(() => { categoryFocused.value = false; }, 100);
 }
 
@@ -408,7 +498,6 @@ async function save({ auto = false } = {}) {
         lastSavedAt.value = Date.now();
         dirty.value = false;
 
-        // Se acabou de criar uma categoria nova, atualiza a lista local
         if (wasNewCategory) {
             kb.fetchCategories({ audience: 'BOTH' }).catch(() => { });
         }
@@ -425,7 +514,6 @@ async function saveAndCreateAnother() {
     await save();
     if (savingError.value) return;
 
-    // Mantém a categoria — comum cadastrar vários artigos na mesma área
     const keptCategory = categorySlug.value;
     articleId.value = null;
     title.value = '';
@@ -435,8 +523,8 @@ async function saveAndCreateAnother() {
     admin.lastSaved = null;
     lastSavedAt.value = null;
     dirty.value = false;
+    previewMode.value = false;
 
-    // limpa o :id da URL (volta para a rota "novo")
     if (route.name === 'AcademyKBEditorEdit') {
         router.replace({ name: 'AcademyKBEditor' });
     }
@@ -447,12 +535,58 @@ async function saveAndCreateAnother() {
 
 async function togglePublish() {
     if (!articleId.value) return;
-    // se houver alterações pendentes, salva antes
     if (dirty.value) await save();
     const next = !isPublished.value;
     const r = await admin.setPublish(articleId.value, next);
     admin.lastSaved = r;
 }
+
+// ── IA ───────────────────────────────────────────────────────────────
+function onAiApply({ title: aiTitle, body: aiBody, categorySlug: aiCat }) {
+    loaded.value = false; // suprime auto-save no momento da injeção
+    if (aiTitle) title.value = aiTitle;
+    if (aiBody) body.value = aiBody;
+    if (aiCat) categorySlug.value = aiCat;
+    payload.value = { embeds: [], widgets: { quiz: {}, task: {} } };
+    nextTick(() => {
+        loaded.value = true;
+        dirty.value = true;
+        scheduleAutoSave();
+    });
+}
+
+// ── Outline (estrutura do artigo) ────────────────────────────────────
+const outline = computed(() => {
+    const lines = String(body.value || '').split('\n');
+    const items = [];
+    for (const line of lines) {
+        const m = line.match(/^(#{1,3})\s+(.+?)\s*#*\s*$/);
+        if (m) items.push({ level: m[1].length, text: m[2].trim() });
+    }
+    return items;
+});
+
+// ── Validação ("testes" do conteúdo) ─────────────────────────────────
+const validation = computed(() => {
+    const b = String(body.value || '');
+    const headings = (b.match(/^##\s+/gm) || []).length;
+    const toConfirm = (b.match(/\[\s*!\s*confirmar\s*\]/gi) || []).length;
+
+    return [
+        { label: 'Título com pelo menos 5 caracteres', pass: title.value.trim().length >= 5 },
+        { label: 'Categoria definida', pass: categorySlug.value.trim().length > 0 },
+        { label: 'Corpo com pelo menos 100 caracteres', pass: b.trim().length >= 100 },
+        { label: 'Pelo menos 2 seções (##)', pass: headings >= 2 },
+        {
+            label: 'Sem marcações pendentes', pass: toConfirm === 0,
+            warn: toConfirm > 0 ? `${toConfirm} "[ ! confirmar ]"` : '',
+        },
+    ];
+});
+const validationScore = computed(() => {
+    const passed = validation.value.filter((c) => c.pass).length;
+    return { passed, total: validation.value.length };
+});
 
 // ── Pílula de status ─────────────────────────────────────────────────
 const now = ref(Date.now());
@@ -501,9 +635,11 @@ const statusPill = computed(() => {
         };
     }
     return {
-        label: 'Rascunho',
+        label: isPublished.value ? 'Publicado' : 'Rascunho',
         icon: 'fa-regular fa-circle',
-        cls: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400',
+        cls: isPublished.value
+            ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300'
+            : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400',
         tooltip: 'Comece a escrever — salvamos sozinho.',
     };
 });
@@ -531,7 +667,7 @@ function onKeydown(e) {
 // ── Versões: ao restaurar, recarrega o conteúdo no editor ────────────
 function onVersionRestored(article) {
     if (!article) return;
-    loaded.value = false; // suprime auto-save da injeção dos campos
+    loaded.value = false;
     title.value = article.title || title.value;
     categorySlug.value = article.categorySlug || categorySlug.value;
     body.value = article.body || '';
