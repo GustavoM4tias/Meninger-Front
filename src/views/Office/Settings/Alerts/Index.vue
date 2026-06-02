@@ -31,6 +31,13 @@ function openEmeForCreation() {
   }));
 }
 
+// Abre o editor inline no chat — pede pra Eme abrir esse alerta específico.
+function openFullEditor(rule) {
+  window.dispatchEvent(new CustomEvent('eme:open', {
+    detail: { prompt: `Abre o editor do alerta "${rule.name}" (id ${rule.id}).` },
+  }));
+}
+
 const formatNext = (cron) => cron || '—';
 const formatDate = (d) => d ? new Date(d).toLocaleString('pt-BR') : '—';
 
@@ -123,8 +130,10 @@ const channelIcons = (ch = {}) => [
             @click="onFire(rule)" v-tippy="'Disparar agora'" />
           <Button size="sm" variant="ghost" icon="fas fa-clock-rotate-left"
             @click="viewLogs = rule" v-tippy="'Histórico'" />
+          <Button size="sm" variant="ghost" icon="fas fa-sliders"
+            @click="openFullEditor(rule)" v-tippy="'Editor avançado'" />
           <Button size="sm" variant="ghost" icon="fas fa-pen"
-            @click="editing = rule" v-tippy="'Editar horário/canais'" />
+            @click="editing = rule" v-tippy="'Editar horário/canais (rápido)'" />
           <Button size="sm" variant="ghost" icon="fas fa-trash"
             @click="onRemove(rule)" v-tippy="'Excluir'" />
         </div>

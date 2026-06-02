@@ -501,11 +501,6 @@ const allVisibleChecked = computed(
         filteredPaths.value.every(p => selection.value.has(p))
 )
 
-function toggle(path, ev) {
-    const s = new Set(selection.value)
-    ev.target.checked ? s.add(path) : s.delete(path)
-    selection.value = s
-}
 function toggleAllVisible(ev) {
     const s = new Set(selection.value)
     if (ev.target.checked) {
@@ -551,7 +546,7 @@ function selectRecommended() {
     selection.value = s
 }
 
-/* ————— Stringify/flatten p/ export ————— */
+/* ————— Stringify p/ export ————— */
 function stringifyScalar(v) {
     if (v == null) return ''
     if (Array.isArray(v)) return stringifyArray(v)
@@ -567,10 +562,29 @@ function stringifyArray(arr) {
         const v = arr && arr.length ? arr[0] : undefined
         return stringifyScalar(v)
     }
+    // modos 'expand-rows' e 'expand-cols' não chegam aqui (tratados no pipeline)
     const mapped = (arr || []).map(v => stringifyScalar(v))
     return mapped.join(' | ')
 }
 
+/* Resolve um path para um array de valores, preservando o número de elementos
+   quando o path atravessa arrays na origem. Para escalares retorna [valor]. */
+function resolveValues(obj, path) {
+    if (!path) return [obj]
+    return resolveValuesDeep(obj, path.split('.'))
+}
+function resolveValuesDeep(cur, parts) {
+    if (cur == null) return [null]
+    if (parts.length === 0) return Array.isArray(cur) ? cur.slice() : [cur]
+    const [head, ...tail] = parts
+    if (Array.isArray(cur)) {
+        if (cur.length === 0) return [null]
+        return cur.flatMap(el => resolveValuesDeep(el, parts))
+    }
+    return resolveValuesDeep(cur[head], tail)
+}
+
+/* Mode 'join' / 'first' / 'count' — 1 linha por registro */
 function buildRow(row, paths) {
     const out = {}
     for (const p of paths) {
@@ -580,9 +594,113 @@ function buildRow(row, paths) {
     return out
 }
 
-const previewRows = computed(() =>
-    rows.value.slice(0, props.maxPreviewRows).map(r => buildRow(r, selectedPaths.value))
-)
+/* Mode 'expand-rows' — N linhas por registro, alinhando arrays por índice */
+function buildExpandedRows(row, paths) {
+    const values = {}
+    let maxLen = 1
+    for (const p of paths) {
+        const vs = resolveValues(row, p)
+        values[p] = vs
+        if (vs.length > 1) maxLen = Math.max(maxLen, vs.length)
+    }
+    const out = []
+    for (let i = 0; i < maxLen; i++) {
+        const r = {}
+        for (const p of paths) {
+            const vs = values[p]
+            const v = vs.length === 1 ? vs[0] : (i < vs.length ? vs[i] : null)
+            r[p] = stringifyScalar(v)
+        }
+        out.push(r)
+    }
+    return out
+}
+
+/* Mode 'expand-cols' — 1 linha, mas paths array viram path[0], path[1]…
+   maxLengths é o tamanho máximo observado por path em TODAS as linhas, para
+   garantir colunas consistentes. */
+function buildExpandedColsRow(row, paths, maxLengths) {
+    const out = {}
+    for (const p of paths) {
+        const max = maxLengths[p] || 1
+        const vs = resolveValues(row, p)
+        if (max <= 1) {
+            out[p] = stringifyScalar(vs[0])
+        } else {
+            for (let i = 0; i < max; i++) {
+                out[`${p}[${i + 1}]`] = stringifyScalar(i < vs.length ? vs[i] : null)
+            }
+        }
+    }
+    return out
+}
+
+function computeMaxLengths(rows, paths) {
+    const m = {}
+    for (const p of paths) m[p] = 1
+    for (const row of rows) {
+        for (const p of paths) {
+            const vs = resolveValues(row, p)
+            if (vs.length > m[p]) m[p] = vs.length
+        }
+    }
+    return m
+}
+
+function expandedColsPaths(paths, maxLengths) {
+    const out = []
+    for (const p of paths) {
+        const max = maxLengths[p] || 1
+        if (max <= 1) out.push(p)
+        else for (let i = 0; i < max; i++) out.push(`${p}[${i + 1}]`)
+    }
+    return out
+}
+
+/* Pipeline unificado: devolve { rows, paths } prontos para CSV/preview.
+   Para join/first/count, paths é igual ao selecionado e há 1 linha por registro.
+   Para expand-rows, paths é igual ao selecionado mas há N linhas por registro.
+   Para expand-cols, paths é expandido e há 1 linha por registro. */
+function buildExportedRows(sourceRows, selected) {
+    if (arrayMode.value === 'expand-rows') {
+        const out = []
+        for (const r of sourceRows) out.push(...buildExpandedRows(r, selected))
+        return { rows: out, paths: selected }
+    }
+    if (arrayMode.value === 'expand-cols') {
+        const maxLengths = computeMaxLengths(sourceRows, selected)
+        const newPaths = expandedColsPaths(selected, maxLengths)
+        const out = sourceRows.map(r => buildExpandedColsRow(r, selected, maxLengths))
+        return { rows: out, paths: newPaths }
+    }
+    const out = sourceRows.map(r => buildRow(r, selected))
+    return { rows: out, paths: selected }
+}
+
+const previewBuild = computed(() => {
+    const slice = rows.value.slice(0, props.maxPreviewRows)
+    return buildExportedRows(slice, selectedPaths.value)
+})
+const previewRows = computed(() => previewBuild.value.rows)
+const previewPaths = computed(() => previewBuild.value.paths)
+
+const exportedRowCount = computed(() => {
+    if (!selectedPaths.value.length) return 0
+    if (arrayMode.value === 'expand-rows') {
+        let total = 0
+        for (const r of rows.value) {
+            let maxLen = 1
+            for (const p of selectedPaths.value) {
+                const vs = resolveValues(r, p)
+                if (vs.length > maxLen) maxLen = vs.length
+            }
+            total += maxLen
+        }
+        return total
+    }
+    return rows.value.length
+})
+
 function formatCell(v) {
     return v
 }
@@ -620,18 +738,29 @@ function downloadFile(content, name, mime) {
     a.remove()
     URL.revokeObjectURL(url)
 }
+function sanitizeFilename(name) {
+    const trimmed = (name || '').trim()
+    if (!trimmed) return 'export'
+    // troca caracteres inválidos (Windows/macOS/Linux) por _
+    // remove pontos/espaços do fim (problemáticos no Windows)
+    return trimmed
+        .replace(/[<>:"/\\|?*]/g, '_')
+        .replace(/[. ]+$/g, '')
+        || 'export'
+}
+
 function exportCSV(kind) {
-    const paths = selectedPaths.value
-    if (!paths.length) {
+    const selected = selectedPaths.value
+    if (!selected.length) {
         alert('Selecione ao menos um campo.')
         return
     }
-    const dataRows = rows.value.map(r => buildRow(r, paths))
+    const { rows: dataRows, paths } = buildExportedRows(rows.value, selected)
     const delim = kind === 'excel' ? ';' : delimiter.value
     const csv = rowsToCSV(dataRows, paths, delim)
-    const name = `${baseFilename.value || 'export'}.csv`
+    const name = `${sanitizeFilename(baseFilename.value)}.csv`
     downloadFile(csv, name, 'text/csv;charset=utf-8;')
-    emit('export', { name, kind: 'csv', delimiter: delim, rows: dataRows, paths })
+    emit('export', { name, kind, delimiter: delim, rows: dataRows, paths })
 }
 
 /* ————— UX ————— */

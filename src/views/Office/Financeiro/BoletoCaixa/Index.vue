@@ -482,31 +482,55 @@
                     {{ item.vencimento ? formatDate(item.vencimento) : '—' }}
                   </td>
                   <td class="px-4 py-3 text-center">
-                    <Badge :variant="statusVariant(item.status)" size="sm">
-                      <i :class="statusIcon(item.status)" class="mr-1"></i>
-                      {{ statusLabel(item.status) }}
-                    </Badge>
+                    <div class="flex flex-col items-center gap-1">
+                      <Badge :variant="statusVariant(item.status)" size="sm">
+                        <i :class="statusIcon(item.status)" class="mr-1"></i>
+                        {{ statusLabel(item.status) }}
+                      </Badge>
+                      <span v-if="warningsList(item).length"
+                        class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20 text-[10px]"
+                        :title="warningsList(item).map(w => `${warningLabel(w.etapa)}: ${w.erro}`).join('\n')">
+                        <i class="fas fa-triangle-exclamation"></i>
+                        {{ warningsList(item).length }} aviso{{ warningsList(item).length > 1 ? 's' : '' }}
+                      </span>
+                    </div>
                   </td>
                   <td class="px-4 py-3 text-center text-xs text-ink-subtle whitespace-nowrap font-mono tabular-nums">
                     {{ formatDateTime(item.createdAt) }}
                   </td>
-                  <td class="px-4 py-3 text-center">
-                    <a v-if="item.boleto_supabase_url" :href="item.boleto_supabase_url" target="_blank"
-                      class="inline-flex items-center gap-1 px-2 py-1 text-xs bg-accent-soft text-accent rounded-lg hover:bg-accent/15 transition-colors">
-                      <i class="fas fa-file-pdf"></i> PDF
-                    </a>
-                    <template v-else-if="item.status === 'error'">
-                      <span class="text-xs text-red-500 inline-flex items-center" :title="item.error_message">
-                        <i class="fas fa-circle-exclamation"></i>
-                        <span class="hidden md:inline ml-1">{{ truncate(item.error_message, 30) }}</span>
-                      </span>
-                      <button v-if="isAdmin" @click="handleRetry(item)"
-                        class="ml-2 inline-flex items-center gap-1 px-2 py-1 text-[11px] bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20 rounded-lg hover:bg-amber-500/20 transition-colors"
-                        :title="`Re-disparar processamento da reserva ${item.idreserva}`">
-                        <i class="fas fa-rotate-right"></i> Reprocessar
-                      </button>
-                    </template>
-                    <span v-else class="text-ink-subtle">—</span>
+                  <td class="px-4 py-3 text-center align-top">
+                    <div class="flex flex-col items-center gap-1.5">
+                      <a v-if="item.boleto_supabase_url" :href="item.boleto_supabase_url" target="_blank"
+                        class="inline-flex items-center gap-1 px-2 py-1 text-xs bg-accent-soft text-accent rounded-lg hover:bg-accent/15 transition-colors">
+                        <i class="fas fa-file-pdf"></i> PDF
+                      </a>
+                      <template v-else-if="item.status === 'error'">
+                        <span class="text-xs text-red-500 inline-flex items-center" :title="item.error_message">
+                          <i class="fas fa-circle-exclamation"></i>
+                          <span class="hidden md:inline ml-1">{{ truncate(item.error_message, 30) }}</span>
+                        </span>
+                        <button v-if="isAdmin" @click="handleRetry(item)"
+                          class="inline-flex items-center gap-1 px-2 py-1 text-[11px] bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20 rounded-lg hover:bg-amber-500/20 transition-colors"
+                          :title="`Re-disparar processamento da reserva ${item.idreserva}`">
+                          <i class="fas fa-rotate-right"></i> Reprocessar
+                        </button>
+                      </template>
+                      <span v-else-if="!warningsList(item).length" class="text-ink-subtle">—</span>
+
+                      <!-- Lista de avisos por etapa (anexo/mensagem/situação) -->
+                      <ul v-if="warningsList(item).length"
+                        class="text-left mt-1 space-y-0.5 text-[10px] leading-tight text-amber-700 dark:text-amber-300 max-w-[220px]">
+                        <li v-for="(w, i) in warningsList(item)" :key="i"
+                          class="flex items-start gap-1"
+                          :title="`${warningLabel(w.etapa)}${w.httpStatus ? ` (HTTP ${w.httpStatus})` : ''}: ${w.erro}`">
+                          <i class="fas fa-circle-exclamation mt-[1px] shrink-0"></i>
+                          <span class="truncate">
+                            <strong>{{ warningLabel(w.etapa) }}:</strong>
+                            {{ truncate(w.erro, 60) }}
+                          </span>
+                        </li>
+                      </ul>
+                    </div>
                   </td>
                 </tr>
               </tbody>
@@ -673,6 +697,30 @@ function statusIcon(status) {
 
 function statusLabel(status) {
   return { processing: 'Processando', success: 'Sucesso', error: 'Erro' }[status] || status;
+}
+
+// ── Warnings por etapa ────────────────────────────────────────────────────────
+// `item.warnings` chega como string (TEXT no DB) ou array (getter do model).
+// Normalizamos pra array, robusto a JSON malformado e a registros antigos.
+function warningsList(item) {
+  const raw = item?.warnings;
+  if (!raw) return [];
+  if (Array.isArray(raw)) return raw;
+  try {
+    const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+const WARNING_LABELS = {
+  cv_anexo: 'Anexo no CV',
+  cv_mensagem: 'Mensagem no CV',
+  cv_situacao: 'Mudança de situação no CV',
+};
+function warningLabel(etapa) {
+  return WARNING_LABELS[etapa] || etapa || 'Etapa desconhecida';
 }
 
 // ── Regras de Comissão por Empreendimento ─────────────────────────────────────
