@@ -105,16 +105,83 @@
           </Surface>
         </Surface>
 
-        <!-- Card: Configurações de Série e CV -->
+        <!-- Card: Configurações do CV (modo leitura por padrão; botão Editar habilita) -->
         <Surface variant="raised" padding="md" class="space-y-4 surface-gradient">
-          <div class="flex items-center gap-3">
-            <div class="h-9 w-9 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 grid place-items-center">
-              <i class="fas fa-sliders"></i>
+          <div class="flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+              <div class="h-9 w-9 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 grid place-items-center">
+                <i class="fas fa-sliders"></i>
+              </div>
+              <div>
+                <h2 class="font-semibold text-ink text-sm">Configurações do CV</h2>
+                <p class="text-xs text-ink-muted">Mapeamentos de série, tipo de documento e situações de workflow.</p>
+              </div>
             </div>
-            <h2 class="font-semibold text-ink text-sm">Configurações do CV</h2>
+            <div class="flex items-center gap-2 shrink-0">
+              <template v-if="!editingCv">
+                <Button variant="ghost" size="sm" icon="fas fa-pen-to-square" @click="startEditCv">
+                  Editar
+                </Button>
+              </template>
+              <template v-else>
+                <Button variant="ghost" size="sm" icon="fas fa-xmark" @click="cancelEditCv">
+                  Cancelar
+                </Button>
+                <Button variant="primary" size="sm" icon="fas fa-check"
+                  :loading="store.settingsLoading" :disabled="store.settingsLoading"
+                  @click="handleSaveCv">
+                  Salvar
+                </Button>
+              </template>
+            </div>
           </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- ── MODO LEITURA ──────────────────────────────────────────────── -->
+          <div v-if="!editingCv" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <p class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1">IDs de Série CV (Entrada)</p>
+              <div class="flex flex-wrap gap-1">
+                <span v-for="id in form.idserie_ra" :key="id"
+                  class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent-soft text-accent border border-accent/20 text-xs font-mono">
+                  {{ id }}
+                </span>
+                <span v-if="!form.idserie_ra.length" class="text-sm text-ink-subtle italic">
+                  Nenhuma série configurada
+                </span>
+              </div>
+            </div>
+            <div>
+              <p class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1">ID Tipo Documento (Anexo)</p>
+              <p class="text-sm text-ink font-mono">{{ form.cv_idtipo_documento ?? '—' }}</p>
+            </div>
+            <div>
+              <p class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1">Situação — Sucesso</p>
+              <p class="text-sm text-ink font-mono">{{ form.situacao_sucesso_id ?? '—' }}</p>
+            </div>
+            <div>
+              <p class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1">Situação — Erro</p>
+              <p class="text-sm text-ink font-mono">{{ form.situacao_erro_id ?? '—' }}</p>
+            </div>
+            <div>
+              <p class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1">Situação — Pago</p>
+              <p class="text-sm text-ink font-mono">{{ form.situacao_pago_id ?? '—' }}</p>
+            </div>
+            <div>
+              <p class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1">Situação — Baixado</p>
+              <p class="text-sm text-ink font-mono">{{ form.situacao_baixado_id ?? '—' }}</p>
+            </div>
+            <div>
+              <p class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1">Tolerância (dias úteis)</p>
+              <p class="text-sm text-ink font-mono">{{ form.tolerancia_dias_uteis ?? '—' }}</p>
+            </div>
+            <div>
+              <p class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1">Safety lote Sienge (min)</p>
+              <p class="text-sm text-ink font-mono">{{ form.delay_situacao_sucesso_min ?? '—' }}</p>
+            </div>
+          </div>
+
+          <!-- ── MODO EDIÇÃO ───────────────────────────────────────────────── -->
+          <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <!-- IDs de Série — chip input (múltiplos) -->
             <div class="md:col-span-1">
               <label class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1.5 block">
@@ -165,6 +232,30 @@
               label="ID Situação CV — Erro"
               placeholder="ID da situação"
               hint="Etapa de Erro CV." />
+            <Input
+              v-model.number="form.situacao_pago_id"
+              type="number"
+              label="ID Situação CV — Pago"
+              placeholder="Ex: 28"
+              hint="Quando o boleto é detectado como LIQUIDADO no Ecobrança." />
+            <Input
+              v-model.number="form.situacao_baixado_id"
+              type="number"
+              label="ID Situação CV — Baixado"
+              placeholder="Ex: 29"
+              hint="Quando o boleto vencido é baixado por devolução." />
+            <Input
+              v-model.number="form.tolerancia_dias_uteis"
+              type="number"
+              label="Tolerância (dias úteis)"
+              placeholder="Ex: 1"
+              hint="Dias úteis após vencimento antes de baixar (já considera sáb/dom/feriados)." />
+            <Input
+              v-model.number="form.delay_situacao_sucesso_min"
+              type="number"
+              label="Safety lote Sienge (min)"
+              placeholder="Ex: 2"
+              hint="Se faltam menos que isto pro próximo lote (5/5min), pula pro seguinte. Default 2 → delay efetivo 3-7 min." />
           </div>
         </Surface>
 
@@ -453,31 +544,8 @@
       <!-- ── TAB: Histórico ───────────────────────────────────────────────────── -->
       <div v-if="activeTab === 'history'" class="space-y-4">
 
-        <!-- Filtros -->
-        <Surface variant="raised" padding="md" class="surface-gradient">
-          <div class="flex flex-wrap gap-3 items-end">
-            <div class="min-w-[180px]">
-              <label class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1.5 block">Status</label>
-              <Select
-                v-model="store.historyFilter.status"
-                :options="statusOptions"
-                size="sm"
-                @change="store.fetchHistory()" />
-            </div>
-            <div class="min-w-[150px]">
-              <label class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1.5 block">ID Reserva</label>
-              <Input
-                v-model="store.historyFilter.idreserva"
-                type="number"
-                placeholder="Ex: 7187"
-                size="sm"
-                @keyup.enter="store.fetchHistory()" />
-            </div>
-            <Button variant="primary" size="sm" icon="fas fa-filter" @click="store.fetchHistory()">
-              Filtrar
-            </Button>
-          </div>
-        </Surface>
+        <!-- Filtros (componente dedicado, padrão DashboardFilters) -->
+        <BoletoFilters @filter-changed="store.fetchHistory()" />
 
         <!-- Loading -->
         <div v-if="store.historyLoading" class="flex items-center justify-center py-12 text-ink-muted">
@@ -493,113 +561,66 @@
           </div>
         </Surface>
 
-        <!-- Tabela -->
+        <!-- Tabela enxuta — detalhes/ações vão pro modal -->
         <Surface v-else variant="raised" padding="none" class="overflow-hidden surface-gradient">
           <div class="overflow-x-auto">
             <table class="w-full text-sm">
               <thead>
                 <tr class="bg-surface-sunken/60 border-b border-line">
-                  <th class="text-left px-4 py-3 text-[11px] font-mono uppercase tracking-wider text-ink-subtle">ID Reserva</th>
-                  <th class="text-left px-4 py-3 text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Titular</th>
-                  <th class="text-left px-4 py-3 text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Empreendimento</th>
+                  <th class="text-left px-4 py-3 text-[11px] font-mono uppercase tracking-wider text-ink-subtle">#Reserva</th>
+                  <th class="text-left px-4 py-3 text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Titular / Empreendimento</th>
                   <th class="text-right px-4 py-3 text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Valor</th>
                   <th class="text-center px-4 py-3 text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Vencimento</th>
-                  <th class="text-center px-4 py-3 text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Status</th>
+                  <th class="text-center px-4 py-3 text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Emissão</th>
+                  <th class="text-center px-4 py-3 text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Pagamento</th>
                   <th class="text-center px-4 py-3 text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Data</th>
-                  <th class="text-center px-4 py-3 text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Boleto</th>
+                  <th class="text-center px-4 py-3 text-[11px] font-mono uppercase tracking-wider text-ink-subtle"></th>
                 </tr>
               </thead>
               <tbody>
                 <tr v-if="!store.history.length">
                   <td colspan="8" class="text-center py-12">
-                    <EmptyState icon="fas fa-inbox" title="Sem registros" description="Nenhum registro encontrado." />
+                    <EmptyState icon="fas fa-inbox" title="Sem registros" description="Nenhum registro encontrado com os filtros atuais." />
                   </td>
                 </tr>
                 <tr v-for="item in store.history" :key="item.id"
-                  class="border-b border-line hover:bg-surface-hover/40 transition-colors">
-                  <td class="px-4 py-3 font-mono text-accent font-semibold">
+                  class="border-b border-line hover:bg-surface-hover/40 transition-colors cursor-pointer"
+                  @click="openDetail(item)">
+                  <td class="px-4 py-3 font-mono text-accent font-semibold whitespace-nowrap">
                     #{{ item.idreserva }}
                   </td>
-                  <td class="px-4 py-3 text-ink">
-                    {{ item.titular_nome || '—' }}
-                  </td>
-                  <td class="px-4 py-3 text-ink-muted text-xs">
-                    {{ item.empreendimento || '—' }}
+                  <td class="px-4 py-3">
+                    <div class="text-ink truncate max-w-[260px]">{{ item.titular_nome || '—' }}</div>
+                    <div class="text-ink-subtle text-[11px] truncate max-w-[260px]">{{ item.empreendimento || '—' }}</div>
                   </td>
                   <td class="px-4 py-3 text-right font-semibold text-ink whitespace-nowrap font-mono tabular-nums">
                     {{ item.valor ? formatCurrency(item.valor) : '—' }}
-                    <div v-if="item.valor_original && Number(item.valor_original) !== Number(item.valor)"
-                      class="text-[10px] font-normal text-ink-subtle"
-                      :title="`Valor original: ${formatCurrency(item.valor_original)} — aplicado ${item.comissao_percentual_aplicada}%`">
-                      orig. {{ formatCurrency(item.valor_original) }}
-                    </div>
                   </td>
                   <td class="px-4 py-3 text-center text-ink-muted whitespace-nowrap font-mono tabular-nums">
                     {{ item.vencimento ? formatDate(item.vencimento) : '—' }}
                   </td>
                   <td class="px-4 py-3 text-center">
-                    <div class="flex flex-col items-center gap-1">
-                      <Badge :variant="statusVariant(item.status)" size="sm">
-                        <i :class="statusIcon(item.status)" class="mr-1"></i>
-                        {{ statusLabel(item.status) }}
-                      </Badge>
-                      <span v-if="warningsList(item).length"
-                        class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20 text-[10px]"
-                        :title="warningsList(item).map(w => `${warningLabel(w.etapa)}: ${w.erro}`).join('\n')">
-                        <i class="fas fa-triangle-exclamation"></i>
-                        {{ warningsList(item).length }} aviso{{ warningsList(item).length > 1 ? 's' : '' }}
-                      </span>
-                    </div>
+                    <Badge :variant="statusVariant(item.status)" size="sm">
+                      <i :class="statusIcon(item.status)" class="mr-1"></i>
+                      {{ statusLabel(item.status) }}
+                    </Badge>
+                  </td>
+                  <td class="px-4 py-3 text-center">
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold"
+                      :class="paymentBadgeClass(item.payment_status || 'pending')">
+                      <i :class="paymentBadgeIcon(item.payment_status || 'pending')"></i>
+                      {{ paymentBadgeLabel(item.payment_status || 'pending') }}
+                    </span>
                   </td>
                   <td class="px-4 py-3 text-center text-xs text-ink-subtle whitespace-nowrap font-mono tabular-nums">
                     {{ formatDateTime(item.createdAt) }}
                   </td>
-                  <td class="px-4 py-3 text-center align-top">
-                    <div class="flex flex-col items-center gap-1.5">
-                      <div v-if="item.boleto_supabase_url" class="flex items-center gap-1.5">
-                        <a :href="item.boleto_supabase_url" target="_blank"
-                          class="inline-flex items-center gap-1 px-2 py-1 text-xs bg-accent-soft text-accent rounded-lg hover:bg-accent/15 transition-colors">
-                          <i class="fas fa-file-pdf"></i> PDF
-                        </a>
-                        <button v-if="isAdmin"
-                          @click="handleResend(item)"
-                          :disabled="resendingId === item.id"
-                          class="inline-flex items-center gap-1 px-2 py-1 text-xs bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 rounded-lg hover:bg-emerald-500/20 transition-colors disabled:opacity-50"
-                          :title="`Reenviar boleto ao titular por e-mail e WhatsApp`">
-                          <i :class="resendingId === item.id ? 'fas fa-spinner fa-spin' : 'fas fa-paper-plane'"></i>
-                          Reenviar
-                        </button>
-                      </div>
-                      <template v-else-if="item.status === 'error'">
-                        <span class="text-xs text-red-500 inline-flex items-center" :title="item.error_message">
-                          <i class="fas fa-circle-exclamation"></i>
-                          <span class="hidden md:inline ml-1">{{ truncate(item.error_message, 30) }}</span>
-                        </span>
-                        <button v-if="isAdmin" @click="handleRetry(item)"
-                          class="inline-flex items-center gap-1 px-2 py-1 text-[11px] bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20 rounded-lg hover:bg-amber-500/20 transition-colors"
-                          :title="`Re-disparar processamento da reserva ${item.idreserva}`">
-                          <i class="fas fa-rotate-right"></i> Reprocessar
-                        </button>
-                      </template>
-                      <span v-else-if="!cvSteps(item).length" class="text-ink-subtle">—</span>
-
-                      <!-- Checklist de etapas CV (anexo, situação, mensagem) -->
-                      <!-- Sempre visível pra boletos que chegaram em emissão (success ou error), -->
-                      <!-- pra deixar claro o que aconteceu em cada interação com o CV. -->
-                      <ul v-if="cvSteps(item).length"
-                        class="text-left mt-1 space-y-0.5 text-[10px] leading-tight max-w-[240px]">
-                        <li v-for="step in cvSteps(item)" :key="step.key"
-                          class="flex items-start gap-1"
-                          :class="stepTextClass(step.status)"
-                          :title="step.detail || stepDefaultLabel(step.status)">
-                          <i :class="stepIconClass(step.status)" class="mt-[1px] shrink-0"></i>
-                          <span class="truncate">
-                            <strong>{{ step.label }}:</strong>
-                            {{ truncate(step.summary, 50) }}
-                          </span>
-                        </li>
-                      </ul>
-                    </div>
+                  <td class="px-4 py-3 text-center whitespace-nowrap">
+                    <button @click.stop="openDetail(item)"
+                      class="inline-flex items-center gap-1 px-2.5 py-1 text-xs bg-accent-soft text-accent rounded-lg hover:bg-accent/15 transition-colors">
+                      <i class="fas fa-arrow-up-right-from-square"></i>
+                      Detalhes
+                    </button>
                   </td>
                 </tr>
               </tbody>
@@ -626,6 +647,13 @@
         </Surface>
       </div>
     </PageContainer>
+
+    <!-- Modal consolidado de detalhes (Resumo / Timeline / PDF) -->
+    <BoletoDetailModal
+      :open="detailModal.open"
+      :item="detailModal.item"
+      @close="closeDetail"
+      @changed="store.fetchHistory()" />
   </div>
 </template>
 
@@ -645,6 +673,10 @@ import Select from '@/components/UI/Select.vue';
 import SegmentedControl from '@/components/UI/SegmentedControl.vue';
 import EmptyState from '@/components/UI/EmptyState.vue';
 
+// Componentes próprios desta tela
+import BoletoFilters from './components/BoletoFilters.vue';
+import BoletoDetailModal from './components/BoletoDetailModal.vue';
+
 const store = useBoletoStore();
 const auth = useAuthStore();
 const isAdmin = computed(() => auth.hasRole('admin'));
@@ -661,12 +693,14 @@ const tabOptions = computed(() => {
   return base;
 });
 
-const statusOptions = [
-  { value: '',           label: 'Todos' },
-  { value: 'processing', label: 'Processando' },
-  { value: 'success',    label: 'Sucesso' },
-  { value: 'error',      label: 'Erro' },
-];
+// ── Modal de detalhes (Resumo / Timeline / PDF) ──────────────────────────────
+const detailModal = ref({ open: false, item: null });
+function openDetail(item) {
+  detailModal.value = { open: true, item };
+}
+function closeDetail() {
+  detailModal.value = { open: false, item: null };
+}
 
 // ── Webhook URL ───────────────────────────────────────────────────────────────
 const webhookUrl = computed(() => `${API_URL}/boleto-caixa/webhook`);
@@ -703,8 +737,51 @@ const form = ref({
   cv_idtipo_documento: null,
   situacao_sucesso_id: null,
   situacao_erro_id: null,
+  situacao_pago_id: 28,
+  situacao_baixado_id: 29,
+  tolerancia_dias_uteis: 1,
+  delay_situacao_sucesso_min: 2,
   active: false,
 });
+
+// ── Modo edição do card "Configurações do CV" ─────────────────────────────────
+// Por padrão o card mostra os valores em modo leitura. Botão "Editar" abre
+// inputs; "Cancelar" reverte pro snapshot; "Salvar" persiste e fecha.
+const editingCv = ref(false);
+let cvSnapshot = null;
+
+function snapshotCvFields() {
+  return {
+    idserie_ra: Array.isArray(form.value.idserie_ra) ? [...form.value.idserie_ra] : [],
+    cv_idtipo_documento: form.value.cv_idtipo_documento,
+    situacao_sucesso_id: form.value.situacao_sucesso_id,
+    situacao_erro_id: form.value.situacao_erro_id,
+    situacao_pago_id: form.value.situacao_pago_id,
+    situacao_baixado_id: form.value.situacao_baixado_id,
+    tolerancia_dias_uteis: form.value.tolerancia_dias_uteis,
+    delay_situacao_sucesso_min: form.value.delay_situacao_sucesso_min,
+  };
+}
+
+function startEditCv() {
+  cvSnapshot = snapshotCvFields();
+  editingCv.value = true;
+}
+
+function cancelEditCv() {
+  if (cvSnapshot) Object.assign(form.value, cvSnapshot);
+  novaSerieId.value = null;
+  editingCv.value = false;
+}
+
+async function handleSaveCv() {
+  const payload = snapshotCvFields();
+  await store.saveSettings(payload);
+  if (!store.settingsError) {
+    cvSnapshot = null;
+    editingCv.value = false;
+  }
+}
 
 // ── Chip input para IDs de Série ──────────────────────────────────────────────
 const novaSerieId = ref(null);
@@ -742,11 +819,6 @@ function formatDateTime(iso) {
   return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 }
 
-function truncate(str, n) {
-  if (!str) return '';
-  return str.length > n ? str.substring(0, n) + '...' : str;
-}
-
 // ── Status helpers ────────────────────────────────────────────────────────────
 function statusVariant(status) {
   return {
@@ -768,95 +840,30 @@ function statusLabel(status) {
   return { processing: 'Processando', success: 'Sucesso', error: 'Erro' }[status] || status;
 }
 
-// ── Warnings por etapa ────────────────────────────────────────────────────────
-// `item.warnings` chega como string (TEXT no DB) ou array (getter do model).
-// Normalizamos pra array, robusto a JSON malformado e a registros antigos.
-function warningsList(item) {
-  const raw = item?.warnings;
-  if (!raw) return [];
-  if (Array.isArray(raw)) return raw;
-  try {
-    const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
+// ── Payment status (pending/paid/cancelled/error) ─────────────────────────────
+function paymentBadgeLabel(s) {
+  return ({
+    pending:   'Pendente',
+    paid:      'Pago',
+    cancelled: 'Baixado',
+    error:     'Erro na verificação',
+  })[s] || s;
 }
-
-const WARNING_LABELS = {
-  cv_anexo: 'Anexo no CV',
-  cv_mensagem: 'Mensagem no CV',
-  cv_situacao: 'Mudança de situação no CV',
-  cliente_email: 'E-mail ao cliente',
-  cliente_whatsapp: 'WhatsApp ao cliente',
-};
-function warningLabel(etapa) {
-  return WARNING_LABELS[etapa] || etapa || 'Etapa desconhecida';
+function paymentBadgeClass(s) {
+  return ({
+    pending:   'bg-ink/5 text-ink-muted border border-line',
+    paid:      'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30',
+    cancelled: 'bg-red-500/15 text-red-700 dark:text-red-300 border border-red-500/30',
+    error:     'bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30',
+  })[s] || 'bg-surface-sunken border border-line';
 }
-
-// ── Checklist de etapas CV ────────────────────────────────────────────────────
-// Combina os booleans persistidos (cv_documento_anexado / cv_situacao_alterada /
-// cv_mensagem_enviada) com o array `warnings` pra mostrar status + motivo.
-// Status possíveis: 'ok' | 'fail' | 'skipped'
-//
-// - 'ok': boolean true e sem warning correspondente
-// - 'fail': boolean false e/ou warning correspondente sem `skipped`
-// - 'skipped': warning correspondente com `skipped: true` (config faltando)
-//
-// Só mostra etapas que fazem sentido pro registro (ex.: não mostra alteração
-// de situação se nenhuma situação foi configurada e nem tentada).
-function cvSteps(item) {
-  const ws = warningsList(item);
-  const warnByEtapa = Object.fromEntries(ws.map(w => [w.etapa, w]));
-
-  const defs = [
-    { key: 'cv_anexo',          label: 'Anexo no CV',     flag: item.cv_documento_anexado },
-    { key: 'cv_situacao',       label: 'Situação no CV',  flag: item.cv_situacao_alterada },
-    { key: 'cv_mensagem',       label: 'Mensagem no CV',  flag: item.cv_mensagem_enviada },
-    { key: 'cliente_email',     label: 'E-mail cliente',  flag: item.cliente_email_enviado },
-    { key: 'cliente_whatsapp',  label: 'WhatsApp cliente',flag: item.cliente_whatsapp_enviado },
-  ];
-
-  // Registros antigos (pré-feature de warnings) podem não ter nenhum desses
-  // campos preenchidos — nesse caso não mostra nada pra não confundir.
-  const hasAnyData = defs.some(d => d.flag === true || warnByEtapa[d.key]);
-  if (!hasAnyData) return [];
-
-  return defs.map(d => {
-    const w = warnByEtapa[d.key];
-    if (w?.skipped) {
-      return { ...d, status: 'skipped', summary: 'pulado (config)', detail: w.erro };
-    }
-    if (w) {
-      const httpInfo = w.httpStatus ? ` (HTTP ${w.httpStatus})` : '';
-      return { ...d, status: 'fail', summary: w.erro, detail: `${d.label}${httpInfo}: ${w.erro}` };
-    }
-    if (d.flag === true) {
-      return { ...d, status: 'ok', summary: 'OK', detail: `${d.label}: enviado com sucesso ao CV.` };
-    }
-    // flag !== true e sem warning → etapa nunca aconteceu (não tentada)
-    return { ...d, status: 'skipped', summary: 'não executado', detail: `${d.label} não foi executado neste boleto.` };
-  });
-}
-
-function stepIconClass(status) {
-  return {
-    ok:      'fas fa-circle-check',
-    fail:    'fas fa-circle-xmark',
-    skipped: 'fas fa-circle-minus',
-  }[status] || 'fas fa-circle-question';
-}
-
-function stepTextClass(status) {
-  return {
-    ok:      'text-emerald-600 dark:text-emerald-400',
-    fail:    'text-red-600 dark:text-red-400',
-    skipped: 'text-ink-subtle',
-  }[status] || 'text-ink-subtle';
-}
-
-function stepDefaultLabel(status) {
-  return { ok: 'OK', fail: 'Falhou', skipped: 'Pulado' }[status] || status;
+function paymentBadgeIcon(s) {
+  return ({
+    pending:   'fas fa-clock',
+    paid:      'fas fa-circle-check',
+    cancelled: 'fas fa-ban',
+    error:     'fas fa-circle-exclamation',
+  })[s] || 'fas fa-circle';
 }
 
 // ── Regras de Comissão por Empreendimento ─────────────────────────────────────
@@ -941,12 +948,6 @@ async function confirmDeleteRule(rule) {
   await store.deleteComissionRule(rule.id);
 }
 
-async function handleRetry(item) {
-  if (!confirm(`Re-disparar emissão de boleto para a reserva ${item.idreserva}?`)) return;
-  const ok = await store.retryHistoryItem(item.id);
-  if (ok) setTimeout(() => store.fetchHistory(), 1500);
-}
-
 async function handleSyncTemplate() {
   const isCreate = !store.whatsappTemplate?.approved_locally;
   if (isCreate) {
@@ -958,29 +959,6 @@ async function handleSyncTemplate() {
     if (!ok) return;
   }
   await store.syncWhatsappTemplate();
-}
-
-const resendingId = ref(null);
-async function handleResend(item) {
-  const ok = confirm(
-    `Reenviar boleto da reserva ${item.idreserva} para o titular?\n\n`
-    + 'Tenta enviar por e-mail e WhatsApp usando os dados mais recentes do CV.'
-  );
-  if (!ok) return;
-  resendingId.value = item.id;
-  try {
-    const res = await store.resendHistoryItem(item.id);
-    if (res.ok) {
-      const e = res.data?.email; const w = res.data?.whatsapp;
-      const msgEmail = e?.ok ? `✓ E-mail enviado pra ${e.to}` : `✗ E-mail: ${e?.error || 'não enviado'}`;
-      const msgWpp   = w?.ok ? `✓ WhatsApp enviado pra ${w.to}` : `✗ WhatsApp: ${w?.error || 'não enviado'}`;
-      alert(`Reenvio concluído:\n\n${msgEmail}\n${msgWpp}`);
-    } else {
-      alert(`Falha no reenvio: ${res.error || 'erro desconhecido'}`);
-    }
-  } finally {
-    resendingId.value = null;
-  }
 }
 
 // ── Mount ─────────────────────────────────────────────────────────────────────
@@ -995,6 +973,10 @@ onMounted(async () => {
       form.value.cv_idtipo_documento = store.settings.cv_idtipo_documento || null;
       form.value.situacao_sucesso_id = store.settings.situacao_sucesso_id || null;
       form.value.situacao_erro_id = store.settings.situacao_erro_id || null;
+      form.value.situacao_pago_id    = store.settings.situacao_pago_id ?? 28;
+      form.value.situacao_baixado_id = store.settings.situacao_baixado_id ?? 29;
+      form.value.tolerancia_dias_uteis = store.settings.tolerancia_dias_uteis ?? 1;
+      form.value.delay_situacao_sucesso_min = store.settings.delay_situacao_sucesso_min ?? 2;
       form.value.active = store.settings.active ?? false;
     }
     await store.fetchComissionRules();

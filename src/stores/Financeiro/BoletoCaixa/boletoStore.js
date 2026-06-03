@@ -67,27 +67,85 @@ export const useBoletoStore = defineStore('boletoCaixa', () => {
     const historyLimit = ref(20);
     const historyLoading = ref(false);
     const historyError = ref(null);
-    const historyFilter = ref({ status: '', idreserva: '' });
 
-    async function fetchHistory() {
-        historyLoading.value = true;
-        historyError.value = null;
+    // Filtros expandidos (alinhados com o backend listHistory). Arrays viram CSV
+    // na query string; strings vazias são omitidas.
+    const historyFilter = ref({
+        status: [],            // multi: processing/success/error
+        paymentStatus: [],     // multi: pending/paid/cancelled/error
+        empreendimento: [],    // multi (nomes exatos)
+        idreserva: '',
+        dateFrom: '',
+        dateTo: '',
+        q: '',                 // titular / nosso número / nº documento
+    });
+
+    function buildHistoryParams() {
+        const params = new URLSearchParams({
+            page: historyPage.value,
+            limit: historyLimit.value,
+        });
+        const f = historyFilter.value;
+        if (Array.isArray(f.status) && f.status.length) params.set('status', f.status.join(','));
+        if (Array.isArray(f.paymentStatus) && f.paymentStatus.length) params.set('paymentStatus', f.paymentStatus.join(','));
+        if (Array.isArray(f.empreendimento) && f.empreendimento.length) params.set('empreendimento', f.empreendimento.join(','));
+        if (f.idreserva) params.set('idreserva', f.idreserva);
+        if (f.dateFrom)  params.set('dateFrom', f.dateFrom);
+        if (f.dateTo)    params.set('dateTo', f.dateTo);
+        if (f.q)         params.set('q', f.q);
+        return params;
+    }
+
+    /**
+     * Busca o histórico aplicando os filtros atuais.
+     * @param {object} [opts]
+     * @param {boolean} [opts.silent=false] - quando true, não toca em
+     *   historyLoading/Error — usado pelo polling em background pra não piscar
+     *   spinner na UI. Mantém a estabilidade visual durante atualizações
+     *   automáticas após ações como "Verificar pagamento".
+     */
+    async function fetchHistory(opts = {}) {
+        const silent = !!opts.silent;
+        if (!silent) {
+            historyLoading.value = true;
+            historyError.value = null;
+        }
         try {
-            const params = new URLSearchParams({
-                page: historyPage.value,
-                limit: historyLimit.value,
-            });
-            if (historyFilter.value.status) params.set('status', historyFilter.value.status);
-            if (historyFilter.value.idreserva) params.set('idreserva', historyFilter.value.idreserva);
-
-            const data = await requestWithAuth(`/boleto-caixa/history?${params}`);
+            const data = await requestWithAuth(`/boleto-caixa/history?${buildHistoryParams()}`);
             history.value = data.rows || [];
             historyTotal.value = data.total || 0;
         } catch (err) {
-            historyError.value = err.message || 'Erro ao carregar histórico.';
+            if (!silent) historyError.value = err.message || 'Erro ao carregar histórico.';
         } finally {
-            historyLoading.value = false;
+            if (!silent) historyLoading.value = false;
         }
+    }
+
+    // Facets pra alimentar selects do filtro (empreendimentos distintos + contagens)
+    const facets = ref({ empreendimentos: [], statusCounts: [], paymentCounts: [] });
+    const facetsLoading = ref(false);
+    async function fetchFacets() {
+        facetsLoading.value = true;
+        try {
+            facets.value = await requestWithAuth('/boleto-caixa/history-facets');
+        } catch (err) {
+            console.warn('[boletoStore] facets:', err.message);
+        } finally {
+            facetsLoading.value = false;
+        }
+    }
+
+    function resetHistoryFilters() {
+        historyFilter.value = {
+            status: [],
+            paymentStatus: [],
+            empreendimento: [],
+            idreserva: '',
+            dateFrom: '',
+            dateTo: '',
+            q: '',
+        };
+        historyPage.value = 1;
     }
 
     const totalPages = computed(() => Math.ceil(historyTotal.value / historyLimit.value));
@@ -115,6 +173,55 @@ export const useBoletoStore = defineStore('boletoCaixa', () => {
         } catch (err) {
             historyError.value = err.message || 'Erro ao reenviar boleto ao cliente.';
             return { ok: false, error: err.message };
+        }
+    }
+
+    // ── Timeline de eventos ───────────────────────────────────────────────────
+    const timelineLoading = ref(false);
+    const timelineError = ref(null);
+    const timelineEvents = ref([]);
+    const timelineHistory = ref(null);
+
+    /**
+     * Busca eventos da timeline de um histórico específico.
+     * @param {number} historyId
+     * @param {object} [opts]
+     * @param {boolean} [opts.silent=false] - quando true, mantém o conteúdo
+     *   atual visível durante o fetch (sem limpar eventos nem ligar spinner).
+     *   Só substitui os arrays quando a resposta chega. Usado pelo polling.
+     */
+    async function fetchTimeline(historyId, opts = {}) {
+        const silent = !!opts.silent;
+        if (!silent) {
+            timelineLoading.value = true;
+            timelineError.value = null;
+            timelineEvents.value = [];
+            timelineHistory.value = null;
+        }
+        try {
+            const data = await requestWithAuth(`/boleto-caixa/history/${historyId}/events`);
+            timelineEvents.value = Array.isArray(data?.events) ? data.events : [];
+            timelineHistory.value = data?.history || null;
+        } catch (err) {
+            if (!silent) timelineError.value = err.message || 'Erro ao carregar timeline.';
+        } finally {
+            if (!silent) timelineLoading.value = false;
+        }
+    }
+
+    async function triggerPaymentCheck(historyId) {
+        try {
+            await requestWithAuth(`/boleto-caixa/history/${historyId}/check-payment`, { method: 'POST' });
+            return { ok: true };
+        } catch (err) {
+            // 409 = lock ocupado — sinaliza pro UI mostrar mensagem diferente
+            // (sem polling, sem "disparado") em vez de mensagem genérica.
+            return {
+                ok: false,
+                error: err.message,
+                conflict: err.status === 409,
+                lock: err.payload?.lock || null,
+            };
         }
     }
 
@@ -246,6 +353,12 @@ export const useBoletoStore = defineStore('boletoCaixa', () => {
         history, historyTotal, historyPage, historyLimit,
         historyLoading, historyError, historyFilter,
         fetchHistory, setPage, totalPages, retryHistoryItem, resendHistoryItem,
+        resetHistoryFilters,
+        // facets
+        facets, facetsLoading, fetchFacets,
+        // timeline
+        timelineLoading, timelineError, timelineEvents, timelineHistory,
+        fetchTimeline, triggerPaymentCheck,
         // whatsapp template
         whatsappTemplate, whatsappTemplateLoading, whatsappTemplateError, whatsappTemplateMsg,
         fetchWhatsappTemplate, syncWhatsappTemplate,
