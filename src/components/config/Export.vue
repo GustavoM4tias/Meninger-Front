@@ -99,7 +99,7 @@
                                     <label for="exp-filename" class="block text-xs font-medium mb-1">Nome do arquivo</label>
                                     <div class="flex items-stretch border rounded-lg overflow-hidden border-gray-200 dark:border-gray-600 focus-within:ring-2 focus-within:ring-purple-500/40 focus-within:border-purple-500">
                                         <input id="exp-filename" v-model="baseFilename" type="text" placeholder="ex.: export-vendas"
-                                            class="flex-1 px-2 py-1.5 bg-transparent text-sm text-gray-700 dark:text-gray-100 focus:outline-none" />
+                                            class="flex-1 px-2 py-1.5 bg-transparent text-sm border-none text-gray-700 dark:text-gray-100 focus:outline-none" />
                                         <span class="px-2 py-1.5 text-xs text-gray-500 bg-gray-100 dark:bg-gray-800/60 border-l border-gray-200 dark:border-gray-600 select-none">.csv</span>
                                     </div>
                                 </div>
