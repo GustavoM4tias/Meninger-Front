@@ -312,6 +312,62 @@
           </div>
         </div>
 
+        <!-- Card: Notificações ao Cliente (e-mail + WhatsApp) -->
+        <Surface variant="raised" padding="md" class="space-y-4 surface-gradient">
+          <div class="flex items-center gap-3">
+            <div class="h-9 w-9 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 grid place-items-center">
+              <i class="fas fa-paper-plane"></i>
+            </div>
+            <div>
+              <h2 class="font-semibold text-ink text-sm">Envio do boleto ao cliente</h2>
+              <p class="text-xs text-ink-muted">Após emissão, enviamos o boleto pro titular por e-mail e WhatsApp.</p>
+            </div>
+          </div>
+
+          <Surface variant="raised" padding="sm" class="border-emerald-500/30 bg-emerald-500/5">
+            <div class="text-xs text-ink leading-relaxed space-y-1">
+              <p class="flex items-start gap-1.5">
+                <i class="fas fa-envelope text-emerald-600 mt-0.5"></i>
+                <span><strong>E-mail:</strong> enviado pro e-mail do titular cadastrado no CV. Rodapé deixa claro que é canal só de envio (não aceita respostas).</span>
+              </p>
+              <p class="flex items-start gap-1.5">
+                <i class="fab fa-whatsapp text-emerald-600 mt-0.5"></i>
+                <span><strong>WhatsApp:</strong> usa o template HSM <code class="font-mono bg-surface-sunken px-1 rounded text-[10px]">{{ store.whatsappTemplate?.name || 'boleto_caixa_ato_v1' }}</code>. Cliente que responder recebe aviso automático informando que é canal só de avisos.</span>
+              </p>
+            </div>
+          </Surface>
+
+          <!-- Status do template WhatsApp -->
+          <div class="flex items-center justify-between gap-3 p-3 rounded-lg border border-line bg-surface-sunken">
+            <div class="flex items-center gap-2 text-sm">
+              <i v-if="store.whatsappTemplate?.approved_locally"
+                class="fas fa-circle-check text-emerald-500"></i>
+              <i v-else class="fas fa-circle-exclamation text-amber-500"></i>
+              <span v-if="store.whatsappTemplate?.approved_locally" class="text-ink">
+                Template WhatsApp <strong>aprovado</strong> e pronto pra uso.
+              </span>
+              <span v-else class="text-ink">
+                Template WhatsApp <strong>não aprovado</strong> ainda — envios por WhatsApp vão falhar.
+              </span>
+              <span v-if="store.whatsappTemplate?.status"
+                class="text-xs text-ink-muted ml-1">({{ store.whatsappTemplate.status }})</span>
+            </div>
+            <Button variant="primary" size="sm"
+              :icon="store.whatsappTemplateLoading ? 'fas fa-spinner fa-spin' : 'fas fa-rotate'"
+              :disabled="store.whatsappTemplateLoading"
+              @click="handleSyncTemplate">
+              {{ store.whatsappTemplate?.approved_locally ? 'Re-sincronizar' : 'Criar na Meta' }}
+            </Button>
+          </div>
+
+          <p v-if="store.whatsappTemplateMsg" class="text-xs text-emerald-600 dark:text-emerald-400 flex items-start gap-1.5">
+            <i class="fas fa-check mt-0.5"></i><span>{{ store.whatsappTemplateMsg }}</span>
+          </p>
+          <p v-if="store.whatsappTemplateError" class="text-xs text-red-500 flex items-start gap-1.5">
+            <i class="fas fa-circle-exclamation mt-0.5"></i><span>{{ store.whatsappTemplateError }}</span>
+          </p>
+        </Surface>
+
         <!-- Card: Controle de ativação -->
         <Surface variant="raised" padding="md" class="surface-gradient">
           <div class="flex items-center justify-between gap-3">
@@ -500,10 +556,20 @@
                   </td>
                   <td class="px-4 py-3 text-center align-top">
                     <div class="flex flex-col items-center gap-1.5">
-                      <a v-if="item.boleto_supabase_url" :href="item.boleto_supabase_url" target="_blank"
-                        class="inline-flex items-center gap-1 px-2 py-1 text-xs bg-accent-soft text-accent rounded-lg hover:bg-accent/15 transition-colors">
-                        <i class="fas fa-file-pdf"></i> PDF
-                      </a>
+                      <div v-if="item.boleto_supabase_url" class="flex items-center gap-1.5">
+                        <a :href="item.boleto_supabase_url" target="_blank"
+                          class="inline-flex items-center gap-1 px-2 py-1 text-xs bg-accent-soft text-accent rounded-lg hover:bg-accent/15 transition-colors">
+                          <i class="fas fa-file-pdf"></i> PDF
+                        </a>
+                        <button v-if="isAdmin"
+                          @click="handleResend(item)"
+                          :disabled="resendingId === item.id"
+                          class="inline-flex items-center gap-1 px-2 py-1 text-xs bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 rounded-lg hover:bg-emerald-500/20 transition-colors disabled:opacity-50"
+                          :title="`Reenviar boleto ao titular por e-mail e WhatsApp`">
+                          <i :class="resendingId === item.id ? 'fas fa-spinner fa-spin' : 'fas fa-paper-plane'"></i>
+                          Reenviar
+                        </button>
+                      </div>
                       <template v-else-if="item.status === 'error'">
                         <span class="text-xs text-red-500 inline-flex items-center" :title="item.error_message">
                           <i class="fas fa-circle-exclamation"></i>
@@ -515,18 +581,21 @@
                           <i class="fas fa-rotate-right"></i> Reprocessar
                         </button>
                       </template>
-                      <span v-else-if="!warningsList(item).length" class="text-ink-subtle">—</span>
+                      <span v-else-if="!cvSteps(item).length" class="text-ink-subtle">—</span>
 
-                      <!-- Lista de avisos por etapa (anexo/mensagem/situação) -->
-                      <ul v-if="warningsList(item).length"
-                        class="text-left mt-1 space-y-0.5 text-[10px] leading-tight text-amber-700 dark:text-amber-300 max-w-[220px]">
-                        <li v-for="(w, i) in warningsList(item)" :key="i"
+                      <!-- Checklist de etapas CV (anexo, situação, mensagem) -->
+                      <!-- Sempre visível pra boletos que chegaram em emissão (success ou error), -->
+                      <!-- pra deixar claro o que aconteceu em cada interação com o CV. -->
+                      <ul v-if="cvSteps(item).length"
+                        class="text-left mt-1 space-y-0.5 text-[10px] leading-tight max-w-[240px]">
+                        <li v-for="step in cvSteps(item)" :key="step.key"
                           class="flex items-start gap-1"
-                          :title="`${warningLabel(w.etapa)}${w.httpStatus ? ` (HTTP ${w.httpStatus})` : ''}: ${w.erro}`">
-                          <i class="fas fa-circle-exclamation mt-[1px] shrink-0"></i>
+                          :class="stepTextClass(step.status)"
+                          :title="step.detail || stepDefaultLabel(step.status)">
+                          <i :class="stepIconClass(step.status)" class="mt-[1px] shrink-0"></i>
                           <span class="truncate">
-                            <strong>{{ warningLabel(w.etapa) }}:</strong>
-                            {{ truncate(w.erro, 60) }}
+                            <strong>{{ step.label }}:</strong>
+                            {{ truncate(step.summary, 50) }}
                           </span>
                         </li>
                       </ul>
@@ -718,9 +787,76 @@ const WARNING_LABELS = {
   cv_anexo: 'Anexo no CV',
   cv_mensagem: 'Mensagem no CV',
   cv_situacao: 'Mudança de situação no CV',
+  cliente_email: 'E-mail ao cliente',
+  cliente_whatsapp: 'WhatsApp ao cliente',
 };
 function warningLabel(etapa) {
   return WARNING_LABELS[etapa] || etapa || 'Etapa desconhecida';
+}
+
+// ── Checklist de etapas CV ────────────────────────────────────────────────────
+// Combina os booleans persistidos (cv_documento_anexado / cv_situacao_alterada /
+// cv_mensagem_enviada) com o array `warnings` pra mostrar status + motivo.
+// Status possíveis: 'ok' | 'fail' | 'skipped'
+//
+// - 'ok': boolean true e sem warning correspondente
+// - 'fail': boolean false e/ou warning correspondente sem `skipped`
+// - 'skipped': warning correspondente com `skipped: true` (config faltando)
+//
+// Só mostra etapas que fazem sentido pro registro (ex.: não mostra alteração
+// de situação se nenhuma situação foi configurada e nem tentada).
+function cvSteps(item) {
+  const ws = warningsList(item);
+  const warnByEtapa = Object.fromEntries(ws.map(w => [w.etapa, w]));
+
+  const defs = [
+    { key: 'cv_anexo',          label: 'Anexo no CV',     flag: item.cv_documento_anexado },
+    { key: 'cv_situacao',       label: 'Situação no CV',  flag: item.cv_situacao_alterada },
+    { key: 'cv_mensagem',       label: 'Mensagem no CV',  flag: item.cv_mensagem_enviada },
+    { key: 'cliente_email',     label: 'E-mail cliente',  flag: item.cliente_email_enviado },
+    { key: 'cliente_whatsapp',  label: 'WhatsApp cliente',flag: item.cliente_whatsapp_enviado },
+  ];
+
+  // Registros antigos (pré-feature de warnings) podem não ter nenhum desses
+  // campos preenchidos — nesse caso não mostra nada pra não confundir.
+  const hasAnyData = defs.some(d => d.flag === true || warnByEtapa[d.key]);
+  if (!hasAnyData) return [];
+
+  return defs.map(d => {
+    const w = warnByEtapa[d.key];
+    if (w?.skipped) {
+      return { ...d, status: 'skipped', summary: 'pulado (config)', detail: w.erro };
+    }
+    if (w) {
+      const httpInfo = w.httpStatus ? ` (HTTP ${w.httpStatus})` : '';
+      return { ...d, status: 'fail', summary: w.erro, detail: `${d.label}${httpInfo}: ${w.erro}` };
+    }
+    if (d.flag === true) {
+      return { ...d, status: 'ok', summary: 'OK', detail: `${d.label}: enviado com sucesso ao CV.` };
+    }
+    // flag !== true e sem warning → etapa nunca aconteceu (não tentada)
+    return { ...d, status: 'skipped', summary: 'não executado', detail: `${d.label} não foi executado neste boleto.` };
+  });
+}
+
+function stepIconClass(status) {
+  return {
+    ok:      'fas fa-circle-check',
+    fail:    'fas fa-circle-xmark',
+    skipped: 'fas fa-circle-minus',
+  }[status] || 'fas fa-circle-question';
+}
+
+function stepTextClass(status) {
+  return {
+    ok:      'text-emerald-600 dark:text-emerald-400',
+    fail:    'text-red-600 dark:text-red-400',
+    skipped: 'text-ink-subtle',
+  }[status] || 'text-ink-subtle';
+}
+
+function stepDefaultLabel(status) {
+  return { ok: 'OK', fail: 'Falhou', skipped: 'Pulado' }[status] || status;
 }
 
 // ── Regras de Comissão por Empreendimento ─────────────────────────────────────
@@ -811,6 +947,42 @@ async function handleRetry(item) {
   if (ok) setTimeout(() => store.fetchHistory(), 1500);
 }
 
+async function handleSyncTemplate() {
+  const isCreate = !store.whatsappTemplate?.approved_locally;
+  if (isCreate) {
+    const ok = confirm(
+      'Enviar o template "boleto_caixa_ato_v1" para a Meta?\n\n'
+      + 'O template ficará em revisão por alguns minutos/horas antes de ser aprovado.\n'
+      + 'Enquanto não estiver aprovado, envios por WhatsApp falharão.'
+    );
+    if (!ok) return;
+  }
+  await store.syncWhatsappTemplate();
+}
+
+const resendingId = ref(null);
+async function handleResend(item) {
+  const ok = confirm(
+    `Reenviar boleto da reserva ${item.idreserva} para o titular?\n\n`
+    + 'Tenta enviar por e-mail e WhatsApp usando os dados mais recentes do CV.'
+  );
+  if (!ok) return;
+  resendingId.value = item.id;
+  try {
+    const res = await store.resendHistoryItem(item.id);
+    if (res.ok) {
+      const e = res.data?.email; const w = res.data?.whatsapp;
+      const msgEmail = e?.ok ? `✓ E-mail enviado pra ${e.to}` : `✗ E-mail: ${e?.error || 'não enviado'}`;
+      const msgWpp   = w?.ok ? `✓ WhatsApp enviado pra ${w.to}` : `✗ WhatsApp: ${w?.error || 'não enviado'}`;
+      alert(`Reenvio concluído:\n\n${msgEmail}\n${msgWpp}`);
+    } else {
+      alert(`Falha no reenvio: ${res.error || 'erro desconhecido'}`);
+    }
+  } finally {
+    resendingId.value = null;
+  }
+}
+
 // ── Mount ─────────────────────────────────────────────────────────────────────
 onMounted(async () => {
   if (isAdmin.value) {
@@ -826,6 +998,7 @@ onMounted(async () => {
       form.value.active = store.settings.active ?? false;
     }
     await store.fetchComissionRules();
+    await store.fetchWhatsappTemplate();
   }
   await store.fetchHistory();
 });

@@ -107,6 +107,52 @@ export const useBoletoStore = defineStore('boletoCaixa', () => {
         }
     }
 
+    async function resendHistoryItem(id) {
+        try {
+            const data = await requestWithAuth(`/boleto-caixa/history/${id}/resend`, { method: 'POST' });
+            await fetchHistory();
+            return { ok: true, data };
+        } catch (err) {
+            historyError.value = err.message || 'Erro ao reenviar boleto ao cliente.';
+            return { ok: false, error: err.message };
+        }
+    }
+
+    // ── WhatsApp Template ─────────────────────────────────────────────────────
+    const whatsappTemplate = ref(null);
+    const whatsappTemplateLoading = ref(false);
+    const whatsappTemplateError = ref(null);
+    const whatsappTemplateMsg = ref(null);
+
+    async function fetchWhatsappTemplate() {
+        whatsappTemplateLoading.value = true;
+        whatsappTemplateError.value = null;
+        try {
+            whatsappTemplate.value = await requestWithAuth('/boleto-caixa/whatsapp-template');
+        } catch (err) {
+            whatsappTemplateError.value = err.message || 'Erro ao consultar status do template.';
+        } finally {
+            whatsappTemplateLoading.value = false;
+        }
+    }
+
+    async function syncWhatsappTemplate() {
+        whatsappTemplateLoading.value = true;
+        whatsappTemplateError.value = null;
+        whatsappTemplateMsg.value = null;
+        try {
+            const data = await requestWithAuth('/boleto-caixa/whatsapp-template/sync', { method: 'POST' });
+            whatsappTemplateMsg.value = data?.note || 'Template sincronizado com a Meta.';
+            await fetchWhatsappTemplate();
+            return true;
+        } catch (err) {
+            whatsappTemplateError.value = err.message || 'Erro ao sincronizar template com a Meta.';
+            return false;
+        } finally {
+            whatsappTemplateLoading.value = false;
+        }
+    }
+
     // ── Empreendimentos do CV (para o picker das regras) ──────────────────────
     const enterprises = ref([]);
     const enterprisesLoading = ref(false);
@@ -199,7 +245,10 @@ export const useBoletoStore = defineStore('boletoCaixa', () => {
         // history
         history, historyTotal, historyPage, historyLimit,
         historyLoading, historyError, historyFilter,
-        fetchHistory, setPage, totalPages, retryHistoryItem,
+        fetchHistory, setPage, totalPages, retryHistoryItem, resendHistoryItem,
+        // whatsapp template
+        whatsappTemplate, whatsappTemplateLoading, whatsappTemplateError, whatsappTemplateMsg,
+        fetchWhatsappTemplate, syncWhatsappTemplate,
         // comission rules
         rules, rulesLoading, rulesError,
         fetchComissionRules, createComissionRule, updateComissionRule, deleteComissionRule,
