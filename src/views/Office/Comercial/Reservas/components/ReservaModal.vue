@@ -594,8 +594,16 @@ const stageVariant = (r) => {
       </div>
     </div>
 
-    <Export v-model="exportOpen" :source="filtered" title="Exportação de Reservas"
-      filename="reservas" initial-delimiter=";" initial-array-mode="join"
+    <Export v-model="exportOpen" :source="filtered" title="Reservas"
+      initial-delimiter=";" initial-array-mode="join"
+      :filters="{
+        'Busca': search,
+        'Empreendimento': aplEmpreendimento,
+        'Situação': aplSituacao,
+        'Status repasse': aplStatusRep,
+        'Imobiliária': aplImob,
+        'Corretor': aplCorretor,
+      }"
       :preselect="[
         'idreserva', 'documento', 'titular.nome',
         'empreendimento', 'etapa', 'bloco', 'unidade',

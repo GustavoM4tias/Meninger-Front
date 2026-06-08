@@ -50,7 +50,7 @@ export const useAcademyKbAdminStore = defineStore('academyKbAdmin', {
             }
         },
 
-        async createArticle({ title, categorySlug, body, payload = null, aliases }) {
+        async createArticle({ title, categorySlug, body, payload = null, aliases, audiences }) {
             this.error = null;
 
             try {
@@ -63,6 +63,7 @@ export const useAcademyKbAdminStore = defineStore('academyKbAdmin', {
                     payload: asObjOrNull(payload),
                 };
                 if (Array.isArray(aliases)) requestBody.aliases = aliases;
+                if (Array.isArray(audiences)) requestBody.audiences = audiences;
 
                 const data = await requestWithAuth('/academy/kb/articles', {
                     method: 'POST',
@@ -84,7 +85,7 @@ export const useAcademyKbAdminStore = defineStore('academyKbAdmin', {
             }
         },
 
-        async updateArticle(id, { title, categorySlug, body, payload = null, aliases }) {
+        async updateArticle(id, { title, categorySlug, body, payload = null, aliases, audiences }) {
             this.error = null;
 
             const safeId = safeNumber(id, 0);
@@ -100,6 +101,7 @@ export const useAcademyKbAdminStore = defineStore('academyKbAdmin', {
                     payload: asObjOrNull(payload),
                 };
                 if (Array.isArray(aliases)) requestBody.aliases = aliases;
+                if (Array.isArray(audiences)) requestBody.audiences = audiences;
 
                 const data = await requestWithAuth(`/academy/kb/articles/${safeId}`, {
                     method: 'PATCH',

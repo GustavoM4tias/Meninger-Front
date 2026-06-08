@@ -49,7 +49,16 @@
                                 class="mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm"
                                 placeholder="Objetivo da trilha, o que a pessoa vai aprender..." />
                         </label>
- 
+
+                        <div class="md:col-span-12">
+                            <AudienceSelector v-model="form.audiences" />
+                            <p class="mt-2 text-[11px] text-slate-500 dark:text-slate-400">
+                                <i class="fa-solid fa-circle-info mr-1"></i>
+                                Cada artigo vinculado precisa cobrir TODOS os públicos selecionados aqui.
+                                Caso contrário, o sistema bloqueia o vínculo.
+                            </p>
+                        </div>
+
                         <label v-if="mode === 'create'" class="md:col-span-12">
                             <div class="text-xs font-medium text-slate-500 dark:text-slate-400">Slug (opcional)</div>
                             <input v-model="form.slug"
@@ -96,6 +105,9 @@
 <script setup>
 import { computed, reactive, ref, watch, onBeforeUnmount } from 'vue';
 import { useAcademyTracksAdminStore } from '@/stores/Academy/academyTracksAdminStore';
+import AudienceSelector from '@/views/Academy/components/AudienceSelector.vue';
+
+const DEFAULT_AUDIENCES = ['INTERNAL', 'GESTOR', 'BROKER', 'REALESTATE', 'CORRESPONDENT'];
 
 const props = defineProps({
     open: { type: Boolean, default: false },
@@ -113,7 +125,7 @@ const form = reactive({
     title: '',
     description: '',
     status: 'DRAFT',
-    audience: 'BOTH',
+    audiences: DEFAULT_AUDIENCES.slice(),
     slug: '',
 });
 
@@ -144,7 +156,9 @@ watch(
             form.title = String(i.title || '');
             form.description = String(i.description || '');
             form.status = String(i.status || 'DRAFT').toUpperCase();
-            form.audience = String(i.audience || 'BOTH');
+            form.audiences = Array.isArray(i.audiences) && i.audiences.length
+                ? i.audiences.slice()
+                : DEFAULT_AUDIENCES.slice();
             form.slug = ''; // só no create
 
             error.value = null;
@@ -167,8 +181,9 @@ function validate() {
     const st = String(form.status || 'DRAFT').toUpperCase();
     if (!['DRAFT', 'PUBLISHED'].includes(st)) return 'Status inválido.';
 
-    const aud = String(form.audience || 'BOTH');
-    if (!['BOTH', 'GESTOR_ONLY', 'ADM_ONLY'].includes(aud)) return 'Audiência inválida.';
+    if (!Array.isArray(form.audiences) || !form.audiences.length) {
+        return 'Selecione ao menos um público em "Visibilidade".';
+    }
 
     return '';
 }
@@ -185,7 +200,7 @@ async function save() {
             title: String(form.title || '').trim(),
             description: String(form.description || '').trim(),
             status: String(form.status || 'DRAFT').toUpperCase(),
-            audience: String(form.audience || 'BOTH'),
+            audiences: Array.isArray(form.audiences) ? form.audiences.slice() : [],
         };
 
         if (props.mode === 'create') {

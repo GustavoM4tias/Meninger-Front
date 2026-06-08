@@ -1794,8 +1794,12 @@ const filterPanelOpen = ref(true)
         <ProjectionLogsDrawer :id="id" />
 
         <!-- Export -->
-        <Export v-model="exportOpen" :source="exportSource" title="Exportação da projeção" filename="projecao-vendas"
+        <Export v-model="exportOpen" :source="exportSource" title="Projeção de vendas"
             initial-delimiter=";" initial-array-mode="join"
+            :filters="{
+                'Período': (startMonth && endMonth) ? `${startMonth} a ${endMonth}` : '',
+                'Inclui linhas zeradas': showZero ? 'Sim' : 'Não',
+            }"
             :preselect="['enterprise_name', 'city', 'erp_id', 'year_month', 'units_target', 'avg_price_target', 'vgv_target', 'marketing_pct', 'commission_pct']" />
 
         <!-- ── Modal: Configurações do empreendimento ──────────────────────── -->

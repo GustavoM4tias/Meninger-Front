@@ -597,8 +597,14 @@ const onLimpar = () => {
     </div>
 
     <!-- Export submodal -->
-    <Export v-model="exportOpen" :source="leadsFiltrados" title="Exportação de Leads"
-      filename="Relatório de Leads" initial-delimiter=";" initial-array-mode="join"
+    <Export v-model="exportOpen" :source="leadsFiltrados" title="Leads"
+      initial-delimiter=";" initial-array-mode="join"
+      :filters="{
+        'Status': filtroStatus,
+        'Empreendimento': filtroEnterprise,
+        'Imobiliária': filtroBroker,
+        'Corretor': filtroAgent,
+      }"
       :preselect="[
         'idlead', 'nome', 'email', 'telefone',
         'situacao_nome', 'midia_principal', 'origem',

@@ -64,7 +64,7 @@ const getColor = (i) => colors[i % colors.length];
 const formatCurrency = (v) =>
   new Intl.NumberFormat('pt-BR', {
     style: 'currency', currency: 'BRL',
-    minimumFractionDigits: 0, maximumFractionDigits: 0,
+    minimumFractionDigits: 2, maximumFractionDigits: 2,
   }).format(v || 0);
 
 const appendedValue = (e) => {
@@ -613,8 +613,13 @@ const onViewChange = (mode) => {
       </table>
     </div>
 
-    <Export v-model="open" :source="sortedData" title="Exportação de vendas" filename="Relatório de Faturamento"
-      initial-delimiter=";" initial-array-mode="join" :preselect="[]" />
+    <Export v-model="open" :source="sortedData" title="Vendas por empreendimento"
+      initial-delimiter=";" initial-array-mode="join" :preselect="[]"
+      :filters="{
+        'Modo de valor': valueModeLabel,
+        'Ordenação': sortBy,
+        'Total de empreendimentos': totalCount,
+      }" />
 
     <EnterpriseDetailModal v-if="showModal" :enterprise="modalEnterprise" :sales="modalSales"
       :initial-mode="initialMode" @close="closeModal" />

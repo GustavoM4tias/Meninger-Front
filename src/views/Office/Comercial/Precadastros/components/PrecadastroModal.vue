@@ -635,8 +635,17 @@ const stageVariant = (s) => {
     </div>
 
     <!-- Export -->
-    <Export v-model="exportOpen" :source="filtered" title="Exportação de Pré-Cadastros"
-      filename="pre-cadastros" initial-delimiter=";" initial-array-mode="join"
+    <Export v-model="exportOpen" :source="filtered" title="Pré-Cadastros"
+      initial-delimiter=";" initial-array-mode="join"
+      :filters="{
+        'Busca': search,
+        'Empreendimento': aplEmpreendimento,
+        'Empresa correspondente': aplEmpresa,
+        'Etapa/Situação': aplEtapa,
+        'Imobiliária': aplImob,
+        'Corretor': aplCorretor,
+        'Origem': aplOrigem,
+      }"
       :preselect="[
         'idprecadastro', 'codigointerno',
         'nome_cliente', 'documento', 'email_cliente',

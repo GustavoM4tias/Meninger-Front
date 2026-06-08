@@ -47,115 +47,124 @@
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-0">
                     <!-- LEFT: Controls -->
                     <div
-                        class="lg:border-r flex flex-col h-full justify-between border-gray-200 dark:border-gray-700 p-5 gap-5 bg-white/60 dark:bg-gray-900/30">
-                        <div class="flex flex-col gap-5">
-                            <!-- Filtro -->
-                            <section aria-labelledby="exp-section-filter" class="flex flex-col gap-1.5">
-                                <label id="exp-section-filter" class="block text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                                    Filtrar campos
-                                </label>
-                                <input v-model="fieldSearch" type="text"
-                                    placeholder="Digite para filtrar pelo caminho do campo…"
-                                    aria-label="Filtrar campos por caminho"
-                                    class="w-full px-3 py-2 border rounded-lg bg-transparent text-sm text-gray-700 dark:text-gray-100 border-gray-200 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500/40 focus:border-purple-500" />
-                            </section>
+                        class="lg:border-r flex flex-col h-full justify-between border-gray-200 dark:border-gray-700 p-4 gap-4 bg-white/60 dark:bg-gray-900/30">
+                        <div class="flex flex-col gap-4 overflow-y-auto pr-1 min-h-0">
+                            <!-- Mini-header (compacto) -->
+                            <div class="flex items-center gap-3 pb-3 border-b border-gray-200 dark:border-gray-700">
+                                <img :src="logo" alt="" :class="['h-8 w-auto object-contain flex-shrink-0', invertLogo ? 'logo-invert' : '']"
+                                    @error="$event.target.style.display='none'" />
+                                <div class="min-w-0 flex-1">
+                                    <p class="text-sm font-semibold text-gray-800 dark:text-gray-100 truncate leading-tight" :title="suggestedTitle">
+                                        {{ suggestedTitle }}
+                                    </p>
+                                    <p class="text-[11px] text-gray-500 truncate">
+                                        Emitido por {{ issuerName }}
+                                    </p>
+                                </div>
+                            </div>
 
-                            <!-- Formato -->
-                            <section aria-labelledby="exp-section-format" class="flex flex-col gap-3">
-                                <h4 id="exp-section-format" class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                                    Formato do arquivo
-                                </h4>
-                                <div class="grid grid-cols-2 gap-3">
+                            <!-- Filtros aplicados (chips inline) -->
+                            <div v-if="normalizedFilters.length" class="flex flex-wrap gap-1">
+                                <span v-for="f in normalizedFilters" :key="f.label"
+                                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-200 text-[11px]"
+                                    :title="`${f.label}: ${f.value}`">
+                                    <span class="opacity-70">{{ f.label }}:</span>
+                                    <span class="max-w-[140px] truncate font-medium">{{ f.value }}</span>
+                                </span>
+                            </div>
+
+                            <!-- Busca de campos -->
+                            <div class="relative">
+                                <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+                                <input v-model="fieldSearch" type="text"
+                                    placeholder="Buscar campos…"
+                                    aria-label="Filtrar campos"
+                                    class="w-full pl-8 pr-3 py-2 border rounded-lg bg-transparent text-sm text-gray-700 dark:text-gray-100 border-gray-200 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500/40 focus:border-purple-500" />
+                            </div>
+
+                            <!-- Atalhos inline + contador discreto -->
+                            <div class="flex items-center flex-wrap gap-x-3 gap-y-1 text-xs">
+                                <button type="button" @click="selectRecommended()"
+                                    class="inline-flex items-center gap-1 text-purple-700 dark:text-purple-300 font-medium hover:underline focus:outline-none focus:underline">
+                                    <i class="fas fa-magic-wand-sparkles text-[10px]"></i> Recomendado
+                                </button>
+                                <span class="text-gray-300 dark:text-gray-700">·</span>
+                                <button type="button" @click="selectAllVisible()" class="text-gray-600 dark:text-gray-300 hover:underline focus:outline-none focus:underline">Marcar visíveis</button>
+                                <span class="text-gray-300 dark:text-gray-700">·</span>
+                                <button type="button" @click="selectCommon()" class="text-gray-600 dark:text-gray-300 hover:underline focus:outline-none focus:underline" title="Apenas campos presentes em 100% dos registros">Só comuns</button>
+                                <span class="text-gray-300 dark:text-gray-700">·</span>
+                                <button type="button" @click="clearSelection()" class="text-gray-500 hover:text-red-600 focus:outline-none focus:underline">Limpar</button>
+                            </div>
+
+                            <!-- Opções avançadas -->
+                            <div class="border-t border-gray-200 dark:border-gray-700 pt-3">
+                                <button type="button" @click="showAdvanced = !showAdvanced"
+                                    class="text-[11px] font-medium text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-100 focus:outline-none">
+                                    <i :class="['fas', showAdvanced ? 'fa-chevron-down' : 'fa-chevron-right', 'mr-1 text-[10px]']"></i>
+                                    Opções avançadas
+                                </button>
+                                <div v-show="showAdvanced" class="mt-3 grid grid-cols-1 gap-3">
                                     <div>
-                                        <label for="exp-delimiter" class="block text-xs font-medium mb-1">Delimitador</label>
+                                        <label for="exp-array-mode" class="flex items-center gap-1 text-[11px] font-medium text-gray-600 dark:text-gray-300 mb-1">
+                                            O que fazer com listas?
+                                            <span class="text-gray-400" title="Quando um campo é uma lista (ex.: várias parcelas), define como apresentar os valores no relatório.">
+                                                <i class="fas fa-circle-info text-[10px]"></i>
+                                            </span>
+                                        </label>
+                                        <select id="exp-array-mode" v-model="arrayMode"
+                                            class="w-full px-2 py-1.5 border rounded-md bg-transparent text-sm text-gray-700 dark:text-gray-100 border-gray-200 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500/40 focus:border-purple-500">
+                                            <option value="join">Juntar com " | "</option>
+                                            <option value="expand-rows">Quebrar em linhas</option>
+                                            <option value="expand-cols">Quebrar em colunas</option>
+                                            <option value="first">Apenas o primeiro</option>
+                                            <option value="count">Só quantidade</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label for="exp-filename" class="block text-[11px] font-medium text-gray-600 dark:text-gray-300 mb-1">Nome do arquivo</label>
+                                        <input id="exp-filename" v-model="baseFilename" type="text" :placeholder="suggestedFilename"
+                                            class="w-full px-2 py-1.5 border rounded-md bg-transparent text-sm text-gray-700 dark:text-gray-100 border-gray-200 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500/40 focus:border-purple-500" />
+                                    </div>
+                                    <div>
+                                        <label for="exp-delimiter" class="block text-[11px] font-medium text-gray-600 dark:text-gray-300 mb-1">
+                                            Delimitador do CSV
+                                        </label>
                                         <select id="exp-delimiter" v-model="delimiter"
-                                            class="w-full px-2 py-1.5 border rounded-lg bg-transparent text-sm text-gray-700 dark:text-gray-100 border-gray-200 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500/40 focus:border-purple-500">
+                                            class="w-full px-2 py-1.5 border rounded-md bg-transparent text-sm text-gray-700 dark:text-gray-100 border-gray-200 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500/40 focus:border-purple-500">
                                             <option value=",">Vírgula (,)</option>
                                             <option value=";">Ponto e vírgula (;)</option>
                                             <option :value="'\t'">Tabulação (Tab)</option>
                                             <option value="|">Barra vertical (|)</option>
                                         </select>
                                     </div>
-                                    <div>
-                                        <label for="exp-array-mode" class="block text-xs font-medium mb-1">Tratamento de arrays</label>
-                                        <select id="exp-array-mode" v-model="arrayMode"
-                                            class="w-full px-2 py-1.5 border rounded-lg bg-transparent text-sm text-gray-700 dark:text-gray-100 border-gray-200 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500/40 focus:border-purple-500">
-                                            <option value="join">Juntar valores (" | ")</option>
-                                            <option value="expand-rows">Quebrar em linhas (1 por elemento)</option>
-                                            <option value="expand-cols">Quebrar em colunas (campo[1], campo[2]…)</option>
-                                            <option value="first">Apenas o primeiro</option>
-                                            <option value="count">Somente quantidade</option>
-                                        </select>
-                                    </div>
                                 </div>
-                                <p v-if="arrayMode === 'expand-rows'" class="text-[11px] text-gray-500 leading-snug">
-                                    Cada registro com array vira N linhas, uma por elemento. Campos escalares se repetem em cada linha.
-                                </p>
-                                <p v-else-if="arrayMode === 'expand-cols'" class="text-[11px] text-gray-500 leading-snug">
-                                    Cada índice do array vira uma coluna separada. Mantém uma linha por registro.
-                                </p>
-
-                                <div>
-                                    <label for="exp-filename" class="block text-xs font-medium mb-1">Nome do arquivo</label>
-                                    <div class="flex items-stretch border rounded-lg overflow-hidden border-gray-200 dark:border-gray-600 focus-within:ring-2 focus-within:ring-purple-500/40 focus-within:border-purple-500">
-                                        <input id="exp-filename" v-model="baseFilename" type="text" placeholder="ex.: export-vendas"
-                                            class="flex-1 px-2 py-1.5 bg-transparent text-sm border-none text-gray-700 dark:text-gray-100 focus:outline-none" />
-                                        <span class="px-2 py-1.5 text-xs text-gray-500 bg-gray-100 dark:bg-gray-800/60 border-l border-gray-200 dark:border-gray-600 select-none">.csv</span>
-                                    </div>
-                                </div>
-                            </section>
-
-                            <!-- Seleção rápida -->
-                            <section aria-labelledby="exp-section-quick" class="flex flex-col gap-2">
-                                <h4 id="exp-section-quick" class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                                    Seleção rápida
-                                </h4>
-                                <div class="flex flex-wrap gap-2">
-                                    <button type="button" @click="selectAllVisible()"
-                                        class="px-3 py-1.5 text-xs rounded-md border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500/40">
-                                        Selecionar visíveis
-                                    </button>
-                                    <button type="button" @click="clearSelection()"
-                                        class="px-3 py-1.5 text-xs rounded-md border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500/40">
-                                        Limpar
-                                    </button>
-                                    <button type="button" @click="selectCommon()"
-                                        class="px-3 py-1.5 text-xs rounded-md border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500/40">
-                                        Somente comuns
-                                    </button>
-                                    <button type="button" @click="selectRecommended()"
-                                        class="px-3 py-1.5 text-xs rounded-md border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500/40">
-                                        Recomendado
-                                    </button>
-                                </div>
-                            </section>
-
-                            <!-- Status -->
-                            <section aria-live="polite" class="rounded-md bg-gray-100/70 dark:bg-gray-900/40 p-2.5 text-[11px] text-gray-600 dark:text-gray-300 leading-relaxed">
-                                <div>
-                                    <span class="font-semibold">{{ selection.size }}</span> campos selecionados de
-                                    <span class="font-semibold">{{ filteredPaths.length }}</span>
-                                    · cobertura média <span class="font-semibold">{{ Math.round(coverageAvg * 100) }}%</span>
-                                </div>
-                                <div class="mt-0.5">
-                                    Exportação gerará
-                                    <span class="font-semibold">{{ exportedRowCount.toLocaleString('pt-BR') }}</span>
-                                    {{ exportedRowCount === 1 ? 'linha' : 'linhas' }}
-                                    <template v-if="arrayMode === 'expand-cols'">
-                                        · <span class="font-semibold">{{ previewPaths.length }}</span> colunas
-                                    </template>
-                                </div>
-                            </section>
+                            </div>
                         </div>
 
-                        <div class="flex gap-2">
-                            <button type="button" @click="exportCSV('csv')" :disabled="!selection.size"
-                                class="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white text-sm font-semibold px-3 py-2 rounded-md shadow focus:outline-none focus:ring-2 focus:ring-blue-500/40">
-                                <i class="fas fa-file-zipper"></i> Exportar CSV
+                        <!-- Footer: status + ações -->
+                        <div class="flex flex-col gap-2 border-t border-gray-200 dark:border-gray-700 pt-3">
+                            <p aria-live="polite" class="text-[11px] text-gray-500 dark:text-gray-400 flex items-center justify-between gap-2">
+                                <span>
+                                    <span class="font-semibold text-gray-700 dark:text-gray-200">{{ selection.size }}</span> campos
+                                </span>
+                                <span>·</span>
+                                <span>
+                                    <span class="font-semibold text-gray-700 dark:text-gray-200">{{ exportedRowCount.toLocaleString('pt-BR') }}</span>
+                                    {{ exportedRowCount === 1 ? 'linha' : 'linhas' }}
+                                </span>
+                                <span v-if="arrayMode === 'expand-cols'">·</span>
+                                <span v-if="arrayMode === 'expand-cols'">
+                                    <span class="font-semibold text-gray-700 dark:text-gray-200">{{ previewPaths.length }}</span> cols
+                                </span>
+                            </p>
+                            <button type="button" @click="exportXLSX()" :disabled="!selection.size || exporting"
+                                class="flex items-center justify-center gap-2 w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:cursor-not-allowed text-white text-sm font-semibold px-4 py-2.5 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/40 transition active:scale-[0.99]">
+                                <i :class="['fas', exporting ? 'fa-spinner fa-spin' : 'fa-file-excel']"></i>
+                                <span>{{ exporting ? 'Gerando…' : 'Exportar Excel' }}</span>
                             </button>
-                            <button type="button" @click="exportCSV('excel')" :disabled="!selection.size"
-                                class="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white text-sm font-semibold px-3 py-2 rounded-md shadow focus:outline-none focus:ring-2 focus:ring-green-500/40">
-                                <i class="fas fa-table"></i> Exportar p/ Excel
+                            <button type="button" @click="exportCSV('csv')" :disabled="!selection.size || exporting"
+                                class="text-[11px] text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 disabled:opacity-40 focus:outline-none focus:underline">
+                                ou exportar como CSV
                             </button>
                         </div>
                     </div>
@@ -236,22 +245,37 @@ import {
     h,
     nextTick
 } from 'vue'
+import ExcelJS from 'exceljs/dist/exceljs.min.js'
+import saveAs from 'file-saver'
+import dayjs from 'dayjs'
+import { useAuthStore } from '@/stores/Settings/Auth/authStore'
 
 /**
- * UniversalExportModal.vue (refeito)
+ * UniversalExportModal.vue
  * - Aceita qualquer JSON (Array ou Objeto)
  * - Descobre todos os caminhos possíveis (paths), atravessando arrays
  * - Árvore hierárquica com tri-state; ordem inversa (desc) entre irmãos
- * - Exporta CSV / Excel-friendly (;)
+ * - Exporta XLSX (com logo, cabeçalho de relatório e formatação) ou CSV
  */
 
 const props = defineProps({
     modelValue: { type: Boolean, default: false },
     source: { type: [Array, Object], required: true },
     title: { type: String, default: 'Exportação de dados' },
-    filename: { type: String, default: 'export' },
+    subtitle: { type: String, default: '' },
+    filename: { type: String, default: '' },
+    /** filtros aplicados na tela; aparecem no cabeçalho do XLSX e ajudam a
+        gerar o título e o nome do arquivo. Formato:
+        { 'Empreendimento': 'TERRAS V', 'Período': '05/2025' } */
+    filters: { type: Object, default: () => ({}) },
+    /** quem está emitindo o relatório; se vazio, pega do authStore */
+    issuer: { type: String, default: '' },
+    /** logo do cabeçalho (caminho público, png ou jpg) */
+    logo: { type: String, default: '/Mlogotext.png' },
+    /** inverte cores do logo (útil quando o logo é branco e o relatório tem fundo claro) */
+    invertLogo: { type: Boolean, default: true },
     initialDelimiter: { type: String, default: ';' },
-    initialArrayMode: { type: String, default: 'join' }, // 'join' | 'first' | 'count'
+    initialArrayMode: { type: String, default: 'join' }, // 'join' | 'expand-rows' | 'expand-cols' | 'first' | 'count'
     maxPreviewRows: { type: Number, default: 50 },
     preselect: { type: Array, default: () => [] }
 })
@@ -266,9 +290,76 @@ const emitClose = () => {
 const panel = ref('fields')
 const delimiter = ref(props.initialDelimiter)
 const arrayMode = ref(props.initialArrayMode)
-const baseFilename = ref(props.filename)
 const fieldSearch = ref('')
 const showFullPaths = ref(false)
+const showAdvanced = ref(false)
+
+/* ————— Contexto do relatório ————— */
+const authStore = useAuthStore()
+const issuerName = computed(() => {
+    if (props.issuer) return props.issuer
+    const u = authStore?.user || {}
+    return u.username || u.name || u.email || 'Usuário'
+})
+
+/* Filtros normalizados: aceita objeto plano ou array de {label,value}. */
+const normalizedFilters = computed(() => {
+    const src = props.filters
+    if (!src) return []
+    if (Array.isArray(src)) {
+        return src
+            .map(f => ({ label: f.label || f.key, value: formatFilterValue(f.value) }))
+            .filter(f => f.label && f.value && f.value !== '—')
+    }
+    return Object.entries(src)
+        .map(([label, value]) => ({ label, value: formatFilterValue(value) }))
+        .filter(f => f.value && f.value !== '—')
+})
+
+function formatFilterValue(v) {
+    if (v == null || v === '') return ''
+    if (v instanceof Set) v = [...v]
+    if (Array.isArray(v)) {
+        if (v.length === 0) return ''
+        return v.map(formatFilterValue).filter(Boolean).join(', ')
+    }
+    if (v instanceof Date) return dayjs(v).format('DD/MM/YYYY')
+    if (typeof v === 'object') return JSON.stringify(v)
+    return String(v)
+}
+
+/* Título sugerido = title + valores dos filtros mais relevantes (separados por ·) */
+const suggestedTitle = computed(() => {
+    const base = (props.title || 'Relatório').replace(/^Exporta[çc][ãa]o\s+(de\s+)?/i, '')
+    const baseClean = base.charAt(0).toUpperCase() + base.slice(1)
+    const parts = normalizedFilters.value
+        .slice(0, 3)
+        .map(f => f.value)
+        .filter(Boolean)
+    return parts.length ? `${baseClean} · ${parts.join(' · ')}` : baseClean
+})
+
+/* Filename sugerido: kebab-case do título sugerido + data atual */
+const suggestedFilename = computed(() => {
+    const slug = suggestedTitle.value
+        .normalize('NFD').replace(/[̀-ͯ]/g, '')
+        .replace(/[^a-zA-Z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .toLowerCase()
+    const date = dayjs().format('YYYY-MM-DD')
+    return slug ? `${slug}-${date}` : `relatorio-${date}`
+})
+
+const baseFilename = ref('')
+watch(
+    () => [props.modelValue, props.filename, suggestedFilename.value],
+    ([open]) => {
+        if (open && !baseFilename.value) {
+            baseFilename.value = props.filename || suggestedFilename.value
+        }
+    },
+    { immediate: true }
+)
 
 /* ————— Normalização da fonte de dados ————— */
 const rows = computed(() => {
@@ -791,7 +882,7 @@ function sanitizeFilename(name) {
         || 'export'
 }
 
-function exportCSV(kind) {
+function exportCSV(kind = 'csv') {
     const selected = selectedPaths.value
     if (!selected.length) {
         alert('Selecione ao menos um campo.')
@@ -803,6 +894,229 @@ function exportCSV(kind) {
     const name = `${sanitizeFilename(baseFilename.value)}.csv`
     downloadFile(csv, name, 'text/csv;charset=utf-8;')
     emit('export', { name, kind, delimiter: delim, rows: dataRows, paths })
+}
+
+/* ————— Export XLSX (com logo + cabeçalho de relatório) ————— */
+const logoCache = new Map() // key: `${url}|${invert}` → { buffer, naturalWidth, naturalHeight }
+
+async function loadLogoData(url, invert) {
+    const key = `${url}|${invert ? '1' : '0'}`
+    if (logoCache.has(key)) return logoCache.get(key)
+    try {
+        const res = await fetch(url, { cache: 'force-cache' })
+        if (!res.ok) return null
+        const raw = await res.arrayBuffer()
+        const img = await loadImageFromBlob(new Blob([raw]))
+        const naturalWidth = img.naturalWidth
+        const naturalHeight = img.naturalHeight
+        const buffer = invert ? await invertImageBuffer(img) : raw
+        const data = { buffer, naturalWidth, naturalHeight }
+        logoCache.set(key, data)
+        return data
+    } catch {
+        return null
+    }
+}
+
+/* Inverte R/G/B preservando alpha — funciona para PNG transparente com pixels brancos. */
+async function invertImageBuffer(img) {
+    const canvas = document.createElement('canvas')
+    canvas.width = img.naturalWidth
+    canvas.height = img.naturalHeight
+    const ctx = canvas.getContext('2d')
+    ctx.drawImage(img, 0, 0)
+    const data = ctx.getImageData(0, 0, canvas.width, canvas.height)
+    const px = data.data
+    for (let i = 0; i < px.length; i += 4) {
+        px[i] = 255 - px[i]
+        px[i + 1] = 255 - px[i + 1]
+        px[i + 2] = 255 - px[i + 2]
+        // alpha preservado
+    }
+    ctx.putImageData(data, 0, 0)
+    const outBlob = await new Promise(r => canvas.toBlob(r, 'image/png'))
+    return await outBlob.arrayBuffer()
+}
+
+function loadImageFromBlob(blob) {
+    return new Promise((resolve, reject) => {
+        const url = URL.createObjectURL(blob)
+        const img = new Image()
+        img.onload = () => { URL.revokeObjectURL(url); resolve(img) }
+        img.onerror = e => { URL.revokeObjectURL(url); reject(e) }
+        img.src = url
+    })
+}
+
+const exporting = ref(false)
+
+async function exportXLSX() {
+    const selected = selectedPaths.value
+    if (!selected.length) {
+        alert('Selecione ao menos um campo.')
+        return
+    }
+    exporting.value = true
+    try {
+        const { rows: dataRows, paths } = buildExportedRows(rows.value, selected)
+        const wb = new ExcelJS.Workbook()
+        wb.creator = issuerName.value
+        wb.created = new Date()
+        const ws = wb.addWorksheet('Relatório', {
+            views: [{ showGridLines: false, state: 'frozen', xSplit: 0, ySplit: 0 }],
+        })
+
+        const colCount = Math.max(paths.length, 4)
+        const lastColLetter = columnLetter(colCount)
+
+        // Logo: ocupa 3 linhas, tamanho calculado a partir do aspect ratio natural
+        const ext = (props.logo || '').toLowerCase().endsWith('.jpg') || (props.logo || '').toLowerCase().endsWith('.jpeg')
+            ? 'jpeg' : 'png'
+        const LOGO_HEIGHT = 48 // px
+        const LOGO_MAX_WIDTH = 280 // px (limite quando aspect for muito largo)
+        const logoData = await loadLogoData(props.logo, props.invertLogo)
+        if (logoData) {
+            const ratio = logoData.naturalWidth / logoData.naturalHeight || 3
+            const width = Math.min(LOGO_HEIGHT * ratio, LOGO_MAX_WIDTH)
+            const imgId = wb.addImage({ buffer: logoData.buffer, extension: ext })
+            ws.addImage(imgId, {
+                tl: { col: 0.15, row: 0.15 },
+                ext: { width, height: LOGO_HEIGHT },
+                editAs: 'oneCell',
+            })
+        }
+        // 3 linhas reservadas pro logo (~16px cada = 48px total)
+        for (let i = 0; i < 3; i++) ws.addRow([])
+        ws.getRow(1).height = 16
+        ws.getRow(2).height = 16
+        ws.getRow(3).height = 16
+
+        // Título
+        const titleRow = ws.addRow([suggestedTitle.value])
+        ws.mergeCells(`A${titleRow.number}:${lastColLetter}${titleRow.number}`)
+        const titleCell = titleRow.getCell(1)
+        titleCell.font = { bold: true, size: 14, color: { argb: 'FF0F172A' } }
+        titleCell.alignment = { vertical: 'middle', horizontal: 'left' }
+        titleRow.height = 20
+
+        // Subtítulo (se houver) na mesma linha-bloco abaixo do título, mais leve
+        if (props.subtitle) {
+            const subRow = ws.addRow([props.subtitle])
+            ws.mergeCells(`A${subRow.number}:${lastColLetter}${subRow.number}`)
+            subRow.getCell(1).font = { italic: true, size: 10, color: { argb: 'FF475569' } }
+            subRow.getCell(1).alignment = { vertical: 'middle' }
+            subRow.height = 14
+        }
+
+        // Meta (emissor · data · total) numa linha discreta
+        const meta = [
+            `Emitido por ${issuerName.value}`,
+            `em ${dayjs().format('DD/MM/YYYY HH:mm')}`,
+            `${exportedRowCount.value.toLocaleString('pt-BR')} ${exportedRowCount.value === 1 ? 'registro' : 'registros'}`,
+        ].join(' · ')
+        const metaRow = ws.addRow([meta])
+        ws.mergeCells(`A${metaRow.number}:${lastColLetter}${metaRow.number}`)
+        metaRow.getCell(1).font = { size: 9, color: { argb: 'FF64748B' } }
+        metaRow.height = 13
+
+        // Bloco de filtros
+        if (normalizedFilters.value.length) {
+            ws.addRow([])
+            const filtersHeader = ws.addRow(['Filtros aplicados'])
+            ws.mergeCells(`A${filtersHeader.number}:${lastColLetter}${filtersHeader.number}`)
+            filtersHeader.getCell(1).font = { bold: true, size: 11, color: { argb: 'FF1E293B' } }
+            filtersHeader.getCell(1).fill = {
+                type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF1F5F9' },
+            }
+            filtersHeader.height = 18
+
+            for (const f of normalizedFilters.value) {
+                const fRow = ws.addRow([f.label, f.value])
+                if (colCount > 2) ws.mergeCells(`B${fRow.number}:${lastColLetter}${fRow.number}`)
+                fRow.getCell(1).font = { bold: true, size: 10, color: { argb: 'FF475569' } }
+                fRow.getCell(1).alignment = { vertical: 'middle' }
+                fRow.getCell(2).font = { size: 10, color: { argb: 'FF0F172A' } }
+                fRow.getCell(2).alignment = { vertical: 'middle', wrapText: true }
+                fRow.height = 16
+            }
+        }
+
+        // Espaço
+        ws.addRow([])
+        ws.addRow([])
+
+        // Cabeçalho da tabela
+        const headerLabels = paths.map(p => shortLabel(p))
+        const headerRow = ws.addRow(headerLabels)
+        headerRow.eachCell(cell => {
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1E293B' } }
+            cell.font = { bold: true, color: { argb: 'FFE2E8F0' }, size: 11 }
+            cell.border = { bottom: { style: 'medium', color: { argb: 'FF6366F1' } } }
+            cell.alignment = { horizontal: 'left', vertical: 'middle', wrapText: true }
+        })
+        headerRow.height = 24
+        ws.views[0].ySplit = headerRow.number
+
+        // Dados
+        dataRows.forEach((row, ri) => {
+            const vals = paths.map(p => coerceForExcel(row[p]))
+            const r = ws.addRow(vals)
+            r.eachCell(cell => {
+                cell.fill = {
+                    type: 'pattern', pattern: 'solid',
+                    fgColor: { argb: ri % 2 === 0 ? 'FFFFFFFF' : 'FFF8FAFC' },
+                }
+                cell.font = { color: { argb: 'FF0F172A' }, size: 10 }
+                cell.alignment = { vertical: 'middle', wrapText: false }
+                cell.border = {
+                    bottom: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+                }
+            })
+        })
+
+        // Larguras automáticas (cap em 40)
+        ws.columns.forEach((col, i) => {
+            const path = paths[i] ?? ''
+            const label = shortLabel(path)
+            const sampleLens = dataRows.slice(0, 200).map(r => String(r[path] ?? '').length)
+            const maxLen = Math.max(label.length, ...sampleLens, 0)
+            col.width = Math.min(Math.max(maxLen + 3, 12), 40)
+        })
+
+        const buf = await wb.xlsx.writeBuffer()
+        const name = `${sanitizeFilename(baseFilename.value || suggestedFilename.value)}.xlsx`
+        saveAs(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), name)
+        emit('export', { name, kind: 'xlsx', rows: dataRows, paths })
+    } finally {
+        exporting.value = false
+    }
+}
+
+function columnLetter(n) {
+    let s = ''
+    while (n > 0) {
+        const r = (n - 1) % 26
+        s = String.fromCharCode(65 + r) + s
+        n = Math.floor((n - 1) / 26)
+    }
+    return s
+}
+
+function coerceForExcel(v) {
+    if (v == null || v === '') return null
+    // detecta números puros e converte para number para que Excel reconheça
+    if (/^-?\d+(?:[.,]\d+)?$/.test(v)) {
+        const n = Number(String(v).replace(',', '.'))
+        if (Number.isFinite(n)) return n
+    }
+    // detecta datas ISO simples
+    const m = /^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2})(?::(\d{2}))?)?/.exec(v)
+    if (m) {
+        const [, y, mo, d, h = '0', mi = '0', s = '0'] = m
+        const dt = new Date(+y, +mo - 1, +d, +h, +mi, +s)
+        if (!isNaN(dt.getTime())) return dt
+    }
+    return v
 }
 
 /* ————— UX ————— */
@@ -960,5 +1274,10 @@ function statsForNode(node) {
 ::-webkit-scrollbar-thumb {
     background-color: rgba(107, 114, 128, 0.4);
     border-radius: 8px;
+}
+
+/* Inverte logo branca → preta na UI (combina com fundo claro do modal). */
+.logo-invert {
+    filter: invert(1);
 }
 </style>
