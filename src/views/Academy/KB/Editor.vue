@@ -112,6 +112,9 @@
                     </div>
                 </section>
 
+                <!-- Visibilidade (públicos) -->
+                <AudienceSelector v-model="audiences" />
+
                 <!-- Estrutura (outline) -->
                 <section
                     class="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
@@ -290,6 +293,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router';
 
 import AcademyPageHeader from '@/views/Academy/components/AcademyPageHeader.vue';
+import AudienceSelector from '@/views/Academy/components/AudienceSelector.vue';
 import TokenEditor from '@/views/Academy/components/TokenEditor.vue';
 import TokenRenderer from '@/views/Academy/components/TokenRenderer.vue';
 import ArticleVersionsModal from '@/views/Academy/KB/ArticleVersionsModal.vue';
@@ -313,6 +317,10 @@ const title = ref('');
 const categorySlug = ref('');
 const body = ref('');
 const payload = ref({ embeds: [], widgets: { quiz: {}, task: {} } });
+// audiences = tokens de público que podem ver. Default "todo mundo, exceto
+// admin-only" — alinhado com DEFAULT_AUDIENCES do backend.
+const DEFAULT_AUDIENCES = ['INTERNAL', 'GESTOR', 'BROKER', 'REALESTATE', 'CORRESPONDENT'];
+const audiences = ref(DEFAULT_AUDIENCES.slice());
 
 const titleInputEl = ref(null);
 const versionsOpen = ref(false);
@@ -445,7 +453,9 @@ const dirty = ref(false);
 const savingError = ref(false);
 const lastSavedAt = ref(null);
 
-const canSave = computed(() => !!(title.value.trim() && categorySlug.value.trim()));
+const canSave = computed(() =>
+    !!(title.value.trim() && categorySlug.value.trim() && audiences.value.length > 0)
+);
 
 let saveTimer = null;
 let saveToken = 0;
@@ -456,7 +466,7 @@ function scheduleAutoSave() {
     saveTimer = setTimeout(() => save({ auto: true }), 2000);
 }
 
-watch([title, categorySlug, body, payload], () => {
+watch([title, categorySlug, body, payload, audiences], () => {
     if (!loaded.value) return;
     dirty.value = true;
     savingError.value = false;
@@ -480,6 +490,7 @@ async function save({ auto = false } = {}) {
                 categorySlug: categorySlug.value.trim(),
                 body: body.value,
                 payload: payload.value,
+                audiences: audiences.value.slice(),
             });
             if (token !== saveToken) return;
             articleId.value = created?.id || null;
@@ -490,6 +501,7 @@ async function save({ auto = false } = {}) {
                 categorySlug: categorySlug.value.trim(),
                 body: body.value,
                 payload: payload.value,
+                audiences: audiences.value.slice(),
             });
             if (token !== saveToken) return;
             admin.lastSaved = updated;
@@ -515,11 +527,13 @@ async function saveAndCreateAnother() {
     if (savingError.value) return;
 
     const keptCategory = categorySlug.value;
+    const keptAudiences = audiences.value.slice();
     articleId.value = null;
     title.value = '';
     body.value = '';
     payload.value = { embeds: [], widgets: { quiz: {}, task: {} } };
     categorySlug.value = keptCategory;
+    audiences.value = keptAudiences;
     admin.lastSaved = null;
     lastSavedAt.value = null;
     dirty.value = false;
@@ -696,6 +710,9 @@ onMounted(async () => {
             payload.value = a.payload && typeof a.payload === 'object'
                 ? a.payload
                 : { embeds: [], widgets: { quiz: {}, task: {} } };
+            audiences.value = Array.isArray(a.audiences) && a.audiences.length
+                ? a.audiences.slice()
+                : DEFAULT_AUDIENCES.slice();
             admin.lastSaved = a;
             lastSavedAt.value = Date.now();
         }

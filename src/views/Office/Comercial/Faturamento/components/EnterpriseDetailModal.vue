@@ -419,8 +419,8 @@ const formatCurrency = (v) =>
   new Intl.NumberFormat('pt-BR', {
     style: 'currency',
     currency: 'BRL',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
   }).format(v || 0);
 const formatDate = (d) => {
   if (!d) return '—';
@@ -908,7 +908,8 @@ const chartOption = computed(() => {
           new Intl.NumberFormat('pt-BR', {
             style: 'currency',
             currency: 'BRL',
-            maximumFractionDigits: 0,
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
           }).format(v),
       },
       splitLine: { lineStyle: { color: gridLine.value } },
@@ -1148,8 +1149,14 @@ const closeModal = () => emit('close');
         </div>
 
         <!-- ── EXPORT MODAL ───────────────────────────────────── -->
-        <Export v-model="open" :source="filteredSales" title="Exportação de vendas"
-          filename="Relatório de Faturamento" initial-delimiter=";" initial-array-mode="join"
+        <Export v-model="open" :source="filteredSales" title="Vendas"
+          :subtitle="enterprise?.name || ''"
+          initial-delimiter=";" initial-array-mode="join"
+          :filters="{
+            'Empreendimento': enterprise?.name,
+            'Busca': searchTerm,
+            'Série': selectedSerie,
+          }"
           :preselect="[
             'customer_id', 'customer_name', 'unit_name', 'enterprise_name',
             'financial_institution_date', 'total_value_gross', 'total_value_net',

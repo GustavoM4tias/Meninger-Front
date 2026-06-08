@@ -1,77 +1,161 @@
 <script setup>
-import { onMounted, ref, computed } from 'vue';
-import { useRoute } from 'vue-router';
+// /marketing/captacao — Inbox da captação de leads inbound.
+//
+// Estrutura:
+//   1. PageHeader com badge "Modo sombra" e ações (atualizar, abrir Campanhas)
+//   2. CaptureHealthBanner — alertas críticos quando há (dry-run, dead-letter, oldest_held>2d)
+//   3. CaptureSummaryCards — 8 KPIs do período + seletor de período
+//   4. CaptureFiltersBar — toolbar expansível com todos os filtros
+//   5. SegmentedControl — alternar entre 3 views (lista / cards / timeline)
+//   6. View (table | cards | timeline) com lista de leads
+//   7. Paginação (só na lista)
+//   8. LeadDetailModal
+
+import { onMounted, ref, computed, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { useCaptureStore } from '@/stores/Marketing/Capture/captureStore';
+import { useAuthStore } from '@/stores/Settings/Auth/authStore';
+
 import PageContainer from '@/components/UI/PageContainer.vue';
 import PageHeader from '@/components/UI/PageHeader.vue';
-import Surface from '@/components/UI/Surface.vue';
 import Button from '@/components/UI/Button.vue';
-import Input from '@/components/UI/Input.vue';
+import SegmentedControl from '@/components/UI/SegmentedControl.vue';
+
+import CaptureHealthBanner from './components/CaptureHealthBanner.vue';
+import CaptureSummaryCards from './components/CaptureSummaryCards.vue';
+import CaptureFiltersBar from './components/CaptureFiltersBar.vue';
+import LeadsTableView from './components/LeadsTableView.vue';
+import LeadsCardsView from './components/LeadsCardsView.vue';
+import LeadsTimelineView from './components/LeadsTimelineView.vue';
 import LeadDetailModal from './components/LeadDetailModal.vue';
 
 const store = useCaptureStore();
+const authStore = useAuthStore();
 const route = useRoute();
+const router = useRouter();
 
-const STATUS_META = {
-  received:    { label: 'Recebido',           cls: 'bg-slate-500/10 text-slate-600 dark:text-slate-300 border-slate-500/20' },
-  validated:   { label: 'Validado',           cls: 'bg-sky-500/10 text-sky-600 dark:text-sky-300 border-sky-500/20' },
-  held:        { label: 'Aguardando vínculo', cls: 'bg-amber-500/10 text-amber-600 dark:text-amber-300 border-amber-500/20' },
-  routed:      { label: 'Roteado',            cls: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-300 border-indigo-500/20' },
-  dispatching: { label: 'Despachando',        cls: 'bg-sky-500/10 text-sky-600 dark:text-sky-300 border-sky-500/20' },
-  delivered:   { label: 'Entregue',           cls: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 border-emerald-500/20' },
-  rejected:    { label: 'Recusado',           cls: 'bg-red-500/10 text-red-600 dark:text-red-300 border-red-500/20' },
-  failed:      { label: 'Falhou',             cls: 'bg-red-500/10 text-red-600 dark:text-red-300 border-red-500/20' },
-  spam:        { label: 'Spam',               cls: 'bg-slate-500/10 text-slate-500 border-slate-500/20' },
-  historical:  { label: 'Histórico (Meta)',   cls: 'bg-violet-500/10 text-violet-600 dark:text-violet-300 border-violet-500/20' },
-};
-const CHANNEL_LABEL = { meta_lead_ads: 'Meta', site_form: 'Site' };
-
-const FILTER_CHIPS = [
-  { key: '',                  label: 'Todos' },
-  { key: 'held',              label: 'Inbox (aguardando)' },
-  { key: 'historical',        label: 'Histórico Meta' },
-  { key: 'failed,rejected',   label: 'Com erro' },
-  { key: 'routed,dispatching', label: 'Em despacho' },
-  { key: 'delivered',         label: 'Entregues' },
-  { key: 'spam',              label: 'Spam' },
-];
+const isAdmin = computed(() => authStore?.user?.role === 'admin');
 
 const detailOpen = ref(false);
 
-const statusMeta = (s) => STATUS_META[s] || { label: s, cls: 'bg-slate-500/10 text-slate-500 border-slate-500/20' };
-const channelLabel = (c) => CHANNEL_LABEL[c] || c;
-const fmtDate = (d) => d ? new Date(d).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : '—';
-const contato = (lead) => lead.email || lead.telefone || '—';
+const VIEW_OPTIONS = [
+    { value: 'list',     label: 'Lista',    icon: 'fas fa-list' },
+    { value: 'cards',    label: 'Cards',    icon: 'fas fa-table-columns' },
+    { value: 'timeline', label: 'Timeline', icon: 'fas fa-clock-rotate-left' },
+];
 
 const totalPages = computed(() => Math.max(1, Math.ceil(store.total / store.pageSize)));
 
-function setFilter(key) {
-  store.filters.status = key;
-  store.page = 1;
-  store.fetchLeads();
-}
-function search() {
-  store.page = 1;
-  store.fetchLeads();
-}
-function goPage(p) {
-  if (p < 1 || p > totalPages.value) return;
-  store.page = p;
-  store.fetchLeads();
-}
-async function openDetail(id) {
-  detailOpen.value = true;
-  await store.fetchDetail(id);
-}
-function refresh() {
-  store.fetchLeads();
-  store.fetchHealth();
+// O sort vem do servidor por created_at DESC; ajustamos client-side se o usuário
+// pediu 'stuck' (presos há mais tempo = held mais antigos primeiro) ou 'oldest'.
+const orderedLeads = computed(() => {
+    const arr = [...store.leads];
+    const sort = store.filters.sort;
+    if (sort === 'oldest') {
+        return arr.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+    }
+    if (sort === 'stuck') {
+        // Held primeiro, mais antigos primeiro; depois failed antigos; depois o resto.
+        const weight = (l) => l.status === 'held' ? 0 : (l.status === 'failed' || l.status === 'rejected') ? 1 : 2;
+        return arr.sort((a, b) => {
+            const w = weight(a) - weight(b);
+            if (w !== 0) return w;
+            return new Date(a.created_at) - new Date(b.created_at);
+        });
+    }
+    return arr; // 'recent' = default do server
+});
+
+function applyFilters() {
+    store.page = 1;
+    store.fetchLeads();
 }
 
+function focusStatus(filterKey) {
+    // Aceita "delivered" ou "failed,rejected" — converte em array.
+    store.filters.status = String(filterKey).split(',').map(s => s.trim()).filter(Boolean);
+    store.page = 1;
+    store.fetchLeads();
+}
+
+function changePeriod(p) {
+    store.setHealthPeriod(p);
+}
+
+function goPage(p) {
+    if (p < 1 || p > totalPages.value) return;
+    store.page = p;
+    store.fetchLeads();
+}
+
+async function openDetail(id) {
+    detailOpen.value = true;
+    await store.fetchDetail(id);
+}
+
+function refresh() {
+    store.fetchLeads();
+    store.fetchHealth();
+}
+
+async function backfillCampaigns() {
+    // Preview primeiro (dryRun) pra mostrar o impacto antes de gravar.
+    const preview = await store.backfillCampaigns({ dryRun: true });
+    if (!preview) return;
+    if (preview.scanned === 0) {
+        window.alert('Nada a fazer — não há leads com ad_id sem campanha.');
+        return;
+    }
+    const msg = `Resolver campanha de ${preview.updated} lead${preview.updated === 1 ? '' : 's'}?\n\n`
+        + `Analisados: ${preview.scanned}\n`
+        + `Vão ganhar campanha: ${preview.updated}\n`
+        + `Não resolvíveis (ad fora do cache): ${preview.unresolved}\n\n`
+        + (preview.unresolved > 0
+            ? 'Dica: pra resolver os "não resolvíveis", clique em "Sincronizar Meta" — vai puxar todos os Ads e tentar de novo.'
+            : '');
+    if (!window.confirm(msg)) return;
+
+    const result = await store.backfillCampaigns({ dryRun: false });
+    if (!result) {
+        window.alert('Falha no backfill: ' + (store.error || 'erro desconhecido'));
+        return;
+    }
+    window.alert(`✅ ${result.updated} lead${result.updated === 1 ? '' : 's'} com campanha resolvida.`);
+}
+
+async function runFullSync() {
+    const msg = 'Sincronizar tudo da Meta?\n\n'
+        + 'Vai puxar formulários, campanhas, anúncios (TODAS), importar leads históricos dos últimos 30 dias, resolver campanhas pendentes e reconciliar com CV.\n\n'
+        + 'Demora entre 2 e 5 minutos. Continuar?';
+    if (!window.confirm(msg)) return;
+
+    const result = await store.runFullSync({ sinceDays: 90, historicalDays: 30 });
+    if (!result) {
+        window.alert('Falha no sync: ' + (store.error || 'erro desconhecido'));
+        return;
+    }
+    const s = result.summary || result;
+    const linhas = [
+        `Forms: ${s.forms?.forms_total ?? 0} (${s.forms?.forms_new ?? 0} novos)`,
+        `Campanhas: ${s.campaigns?.campaigns_total ?? 0}`,
+        `Ads: ${s.ads?.ads_total ?? 0} em ${s.ads?.campaigns_processed ?? 0} campanhas`,
+        `Backfill: ${s.backfill?.updated ?? 0} campanhas resolvidas`,
+        `Histórico: ${s.historical?.inserted ?? 0} novos, ${s.historical?.duplicates ?? 0} dup`,
+        `CV recon: ${s.reconciliation?.matched ?? 0}/${s.reconciliation?.processed ?? 0}`,
+    ];
+    const erros = s.errors?.length ? `\n\n⚠️ ${s.errors.length} erro(s): ${s.errors.map(e => e.step).join(', ')}` : '';
+    window.alert(`✅ Sync completo em ${s.duration_sec ?? '?'}s.\n\n${linhas.join('\n')}${erros}`);
+}
+
+// Watch nos filtros que não dependem de Aplicar (datas e sort dispara refetch).
+watch(() => [store.filters.period_start, store.filters.period_end, store.filters.sort], () => {
+    // sort é client-side, não refetch. Datas, sim.
+}, { deep: false });
+
 onMounted(async () => {
-  await Promise.all([store.fetchLeads(), store.fetchHealth()]);
-  const leadId = route.query.lead;
-  if (leadId) openDetail(String(leadId));
+    await Promise.all([store.fetchLeads(), store.fetchHealth()]);
+    const leadId = route.query.lead;
+    if (leadId) openDetail(String(leadId));
 });
 </script>
 
@@ -81,123 +165,118 @@ onMounted(async () => {
 
       <PageHeader
         title="Captação de Leads"
-        subtitle="Leads captados por formulário e Meta Lead Ads — despacho ao CV CRM."
+        subtitle="Inbox dos leads inbound (Meta Lead Ads e formulários do site) até o despacho ao CV CRM."
         icon="fas fa-inbox">
         <template #actions>
           <span v-if="store.health?.dry_run"
-            class="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs font-medium text-amber-600 dark:text-amber-300">
+            class="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs font-medium text-amber-600 dark:text-amber-300"
+            title="Os leads não estão sendo enviados ao CV — modo sombra ligado">
             <i class="fas fa-eye-slash"></i> Modo sombra
           </span>
-          <Button variant="secondary" size="sm" icon="fas fa-arrows-rotate" @click="refresh">Atualizar</Button>
+          <Button v-if="isAdmin" variant="primary" size="sm" icon="fas fa-arrows-rotate"
+            @click="runFullSync" :loading="store.actionBusy"
+            title="Puxa tudo da Meta (forms, campanhas, ads, leads históricos) e resolve pendências. 2-5 min.">
+            <span class="hidden lg:inline">Sincronizar Meta</span>
+          </Button>
+          <Button v-if="isAdmin" variant="secondary" size="sm" icon="fas fa-link"
+            @click="backfillCampaigns" :loading="store.actionBusy"
+            title="Resolve campanha rapidamente usando o cache local (sem ir à Meta). Use quando só quiser resolver pendências.">
+            <span class="hidden lg:inline">Resolver campanhas</span>
+          </Button>
+          <Button v-if="isAdmin" variant="secondary" size="sm" icon="fas fa-gear"
+            @click="router.push('/marketing/settings')" title="Settings de captação">
+            <span class="hidden lg:inline">Settings</span>
+          </Button>
+          <Button variant="secondary" size="sm" icon="fas fa-bullhorn"
+            @click="router.push('/marketing/campanhas')" title="Ver campanhas Meta">
+            <span class="hidden lg:inline">Campanhas</span>
+          </Button>
+          <Button variant="primary" size="sm" icon="fas fa-arrows-rotate" @click="refresh" :loading="store.loading">
+            Atualizar
+          </Button>
         </template>
       </PageHeader>
 
-      <!-- Health -->
-      <div v-if="store.health" class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-5">
-        <Surface variant="raised" padding="md">
-          <div class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono mb-1">Aguardando vínculo</div>
-          <div class="text-2xl font-bold font-mono tabular-nums text-amber-600 dark:text-amber-400">{{ store.health.counts.held }}</div>
-        </Surface>
-        <Surface variant="raised" padding="md">
-          <div class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono mb-1">Em despacho</div>
-          <div class="text-2xl font-bold font-mono tabular-nums">{{ store.health.counts.routed + store.health.counts.dispatching }}</div>
-        </Surface>
-        <Surface variant="raised" padding="md">
-          <div class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono mb-1">Entregues</div>
-          <div class="text-2xl font-bold font-mono tabular-nums text-emerald-600 dark:text-emerald-400">{{ store.health.counts.delivered }}</div>
-        </Surface>
-        <Surface variant="raised" padding="md">
-          <div class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono mb-1">Com erro</div>
-          <div class="text-2xl font-bold font-mono tabular-nums text-red-600 dark:text-red-400">{{ store.health.counts.failed + store.health.counts.rejected }}</div>
-        </Surface>
-        <Surface variant="raised" padding="md" :bordered="true" :class="store.health.dead_letter ? 'border-red-500/40' : ''">
-          <div class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono mb-1">Dead-letter</div>
-          <div class="text-2xl font-bold font-mono tabular-nums" :class="store.health.dead_letter ? 'text-red-600 dark:text-red-400' : 'text-ink'">{{ store.health.dead_letter }}</div>
-        </Surface>
+      <!-- Alertas críticos -->
+      <CaptureHealthBanner :health="store.health" />
+
+      <!-- KPIs -->
+      <div class="mb-4">
+        <CaptureSummaryCards
+          :health="store.health"
+          :period="store.healthPeriod"
+          @focus-status="focusStatus"
+          @change-period="changePeriod" />
       </div>
 
       <!-- Filtros -->
-      <Surface variant="raised" padding="sm" class="mb-3">
-        <div class="flex flex-wrap items-center gap-2">
-          <button v-for="chip in FILTER_CHIPS" :key="chip.key" type="button"
-            @click="setFilter(chip.key)"
-            :class="[
-              'rounded-lg px-3 py-1.5 text-xs font-medium transition-colors border',
-              store.filters.status === chip.key
-                ? 'bg-accent text-white border-accent'
-                : 'bg-surface-sunken/40 text-ink-muted border-line hover:bg-surface-hover',
-            ]">
-            {{ chip.label }}
-          </button>
-          <div class="flex-1 min-w-[200px]">
-            <Input v-model="store.filters.q" placeholder="Buscar nome, e-mail ou telefone..."
-              icon-left="fas fa-magnifying-glass" size="sm" @keyup.enter="search" />
-          </div>
-          <Button variant="primary" size="sm" icon="fas fa-magnifying-glass" @click="search">Buscar</Button>
-        </div>
-      </Surface>
+      <div class="mb-3">
+        <CaptureFiltersBar
+          :filtros="store.filters"
+          @update:filtros="v => store.filters = v"
+          :campaign-options="store.campaignOptions"
+          :midia-options="store.midiaOptions"
+          :cv-origem-options="store.cvOrigemOptions"
+          :has-active="store.hasActiveFilters"
+          @buscar="applyFilters"
+          @limpar="store.resetFilters" />
+      </div>
+
+      <!-- View mode + total -->
+      <div class="flex items-center justify-between gap-3 mb-3 flex-wrap">
+        <SegmentedControl
+          :model-value="store.viewMode"
+          @change="store.setViewMode"
+          :options="VIEW_OPTIONS"
+          size="sm" />
+        <span class="text-xs font-mono text-ink-subtle tabular-nums">
+          {{ store.total }} lead{{ store.total === 1 ? '' : 's' }}
+          <span v-if="store.total > store.pageSize">
+            · página {{ store.page }} / {{ totalPages }}
+          </span>
+        </span>
+      </div>
 
       <!-- Erro -->
       <div v-if="store.error"
-        class="mb-4 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2.5 text-sm text-red-700 dark:text-red-300 flex items-center gap-2">
+        class="mb-3 rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2.5 text-sm text-red-700 dark:text-red-300 flex items-center gap-2">
         <i class="fas fa-circle-exclamation"></i>{{ store.error }}
       </div>
 
-      <!-- Tabela -->
-      <Surface variant="raised" padding="none" class="overflow-hidden">
-        <div class="overflow-x-auto">
-          <table class="min-w-full text-sm">
-            <thead class="bg-surface-sunken/30 border-b border-line">
-              <tr>
-                <th class="px-4 py-2.5 text-left text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Status</th>
-                <th class="px-4 py-2.5 text-left text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Canal</th>
-                <th class="px-4 py-2.5 text-left text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Nome</th>
-                <th class="px-4 py-2.5 text-left text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Contato</th>
-                <th class="px-4 py-2.5 text-left text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Mídia</th>
-                <th class="px-4 py-2.5 text-left text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Recebido</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-line/60">
-              <tr v-if="store.loading">
-                <td colspan="6" class="px-4 py-10 text-center text-ink-subtle">
-                  <i class="fas fa-circle-notch fa-spin mr-2"></i>Carregando...
-                </td>
-              </tr>
-              <tr v-else-if="!store.leads.length">
-                <td colspan="6" class="px-4 py-10 text-center text-ink-subtle">Nenhum lead encontrado.</td>
-              </tr>
-              <tr v-else v-for="lead in store.leads" :key="lead.id"
-                @click="openDetail(lead.id)"
-                class="hover:bg-surface-hover/40 cursor-pointer transition-colors">
-                <td class="px-4 py-2.5">
-                  <span :class="['inline-flex rounded-md border px-2 py-0.5 text-xs font-medium', statusMeta(lead.status).cls]">
-                    {{ statusMeta(lead.status).label }}
-                  </span>
-                </td>
-                <td class="px-4 py-2.5 text-ink-muted">{{ channelLabel(lead.channel) }}</td>
-                <td class="px-4 py-2.5">
-                  <div v-if="lead.nome" class="text-ink font-medium">{{ lead.nome }}</div>
-                  <div v-else class="text-ink-subtle italic text-xs">(sem nome — só contato)</div>
-                </td>
-                <td class="px-4 py-2.5 text-ink-muted">{{ contato(lead) }}</td>
-                <td class="px-4 py-2.5 text-ink-muted">{{ lead.midia_slug || '—' }}</td>
-                <td class="px-4 py-2.5 text-ink-subtle font-mono text-xs whitespace-nowrap">{{ fmtDate(lead.created_at) }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+      <!-- View -->
+      <LeadsTableView v-if="store.viewMode === 'list'"
+        :leads="orderedLeads" :loading="store.loading"
+        @open-detail="openDetail" />
+      <LeadsCardsView v-else-if="store.viewMode === 'cards'"
+        :leads="orderedLeads" :loading="store.loading"
+        @open-detail="openDetail" />
+      <LeadsTimelineView v-else-if="store.viewMode === 'timeline'"
+        :leads="orderedLeads" :loading="store.loading"
+        @open-detail="openDetail" />
 
-        <!-- Paginação -->
-        <div v-if="store.total > store.pageSize" class="flex items-center justify-between px-4 py-2.5 border-t border-line">
-          <span class="text-xs text-ink-subtle font-mono">{{ store.total }} lead(s)</span>
-          <div class="flex items-center gap-2">
-            <Button variant="ghost" size="sm" icon="fas fa-chevron-left" :disabled="store.page <= 1" @click="goPage(store.page - 1)" />
-            <span class="text-xs text-ink-muted font-mono">{{ store.page }} / {{ totalPages }}</span>
-            <Button variant="ghost" size="sm" icon="fas fa-chevron-right" :disabled="store.page >= totalPages" @click="goPage(store.page + 1)" />
-          </div>
+      <!-- Paginação (só nas views que precisam) -->
+      <div v-if="store.viewMode !== 'cards' && store.total > store.pageSize"
+        class="flex items-center justify-between mt-3 px-3.5 py-2.5 rounded-xl border border-line bg-surface-raised">
+        <span class="text-xs text-ink-subtle font-mono tabular-nums">
+          {{ ((store.page - 1) * store.pageSize) + 1 }}–{{ Math.min(store.page * store.pageSize, store.total) }}
+          de {{ store.total }}
+        </span>
+        <div class="flex items-center gap-1.5">
+          <Button variant="ghost" size="sm" icon="fas fa-angles-left"
+            :disabled="store.page <= 1" @click="goPage(1)" />
+          <Button variant="ghost" size="sm" icon="fas fa-chevron-left"
+            :disabled="store.page <= 1" @click="goPage(store.page - 1)" />
+          <span class="text-xs text-ink-muted font-mono tabular-nums px-2">
+            {{ store.page }} / {{ totalPages }}
+          </span>
+          <Button variant="ghost" size="sm" icon="fas fa-chevron-right"
+            :disabled="store.page >= totalPages" @click="goPage(store.page + 1)" />
+          <Button variant="ghost" size="sm" icon="fas fa-angles-right"
+            :disabled="store.page >= totalPages" @click="goPage(totalPages)" />
         </div>
-      </Surface>
+      </div>
 
+      <!-- Detalhe -->
       <LeadDetailModal v-model:open="detailOpen" />
 
     </PageContainer>

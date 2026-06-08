@@ -564,7 +564,8 @@ const sortOptions = computed(() => [
     </div>
 
     <Export v-model="open" :source="sortedData"
-      title="Exportação de Vendas × Projeção" filename="Vendas_Projecao"
-      initial-delimiter=";" initial-array-mode="join" :preselect="[]" />
+      title="Vendas x Projeção"
+      initial-delimiter=";" initial-array-mode="join" :preselect="[]"
+      :filters="{ 'Ordenação': sortBy }" />
   </section>
 </template>
