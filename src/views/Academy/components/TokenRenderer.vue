@@ -10,7 +10,7 @@
     <template v-else>
       <div v-for="(p, i) in parts" :key="i">
         <div v-if="p.kind === 'md'" class="markdown text-sm leading-7 text-slate-700 dark:text-slate-200"
-          @click="onArticleLinkClick" @mouseover="onLinkHover" @mouseout="onLinkLeave" v-html="p.html" />
+          @mouseover="onLinkHover" @mouseout="onLinkLeave" v-html="p.html" />
 
         <div v-else class="not-prose">
           <!-- ARTICLE -->
@@ -238,11 +238,11 @@
 
 <script setup>
 import { computed, reactive, ref, watch, onMounted, onBeforeUnmount } from 'vue';
-import { useRouter } from 'vue-router';
 import MarkdownIt from 'markdown-it';
 import anchor from 'markdown-it-anchor';
 import linkAttrs from 'markdown-it-link-attributes';
 import { useAcademyKbIndexStore } from '@/stores/Academy/academyKbIndexStore';
+import { isAcademyContext } from '@/utils/appContext';
 
 const DEBUG = false;
 function dwarn(...args) { console.warn('[TrackTokenRenderer]', ...args); }
@@ -260,26 +260,20 @@ const props = defineProps({
 
 const emit = defineEmits(['open-article', 'open-topic', 'quiz-state', 'quiz-submit']);
 
-// Intercepta cliques em links internos do Academy (ex.: `[texto](/academy/kb/...)`
-// que o admin vinculou pelo botão "🔗 Artigo") para navegar via SPA.
-// Ctrl/Cmd/Shift/botão do meio: deixa o browser tratar (nova aba etc.).
-const router = useRouter();
 const kbIndex = useAcademyKbIndexStore();
 
 onMounted(() => {
   kbIndex.ensureLoaded().catch(() => { /* silencioso */ });
 });
 
-function onArticleLinkClick(e) {
-  if (e.defaultPrevented) return;
-  if (e.ctrlKey || e.metaKey || e.shiftKey) return;
-  if (typeof e.button === 'number' && e.button !== 0) return;
-  const a = e.target?.closest?.('a');
-  if (!a) return;
-  const href = a.getAttribute('href') || '';
-  if (!href.startsWith('/academy/')) return;
-  e.preventDefault();
-  router.push(href).catch(() => { /* rota repetida — ignora */ });
+// Os links no corpo são salvos na forma canônica `/academy/kb/...` (forma usada
+// também por backlinks, notificações e índice de preview). No host Academy as
+// rotas NÃO têm o prefixo `/academy` (ex.: a rota do artigo é `/kb/cat/slug`),
+// então convertemos o link canônico para o path da rota do host atual — sem
+// alterar o href salvo, pra não quebrar backlinks/preview.
+function toSpaPath(href) {
+  if (!href || !href.startsWith('/academy/')) return href;
+  return isAcademyContext() ? href.replace(/^\/academy(?=\/)/, '') : href;
 }
 
 // ── Preview no hover de links internos ───────────────────────────────
@@ -317,7 +311,8 @@ function onLinkHover(e) {
   const a = e.target?.closest?.('a');
   if (!a) return;
   const href = a.getAttribute('href') || '';
-  if (!href.startsWith('/academy/kb/')) return;
+  // aceita as duas formas: canônica (/academy/kb/..) e a do host Academy (/kb/..)
+  if (!/^\/(?:academy\/)?kb\//.test(href)) return;
   // já mostrando para este link?
   if (preview.linkEl === a && preview.visible) {
     clearTimeout(hideTimer);
@@ -361,9 +356,9 @@ function onPreviewLeave() {
 }
 function openPreview() {
   if (!preview.entry) return;
-  const href = `/academy/kb/${encodeURIComponent(preview.entry.categorySlug)}/${encodeURIComponent(preview.entry.slug)}`;
+  const href = toSpaPath(`/academy/kb/${encodeURIComponent(preview.entry.categorySlug)}/${encodeURIComponent(preview.entry.slug)}`);
   preview.visible = false;
-  router.push(href).catch(() => { /* ignora */ });
+  window.open(href, '_blank', 'noopener'); // abre em nova aba, preserva o artigo atual
 }
 
 onBeforeUnmount(() => {
@@ -397,7 +392,19 @@ const md = new MarkdownIt({ html: false, linkify: true, breaks: true, typographe
   .use(linkAttrs, { attrs: { target: '_blank', rel: 'noopener noreferrer' } });
 
 function renderMd(s) {
-  return md.render(String(s || ''));
+  let html = md.render(String(s || ''));
+  // Marca cada menção interna (link /academy/..) com a classe `kb-link` — é por
+  // ela que o CSS aplica negrito + cor chamativa (independe do formato do href).
+  // No host Academy as rotas não têm o prefixo /academy, então também removemos
+  // (/academy/kb/.. -> /kb/..) para a menção abrir na rota certa. Como os links
+  // de markdown já saem com target="_blank" (linkAttrs), abre em NOVA ABA,
+  // preservando o artigo atual.
+  if (isAcademyContext()) {
+    html = html.replace(/<a href="\/academy(\/[^"]*)"/g, '<a class="kb-link" href="$1"');
+  } else {
+    html = html.replace(/<a href="(\/academy\/[^"]*)"/g, '<a class="kb-link" href="$1"');
+  }
+  return html;
 }
 
 /* tokens */
@@ -505,14 +512,14 @@ function articleHref(ref) {
   const categorySlug = pickStr(e?.categorySlug, e?.category);
   const slug = pickStr(e?.slug, e?.articleSlug);
   if (categorySlug && slug) {
-    return `/academy/kb/${categorySlug}/${slug}`;
+    return toSpaPath(`/academy/kb/${categorySlug}/${slug}`);
   }
 
   // 2) se ref vier "category/slug"
   const r = String(ref ?? '').trim();
   if (r.includes('/')) {
     const [cs, as] = r.split('/');
-    if (cs && as) return `/academy/kb/${cs}/${as}`;
+    if (cs && as) return toSpaPath(`/academy/kb/${cs}/${as}`);
   }
 
   // 3) fallback url genérico (se existir)

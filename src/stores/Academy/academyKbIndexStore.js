@@ -57,7 +57,8 @@ export const useAcademyKbIndexStore = defineStore('academyKbIndex', {
         // do índice (ou null se não encontrar / for externo).
         findByHref(href) {
             if (!href) return null;
-            const m = String(href).match(/^\/academy\/kb\/([^/]+)\/([^/?#]+)/);
+            // aceita a forma canônica (/academy/kb/..) e a do host Academy (/kb/..)
+            const m = String(href).match(/^\/(?:academy\/)?kb\/([^/]+)\/([^/?#]+)/);
             if (!m) return null;
             let categorySlug = m[1];
             let slug = m[2];

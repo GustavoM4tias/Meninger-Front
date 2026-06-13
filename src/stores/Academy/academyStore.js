@@ -9,7 +9,7 @@ function safeArray(v) {
 export const useAcademyStore = defineStore('academy', {
     state: () => ({
         panel: {
-            audience: 'BOTH',
+            tokens: [],
             kbUpdates: [],
             openQuestions: [],
             tracksInProgress: [],
@@ -26,14 +26,15 @@ export const useAcademyStore = defineStore('academy', {
     }),
 
     actions: {
-        async fetchPanelSummary({ audience = 'BOTH' } = {}) {
+        // audience/tokens são derivados no servidor — não enviamos do cliente.
+        async fetchPanelSummary(_opts = {}) {
             const carregamento = useCarregamentoStore();
             this.error = null;
 
             try {
                 carregamento.iniciarCarregamento();
 
-                const data = await requestWithAuth(`/academy/panel/summary?audience=${encodeURIComponent(audience)}`);
+                const data = await requestWithAuth('/academy/panel/summary');
 
                 const kbUpdates = safeArray(data?.kbUpdates);
                 const openQuestions = safeArray(data?.openQuestions);
@@ -41,7 +42,7 @@ export const useAcademyStore = defineStore('academy', {
                 const highlights = safeArray(data?.highlights);
 
                 this.panel = {
-                    audience: data?.audience || audience,
+                    tokens: safeArray(data?.tokens),
                     kbUpdates,
                     openQuestions,
                     tracksInProgress,

@@ -35,6 +35,13 @@ export default [
             },
 
             {
+                path: 'bolao',
+                name: 'Bolão da Copa',
+                component: () => import('@/views/Office/Bolao/Index.vue'),
+                meta: { requiresAuth: true, searchable: true, content: 'Bolão da Copa — palpites, placar ao vivo e ranking' },
+            },
+
+            {
                 path: 'marketing',
                 name: 'marketing',
                 meta: { requiresAuth: true },
@@ -215,6 +222,12 @@ export default [
                         name: 'Auto-Sync Bills',
                         component: () => import('@/views/Office/Financeiro/AutoSync/Index.vue'),
                         meta: { requiresAuth: true, requiresAdmin: true, searchable: false, content: 'Monitoramento do auto-sync diário de títulos do Sienge' },
+                    },
+                    {
+                        path: 'inadimplencia',
+                        name: 'Inadimplência',
+                        component: () => import('@/views/Office/Financeiro/Inadimplencia/Index.vue'),
+                        meta: { requiresAuth: true, requiresAdmin: true, searchable: false, content: 'Acompanhamento da inadimplência de clientes (backup Sienge)' },
                     },
                 ],
             },

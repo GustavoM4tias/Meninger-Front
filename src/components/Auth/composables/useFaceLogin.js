@@ -98,6 +98,7 @@ export function useFaceLogin({ videoRef, onSuccess } = {}) {
       const result = await faceStore.identify(embedding);
       if (result?.success && result?.data?.token) {
         authStore.setToken(result.data.token);
+        authStore.setRefreshToken(result.data.refreshToken);
         await authStore.fetchUserInfo();
         status.value = 'success';
         await nextTick();

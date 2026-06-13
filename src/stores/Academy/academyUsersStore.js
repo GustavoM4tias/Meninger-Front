@@ -27,7 +27,7 @@ export const useAcademyUsersStore = defineStore('academyUsers', {
     }),
 
     actions: {
-        async fetchRank({ q = '', page = 1, pageSize = 20, audience = 'BOTH' } = {}) {
+        async fetchRank({ q = '', page = 1, pageSize = 20 } = {}) {
             const carregamento = useCarregamentoStore();
             this.error = null;
 
@@ -37,8 +37,7 @@ export const useAcademyUsersStore = defineStore('academyUsers', {
                 const data = await requestWithAuth(
                     `/academy/users/rank?q=${encodeURIComponent(q || '')}` +
                     `&page=${encodeURIComponent(page)}` +
-                    `&pageSize=${encodeURIComponent(pageSize)}` +
-                    `&audience=${encodeURIComponent(audience)}`
+                    `&pageSize=${encodeURIComponent(pageSize)}`
                 );
 
                 this.list = {
@@ -58,7 +57,7 @@ export const useAcademyUsersStore = defineStore('academyUsers', {
             }
         },
 
-        async fetchUserProfile(userId, { audience = 'BOTH' } = {}) {
+        async fetchUserProfile(userId, _opts = {}) {
             const carregamento = useCarregamentoStore();
             this.error = null;
             this.profile.loaded = false;
@@ -67,7 +66,7 @@ export const useAcademyUsersStore = defineStore('academyUsers', {
                 carregamento.iniciarCarregamento();
 
                 const data = await requestWithAuth(
-                    `/academy/users/${userId}/summary?audience=${encodeURIComponent(audience)}`
+                    `/academy/users/${userId}/summary`
                 );
 
                 this.profile.data = data || null;

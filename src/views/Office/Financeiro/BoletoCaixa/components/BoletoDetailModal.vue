@@ -33,18 +33,36 @@ const tabOptions = [
   { value: 'pdf',      label: 'PDF',      icon: 'fas fa-file-pdf' },
 ];
 
-// Carrega timeline quando abre / quando troca o item
-watch(() => [props.open, props.live?.id], async ([open, id]) => {
+// Carrega timeline quando abre / quando troca o item.
+//
+// IMPORTANTE: `store.timelineEvents` e `store.timelineHistory` são singletons
+// no Pinia — compartilhados entre QUALQUER modal/componente que use o store.
+// Se abrir boleto A, fechar, abrir boleto B → enquanto o fetchTimeline(B)
+// está pendente, o modal renderiza os eventos do A (resíduo). Por isso
+// limpamos SINCRONAMENTE antes de fazer fetch.
+//
+// `props.live` é um computed, NÃO uma prop — o watch deve observar
+// `props.item?.id` (a prop real recebida do pai).
+watch(() => [props.open, props.item?.id], async ([open, id]) => {
   if (open && id) {
     activeTab.value = 'summary';
+    actionMsg.value = null;
+    // Limpa IMEDIATAMENTE o estado do boleto anterior, antes do fetch async.
+    store.timelineEvents = [];
+    store.timelineHistory = null;
     await store.fetchTimeline(id);
   } else if (!open) {
     stopPolling();
+    // Ao fechar, limpa pra próxima abertura não mostrar resíduo de quem fechou.
+    store.timelineEvents = [];
+    store.timelineHistory = null;
   }
 }, { immediate: true });
 
 function close() {
   stopPolling();
+  store.timelineEvents = [];
+  store.timelineHistory = null;
   emit('close');
 }
 

@@ -178,6 +178,11 @@
               <p class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1">Safety lote Sienge (min)</p>
               <p class="text-sm text-ink font-mono">{{ form.delay_situacao_sucesso_min ?? '—' }}</p>
             </div>
+            <div>
+              <p class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1">Máx. dias vencimento (geral)</p>
+              <p class="text-sm text-ink font-mono">{{ form.max_dias_vencimento ?? '—' }} dias</p>
+              <p class="text-[10px] text-ink-subtle mt-0.5">Override por empreendimento configurável na regra de comissão.</p>
+            </div>
           </div>
 
           <!-- ── MODO EDIÇÃO ───────────────────────────────────────────────── -->
@@ -256,6 +261,12 @@
               label="Safety lote Sienge (min)"
               placeholder="Ex: 2"
               hint="Se faltam menos que isto pro próximo lote (5/5min), pula pro seguinte. Default 2 → delay efetivo 3-7 min." />
+            <Input
+              v-model.number="form.max_dias_vencimento"
+              type="number"
+              label="Máx. dias vencimento (geral)"
+              placeholder="Ex: 10"
+              hint="Vencimentos acima deste limite são rejeitados. Override por empreendimento na regra de comissão." />
           </div>
         </Surface>
 
@@ -297,6 +308,7 @@
                   <th class="text-left px-3 py-2 text-[11px] font-mono uppercase tracking-wider text-ink-subtle">ID Emp.</th>
                   <th class="text-left px-3 py-2 text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Empreendimento</th>
                   <th class="text-right px-3 py-2 text-[11px] font-mono uppercase tracking-wider text-ink-subtle">% Boleto</th>
+                  <th class="text-center px-3 py-2 text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Máx dias</th>
                   <th class="text-left px-3 py-2 text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Observação</th>
                   <th class="text-center px-3 py-2 text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Ativo</th>
                   <th class="px-3 py-2"></th>
@@ -309,6 +321,15 @@
                   <td class="px-3 py-2 text-ink">{{ rule.empreendimento_nome || '—' }}</td>
                   <td class="px-3 py-2 text-right font-mono tabular-nums font-semibold">
                     {{ Number(rule.percentual_boleto).toFixed(2) }}%
+                  </td>
+                  <td class="px-3 py-2 text-center font-mono text-xs">
+                    <template v-if="rule.max_dias_vencimento">
+                      <span class="text-ink font-semibold">{{ rule.max_dias_vencimento }}</span>
+                      <span class="text-ink-subtle"> d</span>
+                    </template>
+                    <span v-else class="text-ink-subtle italic" :title="`Usa padrão geral (${form.max_dias_vencimento ?? 10} dias)`">
+                      padrão
+                    </span>
                   </td>
                   <td class="px-3 py-2 text-xs text-ink-muted">{{ rule.observacao || '—' }}</td>
                   <td class="px-3 py-2 text-center">
@@ -375,6 +396,15 @@
               label="% do valor da série que vai para o boleto"
               placeholder="Ex: 20 (boleto recebe 20% do valor da série)"
               hint="Ex.: série R$ 10.000 + 20% = boleto de R$ 2.000. Use 100 para emitir valor cheio." />
+
+            <Input
+              v-model.number="ruleModal.form.max_dias_vencimento"
+              type="number"
+              min="1"
+              max="90"
+              label="Máx. dias vencimento (override)"
+              :placeholder="`Vazio = usa padrão geral (${form.max_dias_vencimento ?? 10} dias)`"
+              hint="Override do limite de vencimento só para este empreendimento. Deixe vazio para usar o padrão geral." />
 
             <div>
               <label class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1.5 block">
@@ -545,7 +575,28 @@
       <div v-if="activeTab === 'history'" class="space-y-4">
 
         <!-- Filtros (componente dedicado, padrão DashboardFilters) -->
-        <BoletoFilters @filter-changed="store.fetchHistory()" />
+        <BoletoFilters @filter-changed="onFiltersChanged" />
+
+        <!-- KPIs (reflete o conjunto filtrado) -->
+        <div v-if="store.stats" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          <Surface v-for="kpi in kpiCards" :key="kpi.label"
+            variant="raised" padding="sm" class="surface-gradient relative overflow-hidden">
+            <div class="flex items-start justify-between gap-2">
+              <div class="min-w-0">
+                <p class="text-[10px] font-mono uppercase tracking-wider text-ink-subtle">{{ kpi.label }}</p>
+                <p class="mt-1 text-xl font-semibold text-ink tabular-nums leading-tight truncate" :title="kpi.value">
+                  {{ kpi.value }}
+                </p>
+                <p v-if="kpi.sub" class="mt-0.5 text-[11px] text-ink-muted truncate" :title="kpi.sub">
+                  {{ kpi.sub }}
+                </p>
+              </div>
+              <div class="h-8 w-8 rounded-lg grid place-items-center border shrink-0" :class="kpi.iconClass">
+                <i :class="kpi.icon" class="text-xs"></i>
+              </div>
+            </div>
+          </Surface>
+        </div>
 
         <!-- Loading -->
         <div v-if="store.historyLoading" class="flex items-center justify-center py-12 text-ink-muted">
@@ -741,6 +792,7 @@ const form = ref({
   situacao_baixado_id: 29,
   tolerancia_dias_uteis: 1,
   delay_situacao_sucesso_min: 2,
+  max_dias_vencimento: 10,
   active: false,
 });
 
@@ -760,6 +812,7 @@ function snapshotCvFields() {
     situacao_baixado_id: form.value.situacao_baixado_id,
     tolerancia_dias_uteis: form.value.tolerancia_dias_uteis,
     delay_situacao_sucesso_min: form.value.delay_situacao_sucesso_min,
+    max_dias_vencimento: form.value.max_dias_vencimento,
   };
 }
 
@@ -802,6 +855,63 @@ async function handleSave() {
   await store.saveSettings(payload);
 }
 
+// ── Filtros: ao aplicar, refaz history + stats em paralelo ────────────────────
+function onFiltersChanged() {
+  store.fetchHistory();
+  store.fetchStats();
+}
+
+// ── KPIs ──────────────────────────────────────────────────────────────────────
+const kpiCards = computed(() => {
+  const s = store.stats;
+  if (!s) return [];
+  const pct = (key) => s.percent?.[key] ?? 0;
+  return [
+    {
+      label: 'Emitidos',
+      value: s.emitidos.qty,
+      sub: formatCurrency(s.emitidos.valor),
+      icon: 'fas fa-barcode',
+      iconClass: 'bg-accent-soft text-accent border-accent/20',
+    },
+    {
+      label: 'Pagos',
+      value: s.paid.qty,
+      sub: `${pct('paid')}% · ${formatCurrency(s.paid.valor)}`,
+      icon: 'fas fa-circle-check',
+      iconClass: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
+    },
+    {
+      label: 'Pendentes',
+      value: s.pending.qty,
+      sub: `${pct('pending')}% · ${formatCurrency(s.pending.valor)}`,
+      icon: 'fas fa-clock',
+      iconClass: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20',
+    },
+    {
+      label: 'Baixados',
+      value: s.cancelled.qty,
+      sub: `${pct('cancelled')}% evasão · ${formatCurrency(s.cancelled.valor)}`,
+      icon: 'fas fa-ban',
+      iconClass: 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20',
+    },
+    {
+      label: 'Erros emissão',
+      value: s.errors.qty,
+      sub: `${pct('errorEmissao')}% do total`,
+      icon: 'fas fa-circle-exclamation',
+      iconClass: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
+    },
+    {
+      label: 'Valor pago',
+      value: formatCurrency(s.paid.valor),
+      sub: `de ${formatCurrency(s.emitidos.valor)} emitido`,
+      icon: 'fas fa-sack-dollar',
+      iconClass: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
+    },
+  ];
+});
+
 // ── Formatação ────────────────────────────────────────────────────────────────
 function formatCurrency(value) {
   return Number(value).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -825,6 +935,7 @@ function statusVariant(status) {
     processing: 'info',
     success:    'success',
     error:      'danger',
+    skipped:    'neutral',
   }[status] || 'neutral';
 }
 
@@ -833,11 +944,17 @@ function statusIcon(status) {
     processing: 'fas fa-spinner fa-spin',
     success:    'fas fa-check',
     error:      'fas fa-times',
+    skipped:    'fas fa-forward',
   }[status] || 'fas fa-question';
 }
 
 function statusLabel(status) {
-  return { processing: 'Processando', success: 'Sucesso', error: 'Erro' }[status] || status;
+  return {
+    processing: 'Processando',
+    success: 'Sucesso',
+    error: 'Erro',
+    skipped: 'Sem série',
+  }[status] || status;
 }
 
 // ── Payment status (pending/paid/cancelled/error) ─────────────────────────────
@@ -872,7 +989,7 @@ const ruleModal = ref({
   id: null,
   saving: false,
   error: '',
-  form: { idempreendimento_cv: null, empreendimento_nome: '', percentual_boleto: 100, observacao: '', active: true },
+  form: { idempreendimento_cv: null, empreendimento_nome: '', percentual_boleto: 100, max_dias_vencimento: null, observacao: '', active: true },
 });
 
 // Opções para o select de empreendimentos no modal.
@@ -907,6 +1024,7 @@ function openRuleModal(rule = null) {
         idempreendimento_cv: rule.idempreendimento_cv,
         empreendimento_nome: rule.empreendimento_nome || '',
         percentual_boleto: Number(rule.percentual_boleto),
+        max_dias_vencimento: rule.max_dias_vencimento ?? null,
         observacao: rule.observacao || '',
         active: rule.active,
       },
@@ -914,7 +1032,7 @@ function openRuleModal(rule = null) {
   } else {
     ruleModal.value = {
       open: true, id: null, saving: false, error: '',
-      form: { idempreendimento_cv: null, empreendimento_nome: '', percentual_boleto: 100, observacao: '', active: true },
+      form: { idempreendimento_cv: null, empreendimento_nome: '', percentual_boleto: 100, max_dias_vencimento: null, observacao: '', active: true },
     };
   }
 }
@@ -977,11 +1095,13 @@ onMounted(async () => {
       form.value.situacao_baixado_id = store.settings.situacao_baixado_id ?? 29;
       form.value.tolerancia_dias_uteis = store.settings.tolerancia_dias_uteis ?? 1;
       form.value.delay_situacao_sucesso_min = store.settings.delay_situacao_sucesso_min ?? 2;
+      form.value.max_dias_vencimento = store.settings.max_dias_vencimento ?? 10;
       form.value.active = store.settings.active ?? false;
     }
     await store.fetchComissionRules();
     await store.fetchWhatsappTemplate();
   }
-  await store.fetchHistory();
+  // fetchHistory/fetchStats são disparados pelo BoletoFilters.onMounted via
+  // emit('filter-changed') → onFiltersChanged() (com os defaults de 30 dias).
 });
 </script>

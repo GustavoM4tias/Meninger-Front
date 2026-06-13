@@ -13,18 +13,20 @@
                     Para liberar esta trilha, conclua antes:
                 </p>
                 <ul class="mt-2 space-y-1.5">
-                    <li v-for="b in blockedBy" :key="b.slug"
+                    <li v-for="(b, i) in blockedBy" :key="b.slug || `restricted-${i}`"
                         class="flex items-center justify-between gap-3 rounded-xl bg-white/70 dark:bg-slate-900/40 px-3 py-2">
                         <div class="min-w-0">
                             <div class="truncate text-sm font-medium text-slate-900 dark:text-slate-100">
-                                {{ b.title || b.slug }}
+                                <i v-if="b.restricted" class="fa-solid fa-lock mr-1 text-[10px] opacity-60"></i>
+                                {{ b.title || b.slug || 'Conteúdo restrito' }}
                             </div>
                             <div class="text-xs text-slate-500 dark:text-slate-400">
                                 {{ b.policy === 'LENIENT' ? 'Precisa ter iniciado' : 'Precisa estar 100% concluída' }}
                                 <span v-if="b.userProgressPercent != null"> • você está em {{ b.userProgressPercent }}%</span>
                             </div>
                         </div>
-                        <button type="button"
+                        <!-- Pré-requisito fora do seu público: sem link (fale com seu gestor). -->
+                        <button v-if="b.slug" type="button"
                             class="shrink-0 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
                             @click="$emit('open', b.slug)">
                             Ir para a trilha

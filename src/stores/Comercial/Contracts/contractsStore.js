@@ -332,16 +332,13 @@ export const useContractsStore = defineStore('contracts', {
                 payment_conditions: Array.isArray(c.payment_conditions) ? [...c.payment_conditions] : []
             })
 
-            // Filter hidden enterprises (admin-configured)
-            let visibleContracts = this.contracts
-            try {
-                const hiddenStore = useHiddenEnterprisesStore()
-                if (hiddenStore.hiddenIds.size > 0) {
-                    visibleContracts = this.contracts.filter(
-                        (c) => !hiddenStore.hiddenIds.has(Number(c.enterprise_id))
-                    )
-                }
-            } catch { /* store may not be ready yet */ }
+            // Filter hidden enterprises (admin-configured).
+            // hiddenIds é lido SEMPRE (sem try/catch ou guard) para que a dependência
+            // reativa seja registrada no getter e o dashboard reaja a add/remove.
+            const hiddenIds = useHiddenEnterprisesStore().hiddenIds
+            let visibleContracts = hiddenIds.size > 0
+                ? this.contracts.filter((c) => !hiddenIds.has(Number(c.enterprise_id)))
+                : this.contracts
 
             // TR-satellite merge rule (admin-configured).
             // Empreendimentos que carregam apenas o contrato de Terreno (TR) — separado

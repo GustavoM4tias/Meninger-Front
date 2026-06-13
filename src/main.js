@@ -56,7 +56,11 @@ if (isDark) document.documentElement.classList.add('dark');
 
 // ✅ initializeAuth: só aqui, uma vez
 import { useAuthStore } from './stores/Settings/Auth/authStore';
+import { installAuthInterceptor } from './utils/Auth/installAuthInterceptor';
 const authStore = useAuthStore();
+// Interceptor global: 401 da nossa API → limpa sessão e manda pro login,
+// evitando a tela presa em "Token inválido.".
+installAuthInterceptor();
 authStore.initializeAuth();
 
 app.mount('#app');

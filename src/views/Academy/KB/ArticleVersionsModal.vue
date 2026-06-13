@@ -6,7 +6,7 @@
                 @click.stop>
                 <header class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 px-6 py-4">
                     <div>
-                        <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Histórico de versões</h2>
+                        <h2 class="font-display text-xl font-semibold text-slate-900 dark:text-white">Histórico de versões</h2>
                         <p class="text-sm text-slate-500 dark:text-slate-400">
                             Cada edição material gera uma versão. Restaurar cria um snapshot do estado atual antes.
                         </p>

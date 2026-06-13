@@ -1,6 +1,6 @@
 <template>
     <div
-        class="flex items-center gap-4 rounded-2xl border p-4 transition-colors"
+        class="flex items-center gap-4 rounded-2xl border p-4 shadow-[0_2px_20px_-12px_rgb(15_23_42/0.18)] transition-colors"
         :class="statusBorder">
         <!-- Selo -->
         <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl"
@@ -62,7 +62,7 @@ const statusLabel = computed(() => ({
 }[status.value] || 'Válido'));
 
 const statusBorder = computed(() => ({
-    ACTIVE: 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900',
+    ACTIVE: 'border-slate-200/70 dark:border-slate-800 bg-white dark:bg-slate-900',
     REVOKED: 'border-rose-200 dark:border-rose-900/50 bg-rose-50/40 dark:bg-rose-900/10',
     EXPIRED: 'border-amber-200 dark:border-amber-900/50 bg-amber-50/40 dark:bg-amber-900/10',
 }[status.value]));

@@ -36,7 +36,7 @@
 
         <!-- Tópico -->
         <section
-            class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            class="rounded-2xl border border-slate-200/70 bg-white p-6 shadow-[0_2px_20px_-12px_rgb(15_23_42/0.18)] dark:border-slate-800 dark:bg-slate-900">
             <div class="flex flex-wrap items-center gap-2">
                 <span
                     class="rounded-full bg-indigo-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300">
@@ -96,9 +96,9 @@
 
         <!-- Responder -->
         <section
-            class="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            class="rounded-2xl border border-slate-200/70 bg-white shadow-[0_2px_20px_-12px_rgb(15_23_42/0.18)] dark:border-slate-800 dark:bg-slate-900">
             <div class="border-b border-slate-100 px-5 py-4 dark:border-slate-800">
-                <h2 class="flex items-center gap-2 text-base font-semibold text-slate-900 dark:text-white">
+                <h2 class="flex items-center gap-2 font-display text-lg font-semibold text-slate-900 dark:text-white">
                     <i class="fa-solid fa-reply text-indigo-500"></i>
                     Responder
                 </h2>
@@ -127,9 +127,9 @@
 
         <!-- Respostas -->
         <section
-            class="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            class="rounded-2xl border border-slate-200/70 bg-white shadow-[0_2px_20px_-12px_rgb(15_23_42/0.18)] dark:border-slate-800 dark:bg-slate-900">
             <div class="border-b border-slate-100 px-5 py-4 dark:border-slate-800">
-                <h2 class="flex items-center gap-2 text-base font-semibold text-slate-900 dark:text-white">
+                <h2 class="flex items-center gap-2 font-display text-lg font-semibold text-slate-900 dark:text-white">
                     <i class="fa-solid fa-comments text-indigo-500"></i>
                     Respostas
                 </h2>
@@ -280,7 +280,7 @@ const sending = ref(false);
 const sendError = ref('');
 
 async function load() {
-    await store.fetchTopic(id, { audience: 'BOTH' });
+    await store.fetchTopic(id);
 }
 
 async function send() {

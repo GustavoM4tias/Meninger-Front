@@ -33,9 +33,9 @@
         <div class="grid grid-cols-1 gap-5 lg:grid-cols-12">
             <!-- Meta -->
             <section
-                class="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900 lg:col-span-4">
+                class="rounded-2xl border border-slate-200/70 bg-white shadow-[0_2px_20px_-12px_rgb(15_23_42/0.18)] dark:border-slate-800 dark:bg-slate-900 lg:col-span-4">
                 <div class="border-b border-slate-100 px-5 py-4 dark:border-slate-800">
-                    <h2 class="flex items-center gap-2 text-base font-semibold text-slate-900 dark:text-white">
+                    <h2 class="flex items-center gap-2 font-display text-lg font-semibold text-slate-900 dark:text-white">
                         <i class="fa-solid fa-circle-info text-indigo-500"></i>
                         Dados
                     </h2>
@@ -90,9 +90,9 @@
 
             <!-- Conteúdo -->
             <section
-                class="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900 lg:col-span-8">
+                class="rounded-2xl border border-slate-200/70 bg-white shadow-[0_2px_20px_-12px_rgb(15_23_42/0.18)] dark:border-slate-800 dark:bg-slate-900 lg:col-span-8">
                 <div class="border-b border-slate-100 px-5 py-4 dark:border-slate-800">
-                    <h2 class="flex items-center gap-2 text-base font-semibold text-slate-900 dark:text-white">
+                    <h2 class="flex items-center gap-2 font-display text-lg font-semibold text-slate-900 dark:text-white">
                         <i class="fa-solid fa-comments text-indigo-500"></i>
                         Conteúdo
                     </h2>
@@ -227,7 +227,7 @@ function typeLabel(typeEnum) {
 
 async function refresh() {
   if (!topicId.value) return;
-  await store.fetchTopic(topicId.value, { audience: 'BOTH' });
+  await store.fetchTopic(topicId.value);
 }
 
 function clearReply() {

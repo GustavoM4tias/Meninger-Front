@@ -31,9 +31,9 @@
             {{ store.error }}
         </div>
 
-        <section class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
+        <section class="rounded-2xl border border-slate-200/70 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-[0_2px_20px_-12px_rgb(15_23_42/0.18)]">
             <div class="border-b border-slate-100 dark:border-slate-800 px-5 py-4">
-                <h2 class="text-base font-semibold text-slate-900 dark:text-white">
+                <h2 class="font-display text-lg font-semibold text-slate-900 dark:text-white">
                     Regras ativas <span class="text-slate-400 dark:text-slate-500">({{ store.list.length }})</span>
                 </h2>
             </div>

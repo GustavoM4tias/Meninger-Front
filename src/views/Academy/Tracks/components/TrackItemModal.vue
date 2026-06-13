@@ -11,7 +11,7 @@
                     <div class="flex items-start justify-between gap-4">
                         <div class="min-w-0">
                             <div class="flex items-center gap-2 flex-wrap">
-                                <h2 class="text-lg font-semibold text-slate-900 dark:text-white truncate">
+                                <h2 class="font-display text-xl font-semibold text-slate-900 dark:text-white truncate">
                                     {{ item?.title || 'Conteúdo' }}
                                 </h2>
 

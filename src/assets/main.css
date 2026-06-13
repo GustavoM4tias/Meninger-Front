@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400..700&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -99,6 +99,14 @@
     @apply border-t border-line-subtle;
   }
 
+  /* Tipografia de display do Academy (serif Fraunces) — usada em títulos de
+     telas e seções para o ar editorial. */
+  .font-display {
+    font-family: 'Fraunces', Georgia, 'Times New Roman', serif;
+    font-optical-sizing: auto;
+    letter-spacing: -0.015em;
+  }
+
   /* gradiente sutil top-down em surfaces (dá leve "viço" sem ser chamativo) */
   .surface-gradient {
     background-image:
@@ -166,3 +174,75 @@ input[type="checkbox"]:active {
   background: rgb(var(--accent) / 0.25);
   color: rgb(var(--ink));
 }
+
+/* ───────────────────────────────────────────────
+   Menções entre artigos (links internos do Academy)
+   Toda menção a outro artigo/tópico é um link /academy/...
+   dentro do conteúdo markdown (KB e trilhas). Aqui ela ganha
+   negrito + cor chamativa (emerald, a mesma do card de preview)
+   + sublinhado pontilhado e um ↗, com realce no hover — para
+   induzir o leitor a passar o mouse (mostra o preview) e clicar.
+   Os cartões de embed (token-card) ficam de fora: não usam .markdown.
+   ─────────────────────────────────────────────── */
+.markdown a.kb-link {
+  font-weight: 700;
+  color: rgb(5 150 105);                 /* emerald-600 */
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+  border-radius: 0.3rem;
+  padding: 0 0.15rem;
+  transition: color .15s ease, background-color .15s ease, text-decoration-color .15s ease;
+  cursor: pointer;
+}
+
+.markdown a.kb-link::after {
+  content: "↗";
+  font-size: 0.72em;
+  margin-left: 0.1em;
+  vertical-align: super;
+  opacity: 0.65;
+}
+
+.markdown a.kb-link:hover {
+  color: rgb(4 120 87);                  /* emerald-700 */
+  background-color: rgb(16 185 129 / 0.12);
+  text-decoration-style: solid;
+}
+
+.dark .markdown a.kb-link {
+  color: rgb(52 211 153);                /* emerald-400 */
+}
+
+.dark .markdown a.kb-link:hover {
+  color: rgb(110 231 183);               /* emerald-300 */
+  background-color: rgb(16 185 129 / 0.16);
+}
+
+/* ───────────────────────────────────────────────
+   Dark mode do corpo do artigo (.kb-reading)
+   As regras `:global(.dark) … :deep(…)` do Article.vue NÃO compilam (combinação
+   :global + :deep no Vue scoped), então o texto saía escuro no dark mode. Aqui
+   forçamos as cores claras no escopo global; o prefixo `html.dark` garante a
+   especificidade necessária para vencer as regras scoped de tema claro.
+   ─────────────────────────────────────────────── */
+html.dark .kb-reading,
+html.dark .kb-reading .markdown { color: rgb(203 213 225); }            /* slate-300 */
+
+html.dark .kb-reading .markdown h1,
+html.dark .kb-reading .markdown h2,
+html.dark .kb-reading .markdown h3 { color: rgb(241 245 249); }         /* slate-100 */
+
+html.dark .kb-reading .markdown strong { color: rgb(241 245 249); }
+html.dark .kb-reading .markdown blockquote { color: rgb(226 232 240); }
+html.dark .kb-reading .markdown thead th { color: rgb(241 245 249); }
+html.dark .kb-reading .markdown code { color: rgb(226 232 240); }
+
+/* bordas / fundos que também eram só claros */
+html.dark .kb-reading .markdown h2 { border-top-color: rgb(30 41 59); }
+html.dark .kb-reading .markdown table,
+html.dark .kb-reading .markdown thead th,
+html.dark .kb-reading .markdown tbody td { border-color: rgb(30 41 59); }
+html.dark .kb-reading .markdown tbody tr:nth-child(even) { background: rgb(15 23 42 / 0.4); }
+html.dark .kb-reading .markdown img { border-color: rgb(30 41 59); }

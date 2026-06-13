@@ -31,9 +31,9 @@
         <div class="grid grid-cols-1 gap-5 lg:grid-cols-12">
             <!-- Form -->
             <section
-                class="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900 lg:col-span-8">
+                class="rounded-2xl border border-slate-200/70 bg-white shadow-[0_2px_20px_-12px_rgb(15_23_42/0.18)] dark:border-slate-800 dark:bg-slate-900 lg:col-span-8">
                 <div class="border-b border-slate-100 px-6 py-5 dark:border-slate-800">
-                    <h2 class="flex items-center gap-2 text-base font-semibold text-slate-900 dark:text-white">
+                    <h2 class="flex items-center gap-2 font-display text-lg font-semibold text-slate-900 dark:text-white">
                         <i class="fa-solid fa-route text-indigo-500"></i>
                         Dados da trilha
                     </h2>
@@ -78,6 +78,14 @@
                                 placeholder="Objetivo da trilha, o que a pessoa vai aprender e o resultado esperado."
                                 class="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-4 focus:ring-indigo-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-indigo-700 dark:focus:ring-indigo-950/60" />
                         </label>
+
+                        <div class="md:col-span-12">
+                            <AudienceSelector v-model="form.audiences" />
+                            <p class="mt-2 text-[11px] text-slate-500 dark:text-slate-400">
+                                <i class="fa-solid fa-circle-info mr-1"></i>
+                                Cada artigo vinculado precisa cobrir TODOS os públicos selecionados aqui.
+                            </p>
+                        </div>
                     </div>
 
                     <!-- CTA secundário -->
@@ -100,7 +108,7 @@
             <!-- Side help -->
             <aside class="space-y-5 lg:col-span-4">
                 <div
-                    class="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                    class="rounded-2xl border border-slate-200/70 bg-white shadow-[0_2px_20px_-12px_rgb(15_23_42/0.18)] dark:border-slate-800 dark:bg-slate-900">
                     <div class="border-b border-slate-100 px-5 py-4 dark:border-slate-800">
                         <h3 class="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-white">
                             <i class="fa-solid fa-list-check text-indigo-500"></i>
@@ -155,10 +163,11 @@
                     class="rounded-2xl border border-indigo-100 bg-indigo-50/60 p-5 dark:border-indigo-900/40 dark:bg-indigo-950/30">
                     <div class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-indigo-700 dark:text-indigo-300">
                         <i class="fa-solid fa-circle-info"></i>
-                        Audiência × Vínculos
+                        Visibilidade × Vínculos
                     </div>
                     <p class="mt-2 text-xs leading-relaxed text-slate-600 dark:text-slate-300">
-                        A <span class="font-semibold">audiência</span> é o filtro amplo do módulo.
+                        A <span class="font-semibold">visibilidade</span> define quais perfis
+                        (interno, corretor, etc.) podem ver a trilha.
                         Os <span class="font-semibold">vínculos</span> são o controle fino
                         (cargos / cidade / depto / usuários).
                     </p>
@@ -172,7 +181,10 @@
 import { reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import AcademyPageHeader from '@/views/Academy/components/AcademyPageHeader.vue';
+import AudienceSelector from '@/views/Academy/components/AudienceSelector.vue';
 import { useAcademyTracksAdminStore } from '@/stores/Academy/academyTracksAdminStore';
+
+const DEFAULT_AUDIENCES = ['INTERNAL', 'GESTOR', 'BROKER', 'REALESTATE', 'CORRESPONDENT'];
 
 const router = useRouter();
 const store = useAcademyTracksAdminStore();
@@ -184,7 +196,7 @@ const form = reactive({
     title: '',
     description: '',
     status: 'DRAFT',
-    audience: 'BOTH',
+    audiences: DEFAULT_AUDIENCES.slice(),
     slug: '',
 });
 
@@ -199,8 +211,9 @@ function validate() {
     const st = String(form.status || 'DRAFT').toUpperCase();
     if (!['DRAFT', 'PUBLISHED'].includes(st)) return 'Status inválido.';
 
-    const aud = String(form.audience || 'BOTH');
-    if (!['BOTH', 'GESTOR_ONLY', 'ADM_ONLY'].includes(aud)) return 'Audiência inválida.';
+    if (!Array.isArray(form.audiences) || !form.audiences.length) {
+        return 'Selecione ao menos um público em "Visibilidade".';
+    }
 
     return '';
 }
@@ -217,7 +230,7 @@ async function save() {
             title: String(form.title || '').trim(),
             description: String(form.description || '').trim(),
             status: String(form.status || 'DRAFT').toUpperCase(),
-            audience: String(form.audience || 'BOTH'),
+            audiences: Array.isArray(form.audiences) ? form.audiences.slice() : [],
         };
 
         const s = String(form.slug || '').trim();

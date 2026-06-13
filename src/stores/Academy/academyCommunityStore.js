@@ -26,7 +26,7 @@ export const useAcademyCommunityStore = defineStore('academyCommunity', {
     }),
 
     actions: {
-        async fetchTopics({ type, q = '', status = 'OPEN', audience = 'BOTH', page = 1, pageSize = 20 } = {}) {
+        async fetchTopics({ type, q = '', status = 'OPEN', page = 1, pageSize = 20 } = {}) {
             this.error = null;
             const carregamento = useCarregamentoStore();
 
@@ -37,7 +37,6 @@ export const useAcademyCommunityStore = defineStore('academyCommunity', {
                 if (type) params.set('type', type);
                 if (q) params.set('q', q);
                 if (status) params.set('status', status);
-                if (audience) params.set('audience', audience);
                 params.set('page', String(page));
                 params.set('pageSize', String(pageSize));
 
@@ -60,7 +59,7 @@ export const useAcademyCommunityStore = defineStore('academyCommunity', {
             }
         },
 
-        async fetchTopic(id, { audience = 'BOTH' } = {}) {
+        async fetchTopic(id, _opts = {}) {
             this.error = null;
             const carregamento = useCarregamentoStore();
 
@@ -73,7 +72,7 @@ export const useAcademyCommunityStore = defineStore('academyCommunity', {
 
             try {
                 carregamento.iniciarCarregamento();
-                const data = await requestWithAuth(`/academy/community/topics/${topicId}?audience=${encodeURIComponent(audience)}`);
+                const data = await requestWithAuth(`/academy/community/topics/${topicId}`);
                 this.current = data;
                 return data;
             } catch (e) {
@@ -128,7 +127,7 @@ export const useAcademyCommunityStore = defineStore('academyCommunity', {
         },
 
         // === NOVO: Meus tópicos ===
-        async fetchMyTopics({ q = '', status = '', audience = 'BOTH', page = 1, pageSize = 20 } = {}) {
+        async fetchMyTopics({ q = '', status = '', page = 1, pageSize = 20 } = {}) {
             this.my.error = null;
             const carregamento = useCarregamentoStore();
 
@@ -143,7 +142,6 @@ export const useAcademyCommunityStore = defineStore('academyCommunity', {
                 const params = new URLSearchParams();
                 if (q) params.set('q', q);
                 if (status) params.set('status', status);
-                if (audience) params.set('audience', audience);
                 params.set('page', String(page));
                 params.set('pageSize', String(pageSize));
 

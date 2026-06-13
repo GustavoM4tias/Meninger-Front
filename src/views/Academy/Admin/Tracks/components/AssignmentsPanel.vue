@@ -40,7 +40,7 @@ watch(() => props.slug, load);
     <div class="space-y-4">
         <div class="flex items-start justify-between gap-3">
             <div>
-                <h3 class="text-sm font-semibold text-slate-900 dark:text-white">Vínculos</h3>
+                <h3 class="font-display text-base font-semibold text-slate-900 dark:text-white">Vínculos</h3>
                 <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
                     Se houver vínculos, a trilha só aparece para quem casar em Cargo/Depto/Cidade/Usuário.
                 </p>
@@ -59,7 +59,7 @@ watch(() => props.slug, load);
         </div>
 
         <div
-            class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm overflow-hidden">
+            class="rounded-2xl border border-slate-200/70 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-[0_2px_20px_-12px_rgb(15_23_42/0.18)] overflow-hidden">
             <table class="w-full text-sm">
                 <thead class="bg-slate-50 dark:bg-slate-800/40 text-slate-500 dark:text-slate-400">
                     <tr>

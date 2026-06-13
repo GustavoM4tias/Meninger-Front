@@ -72,11 +72,11 @@
 
         <!-- ITENS -->
         <section v-if="tab === 'items'"
-            class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
+            class="rounded-2xl border border-slate-200/70 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-[0_2px_20px_-12px_rgb(15_23_42/0.18)]">
             <div
                 class="border-b border-slate-100 dark:border-slate-800 px-5 py-4 flex items-start justify-between gap-3">
                 <div>
-                    <h2 class="text-base font-semibold text-slate-900 dark:text-white">Itens</h2>
+                    <h2 class="font-display text-lg font-semibold text-slate-900 dark:text-white">Itens</h2>
                     <p class="text-sm text-slate-500 dark:text-slate-400">Ordem, tipo, target e obrigatoriedade</p>
                 </div>
 
@@ -160,19 +160,19 @@
 
         <!-- MÓDULOS -->
         <section v-else-if="tab === 'modules'"
-            class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm p-4">
+            class="rounded-2xl border border-slate-200/70 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-[0_2px_20px_-12px_rgb(15_23_42/0.18)] p-4">
             <ModulesPanel :slug="slug" :items="items" @changed="reload" />
         </section>
 
         <!-- VÍNCULOS -->
         <section v-else-if="tab === 'assignments'"
-            class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm p-4">
+            class="rounded-2xl border border-slate-200/70 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-[0_2px_20px_-12px_rgb(15_23_42/0.18)] p-4">
             <AssignmentsPanel :slug="slug" />
         </section>
 
         <!-- PREVIEW -->
         <section v-else
-            class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm p-4">
+            class="rounded-2xl border border-slate-200/70 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-[0_2px_20px_-12px_rgb(15_23_42/0.18)] p-4">
             <TrackPreviewPanel :track="track" :items="items" />
         </section>
 
@@ -191,7 +191,7 @@
             <div class="w-full max-w-lg rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden"
                 @click.stop>
                 <header class="px-6 py-4 border-b border-slate-200 dark:border-slate-800">
-                    <h3 class="text-base font-semibold text-slate-900 dark:text-white">Excluir trilha</h3>
+                    <h3 class="font-display text-lg font-semibold text-slate-900 dark:text-white">Excluir trilha</h3>
                     <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
                         Esta ação é permanente. Para confirmar, digite o slug:
                         <span class="font-mono">{{ track?.slug }}</span>

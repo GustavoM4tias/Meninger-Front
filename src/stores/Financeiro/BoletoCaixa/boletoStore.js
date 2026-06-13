@@ -121,6 +121,33 @@ export const useBoletoStore = defineStore('boletoCaixa', () => {
         }
     }
 
+    // ── KPIs / Stats agregados (mesmos filtros do history) ───────────────────
+    const stats = ref(null);
+    const statsLoading = ref(false);
+
+    async function fetchStats(opts = {}) {
+        const silent = !!opts.silent;
+        if (!silent) statsLoading.value = true;
+        try {
+            // Reusa os mesmos filtros — mas sem paginação
+            const params = new URLSearchParams();
+            const f = historyFilter.value;
+            if (Array.isArray(f.status) && f.status.length) params.set('status', f.status.join(','));
+            if (Array.isArray(f.paymentStatus) && f.paymentStatus.length) params.set('paymentStatus', f.paymentStatus.join(','));
+            if (Array.isArray(f.empreendimento) && f.empreendimento.length) params.set('empreendimento', f.empreendimento.join(','));
+            if (f.idreserva) params.set('idreserva', f.idreserva);
+            if (f.dateFrom)  params.set('dateFrom', f.dateFrom);
+            if (f.dateTo)    params.set('dateTo', f.dateTo);
+            if (f.q)         params.set('q', f.q);
+
+            stats.value = await requestWithAuth(`/boleto-caixa/history-stats?${params}`);
+        } catch (err) {
+            console.warn('[boletoStore] fetchStats:', err.message);
+        } finally {
+            if (!silent) statsLoading.value = false;
+        }
+    }
+
     // Facets pra alimentar selects do filtro (empreendimentos distintos + contagens)
     const facets = ref({ empreendimentos: [], statusCounts: [], paymentCounts: [] });
     const facetsLoading = ref(false);
@@ -354,6 +381,8 @@ export const useBoletoStore = defineStore('boletoCaixa', () => {
         historyLoading, historyError, historyFilter,
         fetchHistory, setPage, totalPages, retryHistoryItem, resendHistoryItem,
         resetHistoryFilters,
+        // stats (KPIs)
+        stats, statsLoading, fetchStats,
         // facets
         facets, facetsLoading, fetchFacets,
         // timeline

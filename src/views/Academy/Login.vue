@@ -136,6 +136,7 @@ async function loginInternal() {
         if (!resp?.success) throw new Error(resp?.message || resp?.error || 'Falha no login');
 
         auth.setToken(resp.data?.token || resp.token);
+        auth.setRefreshToken(resp.data?.refreshToken);
         await auth.fetchMe();
 
         // ✅ sempre cair no painel do academy
@@ -165,6 +166,7 @@ async function verifyExternalCode() {
         if (!resp?.success) throw new Error(resp?.message || resp?.error || 'Código incorreto');
 
         auth.setToken(resp.data?.token || resp.token);
+        auth.setRefreshToken(resp.data?.refreshToken);
         await auth.fetchMe();
 
         // ✅ sempre cair no painel do academy
@@ -224,7 +226,7 @@ const splideOptions = {
                                         {{ s.tag }}
                                     </div>
 
-                                    <h2 class="text-4xl font-semibold tracking-tight text-white">
+                                    <h2 class="font-display text-4xl font-semibold tracking-tight text-white">
                                         {{ s.title }}
                                     </h2>
 

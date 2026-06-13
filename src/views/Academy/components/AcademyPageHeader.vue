@@ -1,6 +1,6 @@
 <template>
     <div
-        class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm transition-colors">
+        class="rounded-2xl border border-slate-200/70 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-[0_2px_20px_-12px_rgb(15_23_42/0.18)] transition-colors">
         <div class="flex flex-col gap-3 px-5 py-4 md:flex-row md:items-center md:justify-between">
             <div class="min-w-0">
                 <nav v-if="breadcrumbs?.length"
@@ -24,7 +24,7 @@
                     </button>
 
                     <div class="min-w-0">
-                        <h1 class="truncate text-base font-semibold text-slate-900 dark:text-white">
+                        <h1 class="truncate font-display text-lg font-semibold text-slate-900 dark:text-white">
                             {{ title }}
                         </h1>
                         <p v-if="subtitle" class="truncate text-sm text-slate-500 dark:text-slate-400">

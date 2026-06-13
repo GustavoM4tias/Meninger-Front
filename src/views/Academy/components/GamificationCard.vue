@@ -1,6 +1,6 @@
 <template>
     <section
-        class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm overflow-hidden">
+        class="rounded-2xl border border-slate-200/70 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-[0_2px_20px_-12px_rgb(15_23_42/0.18)] overflow-hidden">
         <!-- Faixa de nível -->
         <div class="relative bg-gradient-to-br from-indigo-600 to-violet-600 px-6 py-5">
             <div class="flex items-center justify-between">
@@ -44,7 +44,7 @@
         <!-- Badges -->
         <div class="px-6 py-4">
             <div class="flex items-center justify-between mb-3">
-                <h3 class="text-sm font-semibold text-slate-900 dark:text-white">
+                <h3 class="font-display text-base font-semibold text-slate-900 dark:text-white">
                     Conquistas
                     <span class="text-slate-400 dark:text-slate-500">({{ badges.length }})</span>
                 </h3>

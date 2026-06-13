@@ -14,24 +14,21 @@ export const useAcademyTracksAdminStore = defineStore('academyTracksAdmin', {
 
         filters: {
             status: '',    // '' | DRAFT | PUBLISHED
-            audience: 'BOTH',
         }
     }),
 
     actions: {
-        async fetchList({ status, audience } = {}) {
+        async fetchList({ status } = {}) {
             const carregamento = useCarregamentoStore();
             this.error = null;
 
             if (typeof status !== 'undefined') this.filters.status = status;
-            if (typeof audience !== 'undefined') this.filters.audience = audience;
 
             try {
                 carregamento.iniciarCarregamento();
 
                 const qs = new URLSearchParams();
                 if (this.filters.status) qs.set('status', this.filters.status);
-                if (this.filters.audience) qs.set('audience', this.filters.audience);
 
                 const data = await requestWithAuth(`/academy/tracks-admin?${qs.toString()}`);
                 this.list = safeArray(data?.results);

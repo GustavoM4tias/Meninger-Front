@@ -67,6 +67,28 @@ export const useAcademyRatingsStore = defineStore('academyRatings', {
             await this.fetchStats(targetType, targetRef);
         },
 
+        // Justificativas de um artigo — só o autor do artigo e admins recebem
+        // dados (o backend faz a checagem). Retorna { results, canModerate }.
+        async fetchArticleJustifications(articleId) {
+            this.error = null;
+            try {
+                const data = await requestWithAuth(`/academy/kb/articles/${articleId}/ratings/justifications`);
+                return {
+                    results: Array.isArray(data?.results) ? data.results : [],
+                    canModerate: !!data?.canModerate,
+                };
+            } catch (e) {
+                this.error = e?.message || 'Erro ao carregar justificativas.';
+                return { results: [], canModerate: false };
+            }
+        },
+
+        // Admin remove uma avaliação (nota + justificativa) pelo id.
+        async adminRemoveRating(ratingId) {
+            this.error = null;
+            await requestWithAuth(`/academy/admin/ratings/${ratingId}`, { method: 'DELETE' });
+        },
+
         statsFor(targetType, targetRef) {
             return this.statsByTarget[keyOf(targetType, targetRef)] || null;
         },

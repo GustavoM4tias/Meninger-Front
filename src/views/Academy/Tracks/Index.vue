@@ -14,7 +14,7 @@
 
         <!-- Busca -->
         <div
-            class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-5">
+            class="rounded-2xl border border-slate-200/70 bg-white p-4 shadow-[0_2px_20px_-12px_rgb(15_23_42/0.18)] dark:border-slate-800 dark:bg-slate-900 sm:p-5">
             <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div class="flex items-center gap-2">
                     <i class="fa-solid fa-route text-indigo-500"></i>
@@ -45,14 +45,14 @@
         <!-- Grade de trilhas -->
         <div v-else class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
             <button v-for="t in filtered" :key="t.slug" type="button" @click="openTrack(t)"
-                class="group flex flex-col rounded-2xl border border-slate-200 bg-white p-5 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-300 hover:shadow-md dark:border-slate-800 dark:bg-slate-900 dark:hover:border-indigo-800">
+                class="group flex flex-col rounded-2xl border border-slate-200/70 bg-white p-5 text-left shadow-[0_2px_20px_-12px_rgb(15_23_42/0.18)] transition hover:-translate-y-0.5 hover:border-indigo-300 hover:shadow-[0_12px_32px_-14px_rgb(79_70_229/0.35)] dark:border-slate-800 dark:bg-slate-900 dark:hover:border-indigo-800">
                 <div class="flex items-start gap-3">
                     <span
                         class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-indigo-100 text-indigo-600 dark:bg-indigo-950/60 dark:text-indigo-300">
                         <i class="fa-solid fa-route"></i>
                     </span>
                     <div class="min-w-0 flex-1">
-                        <div class="truncate text-base font-semibold text-slate-900 dark:text-white">
+                        <div class="truncate font-display text-base font-semibold text-slate-900 dark:text-white">
                             {{ t.title }}
                         </div>
                         <span
