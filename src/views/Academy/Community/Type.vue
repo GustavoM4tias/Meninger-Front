@@ -28,9 +28,9 @@
             <!-- MENU LATERAL (tipos) -->
             <aside class="lg:col-span-3">
                 <div
-                    class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                    class="overflow-hidden rounded-2xl border border-slate-200/70 bg-white shadow-[0_2px_20px_-12px_rgb(15_23_42/0.18)] dark:border-slate-800 dark:bg-slate-900">
                     <div class="border-b border-slate-100 px-5 py-4 dark:border-slate-800">
-                        <h2 class="flex items-center gap-2 text-base font-semibold text-slate-900 dark:text-white">
+                        <h2 class="flex items-center gap-2 font-display text-lg font-semibold text-slate-900 dark:text-white">
                             <i class="fa-solid fa-comments text-amber-500"></i>
                             Tipos
                         </h2>
@@ -75,7 +75,7 @@
                 </div>
 
                 <div
-                    class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                    class="overflow-hidden rounded-2xl border border-slate-200/70 bg-white shadow-[0_2px_20px_-12px_rgb(15_23_42/0.18)] dark:border-slate-800 dark:bg-slate-900">
                     <div
                         class="flex flex-col gap-3 border-b border-slate-100 px-5 py-4 dark:border-slate-800 sm:flex-row sm:items-center sm:justify-between">
                         <div class="text-sm text-slate-600 dark:text-slate-400">
@@ -188,7 +188,7 @@
                 <div
                     class="flex items-center justify-between border-b border-slate-100 px-5 py-4 dark:border-slate-800">
                     <div>
-                        <h2 class="flex items-center gap-2 text-base font-semibold text-slate-900 dark:text-white">
+                        <h2 class="flex items-center gap-2 font-display text-lg font-semibold text-slate-900 dark:text-white">
                             <i class="fa-solid fa-pen-to-square text-indigo-500"></i>
                             Novo tópico
                         </h2>
@@ -275,6 +275,13 @@
                         </p>
                     </div>
 
+                    <AudienceSelector v-model="form.audiences" />
+                    <p class="text-[11px] text-slate-500 dark:text-slate-400">
+                        <i class="fa-solid fa-circle-info mr-1"></i>
+                        Você só pode selecionar públicos que enxergam o conteúdo que VOCÊ enxerga —
+                        o servidor reduz automaticamente o conjunto.
+                    </p>
+
                     <div class="flex gap-2 pt-2">
                         <button type="button" :disabled="submitting || !canSubmit" @click="submit"
                             class="flex-1 rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm shadow-indigo-500/25 transition hover:opacity-95 disabled:opacity-40 md:flex-none">
@@ -301,12 +308,17 @@ import { computed, onMounted, reactive, ref, watch, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
 import AcademyPageHeader from '@/views/Academy/components/AcademyPageHeader.vue';
+import AudienceSelector from '@/views/Academy/components/AudienceSelector.vue';
 import TokenEditor from '@/views/Academy/components/TokenEditor.vue';
 import { useAcademyCommunityStore } from '@/stores/Academy/academyCommunityStore';
+import { useAcademyMeStore } from '@/stores/Academy/academyMeStore';
+
+const DEFAULT_AUDIENCES = ['INTERNAL', 'GESTOR', 'BROKER', 'REALESTATE', 'CORRESPONDENT'];
 
 const route = useRoute();
 const router = useRouter();
 const store = useAcademyCommunityStore();
+const meStore = useAcademyMeStore();
 
 const activePillClasses = 'border-indigo-600 bg-indigo-600 text-white shadow-sm';
 const idlePillClasses = 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700';
@@ -383,9 +395,23 @@ const form = reactive({
     body: '',
     payload: { embeds: [], widgets: { quiz: {}, task: {} } },
     tagsText: '',
+    audiences: DEFAULT_AUDIENCES.slice(),
 });
 
-const canSubmit = computed(() => form.title.trim() && form.categorySlug.trim() && form.body.trim());
+// Tokens reais do user — usados como sugestão inicial no AudienceSelector.
+// Se o user ainda não carregou, cai no DEFAULT_AUDIENCES (o backend depois
+// reduz para o que o user pode mesmo).
+function userTokensOrDefault() {
+    const t = Array.isArray(meStore.summary?.tokens) ? meStore.summary.tokens : [];
+    return t.length ? t : DEFAULT_AUDIENCES.slice();
+}
+
+const canSubmit = computed(() =>
+    form.title.trim()
+    && form.categorySlug.trim()
+    && form.body.trim()
+    && Array.isArray(form.audiences) && form.audiences.length > 0
+);
 
 function normalizeTopicStatus(s) {
     const v = String(s || '').toUpperCase();
@@ -412,7 +438,6 @@ async function reload(page = 1) {
         type: typeParam.value,
         q: q.value,
         status: status.value,
-        audience: 'BOTH',
         page,
         pageSize: 20,
     });
@@ -420,6 +445,14 @@ async function reload(page = 1) {
 
 async function openCreateModal() {
     if (!store.meta?.categories || !store.meta?.types) await store.fetchMeta();
+
+    // Carrega os tokens do user (se ainda não foram). Servem como sugestão
+    // inicial no AudienceSelector — assim o user já vê marcado o público
+    // que ele próprio enxerga.
+    if (!meStore.loaded) {
+        try { await meStore.fetchSummary(); } catch { /* silent */ }
+    }
+    form.audiences = userTokensOrDefault();
 
     // default: tipo do route atual (questions/discussions/etc) -> enum
     const defaultType = ({
@@ -466,6 +499,7 @@ function closeModal() {
 function resetForm() {
     form.title = '';
     form.categorySlug = 'geral';
+    form.audiences = userTokensOrDefault();
     form.body = '';
     form.payload = { embeds: [], widgets: { quiz: {}, task: {} } };
     form.tagsText = '';
@@ -570,7 +604,7 @@ async function submit() {
             body: form.body,
             payload: form.payload,
             tags: parseTags(form.tagsText),
-            audience: 'BOTH',
+            audiences: Array.isArray(form.audiences) ? form.audiences.slice() : [],
         });
 
         openCreate.value = false;

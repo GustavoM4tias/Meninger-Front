@@ -135,12 +135,35 @@ export const useAuthStore = defineStore('user', {
       }
     },
 
+    setRefreshToken(token) {
+      if (token) {
+        localStorage.setItem('refresh_token', token);
+      } else {
+        localStorage.removeItem('refresh_token');
+      }
+    },
+
+    // Revoga o refresh token no servidor (best-effort, não bloqueia a saída).
+    revokeRefreshOnServer() {
+      const rt = localStorage.getItem('refresh_token');
+      if (!rt) return;
+      try {
+        fetch(`${API_URL}/auth/logout`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refreshToken: rt }),
+          keepalive: true,
+        }).catch(() => {});
+      } catch { /* noop */ }
+    },
+
     clearUser() {
       this.user = null;
       this.userById = null;
       this.token = null;
 
       localStorage.removeItem('token');
+      localStorage.removeItem('refresh_token');
       localStorage.removeItem('role');
       localStorage.removeItem('position');
       localStorage.removeItem('user');
@@ -155,6 +178,7 @@ export const useAuthStore = defineStore('user', {
     },
 
     logout() {
+      this.revokeRefreshOnServer();
       this.clearUser();
       // Decide o login pelo contexto (academy.* / env), não pelo host fixo —
       // assim funciona igual em produção e em dev local.
@@ -162,6 +186,7 @@ export const useAuthStore = defineStore('user', {
     },
 
     academyLogout() {
+      this.revokeRefreshOnServer();
       this.clearUser();
       router.push({ name: 'AcademyLogin' });
     },
@@ -227,6 +252,7 @@ export const useAuthStore = defineStore('user', {
         }
 
         this.setToken(result.data.token);
+        this.setRefreshToken(result.data.refreshToken);
         await this.fetchUserInfo();
 
         return result;

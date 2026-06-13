@@ -1,8 +1,8 @@
 <template>
     <div class="space-y-4">
         <!-- Header track -->
-        <div class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5">
-            <h3 class="text-base font-semibold text-slate-900 dark:text-white">{{ track?.title }}</h3>
+        <div class="rounded-2xl border border-slate-200/70 dark:border-slate-800 bg-white dark:bg-slate-900 p-5">
+            <h3 class="font-display text-lg font-semibold text-slate-900 dark:text-white">{{ track?.title }}</h3>
             <p v-if="track?.description" class="mt-1 text-sm text-slate-500 dark:text-slate-400">
                 {{ track.description }}
             </p>
@@ -16,8 +16,8 @@
 
         <!-- Finish -->
         <div v-else-if="isFinished"
-            class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 text-center space-y-3">
-            <div class="text-base font-semibold text-slate-900 dark:text-white">Trilha finalizada (preview)</div>
+            class="rounded-2xl border border-slate-200/70 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 text-center space-y-3">
+            <div class="font-display text-lg font-semibold text-slate-900 dark:text-white">Trilha finalizada (preview)</div>
             <div class="text-sm text-slate-600 dark:text-slate-300">
                 Você concluiu todos os itens obrigatórios.
             </div>
@@ -32,7 +32,7 @@
         </div>
 
         <!-- Item -->
-        <div v-else class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5">
+        <div v-else class="rounded-2xl border border-slate-200/70 dark:border-slate-800 bg-white dark:bg-slate-900 p-5">
             <div class="flex items-start justify-between gap-4">
                 <div class="min-w-0">
                     <div class="text-xs text-slate-500 dark:text-slate-400 font-mono">

@@ -46,7 +46,7 @@
                         <p class="text-xs font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
                             Menin Academy · seu tutor Eme
                         </p>
-                        <h1 class="mt-1 text-xl font-bold text-slate-900 dark:text-white sm:text-2xl md:text-3xl">
+                        <h1 class="font-display mt-1 text-2xl font-semibold text-slate-900 dark:text-white sm:text-3xl md:text-4xl">
                             {{ greeting }}, {{ firstName }}! 👋
                         </h1>
                         <p
@@ -109,12 +109,12 @@
                 <div class="space-y-5 lg:col-span-8">
                     <!-- Continue de onde parou -->
                     <section id="tour-continue"
-                        class="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                        class="rounded-2xl border border-slate-200/70 bg-white shadow-[0_2px_20px_-12px_rgb(15_23_42/0.18)] dark:border-slate-800 dark:bg-slate-900">
                         <div
                             class="flex items-center justify-between border-b border-slate-100 px-5 py-4 dark:border-slate-800">
                             <div class="flex items-center gap-2">
                                 <i class="fa-solid fa-route text-indigo-500"></i>
-                                <h2 class="text-base font-semibold text-slate-900 dark:text-white">
+                                <h2 class="font-display text-lg font-semibold text-slate-900 dark:text-white">
                                     Continue de onde parou
                                 </h2>
                             </div>
@@ -163,10 +163,10 @@
 
                     <!-- Material de boas-vindas -->
                     <section v-if="welcomeArticles.length"
-                        class="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                        class="rounded-2xl border border-slate-200/70 bg-white shadow-[0_2px_20px_-12px_rgb(15_23_42/0.18)] dark:border-slate-800 dark:bg-slate-900">
                         <div class="flex items-center gap-2 border-b border-slate-100 px-5 py-4 dark:border-slate-800">
                             <i class="fa-solid fa-hand-sparkles text-violet-500"></i>
-                            <h2 class="text-base font-semibold text-slate-900 dark:text-white">
+                            <h2 class="font-display text-lg font-semibold text-slate-900 dark:text-white">
                                 Material de boas-vindas
                             </h2>
                         </div>
@@ -189,12 +189,12 @@
 
                     <!-- Atualizações recentes -->
                     <section
-                        class="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                        class="rounded-2xl border border-slate-200/70 bg-white shadow-[0_2px_20px_-12px_rgb(15_23_42/0.18)] dark:border-slate-800 dark:bg-slate-900">
                         <div
                             class="flex items-center justify-between border-b border-slate-100 px-5 py-4 dark:border-slate-800">
                             <div class="flex items-center gap-2">
                                 <i class="fa-solid fa-book text-emerald-500"></i>
-                                <h2 class="text-base font-semibold text-slate-900 dark:text-white">
+                                <h2 class="font-display text-lg font-semibold text-slate-900 dark:text-white">
                                     Atualizações recentes
                                 </h2>
                             </div>
@@ -230,10 +230,10 @@
                 <div class="space-y-5 lg:col-span-4">
                     <!-- Sua evolução -->
                     <section v-if="gamLoaded"
-                        class="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                        class="rounded-2xl border border-slate-200/70 bg-white shadow-[0_2px_20px_-12px_rgb(15_23_42/0.18)] dark:border-slate-800 dark:bg-slate-900">
                         <div class="flex items-center gap-2 border-b border-slate-100 px-5 py-4 dark:border-slate-800">
                             <i class="fa-solid fa-bolt text-amber-500"></i>
-                            <h2 class="text-base font-semibold text-slate-900 dark:text-white">Sua evolução</h2>
+                            <h2 class="font-display text-lg font-semibold text-slate-900 dark:text-white">Sua evolução</h2>
                         </div>
                         <div class="p-5">
                             <div class="flex items-center justify-between">
@@ -275,10 +275,10 @@
 
                     <!-- Destaques -->
                     <section
-                        class="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                        class="rounded-2xl border border-slate-200/70 bg-white shadow-[0_2px_20px_-12px_rgb(15_23_42/0.18)] dark:border-slate-800 dark:bg-slate-900">
                         <div class="flex items-center gap-2 border-b border-slate-100 px-5 py-4 dark:border-slate-800">
                             <i class="fa-solid fa-star text-amber-500"></i>
-                            <h2 class="text-base font-semibold text-slate-900 dark:text-white">Destaques</h2>
+                            <h2 class="font-display text-lg font-semibold text-slate-900 dark:text-white">Destaques</h2>
                         </div>
                         <div class="p-2">
                             <ul v-if="panel.highlights?.length" class="divide-y divide-slate-100 dark:divide-slate-800">
@@ -304,12 +304,12 @@
 
                     <!-- Dúvidas abertas -->
                     <section
-                        class="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                        class="rounded-2xl border border-slate-200/70 bg-white shadow-[0_2px_20px_-12px_rgb(15_23_42/0.18)] dark:border-slate-800 dark:bg-slate-900">
                         <div
                             class="flex items-center justify-between border-b border-slate-100 px-5 py-4 dark:border-slate-800">
                             <div class="flex items-center gap-2">
                                 <i class="fa-solid fa-circle-question text-sky-500"></i>
-                                <h2 class="text-base font-semibold text-slate-900 dark:text-white">Dúvidas abertas</h2>
+                                <h2 class="font-display text-lg font-semibold text-slate-900 dark:text-white">Dúvidas abertas</h2>
                             </div>
                             <button type="button" @click="goToQuestions"
                                 class="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-indigo-600 transition hover:bg-indigo-50 dark:text-indigo-400 dark:hover:bg-indigo-950/50">
@@ -354,10 +354,10 @@
 
             <!-- ADMINISTRAÇÃO -->
             <section v-if="isAdmin"
-                class="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                class="rounded-2xl border border-slate-200/70 bg-white shadow-[0_2px_20px_-12px_rgb(15_23_42/0.18)] dark:border-slate-800 dark:bg-slate-900">
                 <div class="flex items-center gap-2 border-b border-slate-100 px-5 py-4 dark:border-slate-800">
                     <i class="fa-solid fa-shield-halved text-slate-400"></i>
-                    <h2 class="text-base font-semibold text-slate-900 dark:text-white">Administração</h2>
+                    <h2 class="font-display text-lg font-semibold text-slate-900 dark:text-white">Administração</h2>
                 </div>
                 <div class="grid grid-cols-1 gap-2 p-3 sm:grid-cols-2 lg:grid-cols-4">
                     <button v-for="a in adminActions" :key="a.label" type="button" @click="a.run"
@@ -590,12 +590,12 @@ function openHighlight(h) {
 // ── Carregamento ──────────────────────────────────────────────────────────
 async function loadTracksPreview() {
     try {
-        const list = await tracksStore.fetchTracks({ audience: 'BOTH' });
+        const list = await tracksStore.fetchTracks();
         const top = (list || []).slice(0, 3);
         tracksPreview.value = await Promise.all(
             top.map(async (t) => {
                 try {
-                    const d = await tracksStore.fetchTrack(t.slug, { audience: 'BOTH' });
+                    const d = await tracksStore.fetchTrack(t.slug);
                     return toTrackPreviewItem(t, d);
                 } catch {
                     return toTrackPreviewItem(t, null);
@@ -619,7 +619,7 @@ async function loadGamification() {
 async function load() {
     loading.value = true;
     try {
-        await academy.fetchPanelSummary({ audience: 'BOTH' });
+        await academy.fetchPanelSummary();
         await Promise.all([loadTracksPreview(), loadGamification()]);
     } catch {
         /* erro já fica em academy.error */

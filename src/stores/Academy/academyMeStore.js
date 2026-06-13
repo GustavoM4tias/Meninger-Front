@@ -14,7 +14,7 @@ function safeNumber(v, fallback = 0) {
 export const useAcademyMeStore = defineStore('academyMe', {
     state: () => ({
         summary: {
-            audience: 'BOTH',
+            tokens: [],
             user: null,
             kb: { drafts: 0, published: 0, total: 0 },
             community: { topicsCreated: 0, answersPosted: 0 },
@@ -47,19 +47,18 @@ export const useAcademyMeStore = defineStore('academyMe', {
     },
 
     actions: {
-        async fetchSummary({ audience = 'BOTH' } = {}) {
+        // audience/tokens são derivados no servidor do user autenticado.
+        async fetchSummary(_opts = {}) {
             const carregamento = useCarregamentoStore();
             this.error = null;
 
             try {
                 carregamento.iniciarCarregamento();
 
-                const data = await requestWithAuth(
-                    `/academy/me/summary?audience=${encodeURIComponent(audience)}`
-                );
+                const data = await requestWithAuth('/academy/me/summary');
 
                 this.summary = {
-                    audience: data?.audience || audience,
+                    tokens: safeArray(data?.tokens),
                     user: data?.user || null,
                     kb: {
                         drafts: safeNumber(data?.kb?.drafts),
@@ -87,8 +86,8 @@ export const useAcademyMeStore = defineStore('academyMe', {
                 carregamento.finalizarCarregamento();
             }
         },
-        async fetchUserSummary(userId, { audience = 'BOTH' } = {}) {
-            return await requestWithAuth(`/academy/users/${userId}/summary?audience=${encodeURIComponent(audience)}`);
+        async fetchUserSummary(userId) {
+            return await requestWithAuth(`/academy/users/${userId}/summary`);
         }
     },
 });

@@ -31,9 +31,9 @@
         <div class="grid grid-cols-1 gap-5 lg:grid-cols-12">
             <aside class="lg:col-span-3">
                 <div
-                    class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                    class="overflow-hidden rounded-2xl border border-slate-200/70 bg-white shadow-[0_2px_20px_-12px_rgb(15_23_42/0.18)] dark:border-slate-800 dark:bg-slate-900">
                     <div class="border-b border-slate-100 px-5 py-4 dark:border-slate-800">
-                        <h2 class="flex items-center gap-2 text-base font-semibold text-slate-900 dark:text-white">
+                        <h2 class="flex items-center gap-2 font-display text-lg font-semibold text-slate-900 dark:text-white">
                             <i class="fa-solid fa-folder-tree text-indigo-500"></i>
                             Categorias
                         </h2>
@@ -50,31 +50,46 @@
                             Todas
                         </button>
 
-                        <button v-for="c in kb.categories" :key="c.slug" type="button" @click="setCategory(c.slug)"
-                            class="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm font-medium transition-colors"
-                            :class="categorySlug === c.slug
-                                ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300'
-                                : 'text-slate-700 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800/50'">
-                            <i class="fa-regular fa-folder text-xs opacity-70"></i>
-                            {{ c.name }}
-                        </button>
+                        <template v-for="c in kb.categories" :key="c.slug">
+                            <button type="button" @click="setCategory(c.slug)"
+                                class="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm font-medium transition-colors"
+                                :class="categorySlug === c.slug && !subcategorySlug
+                                    ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300'
+                                    : 'text-slate-700 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800/50'">
+                                <i class="fa-regular fa-folder text-xs opacity-70"></i>
+                                <span class="flex-1">{{ c.name }}</span>
+                                <span v-if="c.count" class="text-[10px] font-normal opacity-60">{{ c.count }}</span>
+                            </button>
+
+                            <button v-for="s in c.subcategories" :key="c.slug + '/' + s.slug" type="button"
+                                @click="setSubcategory(c.slug, s.slug)"
+                                class="ml-4 flex items-center gap-2 rounded-xl px-3 py-1.5 text-left text-[13px] font-medium transition-colors"
+                                :class="categorySlug === c.slug && subcategorySlug === s.slug
+                                    ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300'
+                                    : 'text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800/50'">
+                                <i class="fa-solid fa-angle-right text-[10px] opacity-50"></i>
+                                <span class="flex-1">{{ s.name }}</span>
+                                <span class="text-[10px] font-normal opacity-60">{{ s.count }}</span>
+                            </button>
+                        </template>
                     </div>
                 </div>
             </aside>
 
             <main class="lg:col-span-9">
                 <div
-                    class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                    class="overflow-hidden rounded-2xl border border-slate-200/70 bg-white shadow-[0_2px_20px_-12px_rgb(15_23_42/0.18)] dark:border-slate-800 dark:bg-slate-900">
                     <div
                         class="flex flex-col gap-3 border-b border-slate-100 px-5 py-4 dark:border-slate-800 sm:flex-row sm:items-center sm:justify-between">
                         <div>
-                            <h2 class="flex items-center gap-2 text-base font-semibold text-slate-900 dark:text-white">
+                            <h2 class="flex items-center gap-2 font-display text-lg font-semibold text-slate-900 dark:text-white">
                                 <i class="fa-solid fa-book text-emerald-500"></i>
                                 Artigos
                             </h2>
                             <p class="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
                                 {{ kb.list.total }} resultados
-                                <span v-if="categorySlug" class="capitalize">• {{ categorySlug }}</span>
+                                <span v-if="activeCategory">• {{ activeCategory.name }}</span>
+                                <span v-if="activeSub" class="text-indigo-500 dark:text-indigo-400">› {{ activeSub.name }}</span>
                                 <span v-if="q">• busca: "{{ q }}"</span>
                             </p>
                         </div>
@@ -182,6 +197,9 @@ const qLocal = ref('');
 const q = computed(() => String(route.query.q || ''));
 const page = computed(() => Number(route.query.p || 1));
 const categorySlug = computed(() => String(route.params.categorySlug || ''));
+const subcategorySlug = computed(() => String(route.query.sub || ''));
+const activeCategory = computed(() => (kb.categories || []).find((c) => c.slug === categorySlug.value) || null);
+const activeSub = computed(() => (activeCategory.value?.subcategories || []).find((s) => s.slug === subcategorySlug.value) || null);
 
 function formatDate(value) {
     if (!value) return '';
@@ -193,14 +211,14 @@ function formatDate(value) {
 async function load() {
     qLocal.value = q.value;
 
-    await kb.fetchCategories({ audience: 'BOTH' });
+    await kb.fetchCategories();
 
     await kb.fetchArticles({
         q: q.value,
         categorySlug: categorySlug.value,
+        subcategorySlug: subcategorySlug.value,
         page: page.value,
         pageSize: kb.list.pageSize,
-        audience: 'BOTH',
     });
 }
 
@@ -212,6 +230,7 @@ function setCategory(slug) {
         return;
     }
 
+    // troca de categoria limpa a subcategoria (não passa ?sub).
     router.push({
         name: 'AcademyKBCategory',
         params: { categorySlug: slug },
@@ -219,8 +238,16 @@ function setCategory(slug) {
     });
 }
 
+function setSubcategory(catSlug, subSlug) {
+    router.push({
+        name: 'AcademyKBCategory',
+        params: { categorySlug: catSlug },
+        query: { q: q.value || '', p: 1, sub: subSlug },
+    });
+}
+
 function applySearch() {
-    const baseQuery = { q: qLocal.value || '', p: 1 };
+    const baseQuery = { q: qLocal.value || '', p: 1, ...(subcategorySlug.value ? { sub: subcategorySlug.value } : {}) };
 
     if (categorySlug.value) {
         router.push({
@@ -235,7 +262,7 @@ function applySearch() {
 }
 
 function setPage(p) {
-    const baseQuery = { q: q.value || '', p };
+    const baseQuery = { q: q.value || '', p, ...(subcategorySlug.value ? { sub: subcategorySlug.value } : {}) };
 
     if (categorySlug.value) {
         router.push({
@@ -257,6 +284,6 @@ function openArticle(a) {
     });
 }
 
-watch(() => [route.params.categorySlug, route.query.q, route.query.p], load);
+watch(() => [route.params.categorySlug, route.query.sub, route.query.q, route.query.p], load);
 onMounted(load);
 </script>

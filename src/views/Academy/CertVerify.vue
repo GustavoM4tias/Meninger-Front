@@ -3,13 +3,13 @@
         <div class="w-full max-w-lg">
             <!-- Marca -->
             <div class="mb-6 text-center">
-                <div class="text-lg font-extrabold uppercase tracking-widest text-slate-900 dark:text-white">
+                <div class="font-display text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
                     Menin Academy
                 </div>
                 <div class="text-xs text-slate-400 dark:text-slate-500">Verificação de certificado</div>
             </div>
 
-            <div class="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm overflow-hidden">
+            <div class="rounded-3xl border border-slate-200/70 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-[0_2px_20px_-12px_rgb(15_23_42/0.18)] overflow-hidden">
                 <!-- Loading -->
                 <div v-if="loading" class="p-10 text-center">
                     <i class="fa-solid fa-spinner fa-spin text-2xl text-slate-300 dark:text-slate-600"></i>

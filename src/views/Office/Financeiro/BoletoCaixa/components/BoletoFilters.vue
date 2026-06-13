@@ -15,6 +15,21 @@ const store = useBoletoStore();
 const route = useRoute();
 const router = useRouter();
 
+// Helper: formata Date pra ISO YYYY-MM-DD respeitando timezone local.
+function toIsoDateLocal(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+// Default = janela dos últimos 30 dias (hoje incluso).
+const today = new Date();
+const thirtyDaysAgo = new Date();
+thirtyDaysAgo.setDate(today.getDate() - 30);
+const DEFAULT_DATE_FROM = toIsoDateLocal(thirtyDaysAgo);
+const DEFAULT_DATE_TO   = toIsoDateLocal(today);
+
 // Estado local (espelho do store.historyFilter pra controlar v-model). Ao
 // aplicar (botão Filtrar ou input com debounce), copia pro store + emite.
 const local = ref({
@@ -22,8 +37,8 @@ const local = ref({
   paymentStatus: [],
   empreendimento: [],
   idreserva: '',
-  dateFrom: '',
-  dateTo: '',
+  dateFrom: DEFAULT_DATE_FROM,
+  dateTo: DEFAULT_DATE_TO,
   q: '',
 });
 
@@ -32,6 +47,7 @@ const STATUS_OPTIONS = [
   { value: 'success',    label: 'Sucesso' },
   { value: 'error',      label: 'Erro' },
   { value: 'processing', label: 'Processando' },
+  { value: 'skipped',    label: 'Sem série' },
 ];
 const PAYMENT_OPTIONS = [
   { value: 'pending',   label: 'Pendente' },
@@ -98,12 +114,15 @@ function applyFilters() {
 }
 
 function clearFilters() {
+  // Limpa tudo mas mantém o range padrão de 30 dias — evita "ah, sumiu tudo"
+  // quando o usuário clica Limpar e nada aparece porque base é gigante.
   local.value = {
     status: [], paymentStatus: [], empreendimento: [],
-    idreserva: '', dateFrom: '', dateTo: '', q: '',
+    idreserva: '', dateFrom: DEFAULT_DATE_FROM, dateTo: DEFAULT_DATE_TO, q: '',
   };
-  store.resetHistoryFilters();
-  router.replace({ query: {} }).catch(() => {});
+  store.historyFilter = { ...local.value };
+  store.historyPage = 1;
+  syncUrlFromFilters();
   emit('filter-changed');
 }
 
@@ -134,8 +153,10 @@ function onEnterApply(e) {
 onMounted(async () => {
   await store.fetchFacets();
   syncFiltersFromUrl();
-  // Aplica filtros vindos da URL (se houver) na primeira carga
-  if (activeFiltersCount.value > 0) applyFilters();
+  // SEMPRE aplica na primeira carga — temos default de 30 dias, então o
+  // store precisa receber esses filtros pra que o /history e /history-stats
+  // venham filtrados. (Antes só aplicava se viesse algo da URL.)
+  applyFilters();
 });
 </script>
 

@@ -2,7 +2,7 @@
     <div class="space-y-4">
         <div class="flex items-center justify-between">
             <div>
-                <h3 class="text-base font-semibold text-slate-900 dark:text-white">Módulos da trilha</h3>
+                <h3 class="font-display text-lg font-semibold text-slate-900 dark:text-white">Módulos da trilha</h3>
                 <p class="text-sm text-slate-500 dark:text-slate-400">
                     Agrupe os itens em capítulos. Itens sem módulo aparecem soltos antes dos módulos.
                 </p>
@@ -100,7 +100,7 @@
             <div class="fixed inset-0 flex items-center justify-center p-4">
                 <div class="w-full max-w-md rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl" @click.stop>
                     <header class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 px-5 py-4">
-                        <h3 class="text-base font-semibold text-slate-900 dark:text-white">
+                        <h3 class="font-display text-lg font-semibold text-slate-900 dark:text-white">
                             {{ editId ? 'Editar módulo' : 'Novo módulo' }}
                         </h3>
                         <button class="rounded-lg px-2 py-1 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800" @click="modalOpen = false">✕</button>

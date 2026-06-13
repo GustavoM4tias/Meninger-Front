@@ -16,7 +16,7 @@
         </AcademyPageHeader>
 
         <!-- Seletor de trilha -->
-        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div class="rounded-2xl border border-slate-200/70 bg-white p-5 shadow-[0_2px_20px_-12px_rgb(15_23_42/0.18)] dark:border-slate-800 dark:bg-slate-900">
             <label class="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                 <i class="fa-solid fa-route mr-1 text-indigo-500"></i>
                 Trilha
@@ -33,7 +33,7 @@
         <!-- Cards de resumo -->
         <div v-if="adherence" class="grid grid-cols-2 gap-3 md:grid-cols-4">
             <div
-                class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                class="rounded-2xl border border-slate-200/70 bg-white p-4 shadow-[0_2px_20px_-12px_rgb(15_23_42/0.18)] dark:border-slate-800 dark:bg-slate-900">
                 <div class="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                     <i class="fa-solid fa-users"></i> Total
                 </div>
@@ -65,9 +65,9 @@
 
         <!-- Tabela -->
         <div v-if="adherence"
-            class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            class="overflow-hidden rounded-2xl border border-slate-200/70 bg-white shadow-[0_2px_20px_-12px_rgb(15_23_42/0.18)] dark:border-slate-800 dark:bg-slate-900">
             <div class="border-b border-slate-100 px-5 py-4 dark:border-slate-800">
-                <h2 class="flex items-center gap-2 text-base font-semibold text-slate-900 dark:text-white">
+                <h2 class="flex items-center gap-2 font-display text-lg font-semibold text-slate-900 dark:text-white">
                     <i class="fa-solid fa-users-line text-indigo-500"></i>
                     Alunos atribuídos
                 </h2>

@@ -1,162 +1,137 @@
 <template>
-    <div
-        class="h-screen w-full overflow-hidden flex flex-col bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
-        <!-- Header -->
-        <header ref="headerEl" class="sticky top-0 z-40 bg-white dark:bg-slate-900 dark:backdrop-blur-md">
-            <div class="mx-auto p-3 pb-1 md:pb-3 md:pt-4 md:px-3">
-                <div class="flex items-center justify-between gap-3">
-                    <div class="flex items-center gap-3">
-                        <button
-                            class="md:hidden rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm font-medium text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700"
-                            @click="openMobile">
+    <div class="flex h-screen w-full flex-col overflow-hidden bg-slate-50 transition-colors duration-300 dark:bg-slate-950">
+        <!-- ───────────── Header ───────────── -->
+        <header ref="headerEl"
+            class="sticky top-0 z-40 border-b border-slate-200/80 bg-white/85 backdrop-blur-md dark:border-slate-800/80 dark:bg-slate-900/85">
+            <div class="flex items-center justify-between gap-3 px-3 py-3 md:px-4">
+                <div class="flex items-center gap-2.5">
+                    <!-- Toggle mobile -->
+                    <button type="button" @click="openMobile"
+                        class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 md:hidden">
+                        <i class="fa-solid fa-bars-staggered"></i>
+                    </button>
 
-                            <i class="fa-regular fa-square-caret-left text-2xl transition-transform duration-200"
-                                :class="{ 'fa-rotate-180': desktopCollapsed }">
-                            </i>
-                        </button>
+                    <!-- Toggle desktop (colapsar sidebar) -->
+                    <button type="button" @click="desktopCollapsed = !desktopCollapsed" :aria-pressed="desktopCollapsed"
+                        title="Recolher menu"
+                        class="hidden h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 md:inline-flex">
+                        <i class="fa-solid fa-angles-left transition-transform duration-200"
+                            :class="{ 'rotate-180': desktopCollapsed }"></i>
+                    </button>
 
-                        <button
-                            class="hidden md:inline-flex items-center rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2 text-sm font-medium text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700"
-                            @click="desktopCollapsed = !desktopCollapsed" :aria-pressed="desktopCollapsed">
+                    <router-link :to="{ name: 'AcademyPanel' }" class="flex items-center gap-2.5">
+                        <img src="/Mlogotext.png" class="h-8 invert dark:invert-0" alt="Menin" />
+                        <span class="hidden h-5 w-px bg-slate-200 dark:bg-slate-700 sm:block"></span>
+                        <span class="font-display hidden text-lg font-semibold text-slate-900 dark:text-white sm:block">
+                            Academy
+                        </span>
+                    </router-link>
+                </div>
 
-                            <i class="fa-regular fa-square-caret-left text-2xl transition-transform duration-200"
-                                :class="{ 'fa-rotate-180': desktopCollapsed }">
-                            </i>
-                        </button>
-                        <img src="/Mlogotext.png" class="h-9 invert dark:invert-0" alt="Menin Academy">
+                <div class="flex items-center gap-2.5 md:gap-3">
+                    <InputSearch />
 
-                    </div>
+                    <button type="button" @click="router.push({ name: 'AcademyKBEditor' })" title="Criar artigo"
+                        class="hidden h-10 items-center gap-2 rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 px-3.5 text-sm font-semibold text-white shadow-sm shadow-indigo-500/25 transition hover:opacity-95 active:scale-95 md:inline-flex">
+                        <i class="fa-solid fa-feather-pointed text-xs"></i>
+                        <span class="hidden lg:inline">Criar</span>
+                    </button>
 
-                    <div class="flex items-center justify-between md:pe-2 gap-4 w-auto">
-                        <InputSearch />
-                        <i @click="router.push({ name: 'AcademyKBEditor' })"
-                            class="fas text-2xl cursor-pointer fa-book-open !hidden md:!block"></i>
-                        <Profile />
-                    </div>
+                    <Profile />
                 </div>
             </div>
         </header>
 
         <!-- Overlay (mobile) -->
-        <div class="fixed inset-0 z-40 bg-black/40 md:hidden transition-opacity duration-200 ease-[cubic-bezier(0.2,0.8,0.2,1)]"
+        <div class="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-sm transition-opacity duration-200 md:hidden"
             :class="mobileOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'"
             @click="closeMobile" aria-hidden="true" />
 
-        <!-- BODY -->
-        <div class="flex-1 min-h-0 overflow-hidden">
-            <div class="h-full w-full">
-                <div class="flex h-full min-h-0">
-                    <!-- Sidebar -->
-                    <aside :class="[
-                        // Mobile drawer
-                        'fixed md:static z-50 md:z-auto top-0 left-0 h-full',
-                        'transform md:transform-none transition-transform duration-200 ease-[cubic-bezier(0.2,0.8,0.2,1)] will-change-transform',
-                        mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0',
-
-                        // Desktop: altura abaixo do header
-                        'md:sticky md:top-[var(--header-h)] md:h-[calc(100vh-var(--header-h))] md:min-h-0 md:self-start',
-
-                        // Desktop: animar largura
-                        'md:transition-[width] md:duration-200 md:ease-[cubic-bezier(0.2,0.8,0.2,1)]',
-
-                        // Largura
-                        desktopCollapsed ? 'md:w-[72px] w-[280px]' : 'md:w-[280px] w-[280px]'
-                    ]">
-                        <!-- Nav: SEM scroll -->
-                        <nav
-                            class="h-full bg-white dark:bg-slate-900 shadow-sm ps-3 p-2 flex flex-col gap-2 overflow-hidden">
-                            <div class="md:hidden flex items-center justify-between px-2 py-2">
-                                <button
-                                    class="rounded-xl bg-white dark:bg-slate-800 px-3 py-2 text-sm font-medium text-slate-900 dark:text-slate-100"
-                                    @click="closeMobile">
-
-                                    <i class="fa-regular fa-square-caret-left text-2xl transition-transform duration-200"
-                                        :class="{ 'fa-rotate-180': desktopCollapsed }">
-                                    </i>
-                                </button>
-                            </div>
-
-                            <NavItem :to="{ name: 'AcademyPanel' }" label="Painel" :collapsed="desktopCollapsed">
-                                <template #icon><i
-                                        class="fa-solid fa-gauge text-slate-500 dark:text-slate-400"></i></template>
-                            </NavItem>
-
-                            <NavItem :to="{ name: 'AcademyMe' }" label="Meu perfil" :collapsed="desktopCollapsed">
-                                <template #icon><i
-                                        class="fa-solid fa-user text-slate-500 dark:text-slate-400"></i></template>
-                            </NavItem>
-
-                            <NavItem :to="{ name: 'AcademyKB' }" label="Base de conhecimento"
-                                data-tour="nav-kb" :collapsed="desktopCollapsed">
-                                <template #icon><i
-                                        class="fa-solid fa-book text-slate-500 dark:text-slate-400"></i></template>
-                            </NavItem>
-
-                            <NavItem :to="{ name: 'AcademyCommunity' }" label="Comunidade"
-                                data-tour="nav-community" :collapsed="desktopCollapsed">
-                                <template #icon><i
-                                        class="fa-solid fa-comments text-slate-500 dark:text-slate-400"></i></template>
-                            </NavItem>
-
-                            <NavItem :to="{ name: 'AcademyTracks' }" label="Trilhas" data-tour="nav-tracks"
-                                :collapsed="desktopCollapsed">
-                                <template #icon><i
-                                        class="fa-solid fa-route text-slate-500 dark:text-slate-400"></i></template>
-                            </NavItem>
-
-                            <NavItem :to="{ name: 'AcademyUsers' }" label="Usuários" :collapsed="desktopCollapsed">
-                                <template #icon><i
-                                        class="fa-solid fa-users text-slate-500 dark:text-slate-400"></i></template>
-                            </NavItem>
-
-                            <NavItem v-if="authStore?.user?.role === 'admin'" :to="{ name: 'AcademyAdmin' }"
-                                label="Admin" :collapsed="desktopCollapsed">
-                                <template #icon><i
-                                        class="fa-solid fa-shield-halved text-slate-500 dark:text-slate-400"></i></template>
-                            </NavItem>
-
-                            <div class="mt-auto"></div>
-
-                            <div v-if="authStore.isInternal">
-                                <div class="border-t border-slate-100 pb-2 dark:border-slate-800" />
-
-                                <button
-                                    class="w-full rounded-xl px-3 py-2 text-left text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors flex items-center gap-2"
-                                    @click="goOffice">
-                                    <span class="inline-flex h-6 w-6 items-center justify-center shrink-0">
-                                        <i class="fa-solid fa-arrow-left text-slate-500 dark:text-slate-400"></i>
-                                    </span>
-                                    <span v-if="!desktopCollapsed">Voltar ao Office</span>
-                                </button>
-
-                            </div>
-                        </nav>
-                    </aside>
-
-                    <!-- Main: SEM scroll -->
-                    <main class="relative flex-1 min-w-0 min-h-0 overflow-hidden">
-                        <!-- Card do conteúdo -->
-                        <div class="h-full min-h-0 p-1 pe-2 pb-2 bg-white dark:bg-slate-900">
-                            <div
-                                class="h-full min-h-0 overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 shadow-sm">
-                                <!-- “borda interna” -->
-                                <div
-                                    class="h-full min-h-0 rounded-2xl ring-1 ring-inset ring-slate-100 dark:ring-slate-950">
-                                    <!-- ÚNICO lugar com scroll -->
-                                    <div class="h-full min-h-0 overflow-y-auto p-4">
-                                        <!-- Largura consistente em todas as telas do Academy -->
-                                        <div class="mx-auto max-w-6xl">
-                                            <router-view />
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+        <!-- ───────────── Body ───────────── -->
+        <div class="min-h-0 flex-1 overflow-hidden">
+            <div class="flex h-full min-h-0">
+                <!-- Sidebar -->
+                <aside :class="[
+                    'fixed left-0 top-0 z-50 h-full md:static md:z-auto',
+                    'transform transition-transform duration-200 ease-[cubic-bezier(0.2,0.8,0.2,1)] will-change-transform md:transform-none',
+                    mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0',
+                    'md:sticky md:top-[var(--header-h)] md:h-[calc(100vh-var(--header-h))] md:min-h-0 md:self-start',
+                    'md:transition-[width] md:duration-200 md:ease-[cubic-bezier(0.2,0.8,0.2,1)]',
+                    desktopCollapsed ? 'w-[280px] md:w-[76px]' : 'w-[280px]'
+                ]">
+                    <nav
+                        class="flex h-full flex-col gap-1 overflow-y-auto border-r border-slate-200 bg-white px-3 py-3 dark:border-slate-800 dark:bg-slate-900">
+                        <!-- topo do drawer (mobile) -->
+                        <div class="mb-1 flex items-center justify-between px-1 md:hidden">
+                            <span class="font-display text-base font-semibold text-slate-900 dark:text-white">Academy</span>
+                            <button type="button" @click="closeMobile"
+                                class="inline-flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
                         </div>
-                        <!-- Tutor Eme — preenche a área de conteúdo; a nav permanece -->
-                        <AcademyTutorChat />
-                    </main>
 
-                </div>
+                        <NavItem :to="{ name: 'AcademyPanel' }" label="Painel" :collapsed="desktopCollapsed">
+                            <template #icon><i class="fa-solid fa-gauge-high"></i></template>
+                        </NavItem>
+
+                        <p v-if="!desktopCollapsed" class="nav-group">Aprender</p>
+                        <div v-else class="nav-sep"></div>
+
+                        <NavItem :to="{ name: 'AcademyTracks' }" label="Trilhas" data-tour="nav-tracks"
+                            :collapsed="desktopCollapsed">
+                            <template #icon><i class="fa-solid fa-route"></i></template>
+                        </NavItem>
+                        <NavItem :to="{ name: 'AcademyKB' }" label="Base de conhecimento" data-tour="nav-kb"
+                            :collapsed="desktopCollapsed">
+                            <template #icon><i class="fa-solid fa-book-open"></i></template>
+                        </NavItem>
+                        <NavItem :to="{ name: 'AcademyCommunity' }" label="Comunidade" data-tour="nav-community"
+                            :collapsed="desktopCollapsed">
+                            <template #icon><i class="fa-solid fa-comments"></i></template>
+                        </NavItem>
+
+                        <p v-if="!desktopCollapsed" class="nav-group">Você</p>
+                        <div v-else class="nav-sep"></div>
+
+                        <NavItem :to="{ name: 'AcademyMe' }" label="Meu perfil" :collapsed="desktopCollapsed">
+                            <template #icon><i class="fa-solid fa-circle-user"></i></template>
+                        </NavItem>
+                        <NavItem :to="{ name: 'AcademyUsers' }" label="Pessoas" :collapsed="desktopCollapsed">
+                            <template #icon><i class="fa-solid fa-users"></i></template>
+                        </NavItem>
+
+                        <template v-if="authStore?.user?.role === 'admin'">
+                            <p v-if="!desktopCollapsed" class="nav-group">Gestão</p>
+                            <div v-else class="nav-sep"></div>
+                            <NavItem :to="{ name: 'AcademyAdmin' }" label="Administração" :collapsed="desktopCollapsed">
+                                <template #icon><i class="fa-solid fa-shield-halved"></i></template>
+                            </NavItem>
+                        </template>
+
+                        <div class="mt-auto"></div>
+
+                        <div v-if="authStore.isInternal" class="border-t border-slate-100 pt-2 dark:border-slate-800">
+                            <button type="button" @click="goOffice" :title="desktopCollapsed ? 'Voltar ao Office' : undefined"
+                                class="group flex h-11 w-full items-center rounded-xl px-3 text-sm font-medium text-slate-600 transition hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800/70"
+                                :class="desktopCollapsed ? 'justify-center' : ''">
+                                <span class="inline-flex h-6 w-6 shrink-0 items-center justify-center text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-200">
+                                    <i class="fa-solid fa-arrow-left-long"></i>
+                                </span>
+                                <span v-if="!desktopCollapsed" class="ml-2.5">Voltar ao Office</span>
+                            </button>
+                        </div>
+                    </nav>
+                </aside>
+
+                <!-- Main -->
+                <main class="relative min-h-0 min-w-0 flex-1 overflow-hidden">
+                    <div class="h-full min-h-0 overflow-y-auto">
+                        <div class="mx-auto max-w-6xl px-4 py-5 sm:px-6 lg:py-6">
+                            <router-view />
+                        </div>
+                    </div>
+                    <AcademyTutorChat />
+                </main>
             </div>
         </div>
     </div>
@@ -167,7 +142,7 @@ import { ref, watch, onMounted, onBeforeUnmount } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import NavItem from '@/views/Academy/components/NavItem.vue';
 import { useAuthStore } from '@/stores/Settings/Auth/authStore';
-import InputSearch from '@/views/Academy/layouts/InputSearch.vue'
+import InputSearch from '@/views/Academy/layouts/InputSearch.vue';
 import Profile from '@/views/Academy/components/Profile.vue';
 import AcademyTutorChat from '@/views/Academy/components/AcademyTutorChat.vue';
 import { officeUrl } from '@/utils/appContext';
@@ -176,22 +151,13 @@ const authStore = useAuthStore();
 const router = useRouter();
 const route = useRoute();
 
-const search = ref(String(route.query.q || ''));
 const mobileOpen = ref(false);
 const desktopCollapsed = ref(false);
 
 const headerEl = ref(null);
 let ro = null;
 
-watch(() => route.query.q, (v) => (search.value = String(v || '')));
-
-function goSearch() {
-    router.push({ name: 'AcademyKB', query: { q: search.value } });
-    closeMobile();
-}
-
 function goOffice() {
-    // Resolve produção vs local automaticamente (não força domínio fixo).
     window.location.href = officeUrl('/');
 }
 
@@ -213,7 +179,7 @@ watch(() => route.fullPath, () => {
     if (mobileOpen.value) closeMobile();
 });
 
-// seta var --header-h com altura real do header (inclui padding etc.)
+// seta var --header-h com altura real do header
 function setHeaderVar(px) {
     document.documentElement.style.setProperty('--header-h', `${px}px`);
 }
@@ -221,9 +187,7 @@ function setHeaderVar(px) {
 onMounted(() => {
     const el = headerEl.value;
     if (!el) return;
-
     setHeaderVar(Math.ceil(el.getBoundingClientRect().height));
-
     ro = new ResizeObserver((entries) => {
         const h = Math.ceil(entries?.[0]?.contentRect?.height || el.getBoundingClientRect().height);
         setHeaderVar(h);
@@ -236,3 +200,28 @@ onBeforeUnmount(() => {
     if (ro) ro.disconnect();
 });
 </script>
+
+<style scoped>
+.nav-group {
+    padding: 0.85rem 0.75rem 0.25rem;
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    color: rgb(148 163 184);
+}
+
+:global(.dark) .nav-group {
+    color: rgb(100 116 139);
+}
+
+.nav-sep {
+    margin: 0.5rem 0.75rem;
+    height: 1px;
+    background: rgb(226 232 240);
+}
+
+:global(.dark) .nav-sep {
+    background: rgb(30 41 59);
+}
+</style>

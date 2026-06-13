@@ -26,11 +26,11 @@
         <div v-else class="grid grid-cols-1 gap-5 lg:grid-cols-12">
             <!-- Itens -->
             <section
-                class="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900 lg:col-span-8">
+                class="rounded-2xl border border-slate-200/70 bg-white shadow-[0_2px_20px_-12px_rgb(15_23_42/0.18)] dark:border-slate-800 dark:bg-slate-900 lg:col-span-8">
                 <div
                     class="flex flex-col gap-3 border-b border-slate-100 px-5 py-4 dark:border-slate-800 md:flex-row md:items-center md:justify-between">
                     <div class="min-w-0">
-                        <h2 class="flex items-center gap-2 text-base font-semibold text-slate-900 dark:text-white">
+                        <h2 class="flex items-center gap-2 font-display text-lg font-semibold text-slate-900 dark:text-white">
                             <i class="fa-solid fa-list-check text-indigo-500"></i>
                             Itens da jornada
                         </h2>
@@ -164,8 +164,8 @@
             <!-- Sidebar -->
             <aside class="space-y-5 lg:col-span-4">
                 <section
-                    class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-                    <h3 class="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-white">
+                    class="rounded-2xl border border-slate-200/70 bg-white p-5 shadow-[0_2px_20px_-12px_rgb(15_23_42/0.18)] dark:border-slate-800 dark:bg-slate-900">
+                    <h3 class="flex items-center gap-2 font-display text-base font-semibold text-slate-900 dark:text-white">
                         <i class="fa-solid fa-chart-simple text-indigo-500"></i>
                         Resumo do progresso
                     </h3>

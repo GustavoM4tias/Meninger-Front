@@ -15,7 +15,7 @@
                                 <i class="fa-solid fa-wand-magic-sparkles"></i>
                             </span>
                             <div>
-                                <h2 class="text-base font-semibold text-slate-900 dark:text-white">
+                                <h2 class="font-display text-lg font-semibold text-slate-900 dark:text-white">
                                     Gerar artigo com IA
                                 </h2>
                                 <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">

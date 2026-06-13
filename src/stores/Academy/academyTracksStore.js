@@ -51,13 +51,13 @@ export const useAcademyTracksStore = defineStore('academyTracks', {
     }),
 
     actions: {
-        async fetchTracks({ audience = 'BOTH' } = {}) {
+        async fetchTracks(_opts = {}) {
             this.error = null;
             const carregamento = useCarregamentoStore();
 
             try {
                 carregamento.iniciarCarregamento();
-                const data = await requestWithAuth(`/academy/tracks?audience=${encodeURIComponent(audience)}`);
+                const data = await requestWithAuth('/academy/tracks');
                 const rows = Array.isArray(data) ? data : (data?.results || []);
                 this.list = rows.map(t => ({ ...t, progressPercent: Number(t.progressPercent || 0) }));
 
@@ -71,14 +71,14 @@ export const useAcademyTracksStore = defineStore('academyTracks', {
             }
         },
 
-        async fetchTrack(slug, { audience = 'BOTH' } = {}) {
+        async fetchTrack(slug, _opts = {}) {
             this.error = null;
             const carregamento = useCarregamentoStore();
 
             try {
                 carregamento.iniciarCarregamento();
                 const data = await requestWithAuth(
-                    `/academy/tracks/${encodeURIComponent(slug)}?audience=${encodeURIComponent(audience)}`
+                    `/academy/tracks/${encodeURIComponent(slug)}`
                 );
 
                 this.detail = normalizeTrackDetail(data);

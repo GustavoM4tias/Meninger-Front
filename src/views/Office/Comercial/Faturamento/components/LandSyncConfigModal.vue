@@ -79,14 +79,16 @@ const isNewRuleValid = computed(() =>
 );
 
 const enterprisesOptions = computed(() =>
-  (contractsStore.enterprises || []).map(e => e.name)
+  [...new Set((contractsStore.enterprises || []).map(e => e.name).filter(Boolean))]
 );
 
 const enterprisesNotHiddenOptions = computed(() => {
   const hiddenIds = hiddenStore.hiddenIds;
-  return (contractsStore.enterprises || [])
+  const names = (contractsStore.enterprises || [])
     .filter(e => !hiddenIds.has(Number(e.id)))
-    .map(e => e.name);
+    .map(e => e.name)
+    .filter(Boolean);
+  return [...new Set(names)];
 });
 
 const enterpriseSelectOptions = computed(() => [
@@ -161,12 +163,14 @@ async function handleHiddenAdd() {
   }
   selectedHiddenNames.value = [];
   contractsStore.clearContractsCache();
+  await contractsStore.fetchContracts({ force: true });
 }
 
 async function handleHiddenRemove(id) {
   if (!window.confirm('Restaurar visibilidade deste empreendimento?')) return;
   await hiddenStore.removeItem(id);
   contractsStore.clearContractsCache();
+  await contractsStore.fetchContracts({ force: true });
 }
 
 // ── Commission rule handlers ───────────────────────────────────────

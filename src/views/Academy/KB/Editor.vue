@@ -53,9 +53,9 @@
             <aside class="space-y-5 lg:col-span-4">
                 <!-- Dados -->
                 <section
-                    class="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                    class="rounded-2xl border border-slate-200/70 bg-white shadow-[0_2px_20px_-12px_rgb(15_23_42/0.18)] dark:border-slate-800 dark:bg-slate-900">
                     <div class="border-b border-slate-100 px-5 py-4 dark:border-slate-800">
-                        <h2 class="flex items-center gap-2 text-base font-semibold text-slate-900 dark:text-white">
+                        <h2 class="flex items-center gap-2 font-display text-lg font-semibold text-slate-900 dark:text-white">
                             <i class="fa-solid fa-file-pen text-indigo-500"></i>
                             Dados
                         </h2>
@@ -109,17 +109,37 @@
                                 Digite para buscar uma existente, ou crie nova em kebab-case.
                             </p>
                         </div>
+
+                        <div class="relative">
+                            <label
+                                class="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+                                Subcategoria <span class="font-normal normal-case text-slate-400">(opcional)</span>
+                            </label>
+                            <div class="relative mt-1.5">
+                                <input v-model="subcategorySlug" type="text" list="kb-subcats" placeholder="Ex: cartorio"
+                                    class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-4 focus:ring-indigo-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-indigo-700 dark:focus:ring-indigo-950/60" />
+                                <datalist id="kb-subcats">
+                                    <option v-for="s in subcategorySuggestions" :key="s.slug" :value="s.slug">{{ s.name }}</option>
+                                </datalist>
+                            </div>
+                            <p class="mt-1.5 text-xs text-slate-500 dark:text-slate-500">
+                                2º nível dentro da categoria (kebab-case). Ex.: Comercial › Cartório.
+                            </p>
+                        </div>
                     </div>
                 </section>
 
                 <!-- Visibilidade (públicos) -->
                 <AudienceSelector v-model="audiences" />
 
+                <!-- Quem pode editar (além do autor + admin) -->
+                <EditorsSelector v-model="editorUserIds" :seed="editorSeed" />
+
                 <!-- Estrutura (outline) -->
                 <section
-                    class="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                    class="rounded-2xl border border-slate-200/70 bg-white shadow-[0_2px_20px_-12px_rgb(15_23_42/0.18)] dark:border-slate-800 dark:bg-slate-900">
                     <div class="border-b border-slate-100 px-5 py-4 dark:border-slate-800">
-                        <h2 class="flex items-center gap-2 text-base font-semibold text-slate-900 dark:text-white">
+                        <h2 class="flex items-center gap-2 font-display text-lg font-semibold text-slate-900 dark:text-white">
                             <i class="fa-solid fa-list-tree text-indigo-500"></i>
                             Estrutura
                         </h2>
@@ -150,9 +170,9 @@
 
                 <!-- Validação ("testes") -->
                 <section
-                    class="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                    class="rounded-2xl border border-slate-200/70 bg-white shadow-[0_2px_20px_-12px_rgb(15_23_42/0.18)] dark:border-slate-800 dark:bg-slate-900">
                     <div class="flex items-center justify-between border-b border-slate-100 px-5 py-4 dark:border-slate-800">
-                        <h2 class="flex items-center gap-2 text-base font-semibold text-slate-900 dark:text-white">
+                        <h2 class="flex items-center gap-2 font-display text-lg font-semibold text-slate-900 dark:text-white">
                             <i class="fa-solid fa-shield-halved text-indigo-500"></i>
                             Validação
                         </h2>
@@ -233,7 +253,7 @@
 
                 <!-- Editor -->
                 <section
-                    class="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                    class="rounded-2xl border border-slate-200/70 bg-white shadow-[0_2px_20px_-12px_rgb(15_23_42/0.18)] dark:border-slate-800 dark:bg-slate-900">
                     <div
                         class="flex items-center justify-between gap-3 border-b border-slate-100 px-3 py-2.5 dark:border-slate-800">
                         <div class="flex items-center gap-1">
@@ -294,6 +314,7 @@ import { useRoute, useRouter } from 'vue-router';
 
 import AcademyPageHeader from '@/views/Academy/components/AcademyPageHeader.vue';
 import AudienceSelector from '@/views/Academy/components/AudienceSelector.vue';
+import EditorsSelector from '@/views/Academy/components/EditorsSelector.vue';
 import TokenEditor from '@/views/Academy/components/TokenEditor.vue';
 import TokenRenderer from '@/views/Academy/components/TokenRenderer.vue';
 import ArticleVersionsModal from '@/views/Academy/KB/ArticleVersionsModal.vue';
@@ -317,10 +338,14 @@ const title = ref('');
 const categorySlug = ref('');
 const body = ref('');
 const payload = ref({ embeds: [], widgets: { quiz: {}, task: {} } });
-// audiences = tokens de público que podem ver. Default "todo mundo, exceto
-// admin-only" — alinhado com DEFAULT_AUDIENCES do backend.
-const DEFAULT_AUDIENCES = ['INTERNAL', 'GESTOR', 'BROKER', 'REALESTATE', 'CORRESPONDENT'];
+// audiences = set canônico da classe de visibilidade (modelo de 4 classes:
+// Interno | Externo | Ambos | Somente admin). Artigo novo nasce INTERNO —
+// padrão SEGURO: conteúdo interno nunca vaza por esquecimento.
+const DEFAULT_AUDIENCES = ['INTERNAL', 'GESTOR'];
 const audiences = ref(DEFAULT_AUDIENCES.slice());
+// Editores adicionais (além do autor + admin). Array de ids; seed = objetos.
+const editorUserIds = ref([]);
+const editorSeed = ref([]);
 
 const titleInputEl = ref(null);
 const versionsOpen = ref(false);
@@ -350,6 +375,14 @@ function pickCategory(c) {
 function onCategoryBlur() {
     setTimeout(() => { categoryFocused.value = false; }, 100);
 }
+
+// ── Subcategoria (2º nível, opcional) ────────────────────────────────
+const subcategorySlug = ref('');
+// Sugestões = subcategorias já existentes na categoria atual (datalist).
+const subcategorySuggestions = computed(() => {
+    const cat = (kb.categories || []).find((c) => c.slug === String(categorySlug.value || '').trim());
+    return Array.isArray(cat?.subcategories) ? cat.subcategories : [];
+});
 
 // ── Templates (modelos prontos) ──────────────────────────────────────
 const TEMPLATES = [
@@ -466,7 +499,7 @@ function scheduleAutoSave() {
     saveTimer = setTimeout(() => save({ auto: true }), 2000);
 }
 
-watch([title, categorySlug, body, payload, audiences], () => {
+watch([title, categorySlug, subcategorySlug, body, payload, audiences, editorUserIds], () => {
     if (!loaded.value) return;
     dirty.value = true;
     savingError.value = false;
@@ -488,9 +521,11 @@ async function save({ auto = false } = {}) {
             const created = await admin.createArticle({
                 title: title.value.trim(),
                 categorySlug: categorySlug.value.trim(),
+                subcategorySlug: subcategorySlug.value.trim(),
                 body: body.value,
                 payload: payload.value,
                 audiences: audiences.value.slice(),
+                editorUserIds: editorUserIds.value.slice(),
             });
             if (token !== saveToken) return;
             articleId.value = created?.id || null;
@@ -499,9 +534,11 @@ async function save({ auto = false } = {}) {
             const updated = await admin.updateArticle(articleId.value, {
                 title: title.value.trim(),
                 categorySlug: categorySlug.value.trim(),
+                subcategorySlug: subcategorySlug.value.trim(),
                 body: body.value,
                 payload: payload.value,
                 audiences: audiences.value.slice(),
+                editorUserIds: editorUserIds.value.slice(),
             });
             if (token !== saveToken) return;
             admin.lastSaved = updated;
@@ -511,7 +548,7 @@ async function save({ auto = false } = {}) {
         dirty.value = false;
 
         if (wasNewCategory) {
-            kb.fetchCategories({ audience: 'BOTH' }).catch(() => { });
+            kb.fetchCategories().catch(() => { });
         }
     } catch (e) {
         savingError.value = true;
@@ -527,13 +564,17 @@ async function saveAndCreateAnother() {
     if (savingError.value) return;
 
     const keptCategory = categorySlug.value;
+    const keptSubcategory = subcategorySlug.value;
     const keptAudiences = audiences.value.slice();
     articleId.value = null;
     title.value = '';
     body.value = '';
     payload.value = { embeds: [], widgets: { quiz: {}, task: {} } };
     categorySlug.value = keptCategory;
+    subcategorySlug.value = keptSubcategory;
     audiences.value = keptAudiences;
+    editorUserIds.value = [];
+    editorSeed.value = [];
     admin.lastSaved = null;
     lastSavedAt.value = null;
     dirty.value = false;
@@ -684,6 +725,7 @@ function onVersionRestored(article) {
     loaded.value = false;
     title.value = article.title || title.value;
     categorySlug.value = article.categorySlug || categorySlug.value;
+    subcategorySlug.value = article.subcategorySlug || subcategorySlug.value;
     body.value = article.body || '';
     payload.value = article.payload && typeof article.payload === 'object'
         ? article.payload
@@ -699,13 +741,14 @@ onMounted(async () => {
     window.addEventListener('keydown', onKeydown);
     nowInterval = setInterval(() => { now.value = Date.now(); }, 5000);
 
-    await kb.fetchCategories({ audience: 'BOTH' });
+    await kb.fetchCategories();
 
     if (articleId.value) {
         const a = await admin.fetchById(articleId.value);
         if (a) {
             title.value = a.title || '';
             categorySlug.value = a.categorySlug || '';
+            subcategorySlug.value = a.subcategorySlug || '';
             body.value = a.body || '';
             payload.value = a.payload && typeof a.payload === 'object'
                 ? a.payload
@@ -713,6 +756,8 @@ onMounted(async () => {
             audiences.value = Array.isArray(a.audiences) && a.audiences.length
                 ? a.audiences.slice()
                 : DEFAULT_AUDIENCES.slice();
+            editorUserIds.value = Array.isArray(a.editorUserIds) ? a.editorUserIds.slice() : [];
+            editorSeed.value = Array.isArray(a.editors) ? a.editors.slice() : [];
             admin.lastSaved = a;
             lastSavedAt.value = Date.now();
         }

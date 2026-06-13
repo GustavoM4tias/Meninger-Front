@@ -93,24 +93,37 @@ async function submitSetup() {
 
 onMounted(async () => {
   const params = new URLSearchParams(window.location.search);
-  const token  = params.get('token');
+  const code   = params.get('code');
   const error  = params.get('error');
-  const newAcc = params.get('isNew') === 'true';
 
   if (error) {
     errorMessage.value = ERROR_MESSAGES[error] || 'Erro desconhecido. Tente novamente.';
     state.value = 'error';
     return;
   }
-  if (!token) {
-    errorMessage.value = 'Token não recebido. Tente novamente.';
+  if (!code) {
+    errorMessage.value = 'Código de login não recebido. Tente novamente.';
     state.value = 'error';
     return;
   }
 
   try {
-    authStore.setToken(token);
+    // Troca o código de uso único pelo par de tokens (o JWT nunca vem na URL).
+    const resp = await fetch(`${API_URL}/microsoft/auth/exchange`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code }),
+    }).then(r => r.json());
+
+    if (!resp?.success || !resp?.data?.token) {
+      throw new Error(resp?.error || 'Falha ao concluir o login Microsoft.');
+    }
+
+    authStore.setToken(resp.data.token);
+    authStore.setRefreshToken(resp.data.refreshToken);
     await authStore.fetchUserInfo();
+
+    const newAcc = resp.data.isNew === true;
     isNew.value = newAcc;
 
     if (newAcc) {
@@ -122,9 +135,9 @@ onMounted(async () => {
       setTimeout(() => router.push('/'), 1200);
     }
   } catch (err) {
-    console.error('[MicrosoftCallback] Erro ao carregar usuário:', err);
+    console.error('[MicrosoftCallback] Erro ao concluir login:', err);
     authStore.clearUser();
-    errorMessage.value = 'Erro ao carregar seus dados. Tente novamente.';
+    errorMessage.value = err?.message || 'Erro ao carregar seus dados. Tente novamente.';
     state.value = 'error';
   }
 });

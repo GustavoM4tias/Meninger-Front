@@ -11,7 +11,7 @@
 
         <!-- Identidade -->
         <section
-            class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            class="rounded-2xl border border-slate-200/70 bg-white p-6 shadow-[0_2px_20px_-12px_rgb(15_23_42/0.18)] dark:border-slate-800 dark:bg-slate-900">
             <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div class="flex min-w-0 items-center gap-4">
                     <span
@@ -19,7 +19,7 @@
                         {{ String(user?.username || '?').slice(0, 2).toUpperCase() }}
                     </span>
                     <div class="min-w-0">
-                        <div class="truncate text-base font-semibold text-slate-900 dark:text-slate-100">
+                        <div class="truncate font-display text-xl font-semibold text-slate-900 dark:text-slate-100">
                             {{ user?.username || 'Usuário' }}
                         </div>
                         <div class="truncate text-sm text-slate-500 dark:text-slate-400">
@@ -59,7 +59,7 @@
         <!-- Métricas -->
         <section class="grid grid-cols-1 gap-3 md:grid-cols-3">
             <div
-                class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                class="rounded-2xl border border-slate-200/70 bg-white p-5 shadow-[0_2px_20px_-12px_rgb(15_23_42/0.18)] dark:border-slate-800 dark:bg-slate-900">
                 <div class="flex items-center gap-2">
                     <span
                         class="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-100 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-300">
@@ -77,7 +77,7 @@
             </div>
 
             <div
-                class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                class="rounded-2xl border border-slate-200/70 bg-white p-5 shadow-[0_2px_20px_-12px_rgb(15_23_42/0.18)] dark:border-slate-800 dark:bg-slate-900">
                 <div class="flex items-center gap-2">
                     <span
                         class="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-100 text-amber-600 dark:bg-amber-950/60 dark:text-amber-300">
@@ -102,7 +102,7 @@
             </div>
 
             <div
-                class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                class="rounded-2xl border border-slate-200/70 bg-white p-5 shadow-[0_2px_20px_-12px_rgb(15_23_42/0.18)] dark:border-slate-800 dark:bg-slate-900">
                 <div class="flex items-center gap-2">
                     <span
                         class="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-100 text-indigo-600 dark:bg-indigo-950/60 dark:text-indigo-300">
@@ -172,6 +172,6 @@ function fmtDate(value) {
 
 onMounted(async () => {
     if (!id.value) return;
-    await store.fetchUserProfile(id.value, { audience: 'BOTH' });
+    await store.fetchUserProfile(id.value);
 });
 </script>

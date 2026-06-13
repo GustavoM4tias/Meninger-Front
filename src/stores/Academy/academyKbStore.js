@@ -37,6 +37,7 @@ export const useAcademyKbStore = defineStore('academyKb', {
         filters: {
             q: '',
             categorySlug: '',
+            subcategorySlug: '',
             status: '',
             mode: '',
         },
@@ -69,12 +70,14 @@ export const useAcademyKbStore = defineStore('academyKb', {
     }),
 
     actions: {
-        async fetchCategories({ audience = 'BOTH' } = {}) {
+        // audience é derivada no backend a partir do user autenticado — não
+        // mandamos nada do cliente (a tentativa seria ignorada de qualquer jeito).
+        async fetchCategories(_opts = {}) {
             this.error = null;
 
             try {
                 carregamento.iniciarCarregamento();
-                const data = await requestWithAuth(`/academy/kb/categories?audience=${encodeURIComponent(audience)}`);
+                const data = await requestWithAuth('/academy/kb/categories');
                 this.categories = safeArray(data?.categories);
                 return this.categories;
             } catch (e) {
@@ -86,12 +89,13 @@ export const useAcademyKbStore = defineStore('academyKb', {
             }
         },
 
-        async fetchArticles({ q, categorySlug, audience = 'BOTH', page, pageSize, status, mode } = {}) {
+        async fetchArticles({ q, categorySlug, subcategorySlug, page, pageSize, status, mode } = {}) {
             this.list.error = null;
             this.error = null;
 
             if (typeof q !== 'undefined') this.filters.q = q;
             if (typeof categorySlug !== 'undefined') this.filters.categorySlug = categorySlug;
+            if (typeof subcategorySlug !== 'undefined') this.filters.subcategorySlug = subcategorySlug;
             if (typeof status !== 'undefined') this.filters.status = status;
             if (typeof mode !== 'undefined') this.filters.mode = mode;
 
@@ -104,7 +108,7 @@ export const useAcademyKbStore = defineStore('academyKb', {
                 const query = buildQuery({
                     q: this.filters.q,
                     categorySlug: this.filters.categorySlug,
-                    audience,
+                    sub: this.filters.subcategorySlug,
                     page: this.list.page || 1,
                     pageSize: this.list.pageSize || 20,
                     mode: this.filters.mode === 'admin' ? 'admin' : '',
@@ -211,7 +215,7 @@ export const useAcademyKbStore = defineStore('academyKb', {
             }
         },
 
-        async fetchArticle({ categorySlug, articleSlug, audience = 'BOTH' } = {}) {
+        async fetchArticle({ categorySlug, articleSlug } = {}) {
             this.article.error = null;
 
             const cs = String(categorySlug || '').trim();
@@ -226,7 +230,7 @@ export const useAcademyKbStore = defineStore('academyKb', {
             try {
                 carregamento.iniciarCarregamento();
 
-                const qs = buildQuery({ audience });
+                const qs = buildQuery({});
                 const url = `/academy/kb/articles/${encodeURIComponent(cs)}/${encodeURIComponent(as)}${qs ? `?${qs}` : ''}`;
 
                 const data = await requestWithAuth(url);

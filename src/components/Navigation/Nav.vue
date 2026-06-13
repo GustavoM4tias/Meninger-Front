@@ -251,6 +251,12 @@ const closeMobile = () => { isMobileOpen.value = false; };
               @toggleFavorite="toggleFavorite"
             />
           </li>
+
+          <!-- Bolão da Copa — link direto (sem dropdown), abaixo das categorias -->
+          <li>
+            <SidebarItem to="/bolao" icon-img="/bolao-icon.png" label="Bolão da Copa"
+              :collapsed="isCollapsed" @click="expandSidebar(); closeMobile();" />
+          </li>
         </ul>
 
         <!-- Bottom -->

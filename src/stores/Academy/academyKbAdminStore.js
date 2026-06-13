@@ -50,7 +50,7 @@ export const useAcademyKbAdminStore = defineStore('academyKbAdmin', {
             }
         },
 
-        async createArticle({ title, categorySlug, body, payload = null, aliases, audiences }) {
+        async createArticle({ title, categorySlug, subcategorySlug, body, payload = null, aliases, audiences, editorUserIds }) {
             this.error = null;
 
             try {
@@ -62,8 +62,10 @@ export const useAcademyKbAdminStore = defineStore('academyKbAdmin', {
                     body,
                     payload: asObjOrNull(payload),
                 };
+                if (typeof subcategorySlug === 'string') requestBody.subcategorySlug = subcategorySlug;
                 if (Array.isArray(aliases)) requestBody.aliases = aliases;
                 if (Array.isArray(audiences)) requestBody.audiences = audiences;
+                if (Array.isArray(editorUserIds)) requestBody.editorUserIds = editorUserIds;
 
                 const data = await requestWithAuth('/academy/kb/articles', {
                     method: 'POST',
@@ -85,7 +87,7 @@ export const useAcademyKbAdminStore = defineStore('academyKbAdmin', {
             }
         },
 
-        async updateArticle(id, { title, categorySlug, body, payload = null, aliases, audiences }) {
+        async updateArticle(id, { title, categorySlug, subcategorySlug, body, payload = null, aliases, audiences, editorUserIds }) {
             this.error = null;
 
             const safeId = safeNumber(id, 0);
@@ -100,8 +102,10 @@ export const useAcademyKbAdminStore = defineStore('academyKbAdmin', {
                     body,
                     payload: asObjOrNull(payload),
                 };
+                if (typeof subcategorySlug === 'string') requestBody.subcategorySlug = subcategorySlug;
                 if (Array.isArray(aliases)) requestBody.aliases = aliases;
                 if (Array.isArray(audiences)) requestBody.audiences = audiences;
+                if (Array.isArray(editorUserIds)) requestBody.editorUserIds = editorUserIds;
 
                 const data = await requestWithAuth(`/academy/kb/articles/${safeId}`, {
                     method: 'PATCH',
@@ -144,6 +148,19 @@ export const useAcademyKbAdminStore = defineStore('academyKbAdmin', {
             } catch (e) {
                 this.error = e?.message || 'Erro ao publicar/despublicar.';
                 throw e;
+            }
+        },
+
+        // Busca usuários internos para o picker "Quem pode editar".
+        async searchEditorCandidates(q = '') {
+            try {
+                const data = await requestWithAuth(
+                    `/academy/kb/editor-candidates?q=${encodeURIComponent(String(q || ''))}`
+                );
+                return Array.isArray(data?.results) ? data.results : [];
+            } catch (e) {
+                this.error = e?.message || 'Erro ao buscar usuários.';
+                return [];
             }
         },
     },

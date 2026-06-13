@@ -18,9 +18,9 @@
             <!-- Ações -->
             <section class="space-y-5 lg:col-span-8">
                 <div
-                    class="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                    class="rounded-2xl border border-slate-200/70 bg-white shadow-[0_2px_20px_-12px_rgb(15_23_42/0.18)] dark:border-slate-800 dark:bg-slate-900">
                     <div class="border-b border-slate-100 px-5 py-4 dark:border-slate-800">
-                        <h2 class="flex items-center gap-2 text-base font-semibold text-slate-900 dark:text-white">
+                        <h2 class="flex items-center gap-2 font-display text-lg font-semibold text-slate-900 dark:text-white">
                             <i class="fa-solid fa-bolt text-indigo-500"></i>
                             Ações
                         </h2>
@@ -69,8 +69,8 @@
                 </section>
 
                 <section
-                    class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-                    <h3 class="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-white">
+                    class="rounded-2xl border border-slate-200/70 bg-white p-5 shadow-[0_2px_20px_-12px_rgb(15_23_42/0.18)] dark:border-slate-800 dark:bg-slate-900">
+                    <h3 class="flex items-center gap-2 font-display text-base font-semibold text-slate-900 dark:text-white">
                         <i class="fa-solid fa-link text-slate-400"></i>
                         Atalhos
                     </h3>

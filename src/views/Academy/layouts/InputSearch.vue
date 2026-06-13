@@ -2,10 +2,11 @@
 
     <div class="relative hidden md:block w-full md:w-[420px]">
         <button type="button" @click="openPalette"
-            class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2.5 pr-16 text-sm text-slate-600 dark:text-slate-300 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700/60 text-left">
-            Buscar (Artigos / trilhas / tópicos)...
+            class="group flex w-full items-center gap-2.5 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-left text-sm text-slate-500 transition hover:border-slate-300 hover:bg-white dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-400 dark:hover:border-slate-600 dark:hover:bg-slate-800">
+            <i class="fa-solid fa-magnifying-glass text-xs text-slate-400 transition group-hover:text-indigo-500"></i>
+            <span class="flex-1 truncate">Buscar artigos, trilhas, tópicos…</span>
             <span
-                class="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white/70 dark:bg-slate-900/60 px-2 py-1 text-xs text-slate-500 dark:text-slate-400">
+                class="rounded-lg border border-slate-200 bg-white px-2 py-0.5 font-mono text-[11px] text-slate-400 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-500">
                 {{ shortcutHint }}
             </span>
         </button>
@@ -62,6 +63,9 @@
 
 <script setup>
 import { ref, onMounted, onBeforeUnmount, nextTick, computed } from 'vue';
+import { useRouter } from 'vue-router';
+
+const router = useRouter();
 
 const paletteOpen = ref(false);
 const paletteQuery = ref('');
