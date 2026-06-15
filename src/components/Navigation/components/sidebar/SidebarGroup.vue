@@ -15,10 +15,10 @@ defineEmits(['toggle']);
   <div>
     <button type="button" @click="$emit('toggle')"
       :class="[
-        'flex items-center w-full h-10 px-2 rounded-lg text-ink',
+        'flex items-center w-full px-2 rounded-lg text-ink',
         'hover:bg-surface-sunken transition-colors group',
         collapsed ? 'justify-center' : '',
-        level === 'sub' ? 'h-9 text-sm font-normal' : 'text-sm font-medium',
+        level === 'sub' ? 'h-8 text-[13px] font-normal' : 'h-9 text-sm font-medium',
       ]"
       :aria-expanded="open">
       <slot v-if="iconSlot" name="icon" />

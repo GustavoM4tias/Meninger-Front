@@ -36,6 +36,14 @@
                             <i class="fas" :class="store.isLoading ? 'fa-circle-notch fa-spin' : 'fa-sync-alt'"></i>
                             <span>{{ store.isLoading ? 'Atualizando...' : 'Atualizar' }}</span>
                         </button>
+
+                        <!-- Configurações (admin) -->
+                        <button v-if="isAdmin" @click="settingsOpen = true"
+                            class="h-11 px-4 rounded-xl bg-white/20 text-white font-semibold flex items-center gap-2 hover:bg-white/30 transition-all self-end md:self-center backdrop-blur-sm border border-white/30"
+                            title="Configurações da viabilidade (admin)">
+                            <i class="fas fa-sliders-h"></i>
+                            <span class="hidden md:inline">Configurar</span>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -538,17 +546,25 @@
                 </table>
             </div>
         </div>
+
+        <!-- Modal de configurações (admin) -->
+        <ViabilitySettingsModal :open="settingsOpen" @close="settingsOpen = false" />
     </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
 import { useViabilityStore } from '@/stores/Marketing/Viability/viabilityStore';
+import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 import Favorite from '@/components/config/Favorite.vue';
+import ViabilitySettingsModal from './ViabilitySettingsModal.vue';
 import MultiSelector from '@/components/UI/MultiSelector.vue';
 import dayjs from 'dayjs';
 
 const store = useViabilityStore();
+const auth = useAuthStore();
+const isAdmin = computed(() => auth?.user?.role === 'admin');
+const settingsOpen = ref(false);
 
 // proxies locais
 const aliasId = ref(store.selectedAliasId);

@@ -173,20 +173,24 @@
             <i class="fas fa-file-pdf text-xs"></i> Exportar PDF
           </button>
 
-          <!-- Ações de workflow -->
-          <button v-if="isAdmin && detail?.status === 'draft'" @click="$emit('submit-for-approval')" :disabled="actionLoading"
+          <!-- Ações de workflow (conforme permissão) -->
+          <button v-if="canEdit && detail?.status === 'draft'" @click="$emit('submit-for-approval')" :disabled="actionLoading"
             class="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white text-xs font-semibold rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition">
             <i class="fas fa-paper-plane text-xs"></i> Enviar para Autorização
           </button>
-          <button v-else-if="isAdmin && detail?.status === 'pending_approval'" @click="$emit('cancel-approval')"
+          <button v-if="canAuthorize && detail?.status === 'pending_approval'" @click="$emit('authorize')" :disabled="actionLoading"
+            class="flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white text-xs font-semibold rounded-lg hover:bg-green-700 disabled:opacity-50 transition">
+            <i class="fas fa-circle-check text-xs"></i> Autorizar
+          </button>
+          <button v-if="(canEdit || canAuthorize) && detail?.status === 'pending_approval'" @click="$emit('cancel-approval')"
             class="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-xs font-semibold rounded-lg border border-red-200 dark:border-red-800 hover:bg-red-100 transition">
             <i class="fas fa-ban text-xs"></i> Cancelar Autorização
           </button>
-          <div v-else-if="!isAdmin && detail?.status === 'pending_approval'"
+          <div v-if="!canEdit && !canAuthorize && detail?.status === 'pending_approval'"
             class="flex items-center gap-1.5 px-3 py-1.5 bg-accent-soft text-accent text-xs font-semibold rounded-lg border border-accent/30">
-            <i class="fas fa-signature text-xs"></i> Aguardando Assinaturas
+            <i class="fas fa-clock text-xs"></i> Aguardando autorização
           </div>
-          <button v-else-if="isAdmin && detail?.status === 'approved'" @click="$emit('unlock')"
+          <button v-if="canAuthorize && detail?.status === 'approved'" @click="$emit('unlock')"
             class="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500 text-white text-xs font-semibold rounded-lg hover:bg-amber-600 transition">
             <i class="fas fa-lock-open text-xs"></i> Desbloquear
           </button>
@@ -947,12 +951,14 @@ const props = defineProps({
     enterpriseStages: { type: Array,   default: () => [] },
     isAdmin:          { type: Boolean, default: false },
     isApprover:       { type: Boolean, default: false },
+    canEdit:          { type: Boolean, default: false },
+    canAuthorize:     { type: Boolean, default: false },
     actionLoading:    { type: Boolean, default: false },
     wasRejected:      { type: Boolean, default: false },
     rejectionNote:    { type: String,  default: null },
 });
 
-const emit = defineEmits(['navigate-month', 'submit-for-approval', 'unlock', 'cancel-approval']);
+const emit = defineEmits(['navigate-month', 'submit-for-approval', 'unlock', 'cancel-approval', 'authorize']);
 
 const activeIdx = ref(0);
 const activeModule = computed(() => props.localModules[activeIdx.value] ?? null);

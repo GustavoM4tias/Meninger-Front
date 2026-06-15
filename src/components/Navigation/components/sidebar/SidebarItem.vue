@@ -15,8 +15,8 @@ const props = defineProps({
 
 const emit = defineEmits(['click', 'toggleFavorite']);
 
-const heightClass = computed(() => props.size === 'sm' ? 'h-9' : 'h-10');
-const textClass   = computed(() => props.size === 'sm' ? 'text-sm' : 'text-sm');
+const heightClass = computed(() => props.size === 'sm' ? 'h-8' : 'h-9');
+const textClass   = computed(() => props.size === 'sm' ? 'text-[13px]' : 'text-sm');
 </script>
 
 <template>

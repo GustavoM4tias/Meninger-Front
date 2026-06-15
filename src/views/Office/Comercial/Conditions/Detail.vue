@@ -44,7 +44,7 @@
             <div v-else class="flex items-start gap-3 p-3.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl text-amber-800 dark:text-amber-300 text-sm">
               <i class="fas fa-exclamation-triangle flex-shrink-0 mt-0.5"></i>
               <p>
-                Ao confirmar a edição, esta ficha <strong>perde a autorização</strong> e o processo de assinatura vigente é cancelado.
+                Ao confirmar a edição, esta ficha <strong>perde a autorização</strong>.
                 Ela voltará ao status <strong>Rascunho</strong> e precisará ser enviada para autorização novamente.
               </p>
             </div>
@@ -101,7 +101,7 @@
             <div class="flex items-start gap-3 p-3.5 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl text-red-800 dark:text-red-300 text-sm">
               <i class="fas fa-exclamation-triangle flex-shrink-0 mt-0.5"></i>
               <p>
-                Isso irá <strong>cancelar o processo de assinatura</strong> em andamento.
+                Isso irá <strong>cancelar a autorização</strong> em andamento.
                 A ficha voltará ao status <strong>Rascunho</strong> e poderá ser editada e reenviada.
               </p>
             </div>
@@ -316,67 +316,76 @@
                 >
                   <option v-for="h in detail.history" :key="h.id" :value="h.id">
                     {{ formatMonth(h.reference_month) }}
-                    <template v-if="isAdmin">· {{ STATUS_MAP[h.status]?.label }}</template>
+                    <template v-if="canManage">· {{ STATUS_MAP[h.status]?.label }}</template>
                   </option>
                 </select>
               </div>
 
-              <!-- Ações por status (admin only) -->
-              <template v-if="isAdmin">
-                <!-- draft ou reprovada → Enviar para Autorização -->
-                <button
-                  v-if="detail.status === 'draft'"
-                  @click="handleSubmitForApproval"
-                  :disabled="actionLoading"
-                  class="flex items-center gap-2 px-3.5 py-2 bg-indigo-600 text-white text-xs font-semibold rounded-xl hover:bg-indigo-700 disabled:opacity-50 transition"
-                >
-                  <i class="fas fa-paper-plane text-xs"></i>
-                  <span class="hidden sm:inline">Enviar para Autorização</span>
-                </button>
+              <!-- Ações por status (conforme permissão do usuário) -->
+              <!-- draft → Enviar para Autorização (editores) -->
+              <button
+                v-if="detail.status === 'draft' && canEdit"
+                @click="handleSubmitForApproval"
+                :disabled="actionLoading"
+                class="flex items-center gap-2 px-3.5 py-2 bg-indigo-600 text-white text-xs font-semibold rounded-xl hover:bg-indigo-700 disabled:opacity-50 transition"
+              >
+                <i class="fas fa-paper-plane text-xs"></i>
+                <span class="hidden sm:inline">Enviar para Autorização</span>
+              </button>
 
-                <!-- pending_approval → Cancelar Autorização -->
-                <button
-                  v-else-if="detail.status === 'pending_approval'"
-                  @click="showCancelApprovalModal = true"
-                  :disabled="actionLoading"
-                  class="flex items-center gap-2 px-3.5 py-2 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-xs font-semibold rounded-xl border border-red-200 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-900/30 transition"
-                >
-                  <i class="fas fa-ban text-xs"></i>
-                  <span class="hidden sm:inline">Cancelar Autorização</span>
-                </button>
+              <!-- pending_approval → Autorizar (autorizadores) -->
+              <button
+                v-if="detail.status === 'pending_approval' && canAuthorize"
+                @click="handleAuthorize"
+                :disabled="actionLoading"
+                class="flex items-center gap-2 px-3.5 py-2 bg-green-600 text-white text-xs font-semibold rounded-xl hover:bg-green-700 disabled:opacity-50 transition"
+              >
+                <i :class="actionLoading ? 'fa-spinner fa-spin' : 'fa-circle-check'" class="fas text-xs"></i>
+                <span class="hidden sm:inline">Autorizar</span>
+              </button>
 
-                <!-- approved → Editar (= desbloquear) -->
-                <button
-                  v-else-if="detail.status === 'approved'"
-                  @click="showUnlockModal = true"
-                  class="flex items-center gap-2 px-3.5 py-2 bg-amber-500 text-white text-xs font-semibold rounded-xl hover:bg-amber-600 transition"
-                >
-                  <i class="fas fa-pen-to-square text-xs"></i>
-                  <span class="hidden sm:inline">Editar</span>
-                </button>
+              <!-- pending_approval → Cancelar Autorização (editores ou autorizadores) -->
+              <button
+                v-if="detail.status === 'pending_approval' && (canEdit || canAuthorize)"
+                @click="showCancelApprovalModal = true"
+                :disabled="actionLoading"
+                class="flex items-center gap-2 px-3.5 py-2 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-xs font-semibold rounded-xl border border-red-200 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-900/30 transition"
+              >
+                <i class="fas fa-ban text-xs"></i>
+                <span class="hidden sm:inline">Cancelar Autorização</span>
+              </button>
 
-                <!-- closed → Reabrir Empreendimento (= desbloquear closed → draft) -->
-                <button
-                  v-else-if="detail.status === 'closed'"
-                  @click="showUnlockModal = true"
-                  class="flex items-center gap-2 px-3.5 py-2 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 text-xs font-semibold rounded-xl border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition"
-                >
-                  <i class="fas fa-rotate-left text-xs"></i>
-                  <span class="hidden sm:inline">Reabrir Empreendimento</span>
-                </button>
+              <!-- approved → Editar (= desbloquear) (autorizadores) -->
+              <button
+                v-if="detail.status === 'approved' && canAuthorize"
+                @click="showUnlockModal = true"
+                class="flex items-center gap-2 px-3.5 py-2 bg-amber-500 text-white text-xs font-semibold rounded-xl hover:bg-amber-600 transition"
+              >
+                <i class="fas fa-pen-to-square text-xs"></i>
+                <span class="hidden sm:inline">Editar</span>
+              </button>
 
-                <!-- Encerrar Ficha (admin, qualquer status exceto closed/pending_approval) -->
-                <button
-                  v-if="detail.status !== 'closed' && detail.status !== 'pending_approval'"
-                  @click="showCloseModal = true"
-                  :disabled="actionLoading"
-                  title="Encerrar empreendimento (finalização definitiva)"
-                  class="flex items-center gap-2 px-3.5 py-2 bg-surface-sunken text-ink-muted text-xs font-semibold rounded-xl border border-line hover:bg-surface-hover transition"
-                >
-                  <i class="fas fa-flag-checkered text-xs"></i>
-                  <span class="hidden sm:inline">Encerrar</span>
-                </button>
-              </template>
+              <!-- closed → Reabrir Empreendimento (autorizadores) -->
+              <button
+                v-if="detail.status === 'closed' && canAuthorize"
+                @click="showUnlockModal = true"
+                class="flex items-center gap-2 px-3.5 py-2 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 text-xs font-semibold rounded-xl border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition"
+              >
+                <i class="fas fa-rotate-left text-xs"></i>
+                <span class="hidden sm:inline">Reabrir Empreendimento</span>
+              </button>
+
+              <!-- Encerrar Ficha (autorizadores, qualquer status exceto closed/pending_approval) -->
+              <button
+                v-if="detail.status !== 'closed' && detail.status !== 'pending_approval' && canAuthorize"
+                @click="showCloseModal = true"
+                :disabled="actionLoading"
+                title="Encerrar empreendimento (finalização definitiva)"
+                class="flex items-center gap-2 px-3.5 py-2 bg-surface-sunken text-ink-muted text-xs font-semibold rounded-xl border border-line hover:bg-surface-hover transition"
+              >
+                <i class="fas fa-flag-checkered text-xs"></i>
+                <span class="hidden sm:inline">Encerrar</span>
+              </button>
 
               <!-- Salvar Tudo — quando editável ou approved (admin pode editar) -->
               <button
@@ -413,7 +422,7 @@
             <span>
               Ficha autorizada.
               <template v-if="detail.approved_at"> Aprovada em {{ formatDateFull(detail.approved_at) }}.</template>
-              <template v-if="isAdmin"> Edições nesta ficha irão cancelar a autorização.</template>
+              <template v-if="canAuthorize"> Edições nesta ficha irão cancelar a autorização.</template>
             </span>
           </div>
 
@@ -423,7 +432,10 @@
             class="flex items-center gap-2 mb-3 px-3 py-2 bg-accent-soft border border-accent/30 rounded-lg text-accent text-xs"
           >
             <i class="fas fa-clock"></i>
-            <span>Em processo de autorização — aguardando assinaturas dos aprovadores.</span>
+            <span>
+              Em autorização — aguardando um autorizador.
+              <template v-if="canAuthorize"> Você pode autorizar esta ficha.</template>
+            </span>
           </div>
 
           <!-- Banner: Encerrada -->
@@ -434,7 +446,7 @@
             <i class="fas fa-flag-checkered"></i>
             <span>
               Empreendimento encerrado — esta ficha está congelada como histórico.
-              <template v-if="isAdmin"> Use "Reabrir" para retomar a evolução mensal.</template>
+              <template v-if="canAuthorize"> Use "Reabrir" para retomar a evolução mensal.</template>
             </span>
           </div>
 
@@ -508,12 +520,15 @@
             :office-users="store.officeUsers"
             :enterprise-stages="detail.stages ?? []"
             :is-admin="isAdmin"
-            :is-approver="isApprover"
+            :is-approver="canAuthorize"
+            :can-edit="canEdit"
+            :can-authorize="canAuthorize"
             :action-loading="actionLoading"
             :was-rejected="wasRejected"
             :rejection-note="rejectionNote"
             @navigate-month="navigateToMonth"
             @submit-for-approval="handleSubmitForApproval"
+            @authorize="handleAuthorize"
             @unlock="showUnlockModal = true"
             @cancel-approval="showCancelApprovalModal = true"
           />
@@ -607,26 +622,23 @@ const auth = useAuthStore();
 
 const isAdmin = computed(() => auth.hasRole('admin'));
 
-// Aprovador = um dos aprovadores configurados nas settings comerciais
-const isApprover = computed(() => {
-    const uid = auth.user?.id;
-    if (!uid || !store.settings) return false;
-    return uid === store.settings.approver_1_id || uid === store.settings.approver_2_id;
+// Permissões vindas do backend (admin sempre true; demais conforme listas das configurações).
+const canEdit = computed(() => !!store.permissions?.canEdit);
+const canAuthorize = computed(() => !!store.permissions?.canAuthorize);
+const canManage = computed(() => canEdit.value || canAuthorize.value);
+
+// Ficha editável quando: tem permissão de editar E (é rascunho, ou é autorizada e o
+// usuário também pode autorizar — caso em que salvar desbloqueia automaticamente).
+const isLocked = computed(() => {
+    const s = detail.value?.status;
+    if (!canEdit.value) return true;
+    if (s === 'draft') return false;
+    if (s === 'approved' && canAuthorize.value) return false;
+    return true;
 });
 
-// Ficha bloqueada para edição quando em pending_approval/closed (qualquer usuário) ou se não for admin
-const isLocked = computed(() =>
-    !isAdmin.value
-    || detail.value?.status === 'pending_approval'
-    || detail.value?.status === 'closed'
-);
-
-// Pode salvar: admin E não está em pending_approval ou closed
-const canSave = computed(() =>
-    isAdmin.value
-    && detail.value?.status !== 'pending_approval'
-    && detail.value?.status !== 'closed'
-);
+// Pode salvar = ficha não está bloqueada para o usuário atual.
+const canSave = computed(() => !isLocked.value);
 
 const isClosed = computed(() => detail.value?.status === 'closed');
 const isApproved = computed(() => detail.value?.status === 'approved');
@@ -923,10 +935,24 @@ async function handleSubmitForApproval() {
         localModules.value = modulesWithSnapshot;
         await store.saveModules(detail.value.id, localModules.value);
         await store.submitForApproval(detail.value.id);
-        showToast('Ficha enviada para autorização! Os aprovadores receberão o documento para assinar.');
+        showToast('Ficha enviada para autorização! Os autorizadores foram notificados.');
         await store.fetchDetail(detail.value.id);
     } catch (e) {
         showToast(e.message || 'Erro ao enviar para autorização.', 'error');
+    } finally {
+        actionLoading.value = false;
+    }
+}
+
+async function handleAuthorize() {
+    actionLoading.value = true;
+    try {
+        await store.authorizeCondition(detail.value.id);
+        showToast('Ficha autorizada com sucesso!');
+        await store.fetchDetail(detail.value.id);
+        populateFromDetail(store.detail);
+    } catch (e) {
+        showToast(e.message || 'Erro ao autorizar.', 'error');
     } finally {
         actionLoading.value = false;
     }
@@ -1203,6 +1229,7 @@ async function loadDetail(id) {
             store.fetchCorrespondentCompanies(),
             store.fetchOfficeUsers(),
             store.fetchSettings(),
+            store.fetchMyPermissions(),
         ]);
         try {
             await store.fetchList({});
