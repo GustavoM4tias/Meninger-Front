@@ -47,7 +47,7 @@ export default [
                 meta: { requiresAuth: true },
                 children: [
                     {
-                        path: 'Events',
+                        path: 'events',
                         name: 'Eventos',
                         component: () => import('@/views/Office/Marketing/Events/Index.vue'),
                         meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Listagem de eventos' },
@@ -130,12 +130,6 @@ export default [
                         name: 'Empreendimentos',
                         component: () => import('@/views/Office/Comercial/Buildings/Index.vue'),
                         meta: { requiresAuth: true, allowedPosition: '', searchable: false, content: 'Listagem de empreendimentos' },
-                    },
-                    {
-                        path: 'awards',
-                        name: 'Premiação',
-                        component: () => import('@/views/Office/Comercial/Awards/Index.vue'),
-                        meta: { requiresAuth: true, allowedPosition: '', searchable: false, content: 'Premiações de Vendas' },
                     },
                     {
                         path: 'projections',
@@ -294,16 +288,16 @@ export default [
                         meta: { searchable: true, content: 'Envio de planilhas de Engenharia e Área Construída ao bucket GCS.' },
                     },
                     {
-                        path: 'signature',
-                        name: 'Assinatura Digital',
-                        component: () => import('@/views/Office/Tools/Signature/Index.vue'),
-                        meta: { requiresAuth: true, searchable: true, content: 'Assine documentos PDF com autenticação por senha e reconhecimento facial.' },
-                    },
-                    {
                         path: 'eme-brain',
                         name: 'Cérebro da Eme',
                         component: () => import('@/views/Office/Tools/EmeBrain/Index.vue'),
                         meta: { requiresAuth: true, adminOnly: true, searchable: true, content: 'Configure regras, comportamento, glossário e relatórios do assistente Eme sem código.' },
+                    },
+                    {
+                        path: 'whatsapp-automations',
+                        name: 'Automações WhatsApp',
+                        component: () => import('@/views/Office/Tools/WhatsappAutomations/Index.vue'),
+                        meta: { requiresAuth: true, adminOnly: true, searchable: true, content: 'Configure templates e automações de WhatsApp sem código.' },
                     },
                 ],
             },

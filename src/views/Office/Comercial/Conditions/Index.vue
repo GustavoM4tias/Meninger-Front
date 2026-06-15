@@ -22,6 +22,8 @@ const auth = useAuthStore();
 const router = useRouter();
 
 const isAdmin = computed(() => auth.hasRole('admin'));
+const canEdit = computed(() => isAdmin.value || !!store.permissions?.canEdit);
+const canManage = computed(() => canEdit.value || !!store.permissions?.canAuthorize);
 
 const loading = ref(true);
 const search = ref('');
@@ -30,7 +32,7 @@ const showClosed = ref(false);
 
 const statusOptions = computed(() => {
   const opts = [{ value: '', label: 'Todos os status' }];
-  if (isAdmin.value) {
+  if (canManage.value) {
     opts.push({ value: 'draft', label: 'Rascunho' });
     opts.push({ value: 'pending_approval', label: 'Em autorização' });
   }
@@ -218,7 +220,7 @@ function formatMonth(dateStr) {
 
 onMounted(async () => {
   try {
-    await store.fetchList();
+    await Promise.all([store.fetchList(), store.fetchMyPermissions()]);
     const data = await requestWithAuth(`${API_URL}/cv/empreendimentos`);
     enterprises.value = (data ?? []).sort((a, b) => a.nome?.localeCompare(b.nome, 'pt-BR'));
   } finally {
@@ -239,13 +241,13 @@ onMounted(async () => {
           <span>Fichas comerciais</span>
           <Favorite :router="'/comercial/conditions'" :section="'Fichas Comerciais'" />
         </template>
-        <template v-if="isAdmin" #actions>
-          <RouterLink to="/comercial/conditions/settings">
+        <template v-if="isAdmin || canEdit" #actions>
+          <RouterLink v-if="isAdmin" to="/comercial/conditions/settings">
             <Button variant="ghost" size="sm" icon="fas fa-cog">
               <span class="hidden sm:inline">Configurações</span>
             </Button>
           </RouterLink>
-          <Button icon="fas fa-plus" size="sm" @click="openCreate = true">
+          <Button v-if="canEdit" icon="fas fa-plus" size="sm" @click="openCreate = true">
             Nova ficha
           </Button>
         </template>
@@ -390,7 +392,7 @@ onMounted(async () => {
         size="lg" icon="fas fa-file-contract"
         title="Nenhuma ficha encontrada"
         :description="search || filterStatus ? 'Ajuste os filtros ou a busca para ver resultados.' : 'Crie a primeira ficha para começar.'">
-        <template v-if="isAdmin && !search && !filterStatus" #actions>
+        <template v-if="canEdit && !search && !filterStatus" #actions>
           <Button icon="fas fa-plus" @click="openCreate = true">Nova ficha</Button>
         </template>
       </EmptyState>
@@ -427,7 +429,7 @@ onMounted(async () => {
             </template>
             <template v-else>
               <i class="fas fa-circle-info text-[10px] mr-1"></i>
-              Ficha avulsa — produto sem cadastro no CV. Não auto-evolui (criação manual a cada mês).
+              Ficha avulsa — produto sem cadastro no CV. Também evolui automaticamente todo mês.
             </template>
           </p>
         </div>

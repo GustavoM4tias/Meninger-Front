@@ -226,13 +226,13 @@ const closeMobile = () => { isMobileOpen.value = false; };
       ]" aria-label="Sidebar">
 
       <div :class="[
-        'flex flex-col justify-between h-full pb-4 overflow-y-auto',
+        'flex flex-col h-full',
         isCollapsed ? 'px-1.5' : 'px-3',
         'transition-[padding] duration-200 ease-out-expo'
       ]">
 
-        <!-- Topo -->
-        <ul class="space-y-1 mt-2">
+        <!-- Topo — área rolável que ocupa o espaço restante (não empurra o rodapé) -->
+        <ul class="flex-1 min-h-0 overflow-y-auto nav-scroll space-y-0.5 mt-1 pb-2">
           <li>
             <SidebarItem to="/" icon="fas fa-house" label="Dashboard"
               :collapsed="isCollapsed" @click="expandSidebar(); closeMobile();" />
@@ -251,8 +251,8 @@ const closeMobile = () => { isMobileOpen.value = false; };
           <template v-for="(grp, gi) in navSections" :key="grp.group">
             <!-- Rótulo de seção (expandido) · divisória discreta (recolhido) -->
             <li v-if="!isCollapsed"
-                :class="['select-none px-2 pb-1', gi === 0 ? 'pt-2' : 'pt-4']">
-              <span class="text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-subtle">
+                :class="['select-none px-2 pb-0.5', gi === 0 ? 'pt-0.5' : 'pt-2.5']">
+              <span class="text-[11px] font-semibold uppercase tracking-wider text-ink-subtle">
                 {{ grp.group }}
               </span>
             </li>
@@ -283,16 +283,12 @@ const closeMobile = () => { isMobileOpen.value = false; };
           </li>
         </ul>
 
-        <!-- Bottom -->
-        <ul class="space-y-1 pt-3 border-t border-line">
+        <!-- Bottom — fixo: não rola junto com a lista acima -->
+        <ul class="shrink-0 space-y-0.5 pt-2 pb-3 border-t border-line">
           <div class="block md:hidden mb-2"><Search /></div>
 
           <li v-if="authStore?.user?.role === 'admin'">
             <SidebarItem to="/support" icon="fas fa-circle-info" label="Suporte"
-              :collapsed="isCollapsed" @click="expandSidebar(); closeMobile();" />
-          </li>
-          <li>
-            <SidebarItem to="/report" icon="fas fa-bug" label="Reportar Problema"
               :collapsed="isCollapsed" @click="expandSidebar(); closeMobile();" />
           </li>
           <!-- Documentação ocultada temporariamente — não utilizada por enquanto.
@@ -326,4 +322,11 @@ const closeMobile = () => { isMobileOpen.value = false; };
 <style scoped>
 .fade-enter-active, .fade-leave-active { transition: opacity 0.18s ease; }
 .fade-enter-from, .fade-leave-to { opacity: 0; }
+
+/* Scroll discreto somente na área superior (lista de navegação) */
+.nav-scroll { scrollbar-width: thin; scrollbar-color: rgb(148 163 184 / 0.35) transparent; }
+.nav-scroll::-webkit-scrollbar { width: 6px; }
+.nav-scroll::-webkit-scrollbar-thumb { background: rgb(148 163 184 / 0.35); border-radius: 9999px; }
+.nav-scroll::-webkit-scrollbar-thumb:hover { background: rgb(148 163 184 / 0.6); }
+.nav-scroll::-webkit-scrollbar-track { background: transparent; }
 </style>

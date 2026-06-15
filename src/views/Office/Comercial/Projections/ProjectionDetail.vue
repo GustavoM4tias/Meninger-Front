@@ -409,6 +409,7 @@ function inflateFromBackend() {
             defaultPrice: Number(d.default_avg_price || 0),
             defaultMarketingPct: Number(d.default_marketing_pct || 0),
             defaultCommissionPct: Number(d.default_commission_pct || 0),
+            custoLoja: Number(d.custo_loja || 0),
             values: {},
         });
     }
@@ -432,6 +433,7 @@ function inflateFromBackend() {
                 defaultPrice: 0,
                 defaultMarketingPct: 0,
                 defaultCommissionPct: 0,
+                custoLoja: 0,
                 values: {},
             });
         }
@@ -508,7 +510,8 @@ const manualForm = ref({
     totalUnits: 0,
     defaultPrice: 0,
     defaultMarketingPct: 0,
-    defaultCommissionPct: 0
+    defaultCommissionPct: 0,
+    custoLoja: 0
 });
 
 function resetModalState() {
@@ -519,7 +522,7 @@ function resetModalState() {
     rowBeingEdited.value = null;
     pickerMode.value = 'add';
     showManualInAdd.value = false;
-    manualForm.value = { name: '', city: '', totalUnits: 0, defaultPrice: 0, defaultMarketingPct: 0, defaultCommissionPct: 0 };
+    manualForm.value = { name: '', city: '', totalUnits: 0, defaultPrice: 0, defaultMarketingPct: 0, defaultCommissionPct: 0, custoLoja: 0 };
 }
 
 async function openAddModal() {
@@ -530,7 +533,7 @@ async function openAddModal() {
     citySearch.value = '';
     modalSelectedCities.value = [];
     showManualInAdd.value = false;
-    manualForm.value = { name: '', city: '', totalUnits: 0, defaultPrice: 0, defaultMarketingPct: 0, defaultCommissionPct: 0 };
+    manualForm.value = { name: '', city: '', totalUnits: 0, defaultPrice: 0, defaultMarketingPct: 0, defaultCommissionPct: 0, custoLoja: 0 };
 
     showAdd.value = true;
     await store.fetchEnterprisePicker(); // ✅ store
@@ -610,6 +613,7 @@ function addSelected() {
             defaultPrice: 0,
             defaultMarketingPct: 0,
             defaultCommissionPct: 0,
+            custoLoja: 0,
             units_summary: null,
             values: {},
         });
@@ -641,6 +645,7 @@ function addManualEnterprise() {
         defaultPrice: Number(manualForm.value.defaultPrice || 0),
         defaultMarketingPct: Number(manualForm.value.defaultMarketingPct || 0),
         defaultCommissionPct: Number(manualForm.value.defaultCommissionPct || 0),
+        custoLoja: Number(manualForm.value.custoLoja || 0),
         units_summary: null,
         values: {},
     });
@@ -666,6 +671,7 @@ function shallowCloneRow(r) {
         defaultPrice: Number(r.defaultPrice || 0),
         defaultMarketingPct: Number(r.defaultMarketingPct || 0),
         defaultCommissionPct: Number(r.defaultCommissionPct || 0),
+        custoLoja: Number(r.custoLoja || 0),
         units_summary: r.units_summary || null,
         values: {}
     };
@@ -769,6 +775,7 @@ async function doSave({ removeMissing }) {
                 default_marketing_pct: Number(r.defaultMarketingPct || 0),
                 default_commission_pct: Number(r.defaultCommissionPct || 0),
                 total_units: r.erp_id ? null : Number(r.totalUnits ?? 0),
+                custo_loja: Number(r.custoLoja || 0),
                 city: r.erp_id ? null : (r.city || null),
             }));
             await store.saveDefaults(id, defaultsPayload, { removeMissing });
@@ -850,6 +857,7 @@ const rowDefaultsForm = ref({
     defaultPrice: 0,
     defaultMarketingPct: 0,
     defaultCommissionPct: 0,
+    custoLoja: 0,
 });
 
 function openRowDefaultsModal(row) {
@@ -863,6 +871,7 @@ function openRowDefaultsModal(row) {
         defaultPrice: Number(row?.defaultPrice || 0),
         defaultMarketingPct: Number(row?.defaultMarketingPct || 0),
         defaultCommissionPct: Number(row?.defaultCommissionPct || 0),
+        custoLoja: Number(row?.custoLoja || 0),
     };
 
     showRowDefaults.value = true;
@@ -890,6 +899,7 @@ function applyRowDefaultsModal() {
     row.defaultPrice = Number(rowDefaultsForm.value.defaultPrice || 0);
     row.defaultMarketingPct = Number(rowDefaultsForm.value.defaultMarketingPct || 0);
     row.defaultCommissionPct = Number(rowDefaultsForm.value.defaultCommissionPct || 0);
+    row.custoLoja = Number(rowDefaultsForm.value.custoLoja || 0);
 
     onDefaultPriceChange(row);
     rows.value = [...rows.value];
@@ -1629,8 +1639,8 @@ const filterPanelOpen = ref(true)
                             <span class="text-xs font-black text-emerald-700 dark:text-emerald-400 w-28 text-right shrink-0 tabular-nums truncate">{{ brlShortFmt(rowSumVgv(row)) }}</span>
                         </div>
 
-                        <!-- Defaults: ticket · mkt · comissão -->
-                        <div v-if="row.defaultPrice || row.defaultMarketingPct || row.defaultCommissionPct"
+                        <!-- Defaults: ticket · mkt · comissão · loja -->
+                        <div v-if="row.defaultPrice || row.defaultMarketingPct || row.defaultCommissionPct || row.custoLoja"
                             class="flex items-center gap-1.5 mt-3 flex-wrap">
                             <span v-if="row.defaultPrice"
                                 class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-surface-sunken border border-line text-[9px] text-ink-muted font-semibold tabular-nums">
@@ -1643,6 +1653,10 @@ const filterPanelOpen = ref(true)
                             <span v-if="row.defaultCommissionPct"
                                 class="inline-flex items-center px-2 py-0.5 rounded-full bg-surface-sunken border border-line text-[9px] text-ink-muted font-semibold">
                                 Com {{ Number(row.defaultCommissionPct).toFixed(1) }}%
+                            </span>
+                            <span v-if="row.custoLoja"
+                                class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/30 border border-amber-100 dark:border-amber-900 text-[9px] text-amber-700 dark:text-amber-400 font-semibold tabular-nums">
+                                <i class="fas fa-store text-[8px]"></i>Loja {{ brlShortFmt(row.custoLoja) }}
                             </span>
                         </div>
                     </div>
@@ -1903,9 +1917,20 @@ const filterPanelOpen = ref(true)
                                             <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-ink-subtle pointer-events-none">%</span>
                                         </div>
                                     </div>
+
+                                    <!-- Custo Loja (R$) — Viabilidade: valor da loja física deste CC (default 0) -->
+                                    <div>
+                                        <label class="text-xs font-semibold text-ink-muted block mb-1.5">
+                                            <i class="fas fa-store text-amber-400 mr-1 text-[9px]"></i>Custo Loja
+                                        </label>
+                                        <input type="text" inputmode="numeric" :disabled="rowDisabled"
+                                            :value="moneyBR(rowDefaultsForm.custoLoja)"
+                                            @input="(e) => { rowDefaultsForm.custoLoja = parseMoneyBR(e.target.value); setMaskedInputValue(e.target, rowDefaultsForm.custoLoja); }"
+                                            class="w-full h-10 border border-line rounded-xl px-3.5 bg-white dark:bg-gray-800 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-amber-400/40 focus:border-amber-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-right tabular-nums" />
+                                    </div>
                                 </div>
                                 <!-- Preview valores -->
-                                <div v-if="rowDefaultsForm.defaultPrice || rowDefaultsForm.defaultMarketingPct || rowDefaultsForm.defaultCommissionPct"
+                                <div v-if="rowDefaultsForm.defaultPrice || rowDefaultsForm.defaultMarketingPct || rowDefaultsForm.defaultCommissionPct || rowDefaultsForm.custoLoja"
                                     class="mt-3 flex items-center gap-2 flex-wrap">
                                     <span v-if="rowDefaultsForm.defaultPrice" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-accent-soft border border-accent/20 text-[10px] font-semibold text-accent tabular-nums">
                                         <i class="fas fa-tag text-[8px]"></i> {{ brlShortFmt(rowDefaultsForm.defaultPrice) }}/un.
@@ -1915,6 +1940,9 @@ const filterPanelOpen = ref(true)
                                     </span>
                                     <span v-if="rowDefaultsForm.defaultCommissionPct" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900 text-[10px] font-semibold text-emerald-700 dark:text-emerald-400">
                                         Com {{ Number(rowDefaultsForm.defaultCommissionPct).toFixed(1) }}%
+                                    </span>
+                                    <span v-if="rowDefaultsForm.custoLoja" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-50 dark:bg-amber-950/30 border border-amber-100 dark:border-amber-900 text-[10px] font-semibold text-amber-700 dark:text-amber-400">
+                                        <i class="fas fa-store text-[8px]"></i> Loja {{ brlShortFmt(rowDefaultsForm.custoLoja) }}
                                     </span>
                                 </div>
                             </div>
@@ -2086,7 +2114,7 @@ const filterPanelOpen = ref(true)
                                     <div class="w-8 h-8 rounded-lg bg-surface-sunken flex items-center justify-center shrink-0 group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/40 transition-colors">
                                         <i class="fas fa-building text-ink-subtle dark:text-gray-600 group-hover:text-accent text-xs transition-colors"></i>
                                     </div>
-                                    <div class="min-w-0 flex-1">
+                                    <div class="min-w-0 flex-1" :title="e.name">
                                         <p class="font-semibold text-sm text-ink truncate">{{ e.name }}</p>
                                         <div class="flex items-center gap-2 mt-0.5 flex-wrap">
                                             <span v-if="e.city" class="text-[10px] text-ink-subtle flex items-center gap-1">
@@ -2198,6 +2226,14 @@ const filterPanelOpen = ref(true)
                                                     class="w-full h-10 border border-line rounded-xl px-3.5 pr-7 bg-white dark:bg-gray-800 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-emerald-400/40 text-right tabular-nums transition-colors" />
                                                 <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-ink-subtle pointer-events-none">%</span>
                                             </div>
+                                        </div>
+                                        <div>
+                                            <label class="text-xs font-semibold text-ink-muted block mb-1.5">
+                                                <i class="fas fa-store text-amber-400 mr-1 text-[9px]"></i>Custo Loja
+                                            </label>
+                                            <input type="text" inputmode="numeric" :value="moneyBR(manualForm.custoLoja)"
+                                                @input="(e) => { manualForm.custoLoja = parseMoneyBR(e.target.value); setMaskedInputValue(e.target, manualForm.custoLoja); }"
+                                                class="w-full h-10 border border-line rounded-xl px-3.5 bg-white dark:bg-gray-800 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-amber-400/40 text-right tabular-nums transition-colors" />
                                         </div>
                                     </div>
                                 </div>

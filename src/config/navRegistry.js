@@ -13,8 +13,7 @@
  *   sistema cresce. A ordem das seções segue a 1ª aparição no array abaixo.
  *     OPERAÇÃO  — o dia a dia do negócio (Marketing, Comercial, Financeiro)
  *     RECURSOS  — ferramentas e integrações (Ferramentas, Microsoft)
- *     SISTEMA   — administração e configuração (Administração)
- *     PESSOAL   — conta e preferências do próprio usuário
+ *     SISTEMA   — administração, suporte e a conta do próprio usuário
  *
  * ─── Propriedades de categoria ────────────────────────────────────────────────
  *   key               — identificador único (snake_case)
@@ -49,7 +48,7 @@ export const navRegistry = [
     {
         key: 'marketing',
         label: 'Marketing',
-        icon: 'fa fa-bullhorn',
+        icon: 'fas fa-bullhorn',
         group: 'OPERAÇÃO',
         subcategories: [
             {
@@ -90,14 +89,21 @@ export const navRegistry = [
             {
                 key: 'sales',
                 name: 'Vendas',
-                icon: 'fas fa-credit-card',
+                icon: 'fas fa-handshake',
                 pages: [
-                    { route: '/comercial/precadastros',      section: 'Pré-Cadastros',    name: 'Pré-Cadastros',    icon: 'fas fa-id-card-clip', permissionManaged: false },
-                    { route: '/comercial/reservas-report',   section: 'Reservas',         name: 'Reservas',         icon: 'fas fa-bookmark',     permissionManaged: false },
-                    { route: '/comercial/faturamento',       section: 'Faturamento',      name: 'Faturamento',      icon: 'fas fa-file-invoice-dollar' },
-                    { route: '/comercial/sales-projection',  section: 'Vendas x Projeção', name: 'Vendas X Projeção', icon: 'fas fa-arrow-trend-up' },
-                    { route: '/comercial/distratos',         section: 'Distratos',        name: 'Distratos',        icon: 'fas fa-file-circle-xmark' },
-                    { route: '/comercial/projections',       section: 'Projeção',         name: 'Projeção',         icon: 'fas fa-chart-line' },
+                    { route: '/comercial/precadastros',    section: 'Pré-Cadastros', name: 'Pré-Cadastros', icon: 'fas fa-id-card-clip', permissionManaged: false },
+                    { route: '/comercial/reservas-report', section: 'Reservas',      name: 'Reservas',      icon: 'fas fa-bookmark',     permissionManaged: false },
+                    { route: '/comercial/faturamento',     section: 'Faturamento',   name: 'Faturamento',   icon: 'fas fa-file-invoice-dollar' },
+                    { route: '/comercial/distratos',       section: 'Distratos',     name: 'Distratos',     icon: 'fas fa-file-circle-xmark' },
+                ],
+            },
+            {
+                key: 'projection',
+                name: 'Projeção & Metas',
+                icon: 'fas fa-bullseye',
+                pages: [
+                    { route: '/comercial/sales-projection', section: 'Vendas x Projeção', name: 'Vendas X Projeção', icon: 'fas fa-arrow-trend-up' },
+                    { route: '/comercial/projections',      section: 'Projeção',          name: 'Projeção',          icon: 'fas fa-chart-line' },
                 ],
             },
             {
@@ -113,11 +119,16 @@ export const navRegistry = [
                     { route: '/comercial/buildings', section: 'Portal do Cliente', name: 'Portal do Cliente', icon: 'fas fa-user-circle' },
                 ],
             },
-        ],
-        pages: [
-            { route: '/comercial/conditions',      section: 'Fichas Comerciais', name: 'Fichas Comerciais', icon: 'fas fa-file-contract' },
-            { route: '/comercial/mcmv',            section: 'MCMV',             name: 'MCMV - Limites',             icon: 'fas fa-house-circle-check' },
-            { route: '/comercial/workflow/groups', section: 'Grupos Workflow',  name: 'Grupos Workflow',           icon: 'fas fa-chart-diagram' },
+            {
+                key: 'conditions',
+                name: 'Condições & Regras',
+                icon: 'fas fa-clipboard-list',
+                pages: [
+                    { route: '/comercial/conditions',      section: 'Fichas Comerciais', name: 'Fichas Comerciais', icon: 'fas fa-file-contract' },
+                    { route: '/comercial/mcmv',            section: 'MCMV',              name: 'MCMV - Limites',    icon: 'fas fa-house-circle-check' },
+                    { route: '/comercial/workflow/groups', section: 'Grupos Workflow',   name: 'Grupos Workflow',   icon: 'fas fa-chart-diagram' },
+                ],
+            },
         ],
     },
 
@@ -162,7 +173,6 @@ export const navRegistry = [
         pages: [
             { route: '/tools/validator', section: 'Validador', name: 'Validador', icon: 'fas fa-check-double' },
             { route: '/tools/bucket-upload', section: 'Envio ao Bucket', name: 'Envio ao Bucket', icon: 'fas fa-cloud-upload-alt' },
-            { route: '/tools/signature', section: 'Assinatura Digital', name: 'Assinatura Digital', icon: 'fas fa-pen-nib' },
         ],
     },
 
@@ -210,7 +220,7 @@ export const navRegistry = [
                 name: 'Integrações & Dados',
                 icon: 'fas fa-plug',
                 pages: [
-                    { route: '/settings/whatsapp', section: 'WhatsApp', name: 'WhatsApp', icon: 'fa-brands fa-whatsapp', adminOnly: true },
+                    { route: '/settings/whatsapp', section: 'WhatsApp', name: 'WhatsApp', icon: 'fab fa-whatsapp', adminOnly: true },
                     { route: '/settings/backup-sienge', section: 'Backup Sienge', name: 'Backup Sienge', icon: 'fas fa-database', adminOnly: true },
                 ],
             },
@@ -220,12 +230,11 @@ export const navRegistry = [
                 icon: 'fas fa-brain',
                 pages: [
                     { route: '/tools/eme-brain', section: 'Cérebro da Eme', name: 'Cérebro da Eme', icon: 'fas fa-brain', adminOnly: true },
+                    { route: '/tools/whatsapp-automations', section: 'Automações WhatsApp', name: 'Automações WhatsApp', icon: 'fab fa-whatsapp', adminOnly: true },
                 ],
             },
         ],
     },
-
-    // ═══ PESSOAL ════════════════════════════════════════════════════════════════
 
     // ── Conta & Preferências ─────────────────────────────────────────────────────
     // permissionManaged:false → sempre visível para todos, não aparece nas alçadas.
@@ -233,12 +242,13 @@ export const navRegistry = [
         key: 'account',
         label: 'Conta & Preferências',
         icon: 'fas fa-circle-user',
-        group: 'PESSOAL',
+        group: 'SISTEMA',
         permissionManaged: false,
         pages: [
             { route: '/settings/Account', section: 'Minha Conta', name: 'Minha Conta', icon: 'fas fa-user-cog', permissionManaged: false },
             { route: '/settings/notifications', section: 'Notificações', name: 'Notificações', icon: 'fas fa-bell', permissionManaged: false },
             { route: '/settings/alerts', section: 'Alertas', name: 'Alertas', icon: 'fas fa-bell-concierge', permissionManaged: false },
+            { route: '/report', name: 'Reportar Problema', icon: 'fas fa-bug', permissionManaged: false },
         ],
     },
 

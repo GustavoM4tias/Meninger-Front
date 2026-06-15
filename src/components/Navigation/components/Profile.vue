@@ -2,12 +2,10 @@
 import { ref, onMounted, computed } from 'vue';
 import { RouterLink } from 'vue-router';
 import { useAuthStore } from '@/stores/Settings/Auth/authStore';
-import { useSignatureStore } from '@/stores/Signature/signatureStore';
 import Dropdown from '@/components/UI/Dropdown.vue';
 import Switch from '@/components/UI/Switch.vue';
 
 const authStore = useAuthStore();
-const sigStore  = useSignatureStore();
 
 const darkMode = ref(false);
 
@@ -28,9 +26,8 @@ const avatarUrl = computed(() =>
   `https://ui-avatars.com/api/?name=${encodeURIComponent(initials.value)}&background=random`
 );
 
-onMounted(async () => {
+onMounted(() => {
   darkMode.value = document.documentElement.classList.contains('dark');
-  await sigStore.fetchPendingCount();
 });
 
 const logout = () => authStore.logout();
@@ -46,13 +43,6 @@ const logout = () => authStore.logout();
         <span class="sr-only">Abrir menu de usuário</span>
         <img :src="avatarUrl" alt="foto do usuário"
           class="w-8 h-8 rounded-full ring-2 ring-line" />
-
-        <span v-if="sigStore.pendingCount > 0"
-          class="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full
-                 bg-accent text-[10px] font-bold text-white ring-2 ring-surface pointer-events-none
-                 animate-pulse-soft">
-          {{ sigStore.pendingCount > 9 ? '9+' : sigStore.pendingCount }}
-        </span>
       </button>
     </template>
 
@@ -87,17 +77,6 @@ const logout = () => authStore.logout();
             class="flex items-center gap-3 px-4 py-2.5 text-sm text-ink hover:bg-surface-sunken hover:text-accent transition-colors group">
             <i class="fas fa-user-cog w-4 text-ink-muted group-hover:text-accent transition-colors"></i>
             Minha Conta
-          </RouterLink>
-        </li>
-        <li>
-          <RouterLink to="/tools/signature" data-dropdown-item
-            class="flex items-center gap-3 px-4 py-2.5 text-sm text-ink hover:bg-surface-sunken hover:text-accent transition-colors group">
-            <i class="fas fa-pen-nib w-4 text-ink-muted group-hover:text-accent transition-colors"></i>
-            <span class="flex-1">Assinaturas</span>
-            <span v-if="sigStore.pendingCount > 0"
-              class="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-accent px-1.5 text-[10px] font-bold text-white">
-              {{ sigStore.pendingCount > 9 ? '9+' : sigStore.pendingCount }}
-            </span>
           </RouterLink>
         </li>
         <li class="border-t border-line mt-1 pt-1">

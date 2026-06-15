@@ -2,7 +2,6 @@
 import { ref, computed, watch, onMounted } from 'vue';
 import { useContractsStore } from '@/stores/Comercial/Contracts/contractsStore';
 import { useStageCommissionRulesStore } from '@/stores/Comercial/Contracts/stageCommissionRulesStore';
-import { useAwardsStore } from '@/stores/Comercial/Awards/awardStore';
 import ChartActions from '@/components/config/ChartActions.vue';
 import Export from '@/components/config/Export.vue';
 
@@ -37,7 +36,6 @@ const open = ref(false);
 
 const contractsStore = useContractsStore();
 const stageRulesStore = useStageCommissionRulesStore();
-const awardsStore = useAwardsStore();
 
 // Local helper — mirrors contractHadStageInHistory in contractsStore
 const hadStageInHistory = (contract, stageId) => {
@@ -62,15 +60,6 @@ const sub = computed(() => (isDark.value ? '#9CA3AF' : '#6B7280'));
 const gridLine = computed(() => (isDark.value ? '#374151' : '#E5E7EB'));
 const palette = ['#8B5CF6', '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#06B6D4', '#84CC16', '#F97316', '#EC4899', '#6366F1'];
 
-const selectedSales = ref(new Set());
-const lastAwardsMessage = ref('');
-
-onMounted(() => {
-  if (!awardsStore.awards?.length) {
-    awardsStore.fetchAwards();
-  }
-});
-
 const statusLabel = (s) =>
 ({
   iniciado: 'Iniciado',
@@ -91,75 +80,6 @@ const reservaOf = (sale) => {
   if (r?.reservaObj) return r.reservaObj;
 
   return null;
-};
-
-// chave estável da venda pra premiação
-const saleKeyOf = (sale) => {
-  if (!sale) return '';
-
-  const first = firstContractOf(sale);
-
-  const enterprisePart =
-    first?.enterprise_id ??
-    first?.enterprise_name ??
-    props.enterprise?.id ??
-    props.enterprise?.name ??
-    '';
-
-  const customerPart = sale.customer_id ?? customerNameOf(sale) ?? '';
-
-  const unitPart = sale.unit_id ?? sale.unit_name ?? reservaUnitOf(sale) ?? '';
-
-  const datePart =
-    sale.financial_institution_date ??
-    reservaDateOf(sale) ??
-    '';
-
-  return [enterprisePart, customerPart, unitPart, datePart]
-    .map((v) => String(v ?? '').trim())
-    .join('|');
-};
-
-const awardStatusBySaleKey = computed(() => {
-  const map = new Map();
-  for (const award of awardsStore.awards || []) {
-    const status = award.status;
-    if (!Array.isArray(award.links)) continue;
-    award.links.forEach((link) => {
-      if (!link?.saleKey) return;
-      if (!map.has(link.saleKey)) {
-        map.set(link.saleKey, { status, awardId: award.id });
-      }
-    });
-  }
-  return map;
-});
-
-const awardInfoForSale = (sale) => awardStatusBySaleKey.value.get(saleKeyOf(sale)) || null;
-const awardStatusForSale = (sale) => awardInfoForSale(sale)?.status || null;
-const saleHasAward = (sale) => !!awardInfoForSale(sale);
-
-watch(awardStatusBySaleKey, (map) => {
-  if (!map) return;
-  const next = new Set(selectedSales.value);
-  let changed = false;
-  for (const key of Array.from(selectedSales.value)) {
-    if (map.has(key)) {
-      next.delete(key);
-      changed = true;
-    }
-  }
-  if (changed) selectedSales.value = next;
-});
-
-const sanitizeAwardField = (value) => {
-  if (value == null) return null;
-  if (typeof value === 'string') {
-    const trimmed = value.trim();
-    if (!trimmed || trimmed === '—') return null;
-    return trimmed;
-  }
-  return value;
 };
 
 const normalizeCostCenterCode = (value) => {
@@ -743,69 +663,6 @@ const commissionConditionFor = (contract) => {
   };
 };
 
-/* Seleção e envio para premiação */
-const selectedSalesPayload = computed(() => {
-  const allSales = props.sales || [];
-  const list = [];
-
-  for (const key of selectedSales.value) {
-    if (awardStatusBySaleKey.value.has(key)) continue;
-
-    const sale =
-      allSales.find((s) => saleKeyOf(s) === key) ||
-      paginatedSales.value.find((s) => saleKeyOf(s) === key);
-
-    if (!sale) continue;
-
-    const first = firstContractOf(sale);
-
-    list.push({
-      saleKey: key,
-      customerId: sale.customer_id || null,
-      customerName: customerNameOf(sale),
-      unitId: sale.unit_id || null,
-      unitName: sale.unit_name || reservaUnitOf(sale),
-      enterpriseId: first.enterprise_id,
-      enterpriseName: first.enterprise_name,
-      saleValue: getSaleValue(sale),
-      stage: sanitizeAwardField(etapaOf(sale)),
-      block: sanitizeAwardField(blocoOf(sale)),
-      costCenter: costCenterOfSale(sale),
-      saleDate: saleDateIsoOf(sale),
-    });
-  }
-
-  return list;
-});
-
-const toggleSaleSelection = (sale) => {
-  if (saleHasAward(sale)) return;
-  const key = saleKeyOf(sale);
-  const next = new Set(selectedSales.value);
-  if (next.has(key)) next.delete(key);
-  else next.add(key);
-  selectedSales.value = next;
-};
-
-const registerAwards = async () => {
-  if (selectedSalesPayload.value.length === 0) return;
-
-  try {
-    lastAwardsMessage.value = '';
-
-    await awardsStore.registerSalesForAward(selectedSalesPayload.value);
-    await awardsStore.fetchAwards();
-    await contractsStore.fetchContracts();
-
-    selectedSales.value = new Set();
-    lastAwardsMessage.value = 'Clientes adicionados à premiação com sucesso.';
-    emit('close');
-  } catch (err) {
-    console.error('Erro ao registrar premiação:', err);
-    lastAwardsMessage.value = 'Erro ao adicionar clientes à premiação.';
-  }
-};
-
 const keyOf = (n) =>
   (n || '')
     .normalize('NFKC')
@@ -1207,10 +1064,6 @@ const closeModal = () => emit('close');
                         <Badge v-if="saleIsProjection(sale)" variant="success" size="sm">
                           <i class="fas fa-chart-line text-[9px]"></i>Projeção
                         </Badge>
-                        <Badge v-if="awardStatusForSale(sale)" variant="accent" size="sm"
-                          v-tippy="`Premiação: ${statusLabel(awardStatusForSale(sale))}`">
-                          <i class="fas fa-trophy text-[9px]"></i>{{ statusLabel(awardStatusForSale(sale)) }}
-                        </Badge>
                         <span class="text-sm font-semibold text-emerald-600 dark:text-emerald-400 tabular-nums">
                           {{ formatCurrency(getSaleValue(sale)) }}
                         </span>
@@ -1341,10 +1194,6 @@ const closeModal = () => emit('close');
 
     <template #footer>
       <Button variant="ghost" @click="closeModal">Fechar</Button>
-      <Button v-if="selectedSalesPayload.length"
-        icon="fas fa-trophy" @click="registerAwards">
-        Adicionar à premiação ({{ selectedSalesPayload.length }})
-      </Button>
     </template>
   </Modal>
 </template>

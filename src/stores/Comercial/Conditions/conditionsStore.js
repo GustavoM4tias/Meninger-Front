@@ -14,7 +14,8 @@ export const useConditionsStore = defineStore('conditions', () => {
     const correspondents = ref([]);
     const officeUsers = ref([]);
     const correspondentCompanies = ref([]);
-    const settings = ref(null);         // configurações comerciais (aprovadores)
+    const settings = ref(null);         // configurações comerciais (listas de permissão)
+    const permissions = ref({ isAdmin: false, canEdit: false, canAuthorize: false });
     const error = ref(null);
 
     // ─── Listagem ────────────────────────────────────────────────────────────
@@ -79,6 +80,18 @@ export const useConditionsStore = defineStore('conditions', () => {
         return result;
     }
 
+    // ─── Autorizar (pending_approval → approved) ─────────────────────────────
+
+    async function authorizeCondition(id) {
+        const result = await requestWithAuth(`${API_URL}/conditions/${id}/authorize`, {
+            method: 'POST',
+        });
+        if (detail.value?.id === id) {
+            detail.value.status = 'approved';
+        }
+        return result;
+    }
+
     // ─── Desbloquear (approved → draft) ──────────────────────────────────────
 
     async function unlockCondition(id, note = '') {
@@ -102,7 +115,6 @@ export const useConditionsStore = defineStore('conditions', () => {
         });
         if (detail.value?.id === id) {
             detail.value.status = 'draft';
-            detail.value.signature_document_id = null;
         }
         return result;
     }
@@ -143,6 +155,16 @@ export const useConditionsStore = defineStore('conditions', () => {
         });
         await fetchSettings();
         return result;
+    }
+
+    // ─── Permissões do usuário atual (editar/autorizar) ──────────────────────
+
+    async function fetchMyPermissions() {
+        try {
+            permissions.value = await requestWithAuth(`${API_URL}/conditions/permissions`);
+        } catch (e) {
+            console.warn('[conditions] fetchMyPermissions:', e.message);
+        }
     }
 
     // ─── Módulos ─────────────────────────────────────────────────────────────
@@ -263,15 +285,15 @@ export const useConditionsStore = defineStore('conditions', () => {
     }
 
     return {
-        list, detail, priceTables, priceDistribution, correspondents, officeUsers, correspondentCompanies, settings, error,
+        list, detail, priceTables, priceDistribution, correspondents, officeUsers, correspondentCompanies, settings, permissions, error,
         fetchList, fetchDetail,
         createCondition, saveCondition, publishCondition,
-        submitForApproval, unlockCondition, cancelApproval, closeCondition,
+        submitForApproval, authorizeCondition, unlockCondition, cancelApproval, closeCondition,
         saveModules, deleteModule, copyModule, copyModuleFromSource, fetchModulesForEnterprise, fetchEnterpriseStages,
         saveCampaigns, deleteCampaign,
         fetchPriceTables, fetchPriceDistribution,
         fetchCorrespondents, fetchOfficeUsers, fetchCorrespondentCompanies,
-        fetchSettings, updateSettings,
+        fetchSettings, updateSettings, fetchMyPermissions,
         fetchUnitsForStage,
     };
 });
