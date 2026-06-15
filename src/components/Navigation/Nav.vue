@@ -56,6 +56,19 @@ const categoryKeys = computed(() =>
     .map(cat => cat.key)
 );
 
+// Agrupa as categorias visíveis por seção de topo (group), preservando a ordem
+// de primeira aparição. Permite que a navbar escale com rótulos de seção.
+const navSections = computed(() => {
+  const order = [];
+  const buckets = {};
+  for (const key of categoryKeys.value) {
+    const group = getCat(key)?.group || 'Geral';
+    if (!buckets[group]) { buckets[group] = []; order.push(group); }
+    buckets[group].push(key);
+  }
+  return order.map(group => ({ group, keys: buckets[group] }));
+});
+
 const subcatEntries = (key) => {
   const cat = getCat(key);
   const subs = cat?.subcategories || [];
@@ -235,22 +248,33 @@ const closeMobile = () => { isMobileOpen.value = false; };
             />
           </li>
 
-          <li v-for="catKey in categoryKeys" :key="catKey">
-            <SidebarCategory
-              :category="getCat(catKey)"
-              :cat-key="catKey"
-              :open="dropdowns[catKey]"
-              :collapsed="isCollapsed"
-              :flat-items="categoryFlatItems(catKey)"
-              :sub-entries="subcatEntries(catKey)"
-              :sub-dropdowns="subDropdowns"
-              :is-favorited="isFavorited"
-              @toggle="toggleDropdownSafe(catKey)"
-              @toggleSub="(subKey) => toggleSubDropdownSafe(catKey, subKey)"
-              @expand="expandSidebar(); closeMobile();"
-              @toggleFavorite="toggleFavorite"
-            />
-          </li>
+          <template v-for="(grp, gi) in navSections" :key="grp.group">
+            <!-- Rótulo de seção (expandido) · divisória discreta (recolhido) -->
+            <li v-if="!isCollapsed"
+                :class="['select-none px-2 pb-1', gi === 0 ? 'pt-2' : 'pt-4']">
+              <span class="text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-subtle">
+                {{ grp.group }}
+              </span>
+            </li>
+            <li v-else-if="gi > 0" aria-hidden="true" class="mx-auto my-2 h-px w-6 bg-line"></li>
+
+            <li v-for="catKey in grp.keys" :key="catKey">
+              <SidebarCategory
+                :category="getCat(catKey)"
+                :cat-key="catKey"
+                :open="dropdowns[catKey]"
+                :collapsed="isCollapsed"
+                :flat-items="categoryFlatItems(catKey)"
+                :sub-entries="subcatEntries(catKey)"
+                :sub-dropdowns="subDropdowns"
+                :is-favorited="isFavorited"
+                @toggle="toggleDropdownSafe(catKey)"
+                @toggleSub="(subKey) => toggleSubDropdownSafe(catKey, subKey)"
+                @expand="expandSidebar(); closeMobile();"
+                @toggleFavorite="toggleFavorite"
+              />
+            </li>
+          </template>
 
           <!-- Bolão da Copa — link direto (sem dropdown), abaixo das categorias -->
           <li>
@@ -271,10 +295,14 @@ const closeMobile = () => { isMobileOpen.value = false; };
             <SidebarItem to="/report" icon="fas fa-bug" label="Reportar Problema"
               :collapsed="isCollapsed" @click="expandSidebar(); closeMobile();" />
           </li>
+          <!-- Documentação ocultada temporariamente — não utilizada por enquanto.
+               A rota /docs continua funcional; basta reativar este item quando voltar a ser usada. -->
+          <!--
           <li>
             <SidebarItem to="/docs" icon="fas fa-book" label="Documentação"
               :collapsed="isCollapsed" @click="expandSidebar(); closeMobile();" />
           </li>
+          -->
           <li>
             <a :href="academyHref"
               @click="expandSidebar(); closeMobile();"

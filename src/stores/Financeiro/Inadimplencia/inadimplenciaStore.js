@@ -9,15 +9,19 @@ import dayjs from 'dayjs';
 import API_URL from '@/config/apiUrl';
 import { requestWithAuth } from '@/utils/Auth/requestWithAuth';
 
-// Âncora do BI: inadimplência desde 2020.
-const DEFAULT_START = '2020-01-01';
+// Filtro padrão: trimestre corrente (1º dia do trimestre → hoje).
+function quarterStart() {
+  const t = dayjs();
+  const m = Math.floor(t.month() / 3) * 3; // 0, 3, 6 ou 9
+  return t.month(m).startOf('month').format('YYYY-MM-DD');
+}
 
 export const useInadimplenciaStore = defineStore('inadimplencia', () => {
   // ── Filtros ──────────────────────────────────────────────────────────────
   const empresas        = ref([]);   // códigos cdempresaview selecionados
   const empreendimentos = ref([]);   // códigos cdempreendview selecionados
   const situacoes       = ref([]);   // 'Normal' | 'Cobrança' | 'Inadimplente' | 'Sub-judicie'
-  const startDate       = ref(DEFAULT_START);
+  const startDate       = ref(quarterStart());
   const endDate         = ref(dayjs().format('YYYY-MM-DD'));
   const search          = ref('');
 

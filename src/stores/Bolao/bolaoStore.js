@@ -94,6 +94,18 @@ export const useBolaoStore = defineStore('bolao', () => {
     return r;
   }
 
+  // Apaga TODOS os palpites do bolão (mantém participantes e jogos).
+  async function clearPredictions() {
+    await requestWithAuth('/bolao/predictions/clear', { method: 'POST' });
+    await fetchOverview();
+  }
+
+  // Remove um participante (e seus palpites).
+  async function removeParticipant(id) {
+    await requestWithAuth(`/bolao/participants/${id}`, { method: 'DELETE' });
+    await fetchOverview();
+  }
+
   // Cria o bolão da Copa + importa os palpites do grupo (idempotente).
   async function runSeed() {
     await requestWithAuth('/bolao/seed', { method: 'POST' });
@@ -104,6 +116,6 @@ export const useBolaoStore = defineStore('bolao', () => {
     bolao, matches, ranking, reveal, mode, live, recap, recapSource,
     loading, loadingRecap, error, hasLive,
     fetchOverview, fetchLive, fetchRecap, postResult, postLiveScore,
-    savePredictions, addParticipant, runSeed,
+    savePredictions, addParticipant, removeParticipant, clearPredictions, runSeed,
   };
 });
