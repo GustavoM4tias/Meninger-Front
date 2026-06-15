@@ -4,6 +4,8 @@ import PageContainer from '@/components/UI/PageContainer.vue';
 import PageHeader from '@/components/UI/PageHeader.vue';
 import Surface from '@/components/UI/Surface.vue';
 import Button from '@/components/UI/Button.vue';
+import Modal from '@/components/UI/Modal.vue';
+import Input from '@/components/UI/Input.vue';
 import { useBolaoStore } from '@/stores/Bolao/bolaoStore';
 import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 
@@ -13,6 +15,14 @@ const isAdmin = computed(() => auth.hasRole('admin'));
 const hasBolao = computed(() => !!store.bolao);
 
 const flagUrl = (c) => (c ? `/flags/${c}.png` : '');
+const scoreCls = 'w-12 text-center bg-surface-raised border border-line rounded-lg py-1.5 text-sm font-semibold text-ink focus:border-accent-ring focus:ring-2 focus:ring-accent-ring/20 outline-none transition';
+
+function initials(name = '') {
+  const parts = String(name).replace(/[^\p{L}\s]/gu, ' ').trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return '?';
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
 
 const fmtDate = (iso) => new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', weekday: 'short', day: '2-digit', month: 'short' }).format(new Date(iso));
 const fmtTime = (iso) => new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit' }).format(new Date(iso));
@@ -28,9 +38,9 @@ const headerSubtitle = computed(() => {
 const statusChip = computed(() => {
   const b = store.bolao;
   if (!b) return null;
-  if (b.status === 'open') return { text: 'Palpites abertos', cls: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300' };
-  if (b.status === 'finished') return { text: 'Encerrado', cls: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300' };
-  return { text: 'Palpites travados', cls: 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300' };
+  if (b.status === 'open') return { text: 'Palpites abertos', cls: 'bg-accent-soft text-accent' };
+  if (b.status === 'finished') return { text: 'Encerrado', cls: 'bg-surface-sunken text-ink-muted' };
+  return { text: 'Palpites travados', cls: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400' };
 });
 
 const leadersCount = computed(() => store.ranking.filter(r => r.position === 1 && r.total > 0).length);
@@ -41,31 +51,30 @@ function matchScore(m) {
   return null;
 }
 
-// ── Leaderboard: indicadores por jogo (sem revelar o número do palpite) ────────
 const dotClass = (status) => ({
-  exact: 'bg-green-500',
+  exact: 'bg-emerald-500',
   winner: 'bg-blue-500',
   miss: 'bg-red-400',
-  pending: 'bg-gray-300 dark:bg-gray-600',
-}[status] || 'bg-gray-300 dark:bg-gray-600');
+  pending: 'bg-line-strong',
+}[status] || 'bg-line-strong');
 
 function dotTitle(cell, m) {
   if (!m) return '';
   const label = `${m.home_code}×${m.away_code}`;
-  const res = { exact: 'cravou (+' + (store.bolao?.points_exact ?? 3) + ')', winner: 'acertou o vencedor (+' + (store.bolao?.points_winner ?? 1) + ')', miss: 'errou', pending: 'aguardando' }[cell.status] || '';
+  const res = { exact: `cravou (+${store.bolao?.points_exact ?? 3})`, winner: `acertou o vencedor (+${store.bolao?.points_winner ?? 1})`, miss: 'errou', pending: 'aguardando' }[cell.status] || '';
   if (isAdmin.value && cell.has_prediction) return `${label}: palpite ${cell.pred_home}-${cell.pred_away} · ${res}`;
   return `${label}: ${res}`;
 }
 
 function medalStyle(pos, total) {
-  if (total <= 0) return 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400';
-  if (pos === 1) return 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300';
-  if (pos === 2) return 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-200';
-  if (pos === 3) return 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300';
-  return 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400';
+  if (total <= 0) return 'bg-surface-sunken text-ink-muted';
+  if (pos === 1) return 'bg-amber-400/20 text-amber-600 dark:text-amber-300';
+  if (pos === 2) return 'bg-slate-400/20 text-slate-600 dark:text-slate-300';
+  if (pos === 3) return 'bg-orange-400/20 text-orange-600 dark:text-orange-300';
+  return 'bg-surface-sunken text-ink-muted';
 }
 
-// ── Polling enquanto há jogo ao vivo (pausa com o painel admin aberto) ─────────
+// ── Polling enquanto há jogo ao vivo (pausa com painel admin aberto) ───────────
 let timer = null;
 function setupPolling() {
   if (timer) clearInterval(timer);
@@ -87,12 +96,11 @@ async function criarBolao() {
   try { await store.runSeed(); } finally { seeding.value = false; }
 }
 
-// ── Admin: cadastrar palpites 1 por 1 ─────────────────────────────────────────
+// ── Admin: editor de palpites ─────────────────────────────────────────────────
 const showAdminPanel = ref(false);
 const editModel = reactive({}); // { [participantId]: { [matchId]: { home, away } } }
 const savingPid = ref(null);
-const newParticipantName = ref('');
-const addingParticipant = ref(false);
+const removingPid = ref(null);
 
 function buildEditModel() {
   for (const row of store.ranking) {
@@ -124,17 +132,44 @@ async function saveParticipant(pid) {
     savingPid.value = null;
   }
 }
-async function addParticipante() {
-  const name = newParticipantName.value.trim();
-  if (!name) return;
-  addingParticipant.value = true;
-  try {
-    await store.addParticipant({ name });
-    newParticipantName.value = '';
-    buildEditModel();
-  } finally {
-    addingParticipant.value = false;
-  }
+async function removeParticipant(pid) {
+  removingPid.value = pid;
+  try { await store.removeParticipant(pid); buildEditModel(); }
+  finally { removingPid.value = null; }
+}
+
+// ── Admin: adicionar participante (modal com usuários do sistema) ──────────────
+const showUserPicker = ref(false);
+const userSearch = ref('');
+const usersLoaded = ref(false);
+const addingId = ref(null);
+const existingUserIds = computed(() => new Set(store.ranking.map(r => r.participant.user_id).filter(Boolean)));
+const filteredUsers = computed(() => {
+  const q = userSearch.value.trim().toLowerCase();
+  return (auth.activeUsers || [])
+    .filter(u => !existingUserIds.value.has(u.id))
+    .filter(u => !q || (u.username || '').toLowerCase().includes(q) || (u.position || '').toLowerCase().includes(q) || (u.city || '').toLowerCase().includes(q))
+    .slice(0, 50);
+});
+async function ensureUsers() {
+  if (usersLoaded.value) return;
+  try { await auth.getAllUsers(); usersLoaded.value = true; } catch { /* ignora */ }
+}
+function openUserPicker() { userSearch.value = ''; ensureUsers(); showUserPicker.value = true; }
+async function addUser(u) {
+  addingId.value = u.id;
+  try { await store.addParticipant({ user_id: u.id }); buildEditModel(); }
+  finally { addingId.value = null; }
+}
+
+// ── Admin: limpar todos os palpites (confirmação em 2 cliques) ─────────────────
+const clearConfirm = ref(false);
+const clearing = ref(false);
+async function clearAll() {
+  if (!clearConfirm.value) { clearConfirm.value = true; return; }
+  clearing.value = true;
+  try { await store.clearPredictions(); buildEditModel(); }
+  finally { clearing.value = false; clearConfirm.value = false; }
 }
 
 onMounted(async () => {
@@ -151,9 +186,10 @@ onUnmounted(() => { if (timer) clearInterval(timer); });
       <PageHeader title="Bolão da Copa" :subtitle="headerSubtitle" icon="fas fa-futbol">
         <template #actions>
           <div class="flex items-center gap-2">
-            <span v-if="statusChip" class="text-[11px] font-medium px-2 py-1 rounded" :class="statusChip.cls">{{ statusChip.text }}</span>
-            <Button v-if="isAdmin && hasBolao" :variant="showAdminPanel ? 'primary' : 'secondary'" icon="fas fa-pen" size="sm" @click="toggleAdminPanel">
-              {{ showAdminPanel ? 'Fechar cadastro' : 'Cadastrar palpites' }}
+            <span v-if="statusChip" class="text-[11px] font-medium px-2.5 py-1 rounded-full" :class="statusChip.cls">{{ statusChip.text }}</span>
+            <Button v-if="isAdmin && hasBolao" :variant="showAdminPanel ? 'ghost' : 'secondary'"
+              :icon="showAdminPanel ? 'fas fa-list-ol' : 'fas fa-pen'" size="sm" @click="toggleAdminPanel">
+              {{ showAdminPanel ? 'Ver ranking' : 'Cadastrar palpites' }}
             </Button>
             <Button variant="ghost" icon="fas fa-rotate" size="sm" :loading="store.loading" @click="refreshAll">Atualizar</Button>
           </div>
@@ -161,19 +197,19 @@ onUnmounted(() => { if (timer) clearInterval(timer); });
       </PageHeader>
 
       <!-- Carregando inicial -->
-      <Surface v-if="store.loading && !hasBolao" variant="raised" padding="lg" class="text-center text-sm text-gray-500">
+      <Surface v-if="store.loading && !hasBolao" variant="raised" padding="lg" class="text-center text-sm text-ink-muted">
         Carregando o bolão…
       </Surface>
 
       <!-- Estado vazio -->
       <Surface v-else-if="!hasBolao" variant="raised" padding="lg" class="text-center">
         <div class="py-8">
-          <div class="h-14 w-14 mx-auto rounded-2xl bg-green-500/10 text-green-600 grid place-items-center mb-4">
+          <div class="h-14 w-14 mx-auto rounded-2xl bg-emerald-500/10 text-emerald-600 grid place-items-center mb-4">
             <i class="fas fa-futbol text-2xl"></i>
           </div>
-          <h3 class="text-base font-semibold text-gray-800 dark:text-gray-100">Bolão ainda não configurado</h3>
-          <p class="text-sm text-gray-500 mt-1">
-            {{ isAdmin ? 'Crie o bolão da Copa e importe os palpites do grupo.' : 'Em breve o administrador vai configurar o bolão.' }}
+          <h3 class="text-base font-semibold text-ink">Bolão ainda não configurado</h3>
+          <p class="text-sm text-ink-muted mt-1">
+            {{ isAdmin ? 'Crie o bolão da Copa (gera os jogos). Depois adicione os participantes do sistema.' : 'Em breve o administrador vai configurar o bolão.' }}
           </p>
           <div v-if="isAdmin" class="mt-4">
             <Button variant="primary" icon="fas fa-wand-magic-sparkles" :loading="seeding" @click="criarBolao">Criar bolão da Copa</Button>
@@ -186,12 +222,12 @@ onUnmounted(() => { if (timer) clearInterval(timer); });
         <!-- Resenha do Eme -->
         <Surface variant="raised" padding="md" class="mb-4">
           <div class="flex items-start gap-3">
-            <div class="h-9 w-9 rounded-xl bg-indigo-500/10 text-indigo-500 grid place-items-center shrink-0">
+            <div class="h-9 w-9 rounded-xl bg-accent-soft text-accent grid place-items-center shrink-0">
               <i class="fas fa-robot"></i>
             </div>
             <div class="flex-1 min-w-0">
-              <div class="text-sm font-semibold text-gray-800 dark:text-gray-100">Resenha do Eme</div>
-              <p class="text-sm text-gray-600 dark:text-gray-300 mt-0.5">
+              <div class="text-sm font-semibold text-ink">Resenha do Eme</div>
+              <p class="text-sm text-ink-muted mt-0.5">
                 {{ store.recap || (store.loadingRecap ? 'Pensando na resenha…' : 'Sem resenha no momento.') }}
               </p>
             </div>
@@ -199,133 +235,177 @@ onUnmounted(() => { if (timer) clearInterval(timer); });
           </div>
         </Surface>
 
-        <!-- Programação (cards com bandeira) -->
+        <!-- Programação -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
           <Surface v-for="m in store.matches" :key="m.id" variant="raised" padding="md">
             <div class="flex items-center justify-between mb-3">
-              <span class="text-[11px] font-medium text-gray-400">Jogo {{ m.match_order }}</span>
-              <span v-if="m.status === 'live' || m.status === 'halftime'" class="flex items-center gap-1.5 text-[11px] font-semibold text-green-600 dark:text-green-400">
+              <span class="text-[11px] font-medium text-ink-subtle">Jogo {{ m.match_order }}</span>
+              <span v-if="m.status === 'live' || m.status === 'halftime'" class="flex items-center gap-1.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
                 <span class="relative flex h-2 w-2">
-                  <span class="absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75 animate-ping"></span>
-                  <span class="relative inline-flex h-2 w-2 rounded-full bg-green-500"></span>
+                  <span class="absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75 animate-ping"></span>
+                  <span class="relative inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
                 </span>
                 {{ m.status === 'halftime' ? 'INTERVALO' : 'AO VIVO' }}
               </span>
-              <span v-else-if="m.status === 'finished'" class="text-[11px] font-medium text-gray-400">Encerrado</span>
-              <span v-else class="text-[11px] text-gray-500 capitalize">{{ fmtDate(m.kickoff_at) }} · {{ fmtTime(m.kickoff_at) }}</span>
+              <span v-else-if="m.status === 'finished'" class="text-[11px] font-medium text-ink-subtle">Encerrado</span>
+              <span v-else class="text-[11px] text-ink-muted capitalize">{{ fmtDate(m.kickoff_at) }} · {{ fmtTime(m.kickoff_at) }}</span>
             </div>
 
             <div class="flex items-center justify-between gap-2">
               <div class="flex flex-col items-center gap-1.5 flex-1 min-w-0">
-                <img v-if="flagUrl(m.home_country)" :src="flagUrl(m.home_country)" class="h-9 w-12 rounded object-cover shadow-sm" :alt="m.home_team" />
-                <span class="text-xs font-medium text-center text-gray-700 dark:text-gray-200 truncate w-full">{{ m.home_team }}</span>
+                <img v-if="flagUrl(m.home_country)" :src="flagUrl(m.home_country)" class="h-9 w-12 rounded object-cover ring-1 ring-line" :alt="m.home_team" />
+                <span class="text-xs font-medium text-center text-ink truncate w-full">{{ m.home_team }}</span>
               </div>
 
               <div class="flex flex-col items-center px-1 shrink-0">
-                <div v-if="matchScore(m)" class="text-2xl font-bold tabular-nums text-gray-900 dark:text-gray-50">{{ matchScore(m) }}</div>
-                <div v-else class="text-sm text-gray-400">vs</div>
-                <div v-if="m.status === 'live'" class="text-[11px] font-semibold text-green-600 dark:text-green-400 tabular-nums">{{ m.live_minute != null ? m.live_minute + "'" : '' }}</div>
-                <div v-else-if="m.status === 'halftime'" class="text-[11px] font-semibold text-green-600 dark:text-green-400">intervalo</div>
+                <div v-if="matchScore(m)" class="text-2xl font-bold tabular-nums text-ink">{{ matchScore(m) }}</div>
+                <div v-else class="text-sm text-ink-subtle">vs</div>
+                <div v-if="m.status === 'live'" class="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 tabular-nums">{{ m.live_minute != null ? m.live_minute + "'" : '' }}</div>
               </div>
 
               <div class="flex flex-col items-center gap-1.5 flex-1 min-w-0">
-                <img v-if="flagUrl(m.away_country)" :src="flagUrl(m.away_country)" class="h-9 w-12 rounded object-cover shadow-sm" :alt="m.away_team" />
-                <span class="text-xs font-medium text-center text-gray-700 dark:text-gray-200 truncate w-full">{{ m.away_team }}</span>
+                <img v-if="flagUrl(m.away_country)" :src="flagUrl(m.away_country)" class="h-9 w-12 rounded object-cover ring-1 ring-line" :alt="m.away_team" />
+                <span class="text-xs font-medium text-center text-ink truncate w-full">{{ m.away_team }}</span>
               </div>
             </div>
           </Surface>
         </div>
 
-        <!-- Avisos -->
-        <div v-if="leadersCount > 1" class="mb-3 flex items-center gap-2 text-xs px-3 py-2 rounded-lg bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300">
+        <!-- Aviso de empate -->
+        <div v-if="leadersCount > 1" class="mb-3 flex items-center gap-2 text-xs px-3 py-2 rounded-lg bg-surface-sunken text-ink-muted">
           <i class="fas fa-triangle-exclamation"></i> {{ leadersCount }} empatados na liderança — desempate por cravadas, depois menor erro de placar, depois ordem de envio.
         </div>
 
-        <!-- Ranking -->
-        <Surface variant="raised" padding="md">
+        <!-- ── EDITOR ADMIN ── -->
+        <Surface v-if="isAdmin && showAdminPanel" variant="raised" padding="md">
+          <div class="flex items-start justify-between gap-3 mb-4 flex-wrap">
+            <div>
+              <h3 class="text-sm font-semibold text-ink">Cadastrar palpites</h3>
+              <p class="text-xs text-ink-muted mt-0.5">Adicione participantes do sistema e preencha os placares (casa × fora).</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button v-if="clearConfirm" type="button" class="text-[11px] text-ink-subtle hover:text-ink" @click="clearConfirm = false">cancelar</button>
+              <Button :variant="clearConfirm ? 'danger' : 'ghost'" icon="fas fa-eraser" size="sm" :loading="clearing" @click="clearAll">
+                {{ clearConfirm ? 'Confirmar limpeza?' : 'Limpar palpites' }}
+              </Button>
+              <Button variant="secondary" icon="fas fa-user-plus" size="sm" @click="openUserPicker">Adicionar participante</Button>
+            </div>
+          </div>
+
+          <div v-if="!store.ranking.length" class="rounded-xl border border-dashed border-line py-10 text-center">
+            <i class="fas fa-users text-ink-subtle text-xl"></i>
+            <p class="text-sm text-ink-muted mt-2">Nenhum participante. Clique em <span class="font-medium text-ink">Adicionar participante</span>.</p>
+          </div>
+
+          <div v-else class="space-y-2.5">
+            <div v-for="row in store.ranking" :key="row.participant.id"
+              class="rounded-xl border border-line bg-surface p-3 sm:p-4">
+              <div class="flex items-center justify-between gap-3 mb-3">
+                <div class="flex items-center gap-2.5 min-w-0">
+                  <span class="h-9 w-9 rounded-full bg-surface-sunken text-ink-muted grid place-items-center text-xs font-semibold shrink-0">{{ row.participant.avatar_initials }}</span>
+                  <div class="min-w-0">
+                    <div class="text-sm font-medium text-ink truncate">{{ row.participant.display_name }}</div>
+                    <div class="text-[11px] text-ink-subtle truncate">{{ row.participant.subtitle }}</div>
+                  </div>
+                </div>
+                <div class="flex items-center gap-1.5 shrink-0">
+                  <Button variant="primary" size="sm" :loading="savingPid === row.participant.id" @click="saveParticipant(row.participant.id)">Salvar</Button>
+                  <button type="button" title="Remover participante"
+                    class="h-8 w-8 grid place-items-center rounded-lg text-ink-subtle hover:bg-red-500/10 hover:text-red-500 transition-colors disabled:opacity-50"
+                    :disabled="removingPid === row.participant.id" @click="removeParticipant(row.participant.id)">
+                    <i class="fas fa-trash-can text-xs"></i>
+                  </button>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <div v-for="m in store.matches" :key="m.id" class="rounded-lg border border-line bg-surface-raised px-3 py-2.5">
+                  <div class="flex items-center justify-center gap-1.5 mb-2 text-[11px] text-ink-muted">
+                    <img v-if="flagUrl(m.home_country)" :src="flagUrl(m.home_country)" class="h-3 w-4 rounded-[2px] object-cover" :alt="m.home_team" />
+                    <span class="font-medium text-ink">{{ m.home_code }}</span>
+                    <span class="text-ink-subtle">×</span>
+                    <span class="font-medium text-ink">{{ m.away_code }}</span>
+                    <img v-if="flagUrl(m.away_country)" :src="flagUrl(m.away_country)" class="h-3 w-4 rounded-[2px] object-cover" :alt="m.away_team" />
+                  </div>
+                  <div v-if="editModel[row.participant.id] && editModel[row.participant.id][m.id]" class="flex items-center justify-center gap-2">
+                    <input v-model.number="editModel[row.participant.id][m.id].home" type="number" min="0" :class="scoreCls" />
+                    <span class="text-ink-subtle font-semibold">:</span>
+                    <input v-model.number="editModel[row.participant.id][m.id].away" type="number" min="0" :class="scoreCls" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Surface>
+
+        <!-- ── RANKING ── -->
+        <Surface v-else variant="raised" padding="md">
           <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
-            <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-100">Ranking</h3>
-            <div class="flex items-center gap-3 text-[11px] text-gray-500">
-              <span class="inline-flex items-center gap-1"><span class="h-2.5 w-2.5 rounded-full bg-green-500"></span> cravou (+{{ store.bolao?.points_exact ?? 3 }})</span>
+            <h3 class="text-sm font-semibold text-ink">Ranking</h3>
+            <div class="flex items-center gap-3 text-[11px] text-ink-muted">
+              <span class="inline-flex items-center gap-1"><span class="h-2.5 w-2.5 rounded-full bg-emerald-500"></span> cravou (+{{ store.bolao?.points_exact ?? 3 }})</span>
               <span class="inline-flex items-center gap-1"><span class="h-2.5 w-2.5 rounded-full bg-blue-500"></span> vencedor (+{{ store.bolao?.points_winner ?? 1 }})</span>
               <span class="inline-flex items-center gap-1"><span class="h-2.5 w-2.5 rounded-full bg-red-400"></span> errou</span>
             </div>
           </div>
 
-          <div class="divide-y divide-gray-50 dark:divide-gray-800/60">
+          <div class="divide-y divide-line-subtle">
             <div v-for="row in store.ranking" :key="row.participant.id"
               class="flex items-center gap-3 py-2.5"
-              :class="row.position === 1 && row.total > 0 ? 'px-2 -mx-2 rounded-lg bg-green-50/50 dark:bg-green-900/10' : ''">
+              :class="row.position === 1 && row.total > 0 ? 'px-2 -mx-2 rounded-lg bg-emerald-500/5' : ''">
               <span class="h-7 w-7 rounded-full grid place-items-center text-xs font-bold shrink-0" :class="medalStyle(row.position, row.total)">
                 <i v-if="row.position === 1 && row.total > 0" class="fas fa-crown text-[11px]"></i>
                 <template v-else>{{ row.position }}</template>
               </span>
 
-              <span class="h-9 w-9 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 grid place-items-center text-xs font-semibold shrink-0">{{ row.participant.avatar_initials }}</span>
+              <span class="h-9 w-9 rounded-full bg-surface-sunken text-ink-muted grid place-items-center text-xs font-semibold shrink-0">{{ row.participant.avatar_initials }}</span>
 
               <div class="flex-1 min-w-0">
-                <div class="font-medium text-gray-800 dark:text-gray-100 truncate">{{ row.participant.display_name }}</div>
-                <div class="text-[11px] text-gray-400 truncate">{{ row.participant.subtitle }}</div>
+                <div class="font-medium text-ink truncate">{{ row.participant.display_name }}</div>
+                <div class="text-[11px] text-ink-subtle truncate">{{ row.participant.subtitle }}</div>
               </div>
 
               <div class="flex items-center gap-1.5 shrink-0">
-                <span v-for="(cell, ci) in row.perMatch" :key="ci"
-                  class="h-2.5 w-2.5 rounded-full" :class="dotClass(cell.status)"
-                  :title="dotTitle(cell, store.matches[ci])"></span>
+                <span v-for="(cell, ci) in row.perMatch" :key="ci" class="h-2.5 w-2.5 rounded-full" :class="dotClass(cell.status)" :title="dotTitle(cell, store.matches[ci])"></span>
               </div>
 
               <div class="text-right w-14 shrink-0">
-                <span class="text-lg font-bold tabular-nums text-gray-900 dark:text-gray-50">{{ row.total }}</span>
-                <span class="text-[11px] text-gray-400"> pts</span>
+                <span class="text-lg font-bold tabular-nums text-ink">{{ row.total }}</span>
+                <span class="text-[11px] text-ink-subtle"> pts</span>
               </div>
             </div>
 
-            <div v-if="!store.ranking.length" class="py-10 text-center text-sm text-gray-400">
-              Nenhum participante ainda.
+            <div v-if="!store.ranking.length" class="py-10 text-center text-sm text-ink-muted">
+              Nenhum participante ainda{{ isAdmin ? ' — use “Cadastrar palpites”.' : '.' }}
             </div>
-          </div>
-        </Surface>
-
-        <!-- Painel admin: cadastrar palpites 1 por 1 -->
-        <Surface v-if="isAdmin && showAdminPanel" variant="raised" padding="md" class="mt-4">
-          <div class="flex items-center justify-between mb-3">
-            <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-100">Cadastrar palpites — um por participante</h3>
-            <span class="text-[11px] text-gray-400">placar na orientação do jogo (casa × fora)</span>
-          </div>
-
-          <div class="space-y-2">
-            <div v-for="row in store.ranking" :key="row.participant.id"
-              class="flex items-center gap-3 flex-wrap py-2 border-b border-gray-50 dark:border-gray-800/60">
-              <div class="w-40 min-w-[10rem]">
-                <div class="font-medium text-sm text-gray-800 dark:text-gray-100 truncate">{{ row.participant.display_name }}</div>
-                <div class="text-[11px] text-gray-400 truncate">{{ row.participant.subtitle }}</div>
-              </div>
-
-              <div v-for="m in store.matches" :key="m.id" class="flex items-center gap-1.5">
-                <span class="text-[10px] text-gray-400 w-14 text-right">{{ m.home_code }}×{{ m.away_code }}</span>
-                <template v-if="editModel[row.participant.id] && editModel[row.participant.id][m.id]">
-                  <input v-model.number="editModel[row.participant.id][m.id].home" type="number" min="0"
-                    class="w-10 text-center rounded border border-gray-200 dark:border-gray-700 bg-transparent py-1 text-sm" />
-                  <span class="text-gray-400 text-xs">x</span>
-                  <input v-model.number="editModel[row.participant.id][m.id].away" type="number" min="0"
-                    class="w-10 text-center rounded border border-gray-200 dark:border-gray-700 bg-transparent py-1 text-sm" />
-                </template>
-              </div>
-
-              <Button variant="primary" size="sm" :loading="savingPid === row.participant.id" @click="saveParticipant(row.participant.id)">Salvar</Button>
-            </div>
-          </div>
-
-          <!-- Adicionar participante por nome (sem dropdown) -->
-          <div class="flex items-center gap-2 mt-4 pt-3 border-t border-gray-100 dark:border-gray-800">
-            <input v-model="newParticipantName" type="text" placeholder="Nome do participante"
-              class="flex-1 max-w-xs rounded border border-gray-200 dark:border-gray-700 bg-transparent px-3 py-1.5 text-sm"
-              @keyup.enter="addParticipante" />
-            <Button variant="secondary" icon="fas fa-user-plus" size="sm" :loading="addingParticipant" @click="addParticipante">Adicionar participante</Button>
           </div>
         </Surface>
       </template>
 
     </PageContainer>
+
+    <!-- Modal: adicionar participante (usuários do sistema) -->
+    <Modal :open="showUserPicker" size="md" title="Adicionar participante" subtitle="Escolha um usuário do sistema" @close="showUserPicker = false">
+      <Input v-model="userSearch" icon-left="fas fa-magnifying-glass" placeholder="Buscar por nome, cargo ou cidade…" />
+      <div class="mt-3 -mx-1 max-h-[52vh] overflow-y-auto">
+        <button v-for="u in filteredUsers" :key="u.id" type="button" :disabled="addingId === u.id"
+          class="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-surface-sunken text-left transition-colors disabled:opacity-50"
+          @click="addUser(u)">
+          <span class="h-9 w-9 rounded-full bg-surface-sunken text-ink-muted grid place-items-center text-xs font-semibold shrink-0">{{ initials(u.username) }}</span>
+          <div class="flex-1 min-w-0">
+            <div class="text-sm font-medium text-ink truncate">{{ u.username }}</div>
+            <div class="text-[11px] text-ink-subtle truncate">{{ u.position || u.city || '—' }}</div>
+          </div>
+          <i :class="addingId === u.id ? 'fas fa-circle-notch fa-spin' : 'fas fa-plus'" class="text-accent text-sm shrink-0"></i>
+        </button>
+
+        <div v-if="!filteredUsers.length" class="py-10 text-center text-sm text-ink-muted">
+          {{ usersLoaded ? 'Nenhum usuário encontrado.' : 'Carregando usuários…' }}
+        </div>
+      </div>
+      <template #footer>
+        <Button variant="secondary" @click="showUserPicker = false">Concluir</Button>
+      </template>
+    </Modal>
   </div>
 </template>
