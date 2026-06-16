@@ -67,13 +67,13 @@ export const useViabilityAdminStore = defineStore('marketingViabilityAdmin', () 
         enterpriseSettings.value = res?.results || [];
     }
 
-    async function setEnterpriseSettings(enterpriseKey, payload) {
+    async function setEnterpriseSettings(companyId, payload) {
         const res = await requestWithAuth(
-            `${API_URL}/viability/admin/enterprise-settings/${encodeURIComponent(enterpriseKey)}`,
+            `${API_URL}/viability/admin/enterprise-settings/${encodeURIComponent(companyId)}`,
             { method: 'PUT', body: JSON.stringify(payload) }
         );
         // atualiza cache local
-        const idx = enterpriseSettings.value.findIndex((e) => String(e.enterprise_key) === String(enterpriseKey));
+        const idx = enterpriseSettings.value.findIndex((e) => String(e.company_id) === String(companyId));
         if (idx >= 0) enterpriseSettings.value[idx] = res;
         else if (res) enterpriseSettings.value = [...enterpriseSettings.value, res];
         return res;

@@ -12,7 +12,7 @@
  *   A navbar agrupa as categorias em SEÇÕES de topo para escalar conforme o
  *   sistema cresce. A ordem das seções segue a 1ª aparição no array abaixo.
  *     OPERAÇÃO  — o dia a dia do negócio (Marketing, Comercial, Financeiro)
- *     RECURSOS  — ferramentas e integrações (Ferramentas, Microsoft)
+ *     RECURSOS  — canais e integrações externas (Microsoft, Meta)
  *     SISTEMA   — administração, suporte e a conta do próprio usuário
  *
  * ─── Propriedades de categoria ────────────────────────────────────────────────
@@ -54,7 +54,7 @@ export const navRegistry = [
             {
                 key: 'events',
                 name: 'Eventos',
-                icon: 'fas fa-newspaper',
+                icon: 'fas fa-calendar-days',
                 pages: [
                     { route: '/marketing/events', section: 'Geral', name: 'Geral', icon: 'fas fa-list' },
                     { route: '/marketing/events', section: 'Próximos', name: 'Próximos', icon: 'fas fa-calendar-plus' },
@@ -68,8 +68,7 @@ export const navRegistry = [
                 pages: [
                     { route: '/marketing/captacao', name: 'Captação de Leads', icon: 'fas fa-inbox', adminOnly: true },
                     { route: '/marketing/formularios', name: 'Formulários', icon: 'fas fa-square-poll-vertical', adminOnly: true },
-                    { route: '/marketing/campanhas', name: 'Campanhas Meta', icon: 'fab fa-meta', adminOnly: true },
-                    { route: '/marketing/settings', name: 'Config. Captação', icon: 'fas fa-gear', adminOnly: true },
+                    { route: '/marketing/settings', name: 'Config. Captação', icon: 'fas fa-sliders', adminOnly: true },
                 ],
             },
         ],
@@ -112,11 +111,11 @@ export const navRegistry = [
                 icon: 'fas fa-building',
                 pages: [
                     { route: '/comercial/buildings', section: 'Geral', name: 'Geral', icon: 'fas fa-list' },
-                    { route: '/comercial/buildings', section: 'Pré Lançamentos', name: 'Pré Lançamentos', icon: 'fas fa-rocket' },
-                    { route: '/comercial/buildings', section: 'Lançamentos', name: 'Lançamentos', icon: 'fas fa-play' },
-                    { route: '/comercial/buildings', section: 'Em Obras', name: 'Em Obras', icon: 'fas fa-hammer' },
-                    { route: '/comercial/buildings', section: 'Finalizados', name: 'Finalizados', icon: 'fas fa-check-circle' },
-                    { route: '/comercial/buildings', section: 'Portal do Cliente', name: 'Portal do Cliente', icon: 'fas fa-user-circle' },
+                    { route: '/comercial/buildings', section: 'Pré Lançamentos', name: 'Pré Lançamentos', icon: 'fas fa-hourglass-start' },
+                    { route: '/comercial/buildings', section: 'Lançamentos', name: 'Lançamentos', icon: 'fas fa-rocket' },
+                    { route: '/comercial/buildings', section: 'Em Obras', name: 'Em Obras', icon: 'fas fa-helmet-safety' },
+                    { route: '/comercial/buildings', section: 'Finalizados', name: 'Finalizados', icon: 'fas fa-building-circle-check' },
+                    { route: '/comercial/buildings', section: 'Portal do Cliente', name: 'Portal do Cliente', icon: 'fas fa-house-user' },
                 ],
             },
             {
@@ -164,18 +163,6 @@ export const navRegistry = [
 
     // ═══ RECURSOS ═══════════════════════════════════════════════════════════════
 
-    // ── Ferramentas ────────────────────────────────────────────────────────────
-    {
-        key: 'tools',
-        label: 'Ferramentas',
-        icon: 'fas fa-wrench',
-        group: 'RECURSOS',
-        pages: [
-            { route: '/tools/validator', section: 'Validador', name: 'Validador', icon: 'fas fa-check-double' },
-            { route: '/tools/bucket-upload', section: 'Envio ao Bucket', name: 'Envio ao Bucket', icon: 'fas fa-cloud-upload-alt' },
-        ],
-    },
-
     // ── Microsoft (só exibido quando a integração está ativa) ──────────────────
     {
         key: 'microsoft',
@@ -185,17 +172,31 @@ export const navRegistry = [
         requiresMicrosoft: true,
         pages: [
             { route: '/microsoft/sharepoint',  section: 'SharePoint',        name: 'SharePoint',        icon: 'fas fa-folder-open' },
-            { route: '/microsoft/teams',       section: 'Teams',             name: 'Teams',             icon: 'fas fa-users' },
+            { route: '/microsoft/teams',       section: 'Teams',             name: 'Teams',             icon: 'fas fa-people-group' },
             { route: '/microsoft/planner',     section: 'Planner',           name: 'Planner',           icon: 'fas fa-table-columns' },
             { route: '/microsoft/transcripts', section: 'Transcrições & IA', name: 'Transcrições & IA', icon: 'fas fa-file-waveform' },
             // { route: '/microsoft/inperson',    name: 'Reuniões Presenciais',  icon: 'fas fa-people-group' },
         ],
     },
 
+    // ── Meta — canais Facebook/Instagram + WhatsApp ────────────────────────────
+    {
+        key: 'meta',
+        label: 'Meta',
+        icon: 'fab fa-meta',
+        iconColor: '#0866FF',
+        group: 'RECURSOS',
+        pages: [
+            { route: '/marketing/campanhas', name: 'Campanhas Meta', icon: 'fas fa-rectangle-ad', adminOnly: true },
+            { route: '/settings/whatsapp', section: 'WhatsApp', name: 'WhatsApp', icon: 'fab fa-whatsapp', adminOnly: true },
+            { route: '/tools/whatsapp-automations', section: 'Automações WhatsApp', name: 'Automações WhatsApp', icon: 'fas fa-robot', adminOnly: true },
+        ],
+    },
+
     // ═══ SISTEMA ════════════════════════════════════════════════════════════════
 
     // ── Administração ───────────────────────────────────────────────────────────
-    // adminOnly:true → sempre oculto para não-admin (ex: Usuários, Alçadas, WhatsApp)
+    // adminOnly:true → sempre oculto para não-admin (ex: Usuários, Alçadas, Backup Sienge)
     // sem flag       → gerenciado por alçada (ex: Organograma — admin pode delegar/revogar)
     {
         key: 'admin',
@@ -211,7 +212,7 @@ export const navRegistry = [
                     { route: '/settings/users', section: 'Usuários', name: 'Usuários', icon: 'fas fa-users', adminOnly: true },
                     { route: '/settings/organograma', section: 'Organograma', name: 'Organograma', icon: 'fas fa-sitemap' },
                     { route: '/settings/permissions', section: 'Alçadas', name: 'Alçadas', icon: 'fas fa-shield-halved', adminOnly: true },
-                    { route: '/settings/management', section: 'Departamentos', name: 'Departamentos', icon: 'fas fa-gears', adminOnly: true },
+                    { route: '/settings/management', section: 'Departamentos', name: 'Departamentos', icon: 'fas fa-building-user', adminOnly: true },
                     { route: '/settings/cidades', section: 'Cidades', name: 'Cidades', icon: 'fas fa-city', adminOnly: true },
                 ],
             },
@@ -220,17 +221,17 @@ export const navRegistry = [
                 name: 'Integrações & Dados',
                 icon: 'fas fa-plug',
                 pages: [
-                    { route: '/settings/whatsapp', section: 'WhatsApp', name: 'WhatsApp', icon: 'fab fa-whatsapp', adminOnly: true },
+                    { route: '/tools/validator', section: 'Validador', name: 'Validador', icon: 'fas fa-check-double' },
+                    { route: '/tools/bucket-upload', section: 'Envio ao Bucket', name: 'Envio ao Bucket', icon: 'fas fa-cloud-arrow-up' },
                     { route: '/settings/backup-sienge', section: 'Backup Sienge', name: 'Backup Sienge', icon: 'fas fa-database', adminOnly: true },
                 ],
             },
             {
                 key: 'intelligence',
                 name: 'Inteligência (Eme)',
-                icon: 'fas fa-brain',
+                icon: 'fas fa-microchip',
                 pages: [
                     { route: '/tools/eme-brain', section: 'Cérebro da Eme', name: 'Cérebro da Eme', icon: 'fas fa-brain', adminOnly: true },
-                    { route: '/tools/whatsapp-automations', section: 'Automações WhatsApp', name: 'Automações WhatsApp', icon: 'fab fa-whatsapp', adminOnly: true },
                 ],
             },
         ],
@@ -245,9 +246,9 @@ export const navRegistry = [
         group: 'SISTEMA',
         permissionManaged: false,
         pages: [
-            { route: '/settings/Account', section: 'Minha Conta', name: 'Minha Conta', icon: 'fas fa-user-cog', permissionManaged: false },
+            { route: '/settings/Account', section: 'Minha Conta', name: 'Minha Conta', icon: 'fas fa-user-gear', permissionManaged: false },
             { route: '/settings/notifications', section: 'Notificações', name: 'Notificações', icon: 'fas fa-bell', permissionManaged: false },
-            { route: '/settings/alerts', section: 'Alertas', name: 'Alertas', icon: 'fas fa-bell-concierge', permissionManaged: false },
+            { route: '/settings/alerts', section: 'Alertas', name: 'Alertas', icon: 'fas fa-tower-broadcast', permissionManaged: false },
             { route: '/report', name: 'Reportar Problema', icon: 'fas fa-bug', permissionManaged: false },
         ],
     },

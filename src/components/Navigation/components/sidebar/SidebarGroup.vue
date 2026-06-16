@@ -4,6 +4,7 @@ defineProps({
   collapsed: { type: Boolean, default: false },
   label: { type: String, required: true },
   icon: { type: String, default: '' },
+  iconColor: { type: String, default: '' },        // cor de marca fixa (ex.: Meta) — vence o hover
   iconSlot: { type: Boolean, default: false },     // se quiser passar SVG/etc via slot
   level: { type: String, default: 'category' },    // category | sub
 });
@@ -23,6 +24,7 @@ defineEmits(['toggle']);
       :aria-expanded="open">
       <slot v-if="iconSlot" name="icon" />
       <i v-else-if="icon" :class="icon"
+         :style="iconColor ? { color: iconColor } : undefined"
          class="w-5 text-ink-muted group-hover:text-accent transition-colors text-sm shrink-0"></i>
 
       <span v-show="!collapsed"
