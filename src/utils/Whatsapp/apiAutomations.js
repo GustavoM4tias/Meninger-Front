@@ -27,3 +27,7 @@ export const deleteAutomation = (id) => req(`/${id}`, { method: 'DELETE' })
 // Templates (catálogo + criar/submeter à Meta)
 export const listTemplates = () => req('/templates')
 export const createTemplate = (data) => req('/templates', { method: 'POST', body: JSON.stringify(data) })
+
+// Webhook ↔ WABA (conectar a conta ao webhook num clique)
+export const connectWebhook = () => req('/connect-webhook', { method: 'POST' })
+export const webhookStatus = () => req('/webhook-status')

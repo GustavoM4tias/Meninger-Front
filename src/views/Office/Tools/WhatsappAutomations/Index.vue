@@ -26,6 +26,7 @@ const events = ref([])
 const editId = ref(null)
 const json = reactive({ variableMapping: '', buttons: '', replyActions: '', recipients: '' })
 const newName = ref('')
+const conn = reactive({ busy: false, msg: '', ok: null })
 
 const templates = ref([])
 const tmplLoading = ref(false)
@@ -119,6 +120,20 @@ async function remove(a) {
   catch (e) { notify(e.message, 'err') }
 }
 
+// ── Conexão do webhook (subscribed_apps) ──
+async function connectWebhook() {
+  conn.busy = true; conn.msg = ''
+  try {
+    const r = await api.connectWebhook()
+    conn.ok = !!r.subscribed
+    conn.msg = r.subscribed
+      ? 'Conectado ✓ — toque SIM num alerta novo, agora deve chegar.'
+      : 'Comando enviado. Teste tocar SIM.'
+    notify(r.subscribed ? 'WhatsApp conectado ao webhook!' : 'Comando enviado.')
+  } catch (e) { conn.ok = false; conn.msg = e.message; notify(e.message, 'err') }
+  finally { conn.busy = false }
+}
+
 // ── Templates ──
 async function loadTemplates() {
   tmplLoading.value = true
@@ -154,6 +169,20 @@ onMounted(load)
 
       <!-- AUTOMAÇÕES -->
       <div v-show="tab === 'automations'">
+        <Surface variant="raised" padding="sm" class="mb-3" :class="conn.ok ? 'border-emerald-500/40' : ''">
+          <div class="flex items-center gap-3 flex-wrap">
+            <i class="fab fa-whatsapp text-emerald-500 text-lg"></i>
+            <div class="min-w-0">
+              <p class="text-sm font-semibold text-ink">Conexão do webhook</p>
+              <p class="text-xs text-ink-muted">Recebe o alerta mas o "SIM" não volta? Clique aqui — conecta sua conta ao webhook (subscribed_apps) usando o token já salvo.</p>
+            </div>
+            <div class="ml-auto flex items-center gap-3">
+              <span v-if="conn.msg" class="text-xs" :class="conn.ok ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'">{{ conn.msg }}</span>
+              <Button variant="primary" size="sm" icon="fas fa-plug" :loading="conn.busy" @click="connectWebhook">Conectar ao webhook</Button>
+            </div>
+          </div>
+        </Surface>
+
         <Surface variant="raised" padding="sm" class="mb-5">
           <div class="flex items-end gap-2 flex-wrap">
             <div class="flex-1 min-w-[200px]"><label :class="LABEL">Nova automação</label><Input v-model="newName" size="sm" placeholder="Nome da automação" /></div>

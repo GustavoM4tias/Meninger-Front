@@ -20,6 +20,7 @@ defineEmits(['toggle', 'toggleSub', 'expand', 'toggleFavorite']);
   <SidebarGroup
     :label="category.label"
     :icon="category.requiresMicrosoft ? '' : (category.icon || 'far fa-folder')"
+    :icon-color="category.iconColor"
     :icon-slot="!!category.requiresMicrosoft"
     :open="open"
     :collapsed="collapsed"

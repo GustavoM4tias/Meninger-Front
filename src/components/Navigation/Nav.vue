@@ -288,7 +288,7 @@ const closeMobile = () => { isMobileOpen.value = false; };
           <div class="block md:hidden mb-2"><Search /></div>
 
           <li v-if="authStore?.user?.role === 'admin'">
-            <SidebarItem to="/support" icon="fas fa-circle-info" label="Suporte"
+            <SidebarItem to="/support" icon="fas fa-headset" label="Suporte"
               :collapsed="isCollapsed" @click="expandSidebar(); closeMobile();" />
           </li>
           <!-- Documentação ocultada temporariamente — não utilizada por enquanto.
