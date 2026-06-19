@@ -362,8 +362,14 @@ const ACCENTS = [
     { a: '13 148 136', b: '16 185 129' },   // teal → emerald
     { a: '124 58 237', b: '168 85 247' },   // violet → purple
 ];
+// Acentos fixos por categoria (vencem o hash). Sienge = vermelho, combinando com
+// as caixas/realces vermelhos dos prints das telas.
+const ACCENT_OVERRIDES = {
+    sienge: { a: '220 38 38', b: '239 68 68' }, // red-600 → red-500
+};
 function accentFor(slug) {
-    const s = String(slug || 'kb');
+    const s = String(slug || 'kb').toLowerCase();
+    if (ACCENT_OVERRIDES[s]) return ACCENT_OVERRIDES[s];
     let h = 0;
     for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
     return ACCENTS[h % ACCENTS.length];
