@@ -1,1084 +1,484 @@
 <template>
-    <div class="p-4 md:p-6 max-w-7xl mx-auto space-y-6">
-        <!-- HEADER -->
-        <div
-            class="rounded-2xl border dark:border-gray-700 bg-gradient-to-r from-blue-600 to-purple-700 shadow-lg overflow-hidden">
-            <div class="p-6 text-white">
-                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div class="min-h-[calc(100vh-3.5rem)]">
+        <PageContainer size="full">
+
+            <PageHeader icon="fas fa-scale-balanced"
+                subtitle="Quanto cada empreendimento pode gastar em marketing por unidade — orçamento de vida útil + Custo Loja, gasto real e estoque.">
+                <template #title>
+                    Viabilidade de Marketing
+                    <Favorite :router="'/marketing/viability'" :section="'Viabilidade'" />
+                </template>
+                <template #actions>
+                    <Button v-if="isAdmin" variant="ghost" size="sm" icon="fas fa-sliders-h"
+                        @click="settingsOpen = true">
+                        Departamentos
+                    </Button>
+                    <Button variant="primary" size="sm" icon="fas fa-rotate" :loading="store.isLoading"
+                        @click="load">
+                        Atualizar
+                    </Button>
+                </template>
+            </PageHeader>
+
+            <!-- Filtros -->
+            <Surface variant="raised" padding="md" class="mb-5">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 items-end">
                     <div>
-                        <h1 class="text-3xl font-bold mb-2 flex items-center gap-3">
-                            <i class="fas fa-chart-line"></i>
-                            Viabilidade de Marketing
-                        </h1>
-                        <p class="text-emerald-50 text-sm max-w-2xl">
-                            Controle de orçamento de marketing por empreendimento:
-                            <strong>quanto podemos gastar por unidade</strong>, considerando
-                            <strong>vendas realizadas, estoque atual</strong> e o
-                            <strong>mês de competência {{ monthLabel }}</strong>.
-                        </p>
+                        <label class="text-[11px] font-medium text-ink-muted mb-1.5 flex items-center gap-1.5">
+                            <i class="far fa-calendar-alt text-ink-subtle text-[10px]"></i>
+                            Mês de competência
+                        </label>
+                        <Input v-model="month" type="month" />
                     </div>
 
-                    <div class="flex flex-col md:flex-row items-stretch md:items-center gap-3">
-                        <!-- Mês de competência -->
-                        <div class="bg-white/20 backdrop-blur-sm rounded-xl p-4 min-w-[220px]">
-                            <label class="text-xs font-medium text-emerald-50 mb-2 flex items-center gap-2">
-                                <i class="far fa-calendar-alt"></i>
-                                Mês de Competência
-                            </label>
-                            <input type="month" v-model="month"
-                                class="w-full px-3 py-2 bg-white dark:bg-gray-800 border-0 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-white/50 transition-all" />
+                    <div class="lg:col-span-2">
+                        <label class="text-[11px] font-medium text-ink-muted mb-1.5 flex items-center gap-1.5">
+                            <i class="fas fa-city text-ink-subtle text-[10px]"></i>
+                            Empreendimento(s)
+                        </label>
+                        <MultiSelector :model-value="selectedCompanies"
+                            @update:modelValue="v => selectedCompanies = Array.isArray(v) ? v : []"
+                            :options="companyOptions" placeholder="Todos os empreendimentos" :page-size="200"
+                            :select-all="true" />
+                    </div>
+
+                    <div>
+                        <label class="text-[11px] font-medium text-ink-muted mb-1.5 flex items-center gap-1.5">
+                            <i class="fas fa-traffic-light text-ink-subtle text-[10px]"></i>
+                            Status do mês
+                        </label>
+                        <Select v-model="statusFilter" :options="statusOptions" placeholder="(Todos)" />
+                    </div>
+
+                    <div>
+                        <label class="text-[11px] font-medium text-ink-muted mb-1.5 flex items-center gap-1.5">
+                            <i class="fas fa-layer-group text-ink-subtle text-[10px]"></i>
+                            Categoria
+                        </label>
+                        <Select v-model="categoryFilter" :options="categoryOptions" placeholder="(Todas)" />
+                    </div>
+                </div>
+
+                <Surface v-if="store.error" variant="raised" padding="sm" class="mt-3 border-red-500/30 bg-red-500/10">
+                    <div class="text-sm text-red-600 dark:text-red-400 flex items-center gap-2">
+                        <i class="fas fa-circle-exclamation"></i>{{ store.error }}
+                    </div>
+                </Surface>
+            </Surface>
+
+            <!-- KPIs -->
+            <div class="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-5">
+                <Surface variant="raised" padding="md" class="border-accent/20 bg-accent-soft/40">
+                    <div class="flex items-center gap-2 text-[11px] font-mono uppercase tracking-wider text-accent mb-2">
+                        <i class="fas fa-wallet"></i> Orçamento
+                    </div>
+                    <div class="text-xl font-bold text-ink font-mono tabular-nums">{{ fmtBRL(totals.budget) }}</div>
+                    <div class="text-[10px] text-ink-subtle mt-1">Vida útil + Loja {{ fmtBRL(totals.loja) }}</div>
+                </Surface>
+
+                <Surface variant="raised" padding="md">
+                    <div class="flex items-center gap-2 text-[11px] font-mono uppercase tracking-wider text-ink-muted mb-2">
+                        <i class="fas fa-fire text-amber-500"></i> Gasto marketing
+                    </div>
+                    <div class="text-xl font-bold text-ink font-mono tabular-nums">{{ fmtBRL(totals.spent) }}</div>
+                    <div class="mt-1.5">
+                        <div class="h-1.5 rounded-full bg-surface-sunken overflow-hidden">
+                            <div class="h-full rounded-full transition-all" :class="pctBarClass(totals.pctInvested)"
+                                :style="{ width: Math.min(100, totals.pctInvested * 100) + '%' }"></div>
                         </div>
-
-                        <!-- Botão atualizar -->
-                        <button @click="load"
-                            class="h-11 px-4 rounded-xl bg-white text-emerald-700 font-semibold flex items-center gap-2 shadow hover:bg-emerald-50 transition-all self-end md:self-center"
-                            :disabled="store.isLoading">
-                            <i class="fas" :class="store.isLoading ? 'fa-circle-notch fa-spin' : 'fa-sync-alt'"></i>
-                            <span>{{ store.isLoading ? 'Atualizando...' : 'Atualizar' }}</span>
-                        </button>
-
-                        <!-- Configurações (admin) -->
-                        <button v-if="isAdmin" @click="settingsOpen = true"
-                            class="h-11 px-4 rounded-xl bg-white/20 text-white font-semibold flex items-center gap-2 hover:bg-white/30 transition-all self-end md:self-center backdrop-blur-sm border border-white/30"
-                            title="Configurações da viabilidade (admin)">
-                            <i class="fas fa-sliders-h"></i>
-                            <span class="hidden md:inline">Configurar</span>
-                        </button>
+                        <div class="text-[10px] text-ink-subtle mt-1">{{ fmtPct(totals.pctInvested) }} investido</div>
                     </div>
-                </div>
-            </div>
-        </div>
+                </Surface>
 
-        <!-- FILTROS -->
-        <div class="rounded-2xl border dark:border-gray-700 bg-white/90 dark:bg-gray-800 p-6 shadow-lg">
-            <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
-                <!-- Empreendimentos (MultiSelector) -->
-                <div class="md:col-span-5">
-                    <label class="text-sm font-semibold text-gray-700  dark:text-gray-300 mb-2 flex items-center gap-2">
-                        <i class="fas fa-city text-emerald-600"></i>
-                        Empreendimento(s) da projeção
-                    </label>
-
-                    <MultiSelector :model-value="selectedErpIds" @update:modelValue="onEnterprisesChange"
-                        :options="enterpriseOptions" placeholder="Selecione empreendimentos" :page-size="200"
-                        :select-all="true" />
-                </div>
-
-                <div class="md:col-span-4">
-                    <label class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-                        <i class="fas fa-traffic-light text-emerald-600"></i>
-                        Status do Orçamento (mês)
-                    </label>
-                    <select v-model="statusFilter"
-                        class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900/60 text-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-400/60">
-                        <option value="all">(Todos)</option>
-                        <option value="UNDER">Abaixo do orçamento</option>
-                        <option value="ON_TRACK">Dentro do planejado</option>
-                        <option value="OVER">Acima do orçamento</option>
-                    </select>
-                </div>
-
-                <!-- Switch MÊS / ANO -->
-                <div class="md:col-span-3 flex items-center justify-between md:justify-end gap-3">
-                    <div class="flex flex-col items-start md:items-end gap-1">
-                        <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">
-                            Visão (Mês / Ano)
-                        </span>
-                        <div class="flex items-center bg-gray-100 dark:bg-gray-900 rounded-xl p-1 text-xs">
-                            <button type="button" @click="unitScope = 'MONTH'" :class="scopeBtnClass('MONTH')">
-                                Mês
-                            </button>
-                            <button type="button" @click="unitScope = 'YEAR'" :class="scopeBtnClass('YEAR')">
-                                Ano
-                            </button>
-                        </div>
+                <Surface variant="raised" padding="md"
+                    :class="totals.saldo >= 0 ? 'border-emerald-500/20 bg-emerald-500/5' : 'border-red-500/20 bg-red-500/5'">
+                    <div class="flex items-center gap-2 text-[11px] font-mono uppercase tracking-wider text-ink-muted mb-2">
+                        <i class="fas fa-piggy-bank text-emerald-500"></i> Saldo
                     </div>
-
-                    <Favorite :router="'/marketing/viabilidade'" :section="'Viabilidade Marketing'" />
-                </div>
-            </div>
-
-            <p v-if="store.error" class="mt-4 text-sm text-red-600 bg-red-50 dark:bg-red-900/20 px-4 py-2 rounded-lg">
-                <i class="fas fa-exclamation-circle mr-2"></i>{{ store.error }}
-            </p>
-        </div>
-
-        <!-- RESUMO GLOBAL (MÊS / ANO) -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <!-- ORÇAMENTO (MÊS / ANO) -->
-            <div class="rounded-2xl bg-gradient-to-br from-blue-600 to-purple-700 shadow-lg p-6 text-white">
-                <div class="text-sm font-medium opacity-90 mb-2 flex items-center gap-2">
-                    <i class="fas fa-wallet"></i>
-                    <span>
-                        {{
-                            unitScope === 'MONTH'
-                                ? `Orçamento do mês ${monthLabel}`
-                                : 'Orçamento anual'
-                        }}
-                        ({{ kpiPctUsed.toFixed(1) }}% {{ unitScope === 'MONTH' ? 'usado' : 'do orçamento' }})
-                    </span>
-                </div>
-                <div class="text-3xl font-bold">
-                    {{ formatCurrency(kpiBudget) }}
-                </div>
-                <div class="text-md opacity-80 mt-2">
-                    <span>
-                        {{ unitScope === 'MONTH' ? 'Gasto no mês:' : 'Gasto acumulado:' }}
-                    </span>
-                    <strong class="ps-1"> {{ formatCurrency(kpiSpent) }} </strong>
-                </div>
-                <div class="text-md opacity-80 mt-1">
-                    <span>
-                        {{ unitScope === 'MONTH' ? 'Saldo do mês:' : 'Saldo anual estimado:' }}
-                    </span>
-                    <strong class="ps-1" :class="moneyClass(kpiBalance)">
-                        {{ formatCurrency(kpiBalance) }}
-                    </strong>
-                </div>
-            </div>
-
-            <!-- UNIDADES (MÊS / ANO) -->
-            <div class="rounded-2xl bg-white dark:bg-gray-800 border dark:border-gray-700 shadow-lg p-6">
-                <div class="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2 flex items-center gap-2">
-                    <i class="fas fa-cubes text-emerald-600"></i>
-                    <span>Unidades ({{ unitScope === 'MONTH' ? 'mês' : 'ano' }})</span>
-                </div>
-                <div class="text-xl font-bold text-gray-900 dark:text-white">
-                    Meta: {{ unitsTargetScope }} Unidades
-                </div>
-                <div class="mt-1 text-md font-semibold text-emerald-700 dark:text-emerald-300">
-                    Realizadas até {{ monthLabel }}: {{ unitsRealScope }} Unidades
-                </div>
-                <div class="text-md text-gray-500 dark:text-gray-400 mt-1">
-                    <span>
-                        {{ unitScope === 'MONTH' ? 'Restante no mês:' : 'Restante no ano:' }}
-                    </span>
-                    <span class="ps-1" :class="remainingUnitsClass(unitsRemainingScope)">
-                        {{ unitsRemainingScope }} unid.
-                    </span>
-                </div>
-            </div>
-
-            <!-- ESTOQUE / SNAPSHOT CV (GLOBAL) -->
-            <div class="rounded-2xl bg-white dark:bg-gray-800 border dark:border-gray-700 shadow-lg p-6">
-                <div class="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2 flex items-center gap-2">
-                    <i class="fas fa-warehouse text-emerald-600"></i>
-                    Estoque (snapshot CV)
-                </div>
-
-                <div class="text-xs text-gray-500 dark:text-gray-400 mb-1">
-                    Total de unidades (vendidas + não vendidas):
-                </div>
-                <div class="text-xl font-bold text-gray-900 dark:text-white">
-                    {{ totals.availableInventory + totals.soldUnitsStock }} unid.
-                </div>
-
-                <div class="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                    Não vendidas (estoque de viabilidade):
-                    <span class="font-semibold" :class="moneyClass(totals.availableInventory, true)">
-                        {{ totals.availableInventory }} unid.
-                    </span>
-                </div>
-
-                <div class="text-[11px] text-gray-500 dark:text-gray-400 mt-2 space-y-1">
-                    <div class="flex flex-wrap gap-2">
-                        <span
-                            class="inline-flex items-center px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"
-                            v-tippy="'Unidades disponíveis para venda <br>(não reservadas nem bloqueadas)'">
-                            <span class="min-w-2 h-2 rounded-full bg-emerald-500 mr-1"></span>
-                            {{ totals.availableUnits }}
-                        </span>
-
-                        <span
-                            class="inline-flex items-center px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
-                            v-tippy="'Unidades reservadas <br>(início ou ativa)'">
-                            <span class="min-w-2 h-2 rounded-full bg-blue-500 mr-1"></span>
-                            {{ totals.reservedUnits }}
-                        </span>
-
-                        <span
-                            class="inline-flex items-center px-2 py-0.5 rounded-full bg-gray-100 text-gray-700 dark:bg-gray-900/40 dark:text-gray-300"
-                            v-tippy="'Unidades bloqueadas para venda'">
-                            <span class="min-w-2 h-2 rounded-full bg-gray-500 mr-1"></span>
-                            {{ totals.blockedUnits }}
-                        </span>
-
-                        <span
-                            class="inline-flex items-center px-2 py-0.5 rounded-full bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300"
-                            v-tippy="'Unidades vendidas (snapshot)'">
-                            <span class="min-w-2 h-2 rounded-full bg-red-500 mr-1"></span>
-                            {{ totals.soldUnitsStock }}
-                        </span>
+                    <div class="text-xl font-bold font-mono tabular-nums" :class="moneyClass(totals.saldo)">
+                        {{ fmtBRL(totals.saldo) }}
                     </div>
-                </div>
-            </div>
-        </div>
+                    <div class="text-[10px] text-ink-subtle mt-1">Orçamento − gasto</div>
+                </Surface>
 
-        <!-- RESUMO GLOBAL DE CUSTO POR UNIDADE (MÊS / ANO) -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <!-- Planejado por unidade -->
-            <div class="rounded-2xl bg-white dark:bg-gray-800 border dark:border-gray-700 shadow-lg p-6">
-                <div class="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1 flex items-center gap-2">
-                    <i class="fas fa-bullseye text-emerald-600"></i>
-                    Custo planejado por unidade ({{ unitScope === 'MONTH' ? 'mês' : 'ano' }})
-                </div>
-                <div class="text-2xl font-bold text-gray-900 dark:text-white">
-                    {{ formatCurrency(plannedCostPerUnitScope) }}
-                </div>
-                <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    {{
-                        unitScope === 'MONTH'
-                            ? 'Base: orçamento recomendado do mês / unidades alvo do mês.'
-                            : 'Base: orçamento anual / unidades alvo do ano.'
-                    }}
-                </div>
+                <Surface variant="raised" padding="md">
+                    <div class="flex items-center gap-2 text-[11px] font-mono uppercase tracking-wider text-ink-muted mb-2">
+                        <i class="fas fa-bullseye text-accent"></i> Recom. {{ monthLabel }}
+                    </div>
+                    <div class="text-xl font-bold text-ink font-mono tabular-nums">{{ fmtBRL(totals.recMonth) }}</div>
+                    <div class="text-[10px] text-ink-subtle mt-1">Gasto no mês: {{ fmtBRL(totals.monthSpent) }}</div>
+                </Surface>
+
+                <Surface variant="raised" padding="md">
+                    <div class="flex items-center gap-2 text-[11px] font-mono uppercase tracking-wider text-ink-muted mb-2">
+                        <i class="fas fa-warehouse text-emerald-500"></i> Estoque
+                    </div>
+                    <div class="text-xl font-bold text-ink font-mono tabular-nums">{{ totals.available }} <span class="text-xs font-normal text-ink-subtle">unid.</span></div>
+                    <div class="text-[10px] text-ink-subtle mt-1">Disp. p/ marketing · {{ totals.sold }} vendidas</div>
+                </Surface>
             </div>
 
-            <!-- Real por unidade -->
-            <div class="rounded-2xl bg-white dark:bg-gray-800 border dark:border-gray-700 shadow-lg p-6">
-                <div class="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1 flex items-center gap-2">
-                    <i class="fas fa-chart-area text-emerald-600"></i>
-                    Custo real por unidade ({{ unitScope === 'MONTH' ? 'mês' : `vendas até ${monthLabel}` }})
+            <!-- Tabela -->
+            <Surface variant="raised" padding="none" class="overflow-hidden">
+                <div class="px-5 sm:px-6 py-3.5 border-b border-line bg-surface-sunken/40 flex items-center justify-between flex-wrap gap-2">
+                    <h3 class="text-base font-semibold text-ink flex items-center gap-2">
+                        <i class="fas fa-table text-emerald-500"></i>
+                        Empreendimentos
+                    </h3>
+                    <span class="text-xs text-ink-muted">
+                        <span class="font-mono tabular-nums">{{ activeItems.length }}</span> empresa(s)
+                    </span>
                 </div>
-                <div class="text-2xl font-bold" :class="realUnitScopeClass">
-                    {{ formatCurrency(realCostPerUnitScope) }}
+
+                <div class="overflow-x-auto">
+                    <table class="min-w-full">
+                        <thead class="bg-surface-sunken/60 border-b border-line">
+                            <tr>
+                                <th class="px-5 py-3 text-left text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Empresa</th>
+                                <th class="px-5 py-3 text-right text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Orçamento</th>
+                                <th class="px-5 py-3 text-right text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Gasto</th>
+                                <th class="px-5 py-3 text-right text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Saldo</th>
+                                <th class="px-5 py-3 text-right text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Mês {{ monthLabel }}</th>
+                                <th class="px-5 py-3 text-center text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Estoque</th>
+                                <th class="px-5 py-3 text-right text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-line">
+                            <tr v-for="item in activeItems" :key="item.companyId ?? item.erpId"
+                                class="hover:bg-surface-hover/40 transition-colors align-top">
+                                <!-- EMPRESA -->
+                                <td class="px-5 py-3">
+                                    <div class="flex items-start gap-3">
+                                        <div class="h-10 w-10 mt-0.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 grid place-items-center text-emerald-600 dark:text-emerald-400 shrink-0">
+                                            <i class="fas fa-building"></i>
+                                        </div>
+                                        <div class="min-w-0">
+                                            <div class="text-sm font-semibold text-ink flex items-center gap-2">
+                                                {{ item.enterpriseName || '—' }}
+                                                <button v-if="isAdmin" @click="openEnterpriseSettings(item)"
+                                                    class="text-ink-subtle hover:text-accent transition-colors"
+                                                    title="Configurar empresa (bloqueadas / departamentos)">
+                                                    <i class="fas fa-gear text-[11px]"></i>
+                                                </button>
+                                            </div>
+                                            <div class="text-xs text-ink-subtle font-mono">
+                                                Empresa {{ item.companyId || item.displayId || '—' }}
+                                                <span v-if="item.header?.costCenterIds?.length">· CC {{ item.header.costCenterIds.join(', ') }}</span>
+                                            </div>
+                                            <div class="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                                                <Badge v-if="statusInfo(item)" :variant="statusInfo(item).variant" size="sm">
+                                                    <i class="fas" :class="statusInfo(item).icon"></i>
+                                                    {{ statusInfo(item).label }}
+                                                </Badge>
+                                                <Badge :variant="investedVariant(item)" size="sm">
+                                                    {{ fmtPct(item.header?.pctInvested) }} investido
+                                                </Badge>
+                                                <Badge v-if="trendBadge(item)" :variant="trendBadge(item).variant" size="sm"
+                                                    v-tippy="trendTip(item)">
+                                                    <i class="fas" :class="trendBadge(item).icon"></i>
+                                                    {{ trendBadge(item).label }}
+                                                </Badge>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <!-- ORÇAMENTO -->
+                                <td class="px-5 py-3 text-right whitespace-nowrap">
+                                    <div class="text-sm font-bold text-ink font-mono tabular-nums">{{ fmtBRL(item.header?.budgetTotal) }}</div>
+                                    <div v-if="item.header?.custoLoja" class="text-[10px] text-amber-600 dark:text-amber-400 font-mono">
+                                        <i class="fas fa-store text-[8px]"></i> Loja {{ fmtBRL(item.header.custoLoja) }}
+                                    </div>
+                                    <div class="text-[10px] text-ink-subtle font-mono">{{ fmtBRL(item.header?.plannedCostPerUnit) }}/unid</div>
+                                </td>
+
+                                <!-- GASTO -->
+                                <td class="px-5 py-3 text-right whitespace-nowrap">
+                                    <div class="text-sm font-semibold text-ink font-mono tabular-nums">{{ fmtBRL(item.header?.spentTotal) }}</div>
+                                    <div class="text-[10px] mt-0.5">
+                                        <Badge :variant="investedVariant(item)" size="sm">{{ fmtPct(item.header?.pctInvested) }}</Badge>
+                                    </div>
+                                </td>
+
+                                <!-- SALDO -->
+                                <td class="px-5 py-3 text-right whitespace-nowrap">
+                                    <div class="text-sm font-bold font-mono tabular-nums" :class="moneyClass(item.header?.remainingBudgetTotal)">
+                                        {{ fmtBRL(item.header?.remainingBudgetTotal) }}
+                                    </div>
+                                    <div class="text-[10px] text-ink-subtle font-mono">
+                                        real <span :class="realUnitClass(item)">{{ fmtBRL(item.header?.currentRealCostPerUnit) }}</span>/unid
+                                    </div>
+                                </td>
+
+                                <!-- MÊS -->
+                                <td class="px-5 py-3 text-right whitespace-nowrap">
+                                    <div class="text-sm font-semibold text-ink font-mono tabular-nums">{{ fmtBRL(item.header?.monthContext?.monthBudget) }}</div>
+                                    <div class="text-[10px] text-ink-subtle font-mono">gasto {{ fmtBRL(item.header?.monthContext?.monthSpent) }}</div>
+                                    <div class="mt-0.5">
+                                        <Badge :variant="monthStatus(item).variant" size="sm">{{ monthStatus(item).label }}</Badge>
+                                    </div>
+                                </td>
+
+                                <!-- ESTOQUE -->
+                                <td class="px-5 py-3 text-center whitespace-nowrap">
+                                    <div class="text-sm font-semibold text-ink font-mono tabular-nums">{{ Number(item.header?.availableInventory || 0) }}</div>
+                                    <div class="text-[10px] text-ink-subtle mb-1">disponíveis</div>
+                                    <div class="flex items-center justify-center gap-1">
+                                        <span class="inline-flex items-center gap-0.5 text-[9px] font-mono text-emerald-600 dark:text-emerald-400" v-tippy="'Disponíveis'">
+                                            <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>{{ Number(item.header?.availableUnits || 0) }}
+                                        </span>
+                                        <span class="inline-flex items-center gap-0.5 text-[9px] font-mono text-sky-600 dark:text-sky-400" v-tippy="'Reservadas (contam como disponíveis)'">
+                                            <span class="h-1.5 w-1.5 rounded-full bg-sky-500"></span>{{ Number(item.header?.reservedUnits || 0) }}
+                                        </span>
+                                        <span class="inline-flex items-center gap-0.5 text-[9px] font-mono text-ink-subtle" v-tippy="'Bloqueadas'">
+                                            <span class="h-1.5 w-1.5 rounded-full bg-ink-subtle/60"></span>{{ Number(item.header?.blockedUnits || 0) }}
+                                        </span>
+                                        <span class="inline-flex items-center gap-0.5 text-[9px] font-mono text-red-600 dark:text-red-400" v-tippy="'Vendidas'">
+                                            <span class="h-1.5 w-1.5 rounded-full bg-red-500"></span>{{ Number(item.header?.soldUnitsStock ?? item.header?.soldUnits ?? 0) }}
+                                        </span>
+                                    </div>
+                                </td>
+
+                                <!-- AÇÕES -->
+                                <td class="px-5 py-3 text-right whitespace-nowrap">
+                                    <Button variant="secondary" size="sm" icon="fas fa-chart-line" @click="openDetail(item)">
+                                        Detalhes
+                                    </Button>
+                                </td>
+                            </tr>
+
+                            <tr v-if="!activeItems.length && !store.isLoading">
+                                <td colspan="7" class="px-6 py-12">
+                                    <EmptyState icon="fas fa-inbox" title="Nenhum empreendimento com projeção"
+                                        description="Ajuste o mês/filtros. Lembre de marcar os departamentos de marketing em Departamentos, senão o gasto aparece zerado." />
+                                </td>
+                            </tr>
+                            <tr v-if="store.isLoading">
+                                <td colspan="7" class="px-6 py-10 text-center text-ink-muted text-sm">
+                                    <i class="fas fa-circle-notch fa-spin mr-2"></i> Carregando viabilidade...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
-                <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    {{
-                        unitScope === 'MONTH'
-                            ? 'Base: gasto do mês / unidades vendidas no mês.'
-                            : 'Base: gasto acumulado / unidades vendidas no ano.'
-                    }}
-                </div>
-            </div>
-        </div>
+            </Surface>
+        </PageContainer>
 
-        <!-- TABELA DE EMPREENDIMENTOS -->
-        <div class="rounded-2xl border dark:border-gray-700 bg-white/90 dark:bg-gray-800 shadow-lg overflow-hidden">
-            <div
-                class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-900/40 flex items-center justify-between">
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                    <i class="fas fa-table text-emerald-600"></i>
-                    Empreendimentos com projeção
-                </h3>
-                <div class="text-sm text-gray-500 dark:text-gray-400">
-                    {{ activeItems.length }} registro(s)
-                </div>
-            </div>
-
-            <div class="overflow-x-auto">
-                <table class="min-w-full">
-                    <thead class="bg-gray-50 dark:bg-gray-900/60 border-b border-gray-200 dark:border-gray-700">
-                        <tr>
-                            <th
-                                class="px-6 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">
-                                Empreendimento
-                            </th>
-                            <th
-                                class="px-6 py-3 text-right text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">
-                                Mês (R$)
-                            </th>
-                            <th
-                                class="px-6 py-3 text-right text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">
-                                Ano (R$)
-                            </th>
-                            <th
-                                class="px-6 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">
-                                Unidades
-                            </th>
-                            <th
-                                class="px-6 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">
-                                Viabilidade
-                            </th>
-                            <th
-                                class="px-6 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">
-                                Estoque
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                        <tr v-for="item in activeItems" :key="item.erpId + '-' + (item.cvEnterpriseId || 'cv0')"
-                            class="hover:bg-emerald-50/40 dark:hover:bg-emerald-900/10 transition-colors">
-                            <!-- EMPREENDIMENTO -->
-                            <td class="px-6 py-4 align-top">
-                                <div class="flex items-start gap-3">
-                                    <div
-                                        class="w-10 h-10 mt-1 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold shadow-md">
-                                        <i class="fas fa-building"></i>
-                                    </div>
-                                    <div>
-                                        <div class="text-sm font-semibold text-gray-900 dark:text-white">
-                                            {{ item.enterpriseName || '—' }}
-                                        </div>
-                                        <div class="text-xs font-light text-gray-400">
-                                            ERP: {{ item.displayId || item.erpId || '—' }}
-                                            <span v-if="item.cvEnterpriseId">
-                                                • CV: {{ item.cvEnterpriseId }}
-                                            </span>
-                                        </div>
-                                        <div class="text-[10px] text-gray-500 dark:text-gray-400">
-                                            Projeção {{ item.header?.year }} • ID Proj:
-                                            {{ item.header?.projectionId || '-' }}
-                                            <span v-if="item.header?.upToMonth">
-                                                • Até {{ formatMonth(item.header.upToMonth) }}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </td>
-
-                            <!-- MÊS (recomendado + gasto vs recomendado) -->
-                            <td class="px-6 py-4 align-top text-right text-xs text-gray-700 dark:text-gray-300">
-                                <div class="flex flex-col items-end gap-1">
-                                    <div class="text-[11px] text-gray-500 dark:text-gray-400">
-                                        Recom. p/ mês:
-                                        <strong :class="moneyClass(recommendedMonthBudget(item))">
-                                            {{ formatCurrency(recommendedMonthBudget(item)) }}
-                                        </strong>
-                                    </div>
-
-                                    <p class="text-[11px]">
-                                        Gasto:
-                                        <strong>
-                                            {{ formatCurrency(item.header?.monthContext?.monthSpent || 0) }}
-                                        </strong>
-                                        <span :class="recommendedTextClass(item)">
-                                            ({{ recommendedSpendPct(item).toFixed(1) }}%)
-                                        </span>
-                                    </p>
-                                </div>
-                            </td>
-
-                            <!-- ANO (projeção até mês OU ano cheio, conforme unitScope) -->
-                            <td class="px-6 py-4 align-top text-right text-xs text-gray-700 dark:text-gray-300">
-                                <div class="flex flex-col items-end gap-1">
-                                    <!-- Visão por MÊS: só até o mês de competência -->
-                                    <template v-if="unitScope === 'MONTH'">
-                                        <div class="text-xs">
-                                            Projetado até {{ monthLabel }}:
-                                            <strong class="text-sm">{{ formatCurrency(projectedBudgetToMonth(item))
-                                                }}</strong>
-                                        </div>
-
-                                        <div class="text-xs relative flex pb-3 flex-col">
-                                            Gasto até {{ monthLabel }}:<br>
-                                            <strong class="text-sm">{{ formatCurrency(item.header?.spentTotal || 0)
-                                                }}</strong>
-                                            <strong class="absolute bottom-0 right-0 text-xs"
-                                                :class="moneyClass(balanceToMonth(item))">
-                                                {{ formatCurrency(balanceToMonth(item)) }}
-                                            </strong>
-                                        </div>
-
-                                    </template>
-
-                                    <!-- Visão ANO: ano cheio -->
-                                    <template v-else>
-                                        <div class="text-xs">
-                                            Orçamento anual:
-                                            <strong class="text-sm">{{ formatCurrency(item.header?.budgetTotal || 0)
-                                                }}</strong>
-                                        </div>
-
-                                        <div class="text-xs relative flex pb-3 flex-col">
-                                            Gasto até {{ monthLabel }}:
-                                            <strong class="text-sm">{{ formatCurrency(item.header?.spentTotal || 0)
-                                                }}</strong>
-                                            <strong class="absolute bottom-0 right-0 text-xs"
-                                                :class="moneyClass(annualBalance(item))">
-                                                {{ formatCurrency(annualBalance(item)) }}
-                                            </strong>
-                                        </div>
-
-                                    </template>
-                                </div>
-                            </td>
-
-                            <!-- UNIDADES (meta/realizadas + custo próxima) -->
-                            <td class="px-6 py-4 align-top text-center text-xs text-gray-700 dark:text-gray-300">
-                                <div class="space-y-1">
-                                    <div class="font-semibold text-gray-900 dark:text-white">
-                                        <span class="text-gray-400 text-[11px]">Projetado / Realizado</span><br>
-                                        <template v-if="unitScope === 'MONTH'">
-                                            {{ item.header?.monthContext?.unitsTargetMonth || 0 }} /
-                                            {{ item.header?.monthContext?.unitsSoldRealMonth || 0 }}
-                                        </template>
-                                        <template v-else>
-                                            {{ item.header?.unitsTargetTotal || 0 }} /
-                                            {{ item.header?.soldUnitsRealYtd || 0 }}
-                                        </template>
-                                    </div>
-
-                                    <div class="text-[11px] text-gray-500 dark:text-gray-400">
-                                        Restante:
-                                        <strong :class="remainingUnitsClass(
-                                            unitScope === 'MONTH'
-                                                ? unitsRemainingMonth(item)
-                                                : unitsRemainingYear(item)
-                                        )">
-                                            {{
-                                                unitScope === 'MONTH'
-                                                    ? unitsRemainingMonth(item)
-                                                    : unitsRemainingYear(item)
-                                            }}
-                                            unid.
-                                        </strong>
-                                    </div>
-
-                                    <div class="text-[11px] text-gray-500 dark:text-gray-400">
-                                        Custo p/ próxima:
-                                        <strong :class="moneyClass(remainingBudgetPerUnsoldUnit(item))">
-                                            {{ formatCurrency(remainingBudgetPerUnsoldUnit(item)) }}
-                                        </strong>
-                                    </div>
-                                </div>
-                            </td>
-
-                            <!-- VIABILIDADE (alvo / real / próxima) -->
-                            <td class="px-6 py-4 align-top text-center text-xs text-gray-700 dark:text-gray-300">
-                                <div class="space-y-2">
-                                    <div>
-                                        <div class="text-[11px] text-gray-500 dark:text-gray-400">
-                                            Proj p/ unid.
-                                        </div>
-                                        <div class="font-semibold text-gray-900 dark:text-white">
-                                            {{ formatCurrency(item.header?.plannedCostPerUnit || 0) }}
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <div class="text-[11px] text-gray-500 dark:text-gray-400">
-                                            Custo p/ unid.
-                                        </div>
-                                        <div class="font-semibold" :class="realUnitClass(item)">
-                                            {{ formatCurrency(item.header?.currentRealCostPerUnit || 0) }}
-                                        </div>
-                                    </div>
-
-                                    <!-- <div>
-                                        <div class="text-[11px] text-gray-500 dark:text-gray-400">
-                                            Próximas unidades
-                                        </div>
-                                        <div class="font-semibold"
-                                            :class="moneyClass(remainingBudgetPerUnsoldUnit(item))">
-                                            {{ formatCurrency(remainingBudgetPerUnsoldUnit(item)) }}
-                                        </div>
-                                    </div> -->
-                                </div>
-                            </td>
-
-                            <!-- ESTOQUE / SNAPSHOT -->
-                            <td class="px-6 py-4 align-top text-center text-xs text-gray-700 dark:text-gray-300">
-                                <div class="space-y-2">
-                                    <div class="text-[11px] text-gray-500 dark:text-gray-400">
-                                        Total de unidades:
-                                        <span class="font-semibold text-gray-900 dark:text-white">
-                                            {{
-                                                Number(item.header?.availableInventory || 0) +
-                                                Number(item.header?.soldUnitsStock ?? item.header?.soldUnits ?? 0)
-                                            }} unid.
-                                        </span>
-                                    </div>
-
-                                    <div class="text-[11px] text-gray-500 dark:text-gray-400">
-                                        Não vendidas:
-                                        <span class="font-semibold text-gray-900 dark:text-white"
-                                            :class="moneyClass(Number(item.header?.availableInventory || 0), true)">
-                                            {{ Number(item.header?.availableInventory || 0) }} unid.
-                                        </span>
-                                    </div>
-
-                                    <div
-                                        class="text-[11px] text-gray-500 dark:text-gray-400 grid grid-cols-4 gap-2 mt-1 justify-items-center">
-                                        <span
-                                            class="w-full flex items-center px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"
-                                            v-tippy="'Unidades disponíveis para venda (não reservadas nem bloqueadas)'">
-                                            <span
-                                                class="min-w-2 h-2 rounded-full text-center bg-emerald-500 mr-1"></span>
-                                            {{ Number(item.header?.availableUnits || 0) }}
-                                        </span>
-
-                                        <span
-                                            class="w-full flex items-center px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
-                                            v-tippy="'Unidades reservadas (início ou ativa)'">
-                                            <span class="min-w-2 h-2 rounded-full text-center bg-blue-500 mr-1"></span>
-                                            {{ Number(item.header?.reservedUnits || 0) }}
-                                        </span>
-
-                                        <span
-                                            class="w-full flex items-center px-2 py-0.5 rounded-full bg-gray-100 text-gray-700 dark:bg-gray-900/40 dark:text-gray-300"
-                                            v-tippy="'Unidades bloqueadas para venda'">
-                                            <span class="min-w-2 h-2 rounded-full text-center bg-gray-500 mr-1"></span>
-                                            {{ Number(item.header?.blockedUnits || 0) }}
-                                        </span>
-
-                                        <span
-                                            class="w-full flex items-center px-2 py-0.5 rounded-full bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300"
-                                            v-tippy="'Unidades vendidas (snapshot)'">
-                                            <span class="min-w-2 h-2 rounded-full text-center bg-red-500 mr-1"></span>
-                                            {{ Number(item.header?.soldUnitsStock ?? item.header?.soldUnits ?? 0) }}
-                                        </span>
-                                    </div>
-                                </div>
-                            </td>
-
-                        </tr>
-
-                        <tr v-if="!activeItems.length && !store.isLoading">
-                            <td colspan="7" class="px-6 py-12 text-center">
-                                <div class="flex flex-col items-center gap-3 text-gray-500 dark:text-gray-400">
-                                    <i class="fas fa-inbox text-4xl opacity-50"></i>
-                                    <p class="text-sm font-medium">
-                                        Nenhum empreendimento com projeção encontrado.
-                                    </p>
-                                    <p class="text-xs">Verifique o mês/ano, filtros de status ou seleção.</p>
-                                </div>
-                            </td>
-                        </tr>
-
-                        <tr v-if="store.isLoading">
-                            <td colspan="7" class="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
-                                <i class="fas fa-circle-notch fa-spin mr-2"></i>
-                                Carregando dados de viabilidade...
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Modal de configurações (admin) -->
+        <!-- Modais admin -->
         <ViabilitySettingsModal :open="settingsOpen" @close="settingsOpen = false" />
+        <ViabilityEnterpriseSettingsModal :open="entSettingsOpen" :company="entSettingsTarget"
+            @close="entSettingsOpen = false" @saved="load" />
+
+        <!-- Modal de detalhe (série mensal) -->
+        <Modal :open="!!detailItem" size="lg" :title="detailItem?.enterpriseName || 'Empreendimento'"
+            :subtitle="detailItem ? `Empresa ${detailItem.companyId || detailItem.displayId || '—'} · recomendado vs. gasto por mês` : ''"
+            @close="closeDetail">
+            <div v-if="detailItem">
+                <div class="grid grid-cols-3 gap-3 mb-4">
+                    <Surface variant="flat" padding="sm" bordered>
+                        <div class="text-[10px] text-ink-subtle uppercase tracking-wider">Orçamento</div>
+                        <div class="text-base font-bold text-ink font-mono tabular-nums">{{ fmtBRL(detailItem.header?.budgetTotal) }}</div>
+                    </Surface>
+                    <Surface variant="flat" padding="sm" bordered>
+                        <div class="text-[10px] text-ink-subtle uppercase tracking-wider">Gasto</div>
+                        <div class="text-base font-bold text-ink font-mono tabular-nums">{{ fmtBRL(detailItem.header?.spentTotal) }}</div>
+                    </Surface>
+                    <Surface variant="flat" padding="sm" bordered>
+                        <div class="text-[10px] text-ink-subtle uppercase tracking-wider">Saldo/unid a vender</div>
+                        <div class="text-base font-bold font-mono tabular-nums" :class="moneyClass(detailItem.header?.saldoPerUnit)">{{ fmtBRL(detailItem.header?.saldoPerUnit) }}</div>
+                    </Surface>
+                </div>
+
+                <div class="overflow-x-auto rounded-lg border border-line">
+                    <table class="min-w-full text-sm">
+                        <thead class="bg-surface-sunken/60 border-b border-line">
+                            <tr>
+                                <th class="px-3 py-2 text-left text-[10px] font-mono uppercase tracking-wider text-ink-subtle">Mês</th>
+                                <th class="px-3 py-2 text-center text-[10px] font-mono uppercase tracking-wider text-ink-subtle">Meta / Vend.</th>
+                                <th class="px-3 py-2 text-right text-[10px] font-mono uppercase tracking-wider text-ink-subtle">Recomendado</th>
+                                <th class="px-3 py-2 text-right text-[10px] font-mono uppercase tracking-wider text-ink-subtle">Gasto</th>
+                                <th class="px-3 py-2 text-center text-[10px] font-mono uppercase tracking-wider text-ink-subtle">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-line">
+                            <tr v-for="m in (detailItem.months || [])" :key="m.yearMonth">
+                                <td class="px-3 py-2 font-mono text-ink-muted">{{ fmtMonth(m.yearMonth) }}</td>
+                                <td class="px-3 py-2 text-center font-mono tabular-nums text-ink-muted">{{ m.unitsTarget }} / {{ m.unitsSoldReal }}</td>
+                                <td class="px-3 py-2 text-right font-mono tabular-nums text-ink">{{ fmtBRL(m.recommendedBudget) }}</td>
+                                <td class="px-3 py-2 text-right font-mono tabular-nums text-ink">{{ fmtBRL(m.spent) }}</td>
+                                <td class="px-3 py-2 text-center">
+                                    <Badge :variant="m.status === 'OVER' ? 'danger' : m.status === 'UNDER' ? 'success' : 'neutral'" size="sm">
+                                        {{ m.status === 'OVER' ? 'Acima' : m.status === 'UNDER' ? 'Abaixo' : 'No alvo' }}
+                                    </Badge>
+                                </td>
+                            </tr>
+                            <tr v-if="!(detailItem.months || []).length">
+                                <td colspan="5" class="px-3 py-6 text-center text-ink-subtle text-xs">Sem meses no período selecionado.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <template #footer>
+                <Button variant="secondary" @click="closeDetail">Fechar</Button>
+            </template>
+        </Modal>
     </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
+import dayjs from 'dayjs';
 import { useViabilityStore } from '@/stores/Marketing/Viability/viabilityStore';
 import { useAuthStore } from '@/stores/Settings/Auth/authStore';
+
+import PageContainer from '@/components/UI/PageContainer.vue';
+import PageHeader from '@/components/UI/PageHeader.vue';
+import Surface from '@/components/UI/Surface.vue';
+import Button from '@/components/UI/Button.vue';
+import Badge from '@/components/UI/Badge.vue';
+import Select from '@/components/UI/Select.vue';
+import Input from '@/components/UI/Input.vue';
+import MultiSelector from '@/components/UI/MultiSelector.vue';
+import EmptyState from '@/components/UI/EmptyState.vue';
+import Modal from '@/components/UI/Modal.vue';
 import Favorite from '@/components/config/Favorite.vue';
 import ViabilitySettingsModal from './ViabilitySettingsModal.vue';
-import MultiSelector from '@/components/UI/MultiSelector.vue';
-import dayjs from 'dayjs';
+import ViabilityEnterpriseSettingsModal from './ViabilityEnterpriseSettingsModal.vue';
 
 const store = useViabilityStore();
 const auth = useAuthStore();
 const isAdmin = computed(() => auth?.user?.role === 'admin');
-const settingsOpen = ref(false);
 
-// proxies locais
-const aliasId = ref(store.selectedAliasId);
 const month = ref(store.selectedMonth);
 const statusFilter = ref(store.statusFilter);
+const selectedCompanies = ref([]);
 
-// visão global: 'MONTH' (mês) | 'YEAR' (ano)
-const unitScope = ref('MONTH');
+const settingsOpen = ref(false);
+const entSettingsOpen = ref(false);
+const entSettingsTarget = ref(null);
+const detailItem = ref(null);
 
-// Empreendimentos selecionados no MultiSelector (labels)
-const selectedErpIds = ref([]);
+const statusOptions = [
+    { value: 'all', label: '(Todos)' },
+    { value: 'UNDER', label: 'Abaixo do orçamento (mês)' },
+    { value: 'ON_TRACK', label: 'No alvo (mês)' },
+    { value: 'OVER', label: 'Acima do orçamento (mês)' },
+];
 
-// Label amigável para cada empreendimento
-const enterpriseLabel = item =>
-    `${item.enterpriseName || '—'} (ERP ${item.displayId || item.erpId || '—'})`;
+const categoryFilter = ref('all');
+const categoryOptions = [
+    { value: 'all', label: '(Todas)' },
+    { value: 'em_andamento', label: 'Em andamento' },
+    { value: 'previsao_futura', label: 'Previsão Futura' },
+    { value: 'concluido', label: 'Concluído' },
+];
 
-// Opções para o MultiSelector
-const enterpriseOptions = computed(() =>
-    store.sorted.map(enterpriseLabel)
-);
+/* ---------- formatadores ---------- */
+function fmtBRL(v) { return Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
+function fmtMonth(ym) { return ym ? dayjs(`${ym}-01`).format('MM/YYYY') : ''; }
+function fmtPct(v) { return `${(Number(v || 0) * 100).toFixed(0)}%`; }
+const monthLabel = computed(() => fmtMonth(store.selectedMonth) || 'mês');
 
-// quando o usuário marca/desmarca no MultiSelector
-function onEnterprisesChange(v) {
-    selectedErpIds.value = Array.isArray(v) ? v : [];
+/* ---------- seleção / lista ---------- */
+function companyLabel(item) {
+    return `${item.enterpriseName || '—'} (Empresa ${item.companyId || item.displayId || '?'})`;
 }
-
-// Itens ativos = interseção entre sorted e seleção do MultiSelector
+const companyOptions = computed(() => store.sorted.map(companyLabel));
 const activeItems = computed(() => {
-    if (!selectedErpIds.value.length) return store.sorted;
-    const set = new Set(selectedErpIds.value);
-    return store.sorted.filter(item => set.has(enterpriseLabel(item)));
+    let list = store.sorted;
+    if (selectedCompanies.value.length) {
+        const set = new Set(selectedCompanies.value);
+        list = list.filter((i) => set.has(companyLabel(i)));
+    }
+    if (categoryFilter.value !== 'all') {
+        list = list.filter((i) => i.header?.status === categoryFilter.value);
+    }
+    return list;
 });
 
-// ===== TOTAIS agregados com base APENAS nos activeItems =====
+/* ---------- KPIs (sobre os itens ativos) ---------- */
 const totals = computed(() => {
-    let monthBudget = 0;
-    let monthSpent = 0;
-    let monthRemaining = 0;
-
-    let monthUnitsTarget = 0;
-    let soldUnitsMonth = 0;
-
-    let availableInventory = 0;
-    let availableUnits = 0;
-    let reservedUnits = 0;
-    let blockedUnits = 0;
-    let soldUnitsStock = 0;
-
-    let budgetTotal = 0;
-    let spentTotal = 0;
-    let remainingBudgetTotal = 0;
-
-    let unitsTargetTotal = 0;
-    let soldUnitsYear = 0;
-    let remainingUnitsYear = 0;
-
-    // soma do orçamento recomendado do mês
-    let recommendedMonthTotal = 0;
-
-    for (const item of activeItems.value) {
-        const h = item.header || {};
-        const ctx = h.monthContext || {};
-
-        // visão mensal (valores do backend)
-        monthBudget += Number(ctx.monthBudget || 0);
-        monthSpent += Number(ctx.monthSpent || 0);
-        monthRemaining += Number(ctx.monthRemaining || 0);
-
-        monthUnitsTarget += Number(ctx.unitsTargetMonth || 0);
-        soldUnitsMonth += Number(ctx.unitsSoldRealMonth || 0);
-
-        // recomendado do mês (calculado)
-        recommendedMonthTotal += Number(recommendedMonthBudget(item) || 0);
-
-        // estoque (snapshot)
-        availableInventory += Number(h.availableInventory || 0);
-        availableUnits += Number(h.availableUnits || 0);
-        reservedUnits += Number(h.reservedUnits || 0);
-        blockedUnits += Number(h.blockedUnits || 0);
-        soldUnitsStock += Number(h.soldUnitsStock ?? h.soldUnits ?? 0);
-
-        // visão global anual
-        budgetTotal += Number(h.budgetTotal || 0);
-        spentTotal += Number(h.spentTotal || 0);
-        remainingBudgetTotal += Number(h.remainingBudgetTotal || 0);
-
-        unitsTargetTotal += Number(h.unitsTargetTotal || 0);
-        soldUnitsYear += Number(h.soldUnitsRealYtd || 0);
-        remainingUnitsYear += Number(h.remainingUnitsPlan || 0);
+    let budget = 0, spent = 0, saldo = 0, loja = 0, recMonth = 0, monthSpent = 0, available = 0, sold = 0;
+    for (const it of activeItems.value) {
+        const h = it.header || {};
+        budget += Number(h.budgetTotal || 0);
+        spent += Number(h.spentTotal || 0);
+        saldo += Number(h.remainingBudgetTotal || 0);
+        loja += Number(h.custoLoja || 0);
+        recMonth += Number(h.monthContext?.monthBudget || 0);
+        monthSpent += Number(h.monthContext?.monthSpent || 0);
+        available += Number(h.availableInventory || 0);
+        sold += Number(h.soldUnitsRealYtd || 0);
     }
-
-    const monthSpentPct = monthBudget > 0 ? (monthSpent / monthBudget) * 100 : 0;
-    const yearSpentPct = budgetTotal > 0 ? (spentTotal / budgetTotal) * 100 : 0;
-
-    return {
-        // visão mensal
-        monthBudget,
-        monthSpent,
-        monthRemaining,
-        monthSpentPct,
-
-        monthUnitsTarget,
-        soldUnitsMonth,
-
-        // recomendado agregado do mês
-        recommendedMonthTotal,
-
-        // estoque (snapshot)
-        availableInventory,
-        availableUnits,
-        reservedUnits,
-        blockedUnits,
-        soldUnitsStock,
-
-        // visão global anual
-        budgetTotal,
-        spentTotal,
-        remainingBudgetTotal,
-        unitsTargetTotal,
-        soldUnitsYear,
-        remainingUnitsYear,
-        yearSpentPct,
-
-        // extras para os KPIs
-        unitsTargetMonth: monthUnitsTarget,
-        soldUnitsMonth,
-        remainingUnitsMonth: monthUnitsTarget - soldUnitsMonth
-    };
+    return { budget, spent, saldo, loja, recMonth, monthSpent, available, sold, pctInvested: budget > 0 ? spent / budget : 0 };
 });
 
-const monthLabel = computed(() => {
-    if (!store.selectedMonth) return 'o período';
-    return formatMonth(store.selectedMonth);
-});
-
-// saldo anual global (sempre budget - gasto)
-const globalAnnualBalance = computed(() => {
-    const t = totals.value;
-    const budget = Number(t.budgetTotal || 0);
-    const spent = Number(t.spentTotal || 0);
-    return budget - spent;
-});
-
-// ====== KPIs ORÇAMENTO (MÊS / ANO) ======
-const kpiBudget = computed(() => {
-    const t = totals.value;
-    // MÊS = orçamento recomendado total
-    return unitScope.value === 'MONTH'
-        ? Number(t.recommendedMonthTotal || 0)
-        : Number(t.budgetTotal || 0);
-});
-
-const kpiSpent = computed(() => {
-    const t = totals.value;
-    return unitScope.value === 'MONTH'
-        ? Number(t.monthSpent || 0)
-        : Number(t.spentTotal || 0);
-});
-
-const kpiPctUsed = computed(() => {
-    const t = totals.value;
-    if (unitScope.value === 'MONTH') {
-        const budget = Number(t.recommendedMonthTotal || 0);
-        const spent = Number(t.monthSpent || 0);
-        return budget > 0 ? (spent / budget) * 100 : 0;
-    }
-    return Number(t.yearSpentPct || 0);
-});
-
-const kpiBalance = computed(() => {
-    const t = totals.value;
-    if (unitScope.value === 'MONTH') {
-        const budget = Number(t.recommendedMonthTotal || 0);
-        const spent = Number(t.monthSpent || 0);
-        // saldo = recomendado - gasto
-        return budget - spent;
-    }
-    return globalAnnualBalance.value;
-});
-
-// ====== UNIDADES GLOBAIS (MÊS / ANO) ======
-
-// meta de unidades (escopo mês/ano)
-const unitsTargetScope = computed(() => {
-    const t = totals.value;
-    if (unitScope.value === 'MONTH') {
-        if (t.unitsTargetMonth !== undefined && t.unitsTargetMonth !== null) {
-            return Number(t.unitsTargetMonth);
-        }
-        return Number(t.monthUnitsTarget || 0);
-    }
-    return Number(t.unitsTargetTotal || 0);
-});
-
-// realizadas (escopo mês/ano)
-const unitsRealScope = computed(() => {
-    const t = totals.value;
-    if (unitScope.value === 'MONTH') {
-        if (t.soldUnitsMonth !== undefined && t.soldUnitsMonth !== null) {
-            return Number(t.soldUnitsMonth);
-        }
-        return Number(t.soldUnitsMonth || 0);
-    }
-    return Number(t.soldUnitsYear || 0);
-});
-
-// restante (escopo mês/ano)
-const unitsRemainingScope = computed(() => {
-    const t = totals.value;
-    if (unitScope.value === 'MONTH') {
-        if (t.remainingUnitsMonth !== undefined && t.remainingUnitsMonth !== null) {
-            return Number(t.remainingUnitsMonth);
-        }
-        return unitsTargetScope.value - unitsRealScope.value;
-    }
-    return Number(t.remainingUnitsYear || 0);
-});
-
-// ===== MÉTRICAS GLOBAIS DE CUSTO POR UNIDADE (ANO BASE + MÊS DERIVADO) =====
-
-const totalPlannedCostPerUnit = computed(() => {
-    const t = totals.value;
-    const units = Number(t.unitsTargetTotal || 0);
-    const budget = Number(t.budgetTotal || 0);
-    if (!units) return 0;
-    return budget / units;
-});
-
-const totalRealCostPerUnitYtd = computed(() => {
-    const t = totals.value;
-    const sold = Number(t.soldUnitsYear || 0);
-    const spent = Number(t.spentTotal || 0);
-    if (!sold) return 0;
-    return spent / sold;
-});
-
-const remainingCostPerUnitGlobal = computed(() => {
-    const t = totals.value;
-    const remainingUnits = Number(t.remainingUnitsYear || 0);
-    const remainingBudget =
-        t.remainingBudgetTotal !== undefined && t.remainingBudgetTotal !== null
-            ? Number(t.remainingBudgetTotal)
-            : Number(t.budgetTotal || 0) - Number(t.spentTotal || 0);
-    if (!remainingUnits) return 0;
-    return remainingBudget / remainingUnits;
-});
-
-// custos reativos ao escopo (mês/ano)
-const plannedCostPerUnitScope = computed(() => {
-    const t = totals.value;
-
-    if (unitScope.value === 'MONTH') {
-        const units = unitsTargetScope.value || 0;
-        const recommended = Number(t.recommendedMonthTotal || 0);
-        if (!units) return 0;
-        // Custo planejado = orçamento recomendado / unidades alvo
-        return recommended / units;
-    }
-
-    // visão ANO segue usando orçamento anual
-    return totalPlannedCostPerUnit.value;
-});
-
-const realCostPerUnitScope = computed(() => {
-    const t = totals.value;
-
-    if (unitScope.value === 'MONTH') {
-        const soldMonth = unitsRealScope.value || 0;     // vendidas no mês
-        const spentMonth = Number(t.monthSpent || 0);    // gasto no mês
-
-        if (soldMonth > 0) {
-            // caso normal: gasto do mês / vendidas no mês
-            return spentMonth / soldMonth;
-        }
-
-        // sem vendas no mês → usa custo real YTD (backend / visão anual)
-        return totalRealCostPerUnitYtd.value;
-    }
-
-    // visão ANO: já era YTD
-    return totalRealCostPerUnitYtd.value;
-});
-
-const realUnitScopeClass = computed(() => {
-    const planned = Number(plannedCostPerUnitScope.value || 0);
-    const real = Number(realCostPerUnitScope.value || 0);
-
-    if (!planned || !real) return 'text-gray-700 dark:text-gray-300';
-
-    if (real > planned) return 'text-red-600 dark:text-red-400';
-    if (real < planned) return 'text-emerald-600 dark:text-emerald-400';
-    return 'text-gray-700 dark:text-gray-300';
-});
-
-// ===== Helpers de layout/calculo =====
-
-function formatCurrency(v) {
-    return Number(v || 0).toLocaleString('pt-BR', {
-        style: 'currency',
-        currency: 'BRL'
-    });
+/* ---------- helpers de cor/saúde ---------- */
+function moneyClass(v) {
+    const n = Number(v || 0);
+    return n < 0 ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400';
 }
-
-function formatMonth(ym) {
-    if (!ym) return '';
-    return dayjs(`${ym}-01`).format('MM/YYYY');
+function pctBarClass(p) {
+    const v = Number(p || 0);
+    if (v > 1) return 'bg-red-500';
+    if (v >= 0.75) return 'bg-amber-500';
+    return 'bg-emerald-500';
 }
-
-// classe de cor para valores monetários (positivo/negativo)
-function moneyClass(value, isUnits = false) {
-    const v = Number(value || 0);
-    if (v > 0) return 'text-emerald-600 dark:text-emerald-400';
-    if (v < 0) return 'text-red-600 dark:text-red-400';
-    return isUnits ? 'text-gray-700 dark:text-gray-300' : 'text-gray-700 dark:text-gray-300';
+function investedVariant(item) {
+    const p = Number(item.header?.pctInvested || 0);
+    return p > 1 ? 'danger' : p >= 0.75 ? 'warning' : 'success';
 }
-
-// restante de unidades: positivo = ruim (vermelho), negativo = bom (verde)
-function remainingUnitsClass(delta) {
-    const v = Number(delta || 0);
-    if (v > 0) return 'text-red-600 dark:text-red-400';
-    if (v < 0) return 'text-emerald-600 dark:text-emerald-400';
-    return 'text-gray-700 dark:text-gray-300';
-}
-
-// botão do switch Mês/Ano
-function scopeBtnClass(mode) {
-    return [
-        'px-3 py-1 rounded-lg font-medium transition-all',
-        unitScope.value === mode
-            ? 'bg-white dark:bg-gray-800 text-emerald-700 dark:text-emerald-300 shadow'
-            : 'text-gray-500 dark:text-gray-400'
-    ];
-}
-
-// unidades restantes (meta - realizadas) por empreendimento (mês)
-function unitsRemainingMonth(item) {
-    const t = Number(item.header?.monthContext?.unitsTargetMonth || 0);
-    const s = Number(item.header?.monthContext?.unitsSoldRealMonth || 0);
-    return t - s;
-}
-
-// unidades restantes (ano)
-function unitsRemainingYear(item) {
-    const h = item.header || {};
-    if (h.remainingUnitsPlan !== undefined && h.remainingUnitsPlan !== null) {
-        return Number(h.remainingUnitsPlan || 0);
-    }
-    const target = Number(h.unitsTargetTotal || 0);
-    const sold = Number(h.soldUnitsRealYtd || 0);
-    return target - sold;
-}
-
-// saldo anual por empreendimento (sempre budget - gasto)
-function annualBalance(item) {
-    const budget = Number(item.header?.budgetTotal || 0);
-    const spent = Number(item.header?.spentTotal || 0);
-    return budget - spent;
-}
-
-/**
- * Orçamento projetado até o mês de competência.
- */
-function projectedBudgetToMonth(item) {
-    const upTo = Number(item.header?.budgetUpToMonth || 0);
-    if (upTo) return upTo;
-    return Number(item.header?.budgetTotal || 0);
-}
-
-function balanceToMonth(item) {
-    const projected = projectedBudgetToMonth(item);
-    const spent = Number(item.header?.spentTotal || 0);
-    return projected - spent;
-}
-
-/**
- * % do gasto em relação ao RECOMENDADO do mês.
- */
-function recommendedSpendPct(item) {
-    const rec = recommendedMonthBudget(item);
-    if (!rec) return 0;
-    const spent = Number(item.header?.monthContext?.monthSpent || 0);
-    return (spent / rec) * 100;
-}
-
-/**
- * Texto do Gasto vs Recomendado (mês)
- */
-function recommendedTextClass(item) {
-    const pct = recommendedSpendPct(item);
-    if (!pct) return 'text-gray-700 dark:text-gray-300';
-    if (pct <= 100) return 'text-emerald-600 dark:text-emerald-400';
-    return 'text-red-600 dark:text-red-400';
-}
-
-/**
- * Viabilidade total do empreendimento
- */
-function viabilityTotal(item) {
-    const plannedPerUnit = Number(item.header?.plannedCostPerUnit || 0);
-    const header = item.header || {};
-
-    let totalUnits = Number(header.totalUnits || 0);
-
-    // se por algum motivo não tiver totalUnits, tenta recompor: estoque + vendidas
-    if (!totalUnits) {
-        const availableInventory = Number(header.availableInventory || 0);
-        const soldSnap = Number(header.soldUnitsStock ?? header.soldUnits ?? 0);
-        const maybeTotal = availableInventory + soldSnap;
-        if (maybeTotal > 0) {
-            totalUnits = maybeTotal;
-        }
-    }
-
-    if (plannedPerUnit && totalUnits) {
-        return plannedPerUnit * totalUnits;
-    }
-    return Number(header.budgetTotal || 0);
-}
-
-/**
- * Unidades restantes a vender (estoque de viabilidade)
- */
-function remainingUnitsToSell(item) {
-    const header = item.header || {};
-
-    // Estoque de viabilidade explícito vindo do backend
-    const availableInventory = Number(header.availableInventory ?? 0);
-    if (availableInventory > 0) {
-        return availableInventory;
-    }
-
-    // Fallback: total - vendidas (snapshot)
-    const totalUnits = Number(header.totalUnits || 0);
-    const soldSnap = Number(header.soldUnitsStock ?? header.soldUnits ?? 0);
-
-    if (totalUnits > 0) {
-        const unsold = totalUnits - soldSnap;
-        return unsold >= 0 ? unsold : 0;
-    }
-
-    return 0;
-}
-
-/**
- * Viabilidade por unidade remanescente
- * = (viabilidade total - gasto até agora) / unidades ainda não vendidas
- */
-function remainingBudgetPerUnsoldUnit(item) {
-    const totalViability = viabilityTotal(item);
-    const spent = Number(item.header?.spentTotal || 0);
-    const remainingBudget = totalViability - spent;
-    const unitsToSell = remainingUnitsToSell(item);
-    if (!unitsToSell) return 0;
-    return remainingBudget / unitsToSell;
-}
-
-/**
- * Orçamento recomendado para o MÊS
- * = custo remanescente por unidade * meta de unidades do mês
- */
-function recommendedMonthBudget(item) {
-    const perUnit = remainingBudgetPerUnsoldUnit(item);
-    const unitsTargetMonth = Number(item.header?.monthContext?.unitsTargetMonth || 0);
-    if (!unitsTargetMonth) return 0;
-    return perUnit * unitsTargetMonth;
-}
-
-// cor para Real / unid comparando com planejado (por empreendimento / ano)
 function realUnitClass(item) {
     const planned = Number(item.header?.plannedCostPerUnit || 0);
     const real = Number(item.header?.currentRealCostPerUnit || 0);
-    if (!planned || !real) return 'text-gray-700 dark:text-gray-300';
-
-    if (real > planned) return 'text-red-600 dark:text-red-400';
-    if (real < planned) return 'text-emerald-600 dark:text-emerald-400';
-    return 'text-gray-700 dark:text-gray-300';
+    if (!planned || !real) return 'text-ink-muted';
+    return real > planned ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400';
+}
+function monthStatus(item) {
+    const s = item.status; // do store: OVER | UNDER | ON_TRACK
+    if (s === 'OVER') return { variant: 'danger', label: 'Acima' };
+    if (s === 'UNDER') return { variant: 'success', label: 'Abaixo' };
+    return { variant: 'neutral', label: 'No alvo' };
+}
+function trendBadge(item) {
+    const d = item.header?.trendDirection;
+    if (d === 'improving') return { variant: 'success', icon: 'fa-arrow-trend-down', label: 'melhorando' };
+    if (d === 'worsening') return { variant: 'danger', icon: 'fa-arrow-trend-up', label: 'piorando' };
+    return null;
+}
+function trendTip(item) {
+    const h = item.header || {};
+    return `Gasto no mês: ${fmtBRL(h.monthContext?.monthSpent)} • Média mensal: ${fmtBRL(h.avgMonthlySpend)}`;
 }
 
-// ===== LOAD / WATCHERS =====
+// categoria/status do empreendimento (com override do admin via header.status)
+function statusInfo(item) {
+    const s = item.header?.status;
+    if (s === 'concluido') return { label: 'Concluído', variant: 'neutral', icon: 'fa-circle-check' };
+    if (s === 'em_andamento') return { label: 'Em andamento', variant: 'info', icon: 'fa-person-running' };
+    if (s === 'previsao_futura') return { label: 'Previsão Futura', variant: 'warning', icon: 'fa-calendar-day' };
+    return null;
+}
+
+/* ---------- ações ---------- */
+function openEnterpriseSettings(item) { entSettingsTarget.value = item; entSettingsOpen.value = true; }
+function openDetail(item) { detailItem.value = item; }
+function closeDetail() { detailItem.value = null; }
 
 async function load() {
     const ym = month.value || dayjs().format('YYYY-MM');
-    const y = Number(String(ym).slice(0, 4));
-    if (y) {
-        store.setYear(y);
-    }
-
-    store.setAlias(aliasId.value);
+    store.setYear(Number(String(ym).slice(0, 4)));
     store.setMonth(month.value);
+    store.setStatusFilter(statusFilter.value);
     await store.fetchList();
 }
 
-watch(aliasId, v => {
-    store.setAlias(v);
-});
-
-watch(month, v => {
+watch(month, (v) => {
     store.setMonth(v);
-    if (v && String(v).length >= 4) {
-        const y = Number(String(v).slice(0, 4));
-        if (y) {
-            store.setYear(y);
-        }
-    }
+    if (v && String(v).length >= 4) store.setYear(Number(String(v).slice(0, 4)));
 });
+watch(statusFilter, (v) => store.setStatusFilter(v));
 
-watch(statusFilter, v => {
-    store.setStatusFilter(v);
-});
-
-onMounted(async () => {
-    aliasId.value = store.selectedAliasId;
-    month.value = store.selectedMonth;
-
-    await load();
-});
+onMounted(load);
 </script>
