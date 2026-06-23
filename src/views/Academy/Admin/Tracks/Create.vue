@@ -80,7 +80,7 @@
                         </label>
 
                         <div class="md:col-span-12">
-                            <AudienceSelector v-model="form.audiences" />
+                            <DepartmentSelector v-model="form.departmentIds" />
                             <p class="mt-2 text-[11px] text-slate-500 dark:text-slate-400">
                                 <i class="fa-solid fa-circle-info mr-1"></i>
                                 Cada artigo vinculado precisa cobrir TODOS os públicos selecionados aqui.
@@ -181,10 +181,8 @@
 import { reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import AcademyPageHeader from '@/views/Academy/components/AcademyPageHeader.vue';
-import AudienceSelector from '@/views/Academy/components/AudienceSelector.vue';
+import DepartmentSelector from '@/views/Academy/components/DepartmentSelector.vue';
 import { useAcademyTracksAdminStore } from '@/stores/Academy/academyTracksAdminStore';
-
-const DEFAULT_AUDIENCES = ['INTERNAL', 'GESTOR', 'BROKER', 'REALESTATE', 'CORRESPONDENT'];
 
 const router = useRouter();
 const store = useAcademyTracksAdminStore();
@@ -196,7 +194,7 @@ const form = reactive({
     title: '',
     description: '',
     status: 'DRAFT',
-    audiences: DEFAULT_AUDIENCES.slice(),
+    departmentIds: [],
     slug: '',
 });
 
@@ -210,10 +208,6 @@ function validate() {
 
     const st = String(form.status || 'DRAFT').toUpperCase();
     if (!['DRAFT', 'PUBLISHED'].includes(st)) return 'Status inválido.';
-
-    if (!Array.isArray(form.audiences) || !form.audiences.length) {
-        return 'Selecione ao menos um público em "Visibilidade".';
-    }
 
     return '';
 }
@@ -230,7 +224,7 @@ async function save() {
             title: String(form.title || '').trim(),
             description: String(form.description || '').trim(),
             status: String(form.status || 'DRAFT').toUpperCase(),
-            audiences: Array.isArray(form.audiences) ? form.audiences.slice() : [],
+            departmentIds: Array.isArray(form.departmentIds) ? form.departmentIds.slice() : [],
         };
 
         const s = String(form.slug || '').trim();

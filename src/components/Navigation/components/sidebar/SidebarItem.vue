@@ -6,6 +6,7 @@ const props = defineProps({
   to: { type: [String, Object], default: null },
   icon: { type: String, default: '' },
   iconImg: { type: String, default: '' },   // PNG/SVG opcional no lugar do ícone FontAwesome
+  iconColor: { type: String, default: '' }, // cor de marca fixa (ex.: WhatsApp) — vence o hover
   label: { type: String, required: true },
   collapsed: { type: Boolean, default: false },
   favorite: { type: Boolean, default: null },  // null = no fav button
@@ -34,6 +35,7 @@ const textClass   = computed(() => props.size === 'sm' ? 'text-[13px]' : 'text-s
       <img v-if="iconImg" :src="iconImg" :alt="label"
            class="w-5 h-5 rounded-sm object-cover shrink-0" />
       <i v-else-if="icon" :class="icon"
+         :style="iconColor ? { color: iconColor } : undefined"
          class="w-5 text-ink-muted group-hover/item:text-accent transition-colors text-sm shrink-0"></i>
       <span v-show="!collapsed"
             class="ms-3 truncate transition-opacity duration-200">{{ label }}</span>

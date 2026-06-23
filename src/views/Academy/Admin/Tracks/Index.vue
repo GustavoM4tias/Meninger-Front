@@ -99,7 +99,7 @@
                                     <div class="mt-3 flex flex-wrap items-center gap-2 text-xs">
                                         <span
                                             class="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 font-mono text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-                                            <i class="fa-solid fa-hashtag text-[9px] text-slate-400"></i>
+                                            <i class="fa-solid fa-hashtag text-[9px] text-slate-400 dark:text-slate-500"></i>
                                             {{ t.slug }}
                                         </span>
                                         <span class="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider"

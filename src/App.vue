@@ -8,8 +8,9 @@ import { isAcademyContext } from '@/utils/appContext';
 const authStore = useAuthStore();
 const isAuthenticated = computed(() => authStore.isAuthenticated());
 
-// O Eme Office só aparece no contexto Office. No Academy, o assistente é o
-// AcademyTutorChat (plugado no AcademyShell) — não pode haver os dois juntos.
+// A Eme do Office (OfficeChatFloat) é o ÚNICO assistente. Aparece no contexto
+// Office — que inclui o Academy migrado para dentro do Office (rotas /academy).
+// A Eme própria do Academy (AcademyTutorChat) foi removida do AcademyShell.
 const showOfficeChat = computed(() => isAuthenticated.value && !isAcademyContext());
 
 // Badge de placar ao vivo do bolão — Office autenticado, fora do Academy.

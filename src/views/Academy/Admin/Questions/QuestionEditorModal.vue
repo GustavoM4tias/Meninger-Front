@@ -49,7 +49,7 @@
                     <div>
                         <div class="flex items-center justify-between mb-1">
                             <label class="text-sm font-medium text-slate-900 dark:text-slate-100">
-                                Opções <span class="text-slate-400">(marque a(s) correta(s))</span>
+                                Opções <span class="text-slate-400 dark:text-slate-500">(marque a(s) correta(s))</span>
                             </label>
                             <button type="button" class="text-xs font-semibold text-slate-600 dark:text-slate-300 hover:underline"
                                 @click="addOption">+ Adicionar opção</button>
@@ -72,7 +72,7 @@
                     <!-- Explicação -->
                     <div>
                         <label class="block text-sm font-medium text-slate-900 dark:text-slate-100 mb-1">
-                            Explicação <span class="text-slate-400">(opcional, mostrada após responder)</span>
+                            Explicação <span class="text-slate-400 dark:text-slate-500">(opcional, mostrada após responder)</span>
                         </label>
                         <textarea v-model="form.explanation" rows="2" placeholder="Por que essa é a resposta correta..."
                             class="w-full resize-none rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2.5 text-sm text-slate-900 dark:text-slate-100"></textarea>
@@ -81,7 +81,7 @@
                     <!-- Tags -->
                     <div>
                         <label class="block text-sm font-medium text-slate-900 dark:text-slate-100 mb-1">
-                            Tags <span class="text-slate-400">(separadas por vírgula)</span>
+                            Tags <span class="text-slate-400 dark:text-slate-500">(separadas por vírgula)</span>
                         </label>
                         <input v-model="tagsText" placeholder="vendas, lgpd, atendimento"
                             class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2.5 text-sm text-slate-900 dark:text-slate-100" />

@@ -2,7 +2,7 @@
   <div>
 
     <!-- Loading -->
-    <div v-if="loading" class="py-16 flex items-center justify-center gap-2 text-gray-400">
+    <div v-if="loading" class="py-16 flex items-center justify-center gap-2 text-gray-400 dark:text-slate-500">
       <i class="fas fa-circle-notch animate-spin"></i>
       <span class="text-sm">Carregando...</span>
     </div>
@@ -10,7 +10,7 @@
     <!-- Empty -->
     <div v-else-if="!groupedEvents.length" class="py-16 text-center">
       <i class="fas fa-calendar-xmark text-4xl text-ink-subtle mb-3 block"></i>
-      <p class="text-sm text-gray-400">Nenhum evento neste período</p>
+      <p class="text-sm text-gray-400 dark:text-slate-500">Nenhum evento neste período</p>
     </div>
 
     <!-- Event groups by day -->
@@ -28,7 +28,7 @@
           <span class="text-sm font-semibold text-ink">{{ group.dayName }}</span>
           <span v-if="group.isToday" class="ml-2 text-xs text-accent font-semibold">Hoje</span>
         </div>
-        <span class="text-xs text-gray-400 shrink-0">
+        <span class="text-xs text-gray-400 dark:text-slate-500 shrink-0">
           {{ group.events.length }} evento{{ group.events.length !== 1 ? 's' : '' }}
         </span>
       </div>
@@ -44,9 +44,9 @@
             <div class="w-2.5 h-2.5 rounded-full shrink-0" :class="dotClass(ev)"></div>
             <template v-if="!ev.isAllDay">
               <span class="text-xs font-semibold text-ink-muted">{{ fmtTime(ev.start) }}</span>
-              <span class="text-xs text-gray-400">{{ fmtTime(ev.end) }}</span>
+              <span class="text-xs text-gray-400 dark:text-slate-500">{{ fmtTime(ev.end) }}</span>
             </template>
-            <span v-else class="text-[10px] text-gray-400 font-medium text-center leading-tight">Dia<br>todo</span>
+            <span v-else class="text-[10px] text-gray-400 dark:text-slate-500 font-medium text-center leading-tight">Dia<br>todo</span>
           </div>
 
           <!-- Content -->
@@ -58,20 +58,20 @@
               <span v-if="ev.isOnlineMeeting" class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-300 text-[10px] font-semibold shrink-0">
                 <i class="fas fa-video text-[8px]"></i> Teams
               </span>
-              <span v-if="ev.isRecurring" class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-surface-sunken text-gray-400 text-[10px] shrink-0">
+              <span v-if="ev.isRecurring" class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-surface-sunken text-gray-400 dark:text-slate-500 text-[10px] shrink-0">
                 <i class="fas fa-rotate text-[8px]"></i> Recorrente
               </span>
               <span v-if="ev.isCancelled" class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-red-100 dark:bg-red-900/30 text-red-500 text-[10px] font-semibold shrink-0">
                 Cancelado
               </span>
             </div>
-            <div v-if="ev.location" class="flex items-center gap-1 text-xs text-gray-400 mb-0.5">
+            <div v-if="ev.location" class="flex items-center gap-1 text-xs text-gray-400 dark:text-slate-500 mb-0.5">
               <i class="fas fa-location-dot text-[9px]"></i> {{ ev.location }}
             </div>
-            <div v-if="ev.organizer?.name || ev.organizer?.email" class="text-xs text-gray-400">
+            <div v-if="ev.organizer?.name || ev.organizer?.email" class="text-xs text-gray-400 dark:text-slate-500">
               <i class="fas fa-user text-[9px] mr-1"></i>{{ ev.organizer.name || ev.organizer.email }}
             </div>
-            <div v-if="ev.attendees?.length" class="text-xs text-gray-400 mt-0.5">
+            <div v-if="ev.attendees?.length" class="text-xs text-gray-400 dark:text-slate-500 mt-0.5">
               <i class="fas fa-users text-[9px] mr-1"></i>{{ ev.attendees.length }} participante{{ ev.attendees.length !== 1 ? 's' : '' }}
             </div>
           </div>
@@ -84,7 +84,7 @@
               <i class="fas fa-video text-[10px]"></i> Entrar
             </a>
             <button @click.stop="$emit('event-click', ev)"
-              class="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-surface-hover transition-colors">
+              class="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-surface-hover transition-colors">
               <i class="fas fa-chevron-right text-xs"></i>
             </button>
           </div>

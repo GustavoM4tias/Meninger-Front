@@ -8,6 +8,8 @@ export const useAlertStore = defineStore('alertStore', {
         loading: false,
         logs: [],
         loadingLogs: false,
+        incomingShares: [],
+        loadingShares: false,
     }),
     actions: {
         async fetch(params = {}) {
@@ -60,6 +62,29 @@ export const useAlertStore = defineStore('alertStore', {
                 console.error('[alertStore] fetchLogs', e);
                 this.logs = [];
             } finally { this.loadingLogs = false; }
+        },
+
+        // ─── Compartilhamento ────────────────────────────────────────────────
+        async fetchIncoming() {
+            this.loadingShares = true;
+            try {
+                const r = await api.fetchIncomingShares();
+                this.incomingShares = Array.isArray(r?.items) ? r.items : [];
+            } catch (e) {
+                console.error('[alertStore] fetchIncoming', e);
+                this.incomingShares = [];
+            } finally { this.loadingShares = false; }
+        },
+        async share(id, payload) {
+            return api.shareAlert(id, payload);
+        },
+        async respondShare(shareId, action) {
+            const r = await api.respondShare(shareId, action);
+            // tira o convite da lista local
+            this.incomingShares = this.incomingShares.filter(s => s.id !== shareId);
+            // aceite cria uma cópia própria → recarrega a lista de alertas
+            if (action === 'accept') await this.fetch();
+            return r;
         },
     },
 });

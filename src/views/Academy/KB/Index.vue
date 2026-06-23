@@ -5,7 +5,7 @@
             <template #actions>
                 <div class="flex w-full flex-col gap-2 md:w-auto md:flex-row md:items-center">
                     <div class="relative w-full md:w-80">
-                        <input v-model="qLocal" placeholder="Buscar artigos..." @keyup.enter="applySearch"
+                        <input v-model="qLocal" :placeholder="searchPlaceholder" @keyup.enter="applySearch"
                             class="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-4 pr-11 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-4 focus:ring-indigo-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-indigo-700 dark:focus:ring-indigo-950/60" />
                         <button type="button" @click="applySearch" aria-label="Buscar"
                             class="absolute right-1.5 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-indigo-600 dark:text-slate-400 dark:hover:bg-slate-700">
@@ -200,6 +200,13 @@ const categorySlug = computed(() => String(route.params.categorySlug || ''));
 const subcategorySlug = computed(() => String(route.query.sub || ''));
 const activeCategory = computed(() => (kb.categories || []).find((c) => c.slug === categorySlug.value) || null);
 const activeSub = computed(() => (activeCategory.value?.subcategories || []).find((s) => s.slug === subcategorySlug.value) || null);
+
+// Deixa explícito o escopo da busca: dentro da categoria/sub atual, ou em toda a base.
+const searchPlaceholder = computed(() => {
+    if (activeSub.value) return `Buscar em ${activeSub.value.name}…`;
+    if (activeCategory.value) return `Buscar em ${activeCategory.value.name}…`;
+    return 'Buscar em toda a base…';
+});
 
 function formatDate(value) {
     if (!value) return '';

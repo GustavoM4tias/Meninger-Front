@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Microsoft Teams">
+  <defs>
+    <linearGradient id="teamsBody" x1="4.5" y1="8.5" x2="18" y2="23.5" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#5A62C8"/>
+      <stop offset="1" stop-color="#4750BB"/>
+    </linearGradient>
+  </defs>
+  <!-- cabeça da pessoa -->
+  <circle cx="22.7" cy="7" r="3.7" fill="#7B83EB"/>
+  <!-- corpo/pílula à direita -->
+  <path d="M27 12h-7.4a1 1 0 0 0-1 1v7.1a5.3 5.3 0 0 0 3.4 1.6h.3A5.5 5.5 0 0 0 28 17.1V13a1 1 0 0 0-1-1z" fill="#5059C9"/>
+  <!-- painel principal -->
+  <rect x="3.2" y="8" width="16" height="16" rx="1.9" fill="url(#teamsBody)"/>
+  <!-- T branco -->
+  <path d="M15.3 12.25H7.1v2.15h3.05v7.6h2.25v-7.6h2.9z" fill="#fff"/>
+</svg>

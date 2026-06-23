@@ -184,7 +184,7 @@
                                     <div class="min-w-0">
                                         <div class="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">
                                             {{ u.username }}
-                                            <span class="text-xs font-mono text-slate-500">({{ u.role }})</span>
+                                            <span class="text-xs font-mono text-slate-500 dark:text-slate-400">({{ u.role }})</span>
                                         </div>
                                         <div class="text-xs text-slate-500 dark:text-slate-400 font-mono truncate">
                                             {{ u.email }} | {{ u.position || '-' }} | {{ u.city || '-' }}

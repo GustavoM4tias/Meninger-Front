@@ -28,6 +28,7 @@ const canManage = computed(() => canEdit.value || !!store.permissions?.canAuthor
 const loading = ref(true);
 const search = ref('');
 const filterStatus = ref('');
+const filterMonth = ref(currentMonthYm());
 const showClosed = ref(false);
 
 const statusOptions = computed(() => {
@@ -148,12 +149,17 @@ async function handleCreate() {
   }
 }
 
-// ── Agrupamento ──────────────────────────────────────
+// ── Agrupamento por SÉRIE (CV: idempreendimento · Avulsa: series_id) ──────────
+const ymOf = (d) => (d ? String(d).substring(0, 7) : '');
+
 const groups = computed(() => {
   const map = new Map();
   for (const c of (store.list ?? [])) {
     const eid = c.enterprise?.idempreendimento ?? c.idempreendimento;
-    const groupKey = eid != null ? `cv:${eid}` : `avulsa:${c.id}`;
+    // Avulsa agrupa por series_id; sem ele cada mês viraria um card separado.
+    const groupKey = eid != null
+      ? `cv:${eid}`
+      : (c.series_id != null ? `serie:${c.series_id}` : `ficha:${c.id}`);
     if (!map.has(groupKey)) {
       const enterprise = c.enterprise ?? (eid != null
         ? { idempreendimento: eid }
@@ -174,9 +180,26 @@ const groups = computed(() => {
   );
 });
 
+// Meses com fichas (mais recente primeiro) — alimenta o seletor de mês.
+const availableMonths = computed(() => {
+  const set = new Set();
+  for (const c of (store.list ?? [])) { const m = ymOf(c.reference_month); if (m) set.add(m); }
+  return [...set].sort().reverse();
+});
+const monthOptions = computed(() =>
+  availableMonths.value.map(m => ({ value: m, label: formatMonth(m) }))
+);
+
+// Para cada série, a ficha do mês selecionado — é o que o card exibe.
+const monthGroups = computed(() =>
+  groups.value
+    .map(g => ({ ...g, shown: g.conditions.find(c => ymOf(c.reference_month) === filterMonth.value) }))
+    .filter(g => g.shown)
+);
+
 const filteredGroups = computed(() => {
-  let r = groups.value;
-  if (filterStatus.value) r = r.filter(g => g.latest?.status === filterStatus.value);
+  let r = monthGroups.value;
+  if (filterStatus.value) r = r.filter(g => g.shown?.status === filterStatus.value);
   if (search.value.trim()) {
     const s = search.value.toLowerCase();
     r = r.filter(g =>
@@ -188,14 +211,14 @@ const filteredGroups = computed(() => {
 });
 
 const activeGroups = computed(() =>
-  filterStatus.value === 'closed' ? [] : filteredGroups.value.filter(g => g.latest?.status !== 'closed')
+  filterStatus.value === 'closed' ? [] : filteredGroups.value.filter(g => g.shown?.status !== 'closed')
 );
 const closedGroups = computed(() =>
-  filteredGroups.value.filter(g => g.latest?.status === 'closed')
+  filteredGroups.value.filter(g => g.shown?.status === 'closed')
 );
 
 function openGroup(group) {
-  router.push(`/comercial/conditions/${group.latest.id}`);
+  router.push(`/comercial/conditions/${group.shown.id}`);
 }
 
 // ── Helpers ──────────────────────────────────────────
@@ -218,9 +241,19 @@ function formatMonth(dateStr) {
   return `${months[Number(m) - 1]}/${y}`;
 }
 
+// Mês atual do usuário no formato YYYY-MM (default do filtro de mês).
+function currentMonthYm() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
 onMounted(async () => {
   try {
     await Promise.all([store.fetchList(), store.fetchMyPermissions()]);
+    // Se o mês atual ainda não tem fichas, cai para o mês mais recente disponível.
+    if (availableMonths.value.length && !availableMonths.value.includes(filterMonth.value)) {
+      filterMonth.value = availableMonths.value[0];
+    }
     const data = await requestWithAuth(`${API_URL}/cv/empreendimentos`);
     enterprises.value = (data ?? []).sort((a, b) => a.nome?.localeCompare(b.nome, 'pt-BR'));
   } finally {
@@ -255,9 +288,10 @@ onMounted(async () => {
 
       <!-- Filtros -->
       <section class="rounded-xl border border-line bg-surface-raised shadow-soft surface-gradient mb-4">
-        <div class="p-3 sm:p-4 grid grid-cols-1 sm:grid-cols-[1fr_14rem] gap-3">
+        <div class="p-3 sm:p-4 grid grid-cols-1 sm:grid-cols-[1fr_12rem_12rem] gap-3">
           <Input v-model="search" placeholder="Buscar empreendimento..."
             iconLeft="fas fa-magnifying-glass" />
+          <Select v-model="filterMonth" :options="monthOptions" placeholder="Mês" />
           <Select v-model="filterStatus" :options="statusOptions" />
         </div>
       </section>
@@ -285,7 +319,7 @@ onMounted(async () => {
             @click="openGroup(group)">
 
             <!-- Faixa de status -->
-            <div :class="['h-1', statusBarClass(group.latest.status)]"></div>
+            <div :class="['h-1', statusBarClass(group.shown.status)]"></div>
 
             <div class="p-5">
               <div class="mb-3 min-w-0">
@@ -304,11 +338,11 @@ onMounted(async () => {
               <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
                 <div class="flex items-center gap-2 text-xs text-ink-muted">
                   <i class="far fa-calendar text-[10px] text-ink-subtle"></i>
-                  <span class="font-semibold font-mono">{{ formatMonth(group.latest.reference_month) }}</span>
+                  <span class="font-semibold font-mono">{{ formatMonth(group.shown.reference_month) }}</span>
                 </div>
                 <div class="flex items-center gap-2">
-                  <Badge :variant="statusVariant(group.latest.status)" size="sm">
-                    {{ statusLabel(group.latest.status) }}
+                  <Badge :variant="statusVariant(group.shown.status)" size="sm">
+                    {{ statusLabel(group.shown.status) }}
                   </Badge>
                   <Badge v-if="group.conditions.length > 1" variant="neutral" size="sm"
                     v-tippy="`${group.conditions.length} fichas no histórico`">
@@ -318,15 +352,15 @@ onMounted(async () => {
               </div>
 
               <!-- Módulos -->
-              <div v-if="group.latest.modules?.length" class="flex flex-wrap gap-1.5">
-                <span v-for="mod in group.latest.modules.slice(0, 4)" :key="mod.id"
+              <div v-if="group.shown.modules?.length" class="flex flex-wrap gap-1.5">
+                <span v-for="mod in group.shown.modules.slice(0, 4)" :key="mod.id"
                   class="inline-flex items-center gap-1 px-2 py-0.5 bg-accent-soft text-accent rounded-lg text-[11px] font-medium border border-accent/20">
                   <span class="truncate max-w-[100px]">{{ mod.module_name }}</span>
                   <span class="opacity-70 font-mono">{{ mod.total_units }}u</span>
                 </span>
-                <span v-if="group.latest.modules.length > 4"
+                <span v-if="group.shown.modules.length > 4"
                   class="px-2 py-0.5 bg-surface-sunken text-ink-subtle rounded-lg text-[11px] border border-line">
-                  +{{ group.latest.modules.length - 4 }}
+                  +{{ group.shown.modules.length - 4 }}
                 </span>
               </div>
               <p v-else class="text-xs text-ink-subtle italic">Sem módulos</p>
@@ -354,7 +388,7 @@ onMounted(async () => {
           </button>
 
           <div v-if="showClosed" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 opacity-75">
-            <article v-for="group in closedGroups" :key="group.enterprise.idempreendimento"
+            <article v-for="group in closedGroups" :key="group.groupKey"
               class="group relative rounded-xl border border-line bg-surface-sunken shadow-soft overflow-hidden cursor-pointer
                      hover:shadow-elevated hover:border-ink-subtle hover:opacity-100
                      transition-all duration-200 ease-out-expo"
@@ -373,7 +407,7 @@ onMounted(async () => {
                 <div class="flex items-center justify-between mb-1 flex-wrap gap-2">
                   <div class="flex items-center gap-2 text-xs text-ink-subtle">
                     <i class="far fa-calendar text-[10px]"></i>
-                    <span class="font-semibold font-mono">Encerrado em {{ formatMonth(group.latest.reference_month) }}</span>
+                    <span class="font-semibold font-mono">Encerrado em {{ formatMonth(group.shown.reference_month) }}</span>
                   </div>
                   <Badge variant="neutral" size="sm">{{ statusLabel('closed') }}</Badge>
                 </div>
@@ -390,9 +424,9 @@ onMounted(async () => {
       <!-- Empty -->
       <EmptyState v-else-if="!loading"
         size="lg" icon="fas fa-file-contract"
-        title="Nenhuma ficha encontrada"
-        :description="search || filterStatus ? 'Ajuste os filtros ou a busca para ver resultados.' : 'Crie a primeira ficha para começar.'">
-        <template v-if="canEdit && !search && !filterStatus" #actions>
+        :title="store.list?.length ? `Nenhuma ficha em ${formatMonth(filterMonth)}` : 'Nenhuma ficha encontrada'"
+        :description="store.list?.length ? 'Troque o mês no filtro para ver outras versões, ou ajuste os filtros/busca.' : 'Crie a primeira ficha para começar.'">
+        <template v-if="canEdit && !(store.list?.length)" #actions>
           <Button icon="fas fa-plus" @click="openCreate = true">Nova ficha</Button>
         </template>
       </EmptyState>

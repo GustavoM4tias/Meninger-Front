@@ -10,7 +10,7 @@
                     <div class="flex items-center justify-between gap-4">
                         <div class="min-w-0">
                             <h3 class="text-xl font-bold truncate">{{ title }}</h3>
-                            <p class="text-xs text-gray-500">
+                            <p class="text-xs text-gray-500 dark:text-gray-400">
                                 Selecione os campos para exportar (funciona com qualquer JSON)
                             </p>
                         </div>
@@ -57,7 +57,7 @@
                                     <p class="text-sm font-semibold text-gray-800 dark:text-gray-100 truncate leading-tight" :title="suggestedTitle">
                                         {{ suggestedTitle }}
                                     </p>
-                                    <p class="text-[11px] text-gray-500 truncate">
+                                    <p class="text-[11px] text-gray-500 dark:text-gray-400 truncate">
                                         Emitido por {{ issuerName }}
                                     </p>
                                 </div>
@@ -93,7 +93,7 @@
                                 <span class="text-gray-300 dark:text-gray-700">·</span>
                                 <button type="button" @click="selectCommon()" class="text-gray-600 dark:text-gray-300 hover:underline focus:outline-none focus:underline" title="Apenas campos presentes em 100% dos registros">Só comuns</button>
                                 <span class="text-gray-300 dark:text-gray-700">·</span>
-                                <button type="button" @click="clearSelection()" class="text-gray-500 hover:text-red-600 focus:outline-none focus:underline">Limpar</button>
+                                <button type="button" @click="clearSelection()" class="text-gray-500 dark:text-gray-400 hover:text-red-600 focus:outline-none focus:underline">Limpar</button>
                             </div>
 
                             <!-- Opções avançadas -->
@@ -163,7 +163,7 @@
                                 <span>{{ exporting ? 'Gerando…' : 'Exportar Excel' }}</span>
                             </button>
                             <button type="button" @click="exportCSV('csv')" :disabled="!selection.size || exporting"
-                                class="text-[11px] text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 disabled:opacity-40 focus:outline-none focus:underline">
+                                class="text-[11px] text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-200 disabled:opacity-40 focus:outline-none focus:underline">
                                 ou exportar como CSV
                             </button>
                         </div>
@@ -201,7 +201,7 @@
                         </template>
 
                         <template v-else>
-                            <div class="mb-2 text-xs text-gray-500 flex items-center justify-between">
+                            <div class="mb-2 text-xs text-gray-500 dark:text-gray-400 flex items-center justify-between">
                                 <span>Prévia (máx. {{ maxPreviewRows }} linhas-fonte)</span>
                                 <span v-if="previewPaths.length">{{ previewPaths.length }} colunas · {{ previewRows.length }} linhas</span>
                             </div>
@@ -1213,7 +1213,7 @@ const FieldNode = defineComponent({
                     h('div', { class: 'text-[11px] text-right w-14 shrink-0' }, `${cov}%`),
                     h(
                         'div',
-                        { class: 'text-[11px] text-gray-500 w-32 shrink-0 truncate' },
+                        { class: 'text-[11px] text-gray-500 dark:text-gray-400 w-32 shrink-0 truncate' },
                         types
                     )
                 ]

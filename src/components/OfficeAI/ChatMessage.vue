@@ -15,6 +15,7 @@ import ChatPrecadastrosActions from './renderers/ChatPrecadastrosActions.vue';
 import ChatReservasSummary from './renderers/ChatReservasSummary.vue';
 import ChatReservasActions from './renderers/ChatReservasActions.vue';
 import ChatAlertEditor from './renderers/ChatAlertEditor.vue';
+import ChatAcademyCards from './renderers/ChatAcademyCards.vue';
 
 const props = defineProps({
   message: { type: Object, required: true },
@@ -86,6 +87,9 @@ const isError = computed(() => props.message.response_type === 'error');
 
         <!-- Editor de Alerta inline -->
         <ChatAlertEditor v-if="action?.type === 'open_alert_editor'" :action="action" />
+
+        <!-- Academy: cards de processos / certificados / comunidade -->
+        <ChatAcademyCards v-if="action?.type === 'academy_cards'" :action="action" />
 
         <!-- Feedback / Retry -->
         <div v-if="!streaming" class="flex items-center gap-1 mt-1.5">

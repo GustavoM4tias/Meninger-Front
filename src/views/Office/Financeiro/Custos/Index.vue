@@ -9,18 +9,7 @@
           Custos por Empreendimento
           <Favorite :router="'/financeiro/custos'" :section="'Custos'" />
         </template>
-        <template #actions>
-          <Button v-if="isAdmin" variant="ghost" icon="fas fa-gear" size="sm"
-            @click="adminSettingsOpen = true">
-            Configurações
-          </Button>
-        </template>
       </PageHeader>
-
-      <AdminSettingsModal v-if="isAdmin" :open="adminSettingsOpen"
-        :cost-center-groups="store.rawGroups"
-        @close="adminSettingsOpen = false"
-        @changed="onAdminSettingsChanged" />
 
       <!-- Filtros Card -->
       <Surface variant="raised" padding="md" class="mb-5 surface-gradient">
@@ -102,7 +91,7 @@
           <div class="text-[10px] text-emerald-700/70 dark:text-emerald-300/70 mt-1">Ativos (exclui cancelados)</div>
         </Surface>
 
-        <Surface variant="raised" padding="md" class="border-red-500/30 bg-red-500/10 surface-gradient">
+        <Surface v-if="filteredCancelledTotal > 0" variant="raised" padding="md" class="border-red-500/30 bg-red-500/10 surface-gradient">
           <div class="flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-red-700 dark:text-red-300 mb-2">
             <i class="fas fa-ban"></i> Cancelados
           </div>
@@ -347,13 +336,6 @@
               <span class="opacity-40">|</span>
 
               <div class="flex items-center gap-2 flex-wrap">
-                <select v-model="bulkDepartment"
-                  class="px-3 py-1.5 rounded-lg bg-white/20 border border-white/30 text-white text-sm focus:outline-none focus:ring-2 focus:ring-white/50">
-                  <option value="" class="text-gray-800">Departamento (opcional)...</option>
-                  <option v-for="d in store.departmentOptions" :key="d" :value="d" class="text-gray-800">
-                    {{ d }}
-                  </option>
-                </select>
                 <select v-model.number="bulkCategoryId"
                   class="px-3 py-1.5 rounded-lg bg-white/20 border border-white/30 text-white text-sm focus:outline-none focus:ring-2 focus:ring-white/50">
                   <option :value="null" class="text-gray-800">Categoria (opcional)...</option>
@@ -362,7 +344,7 @@
                   </option>
                 </select>
                 <button @click="applyBulkBoth"
-                  :disabled="bulkCategoryId === null && !bulkDepartment"
+                  :disabled="bulkCategoryId === null"
                   class="px-3 py-1.5 bg-white text-emerald-700 font-semibold rounded-lg text-sm hover:bg-emerald-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
                   <i class="fas fa-check mr-1"></i> Aplicar
                 </button>
@@ -613,12 +595,16 @@
           </div>
         </Surface>
 
-        <!-- Departamento -->
-        <Select
-          v-model="editForm.departmentName"
-          :options="editDepartmentOptions"
-          placeholder="(sem departamento)"
-          label="Departamento" />
+        <!-- Departamento (vem do Sienge — somente leitura) -->
+        <div>
+          <label class="text-[11px] font-medium text-ink-muted mb-1.5 block">
+            <i class="fas fa-sitemap text-ink-subtle mr-1"></i> Departamento
+            <span class="text-[10px] text-ink-subtle font-normal">· do Sienge</span>
+          </label>
+          <div class="px-3.5 py-2.5 rounded-lg border border-line bg-surface-sunken/40 text-sm text-ink">
+            {{ editingExpense.departmentName || editingExpense.bill?.mainDepartmentName || '(sem departamento)' }}
+          </div>
+        </div>
 
         <!-- Categoria -->
         <Select
@@ -661,8 +647,6 @@ import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 import { useCostCenterNamesStore } from '@/stores/Financeiro/costCenterNamesStore';
 import { useToast } from 'vue-toastification';
 
-import AdminSettingsModal from './AdminSettingsModal.vue';
-
 import PageContainer from '@/components/UI/PageContainer.vue';
 import PageHeader from '@/components/UI/PageHeader.vue';
 import Surface from '@/components/UI/Surface.vue';
@@ -682,7 +666,6 @@ const contractsStore = useContractsStore();
 const auth = useAuthStore();
 const ccNames = useCostCenterNamesStore();
 const isAdmin = computed(() => auth?.user?.role === 'admin');
-const adminSettingsOpen = ref(false);
 
 const toast = (() => {
   try { return useToast(); }
@@ -1027,31 +1010,21 @@ function toggleSelectAllExpenses() {
   selectedExpenseIds.value = selectedExpenseIds.value.length === allIds.length ? [] : allIds;
 }
 
-// ── Bulk action unificada: aplica departamento E/OU categoria de uma vez ──────
+// ── Bulk action: aplica CATEGORIA nos selecionados (departamento vem do Sienge) ──
 async function applyBulkBoth() {
   const n = selectedExpenseIds.value.length;
   if (!n) return;
-  const hasDept = !!bulkDepartment.value;
-  const hasCat = bulkCategoryId.value !== null;
-  if (!hasDept && !hasCat) return;
+  if (bulkCategoryId.value === null) return;
 
-  const catId = hasCat ? Number(bulkCategoryId.value) : null;
-  const foundCat = hasCat ? categoryOptions.value.find(c => c.id === catId) : null;
+  const catId = Number(bulkCategoryId.value);
+  const foundCat = categoryOptions.value.find(c => c.id === catId);
 
-  const partes = [
-    hasDept ? `departamento "${bulkDepartment.value}"` : null,
-    hasCat ? `categoria "${foundCat?.name}"` : null,
-  ].filter(Boolean).join(' e ');
+  if (!confirm(`Aplicar categoria "${foundCat?.name}" em ${n} lançamento(s)?`)) return;
 
-  if (!confirm(`Aplicar ${partes} em ${n} lançamento(s)?`)) return;
-
-  // Monta 1 único payload por expense — backend grava ambos numa só requisição
-  const payload = {};
-  if (hasDept) payload.departmentName = bulkDepartment.value;
-  if (hasCat) {
-    payload.departmentCategoryId = catId;
-    payload.departmentCategoryName = foundCat?.name || null;
-  }
+  const payload = {
+    departmentCategoryId: catId,
+    departmentCategoryName: foundCat?.name || null,
+  };
 
   try {
     await Promise.all(
@@ -1099,7 +1072,6 @@ async function saveEdit() {
 
     await store.updateExpense(editingExpense.value.id, {
       description: editForm.value.description || null,
-      departmentName: editForm.value.departmentName || null,
       departmentCategoryId: catId,
       departmentCategoryName: found?.name || null,
     });
@@ -1190,12 +1162,6 @@ function formatMonth(d) {
 }
 
 // ── Mount ─────────────────────────────────────────────────
-async function onAdminSettingsChanged() {
-  // Recarrega mapa de overrides + dados (nome de exibição pode ter mudado)
-  await ccNames.fetchOverrideMap({ force: true });
-  await store.fetchExpenses();
-}
-
 onMounted(async () => {
   store.selectedDepartments = [];
   await Promise.all([

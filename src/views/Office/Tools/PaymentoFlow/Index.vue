@@ -226,7 +226,7 @@ async function onBoletoUpdated() {
                                 <div class="font-bold text-sm text-ink">
                                     {{ store.summary[item.key]?.count || 0 }}
                                 </div>
-                                <div v-if="store.summary[item.key]?.totalAmount" class="text-xs text-gray-400">
+                                <div v-if="store.summary[item.key]?.totalAmount" class="text-xs text-gray-400 dark:text-slate-500">
                                     {{ formatCurrency(store.summary[item.key]?.totalAmount) }}
                                 </div>
                             </div>
@@ -234,7 +234,7 @@ async function onBoletoUpdated() {
 
                         <!-- Totalizador -->
                         <div class="border-t border-line pt-3">
-                            <div class="text-xs text-gray-500 mb-1">Em andamento</div>
+                            <div class="text-xs text-gray-500 dark:text-slate-400 mb-1">Em andamento</div>
                             <div class="text-base font-bold text-blue-600 dark:text-blue-400">
                                 {{ formatCurrency(totalActiveAmount) }}
                             </div>
@@ -421,10 +421,10 @@ async function onBoletoUpdated() {
                         <div v-if="!store.hasLaunches" class="text-center py-16 px-6">
                             <div
                                 class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-                                <i class="fas fa-file-invoice-dollar text-2xl text-gray-400"></i>
+                                <i class="fas fa-file-invoice-dollar text-2xl text-gray-400 dark:text-slate-500"></i>
                             </div>
                             <h3 class="font-semibold text-ink mb-1">Nenhum lançamento</h3>
-                            <p class="text-sm text-gray-400">
+                            <p class="text-sm text-gray-400 dark:text-slate-500">
                                 {{ filterStatus || filterType || searchInput
                                     ? 'Tente ajustar os filtros.'
                                     : 'Clique em "Novo Lançamento" para começar.' }}
@@ -466,7 +466,7 @@ async function onBoletoUpdated() {
                                             :title="launch.providerName">
                                             {{ launch.providerName || '—' }}
                                         </div>
-                                        <div class="text-xs text-gray-400 font-mono">
+                                        <div class="text-xs text-gray-400 dark:text-slate-500 font-mono">
                                             {{ launch.providerCnpj
                                                 ? launch.providerCnpj.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/,
                                                     '$1.$2.$3/$4-$5')
@@ -525,7 +525,7 @@ async function onBoletoUpdated() {
                                             <span class="inline-block w-1.5 h-1.5 rounded-full flex-shrink-0"
                                                 :class="pipelineDotClass(launch.pipelineStage)">
                                             </span>
-                                            <span class="text-xs text-gray-400 hidden lg:inline truncate max-w-20">
+                                            <span class="text-xs text-gray-400 dark:text-slate-500 hidden lg:inline truncate max-w-20">
                                                 {{ PIPELINE_STAGE_LABELS[launch.pipelineStage]?.label }}
                                             </span>
                                         </div>
@@ -533,7 +533,7 @@ async function onBoletoUpdated() {
 
                                     <!-- Expand chevron -->
                                     <div class="col-span-12 md:col-span-1 flex justify-end">
-                                        <i class="fas text-gray-400 text-xs transition-transform duration-200"
+                                        <i class="fas text-gray-400 dark:text-slate-500 text-xs transition-transform duration-200"
                                             :class="expandedId === launch.id ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
                                     </div>
                                 </div>
@@ -579,7 +579,7 @@ async function onBoletoUpdated() {
                                                     {{ act.label }}
                                                 </button>
                                             </div>
-                                            <div v-else class="text-xs text-gray-400 italic">
+                                            <div v-else class="text-xs text-gray-400 dark:text-slate-500 italic">
                                                 Nenhuma ação disponível para este status.
                                             </div>
 
@@ -587,29 +587,29 @@ async function onBoletoUpdated() {
                                             <div
                                                 class="rounded-xl border border-line bg-surface-raised p-3 space-y-2 text-xs">
                                                 <div class="flex justify-between">
-                                                    <span class="text-gray-500">Empreendimento</span>
+                                                    <span class="text-gray-500 dark:text-slate-400">Empreendimento</span>
                                                     <span
                                                         class="text-gray-800 dark:text-gray-200 font-medium truncate max-w-40 text-right">
                                                         {{ launch.enterpriseName || launch.companyName || '—' }}
                                                     </span>
                                                 </div>
                                                 <div class="flex justify-between">
-                                                    <span class="text-gray-500">ERP ID</span>
+                                                    <span class="text-gray-500 dark:text-slate-400">ERP ID</span>
                                                     <span class="font-mono text-ink-muted">{{
                                                         launch.enterpriseId || '—' }}</span>
                                                 </div>
                                                 <div class="flex justify-between">
-                                                    <span class="text-gray-500">Empresa Sienge</span>
+                                                    <span class="text-gray-500 dark:text-slate-400">Empresa Sienge</span>
                                                     <span class="font-mono text-ink-muted">{{
                                                         launch.companyId || '—' }}</span>
                                                 </div>
                                                 <div v-if="launch.boletoDueDate" class="flex justify-between">
-                                                    <span class="text-gray-500">Vencimento boleto</span>
+                                                    <span class="text-gray-500 dark:text-slate-400">Vencimento boleto</span>
                                                     <span class="text-ink">{{
                                                         formatDate(launch.boletoDueDate) }}</span>
                                                 </div>
                                                 <div v-if="launch.notes"
-                                                    class="pt-1 border-t border-gray-100 dark:border-gray-800 text-gray-500 italic">
+                                                    class="pt-1 border-t border-gray-100 dark:border-gray-800 text-gray-500 dark:text-slate-400 italic">
                                                     {{ launch.notes }}
                                                 </div>
                                             </div>
@@ -623,7 +623,7 @@ async function onBoletoUpdated() {
                         <!-- Paginação -->
                         <div v-if="store.pagination.pages > 1"
                             class="flex items-center justify-between px-4 py-3 border-t border-line">
-                            <span class="text-xs text-gray-500">
+                            <span class="text-xs text-gray-500 dark:text-slate-400">
                                 {{ store.pagination.total }} lançamentos · pág. {{ store.pagination.page }}/{{
                                     store.pagination.pages }}
                             </span>
@@ -693,34 +693,34 @@ async function onBoletoUpdated() {
                 <div
                     class="rounded-xl bg-surface-sunken border border-line p-4 space-y-2 text-xs">
                     <div class="flex justify-between">
-                        <span class="text-gray-500">Lançamento</span>
+                        <span class="text-gray-500 dark:text-slate-400">Lançamento</span>
                         <span class="font-mono font-semibold text-gray-800 dark:text-gray-200">#{{
                             store.conflictLaunch.id }}</span>
                     </div>
                     <div class="flex justify-between">
-                        <span class="text-gray-500">Status</span>
+                        <span class="text-gray-500 dark:text-slate-400">Status</span>
                         <span class="font-semibold"
                             :class="statusBadgeClass(store.conflictLaunch.status)?.replace('bg-', 'text-').replace(/ bg-\S+/g, '')">
                             {{ store.conflictLaunch.status }}
                         </span>
                     </div>
                     <div class="flex justify-between">
-                        <span class="text-gray-500">Tipo</span>
+                        <span class="text-gray-500 dark:text-slate-400">Tipo</span>
                         <span class="text-ink">{{ store.conflictLaunch.launchType || '—'
                             }}</span>
                     </div>
                     <div class="flex justify-between">
-                        <span class="text-gray-500">Fornecedor</span>
+                        <span class="text-gray-500 dark:text-slate-400">Fornecedor</span>
                         <span class="text-ink text-right max-w-48 truncate">{{
                             store.conflictLaunch.providerName || '—' }}</span>
                     </div>
                     <div class="flex justify-between">
-                        <span class="text-gray-500">NF</span>
+                        <span class="text-gray-500 dark:text-slate-400">NF</span>
                         <span class="font-mono text-ink">{{ store.conflictLaunch.nfNumber
                             }}</span>
                     </div>
                     <div class="flex justify-between">
-                        <span class="text-gray-500">Criado por</span>
+                        <span class="text-gray-500 dark:text-slate-400">Criado por</span>
                         <span class="text-ink">{{ store.conflictLaunch.createdByName || '—'
                             }}</span>
                     </div>
@@ -753,11 +753,11 @@ async function onBoletoUpdated() {
             <div
                 class="w-full max-w-sm bg-surface-raised rounded-2xl shadow-2xl border border-line p-6 space-y-4">
                 <h3 class="font-bold text-ink">{{ confirmingAction.label }}</h3>
-                <p class="text-sm text-gray-500">
+                <p class="text-sm text-gray-500 dark:text-slate-400">
                     Confirma a ação <strong>{{ confirmingAction.label }}</strong> para este lançamento?
                 </p>
                 <div class="flex justify-end gap-3">
-                    <button class="text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition"
+                    <button class="text-sm text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-gray-300 transition"
                         @click="cancelAction">Cancelar</button>
                     <button class="px-4 py-2 text-sm font-medium rounded-xl text-white transition" :class="confirmingAction.action === 'cancel'
                         ? 'bg-red-600 hover:bg-red-700'

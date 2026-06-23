@@ -410,6 +410,7 @@ function inflateFromBackend() {
             defaultMarketingPct: Number(d.default_marketing_pct || 0),
             defaultCommissionPct: Number(d.default_commission_pct || 0),
             custoLoja: Number(d.custo_loja || 0),
+            blockedConsideredAvailable: Number(d.blocked_considered_available || 0),
             values: {},
         });
     }
@@ -672,6 +673,7 @@ function shallowCloneRow(r) {
         defaultMarketingPct: Number(r.defaultMarketingPct || 0),
         defaultCommissionPct: Number(r.defaultCommissionPct || 0),
         custoLoja: Number(r.custoLoja || 0),
+        blockedConsideredAvailable: Number(r.blockedConsideredAvailable || 0),
         units_summary: r.units_summary || null,
         values: {}
     };
@@ -776,6 +778,7 @@ async function doSave({ removeMissing }) {
                 default_commission_pct: Number(r.defaultCommissionPct || 0),
                 total_units: r.erp_id ? null : Number(r.totalUnits ?? 0),
                 custo_loja: Number(r.custoLoja || 0),
+                blocked_considered_available: Number(r.blockedConsideredAvailable || 0),
                 city: r.erp_id ? null : (r.city || null),
             }));
             await store.saveDefaults(id, defaultsPayload, { removeMissing });
@@ -858,6 +861,7 @@ const rowDefaultsForm = ref({
     defaultMarketingPct: 0,
     defaultCommissionPct: 0,
     custoLoja: 0,
+    blockedConsideredAvailable: 0,
 });
 
 function openRowDefaultsModal(row) {
@@ -872,6 +876,7 @@ function openRowDefaultsModal(row) {
         defaultMarketingPct: Number(row?.defaultMarketingPct || 0),
         defaultCommissionPct: Number(row?.defaultCommissionPct || 0),
         custoLoja: Number(row?.custoLoja || 0),
+        blockedConsideredAvailable: row?.blockedConsideredAvailable ?? null,
     };
 
     showRowDefaults.value = true;
@@ -900,6 +905,7 @@ function applyRowDefaultsModal() {
     row.defaultMarketingPct = Number(rowDefaultsForm.value.defaultMarketingPct || 0);
     row.defaultCommissionPct = Number(rowDefaultsForm.value.defaultCommissionPct || 0);
     row.custoLoja = Number(rowDefaultsForm.value.custoLoja || 0);
+    row.blockedConsideredAvailable = Math.max(0, parseInt(rowDefaultsForm.value.blockedConsideredAvailable, 10) || 0);
 
     onDefaultPriceChange(row);
     rows.value = [...rows.value];
@@ -1058,7 +1064,7 @@ watch(
 ============================================================================= */
 const chipClass = {
     active(v) {
-        return v ? 'bg-blue-200 text-blue-700 border-blue-400' : 'bg-gray-200 text-gray-600 border-gray-400';
+        return v ? 'bg-blue-200 text-blue-700 border-blue-400' : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-gray-400';
     },
     locked(v) {
         return v ? 'bg-emerald-200 text-emerald-700 border-emerald-400' : 'bg-red-200 text-red-700 border-red-400';
@@ -1721,7 +1727,7 @@ const filterPanelOpen = ref(true)
                                         </div>
 
                                         <div v-if="r.city"
-                                            class="text-[11px] text-gray-500 -my-2 flex items-center gap-1">
+                                            class="text-[11px] text-gray-500 dark:text-gray-400 -my-2 flex items-center gap-1">
                                             <i class="fas fa-location-dot text-[10px]"></i>
                                             <span class="truncate">{{ r.city }}</span>
                                             <span v-if="r.erp_id" class="truncate"> - CC: {{ r.erp_id }}</span>
@@ -1755,7 +1761,7 @@ const filterPanelOpen = ref(true)
                         <td v-for="ym in monthKeys" :key="ym" class="align-center p-1 border dark:border-gray-800">
                             <div class="flex gap-1">
                                 <div>
-                                    <label class="text-[10px] text-gray-500 block text-center">Qtd. Uni</label>
+                                    <label class="text-[10px] text-gray-500 dark:text-gray-400 block text-center">Qtd. Uni</label>
                                     <input :disabled="rowDisabled" v-model.number="ensureCell(r, ym).units"
                                         @input="onUnitsInput(r, ym)" type="number" min="0"
                                         class="w-14 h-8 border text-center border-line rounded px-2 bg-surface-raised focus:outline-none"
@@ -1763,13 +1769,13 @@ const filterPanelOpen = ref(true)
                                 </div>
 
                                 <div>
-                                    <label class="text-[10px] text-gray-500 block text-center">VGV</label>
+                                    <label class="text-[10px] text-gray-500 dark:text-gray-400 block text-center">VGV</label>
                                     <input :disabled="rowDisabled" type="text" inputmode="numeric"
                                         :value="moneyBR(vgvValue(r, ym))"
                                         @input="(e) => { const c = ensureCell(r, ym); c.total_manual = true; c.total = parseMoneyBR(e.target.value); setMaskedInputValue(e.target, vgvValue(r, ym)); r.values = { ...r.values }; }"
                                         class="w-32 h-8 border border-line rounded px-2 bg-surface-raised focus:outline-none" />
 
-                                    <div class="text-[10px] text-gray-500 flex items-center justify-between">
+                                    <div class="text-[10px] text-gray-500 dark:text-gray-400 flex items-center justify-between">
                                         <span>{{ fmtBRL((r.values[ym]?.price || 0) || (r.defaultPrice || 0)) }}</span>
                                         <button v-if="(r.values[ym]?.total_manual)" type="button"
                                             class="text-[10px] text-indigo-600 hover:underline" :disabled="rowDisabled"
@@ -1927,6 +1933,20 @@ const filterPanelOpen = ref(true)
                                             :value="moneyBR(rowDefaultsForm.custoLoja)"
                                             @input="(e) => { rowDefaultsForm.custoLoja = parseMoneyBR(e.target.value); setMaskedInputValue(e.target, rowDefaultsForm.custoLoja); }"
                                             class="w-full h-10 border border-line rounded-xl px-3.5 bg-white dark:bg-gray-800 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-amber-400/40 focus:border-amber-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-right tabular-nums" />
+                                    </div>
+
+                                    <!-- Bloqueadas consideradas disponíveis — Viabilidade (default 0) -->
+                                    <div>
+                                        <label class="text-xs font-semibold text-ink-muted block mb-1.5">
+                                            <i class="fas fa-lock-open text-amber-400 mr-1 text-[9px]"></i>Bloq. disponíveis
+                                        </label>
+                                        <input type="number" min="0" step="1" :disabled="rowDisabled"
+                                            v-model.number="rowDefaultsForm.blockedConsideredAvailable"
+                                            class="w-full h-10 border border-line rounded-xl px-3.5 bg-white dark:bg-gray-800 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-amber-400/40 focus:border-amber-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-right tabular-nums"
+                                            placeholder="0" />
+                                        <p v-if="rowDefaultsTarget?.units_summary?.blockedUnits" class="text-[10px] text-ink-subtle mt-1">
+                                            CV marca {{ rowDefaultsTarget.units_summary.blockedUnits }} bloqueada(s). Reservadas sempre contam.
+                                        </p>
                                     </div>
                                 </div>
                                 <!-- Preview valores -->

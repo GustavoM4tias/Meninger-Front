@@ -86,7 +86,7 @@ watch(open, (v) => {
             <span class="hidden max-w-[8rem] truncate text-sm font-medium text-slate-700 dark:text-slate-200 sm:block">
                 {{ firstName }}
             </span>
-            <i class="fa-solid fa-chevron-down text-[10px] text-slate-400 transition-transform"
+            <i class="fa-solid fa-chevron-down text-[10px] text-slate-400 dark:text-slate-500 transition-transform"
                 :class="{ 'rotate-180': open }"></i>
         </button>
 

@@ -11,6 +11,7 @@ import { academyUrl } from '@/utils/appContext';
 
 import Search from '@/components/Navigation/components/Search.vue';
 import Notification from '@/components/Navigation/components/Notification.vue';
+import MuralBell from '@/components/Navigation/components/MuralBell.vue';
 import Profile from '@/components/Navigation/components/Profile.vue';
 
 import IconButton from '@/components/UI/IconButton.vue';
@@ -201,6 +202,7 @@ const closeMobile = () => { isMobileOpen.value = false; };
 
         <div class="flex items-center gap-1">
           <div class="hidden md:block"><Search /></div>
+          <MuralBell />
           <Notification />
           <Profile />
         </div>
@@ -299,7 +301,7 @@ const closeMobile = () => { isMobileOpen.value = false; };
               :collapsed="isCollapsed" @click="expandSidebar(); closeMobile();" />
           </li>
           -->
-          <li>
+          <!-- <li>
             <a :href="academyHref"
               @click="expandSidebar(); closeMobile();"
               class="flex items-center h-10 px-2 rounded-lg text-ink hover:bg-surface-sunken transition-colors group"
@@ -307,7 +309,7 @@ const closeMobile = () => { isMobileOpen.value = false; };
               <i class="fas fa-graduation-cap w-5 text-ink-muted group-hover:text-accent text-sm shrink-0"></i>
               <span v-show="!isCollapsed" class="ms-3 text-sm">Academy</span>
             </a>
-          </li>
+          </li> -->
           <li>
             <SidebarItem
               asButton icon="fas fa-arrow-right-from-bracket" label="Sair"

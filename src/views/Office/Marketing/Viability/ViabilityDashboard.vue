@@ -134,17 +134,29 @@
                     <table class="min-w-full">
                         <thead class="bg-surface-sunken/60 border-b border-line">
                             <tr>
-                                <th class="px-5 py-3 text-left text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Empresa</th>
-                                <th class="px-5 py-3 text-right text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Orçamento</th>
-                                <th class="px-5 py-3 text-right text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Gasto</th>
-                                <th class="px-5 py-3 text-right text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Saldo</th>
-                                <th class="px-5 py-3 text-right text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Mês {{ monthLabel }}</th>
-                                <th class="px-5 py-3 text-center text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Estoque</th>
+                                <th @click="handleSort('empresa')" class="px-5 py-3 text-left text-[11px] font-mono uppercase tracking-wider text-ink-subtle cursor-pointer hover:text-ink transition-colors select-none">
+                                    <div class="flex items-center gap-1.5">Empresa <i :class="sortIcon('empresa')" class="text-[9px]"></i></div>
+                                </th>
+                                <th @click="handleSort('orcamento')" class="px-5 py-3 text-right text-[11px] font-mono uppercase tracking-wider text-ink-subtle cursor-pointer hover:text-ink transition-colors select-none">
+                                    <div class="flex items-center justify-end gap-1.5">Orçamento <i :class="sortIcon('orcamento')" class="text-[9px]"></i></div>
+                                </th>
+                                <th @click="handleSort('gasto')" class="px-5 py-3 text-right text-[11px] font-mono uppercase tracking-wider text-ink-subtle cursor-pointer hover:text-ink transition-colors select-none">
+                                    <div class="flex items-center justify-end gap-1.5">Gasto <i :class="sortIcon('gasto')" class="text-[9px]"></i></div>
+                                </th>
+                                <th @click="handleSort('saldo')" class="px-5 py-3 text-right text-[11px] font-mono uppercase tracking-wider text-ink-subtle cursor-pointer hover:text-ink transition-colors select-none">
+                                    <div class="flex items-center justify-end gap-1.5">Saldo <i :class="sortIcon('saldo')" class="text-[9px]"></i></div>
+                                </th>
+                                <th @click="handleSort('mes')" class="px-5 py-3 text-right text-[11px] font-mono uppercase tracking-wider text-ink-subtle cursor-pointer hover:text-ink transition-colors select-none">
+                                    <div class="flex items-center justify-end gap-1.5">Mês {{ monthLabel }} <i :class="sortIcon('mes')" class="text-[9px]"></i></div>
+                                </th>
+                                <th @click="handleSort('estoque')" class="px-5 py-3 text-center text-[11px] font-mono uppercase tracking-wider text-ink-subtle cursor-pointer hover:text-ink transition-colors select-none">
+                                    <div class="flex items-center justify-center gap-1.5">Estoque <i :class="sortIcon('estoque')" class="text-[9px]"></i></div>
+                                </th>
                                 <th class="px-5 py-3 text-right text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Ações</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-line">
-                            <tr v-for="item in activeItems" :key="item.companyId ?? item.erpId"
+                            <tr v-for="item in sortedItems" :key="item.companyId ?? item.erpId"
                                 class="hover:bg-surface-hover/40 transition-colors align-top">
                                 <!-- EMPRESA -->
                                 <td class="px-5 py-3">
@@ -269,26 +281,102 @@
         <ViabilityEnterpriseSettingsModal :open="entSettingsOpen" :company="entSettingsTarget"
             @close="entSettingsOpen = false" @saved="load" />
 
-        <!-- Modal de detalhe (série mensal) -->
-        <Modal :open="!!detailItem" size="lg" :title="detailItem?.enterpriseName || 'Empreendimento'"
-            :subtitle="detailItem ? `Empresa ${detailItem.companyId || detailItem.displayId || '—'} · recomendado vs. gasto por mês` : ''"
+        <!-- Modal de detalhe analítico -->
+        <Modal :open="!!detailItem" size="xl" :title="detailItem?.enterpriseName || 'Empreendimento'"
+            :subtitle="detailItem ? `Empresa ${detailItem.companyId || detailItem.displayId || '—'} · CC ${(detailItem.header?.costCenterIds || []).join(', ')}` : ''"
             @close="closeDetail">
-            <div v-if="detailItem">
-                <div class="grid grid-cols-3 gap-3 mb-4">
-                    <Surface variant="flat" padding="sm" bordered>
-                        <div class="text-[10px] text-ink-subtle uppercase tracking-wider">Orçamento</div>
-                        <div class="text-base font-bold text-ink font-mono tabular-nums">{{ fmtBRL(detailItem.header?.budgetTotal) }}</div>
-                    </Surface>
-                    <Surface variant="flat" padding="sm" bordered>
-                        <div class="text-[10px] text-ink-subtle uppercase tracking-wider">Gasto</div>
-                        <div class="text-base font-bold text-ink font-mono tabular-nums">{{ fmtBRL(detailItem.header?.spentTotal) }}</div>
-                    </Surface>
-                    <Surface variant="flat" padding="sm" bordered>
-                        <div class="text-[10px] text-ink-subtle uppercase tracking-wider">Saldo/unid a vender</div>
-                        <div class="text-base font-bold font-mono tabular-nums" :class="moneyClass(detailItem.header?.saldoPerUnit)">{{ fmtBRL(detailItem.header?.saldoPerUnit) }}</div>
-                    </Surface>
+            <div v-if="detailItem" class="space-y-5">
+                <!-- status + saúde -->
+                <div class="flex items-center gap-2 flex-wrap">
+                    <Badge v-if="statusInfo(detailItem)" :variant="statusInfo(detailItem).variant">
+                        <i class="fas" :class="statusInfo(detailItem).icon"></i> {{ statusInfo(detailItem).label }}
+                    </Badge>
+                    <Badge :variant="investedVariant(detailItem)">{{ fmtPct(detailItem.header?.pctInvested) }} investido</Badge>
+                    <Badge v-if="trendBadge(detailItem)" :variant="trendBadge(detailItem).variant">
+                        <i class="fas" :class="trendBadge(detailItem).icon"></i> {{ trendBadge(detailItem).label }}
+                    </Badge>
+                    <span class="text-xs text-ink-subtle ml-auto">
+                        Média mensal de gasto: <strong class="font-mono tabular-nums text-ink-muted">{{ fmtBRL(detailItem.header?.avgMonthlySpend) }}</strong>
+                    </span>
                 </div>
 
+                <!-- Orçamento (vida útil) -->
+                <div>
+                    <p class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-2">Orçamento (vida útil)</p>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <Surface variant="flat" padding="sm" bordered>
+                            <div class="text-[10px] text-ink-subtle uppercase tracking-wider">Orçamento total</div>
+                            <div class="text-base font-bold text-ink font-mono tabular-nums">{{ fmtBRL(detailItem.header?.budgetTotal) }}</div>
+                        </Surface>
+                        <Surface variant="flat" padding="sm" bordered>
+                            <div class="text-[10px] text-ink-subtle uppercase tracking-wider">Custo Loja</div>
+                            <div class="text-base font-bold font-mono tabular-nums" :class="detailItem.header?.custoLoja ? 'text-amber-600 dark:text-amber-400' : 'text-ink'">{{ fmtBRL(detailItem.header?.custoLoja) }}</div>
+                        </Surface>
+                        <Surface variant="flat" padding="sm" bordered>
+                            <div class="text-[10px] text-ink-subtle uppercase tracking-wider">% Marketing</div>
+                            <div class="text-base font-bold text-ink font-mono tabular-nums">{{ Number(detailItem.header?.marketingPct || 0).toFixed(2) }}%</div>
+                        </Surface>
+                        <Surface variant="flat" padding="sm" bordered>
+                            <div class="text-[10px] text-ink-subtle uppercase tracking-wider">Ticket médio</div>
+                            <div class="text-base font-bold text-ink font-mono tabular-nums">{{ fmtBRL(detailItem.header?.avgTicketGlobal) }}</div>
+                        </Surface>
+                    </div>
+                </div>
+
+                <!-- Realizado e custo por unidade -->
+                <div>
+                    <p class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-2">Realizado e custo por unidade</p>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <Surface variant="flat" padding="sm" bordered>
+                            <div class="text-[10px] text-ink-subtle uppercase tracking-wider">Gasto ({{ fmtPct(detailItem.header?.pctInvested) }})</div>
+                            <div class="text-base font-bold text-ink font-mono tabular-nums">{{ fmtBRL(detailItem.header?.spentTotal) }}</div>
+                        </Surface>
+                        <Surface variant="flat" padding="sm" bordered>
+                            <div class="text-[10px] text-ink-subtle uppercase tracking-wider">Saldo</div>
+                            <div class="text-base font-bold font-mono tabular-nums" :class="moneyClass(detailItem.header?.remainingBudgetTotal)">{{ fmtBRL(detailItem.header?.remainingBudgetTotal) }}</div>
+                        </Surface>
+                        <Surface variant="flat" padding="sm" bordered>
+                            <div class="text-[10px] text-ink-subtle uppercase tracking-wider">Planejado / unid</div>
+                            <div class="text-base font-bold text-ink font-mono tabular-nums">{{ fmtBRL(detailItem.header?.plannedCostPerUnit) }}</div>
+                        </Surface>
+                        <Surface variant="flat" padding="sm" bordered>
+                            <div class="text-[10px] text-ink-subtle uppercase tracking-wider">Real / unid</div>
+                            <div class="text-base font-bold font-mono tabular-nums" :class="realUnitClass(detailItem)">{{ fmtBRL(detailItem.header?.currentRealCostPerUnit) }}</div>
+                        </Surface>
+                    </div>
+                </div>
+
+                <!-- Unidades -->
+                <div>
+                    <p class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-2">Unidades</p>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-2">
+                        <Surface variant="flat" padding="sm" bordered>
+                            <div class="text-[10px] text-ink-subtle uppercase tracking-wider">Total</div>
+                            <div class="text-base font-bold text-ink font-mono tabular-nums">{{ Number(detailItem.header?.totalUnits || 0) }}</div>
+                        </Surface>
+                        <Surface variant="flat" padding="sm" bordered>
+                            <div class="text-[10px] text-ink-subtle uppercase tracking-wider">Disp. p/ marketing</div>
+                            <div class="text-base font-bold text-emerald-600 dark:text-emerald-400 font-mono tabular-nums">{{ Number(detailItem.header?.availableInventory || 0) }}</div>
+                        </Surface>
+                        <Surface variant="flat" padding="sm" bordered>
+                            <div class="text-[10px] text-ink-subtle uppercase tracking-wider">Vendidas (real)</div>
+                            <div class="text-base font-bold text-ink font-mono tabular-nums">{{ Number(detailItem.header?.soldUnitsRealYtd || 0) }}</div>
+                        </Surface>
+                        <Surface variant="flat" padding="sm" bordered>
+                            <div class="text-[10px] text-ink-subtle uppercase tracking-wider">Saldo / unid a vender</div>
+                            <div class="text-base font-bold font-mono tabular-nums" :class="moneyClass(detailItem.header?.saldoPerUnit)">{{ fmtBRL(detailItem.header?.saldoPerUnit) }}</div>
+                        </Surface>
+                    </div>
+                    <div class="flex items-center gap-4 text-xs flex-wrap text-ink-muted">
+                        <span class="inline-flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-emerald-500"></span>Disponíveis <strong class="font-mono">{{ Number(detailItem.header?.availableUnits || 0) }}</strong></span>
+                        <span class="inline-flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-sky-500"></span>Reservadas <strong class="font-mono">{{ Number(detailItem.header?.reservedUnits || 0) }}</strong></span>
+                        <span class="inline-flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-ink-subtle/60"></span>Bloqueadas <strong class="font-mono">{{ Number(detailItem.header?.blockedUnits || 0) }}</strong></span>
+                        <span class="inline-flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-red-500"></span>Vendidas (CV) <strong class="font-mono">{{ Number(detailItem.header?.soldUnitsStock ?? detailItem.header?.soldUnits ?? 0) }}</strong></span>
+                    </div>
+                </div>
+
+                <!-- Série mensal -->
+                <p class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle -mb-2">Mês a mês — recomendado vs. gasto</p>
                 <div class="overflow-x-auto rounded-lg border border-line">
                     <table class="min-w-full text-sm">
                         <thead class="bg-surface-sunken/60 border-b border-line">
@@ -331,6 +419,7 @@ import { ref, computed, onMounted, watch } from 'vue';
 import dayjs from 'dayjs';
 import { useViabilityStore } from '@/stores/Marketing/Viability/viabilityStore';
 import { useAuthStore } from '@/stores/Settings/Auth/authStore';
+import { useTableSort } from '@/composables/useTableSort';
 
 import PageContainer from '@/components/UI/PageContainer.vue';
 import PageHeader from '@/components/UI/PageHeader.vue';
@@ -395,6 +484,20 @@ const activeItems = computed(() => {
         list = list.filter((i) => i.header?.status === categoryFilter.value);
     }
     return list;
+});
+
+// ordenação por cabeçalho (composable reutilizável)
+const sortAccessors = {
+    empresa: (i) => (i.enterpriseName || '').toLowerCase(),
+    orcamento: (i) => Number(i.header?.budgetTotal || 0),
+    gasto: (i) => Number(i.header?.spentTotal || 0),
+    saldo: (i) => Number(i.header?.remainingBudgetTotal || 0),
+    mes: (i) => Number(i.header?.monthContext?.monthBudget || 0),
+    estoque: (i) => Number(i.header?.availableInventory || 0),
+};
+const { handleSort, sortIcon, sorted: sortedItems } = useTableSort(activeItems, sortAccessors, {
+    defaultKey: 'orcamento',
+    defaultDir: 'desc',
 });
 
 /* ---------- KPIs (sobre os itens ativos) ---------- */

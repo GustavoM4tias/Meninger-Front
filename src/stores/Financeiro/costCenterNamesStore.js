@@ -1,7 +1,7 @@
 // src/stores/Financeiro/costCenterNamesStore.js
 //
 // Mapa { costCenterId -> nome de exibição } com overrides administrativos.
-// Compartilhado por Custos, Títulos e AutoSync para que o nome editado
+// Compartilhado por Custos e Títulos para que o nome editado
 // reflita em todos os selectors/listagens. Cacheado (1 fetch por sessão).
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
@@ -18,7 +18,8 @@ export const useCostCenterNamesStore = defineStore('costCenterNames', () => {
         if (inflight) return inflight;
         inflight = (async () => {
             try {
-                const data = await requestWithAuth(`${API_URL}/expenses/cost-center-overrides/map`);
+                // Fonte única de naming = nomes da PROJEÇÃO ativa (com fallback override legado).
+                const data = await requestWithAuth(`${API_URL}/projections/cost-center-names`);
                 overrideMap.value = data && typeof data === 'object' ? data : {};
                 loaded.value = true;
             } catch (e) {

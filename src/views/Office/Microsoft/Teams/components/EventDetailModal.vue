@@ -24,14 +24,14 @@
                     Cancelado
                   </span>
                   <span v-if="event.isRecurring"
-                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-surface-sunken text-gray-500 text-xs">
+                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-surface-sunken text-gray-500 dark:text-slate-400 text-xs">
                     <i class="fas fa-rotate text-xs"></i> Recorrente
                   </span>
                 </div>
                 <h2 class="text-lg font-bold text-ink leading-snug">{{ event.subject }}</h2>
               </div>
               <button @click="$emit('close')"
-                class="w-8 h-8 rounded-lg bg-surface-sunken flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors shrink-0 mt-0.5">
+                class="w-8 h-8 rounded-lg bg-surface-sunken flex items-center justify-center text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors shrink-0 mt-0.5">
                 <i class="fas fa-xmark text-sm"></i>
               </button>
             </div>
@@ -59,13 +59,13 @@
             <div v-if="event.organizer?.name" class="flex items-center gap-3 text-sm text-ink-muted">
               <i class="fas fa-user w-4 text-center shrink-0"></i>
               <span>{{ event.organizer.name }}
-                <span v-if="event.organizer.email" class="text-gray-400 text-xs ml-1">{{ event.organizer.email }}</span>
+                <span v-if="event.organizer.email" class="text-gray-400 dark:text-slate-500 text-xs ml-1">{{ event.organizer.email }}</span>
               </span>
             </div>
 
             <!-- Attendees -->
             <div v-if="event.attendees?.length" class="flex items-start gap-3 text-sm">
-              <i class="fas fa-users w-4 text-center text-gray-400 shrink-0 mt-0.5"></i>
+              <i class="fas fa-users w-4 text-center text-gray-400 dark:text-slate-500 shrink-0 mt-0.5"></i>
               <div>
                 <p class="text-xs font-semibold text-ink-muted uppercase tracking-wide mb-1.5">Participantes</p>
                 <div class="flex flex-col gap-1">
@@ -83,7 +83,7 @@
 
             <!-- Body preview -->
             <div v-if="event.bodyPreview" class="flex items-start gap-3 text-sm">
-              <i class="fas fa-align-left w-4 text-center text-gray-400 shrink-0 mt-0.5"></i>
+              <i class="fas fa-align-left w-4 text-center text-gray-400 dark:text-slate-500 shrink-0 mt-0.5"></i>
               <p class="text-ink-muted leading-relaxed line-clamp-4">{{ event.bodyPreview }}</p>
             </div>
 
@@ -221,7 +221,7 @@ function statusClass(s) {
     declined: 'text-red-500 dark:text-red-400',
     tentativelyAccepted: 'text-yellow-600 dark:text-yellow-400',
   };
-  return map[s] || 'text-gray-400';
+  return map[s] || 'text-gray-400 dark:text-slate-500';
 }
 </script>
 

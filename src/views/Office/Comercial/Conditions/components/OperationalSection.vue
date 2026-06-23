@@ -250,7 +250,7 @@
                 class="flex items-center gap-2 px-4 py-2.5 rounded-md border cursor-pointer transition-all text-sm font-medium select-none"
                 :class="certProvider === opt.value
                   ? 'border-accent bg-accent-soft text-accent shadow-sm'
-                  : 'border-line text-ink-muted bg-surface-raised/60 hover:border-gray-300'"
+                  : 'border-line text-ink-muted bg-surface-raised/60 hover:border-gray-300 dark:hover:border-gray-600'"
                 :style="readonly ? 'pointer-events:none;opacity:.75' : ''">
                 <input type="radio" :value="opt.value" :checked="certProvider === opt.value"
                   @change="setCertProvider(opt.value)" class="sr-only" :disabled="readonly" />

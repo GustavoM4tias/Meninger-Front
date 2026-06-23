@@ -103,7 +103,7 @@
 
         <!-- Span de fechar chat: só quando está na caixa fechada (não colapsado nem aberto) -->
         <span v-if="!open && !collapsed" @click.stop="collapseChat"
-            class="fixed w-22 right-3 bottom-1 text-gray-400 text-xs text-end cursor-pointer">
+            class="fixed w-22 right-3 bottom-1 text-gray-400 dark:text-slate-400 text-xs text-end cursor-pointer">
             Fechar chat? <i class="fas fa-xmark"></i>
         </span>
     </div>

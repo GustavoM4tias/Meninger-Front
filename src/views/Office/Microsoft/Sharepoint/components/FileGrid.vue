@@ -8,12 +8,12 @@
       </span>
       <div class="flex items-center gap-1">
         <button @click="viewMode = 'grid'"
-          :class="viewMode === 'grid' ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'"
+          :class="viewMode === 'grid' ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300'"
           class="w-7 h-7 rounded-lg flex items-center justify-center text-sm transition-colors">
           <i class="fas fa-grip"></i>
         </button>
         <button @click="viewMode = 'list'"
-          :class="viewMode === 'list' ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'"
+          :class="viewMode === 'list' ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300'"
           class="w-7 h-7 rounded-lg flex items-center justify-center text-sm transition-colors">
           <i class="fas fa-list"></i>
         </button>
@@ -151,15 +151,15 @@
         <!-- Actions (visible on hover) -->
         <div class="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 shrink-0">
           <button v-if="!item.isFolder" @click.stop="emit('action', 'preview', item)"
-            class="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">
+            class="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">
             <i class="fas fa-eye text-xs"></i>
           </button>
           <button v-if="!item.isFolder" @click.stop="emit('action', 'download', item)"
-            class="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors">
+            class="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 dark:text-gray-500 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors">
             <i class="fas fa-download text-xs"></i>
           </button>
           <button @click.stop="openCtx({ clientX: $event.clientX, clientY: $event.clientY }, item)"
-            class="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-surface-hover transition-colors">
+            class="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-surface-hover transition-colors">
             <i class="fas fa-ellipsis-vertical text-xs"></i>
           </button>
         </div>

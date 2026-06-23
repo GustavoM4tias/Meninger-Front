@@ -17,6 +17,7 @@ import EmptyState from '@/components/UI/EmptyState.vue';
 import SegmentedControl from '@/components/UI/SegmentedControl.vue';
 import Dropdown from '@/components/UI/Dropdown.vue';
 import Favorite from '@/components/config/Favorite.vue';
+import DepartmentVisibilityPanel from './DepartmentVisibilityPanel.vue';
 
 const route = useRoute();
 
@@ -24,6 +25,7 @@ const route = useRoute();
 const mainTabs = [
   { value: 'users',    label: 'Usuários', icon: 'fas fa-users' },
   { value: 'profiles', label: 'Perfis',   icon: 'fas fa-layer-group' },
+  { value: 'departments', label: 'Departamentos', icon: 'fas fa-eye-slash' },
 ];
 const mainTab = ref('users');
 
@@ -427,6 +429,11 @@ onMounted(() => { loadUsers(); loadProfiles(); });
             </Surface>
           </div>
         </main>
+      </div>
+
+      <!-- ───── Aba Departamentos ───── -->
+      <div v-else-if="mainTab === 'departments'" class="space-y-4">
+        <DepartmentVisibilityPanel />
       </div>
 
       <!-- ───── Aba Perfis ───── -->

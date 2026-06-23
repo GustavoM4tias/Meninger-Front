@@ -17,11 +17,11 @@
                         <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
                             Um único campo (markdown). Digite <span class="font-mono">@</span> para inserir itens
                             (artigo, tópico, vídeo, link, quiz e tarefas).
-                            <span class="ml-2 text-xs font-mono text-slate-400">Tokens: @[(TYPE:ref)]</span>
+                            <span class="ml-2 text-xs font-mono text-slate-400 dark:text-slate-500">Tokens: @[(TYPE:ref)]</span>
                         </p>
                     </div>
 
-                    <button class="rounded-lg px-2 py-1 text-slate-500 hover:text-slate-900 dark:hover:text-white"
+                    <button class="rounded-lg px-2 py-1 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                         @click="close" aria-label="Fechar" title="Fechar" type="button">
                         ✕
                     </button>
@@ -42,7 +42,7 @@
                                 <div class="text-xs font-medium text-slate-500 dark:text-slate-400">Minutos (estimado)
                                 </div>
                                 <button
-                                    class="text-xs text-slate-500 hover:text-slate-900 dark:hover:text-white underline"
+                                    class="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white underline"
                                     type="button" @click="unlockMinutesAuto" v-if="minutesLocked"
                                     title="Voltar a calcular automaticamente">
                                     auto

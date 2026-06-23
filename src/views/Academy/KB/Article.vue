@@ -5,6 +5,9 @@
             <div class="kb-progress__bar" :style="{ width: progress + '%' }"></div>
         </div>
 
+        <!-- Visualizador de imagens (abrir, zoom, tela cheia, navegar) -->
+        <LightboxViewer v-model:open="lbOpen" :images="lbImages" :start-index="lbIndex" />
+
         <div class="mx-auto max-w-4xl space-y-5 pb-12 xl:max-w-[68rem]">
             <AcademyPageHeader :title="title" subtitle="Base de Conhecimento" :breadcrumbs="breadcrumbs" :backTo="backTo">
                 <template #actions>
@@ -53,19 +56,19 @@
                                         <i class="fa-regular fa-folder-open text-[10px]"></i>
                                         {{ article?.categorySlug || categorySlug }}
                                     </span>
-                                    <span v-if="readingMinutes" class="kb-chip">
+                                    <span v-if="readingMinutes" class="kb-chip text-slate-600 dark:text-slate-300 bg-white/70 dark:bg-slate-800/70 border-slate-200 dark:border-slate-700">
                                         <i class="fa-regular fa-clock text-[10px]"></i>
                                         {{ readingMinutes }} min de leitura
                                     </span>
-                                    <span v-if="article?.slug" class="kb-chip font-mono lowercase">
+                                    <span v-if="article?.slug" class="kb-chip font-mono lowercase text-slate-600 dark:text-slate-300 bg-white/70 dark:bg-slate-800/70 border-slate-200 dark:border-slate-700">
                                         {{ article.slug }}
                                     </span>
-                                    <span v-if="store.article.loaded && !article" class="kb-chip">
+                                    <span v-if="store.article.loaded && !article" class="kb-chip text-slate-600 dark:text-slate-300 bg-white/70 dark:bg-slate-800/70 border-slate-200 dark:border-slate-700">
                                         Não encontrado
                                     </span>
                                 </div>
 
-                                <h1 class="kb-title mt-4">{{ article?.title || 'Artigo' }}</h1>
+                                <h1 class="kb-title mt-4 text-slate-900 dark:text-slate-100">{{ article?.title || 'Artigo' }}</h1>
 
                                 <!-- Autoria -->
                                 <div v-if="article"
@@ -132,7 +135,7 @@
                                 Artigo não encontrado ou indisponível para seu perfil.
                             </div>
 
-                            <div v-else ref="proseRef" class="kb-reading">
+                            <div v-else ref="proseRef" class="kb-reading" @click="onProseImageClick">
                                 <TokenRenderer :content="renderBody" :payload="article.payload || null"
                                     item-type="" item-key="" />
                             </div>
@@ -271,15 +274,15 @@
                 <!-- ───────────── TOC fixa (desktop) ───────────── -->
                 <aside v-if="outline.length" class="hidden xl:block">
                     <div class="sticky top-6">
-                        <div class="kb-toc">
-                            <div class="kb-toc__title">
+                        <div class="kb-toc border-slate-200 bg-white/70 dark:border-slate-800 dark:bg-slate-900/60">
+                            <div class="kb-toc__title text-slate-500 dark:text-slate-400">
                                 <i class="fa-solid fa-list-ul mr-1.5 text-[rgb(var(--art))]"></i>
                                 Nesta página
                             </div>
                             <ul class="mt-1 space-y-0.5">
                                 <li v-for="o in outline" :key="o.id">
                                     <button type="button" @click="scrollToHeading(o.id)"
-                                        class="kb-toc__link"
+                                        class="kb-toc__link text-slate-500 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white"
                                         :class="[`lvl-${o.level}`, { 'is-active': activeId === o.id }]">
                                         {{ o.text }}
                                     </button>
@@ -304,6 +307,7 @@ import TokenRenderer from '@/views/Academy/components/TokenRenderer.vue';
 import StarRating from '@/views/Academy/components/StarRating.vue';
 import FollowButton from '@/views/Academy/components/FollowButton.vue';
 import CommentThread from '@/views/Academy/components/CommentThread.vue';
+import LightboxViewer from '@/views/Academy/components/LightboxViewer.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -411,8 +415,22 @@ function goBack() {
     router.push(backTo.value);
 }
 
+// O shell do Academy rola num container interno (.overflow-y-auto) — a window
+// NÃO rola. Resolve o elemento que realmente rola (fallback: window).
+function getScroller() {
+    const byClass = articleRef.value?.closest('.overflow-y-auto');
+    if (byClass) return byClass;
+    let el = articleRef.value?.parentElement;
+    while (el && el !== document.body) {
+        const oy = getComputedStyle(el).overflowY;
+        if (oy === 'auto' || oy === 'scroll') return el;
+        el = el.parentElement;
+    }
+    return window;
+}
+
 function scrollToTop() {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    getScroller().scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 // ── Rating (S4.2) ────────────────────────────────────────────────────
@@ -486,12 +504,21 @@ async function removeJustification(ratingId) {
 // ── Tempo estimado de leitura ────────────────────────────────────────
 const readingMinutes = computed(() => {
     const raw = String(article.value?.body || '');
-    if (!raw.trim()) return 0;
     const clean = raw
         .replace(/@\[[A-Z_]+:[^\]]+\]/g, ' ')
         .replace(/[*_#>()`\[\]]/g, ' ');
     const words = clean.split(/\s+/).filter(Boolean).length;
-    return Math.max(1, Math.round(words / 200));
+    const textMin = raw.trim() ? Math.max(1, Math.round(words / 200)) : 0;
+
+    // Inclui a duração dos vídeos embutidos (payload.embeds[].durationSec).
+    let p = article.value?.payload;
+    if (typeof p === 'string') { try { p = JSON.parse(p); } catch { p = null; } }
+    const videoSec = (Array.isArray(p?.embeds) ? p.embeds : [])
+        .filter((e) => String(e?.type).toUpperCase() === 'VIDEO')
+        .reduce((s, e) => s + (Number(e?.durationSec) || 0), 0);
+    const videoMin = videoSec > 0 ? Math.ceil(videoSec / 60) : 0;
+
+    return textMin + videoMin;
 });
 
 // ── Copiar link do artigo ────────────────────────────────────────────
@@ -512,7 +539,6 @@ const proseRef = ref(null);
 const articleRef = ref(null);
 const outline = ref([]);
 const activeId = ref('');
-let headingObserver = null;
 
 async function extractOutline() {
     await nextTick();
@@ -532,24 +558,24 @@ async function extractOutline() {
         .filter((o) => o.id && o.text);
 
     if (outline.value.length) activeId.value = outline.value[0].id;
-    setupHeadingObserver();
+    updateActiveHeading();
 }
 
-function setupHeadingObserver() {
-    if (headingObserver) { headingObserver.disconnect(); headingObserver = null; }
-    if (!proseRef.value) return;
-    const heads = Array.from(proseRef.value.querySelectorAll('h1, h2, h3'))
-        .filter((h) => h.id && h.offsetParent !== null);
-    if (!heads.length) return;
-
-    headingObserver = new IntersectionObserver((entries) => {
-        const visible = entries
-            .filter((e) => e.isIntersecting)
-            .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
-        if (visible.length) activeId.value = visible[0].target.id;
-    }, { rootMargin: '-88px 0px -65% 0px', threshold: 0 });
-
-    heads.forEach((h) => headingObserver.observe(h));
+// Destaca a seção atual no índice — dirigido pelo SCROLL (o IntersectionObserver
+// não dispara de forma confiável dentro do container interno do shell). Roda junto
+// com a barra de progresso, no mesmo listener do container que rola de verdade.
+function updateActiveHeading() {
+    const items = outline.value;
+    if (!items.length) return;
+    const offset = 120; // ~logo abaixo do header fixo
+    let current = items[0].id;
+    for (const o of items) {
+        const el = document.getElementById(o.id);
+        if (!el) continue;
+        if (el.getBoundingClientRect().top - offset <= 0) current = o.id;
+        else break;
+    }
+    activeId.value = current;
 }
 
 function scrollToHeading(id) {
@@ -558,6 +584,19 @@ function scrollToHeading(id) {
     if (!el) return;
     el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     activeId.value = id;
+}
+
+// ── Lightbox de imagens (clicar numa imagem do artigo → abrir/zoom/tela cheia) ─
+const lbOpen = ref(false);
+const lbImages = ref([]);
+const lbIndex = ref(0);
+function onProseImageClick(e) {
+    const img = e.target?.closest?.('img');
+    if (!img || !proseRef.value?.contains(img)) return;
+    const imgs = Array.from(proseRef.value.querySelectorAll('img'));
+    lbImages.value = imgs.map((n) => ({ src: n.currentSrc || n.src, alt: n.getAttribute('alt') || '' }));
+    lbIndex.value = Math.max(0, imgs.indexOf(img));
+    lbOpen.value = true;
 }
 
 // ── Barra de progresso de leitura ────────────────────────────────────
@@ -570,9 +609,13 @@ function computeProgress() {
     const rect = el.getBoundingClientRect();
     const vh = window.innerHeight || document.documentElement.clientHeight;
     const total = rect.height - vh;
-    if (total <= 0) { progress.value = rect.top <= 0 ? 100 : 0; return; }
-    const scrolled = Math.min(Math.max(-rect.top, 0), total);
-    progress.value = Math.round((scrolled / total) * 100);
+    if (total <= 0) {
+        progress.value = rect.top <= 0 ? 100 : 0;
+    } else {
+        const scrolled = Math.min(Math.max(-rect.top, 0), total);
+        progress.value = Math.round((scrolled / total) * 100);
+    }
+    updateActiveHeading();
 }
 function onScroll() {
     if (!rafPending) { rafPending = true; requestAnimationFrame(computeProgress); }
@@ -632,23 +675,25 @@ watch(() => article.value?.id, (id) => {
 watch(() => [route.params.categorySlug, route.params.articleSlug], () => {
     load().then(() => {
         nextTick(() => {
-            const scroller = articleRef.value?.closest('.overflow-y-auto');
-            if (scroller) scroller.scrollTo({ top: 0 });
-            else window.scrollTo({ top: 0 });
+            getScroller().scrollTo({ top: 0 });
         });
     });
 });
 
+let scrollerEl = null;
 onMounted(() => {
     load();
-    window.addEventListener('scroll', onScroll, { passive: true });
+    nextTick(() => {
+        scrollerEl = getScroller();
+        scrollerEl.addEventListener('scroll', onScroll, { passive: true });
+        computeProgress();
+    });
     window.addEventListener('resize', onScroll, { passive: true });
 });
 
 onBeforeUnmount(() => {
-    window.removeEventListener('scroll', onScroll);
+    scrollerEl?.removeEventListener?.('scroll', onScroll);
     window.removeEventListener('resize', onScroll);
-    if (headingObserver) headingObserver.disconnect();
 });
 </script>
 
@@ -703,12 +748,7 @@ onBeforeUnmount(() => {
     letter-spacing: -0.02em;
     line-height: 1.07;
     font-size: clamp(1.95rem, 1.2rem + 2.6vw, 3rem);
-    color: rgb(15 23 42);
     text-wrap: balance;
-}
-
-:global(.dark) .kb-title {
-    color: rgb(241 245 249);
 }
 
 /* ── Chips ──────────────────────────────────────────────────────────── */
@@ -721,16 +761,9 @@ onBeforeUnmount(() => {
     font-size: .72rem;
     font-weight: 600;
     letter-spacing: .01em;
-    color: rgb(71 85 105);
-    background: rgb(255 255 255 / .65);
-    border: 1px solid rgb(226 232 240);
+    border-width: 1px;
+    border-style: solid;
     backdrop-filter: blur(4px);
-}
-
-:global(.dark) .kb-chip {
-    color: rgb(148 163 184);
-    background: rgb(15 23 42 / .5);
-    border-color: rgb(51 65 85);
 }
 
 .kb-chip--accent {
@@ -772,18 +805,13 @@ onBeforeUnmount(() => {
 
 /* ── TOC fixa ───────────────────────────────────────────────────────── */
 .kb-toc {
-    border: 1px solid rgb(226 232 240);
+    border-width: 1px;
+    border-style: solid;
     border-radius: 1rem;
-    background: rgb(255 255 255 / .7);
     backdrop-filter: blur(6px);
     padding: .85rem;
     max-height: calc(100vh - 8rem);
     overflow-y: auto;
-}
-
-:global(.dark) .kb-toc {
-    border-color: rgb(30 41 59);
-    background: rgb(15 23 42 / .6);
 }
 
 .kb-toc__title {
@@ -791,7 +819,6 @@ onBeforeUnmount(() => {
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: .09em;
-    color: rgb(100 116 139);
     padding: .3rem .5rem .35rem;
 }
 
@@ -803,22 +830,14 @@ onBeforeUnmount(() => {
     padding: .38rem .6rem;
     font-size: .82rem;
     line-height: 1.35;
-    color: rgb(100 116 139);
     border-left: 2px solid transparent;
     transition: color .15s ease, background-color .15s ease, border-color .15s ease;
 }
 
+/* cor dos links via utilitárias Tailwind (text-slate-* / dark:text-slate-*) no
+   template — mais confiável que :global(.dark) no scoped. Aqui fica só o realce. */
 .kb-toc__link:hover {
-    color: rgb(15 23 42);
     background: rgb(var(--art) / 0.07);
-}
-
-:global(.dark) .kb-toc__link {
-    color: rgb(148 163 184);
-}
-
-:global(.dark) .kb-toc__link:hover {
-    color: rgb(241 245 249);
 }
 
 .kb-toc__link.lvl-3 {
@@ -880,6 +899,11 @@ onBeforeUnmount(() => {
 /* Parágrafos */
 .kb-reading :deep(.markdown p) {
     margin: 1.15rem 0;
+}
+
+/* Imagens dos artigos são clicáveis → abrem no visualizador (lightbox). */
+.kb-reading :deep(.markdown img) {
+    cursor: zoom-in;
 }
 
 /* Títulos */

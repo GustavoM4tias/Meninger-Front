@@ -21,8 +21,7 @@
               Empreendimento / Centro de Custo
             </label>
             <MultiSelector :model-value="selectedCostCenterNames" @update:modelValue="handleCostCenterChange"
-              :options="costCenterOptions" placeholder="Selecione empreendimentos" :page-size="200"
-              :disabled="isSyncing" />
+              :options="costCenterOptions" placeholder="Selecione empreendimentos" :page-size="200" />
           </div>
 
           <!-- Data Inicial -->
@@ -31,7 +30,7 @@
               <i class="fas fa-calendar-day text-accent text-[10px]"></i>
               Data Inicial
             </label>
-            <Input v-model="store.startDate" type="date" :disabled="isSyncing" />
+            <Input v-model="store.startDate" type="date" />
           </div>
 
           <!-- Data Final -->
@@ -40,7 +39,7 @@
               <i class="fas fa-calendar-check text-accent text-[10px]"></i>
               Data Final
             </label>
-            <Input v-model="store.endDate" type="date" :disabled="isSyncing" />
+            <Input v-model="store.endDate" type="date" />
           </div>
 
           <!-- Departamentos -->
@@ -51,28 +50,16 @@
             </label>
             <MultiSelector :model-value="store.selectedDepartments"
               @update:modelValue="v => store.selectedDepartments = Array.isArray(v) ? v : []"
-              :options="store.departmentsOptions" placeholder="Departamento" :page-size="200" :disabled="isSyncing" />
+              :options="store.departmentsOptions" placeholder="Departamento" :page-size="200" />
           </div>
 
           <!-- Botões -->
           <div class="md:col-span-2 flex flex-col gap-2">
             <Button variant="primary" icon="fas fa-filter" block
               :loading="store.isLoading"
-              :disabled="store.isLoading || !store.costCenterIds.length || isSyncing"
+              :disabled="store.isLoading || !store.costCenterIds.length"
               @click="store.fetchBills">
               {{ store.isLoading ? 'Carregando...' : 'Filtrar' }}
-            </Button>
-
-            <!-- Sincronizar Tudo — aparece só quando 1 empreendimento selecionado -->
-            <Button v-if="canSyncEnterprise"
-              variant="primary"
-              size="sm"
-              block
-              class="!bg-emerald-600 hover:!bg-emerald-700"
-              :icon="isSyncing ? 'fas fa-spinner fa-spin' : 'fas fa-cloud-arrow-down'"
-              :disabled="isSyncing || store.isLoading"
-              @click="startEnterpriseSync">
-              {{ isSyncing ? 'Sincronizando...' : 'Sincronizar Tudo' }}
             </Button>
           </div>
         </div>
@@ -93,95 +80,6 @@
           </div>
         </Surface>
       </Surface>
-
-      <!-- Painel de Sync Completo -->
-      <transition name="slide-down">
-        <Surface v-if="syncStatus && syncStatus.phase !== null"
-          variant="raised"
-          padding="md"
-          class="mb-5 border-2 surface-gradient"
-          :class="{
-            'border-emerald-500/40 bg-emerald-500/10': syncStatus.phase === 'done',
-            'border-red-500/40 bg-red-500/10': syncStatus.phase === 'error',
-            'border-accent/40 bg-accent-soft': syncStatus.running,
-          }">
-          <div class="flex items-start justify-between gap-4">
-            <div class="flex-1 min-w-0">
-              <div class="flex items-center gap-3 mb-3">
-                <div class="h-9 w-9 rounded-xl grid place-items-center text-white shrink-0"
-                  :class="{
-                    'bg-emerald-500': syncStatus.phase === 'done',
-                    'bg-red-500': syncStatus.phase === 'error',
-                    'bg-accent': syncStatus.running,
-                  }">
-                  <i :class="{
-                    'fas fa-check': syncStatus.phase === 'done',
-                    'fas fa-times': syncStatus.phase === 'error',
-                    'fas fa-arrows-rotate fa-spin': syncStatus.running,
-                  }"></i>
-                </div>
-                <div class="min-w-0">
-                  <h3 class="font-semibold text-ink text-sm">
-                    Sincronização Completa do Empreendimento
-                  </h3>
-                  <p class="text-xs text-ink-muted">{{ syncPhaseLabel }}</p>
-                </div>
-              </div>
-
-              <!-- Barra de progresso -->
-              <div v-if="syncStatus.running" class="mb-3">
-                <div class="h-2 bg-surface-sunken rounded-full overflow-hidden">
-                  <div class="h-full bg-accent rounded-full transition-all duration-500"
-                    :style="{ width: syncProgressPct + '%' }">
-                  </div>
-                </div>
-                <div class="flex justify-between text-[11px] text-ink-muted mt-1 font-mono tabular-nums">
-                  <span>{{ syncProgressLabel }}</span>
-                  <span>{{ syncProgressPct }}%</span>
-                </div>
-              </div>
-
-              <!-- Resultado final (done) -->
-              <div v-if="syncStatus.phase === 'done' && syncStatus.result" class="grid grid-cols-3 gap-3 text-center">
-                <Surface variant="raised" padding="sm">
-                  <div class="text-lg font-bold text-emerald-600 dark:text-emerald-400 font-mono tabular-nums">
-                    {{ syncStatus.result.total }}
-                  </div>
-                  <div class="text-[10px] text-ink-subtle uppercase tracking-wider">Títulos</div>
-                </Surface>
-                <Surface variant="raised" padding="sm">
-                  <div class="text-lg font-bold text-accent font-mono tabular-nums">
-                    {{ syncStatus.result.missingDeps }}
-                  </div>
-                  <div class="text-[10px] text-ink-subtle uppercase tracking-wider">Departamentos novos</div>
-                </Surface>
-                <Surface variant="raised" padding="sm">
-                  <div class="text-lg font-bold text-purple-600 dark:text-purple-400 font-mono tabular-nums">
-                    {{ syncStatus.result.missingInst }}
-                  </div>
-                  <div class="text-[10px] text-ink-subtle uppercase tracking-wider">Parcelas novas</div>
-                </Surface>
-              </div>
-
-              <!-- Erro -->
-              <Surface v-if="syncStatus.phase === 'error'" variant="raised" padding="sm"
-                class="border-red-500/30 bg-red-500/10">
-                <p class="text-sm text-red-700 dark:text-red-400 flex items-center gap-2">
-                  <i class="fas fa-circle-exclamation"></i>{{ syncStatus.error }}
-                </p>
-              </Surface>
-            </div>
-
-            <!-- Botão fechar (só quando finalizado) -->
-            <IconButton v-if="!syncStatus.running"
-              icon="fas fa-times"
-              label="Fechar"
-              variant="ghost"
-              size="sm"
-              @click="syncStatus = null" />
-          </div>
-        </Surface>
-      </transition>
 
       <!-- Summary Card -->
       <Surface variant="raised" padding="md" class="mb-5 surface-gradient">
@@ -312,12 +210,10 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useBillsStore } from '@/stores/Financeiro/Bills/billsStore';
 import { useContractsStore } from '@/stores/Comercial/Contracts/contractsStore';
 import { useCostCenterNamesStore } from '@/stores/Financeiro/costCenterNamesStore';
-import API_URL from '@/config/apiUrl';
-import { requestWithAuth } from '@/utils/Auth/requestWithAuth';
 
 import PageContainer from '@/components/UI/PageContainer.vue';
 import PageHeader from '@/components/UI/PageHeader.vue';
@@ -361,127 +257,6 @@ function handleCostCenterChange(v) {
     .map(name => costCenterIdByName.value.get(name))
     .filter(id => Number.isFinite(id));
 }
-
-// ── Sync completo de empreendimento ───────────────────────────────────────────
-const syncStatus = ref(null);
-const canSyncEnterprise = computed(() => store.costCenterIds.length === 1);
-const isSyncing = computed(() => syncStatus.value?.running === true);
-
-let pollTimer = null;
-
-const syncPhaseLabels = {
-  starting:     'Iniciando...',
-  fetching:     'Buscando títulos no Sienge...',
-  upserting:    'Salvando títulos no banco...',
-  departments:  'Processando departamentos...',
-  installments: 'Processando parcelas e despesas...',
-  done:         'Sincronização concluída!',
-  error:        'Erro durante a sincronização',
-};
-
-const syncPhaseLabel = computed(() =>
-  syncPhaseLabels[syncStatus.value?.phase] || syncStatus.value?.phase || '...'
-);
-
-const syncProgressPct = computed(() => {
-  const s = syncStatus.value;
-  if (!s?.running) return 100;
-
-  if (s.phase === 'fetching') {
-    if (!s.total) return 5;
-    return Math.min(20, Math.round((s.fetched / s.total) * 20));
-  }
-  if (s.phase === 'upserting') {
-    if (!s.total) return 20;
-    return 20 + Math.round((s.done / s.total) * 20);
-  }
-  if (s.phase === 'departments') {
-    if (!s.total) return 40;
-    return 40 + Math.round((s.done / s.total) * 25);
-  }
-  if (s.phase === 'installments') {
-    if (!s.total) return 65;
-    return 65 + Math.round((s.done / s.total) * 34);
-  }
-  return 5;
-});
-
-const syncProgressLabel = computed(() => {
-  const s = syncStatus.value;
-  if (!s) return '';
-  if (s.phase === 'fetching') return `${s.fetched ?? 0} / ${s.total ?? '?'} títulos`;
-  if (s.phase === 'upserting') return `${s.done ?? 0} / ${s.total ?? '?'} salvos`;
-  if (s.phase === 'departments') return `${s.done ?? 0} / ${s.total ?? '?'} departamentos`;
-  if (s.phase === 'installments') return `${s.done ?? 0} / ${s.total ?? '?'} parcelas`;
-  return '';
-});
-
-async function pollSyncStatus() {
-  const costCenterId = store.costCenterIds[0];
-  if (!costCenterId) return;
-
-  try {
-    const data = await requestWithAuth(
-      `${API_URL}/sienge/bills/sync-enterprise/status/${costCenterId}`
-    );
-    syncStatus.value = data;
-
-    if (!data.running) {
-      stopPolling();
-    }
-  } catch (err) {
-    console.warn('[Títulos] Falha ao consultar status do sync:', err.message);
-  }
-}
-
-function startPolling() {
-  stopPolling();
-  pollTimer = setInterval(pollSyncStatus, 2500);
-}
-
-function stopPolling() {
-  if (pollTimer) {
-    clearInterval(pollTimer);
-    pollTimer = null;
-  }
-}
-
-async function startEnterpriseSync() {
-  const costCenterId = store.costCenterIds[0];
-  if (!costCenterId) return;
-
-  try {
-    syncStatus.value = {
-      running: true,
-      phase: 'starting',
-      fetched: 0,
-      total: null,
-      done: 0,
-    };
-
-    await requestWithAuth(`${API_URL}/sienge/bills/sync-enterprise`, {
-      method: 'POST',
-      body: JSON.stringify({ costCenterId }),
-    });
-
-    startPolling();
-  } catch (err) {
-    syncStatus.value = {
-      running: false,
-      phase: 'error',
-      error: err.message,
-    };
-  }
-}
-
-onUnmounted(() => stopPolling());
-
-watch(() => store.costCenterIds, () => {
-  if (!isSyncing.value) {
-    stopPolling();
-    syncStatus.value = null;
-  }
-});
 
 // ── Status badge ──────────────────────────────────────────────────────────────
 function statusBadgeVariant(status) {

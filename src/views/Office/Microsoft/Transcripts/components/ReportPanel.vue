@@ -74,10 +74,10 @@
         <table class="w-full text-sm">
           <thead>
             <tr class="bg-surface-sunken/60 text-left">
-              <th class="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">Tarefa</th>
-              <th class="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide hidden sm:table-cell">Responsável</th>
-              <th class="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide hidden md:table-cell">Prazo</th>
-              <th class="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">Prioridade</th>
+              <th class="px-4 py-2 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Tarefa</th>
+              <th class="px-4 py-2 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide hidden sm:table-cell">Responsável</th>
+              <th class="px-4 py-2 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide hidden md:table-cell">Prazo</th>
+              <th class="px-4 py-2 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Prioridade</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-line">
@@ -106,11 +106,11 @@
           class="flex items-center gap-3 px-4 py-3">
           <input type="checkbox" v-model="item.concluido"
             class="w-4 h-4 accent-teal-500 cursor-pointer shrink-0" />
-          <span :class="item.concluido ? 'line-through text-gray-400' : 'text-ink-muted'"
+          <span :class="item.concluido ? 'line-through text-gray-400 dark:text-slate-500' : 'text-ink-muted'"
             class="text-sm flex-1 transition-all">
             {{ item.item }}
           </span>
-          <span v-if="item.responsavel" class="text-xs text-gray-400 shrink-0">{{ item.responsavel }}</span>
+          <span v-if="item.responsavel" class="text-xs text-gray-400 dark:text-slate-500 shrink-0">{{ item.responsavel }}</span>
         </div>
       </div>
     </section>
