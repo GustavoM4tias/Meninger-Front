@@ -180,6 +180,13 @@ const presets = [
     examples: ['Maria', 'Resumo de Leads da Semana'],
     buttons: [{ text: 'SIM' }, { text: 'NÃO' }],
   },
+  {
+    name: 'alert_share_v1',
+    label: 'Compartilhamento de alerta (sistema)',
+    body: 'Olá *{{1}}*! O usuário *{{2}}* quer compartilhar o alerta *{{3}}* com você no Menin Office. Ele é enviado {{4}}. Toque em *SIM* para aceitar e passar a receber, ou em *NÃO* para recusar.',
+    examples: ['Maria', 'João Silva', 'Resumo de Leads da Semana', 'todo dia às 08:00'],
+    buttons: [{ text: 'SIM' }, { text: 'NÃO' }],
+  },
 ];
 
 const applyPreset = (p) => {

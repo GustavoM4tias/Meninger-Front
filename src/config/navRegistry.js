@@ -35,6 +35,8 @@
  *   route     — caminho da rota (deve bater com office.routes.js)
  *   name      — nome de exibição
  *   icon      — classe FontAwesome
+ *   iconImg   — (opcional) URL de PNG/SVG (em /public) p/ logos de marca; vence o icon
+ *   iconColor — (opcional) cor fixa do ícone (ex.: '#25D366'); usa o glifo da marca
  *   section   — (opcional) query param ?section= para navegação interna
  *   adminOnly — (opcional) true = visível apenas para admin
  * ─────────────────────────────────────────────────────────────────────────────
@@ -43,6 +45,20 @@
 export const navRegistry = [
 
     // ═══ OPERAÇÃO ═══════════════════════════════════════════════════════════════
+
+    // ── Checklists (lançamentos e demandas) ────────────────────────────────────
+    {
+        key: 'checklist',
+        label: 'Checklists',
+        icon: 'fas fa-list-check',
+        group: 'OPERAÇÃO',
+        pages: [
+            { route: '/checklists', section: 'Painel', name: 'Painel', icon: 'fas fa-gauge-high' },
+            { route: '/checklists', section: 'Checklists', name: 'Checklists', icon: 'fas fa-list-check' },
+            { route: '/checklists', section: 'Minhas Tarefas', name: 'Minhas Tarefas', icon: 'fas fa-user-check' },
+            { route: '/checklists/cobranca', name: 'Cobrança (régua)', icon: 'fas fa-bell', adminOnly: true },
+        ],
+    },
 
     // ── Marketing ──────────────────────────────────────────────────────────────
     {
@@ -67,7 +83,7 @@ export const navRegistry = [
                 icon: 'fas fa-magnet',
                 pages: [
                     { route: '/marketing/captacao', name: 'Captação de Leads', icon: 'fas fa-inbox', adminOnly: true },
-                    { route: '/marketing/formularios', name: 'Formulários', icon: 'fas fa-square-poll-vertical', adminOnly: true },
+                    { route: '/marketing/formularios', name: 'Formulários', icon: 'fas fa-list-check', adminOnly: true },
                     { route: '/marketing/settings', name: 'Config. Captação', icon: 'fas fa-sliders', adminOnly: true },
                 ],
             },
@@ -155,9 +171,28 @@ export const navRegistry = [
                 pages: [
                     { route: '/financeiro/paymentflow', section: 'Fluxo de Pagamento', name: 'Fluxo de Pagamento', icon: 'fas fa-diagram-project' },
                     { route: '/financeiro/boleto-caixa', name: 'Boleto Caixa', icon: 'fas fa-barcode', adminOnly: true },
-                    { route: '/financeiro/auto-sync', name: 'Auto-Sync Títulos', icon: 'fas fa-arrows-rotate', adminOnly: true },
                 ],
             },
+        ],
+    },
+
+    // ── Academy (Conhecimento & Trilhas) ───────────────────────────────────────
+    // Academy migrado para dentro do Office — área /academy renderizada DENTRO do
+    // OfficeShell (nav do Office). permissionManaged:false → visível a todos os
+    // usuários Office, fora das Alçadas. O "Painel" é o hub do Academy (destaques,
+    // dúvidas, comunidade, nível/conquistas) — entra aqui para acesso direto, sem
+    // precisar passar pela KB/Trilhas e voltar.
+    {
+        key: 'academy',
+        label: 'Academy',
+        icon: 'fas fa-graduation-cap',
+        group: 'OPERAÇÃO',
+        permissionManaged: false,
+        pages: [
+            { route: '/academy/panel', name: 'Painel', icon: 'fas fa-gauge-high', permissionManaged: false },
+            { route: '/academy/kb', name: 'Base de Conhecimento', icon: 'fas fa-book-open', permissionManaged: false },
+            { route: '/academy/tracks', name: 'Trilhas', icon: 'fas fa-route', permissionManaged: false },
+            { route: '/academy/admin', name: 'Gestão do Academy', icon: 'fas fa-shield-halved', adminOnly: true },
         ],
     },
 
@@ -171,10 +206,10 @@ export const navRegistry = [
         group: 'RECURSOS',
         requiresMicrosoft: true,
         pages: [
-            { route: '/microsoft/sharepoint',  section: 'SharePoint',        name: 'SharePoint',        icon: 'fas fa-folder-open' },
-            { route: '/microsoft/teams',       section: 'Teams',             name: 'Teams',             icon: 'fas fa-people-group' },
-            { route: '/microsoft/planner',     section: 'Planner',           name: 'Planner',           icon: 'fas fa-table-columns' },
-            { route: '/microsoft/transcripts', section: 'Transcrições & IA', name: 'Transcrições & IA', icon: 'fas fa-file-waveform' },
+            { route: '/microsoft/sharepoint',  section: 'SharePoint',        name: 'SharePoint',        icon: 'fas fa-folder-open',   iconImg: '/icons/ms-sharepoint.svg' },
+            { route: '/microsoft/teams',       section: 'Teams',             name: 'Teams',             icon: 'fas fa-people-group',  iconImg: '/icons/ms-teams.svg' },
+            { route: '/microsoft/planner',     section: 'Planner',           name: 'Planner',           icon: 'fas fa-table-columns', iconImg: '/icons/ms-planner.svg' },
+            { route: '/microsoft/transcripts', section: 'Transcrições & IA', name: 'Transcrições & IA', icon: 'fas fa-wand-magic-sparkles' },
             // { route: '/microsoft/inperson',    name: 'Reuniões Presenciais',  icon: 'fas fa-people-group' },
         ],
     },
@@ -187,8 +222,8 @@ export const navRegistry = [
         iconColor: '#0866FF',
         group: 'RECURSOS',
         pages: [
-            { route: '/marketing/campanhas', name: 'Campanhas Meta', icon: 'fas fa-rectangle-ad', adminOnly: true },
-            { route: '/settings/whatsapp', section: 'WhatsApp', name: 'WhatsApp', icon: 'fab fa-whatsapp', adminOnly: true },
+            { route: '/marketing/campanhas', name: 'Campanhas Meta', icon: 'fas fa-rectangle-ad', iconColor: '#0866FF', adminOnly: true },
+            { route: '/settings/whatsapp', section: 'WhatsApp', name: 'WhatsApp', icon: 'fab fa-whatsapp', iconColor: '#25D366', adminOnly: true },
             { route: '/tools/whatsapp-automations', section: 'Automações WhatsApp', name: 'Automações WhatsApp', icon: 'fas fa-robot', adminOnly: true },
         ],
     },
@@ -232,6 +267,14 @@ export const navRegistry = [
                 icon: 'fas fa-microchip',
                 pages: [
                     { route: '/tools/eme-brain', section: 'Cérebro da Eme', name: 'Cérebro da Eme', icon: 'fas fa-brain', adminOnly: true },
+                ],
+            },
+            {
+                key: 'communication',
+                name: 'Comunicação',
+                icon: 'fas fa-comments',
+                pages: [
+                    { route: '/mural/admin', section: 'Mural de Avisos', name: 'Mural de Avisos', icon: 'fas fa-thumbtack', adminOnly: true },
                 ],
             },
         ],

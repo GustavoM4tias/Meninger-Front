@@ -2,13 +2,13 @@
   <div class="min-h-[calc(100vh-3.5rem)] flex flex-col">
 
     <!-- Top bar -->
-    <div class="shrink-0 bg-surface-raised border-b border-line px-4 sm:px-6 py-3">
+    <div class="shrink-0 bg-surface-raised border-b border-line px-4 sm:px-6 pt-5 pb-4">
       <div class="flex items-center gap-3 flex-wrap">
 
         <!-- Identidade Planner -->
         <div class="flex items-center gap-2 mr-2 min-w-0">
-          <div class="h-9 w-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 grid place-items-center shrink-0">
-            <i class="fas fa-table-columns text-emerald-500 text-sm"></i>
+          <div class="h-9 w-9 rounded-xl bg-surface-sunken border border-line grid place-items-center shrink-0 overflow-hidden">
+            <img src="/icons/ms-planner.svg" alt="" class="h-7 w-7 object-contain" />
           </div>
           <div class="hidden sm:block min-w-0">
             <p class="text-sm font-semibold text-ink leading-tight">Microsoft Planner</p>

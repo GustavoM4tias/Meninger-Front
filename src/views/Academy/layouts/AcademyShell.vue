@@ -85,20 +85,25 @@
                             :collapsed="desktopCollapsed">
                             <template #icon><i class="fa-solid fa-book-open"></i></template>
                         </NavItem>
-                        <NavItem :to="{ name: 'AcademyCommunity' }" label="Comunidade" data-tour="nav-community"
+                        <!-- Comunidade: standby no MVP Office (rota segue montada). -->
+                        <NavItem v-if="false" :to="{ name: 'AcademyCommunity' }" label="Comunidade" data-tour="nav-community"
                             :collapsed="desktopCollapsed">
                             <template #icon><i class="fa-solid fa-comments"></i></template>
                         </NavItem>
 
-                        <p v-if="!desktopCollapsed" class="nav-group">Você</p>
-                        <div v-else class="nav-sep"></div>
+                        <!-- Grupo "Você" (Meu perfil + Pessoas): standby no MVP Office.
+                             Rotas seguem montadas; para reativar, remover o v-if="false". -->
+                        <template v-if="false">
+                            <p v-if="!desktopCollapsed" class="nav-group">Você</p>
+                            <div v-else class="nav-sep"></div>
 
-                        <NavItem :to="{ name: 'AcademyMe' }" label="Meu perfil" :collapsed="desktopCollapsed">
-                            <template #icon><i class="fa-solid fa-circle-user"></i></template>
-                        </NavItem>
-                        <NavItem :to="{ name: 'AcademyUsers' }" label="Pessoas" :collapsed="desktopCollapsed">
-                            <template #icon><i class="fa-solid fa-users"></i></template>
-                        </NavItem>
+                            <NavItem :to="{ name: 'AcademyMe' }" label="Meu perfil" :collapsed="desktopCollapsed">
+                                <template #icon><i class="fa-solid fa-circle-user"></i></template>
+                            </NavItem>
+                            <NavItem :to="{ name: 'AcademyUsers' }" label="Pessoas" :collapsed="desktopCollapsed">
+                                <template #icon><i class="fa-solid fa-users"></i></template>
+                            </NavItem>
+                        </template>
 
                         <template v-if="authStore?.user?.role === 'admin'">
                             <p v-if="!desktopCollapsed" class="nav-group">Gestão</p>
@@ -130,7 +135,8 @@
                             <router-view />
                         </div>
                     </div>
-                    <AcademyTutorChat />
+                    <!-- Eme própria do Academy removida — o assistente é a Eme do
+                         Office (OfficeChatFloat). Componente preservado, não montado. -->
                 </main>
             </div>
         </div>
@@ -144,7 +150,6 @@ import NavItem from '@/views/Academy/components/NavItem.vue';
 import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 import InputSearch from '@/views/Academy/layouts/InputSearch.vue';
 import Profile from '@/views/Academy/components/Profile.vue';
-import AcademyTutorChat from '@/views/Academy/components/AcademyTutorChat.vue';
 import { officeUrl } from '@/utils/appContext';
 
 const authStore = useAuthStore();

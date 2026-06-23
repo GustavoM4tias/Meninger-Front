@@ -51,7 +51,7 @@
                         </label>
 
                         <div class="md:col-span-12">
-                            <AudienceSelector v-model="form.audiences" />
+                            <DepartmentSelector v-model="form.departmentIds" />
                             <p class="mt-2 text-[11px] text-slate-500 dark:text-slate-400">
                                 <i class="fa-solid fa-circle-info mr-1"></i>
                                 Cada artigo vinculado precisa cobrir TODOS os públicos selecionados aqui.
@@ -105,9 +105,7 @@
 <script setup>
 import { computed, reactive, ref, watch, onBeforeUnmount } from 'vue';
 import { useAcademyTracksAdminStore } from '@/stores/Academy/academyTracksAdminStore';
-import AudienceSelector from '@/views/Academy/components/AudienceSelector.vue';
-
-const DEFAULT_AUDIENCES = ['INTERNAL', 'GESTOR', 'BROKER', 'REALESTATE', 'CORRESPONDENT'];
+import DepartmentSelector from '@/views/Academy/components/DepartmentSelector.vue';
 
 const props = defineProps({
     open: { type: Boolean, default: false },
@@ -125,7 +123,7 @@ const form = reactive({
     title: '',
     description: '',
     status: 'DRAFT',
-    audiences: DEFAULT_AUDIENCES.slice(),
+    departmentIds: [],
     slug: '',
 });
 
@@ -156,9 +154,9 @@ watch(
             form.title = String(i.title || '');
             form.description = String(i.description || '');
             form.status = String(i.status || 'DRAFT').toUpperCase();
-            form.audiences = Array.isArray(i.audiences) && i.audiences.length
-                ? i.audiences.slice()
-                : DEFAULT_AUDIENCES.slice();
+            form.departmentIds = Array.isArray(i.departmentIds)
+                ? i.departmentIds.map(Number).filter(Number.isFinite)
+                : [];
             form.slug = ''; // só no create
 
             error.value = null;
@@ -181,10 +179,6 @@ function validate() {
     const st = String(form.status || 'DRAFT').toUpperCase();
     if (!['DRAFT', 'PUBLISHED'].includes(st)) return 'Status inválido.';
 
-    if (!Array.isArray(form.audiences) || !form.audiences.length) {
-        return 'Selecione ao menos um público em "Visibilidade".';
-    }
-
     return '';
 }
 
@@ -200,7 +194,7 @@ async function save() {
             title: String(form.title || '').trim(),
             description: String(form.description || '').trim(),
             status: String(form.status || 'DRAFT').toUpperCase(),
-            audiences: Array.isArray(form.audiences) ? form.audiences.slice() : [],
+            departmentIds: Array.isArray(form.departmentIds) ? form.departmentIds.slice() : [],
         };
 
         if (props.mode === 'create') {

@@ -100,7 +100,7 @@
                                             <i class="fa-regular fa-folder text-xs text-slate-400"></i>
                                             <span class="text-slate-800 dark:text-slate-200">{{ c.name }}</span>
                                         </span>
-                                        <span class="font-mono text-[10px] text-slate-400">{{ c.slug }}</span>
+                                        <span class="font-mono text-[10px] text-slate-400 dark:text-slate-500">{{ c.slug }}</span>
                                     </button>
                                 </div>
                             </Transition>
@@ -113,7 +113,7 @@
                         <div class="relative">
                             <label
                                 class="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
-                                Subcategoria <span class="font-normal normal-case text-slate-400">(opcional)</span>
+                                Subcategoria <span class="font-normal normal-case text-slate-400 dark:text-slate-500">(opcional)</span>
                             </label>
                             <div class="relative mt-1.5">
                                 <input v-model="subcategorySlug" type="text" list="kb-subcats" placeholder="Ex: cartorio"
@@ -129,8 +129,8 @@
                     </div>
                 </section>
 
-                <!-- Visibilidade (públicos) -->
-                <AudienceSelector v-model="audiences" />
+                <!-- Visibilidade (por departamento) -->
+                <DepartmentSelector v-model="departmentIds" />
 
                 <!-- Quem pode editar (além do autor + admin) -->
                 <EditorsSelector v-model="editorUserIds" :seed="editorSeed" />
@@ -313,7 +313,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router';
 
 import AcademyPageHeader from '@/views/Academy/components/AcademyPageHeader.vue';
-import AudienceSelector from '@/views/Academy/components/AudienceSelector.vue';
+import DepartmentSelector from '@/views/Academy/components/DepartmentSelector.vue';
 import EditorsSelector from '@/views/Academy/components/EditorsSelector.vue';
 import TokenEditor from '@/views/Academy/components/TokenEditor.vue';
 import TokenRenderer from '@/views/Academy/components/TokenRenderer.vue';
@@ -338,11 +338,9 @@ const title = ref('');
 const categorySlug = ref('');
 const body = ref('');
 const payload = ref({ embeds: [], widgets: { quiz: {}, task: {} } });
-// audiences = set canônico da classe de visibilidade (modelo de 4 classes:
-// Interno | Externo | Ambos | Somente admin). Artigo novo nasce INTERNO —
-// padrão SEGURO: conteúdo interno nunca vaza por esquecimento.
-const DEFAULT_AUDIENCES = ['INTERNAL', 'GESTOR'];
-const audiences = ref(DEFAULT_AUDIENCES.slice());
+// departmentIds = visibilidade por departamento. [] = GERAL (todos do Office veem);
+// [ids] = só esses departamentos (+ admin). Artigo novo nasce GERAL.
+const departmentIds = ref([]);
 // Editores adicionais (além do autor + admin). Array de ids; seed = objetos.
 const editorUserIds = ref([]);
 const editorSeed = ref([]);
@@ -487,7 +485,7 @@ const savingError = ref(false);
 const lastSavedAt = ref(null);
 
 const canSave = computed(() =>
-    !!(title.value.trim() && categorySlug.value.trim() && audiences.value.length > 0)
+    !!(title.value.trim() && categorySlug.value.trim())
 );
 
 let saveTimer = null;
@@ -499,7 +497,7 @@ function scheduleAutoSave() {
     saveTimer = setTimeout(() => save({ auto: true }), 2000);
 }
 
-watch([title, categorySlug, subcategorySlug, body, payload, audiences, editorUserIds], () => {
+watch([title, categorySlug, subcategorySlug, body, payload, departmentIds, editorUserIds], () => {
     if (!loaded.value) return;
     dirty.value = true;
     savingError.value = false;
@@ -524,7 +522,7 @@ async function save({ auto = false } = {}) {
                 subcategorySlug: subcategorySlug.value.trim(),
                 body: body.value,
                 payload: payload.value,
-                audiences: audiences.value.slice(),
+                departmentIds: departmentIds.value.slice(),
                 editorUserIds: editorUserIds.value.slice(),
             });
             if (token !== saveToken) return;
@@ -537,7 +535,7 @@ async function save({ auto = false } = {}) {
                 subcategorySlug: subcategorySlug.value.trim(),
                 body: body.value,
                 payload: payload.value,
-                audiences: audiences.value.slice(),
+                departmentIds: departmentIds.value.slice(),
                 editorUserIds: editorUserIds.value.slice(),
             });
             if (token !== saveToken) return;
@@ -565,14 +563,14 @@ async function saveAndCreateAnother() {
 
     const keptCategory = categorySlug.value;
     const keptSubcategory = subcategorySlug.value;
-    const keptAudiences = audiences.value.slice();
+    const keptDepartmentIds = departmentIds.value.slice();
     articleId.value = null;
     title.value = '';
     body.value = '';
     payload.value = { embeds: [], widgets: { quiz: {}, task: {} } };
     categorySlug.value = keptCategory;
     subcategorySlug.value = keptSubcategory;
-    audiences.value = keptAudiences;
+    departmentIds.value = keptDepartmentIds;
     editorUserIds.value = [];
     editorSeed.value = [];
     admin.lastSaved = null;
@@ -753,9 +751,9 @@ onMounted(async () => {
             payload.value = a.payload && typeof a.payload === 'object'
                 ? a.payload
                 : { embeds: [], widgets: { quiz: {}, task: {} } };
-            audiences.value = Array.isArray(a.audiences) && a.audiences.length
-                ? a.audiences.slice()
-                : DEFAULT_AUDIENCES.slice();
+            departmentIds.value = Array.isArray(a.departmentIds)
+                ? a.departmentIds.map(Number).filter(Number.isFinite)
+                : [];
             editorUserIds.value = Array.isArray(a.editorUserIds) ? a.editorUserIds.slice() : [];
             editorSeed.value = Array.isArray(a.editors) ? a.editors.slice() : [];
             admin.lastSaved = a;

@@ -19,7 +19,7 @@
                 <p class="text-xs text-ink-muted truncate max-w-xs">{{ meeting?.subject }}</p>
               </div>
             </div>
-            <button @click="$emit('close')" class="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:bg-surface-hover transition-colors">
+            <button @click="$emit('close')" class="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 dark:text-gray-500 hover:bg-surface-hover transition-colors">
               <i class="fas fa-times"></i>
             </button>
           </div>
@@ -51,14 +51,14 @@
                   @keydown.tab.prevent="addEmail"
                   type="email"
                   placeholder="nome@empresa.com"
-                  class="flex-1 px-3 py-2 rounded-xl border border-line bg-surface-sunken text-sm text-ink focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent placeholder:text-gray-400"
+                  class="flex-1 px-3 py-2 rounded-xl border border-line bg-surface-sunken text-sm text-ink focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent placeholder:text-gray-400 dark:placeholder:text-gray-500"
                 />
                 <button @click="addEmail" :disabled="!newEmail.trim()"
                   class="px-3 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium transition-colors disabled:opacity-40 shrink-0">
                   <i class="fas fa-plus"></i>
                 </button>
               </div>
-              <p class="text-xs text-gray-400 mt-1.5">Pressione Enter para adicionar · Participantes da reunião são pré-selecionados</p>
+              <p class="text-xs text-gray-400 dark:text-gray-500 mt-1.5">Pressione Enter para adicionar · Participantes da reunião são pré-selecionados</p>
             </div>
 
             <!-- Assunto -->
@@ -73,11 +73,11 @@
             <!-- Observações -->
             <div>
               <label class="block text-xs font-semibold text-ink-muted mb-2">
-                <i class="fas fa-comment-alt mr-1 text-purple-500"></i> Observações <span class="font-normal text-gray-400">(opcional)</span>
+                <i class="fas fa-comment-alt mr-1 text-purple-500"></i> Observações <span class="font-normal text-gray-400 dark:text-gray-500">(opcional)</span>
               </label>
               <textarea v-model="observations" rows="3"
                 placeholder="Adicione um comentário ou nota que será incluído no e-mail..."
-                class="w-full px-3 py-2 rounded-xl border border-line bg-surface-sunken text-sm text-ink focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent placeholder:text-gray-400 resize-none" />
+                class="w-full px-3 py-2 rounded-xl border border-line bg-surface-sunken text-sm text-ink focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent placeholder:text-gray-400 dark:placeholder:text-gray-500 resize-none" />
             </div>
 
             <!-- Preview do que será enviado -->
@@ -112,7 +112,7 @@
 
           <!-- Footer -->
           <div class="flex items-center justify-between gap-3 px-6 py-4 border-t border-line shrink-0">
-            <p class="text-xs text-gray-400">{{ recipients.length }} destinatário(s)</p>
+            <p class="text-xs text-gray-400 dark:text-gray-500">{{ recipients.length }} destinatário(s)</p>
             <div class="flex gap-2">
               <button @click="$emit('close')"
                 class="px-4 py-2 rounded-xl border border-line text-sm text-ink-muted hover:bg-surface-hover transition-colors">

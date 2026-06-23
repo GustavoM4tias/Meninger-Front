@@ -12,7 +12,7 @@ export const useBillsStore = defineStore('bills', () => {
     const today = dayjs();
     const costCenterIds = ref([]);
     // Período padrão: 1º de janeiro do ano anterior → hoje.
-    // O auto-sync diário mantém o banco populado, então a consulta é barata mesmo em janela longa.
+    // Leitura AO VIVO do backup do Sienge (com cache no backend), barata mesmo em janela longa.
     const startDate = ref(today.subtract(1, 'year').startOf('year').format('YYYY-MM-DD'));
     const endDate = ref(today.format('YYYY-MM-DD'));
 
@@ -39,7 +39,7 @@ export const useBillsStore = defineStore('bills', () => {
     });
 
     // dateRangeWarning preservado para compatibilidade com a tela, mas hoje sempre null —
-    // o auto-sync diário tornou desnecessário limitar o range de consulta.
+    // a leitura ao vivo do backup tornou desnecessário limitar o range de consulta.
     const dateRangeWarning = computed(() => null);
 
     async function fetchBills() {

@@ -29,7 +29,7 @@ const filteredBuildings = computed(() => {
         <Carrossel v-if="filteredBuildings.length > 0"
             class="duration-300 transform hover:scale-[101%] my-auto"
             :buildings="filteredBuildings" />
-        <div v-else class="relative rounded-xl flex overflow-hidden h-[30vh] max-h-[100%] bg-gray-700 text-xl text-gray-500">
+        <div v-else class="relative rounded-xl flex overflow-hidden h-[30vh] max-h-[100%] bg-gray-700 text-xl text-gray-500 dark:text-slate-400">
             <p class="m-auto">Nenhum empreendimento encontrado.</p>
         </div>
     </div>

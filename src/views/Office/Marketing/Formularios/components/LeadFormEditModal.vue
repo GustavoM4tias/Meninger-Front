@@ -406,7 +406,7 @@ const sections = computed(() => {
         <span v-if="isEdit" :class="['inline-flex shrink-0 rounded-md border px-2 py-0.5 text-[11px] font-medium',
           form?.active
             ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 border-emerald-500/20'
-            : 'bg-slate-500/10 text-slate-500 border-slate-500/20']">
+            : 'bg-slate-500/10 text-slate-500 dark:text-slate-400 border-slate-500/20']">
           {{ form?.active ? 'Ativo' : 'Inativo' }}
         </span>
         <button @click="close" class="shrink-0 text-ink-subtle hover:text-ink p-1">

@@ -29,21 +29,6 @@
                 </select>
             </div>
 
-            <!-- Bloqueadas -->
-            <div :class="companyId == null ? 'opacity-50 pointer-events-none' : ''">
-                <h4 class="text-sm font-semibold text-ink flex items-center gap-2 mb-1">
-                    <i class="fas fa-lock text-ink-subtle"></i>
-                    Bloqueadas consideradas disponíveis
-                </h4>
-                <p class="text-xs text-ink-muted mb-2">
-                    O CV marca <strong>{{ blockedUnits }}</strong> unidade(s) como bloqueada(s). Informe quantas devem
-                    entrar no estoque disponível para marketing (padrão <strong>0</strong>). Reservadas sempre contam.
-                </p>
-                <div class="max-w-[10rem]">
-                    <Input v-model="blockedAvail" type="number" />
-                </div>
-            </div>
-
             <!-- Exceções de departamento -->
             <div :class="companyId == null ? 'opacity-50 pointer-events-none' : ''">
                 <h4 class="text-sm font-semibold text-ink flex items-center gap-2 mb-1">
@@ -92,7 +77,6 @@ import { ref, computed, watch } from 'vue';
 import { useViabilityAdminStore } from '@/stores/Marketing/Viability/viabilityAdminStore';
 import Modal from '@/components/UI/Modal.vue';
 import Button from '@/components/UI/Button.vue';
-import Input from '@/components/UI/Input.vue';
 import EmptyState from '@/components/UI/EmptyState.vue';
 
 const props = defineProps({
@@ -103,7 +87,6 @@ const emit = defineEmits(['close', 'saved']);
 
 const adminStore = useViabilityAdminStore();
 
-const blockedAvail = ref(0);
 const overrideState = ref({});
 const statusOverride = ref(''); // '' = automático
 const saving = ref(false);
@@ -113,7 +96,6 @@ const companyId = computed(() => props.company?.companyId ?? props.company?.head
 const companyName = computed(
     () => props.company?.enterpriseName || props.company?.header?.companyName || 'Empresa'
 );
-const blockedUnits = computed(() => Number(props.company?.header?.blockedUnits || 0));
 const known = computed(() => adminStore.known || []);
 
 watch(() => props.open, async (v) => {
@@ -125,7 +107,6 @@ watch(() => props.open, async (v) => {
     const cur = (adminStore.enterpriseSettings || []).find(
         (e) => String(e.company_id) === String(companyId.value)
     );
-    blockedAvail.value = Number(cur?.blocked_considered_available || 0);
     statusOverride.value = cur?.status_override || '';
 
     const ov = cur?.marketing_dept_overrides || {};
@@ -151,7 +132,6 @@ async function save() {
             else if (st === 'not') overrides[d] = false;
         }
         await adminStore.setEnterpriseSettings(companyId.value, {
-            blocked_considered_available: Math.max(0, Number(blockedAvail.value || 0)),
             marketing_dept_overrides: overrides,
             status_override: statusOverride.value || null,
         });

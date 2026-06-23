@@ -50,7 +50,7 @@ export const useAcademyKbAdminStore = defineStore('academyKbAdmin', {
             }
         },
 
-        async createArticle({ title, categorySlug, subcategorySlug, body, payload = null, aliases, audiences, editorUserIds }) {
+        async createArticle({ title, categorySlug, subcategorySlug, body, payload = null, aliases, audiences, editorUserIds, departmentIds }) {
             this.error = null;
 
             try {
@@ -66,6 +66,7 @@ export const useAcademyKbAdminStore = defineStore('academyKbAdmin', {
                 if (Array.isArray(aliases)) requestBody.aliases = aliases;
                 if (Array.isArray(audiences)) requestBody.audiences = audiences;
                 if (Array.isArray(editorUserIds)) requestBody.editorUserIds = editorUserIds;
+                if (Array.isArray(departmentIds)) requestBody.departmentIds = departmentIds;
 
                 const data = await requestWithAuth('/academy/kb/articles', {
                     method: 'POST',
@@ -87,7 +88,7 @@ export const useAcademyKbAdminStore = defineStore('academyKbAdmin', {
             }
         },
 
-        async updateArticle(id, { title, categorySlug, subcategorySlug, body, payload = null, aliases, audiences, editorUserIds }) {
+        async updateArticle(id, { title, categorySlug, subcategorySlug, body, payload = null, aliases, audiences, editorUserIds, departmentIds }) {
             this.error = null;
 
             const safeId = safeNumber(id, 0);
@@ -106,6 +107,7 @@ export const useAcademyKbAdminStore = defineStore('academyKbAdmin', {
                 if (Array.isArray(aliases)) requestBody.aliases = aliases;
                 if (Array.isArray(audiences)) requestBody.audiences = audiences;
                 if (Array.isArray(editorUserIds)) requestBody.editorUserIds = editorUserIds;
+                if (Array.isArray(departmentIds)) requestBody.departmentIds = departmentIds;
 
                 const data = await requestWithAuth(`/academy/kb/articles/${safeId}`, {
                     method: 'PATCH',

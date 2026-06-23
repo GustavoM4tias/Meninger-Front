@@ -13,8 +13,7 @@ function getToken() {
 export const useExpensesStore = defineStore('expenses', () => {
     const carregamento = useCarregamentoStore();
 
-    // Período padrão: 1º de janeiro do ano anterior → hoje.
-    // Mostra o panorama completo recente, alimentado pelo auto-sync diário.
+    // Período padrão: mês corrente. Leitura AO VIVO do backup do Sienge.
     const startDate = ref(dayjs().startOf('month').format('YYYY-MM-DD'));
     const endDate = ref(dayjs().format('YYYY-MM-DD'));
     const data = ref(null);                       // { startDate, endDate, total, groups: [...] }

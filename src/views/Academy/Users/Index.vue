@@ -59,28 +59,28 @@
                                     <div class="mt-2 flex flex-wrap items-center gap-1.5">
                                         <span
                                             class="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] dark:bg-slate-800">
-                                            <i class="fa-solid fa-book text-[9px] text-slate-400"></i>
+                                            <i class="fa-solid fa-book text-[9px] text-slate-400 dark:text-slate-500"></i>
                                             <span class="font-semibold text-slate-700 dark:text-slate-200">{{
                                                 u.kb?.published ?? 0 }}</span>
                                             <span class="text-slate-500 dark:text-slate-400">artigos</span>
                                         </span>
                                         <span
                                             class="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] dark:bg-slate-800">
-                                            <i class="fa-solid fa-reply text-[9px] text-slate-400"></i>
+                                            <i class="fa-solid fa-reply text-[9px] text-slate-400 dark:text-slate-500"></i>
                                             <span class="font-semibold text-slate-700 dark:text-slate-200">{{
                                                 u.community?.answersPosted ?? 0 }}</span>
                                             <span class="text-slate-500 dark:text-slate-400">respostas</span>
                                         </span>
                                         <span
                                             class="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] dark:bg-slate-800">
-                                            <i class="fa-solid fa-comments text-[9px] text-slate-400"></i>
+                                            <i class="fa-solid fa-comments text-[9px] text-slate-400 dark:text-slate-500"></i>
                                             <span class="font-semibold text-slate-700 dark:text-slate-200">{{
                                                 u.community?.topicsCreated ?? 0 }}</span>
                                             <span class="text-slate-500 dark:text-slate-400">tópicos</span>
                                         </span>
                                         <span
                                             class="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] dark:bg-slate-800">
-                                            <i class="fa-solid fa-route text-[9px] text-slate-400"></i>
+                                            <i class="fa-solid fa-route text-[9px] text-slate-400 dark:text-slate-500"></i>
                                             <span class="font-semibold text-slate-700 dark:text-slate-200">{{
                                                 u.tracks?.completed ?? 0 }}</span>
                                             <span class="text-slate-500 dark:text-slate-400">trilhas</span>

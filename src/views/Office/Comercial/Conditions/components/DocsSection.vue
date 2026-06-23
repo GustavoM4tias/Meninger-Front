@@ -14,7 +14,7 @@
               class="flex items-center gap-2 px-3.5 py-2 rounded-md border cursor-pointer transition-all text-sm font-medium select-none"
               :class="form.cef_package_paid_by === opt.value
                 ? 'border-accent bg-accent-soft text-accent shadow-sm'
-                : 'border-line text-ink-muted bg-surface-raised/60 hover:border-gray-300'"
+                : 'border-line text-ink-muted bg-surface-raised/60 hover:border-gray-300 dark:hover:border-gray-600'"
               :style="readonly ? 'pointer-events:none;opacity:.75' : ''">
               <input type="radio" :value="opt.value" :checked="form.cef_package_paid_by === opt.value"
                 @change="set('cef_package_paid_by', opt.value)" class="sr-only" :disabled="readonly" />
@@ -126,7 +126,7 @@
               class="flex items-center gap-2 px-3.5 py-2 rounded-md border cursor-pointer transition-all text-sm font-medium select-none"
               :class="form.cartorio_paid_by === opt.value
                 ? 'border-accent bg-accent-soft text-accent shadow-sm'
-                : 'border-line text-ink-muted bg-surface-raised/60 hover:border-gray-300'"
+                : 'border-line text-ink-muted bg-surface-raised/60 hover:border-gray-300 dark:hover:border-gray-600'"
               :style="readonly ? 'pointer-events:none;opacity:.75' : ''">
               <input type="radio" :value="opt.value" :checked="form.cartorio_paid_by === opt.value"
                 @change="set('cartorio_paid_by', opt.value)" class="sr-only" :disabled="readonly" />
@@ -155,7 +155,7 @@
               <span class="text-ink-muted">{{ item.label }}</span>
               <strong class="text-ink">{{ formatCurrency(item.value) }}</strong>
             </li>
-            <li v-if="!costSummary.menin.length" class="text-gray-400 italic">Nenhum custo atribuído</li>
+            <li v-if="!costSummary.menin.length" class="text-gray-400 dark:text-gray-500 italic">Nenhum custo atribuído</li>
           </ul>
           <div class="mt-3 pt-3 border-t border-line flex justify-between text-sm">
             <span class="font-semibold text-ink">Total</span>
@@ -169,7 +169,7 @@
               <span class="text-ink-muted">{{ item.label }}</span>
               <strong class="text-ink">{{ formatCurrency(item.value) }}</strong>
             </li>
-            <li v-if="!costSummary.client.length" class="text-gray-400 italic">Nenhum custo atribuído</li>
+            <li v-if="!costSummary.client.length" class="text-gray-400 dark:text-gray-500 italic">Nenhum custo atribuído</li>
           </ul>
           <div class="mt-3 pt-3 border-t border-line flex justify-between text-sm">
             <span class="font-semibold text-ink">Total</span>

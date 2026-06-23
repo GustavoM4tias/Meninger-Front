@@ -4,7 +4,7 @@
     <!-- Loading overlay -->
     <div v-if="loading"
       class="absolute inset-0 z-10 flex items-center justify-center bg-white/60 dark:bg-gray-900/60 backdrop-blur-sm rounded-b-2xl">
-      <div class="flex items-center gap-2 text-gray-400">
+      <div class="flex items-center gap-2 text-gray-400 dark:text-slate-500">
         <i class="fas fa-circle-notch animate-spin"></i>
         <span class="text-sm">Carregando...</span>
       </div>
@@ -49,7 +49,7 @@
           <!-- "+" create hint (só aparece no hover) -->
           <button
             @click.stop="$emit('slot-click', { date: day, hour: 9, minute: 0 })"
-            class="opacity-0 group-hover/cell:opacity-100 w-4 h-4 rounded flex items-center justify-center text-gray-400 hover:text-violet-600 dark:hover:text-violet-400 hover:bg-violet-100 dark:hover:bg-violet-900/30 transition-all text-[9px]">
+            class="opacity-0 group-hover/cell:opacity-100 w-4 h-4 rounded flex items-center justify-center text-gray-400 dark:text-slate-500 hover:text-violet-600 dark:hover:text-violet-400 hover:bg-violet-100 dark:hover:bg-violet-900/30 transition-all text-[9px]">
             <i class="fas fa-plus"></i>
           </button>
         </div>
@@ -82,7 +82,7 @@
     <!-- Empty state -->
     <div v-if="!loading && !hasAnyEvent" class="py-16 text-center pointer-events-none">
       <i class="fas fa-calendar-xmark text-4xl text-ink-subtle mb-3 block"></i>
-      <p class="text-sm text-gray-400">Nenhum evento neste mês</p>
+      <p class="text-sm text-gray-400 dark:text-slate-500">Nenhum evento neste mês</p>
     </div>
 
   </div>
@@ -100,7 +100,7 @@
           <div class="flex items-center justify-between px-3 py-2 border-b border-line shrink-0">
             <span class="text-xs font-semibold text-ink">{{ popupDayLabel }}</span>
             <button @click="closePopup"
-              class="w-5 h-5 rounded flex items-center justify-center text-gray-400 hover:bg-surface-hover transition-colors">
+              class="w-5 h-5 rounded flex items-center justify-center text-gray-400 dark:text-slate-500 hover:bg-surface-hover transition-colors">
               <i class="fas fa-times text-[9px]"></i>
             </button>
           </div>
@@ -193,7 +193,7 @@ function overflowCount(day) {
 
 // ── Chip / dot colors ─────────────────────────────────────────────────────────
 function chipClass(ev) {
-  if (ev.isCancelled)     return 'bg-surface-sunken text-gray-400 line-through';
+  if (ev.isCancelled)     return 'bg-surface-sunken text-gray-400 dark:text-slate-500 line-through';
   if (ev.isAllDay)        return 'bg-blue-500 text-white';
   if (ev.isOnlineMeeting) return 'bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300';
   return 'bg-accent-soft text-accent';

@@ -260,11 +260,11 @@ const CLASSIFICACAO_TRIBUTARIA = [
                         class="rounded-xl bg-surface-sunken border border-line px-4 py-3 flex items-start gap-3">
                         <i class="fas fa-circle-xmark text-red-500 mt-0.5 flex-shrink-0"></i>
                         <div>
-                            <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-0.5">Fornecedor não
+                            <div class="text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-0.5">Fornecedor não
                                 encontrado no Sienge</div>
                             <div class="text-sm font-semibold text-ink">{{ launch.providerName || '—'
                                 }}</div>
-                            <div class="text-xs font-mono text-gray-500">{{ launch.providerCnpj || '—' }}</div>
+                            <div class="text-xs font-mono text-gray-500 dark:text-slate-400">{{ launch.providerCnpj || '—' }}</div>
                         </div>
                     </div>
                 </div>
@@ -342,7 +342,7 @@ const CLASSIFICACAO_TRIBUTARIA = [
                                         ? 'bg-amber-500 text-white shadow'
                                         : step > idx + 1
                                             ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-                                            : 'bg-gray-100 dark:bg-gray-800 text-gray-400'"
+                                            : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-slate-500'"
                                     @click="step > idx + 1 ? (step = idx + 1) : null">
                                     <i v-if="step > idx + 1" class="fas fa-check text-[10px]"></i>
                                     <span>{{ idx + 1 }}. {{ label }}</span>
@@ -356,7 +356,7 @@ const CLASSIFICACAO_TRIBUTARIA = [
 
                         <!-- ═══════════════════ STEP 1: IDENTIFICAÇÃO ═══════════════════ -->
                         <template v-if="step === 1">
-                            <div class="text-xs font-bold text-gray-500 uppercase tracking-wider">1. Identificação do
+                            <div class="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider">1. Identificação do
                                 Fornecedor</div>
 
                             <div class="grid grid-cols-2 gap-3">
@@ -447,7 +447,7 @@ const CLASSIFICACAO_TRIBUTARIA = [
 
                         <!-- ═══════════════════ STEP 2: QUALIFICAÇÃO ═══════════════════ -->
                         <template v-else-if="step === 2">
-                            <div class="text-xs font-bold text-gray-500 uppercase tracking-wider">2. Qualificação para
+                            <div class="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider">2. Qualificação para
                                 Fornecimento</div>
 
                             <!-- 2.1 Sistema de qualidade -->
@@ -593,7 +593,7 @@ const CLASSIFICACAO_TRIBUTARIA = [
 
                         <!-- ═══════════════════ STEP 3: REVISÃO E ENVIO ═══════════════════ -->
                         <template v-else-if="step === 3">
-                            <div class="text-xs font-bold text-gray-500 uppercase tracking-wider">Revisar e Enviar</div>
+                            <div class="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Revisar e Enviar</div>
 
                             <!-- Resumo identificação -->
                             <div class="rounded-xl bg-surface-sunken border border-line p-4 space-y-1 text-xs">
@@ -614,9 +614,9 @@ const CLASSIFICACAO_TRIBUTARIA = [
                             <!-- Outros Anexos -->
                             <div class="rounded-xl bg-surface-sunken border border-line p-4 space-y-2">
                                 <div class="font-semibold text-xs text-gray-700 dark:text-gray-200 flex items-center gap-2">
-                                    <i class="fas fa-paperclip text-gray-400"></i>
+                                    <i class="fas fa-paperclip text-gray-400 dark:text-slate-500"></i>
                                     Outros Anexos
-                                    <span class="text-gray-400 font-normal">(opcional)</span>
+                                    <span class="text-gray-400 dark:text-slate-500 font-normal">(opcional)</span>
                                 </div>
                                 <p class="text-xs text-ink-muted">
                                     Documentos adicionais que serão enviados junto com a RID no email.
@@ -627,7 +627,7 @@ const CLASSIFICACAO_TRIBUTARIA = [
                                     <div v-for="(file, idx) in outrosAnexos" :key="idx"
                                         class="flex items-center justify-between bg-white dark:bg-gray-700 rounded-lg px-3 py-1.5 text-xs border border-gray-200 dark:border-gray-600">
                                         <span class="text-gray-700 dark:text-gray-200 truncate">
-                                            <i class="fas fa-file mr-1.5 text-gray-400"></i>{{ file.name }}
+                                            <i class="fas fa-file mr-1.5 text-gray-400 dark:text-slate-500"></i>{{ file.name }}
                                         </span>
                                         <button @click="removerAnexo(idx)"
                                             class="ml-2 text-red-400 hover:text-red-600 transition flex-shrink-0">
@@ -694,7 +694,7 @@ const CLASSIFICACAO_TRIBUTARIA = [
 
                     <!-- Info automação -->
                     <div class="mx-6 mb-5 rounded-xl bg-surface-sunken/50 border border-line px-4 py-3 flex items-start gap-3">
-                        <i class="fas fa-robot text-gray-400 mt-0.5 flex-shrink-0 text-sm"></i>
+                        <i class="fas fa-robot text-gray-400 dark:text-slate-500 mt-0.5 flex-shrink-0 text-sm"></i>
                         <p class="text-xs text-ink-muted">
                             Após o envio, o sistema verificará a cada
                             <strong class="text-ink">20 minutos</strong>
@@ -729,7 +729,7 @@ const CLASSIFICACAO_TRIBUTARIA = [
 }
 
 .radio-opt input[type="radio"] {
-    @apply h-4 w-4 border-gray-300 text-blue-600 focus:ring-blue-500 accent-blue-600 cursor-pointer;
+    @apply h-4 w-4 border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500 accent-blue-600 cursor-pointer;
 }
 
 .btn-primary {

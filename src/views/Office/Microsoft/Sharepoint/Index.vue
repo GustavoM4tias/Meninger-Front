@@ -20,7 +20,7 @@
     <PageContainer size="full">
       <PageHeader
         subtitle="Navegue, visualize e gerencie seus arquivos"
-        icon="fas fa-folder-tree">
+        icon-img="/icons/ms-sharepoint.svg">
         <template #title>SharePoint</template>
         <template #actions>
           <Button v-if="sp.selectedDrive"

@@ -15,7 +15,7 @@
               <i class="fas fa-file-contract text-blue-500"></i>
               <span class="text-sm font-bold text-ink">
                 Ficha Comercial — {{ detail?.enterprise?.nome }}
-                <span class="ml-2 text-xs font-normal text-gray-400">{{ currentMonthLabel }}</span>
+                <span class="ml-2 text-xs font-normal text-gray-400 dark:text-slate-500">{{ currentMonthLabel }}</span>
               </span>
             </div>
             <div class="flex items-center gap-2">
@@ -24,7 +24,7 @@
                 <i class="fas fa-file-pdf text-xs"></i> Exportar PDF
               </button>
               <button @click="closeDocModal"
-                class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 transition">
+                class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition">
                 <i class="fas fa-times text-sm"></i>
               </button>
             </div>
@@ -98,10 +98,10 @@
                       <span class="text-sm font-medium text-ink truncate">{{ t.nome }}</span>
                       <div class="flex items-center gap-2 flex-shrink-0">
                         <span v-if="t.vigente" class="badge-green">vigente</span>
-                        <span class="text-xs text-gray-400">{{ formatDate(t.data_vigencia_de) }} → {{ formatDate(t.data_vigencia_ate) }}</span>
+                        <span class="text-xs text-gray-400 dark:text-slate-500">{{ formatDate(t.data_vigencia_de) }} → {{ formatDate(t.data_vigencia_ate) }}</span>
                       </div>
                     </div>
-                    <div v-if="t.unit_count > 0" class="text-xs text-gray-500 flex gap-3 pl-0 flex-wrap">
+                    <div v-if="t.unit_count > 0" class="text-xs text-gray-500 dark:text-slate-400 flex gap-3 pl-0 flex-wrap">
                       <span><strong>{{ t.unit_count }}</strong> unidades</span>
                       <span v-if="t.price_min != null">{{ formatCurrencyShort(t.price_min) }} — {{ formatCurrencyShort(t.price_max) }}</span>
                     </div>
@@ -114,10 +114,10 @@
                 <div class="info-card-body campaign-row">
                   <div v-for="(camp, ci) in modActiveCampaigns(mod)" :key="camp.id ?? ci" class="campaign-card">
                     <p class="text-sm font-bold text-ink">{{ camp.title }}</p>
-                    <p v-if="camp.description" class="text-xs text-gray-500 mt-0.5">{{ camp.description }}</p>
+                    <p v-if="camp.description" class="text-xs text-gray-500 dark:text-slate-400 mt-0.5">{{ camp.description }}</p>
                     <div class="flex gap-3 mt-1 flex-wrap">
                       <span v-if="camp.value" class="campaign-value">{{ formatCurrency(camp.value) }}</span>
-                      <span v-if="camp.start_date" class="text-xs text-gray-400">{{ formatDate(camp.start_date) }}{{ camp.end_date ? ` → ${formatDate(camp.end_date)}` : '' }}</span>
+                      <span v-if="camp.start_date" class="text-xs text-gray-400 dark:text-slate-500">{{ formatDate(camp.start_date) }}{{ camp.end_date ? ` → ${formatDate(camp.end_date)}` : '' }}</span>
                     </div>
                   </div>
                 </div>
@@ -136,12 +136,12 @@
         <div class="flex items-center gap-2">
           <button @click="navigatePrev" :disabled="!prevItem"
             :class="['w-7 h-7 flex items-center justify-center rounded-lg transition text-xs',
-              prevItem ? 'text-gray-500 hover:text-gray-800 dark:hover:text-white hover:bg-white dark:hover:bg-gray-700 shadow-sm border border-line'
+              prevItem ? 'text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-white hover:bg-white dark:hover:bg-gray-700 shadow-sm border border-line'
                        : 'text-ink-subtle cursor-not-allowed']">
             <i class="fas fa-chevron-left"></i>
           </button>
           <div class="flex items-center gap-2">
-            <span class="text-xs text-gray-500 font-medium">Ref:</span>
+            <span class="text-xs text-gray-500 dark:text-slate-400 font-medium">Ref:</span>
             <span class="text-sm font-bold text-gray-800 dark:text-white">{{ currentMonthLabel }}</span>
             <!-- Status badge -->
             <span v-if="wasRejected && detail?.status === 'draft'"
@@ -154,7 +154,7 @@
           </div>
           <button @click="navigateNext" :disabled="!nextItem"
             :class="['w-7 h-7 flex items-center justify-center rounded-lg transition text-xs',
-              nextItem ? 'text-gray-500 hover:text-gray-800 dark:hover:text-white hover:bg-white dark:hover:bg-gray-700 shadow-sm border border-line'
+              nextItem ? 'text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-white hover:bg-white dark:hover:bg-gray-700 shadow-sm border border-line'
                        : 'text-ink-subtle cursor-not-allowed']">
             <i class="fas fa-chevron-right"></i>
           </button>
@@ -357,14 +357,14 @@
                   <span class="field-label">Comissão</span>
                   <span class="field-value" :class="mod.commission_pct == null ? 'field-empty' : ''">
                     {{ mod.commission_pct != null ? `${parseFloat(mod.commission_pct).toFixed(1)}%` : 'Não informado' }}
-                    <span v-if="mod.commission_pct != null" class="text-xs text-gray-400 ml-1">({{ mod.commission_source === 'cv' ? 'via CV' : 'manual' }})</span>
+                    <span v-if="mod.commission_pct != null" class="text-xs text-gray-400 dark:text-slate-500 ml-1">({{ mod.commission_source === 'cv' ? 'via CV' : 'manual' }})</span>
                   </span>
                 </div>
                 <div class="field-item">
                   <span class="field-label">Prazo de Entrega</span>
                   <span class="field-value" :class="mod.delivery_deadline_months == null ? 'field-empty' : ''">
                     {{ mod.delivery_deadline_months != null ? `${mod.delivery_deadline_months} meses` : 'Não informado' }}
-                    <span v-if="mod.delivery_deadline_note" class="block text-xs text-gray-400 mt-0.5">{{ mod.delivery_deadline_note }}</span>
+                    <span v-if="mod.delivery_deadline_note" class="block text-xs text-gray-400 dark:text-slate-500 mt-0.5">{{ mod.delivery_deadline_note }}</span>
                   </span>
                 </div>
               </div>
@@ -424,7 +424,7 @@
                     <span class="field-label block mb-1">CCA</span>
                     <span class="field-value block leading-snug break-words" :class="!mod.cca_company_name ? 'field-empty' : ''">
                       {{ mod.cca_company_name || 'Nome não informado' }}
-                      <span class="block mt-1 text-xs font-medium" :class="mod.cca_charges_company ? 'text-accent' : 'text-gray-400'">
+                      <span class="block mt-1 text-xs font-medium" :class="mod.cca_charges_company ? 'text-accent' : 'text-gray-400 dark:text-slate-500'">
                         <i :class="mod.cca_charges_company ? 'fa-square-check' : 'fa-square'" class="far mr-1"></i>
                         Pago pela Menin: <strong>{{ mod.cca_charges_company ? 'Sim' : 'Não' }}</strong>
                         <span v-if="mod.cca_charges_company && mod.cca_cost != null" class="ml-1 text-ink-muted">— {{ formatCurrency(mod.cca_cost) }}</span>
@@ -447,7 +447,7 @@
 
                         <span
                           v-if="modCorrespondent(mod).email"
-                          class="block mt-0.5 text-xs font-normal text-gray-400"
+                          class="block mt-0.5 text-xs font-normal text-gray-400 dark:text-slate-500"
                         >
                           {{ modCorrespondent(mod).email }}
                         </span>
@@ -474,7 +474,7 @@
 
                         <span
                           v-if="mod.digital_cert_contact"
-                          class="block mt-0.5 text-xs font-normal text-gray-400"
+                          class="block mt-0.5 text-xs font-normal text-gray-400 dark:text-slate-500"
                         >
                           {{ mod.digital_cert_contact }}
                         </span>
@@ -486,7 +486,7 @@
                         </span>
                         <span
                           v-else-if="mod.has_digital_cert"
-                          class="block mt-1 text-[10px] text-gray-400"
+                          class="block mt-1 text-[10px] text-gray-400 dark:text-slate-500"
                         >
                           Sem custo
                         </span>
@@ -609,7 +609,7 @@
                         <span v-if="f.appraisal_value != null" class="text-xs text-ink-muted">
                           Avaliação: <strong>{{ formatCurrency(f.appraisal_value) }}</strong>
                         </span>
-                        <span v-if="f.appraisal_ceiling != null" class="text-xs text-gray-500">
+                        <span v-if="f.appraisal_ceiling != null" class="text-xs text-gray-500 dark:text-slate-400">
                           Teto: <strong>{{ formatCurrency(f.appraisal_ceiling) }}</strong>
                         </span>
                         <span v-if="f.avg_ticket != null" class="text-xs text-accent">
@@ -656,7 +656,7 @@
                   <span class="field-label">Pacote CEF</span>
                   <span class="field-value">
                     {{ mod.cef_package_avg_value != null ? formatCurrency(mod.cef_package_avg_value) : 'Valor não informado' }}
-                    <span v-if="mod.cef_package_paid_by" class="block text-xs text-gray-400 mt-0.5">Pago por: <strong class="text-ink-muted">{{ mod.cef_package_paid_by === 'menin' ? 'Menin' : 'Cliente' }}</strong></span>
+                    <span v-if="mod.cef_package_paid_by" class="block text-xs text-gray-400 dark:text-slate-500 mt-0.5">Pago por: <strong class="text-ink-muted">{{ mod.cef_package_paid_by === 'menin' ? 'Menin' : 'Cliente' }}</strong></span>
                   </span>
                 </div>
                 <div class="field-item">
@@ -667,7 +667,7 @@
                     </template>
                     <template v-else-if="mod.itbi_avg_value != null">
                       {{ formatCurrency(mod.itbi_avg_value) }}
-                      <span class="block text-xs text-gray-400 mt-0.5">Pago por: <strong class="text-ink-muted">Cliente</strong></span>
+                      <span class="block text-xs text-gray-400 dark:text-slate-500 mt-0.5">Pago por: <strong class="text-ink-muted">Cliente</strong></span>
                     </template>
                     <template v-else>
                       <span class="field-empty">Não informado</span>
@@ -682,7 +682,7 @@
                   <span class="field-label">Cartório — Registro</span>
                   <span class="field-value">
                     {{ formatCurrency(mod.cartorio_registration_value) }}
-                    <span v-if="mod.cartorio_paid_by" class="block text-xs text-gray-400 mt-0.5">Pago por: <strong class="text-ink-muted">{{ mod.cartorio_paid_by === 'menin' ? 'Menin' : 'Cliente' }}</strong></span>
+                    <span v-if="mod.cartorio_paid_by" class="block text-xs text-gray-400 dark:text-slate-500 mt-0.5">Pago por: <strong class="text-ink-muted">{{ mod.cartorio_paid_by === 'menin' ? 'Menin' : 'Cliente' }}</strong></span>
                   </span>
                 </div>
               </div>
@@ -706,7 +706,7 @@
                       <span class="text-ink-muted">{{ item.label }}</span>
                       <strong class="text-ink">{{ formatCurrency(item.value) }}</strong>
                     </li>
-                    <li v-if="!modCostSummary(mod).menin.length" class="text-gray-400 italic">—</li>
+                    <li v-if="!modCostSummary(mod).menin.length" class="text-gray-400 dark:text-slate-500 italic">—</li>
                   </ul>
                   <div class="mt-2 pt-2 border-t border-line flex justify-between text-xs">
                     <span class="font-semibold text-ink">Total</span>
@@ -720,7 +720,7 @@
                       <span class="text-ink-muted">{{ item.label }}</span>
                       <strong class="text-ink">{{ formatCurrency(item.value) }}</strong>
                     </li>
-                    <li v-if="!modCostSummary(mod).client.length" class="text-gray-400 italic">—</li>
+                    <li v-if="!modCostSummary(mod).client.length" class="text-gray-400 dark:text-slate-500 italic">—</li>
                   </ul>
                   <div class="mt-2 pt-2 border-t border-line flex justify-between text-xs">
                     <span class="font-semibold text-ink">Total</span>
@@ -748,7 +748,7 @@
                       </div>
                       <div class="flex items-center gap-2 flex-shrink-0">
                         <span v-if="t.vigente" class="badge-green">vigente</span>
-                        <span class="text-xs text-gray-400">{{ formatDate(t.data_vigencia_de) }} → {{ formatDate(t.data_vigencia_ate) }}</span>
+                        <span class="text-xs text-gray-400 dark:text-slate-500">{{ formatDate(t.data_vigencia_de) }} → {{ formatDate(t.data_vigencia_ate) }}</span>
                       </div>
                     </div>
 
@@ -767,13 +767,13 @@
                         <div v-for="serie in t.unidades[0].series" :key="serie.nome" 
                           class="bg-surface-raised/60 p-2 rounded-lg border border-line flex flex-col justify-between flex-grow flex-shrink-0 basis-[calc(25%-0.5rem)] min-w-[120px] max-w-full">
                           
-                          <p class="text-[9px] text-gray-400 uppercase font-bold whitespace-normal leading-tight mb-1">
+                          <p class="text-[9px] text-gray-400 dark:text-slate-500 uppercase font-bold whitespace-normal leading-tight mb-1">
                             {{ serie.nome }}
                           </p>
                           
                           <div>
                             <p class="text-sm font-black text-ink">{{ formatCurrencyShort(serie.valor) }}</p>
-                            <p class="text-[10px] text-gray-500">
+                            <p class="text-[10px] text-gray-500 dark:text-slate-400">
                               {{ serie.qtd_parcelas }}x 
                               <span v-if="serie.data_vencimento" class="text-[9px]">({{ serie.data_vencimento.split('/')[2] }})</span>
                             </p>
@@ -805,7 +805,7 @@
                   <p v-if="camp.description" class="text-xs text-ink-muted mt-0.5">{{ camp.description }}</p>
                   <div class="flex items-center gap-3 mt-2 flex-wrap">
                     <span v-if="camp.value" class="campaign-value">{{ formatCurrency(camp.value) }}</span>
-                    <span v-if="camp.start_date" class="text-xs text-gray-400">
+                    <span v-if="camp.start_date" class="text-xs text-gray-400 dark:text-slate-500">
                       {{ formatDate(camp.start_date) }}{{ camp.end_date ? ` → ${formatDate(camp.end_date)}` : '' }}
                     </span>
                   </div>
@@ -824,7 +824,7 @@
             <div class="info-card-header">
               <i class="fas fa-home text-blue-500"></i>
               Unidades
-              <span class="ml-auto flex items-center gap-1.5 text-[10px] font-normal text-gray-400 normal-case tracking-normal">
+              <span class="ml-auto flex items-center gap-1.5 text-[10px] font-normal text-gray-400 dark:text-slate-500 normal-case tracking-normal">
                 <i class="fas fa-snowflake text-blue-400 text-[9px]"></i>
                 Congelado em {{ formatSnapshotDate(mod.unit_snapshot.capturedAt) }}
               </span>
@@ -847,7 +847,7 @@
                   <span class="w-2.5 h-2.5 rounded-full bg-gray-400 inline-block"></span>
                   <strong>{{ snapshotStats(mod).bloq }}</strong> Bloqueadas
                 </span>
-                <span class="text-gray-400">· Total: {{ snapshotStats(mod).total }}</span>
+                <span class="text-gray-400 dark:text-slate-500">· Total: {{ snapshotStats(mod).total }}</span>
               </div>
               <div class="space-y-4">
                 <div v-for="bloco in snapshotBlocos(mod)" :key="bloco.idbloco">
@@ -860,7 +860,7 @@
                       :class="['rounded px-1.5 py-1 text-center border text-[10px] leading-tight', unitStatusClass(u)]">
                       <p class="font-semibold text-ink truncate">{{ u.nome }}</p>
                       <p v-if="u.valor_total != null" class="text-accent font-bold">{{ formatCurrencyShort(u.valor_total) }}</p>
-                      <p v-if="u.area_privativa" class="text-gray-400">{{ Number(u.area_privativa).toFixed(2) }}m²</p>
+                      <p v-if="u.area_privativa" class="text-gray-400 dark:text-slate-500">{{ Number(u.area_privativa).toFixed(2) }}m²</p>
                     </div>
                   </div>
                 </div>
@@ -894,7 +894,7 @@
                 <span class="text-ink-muted">{{ item.label }}</span>
                 <strong class="text-ink">{{ formatCurrency(item.value) }}</strong>
               </li>
-              <li v-if="!fichaCosts.menin.length" class="text-gray-400 italic">—</li>
+              <li v-if="!fichaCosts.menin.length" class="text-gray-400 dark:text-slate-500 italic">—</li>
             </ul>
             <div class="mt-3 pt-3 border-t-2 border-accent/30 flex justify-between text-sm">
               <span class="font-bold text-ink">Total Menin</span>
@@ -910,7 +910,7 @@
                 <span class="text-ink-muted">{{ item.label }}</span>
                 <strong class="text-ink">{{ formatCurrency(item.value) }}</strong>
               </li>
-              <li v-if="!fichaCosts.client.length" class="text-gray-400 italic">—</li>
+              <li v-if="!fichaCosts.client.length" class="text-gray-400 dark:text-slate-500 italic">—</li>
             </ul>
             <div class="mt-3 pt-3 border-t-2 border-accent/30 flex justify-between text-sm">
               <span class="font-bold text-ink">Total Cliente</span>
@@ -922,7 +922,7 @@
 
       <!-- Rodapé — só impresso -->
       <div class="print-only print-footer">
-        <div class="flex items-center justify-between text-xs text-gray-400">
+        <div class="flex items-center justify-between text-xs text-gray-400 dark:text-slate-500">
           <span>Menin Office — Ficha Comercial Confidencial</span>
           <span>Gerado em {{ formatDateFull(new Date()) }}</span>
         </div>
@@ -2830,7 +2830,7 @@ function formatDateFull(date) {
     @apply p-3 rounded-lg bg-surface-sunken/40 border-l-2 border-line;
 }
 .note-block p { @apply text-sm text-ink-muted mt-0.5; }
-.note-label   { @apply block text-[10px] font-bold text-gray-400 uppercase tracking-wider; }
+.note-label   { @apply block text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider; }
 
 /* ── Separador de módulo no print ────────────────────────────────────────────── */
 .print-module-sep {

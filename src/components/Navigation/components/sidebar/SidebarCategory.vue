@@ -49,6 +49,8 @@ defineEmits(['toggle', 'toggleSub', 'expand', 'toggleFavorite']);
           <SidebarItem
             :to="{ path: item.route, query: item.section ? { section: item.section } : undefined }"
             :icon="item.icon || 'far fa-file'"
+            :icon-img="item.iconImg"
+            :icon-color="item.iconColor"
             :label="item.name"
             :collapsed="collapsed"
             :favorite="isFavorited(item.route, item.section)"
@@ -65,6 +67,8 @@ defineEmits(['toggle', 'toggleSub', 'expand', 'toggleFavorite']);
       <SidebarItem
         :to="{ path: item.route, query: item.section ? { section: item.section } : undefined }"
         :icon="item.icon || 'far fa-file'"
+        :icon-img="item.iconImg"
+        :icon-color="item.iconColor"
         :label="item.name"
         :collapsed="collapsed"
         :favorite="isFavorited(item.route, item.section)"

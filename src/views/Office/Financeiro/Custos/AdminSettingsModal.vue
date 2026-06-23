@@ -50,72 +50,6 @@
       </div>
     </div>
 
-    <!-- TAB: Empreendimentos -->
-    <div v-if="activeTab === 'overrides'" class="space-y-3">
-      <p class="text-xs text-ink-muted">
-        Sobreponha o nome exibido de um empreendimento (CC). A identidade continua sendo o CC —
-        apenas o nome de exibição é alterado. Edite direto na linha e clique em <i class="fas fa-check text-emerald-500"></i> para salvar.
-      </p>
-
-      <!-- Busca -->
-      <Input v-model="overrideSearch"
-        placeholder="Buscar por CC ou nome..."
-        icon-left="fas fa-magnifying-glass" />
-
-      <!-- Lista de CCs em uso, com edição inline -->
-      <div v-if="!availableCcs.length" class="text-center py-8 text-ink-subtle text-sm">
-        Nenhum centro de custo encontrado. Verifique se a tela Custos tem dados.
-      </div>
-
-      <div v-else class="border border-line rounded max-h-[60vh] overflow-y-auto">
-        <table class="w-full text-sm">
-          <thead class="bg-surface-sunken/60 border-b border-line sticky top-0 z-10">
-            <tr>
-              <th class="px-3 py-2 text-left text-[11px] font-mono uppercase tracking-wider text-ink-subtle w-20">CC</th>
-              <th class="px-3 py-2 text-left text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Nome de exibição</th>
-              <th class="px-3 py-2 text-right text-[11px] font-mono uppercase tracking-wider text-ink-subtle w-32">Ações</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-line/60">
-            <tr v-for="cc in filteredCcs" :key="cc.id"
-              class="hover:bg-surface-hover/40"
-              :class="{ 'bg-amber-50/30 dark:bg-amber-500/5': cc.hasOverride }">
-              <td class="px-3 py-2 font-mono tabular-nums align-middle">
-                <span class="flex items-center gap-1.5">
-                  {{ cc.id }}
-                  <i v-if="cc.hasOverride" class="fas fa-star text-amber-500 text-[10px]"
-                    title="Tem override ativo"></i>
-                </span>
-              </td>
-              <td class="px-2 py-1.5 align-middle">
-                <Input v-model="editing[cc.id]"
-                  :placeholder="cc.currentDisplayed || 'Sem nome'"
-                  size="sm" />
-              </td>
-              <td class="px-3 py-2 text-right align-middle whitespace-nowrap">
-                <IconButton v-if="canSave(cc)"
-                  icon="fas fa-check"
-                  size="sm" variant="primary"
-                  label="Salvar"
-                  :loading="rowSaving === cc.id"
-                  @click="saveRow(cc)" />
-                <IconButton v-if="cc.hasOverride"
-                  icon="fas fa-rotate-left"
-                  size="sm" variant="ghost"
-                  label="Restaurar padrão"
-                  @click="resetRow(cc)" />
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <div class="text-xs text-ink-subtle flex items-center gap-4">
-        <span><i class="fas fa-star text-amber-500"></i> = com override</span>
-        <span>{{ ccsWithOverride }} de {{ availableCcs.length }} com override</span>
-      </div>
-    </div>
-
     <template #footer>
       <Button variant="ghost" @click="$emit('close')">Fechar</Button>
     </template>
@@ -123,20 +57,17 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue';
+import { ref, watch } from 'vue';
 import { useToast } from 'vue-toastification';
 import { useExpensesAdminStore } from '@/stores/Financeiro/Expenses/expensesAdminStore';
 
 import Modal from '@/components/UI/Modal.vue';
-import Surface from '@/components/UI/Surface.vue';
 import Button from '@/components/UI/Button.vue';
-import IconButton from '@/components/UI/IconButton.vue';
 import Badge from '@/components/UI/Badge.vue';
-import Input from '@/components/UI/Input.vue';
 
 const props = defineProps({
   open: { type: Boolean, required: true },
-  // CCs disponíveis vindos da página Custos: [{ costCenterId, costCenterName }]
+  // mantido por compatibilidade com a página Custos (não usado aqui)
   costCenterGroups: { type: Array, default: () => [] },
 });
 const emit = defineEmits(['close', 'changed']);
@@ -147,74 +78,15 @@ const toast = (() => {
   catch { return { success: () => { }, error: console.error }; }
 })();
 
+// Nomes de empreendimento agora vêm da PROJEÇÃO (fonte única). Aqui só Departamentos.
 const tabs = [
   { key: 'departments', label: 'Departamentos', icon: 'fas fa-sitemap' },
-  { key: 'overrides', label: 'Nomes de Empreendimento', icon: 'fas fa-pen-to-square' },
 ];
 const activeTab = ref('departments');
 
-const overrideSearch = ref('');
-const editing = ref({});      // { [ccId]: newName }
-const rowSaving = ref(null);  // id do CC sendo salvo
-
 watch(() => props.open, async (open) => {
-  if (open) {
-    await Promise.all([
-      adminStore.fetchDepartments(),
-      adminStore.fetchOverrides(),
-    ]);
-    seedEditing();
-  }
+  if (open) await adminStore.fetchDepartments();
 });
-
-// Pré-preenche o input de cada CC com o valor atualmente exibido (override ou padrão)
-function seedEditing() {
-  const next = {};
-  const overrideByCc = new Map(adminStore.overrides.map(o => [Number(o.cost_center_id), o.display_name]));
-  for (const g of props.costCenterGroups || []) {
-    const id = Number(g.costCenterId);
-    if (!Number.isFinite(id)) continue;
-    next[id] = overrideByCc.has(id) ? overrideByCc.get(id) : (g.costCenterName || '');
-  }
-  editing.value = next;
-}
-
-// Lista combinada: CCs em uso + flag "hasOverride" + nome padrão (sem override)
-const availableCcs = computed(() => {
-  const overrideByCc = new Map(adminStore.overrides.map(o => [Number(o.cost_center_id), o.display_name]));
-  return (props.costCenterGroups || [])
-    .map(g => {
-      const id = Number(g.costCenterId);
-      const hasOverride = overrideByCc.has(id);
-      // costCenterName vem com override já aplicado pelo backend;
-      // pra mostrar o "Original" precisamos derivar — se tem override, original é desconhecido client-side.
-      // Mantemos o nome bruto do backend para fins de exibição.
-      const overrideName = overrideByCc.get(id) || null;
-      const currentDisplayed = g.costCenterName || '';
-      const defaultName = hasOverride
-        ? null // não temos o "nome padrão" original aqui (backend aplicou override antes)
-        : currentDisplayed;
-      return { id, currentDisplayed, hasOverride, overrideName, defaultName };
-    })
-    .sort((a, b) => a.id - b.id);
-});
-
-const filteredCcs = computed(() => {
-  const q = overrideSearch.value.trim().toLowerCase();
-  if (!q) return availableCcs.value;
-  return availableCcs.value.filter(cc =>
-    String(cc.id).includes(q)
-    || (cc.currentDisplayed || '').toLowerCase().includes(q)
-  );
-});
-
-const ccsWithOverride = computed(() => availableCcs.value.filter(cc => cc.hasOverride).length);
-
-function canSave(cc) {
-  const current = (editing.value[cc.id] || '').trim();
-  const original = cc.hasOverride ? (cc.overrideName || '') : (cc.currentDisplayed || '');
-  return current && current !== original;
-}
 
 async function toggleDepartment(d, checked) {
   const hidden = !checked;
@@ -227,34 +99,6 @@ async function toggleDepartment(d, checked) {
   } catch (err) {
     d.hidden = prev;
     toast.error(err.message || 'Falha ao atualizar visibilidade.');
-  }
-}
-
-async function saveRow(cc) {
-  const name = (editing.value[cc.id] || '').trim();
-  if (!name) return;
-  rowSaving.value = cc.id;
-  try {
-    await adminStore.setOverride(cc.id, name);
-    toast.success(`Nome do CC ${cc.id} atualizado.`);
-    emit('changed');
-    seedEditing();
-  } catch (err) {
-    toast.error(err.message || 'Falha ao salvar.');
-  } finally {
-    rowSaving.value = null;
-  }
-}
-
-async function resetRow(cc) {
-  if (!confirm(`Remover override do CC ${cc.id}? O nome volta ao padrão (CRM/Sienge).`)) return;
-  try {
-    await adminStore.deleteOverride(cc.id);
-    toast.success(`Override do CC ${cc.id} removido.`);
-    emit('changed');
-    seedEditing();
-  } catch (err) {
-    toast.error(err.message || 'Falha ao remover override.');
   }
 }
 </script>

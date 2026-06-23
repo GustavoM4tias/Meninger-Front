@@ -600,8 +600,8 @@ const STATUS_RULES = [
   { key: 'on_track',      icon: 'fas fa-circle-check',           color: 'text-blue-500',           rule: '0.8 ≤ ratio < 1.1', desc: 'Performance dentro da margem esperada' },
   { key: 'behind',        icon: 'fas fa-triangle-exclamation',   color: 'text-yellow-500',         rule: '0.4 ≤ ratio < 0.8', desc: 'Atrás do esperado, requer atenção' },
   { key: 'at_risk',       icon: 'fas fa-skull',                  color: 'text-red-500',            rule: 'ratio < 0.4',     desc: 'Performance crítica, ação urgente necessária' },
-  { key: 'no_sales',      icon: 'fas fa-ban',                    color: 'text-slate-500',          rule: 'sem vendas',      desc: 'Possui meta cadastrada mas nenhuma venda no período' },
-  { key: 'no_projection', icon: 'fas fa-minus',                  color: 'text-slate-400',          rule: 'sem meta',        desc: 'Não possui projeção/meta cadastrada para o período' },
+  { key: 'no_sales',      icon: 'fas fa-ban',                    color: 'text-slate-500 dark:text-slate-400',          rule: 'sem vendas',      desc: 'Possui meta cadastrada mas nenhuma venda no período' },
+  { key: 'no_projection', icon: 'fas fa-minus',                  color: 'text-slate-400 dark:text-slate-500',          rule: 'sem meta',        desc: 'Não possui projeção/meta cadastrada para o período' },
 ];
 
 const closeModal = () => emit('close');

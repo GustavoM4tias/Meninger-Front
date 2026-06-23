@@ -1,4 +1,6 @@
 // src/router/office.routes.js
+import { academyAppRoutes } from './academy.routes.js';
+
 export default [
     // públicas
     {
@@ -39,6 +41,53 @@ export default [
                 name: 'Bolão da Copa',
                 component: () => import('@/views/Office/Bolao/Index.vue'),
                 meta: { requiresAuth: true, searchable: true, content: 'Bolão da Copa — palpites, placar ao vivo e ranking' },
+            },
+
+            // Mural de Avisos / Comunicados — módulo próprio do Office (interno).
+            {
+                path: 'mural',
+                name: 'Mural de Avisos',
+                component: () => import('@/views/Office/Mural/Index.vue'),
+                meta: { requiresAuth: true, searchable: true, content: 'Mural de avisos e comunicados internos' },
+            },
+            {
+                path: 'mural/admin',
+                name: 'Gestão de Comunicados',
+                component: () => import('@/views/Office/Mural/Admin.vue'),
+                meta: { requiresAuth: true, requiresAdmin: true, allowedRole: 'admin', searchable: false, content: 'Gestão do mural de avisos e comunicados' },
+            },
+
+            // Checklist (gestão de lançamentos e demandas) — substitui o Planner.
+            {
+                path: 'checklists',
+                name: 'Checklists',
+                component: () => import('@/views/Office/Checklist/Index.vue'),
+                meta: { requiresAuth: true, searchable: true, content: 'Checklists de lançamento: visualização, gestão, criação e cobrança de entregas e demandas' },
+            },
+            {
+                path: 'checklists/cobranca',
+                name: 'Cobrança do Checklist',
+                component: () => import('@/views/Office/Checklist/Cobranca.vue'),
+                meta: { requiresAuth: true, requiresAdmin: true, allowedRole: 'admin', searchable: false, content: 'Configuração da régua de cobrança dos checklists' },
+            },
+            {
+                path: 'checklists/:id',
+                name: 'Checklist',
+                component: () => import('@/views/Office/Checklist/Detail.vue'),
+                meta: { requiresAuth: true, searchable: false, content: 'Detalhe do checklist' },
+            },
+
+            // Academy dentro do Office (KB + Trilhas + Gestão), renderizado DENTRO
+            // do OfficeShell → usa a NAV DO OFFICE. O AcademyShell (nav própria do
+            // Academy) fica reservado ao host academy.* . As páginas são
+            // self-contained; AcademyOfficeArea só dá o respiro do container.
+            // Login = login do Office. Comunidade/Pessoas/Perfil seguem montadas,
+            // porém ocultas (standby do MVP).
+            {
+                path: 'academy',
+                component: () => import('@/views/Academy/layouts/AcademyOfficeArea.vue'),
+                meta: { requiresAuth: true },
+                children: academyAppRoutes,
             },
 
             {
@@ -212,12 +261,6 @@ export default [
                         meta: { searchable: true, content: 'Lançamentos de pagamento Sienge.' },
                     },
                     {
-                        path: 'auto-sync',
-                        name: 'Auto-Sync Bills',
-                        component: () => import('@/views/Office/Financeiro/AutoSync/Index.vue'),
-                        meta: { requiresAuth: true, requiresAdmin: true, searchable: false, content: 'Monitoramento do auto-sync diário de títulos do Sienge' },
-                    },
-                    {
                         path: 'inadimplencia',
                         name: 'Inadimplência',
                         component: () => import('@/views/Office/Financeiro/Inadimplencia/Index.vue'),
@@ -350,6 +393,12 @@ export default [
                         name: 'Alertas',
                         component: () => import('@/views/Office/Settings/Alerts/Index.vue'),
                         meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Gestão de alertas recorrentes criados via Eme' },
+                    },
+                    {
+                        path: 'alerts/admin',
+                        name: 'Painel de Alertas',
+                        component: () => import('@/views/Office/Settings/Alerts/Admin/Index.vue'),
+                        meta: { requiresAuth: true, allowedRole: 'admin', searchable: true, content: 'Painel admin de alertas: visão geral e uso por usuário' },
                     },
                     {
                         path: 'backup-sienge',

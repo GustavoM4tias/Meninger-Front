@@ -71,7 +71,7 @@
                 <section
                     class="rounded-2xl border border-slate-200/70 bg-white p-5 shadow-[0_2px_20px_-12px_rgb(15_23_42/0.18)] dark:border-slate-800 dark:bg-slate-900">
                     <h3 class="flex items-center gap-2 font-display text-base font-semibold text-slate-900 dark:text-white">
-                        <i class="fa-solid fa-link text-slate-400"></i>
+                        <i class="fa-solid fa-link text-slate-400 dark:text-slate-500"></i>
                         Atalhos
                     </h3>
                     <div class="mt-3 grid grid-cols-1 gap-2">

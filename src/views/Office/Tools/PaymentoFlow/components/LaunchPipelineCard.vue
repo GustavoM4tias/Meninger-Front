@@ -76,6 +76,11 @@ const inTituloStage = computed(() => tituloCreating.value || tituloCreated.value
 const boletoRegisterError = computed(() =>
   stage.value === 'titulo_created' && !!props.launch.siengeTituloError
 );
+// Linha digitável inválida (Sienge 400): erro permanente, sem retry automático.
+const boletoManualRequired = computed(() =>
+  boletoRegisterError.value &&
+  /linha digit[aá]vel|sienge 400|manualmente/i.test(props.launch.siengeTituloError || '')
+);
 const canUpdateBoleto = computed(() =>
   !!props.launch.siengeTituloNumber && (tituloAwaiting.value || boletoRegisterError.value)
 );
@@ -504,7 +509,11 @@ const cardBorderClass = computed(() => {
               <i class="fas fa-triangle-exclamation"></i>Boleto não registrado
             </p>
             <p class="break-words opacity-80">{{ launch.siengeTituloError }}</p>
-            <p class="text-[11px] opacity-70">O sistema tentará novamente automaticamente. Use o botão abaixo para enviar um novo boleto.</p>
+            <p class="text-[11px] opacity-70">
+              {{ boletoManualRequired
+                ? 'Registre o boleto manualmente no Sienge ou envie um boleto corrigido pelo botão abaixo.'
+                : 'O sistema tentará novamente automaticamente. Use o botão abaixo para enviar um novo boleto.' }}
+            </p>
           </div>
 
           <div v-if="!tituloAwaiting && !tituloPago && launch.siengeTituloNumber && launch.boletoBarcode && !boletoRegisterError"

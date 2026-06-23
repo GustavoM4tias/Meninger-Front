@@ -27,8 +27,8 @@ function statusBadge(c) {
     if (s.includes('ACTIVE'))   return { label: 'Ativa',     cls: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30' };
     if (s.includes('PAUSED'))   return { label: 'Pausada',   cls: 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30' };
     if (s.includes('DELETED'))  return { label: 'Excluída',  cls: 'bg-red-500/15 text-red-700 dark:text-red-300 border-red-500/30' };
-    if (s.includes('ARCHIVED')) return { label: 'Arquivada', cls: 'bg-slate-500/15 text-slate-500 border-slate-500/30' };
-    return { label: s || '—', cls: 'bg-slate-500/15 text-slate-500 border-slate-500/30' };
+    if (s.includes('ARCHIVED')) return { label: 'Arquivada', cls: 'bg-slate-500/15 text-slate-500 dark:text-slate-400 border-slate-500/30' };
+    return { label: s || '—', cls: 'bg-slate-500/15 text-slate-500 dark:text-slate-400 border-slate-500/30' };
 }
 function isActive(c) {
     return String(c.effective_status || c.status || '').toUpperCase().includes('ACTIVE');

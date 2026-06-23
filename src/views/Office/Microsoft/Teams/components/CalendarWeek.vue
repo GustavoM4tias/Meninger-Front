@@ -21,7 +21,7 @@
     <div v-if="hasAllDay"
       class="grid border-b border-line shrink-0 bg-surface-raised"
       :style="{ gridTemplateColumns: `48px repeat(${weekDays.length}, 1fr)` }">
-      <div class="text-xs text-gray-400 flex items-center justify-end pr-2 py-1">Todo dia</div>
+      <div class="text-xs text-gray-400 dark:text-gray-500 flex items-center justify-end pr-2 py-1">Todo dia</div>
       <div v-for="day in weekDays" :key="fmtYMD(day)"
         class="border-l border-line p-0.5 min-h-[28px]">
         <div v-for="ev in allDayByDay[fmtYMD(day)]" :key="ev.id"
@@ -117,7 +117,7 @@
     <div v-if="!loading && !hasAnyEvent"
       class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none mt-24">
       <i class="fas fa-calendar-xmark text-4xl text-ink-subtle mb-3"></i>
-      <p class="text-sm text-gray-400">Nenhum evento nesta semana</p>
+      <p class="text-sm text-gray-400 dark:text-gray-500">Nenhum evento nesta semana</p>
     </div>
 
     <!-- Loading overlay -->

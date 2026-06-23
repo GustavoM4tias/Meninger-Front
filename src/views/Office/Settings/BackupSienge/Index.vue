@@ -211,10 +211,10 @@
         <div class="px-6 pb-6 pt-4 flex-1 flex flex-col gap-3 min-h-0">
             <div class="flex items-center justify-between mb-1">
                 <h2 class="text-lg font-semibold">Histórico</h2>
-                <span class="text-xs text-gray-500">{{ store.items.length }} execução(ões)</span>
+                <span class="text-xs text-gray-500 dark:text-slate-400">{{ store.items.length }} execução(ões)</span>
             </div>
 
-            <div v-if="store.items.length === 0" class="text-gray-500 text-sm">
+            <div v-if="store.items.length === 0" class="text-gray-500 dark:text-slate-400 text-sm">
                 Sem registros.
             </div>
 
@@ -223,24 +223,24 @@
                 <table class="min-w-full text-sm">
                     <thead class="bg-gray-50 dark:bg-gray-800/80">
                         <tr>
-                            <th class="px-4 py-2.5 text-left font-medium text-xs uppercase tracking-wide text-gray-500">#</th>
-                            <th class="px-4 py-2.5 text-left font-medium text-xs uppercase tracking-wide text-gray-500">Início</th>
-                            <th class="px-4 py-2.5 text-left font-medium text-xs uppercase tracking-wide text-gray-500">Disparo</th>
-                            <th class="px-4 py-2.5 text-left font-medium text-xs uppercase tracking-wide text-gray-500">Etapa</th>
-                            <th class="px-4 py-2.5 text-left font-medium text-xs uppercase tracking-wide text-gray-500">Status</th>
-                            <th class="px-4 py-2.5 text-left font-medium text-xs uppercase tracking-wide text-gray-500">Restore</th>
-                            <th class="px-4 py-2.5 text-right font-medium text-xs uppercase tracking-wide text-gray-500">Duração</th>
-                            <th class="px-4 py-2.5 text-right font-medium text-xs uppercase tracking-wide text-gray-500">Tamanho</th>
-                            <th class="px-4 py-2.5 text-left font-medium text-xs uppercase tracking-wide text-gray-500">Erro</th>
+                            <th class="px-4 py-2.5 text-left font-medium text-xs uppercase tracking-wide text-gray-500 dark:text-slate-400">#</th>
+                            <th class="px-4 py-2.5 text-left font-medium text-xs uppercase tracking-wide text-gray-500 dark:text-slate-400">Início</th>
+                            <th class="px-4 py-2.5 text-left font-medium text-xs uppercase tracking-wide text-gray-500 dark:text-slate-400">Disparo</th>
+                            <th class="px-4 py-2.5 text-left font-medium text-xs uppercase tracking-wide text-gray-500 dark:text-slate-400">Etapa</th>
+                            <th class="px-4 py-2.5 text-left font-medium text-xs uppercase tracking-wide text-gray-500 dark:text-slate-400">Status</th>
+                            <th class="px-4 py-2.5 text-left font-medium text-xs uppercase tracking-wide text-gray-500 dark:text-slate-400">Restore</th>
+                            <th class="px-4 py-2.5 text-right font-medium text-xs uppercase tracking-wide text-gray-500 dark:text-slate-400">Duração</th>
+                            <th class="px-4 py-2.5 text-right font-medium text-xs uppercase tracking-wide text-gray-500 dark:text-slate-400">Tamanho</th>
+                            <th class="px-4 py-2.5 text-left font-medium text-xs uppercase tracking-wide text-gray-500 dark:text-slate-400">Erro</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
                         <tr v-for="row in store.items" :key="row.id"
                             class="hover:bg-gray-50/70 dark:hover:bg-gray-800/70 transition-colors">
-                            <td class="px-4 py-3 font-mono text-xs text-gray-500">{{ row.id }}</td>
+                            <td class="px-4 py-3 font-mono text-xs text-gray-500 dark:text-slate-400">{{ row.id }}</td>
                             <td class="px-4 py-3 align-top">
                                 <div>{{ formatDate(row.started_at) }}</div>
-                                <div v-if="row.finished_at" class="text-xs text-gray-500">
+                                <div v-if="row.finished_at" class="text-xs text-gray-500 dark:text-slate-400">
                                     até {{ formatTime(row.finished_at) }}
                                 </div>
                             </td>
@@ -263,7 +263,7 @@
                                     <i :class="statusIcon(row.import_status)"></i>
                                     {{ row.import_status }}
                                 </span>
-                                <span v-else class="text-gray-400 text-xs">—</span>
+                                <span v-else class="text-gray-400 dark:text-slate-500 text-xs">—</span>
                             </td>
                             <td class="px-4 py-3 align-top text-right font-mono text-xs">
                                 {{ formatDuration(row.duration_ms) }}
@@ -276,7 +276,7 @@
                                       class="text-red-600 dark:text-red-300 break-words">
                                     {{ row.error_message || row.import_error_message }}
                                 </span>
-                                <span v-else class="text-gray-400">—</span>
+                                <span v-else class="text-gray-400 dark:text-slate-500">—</span>
                             </td>
                         </tr>
                     </tbody>

@@ -93,7 +93,7 @@
                                     <i class="fas fa-layer-group mr-1"></i>{{ seg }}
                                 </span>
                             </template>
-                            <span v-else class="ml-2 text-gray-400">—</span>
+                            <span v-else class="ml-2 text-gray-400 dark:text-gray-500">—</span>
                         </div>
 
                         <!-- Situações -->
@@ -165,7 +165,7 @@
                                     <option value="" disabled>Selecione um segmento</option>
                                     <option v-for="seg in segmentosOptions" :key="seg" :value="seg">{{ seg }}</option>
                                 </select>
-                                <p class="text-xs text-gray-500 mt-1">Opções geradas a partir de
+                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Opções geradas a partir de
                                     <code>cv_enterprises.segmento_nome</code>.
                                 </p>
                             </div>
@@ -187,7 +187,7 @@
                             </div>
 
                             <div class="relative mb-2">
-                                <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                                <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"></i>
                                 <input v-model="q" placeholder="Buscar pelo nome da situação"
                                     class="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500" />
                             </div>

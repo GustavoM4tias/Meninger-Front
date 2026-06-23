@@ -22,11 +22,11 @@
             >
               {{ task.title }}
             </h2>
-            <p class="text-xs text-gray-400 mt-0.5">
+            <p class="text-xs text-gray-400 dark:text-slate-500 mt-0.5">
               {{ bucketName }} · {{ planName }}
             </p>
           </div>
-          <button @click="$emit('close')" class="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-surface-hover transition shrink-0">
+          <button @click="$emit('close')" class="p-1.5 rounded-lg text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-surface-hover transition shrink-0">
             <i class="fas fa-xmark text-sm"></i>
           </button>
         </div>
@@ -39,7 +39,7 @@
 
             <!-- Progresso -->
             <div class="space-y-1">
-              <label class="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Status</label>
+              <label class="text-[11px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wide">Status</label>
               <button
                 @click="toggleComplete"
                 :disabled="store.savingTask"
@@ -57,7 +57,7 @@
 
             <!-- Prioridade -->
             <div class="space-y-1">
-              <label class="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Prioridade</label>
+              <label class="text-[11px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wide">Prioridade</label>
               <select
                 v-model="form.priority"
                 @change="savePriority"
@@ -73,7 +73,7 @@
 
             <!-- Vencimento -->
             <div class="space-y-1">
-              <label class="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Vencimento</label>
+              <label class="text-[11px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wide">Vencimento</label>
               <input
                 type="date"
                 v-model="form.dueDate"
@@ -85,7 +85,7 @@
 
           <!-- Coluna (Bucket) -->
           <div class="space-y-1">
-            <label class="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Coluna</label>
+            <label class="text-[11px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wide">Coluna</label>
             <select
               v-model="form.bucketId"
               @change="saveBucket"
@@ -97,21 +97,21 @@
 
           <!-- Descrição -->
           <div class="space-y-1.5">
-            <label class="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Descrição</label>
+            <label class="text-[11px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wide">Descrição</label>
             <textarea
               v-model="form.description"
               @blur="saveDescription"
               rows="3"
               placeholder="Adicione uma descrição..."
-              class="w-full px-3 py-2.5 text-sm rounded-lg border border-line bg-surface-raised/60 text-ink placeholder:text-gray-400 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/10 resize-none transition"
+              class="w-full px-3 py-2.5 text-sm rounded-lg border border-line bg-surface-raised/60 text-ink placeholder:text-gray-400 dark:placeholder:text-slate-500 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/10 resize-none transition"
             ></textarea>
           </div>
 
           <!-- Checklist -->
           <div class="space-y-2">
             <div class="flex items-center justify-between">
-              <label class="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Checklist</label>
-              <span v-if="checklist.length > 0" class="text-[11px] text-gray-400">
+              <label class="text-[11px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wide">Checklist</label>
+              <span v-if="checklist.length > 0" class="text-[11px] text-gray-400 dark:text-slate-500">
                 {{ checklist.filter(i => i.isChecked).length }}/{{ checklist.length }}
               </span>
             </div>
@@ -143,7 +143,7 @@
                 >{{ item.title }}</span>
                 <button
                   @click="removeChecklistItem(item.id)"
-                  class="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500 transition p-0.5"
+                  class="opacity-0 group-hover:opacity-100 text-gray-300 dark:text-slate-600 hover:text-red-500 transition p-0.5"
                 >
                   <i class="fas fa-xmark text-xs"></i>
                 </button>
@@ -157,7 +157,7 @@
                 type="text"
                 placeholder="Adicionar item..."
                 @keydown.enter="addChecklistItem"
-                class="flex-1 px-3 py-1.5 text-sm rounded-lg border border-line bg-surface-raised/60 text-ink placeholder:text-gray-400 outline-none focus:border-blue-400 transition"
+                class="flex-1 px-3 py-1.5 text-sm rounded-lg border border-line bg-surface-raised/60 text-ink placeholder:text-gray-400 dark:placeholder:text-slate-500 outline-none focus:border-blue-400 transition"
               />
               <button
                 @click="addChecklistItem"
@@ -171,7 +171,7 @@
 
           <!-- Rodapé com info -->
           <div class="pt-2 border-t border-line space-y-1">
-            <p v-if="task.createdDateTime" class="text-xs text-gray-400">
+            <p v-if="task.createdDateTime" class="text-xs text-gray-400 dark:text-slate-500">
               Criada em {{ formatDate(task.createdDateTime) }}
             </p>
           </div>
@@ -186,7 +186,7 @@
             <i class="fas fa-trash text-xs"></i>
             Excluir tarefa
           </button>
-          <div v-if="saving" class="text-xs text-gray-400 flex items-center gap-1.5">
+          <div v-if="saving" class="text-xs text-gray-400 dark:text-slate-500 flex items-center gap-1.5">
             <i class="fas fa-spinner animate-spin text-xs"></i> Salvando...
           </div>
           <div v-else-if="savedMsg" class="text-xs text-green-500 flex items-center gap-1.5">

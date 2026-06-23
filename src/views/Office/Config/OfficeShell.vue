@@ -6,6 +6,7 @@ import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 import Nav from '@/components/Navigation/Nav.vue'; 
 import Carregamento from '@/components/Loading/Carregamento.vue';
 import InPersonRecordingBar from '@/components/InPersonRecordingBar.vue';
+import MuralFloatingCard from '@/components/Mural/MuralFloatingCard.vue';
 
 const authStore = useAuthStore();
 
@@ -35,6 +36,7 @@ const isAuthenticated = computed(() => authStore.isAuthenticated());
         </main>
  
         <InPersonRecordingBar />
+        <MuralFloatingCard />
         <Carregamento />
     </div>
 </template>

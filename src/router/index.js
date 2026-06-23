@@ -5,7 +5,10 @@ import { usePermissionStore } from '@/stores/Settings/Permissions/permissionStor
 import { allManagedRoutes } from '@/config/navRegistry';
 
 import officeRoutes from './office.routes.js';
-import academyRoutes from './academy.routes.js';
+// Academy em manutenção (migrando para dentro do Office). O academy.routes.js
+// fica preservado no repo; para reativar no futuro, reimportar e usar no lugar
+// de maintenanceRoutes na linha de seleção de rotas abaixo.
+import maintenanceRoutes from './maintenance.routes.js';
 import lpRoutes from './lp.routes.js';
 
 // Decide se a aplicação roda como Academy ou Office.
@@ -32,7 +35,7 @@ function isLpHost() {
 
 const router = createRouter({
   history: createWebHistory(),
-  routes: isLpHost() ? lpRoutes : (isAcademyHost() ? academyRoutes : officeRoutes),
+  routes: isLpHost() ? lpRoutes : (isAcademyHost() ? maintenanceRoutes : officeRoutes),
 });
 
 // ✅ Guard unificado: autenticação + role + permissões de alçada

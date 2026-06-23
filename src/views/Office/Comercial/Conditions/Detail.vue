@@ -30,7 +30,7 @@
                 {{ isClosed ? 'Reabrir Empreendimento' : 'Editar Ficha Autorizada' }}
               </h2>
             </div>
-            <button @click="showUnlockModal = false" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-surface-hover transition">
+            <button @click="showUnlockModal = false" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-surface-hover transition">
               <i class="fas fa-times text-sm"></i>
             </button>
           </div>
@@ -56,7 +56,7 @@
                 v-model="unlockNote"
                 rows="3"
                 :placeholder="isClosed ? 'Ex: Empreendimento retomado...' : 'Ex: Correção no valor de comissão...'"
-                class="w-full px-3.5 py-2.5 text-sm text-ink bg-surface-raised/60 border border-line rounded-md shadow-sm placeholder:text-gray-400 outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-500/15 transition resize-none"
+                class="w-full px-3.5 py-2.5 text-sm text-ink bg-surface-raised/60 border border-line rounded-md shadow-sm placeholder:text-gray-400 dark:placeholder:text-slate-500 outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-500/15 transition resize-none"
               />
             </div>
           </div>
@@ -93,7 +93,7 @@
               <i class="fas fa-ban text-red-500"></i>
               <h2 class="text-base font-bold text-ink">Cancelar Autorização</h2>
             </div>
-            <button @click="showCancelApprovalModal = false" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-surface-hover transition">
+            <button @click="showCancelApprovalModal = false" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-surface-hover transition">
               <i class="fas fa-times text-sm"></i>
             </button>
           </div>
@@ -111,7 +111,7 @@
                 v-model="cancelApprovalNote"
                 rows="3"
                 placeholder="Ex: Necessário ajustar valor de entrada..."
-                class="w-full px-3.5 py-2.5 text-sm text-ink bg-surface-raised/60 border border-line rounded-md shadow-sm placeholder:text-gray-400 outline-none focus:border-red-400 focus:ring-2 focus:ring-red-500/15 transition resize-none"
+                class="w-full px-3.5 py-2.5 text-sm text-ink bg-surface-raised/60 border border-line rounded-md shadow-sm placeholder:text-gray-400 dark:placeholder:text-slate-500 outline-none focus:border-red-400 focus:ring-2 focus:ring-red-500/15 transition resize-none"
               />
             </div>
           </div>
@@ -145,7 +145,7 @@
               <i class="fas fa-triangle-exclamation text-amber-500"></i>
               <h2 class="text-base font-bold text-ink">Atenção — Ficha Autorizada</h2>
             </div>
-            <button @click="showSaveApprovedModal = false" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-surface-hover transition">
+            <button @click="showSaveApprovedModal = false" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-surface-hover transition">
               <i class="fas fa-times text-sm"></i>
             </button>
           </div>
@@ -185,10 +185,10 @@
         <div class="bg-surface-raised rounded-2xl shadow-2xl w-full max-w-md border border-line">
           <div class="flex items-center justify-between px-6 py-4 border-b border-line">
             <div class="flex items-center gap-2">
-              <i class="fas fa-flag-checkered text-gray-500"></i>
+              <i class="fas fa-flag-checkered text-gray-500 dark:text-slate-400"></i>
               <h2 class="text-base font-bold text-ink">Encerrar Empreendimento</h2>
             </div>
-            <button @click="closeCloseModal" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-surface-hover transition">
+            <button @click="closeCloseModal" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-surface-hover transition">
               <i class="fas fa-times text-sm"></i>
             </button>
           </div>
@@ -214,7 +214,7 @@
                 v-model="closeNote"
                 rows="2"
                 placeholder="Ex: Empreendimento finalizado, todas as unidades vendidas..."
-                class="w-full px-3.5 py-2.5 text-sm text-ink bg-surface-raised/60 border border-line rounded-md shadow-sm placeholder:text-gray-400 outline-none focus:border-red-400 focus:ring-2 focus:ring-red-500/15 transition resize-none"
+                class="w-full px-3.5 py-2.5 text-sm text-ink bg-surface-raised/60 border border-line rounded-md shadow-sm placeholder:text-gray-400 dark:placeholder:text-slate-500 outline-none focus:border-red-400 focus:ring-2 focus:ring-red-500/15 transition resize-none"
               />
             </div>
 
@@ -227,7 +227,7 @@
                 v-model="closeConfirmation"
                 type="text"
                 placeholder="ENCERRAR"
-                class="w-full px-3.5 py-2.5 text-sm font-mono text-ink bg-surface-raised/60 border-2 rounded-md shadow-sm placeholder:text-gray-400 outline-none focus:ring-2 transition"
+                class="w-full px-3.5 py-2.5 text-sm font-mono text-ink bg-surface-raised/60 border-2 rounded-md shadow-sm placeholder:text-gray-400 dark:placeholder:text-slate-500 outline-none focus:ring-2 transition"
                 :class="closeConfirmation === 'ENCERRAR'
                   ? 'border-emerald-500 focus:border-emerald-600 focus:ring-emerald-500/20'
                   : 'border-red-300 dark:border-red-800 focus:border-red-500 focus:ring-red-500/15'"
@@ -265,7 +265,7 @@
     </div>
 
     <!-- Carregando -->
-    <div v-else-if="!detail && !fetchError" class="flex items-center justify-center py-24 text-gray-400">
+    <div v-else-if="!detail && !fetchError" class="flex items-center justify-center py-24 text-gray-400 dark:text-slate-500">
       <i class="fas fa-spinner fa-spin text-2xl"></i>
     </div>
 
@@ -276,12 +276,12 @@
           <!-- Top bar -->
           <div class="flex items-center justify-between pb-4 pt-6 gap-4">
             <div class="flex items-center gap-3 min-w-0">
-              <button @click="$router.back()" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-surface-hover transition flex-shrink-0">
+              <button @click="$router.back()" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 dark:text-slate-500 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-surface-hover transition flex-shrink-0">
                 <i class="fas fa-arrow-left text-sm"></i>
               </button>
               <div class="min-w-0">
                 <div class="flex items-center gap-2 flex-wrap">
-                  <i v-if="isAvulsa" class="fas fa-cube text-gray-400 text-sm" title="Ficha avulsa (sem CV)"></i>
+                  <i v-if="isAvulsa" class="fas fa-cube text-gray-400 dark:text-slate-500 text-sm" title="Ficha avulsa (sem CV)"></i>
                   <h1 class="text-lg lg:text-xl font-bold text-ink truncate">
                     {{ headerTitle }}
                   </h1>
@@ -307,7 +307,7 @@
             <div class="flex items-center gap-2 flex-shrink-0 flex-wrap justify-end">
               <!-- Navegador de histórico (meses anteriores) -->
               <div v-if="detail.history?.length > 1" class="flex items-center gap-1.5">
-                <i class="fas fa-history text-xs text-gray-400"></i>
+                <i class="fas fa-history text-xs text-gray-400 dark:text-slate-500"></i>
                 <select
                   :value="detail.id"
                   @change="navigateToMonth($event.target.value)"
@@ -1175,27 +1175,27 @@ function formatDateFull(d) {
     if (!d) return '—';
     return new Date(d).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
-function badgeClass(s) { return STATUS_MAP[s]?.cls ?? 'bg-gray-100 text-gray-600'; }
+function badgeClass(s) { return STATUS_MAP[s]?.cls ?? 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'; }
 function statusLabel(s) { return STATUS_MAP[s]?.label ?? s; }
 
 // ─── Histórico de eventos ─────────────────────────────────────────────────────
 const EVENT_META = {
     created:                 { label: 'Ficha criada',                    icon: 'fa-plus',        cls: 'bg-blue-100 text-blue-600 dark:bg-blue-900/30',    type: 'approval' },
-    auto_created:            { label: 'Gerada automaticamente',          icon: 'fa-robot',       cls: 'bg-gray-100 text-gray-500 dark:bg-gray-800',       type: 'approval' },
+    auto_created:            { label: 'Gerada automaticamente',          icon: 'fa-robot',       cls: 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400',       type: 'approval' },
     submitted_for_approval:  { label: 'Enviada para autorização',        icon: 'fa-paper-plane', cls: 'bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30', type: 'approval' },
     approved:                { label: 'Autorizada',                      icon: 'fa-check',       cls: 'bg-green-100 text-green-600 dark:bg-green-900/30', type: 'approval' },
     unlocked:                { label: 'Desbloqueada para edição',        icon: 'fa-lock-open',   cls: 'bg-amber-100 text-amber-600 dark:bg-amber-900/30', type: 'approval' },
     closed:                  { label: 'Empreendimento encerrado',        icon: 'fa-flag-checkered', cls: 'bg-gray-200 text-gray-700 dark:bg-gray-800 dark:text-gray-300', type: 'approval' },
     approval_cancelled:      { label: 'Autorização cancelada',           icon: 'fa-times',       cls: 'bg-red-100 text-red-600 dark:bg-red-900/30',       type: 'approval' },
     approval_rejected:       { label: 'Autorização reprovada',           icon: 'fa-ban',         cls: 'bg-red-100 text-red-700 dark:bg-red-900/40',       type: 'approval' },
-    saved:                   { label: 'Alterações salvas (rascunho)',     icon: 'fa-floppy-disk',   cls: 'bg-gray-100 text-gray-600 dark:bg-gray-800',         type: 'change' },
+    saved:                   { label: 'Alterações salvas (rascunho)',     icon: 'fa-floppy-disk',   cls: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300',         type: 'change' },
     edited_after_unlock:     { label: 'Editado após desbloqueio',        icon: 'fa-pen-to-square', cls: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30',   type: 'change' },
     module_copied:           { label: 'Módulo copiado',                  icon: 'fa-copy',          cls: 'bg-purple-100 text-purple-600 dark:bg-purple-900/30', type: 'change' },
     modules_updated:         { label: 'Módulo(s) adicionado(s)',         icon: 'fa-layer-group',   cls: 'bg-blue-100 text-blue-600 dark:bg-blue-900/30',       type: 'change' },
 };
 function eventLabel(action)     { return EVENT_META[action]?.label    ?? action; }
 function eventIcon(action)      { return EVENT_META[action]?.icon     ?? 'fa-circle'; }
-function eventIconClass(action) { return EVENT_META[action]?.cls      ?? 'bg-gray-100 text-gray-400'; }
+function eventIconClass(action) { return EVENT_META[action]?.cls      ?? 'bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-500'; }
 
 const approvalHistory = computed(() => {
     const hist = detail.value?.approval_history ?? [];

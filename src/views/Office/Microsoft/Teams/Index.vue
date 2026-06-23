@@ -208,7 +208,7 @@ function showToast(message, type = 'success') {
       <!-- Header -->
       <PageHeader
         subtitle="Reuniões, eventos e calendário do Microsoft Teams"
-        icon="fas fa-users-rectangle">
+        icon-img="/icons/ms-teams.svg">
         <template #title>
           <span>Microsoft Teams</span>
         </template>

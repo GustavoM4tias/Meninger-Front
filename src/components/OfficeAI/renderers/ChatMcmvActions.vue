@@ -32,7 +32,7 @@ function buildPrompt(topic) {
 
 <template>
   <div class="mt-3 pt-3 border-t border-white/5">
-    <p class="text-[11px] text-slate-600 uppercase tracking-wide mb-2">Sugestões</p>
+    <p class="text-[11px] text-slate-600 dark:text-slate-300 uppercase tracking-wide mb-2">Sugestões</p>
     <div class="flex flex-wrap gap-1.5">
       <button
         @click="openDashboard"

@@ -122,7 +122,7 @@
                       <div class="flex items-center gap-2">
                         <input v-model.number="form.recurrenceInterval" type="number" min="1" max="99"
                           class="field-input w-16 text-center" />
-                        <span class="text-xs text-gray-500 whitespace-nowrap">{{ recurrenceUnitLabel }}</span>
+                        <span class="text-xs text-gray-500 dark:text-slate-400 whitespace-nowrap">{{ recurrenceUnitLabel }}</span>
                       </div>
                     </div>
                     <div>
@@ -147,9 +147,9 @@
 
               <!-- Local -->
               <div>
-                <label class="field-label">Local <span class="text-gray-400 font-normal text-[11px]">(opcional)</span></label>
+                <label class="field-label">Local <span class="text-gray-400 dark:text-slate-500 font-normal text-[11px]">(opcional)</span></label>
                 <div class="relative">
-                  <i class="fas fa-location-dot absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none"></i>
+                  <i class="fas fa-location-dot absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500 text-sm pointer-events-none"></i>
                   <input v-model="form.location" type="text" placeholder="Sala de reunião, endereço, link externo..."
                     class="field-input pl-9" />
                 </div>
@@ -166,7 +166,7 @@
                 </label>
                 <div class="flex gap-2 mb-2">
                   <div class="relative flex-1">
-                    <i class="fas fa-at absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none"></i>
+                    <i class="fas fa-at absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500 text-sm pointer-events-none"></i>
                     <input v-model="attendeeInput" type="email"
                       @keydown.enter.prevent="addAttendee"
                       @keydown.comma.prevent="addAttendee"
@@ -189,7 +189,7 @@
                     </button>
                   </span>
                 </div>
-                <p v-else class="text-xs text-gray-400 mt-1.5 flex items-center gap-1">
+                <p v-else class="text-xs text-gray-400 dark:text-slate-500 mt-1.5 flex items-center gap-1">
                   <i class="fas fa-info-circle text-[10px]"></i>
                   <span v-if="form.type === 'meeting'">Convite Teams será enviado automaticamente por e-mail.</span>
                   <span v-else>Adicione participantes para enviar convites.</span>
@@ -198,7 +198,7 @@
 
               <!-- Descrição -->
               <div>
-                <label class="field-label">Descrição <span class="text-gray-400 font-normal text-[11px]">(opcional)</span></label>
+                <label class="field-label">Descrição <span class="text-gray-400 dark:text-slate-500 font-normal text-[11px]">(opcional)</span></label>
                 <textarea v-model="form.body" rows="3" placeholder="Pauta, links, notas importantes..."
                   class="field-input resize-none" />
               </div>
@@ -213,7 +213,7 @@
               Cancelar
             </button>
             <div class="flex-1"></div>
-            <p v-if="!canSubmit && form.subject.trim() === ''" class="text-xs text-gray-400">
+            <p v-if="!canSubmit && form.subject.trim() === ''" class="text-xs text-gray-400 dark:text-slate-500">
               Preencha o assunto para continuar
             </p>
             <button @click="submit" :disabled="!canSubmit || submitting"

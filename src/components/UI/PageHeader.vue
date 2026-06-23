@@ -3,6 +3,7 @@ defineProps({
   title: { type: String, required: true },
   subtitle: { type: String, default: '' },
   icon: { type: String, default: '' },
+  iconImg: { type: String, default: '' },   // logo de marca (PNG/SVG); vence o icon
   eyebrow: { type: String, default: '' },
 });
 </script>
@@ -10,7 +11,11 @@ defineProps({
 <template>
   <header class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 sm:gap-4 mb-6 min-w-0">
     <div class="flex items-start gap-3 min-w-0">
-      <div v-if="icon"
+      <div v-if="iconImg"
+           class="hidden sm:grid place-items-center h-10 w-10 rounded-xl bg-surface-sunken border border-line shrink-0 overflow-hidden">
+        <img :src="iconImg" alt="" class="h-8 w-8 object-contain" />
+      </div>
+      <div v-else-if="icon"
            class="hidden sm:grid place-items-center h-10 w-10 rounded-xl bg-accent-soft text-accent border border-accent/20 shrink-0">
         <i :class="icon"></i>
       </div>

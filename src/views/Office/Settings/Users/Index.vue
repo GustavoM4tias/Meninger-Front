@@ -34,7 +34,7 @@ const searchQuery = ref('');
 const searchField = ref('username');
 const filterCity = ref('');
 const filterPosition = ref('');
-const filterStatus = ref(true);
+const filterStatus = ref('active'); // '' (todos) | 'active' | 'inactive'
 const editableUser = ref(null);
 const showUserModal = ref(false);
 const togglingOrgId = ref(null);
@@ -55,9 +55,9 @@ const fieldOptions = [
 ];
 
 const statusOptions = [
-  { value: '',    label: 'Todos' },
-  { value: true,  label: 'Ativos' },
-  { value: false, label: 'Inativos' },
+  { value: '',         label: 'Todos' },
+  { value: 'active',   label: 'Ativo' },
+  { value: 'inactive', label: 'Inativo' },
 ];
 
 const cityOptions = computed(() => [
@@ -77,7 +77,8 @@ const filteredUsers = computed(() => {
     const matchesSearch = String(u?.[field] ?? '').toLowerCase().includes(q);
     const matchesCity = !filterCity.value || u.city === filterCity.value;
     const matchesPosition = !filterPosition.value || u.position === filterPosition.value;
-    const matchesStatus = filterStatus.value === '' || u.status === filterStatus.value;
+    const matchesStatus = filterStatus.value === ''
+      || (filterStatus.value === 'active' ? Boolean(u.status) : !u.status);
     return matchesSearch && matchesCity && matchesPosition && matchesStatus;
   });
 });
