@@ -3,8 +3,9 @@ import { computed, ref, onMounted } from 'vue';
 import dayjs from 'dayjs';
 import { useChecklistStore } from '@/stores/Checklist/checklistStore.js';
 import TaskPreview from './TaskPreview.vue';
+import Button from '@/components/UI/Button.vue';
 
-const props = defineProps({ filter: { type: Object, default: () => ({}) } });
+const props = defineProps({ filter: { type: Object, default: () => ({}) }, isAdmin: { type: Boolean, default: false } });
 const store = useChecklistStore();
 const emit = defineEmits(['open-task']);
 onMounted(() => { if (!store.users.length) store.loadUsers(); });
@@ -87,8 +88,9 @@ async function addCatTask(sectionId, cat) {
 const newSection = ref('');
 async function addSection() { if (!newSection.value.trim()) return; await store.addSection(newSection.value.trim()); newSection.value = ''; }
 
-// Inputs inline: discretos (sem borda) até hover/foco — desafoga a tabela.
-const cellInput = 'w-full bg-transparent rounded-md border border-transparent px-2 py-1.5 text-sm text-ink hover:border-line focus:border-accent-ring focus:ring-2 focus:ring-accent-ring/20 outline-none transition-all';
+// Inputs inline: borda leve sempre visível (deixa claro onde dá pra clicar/editar),
+// realçando no hover/foco — sem pesar a tabela.
+const cellInput = 'w-full bg-surface-raised/60 rounded-md border border-line/70 px-2 py-1.5 text-sm text-ink hover:border-line-strong hover:bg-surface-raised focus:border-accent-ring focus:ring-2 focus:ring-accent-ring/20 focus:bg-surface-raised outline-none transition-all';
 const bulkCtrl = 'text-xs rounded-lg border border-line bg-surface-raised text-ink px-2 py-1.5 focus-ring';
 </script>
 
@@ -97,7 +99,7 @@ const bulkCtrl = 'text-xs rounded-lg border border-line bg-surface-raised text-i
         <div v-for="sec in visibleSections" :key="sec.id" class="surface-card overflow-hidden">
             <!-- Cabeçalho da seção -->
             <div class="flex items-center gap-2.5 px-4 py-3 border-b border-line bg-surface-sunken/40">
-                <input type="checkbox" :checked="allSelected(sec.id)" @change="toggleSection(sec.id, $event)" title="Selecionar seção"
+                <input v-if="isAdmin" type="checkbox" :checked="allSelected(sec.id)" @change="toggleSection(sec.id, $event)" title="Selecionar seção"
                     class="h-4 w-4 cursor-pointer rounded" />
                 <span class="w-2.5 h-2.5 rounded-full shrink-0" :style="{ background: sec.color || '#64748b' }"></span>
                 <h3 class="font-semibold text-ink">{{ sec.name }}</h3>
@@ -106,15 +108,23 @@ const bulkCtrl = 'text-xs rounded-lg border border-line bg-surface-raised text-i
             </div>
 
             <!-- Barra de edição em lote -->
-            <div v-if="selectedInSection(sec.id).length" class="flex items-center gap-2 flex-wrap px-4 py-2.5 bg-accent-soft/40 border-b border-accent/20 animate-slide-down">
-                <span class="text-xs font-semibold text-accent flex items-center gap-1.5"><i class="fas fa-check-double"></i> {{ selectedInSection(sec.id).length }} selecionada(s)</span>
-                <select @change="bulkStatus(sec.id, $event)" :class="bulkCtrl"><option value="">Status...</option><option v-for="s in statuses" :key="s.id" :value="s.id">{{ s.label }}</option></select>
-                <select @change="bulkAssignee(sec.id, $event)" :class="bulkCtrl"><option value="">Responsável...</option><option v-for="u in store.users" :key="u.id" :value="u.id">{{ u.username }}</option></select>
-                <select @change="bulkPriority(sec.id, $event)" :class="bulkCtrl"><option value="">Prioridade...</option><option value="LOW">Baixa</option><option value="MEDIUM">Média</option><option value="HIGH">Alta</option><option value="URGENT">Urgente</option></select>
-                <label class="text-xs text-ink-muted flex items-center gap-1.5">Prazo<input type="date" @change="bulkDue(sec.id, $event)" :class="bulkCtrl" /></label>
-                <span class="text-xs text-ink-muted flex items-center gap-1">Deslocar<input type="number" v-model.number="shiftN" class="w-14 text-xs rounded-lg border border-line bg-surface-raised text-ink px-1.5 py-1.5 focus-ring" />d<button @click="bulkShift(sec.id)" class="text-accent hover:underline font-medium">aplicar</button></span>
-                <button @click="bulkDelete(sec.id)" class="text-xs text-red-500 hover:text-red-400 ml-auto"><i class="fas fa-trash"></i> excluir</button>
-                <button @click="clearSection(sec.id)" class="text-xs text-ink-muted hover:text-ink">limpar</button>
+            <div v-if="isAdmin && selectedInSection(sec.id).length" class="flex items-center gap-x-3 gap-y-2 flex-wrap px-4 py-3 bg-accent-soft/40 border-b border-accent/20 animate-slide-down">
+                <span class="text-xs font-semibold text-accent inline-flex items-center gap-1.5 shrink-0"><i class="fas fa-check-double"></i> {{ selectedInSection(sec.id).length }} selecionada(s)</span>
+                <span class="h-5 w-px bg-accent/20 shrink-0"></span>
+                <select @change="bulkStatus(sec.id, $event)" :class="bulkCtrl" title="Mudar status das selecionadas"><option value="">Mudar status</option><option v-for="s in statuses" :key="s.id" :value="s.id">{{ s.label }}</option></select>
+                <select @change="bulkAssignee(sec.id, $event)" :class="bulkCtrl" title="Atribuir responsável"><option value="">Atribuir responsável</option><option v-for="u in store.users" :key="u.id" :value="u.id">{{ u.username }}</option></select>
+                <select @change="bulkPriority(sec.id, $event)" :class="bulkCtrl" title="Definir prioridade"><option value="">Definir prioridade</option><option value="LOW">Baixa</option><option value="MEDIUM">Média</option><option value="HIGH">Alta</option><option value="URGENT">Urgente</option></select>
+                <label class="text-xs text-ink-muted inline-flex items-center gap-1.5">Prazo:<input type="date" @change="bulkDue(sec.id, $event)" :class="bulkCtrl" /></label>
+                <!-- <span class="inline-flex items-center gap-1.5 text-xs text-ink-muted">
+                    Adiar
+                    <input type="number" v-model.number="shiftN" class="w-14 text-xs rounded-lg border border-line bg-surface-raised text-ink px-2 py-1.5 focus-ring" />
+                    dias
+                </span> -->
+                <div class="ml-auto inline-flex items-center gap-1.5">
+                    <Button variant="normal" size="sm" @click="bulkShift(sec.id)">Aplicar</Button>
+                    <Button variant="danger" size="sm" icon="fas fa-trash" @click="bulkDelete(sec.id)">Excluir</Button>
+                    <Button variant="subtle" size="sm" @click="clearSection(sec.id)">Limpar</Button>
+                </div>
             </div>
 
             <!-- Tabela -->
@@ -124,6 +134,7 @@ const bulkCtrl = 'text-xs rounded-lg border border-line bg-surface-raised text-i
                         <tr class="text-ink-subtle text-[11px] uppercase tracking-wide">
                             <th class="w-9 px-2 py-2"></th>
                             <th class="px-3 py-2 text-left font-semibold">Tarefa</th>
+                            <th class="w-52 px-3 py-2 text-left font-semibold">Anotação</th>
                             <th class="w-48 px-3 py-2 text-left font-semibold">Status</th>
                             <th class="w-36 px-3 py-2 text-left font-semibold">Responsável</th>
                             <th class="w-36 px-3 py-2 text-left font-semibold">Prazo</th>
@@ -135,50 +146,55 @@ const bulkCtrl = 'text-xs rounded-lg border border-line bg-surface-raised text-i
                         <template v-for="cat in categoriesOf(sec.id)" :key="cat || 'geral'">
                             <tr v-if="cat" class="bg-surface-sunken/30">
                                 <td></td>
-                                <td colspan="6" class="px-3 py-1.5 text-[11px] font-semibold text-ink-muted uppercase tracking-wide">{{ cat }}</td>
+                                <td colspan="7" class="px-3 py-1.5 text-[11px] font-semibold text-ink-muted uppercase tracking-wide">{{ cat }}</td>
                             </tr>
                             <tr v-for="t in tasksByCategory(sec.id, cat)" :key="t.id"
                                 class="border-t border-line-subtle group transition-colors"
                                 :class="store.isSelected(t.id) ? 'bg-accent-soft/40' : 'hover:bg-surface-sunken/50'"
                                 @mouseenter="onHover(t, $event)" @mouseleave="onLeave">
-                                <td class="px-2 py-2.5 text-center align-middle">
-                                    <input type="checkbox" :checked="store.isSelected(t.id)" @change="store.toggleSelect(t.id)" class="h-4 w-4 cursor-pointer rounded" />
+                                <td class="px-2 py-1.5 text-center align-middle">
+                                    <input v-if="isAdmin" type="checkbox" :checked="store.isSelected(t.id)" @change="store.toggleSelect(t.id)" class="h-4 w-4 cursor-pointer rounded" />
                                 </td>
-                                <td class="px-3 py-2.5 align-middle">
-                                    <button @click="emit('open-task', t.id)" class="text-left text-ink font-medium hover:text-accent transition-colors">{{ t.title }}</button>
+                                <td class="px-3 py-1.5 align-middle">
+                                    <button @click="emit('open-task', t.id)" class="text-left text-ink font-medium hover:text-accent transition-colors w-80 truncate">{{ t.title }}</button>
                                     <span v-if="t.attachments_count" class="ml-2 text-xs text-ink-subtle"><i class="fas fa-paperclip"></i> {{ t.attachments_count }}</span>
                                     <span v-if="t.comments_count" class="ml-1.5 text-xs text-ink-subtle"><i class="fas fa-comment"></i> {{ t.comments_count }}</span>
                                 </td>
-                                <td class="px-2 py-2.5 align-middle">
+                                <td class="px-3 py-1.5 align-middle">
+                                    <span v-if="t.description" class="block max-w-[13rem] truncate text-xs text-ink-muted italic" :title="t.description"><i class="fas fa-note-sticky text-ink-subtle/60 mr-1"></i>{{ t.description }}</span>
+                                    <span v-else class="text-ink-subtle/40 text-xs">—</span>
+                                </td>
+                                <td class="px-2 py-1.5 align-middle">
                                     <div class="flex items-center gap-1.5">
                                         <span class="w-2 h-2 rounded-full shrink-0" :style="{ background: statusColor(t.status_id) }"></span>
                                         <select :value="t.status_id || ''" @change="store.setTaskStatus(t.id, Number($event.target.value) || null)" :class="cellInput">
                                             <option :value="''">- sem status -</option>
-                                            <option v-for="s in statuses" :key="s.id" :value="s.id">{{ s.label }}</option>
+                                            <option v-for="s in statuses" class="text-center" :key="s.id" :value="s.id">{{ s.label }}</option>
                                         </select>
                                     </div>
                                 </td>
-                                <td class="px-3 py-2.5 align-middle text-ink-muted truncate">
-                                    <span v-if="t.assignee">{{ t.assignee.username }}</span>
+                                <td class="px-3 py-1.5 align-middle text-ink-muted text-center truncate">
+                                    <span v-if="t.assignee">{{ t.assignee.username }}<span v-if="(t.assignee_user_ids || []).length > 1" class="text-ink-subtle" :title="(t.assignee_user_ids || []).length + ' responsáveis'"> +{{ t.assignee_user_ids.length - 1 }}</span></span>
                                     <span v-else-if="t.assignee_label">{{ t.assignee_label }}</span>
                                     <span v-else class="text-ink-subtle">-</span>
                                 </td>
-                                <td class="px-2 py-2.5 align-middle">
-                                    <input type="date" :value="t.due_date || ''" @change="store.patchTask(t.id, { due_date: $event.target.value || null })"
-                                        :class="[cellInput, t.due_date && t.due_date < today && t.state_class !== 'DONE' ? '!text-red-500 font-semibold' : 'text-ink-muted']" />
+                                <td class="px-2 py-1.5 align-middle">
+                                    <input type="date" :value="t.due_date || ''" :disabled="!isAdmin" @change="store.patchTask(t.id, { due_date: $event.target.value || null })"
+                                        class="text-center -me-6" :class="[cellInput, t.due_date && t.due_date < today && t.state_class !== 'DONE' ? '!text-red-500 font-semibold' : 'text-ink-muted']" />
                                 </td>
-                                <td class="px-2 py-2.5 align-middle">
+                                <td class="px-2 py-1.5 align-middle relative">
+                                    <span class="text-gray-300 text-xs absolute top-1 left-1">R$</span>
                                     <input type="number" step="0.01" :value="t.value ?? ''"
                                         @change="store.patchTask(t.id, { value: $event.target.value !== '' ? Number($event.target.value) : null })"
-                                        placeholder="0,00" :class="[cellInput, 'text-right']" />
+                                        :disabled="true" placeholder="0,00" :class="[cellInput, 'text-right border-none']" />
                                 </td>
-                                <td class="px-2 py-2.5 text-right align-middle">
+                                <td class="px-2 py-1.5 text-right align-middle">
                                     <button @click="emit('open-task', t.id)" title="Abrir" class="text-ink-subtle hover:text-accent opacity-0 group-hover:opacity-100 transition-opacity focus-ring rounded"><i class="fas fa-up-right-and-down-left-from-center text-xs"></i></button>
                                 </td>
                             </tr>
-                            <tr v-if="cat" class="border-t border-line-subtle/40">
+                            <tr v-if="cat && isAdmin" class="border-t border-line-subtle/40">
                                 <td></td>
-                                <td colspan="6" class="px-3 py-1.5">
+                                <td colspan="7" class="px-3 py-1.5">
                                     <input v-model="newCatTask[sec.id + '|' + cat]" @keyup.enter="addCatTask(sec.id, cat)" :placeholder="'+ tarefa em ' + cat"
                                         class="w-full text-xs bg-transparent placeholder-ink-subtle focus:outline-none text-ink-muted" />
                                 </td>
@@ -187,13 +203,13 @@ const bulkCtrl = 'text-xs rounded-lg border border-line bg-surface-raised text-i
 
                         <tr v-if="!topTasks(sec.id).length">
                             <td></td>
-                            <td colspan="6" class="px-3 py-3 text-xs text-ink-subtle">Nenhuma tarefa nesta seção.</td>
+                            <td colspan="7" class="px-3 py-3 text-xs text-ink-subtle">Nenhuma tarefa nesta seção.</td>
                         </tr>
 
-                        <!-- Nova tarefa -->
-                        <tr class="border-t border-line">
+                        <!-- Nova tarefa (admin) -->
+                        <tr v-if="isAdmin" class="border-t border-line">
                             <td></td>
-                            <td colspan="6" class="px-3 py-2.5">
+                            <td colspan="7" class="px-3 py-2.5">
                                 <div class="flex items-center gap-2">
                                     <i class="fas fa-plus text-ink-subtle text-xs"></i>
                                     <input v-model="newTaskTitle[sec.id]" @keyup.enter="addTask(sec.id)" placeholder="Nova tarefa (Enter para adicionar)"
@@ -213,7 +229,7 @@ const bulkCtrl = 'text-xs rounded-lg border border-line bg-surface-raised text-i
             Nenhuma tarefa corresponde aos filtros.
         </div>
 
-        <div class="flex items-center gap-2">
+        <div v-if="isAdmin" class="flex items-center gap-2">
             <input v-model="newSection" @keyup.enter="addSection" placeholder="+ Nova seção"
                 class="text-sm rounded-lg border border-line bg-surface-raised text-ink px-3 py-2 focus-ring" />
             <button @click="addSection" class="text-sm text-accent hover:underline font-medium">adicionar seção</button>

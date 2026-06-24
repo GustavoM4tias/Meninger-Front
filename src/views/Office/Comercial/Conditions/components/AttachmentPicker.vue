@@ -330,6 +330,7 @@ import { ref, computed, watch } from 'vue';
 import { useUploadStore } from '@/stores/Config/uploadStore';
 import { useMicrosoftStore } from '@/stores/Microsoft/microsoftStore';
 import { useSharepointStore } from '@/stores/Microsoft/sharepointStore';
+import { compressImage } from '@/utils/Checklist/imageCompress';
 
 const props = defineProps({
     modelValue: { type: String, default: '' },
@@ -337,8 +338,11 @@ const props = defineProps({
     hint: { type: String, default: '' },
     uploadContext: { type: String, default: 'appraisal_laudo' },
     referenceId: { type: [Number, String], default: null },
+    resourceType: { type: String, default: 'appraisal' },
     // Quando true, permite selecionar pastas inteiras no SharePoint (não apenas arquivos)
     allowFolderSelection: { type: Boolean, default: false },
+    // Quando true, comprime imagens (canvas) antes do upload (não afeta PDFs/docs).
+    compressImages: { type: Boolean, default: false },
 });
 const emit = defineEmits(['update:modelValue']);
 
@@ -424,11 +428,15 @@ async function handleUpload() {
     uploading.value  = true;
     uploadError.value = '';
     try {
-        uploadStore.setFile(uploadFile.value);
+        let toSend = uploadFile.value;
+        if (props.compressImages && String(toSend.type || '').startsWith('image/')) {
+            try { toSend = await compressImage(toSend); } catch { /* usa o original */ }
+        }
+        uploadStore.setFile(toSend);
         const result = await uploadStore.uploadByContext({
             context:      props.uploadContext,
             referenceId:  props.referenceId,
-            resourceType: 'appraisal',
+            resourceType: props.resourceType,
         }, false);
         const url = result?.url || result?.publicUrl || result?.fileUrl || '';
         if (!url) throw new Error('URL não retornada pelo servidor.');

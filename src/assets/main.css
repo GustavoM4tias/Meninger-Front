@@ -33,6 +33,8 @@
     --accent-hover: 29 78 216;         /* blue-700 */
     --accent-soft: 219 234 254;        /* blue-100 */
     --accent-ring: 59 130 246;         /* blue-500 */
+    /* Controles nativos (checkbox, date, scrollbar) seguem o tema do app, não o do SO. */
+    color-scheme: light;
   }
 
   .dark {
@@ -54,6 +56,7 @@
     --accent-hover: 96 165 250;        /* blue-400 */
     --accent-soft: 30 58 138;          /* blue-900 */
     --accent-ring: 96 165 250;
+    color-scheme: dark;
   }
 
   html, body, #app {

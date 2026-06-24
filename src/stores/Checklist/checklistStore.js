@@ -11,6 +11,11 @@ export const useChecklistStore = defineStore('checklist', () => {
     const statusesCatalog = ref([]);
     const users = ref([]);
     const enterprises = ref([]);
+    // ── Autorização / aprovação ──
+    const approvalMe = ref({ isApprover: false, profiles: [] }); // perfis do usuário atual
+    const authProfiles = ref([]);        // catálogo de perfis (admin)
+    const pendingApprovals = ref([]);    // tarefas aguardando minha decisão
+    const approvalPrompt = ref(null);    // { taskId } quando um status barrado foi bloqueado
 
     // ── Detalhe atual ──
     const current = ref(null);   // { checklist, sections, statuses, tasks }
@@ -37,10 +42,15 @@ export const useChecklistStore = defineStore('checklist', () => {
     async function loadHome() {
         loading.value = true; error.value = null;
         try {
-            const [dash, tpls] = await Promise.all([api.dashboard(), api.templates()]);
+            const [dash, tpls, me] = await Promise.all([
+                api.dashboard(),
+                api.templates(),
+                api.approvalMe().catch(() => ({ isApprover: false, profiles: [] })),
+            ]);
             dashboard.value = dash || { summary: {}, checklists: [], myTasks: [] };
             checklists.value = dash?.checklists || [];
             templates.value = tpls || [];
+            approvalMe.value = me || { isApprover: false, profiles: [] };
         } catch (e) { error.value = e.message; } finally { loading.value = false; }
     }
 
@@ -139,8 +149,16 @@ export const useChecklistStore = defineStore('checklist', () => {
 
     async function setTaskStatus(taskId, statusId) {
         const t = (current.value?.tasks || []).find((x) => x.id === taskId);
+        const prev = t ? t.status_id : null;
         if (t) { t.status_id = statusId; t.state_class = statusById.value.get(statusId)?.state_class || 'TODO'; }
-        try { await api.setTaskStatus(taskId, statusId); } catch (e) { error.value = e.message; await refreshCurrent(); return; }
+        try {
+            await api.setTaskStatus(taskId, statusId);
+        } catch (e) {
+            // Reverte o otimista e reage ao gating de autorização.
+            if (t) { t.status_id = prev; t.state_class = statusById.value.get(prev)?.state_class || 'TODO'; }
+            if (e.code === 'APPROVAL_REQUIRED') { approvalPrompt.value = { taskId }; return; }
+            error.value = e.message; await refreshCurrent(); return;
+        }
         recomputeLocalProgress();
     }
 
@@ -177,6 +195,42 @@ export const useChecklistStore = defineStore('checklist', () => {
     }
 
     async function deleteChecklist(id) { return api.remove(id); }
+    async function cloneChecklist(id, title) { return api.clone(id, title); }
+
+    // ── Autorização / aprovação ──
+    async function loadAuthProfiles() {
+        try { authProfiles.value = await api.authProfiles(); } catch (e) { error.value = e.message; }
+        return authProfiles.value;
+    }
+    async function saveAuthProfile(payload) {
+        const res = payload.id ? await api.updateAuthProfile(payload.id, payload) : await api.createAuthProfile(payload);
+        await loadAuthProfiles();
+        return res;
+    }
+    async function removeAuthProfile(id) { const r = await api.removeAuthProfile(id); await loadAuthProfiles(); return r; }
+    async function loadApprovalMe() {
+        try { approvalMe.value = await api.approvalMe(); } catch (e) { error.value = e.message; }
+        return approvalMe.value;
+    }
+    async function loadPendingApprovals() {
+        try { pendingApprovals.value = await api.pendingApprovals(); } catch (e) { error.value = e.message; }
+        return pendingApprovals.value;
+    }
+    async function submitForApproval(taskId) {
+        const res = await api.submitApproval(taskId);
+        if (currentTask.value?.task?.id === taskId) currentTask.value = res;
+        approvalPrompt.value = null;
+        await refreshCurrent();
+        return res;
+    }
+    async function decideApproval(taskId, payload) {
+        const res = await api.decideApproval(taskId, payload);
+        if (currentTask.value?.task?.id === taskId) currentTask.value = res;
+        await refreshCurrent();
+        await loadPendingApprovals();
+        return res;
+    }
+    function clearApprovalPrompt() { approvalPrompt.value = null; }
 
     // ── Seleção múltipla / edição em cascata ──
     function isSelected(id) { return selectedIds.value.includes(id); }
@@ -223,8 +277,8 @@ export const useChecklistStore = defineStore('checklist', () => {
     }
     function closeTask() { currentTask.value = null; }
 
-    async function addComment(taskId, text) {
-        const c = await api.addComment(taskId, text);
+    async function addComment(taskId, payload) {
+        const c = await api.addComment(taskId, payload);
         if (currentTask.value?.task?.id === taskId) currentTask.value.comments.push(c);
         const t = (current.value?.tasks || []).find((x) => x.id === taskId);
         if (t) t.comments_count = (t.comments_count || 0) + 1;
@@ -265,13 +319,15 @@ export const useChecklistStore = defineStore('checklist', () => {
 
     return {
         checklists, dashboard, templates, statusesCatalog, users, enterprises, current, currentTask, selectedIds,
+        approvalMe, authProfiles, pendingApprovals, approvalPrompt,
         loading, saving, error, statusById, tasksOfSection,
         loadHome, loadTemplates, loadUsers, loadEnterprises, loadStatusesCatalog, createFromTemplate, createBlank, importExcel,
         openChecklist, refreshCurrent, updateChecklist, archiveChecklist,
         addSection, updateSection, removeSection,
-        createTask, patchTask, setTaskStatus, setAssignee, removeTask, nudge, saveTask, deleteChecklist,
+        createTask, patchTask, setTaskStatus, setAssignee, removeTask, nudge, saveTask, deleteChecklist, cloneChecklist,
         isSelected, toggleSelect, selectMany, clearSelection, bulkApply, bulkApplyTo,
         loadChecklistCobranca, saveChecklistCobranca,
         openTask, closeTask, addComment, addAttachment, removeAttachment,
+        loadAuthProfiles, saveAuthProfile, removeAuthProfile, loadApprovalMe, loadPendingApprovals, submitForApproval, decideApproval, clearApprovalPrompt,
     };
 });

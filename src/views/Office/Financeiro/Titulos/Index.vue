@@ -238,15 +238,25 @@ function effectiveName(e) {
   return ccNames.displayName(e.erp_id, e.name);
 }
 
+// Rótulo "Nome (CC)" para o filtro buscar por nome OU por número do centro de custo.
+// Dedup por erp_id (enterprise_cities pode ter duplicatas crm/erp).
+const costCenterEntries = computed(() => {
+  const byId = new Map();
+  for (const e of contractsStore.enterpriseCities || []) {
+    const id = Number(e.erp_id);
+    if (!Number.isFinite(id) || byId.has(id)) continue;
+    byId.set(id, `${effectiveName(e)} (${id})`);
+  }
+  return byId;
+});
+
 const costCenterOptions = computed(() =>
-  (contractsStore.enterpriseCities || []).map(effectiveName)
+  Array.from(costCenterEntries.value.values()).sort((a, b) => a.localeCompare(b, 'pt-BR'))
 );
 
 const costCenterIdByName = computed(() => {
   const m = new Map();
-  for (const e of contractsStore.enterpriseCities || []) {
-    m.set(effectiveName(e), Number(e.erp_id));
-  }
+  for (const [id, label] of costCenterEntries.value) m.set(label, id);
   return m;
 });
 
@@ -254,7 +264,7 @@ function handleCostCenterChange(v) {
   const arr = Array.isArray(v) ? v : [];
   selectedCostCenterNames.value = arr;
   store.costCenterIds = arr
-    .map(name => costCenterIdByName.value.get(name))
+    .map(label => costCenterIdByName.value.get(label))
     .filter(id => Number.isFinite(id));
 }
 

@@ -680,15 +680,25 @@ function effectiveName(e) {
   return ccNames.displayName(e.erp_id, e.name);
 }
 
+// Rótulo "Nome (CC)" para o filtro buscar por nome OU por número do centro de custo.
+// Dedup por erp_id (enterprise_cities pode ter duplicatas crm/erp).
+const enterpriseEntries = computed(() => {
+  const byId = new Map();
+  for (const e of contractsStore.enterpriseCities || []) {
+    const id = Number(e.erp_id);
+    if (!Number.isFinite(id) || byId.has(id)) continue;
+    byId.set(id, `${effectiveName(e)} (${id})`);
+  }
+  return byId;
+});
+
 const enterpriseOptions = computed(() =>
-  (contractsStore.enterpriseCities || []).map(effectiveName)
+  Array.from(enterpriseEntries.value.values()).sort((a, b) => a.localeCompare(b, 'pt-BR'))
 );
 
 const enterpriseIdByName = computed(() => {
   const m = new Map();
-  for (const e of contractsStore.enterpriseCities || []) {
-    m.set(effectiveName(e), Number(e.erp_id));
-  }
+  for (const [id, label] of enterpriseEntries.value) m.set(label, id);
   return m;
 });
 

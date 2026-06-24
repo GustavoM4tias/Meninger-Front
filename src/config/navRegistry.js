@@ -56,7 +56,6 @@ export const navRegistry = [
             { route: '/checklists', section: 'Painel', name: 'Painel', icon: 'fas fa-gauge-high' },
             { route: '/checklists', section: 'Checklists', name: 'Checklists', icon: 'fas fa-list-check' },
             { route: '/checklists', section: 'Minhas Tarefas', name: 'Minhas Tarefas', icon: 'fas fa-user-check' },
-            { route: '/checklists/cobranca', name: 'Cobrança (régua)', icon: 'fas fa-bell', adminOnly: true },
         ],
     },
 

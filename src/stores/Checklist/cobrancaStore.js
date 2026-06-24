@@ -25,7 +25,7 @@ export const useCobrancaStore = defineStore('checklistCobranca', () => {
 
     // ── Status (rótulos e cores) ──
     function blankStatus() {
-        return { scope: 'GLOBAL', label: 'Novo status', color: '#94a3b8', state_class: 'TODO', position: (statuses.value.length + 1) * 10, is_active: true };
+        return { scope: 'GLOBAL', label: 'Novo status', color: '#94a3b8', state_class: 'TODO', position: (statuses.value.length + 1) * 10, is_active: true, requires_approval: false, approval_role: null };
     }
     async function addStatus() {
         const created = await api.createStatus(blankStatus());

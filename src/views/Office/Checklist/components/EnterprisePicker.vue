@@ -8,8 +8,9 @@ import Input from '@/components/UI/Input.vue';
 const props = defineProps({
     idempreendimento: { type: [Number, String, null], default: null },
     displayName: { type: String, default: '' },
+    costCenter: { type: String, default: '' },
 });
-const emit = defineEmits(['update:idempreendimento', 'update:displayName']);
+const emit = defineEmits(['update:idempreendimento', 'update:displayName', 'update:costCenter']);
 
 const store = useChecklistStore();
 
@@ -21,8 +22,8 @@ const mode = ref('manual');
 watch(() => props.idempreendimento, (v) => { if (v) mode.value = 'cv'; }, { immediate: true });
 
 const MODES = [
-    { value: 'cv', label: 'Buscar no CV', icon: 'fas fa-magnifying-glass' },
-    { value: 'manual', label: 'Digitar manual', icon: 'fas fa-keyboard' },
+    { value: 'cv', label: 'Empreendimento do CV', icon: 'fas fa-magnifying-glass' },
+    { value: 'manual', label: 'Nome manual', icon: 'fas fa-keyboard' },
 ];
 
 onMounted(() => { if (!store.enterprises.length) store.loadEnterprises(); });
@@ -50,7 +51,7 @@ function onManual(v) { emit('update:displayName', v); emit('update:idempreendime
 </script>
 
 <template>
-    <div class="space-y-2">
+    <div class="space-y-2.5">
         <SegmentedControl :model-value="mode" :options="MODES" size="sm" @update:model-value="mode = $event" />
 
         <MultiSelector v-if="mode === 'cv'" single :options="cvOptions" :model-value="cvModel"
@@ -58,9 +59,13 @@ function onManual(v) { emit('update:displayName', v); emit('update:idempreendime
         <Input v-else :model-value="displayName" placeholder="Nome do empreendimento (manual)"
             @update:model-value="onManual" />
 
-        <p v-if="mode === 'cv' && idempreendimento" class="text-[11px] text-ink-subtle">
+        <p v-if="mode === 'cv' && idempreendimento" class="text-[11px] text-ink-subtle -mt-0.5">
             <i class="fas fa-circle-check text-emerald-500"></i>
             {{ displayName }} <span class="text-ink-subtle/70">· #{{ idempreendimento }}</span>
         </p>
+
+        <!-- Centro de custo: disponível em qualquer caso (CV ou manual) p/ puxar dados depois. -->
+        <Input :model-value="costCenter" icon-left="fas fa-hashtag"
+            placeholder="Centro de custo (opcional)" @update:model-value="emit('update:costCenter', $event)" />
     </div>
 </template>

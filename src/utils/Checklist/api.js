@@ -14,7 +14,10 @@ async function req(path, opts = {}) {
     const resp = await fetch(`${API_URL}/checklists${path}`, { headers: authHeaders(), ...opts });
     const data = await resp.json().catch(() => ({}));
     if (!resp.ok) {
-        throw new Error(data?.message || data?.error || `Erro na requisição (${resp.status}).`);
+        const err = new Error(data?.message || data?.error || `Erro na requisição (${resp.status}).`);
+        err.code = data?.code || null; // ex.: APPROVAL_REQUIRED, APPROVAL_LOCKED
+        err.status = resp.status;
+        throw err;
     }
     return data;
 }
@@ -44,8 +47,20 @@ export default {
 
     // Modelos
     templates: () => req('/templates'),
+    templatesAll: () => req('/templates?includeInactive=true'),
     template: (id) => req(`/templates/${id}`),
     instantiate: (id, payload) => req(`/templates/${id}/instantiate`, { method: 'POST', ...body(payload) }),
+    // Edição de modelos (admin)
+    createTemplate: (payload) => req('/templates', { method: 'POST', ...body(payload) }),
+    updateTemplate: (id, payload) => req(`/templates/${id}`, { method: 'PATCH', ...body(payload) }),
+    deleteTemplate: (id) => req(`/templates/${id}`, { method: 'DELETE' }),
+    saveTemplateSection: (templateId, payload) => req(`/templates/${templateId}/sections`, { method: 'POST', ...body(payload) }),
+    removeTemplateSection: (id) => req(`/templates/sections/${id}`, { method: 'DELETE' }),
+    saveTemplateItem: (templateId, payload) => req(`/templates/${templateId}/items`, { method: 'POST', ...body(payload) }),
+    removeTemplateItem: (id) => req(`/templates/items/${id}`, { method: 'DELETE' }),
+
+    // Clonar checklist
+    clone: (id, title) => req(`/${id}/clone`, { method: 'POST', ...body({ title }) }),
 
     // Tarefas
     getTask: (id) => req(`/tasks/${id}`),
@@ -57,7 +72,7 @@ export default {
     nudgeTask: (id, message, channels) => req(`/tasks/${id}/nudge`, { method: 'POST', ...body({ message, channels }) }),
 
     // Comentários / anexos
-    addComment: (taskId, text) => req(`/tasks/${taskId}/comments`, { method: 'POST', ...body({ body: text }) }),
+    addComment: (taskId, payload) => req(`/tasks/${taskId}/comments`, { method: 'POST', ...body(typeof payload === 'string' ? { body: payload } : payload) }),
     removeComment: (id) => req(`/comments/${id}`, { method: 'DELETE' }),
     addAttachment: (taskId, payload) => req(`/tasks/${taskId}/attachments`, { method: 'POST', ...body(payload) }),
     removeAttachment: (id) => req(`/attachments/${id}`, { method: 'DELETE' }),
@@ -82,6 +97,16 @@ export default {
     users: () => req('/users'),
     // Empreendimentos do CV (seletor)
     enterprises: () => req('/enterprises'),
+
+    // ── Autorização / aprovação ──
+    authProfiles: () => req('/approval/profiles'),
+    createAuthProfile: (payload) => req('/approval/profiles', { method: 'POST', ...body(payload) }),
+    updateAuthProfile: (id, payload) => req(`/approval/profiles/${id}`, { method: 'PATCH', ...body(payload) }),
+    removeAuthProfile: (id) => req(`/approval/profiles/${id}`, { method: 'DELETE' }),
+    approvalMe: () => req('/approval/me'),
+    pendingApprovals: () => req('/approval/pending'),
+    submitApproval: (id) => req(`/tasks/${id}/submit-approval`, { method: 'POST' }),
+    decideApproval: (id, payload) => req(`/tasks/${id}/decision`, { method: 'POST', ...body(payload) }),
 
     // Importação de Excel (multipart — não usa o helper JSON)
     importExcel: async (file, title) => {
