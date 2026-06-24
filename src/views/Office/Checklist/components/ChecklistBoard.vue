@@ -5,6 +5,7 @@ import { useChecklistStore } from '@/stores/Checklist/checklistStore.js';
 import TaskPreview from './TaskPreview.vue';
 
 const store = useChecklistStore();
+defineProps({ isAdmin: { type: Boolean, default: false } });
 const emit = defineEmits(['open-task']);
 
 const today = dayjs().format('YYYY-MM-DD');
@@ -76,7 +77,7 @@ function onLeave() { clearTimeout(hoverTimer); hover.value = null; }
                     <div class="flex items-center gap-2 mt-2 text-xs text-ink-subtle flex-wrap">
                         <span>{{ sectionName(t.section_id) }}</span>
                         <span v-if="t.due_date" :class="t.due_date < today && t.state_class !== 'DONE' ? 'text-red-500 font-semibold' : ''"><i class="fas fa-clock"></i> {{ dayjs(t.due_date).format('DD/MM') }}</span>
-                        <span v-if="t.assignee" class="ml-auto"><i class="fas fa-user"></i> {{ t.assignee.username }}</span>
+                        <span v-if="t.assignee" class="ml-auto"><i class="fas fa-user"></i> {{ t.assignee.username }}<span v-if="(t.assignee_user_ids || []).length > 1"> +{{ t.assignee_user_ids.length - 1 }}</span></span>
                         <span v-else-if="t.assignee_label" class="ml-auto">{{ t.assignee_label }}</span>
                     </div>
                     <p v-if="brl(t.value)" class="text-xs text-ink-subtle mt-1">{{ brl(t.value) }}</p>

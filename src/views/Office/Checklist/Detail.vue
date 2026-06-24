@@ -10,18 +10,30 @@ import ChecklistTimeline from './components/ChecklistTimeline.vue';
 import TaskDrawer from './components/TaskDrawer.vue';
 import ChecklistCobrancaModal from './components/ChecklistCobrancaModal.vue';
 import ChecklistSettingsModal from './components/ChecklistSettingsModal.vue';
+import MultiSelector from '@/components/UI/MultiSelector.vue';
+import SegmentedControl from '@/components/UI/SegmentedControl.vue';
+import Modal from '@/components/UI/Modal.vue';
+import Button from '@/components/UI/Button.vue';
+import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 
 const store = useChecklistStore();
 const route = useRoute();
 const router = useRouter();
+const auth = useAuthStore();
+const isAdmin = computed(() => auth.user?.role === 'admin' || (typeof auth.hasRole === 'function' && auth.hasRole('admin')));
 
 const viewMode = ref('table');
 const openTaskId = ref(null);
 const showCobranca = ref(false);
 const showSettings = ref(false);
-const shiftN = ref(7);
 
 function onDeleted() { showSettings.value = false; router.push('/checklists'); }
+
+// Gating de autorização: a tabela/quadro bloqueia mudar p/ status barrado → pergunta.
+async function confirmApprovalPrompt() {
+    const id = store.approvalPrompt?.taskId;
+    if (id) { try { await store.submitForApproval(id); } catch (e) { store.error = e.message; } }
+}
 
 const brl = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(v) || 0);
 const fmt = (d) => (d ? dayjs(d).format('DD/MM/YYYY') : '-');
@@ -31,7 +43,6 @@ const progress = computed(() => checklist.value?.progress || checklist.value?.pr
 const keyDates = computed(() => (checklist.value?.key_dates || []).filter((k) => k.date));
 const statuses = computed(() => store.current?.statuses || []);
 const reminderLabel = computed(() => ({ DEFAULT: 'Padrão', CUSTOM: 'Personalizada', OFF: 'Desligada' }[checklist.value?.reminder_mode] || 'Padrão'));
-const selCount = computed(() => store.selectedIds.length);
 
 onMounted(async () => {
     store.clearSelection();
@@ -44,15 +55,26 @@ watch(() => route.params.id, (id) => { if (id) { store.clearSelection(); store.o
 function openTask(id) { openTaskId.value = id; router.replace({ query: { ...route.query, task: id } }); }
 function closeTask() { openTaskId.value = null; const q = { ...route.query }; delete q.task; router.replace({ query: q }); }
 
-// Edição em cascata
-function bulkStatus(e) { store.bulkApply({ status_id: Number(e.target.value) || null }); }
-function bulkAssignee(e) { store.bulkApply({ assignee_user_id: Number(e.target.value) || null }); }
-function bulkPriority(e) { if (e.target.value) store.bulkApply({ priority: e.target.value }); }
-function bulkDue(e) { store.bulkApply({ due_date: e.target.value || null }); }
-function bulkShift() { store.bulkApply({ shiftDays: Number(shiftN.value) || 0 }); }
-function bulkDelete() { if (confirm(`Excluir ${selCount.value} tarefa(s) selecionada(s)?`)) store.bulkApply({ delete: true }); }
+// ── Filtros do checklist (aplicados à Tabela) ──
+const filter = ref({ search: '', statuses: [], assignees: [], onlyOverdue: false, hideDone: false });
+const statusOptions = computed(() => statuses.value.map((s) => s.label));
+const assigneeOptions = computed(() => {
+    const set = new Set();
+    (store.current?.tasks || []).forEach((t) => {
+        if (t.assignee?.username) set.add(t.assignee.username);
+        else if (t.assignee_label) set.add(t.assignee_label);
+        else set.add('Sem responsável');
+    });
+    return Array.from(set).sort();
+});
+const filterCount = computed(() => filter.value.statuses.length + filter.value.assignees.length + (filter.value.onlyOverdue ? 1 : 0) + (filter.value.hideDone ? 1 : 0) + (filter.value.search.trim() ? 1 : 0));
+function clearFilters() { filter.value = { search: '', statuses: [], assignees: [], onlyOverdue: false, hideDone: false }; }
 
-const ctrlCls = 'text-xs rounded-lg border border-line bg-surface text-ink px-2 py-1 focus-ring';
+const VIEW_MODES = [
+    { value: 'table', label: 'Tabela', icon: 'fas fa-table-list' },
+    { value: 'board', label: 'Quadro', icon: 'fas fa-columns' },
+    { value: 'timeline', label: 'Linha do tempo', icon: 'fas fa-chart-gantt' },
+];
 </script>
 
 <template>
@@ -73,7 +95,10 @@ const ctrlCls = 'text-xs rounded-lg border border-line bg-surface text-ink px-2 
                                 <span v-if="checklist.status === 'draft'" class="text-[11px] font-semibold uppercase bg-amber-500/15 text-amber-600 dark:text-amber-400 px-2 py-0.5 rounded-md">Rascunho</span>
                                 <span v-else-if="checklist.status === 'done'" class="text-[11px] font-semibold uppercase bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-md">Concluído</span>
                             </h1>
-                            <p class="text-sm text-ink-muted">{{ checklist.display_name || (checklist.idempreendimento ? 'Empreendimento #' + checklist.idempreendimento : '') }}</p>
+                            <p class="text-sm text-ink-muted">
+                                {{ checklist.display_name || (checklist.idempreendimento ? 'Empreendimento #' + checklist.idempreendimento : '') }}
+                                <span v-if="checklist.cost_center" class="text-ink-subtle"><i class="fas fa-hashtag text-[10px]"></i> CC {{ checklist.cost_center }}</span>
+                            </p>
                             <div class="flex items-center gap-4 mt-1 text-xs text-ink-muted flex-wrap">
                                 <span><i class="fas fa-list-ul"></i> {{ progress.done || 0 }}/{{ progress.total || 0 }}</span>
                                 <span v-if="(progress.overdue || 0) > 0" class="text-red-500 font-semibold"><i class="fas fa-triangle-exclamation"></i> {{ progress.overdue }} em atraso</span>
@@ -82,7 +107,7 @@ const ctrlCls = 'text-xs rounded-lg border border-line bg-surface text-ink px-2 
                         </div>
                     </div>
                     <div class="flex flex-col items-end gap-2">
-                        <div class="flex items-center gap-2">
+                        <div v-if="isAdmin" class="flex items-center gap-2">
                             <button @click="showSettings = true" class="inline-flex items-center gap-2 text-xs border border-line rounded-lg px-3 py-1.5 text-ink-muted hover:bg-surface-sunken focus-ring">
                                 <i class="fas fa-gear"></i> Configurar
                             </button>
@@ -100,22 +125,53 @@ const ctrlCls = 'text-xs rounded-lg border border-line bg-surface text-ink px-2 
                 </div>
             </div>
 
-            <!-- Switcher -->
-            <div class="flex items-center gap-2 mb-4">
-                <div class="inline-flex rounded-lg border border-line overflow-hidden">
-                    <button @click="viewMode = 'table'" class="px-3 py-1.5 text-sm focus-ring" :class="viewMode === 'table' ? 'bg-accent text-white' : 'text-ink-muted hover:bg-surface-sunken'"><i class="fas fa-table-list"></i> Tabela</button>
-                    <button @click="viewMode = 'board'" class="px-3 py-1.5 text-sm focus-ring" :class="viewMode === 'board' ? 'bg-accent text-white' : 'text-ink-muted hover:bg-surface-sunken'"><i class="fas fa-columns"></i> Quadro</button>
-                    <button @click="viewMode = 'timeline'" class="px-3 py-1.5 text-sm focus-ring" :class="viewMode === 'timeline' ? 'bg-accent text-white' : 'text-ink-muted hover:bg-surface-sunken'"><i class="fas fa-chart-gantt"></i> Linha do tempo</button>
+            <!-- Switcher + filtros -->
+            <div class="mb-4 space-y-2.5">
+                <SegmentedControl :model-value="viewMode" :options="VIEW_MODES" @update:model-value="viewMode = $event" />
+
+                <div v-if="viewMode === 'table'" class="flex flex-wrap items-center gap-2">
+                    <div class="relative">
+                        <i class="fas fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-ink-subtle text-xs pointer-events-none"></i>
+                        <input v-model="filter.search" placeholder="Buscar tarefa..."
+                            class="w-80 pl-8 pr-3 h-9 text-sm rounded-lg border border-line bg-surface-raised text-ink shadow-inner-soft placeholder:text-ink-subtle outline-none focus:border-accent-ring focus:ring-2 focus:ring-accent-ring/20 transition-all" />
+                    </div>
+                    <div class="w-44 shrink-0"><MultiSelector :options="statusOptions" v-model="filter.statuses" placeholder="Status" /></div>
+                    <div class="w-44 shrink-0"><MultiSelector :options="assigneeOptions" v-model="filter.assignees" placeholder="Responsável" /></div>
+                    <button @click="filter.onlyOverdue = !filter.onlyOverdue" type="button"
+                        class="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg text-sm border transition shrink-0"
+                        :class="filter.onlyOverdue ? 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/30' : 'text-ink-muted border-line hover:bg-surface-sunken'">
+                        <i class="fas fa-triangle-exclamation text-xs"></i> Em atraso
+                    </button>
+                    <button @click="filter.hideDone = !filter.hideDone" type="button"
+                        class="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg text-sm border transition shrink-0"
+                        :class="filter.hideDone ? 'bg-accent-soft text-accent border-accent/30' : 'text-ink-muted border-line hover:bg-surface-sunken'">
+                        <i class="fas fa-eye-slash text-xs"></i> Ocultar concluídas
+                    </button>
+                    <button v-if="filterCount" @click="clearFilters" type="button" class="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg text-sm text-ink-muted hover:bg-surface-sunken border border-transparent shrink-0">
+                        <i class="fas fa-xmark"></i> limpar ({{ filterCount }})
+                    </button>
                 </div>
             </div>
 
-            <ChecklistTable v-if="viewMode === 'table'" @open-task="openTask" />
-            <ChecklistBoard v-else-if="viewMode === 'board'" @open-task="openTask" />
+            <ChecklistTable v-if="viewMode === 'table'" :filter="filter" :is-admin="isAdmin" @open-task="openTask" />
+            <ChecklistBoard v-else-if="viewMode === 'board'" :is-admin="isAdmin" @open-task="openTask" />
             <ChecklistTimeline v-else @open-task="openTask" />
 
             <TaskDrawer v-if="openTaskId" :task-id="openTaskId" @close="closeTask" @changed="() => {}" />
             <ChecklistCobrancaModal v-if="showCobranca" @close="showCobranca = false" />
             <ChecklistSettingsModal v-if="showSettings" @close="showSettings = false" @deleted="onDeleted" />
+
+            <!-- Gating: enviar para aprovação ao tentar avançar um status barrado -->
+            <Modal :open="!!store.approvalPrompt" size="sm" title="Autorização necessária" @close="store.clearApprovalPrompt()">
+                <div class="flex items-start gap-3">
+                    <span class="h-9 w-9 grid place-items-center rounded-full bg-accent-soft text-accent shrink-0"><i class="fas fa-user-shield"></i></span>
+                    <p class="text-sm text-ink-muted">Esta tarefa precisa passar por autorização antes de avançar para esse status. Enviar para aprovação agora?</p>
+                </div>
+                <template #footer>
+                    <Button variant="ghost" size="sm" @click="store.clearApprovalPrompt()">Cancelar</Button>
+                    <Button variant="primary" size="sm" icon="fas fa-paper-plane" @click="confirmApprovalPrompt">Enviar para aprovação</Button>
+                </template>
+            </Modal>
         </template>
     </div>
 </template>

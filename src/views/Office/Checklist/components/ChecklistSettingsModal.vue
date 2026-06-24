@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 import { useToast } from 'vue-toastification';
 import { useChecklistStore } from '@/stores/Checklist/checklistStore.js';
 import EnterprisePicker from './EnterprisePicker.vue';
@@ -10,10 +11,11 @@ import Badge from '@/components/UI/Badge.vue';
 
 const emit = defineEmits(['close', 'deleted']);
 const store = useChecklistStore();
+const router = useRouter();
 const toast = useToast();
 
 const saving = ref(false);
-const form = ref({ title: '', display_name: '', idempreendimento: null, key_dates: [], status: 'active' });
+const form = ref({ title: '', display_name: '', idempreendimento: null, cost_center: '', key_dates: [], status: 'active' });
 
 onMounted(() => {
     const c = store.current?.checklist || {};
@@ -21,6 +23,7 @@ onMounted(() => {
         title: c.title || '',
         display_name: c.display_name || '',
         idempreendimento: c.idempreendimento ?? null,
+        cost_center: c.cost_center || '',
         key_dates: JSON.parse(JSON.stringify(c.key_dates || [])),
         status: c.status || 'active',
     };
@@ -30,7 +33,8 @@ const statusBadge = computed(() => ({
     draft: { label: 'Rascunho', variant: 'warning' },
     done: { label: 'Concluído', variant: 'success' },
     archived: { label: 'Arquivado', variant: 'neutral' },
-}[form.value.status] || { label: 'Efetivo', variant: 'accent' }));
+}[form.value.status] || { label: 'Ativo', variant: 'accent' }));
+const isActive = computed(() => !['draft', 'done', 'archived'].includes(form.value.status));
 
 function slug(s) { return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, ''); }
 function addKeyDate() { form.value.key_dates.push({ key: '', label: '', date: '' }); }
@@ -46,12 +50,24 @@ async function save(newStatus) {
             title: form.value.title.trim(),
             display_name: form.value.display_name?.trim() || null,
             idempreendimento: form.value.idempreendimento || null,
+            cost_center: form.value.cost_center?.trim() || null,
             key_dates,
         };
         if (newStatus) payload.status = newStatus;
         await store.updateChecklist(payload);
-        toast.success(newStatus === 'draft' ? 'Salvo como rascunho.' : newStatus === 'active' ? 'Checklist efetivado.' : 'Configurações salvas.');
+        toast.success(newStatus === 'draft' ? 'Movido para rascunho.' : newStatus === 'active' ? 'Checklist ativado.' : 'Configurações salvas.');
         emit('close');
+    } catch (e) { toast.error(e.message); }
+    finally { saving.value = false; }
+}
+
+async function clone() {
+    saving.value = true;
+    try {
+        const res = await store.cloneChecklist(store.current.checklist.id);
+        toast.success('Checklist clonado - a cópia abre em rascunho.');
+        emit('close');
+        if (res?.checklist?.id) router.push(`/checklists/${res.checklist.id}`);
     } catch (e) { toast.error(e.message); }
     finally { saving.value = false; }
 }
@@ -88,7 +104,7 @@ const dateField = 'rounded-lg border border-line bg-surface-raised text-ink px-3
 
             <div>
                 <label class="block text-xs font-medium text-ink-muted mb-1.5">Empreendimento</label>
-                <EnterprisePicker v-model:idempreendimento="form.idempreendimento" v-model:display-name="form.display_name" />
+                <EnterprisePicker v-model:idempreendimento="form.idempreendimento" v-model:display-name="form.display_name" v-model:cost-center="form.cost_center" />
             </div>
 
             <div class="surface-card p-3.5">
@@ -117,9 +133,10 @@ const dateField = 'rounded-lg border border-line bg-surface-raised text-ink px-3
         <template #footer>
             <div class="flex flex-wrap items-center gap-2 w-full">
                 <Button variant="danger" size="sm" icon="fas fa-trash" :loading="saving" @click="del">Excluir</Button>
+                <Button variant="outline" size="sm" icon="fas fa-clone" :loading="saving" @click="clone">Clonar</Button>
                 <div class="flex flex-wrap items-center gap-2 ml-auto">
-                    <Button variant="outline" size="sm" icon="fas fa-file-pen" :disabled="saving" @click="save('draft')">Rascunho</Button>
-                    <Button variant="outline" size="sm" icon="fas fa-circle-check" :disabled="saving" @click="save('active')">Tornar efetivo</Button>
+                    <Button v-if="isActive" variant="outline" size="sm" icon="fas fa-file-pen" :disabled="saving" @click="save('draft')">Mover para rascunho</Button>
+                    <Button v-else variant="outline" size="sm" icon="fas fa-circle-check" :disabled="saving" @click="save('active')">Tornar ativo</Button>
                     <Button variant="primary" size="sm" icon="fas fa-floppy-disk" :loading="saving" @click="save()">Salvar</Button>
                 </div>
             </div>
