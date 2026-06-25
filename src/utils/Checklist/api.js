@@ -107,6 +107,7 @@ export default {
     pendingApprovals: () => req('/approval/pending'),
     submitApproval: (id) => req(`/tasks/${id}/submit-approval`, { method: 'POST' }),
     decideApproval: (id, payload) => req(`/tasks/${id}/decision`, { method: 'POST', ...body(payload) }),
+    cancelApproval: (id) => req(`/tasks/${id}/cancel-approval`, { method: 'POST' }),
 
     // Importação de Excel (multipart — não usa o helper JSON)
     importExcel: async (file, title) => {

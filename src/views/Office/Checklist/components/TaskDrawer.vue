@@ -308,6 +308,23 @@ const annotateAtt = ref(null);
 // Permissão: usuário normal edita só etapa, anotações, subtarefas, anexos e comentários.
 const isAdmin = computed(() => auth.user?.role === 'admin' || (typeof auth.hasRole === 'function' && auth.hasRole('admin')));
 
+// Voltar para ajuste (cancela o pedido de autorização) — executor/dono/admin, com aviso.
+const iAmAssignee = computed(() => {
+    const t = data.value?.task; if (!t) return false;
+    const ids = (t.assignee_user_ids?.length ? t.assignee_user_ids : (t.assignee_user_id ? [t.assignee_user_id] : [])).map(Number);
+    return ids.includes(Number(myId.value));
+});
+const canCancelApproval = computed(() => locked.value && (isAdmin.value || iAmAssignee.value));
+function askCancelApproval() {
+    confirmState.value = {
+        title: 'Voltar para ajuste',
+        message: 'Isto vai CANCELAR o pedido de autorização atual e devolver a tarefa para ajuste. As aprovações deste envio são descartadas e, para concluir, você precisará enviar novamente. Deseja continuar?',
+        confirmLabel: 'Cancelar autorização e ajustar',
+        variant: 'primary', icon: 'fas fa-rotate-left',
+        onConfirm: async () => { await store.cancelApproval(props.taskId); await load(); emit('changed'); },
+    };
+}
+
 // Múltiplos responsáveis (multiselect de usuários).
 const userNames = computed(() => (store.users || []).map((u) => u.username));
 const selectedAssigneeNames = computed(() => (draft.value.assignee_user_ids || []).map((id) => store.users.find((u) => u.id === id)?.username).filter(Boolean));
@@ -572,8 +589,9 @@ const fieldCls = `${fieldBase} px-3 py-2 text-sm rounded-lg`;
             </div>
 
             <!-- Rodapé: em aprovação fica bloqueado -->
-            <div v-if="data?.task && locked" class="border-t border-line px-5 py-3.5 bg-surface shrink-0 text-center">
+            <div v-if="data?.task && locked" class="border-t border-line px-5 py-3.5 bg-surface shrink-0 space-y-2 text-center">
                 <p class="text-sm text-amber-600 dark:text-amber-400 font-medium"><i class="fas fa-lock"></i> Em aprovação - edição bloqueada até a decisão.</p>
+                <Button v-if="canCancelApproval" variant="outline" size="sm" icon="fas fa-rotate-left" @click="askCancelApproval">Voltar para ajuste (cancela a autorização)</Button>
             </div>
 
             <!-- Rodapé fixo: notificação + salvar -->
