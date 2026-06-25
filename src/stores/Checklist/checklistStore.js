@@ -230,6 +230,13 @@ export const useChecklistStore = defineStore('checklist', () => {
         await loadPendingApprovals();
         return res;
     }
+    async function cancelApproval(taskId) {
+        const res = await api.cancelApproval(taskId);
+        if (currentTask.value?.task?.id === taskId) currentTask.value = res;
+        await refreshCurrent();
+        await loadPendingApprovals();
+        return res;
+    }
     function clearApprovalPrompt() { approvalPrompt.value = null; }
 
     // ── Seleção múltipla / edição em cascata ──
@@ -328,6 +335,6 @@ export const useChecklistStore = defineStore('checklist', () => {
         isSelected, toggleSelect, selectMany, clearSelection, bulkApply, bulkApplyTo,
         loadChecklistCobranca, saveChecklistCobranca,
         openTask, closeTask, addComment, addAttachment, removeAttachment,
-        loadAuthProfiles, saveAuthProfile, removeAuthProfile, loadApprovalMe, loadPendingApprovals, submitForApproval, decideApproval, clearApprovalPrompt,
+        loadAuthProfiles, saveAuthProfile, removeAuthProfile, loadApprovalMe, loadPendingApprovals, submitForApproval, decideApproval, cancelApproval, clearApprovalPrompt,
     };
 });
