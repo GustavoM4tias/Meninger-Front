@@ -74,6 +74,31 @@ function medalStyle(pos, total) {
   return 'bg-surface-sunken text-ink-muted';
 }
 
+// ── Olhinho: ver o palpite de um participante (modal, dados já carregados) ──────
+const viewPid = ref(null);
+const viewRow = computed(() => viewPid.value == null ? null : store.ranking.find(r => r.participant.id === viewPid.value) || null);
+const viewSubtitle = computed(() => {
+  const r = viewRow.value;
+  if (!r) return '';
+  const parts = [];
+  if (r.participant.subtitle) parts.push(r.participant.subtitle);
+  if (r.total > 0) parts.push(`${r.total} pts`);
+  return parts.join(' · ');
+});
+function openView(row) { viewPid.value = row.participant.id; }
+function predScore(cell) {
+  if (!cell || !cell.has_prediction || cell.pred_home == null) return '—';
+  return `${cell.pred_home} : ${cell.pred_away}`;
+}
+function cellLabel(status) {
+  const pe = store.bolao?.points_exact ?? 3;
+  const pw = store.bolao?.points_winner ?? 1;
+  if (status === 'exact')  return { t: `cravou +${pe}`,  cls: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400' };
+  if (status === 'winner') return { t: `acertou +${pw}`, cls: 'bg-blue-500/15 text-blue-600 dark:text-blue-400' };
+  if (status === 'miss')   return { t: 'errou',          cls: 'bg-red-500/15 text-red-600 dark:text-red-400' };
+  return { t: 'aguardando', cls: 'bg-surface-sunken text-ink-muted' };
+}
+
 // ── Polling enquanto há jogo ao vivo (pausa com painel admin aberto) ───────────
 let timer = null;
 function setupPolling() {
@@ -373,6 +398,12 @@ onUnmounted(() => { if (timer) clearInterval(timer); });
                 <span class="text-lg font-bold tabular-nums text-ink">{{ row.total }}</span>
                 <span class="text-[11px] text-ink-subtle"> pts</span>
               </div>
+
+              <button type="button" title="Ver palpite" :aria-label="`Ver palpite de ${row.participant.display_name}`"
+                class="h-8 w-8 grid place-items-center rounded-lg text-ink-subtle hover:bg-accent-soft hover:text-accent transition-colors shrink-0"
+                @click="openView(row)">
+                <i class="fas fa-eye text-xs"></i>
+              </button>
             </div>
 
             <div v-if="!store.ranking.length" class="py-10 text-center text-sm text-ink-muted">
@@ -405,6 +436,30 @@ onUnmounted(() => { if (timer) clearInterval(timer); });
       </div>
       <template #footer>
         <Button variant="secondary" @click="showUserPicker = false">Concluir</Button>
+      </template>
+    </Modal>
+
+    <!-- Modal: ver palpite de um participante (olhinho) -->
+    <Modal :open="viewPid != null" size="md"
+      :title="viewRow ? `Palpite de ${viewRow.participant.display_name}` : 'Palpite'"
+      :subtitle="viewSubtitle" @close="viewPid = null">
+      <div v-if="viewRow" class="space-y-2">
+        <div v-for="(m, i) in store.matches" :key="m.id"
+          class="flex items-center justify-between gap-3 rounded-xl border border-line bg-surface px-3 py-2.5">
+          <div class="flex items-center gap-2 text-sm min-w-0">
+            <img v-if="flagUrl(m.home_country)" :src="flagUrl(m.home_country)" class="h-3.5 w-5 rounded-[2px] object-cover shrink-0" :alt="m.home_team" />
+            <span class="font-medium text-ink">{{ m.home_code }}</span>
+            <b class="px-2 tabular-nums text-ink">{{ predScore(viewRow.perMatch[i]) }}</b>
+            <span class="font-medium text-ink">{{ m.away_code }}</span>
+            <img v-if="flagUrl(m.away_country)" :src="flagUrl(m.away_country)" class="h-3.5 w-5 rounded-[2px] object-cover shrink-0" :alt="m.away_team" />
+          </div>
+          <span class="text-[11px] font-medium px-2 py-0.5 rounded-full shrink-0" :class="cellLabel(viewRow.perMatch[i]?.status).cls">
+            {{ cellLabel(viewRow.perMatch[i]?.status).t }}
+          </span>
+        </div>
+      </div>
+      <template #footer>
+        <Button variant="secondary" @click="viewPid = null">Fechar</Button>
       </template>
     </Modal>
   </div>
