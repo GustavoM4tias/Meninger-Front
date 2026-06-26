@@ -2,7 +2,6 @@
 // Gráfico Dia-a-dia da campanha — ECharts com:
 //  - Barras de gasto/dia (eixo Y esquerdo, R$)
 //  - Linha de leads Meta/dia (eixo Y direito)
-//  - Linha de leads Office/dia (eixo Y direito)
 //  - Tooltip rico com todas as métricas do dia
 
 import { computed } from 'vue';
@@ -33,7 +32,6 @@ const option = computed(() => {
     const days = props.daily.map(d => d.day);
     const spend = props.daily.map(d => Number(d.spend) || 0);
     const metaLeads = props.daily.map(d => Number(d.meta_leads) || 0);
-    const officeLeads = props.daily.map(d => Number(d.office_leads) || 0);
 
     return {
         backgroundColor: 'transparent',
@@ -42,7 +40,7 @@ const option = computed(() => {
             top: 6,
             textStyle: { color: '#94a3b8', fontSize: 11 },
             itemWidth: 12, itemHeight: 8,
-            data: ['Gasto', 'Leads Meta', 'Leads Office'],
+            data: ['Gasto', 'Leads Meta'],
         },
         tooltip: {
             trigger: 'axis',
@@ -134,17 +132,6 @@ const option = computed(() => {
                         { offset: 1, color: 'rgba(16, 185, 129, 0)' },
                     ]),
                 },
-            },
-            {
-                name: 'Leads Office',
-                type: 'line',
-                yAxisIndex: 1,
-                data: officeLeads,
-                smooth: true,
-                symbol: 'circle',
-                symbolSize: 5,
-                lineStyle: { color: '#f59e0b', width: 2, type: 'dashed' },
-                itemStyle: { color: '#f59e0b' },
             },
         ],
     };

@@ -14,13 +14,15 @@ const emit = defineEmits(['update:open']);
 
 const store = useCampaignsStore();
 
+// Corte do cutover: tudo a partir de 01/06 vai pro CV.
+const CUTOFF = '2026-06-01';
+
 function close() { emit('update:open', false); }
 
 // Opções customizáveis pro full sync
 const fullOpts = ref({
     sinceDays: 90,
     historicalDays: 30,
-    reconcileLimit: 200,
     adsAllStatuses: false,
 });
 
@@ -31,8 +33,7 @@ async function doFullSync() {
         '  1. Forms (Meta Lead Forms)\n' +
         `  2. Campanhas (últimos ${fullOpts.value.sinceDays} dias)\n` +
         `  3. Anúncios (${fullOpts.value.adsAllStatuses ? 'TODAS' : 'só ATIVAS'} campanhas)\n` +
-        `  4. Leads históricos (últimos ${fullOpts.value.historicalDays} dias)\n` +
-        `  5. Reconciliação com CV (até ${fullOpts.value.reconcileLimit} leads)\n\n` +
+        `  4. Leads históricos (últimos ${fullOpts.value.historicalDays} dias)\n\n` +
         'Pode demorar alguns minutos. Tudo isso roda no cron a cada 2h em horário comercial.'
     )) return;
     await store.runFullSync({ ...fullOpts.value });
@@ -54,10 +55,33 @@ async function doReparse() {
     if (result) alert(`✅ ${result.updated} atualizados de ${result.scanned} escaneados.`);
 }
 
-async function doReconcileBatch() {
-    if (!confirm(`Buscar correspondência no CV pra ${fullOpts.value.reconcileLimit} leads sem cv_idlead?`)) return;
-    const result = await store.reconcileBatch({ limit: fullOpts.value.reconcileLimit });
-    if (result) alert(`✅ ${result.matched} encontrados · ${result.unmatched} sem match · ${result.errors} erros (de ${result.processed}).`);
+async function doDispatchHistorical() {
+    // 1) Preview leve (go/no-go) — não envia nada.
+    const pre = await store.dispatchHistorical({ cutoff: CUTOFF, preview: true });
+    if (!pre) { alert('Falha no preview: ' + (store.error || 'erro desconhecido')); return; }
+    if (pre.shadow_mode) {
+        alert('⚠️ Modo sombra (dry-run) ainda está LIGADO.\n\nDesligue em Configurações › Geral e salve antes de disparar — senão nada é enviado ao CV.');
+        return;
+    }
+    const ok = confirm(
+        `Disparar pro CV desde ${pre.cutoff}?\n\n` +
+        `• Histórico da Meta: ${pre.historical_total}\n` +
+        `• Fila segurada pela sombra (routed): ${pre.routed_pending}\n` +
+        `• Total no backlog: ${pre.total}\n\n` +
+        'Envia em lotes de 500 (resumível). Quem já existe no CV é ATUALIZADO (não duplica). ' +
+        'Histórico de campanha sem vínculo fica de fora.'
+    );
+    if (!ok) return;
+    // 2) Disparo real do lote.
+    const result = await store.dispatchHistorical({ cutoff: CUTOFF, preview: false, limit: 500 });
+    if (!result) { alert('Falha no disparo: ' + (store.error || 'erro desconhecido')); return; }
+    let msg = '✅ Lote enviado ao CV.\n\n' +
+        `Despachados: ${result.dispatched} (entregues ${result.delivered}, falhas ${result.failed})\n` +
+        `Histórico sem vínculo (ficaram de fora): ${result.historical_no_binding}\n` +
+        `Sem contato: ${result.no_contact}\n` +
+        `Erros: ${result.errors?.length || 0}`;
+    if (result.reached_limit) msg += '\n\n⚠️ Atingiu o lote de 500 — RODE DE NOVO pra continuar até zerar.';
+    alert(msg);
 }
 
 async function doMigrateMappings() {
@@ -93,12 +117,12 @@ async function doMigrateMappings() {
             <div class="flex-1 min-w-0">
               <div class="text-base font-semibold text-ink">Sincronizar TUDO</div>
               <p class="text-xs text-ink-muted mt-0.5">
-                Forms → Campanhas → Anúncios → Leads históricos → Reconciliação com CV.
+                Forms → Campanhas → Anúncios → Leads históricos.
                 <b>Roda em sequência</b> e pode demorar alguns minutos.
               </p>
 
               <!-- Opções -->
-              <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3">
+              <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-3">
                 <label class="block">
                   <span class="text-[10px] uppercase tracking-wider text-ink-subtle">Janela campanhas/ads</span>
                   <select v-model.number="fullOpts.sinceDays" class="w-full rounded border border-line bg-surface px-2 py-1 text-xs text-ink">
@@ -117,15 +141,6 @@ async function doMigrateMappings() {
                     <option :value="30">30 dias</option>
                     <option :value="60">60 dias</option>
                     <option :value="90">90 dias (máx Meta)</option>
-                  </select>
-                </label>
-                <label class="block">
-                  <span class="text-[10px] uppercase tracking-wider text-ink-subtle">Reconciliação CV</span>
-                  <select v-model.number="fullOpts.reconcileLimit" class="w-full rounded border border-line bg-surface px-2 py-1 text-xs text-ink">
-                    <option :value="100">100 leads</option>
-                    <option :value="200">200 leads</option>
-                    <option :value="500">500 leads</option>
-                    <option :value="0">Pular</option>
                   </select>
                 </label>
                 <label class="block">
@@ -165,9 +180,6 @@ async function doMigrateMappings() {
               <li v-if="store.lastFullSync.historical">
                 <b>Histórico:</b> {{ store.lastFullSync.historical.inserted }} novos, {{ store.lastFullSync.historical.duplicates }} dup
               </li>
-              <li v-if="store.lastFullSync.reconciliation">
-                <b>CV-recon:</b> {{ store.lastFullSync.reconciliation.matched }} casados de {{ store.lastFullSync.reconciliation.processed }}
-              </li>
             </ul>
           </div>
         </div>
@@ -202,13 +214,13 @@ async function doMigrateMappings() {
             <p class="text-[11px] text-ink-muted">Aplica parser novo no raw_payload de leads antigos.</p>
           </button>
 
-          <button @click="doReconcileBatch" class="rounded-lg border border-line p-3 hover:border-accent/30 transition-colors text-left">
+          <button @click="doDispatchHistorical" class="rounded-lg border border-emerald-500/40 bg-emerald-500/5 p-3 hover:border-emerald-500/60 transition-colors text-left">
             <div class="flex items-center gap-2 mb-1">
-              <i class="fas fa-link text-amber-500"></i>
-              <span class="font-medium text-sm text-ink">Reconciliar com CV</span>
-              <span v-if="store.reconciling" class="ml-auto"><i class="fas fa-circle-notch fa-spin text-xs text-accent"></i></span>
+              <i class="fas fa-paper-plane text-emerald-600"></i>
+              <span class="font-medium text-sm text-ink">Disparar histórico ao CV</span>
+              <span v-if="store.dispatching" class="ml-auto"><i class="fas fa-circle-notch fa-spin text-xs text-accent"></i></span>
             </div>
-            <p class="text-[11px] text-ink-muted">Casa leads sem cv_idlead via email/telefone.</p>
+            <p class="text-[11px] text-ink-muted">Envia o backlog desde 01/06 (preview antes). Atualiza quem já existe.</p>
           </button>
 
           <button @click="doMigrateMappings" class="rounded-lg border border-line p-3 hover:border-accent/30 transition-colors text-left sm:col-span-2">

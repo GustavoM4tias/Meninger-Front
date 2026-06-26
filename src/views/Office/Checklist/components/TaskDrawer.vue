@@ -9,6 +9,9 @@ import Switch from '@/components/UI/Switch.vue';
 import Badge from '@/components/UI/Badge.vue';
 import Modal from '@/components/UI/Modal.vue';
 import MultiSelector from '@/components/UI/MultiSelector.vue';
+import UserAvatar from '@/components/UI/UserAvatar.vue';
+import UserAvatarStack from '@/components/UI/UserAvatarStack.vue';
+import UserInfoModal from '@/components/UI/UserInfoModal.vue';
 import AttachmentViewerModal from './AttachmentViewerModal.vue';
 import AttachmentPicker from '@/views/Office/Comercial/Conditions/components/AttachmentPicker.vue';
 import ImageAnnotator from './ImageAnnotator.vue';
@@ -71,11 +74,23 @@ async function load() {
         const t = store.currentTask?.task || {};
         draft.value = EDITABLE.reduce((o, k) => { o[k] = t[k] ?? null; return o; }, {});
         for (const k of ['assignee_user_ids', 'auth_profile_ids', 'checklist_items']) if (!Array.isArray(draft.value[k])) draft.value[k] = [];
+        // Contratação não preenchida = data de criação da tarefa (baseline, não marca "não salva").
+        if (!draft.value.contracted_at) { const created = whenOf(t); if (created && dayjs(created).isValid()) draft.value.contracted_at = dayjs(created).format('YYYY-MM-DD'); }
         loaded.value = currentNorm();
     } finally { loading.value = false; }
 }
 
 async function save() {
+    // Concluir é terminal: avisa que depois não volta para outras etapas.
+    if (!doneWarned.value && changedKeys.value.includes('status_id') && isDoneStatus(draft.value.status_id) && !isDoneStatus(loaded.value.status_id)) {
+        confirmState.value = {
+            title: 'Concluir tarefa',
+            message: 'Ao concluir, a tarefa NÃO poderá voltar para outras etapas depois. Deseja concluir?',
+            confirmLabel: 'Concluir', variant: 'primary', icon: 'fas fa-flag-checkered',
+            onConfirm: async () => { doneWarned.value = true; try { await save(); } finally { doneWarned.value = false; } },
+        };
+        return;
+    }
     saving.value = true;
     try {
         const c = currentNorm();
@@ -98,7 +113,8 @@ async function save() {
                 variant: 'primary', icon: 'fas fa-paper-plane',
                 onConfirm: async () => { await store.submitForApproval(props.taskId); await load(); emit('changed'); },
             };
-        } else { toast.error(e.message); }
+        } else if (e.code === 'DONE_LOCKED') { draft.value.status_id = loaded.value.status_id; toast.error(e.message); }
+        else { toast.error(e.message); }
     }
     finally { saving.value = false; }
 }
@@ -107,35 +123,47 @@ async function saveAndClose() { await save(); if (!dirty.value) emit('close'); }
 function tryClose() { if (dirty.value && !confirm('Há alterações não salvas. Descartar?')) return; emit('close'); }
 function onBackdrop() { if (dirty.value) { toast.info('Salve ou descarte as alterações primeiro.'); return; } emit('close'); }
 
-// Menções: autocomplete ao digitar @ + destaque no texto exibido.
+// Menções: autocomplete (aceita nome com espaço) + destaque só de usuários REAIS.
 const mentionMatches = ref([]);
 const showMention = ref(false);
 function onCommentInput() {
-    const m = commentText.value.match(/@([\w.\-]*)$/);
+    const m = commentText.value.match(/@([^@]*)$/);   // tudo após o último @ (permite espaço)
     if (m) {
-        const q = m[1].toLowerCase();
-        mentionMatches.value = (store.users || []).filter((u) => u.username.toLowerCase().includes(q)).slice(0, 6);
+        const q = m[1].trim().toLowerCase();
+        mentionMatches.value = (store.users || []).filter((u) => (u.username || '').toLowerCase().includes(q)).slice(0, 6);
         showMention.value = mentionMatches.value.length > 0;
     } else { showMention.value = false; }
 }
 function pickMention(u) {
-    commentText.value = commentText.value.replace(/@([\w.\-]*)$/, '@' + u.username + ' ');
+    commentText.value = commentText.value.replace(/@([^@]*)$/, '@' + u.username + ' ');
     showMention.value = false;
 }
-function renderBody(body) {
-    const out = []; const re = /(@[\w.\-]+)/g; let last = 0, m;
-    while ((m = re.exec(body)) !== null) {
-        if (m.index > last) out.push({ text: body.slice(last, m.index), mention: false });
-        out.push({ text: m[0], mention: true });
-        last = re.lastIndex;
+// Varre o texto casando NOMES COMPLETOS de usuários (o mais longo primeiro). Só
+// pessoas reais viram menção (azul) e entram na notificação — "@brun" solto não conta.
+function scanMentions(body) {
+    const text = body || '';
+    const sorted = [...(store.users || [])].sort((a, b) => (b.username?.length || 0) - (a.username?.length || 0));
+    const segments = [];
+    const ids = new Set();
+    const pushText = (ch) => { const last = segments[segments.length - 1]; if (last && !last.mention) last.text += ch; else segments.push({ text: ch, mention: false }); };
+    let i = 0;
+    while (i < text.length) {
+        if (text[i] === '@') {
+            const u = sorted.find((x) => x.username && text.slice(i + 1, i + 1 + x.username.length).toLowerCase() === x.username.toLowerCase());
+            if (u) { segments.push({ text: '@' + u.username, mention: true }); ids.add(u.id); i += 1 + u.username.length; continue; }
+        }
+        pushText(text[i]); i++;
     }
-    if (last < (body || '').length) out.push({ text: body.slice(last), mention: false });
-    return out;
+    return { segments, ids: Array.from(ids) };
 }
+function renderBody(body) { return scanMentions(body).segments; }
 async function sendComment() {
     const text = commentText.value.trim();
     if (!text) return;
-    try { await store.addComment(props.taskId, text); commentText.value = ''; showMention.value = false; } catch (e) { toast.error(e.message); }
+    try {
+        await store.addComment(props.taskId, { body: text, mentioned_user_ids: scanMentions(text).ids });
+        commentText.value = ''; showMention.value = false;
+    } catch (e) { toast.error(e.message); }
 }
 // ── Confirmação genérica (excluir tarefa / anexo) via modal. ──
 const confirmState = ref(null); // { title, message, confirmLabel, onConfirm }
@@ -184,14 +212,23 @@ function kindFromUrl(u) {
     if (/\.(pdf|docx?|xlsx?|pptx?|txt|csv|zip)(\?|$)/i.test(u)) return 'FILE';
     return 'LINK';
 }
-async function addAttach() {
-    const url = (attachUrl.value || '').trim();
+async function addAttach(explicitUrl) {
+    if (locked.value) return;
+    const url = (typeof explicitUrl === 'string' ? explicitUrl : attachUrl.value || '').trim();
     if (!url) return;
     try {
         await store.addAttachment(props.taskId, { url, file_name: fileNameFromUrl(url), kind: kindFromUrl(url) });
         attachUrl.value = '';
-        toast.success('Anexo vinculado.');
+        toast.success('Anexo adicionado.');
+        emit('changed');
     } catch (e) { toast.error(e.message); }
+}
+// Vindo do AttachmentPicker (upload/URL/SharePoint): URL completa = adiciona na hora.
+// Digitação parcial não dispara (não casa http(s)://) — aí usa o botão "Adicionar".
+function onAttachPicked(url) {
+    attachUrl.value = url || '';
+    // URL completa (http(s)://host.tld/...) = veio do modal (upload/SharePoint/confirmar) → adiciona já.
+    if (/^https?:\/\/\S+\.\S+/i.test((url || '').trim())) addAttach(url);
 }
 function isImg(a) { return a.kind === 'IMAGE' || (a.mime_type || '').startsWith('image/') || /\.(png|jpe?g|webp|gif|bmp|svg)(\?|$)/i.test(a.url || ''); }
 function attIcon(a) {
@@ -211,6 +248,9 @@ const historyOpen = ref(false);
 const PRIORITY_PT = { LOW: 'Baixa', MEDIUM: 'Média', HIGH: 'Alta', URGENT: 'Urgente' };
 const PRIORITY_VARIANT = { LOW: 'neutral', MEDIUM: 'info', HIGH: 'warning', URGENT: 'danger' };
 const currentStatus = computed(() => statuses.value.find((s) => s.id === Number(draft.value.status_id)) || null);
+// Concluído (state_class DONE) é terminal — usado p/ avisar antes de salvar.
+const doneWarned = ref(false);
+function isDoneStatus(id) { return statuses.value.find((s) => s.id === Number(id))?.state_class === 'DONE'; }
 const brl = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(v) || 0);
 
 // ── Histórico/atividade legível (com from → to dos campos alterados). ──
@@ -219,10 +259,26 @@ const ACTION_PT = {
     'task.updated': { label: 'atualizou', icon: 'fas fa-pen' },
     'status_changed': { label: 'mudou o status', icon: 'fas fa-flag' },
     'comment.added': { label: 'comentou', icon: 'fas fa-comment' },
+    'comment.annotated': { label: 'marcou uma imagem', icon: 'fas fa-pen-nib' },
+    'comment.removed': { label: 'removeu um comentário', icon: 'fas fa-comment-slash' },
     'attachment.added': { label: 'anexou arquivo', icon: 'fas fa-paperclip' },
+    'attachment.annotated': { label: 'anexou uma marcação', icon: 'fas fa-pen-nib' },
+    'attachment.removed': { label: 'removeu um anexo', icon: 'fas fa-link-slash' },
     'nudge.sent': { label: 'cobrou a entrega', icon: 'fas fa-bell' },
-    'reminder.sent': { label: 'lembrete de cobrança', icon: 'fas fa-clock' },
+    'reminder.sent': { label: 'enviou um lembrete', icon: 'fas fa-clock' },
+    'approval.requested': { label: 'enviou para aprovação', icon: 'fas fa-paper-plane' },
+    'approval.approved': { label: 'aprovou', icon: 'fas fa-check' },
+    'approval.rejected': { label: 'reprovou', icon: 'fas fa-xmark' },
+    'approval.cancelled': { label: 'voltou para ajuste (cancelou a autorização)', icon: 'fas fa-rotate-left' },
+    'task.removed': { label: 'excluiu a tarefa', icon: 'fas fa-trash' },
     'task.bulk_updated': { label: 'edição em lote', icon: 'fas fa-layer-group' },
+    'task.bulk_removed': { label: 'exclusão em lote', icon: 'fas fa-layer-group' },
+    'checklist.created': { label: 'criou o checklist', icon: 'fas fa-list-check' },
+    'checklist.updated': { label: 'atualizou o checklist', icon: 'fas fa-pen' },
+    'checklist.archived': { label: 'arquivou o checklist', icon: 'fas fa-box-archive' },
+    'checklist.imported': { label: 'importou do Excel', icon: 'fas fa-file-import' },
+    'section.created': { label: 'criou uma seção', icon: 'fas fa-folder-plus' },
+    'section.removed': { label: 'removeu uma seção', icon: 'fas fa-folder-minus' },
 };
 const FIELD_PT = { title: 'título', status_id: 'status', priority: 'prioridade', value: 'valor', value_kind: 'recorrência', due_date: 'prazo', contracted_at: 'contratação', started_at: 'início', assignee_user_id: 'responsável', assignee_user_ids: 'responsáveis', assignee_label: 'responsável', checklist_items: 'subtarefas', description: 'anotações', category: 'categoria', section_id: 'seção', parent_task_id: 'subtarefa', position: 'ordem' };
 function fmtFieldVal(field, v) {
@@ -325,12 +381,21 @@ function askCancelApproval() {
     };
 }
 
-// Múltiplos responsáveis (multiselect de usuários).
+// Múltiplos responsáveis (multiselect de usuários) — somente usuários, sem texto livre.
 const userNames = computed(() => (store.users || []).map((u) => u.username));
 const selectedAssigneeNames = computed(() => (draft.value.assignee_user_ids || []).map((id) => store.users.find((u) => u.id === id)?.username).filter(Boolean));
 function onAssigneesChange(names) {
     draft.value.assignee_user_ids = names.map((n) => store.users.find((u) => u.username === n)?.id).filter(Boolean);
 }
+// Responsáveis resolvidos p/ as bolinhas (avatar). Usa o draft p/ refletir a edição.
+const assignees = computed(() => {
+    const ids = (draft.value.assignee_user_ids || []).length
+        ? draft.value.assignee_user_ids
+        : (data.value?.task?.assignee_user_id ? [data.value.task.assignee_user_id] : []);
+    return ids.map((id) => (store.users || []).find((u) => u.id === Number(id))).filter(Boolean);
+});
+// Modal de info do colaborador (clique na bolinha) — estilo organograma.
+const infoUser = ref(null);
 
 // Subtarefas (checklist dentro da tarefa) — acompanha a evolução.
 const newItemText = ref('');
@@ -376,6 +441,12 @@ const fieldCls = `${fieldBase} px-3 py-2 text-sm rounded-lg`;
             <div v-if="loading || !data?.task" class="p-10 text-center text-ink-subtle"><i class="fas fa-spinner fa-spin text-lg"></i></div>
 
             <div v-else class="flex-1 min-h-0 overflow-y-auto px-5 py-5 space-y-6">
+
+                <!-- Responsáveis (bolinhas; clique abre o card do colaborador) -->
+                <div v-if="assignees.length" class="flex items-center gap-2.5">
+                    <span class="text-xs font-semibold text-ink-muted uppercase tracking-wide">Responsáveis</span>
+                    <UserAvatarStack :users="assignees" :size="30" @select="infoUser = $event" />
+                </div>
 
                 <!-- Painel de autorização / aprovação -->
                 <div v-if="approvalStatus !== 'NONE'" class="rounded-xl border p-3.5"
@@ -436,9 +507,8 @@ const fieldCls = `${fieldBase} px-3 py-2 text-sm rounded-lg`;
                         <select v-model="draft.value_kind" :class="fieldCls"><option :value="null">Avulso</option><option value="MONTHLY">Mensal</option></select>
                     </div>
                     <div class="col-span-2">
-                        <label :class="labelBase">Responsáveis <span class="text-ink-subtle font-normal">(1 ou mais — tarefa em grupo)</span></label>
+                        <label :class="labelBase">Responsáveis <span class="text-ink-subtle font-normal">(1 ou mais - tarefa em grupo)</span></label>
                         <MultiSelector :options="userNames" :model-value="selectedAssigneeNames" placeholder="Selecionar responsáveis..." @change="onAssigneesChange" />
-                        <input v-model="draft.assignee_label" placeholder="ou texto livre (ex.: AGÊNCIA, ADM)" :class="[fieldCls, 'mt-2']" />
                     </div>
                     <div class="col-span-2">
                         <label :class="labelBase">Categoria <span class="text-ink-subtle font-normal">(divisão dentro da seção)</span></label>
@@ -500,13 +570,14 @@ const fieldCls = `${fieldBase} px-3 py-2 text-sm rounded-lg`;
                 <div class="border-t border-line pt-5">
                     <label class="text-xs font-semibold text-ink-muted uppercase tracking-wide">Anexos</label>
 
-                    <!-- Vincular: Colar URL / Enviar Arquivo / SharePoint -->
-                    <div class="flex items-start gap-2 mt-2">
+                    <!-- Vincular: Colar URL / Enviar Arquivo / SharePoint (bloqueado em aprovação) -->
+                    <div v-if="!locked" class="flex items-start gap-2 mt-2">
                         <div class="flex-1 min-w-0">
-                            <AttachmentPicker v-model="attachUrl" upload-context="checklist_attachment" :reference-id="taskId" resource-type="" compress-images placeholder="Cole o link, envie ou busque no SharePoint" />
+                            <AttachmentPicker :model-value="attachUrl" @update:model-value="onAttachPicked" upload-context="checklist_attachment" :reference-id="taskId" resource-type="" compress-images placeholder="Cole o link, envie ou busque no SharePoint" />
                         </div>
-                        <Button size="md" icon="fas fa-plus py-1" :disabled="!attachUrl" @click="addAttach" class="shrink-0">Adicionar</Button>
+                        <Button size="md" icon="fas fa-plus py-1" :disabled="!attachUrl" @click="addAttach()" class="shrink-0">Adicionar</Button>
                     </div>
+                    <p v-else class="mt-2 text-[11px] text-amber-600 dark:text-amber-400"><i class="fas fa-lock"></i> Em aprovação - anexos bloqueados até a decisão.</p>
 
                     <!-- Mini-visualização (clique abre o visualizador) -->
                     <div v-if="data?.attachments?.length" class="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-3">
@@ -521,7 +592,7 @@ const fieldCls = `${fieldBase} px-3 py-2 text-sm rounded-lg`;
                             <div class="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition">
                                 <button v-if="isImg(a)" @click.stop="annotateAtt = a" class="h-6 w-6 grid place-items-center rounded-md bg-surface-overlay/90 text-ink-subtle hover:text-accent shadow-soft" title="Marcar imagem (proofing)"><i class="fas fa-pen text-[10px]"></i></button>
                                 <a :href="a.url" target="_blank" rel="noopener" @click.stop class="h-6 w-6 grid place-items-center rounded-md bg-surface-overlay/90 text-ink-subtle hover:text-accent shadow-soft" title="Abrir em nova aba"><i class="fas fa-arrow-up-right-from-square text-[10px]"></i></a>
-                                <button @click.stop="askRemoveAttachment(a)" class="h-6 w-6 grid place-items-center rounded-md bg-surface-overlay/90 text-ink-subtle hover:text-red-500 shadow-soft" title="Remover"><i class="fas fa-xmark text-[10px]"></i></button>
+                                <button v-if="!locked" @click.stop="askRemoveAttachment(a)" class="h-6 w-6 grid place-items-center rounded-md bg-surface-overlay/90 text-ink-subtle hover:text-red-500 shadow-soft" title="Remover"><i class="fas fa-xmark text-[10px]"></i></button>
                             </div>
                             <span v-if="a.annotated_from_id" class="absolute top-1 left-1 px-1.5 py-0.5 rounded-md text-[9px] font-semibold bg-accent text-white shadow-soft"><i class="fas fa-pen"></i> marcação</span>
                         </div>
@@ -535,7 +606,10 @@ const fieldCls = `${fieldBase} px-3 py-2 text-sm rounded-lg`;
                     <div class="space-y-2.5 mt-3 max-h-80 overflow-y-auto pr-1">
                         <div v-for="c in comments" :key="c.id" class="flex" :class="isMine(c) ? 'justify-end' : 'justify-start'">
                             <div class="max-w-[82%] min-w-0">
-                                <p v-if="!isMine(c)" class="text-[11px] font-semibold mb-0.5 px-1 truncate" :class="authorColor(c)">{{ c.author?.username || 'Usuário' }}</p>
+                                <div v-if="!isMine(c)" class="flex items-center gap-1.5 mb-0.5 px-1">
+                                    <UserAvatar :name="c.author?.username || 'Usuário'" :size="18" :ring="false" />
+                                    <span class="text-[11px] font-semibold truncate" :class="authorColor(c)">{{ c.author?.username || 'Usuário' }}</span>
+                                </div>
                                 <div class="rounded-2xl px-3 py-2 text-sm shadow-soft" :class="isMine(c) ? 'bg-accent text-white rounded-br-md' : 'bg-surface-sunken text-ink rounded-bl-md'">
                                     <p v-if="c.body" class="whitespace-pre-wrap break-words"><template v-for="(seg, i) in renderBody(c.body)" :key="i"><span v-if="seg.mention" :class="isMine(c) ? 'font-semibold underline decoration-white/50' : 'text-accent font-medium'">{{ seg.text }}</span><template v-else>{{ seg.text }}</template></template></p>
                                     <button v-if="c.image_url" type="button" @click="viewerAtt = { url: c.image_url, file_name: c.annotated_from_id ? 'Marcação' : 'Imagem', kind: 'IMAGE' }" class="block" :class="c.body ? 'mt-1.5' : ''">
@@ -567,9 +641,11 @@ const fieldCls = `${fieldBase} px-3 py-2 text-sm rounded-lg`;
                     </button>
                     <ul v-show="historyOpen" class="mt-3 space-y-3">
                         <li v-for="ev in data.activity.slice(0, 20)" :key="ev.id" class="flex gap-3 text-xs">
-                            <span class="h-6 w-6 grid place-items-center rounded-full bg-surface-sunken text-ink-subtle shrink-0 mt-0.5"><i :class="actionMeta(ev.action).icon" class="text-[10px]"></i></span>
+                            <UserAvatar v-if="ev.actor?.username" :name="ev.actor.username" :size="24" :ring="false" class="mt-0.5" />
+                            <span v-else class="h-6 w-6 grid place-items-center rounded-full bg-surface-sunken text-ink-subtle shrink-0 mt-0.5"><i :class="actionMeta(ev.action).icon" class="text-[10px]"></i></span>
                             <div class="min-w-0 flex-1">
                                 <p class="text-ink-muted">
+                                    <i :class="actionMeta(ev.action).icon" class="text-ink-subtle text-[10px] mr-1"></i>
                                     <span class="font-medium text-ink">{{ ev.actor?.username || 'Sistema' }}</span>
                                     {{ actionMeta(ev.action).label }}<span v-if="!changeLines(ev).length">{{ fallbackFields(ev) }}</span>
                                     <span class="text-ink-subtle"> · {{ fmtWhen(ev) }}</span>
@@ -582,6 +658,7 @@ const fieldCls = `${fieldBase} px-3 py-2 text-sm rounded-lg`;
                                         <span class="text-ink font-medium">{{ ln.to }}</span>
                                     </li>
                                 </ul>
+                                <p v-if="ev.meta?.comment" class="mt-0.5 text-ink-subtle italic break-words">"{{ ev.meta.comment }}"</p>
                             </div>
                         </li>
                     </ul>
@@ -616,6 +693,7 @@ const fieldCls = `${fieldBase} px-3 py-2 text-sm rounded-lg`;
         </div>
         <AttachmentViewerModal v-if="viewerAtt" :attachment="viewerAtt" @close="viewerAtt = null" />
         <ImageAnnotator v-if="annotateAtt" :attachment="annotateAtt" :task-id="taskId" @close="annotateAtt = null" />
+        <UserInfoModal v-if="infoUser" :user="infoUser" @close="infoUser = null" />
 
         <!-- Confirmação (excluir tarefa / anexo) -->
         <Modal :open="!!confirmState" size="sm" :title="confirmState?.title" @close="confirmCancel">

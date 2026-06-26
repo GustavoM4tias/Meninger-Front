@@ -399,6 +399,9 @@ export const useAuthStore = defineStore('user', {
         position: payload.position,
         city: payload.city,
         birth_date: payload.birth_date,
+        phone: payload.phone ?? null,
+        manager_id: payload.manager_id ?? null,
+        status: payload.status ?? true,
       };
 
       try {

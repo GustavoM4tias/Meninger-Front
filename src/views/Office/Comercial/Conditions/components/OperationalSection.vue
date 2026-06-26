@@ -191,8 +191,8 @@
         <div
           class="flex items-center justify-between p-3.5 rounded-md border border-line bg-gray-50/50 dark:bg-gray-800/30">
           <div>
-            <p class="text-sm font-medium text-ink">CCA cobra da empresa</p>
-            <p class="text-xs text-ink-subtle mt-0.5">Ative se o CCA cobra taxa da Menin</p>
+            <p class="text-sm font-medium text-ink">CCA tem custo</p>
+            <p class="text-xs text-ink-subtle mt-0.5">Ative se há custo de CCA neste produto (escolha o pagador abaixo)</p>
           </div>
           <button type="button" @click="set('cca_charges_company', !form.cca_charges_company)"
             :class="form.cca_charges_company ? 'bg-blue-600' : 'bg-surface-sunken'"
@@ -203,12 +203,36 @@
           </button>
         </div>
 
-        <div v-if="form.cca_charges_company">
-          <label class="lbl">Valor Cobrado pelo CCA (R$)</label>
-          <div class="relative">
-            <span class="pfx">R$</span>
-            <input :value="form.cca_cost" @input="set('cca_cost', numOrNull($event))" type="number" step="100"
-              class="inp-pfx" placeholder="0,00" :disabled="readonly" />
+        <div v-if="form.cca_charges_company" class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
+          <div>
+            <label class="lbl">Valor Cobrado pelo CCA (R$)</label>
+            <div class="relative">
+              <span class="pfx">R$</span>
+              <input type="text" :value="fmtBR(form.cca_cost)"
+                @focus="e => { e.target.value = form.cca_cost ?? ''; e.target.select(); }"
+                @blur="e => set('cca_cost', parseBR(e.target.value))"
+                class="inp-pfx" placeholder="0,00" :disabled="readonly" />
+            </div>
+          </div>
+          <div>
+            <label class="lbl">Pago por</label>
+            <div class="flex gap-2 flex-wrap mt-1">
+              <label v-for="opt in payerOptions" :key="opt.value"
+                class="flex items-center gap-2 px-3.5 py-2 rounded-md border cursor-pointer transition-all text-sm font-medium select-none"
+                :class="(form.cca_paid_by || 'menin') === opt.value
+                  ? 'border-accent bg-accent-soft text-accent shadow-sm'
+                  : 'border-line text-ink-muted bg-surface-raised/60 hover:border-gray-300 dark:hover:border-gray-600'"
+                :style="readonly ? 'pointer-events:none;opacity:.75' : ''">
+                <input type="radio" :value="opt.value" :checked="(form.cca_paid_by || 'menin') === opt.value"
+                  @change="set('cca_paid_by', opt.value)" class="sr-only" :disabled="readonly" />
+                <span class="w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all"
+                  :class="(form.cca_paid_by || 'menin') === opt.value ? 'border-accent bg-blue-500' : 'border-line'">
+                  <span v-if="(form.cca_paid_by || 'menin') === opt.value" class="w-1 h-1 rounded-full bg-white"></span>
+                </span>
+                <i :class="opt.icon" class="text-xs opacity-70"></i>
+                {{ opt.label }}
+              </label>
+            </div>
           </div>
         </div>
       </div>
@@ -284,7 +308,7 @@
             <div class="flex items-center justify-between gap-4 p-3.5 rounded-md border border-line bg-gray-50/50 dark:bg-gray-800/30">
               <div class="min-w-0">
                 <p class="text-sm font-semibold text-ink">Tem custo?</p>
-                <p class="text-xs text-ink-subtle mt-0.5">Custo é sempre pago pela Menin (entra automaticamente no resumo).</p>
+                <p class="text-xs text-ink-subtle mt-0.5">Marque se há custo e escolha o pagador (entra no resumo).</p>
               </div>
               <button type="button" @click="set('digital_cert_has_cost', !form.digital_cert_has_cost)"
                 :class="form.digital_cert_has_cost ? 'bg-blue-600' : 'bg-surface-sunken'"
@@ -302,9 +326,26 @@
                   @blur="e => set('digital_cert_cost', parseBR(e.target.value))"
                   class="inp-pfx" placeholder="0,00" :disabled="readonly" />
               </div>
-              <p class="mt-1 text-[11px] text-accent font-medium">
-                <i class="fas fa-building text-[10px] mr-1"></i>Pago pela Menin
-              </p>
+              <div class="mt-2">
+                <label class="lbl">Pago por</label>
+                <div class="flex gap-2 flex-wrap mt-1">
+                  <label v-for="opt in payerOptions" :key="opt.value"
+                    class="flex items-center gap-2 px-3.5 py-2 rounded-md border cursor-pointer transition-all text-sm font-medium select-none"
+                    :class="(form.digital_cert_paid_by || 'menin') === opt.value
+                      ? 'border-accent bg-accent-soft text-accent shadow-sm'
+                      : 'border-line text-ink-muted bg-surface-raised/60 hover:border-gray-300 dark:hover:border-gray-600'"
+                    :style="readonly ? 'pointer-events:none;opacity:.75' : ''">
+                    <input type="radio" :value="opt.value" :checked="(form.digital_cert_paid_by || 'menin') === opt.value"
+                      @change="set('digital_cert_paid_by', opt.value)" class="sr-only" :disabled="readonly" />
+                    <span class="w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all"
+                      :class="(form.digital_cert_paid_by || 'menin') === opt.value ? 'border-accent bg-blue-500' : 'border-line'">
+                      <span v-if="(form.digital_cert_paid_by || 'menin') === opt.value" class="w-1 h-1 rounded-full bg-white"></span>
+                    </span>
+                    <i :class="opt.icon" class="text-xs opacity-70"></i>
+                    {{ opt.label }}
+                  </label>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -377,6 +418,12 @@ const certProviderOptions = [
   { value: 'splink', label: 'Splink', icon: 'fas fa-bolt' },
   { value: 'gov', label: 'Gov.br', icon: 'fas fa-landmark' },
   { value: 'outra', label: 'Outra', icon: 'fas fa-ellipsis' },
+];
+
+// Pagador uniforme (Menin x cliente) para CCA e certificação digital.
+const payerOptions = [
+  { value: 'menin',  label: 'Menin',   icon: 'fas fa-building' },
+  { value: 'client', label: 'Cliente', icon: 'fas fa-user' },
 ];
 
 // ── Modo Gestor: sistema (FK user) ou manual (texto livre) ────────────────────

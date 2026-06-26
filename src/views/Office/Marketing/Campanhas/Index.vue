@@ -183,7 +183,7 @@ const filtered = computed(() => {
     if (sortBy === 'spend') {
         arr.sort((a, b) => (Number(b.spend) || 0) - (Number(a.spend) || 0));
     } else if (sortBy === 'leads') {
-        arr.sort((a, b) => (b.lead_stats?.total || 0) - (a.lead_stats?.total || 0));
+        arr.sort((a, b) => (Number(b.meta_leads_total) || 0) - (Number(a.meta_leads_total) || 0));
     } else if (sortBy === 'cac') {
         arr.sort((a, b) => (Number(a.cac) || Infinity) - (Number(b.cac) || Infinity));
     } else if (sortBy === 'start') {
@@ -199,20 +199,17 @@ const filtered = computed(() => {
 });
 
 const summary = computed(() => {
-    let spend = 0, leadsMeta = 0, leadsOffice = 0, delivered = 0, impressions = 0, clicks = 0;
+    let spend = 0, leadsMeta = 0, impressions = 0, clicks = 0;
     for (const c of filtered.value) {
         spend       += Number(c.spend) || 0;
         leadsMeta   += Number(c.meta_leads_total) || 0;
-        leadsOffice += c.lead_stats?.total     || 0;
-        delivered   += c.lead_stats?.delivered || 0;
         impressions += c.impressions || 0;
         clicks      += c.clicks      || 0;
     }
-    // Para o CAC médio agregado, usa Office se temos dados; senão usa Meta.
-    const totalLeads = leadsOffice > 0 ? leadsOffice : leadsMeta;
-    const cacMedio = totalLeads > 0 ? spend / totalLeads : null;
+    // CAC médio agregado base Meta (telas Meta = só Meta).
+    const cacMedio = leadsMeta > 0 ? spend / leadsMeta : null;
     const ctrAgg   = impressions > 0 ? (clicks / impressions) * 100 : null;
-    return { spend, leadsMeta, leadsOffice, delivered, impressions, clicks, cacMedio, ctrAgg };
+    return { spend, leadsMeta, impressions, clicks, cacMedio, ctrAgg };
 });
 
 function fmtMoney(v, currency = 'BRL') {
@@ -290,7 +287,7 @@ function periodEnd(c) {
           </Button>
           <!-- Gear admin — só pra admin -->
           <button v-if="isAdmin" @click="adminModalOpen = true"
-            title="Ferramentas admin (sincronizar, importar histórico, reconciliar com CV, etc.)"
+            title="Ferramentas admin (sincronizar, importar histórico, disparar ao CV, etc.)"
             class="inline-flex items-center justify-center w-8 h-8 rounded-md border border-line bg-surface hover:bg-surface-hover hover:border-accent/40 text-ink-muted hover:text-ink transition-colors">
             <i class="fas fa-screwdriver-wrench text-xs"></i>
           </button>
@@ -444,15 +441,6 @@ function periodEnd(c) {
         </div>
       </div>
 
-      <!-- Resultado reconciliação CV -->
-      <div v-if="store.lastReconcile"
-        class="rounded-lg border border-emerald-500/30 bg-emerald-500/5 px-3 py-2.5 text-sm text-emerald-700 dark:text-emerald-300 mb-3">
-        <i class="fas fa-link mr-1"></i>
-        <b>Reconciliação CV:</b> {{ store.lastReconcile.processed }} processado(s) ·
-        <b>{{ store.lastReconcile.matched }}</b> encontrado(s) no CV ·
-        {{ store.lastReconcile.unmatched }} sem match · {{ store.lastReconcile.errors }} erro(s)
-      </div>
-
       <!-- Erro -->
       <div v-if="store.error"
         class="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-300 flex items-start gap-2 mb-3">
@@ -581,17 +569,13 @@ function periodEnd(c) {
                     {{ fmtInt(c.meta_leads_total || 0) }}
                     <i class="fab fa-meta text-[9px] text-ink-subtle ml-0.5"></i>
                   </div>
-                  <div class="text-[10px] text-ink-subtle leading-tight" title="Leads no nosso banco via webhook">
-                    Office: {{ fmtInt(c.lead_stats?.total || 0) }}
-                    <span v-if="c.lead_stats?.delivered" class="text-emerald-600 dark:text-emerald-300">· {{ c.lead_stats.delivered }} ent.</span>
-                  </div>
                 </td>
 
                 <!-- CAC -->
                 <td class="px-3 py-2.5 text-right whitespace-nowrap text-sm">
-                  <span v-if="c.cac != null" class="font-medium text-ink" :title="c.cac_source === 'meta' ? 'CAC calculado usando contagem da Meta' : 'CAC com base no nosso banco'">
+                  <span v-if="c.cac != null" class="font-medium text-ink" title="CAC = gasto ÷ leads da Meta">
                     {{ fmtMoney(c.cac, c.currency) }}
-                    <i v-if="c.cac_source === 'meta'" class="fab fa-meta text-[9px] text-ink-subtle ml-0.5"></i>
+                    <i class="fab fa-meta text-[9px] text-ink-subtle ml-0.5"></i>
                   </span>
                   <span v-else class="text-ink-subtle italic text-xs">—</span>
                 </td>

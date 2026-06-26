@@ -3,7 +3,7 @@
     <PageContainer size="full">
 
       <PageHeader
-        subtitle="Acompanhe os gastos por centro de custo no período selecionado"
+        subtitle="Pagamentos por centro de custo no período (por data de pagamento)"
         icon="fas fa-building">
         <template #title>
           Custos por Empreendimento
@@ -88,7 +88,7 @@
           <div class="text-2xl font-bold text-emerald-700 dark:text-emerald-200 font-mono tabular-nums">
             {{ filteredTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) }}
           </div>
-          <div class="text-[10px] text-emerald-700/70 dark:text-emerald-300/70 mt-1">Ativos (exclui cancelados)</div>
+          <div class="text-[10px] text-emerald-700/70 dark:text-emerald-300/70 mt-1">Pago no período</div>
         </Surface>
 
         <Surface v-if="filteredCancelledTotal > 0" variant="raised" padding="md" class="border-red-500/30 bg-red-500/10 surface-gradient">
@@ -296,7 +296,7 @@
           <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
             <span class="text-[11px] font-medium text-ink-muted whitespace-nowrap flex items-center gap-1.5">
               <i class="fas fa-calendar-days text-ink-subtle text-[10px]"></i>
-              Vencimento entre
+              Pagamento entre
             </span>
             <div class="flex items-center gap-2 flex-1">
               <Input v-model="modalFilterDateFrom" type="date" />
@@ -379,7 +379,7 @@
                 </th>
                 <th @click="handleModalSort('date')"
                   class="px-3 py-3 text-left text-[11px] font-mono uppercase tracking-wider text-ink-subtle cursor-pointer hover:text-ink whitespace-nowrap">
-                  <span class="flex items-center gap-1">Vencimento <i :class="getModalSortIcon('date')"></i></span>
+                  <span class="flex items-center gap-1">Pagamento <i :class="getModalSortIcon('date')"></i></span>
                 </th>
                 <th @click="handleModalSort('title')"
                   class="px-3 py-3 text-left text-[11px] font-mono uppercase tracking-wider text-ink-subtle cursor-pointer hover:text-ink">
@@ -418,10 +418,10 @@
 
                 <td class="px-3 py-3 whitespace-nowrap">
                   <div class="font-medium text-ink font-mono tabular-nums">
-                    {{ formatDate(exp.dueDate) }}
+                    {{ formatDate(exp.paidAt) }}
                   </div>
                   <div class="text-[10px] text-ink-subtle mt-0.5">
-                    Competência: {{ formatMonth(exp.competenceMonth) }}
+                    Vencimento: {{ formatDate(exp.dueDate) }}
                   </div>
                   <div v-if="exp.bill?.issueDate" class="text-[10px] text-ink-subtle">
                     Emissão: {{ formatDate(exp.bill.issueDate) }}
@@ -571,7 +571,7 @@
             <div>
               <span class="font-mono uppercase text-[10px] tracking-wider text-ink-subtle block mb-0.5">Vencimento</span>
               <span class="font-mono tabular-nums">{{ formatDate(editingExpense.dueDate) }}</span>
-              <span class="text-ink-subtle block">Competência: {{ formatMonth(editingExpense.competenceMonth) }}</span>
+              <span class="text-ink-subtle block">Pagamento: {{ formatDate(editingExpense.paidAt) }}</span>
             </div>
             <div>
               <span class="font-mono uppercase text-[10px] tracking-wider text-ink-subtle block mb-0.5">Parcela</span>
@@ -924,13 +924,13 @@ const modalExpenses = computed(() => {
 
   if (modalFilterDateFrom.value) {
     list = list.filter(exp => {
-      const d = exp.dueDate || exp.competenceMonth;
+      const d = exp.paidAt || exp.dueDate;
       return d && d >= modalFilterDateFrom.value;
     });
   }
   if (modalFilterDateTo.value) {
     list = list.filter(exp => {
-      const d = exp.dueDate || exp.competenceMonth;
+      const d = exp.paidAt || exp.dueDate;
       return d && d <= modalFilterDateTo.value;
     });
   }
@@ -940,8 +940,8 @@ const modalExpenses = computed(() => {
     let aVal, bVal;
     switch (key) {
       case 'date':
-        aVal = a.dueDate || a.competenceMonth || '';
-        bVal = b.dueDate || b.competenceMonth || '';
+        aVal = a.paidAt || a.dueDate || '';
+        bVal = b.paidAt || b.dueDate || '';
         break;
       case 'title':
         aVal = (a.bill?.creditor_json?.tradeName || a.bill?.creditor_json?.name || '').toLowerCase();

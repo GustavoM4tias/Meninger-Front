@@ -125,7 +125,7 @@ async function backfillCampaigns() {
 
 async function runFullSync() {
     const msg = 'Sincronizar tudo da Meta?\n\n'
-        + 'Vai puxar formulários, campanhas, anúncios (TODAS), importar leads históricos dos últimos 30 dias, resolver campanhas pendentes e reconciliar com CV.\n\n'
+        + 'Vai puxar formulários, campanhas, anúncios (TODAS), importar leads históricos dos últimos 30 dias e resolver campanhas pendentes.\n\n'
         + 'Demora entre 2 e 5 minutos. Continuar?';
     if (!window.confirm(msg)) return;
 
@@ -141,7 +141,6 @@ async function runFullSync() {
         `Ads: ${s.ads?.ads_total ?? 0} em ${s.ads?.campaigns_processed ?? 0} campanhas`,
         `Backfill: ${s.backfill?.updated ?? 0} campanhas resolvidas`,
         `Histórico: ${s.historical?.inserted ?? 0} novos, ${s.historical?.duplicates ?? 0} dup`,
-        `CV recon: ${s.reconciliation?.matched ?? 0}/${s.reconciliation?.processed ?? 0}`,
     ];
     const erros = s.errors?.length ? `\n\n⚠️ ${s.errors.length} erro(s): ${s.errors.map(e => e.step).join(', ')}` : '';
     window.alert(`✅ Sync completo em ${s.duration_sec ?? '?'}s.\n\n${linhas.join('\n')}${erros}`);

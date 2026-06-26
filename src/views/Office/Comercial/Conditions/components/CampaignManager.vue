@@ -116,6 +116,19 @@
               </div>
 
               <div>
+                <label class="lbl">Pago por</label>
+                <select
+                  :value="camp.paid_by || ''"
+                  @change="patchCamp(i, 'paid_by', $event.target.value || null)"
+                  class="inp"
+                >
+                  <option value="">Não se aplica</option>
+                  <option value="menin">Menin</option>
+                  <option value="client">Cliente</option>
+                </select>
+              </div>
+
+              <div>
                 <label class="lbl">Status da Campanha</label>
                 <div class="flex gap-2 mt-1">
                   <label
@@ -185,13 +198,7 @@
         <p class="text-xs mt-1">Clique em "Nova Campanha" para começar</p>
       </div>
 
-      <!-- Footer -->
-      <div class="flex justify-end px-5 py-4 border-t border-line bg-gray-50/50 dark:bg-gray-800/30">
-        <button @click="$emit('save')" :disabled="saving" class="btn-primary">
-          <i :class="saving ? 'fa-spinner fa-spin' : 'fa-floppy-disk'" class="fas text-xs"></i>
-          {{ saving ? 'Salvando...' : 'Salvar Campanhas' }}
-        </button>
-      </div>
+      <!-- Campanhas salvam junto com o módulo (botão único de Salvar no rodapé do módulo). -->
     </div>
 
   </div>
@@ -250,7 +257,7 @@ function formatCurrency(val) {
 function formatDateRange(start, end) {
     if (!start) return '';
     const fmt = (d) => { const [y, m, day] = d.split('-'); return `${day}/${m}/${y}`; };
-    return end ? `${fmt(start)} – ${fmt(end)}` : `a partir de ${fmt(start)}`;
+    return end ? `${fmt(start)} a ${fmt(end)}` : `a partir de ${fmt(start)}`;
 }
 </script>
 

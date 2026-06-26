@@ -33,14 +33,6 @@ function statusBadge(c) {
 function isActive(c) {
     return String(c.effective_status || c.status || '').toUpperCase().includes('ACTIVE');
 }
-function deliveryRate(c) {
-    const meta = Number(c.meta_leads_total) || 0;
-    const office = c.lead_stats?.total || 0;
-    const ref = office > 0 ? office : meta;
-    if (!ref) return null;
-    const delivered = c.lead_stats?.delivered || 0;
-    return Math.round((delivered / ref) * 100);
-}
 
 // Dias rodando até hoje (ou até stop_time)
 function daysRunning(c) {
@@ -129,22 +121,12 @@ function objectiveLabel(o) {
         <div class="rounded bg-surface-sunken/40 p-2">
           <div class="text-[9px] uppercase tracking-wider text-ink-subtle">Leads</div>
           <div class="text-sm font-semibold text-emerald-600 dark:text-emerald-300 leading-tight">{{ fmtInt(c.meta_leads_total || 0) }}</div>
-          <div class="text-[9px] text-ink-subtle leading-tight">Office: {{ fmtInt(c.lead_stats?.total || 0) }}</div>
+          <div class="text-[9px] text-ink-subtle leading-tight">via Meta</div>
         </div>
         <div class="rounded bg-surface-sunken/40 p-2">
           <div class="text-[9px] uppercase tracking-wider text-ink-subtle">CAC</div>
           <div class="text-sm font-semibold text-ink leading-tight">{{ c.cac != null ? fmtMoney(c.cac, c.currency || currency) : '—' }}</div>
-          <div class="text-[9px] text-ink-subtle leading-tight">{{ c.cac_source === 'meta' ? 'via Meta' : c.cac_source === 'office' ? 'via Office' : '—' }}</div>
-        </div>
-      </div>
-
-      <!-- Footer: entrega -->
-      <div v-if="deliveryRate(c) != null" class="px-3 py-2 border-t border-line/60 bg-surface-sunken/20">
-        <div class="flex items-center gap-2">
-          <div class="flex-1 h-1.5 rounded-full bg-surface-sunken overflow-hidden">
-            <div class="h-full bg-emerald-500" :style="{ width: deliveryRate(c) + '%' }"></div>
-          </div>
-          <span class="text-[10px] font-mono text-ink-muted">{{ deliveryRate(c) }}% entregue</span>
+          <div class="text-[9px] text-ink-subtle leading-tight">via Meta</div>
         </div>
       </div>
     </button>
