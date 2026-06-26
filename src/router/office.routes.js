@@ -389,6 +389,12 @@ export default [
                         meta: { requiresAuth: true, allowedRole: 'admin', searchable: true, content: 'Integração WhatsApp Business: config, templates, mensagens' },
                     },
                     {
+                        path: 'meta',
+                        name: 'Configurações Meta',
+                        component: () => import('@/views/Office/Settings/Meta/Index.vue'),
+                        meta: { requiresAuth: true, allowedRole: 'admin', searchable: true, content: 'Credenciais do App Meta compartilhadas (WhatsApp + Lead Ads): App ID, App Secret, versão da Graph API' },
+                    },
+                    {
                         path: 'alerts',
                         name: 'Alertas',
                         component: () => import('@/views/Office/Settings/Alerts/Index.vue'),

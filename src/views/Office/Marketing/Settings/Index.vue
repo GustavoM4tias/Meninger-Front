@@ -99,7 +99,7 @@ const test = computed(() => store.testResult);
     <PageContainer size="lg">
       <PageHeader
         title="Configurações de Captação"
-        subtitle="Modo sombra, tentativas de envio e credenciais do Meta Lead Ads."
+        subtitle="Modo sombra, tentativas de envio e tokens do Meta Lead Ads (App Secret e App ID ficam em Configurações Meta)."
         icon="fas fa-gear">
         <template #actions>
           <Button variant="secondary" size="sm" icon="fas fa-arrows-rotate" @click="store.fetchConfig">
@@ -202,40 +202,16 @@ const test = computed(() => store.testResult);
           </div>
         </Surface>
 
-        <!-- App ID -->
-        <Surface variant="raised" padding="md">
-          <h3 class="text-sm font-semibold text-ink mb-1">App ID</h3>
-          <p class="text-xs text-ink-muted mb-3">
-            Identificador do app no Meta. Aparece no topo de developers.facebook.com → seu app
-            (15-16 dígitos).
+        <!-- App ID / App Secret / versão Graph → centralizados (compartilhados c/ WhatsApp) -->
+        <Surface variant="raised" padding="md" class="border-[#0866FF]/20 bg-[#0866FF]/5">
+          <h3 class="text-sm font-semibold text-ink mb-1">
+            <i class="fas fa-key mr-1 text-[#0866FF]"></i>App ID, App Secret e versão da Graph
+          </h3>
+          <p class="text-xs text-ink-muted">
+            Essas credenciais são <b>compartilhadas com o WhatsApp</b> (mesmo App da Meta) e agora ficam num lugar só:
+            <RouterLink to="/settings/meta" class="text-accent underline">Configurações Meta (App)</RouterLink>.
+            Atualizar lá vale pro Lead Ads e pro WhatsApp de uma vez - sem uma ficar pra trás.
           </p>
-          <Input v-model="draft.meta_app_id" label="App ID" placeholder="785502081163165" size="sm" />
-        </Surface>
-
-        <!-- App Secret -->
-        <Surface variant="raised" padding="md">
-          <h3 class="text-sm font-semibold text-ink mb-1">Chave Secreta do App (App Secret)</h3>
-          <p class="text-xs text-ink-muted mb-3">
-            Usada pra validar o HMAC SHA-256 do webhook (header <code class="font-mono">X-Hub-Signature-256</code>).
-            <br>
-            <strong>Onde encontrar:</strong> developers.facebook.com → seu app →
-            <strong>Configurações › Básico</strong> → "Chave Secreta do App" → "Mostrar".
-          </p>
-          <div class="flex items-center gap-2">
-            <div class="flex-1">
-              <Input v-model="draft.meta_app_secret"
-                :type="showSecrets.app_secret ? 'text' : 'password'"
-                :placeholder="cfg.has_meta_app_secret ? '•••• já configurado — preencha pra trocar' : 'Cole o App Secret'"
-                size="sm" />
-            </div>
-            <Button variant="ghost" size="sm"
-              :icon="showSecrets.app_secret ? 'fas fa-eye-slash' : 'fas fa-eye'"
-              @click="showSecrets.app_secret = !showSecrets.app_secret" />
-          </div>
-          <button v-if="cfg.has_meta_app_secret" type="button" @click="clearSecret('app_secret')"
-            class="mt-1 text-[11px] text-red-500 hover:underline">
-            Remover secret salvo
-          </button>
         </Surface>
 
         <!-- Verify Token -->
@@ -294,19 +270,6 @@ const test = computed(() => store.testResult);
             class="mt-1 text-[11px] text-red-500 hover:underline">
             Remover salvo
           </button>
-        </Surface>
-
-        <!-- Graph API version -->
-        <Surface variant="raised" padding="md">
-          <h3 class="text-sm font-semibold text-ink mb-1">Versão da Graph API</h3>
-          <p class="text-xs text-ink-muted mb-3">
-            Versão usada nas chamadas pra buscar dados de lead. Deixe igual à versão do seu app
-            (developers.facebook.com → seu app → <strong>Configurações da API</strong>).
-          </p>
-          <select v-model="draft.meta_graph_api_version"
-            class="w-full sm:w-48 rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink">
-            <option v-for="v in META_GRAPH_VERSIONS" :key="v" :value="v">{{ v }}</option>
-          </select>
         </Surface>
 
         <!-- Test connection -->

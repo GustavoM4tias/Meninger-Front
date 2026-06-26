@@ -179,7 +179,6 @@ const onTestSend = async () => {
         <Input v-model="form.business_id"     label="Business ID"     placeholder="123456789012345" />
         <Input v-model="form.waba_id"         label="WABA ID"         placeholder="987654321098765" />
         <Input v-model="form.phone_number_id" label="Phone Number ID" placeholder="111122223333444" />
-        <Input v-model="form.api_version"     label="API Version"     placeholder="v21.0" />
         <Input v-model="form.display_phone"   label="Telefone (display)" placeholder="+55 11 99999-9999" />
         <Input v-model="form.display_name"    label="Nome de exibição"  placeholder="Menin" />
       </div>
@@ -194,16 +193,16 @@ const onTestSend = async () => {
             :label="`Access Token ${store.config?.has_access_token ? '(já configurado)' : ''}`"
             placeholder="EAAG..."
             type="password" />
-          <Input v-model="form.app_secret"
-            :label="`App Secret ${store.config?.has_app_secret ? '(já configurado)' : ''}`"
-            placeholder="..."
-            hint="Usado para validar a assinatura HMAC do webhook."
-            type="password" />
           <Input v-model="form.webhook_verify_token"
             :label="`Webhook Verify Token ${store.config?.has_webhook_verify_token ? '(já configurado)' : ''}`"
             placeholder="qualquer string que você cadastrou na Meta"
             type="password" />
         </div>
+        <p class="text-[11px] text-ink-subtle mt-3 rounded-md border border-line bg-surface-sunken/40 px-3 py-2">
+          <i class="fas fa-key mr-1 text-[#0866FF]"></i>
+          O <b>App Secret</b> e a <b>versão da Graph API</b> são compartilhados com o Lead Ads e ficam em
+          <RouterLink to="/settings/meta" class="text-accent underline">Configurações Meta (App)</RouterLink>.
+        </p>
       </div>
 
       <div class="border-t border-line pt-5 flex flex-col sm:flex-row gap-4">

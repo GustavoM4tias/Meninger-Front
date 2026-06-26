@@ -224,6 +224,7 @@ export const navRegistry = [
             { route: '/marketing/campanhas', name: 'Campanhas Meta', icon: 'fas fa-rectangle-ad', iconColor: '#0866FF', adminOnly: true },
             { route: '/settings/whatsapp', section: 'WhatsApp', name: 'WhatsApp', icon: 'fab fa-whatsapp', iconColor: '#25D366', adminOnly: true },
             { route: '/tools/whatsapp-automations', section: 'Automações WhatsApp', name: 'Automações WhatsApp', icon: 'fas fa-robot', adminOnly: true },
+            { route: '/settings/meta', name: 'Credenciais do App', icon: 'fas fa-key', iconColor: '#0866FF', adminOnly: true },
         ],
     },
 

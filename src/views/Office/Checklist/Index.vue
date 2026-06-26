@@ -197,7 +197,7 @@ const btnPrimary = 'inline-flex items-center gap-2 bg-accent hover:bg-accent-hov
 </script>
 
 <template>
-    <div class="p-4 md:p-6 max-w-7xl mx-auto">
+    <div class="p-4 md:p-6 max-w-7xl mx-auto bg-surface">
         <!-- Cabeçalho -->
         <div class="flex items-center justify-between flex-wrap gap-3 mb-5">
             <div>

@@ -127,7 +127,7 @@ async function connectWebhook() {
     const r = await api.connectWebhook()
     conn.ok = !!r.subscribed
     conn.msg = r.subscribed
-      ? 'Conectado ✓ — toque SIM num alerta novo, agora deve chegar.'
+      ? 'Conectado ✓ - toque SIM num alerta novo, agora deve chegar.'
       : 'Comando enviado. Teste tocar SIM.'
     notify(r.subscribed ? 'WhatsApp conectado ao webhook!' : 'Comando enviado.')
   } catch (e) { conn.ok = false; conn.msg = e.message; notify(e.message, 'err') }
@@ -163,7 +163,7 @@ onMounted(load)
 <template>
   <div class="min-h-[calc(100vh-3.5rem)]">
     <PageContainer size="lg">
-      <PageHeader title="Automações WhatsApp" subtitle="Configure quais templates disparam, com quais variáveis, botões e ações — sem código." icon="fab fa-whatsapp" />
+      <PageHeader title="Automações WhatsApp" subtitle="Configure quais templates disparam, com quais variáveis, botões e ações - sem código." icon="fab fa-whatsapp" />
 
       <div class="mb-5"><SegmentedControl :model-value="tab" :options="tabOpts" @change="(v) => tab = v" /></div>
 
@@ -174,7 +174,7 @@ onMounted(load)
             <i class="fab fa-whatsapp text-emerald-500 text-lg"></i>
             <div class="min-w-0">
               <p class="text-sm font-semibold text-ink">Conexão do webhook</p>
-              <p class="text-xs text-ink-muted">Recebe o alerta mas o "SIM" não volta? Clique aqui — conecta sua conta ao webhook (subscribed_apps) usando o token já salvo.</p>
+              <p class="text-xs text-ink-muted">Recebe o alerta mas o "SIM" não volta? Clique aqui - conecta sua conta ao webhook (subscribed_apps) usando o token já salvo.</p>
             </div>
             <div class="ml-auto flex items-center gap-3">
               <span v-if="conn.msg" class="text-xs" :class="conn.ok ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'">{{ conn.msg }}</span>
@@ -224,7 +224,7 @@ onMounted(load)
               </div>
               <div class="flex items-center justify-between">
                 <Button v-if="!a.isSystem" variant="danger" size="sm" icon="fas fa-trash" @click="remove(a)">Excluir</Button>
-                <span v-else class="text-xs text-ink-subtle">Automação de sistema — editável, não deletável.</span>
+                <span v-else class="text-xs text-ink-subtle">Automação de sistema - editável, não deletável.</span>
                 <Button variant="primary" size="sm" :loading="busy" @click="save(a)">Salvar</Button>
               </div>
             </div>
@@ -258,7 +258,7 @@ onMounted(load)
               <code class="text-sm font-mono text-ink">{{ t.name }}</code>
               <span class="text-xs text-ink-subtle font-mono">{{ t.language }}</span>
               <Badge size="sm" variant="neutral">{{ t.category }}</Badge>
-              <Badge size="sm" :variant="statusVariant(t.status)" class="ml-auto">{{ t.status || '—' }}</Badge>
+              <Badge size="sm" :variant="statusVariant(t.status)" class="ml-auto">{{ t.status || '-' }}</Badge>
             </div>
           </Surface>
           <EmptyState v-if="!templates.length" size="md" icon="fas fa-file-lines" title="Nenhum template" description="Crie um acima ou sincronize com a Meta na tela de Config do WhatsApp." />

@@ -173,7 +173,7 @@
               <button
                 @click="handleCopyIntra"
                 :disabled="!copySourceId || copying"
-                class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-surface-sunken text-white rounded-lg hover:bg-gray-800 disabled:opacity-40 transition"
+                class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-gray-700 dark:bg-gray-600 text-white rounded-lg hover:bg-gray-800 disabled:opacity-40 transition"
               >
                 <i class="fas fa-arrows-rotate text-xs"></i>
                 Copiar
@@ -317,8 +317,16 @@
     <!-- ── Conteúdo do módulo ────────────────────────────────────────────── -->
     <div v-if="activeModule" class="bg-surface-raised rounded-2xl border border-line shadow-sm overflow-hidden">
 
+      <!-- Copiar dados (botão claro; o modal deixa escolher a origem e quais seções copiar) -->
+      <div v-if="hideChrome && !readonly && enterpriseOptions?.length" class="px-5 pt-4">
+        <button @click="openCopyModal" class="flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-accent bg-accent-soft border border-accent/20 rounded-lg hover:bg-accent-soft/70 transition">
+          <i class="fas fa-copy text-xs"></i>
+          Copiar dados de outro módulo ou mês
+        </button>
+      </div>
+
       <!-- ── Seção: Produto ──────────────────────────────────────────────── -->
-      <div id="modsec-data" class="p-5 space-y-5 scroll-mt-32">
+      <div id="modsec-data" class="p-5 space-y-5 scroll-mt-40">
         <h3 class="flex items-center gap-2 text-sm font-bold text-ink mb-1"><i class="fas fa-box text-blue-500"></i> Produto</h3>
         <!-- Números do Módulo -->
         <div>
@@ -556,7 +564,7 @@
       </div>
 
       <!-- ── Seção: Preços ───────────────────────────────────────────────── -->
-      <div id="modsec-prices" class="p-5 space-y-5 scroll-mt-32 border-t border-line">
+      <div id="modsec-prices" class="p-5 space-y-5 scroll-mt-40 border-t border-line">
         <h3 class="flex items-center gap-2 text-sm font-bold text-ink mb-1"><i class="fas fa-tag text-blue-500"></i> Preços</h3>
         <!-- Tabelas do CV -->
         <div>
@@ -744,7 +752,7 @@
 
                     <button v-if="!readonly" @click="applyAvgTicket(mi)"
                       :disabled="!mt.avg_ticket || !(mt.units?.length)"
-                      class="flex items-center gap-1 p-3 text-xs font-semibold bg-surface-sunken text-white rounded-md hover:bg-gray-800 disabled:opacity-40 transition">
+                      class="flex items-center gap-1 p-3 text-xs font-semibold bg-gray-700 dark:bg-gray-600 text-white rounded-md hover:bg-gray-800 disabled:opacity-40 transition">
                       Aplicar
                     </button>
                   </div>
@@ -818,7 +826,7 @@
       </div>
 
       <!-- ── Seção: Negociação ───────────────────────────────────────────── -->
-      <div id="modsec-negotiation" class="p-5 scroll-mt-32 border-t border-line">
+      <div id="modsec-negotiation" class="p-5 scroll-mt-40 border-t border-line">
         <h3 class="flex items-center gap-2 text-sm font-bold text-ink mb-3"><i class="fas fa-handshake text-blue-500"></i> Negociação</h3>
         <NegotiationRules
           :form="activeModule"
@@ -828,7 +836,7 @@
       </div>
 
       <!-- ── Seção: Documentação ────────────────────────────────────────── -->
-      <div id="modsec-docs" class="p-5 scroll-mt-32 border-t border-line">
+      <div id="modsec-docs" class="p-5 scroll-mt-40 border-t border-line">
         <h3 class="flex items-center gap-2 text-sm font-bold text-ink mb-3"><i class="fas fa-file-contract text-blue-500"></i> Documentação</h3>
         <DocsSection
           :form="activeModule"
@@ -838,7 +846,7 @@
       </div>
 
       <!-- ── Seção: Campanhas ───────────────────────────────────────────── -->
-      <div id="modsec-campaigns" class="p-5 scroll-mt-32 border-t border-line">
+      <div id="modsec-campaigns" class="p-5 scroll-mt-40 border-t border-line">
         <h3 class="flex items-center gap-2 text-sm font-bold text-ink mb-3"><i class="fas fa-bullhorn text-blue-500"></i> Campanhas</h3>
         <CampaignManager
           :campaigns="activeModule.campaigns ?? []"
@@ -850,7 +858,7 @@
       </div>
 
       <!-- ── Seção: Operacional ─────────────────────────────────────────── -->
-      <div id="modsec-operational" class="p-5 scroll-mt-32 border-t border-line">
+      <div id="modsec-operational" class="p-5 scroll-mt-40 border-t border-line">
         <h3 class="flex items-center gap-2 text-sm font-bold text-ink mb-3"><i class="fas fa-gears text-blue-500"></i> Operacional</h3>
         <OperationalSection
           :form="activeModule"
@@ -862,7 +870,7 @@
       </div>
 
       <!-- ── Seção: Unidades (só módulos do CV) ──────────────────────────── -->
-      <div v-if="activeModule?.idetapa" id="modsec-units" class="p-5 scroll-mt-32 border-t border-line">
+      <div v-if="activeModule?.idetapa" id="modsec-units" class="p-5 scroll-mt-40 border-t border-line">
         <h3 class="flex items-center gap-2 text-sm font-bold text-ink mb-3"><i class="fas fa-layer-group text-blue-500"></i> Unidades</h3>
 
         <!-- Barra de snapshot -->
@@ -889,7 +897,7 @@
           <button
             v-if="!readonly && unitsData.length"
             @click="captureUnitSnapshot"
-            class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-surface-sunken text-white rounded-lg hover:bg-gray-800 transition"
+            class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-gray-700 dark:bg-gray-600 text-white rounded-lg hover:bg-gray-800 transition"
             title="Congela o estado atual das unidades para referência histórica"
           >
             <i class="fas fa-snowflake text-[10px]"></i> Capturar estado
