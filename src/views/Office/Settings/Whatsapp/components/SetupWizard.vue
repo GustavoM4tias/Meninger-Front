@@ -89,7 +89,6 @@ const onApply = async () => {
       phone_number_id: phoneId.value,
       display_phone: selectedPhone.value?.display_phone_number,
       display_name: selectedPhone.value?.verified_name,
-      app_secret: appSecret.value || undefined,
       webhook_verify_token: verifyToken.value || undefined,
       active: active.value,
       dry_run: dryRun.value,
@@ -224,10 +223,11 @@ const onRestart = () => {
         placeholder="deixe em branco pra gerar um aleatório"
         hint="Use a MESMA string aqui e na configuração de webhook da Meta." />
 
-      <Input v-model="appSecret" label="App Secret (opcional, recomendado)"
-        type="password"
-        placeholder="..."
-        hint="Necessário pra validar o HMAC do webhook. Sem isso, qualquer um pode disparar eventos forjados." />
+      <p class="text-xs text-ink-muted rounded-lg border border-line bg-surface-sunken/50 p-3">
+        <i class="fas fa-key mr-1 text-[#0866FF]"></i>
+        O <b>App Secret</b> (valida a assinatura do webhook) é compartilhado com o Lead Ads e fica em
+        <RouterLink to="/settings/meta" class="text-accent underline">Configurações Meta (App)</RouterLink>. Configure lá uma vez - vale pros dois.
+      </p>
 
       <div class="flex flex-col sm:flex-row gap-4 border-t border-line pt-4">
         <Switch v-model="active"  size="sm" label="Ativar imediatamente"

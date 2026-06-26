@@ -469,7 +469,7 @@
                 @click="showCloseModal = true"
                 :disabled="actionLoading"
                 title="Encerrar empreendimento (finalização definitiva)"
-                class="flex items-center gap-2 px-3.5 py-2 bg-surface-sunken text-ink-muted text-xs font-semibold rounded-xl border border-line hover:bg-surface-hover transition"
+                class="flex items-center gap-2 px-3.5 py-2 bg-surface-sunken text-ink text-xs font-semibold rounded-xl border border-line hover:bg-surface-sunken/70 transition"
               >
                 <i class="fas fa-flag-checkered text-xs"></i>
                 <span class="hidden sm:inline">Encerrar</span>
@@ -615,7 +615,10 @@
         <!-- Resumo / PDF -->
         <div v-show="activeTab === 'summary'">
           <SummaryExport
+            ref="summaryRef"
             :detail="detail"
+            :hide-chrome="true"
+            v-model:active-index="activeModuleIndex"
             :local-modules="localModules"
             :price-tables="store.priceTables"
             :correspondents="store.correspondents"
@@ -673,8 +676,7 @@
           </main>
 
           <!-- Índice flutuante (direita, xl+) — estilo Academy -->
-          <aside v-if="activeTab === 'modules' && localModules.length" class="hidden xl:block w-[240px] shrink-0">
-            <div class="sticky" :style="{ top: 'calc(var(--cond-header-h, 56px) + 8px)' }">
+          <aside v-if="(activeTab === 'modules' || activeTab === 'summary') && localModules.length" class="hidden xl:block w-[240px] shrink-0 self-start sticky" :style="{ top: 'calc(var(--cond-header-h, 120px) + 16px)' }">
               <div class="cond-toc">
                 <p class="cond-toc__title"><i class="fas fa-list-ul mr-1.5 text-accent"></i> Neste módulo</p>
 
@@ -691,10 +693,21 @@
                     <i class="fas fa-trash text-[11px]"></i>
                   </button>
                 </div>
-                <button v-if="canEdit && !isLocked" @click="showAddModuleMenu = !showAddModuleMenu" class="cond-toc__add">
+                <!-- Ações do Resumo (na view Resumo): exportar PDF / ver documento -->
+                <template v-if="activeTab === 'summary'">
+                  <p class="cond-toc__grp">Ações</p>
+                  <button @click="summaryRef?.printModule?.()" class="w-full flex items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-semibold text-white bg-red-600 hover:bg-red-700 transition">
+                    <i class="fas fa-file-pdf"></i> Exportar PDF
+                  </button>
+                  <button v-if="canAuthorize && detail.status === 'pending_approval'" @click="summaryRef?.openDoc?.()" class="w-full flex items-center gap-2 rounded-lg px-2.5 py-2 mt-1.5 text-xs font-semibold text-accent bg-accent-soft hover:bg-accent-soft/70 transition">
+                    <i class="fas fa-file-contract"></i> Ver documento
+                  </button>
+                </template>
+
+                <button v-if="canEdit && !isLocked && activeTab === 'modules'" @click="showAddModuleMenu = !showAddModuleMenu" class="cond-toc__add">
                   <i class="fas fa-plus text-[10px] mr-1.5"></i> Adicionar módulo
                 </button>
-                <div v-if="showAddModuleMenu" class="ml-1 my-1 pl-2 border-l-2 border-line space-y-0.5">
+                <div v-if="showAddModuleMenu && activeTab === 'modules'" class="ml-1 my-1 pl-2 border-l-2 border-line space-y-0.5">
                   <p v-if="availableStages.length" class="text-[10px] font-semibold text-ink-subtle uppercase px-1 pt-1">Etapas do CV</p>
                   <button v-for="s in availableStages" :key="s.idetapa" @click="addStageModule(s)" class="w-full flex items-center gap-2 px-2 py-1 text-xs text-ink-muted hover:bg-accent-soft hover:text-accent rounded text-left transition">
                     <i class="fas fa-layer-group text-[10px]"></i> <span class="truncate">{{ s.nome }}</span>
@@ -704,15 +717,15 @@
                   </button>
                 </div>
 
-                <template v-if="activeModule">
+                <template v-if="activeModule && activeTab === 'modules'">
                   <p class="cond-toc__grp">Seções</p>
                   <button v-for="sec in moduleSections" :key="sec.id" @click="scrollToSection(sec.id)" :class="['cond-toc__link mb-1', { 'is-active': activeSection === sec.id }]">
                     <i :class="sec.icon" class="mr-2 text-xs shrink-0"></i>
                     <span class="truncate">{{ sec.label }}</span>
                   </button>
                 </template>
+                
               </div>
-            </div>
           </aside>
 
         </div>
@@ -873,6 +886,7 @@ const activeSection = ref('data');
 const sidebarCollapsed = ref(false);
 const sidebarMobileOpen = ref(false);
 const showAddModuleMenu = ref(false);
+const summaryRef = ref(null); // ref do SummaryExport (p/ acionar Exportar PDF pela lateral)
 
 const activeModule = computed(() => localModules.value[activeModuleIndex.value] ?? null);
 
@@ -965,14 +979,16 @@ watch(() => localModules.value.length, (len) => {
 // Altura real do header → var CSS, para a lateral grudar logo abaixo (padrão Academy).
 const headerEl = ref(null);
 let headerRO = null;
-onMounted(() => {
-    const el = headerEl.value;
+// O header só existe depois que `detail` carrega, então observamos o ref (não onMounted,
+// que rodaria antes do header existir e deixaria o --cond-header-h no fallback).
+watch(headerEl, (el) => {
+    if (headerRO) { headerRO.disconnect(); headerRO = null; }
     if (!el || typeof ResizeObserver === 'undefined') return;
     const setVar = () => document.documentElement.style.setProperty('--cond-header-h', `${Math.ceil(el.getBoundingClientRect().height)}px`);
     setVar();
     headerRO = new ResizeObserver(setVar);
     headerRO.observe(el);
-});
+}, { immediate: true });
 onBeforeUnmount(() => { if (headerRO) headerRO.disconnect(); });
 
 // Destaca a seção atual no índice flutuante conforme o scroll (padrão Academy).

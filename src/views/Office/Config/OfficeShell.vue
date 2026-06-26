@@ -22,13 +22,13 @@ const isAuthenticated = computed(() => authStore.isAuthenticated());
 
     <!-- Office: autenticado -->
     <div v-else class="flex w-full">
-        <main class="flex flex-col h-dvw w-full">
+        <main class="flex flex-col h-dvh w-full">
             <div class="flex">
                 <Nav />
 
                 <div
-                    class="flex flex-1 mt-16 sm:mt-12 w-full h-auto md:min-h-[calc(100vh-3.5rem)] break-words overflow-auto">
-                    <div class="w-full max-w-full bg-gray-50 dark:bg-gray-950">
+                    class="flex flex-1 mt-16 sm:mt-12 w-full h-auto md:h-[calc(100vh-3.5rem)] break-words overflow-auto">
+                    <div class="w-full max-w-full">
                         <router-view />
                     </div>
                 </div>
