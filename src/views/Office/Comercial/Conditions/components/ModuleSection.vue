@@ -103,14 +103,14 @@
       </div>
     </transition>
 
-    <!-- ── HEADER principal ──────────────────────────────────────────────── -->
-    <div class="bg-surface-raised rounded-2xl border border-line shadow-sm">
+    <!-- ── HEADER principal (mês/cópia/pills) — escondido quando o Detail tem a lateral ── -->
+    <div v-if="!hideChrome" class="bg-surface-raised rounded-2xl border border-line shadow-sm">
 
       <!-- Linha 1: Navegação de mês + status + ações -->
       <div class="flex items-center justify-between px-5 py-3.5 bg-gradient-to-r from-slate-50 to-blue-50/40 dark:from-gray-800/60 dark:to-blue-950/20 border-b border-line">
 
-        <!-- Navegador de mês -->
-        <div class="flex items-center gap-2">
+        <!-- Navegador de mês (escondido quando o Detail tem o stepper na lateral) -->
+        <div v-if="!hideChrome" class="flex items-center gap-2">
           <button
             @click="navigatePrev"
             :disabled="!prevItem"
@@ -194,8 +194,8 @@
         </div>
       </div>
 
-      <!-- Linha 2: Módulos como pills + botão de adicionar -->
-      <div class="relative">
+      <!-- Linha 2: Módulos como pills + botão de adicionar (na lateral quando hideChrome) -->
+      <div v-if="!hideChrome" class="relative">
         <div class="flex items-stretch overflow-x-auto scrollbar-hide border-b border-line">
           <button
             v-for="(mod, i) in modules"
@@ -295,16 +295,16 @@
         </transition>
       </div>
 
-      <!-- Sub-tab bar -->
-      <div class="flex overflow-x-auto scrollbar-hide bg-gray-50/60 dark:bg-gray-800/30">
+      <!-- Navegação por seções (âncora) — na lateral quando hideChrome -->
+      <div v-if="!hideChrome" class="flex gap-1.5 overflow-x-auto scrollbar-hide bg-surface-sunken/60 rounded-xl p-1.5 mb-3">
         <button
           v-for="st in subTabs"
           :key="st.id"
-          @click="activeSubTab = st.id"
+          @click="scrollToSection(st.id)"
           :class="[
-            'flex items-center gap-1.5 px-4 py-2 text-xs font-semibold whitespace-nowrap border-b-2 transition',
+            'flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold whitespace-nowrap rounded-lg border transition',
             activeSubTab === st.id
-              ? 'border-blue-600 text-accent bg-surface-raised/50'
+              ? 'bg-accent-soft border-accent/30 text-accent'
               : 'border-transparent text-ink-muted hover:text-gray-700 dark:hover:text-gray-200'
           ]"
         >
@@ -317,8 +317,9 @@
     <!-- ── Conteúdo do módulo ────────────────────────────────────────────── -->
     <div v-if="activeModule" class="bg-surface-raised rounded-2xl border border-line shadow-sm overflow-hidden">
 
-      <!-- ── Sub-tab: Dados ──────────────────────────────────────────────── -->
-      <div v-show="activeSubTab === 'data'" class="p-5 space-y-5">
+      <!-- ── Seção: Produto ──────────────────────────────────────────────── -->
+      <div id="modsec-data" class="p-5 space-y-5 scroll-mt-32">
+        <h3 class="flex items-center gap-2 text-sm font-bold text-ink mb-1"><i class="fas fa-box text-blue-500"></i> Produto</h3>
         <!-- Números do Módulo -->
         <div>
           <p class="lbl-section mb-3"><i class="fas fa-hashtag text-blue-500"></i> Números do Módulo</p>
@@ -554,8 +555,9 @@
         </div>
       </div>
 
-      <!-- ── Sub-tab: Preços ─────────────────────────────────────────────── -->
-      <div v-show="activeSubTab === 'prices'" class="p-5 space-y-5">
+      <!-- ── Seção: Preços ───────────────────────────────────────────────── -->
+      <div id="modsec-prices" class="p-5 space-y-5 scroll-mt-32 border-t border-line">
+        <h3 class="flex items-center gap-2 text-sm font-bold text-ink mb-1"><i class="fas fa-tag text-blue-500"></i> Preços</h3>
         <!-- Tabelas do CV -->
         <div>
           <p class="lbl-section mb-3"><i class="fas fa-table text-blue-500"></i> Tabelas do CV</p>
@@ -815,8 +817,9 @@
         </div>
       </div>
 
-      <!-- ── Sub-tab: Negociação ─────────────────────────────────────────── -->
-      <div v-show="activeSubTab === 'negotiation'" class="p-5">
+      <!-- ── Seção: Negociação ───────────────────────────────────────────── -->
+      <div id="modsec-negotiation" class="p-5 scroll-mt-32 border-t border-line">
+        <h3 class="flex items-center gap-2 text-sm font-bold text-ink mb-3"><i class="fas fa-handshake text-blue-500"></i> Negociação</h3>
         <NegotiationRules
           :form="activeModule"
           :readonly="readonly"
@@ -824,8 +827,9 @@
         />
       </div>
 
-      <!-- ── Sub-tab: Documentação ──────────────────────────────────────── -->
-      <div v-show="activeSubTab === 'docs'" class="p-5">
+      <!-- ── Seção: Documentação ────────────────────────────────────────── -->
+      <div id="modsec-docs" class="p-5 scroll-mt-32 border-t border-line">
+        <h3 class="flex items-center gap-2 text-sm font-bold text-ink mb-3"><i class="fas fa-file-contract text-blue-500"></i> Documentação</h3>
         <DocsSection
           :form="activeModule"
           :readonly="readonly"
@@ -833,8 +837,9 @@
         />
       </div>
 
-      <!-- ── Sub-tab: Campanhas ─────────────────────────────────────────── -->
-      <div v-show="activeSubTab === 'campaigns'" class="p-5">
+      <!-- ── Seção: Campanhas ───────────────────────────────────────────── -->
+      <div id="modsec-campaigns" class="p-5 scroll-mt-32 border-t border-line">
+        <h3 class="flex items-center gap-2 text-sm font-bold text-ink mb-3"><i class="fas fa-bullhorn text-blue-500"></i> Campanhas</h3>
         <CampaignManager
           :campaigns="activeModule.campaigns ?? []"
           :saving="saving"
@@ -844,8 +849,9 @@
         />
       </div>
 
-      <!-- ── Sub-tab: Operacional ───────────────────────────────────────── -->
-      <div v-show="activeSubTab === 'operational'" class="p-5">
+      <!-- ── Seção: Operacional ─────────────────────────────────────────── -->
+      <div id="modsec-operational" class="p-5 scroll-mt-32 border-t border-line">
+        <h3 class="flex items-center gap-2 text-sm font-bold text-ink mb-3"><i class="fas fa-gears text-blue-500"></i> Operacional</h3>
         <OperationalSection
           :form="activeModule"
           :correspondents="correspondents"
@@ -855,8 +861,9 @@
         />
       </div>
 
-      <!-- ── Sub-tab: Unidades ──────────────────────────────────────────── -->
-      <div v-show="activeSubTab === 'units'" class="p-5">
+      <!-- ── Seção: Unidades (só módulos do CV) ──────────────────────────── -->
+      <div v-if="activeModule?.idetapa" id="modsec-units" class="p-5 scroll-mt-32 border-t border-line">
+        <h3 class="flex items-center gap-2 text-sm font-bold text-ink mb-3"><i class="fas fa-layer-group text-blue-500"></i> Unidades</h3>
 
         <!-- Barra de snapshot -->
         <div class="flex items-center justify-between gap-3 mb-4 flex-wrap">
@@ -1008,8 +1015,8 @@
       </div>
     </div>
 
-    <!-- Salvar -->
-    <div v-if="!readonly" class="flex justify-end">
+    <!-- Salvar (escondido quando o Detail tem a lateral: o header do Detail salva) -->
+    <div v-if="!readonly && !hideChrome" class="flex justify-end">
       <button @click="$emit('save')" :disabled="saving" class="btn-primary">
         <i :class="saving ? 'fa-spinner fa-spin' : 'fa-floppy-disk'" class="fas text-xs"></i>
         {{ saving ? 'Salvando...' : 'Salvar Módulos' }}
@@ -1042,17 +1049,31 @@ const props = defineProps({
     history:            { type: Array,            default: () => [] }, // [{id, reference_month, status}]
     currentConditionId:         { type: [Number, String], default: null },
     conditionIdempreendimento:  { type: [Number, String], default: null },
+    activeIndex:        { type: Number,           default: 0 },     // módulo ativo (controlado pelo Detail)
+    hideChrome:         { type: Boolean,          default: false }, // esconde a nav própria quando o Detail tem a lateral
 });
 
-const emit = defineEmits(['update:modules', 'save', 'save-silent', 'copy', 'copy-from-enterprise', 'navigate-month', 'delete-module']);
+const emit = defineEmits(['update:modules', 'save', 'save-silent', 'copy', 'copy-from-enterprise', 'navigate-month', 'delete-module', 'update:activeIndex']);
 
 const store = useConditionsStore();
 
-const activeIdx    = ref(0);
+// Módulo ativo controlado pelo Detail (v-model:activeIndex); proxy mantém todas as
+// referências internas a activeIdx.value funcionando.
+const activeIdx = computed({
+    get: () => props.activeIndex,
+    set: (v) => emit('update:activeIndex', v),
+});
 const activeSubTab = ref('data');
 const copying      = ref(false);
 const copySourceId = ref('');
 const showAddPanel = ref(false);
+
+// Navegação por âncora: destaca a seção e rola até ela (seções sempre visíveis).
+function scrollToSection(id) {
+    activeSubTab.value = id;
+    const el = typeof document !== 'undefined' ? document.getElementById(`modsec-${id}`) : null;
+    el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
 
 const STATUS_LABELS = {
     draft:            'Rascunho',
@@ -1227,9 +1248,13 @@ async function loadUnits() {
     }
 }
 
-watch(activeSubTab, (tab) => { if (tab === 'units') loadUnits(); });
-
 const activeModule = computed(() => props.modules[activeIdx.value] ?? null);
+
+// Carrega unidades quando o módulo ativo (com etapa do CV) muda — seções roláveis.
+watch(() => activeModule.value?.idetapa, (idetapa) => {
+    if (idetapa) loadUnits();
+    else unitsData.value = [];
+}, { immediate: true });
 const otherModules = computed(() => props.modules.filter((_, i) => i !== activeIdx.value));
 
 // Etapas do CV ainda não vinculadas a nenhum módulo desta ficha

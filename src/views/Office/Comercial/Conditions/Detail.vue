@@ -251,6 +251,78 @@
       </div>
     </transition>
 
+    <!-- Modal: Vincular avulsa ao CV -->
+    <transition name="fade">
+      <div
+        v-if="showLinkCvModal"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+        @click.self="showLinkCvModal = false"
+      >
+        <div class="bg-surface-raised rounded-2xl shadow-2xl w-full max-w-lg border border-line max-h-[85vh] flex flex-col">
+          <div class="flex items-center justify-between px-6 py-4 border-b border-line">
+            <div class="flex items-center gap-2">
+              <i class="fas fa-link text-teal-500"></i>
+              <h2 class="text-base font-bold text-ink">Vincular ao empreendimento do CV</h2>
+            </div>
+            <button @click="showLinkCvModal = false" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-surface-hover transition">
+              <i class="fas fa-times text-sm"></i>
+            </button>
+          </div>
+          <div class="px-6 py-5 space-y-4 overflow-y-auto">
+            <div class="flex items-start gap-3 p-3.5 bg-teal-50 dark:bg-teal-900/20 border border-teal-200 dark:border-teal-800 rounded-xl text-teal-800 dark:text-teal-300 text-sm">
+              <i class="fas fa-circle-info flex-shrink-0 mt-0.5"></i>
+              <p>Isto promove <strong>toda a série</strong> desta avulsa ({{ detail.history?.length || 1 }} ficha(s)) para o empreendimento escolhido. O histórico é preservado e nada é apagado.</p>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-ink-muted uppercase tracking-wide mb-1.5">Empreendimento do CV</label>
+              <select
+                v-model="linkCvEnterpriseId"
+                @change="onLinkEnterpriseChange"
+                class="w-full px-3.5 py-2.5 text-sm text-ink bg-surface-raised/60 border border-line rounded-md shadow-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/15 transition"
+              >
+                <option :value="null">Selecionar empreendimento...</option>
+                <option v-for="e in cvEnterprises" :key="e.idempreendimento" :value="e.idempreendimento">{{ e.nome }}</option>
+              </select>
+            </div>
+            <div v-if="linkCvEnterpriseId && localModules.length">
+              <label class="block text-xs font-semibold text-ink-muted uppercase tracking-wide mb-1.5">Mapear módulos às etapas <span class="normal-case font-normal text-ink-subtle">(opcional)</span></label>
+              <div class="space-y-2">
+                <div v-for="mod in localModules" :key="mod.id ?? mod.module_name" class="flex items-center gap-2">
+                  <span class="text-sm text-ink flex-1 min-w-0 truncate">{{ mod.module_name || 'Sem nome' }}</span>
+                  <i class="fas fa-arrow-right text-xs text-ink-subtle flex-shrink-0"></i>
+                  <select
+                    v-model="linkModuleMap[mod.id]"
+                    :disabled="!mod.id"
+                    class="flex-1 min-w-0 px-3 py-2 text-sm text-ink bg-surface-raised/60 border border-line rounded-md shadow-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/15 transition disabled:opacity-50"
+                  >
+                    <option :value="null">Manter livre</option>
+                    <option v-for="s in linkCvStages" :key="s.idetapa" :value="s.idetapa">{{ s.nome }}</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div v-if="linkError" class="flex items-start gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-400 text-xs">
+              <i class="fas fa-exclamation-triangle flex-shrink-0 mt-0.5"></i>
+              <span>{{ linkError }}</span>
+            </div>
+          </div>
+          <div class="flex justify-end gap-3 px-6 py-4 border-t border-line">
+            <button @click="showLinkCvModal = false" class="px-4 py-2.5 text-sm font-medium text-ink-muted hover:text-gray-800 dark:hover:text-white transition">
+              Cancelar
+            </button>
+            <button
+              @click="handleLinkToCv"
+              :disabled="!linkCvEnterpriseId || linkLoading"
+              class="flex items-center gap-2 px-5 py-2.5 bg-teal-600 text-white text-sm font-semibold rounded-xl hover:bg-teal-700 disabled:opacity-50 transition"
+            >
+              <i :class="linkLoading ? 'fa-spinner fa-spin' : 'fa-link'" class="fas text-xs"></i>
+              {{ linkLoading ? 'Vinculando...' : 'Vincular série' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </transition>
+
     <!-- Erro de carregamento -->
     <div v-if="fetchError && !detail" class="flex flex-col items-center justify-center py-24 text-center px-4">
       <div class="w-14 h-14 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mb-4">
@@ -271,7 +343,7 @@
 
     <template v-if="detail">
       <!-- ─── Header ─────────────────────────────────────────────────────── -->
-      <div class="bg-surface-raised border-b border-gray-200 dark:border-gray-800 sticky top-0 z-20">
+      <div ref="headerEl" class="bg-surface-raised border-b border-gray-200 dark:border-gray-800 sticky top-0 z-20">
         <div class="max-w-7xl mx-auto px-4">
           <!-- Top bar -->
           <div class="flex items-center justify-between pb-4 pt-6 gap-4">
@@ -305,21 +377,37 @@
             </div>
 
             <div class="flex items-center gap-2 flex-shrink-0 flex-wrap justify-end">
-              <!-- Navegador de histórico (meses anteriores) -->
-              <div v-if="detail.history?.length > 1" class="flex items-center gap-1.5">
-                <i class="fas fa-history text-xs text-gray-400 dark:text-slate-500"></i>
-                <select
-                  :value="detail.id"
-                  @change="navigateToMonth($event.target.value)"
-                  class="text-xs text-ink-muted bg-surface-sunken border-0 rounded-lg px-2.5 py-1.5 outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer"
-                  title="Navegar pelo histórico"
+              <!-- Navegação de mês (setas) -->
+              <div v-if="detail.history?.length > 1" class="flex items-center gap-0.5 bg-surface-sunken rounded-lg p-0.5">
+                <button
+                  @click="olderItem && navigateToMonth(olderItem.id)"
+                  :disabled="!olderItem"
+                  class="w-7 h-7 flex items-center justify-center rounded-md text-ink-muted hover:bg-surface-hover disabled:opacity-30 disabled:cursor-default transition"
+                  title="Mês anterior"
                 >
-                  <option v-for="h in detail.history" :key="h.id" :value="h.id">
-                    {{ formatMonth(h.reference_month) }}
-                    <template v-if="canManage">· {{ STATUS_MAP[h.status]?.label }}</template>
-                  </option>
-                </select>
+                  <i class="fas fa-chevron-left text-xs"></i>
+                </button>
+                <span class="text-xs font-semibold text-ink px-2 min-w-[58px] text-center">{{ formatMonth(detail.reference_month) }}</span>
+                <button
+                  @click="newerItem && navigateToMonth(newerItem.id)"
+                  :disabled="!newerItem"
+                  class="w-7 h-7 flex items-center justify-center rounded-md text-ink-muted hover:bg-surface-hover disabled:opacity-30 disabled:cursor-default transition"
+                  title="Próximo mês"
+                >
+                  <i class="fas fa-chevron-right text-xs"></i>
+                </button>
               </div>
+
+              <!-- Avulsa → Vincular ao CV (editores) -->
+              <button
+                v-if="isAvulsa && canEdit"
+                @click="openLinkCv"
+                title="Vincular esta série avulsa a um empreendimento do CV"
+                class="flex items-center gap-2 px-3.5 py-2 bg-teal-50 dark:bg-teal-900/20 text-teal-700 dark:text-teal-300 text-xs font-semibold rounded-xl border border-teal-200 dark:border-teal-800 hover:bg-teal-100 dark:hover:bg-teal-900/30 transition"
+              >
+                <i class="fas fa-link text-xs"></i>
+                <span class="hidden sm:inline">Vincular ao CV</span>
+              </button>
 
               <!-- Ações por status (conforme permissão do usuário) -->
               <!-- draft → Enviar para Autorização (editores) -->
@@ -461,7 +549,7 @@
             </div>
           </div>
 
-          <!-- Tabs -->
+          <!-- Tabs (views) -->
           <div class="flex gap-0 overflow-x-auto scrollbar-hide -mb-px">
             <button
               v-for="tab in visibleTabs"
@@ -481,13 +569,27 @@
         </div>
       </div>
 
-      <!-- ─── Content ────────────────────────────────────────────────────── -->
+      <!-- ─── Corpo: conteúdo + índice flutuante (direita, estilo Academy) ── -->
       <div class="max-w-7xl mx-auto px-4 py-6">
+        <div class="flex gap-4">
+          <main class="flex-1 min-w-0">
+
+            <!-- Navegação compacta (telas < xl, onde o índice flutuante não cabe) -->
+            <div v-if="activeTab === 'modules' && localModules.length" class="xl:hidden mb-3 flex gap-1.5 overflow-x-auto scrollbar-hide">
+              <button v-for="(mod, i) in localModules" :key="mod.id ?? i" @click="selectModule(i)" :class="['flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap border transition', activeModuleIndex === i ? 'bg-accent-soft border-accent/30 text-accent' : 'border-line text-ink-muted bg-surface-raised']">
+                <i :class="mod.idetapa ? 'fas fa-box' : 'fas fa-cube'" class="text-[10px]"></i>{{ mod.module_name || 'Novo módulo' }}
+              </button>
+            </div>
+            <div v-if="activeTab === 'modules' && activeModule" class="xl:hidden mb-4 flex gap-1.5 overflow-x-auto scrollbar-hide">
+              <button v-for="sec in moduleSections" :key="sec.id" @click="scrollToSection(sec.id)" :class="['px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap border transition', activeSection === sec.id ? 'bg-accent-soft border-accent/30 text-accent' : 'border-line text-ink-muted bg-surface-raised']">{{ sec.label }}</button>
+            </div>
 
         <!-- Módulos -->
         <div v-show="activeTab === 'modules'">
           <ModuleSection
             :modules="localModules"
+            :hide-chrome="true"
+            v-model:active-index="activeModuleIndex"
             :condition-id="detail.id"
             :condition-status="detail.status"
             :saving="saving"
@@ -534,81 +636,93 @@
           />
         </div>
 
-        <!-- Histórico -->
+        <!-- Histórico: linha do tempo única -->
         <div v-if="activeTab === 'history'">
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-
-            <!-- Histórico de Aprovação -->
-            <div class="bg-surface-raised rounded-2xl border border-line shadow-sm p-6">
-              <p class="text-xs font-semibold text-ink-muted uppercase tracking-wide mb-4 flex items-center gap-2">
-                <i class="fas fa-shield-check text-indigo-500"></i> Histórico de Aprovação
-              </p>
-              <div v-if="approvalHistory.length" class="space-y-3">
-                <div
-                  v-for="(ev, i) in approvalHistory"
-                  :key="i"
-                  class="flex items-start gap-3"
-                >
-                  <div class="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs"
-                    :class="eventIconClass(ev.action)">
-                    <i :class="eventIcon(ev.action)" class="fas"></i>
-                  </div>
-                  <div class="flex-1 min-w-0">
-                    <p class="text-sm font-medium text-ink">{{ eventLabel(ev.action) }}</p>
-                    <p class="text-xs text-ink-subtle">
-                      {{ ev.username || 'Sistema' }}
-                      <span class="mx-1">·</span>
-                      {{ formatDateFull(ev.at) }}
-                    </p>
-                    <p v-if="ev.note" class="text-xs text-ink-muted mt-0.5 italic">{{ ev.note }}</p>
-                  </div>
+          <div class="bg-surface-raised rounded-2xl border border-line shadow-sm p-6 max-w-3xl">
+            <p class="text-xs font-semibold text-ink-muted uppercase tracking-wide mb-5 flex items-center gap-2">
+              <i class="fas fa-timeline text-indigo-500"></i> Linha do tempo: quem, quando, o quê e onde
+            </p>
+            <div v-if="timeline.length" class="relative">
+              <div
+                v-for="(ev, i) in timeline"
+                :key="ev._i ?? i"
+                class="relative flex items-start gap-3 pb-5 last:pb-0"
+              >
+                <div v-if="i < timeline.length - 1" class="absolute left-[13px] top-7 -bottom-0 w-px bg-line"></div>
+                <div class="relative z-10 flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs"
+                  :class="eventIconClass(ev.action)">
+                  <i :class="eventIcon(ev.action)" class="fas"></i>
                 </div>
-              </div>
-              <div v-else class="flex items-center justify-center py-10 text-ink-subtle text-sm">
-                Nenhum evento de aprovação registrado.
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-medium text-ink">{{ eventLabel(ev.action) }}</p>
+                  <p class="text-xs text-ink-subtle">
+                    <i class="fas fa-user text-[10px] mr-1"></i>{{ ev.username || 'Sistema' }}
+                    <span class="mx-1">·</span>
+                    {{ formatDateFull(ev.at) }}
+                  </p>
+                  <p v-if="ev.note" class="text-xs text-ink-muted mt-1 italic break-words">{{ ev.note }}</p>
+                </div>
               </div>
             </div>
-
-            <!-- Histórico de Alterações -->
-            <div class="bg-surface-raised rounded-2xl border border-line shadow-sm p-6">
-              <p class="text-xs font-semibold text-ink-muted uppercase tracking-wide mb-4 flex items-center gap-2">
-                <i class="fas fa-pen-to-square text-amber-500"></i> Histórico de Alterações
-              </p>
-              <div v-if="changeHistory.length" class="space-y-3">
-                <div
-                  v-for="(ev, i) in changeHistory"
-                  :key="i"
-                  class="flex items-start gap-3"
-                >
-                  <div class="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs"
-                    :class="eventIconClass(ev.action)">
-                    <i :class="eventIcon(ev.action)" class="fas"></i>
-                  </div>
-                  <div class="flex-1 min-w-0">
-                    <p class="text-sm font-medium text-ink">{{ eventLabel(ev.action) }}</p>
-                    <p class="text-xs text-ink-subtle">
-                      {{ ev.username || 'Sistema' }}
-                      <span class="mx-1">·</span>
-                      {{ formatDateFull(ev.at) }}
-                    </p>
-                    <p v-if="ev.note" class="text-xs text-ink-muted mt-0.5 italic break-words">{{ ev.note }}</p>
-                  </div>
-                </div>
-              </div>
-              <div v-else class="flex items-center justify-center py-10 text-ink-subtle text-sm">
-                Nenhuma alteração registrada.
-              </div>
+            <div v-else class="flex items-center justify-center py-12 text-ink-subtle text-sm">
+              Nenhum evento registrado ainda.
             </div>
           </div>
         </div>
 
+          </main>
+
+          <!-- Índice flutuante (direita, xl+) — estilo Academy -->
+          <aside v-if="activeTab === 'modules' && localModules.length" class="hidden xl:block w-[240px] shrink-0">
+            <div class="sticky" :style="{ top: 'calc(var(--cond-header-h, 56px) + 8px)' }">
+              <div class="cond-toc">
+                <p class="cond-toc__title"><i class="fas fa-list-ul mr-1.5 text-accent"></i> Neste módulo</p>
+
+                <p class="cond-toc__grp">Módulos</p>
+                <div v-for="(mod, i) in localModules" :key="mod.id ?? i" class="flex items-center gap-1 mb-1.5">
+                  <button @click="selectModule(i)" :class="['cond-toc__link flex-1 min-w-0', { 'is-active': activeModuleIndex === i }]">
+                    <i :class="mod.idetapa ? 'fas fa-box' : 'fas fa-cube'" class="mr-2 text-xs shrink-0"></i>
+                    <span class="truncate flex-1">{{ mod.module_name || 'Novo módulo' }}</span>
+                    <span class="ml-1.5 flex gap-0.5 shrink-0">
+                      <span v-for="(f, k) in moduleCompleteness(mod)" :key="k" class="w-1 h-1 rounded-full" :class="f ? 'bg-accent' : 'bg-surface-sunken'"></span>
+                    </span>
+                  </button>
+                  <button v-if="canEdit && !isLocked" @click="removeModule(i)" class="shrink-0 w-7 h-7 flex items-center justify-center rounded-lg text-ink-subtle hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition" title="Remover módulo">
+                    <i class="fas fa-trash text-[11px]"></i>
+                  </button>
+                </div>
+                <button v-if="canEdit && !isLocked" @click="showAddModuleMenu = !showAddModuleMenu" class="cond-toc__add">
+                  <i class="fas fa-plus text-[10px] mr-1.5"></i> Adicionar módulo
+                </button>
+                <div v-if="showAddModuleMenu" class="ml-1 my-1 pl-2 border-l-2 border-line space-y-0.5">
+                  <p v-if="availableStages.length" class="text-[10px] font-semibold text-ink-subtle uppercase px-1 pt-1">Etapas do CV</p>
+                  <button v-for="s in availableStages" :key="s.idetapa" @click="addStageModule(s)" class="w-full flex items-center gap-2 px-2 py-1 text-xs text-ink-muted hover:bg-accent-soft hover:text-accent rounded text-left transition">
+                    <i class="fas fa-layer-group text-[10px]"></i> <span class="truncate">{{ s.nome }}</span>
+                  </button>
+                  <button @click="addCustomModule" class="w-full flex items-center gap-2 px-2 py-1 text-xs text-ink-muted hover:bg-surface-hover rounded text-left transition">
+                    <i class="fas fa-cube text-[10px]"></i> Módulo avulso
+                  </button>
+                </div>
+
+                <template v-if="activeModule">
+                  <p class="cond-toc__grp">Seções</p>
+                  <button v-for="sec in moduleSections" :key="sec.id" @click="scrollToSection(sec.id)" :class="['cond-toc__link mb-1', { 'is-active': activeSection === sec.id }]">
+                    <i :class="sec.icon" class="mr-2 text-xs shrink-0"></i>
+                    <span class="truncate">{{ sec.label }}</span>
+                  </button>
+                </template>
+              </div>
+            </div>
+          </aside>
+
+        </div>
       </div>
     </template>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, onBeforeUnmount } from 'vue';
+import { ref, reactive, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue';
 import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router';
 import { useConditionsStore } from '@/stores/Comercial/Conditions/conditionsStore';
 import { useAuthStore } from '@/stores/Settings/Auth/authStore';
@@ -736,6 +850,156 @@ const visibleTabs = computed(() =>
 const detail = computed(() => store.detail);
 const localModules = ref([]);
 const form = ref({ notes: '' });
+
+// Navegação de mês: detail.history vem ordenada por reference_month DESC.
+const historyIndex = computed(() => {
+    const h = detail.value?.history ?? [];
+    return h.findIndex(x => String(x.id) === String(detail.value?.id));
+});
+const olderItem = computed(() => {
+    const h = detail.value?.history ?? [];
+    const i = historyIndex.value;
+    return i >= 0 && i < h.length - 1 ? h[i + 1] : null;
+});
+const newerItem = computed(() => {
+    const h = detail.value?.history ?? [];
+    const i = historyIndex.value;
+    return i > 0 ? h[i - 1] : null;
+});
+
+// ── Navegação lateral (estilo Academy, controla módulo ativo + seções) ────────
+const activeModuleIndex = ref(0);
+const activeSection = ref('data');
+const sidebarCollapsed = ref(false);
+const sidebarMobileOpen = ref(false);
+const showAddModuleMenu = ref(false);
+
+const activeModule = computed(() => localModules.value[activeModuleIndex.value] ?? null);
+
+const ALL_SECTIONS = [
+    { id: 'data',        label: 'Produto',       icon: 'fas fa-box' },
+    { id: 'prices',      label: 'Preços',        icon: 'fas fa-tag' },
+    { id: 'negotiation', label: 'Negociação',    icon: 'fas fa-handshake' },
+    { id: 'docs',        label: 'Documentação',  icon: 'fas fa-file-contract' },
+    { id: 'campaigns',   label: 'Campanhas',     icon: 'fas fa-bullhorn' },
+    { id: 'operational', label: 'Operacional',   icon: 'fas fa-gears' },
+    { id: 'units',       label: 'Unidades',      icon: 'fas fa-layer-group' },
+];
+const moduleSections = computed(() => {
+    const hasUnits = !!activeModule.value?.idetapa;
+    return ALL_SECTIONS.filter(s => s.id !== 'units' || hasUnits);
+});
+
+// Etapas do CV ainda não vinculadas a um módulo desta ficha.
+const availableStages = computed(() => {
+    const used = new Set(localModules.value.map(m => m.idetapa).filter(Boolean));
+    return (detail.value?.stages ?? []).filter(s => !used.has(s.idetapa));
+});
+
+function moduleCompleteness(mod) {
+    return [
+        !!(mod.module_name && mod.total_units),
+        (mod.price_table_ids?.length > 0) || (mod.manual_price_tables?.length > 0),
+        !!(mod.max_entry_value || mod.rp_rule || mod.max_installments),
+        (mod.campaigns?.length > 0),
+        !!(mod.manager_user_id || mod.correspondent_id || mod.contract_registration_by),
+    ];
+}
+
+function navItemClass(active) {
+    return [
+        'group relative w-full flex items-center gap-2.5 h-9 px-2.5 rounded-lg text-sm font-medium transition',
+        active ? 'bg-accent-soft text-accent' : 'text-ink-muted hover:bg-surface-hover hover:text-ink',
+    ];
+}
+
+function selectModule(i) {
+    activeModuleIndex.value = i;
+    activeSection.value = 'data';
+    sidebarMobileOpen.value = false;
+}
+function scrollToSection(id) {
+    activeSection.value = id;
+    document.getElementById(`modsec-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    sidebarMobileOpen.value = false;
+}
+function addStageModule(stage) {
+    const newMod = moduleDefaults({ idetapa: stage.idetapa, module_name: stage.nome || `Etapa ${stage.idetapa}`, sort_order: localModules.value.length });
+    localModules.value = [...localModules.value, newMod];
+    activeModuleIndex.value = localModules.value.length - 1;
+    activeSection.value = 'data';
+    isDirty.value = true;
+    showAddModuleMenu.value = false;
+}
+function addCustomModule() {
+    const newMod = moduleDefaults({ idetapa: null, module_name: '', sort_order: localModules.value.length });
+    localModules.value = [...localModules.value, newMod];
+    activeModuleIndex.value = localModules.value.length - 1;
+    activeSection.value = 'data';
+    isDirty.value = true;
+    showAddModuleMenu.value = false;
+}
+
+// Remove o módulo i: se já salvo (tem id) deleta no backend; senão tira da lista local.
+function removeModule(i) {
+    const mod = localModules.value[i];
+    if (!mod) return;
+    const name = mod.module_name || 'este módulo';
+    if (!window.confirm(`Remover "${name}"? Esta ação não pode ser desfeita.`)) return;
+    if (mod.id) {
+        handleDeleteModule(mod.id);
+    } else {
+        localModules.value = localModules.value.filter((_, idx) => idx !== i);
+        if (activeModuleIndex.value >= localModules.value.length) {
+            activeModuleIndex.value = Math.max(0, localModules.value.length - 1);
+        }
+        isDirty.value = true;
+    }
+}
+
+// Mantém o índice ativo no range quando a lista muda (ex.: após remover módulo).
+watch(() => localModules.value.length, (len) => {
+    if (activeModuleIndex.value >= len) activeModuleIndex.value = Math.max(0, len - 1);
+});
+
+// Altura real do header → var CSS, para a lateral grudar logo abaixo (padrão Academy).
+const headerEl = ref(null);
+let headerRO = null;
+onMounted(() => {
+    const el = headerEl.value;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const setVar = () => document.documentElement.style.setProperty('--cond-header-h', `${Math.ceil(el.getBoundingClientRect().height)}px`);
+    setVar();
+    headerRO = new ResizeObserver(setVar);
+    headerRO.observe(el);
+});
+onBeforeUnmount(() => { if (headerRO) headerRO.disconnect(); });
+
+// Destaca a seção atual no índice flutuante conforme o scroll (padrão Academy).
+let sectionObserver = null;
+function observeSections() {
+    if (typeof IntersectionObserver === 'undefined') return;
+    if (sectionObserver) sectionObserver.disconnect();
+    sectionObserver = new IntersectionObserver((entries) => {
+        for (const e of entries) {
+            if (e.isIntersecting) {
+                const id = e.target.id.replace('modsec-', '');
+                if (id) activeSection.value = id;
+            }
+        }
+    }, { rootMargin: '-25% 0px -65% 0px', threshold: 0 });
+    nextTick(() => {
+        for (const s of moduleSections.value) {
+            const el = document.getElementById(`modsec-${s.id}`);
+            if (el) sectionObserver.observe(el);
+        }
+    });
+}
+watch([activeModuleIndex, () => activeTab.value, () => localModules.value.length], () => {
+    if (activeTab.value === 'modules') nextTick(observeSections);
+});
+onMounted(() => { if (activeTab.value === 'modules') nextTick(observeSections); });
+onBeforeUnmount(() => { if (sectionObserver) sectionObserver.disconnect(); });
 
 function moduleDefaults(m = {}) {
     const base = {
@@ -990,6 +1254,66 @@ async function handleUnlock() {
     }
 }
 
+// ─── Vincular avulsa ao CV (promove a série inteira) ──────────────────────────
+const showLinkCvModal = ref(false);
+const cvEnterprises = ref([]);
+const linkCvEnterpriseId = ref(null);
+const linkCvStages = ref([]);
+const linkModuleMap = ref({});
+const linkLoading = ref(false);
+const linkError = ref(null);
+
+async function openLinkCv() {
+    linkError.value = null;
+    linkCvEnterpriseId.value = null;
+    linkCvStages.value = [];
+    linkModuleMap.value = {};
+    showLinkCvModal.value = true;
+    if (!cvEnterprises.value.length) {
+        try { cvEnterprises.value = await store.fetchCvEnterprises(); }
+        catch (e) { linkError.value = e.message || 'Erro ao carregar empreendimentos do CV.'; }
+    }
+}
+
+async function onLinkEnterpriseChange() {
+    linkCvStages.value = [];
+    linkModuleMap.value = {};
+    linkError.value = null;
+    if (!linkCvEnterpriseId.value) return;
+    try {
+        linkCvStages.value = await store.fetchEnterpriseStages(linkCvEnterpriseId.value);
+        // Pré-cria as chaves do mapa (= null) para o select mostrar "Manter livre".
+        const m = {};
+        for (const mod of localModules.value) if (mod.id != null) m[mod.id] = null;
+        linkModuleMap.value = m;
+    } catch (e) {
+        linkError.value = e.message || 'Erro ao carregar etapas do empreendimento.';
+    }
+}
+
+async function handleLinkToCv() {
+    if (!linkCvEnterpriseId.value) return;
+    linkLoading.value = true;
+    linkError.value = null;
+    try {
+        const map = {};
+        for (const [k, v] of Object.entries(linkModuleMap.value)) {
+            if (v != null) map[k] = v;
+        }
+        const res = await store.linkSeriesToCv(detail.value.id, linkCvEnterpriseId.value, map);
+        showLinkCvModal.value = false;
+        showToast(`Série vinculada ao CV (${res?.affected || 1} ficha(s)).`);
+        await store.fetchDetail(detail.value.id);
+        populateFromDetail(store.detail);
+        const eid = store.detail?.idempreendimento;
+        if (eid) await Promise.all([store.fetchPriceTables(eid), store.fetchPriceDistribution(eid)]);
+    } catch (e) {
+        linkError.value = e.message || 'Erro ao vincular ao CV.';
+    } finally {
+        linkLoading.value = false;
+    }
+}
+
 // ─── Saves ────────────────────────────────────────────────────────────────────
 
 async function handleSaveModules() {
@@ -1076,7 +1400,7 @@ async function handleSaveModulesSilent(modulesPayload = null) {
 
         savingSilentPromise = (async () => {
             try {
-                const result = await store.saveModules(detail.value.id, toSave);
+                const result = await store.saveModules(detail.value.id, toSave, { silent: true });
                 if (result?.modules) {
                     // Reaplica intendedLinks também no resultado, caso o backend tenha falhado em persistir
                     const fromBackend = result.modules.map(m => moduleDefaults(m));
@@ -1192,18 +1516,17 @@ const EVENT_META = {
     edited_after_unlock:     { label: 'Editado após desbloqueio',        icon: 'fa-pen-to-square', cls: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30',   type: 'change' },
     module_copied:           { label: 'Módulo copiado',                  icon: 'fa-copy',          cls: 'bg-purple-100 text-purple-600 dark:bg-purple-900/30', type: 'change' },
     modules_updated:         { label: 'Módulo(s) adicionado(s)',         icon: 'fa-layer-group',   cls: 'bg-blue-100 text-blue-600 dark:bg-blue-900/30',       type: 'change' },
+    module_edited:           { label: 'Módulo editado',                 icon: 'fa-pen',           cls: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',   type: 'change' },
+    linked_to_cv:            { label: 'Vinculada ao CV',                icon: 'fa-link',          cls: 'bg-teal-100 text-teal-700 dark:bg-teal-900/30',       type: 'approval' },
 };
 function eventLabel(action)     { return EVENT_META[action]?.label    ?? action; }
 function eventIcon(action)      { return EVENT_META[action]?.icon     ?? 'fa-circle'; }
 function eventIconClass(action) { return EVENT_META[action]?.cls      ?? 'bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-500'; }
 
-const approvalHistory = computed(() => {
+// Linha do tempo única (cronológica reversa): quem, quando, o quê, onde (na nota).
+const timeline = computed(() => {
     const hist = detail.value?.approval_history ?? [];
-    return [...hist].reverse().filter(ev => (EVENT_META[ev.action]?.type ?? 'approval') === 'approval');
-});
-const changeHistory = computed(() => {
-    const hist = detail.value?.approval_history ?? [];
-    return [...hist].reverse().filter(ev => (EVENT_META[ev.action]?.type) === 'change');
+    return hist.map((ev, i) => ({ ...ev, _i: i })).reverse();
 });
 
 // ─── Fetch / retry ───────────────────────────────────────────────────────────
@@ -1260,4 +1583,12 @@ onMounted(() => loadDetail(route.params.id));
 <style scoped>
 .fade-enter-active, .fade-leave-active { transition: opacity .3s; }
 .fade-enter-from, .fade-leave-to { opacity: 0; }
+.nav-grp { @apply px-2 pt-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-ink-subtle; }
+.cond-toc { @apply border border-line rounded-2xl bg-surface-raised p-2.5 overflow-y-auto shadow-sm; max-height: calc(100vh - var(--cond-header-h, 56px) - 1.5rem); }
+.cond-toc__title { @apply text-[11px] font-bold uppercase tracking-wider text-ink-subtle px-2 pb-1.5 flex items-center; }
+.cond-toc__grp { @apply text-[10px] font-bold uppercase tracking-wider text-ink-subtle px-2 pt-2.5 pb-1; }
+.cond-toc__link { @apply w-full flex items-center text-left rounded-lg px-2.5 py-1.5 text-sm text-ink-muted transition; border-left: 2px solid transparent; }
+.cond-toc__link:hover { @apply bg-surface-sunken text-ink; }
+.cond-toc__link.is-active { @apply bg-accent-soft text-accent font-semibold; border-left-color: currentColor; }
+.cond-toc__add { @apply w-full flex items-center rounded-lg px-2.5 py-1.5 mt-1 text-xs font-medium text-accent border border-dashed border-accent/40 hover:bg-accent-soft transition; }
 </style>

@@ -46,24 +46,6 @@ const kpis = computed(() => {
             accent: 'text-violet-500 bg-violet-500/10',
         },
         {
-            key: 'leadsOffice',
-            label: 'Leads (Office)',
-            value: intFmt.format(s.leadsOffice || 0),
-            sub: 'no nosso DB',
-            icon: 'fas fa-database',
-            accent: 'text-indigo-500 bg-indigo-500/10',
-        },
-        {
-            key: 'delivered',
-            label: 'Entregues ao CV',
-            value: intFmt.format(s.delivered || 0),
-            sub: s.leadsOffice > 0
-                ? `${((s.delivered / s.leadsOffice) * 100).toFixed(0)}% do Office`
-                : 'sem leads no DB',
-            icon: 'fas fa-circle-check',
-            accent: 'text-emerald-500 bg-emerald-500/10',
-        },
-        {
             key: 'cac',
             label: 'CAC médio',
             value: s.cacMedio ? moneyFmt.value.format(s.cacMedio) : '—',

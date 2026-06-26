@@ -95,10 +95,9 @@ export const useMetaFormsStore = defineStore('marketingMetaForms', () => {
         }
     }
 
-    async function fetchRecentLeads(metaFormId, { limit = 20, cv = null } = {}) {
+    async function fetchRecentLeads(metaFormId, { limit = 20 } = {}) {
         try {
             const qs = new URLSearchParams({ limit: String(limit) });
-            if (cv === 'matched' || cv === 'unmatched') qs.set('cv', cv);
             const d = await apiFetch(`/meta-forms/${encodeURIComponent(metaFormId)}/leads?${qs}`);
             return Array.isArray(d.results) ? d.results : [];
         } catch (e) {
@@ -137,20 +136,10 @@ export const useMetaFormsStore = defineStore('marketingMetaForms', () => {
         }
     }
 
-    async function fetchComparison(metaFormId) {
-        try {
-            return await apiFetch(`/meta-forms/${encodeURIComponent(metaFormId)}/comparison`);
-        } catch (e) {
-            error.value = e.message;
-            return null;
-        }
-    }
-
     /** Faz download direto do CSV — abre nova aba/baixa via browser. */
-    function downloadLeadsCsv(metaFormId, { cv = null } = {}) {
+    function downloadLeadsCsv(metaFormId) {
         const token = localStorage.getItem('token');
         const qs = new URLSearchParams();
-        if (cv === 'matched' || cv === 'unmatched') qs.set('cv', cv);
         // O endpoint admin exige Bearer — não dá pra usar window.open direto.
         // Estratégia: fetch + blob + download programático.
         return fetch(`${API_URL}/marketing/meta-forms/${encodeURIComponent(metaFormId)}/leads.csv?${qs}`, {
@@ -170,7 +159,7 @@ export const useMetaFormsStore = defineStore('marketingMetaForms', () => {
     return {
         forms, loading, syncing, saving, error, lastSync,
         fetchAll, syncFromMeta, updateMapping, fetchRecentLeads,
-        fetchComparison, downloadLeadsCsv,
+        downloadLeadsCsv,
         fetchFieldMappings, saveFieldMappings,
     };
 });

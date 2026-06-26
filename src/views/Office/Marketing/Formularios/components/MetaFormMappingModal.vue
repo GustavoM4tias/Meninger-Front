@@ -37,9 +37,6 @@ const fmSaving  = ref(false);
 const fmEditor  = ref(null);          // { form, items, available_targets }
 const fmDraft   = ref({});            // { questionKey: cvField | '' }
 
-// Comparativo
-const comparison = ref(null);
-const loadingComp = ref(false);
 const downloadingCsv = ref(false);
 
 // Leads recentes
@@ -60,7 +57,6 @@ watch([() => props.open, () => props.form], async ([isOpen, f]) => {
 
     fmEditor.value = null;
     fmDraft.value = {};
-    comparison.value = null;
     recentLeads.value = [];
 
     // Pré-carrega o editor de mapeamento (tab default)
@@ -86,21 +82,6 @@ watch([() => props.open, () => props.form], async ([isOpen, f]) => {
         loadingLeads.value = false;
     }
 }, { immediate: true });
-
-// ── Lazy load do comparativo ───────────────────────────────────────────────
-async function loadComparison() {
-    if (!props.form?.id || comparison.value) return;
-    loadingComp.value = true;
-    try {
-        const d = await store.fetchComparison(props.form.id);
-        if (d?.ok) comparison.value = d;
-    } finally {
-        loadingComp.value = false;
-    }
-}
-watch(activeSection, (s) => {
-    if (s === 'comparativo' && !comparison.value) loadComparison();
-});
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 function fmtMoney(v) { return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(v) || 0); }
@@ -220,7 +201,6 @@ async function exportCsv(filter) {
 const sections = [
     { key: 'estrutura',   label: 'Estrutura & Mapeamento', icon: 'fas fa-list-check' },
     { key: 'gestao',      label: 'Gestão interna',         icon: 'fas fa-clipboard-list' },
-    { key: 'comparativo', label: 'Comparativo',            icon: 'fas fa-scale-balanced' },
     { key: 'leads',       label: 'Leads recentes',         icon: 'fas fa-users' },
 ];
 </script>
@@ -409,90 +389,6 @@ const sections = [
 
           <div class="flex justify-end">
             <Button variant="primary" size="sm" icon="fas fa-save" :loading="savingMeta" @click="saveGestao">Salvar</Button>
-          </div>
-        </section>
-
-        <!-- ── Comparativo ───────────────────────────────────────────────── -->
-        <section v-show="activeSection === 'comparativo'" class="space-y-4">
-          <div v-if="loadingComp" class="text-center py-8 text-ink-subtle">
-            <i class="fas fa-circle-notch fa-spin mr-2"></i>Calculando comparativo...
-          </div>
-
-          <template v-else-if="comparison">
-            <div class="grid grid-cols-3 gap-2">
-              <div class="rounded-lg border border-blue-500/30 bg-blue-500/5 p-3 text-center">
-                <div class="text-[10px] uppercase tracking-wider text-blue-700 dark:text-blue-300 flex items-center justify-center gap-1">
-                  <i class="fab fa-meta"></i>Meta
-                </div>
-                <div class="text-3xl font-semibold text-ink mt-1">{{ fmtInt(comparison.meta.leads) }}</div>
-                <div class="text-[10px] text-ink-subtle mt-0.5">leads (insights)</div>
-                <div class="text-[10px] text-ink-subtle mt-2">{{ fmtMoney(comparison.meta.spend) }} · {{ comparison.meta.ads_count }} ads</div>
-              </div>
-              <div class="rounded-lg border border-violet-500/30 bg-violet-500/5 p-3 text-center">
-                <div class="text-[10px] uppercase tracking-wider text-violet-700 dark:text-violet-300 flex items-center justify-center gap-1">
-                  <i class="fas fa-database"></i>Office
-                </div>
-                <div class="text-3xl font-semibold text-ink mt-1">{{ fmtInt(comparison.office.total) }}</div>
-                <div class="text-[10px] text-ink-subtle mt-0.5">no nosso DB</div>
-                <div class="text-[10px] mt-2">
-                  <span :class="comparison.rates.office_vs_meta_pct >= 95 ? 'text-emerald-600 dark:text-emerald-300' : 'text-amber-600 dark:text-amber-300'">
-                    {{ comparison.rates.office_vs_meta_pct ?? '—' }}% da Meta
-                  </span>
-                </div>
-              </div>
-              <div class="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-3 text-center">
-                <div class="text-[10px] uppercase tracking-wider text-emerald-700 dark:text-emerald-300 flex items-center justify-center gap-1">
-                  <i class="fas fa-check-circle"></i>CV
-                </div>
-                <div class="text-3xl font-semibold text-ink mt-1">{{ fmtInt(comparison.cv.matched) }}</div>
-                <div class="text-[10px] text-ink-subtle mt-0.5">com cv_idlead</div>
-                <div class="text-[10px] mt-2">
-                  <span :class="comparison.rates.cv_vs_meta_pct >= 80 ? 'text-emerald-600 dark:text-emerald-300' : 'text-amber-600 dark:text-amber-300'">
-                    {{ comparison.rates.cv_vs_meta_pct ?? '—' }}% da Meta
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Gaps -->
-            <div class="rounded-lg border border-line/60 bg-surface-sunken/30 p-3">
-              <div class="text-[10px] uppercase tracking-wider text-ink-subtle mb-2">Onde se perdem os leads</div>
-              <div class="space-y-2 text-xs">
-                <div class="flex justify-between"><span class="text-ink-muted">Meta → Office</span>
-                  <span class="font-mono font-medium" :class="comparison.gaps.meta_minus_office > 0 ? 'text-amber-600 dark:text-amber-300' : 'text-ink-subtle'">
-                    −{{ fmtInt(comparison.gaps.meta_minus_office) }}
-                  </span>
-                </div>
-                <div class="flex justify-between"><span class="text-ink-muted">Office → CV</span>
-                  <span class="font-mono font-medium" :class="comparison.gaps.office_minus_cv > 0 ? 'text-amber-600 dark:text-amber-300' : 'text-ink-subtle'">
-                    −{{ fmtInt(comparison.gaps.office_minus_cv) }}
-                  </span>
-                </div>
-                <div class="flex justify-between pt-2 border-t border-line/60">
-                  <span class="font-medium text-ink">Perda total Meta → CV</span>
-                  <span class="font-mono font-semibold" :class="comparison.gaps.meta_minus_cv > 0 ? 'text-red-600 dark:text-red-300' : 'text-emerald-600 dark:text-emerald-300'">
-                    −{{ fmtInt(comparison.gaps.meta_minus_cv) }} ({{ (100 - (comparison.rates.cv_vs_meta_pct ?? 0)).toFixed(1) }}%)
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div class="flex flex-wrap items-center gap-2">
-              <Button variant="secondary" size="sm" icon="fas fa-download" :loading="downloadingCsv" @click="exportCsv(null)">
-                Exportar todos ({{ comparison.office.total }})
-              </Button>
-              <Button v-if="comparison.cv.matched > 0" variant="ghost" size="sm" icon="fas fa-download" :loading="downloadingCsv" @click="exportCsv('matched')">
-                Só com CV ({{ comparison.cv.matched }})
-              </Button>
-              <Button v-if="comparison.cv.unmatched > 0" variant="ghost" size="sm" icon="fas fa-download" :loading="downloadingCsv" @click="exportCsv('unmatched')">
-                Sem CV ({{ comparison.cv.unmatched }})
-              </Button>
-            </div>
-          </template>
-
-          <div v-else class="text-center py-8 text-ink-subtle text-sm">
-            <i class="fas fa-scale-balanced text-2xl mb-2 block"></i>
-            Aguardando dados.
           </div>
         </section>
 

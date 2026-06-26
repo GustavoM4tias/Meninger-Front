@@ -169,11 +169,12 @@ export const useConditionsStore = defineStore('conditions', () => {
 
     // ─── Módulos ─────────────────────────────────────────────────────────────
 
-    async function saveModules(id, modules) {
-        // modules agora inclui campaigns[] dentro de cada módulo
+    async function saveModules(id, modules, { silent = false } = {}) {
+        // modules agora inclui campaigns[] dentro de cada módulo.
+        // silent=true (auto-saves) não registra diff no histórico (casa com o backend).
         return await requestWithAuth(`${API_URL}/conditions/${id}/modules`, {
             method: 'PUT',
-            body: JSON.stringify({ modules }),
+            body: JSON.stringify({ modules, silent }),
         });
     }
 
@@ -208,6 +209,20 @@ export const useConditionsStore = defineStore('conditions', () => {
 
     async function fetchUnitsForStage(idempreendimento, idetapa) {
         return await requestWithAuth(`${API_URL}/conditions/enterprise/${idempreendimento}/stages/${idetapa}/units`);
+    }
+
+    // ─── Vincular avulsa ao CV (promove a série inteira) ─────────────────────
+    async function linkSeriesToCv(id, idempreendimento, moduleStageMap = {}) {
+        return await requestWithAuth(`${API_URL}/conditions/${id}/link-to-cv`, {
+            method: 'POST',
+            body: JSON.stringify({ idempreendimento, moduleStageMap }),
+        });
+    }
+
+    // ─── Empreendimentos do CV (seletor do vínculo avulso → CV) ──────────────
+    async function fetchCvEnterprises() {
+        const data = await requestWithAuth(`${API_URL}/cv/empreendimentos`);
+        return (data ?? []).slice().sort((a, b) => (a.nome || '').localeCompare(b.nome || '', 'pt-BR'));
     }
 
     // ─── Campanhas ───────────────────────────────────────────────────────────
@@ -295,5 +310,6 @@ export const useConditionsStore = defineStore('conditions', () => {
         fetchCorrespondents, fetchOfficeUsers, fetchCorrespondentCompanies,
         fetchSettings, updateSettings, fetchMyPermissions,
         fetchUnitsForStage,
+        linkSeriesToCv, fetchCvEnterprises,
     };
 });

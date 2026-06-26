@@ -1,7 +1,9 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import OrganizerPicker from './OrganizerPicker.vue';
 import NotifyToPicker from './NotifyToPicker.vue';
+import AttachmentPicker from '@/views/Office/Comercial/Conditions/components/AttachmentPicker.vue';
+import { useMicrosoftStore } from '@/stores/Microsoft/microsoftStore';
 import { useEnterpriseSearch, mapEnterpriseAddress } from '../composables/useEnterpriseSearch';
 import { useCepLookup } from '../composables/useCepLookup';
 
@@ -20,6 +22,8 @@ const props = defineProps({
 
 const titleRef = ref(null);
 defineExpose({ focusTitle: () => titleRef.value?.$el?.querySelector('input')?.focus() });
+
+const microsoftStore = useMicrosoftStore();
 
 // ── Enterprise ───────────────────────────────────────
 const ent = useEnterpriseSearch();
@@ -88,15 +92,35 @@ function addTag() {
 function removeTag(i) { props.form.tags.splice(i, 1); }
 
 // ── Images ───────────────────────────────────────────
+// Usa o AttachmentPicker padrão (URL / envio do PC / SharePoint). O arquivo enviado vai
+// para o Supabase Storage (não para o banco) e é comprimido antes de subir (compress-images),
+// evitando lotar o storage. referenceId: id do evento (edição) ou um token de rascunho (criação).
+const draftRef = `event-draft-${Date.now()}`;
+const uploadRefId = computed(() => props.form.id || draftRef);
+
 const newImg = ref('');
+const imgError = ref('');
+
 function addImg() {
   const u = newImg.value.trim();
-  if (u && !props.form.images.includes(u)) {
-    props.form.images.push(u);
-    newImg.value = '';
+  if (!u) return;
+  // Bloqueia data: URI (base64) — encheria a coluna JSON do banco. Use "Enviar arquivo" ou um link.
+  if (/^data:/i.test(u)) {
+    imgError.value = 'Imagens em base64 (data:) não são aceitas. Use "Enviar arquivo" ou cole um link.';
+    return;
   }
+  imgError.value = '';
+  if (!props.form.images.includes(u)) props.form.images.push(u);
+  newImg.value = '';
 }
 function removeImg(i) { props.form.images.splice(i, 1); }
+
+// Vindo do AttachmentPicker (upload/URL/SharePoint): URL completa = adiciona na hora.
+// Digitação parcial não casa http(s):// — aí espera o botão "Adicionar".
+function onImgPicked(url) {
+  newImg.value = url || '';
+  if (/^https?:\/\/\S+\.\S+/i.test((url || '').trim())) addImg();
+}
 
 // ── Sections ─────────────────────────────────────────
 const sections = ref({ location: false, media: false, organizers: false });
@@ -105,6 +129,9 @@ const sections = ref({ location: false, media: false, organizers: false });
 function delayedHideEnterpriseResults() {
   window.setTimeout(() => { ent.showResults.value = false; }, 120);
 }
+
+// Garante que a aba SharePoint do AttachmentPicker apareça (depende do status MS).
+onMounted(() => { if (!microsoftStore.connected) microsoftStore.fetchStatus?.(); });
 </script>
 
 <template>
@@ -261,13 +288,27 @@ function delayedHideEnterpriseResults() {
     <Collapsible v-model="sections.media" title="Imagens" icon="far fa-images"
       :hint="form.images.length ? `${form.images.length} adicionada${form.images.length > 1 ? 's' : ''}` : ''">
       <div class="space-y-3">
-        <div class="flex gap-2">
-          <Input v-model="newImg" type="url" placeholder="URL da imagem..." class="flex-1"
-            @keydown.enter.prevent="addImg" />
-          <Button variant="secondary" icon="fas fa-plus" @click="addImg" :disabled="!newImg.trim()">
+        <div class="flex items-start gap-2">
+          <div class="flex-1 min-w-0">
+            <AttachmentPicker
+              :model-value="newImg"
+              @update:model-value="onImgPicked"
+              upload-context="event_image"
+              :reference-id="uploadRefId"
+              resource-type="event"
+              compress-images
+              accept=".png,.jpg,.jpeg,.webp"
+              upload-hint="PNG, JPG ou WEBP (comprimida ao enviar)"
+              placeholder="Cole o link, envie do PC ou busque no SharePoint" />
+          </div>
+          <Button variant="secondary" icon="fas fa-plus" @click="addImg" :disabled="!newImg.trim()" class="shrink-0">
             Adicionar
           </Button>
         </div>
+
+        <p v-if="imgError" class="text-xs text-red-500 flex items-center gap-1">
+          <i class="fas fa-circle-exclamation"></i>{{ imgError }}
+        </p>
 
         <p v-if="!form.images.length && form.enterprise_logo" class="text-xs text-ink-muted">
           Nenhuma imagem anexada. Ao salvar, a logo do empreendimento será usada automaticamente.

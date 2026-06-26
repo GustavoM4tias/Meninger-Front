@@ -175,9 +175,9 @@ export const useCampaignsStore = defineStore('marketingCampaigns', () => {
     }
 
     const importing = ref(false);
-    const reconciling = ref(false);
     const lastImport = ref(null);
-    const lastReconcile = ref(null);
+    const dispatching = ref(false);
+    const lastDispatch = ref(null);
 
     async function importHistorical({ sinceDays = 90 } = {}) {
         importing.value = true;
@@ -319,35 +319,34 @@ export const useCampaignsStore = defineStore('marketingCampaigns', () => {
         });
     }
 
-    async function reconcileBatch({ limit = 200 } = {}) {
-        reconciling.value = true;
+    // ── Cutover: disparar backlog (histórico + fila de sombra) ao CV ────────
+    async function dispatchHistorical({ cutoff = '2026-06-01', preview = false, limit = 500 } = {}) {
+        dispatching.value = true;
         error.value = null;
-        lastReconcile.value = null;
-        return withOp({ type: 'reconcile', label: `Reconciliar com CV (até ${limit})`, details: { limit } }, async () => {
+        const label = preview ? `Preview do disparo (desde ${cutoff})` : `Disparar histórico ao CV (desde ${cutoff})`;
+        return withOp({ type: 'dispatch', label, details: { cutoff, preview, limit } }, async () => {
         try {
-            const d = await apiFetch('/meta-campaigns/reconcile-cv-batch', {
+            const d = await apiFetch('/meta-campaigns/dispatch-historical', {
                 method: 'POST',
-                body: JSON.stringify({ limit }),
+                body: JSON.stringify({ cutoff, preview, limit }),
             });
-            lastReconcile.value = {
-                processed: d.processed, matched: d.matched, unmatched: d.unmatched, errors: d.errors,
-            };
-            return lastReconcile.value;
+            if (!preview) { lastDispatch.value = d; await fetchAll(); }
+            return d;
         } catch (e) {
             error.value = e.message;
             return null;
         } finally {
-            reconciling.value = false;
+            dispatching.value = false;
         }
         });
     }
 
     return {
         campaigns, loading, syncing, saving, error, lastSync,
-        importing, reconciling, lastImport, lastReconcile,
+        importing, lastImport, dispatching, lastDispatch,
         ops, clearOps,
         fetchAll, syncFromMeta, fetchDetail, fetchLeads, fetchDaily, updateInternal,
-        importHistorical, reconcileBatch, reparseExistingLeads, migrateMappings,
+        importHistorical, dispatchHistorical, reparseExistingLeads, migrateMappings,
         runFullSync, fullSyncing, lastFullSync,
         fetchAds, syncAds, fetchAdSets,
         allAds, loadingAllAds, fetchAllAds,

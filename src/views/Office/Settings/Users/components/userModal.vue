@@ -160,6 +160,7 @@ async function saveUser() {
       await authStore.createUser({
         username: u.username, email: u.email, password: password.value,
         position: u.position, city: u.city, birth_date: u.birth_date,
+        phone: u.phone || null, manager_id: u.manager_id, status: u.status,
       });
       toast.success('Usuário criado com sucesso!');
     }

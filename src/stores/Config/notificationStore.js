@@ -10,6 +10,17 @@ import {
     saveNotificationPreference,
 } from '@/utils/Config/apiNotification';
 
+// Ordena: não-lidas primeiro, depois da mais recente para a mais antiga.
+function sortNotifications(list) {
+    const ts = (n) => new Date(n?.created_at || n?.createdAt || 0).getTime() || 0;
+    return [...(list || [])].sort((a, b) => {
+        const aUnread = a?.read_at ? 0 : 1;
+        const bUnread = b?.read_at ? 0 : 1;
+        if (aUnread !== bUnread) return bUnread - aUnread; // não-lidas no topo
+        return ts(b) - ts(a);                              // recente → antigo
+    });
+}
+
 export const useNotificationStore = defineStore('notificationStore', {
     state: () => ({
         notifications: [],
@@ -32,7 +43,7 @@ export const useNotificationStore = defineStore('notificationStore', {
             try {
                 const result = await fetchNotifications({ unread, limit, offset });
                 const items = Array.isArray(result?.items) ? result.items : [];
-                this.notifications = append ? [...this.notifications, ...items] : items;
+                this.notifications = sortNotifications(append ? [...this.notifications, ...items] : items);
                 this.total = Number(result?.total ?? 0);
                 if (typeof result?.unread === 'number') this.unread = result.unread;
             } catch (err) {

@@ -7,9 +7,21 @@ import '@vue-flow/core/dist/theme-default.css';
 const props = defineProps({
   rootNode: { type: Object, required: true },
   selectedId: { type: [Number, String], default: null },
+  editMode: { type: Boolean, default: false },
+  overrideMap: { type: Object, default: () => ({}) },
 });
 
-const emit = defineEmits(['select']);
+const emit = defineEmits(['select', 'update-position']);
+
+// Posição arrastada localmente (id -> {x,y}). Aplicada com prioridade máxima no
+// buildGraph para o card não "voltar" enquanto o PUT ao backend vai e volta.
+const localPos = ref({});
+
+function hasOverride(id) {
+  const ov = props.overrideMap?.[id];
+  return !!(ov && (ov.display_parent_id != null || ov.display_order != null
+    || ov.pos_x != null || ov.pos_y != null));
+}
 
 // ── Layout: Reingold-Tilford simplificado (top-down por subárvore) ──
 const NODE_W = 220;
@@ -56,10 +68,24 @@ function buildGraph(rootNode) {
   const nodes = [];
   const edges = [];
   function walk(node, parentId = null) {
+    // Precedência da posição: arrasto local > posição salva (override) > auto-layout.
+    // Nó-raiz "empresa" usa a chave sentinela 0 (não tem user id).
+    const oid = node.type === 'company' ? 0 : node.data?.id;
+    const lp = oid != null ? localPos.value[oid] : null;
+    const ov = oid != null ? props.overrideMap?.[oid] : null;
+    const position = lp
+      ? { x: lp.x, y: lp.y }
+      : (ov && ov.pos_x != null && ov.pos_y != null)
+        ? { x: ov.pos_x, y: ov.pos_y }
+        : { x: node._x, y: node._y };
+
     nodes.push({
       id: node.key,
-      position: { x: node._x, y: node._y },
-      data: { ...node.data, level: node._level, hasChildren: !!(node.children?.length) },
+      position,
+      data: {
+        ...node.data, level: node._level, hasChildren: !!(node.children?.length),
+        editing: props.editMode, adjusted: oid != null && hasOverride(oid),
+      },
       type: node.type === 'company' ? 'company' : 'person',
       sourcePosition: Position.Bottom,
       targetPosition: Position.Top,
@@ -142,6 +168,18 @@ function onNodeClick({ node }) {
   emit('select', node.data);
 }
 
+function onNodeDragStop({ node }) {
+  if (!node) return;
+  // Empresa (raiz) persiste sob a chave sentinela 0; pessoas sob o próprio id.
+  const id = node.type === 'company' ? 0 : node.data?.id;
+  if (id == null) return;
+  const x = Math.round(node.position.x);
+  const y = Math.round(node.position.y);
+  // Fixa imediatamente para o card não voltar enquanto o backend confirma.
+  localPos.value = { ...localPos.value, [id]: { x, y } };
+  emit('update-position', { userId: id, x, y });
+}
+
 function handleFit() { fitView({ padding: 0.2, duration: 400 }); }
 
 // Helpers visuais
@@ -174,8 +212,11 @@ function directCount(node) {
   return node?.children?.length ?? 0;
 }
 
-// Re-fit ao trocar de árvore
+// Re-fit ao trocar de árvore. Limpa o cache de arrasto: mudanças estruturais
+// (reparent/reorder/reset) reconstroem a árvore e a posição passa a vir do override
+// (ou do auto-layout). Arrasto puro não troca o rootNode, então o cache persiste.
 watch(() => props.rootNode, () => {
+  localPos.value = {};
   setTimeout(() => fitView({ padding: 0.2, duration: 400 }), 50);
 });
 </script>
@@ -197,19 +238,27 @@ watch(() => props.rootNode, () => {
       :default-viewport="{ zoom: 0.65 }"
       :min-zoom="0.15"
       :max-zoom="2.5"
-      :nodes-draggable="false"
+      :nodes-draggable="editMode"
       :nodes-connectable="false"
       :edges-updatable="false"
       :pan-on-drag="true"
       :zoom-on-double-click="false"
       :delete-key-code="null"
       class="organogram-flow"
-      @node-click="onNodeClick">
+      :class="{ 'is-editing': editMode }"
+      @node-click="onNodeClick"
+      @node-drag-stop="onNodeDragStop">
 
       <!-- Person node -->
       <template #node-person="{ data }">
         <div class="org-card-shell" :data-level="data.level">
-          <div class="org-card">
+          <div class="org-card" :class="{ 'is-editing': data.editing }">
+            <!-- Marca de "ajustado" no modo edição -->
+            <span v-if="data.editing && data.adjusted"
+              class="absolute top-1.5 right-1.5 h-4 w-4 grid place-items-center rounded-full
+                     bg-accent text-white text-[8px] shadow-soft z-10" title="Posição ajustada">
+              <i class="fas fa-pen"></i>
+            </span>
             <!-- Avatar com ring colorido por nível -->
             <div class="relative shrink-0">
               <img :src="data.image" :alt="data.name"
@@ -425,6 +474,13 @@ watch(() => props.rootNode, () => {
   height: 44px;
   border-radius: 12px;
   object-fit: cover;
+}
+
+/* Modo edição: cards arrastáveis */
+.organogram-flow.is-editing :deep(.vue-flow__node) { cursor: move; }
+.org-card.is-editing {
+  border-style: dashed;
+  border-color: rgb(var(--accent) / 0.45);
 }
 
 /* ── Company (root) ── */

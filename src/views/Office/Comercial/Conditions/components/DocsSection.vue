@@ -59,15 +59,37 @@
           </button>
         </div>
 
-        <!-- Não isento: valor médio -->
-        <div v-if="!form.itbi_exempt">
-          <label class="lbl">Valor Médio do ITBI</label>
-          <div class="relative">
-            <span class="pfx">R$</span>
-            <input type="text" :value="fmtBR(form.itbi_avg_value)"
-              @focus="e => { e.target.value = form.itbi_avg_value ?? ''; e.target.select(); }"
-              @blur="e => set('itbi_avg_value', parseBR(e.target.value))"
-              class="inp-pfx" placeholder="0,00" :disabled="readonly" />
+        <!-- Não isento: valor médio + pagador -->
+        <div v-if="!form.itbi_exempt" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="lbl">Valor Médio do ITBI</label>
+            <div class="relative">
+              <span class="pfx">R$</span>
+              <input type="text" :value="fmtBR(form.itbi_avg_value)"
+                @focus="e => { e.target.value = form.itbi_avg_value ?? ''; e.target.select(); }"
+                @blur="e => set('itbi_avg_value', parseBR(e.target.value))"
+                class="inp-pfx" placeholder="0,00" :disabled="readonly" />
+            </div>
+          </div>
+          <div>
+            <label class="lbl">Pago por</label>
+            <div class="flex gap-2 flex-wrap mt-1">
+              <label v-for="opt in payerOptions" :key="opt.value"
+                class="flex items-center gap-2 px-3.5 py-2 rounded-md border cursor-pointer transition-all text-sm font-medium select-none"
+                :class="(form.itbi_paid_by || 'client') === opt.value
+                  ? 'border-accent bg-accent-soft text-accent shadow-sm'
+                  : 'border-line text-ink-muted bg-surface-raised/60 hover:border-gray-300 dark:hover:border-gray-600'"
+                :style="readonly ? 'pointer-events:none;opacity:.75' : ''">
+                <input type="radio" :value="opt.value" :checked="(form.itbi_paid_by || 'client') === opt.value"
+                  @change="set('itbi_paid_by', opt.value)" class="sr-only" :disabled="readonly" />
+                <span class="w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all"
+                  :class="(form.itbi_paid_by || 'client') === opt.value ? 'border-accent bg-blue-500' : 'border-line'">
+                  <span v-if="(form.itbi_paid_by || 'client') === opt.value" class="w-1 h-1 rounded-full bg-white"></span>
+                </span>
+                <i :class="opt.icon" class="text-xs opacity-70"></i>
+                {{ opt.label }}
+              </label>
+            </div>
           </div>
         </div>
 

@@ -4,6 +4,9 @@ import dayjs from 'dayjs';
 import { useChecklistStore } from '@/stores/Checklist/checklistStore.js';
 import TaskPreview from './TaskPreview.vue';
 import Button from '@/components/UI/Button.vue';
+import UserAvatarStack from '@/components/UI/UserAvatarStack.vue';
+import UserInfoModal from '@/components/UI/UserInfoModal.vue';
+import Modal from '@/components/UI/Modal.vue';
 
 const props = defineProps({ filter: { type: Object, default: () => ({}) }, isAdmin: { type: Boolean, default: false } });
 const store = useChecklistStore();
@@ -12,6 +15,26 @@ onMounted(() => { if (!store.users.length) store.loadUsers(); });
 
 const today = dayjs().format('YYYY-MM-DD');
 const brl = (v) => (Number(v) ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(v)) : '-');
+
+// Responsáveis resolvidos p/ as bolinhas (1+). Cai no t.assignee se store.users não tiver o id.
+function assigneesOf(t) {
+    const ids = (t.assignee_user_ids || []).length ? t.assignee_user_ids : (t.assignee?.id ? [t.assignee.id] : []);
+    const list = ids.map((id) => (store.users || []).find((u) => u.id === Number(id))).filter(Boolean);
+    if (!list.length && t.assignee) list.push(t.assignee);
+    return list;
+}
+const infoUser = ref(null);
+
+// Concluir é terminal: confirma antes (não dá pra voltar p/ outras etapas depois).
+function isDoneStatus(id) { return statuses.value.find((s) => s.id === Number(id))?.state_class === 'DONE'; }
+const doneConfirm = ref(null); // { taskId, statusId, el, prev }
+function onStatusChange(t, e) {
+    const val = Number(e.target.value) || null;
+    if (val && isDoneStatus(val) && !isDoneStatus(t.status_id)) { doneConfirm.value = { taskId: t.id, statusId: val, el: e.target, prev: t.status_id || '' }; return; }
+    store.setTaskStatus(t.id, val);
+}
+function confirmDone() { if (doneConfirm.value) store.setTaskStatus(doneConfirm.value.taskId, doneConfirm.value.statusId); doneConfirm.value = null; }
+function cancelDone() { if (doneConfirm.value?.el) doneConfirm.value.el.value = doneConfirm.value.prev; doneConfirm.value = null; }
 
 const sections = computed(() => store.current?.sections || []);
 const statuses = computed(() => store.current?.statuses || []);
@@ -167,16 +190,18 @@ const bulkCtrl = 'text-xs rounded-lg border border-line bg-surface-raised text-i
                                 <td class="px-2 py-1.5 align-middle">
                                     <div class="flex items-center gap-1.5">
                                         <span class="w-2 h-2 rounded-full shrink-0" :style="{ background: statusColor(t.status_id) }"></span>
-                                        <select :value="t.status_id || ''" @change="store.setTaskStatus(t.id, Number($event.target.value) || null)" :class="cellInput">
+                                        <select :value="t.status_id || ''" @change="onStatusChange(t, $event)" :class="cellInput">
                                             <option :value="''">- sem status -</option>
                                             <option v-for="s in statuses" class="text-center" :key="s.id" :value="s.id">{{ s.label }}</option>
                                         </select>
                                     </div>
                                 </td>
-                                <td class="px-3 py-1.5 align-middle text-ink-muted text-center truncate">
-                                    <span v-if="t.assignee">{{ t.assignee.username }}<span v-if="(t.assignee_user_ids || []).length > 1" class="text-ink-subtle" :title="(t.assignee_user_ids || []).length + ' responsáveis'"> +{{ t.assignee_user_ids.length - 1 }}</span></span>
-                                    <span v-else-if="t.assignee_label">{{ t.assignee_label }}</span>
-                                    <span v-else class="text-ink-subtle">-</span>
+                                <td class="px-3 py-1.5 align-middle">
+                                    <div class="flex justify-center">
+                                        <UserAvatarStack v-if="assigneesOf(t).length" :users="assigneesOf(t)" :size="24" :max="3" @select="infoUser = $event" />
+                                        <span v-else-if="t.assignee_label" class="text-ink-muted text-xs truncate" :title="t.assignee_label">{{ t.assignee_label }}</span>
+                                        <span v-else class="text-ink-subtle">-</span>
+                                    </div>
                                 </td>
                                 <td class="px-2 py-1.5 align-middle">
                                     <input type="date" :value="t.due_date || ''" :disabled="!isAdmin" @change="store.patchTask(t.id, { due_date: $event.target.value || null })"
@@ -236,5 +261,17 @@ const bulkCtrl = 'text-xs rounded-lg border border-line bg-surface-raised text-i
         </div>
 
         <TaskPreview v-if="hover" :task="hover.task" :x="hover.x" :y="hover.y" />
+        <UserInfoModal v-if="infoUser" :user="infoUser" @close="infoUser = null" />
+
+        <Modal :open="!!doneConfirm" size="sm" title="Concluir tarefa" @close="cancelDone">
+            <div class="flex items-start gap-3">
+                <span class="h-9 w-9 grid place-items-center rounded-full bg-accent-soft text-accent shrink-0"><i class="fas fa-flag-checkered"></i></span>
+                <p class="text-sm text-ink-muted">Ao concluir, a tarefa <strong class="text-ink">não poderá voltar</strong> para outras etapas depois. Deseja concluir?</p>
+            </div>
+            <template #footer>
+                <Button variant="ghost" size="sm" @click="cancelDone">Cancelar</Button>
+                <Button variant="primary" size="sm" icon="fas fa-flag-checkered" @click="confirmDone">Concluir</Button>
+            </template>
+        </Modal>
     </div>
 </template>

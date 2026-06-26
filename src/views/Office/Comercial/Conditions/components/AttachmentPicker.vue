@@ -36,9 +36,11 @@
     <!-- ── Modal ──────────────────────────────────────────────────────────── -->
     <teleport to="body">
       <transition name="modal-fade">
+        <!-- z-[10000]: modal aninhado, precisa ficar ACIMA do Modal padrão (z-[9999]).
+             Não baixar para z-50, senão some atrás de drawers como o de eventos. -->
         <div
           v-if="modalOpen"
-          class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+          class="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
           @click.self="closeModal"
         >
           <div class="bg-surface-raised rounded-2xl shadow-2xl border border-line w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden">
@@ -122,11 +124,11 @@
                     ? 'border-blue-400 bg-accent-soft'
                     : 'border-line bg-surface-sunken/30 hover:border-blue-300 dark:hover:border-blue-700'"
                 >
-                  <input type="file" class="sr-only" @change="handleFileSelect" accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg" />
+                  <input type="file" class="sr-only" @change="handleFileSelect" :accept="accept" />
                   <div v-if="!uploadFile" class="text-center">
                     <i class="fas fa-cloud-upload-alt text-2xl text-ink-subtle mb-2"></i>
                     <p class="text-sm font-medium text-ink-muted">Clique para selecionar</p>
-                    <p class="text-xs text-ink-subtle mt-0.5">PDF, Word, Excel, Imagens</p>
+                    <p class="text-xs text-ink-subtle mt-0.5">{{ uploadHint }}</p>
                   </div>
                   <div v-else class="flex items-center gap-3 px-4">
                     <i class="fas fa-file text-blue-500 text-xl flex-shrink-0"></i>
@@ -343,6 +345,10 @@ const props = defineProps({
     allowFolderSelection: { type: Boolean, default: false },
     // Quando true, comprime imagens (canvas) antes do upload (não afeta PDFs/docs).
     compressImages: { type: Boolean, default: false },
+    // Tipos aceitos no seletor de arquivo (atributo accept do <input type="file">).
+    accept: { type: String, default: '.pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg' },
+    // Texto auxiliar abaixo do título da drop zone de upload.
+    uploadHint: { type: String, default: 'PDF, Word, Excel, Imagens' },
 });
 const emit = defineEmits(['update:modelValue']);
 
