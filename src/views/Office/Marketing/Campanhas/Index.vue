@@ -2,7 +2,7 @@
 // /marketing/campanhas — tela principal de campanhas Meta com KPIs agregados,
 // filtros (status, conta, datas, busca) e tabela com investimento + leads + CAC.
 
-import { onMounted, ref, computed } from 'vue';
+import { onMounted, ref, computed, watch } from 'vue';
 import dayjs from 'dayjs';
 import { useCampaignsStore } from '@/stores/Marketing/Campaigns/campaignsStore';
 import { useAuthStore } from '@/stores/Settings/Auth/authStore';
@@ -31,8 +31,8 @@ const filtros = ref({
     busca: '',
     sort: 'spend',
     incluir_arquivadas: false,
-    data_inicio: dayjs().startOf('month').format('YYYY-MM-DD'),
-    data_fim: dayjs().endOf('month').format('YYYY-MM-DD'),
+    data_inicio: '',
+    data_fim: '',
 });
 
 const adminModalOpen = ref(false);
@@ -56,6 +56,12 @@ function openDetail(c) {
 
 onMounted(() => {
     store.fetchAll();
+});
+
+// Arquivadas (flag local da aba Gestão) não vêm no fetch padrão. Quando o usuário
+// liga "Incluir arquivadas", re-busca do servidor incluindo-as (e vice-versa).
+watch(() => filtros.value.incluir_arquivadas, (incluir) => {
+    store.fetchAll({ includeArchived: !!incluir });
 });
 
 // Reset pro mês atual
@@ -135,7 +141,7 @@ function campaignOverlapsPeriod(c) {
     if (to) to.setHours(23, 59, 59, 999);
 
     const start = c.start_time ? new Date(c.start_time) : null;
-    if (!start) return false;                                  // sem start = não avalia → fora
+    if (!start) return true;                                   // sem start_time = não dá pra avaliar → não esconde
     if (to && start > to) return false;                        // começou depois do fim
 
     const isActive = String(c.effective_status || c.status || '').toUpperCase().includes('ACTIVE');

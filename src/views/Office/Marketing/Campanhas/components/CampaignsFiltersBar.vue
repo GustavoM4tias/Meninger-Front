@@ -5,7 +5,7 @@
 // O componente trabalha com um objeto `filtros` reativo (v-model:filtros).
 // As opções dinâmicas (contas, mídias, objetivos) vêm via props.
 
-import { computed, onMounted, ref } from 'vue';
+import { computed, ref } from 'vue';
 import dayjs from 'dayjs';
 
 import MultiSelector from '@/components/UI/MultiSelector.vue';
@@ -44,18 +44,15 @@ const sortKeyByLabel = Object.fromEntries(
 const defaultStart = dayjs().startOf('month').format('YYYY-MM-DD');
 const defaultEnd   = dayjs().endOf('month').format('YYYY-MM-DD');
 
+// Período começa VAZIO (mostra todas as campanhas). Vazio = sem filtro de data;
+// o usuário aplica início/fim só quando quer recortar por período.
 const dataInicio = computed({
-    get: () => props.filtros.data_inicio || defaultStart,
+    get: () => props.filtros.data_inicio || '',
     set: v  => updateField('data_inicio', v || ''),
 });
 const dataFim = computed({
-    get: () => props.filtros.data_fim || defaultEnd,
+    get: () => props.filtros.data_fim || '',
     set: v  => updateField('data_fim', v || ''),
-});
-
-onMounted(() => {
-    if (!props.filtros.data_inicio) updateField('data_inicio', defaultStart);
-    if (!props.filtros.data_fim)    updateField('data_fim', defaultEnd);
 });
 
 // ── Filtros ativos ─────────────────────────────────────────────────────────
