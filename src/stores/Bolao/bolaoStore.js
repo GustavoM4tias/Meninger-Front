@@ -12,9 +12,16 @@ export const useBolaoStore = defineStore('bolao', () => {
   const ranking = ref([]);
   const reveal  = ref(false);
   const mode    = ref('official');
+  const me      = ref(null);   // palpite do próprio usuário { participant_id, predictions:[{match_id,home,away}] }
   const live    = ref(null);
   const recap   = ref('');
   const recapSource = ref(null);
+
+  // Qual edição está sendo exibida (null = padrão/ativa no backend). A página
+  // passa o slug explícito (Japão na navbar, Copa no arquivo). As ações de admin
+  // miram nesta edição.
+  const currentSlug = ref(null);
+  const qs = (slug) => (slug ? `?slug=${encodeURIComponent(slug)}` : '');
 
   const loading      = ref(false);
   const loadingRecap = ref(false);
@@ -23,15 +30,22 @@ export const useBolaoStore = defineStore('bolao', () => {
   const hasLive = computed(() =>
     matches.value.some(m => m.status === 'live' || m.status === 'halftime'));
 
-  async function fetchOverview() {
+  // Palpite do usuário para um jogo (ou null se ainda não gravou).
+  function myPrediction(matchId) {
+    return me.value?.predictions?.find(p => p.match_id === matchId) || null;
+  }
+
+  async function fetchOverview(slug = currentSlug.value) {
+    currentSlug.value = slug || null;
     loading.value = true; error.value = null;
     try {
-      const data = await requestWithAuth('/bolao');
+      const data = await requestWithAuth(`/bolao${qs(slug)}`);
       bolao.value   = data.bolao || null;
       matches.value = data.matches || [];
       ranking.value = data.ranking || [];
       reveal.value  = !!data.reveal;
       mode.value    = data.mode || 'official';
+      me.value      = data.me || null;
     } catch (e) {
       error.value = e.message || 'Falha ao carregar o bolão.';
     } finally {
@@ -49,10 +63,10 @@ export const useBolaoStore = defineStore('bolao', () => {
     return live.value;
   }
 
-  async function fetchRecap() {
+  async function fetchRecap(slug = currentSlug.value) {
     loadingRecap.value = true;
     try {
-      const data = await requestWithAuth('/bolao/recap');
+      const data = await requestWithAuth(`/bolao/recap${qs(slug)}`);
       recap.value = data?.text || '';
       recapSource.value = data?.source || null;
     } catch {
@@ -61,6 +75,16 @@ export const useBolaoStore = defineStore('bolao', () => {
       loadingRecap.value = false;
     }
     return recap.value;
+  }
+
+  // Auto-palpite: a própria pessoa logada grava seu palpite (sem CPF).
+  // predictions = [{ match_id, home, away }]. Definitivo após confirmar.
+  async function submitSelf(predictions) {
+    const r = await requestWithAuth(`/bolao/predictions/self${qs(currentSlug.value)}`, {
+      method: 'POST', body: JSON.stringify({ predictions }),
+    });
+    await fetchOverview();
+    return r;
   }
 
   // ── Admin ──────────────────────────────────────────────────────────────────
@@ -87,7 +111,7 @@ export const useBolaoStore = defineStore('bolao', () => {
   }
 
   async function addParticipant(payload) {
-    const r = await requestWithAuth('/bolao/participants', {
+    const r = await requestWithAuth(`/bolao/participants${qs(currentSlug.value)}`, {
       method: 'POST', body: JSON.stringify(payload),
     });
     await fetchOverview();
@@ -96,7 +120,7 @@ export const useBolaoStore = defineStore('bolao', () => {
 
   // Apaga TODOS os palpites do bolão (mantém participantes e jogos).
   async function clearPredictions() {
-    await requestWithAuth('/bolao/predictions/clear', { method: 'POST' });
+    await requestWithAuth(`/bolao/predictions/clear${qs(currentSlug.value)}`, { method: 'POST' });
     await fetchOverview();
   }
 
@@ -106,16 +130,17 @@ export const useBolaoStore = defineStore('bolao', () => {
     await fetchOverview();
   }
 
-  // Cria o bolão da Copa + importa os palpites do grupo (idempotente).
+  // Cria/garante a edição atual do bolão (idempotente). Mira no slug exibido.
   async function runSeed() {
-    await requestWithAuth('/bolao/seed', { method: 'POST' });
+    await requestWithAuth(`/bolao/seed${qs(currentSlug.value)}`, { method: 'POST' });
     await Promise.all([fetchOverview(), fetchRecap()]);
   }
 
   return {
-    bolao, matches, ranking, reveal, mode, live, recap, recapSource,
-    loading, loadingRecap, error, hasLive,
-    fetchOverview, fetchLive, fetchRecap, postResult, postLiveScore,
+    bolao, matches, ranking, reveal, mode, me, live, recap, recapSource,
+    currentSlug, loading, loadingRecap, error, hasLive,
+    myPrediction,
+    fetchOverview, fetchLive, fetchRecap, submitSelf, postResult, postLiveScore,
     savePredictions, addParticipant, removeParticipant, clearPredictions, runSeed,
   };
 });

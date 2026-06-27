@@ -38,9 +38,18 @@ export default [
 
             {
                 path: 'bolao',
-                name: 'Bolão da Copa',
+                name: 'Bolão Brasil x Japão',
                 component: () => import('@/views/Office/Bolao/Index.vue'),
-                meta: { requiresAuth: true, searchable: true, content: 'Bolão da Copa — palpites, placar ao vivo e ranking' },
+                meta: { requiresAuth: true, searchable: true, bolaoSlug: 'japao-gestores', content: 'Bolão Brasil x Japão - grave seu palpite, placar ao vivo e ranking' },
+            },
+
+            // Arquivo da 1ª chave (Copa dos gestores, encerrado). Fica fora da
+            // navbar de propósito: acessível por URL / link discreto na edição atual.
+            {
+                path: 'bolao/copa-2026',
+                name: 'Bolão da Copa (arquivo)',
+                component: () => import('@/views/Office/Bolao/Index.vue'),
+                meta: { requiresAuth: true, searchable: false, bolaoSlug: 'copa-2026-gestores', content: 'Bolão da Copa 2026 - 1ª chave (arquivo)' },
             },
 
             // Mural de Avisos / Comunicados — módulo próprio do Office (interno).
@@ -297,6 +306,12 @@ export default [
                         name: 'Planner',
                         component: () => import('@/views/Office/Microsoft/Planner/Index.vue'),
                         meta: { requiresAuth: true, searchable: true, content: 'Quadro Kanban integrado com Microsoft Planner' },
+                    },
+                    {
+                        path: 'todo',
+                        name: 'To Do',
+                        component: () => import('@/views/Office/Microsoft/Todo/Index.vue'),
+                        meta: { requiresAuth: true, searchable: true, content: 'Microsoft To Do — gestão de tarefas pessoais com prazos, etapas, anexos e reuniões' },
                     },
                     // {
                     //     path: 'inperson',

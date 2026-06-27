@@ -208,6 +208,7 @@ export const navRegistry = [
             { route: '/microsoft/sharepoint',  section: 'SharePoint',        name: 'SharePoint',        icon: 'fas fa-folder-open',   iconImg: '/icons/ms-sharepoint.svg' },
             { route: '/microsoft/teams',       section: 'Teams',             name: 'Teams',             icon: 'fas fa-people-group',  iconImg: '/icons/ms-teams.svg' },
             { route: '/microsoft/planner',     section: 'Planner',           name: 'Planner',           icon: 'fas fa-table-columns', iconImg: '/icons/ms-planner.svg' },
+            { route: '/microsoft/todo',        section: 'To Do',             name: 'To Do',             icon: 'fas fa-list-check',    iconImg: '/icons/ms-todo.svg' },
             { route: '/microsoft/transcripts', section: 'Transcrições & IA', name: 'Transcrições & IA', icon: 'fas fa-wand-magic-sparkles' },
             // { route: '/microsoft/inperson',    name: 'Reuniões Presenciais',  icon: 'fas fa-people-group' },
         ],
