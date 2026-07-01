@@ -298,3 +298,14 @@ html.dark .kb-reading .markdown thead th,
 html.dark .kb-reading .markdown tbody td { border-color: rgb(30 41 59); }
 html.dark .kb-reading .markdown tbody tr:nth-child(even) { background: rgb(15 23 42 / 0.4); }
 html.dark .kb-reading .markdown img { border-color: rgb(30 41 59); }
+
+/* ───────────────────────────────────────────────
+   Camadas flutuantes acima dos modais
+   O Modal (UI/Modal.vue) usa z-[9999] e é teleportado pro body ao abrir. O toast
+   (vue-toastification) usa z-index 9999 por padrão — no empate, o modal (inserido
+   depois no DOM) ficava na frente e escondia a mensagem. Erros são exibidos via
+   toast.error(): precisam aparecer ACIMA do modal. Mantém o modal em 9999 e sobe o
+   toast. (!important porque este CSS é importado antes do CSS do toast no main.js.)
+   O z-index do tippy.js é tratado no main.js (a lib aplica inline).
+   ─────────────────────────────────────────────── */
+.Vue-Toastification__container { z-index: 100000 !important; }
