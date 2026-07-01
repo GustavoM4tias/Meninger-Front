@@ -75,5 +75,66 @@ export const useMetaAppStore = defineStore('metaApp', () => {
         }
     }
 
-    return { config, loading, saving, testing, error, testResult, fetchConfig, updateConfig, testSecret };
+    // ── Token de gestão de campanhas (admin — vê todas as contas/BMs) ─────────
+    const campaignsStatus = ref(null);
+    const campaignsBusy = ref(false);
+    const campaignsMsg = ref(null);
+
+    async function fetchCampaignsStatus() {
+        try {
+            const resp = await fetch(`${API_URL}/meta-app/campaigns/status`, { headers: authHeaders() });
+            const d = await resp.json().catch(() => ({}));
+            if (resp.ok && d?.ok) campaignsStatus.value = d.status;
+        } catch { /* silencioso */ }
+    }
+
+    async function connectCampaigns(token) {
+        campaignsBusy.value = true; campaignsMsg.value = null;
+        try {
+            const resp = await fetch(`${API_URL}/meta-app/campaigns/connect`, {
+                method: 'POST', headers: authHeaders(), body: JSON.stringify({ token }),
+            });
+            const d = await resp.json().catch(() => ({}));
+            if (!resp.ok || d?.ok === false) throw new Error(d?.error || `Erro (${resp.status}).`);
+            await fetchCampaignsStatus();
+            campaignsMsg.value = { type: 'success', text: `Conectado como ${d.name || 'admin'}${d.accounts_count != null ? ` · ${d.accounts_count} contas visíveis` : ''}.` };
+            return d;
+        } catch (e) {
+            campaignsMsg.value = { type: 'error', text: e.message };
+            return null;
+        } finally { campaignsBusy.value = false; }
+    }
+
+    async function refreshCampaigns() {
+        campaignsBusy.value = true; campaignsMsg.value = null;
+        try {
+            const resp = await fetch(`${API_URL}/meta-app/campaigns/refresh`, { method: 'POST', headers: authHeaders() });
+            const d = await resp.json().catch(() => ({}));
+            await fetchCampaignsStatus();
+            campaignsMsg.value = d?.refreshed
+                ? { type: 'success', text: `Token renovado${d.days_left != null ? ` · expira em ${d.days_left} dias` : ''}.` }
+                : { type: 'error', text: d?.reason || 'Não foi possível renovar (reconecte pelo login).' };
+        } finally { campaignsBusy.value = false; }
+    }
+
+    async function disconnectCampaigns() {
+        campaignsBusy.value = true; campaignsMsg.value = null;
+        try {
+            await fetch(`${API_URL}/meta-app/campaigns/disconnect`, { method: 'POST', headers: authHeaders() });
+            await fetchCampaignsStatus();
+        } finally { campaignsBusy.value = false; }
+    }
+
+    async function campaignsOAuthUrl() {
+        const resp = await fetch(`${API_URL}/meta-app/campaigns/oauth/url`, { headers: authHeaders() });
+        const d = await resp.json().catch(() => ({}));
+        if (!resp.ok || d?.ok === false) throw new Error(d?.error || `Erro (${resp.status}).`);
+        return d;
+    }
+
+    return {
+        config, loading, saving, testing, error, testResult, fetchConfig, updateConfig, testSecret,
+        campaignsStatus, campaignsBusy, campaignsMsg,
+        fetchCampaignsStatus, connectCampaigns, refreshCampaigns, disconnectCampaigns, campaignsOAuthUrl,
+    };
 });

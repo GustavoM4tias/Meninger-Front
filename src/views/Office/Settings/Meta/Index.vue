@@ -4,7 +4,7 @@
 // App Secret aqui vale pros dois de uma vez. Tokens de acesso e verify tokens
 // continuam em cada integração (são diferentes).
 
-import { ref, watch, computed, onMounted } from 'vue';
+import { ref, watch, computed, onMounted, onBeforeUnmount } from 'vue';
 import { useMetaAppStore } from '@/stores/Meta/metaAppStore';
 import Input from '@/components/UI/Input.vue';
 import Button from '@/components/UI/Button.vue';
@@ -14,8 +14,17 @@ const store = useMetaAppStore();
 const form = ref({ meta_app_id: '', meta_app_secret: '', meta_graph_api_version: 'v21.0' });
 const dirty = ref(false);
 const message = ref(null);
+const campaignToken = ref('');
 
-onMounted(() => store.fetchConfig());
+// Ao voltar da aba do login OAuth, reatualiza o status do token de campanhas.
+const refetchOnFocus = () => store.fetchCampaignsStatus();
+
+onMounted(() => {
+  store.fetchConfig();
+  store.fetchCampaignsStatus();
+  window.addEventListener('focus', refetchOnFocus);
+});
+onBeforeUnmount(() => window.removeEventListener('focus', refetchOnFocus));
 
 watch(() => store.config, (cfg) => {
   if (!cfg) return;
@@ -55,6 +64,28 @@ async function onSave() {
 
 async function onTest() {
   await store.testSecret();
+}
+
+const campExpiry = computed(() => {
+  const s = store.campaignsStatus;
+  if (!s?.connected) return null;
+  if (!s.expires_at) return 'sem expiração (token permanente)';
+  return `expira em ${s.days_left} dia(s) · ${new Date(s.expires_at).toLocaleDateString('pt-BR')}`;
+});
+
+async function onConnectLogin() {
+  try {
+    const d = await store.campaignsOAuthUrl();
+    window.open(d.url, '_blank', 'noopener,width=680,height=780');
+  } catch (e) {
+    flash('error', e.message);
+  }
+}
+
+async function onConnectPaste() {
+  if (!campaignToken.value.trim()) return;
+  const d = await store.connectCampaigns(campaignToken.value.trim());
+  if (d) campaignToken.value = '';
 }
 </script>
 
@@ -145,6 +176,79 @@ async function onTest() {
       </div>
 
       <p class="text-[11px] text-ink-subtle">Último teste: {{ lastTest }}</p>
+    </section>
+
+    <!-- Gestão de Campanhas (token admin — enxerga todas as contas/BMs) -->
+    <section class="rounded-xl border border-line bg-surface-raised p-5 shadow-soft space-y-4">
+      <header>
+        <h2 class="text-sm font-semibold text-ink">Gestão de Campanhas (Meta)</h2>
+        <p class="text-xs text-ink-muted">
+          Conecta um usuário <b>admin</b> que enxerga <b>todas as contas de anúncio de todos os BMs</b>
+          (inclusive as futuras) — usado só pelo relatório e atribuição de campanhas.
+          <b>Os leads não usam este token:</b> se ele cair, os leads continuam entrando; só o relatório
+          para de atualizar até reconectar.
+        </p>
+      </header>
+
+      <!-- Status -->
+      <div class="rounded-lg border px-3 py-2.5 text-sm"
+        :class="store.campaignsStatus?.connected
+          ? 'border-emerald-500/20 bg-emerald-500/5'
+          : 'border-amber-500/20 bg-amber-500/5'">
+        <div v-if="store.campaignsStatus?.connected" class="space-y-0.5">
+          <div class="flex items-center gap-2 text-emerald-700 dark:text-emerald-300 font-medium">
+            <i class="fas fa-circle-check"></i>
+            Conectado como {{ store.campaignsStatus.name || 'admin' }}
+          </div>
+          <div class="text-xs text-ink-muted">
+            <span v-if="store.campaignsStatus.accounts_count != null">{{ store.campaignsStatus.accounts_count }} contas visíveis · </span>
+            <span>{{ campExpiry }}</span>
+          </div>
+        </div>
+        <div v-else class="flex items-center gap-2 text-amber-700 dark:text-amber-300">
+          <i class="fas fa-triangle-exclamation"></i>
+          Não conectado — o sync usa o token do System User (vê só as contas atribuídas a ele).
+        </div>
+      </div>
+
+      <!-- Mensagem -->
+      <div v-if="store.campaignsMsg"
+        :class="['text-xs px-3 py-2 rounded-md border',
+          store.campaignsMsg.type === 'success'
+            ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
+            : 'text-red-600 dark:text-red-400 bg-red-500/10 border-red-500/20']">
+        {{ store.campaignsMsg.text }}
+      </div>
+
+      <!-- Ações -->
+      <div class="flex flex-wrap items-center gap-2">
+        <Button icon="fab fa-facebook" @click="onConnectLogin">
+          {{ store.campaignsStatus?.connected ? 'Reconectar com Facebook' : 'Conectar com Facebook' }}
+        </Button>
+        <Button v-if="store.campaignsStatus?.connected" variant="secondary" :loading="store.campaignsBusy"
+          icon="fas fa-rotate" @click="store.refreshCampaigns()">Renovar token</Button>
+        <Button variant="secondary" icon="fas fa-arrows-rotate" @click="store.fetchCampaignsStatus()">Atualizar</Button>
+        <Button v-if="store.campaignsStatus?.connected" variant="secondary" :loading="store.campaignsBusy"
+          icon="fas fa-link-slash" @click="store.disconnectCampaigns()">Desconectar</Button>
+      </div>
+
+      <!-- Fallback: colar token manualmente -->
+      <details class="text-xs text-ink-muted">
+        <summary class="cursor-pointer select-none">Ou colar um token admin manualmente</summary>
+        <div class="mt-2 flex flex-col sm:flex-row gap-2 sm:items-end">
+          <div class="flex-1">
+            <Input v-model="campaignToken" type="password" label="Token de acesso admin"
+              placeholder="cole o token (curto ou longo — troco por um de 60 dias)" />
+          </div>
+          <Button :loading="store.campaignsBusy" :disabled="!campaignToken.trim()" icon="fas fa-plug" @click="onConnectPaste">Conectar</Button>
+        </div>
+      </details>
+
+      <p class="text-[11px] text-ink-subtle">
+        O login abre em outra aba. Se o App pedir para cadastrar a URL de redirecionamento (Facebook Login →
+        URIs de redirecionamento OAuth válidos), use
+        <code class="font-mono">https://menin.up.railway.app/api/meta-app-oauth/campaigns/callback</code>.
+      </p>
     </section>
   </div>
 </template>

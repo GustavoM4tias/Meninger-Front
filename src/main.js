@@ -39,7 +39,8 @@ app.use(PrimeVue, { theme: { preset: Aura } });
 
 app.directive('tippy', {
   mounted(el, binding) {
-    tippy(el, { content: binding.value, allowHTML: true });
+    // zIndex acima do Modal (z-[9999]) p/ o tooltip não ficar escondido atrás dele.
+    tippy(el, { content: binding.value, allowHTML: true, zIndex: 100000 });
   },
   updated(el, binding) {
     if (el._tippy) el._tippy.setContent(binding.value);
