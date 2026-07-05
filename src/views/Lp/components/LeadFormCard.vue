@@ -21,7 +21,8 @@ const consent = defineModel('consent', { type: Boolean, default: false });
 const cfg = computed(() => props.pageConfig || {});
 const accent = computed(() => cfg.value.accent_color || '#3b82f6');
 
-const LOGO_SIZES = { sm: 'h-8', md: 'h-10', lg: 'h-20', xl: 'h-32' };
+// lg/xl reduzem no mobile pro logo não dominar a tela pequena.
+const LOGO_SIZES = { sm: 'h-8', md: 'h-10', lg: 'h-16 sm:h-20', xl: 'h-24 sm:h-32' };
 const TEXT_ALIGN = { start: 'text-left', center: 'text-center', end: 'text-right' };
 const RADIUS = {
   square:  { card: 'rounded-none', field: 'rounded-none', button: 'rounded-none' },
@@ -31,7 +32,7 @@ const RADIUS = {
 const SPACING = {
   compact:  { hero: 'px-5 py-4', logo: 'mb-2', form: 'px-5 py-4 space-y-2', footer: 'px-5 py-2' },
   normal:   { hero: 'px-6 py-6', logo: 'mb-4', form: 'px-6 py-5 space-y-3', footer: 'px-6 py-3' },
-  spacious: { hero: 'px-8 py-9', logo: 'mb-6', form: 'px-8 py-7 space-y-5', footer: 'px-8 py-4' },
+  spacious: { hero: 'px-6 py-7 sm:px-8 sm:py-9', logo: 'mb-4 sm:mb-6', form: 'px-6 py-6 sm:px-8 sm:py-7 space-y-4 sm:space-y-5', footer: 'px-6 sm:px-8 py-3 sm:py-4' },
 };
 
 const heroAlign = computed(() => TEXT_ALIGN[cfg.value.text_align] || 'text-left');
@@ -95,7 +96,7 @@ function onSubmit() {
           v-model="data[f.key]"
           :placeholder="f.placeholder || ''"
           :required="f.required && !preview"
-          class="w-full border border-slate-300 px-3 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:border-slate-500 focus:ring-2 focus:ring-slate-200 focus:outline-none transition-all"
+          class="w-full border border-slate-300 px-3 py-2.5 text-base sm:text-sm text-slate-900 placeholder-slate-400 focus:border-slate-500 focus:ring-2 focus:ring-slate-200 focus:outline-none transition-all"
           :class="radius.field" />
       </div>
 
