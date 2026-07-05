@@ -36,11 +36,13 @@ onMounted(() => store.fetchAll());
       </PageHeader>
 
       <!-- Aviso sobre forms Meta -->
-      <div class="mb-4 rounded-lg border border-blue-500/20 bg-blue-500/5 px-3 py-2.5 text-xs text-blue-700 dark:text-blue-300">
-        <i class="fas fa-circle-info mr-1"></i>
-        <b>Forms da Meta?</b> Agora são gerenciados em
-        <RouterLink to="/marketing/campanhas" class="underline">Campanhas → abrir campanha → aba Anúncios → clicar no badge do form</RouterLink>.
-        O mapeamento (empreendimento, mídia) vive na campanha; o mapeamento de campos (pergunta → CV) vive no form.
+      <div class="mb-4 flex items-start gap-2.5 rounded-lg border border-line bg-surface-sunken/30 px-3 py-2.5 text-xs text-ink-muted">
+        <i class="fab fa-meta text-blue-500 mt-0.5"></i>
+        <div>
+          <b class="text-ink">Forms da Meta?</b> São gerenciados em
+          <RouterLink to="/marketing/campanhas" class="text-accent hover:underline">Campanhas → abrir campanha → aba Anúncios → badge do form</RouterLink>.
+          O mapeamento (empreendimento, mídia) vive na campanha; o de campos (pergunta → CV) vive no form.
+        </div>
       </div>
 
       <InternalLeadFormsTable @edit="openEdit" />

@@ -1,11 +1,16 @@
 <script setup>
-// Tabela dos formulários internos (LPs) com KPIs, filtros, toggle ativo inline.
-// Espelha a UX da MetaLeadFormsTable pra manter consistência.
+// Tabela dos formulários internos (LPs) com KPIs, filtros e toggle ativo inline.
+// Filtros: busca, status (segmented), prioridade, origem CV, período, encerrados.
 
 import { computed, ref } from 'vue';
 import { useLeadFormsStore } from '@/stores/Marketing/Capture/leadFormsStore';
 import Surface from '@/components/UI/Surface.vue';
 import Button from '@/components/UI/Button.vue';
+import Input from '@/components/UI/Input.vue';
+import SegmentedControl from '@/components/UI/SegmentedControl.vue';
+import EmptyState from '@/components/UI/EmptyState.vue';
+
+const LP_HOST = 'https://lp.menin.com.br';
 
 const emit = defineEmits(['edit']);
 
@@ -14,15 +19,27 @@ const store = useLeadFormsStore();
 const search = ref('');
 const filterActive   = ref('ALL');  // ALL | ACTIVE | INACTIVE
 const filterPriority = ref('ALL');  // ALL | high | normal | low
+const filterOrigem   = ref('ALL');  // ALL | SI | FB | IG | GO | MP | OU
 const filterDateFrom = ref('');     // start_date (ou created_at se sem start_date)
 const filterDateTo   = ref('');
+const hideEnded      = ref(false);  // esconde forms com end_date no passado
 const sortBy         = ref('last_lead'); // last_lead | total | name | created
+
+const ORIGEM_LABELS = { SI: 'WebSite', FB: 'Facebook', IG: 'Instagram', GO: 'Google', MP: 'Mídia Paga', OU: 'Outros' };
 
 function openEdit(f) { emit('edit', f); }
 
 async function quickToggle(e, f) {
     e.stopPropagation();   // não abre o modal
     await store.toggleActive(f.id);
+}
+
+function lpUrl(f) { return `${LP_HOST}/${f.slug}`; }
+
+async function copyLpUrl(e, f) {
+    e.stopPropagation();
+    try { await navigator.clipboard.writeText(lpUrl(f)); window.alert('URL da LP copiada.'); }
+    catch { window.alert('Não consegui copiar.'); }
 }
 
 function fmtDate(iso) {
@@ -44,6 +61,25 @@ function inRange(iso) {
     return true;
 }
 
+function endedAlready(f) {
+    if (!f.end_date) return false;
+    const end = new Date(f.end_date);
+    end.setHours(23, 59, 59, 999);
+    return Date.now() > end.getTime();
+}
+
+const statusCounts = computed(() => {
+    const all = store.forms.length;
+    const actives = store.forms.filter(f => f.active).length;
+    return { all, actives, inactives: all - actives };
+});
+
+const statusOptions = computed(() => [
+    { value: 'ALL',      label: 'Todos',    count: statusCounts.value.all },
+    { value: 'ACTIVE',   label: 'Ativos',   count: statusCounts.value.actives },
+    { value: 'INACTIVE', label: 'Inativos', count: statusCounts.value.inactives },
+]);
+
 const filtered = computed(() => {
     const q = search.value.trim().toLowerCase();
     let arr = store.forms.filter(f => {
@@ -51,6 +87,8 @@ const filtered = computed(() => {
         if (filterActive.value === 'INACTIVE' &&  f.active) return false;
 
         if (filterPriority.value !== 'ALL' && f.priority !== filterPriority.value) return false;
+        if (filterOrigem.value !== 'ALL' && f.cv_origem !== filterOrigem.value) return false;
+        if (hideEnded.value && endedAlready(f)) return false;
 
         if (filterDateFrom.value || filterDateTo.value) {
             const ref = f.start_date || f.created_at;
@@ -58,7 +96,8 @@ const filtered = computed(() => {
         }
 
         if (q) {
-            const txt = [f.name, f.slug, f.midia_slug, f.campaign_ref, f.description]
+            const txt = [f.name, f.slug, f.midia_slug, f.campaign_ref, f.description,
+                Array.isArray(f.tags) ? f.tags.join(' ') : '']
                 .filter(Boolean).join(' ').toLowerCase();
             if (!txt.includes(q)) return false;
         }
@@ -88,6 +127,20 @@ const filtered = computed(() => {
     return arr;
 });
 
+const hasFilters = computed(() =>
+    !!search.value.trim() || filterActive.value !== 'ALL' || filterPriority.value !== 'ALL'
+    || filterOrigem.value !== 'ALL' || !!filterDateFrom.value || !!filterDateTo.value || hideEnded.value);
+
+function clearFilters() {
+    search.value = '';
+    filterActive.value = 'ALL';
+    filterPriority.value = 'ALL';
+    filterOrigem.value = 'ALL';
+    filterDateFrom.value = '';
+    filterDateTo.value = '';
+    hideEnded.value = false;
+}
+
 const summary = computed(() => {
     const acc = { total: 0, last_30d: 0, delivered: 0, held: 0, actives: 0 };
     for (const f of filtered.value) {
@@ -99,6 +152,19 @@ const summary = computed(() => {
     }
     return acc;
 });
+
+const KPIS = [
+    { key: 'forms',     label: 'Forms exibidos',  icon: 'fas fa-square-poll-vertical', tone: 'text-accent bg-accent/10' },
+    { key: 'total',     label: 'Leads totais',    icon: 'fas fa-users',                tone: 'text-ink bg-surface-sunken' },
+    { key: 'last_30d',  label: 'Últimos 30 dias', icon: 'fas fa-calendar-days',        tone: 'text-blue-600 dark:text-blue-300 bg-blue-500/10' },
+    { key: 'delivered', label: 'Entregues ao CV', icon: 'fas fa-circle-check',         tone: 'text-emerald-600 dark:text-emerald-300 bg-emerald-500/10' },
+    { key: 'held',      label: 'Em held',         icon: 'fas fa-hourglass-half',       tone: 'text-amber-600 dark:text-amber-300 bg-amber-500/10' },
+];
+
+function kpiValue(key) {
+    if (key === 'forms') return filtered.value.length;
+    return summary.value[key];
+}
 
 function priorityDot(p) {
     if (p === 'high')   return { cls: 'bg-red-500',     title: 'Prioridade alta' };
@@ -131,79 +197,89 @@ function fmtShortDate(iso) {
     try { return new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' }); }
     catch { return '—'; }
 }
-
-function endedAlready(f) {
-    if (!f.end_date) return false;
-    const end = new Date(f.end_date);
-    end.setHours(23, 59, 59, 999);
-    return Date.now() > end.getTime();
-}
 </script>
 
 <template>
   <div class="space-y-3">
 
     <!-- Resumo -->
-    <Surface variant="raised" padding="sm" class="grid grid-cols-2 sm:grid-cols-5 gap-3">
-      <div>
-        <div class="text-[10px] uppercase tracking-wider text-ink-subtle">Forms exibidos</div>
-        <div class="text-xl font-semibold text-ink">{{ filtered.length }}</div>
-        <div class="text-[10px] text-ink-subtle">{{ summary.actives }} ativos</div>
-      </div>
-      <div>
-        <div class="text-[10px] uppercase tracking-wider text-ink-subtle">Leads totais</div>
-        <div class="text-xl font-semibold text-ink">{{ summary.total }}</div>
-      </div>
-      <div>
-        <div class="text-[10px] uppercase tracking-wider text-ink-subtle">Últimos 30 dias</div>
-        <div class="text-xl font-semibold text-ink">{{ summary.last_30d }}</div>
-      </div>
-      <div>
-        <div class="text-[10px] uppercase tracking-wider text-ink-subtle">Entregues ao CV</div>
-        <div class="text-xl font-semibold text-emerald-600 dark:text-emerald-300">{{ summary.delivered }}</div>
-      </div>
-      <div>
-        <div class="text-[10px] uppercase tracking-wider text-ink-subtle">Em held</div>
-        <div class="text-xl font-semibold text-amber-600 dark:text-amber-300">{{ summary.held }}</div>
+    <Surface variant="raised" padding="sm">
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        <div v-for="k in KPIS" :key="k.key" class="flex items-center gap-2.5 min-w-0">
+          <div :class="['h-9 w-9 rounded-lg grid place-items-center shrink-0', k.tone]">
+            <i :class="k.icon" class="text-sm"></i>
+          </div>
+          <div class="min-w-0">
+            <div class="text-lg font-semibold text-ink leading-tight">{{ kpiValue(k.key) }}</div>
+            <div class="text-[10px] uppercase tracking-wider text-ink-subtle truncate">
+              {{ k.label }}<span v-if="k.key === 'forms'" class="normal-case tracking-normal"> · {{ summary.actives }} ativos</span>
+            </div>
+          </div>
+        </div>
       </div>
     </Surface>
 
     <!-- Filtros -->
-    <div class="flex flex-wrap items-center gap-2">
-      <input v-model="search" type="text" placeholder="Buscar por nome, slug, mídia, ref..."
-        class="flex-1 min-w-[200px] rounded border border-line bg-surface px-3 py-1.5 text-sm text-ink placeholder-ink-subtle focus:outline-none focus:border-accent/40" />
-
-      <select v-model="filterActive" class="rounded border border-line bg-surface px-2.5 py-1.5 text-xs text-ink focus:outline-none">
-        <option value="ALL">Ativos + Inativos</option>
-        <option value="ACTIVE">Só ativos</option>
-        <option value="INACTIVE">Só inativos</option>
-      </select>
-
-      <select v-model="filterPriority" class="rounded border border-line bg-surface px-2.5 py-1.5 text-xs text-ink focus:outline-none">
-        <option value="ALL">Todas prioridades</option>
-        <option value="high">Alta</option>
-        <option value="normal">Normal</option>
-        <option value="low">Baixa</option>
-      </select>
-
-      <div class="flex items-center gap-1 text-xs text-ink-subtle">
-        <span>De:</span>
-        <input v-model="filterDateFrom" type="date" class="rounded border border-line bg-surface px-2 py-1 text-xs text-ink focus:outline-none" />
-        <span>até:</span>
-        <input v-model="filterDateTo"   type="date" class="rounded border border-line bg-surface px-2 py-1 text-xs text-ink focus:outline-none" />
+    <Surface variant="raised" padding="sm" class="space-y-2.5">
+      <div class="flex flex-col sm:flex-row sm:items-center gap-2.5">
+        <div class="flex-1 min-w-0">
+          <Input v-model="search" size="sm" icon-left="fas fa-magnifying-glass"
+            placeholder="Buscar por nome, slug, mídia, ref, tag..." />
+        </div>
+        <SegmentedControl v-model="filterActive" :options="statusOptions" size="sm" />
+        <Button variant="secondary" size="sm" icon="fas fa-arrows-rotate" :loading="store.loading" @click="store.fetchAll">
+          Atualizar
+        </Button>
       </div>
 
-      <select v-model="sortBy" class="rounded border border-line bg-surface px-2.5 py-1.5 text-xs text-ink focus:outline-none">
-        <option value="last_lead">Último lead</option>
-        <option value="total">Mais leads</option>
-        <option value="name">Nome A-Z</option>
-        <option value="created">Mais novos</option>
-      </select>
+      <div class="flex flex-wrap items-center gap-2">
+        <select v-model="filterPriority"
+          class="rounded-lg border border-line bg-surface px-2.5 py-1.5 text-xs text-ink focus:outline-none focus:border-accent/40">
+          <option value="ALL">Todas prioridades</option>
+          <option value="high">Alta</option>
+          <option value="normal">Normal</option>
+          <option value="low">Baixa</option>
+        </select>
 
-      <Button variant="secondary" size="sm" icon="fas fa-arrows-rotate" :loading="store.loading" @click="store.fetchAll">
-        Atualizar
-      </Button>
-    </div>
+        <select v-model="filterOrigem"
+          class="rounded-lg border border-line bg-surface px-2.5 py-1.5 text-xs text-ink focus:outline-none focus:border-accent/40">
+          <option value="ALL">Todas origens CV</option>
+          <option v-for="(label, v) in ORIGEM_LABELS" :key="v" :value="v">{{ label }} ({{ v }})</option>
+        </select>
+
+        <div class="flex items-center gap-1.5 rounded-lg border border-line bg-surface px-2.5 py-1 text-xs text-ink-subtle">
+          <i class="fas fa-calendar text-[10px]"></i>
+          <input v-model="filterDateFrom" type="date"
+            class="bg-transparent text-xs text-ink focus:outline-none w-[7.5rem]" />
+          <span>→</span>
+          <input v-model="filterDateTo" type="date"
+            class="bg-transparent text-xs text-ink focus:outline-none w-[7.5rem]" />
+        </div>
+
+        <label class="flex items-center gap-1.5 rounded-lg border border-line bg-surface px-2.5 py-1.5 text-xs text-ink-muted cursor-pointer select-none hover:text-ink transition-colors">
+          <input type="checkbox" v-model="hideEnded" class="h-3.5 w-3.5 rounded border-line accent-emerald-500" />
+          Ocultar encerrados
+        </label>
+
+        <div class="flex-1"></div>
+
+        <button v-if="hasFilters" @click="clearFilters"
+          class="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-accent hover:bg-accent/10 transition-colors">
+          <i class="fas fa-filter-circle-xmark text-[10px]"></i>Limpar filtros
+        </button>
+
+        <div class="flex items-center gap-1.5 text-xs text-ink-subtle">
+          <i class="fas fa-arrow-down-wide-short text-[10px]"></i>
+          <select v-model="sortBy"
+            class="rounded-lg border border-line bg-surface px-2.5 py-1.5 text-xs text-ink focus:outline-none focus:border-accent/40">
+            <option value="last_lead">Último lead</option>
+            <option value="total">Mais leads</option>
+            <option value="name">Nome A-Z</option>
+            <option value="created">Mais novos</option>
+          </select>
+        </div>
+      </div>
+    </Surface>
 
     <!-- Erro -->
     <div v-if="store.error"
@@ -226,27 +302,30 @@ function endedAlready(f) {
               <th class="px-3 py-2.5 text-center text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Entrega</th>
               <th class="px-3 py-2.5 text-left   text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Último</th>
               <th class="px-3 py-2.5 text-center text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Status</th>
+              <th class="px-3 py-2.5 w-20"></th>
             </tr>
           </thead>
           <tbody class="divide-y divide-line/60">
             <tr v-if="store.loading">
-              <td colspan="8" class="px-4 py-10 text-center text-ink-subtle">
+              <td colspan="9" class="px-4 py-10 text-center text-ink-subtle">
                 <i class="fas fa-circle-notch fa-spin mr-2"></i>Carregando...
               </td>
             </tr>
             <tr v-else-if="!store.forms.length">
-              <td colspan="8" class="px-4 py-10 text-center text-ink-subtle">
-                Nenhum formulário ainda. Clique em "Novo formulário".
+              <td colspan="9">
+                <EmptyState icon="fas fa-square-poll-vertical" title="Nenhum formulário ainda"
+                  description='Crie o primeiro clicando em "Novo formulário".' />
               </td>
             </tr>
             <tr v-else-if="!filtered.length">
-              <td colspan="8" class="px-4 py-10 text-center text-ink-subtle">
-                Nenhum formulário corresponde aos filtros.
+              <td colspan="9">
+                <EmptyState icon="fas fa-filter" size="sm" title="Nada corresponde aos filtros"
+                  description="Ajuste a busca ou limpe os filtros pra ver todos os formulários." />
               </td>
             </tr>
             <tr v-else v-for="f in filtered" :key="f.id"
               @click="openEdit(f)"
-              class="hover:bg-surface-hover/40 cursor-pointer transition-colors">
+              class="group hover:bg-surface-hover/40 cursor-pointer transition-colors">
 
               <!-- Form -->
               <td class="px-3 py-2.5">
@@ -265,7 +344,7 @@ function endedAlready(f) {
               <td class="px-3 py-2.5">
                 <div v-if="f.midia_slug" class="font-mono text-[11px] text-ink">{{ f.midia_slug }}</div>
                 <div v-else class="text-[11px] text-ink-subtle italic">—</div>
-                <div class="text-[10px] text-ink-subtle">{{ f.cv_origem || '—' }}</div>
+                <div class="text-[10px] text-ink-subtle">{{ ORIGEM_LABELS[f.cv_origem] || f.cv_origem || '—' }}</div>
               </td>
 
               <!-- Período -->
@@ -326,6 +405,22 @@ function endedAlready(f) {
                   <i :class="f.active ? 'fas fa-circle-check' : 'fas fa-circle-pause'" class="text-[10px]"></i>
                   {{ f.active ? 'Ativo' : 'Inativo' }}
                 </button>
+              </td>
+
+              <!-- Ações rápidas (aparecem no hover) -->
+              <td class="px-3 py-2.5">
+                <div class="flex items-center justify-end gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <a :href="lpUrl(f)" target="_blank" rel="noopener" @click.stop
+                    title="Abrir LP em nova aba"
+                    class="h-7 w-7 grid place-items-center rounded-md text-ink-subtle hover:text-accent hover:bg-accent/10 transition-colors">
+                    <i class="fas fa-arrow-up-right-from-square text-[11px]"></i>
+                  </a>
+                  <button @click="copyLpUrl($event, f)"
+                    title="Copiar URL da LP"
+                    class="h-7 w-7 grid place-items-center rounded-md text-ink-subtle hover:text-accent hover:bg-accent/10 transition-colors">
+                    <i class="fas fa-copy text-[11px]"></i>
+                  </button>
+                </div>
               </td>
             </tr>
           </tbody>
