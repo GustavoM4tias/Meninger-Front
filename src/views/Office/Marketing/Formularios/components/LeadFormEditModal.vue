@@ -81,6 +81,7 @@ function buildPage(stored) {
     logo_align: s.logo_align || '',
     text_align: s.text_align || '',
     corner_style: s.corner_style || '',
+    spacing: s.spacing || '',
     card_width: s.card_width || '',
     card_position: s.card_position || '',
     overlay_opacity: s.overlay_opacity || '',
@@ -698,10 +699,10 @@ const sections = computed(() => {
                 <label class="text-xs font-medium text-ink block mb-1">Tamanho do logo</label>
                 <select v-model="data.page.logo_size"
                   class="w-full rounded border border-line bg-surface px-3 py-1.5 text-sm text-ink focus:outline-none focus:border-accent/40">
-                  <option value="">Padrão (médio)</option>
-                  <option value="sm">Pequeno</option>
-                  <option value="lg">Grande</option>
-                  <option value="xl">Gigante</option>
+                  <option value="">Padrão (40px)</option>
+                  <option value="sm">Pequeno (32px)</option>
+                  <option value="lg">Grande (80px)</option>
+                  <option value="xl">Gigante (128px)</option>
                 </select>
               </div>
               <div>
@@ -721,6 +722,15 @@ const sections = computed(() => {
                   <option value="">Padrão (esquerda)</option>
                   <option value="center">Centralizado</option>
                   <option value="end">Direita</option>
+                </select>
+              </div>
+              <div>
+                <label class="text-xs font-medium text-ink block mb-1">Espaçamento</label>
+                <select v-model="data.page.spacing"
+                  class="w-full rounded border border-line bg-surface px-3 py-1.5 text-sm text-ink focus:outline-none focus:border-accent/40">
+                  <option value="">Padrão</option>
+                  <option value="compact">Compacto</option>
+                  <option value="spacious">Espaçoso</option>
                 </select>
               </div>
               <div>

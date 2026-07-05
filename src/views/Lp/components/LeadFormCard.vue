@@ -21,18 +21,24 @@ const consent = defineModel('consent', { type: Boolean, default: false });
 const cfg = computed(() => props.pageConfig || {});
 const accent = computed(() => cfg.value.accent_color || '#3b82f6');
 
-const LOGO_SIZES = { sm: 'h-8', md: 'h-10', lg: 'h-14', xl: 'h-20' };
+const LOGO_SIZES = { sm: 'h-8', md: 'h-10', lg: 'h-20', xl: 'h-32' };
 const TEXT_ALIGN = { start: 'text-left', center: 'text-center', end: 'text-right' };
 const RADIUS = {
   square:  { card: 'rounded-none', field: 'rounded-none', button: 'rounded-none' },
   rounded: { card: 'rounded-2xl',  field: 'rounded-lg',   button: 'rounded-lg' },
   pill:    { card: 'rounded-3xl',  field: 'rounded-full', button: 'rounded-full' },
 };
+const SPACING = {
+  compact:  { hero: 'px-5 py-4', logo: 'mb-2', form: 'px-5 py-4 space-y-2', footer: 'px-5 py-2' },
+  normal:   { hero: 'px-6 py-6', logo: 'mb-4', form: 'px-6 py-5 space-y-3', footer: 'px-6 py-3' },
+  spacious: { hero: 'px-8 py-9', logo: 'mb-6', form: 'px-8 py-7 space-y-5', footer: 'px-8 py-4' },
+};
 
 const heroAlign = computed(() => TEXT_ALIGN[cfg.value.text_align] || 'text-left');
 const logoAlign = computed(() => TEXT_ALIGN[cfg.value.logo_align] || heroAlign.value);
 const logoSize = computed(() => LOGO_SIZES[cfg.value.logo_size] || LOGO_SIZES.md);
 const radius = computed(() => RADIUS[cfg.value.corner_style] || RADIUS.rounded);
+const spacing = computed(() => SPACING[cfg.value.spacing] || SPACING.normal);
 
 const ctaFull = computed(() => (cfg.value.cta_width || 'full') === 'full');
 const ctaAlign = computed(() => TEXT_ALIGN[cfg.value.cta_align] || 'text-left');
@@ -48,16 +54,16 @@ function onSubmit() {
 <template>
   <div :class="['w-full bg-white shadow-2xl overflow-hidden', radius.card]">
     <!-- Hero -->
-    <div class="px-6 py-6 border-b border-slate-200" :class="heroAlign">
-      <div v-if="cfg.logo_url" class="mb-4" :class="logoAlign">
-        <img :src="cfg.logo_url" alt="logo" class="inline-block object-contain" :class="logoSize" />
+    <div class="border-b border-slate-200" :class="[heroAlign, spacing.hero]">
+      <div v-if="cfg.logo_url" :class="[logoAlign, spacing.logo]">
+        <img :src="cfg.logo_url" alt="logo" class="inline-block object-contain max-w-full" :class="logoSize" />
       </div>
       <h1 class="text-slate-900 text-2xl font-bold leading-tight">{{ cfg.title || formName }}</h1>
       <p v-if="cfg.subtitle" class="text-slate-500 text-sm mt-2 leading-relaxed">{{ cfg.subtitle }}</p>
     </div>
 
     <!-- Form -->
-    <form @submit.prevent="onSubmit" class="px-6 py-5 space-y-3">
+    <form @submit.prevent="onSubmit" :class="spacing.form">
       <!-- honeypot - invisível pra humanos, denuncia bots -->
       <input v-if="!preview" type="text" name="_hp" v-model="honeypot" tabindex="-1" autocomplete="off"
              style="position:absolute;left:-9999px;width:1px;height:1px" aria-hidden="true" />
@@ -93,7 +99,8 @@ function onSubmit() {
     </form>
 
     <div v-if="showFooter"
-      class="px-6 py-3 border-t border-slate-100 text-center text-[10px] text-slate-400 tracking-wide">
+      class="border-t border-slate-100 text-center text-[10px] text-slate-400 tracking-wide"
+      :class="spacing.footer">
       {{ footerText }}
     </div>
   </div>
