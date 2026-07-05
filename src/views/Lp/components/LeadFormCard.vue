@@ -46,6 +46,20 @@ const ctaAlign = computed(() => TEXT_ALIGN[cfg.value.cta_align] || 'text-left');
 const showFooter = computed(() => cfg.value.show_powered_by !== false);
 const footerText = computed(() => cfg.value.footer_text || 'Captação Menin');
 
+// logo_trim: margem negativa vertical no img — compensa espaço transparente
+// embutido no PNG (0-80px). logo_gap: distância do bloco do logo até o título,
+// sobrepondo o default do espaçamento quando informado.
+const logoImgStyle = computed(() => {
+  const trim = parseInt(cfg.value.logo_trim, 10);
+  if (!Number.isFinite(trim) || trim <= 0) return {};
+  const px = `-${Math.min(trim, 80)}px`;
+  return { marginTop: px, marginBottom: px };
+});
+const logoGap = computed(() => {
+  const gap = parseInt(cfg.value.logo_gap, 10);
+  return Number.isFinite(gap) && gap >= 0 ? Math.min(gap, 96) : null;
+});
+
 function onSubmit() {
   if (!props.preview) emit('submit');
 }
@@ -55,8 +69,11 @@ function onSubmit() {
   <div :class="['w-full bg-white shadow-2xl overflow-hidden', radius.card]">
     <!-- Hero -->
     <div class="border-b border-slate-200" :class="[heroAlign, spacing.hero]">
-      <div v-if="cfg.logo_url" :class="[logoAlign, spacing.logo]">
-        <img :src="cfg.logo_url" alt="logo" class="inline-block object-contain max-w-full" :class="logoSize" />
+      <div v-if="cfg.logo_url"
+        :class="[logoAlign, logoGap === null ? spacing.logo : '']"
+        :style="logoGap !== null ? { marginBottom: logoGap + 'px' } : {}">
+        <img :src="cfg.logo_url" alt="logo" class="inline-block object-contain max-w-full"
+          :class="logoSize" :style="logoImgStyle" />
       </div>
       <h1 class="text-slate-900 text-2xl font-bold leading-tight">{{ cfg.title || formName }}</h1>
       <p v-if="cfg.subtitle" class="text-slate-500 text-sm mt-2 leading-relaxed">{{ cfg.subtitle }}</p>

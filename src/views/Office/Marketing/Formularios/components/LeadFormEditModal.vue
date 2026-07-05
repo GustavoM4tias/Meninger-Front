@@ -79,6 +79,8 @@ function buildPage(stored) {
     // Layout — '' = padrão (a chave nem é salva no page_config)
     logo_size: s.logo_size || '',
     logo_align: s.logo_align || '',
+    logo_trim: s.logo_trim || '',
+    logo_gap: s.logo_gap ?? '',
     text_align: s.text_align || '',
     corner_style: s.corner_style || '',
     spacing: s.spacing || '',
@@ -714,6 +716,18 @@ const sections = computed(() => {
                   <option value="center">Centro</option>
                   <option value="end">Direita</option>
                 </select>
+              </div>
+              <div>
+                <label class="text-xs font-medium text-ink block mb-1">Recorte do logo (px)</label>
+                <input v-model="data.page.logo_trim" type="number" min="0" max="80" step="1" placeholder="0"
+                  class="w-full rounded border border-line bg-surface px-3 py-1.5 text-sm text-ink placeholder-ink-subtle focus:outline-none focus:border-accent/40" />
+                <p class="text-[10px] text-ink-subtle mt-0.5">Corta espaço transparente em cima/embaixo do PNG.</p>
+              </div>
+              <div>
+                <label class="text-xs font-medium text-ink block mb-1">Distância logo → título (px)</label>
+                <input v-model="data.page.logo_gap" type="number" min="0" max="96" step="1" placeholder="auto"
+                  class="w-full rounded border border-line bg-surface px-3 py-1.5 text-sm text-ink placeholder-ink-subtle focus:outline-none focus:border-accent/40" />
+                <p class="text-[10px] text-ink-subtle mt-0.5">Vazio = segue o espaçamento geral. 0 = colado.</p>
               </div>
               <div>
                 <label class="text-xs font-medium text-ink block mb-1">Alinhamento do texto</label>
