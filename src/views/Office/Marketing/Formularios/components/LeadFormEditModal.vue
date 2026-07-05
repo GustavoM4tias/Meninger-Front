@@ -17,6 +17,8 @@ import API_URL from '@/config/apiUrl';
 import Button from '@/components/UI/Button.vue';
 import Input from '@/components/UI/Input.vue';
 import EnterpriseMultiSelect from '@/components/Marketing/EnterpriseMultiSelect.vue';
+import LeadFormCard from '@/views/Lp/components/LeadFormCard.vue';
+import { backgroundStyle, cardWidthClass, cardJustifyClass } from '@/views/Lp/lpTheme';
 
 const LP_HOST = 'https://lp.menin.com.br';
 
@@ -74,6 +76,18 @@ function buildPage(stored) {
     cta_button_text: s.cta_button_text || '',
     success_title: s.success_title || '',
     success_message: s.success_message || '',
+    // Layout — '' = padrão (a chave nem é salva no page_config)
+    logo_size: s.logo_size || '',
+    logo_align: s.logo_align || '',
+    text_align: s.text_align || '',
+    corner_style: s.corner_style || '',
+    card_width: s.card_width || '',
+    card_position: s.card_position || '',
+    overlay_opacity: s.overlay_opacity || '',
+    cta_width: s.cta_width || '',
+    cta_align: s.cta_align || '',
+    footer_text: s.footer_text || '',
+    show_powered_by: s.show_powered_by !== false,
   };
 }
 
@@ -160,11 +174,32 @@ function parseList(s) { return String(s || '').split(',').map(x => x.trim()).fil
 function cleanPage(p) {
   const out = {};
   for (const [k, v] of Object.entries(p)) {
+    // Boolean: só persiste quando difere do default (true).
+    if (k === 'show_powered_by') {
+      if (v === false) out[k] = false;
+      continue;
+    }
     const t = String(v || '').trim();
     if (t) out[k] = t;
   }
   return Object.keys(out).length ? out : null;
 }
+
+// ── Pré-visualização ao vivo ────────────────────────────────────────────────
+// Usa o MESMO componente da LP pública (LeadFormCard) com a config atual do
+// modal, então o que se vê aqui é exatamente o que vai pro ar.
+const previewConfig = computed(() => cleanPage(data.value.page) || {});
+const previewBg = computed(() => backgroundStyle(previewConfig.value));
+const previewFields = computed(() => data.value.fields_config
+  .filter(f => f.enabled)
+  .map(f => ({
+    key: f.key,
+    label: (f.label || '').trim() || f.label_default,
+    required: !!f.required,
+    type: f.type,
+    placeholder: '',
+  })));
+const previewData = ref({});   // sink dos v-model dos inputs do preview
 
 function tryParseExtra() {
   cvExtraError.value = null;
@@ -332,6 +367,27 @@ f.addEventListener('submit', async (e) => {
   const d = await r.json();
   if (d.ok) { d.redirect ? location.href = d.redirect : alert('Recebemos seu contato!'); f.reset(); }
   else alert(d.error || 'Não foi possível enviar.');
+});
+${closeScript}`;
+});
+
+// Iframe com o MESMO visual da LP hospedada (?embed=1 renderiza só o card e
+// reporta a altura via postMessage — o script abaixo ajusta o iframe).
+const iframeSnippet = computed(() => {
+  if (!isEdit.value) return '';
+  const s = props.form.slug;
+  const id = `menin-lp-${s}`;
+  const closeScript = '</scr' + 'ipt>';
+  return `<iframe id="${id}" src="${lpUrl.value}?embed=1"
+  style="width:100%;max-width:480px;height:640px;border:0;display:block;margin:0 auto"
+  loading="lazy" title="${props.form.name || 'Formulário Menin'}"></iframe>
+<script>
+window.addEventListener('message', function (e) {
+  if (e.origin !== '${LP_HOST}') return;
+  var d = e.data || {};
+  if (d.meninLpSlug === '${s}' && d.height) {
+    document.getElementById('${id}').style.height = d.height + 'px';
+  }
 });
 ${closeScript}`;
 });
@@ -595,6 +651,29 @@ const sections = computed(() => {
             </p>
           </div>
 
+          <!-- Pré-visualização ao vivo -->
+          <div class="rounded-lg border border-line overflow-hidden">
+            <div class="flex items-center justify-between px-3 py-1.5 border-b border-line bg-surface-sunken/30">
+              <span class="text-[10px] font-mono uppercase tracking-wider text-ink-subtle">
+                <i class="fas fa-eye mr-1"></i>Pré-visualização ao vivo
+              </span>
+              <span class="text-[10px] text-ink-subtle">atualiza conforme você edita</span>
+            </div>
+            <div class="p-5 sm:p-8 flex bg-slate-900" :class="cardJustifyClass(previewConfig)" :style="previewBg">
+              <div :class="['w-full pointer-events-none select-none', cardWidthClass(previewConfig)]">
+                <LeadFormCard
+                  :page-config="previewConfig"
+                  :fields="previewFields"
+                  :form-name="data.name || 'Nome do formulário'"
+                  :consent-required="data.consent_required"
+                  :consent-text="data.consent_text"
+                  :data="previewData"
+                  preview
+                />
+              </div>
+            </div>
+          </div>
+
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Input v-model="data.page.title" label="Título principal" placeholder="Conheça o MOND" size="sm" />
             <Input v-model="data.page.subtitle" label="Subtítulo" placeholder="Apartamentos 2 e 3 dorms em Marília" size="sm" />
@@ -607,6 +686,106 @@ const sections = computed(() => {
           </div>
           <Input v-model="data.page.success_message" label="Mensagem pós-cadastro"
             placeholder="Recebemos seu contato. Em breve nosso time entra em contato." size="sm" />
+
+          <!-- Layout -->
+          <div class="pt-3 border-t border-line/60">
+            <div class="text-sm font-medium text-ink mb-1">Layout</div>
+            <p class="text-[11px] text-ink-subtle mb-2">
+              "Padrão" mantém o visual default — a chave nem é salva na config.
+            </p>
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <div>
+                <label class="text-xs font-medium text-ink block mb-1">Tamanho do logo</label>
+                <select v-model="data.page.logo_size"
+                  class="w-full rounded border border-line bg-surface px-3 py-1.5 text-sm text-ink focus:outline-none focus:border-accent/40">
+                  <option value="">Padrão (médio)</option>
+                  <option value="sm">Pequeno</option>
+                  <option value="lg">Grande</option>
+                  <option value="xl">Gigante</option>
+                </select>
+              </div>
+              <div>
+                <label class="text-xs font-medium text-ink block mb-1">Alinhamento do logo</label>
+                <select v-model="data.page.logo_align"
+                  class="w-full rounded border border-line bg-surface px-3 py-1.5 text-sm text-ink focus:outline-none focus:border-accent/40">
+                  <option value="">Segue o texto</option>
+                  <option value="start">Esquerda</option>
+                  <option value="center">Centro</option>
+                  <option value="end">Direita</option>
+                </select>
+              </div>
+              <div>
+                <label class="text-xs font-medium text-ink block mb-1">Alinhamento do texto</label>
+                <select v-model="data.page.text_align"
+                  class="w-full rounded border border-line bg-surface px-3 py-1.5 text-sm text-ink focus:outline-none focus:border-accent/40">
+                  <option value="">Padrão (esquerda)</option>
+                  <option value="center">Centralizado</option>
+                  <option value="end">Direita</option>
+                </select>
+              </div>
+              <div>
+                <label class="text-xs font-medium text-ink block mb-1">Cantos</label>
+                <select v-model="data.page.corner_style"
+                  class="w-full rounded border border-line bg-surface px-3 py-1.5 text-sm text-ink focus:outline-none focus:border-accent/40">
+                  <option value="">Padrão (arredondado)</option>
+                  <option value="square">Retos</option>
+                  <option value="pill">Bem arredondados</option>
+                </select>
+              </div>
+              <div>
+                <label class="text-xs font-medium text-ink block mb-1">Largura do card</label>
+                <select v-model="data.page.card_width"
+                  class="w-full rounded border border-line bg-surface px-3 py-1.5 text-sm text-ink focus:outline-none focus:border-accent/40">
+                  <option value="">Padrão (médio)</option>
+                  <option value="sm">Estreito</option>
+                  <option value="lg">Largo</option>
+                  <option value="xl">Extra largo</option>
+                </select>
+              </div>
+              <div>
+                <label class="text-xs font-medium text-ink block mb-1">Posição na tela</label>
+                <select v-model="data.page.card_position"
+                  class="w-full rounded border border-line bg-surface px-3 py-1.5 text-sm text-ink focus:outline-none focus:border-accent/40">
+                  <option value="">Padrão (centro)</option>
+                  <option value="start">Esquerda</option>
+                  <option value="end">Direita</option>
+                </select>
+              </div>
+              <div>
+                <label class="text-xs font-medium text-ink block mb-1">Largura do botão</label>
+                <select v-model="data.page.cta_width"
+                  class="w-full rounded border border-line bg-surface px-3 py-1.5 text-sm text-ink focus:outline-none focus:border-accent/40">
+                  <option value="">Padrão (100%)</option>
+                  <option value="auto">Ajustado ao texto</option>
+                </select>
+              </div>
+              <div>
+                <label class="text-xs font-medium text-ink block mb-1">Alinhamento do botão</label>
+                <select v-model="data.page.cta_align" :disabled="data.page.cta_width !== 'auto'"
+                  class="w-full rounded border border-line bg-surface px-3 py-1.5 text-sm text-ink focus:outline-none focus:border-accent/40 disabled:opacity-50">
+                  <option value="">Esquerda</option>
+                  <option value="center">Centro</option>
+                  <option value="end">Direita</option>
+                </select>
+              </div>
+              <div>
+                <label class="text-xs font-medium text-ink block mb-1">Overlay da imagem (%)</label>
+                <input v-model="data.page.overlay_opacity" type="number" min="0" max="95" step="5" placeholder="55"
+                  class="w-full rounded border border-line bg-surface px-3 py-1.5 text-sm text-ink placeholder-ink-subtle focus:outline-none focus:border-accent/40" />
+                <p class="text-[10px] text-ink-subtle mt-0.5">Escurecimento sobre a imagem de fundo.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Rodapé do card -->
+          <div class="pt-3 border-t border-line/60 space-y-2">
+            <label class="flex items-center gap-2.5 cursor-pointer select-none">
+              <input type="checkbox" v-model="data.page.show_powered_by" class="h-4 w-4 rounded border-line accent-emerald-500" />
+              <span class="text-sm text-ink font-medium">Exibir rodapé do card</span>
+            </label>
+            <Input v-model="data.page.footer_text" label="Texto do rodapé" placeholder="Captação Menin" size="sm"
+              :disabled="!data.page.show_powered_by" />
+          </div>
 
           <!-- Campos do form -->
           <div class="pt-3 border-t border-line/60">
@@ -695,10 +874,20 @@ const sections = computed(() => {
           </div>
 
           <div>
-            <div class="text-xs text-ink-muted mb-1">Snippet HTML pra colar em site externo:</div>
+            <div class="text-xs text-ink-muted mb-1">
+              Incorporar em site externo com o <strong>mesmo visual da LP</strong> (iframe, altura automática):
+            </div>
+            <pre class="text-[11px] font-mono bg-surface border border-line rounded p-3 overflow-x-auto max-h-72 whitespace-pre">{{ iframeSnippet }}</pre>
+            <div class="mt-2 flex justify-end">
+              <Button variant="secondary" size="sm" icon="fas fa-copy" @click="copy(iframeSnippet, 'HTML do iframe')">Copiar iframe</Button>
+            </div>
+          </div>
+
+          <div>
+            <div class="text-xs text-ink-muted mb-1">Snippet HTML sem estilo (pra estilizar direto no site de destino):</div>
             <pre class="text-[11px] font-mono bg-surface border border-line rounded p-3 overflow-x-auto max-h-72 whitespace-pre">{{ htmlSnippet }}</pre>
             <div class="mt-2 flex justify-end">
-              <Button variant="secondary" size="sm" icon="fas fa-copy" @click="copy(htmlSnippet, 'HTML')">Copiar HTML</Button>
+              <Button variant="ghost" size="sm" icon="fas fa-copy" @click="copy(htmlSnippet, 'HTML')">Copiar HTML</Button>
             </div>
           </div>
         </section>

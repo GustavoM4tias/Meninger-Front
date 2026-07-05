@@ -3,13 +3,18 @@
 // Busca a config do formulário no backend e renderiza um form polido com
 // honeypot anti-bot, validação de campos obrigatórios, consentimento LGPD e
 // captura automática de UTMs / referrer / landing_url.
+// Com ?embed=1 renderiza só o card (pra iframe em site externo) e reporta a
+// altura via postMessage pro pai ajustar o iframe automaticamente.
 
 import { onMounted, ref, computed, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import API_URL from '@/config/apiUrl';
+import LeadFormCard from './components/LeadFormCard.vue';
+import { backgroundStyle, cardWidthClass, cardJustifyClass } from './lpTheme';
 
 const route = useRoute();
 const slug = computed(() => route.params.slug);
+const embed = computed(() => ['1', 'true'].includes(String(route.query.embed || '')));
 
 const loading = ref(true);
 const error = ref(null);
@@ -50,21 +55,11 @@ const fields = computed(() => {
 });
 
 const pageConfig = computed(() => form.value?.page_config || {});
-
-const bgStyle = computed(() => {
-  const c = pageConfig.value;
-  if (c.background_image_url) {
-    return {
-      backgroundImage: `linear-gradient(rgba(15,23,42,0.55),rgba(15,23,42,0.55)), url(${c.background_image_url})`,
-      backgroundSize: 'cover',
-      backgroundPosition: 'center',
-    };
-  }
-  if (c.background_color) return { backgroundColor: c.background_color };
-  return {};
-});
-
-const accent = computed(() => pageConfig.value.accent_color || '#3b82f6');
+const bgStyle = computed(() => backgroundStyle(pageConfig.value));
+const widthClass = computed(() => cardWidthClass(pageConfig.value));
+const wrapperClass = computed(() => embed.value
+  ? 'w-full p-2 flex justify-center'
+  : ['min-h-screen flex items-center p-4 bg-slate-900', cardJustifyClass(pageConfig.value)]);
 
 async function load() {
   loading.value = true;
@@ -102,7 +97,7 @@ function readUtms() {
 }
 
 async function submit() {
-  // Validação cliente — backend re-valida.
+  // Validação cliente - backend re-valida.
   for (const f of fields.value) {
     if (f.required && !String(data.value[f.key] || '').trim()) {
       window.alert(`Por favor preencha: ${f.label}`);
@@ -118,7 +113,7 @@ async function submit() {
   try {
     const body = {
       ...data.value,
-      _hp: honeypot.value,                    // honeypot — sempre vazio em humanos
+      _hp: honeypot.value,                    // honeypot - sempre vazio em humanos
       ...readUtms(),
       landing_url: location.href,
       consent: consentGiven.value,
@@ -129,7 +124,11 @@ async function submit() {
     );
     const d = await resp.json().catch(() => ({}));
     if (resp.ok && d.ok) {
-      if (d.redirect) { location.href = d.redirect; return; }
+      if (d.redirect) {
+        // Dentro de iframe, redireciona a página do site hospedeiro.
+        (embed.value ? window.top || window : window).location.href = d.redirect;
+        return;
+      }
       success.value = true;
     } else {
       window.alert(d.error || 'Não foi possível enviar. Tente novamente.');
@@ -141,15 +140,29 @@ async function submit() {
   }
 }
 
-onMounted(load);
+// No modo embed, avisa a página hospedeira da altura real pro iframe se ajustar.
+function reportEmbedHeight() {
+  if (window.parent === window) return;
+  window.parent.postMessage(
+    { meninLpSlug: slug.value, height: document.documentElement.scrollHeight },
+    '*'
+  );
+}
+
+onMounted(() => {
+  load();
+  if (embed.value && 'ResizeObserver' in window) {
+    new ResizeObserver(reportEmbedHeight).observe(document.body);
+  }
+});
 watch(slug, load);
 </script>
 
 <template>
-  <div class="min-h-screen flex items-center justify-center p-4 bg-slate-900" :style="bgStyle">
+  <div :class="wrapperClass" :style="embed ? {} : bgStyle">
 
     <!-- Loading -->
-    <div v-if="loading" class="text-white">
+    <div v-if="loading" :class="embed ? 'text-slate-400 py-10' : 'text-white'">
       <i class="fas fa-circle-notch fa-spin mr-2"></i>Carregando...
     </div>
 
@@ -187,50 +200,19 @@ watch(slug, load);
     </div>
 
     <!-- Formulário -->
-    <div v-else class="max-w-md w-full bg-white rounded-2xl shadow-2xl overflow-hidden">
-      <!-- Hero -->
-      <div class="px-6 py-6 border-b border-slate-200">
-        <img v-if="pageConfig.logo_url" :src="pageConfig.logo_url" alt="logo" class="h-10 mb-4 object-contain" />
-        <h1 class="text-slate-900 text-2xl font-bold leading-tight">{{ pageConfig.title || form.name }}</h1>
-        <p v-if="pageConfig.subtitle" class="text-slate-500 text-sm mt-2 leading-relaxed">{{ pageConfig.subtitle }}</p>
-      </div>
-
-      <!-- Form -->
-      <form @submit.prevent="submit" class="px-6 py-5 space-y-3">
-        <!-- honeypot — invisível pra humanos, denuncia bots -->
-        <input type="text" name="_hp" v-model="honeypot" tabindex="-1" autocomplete="off"
-               style="position:absolute;left:-9999px;width:1px;height:1px" aria-hidden="true" />
-
-        <div v-for="f in fields" :key="f.key">
-          <label :for="`f-${f.key}`" class="block text-xs font-medium text-slate-700 mb-1">
-            {{ f.label }}<span v-if="f.required" class="text-red-500 ml-0.5">*</span>
-          </label>
-          <input
-            :id="`f-${f.key}`"
-            :type="f.type"
-            v-model="data[f.key]"
-            :placeholder="f.placeholder || ''"
-            :required="f.required"
-            class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:border-slate-500 focus:ring-2 focus:ring-slate-200 focus:outline-none transition-all" />
-        </div>
-
-        <label v-if="form.consent_required" class="flex items-start gap-2 text-xs text-slate-600 pt-2 cursor-pointer">
-          <input type="checkbox" v-model="consentGiven" required class="mt-0.5 shrink-0" />
-          <span>{{ form.consent_text || 'Autorizo o contato sobre este interesse e concordo com a política de privacidade.' }}</span>
-        </label>
-
-        <button type="submit" :disabled="submitting"
-          :style="{ backgroundColor: accent }"
-          class="w-full mt-2 rounded-lg text-white px-4 py-3 text-sm font-semibold hover:opacity-90 disabled:opacity-60 transition-opacity">
-          <i v-if="submitting" class="fas fa-circle-notch fa-spin mr-2"></i>
-          {{ submitting ? 'Enviando...' : (pageConfig.cta_button_text || 'Enviar') }}
-        </button>
-      </form>
-
-      <div v-if="pageConfig.show_powered_by !== false"
-        class="px-6 py-3 border-t border-slate-100 text-center text-[10px] text-slate-400 tracking-wide">
-        Captação Menin
-      </div>
+    <div v-else :class="['w-full', widthClass]">
+      <LeadFormCard
+        :page-config="pageConfig"
+        :fields="fields"
+        :form-name="form?.name || ''"
+        :consent-required="!!form?.consent_required"
+        :consent-text="form?.consent_text || ''"
+        :data="data"
+        :submitting="submitting"
+        v-model:honeypot="honeypot"
+        v-model:consent="consentGiven"
+        @submit="submit"
+      />
     </div>
   </div>
 </template>

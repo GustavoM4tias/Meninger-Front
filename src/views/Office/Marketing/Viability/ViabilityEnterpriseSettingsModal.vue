@@ -24,6 +24,7 @@
                     class="h-9 px-2 text-sm border border-line rounded-lg bg-surface text-ink focus:outline-none focus:ring-2 focus:ring-accent-ring/30">
                     <option value="">Automático</option>
                     <option value="em_andamento">Em andamento</option>
+                    <option value="pre_lancamento">Pré-lançamento</option>
                     <option value="previsao_futura">Previsão Futura</option>
                     <option value="concluido">Concluído</option>
                 </select>

@@ -268,6 +268,7 @@ export const navRegistry = [
                 icon: 'fas fa-microchip',
                 pages: [
                     { route: '/tools/eme-brain', section: 'Cérebro da Eme', name: 'Cérebro da Eme', icon: 'fas fa-brain', adminOnly: true },
+                    { route: '/tools/eme-atende', section: 'Eme Atende', name: 'Eme Atende', icon: 'fas fa-headset', adminOnly: true },
                 ],
             },
             {
