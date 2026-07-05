@@ -357,6 +357,12 @@ export default [
                         component: () => import('@/views/Office/Tools/WhatsappAutomations/Index.vue'),
                         meta: { requiresAuth: true, adminOnly: true, searchable: true, content: 'Configure templates e automações de WhatsApp sem código.' },
                     },
+                    {
+                        path: 'eme-atende',
+                        name: 'Eme Atende',
+                        component: () => import('@/views/Office/Tools/EmeAtende/Index.vue'),
+                        meta: { requiresAuth: true, adminOnly: true, searchable: true, content: 'A Eme atendendo leads no WhatsApp: fluxos, conversas, segmentação e configuração da IA.' },
+                    },
                 ],
             },
 

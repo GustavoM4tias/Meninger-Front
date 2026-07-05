@@ -1390,7 +1390,7 @@ const filterPanelOpen = ref(true)
                         </label>
                         <MultiSelector :model-value="selectedEnterpriseLabels"
                             @update:modelValue="v => selectedEnterpriseLabels = Array.isArray(v) ? v : []"
-                            :options="enterprisesOptions" placeholder="Todos os empreendimentos" class="z-10" :page-size="600" :select-all="true" />
+                            :options="enterprisesOptions" placeholder="Todos os empreendimentos" class="z-50" :page-size="600" :select-all="true" />
                     </div>
 
                     <!-- Cidades -->
@@ -1404,7 +1404,7 @@ const filterPanelOpen = ref(true)
                         </label>
                         <MultiSelector :model-value="selectedCityLabels"
                             @update:modelValue="v => selectedCityLabels = Array.isArray(v) ? v : []"
-                            :options="cityOptions" placeholder="Todas as cidades" class="z-10" :page-size="300" :select-all="true" />
+                            :options="cityOptions" placeholder="Todas as cidades" class="z-50" :page-size="300" :select-all="true" />
                     </div>
                 </div>
             </div>

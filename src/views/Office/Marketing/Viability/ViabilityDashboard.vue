@@ -33,12 +33,12 @@
 
                     <div class="lg:col-span-2">
                         <label class="text-[11px] font-medium text-ink-muted mb-1.5 flex items-center gap-1.5">
-                            <i class="fas fa-city text-ink-subtle text-[10px]"></i>
-                            Empreendimento(s)
+                            <i class="fas fa-sitemap text-ink-subtle text-[10px]"></i>
+                            Centro(s) de custo
                         </label>
-                        <MultiSelector :model-value="selectedCompanies"
-                            @update:modelValue="v => selectedCompanies = Array.isArray(v) ? v : []"
-                            :options="companyOptions" placeholder="Todos os empreendimentos" :page-size="200"
+                        <MultiSelector :model-value="selectedCostCenters"
+                            @update:modelValue="v => selectedCostCenters = Array.isArray(v) ? v : []"
+                            :options="costCenterOptions" placeholder="Todos os centros de custo" :page-size="200"
                             :select-all="true" />
                     </div>
 
@@ -245,7 +245,7 @@
                                         <span class="inline-flex items-center gap-0.5 text-[9px] font-mono text-ink-subtle" v-tippy="'Bloqueadas'">
                                             <span class="h-1.5 w-1.5 rounded-full bg-ink-subtle/60"></span>{{ Number(item.header?.blockedUnits || 0) }}
                                         </span>
-                                        <span class="inline-flex items-center gap-0.5 text-[9px] font-mono text-red-600 dark:text-red-400" v-tippy="'Vendidas'">
+                                        <span class="inline-flex items-center gap-0.5 text-[9px] font-mono text-red-600 dark:text-red-400" v-tippy="'Vendidas no CV - sem assinatura da instituição financeira, contam como boletagem (disponível)'">
                                             <span class="h-1.5 w-1.5 rounded-full bg-red-500"></span>{{ Number(item.header?.soldUnitsStock ?? item.header?.soldUnits ?? 0) }}
                                         </span>
                                     </div>
@@ -371,12 +371,12 @@
                         <span class="inline-flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-emerald-500"></span>Disponíveis <strong class="font-mono">{{ Number(detailItem.header?.availableUnits || 0) }}</strong></span>
                         <span class="inline-flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-sky-500"></span>Reservadas <strong class="font-mono">{{ Number(detailItem.header?.reservedUnits || 0) }}</strong></span>
                         <span class="inline-flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-ink-subtle/60"></span>Bloqueadas <strong class="font-mono">{{ Number(detailItem.header?.blockedUnits || 0) }}</strong></span>
-                        <span class="inline-flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-red-500"></span>Vendidas (CV) <strong class="font-mono">{{ Number(detailItem.header?.soldUnitsStock ?? detailItem.header?.soldUnits ?? 0) }}</strong></span>
+                        <span class="inline-flex items-center gap-1.5" v-tippy="'Vendidas no CV - sem assinatura da instituição financeira contam como boletagem no disponível p/ marketing'"><span class="h-2 w-2 rounded-full bg-red-500"></span>Vendidas (CV) <strong class="font-mono">{{ Number(detailItem.header?.soldUnitsStock ?? detailItem.header?.soldUnits ?? 0) }}</strong></span>
                     </div>
                 </div>
 
                 <!-- Série mensal -->
-                <p class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle -mb-2">Mês a mês — recomendado vs. gasto</p>
+                <p class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle -mb-2">Mês a mês - recomendado vs. gasto</p>
                 <div class="overflow-x-auto rounded-lg border border-line">
                     <table class="min-w-full text-sm">
                         <thead class="bg-surface-sunken/60 border-b border-line">
@@ -419,6 +419,7 @@ import { ref, computed, onMounted, watch } from 'vue';
 import dayjs from 'dayjs';
 import { useViabilityStore } from '@/stores/Marketing/Viability/viabilityStore';
 import { useAuthStore } from '@/stores/Settings/Auth/authStore';
+import { useCostCenterNamesStore } from '@/stores/Financeiro/costCenterNamesStore';
 import { useTableSort } from '@/composables/useTableSort';
 
 import PageContainer from '@/components/UI/PageContainer.vue';
@@ -437,11 +438,12 @@ import ViabilityEnterpriseSettingsModal from './ViabilityEnterpriseSettingsModal
 
 const store = useViabilityStore();
 const auth = useAuthStore();
+const ccNames = useCostCenterNamesStore();
 const isAdmin = computed(() => auth?.user?.role === 'admin');
 
 const month = ref(store.selectedMonth);
 const statusFilter = ref(store.statusFilter);
-const selectedCompanies = ref([]);
+const selectedCostCenters = ref([]);
 
 const settingsOpen = ref(false);
 const entSettingsOpen = ref(false);
@@ -459,6 +461,7 @@ const categoryFilter = ref('all');
 const categoryOptions = [
     { value: 'all', label: '(Todas)' },
     { value: 'em_andamento', label: 'Em andamento' },
+    { value: 'pre_lancamento', label: 'Pré-lançamento' },
     { value: 'previsao_futura', label: 'Previsão Futura' },
     { value: 'concluido', label: 'Concluído' },
 ];
@@ -469,16 +472,30 @@ function fmtMonth(ym) { return ym ? dayjs(`${ym}-01`).format('MM/YYYY') : ''; }
 function fmtPct(v) { return `${(Number(v || 0) * 100).toFixed(0)}%`; }
 const monthLabel = computed(() => fmtMonth(store.selectedMonth) || 'mês');
 
-/* ---------- seleção / lista ---------- */
-function companyLabel(item) {
-    return `${item.enterpriseName || '—'} (Empresa ${item.companyId || item.displayId || '?'})`;
+/* ---------- seleção / lista (por centro de custo) ---------- */
+function ccLabel(id, fallbackName) {
+    const name = ccNames.displayName(id, fallbackName) || fallbackName || '-';
+    return `${name} (CC ${id})`;
 }
-const companyOptions = computed(() => store.sorted.map(companyLabel));
+// { label -> costCenterId } de todos os centros de custo presentes na lista
+const costCenterIndex = computed(() => {
+    const map = new Map();
+    for (const item of store.sorted) {
+        for (const id of item.header?.costCenterIds || []) {
+            map.set(ccLabel(id, item.enterpriseName), id);
+        }
+    }
+    return map;
+});
+const costCenterOptions = computed(() =>
+    [...costCenterIndex.value.keys()].sort((a, b) => a.localeCompare(b, 'pt-BR'))
+);
 const activeItems = computed(() => {
     let list = store.sorted;
-    if (selectedCompanies.value.length) {
-        const set = new Set(selectedCompanies.value);
-        list = list.filter((i) => set.has(companyLabel(i)));
+    if (selectedCostCenters.value.length) {
+        const idx = costCenterIndex.value;
+        const ids = new Set(selectedCostCenters.value.map((l) => idx.get(l)).filter((v) => v != null));
+        list = list.filter((i) => (i.header?.costCenterIds || []).some((id) => ids.has(id)));
     }
     if (categoryFilter.value !== 'all') {
         list = list.filter((i) => i.header?.status === categoryFilter.value);
@@ -560,6 +577,7 @@ function statusInfo(item) {
     const s = item.header?.status;
     if (s === 'concluido') return { label: 'Concluído', variant: 'neutral', icon: 'fa-circle-check' };
     if (s === 'em_andamento') return { label: 'Em andamento', variant: 'info', icon: 'fa-person-running' };
+    if (s === 'pre_lancamento') return { label: 'Pré-lançamento', variant: 'accent', icon: 'fa-rocket' };
     if (s === 'previsao_futura') return { label: 'Previsão Futura', variant: 'warning', icon: 'fa-calendar-day' };
     return null;
 }
@@ -574,6 +592,7 @@ async function load() {
     store.setYear(Number(String(ym).slice(0, 4)));
     store.setMonth(month.value);
     store.setStatusFilter(statusFilter.value);
+    ccNames.fetchOverrideMap();
     await store.fetchList();
 }
 
