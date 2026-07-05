@@ -57,9 +57,11 @@ const fields = computed(() => {
 const pageConfig = computed(() => form.value?.page_config || {});
 const bgStyle = computed(() => backgroundStyle(pageConfig.value));
 const widthClass = computed(() => cardWidthClass(pageConfig.value));
+// Sem items-center: cada estado usa my-auto, que centraliza quando cabe na
+// tela mas deixa rolar a partir do topo quando o form é maior que ela (mobile).
 const wrapperClass = computed(() => embed.value
   ? 'w-full p-2 flex justify-center'
-  : ['min-h-screen flex items-center p-4 bg-slate-900', cardJustifyClass(pageConfig.value)]);
+  : ['min-h-screen flex p-4 sm:p-6 bg-slate-900', cardJustifyClass(pageConfig.value)]);
 
 async function load() {
   loading.value = true;
@@ -162,12 +164,12 @@ watch(slug, load);
   <div :class="wrapperClass" :style="embed ? {} : bgStyle">
 
     <!-- Loading -->
-    <div v-if="loading" :class="embed ? 'text-slate-400 py-10' : 'text-white'">
+    <div v-if="loading" :class="embed ? 'text-slate-400 py-10' : 'text-white my-auto'">
       <i class="fas fa-circle-notch fa-spin mr-2"></i>Carregando...
     </div>
 
     <!-- Página desativada (410) -->
-    <div v-else-if="inactive" class="max-w-md w-full bg-white rounded-2xl shadow-2xl p-8 text-center">
+    <div v-else-if="inactive" class="max-w-md w-full my-auto bg-white rounded-2xl shadow-2xl p-8 text-center">
       <div class="h-14 w-14 rounded-full bg-amber-100 mx-auto mb-4 grid place-items-center text-amber-600">
         <i class="fas fa-pause text-2xl"></i>
       </div>
@@ -180,7 +182,7 @@ watch(slug, load);
     </div>
 
     <!-- Página não encontrada (404 e outros erros) -->
-    <div v-else-if="error" class="max-w-md w-full bg-white rounded-2xl shadow-2xl p-8 text-center">
+    <div v-else-if="error" class="max-w-md w-full my-auto bg-white rounded-2xl shadow-2xl p-8 text-center">
       <div class="h-14 w-14 rounded-full bg-slate-100 mx-auto mb-4 grid place-items-center text-slate-400">
         <i class="fas fa-circle-question text-2xl"></i>
       </div>
@@ -189,7 +191,7 @@ watch(slug, load);
     </div>
 
     <!-- Sucesso -->
-    <div v-else-if="success" class="max-w-md w-full bg-white rounded-2xl shadow-2xl p-8 text-center">
+    <div v-else-if="success" class="max-w-md w-full my-auto bg-white rounded-2xl shadow-2xl p-8 text-center">
       <div class="h-14 w-14 rounded-full bg-emerald-100 mx-auto mb-4 grid place-items-center text-emerald-600">
         <i class="fas fa-check text-2xl"></i>
       </div>
@@ -200,7 +202,7 @@ watch(slug, load);
     </div>
 
     <!-- Formulário -->
-    <div v-else :class="['w-full', widthClass]">
+    <div v-else :class="['w-full my-auto', widthClass]">
       <LeadFormCard
         :page-config="pageConfig"
         :fields="fields"
