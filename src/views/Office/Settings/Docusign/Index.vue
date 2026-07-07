@@ -49,14 +49,14 @@
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label class="lbl">Integration Key</label>
-              <input v-model="form.integration_key" type="text" class="inp" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" />
+              <input v-model="form.integration_key" type="text" class="inp" autocomplete="off" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" />
             </div>
             <div>
               <label class="lbl">
                 Secret Key
                 <span v-if="settings?.has_secret_key" class="ml-2 normal-case font-normal text-green-600 dark:text-green-400"><i class="fas fa-check mr-0.5"></i>salva — cole outra só para trocar</span>
               </label>
-              <input v-model="form.secret_key" type="password" class="inp" :placeholder="settings?.has_secret_key ? '(mantida)' : 'cole a secret key'" />
+              <input v-model="form.secret_key" type="password" class="inp" autocomplete="new-password" data-1p-ignore data-lpignore="true" :placeholder="settings?.has_secret_key ? '(mantida)' : 'cole a secret key'" />
             </div>
             <div>
               <label class="lbl">Ambiente</label>
