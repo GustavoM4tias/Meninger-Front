@@ -67,7 +67,13 @@
               <i class="fas fa-file-signature text-violet-500 mr-1.5"></i> Processo de assinatura
             </p>
             <div class="flex items-center gap-2">
+              <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-surface-sunken text-ink" :title="`${signedCount} de ${totalSigners} assinaram`">
+                {{ signedCount }}/{{ totalSigners }} <i class="fas fa-signature text-[10px]"></i>
+              </span>
               <span :class="statusChip(current.status)" class="px-2.5 py-1 rounded-full text-xs font-semibold">{{ statusLabel(current.status) }}</span>
+              <button @click="openDocument('original')" :disabled="docLoading === 'original'" class="px-3 py-1.5 text-xs font-semibold text-ink bg-surface-sunken border border-line rounded-lg hover:bg-surface-sunken/70 disabled:opacity-50 transition" title="Visualizar/baixar o documento original enviado">
+                <i :class="docLoading === 'original' ? 'fa-spinner fa-spin' : 'fa-file-lines'" class="fas mr-1"></i> Original
+              </button>
               <button @click="refresh" :disabled="refreshing" class="px-3 py-1.5 text-xs font-semibold text-ink bg-surface-sunken border border-line rounded-lg hover:bg-surface-sunken/70 disabled:opacity-50 transition" title="Consultar status no DocuSign">
                 <i :class="refreshing ? 'fa-spinner fa-spin' : 'fa-arrows-rotate'" class="fas"></i>
               </button>
@@ -84,19 +90,31 @@
 
           <div class="p-5 space-y-4">
             <p class="text-xs text-ink-subtle">
-              Enviado em {{ formatDate(current.sent_at) }}
-              <template v-if="current.completed_at"> · concluído em {{ formatDate(current.completed_at) }}</template>
+              <i class="fas fa-paper-plane text-[10px] mr-1"></i>1º envio: <strong class="text-ink-muted">{{ formatDate(current.sent_at) }}</strong>
+              <template v-if="current.completed_at"> · <i class="fas fa-check text-[10px]"></i> concluído: <strong class="text-ink-muted">{{ formatDate(current.completed_at) }}</strong></template>
+              <template v-else-if="pendingNames.length"> · faltam: <strong class="text-amber-600 dark:text-amber-400">{{ pendingNames.join(', ') }}</strong></template>
             </p>
 
             <!-- Assinantes -->
             <div class="space-y-2">
-              <div v-for="(sg, i) in (current.signers ?? [])" :key="i" class="flex items-center justify-between gap-3 px-3.5 py-2.5 bg-surface-sunken/40 border border-line rounded-xl">
+              <div v-for="(sg, i) in (current.signers ?? [])" :key="i" class="flex items-center justify-between gap-3 px-3.5 py-2.5 bg-surface-sunken/40 border border-line rounded-xl flex-wrap">
                 <div class="min-w-0">
-                  <p class="text-sm font-semibold text-ink truncate">{{ sg.name }}</p>
+                  <p class="text-sm font-semibold text-ink truncate">
+                    <i v-if="sg.status === 'completed'" class="fas fa-circle-check text-green-500 mr-1"></i>{{ sg.name }}
+                  </p>
                   <p class="text-xs text-ink-subtle truncate">{{ sg.email }}</p>
+                  <p class="text-[11px] text-ink-subtle mt-1 flex items-center gap-3 flex-wrap">
+                    <span><i class="fas fa-paper-plane text-[9px] mr-1"></i>Enviado: {{ formatDate(sg.last_sent_at || current.sent_at) }}</span>
+                    <span v-if="sg.delivered_at" :class="isStaleDelivery(sg) ? 'text-amber-600 dark:text-amber-400' : ''">
+                      <i class="fas fa-envelope-open text-[9px] mr-1"></i>Recebeu: {{ formatDate(sg.delivered_at) }}{{ isStaleDelivery(sg) ? ' (antes do reenvio)' : '' }}
+                    </span>
+                    <span v-else class="text-ink-subtle"><i class="fas fa-envelope text-[9px] mr-1"></i>Ainda não abriu</span>
+                    <span v-if="sg.signed_at" class="text-green-600 dark:text-green-400 font-semibold">
+                      <i class="fas fa-signature text-[9px] mr-1"></i>Assinou: {{ formatDate(sg.signed_at) }}
+                    </span>
+                  </p>
                 </div>
                 <div class="flex items-center gap-2 flex-shrink-0">
-                  <span v-if="sg.signed_at" class="text-[10px] text-ink-subtle">{{ formatDate(sg.signed_at) }}</span>
                   <span :class="signerChip(sg.status)" class="px-2 py-0.5 rounded-full text-[10px] font-semibold">{{ signerLabel(sg.status) }}</span>
                   <button v-if="canAuthorize && ['sent','delivered'].includes(current.status) && !['completed','declined'].includes(sg.status)"
                     @click="resend([sg.email])" :disabled="!!resending"
@@ -104,6 +122,23 @@
                     :title="`Reenviar convite para ${sg.email}`">
                     <i :class="resending === sg.email ? 'fa-spinner fa-spin' : 'fa-paper-plane'" class="fas text-xs"></i>
                   </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Histórico do processo -->
+            <div v-if="eventsList.length" class="border-t border-line pt-3">
+              <button @click="showEvents = !showEvents" class="w-full flex items-center justify-between text-left">
+                <p class="text-[11px] font-bold text-ink-subtle uppercase tracking-wider"><i class="fas fa-timeline mr-1.5"></i> Histórico do processo ({{ eventsList.length }})</p>
+                <i :class="showEvents ? 'fa-chevron-up' : 'fa-chevron-down'" class="fas text-[10px] text-ink-subtle"></i>
+              </button>
+              <div v-if="showEvents" class="mt-3 space-y-2">
+                <div v-for="(ev, i) in eventsList" :key="i" class="flex items-start gap-2.5 text-xs">
+                  <i :class="eventIcon(ev.type)" class="fas mt-0.5 w-4 text-center flex-shrink-0" :style="{ color: eventColor(ev.type) }"></i>
+                  <div class="min-w-0">
+                    <span class="text-ink">{{ eventText(ev) }}</span>
+                    <span class="text-ink-subtle ml-1">· {{ formatDate(ev.at) }}</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -138,6 +173,7 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue';
 import { useConditionsStore } from '@/stores/Comercial/Conditions/conditionsStore';
+import API_URL from '@/config/apiUrl';
 
 const props = defineProps({
     detail: { type: Object, required: true },
@@ -198,6 +234,63 @@ async function refresh() {
         error.value = e.message || 'Erro ao atualizar status.';
     } finally {
         refreshing.value = false;
+    }
+}
+
+// ── Progresso, entrega e histórico do processo ────────────────────────────────
+
+const showEvents = ref(false);
+const docLoading = ref(null);
+
+const totalSigners = computed(() => (current.value?.signers ?? []).length);
+const signedCount = computed(() => (current.value?.signers ?? []).filter(s => s.status === 'completed').length);
+const pendingNames = computed(() =>
+    (current.value?.signers ?? []).filter(s => s.status !== 'completed').map(s => s.name));
+
+// Recebeu ANTES do último reenvio → ainda não abriu a versão reenviada.
+function isStaleDelivery(sg) {
+    return !!(sg.delivered_at && sg.last_sent_at && new Date(sg.delivered_at) < new Date(sg.last_sent_at));
+}
+
+const eventsList = computed(() => [...(current.value?.raw?.events ?? [])].reverse());
+
+const EVENT_TYPES = {
+    sent:      { icon: 'fa-paper-plane',   color: '#7c3aed', text: e => `Enviado para ${(e.emails ?? []).join(', ')}${e.by ? ` por ${e.by}` : ''}` },
+    resent:    { icon: 'fa-paper-plane',   color: '#7c3aed', text: e => `Reenviado para ${(e.emails ?? []).join(', ')}${e.by ? ` por ${e.by}` : ''}` },
+    delivered: { icon: 'fa-envelope-open', color: '#6366f1', text: e => `${e.name || e.email} recebeu/abriu o documento` },
+    signed:    { icon: 'fa-signature',     color: '#16a34a', text: e => `${e.name || e.email} assinou` },
+    declined:  { icon: 'fa-ban',           color: '#dc2626', text: e => `${e.name || e.email} recusou${e.note ? ` (${e.note})` : ''}` },
+    completed: { icon: 'fa-circle-check',  color: '#16a34a', text: () => 'Todos assinaram - documento concluído' },
+    voided:    { icon: 'fa-ban',           color: '#6b7280', text: e => `Envelope anulado${e.by ? ` por ${e.by}` : ''}${e.note ? ` (${e.note})` : ''}` },
+};
+function eventIcon(t)  { return EVENT_TYPES[t]?.icon ?? 'fa-circle'; }
+function eventColor(t) { return EVENT_TYPES[t]?.color ?? '#9ca3af'; }
+function eventText(ev) { return EVENT_TYPES[ev.type]?.text?.(ev) ?? ev.type; }
+
+// Abre o documento: 'original' (via backend, autenticado) ou 'signed' (URL pública).
+async function openDocument(type) {
+    if (type === 'signed' && current.value?.signed_doc_url) {
+        window.open(current.value.signed_doc_url, '_blank', 'noopener');
+        return;
+    }
+    docLoading.value = type;
+    error.value = null;
+    try {
+        const res = await fetch(`${API_URL}/conditions/${props.detail.id}/signature/document?type=${type}`, {
+            headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        });
+        if (!res.ok) {
+            const j = await res.json().catch(() => ({}));
+            throw new Error(j.error || `HTTP ${res.status}`);
+        }
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        window.open(url, '_blank', 'noopener');
+        setTimeout(() => URL.revokeObjectURL(url), 60000);
+    } catch (e) {
+        error.value = e.message || 'Erro ao abrir documento.';
+    } finally {
+        docLoading.value = null;
     }
 }
 
