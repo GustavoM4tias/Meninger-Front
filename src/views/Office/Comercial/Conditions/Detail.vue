@@ -1569,6 +1569,7 @@ const EVENT_META = {
     linked_to_cv:            { label: 'Vinculada ao CV',                icon: 'fa-link',          cls: 'bg-teal-100 text-teal-700 dark:bg-teal-900/30',       type: 'approval' },
     campaign_template_updated: { label: 'Campanha atualizada via biblioteca', icon: 'fa-bullhorn', cls: 'bg-teal-100 text-teal-700 dark:bg-teal-900/30',  type: 'change' },
     signature_sent:      { label: 'Enviada para assinatura (DocuSign)', icon: 'fa-file-signature', cls: 'bg-violet-100 text-violet-700 dark:bg-violet-900/30', type: 'approval' },
+    signature_resent:    { label: 'Convite de assinatura reenviado',    icon: 'fa-paper-plane',    cls: 'bg-violet-100 text-violet-700 dark:bg-violet-900/30', type: 'approval' },
     signature_completed: { label: 'Documento assinado por todos',       icon: 'fa-file-circle-check', cls: 'bg-green-100 text-green-700 dark:bg-green-900/30', type: 'approval' },
     signature_voided:    { label: 'Envelope de assinatura anulado',     icon: 'fa-ban',            cls: 'bg-gray-200 text-gray-700 dark:bg-gray-800 dark:text-gray-300', type: 'approval' },
 };

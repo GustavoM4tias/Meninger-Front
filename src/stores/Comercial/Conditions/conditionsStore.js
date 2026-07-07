@@ -250,6 +250,13 @@ export const useConditionsStore = defineStore('conditions', () => {
     async function refreshSignature(conditionId) {
         return await requestWithAuth(`${API_URL}/conditions/${conditionId}/signature/refresh`, { method: 'POST' });
     }
+    // Reenvia o convite: emails=null → todos os elegíveis; ou lista de e-mails específicos.
+    async function resendSignature(conditionId, emails = null) {
+        return await requestWithAuth(`${API_URL}/conditions/${conditionId}/signature/resend`, {
+            method: 'POST',
+            body: JSON.stringify({ emails }),
+        });
+    }
     async function voidSignature(conditionId, reason = '') {
         return await requestWithAuth(`${API_URL}/conditions/${conditionId}/signature/void`, {
             method: 'POST',
@@ -396,6 +403,6 @@ export const useConditionsStore = defineStore('conditions', () => {
         campaignTemplates, fetchCampaignTemplates, createCampaignTemplate, updateCampaignTemplate, fetchCampaignTemplateUsage,
         fetchDocusignSettings, updateDocusignSettings, fetchDocusignConsentUrl, testDocusign,
         fetchDocusignOauthUrl, disconnectDocusign,
-        fetchSignature, sendSignature, refreshSignature, voidSignature,
+        fetchSignature, sendSignature, refreshSignature, voidSignature, resendSignature,
     };
 });

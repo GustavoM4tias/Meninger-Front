@@ -71,6 +71,11 @@
               <button @click="refresh" :disabled="refreshing" class="px-3 py-1.5 text-xs font-semibold text-ink bg-surface-sunken border border-line rounded-lg hover:bg-surface-sunken/70 disabled:opacity-50 transition" title="Consultar status no DocuSign">
                 <i :class="refreshing ? 'fa-spinner fa-spin' : 'fa-arrows-rotate'" class="fas"></i>
               </button>
+              <button v-if="canAuthorize && ['sent','delivered'].includes(current.status)" @click="resend()" :disabled="!!resending"
+                class="px-3 py-1.5 text-xs font-semibold text-violet-700 dark:text-violet-300 bg-violet-50 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-800 rounded-lg hover:bg-violet-100 dark:hover:bg-violet-900/40 disabled:opacity-50 transition"
+                title="Reenviar o convite para todos que ainda podem assinar">
+                <i :class="resending === 'all' ? 'fa-spinner fa-spin' : 'fa-paper-plane'" class="fas mr-1"></i> Reenviar
+              </button>
               <button v-if="canAuthorize && ['sent','delivered'].includes(current.status)" @click="voidEnvelope" class="px-3 py-1.5 text-xs font-semibold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg hover:bg-red-100 transition">
                 <i class="fas fa-ban mr-1"></i> Anular
               </button>
@@ -93,6 +98,12 @@
                 <div class="flex items-center gap-2 flex-shrink-0">
                   <span v-if="sg.signed_at" class="text-[10px] text-ink-subtle">{{ formatDate(sg.signed_at) }}</span>
                   <span :class="signerChip(sg.status)" class="px-2 py-0.5 rounded-full text-[10px] font-semibold">{{ signerLabel(sg.status) }}</span>
+                  <button v-if="canAuthorize && ['sent','delivered'].includes(current.status) && !['completed','declined'].includes(sg.status)"
+                    @click="resend([sg.email])" :disabled="!!resending"
+                    class="w-7 h-7 flex items-center justify-center rounded-md text-violet-600 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/20 disabled:opacity-40 transition"
+                    :title="`Reenviar convite para ${sg.email}`">
+                    <i :class="resending === sg.email ? 'fa-spinner fa-spin' : 'fa-paper-plane'" class="fas text-xs"></i>
+                  </button>
                 </div>
               </div>
             </div>
@@ -113,6 +124,9 @@
         </div>
       </template>
 
+      <div v-if="info" class="px-3.5 py-2.5 rounded-lg text-xs bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400">
+        {{ info }}
+      </div>
       <div v-if="error" class="px-3.5 py-2.5 rounded-lg text-xs bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400">
         {{ error }}
       </div>
@@ -138,6 +152,8 @@ const store = useConditionsStore();
 const loading = ref(true);
 const sending = ref(false);
 const refreshing = ref(false);
+const resending = ref(null); // 'all' | email | null
+const info = ref(null);
 const error = ref(null);
 const state = ref({ configured: false, config: null, current: null, history: [] });
 
@@ -182,6 +198,23 @@ async function refresh() {
         error.value = e.message || 'Erro ao atualizar status.';
     } finally {
         refreshing.value = false;
+    }
+}
+
+// Reenvia o convite (emails=null → todos os elegíveis; [email] → só aquele).
+async function resend(emails = null) {
+    resending.value = emails?.length === 1 ? emails[0] : 'all';
+    error.value = null;
+    info.value = null;
+    try {
+        const r = await store.resendSignature(props.detail.id, emails);
+        info.value = `Convite reenviado para: ${r.resent.join(', ')}`
+            + (r.skipped?.length ? ` (sem reenvio: ${r.skipped.map(s => `${s.email} — ${signerLabel(s.status)}`).join(', ')})` : '');
+        emit('changed');
+    } catch (e) {
+        error.value = e.message || 'Erro ao reenviar convite.';
+    } finally {
+        resending.value = null;
     }
 }
 
