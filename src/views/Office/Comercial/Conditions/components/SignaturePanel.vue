@@ -48,7 +48,8 @@
           <p class="text-xs text-ink-muted mb-4">
             O documento do Resumo será enviado via DocuSign para
             <strong>{{ (state.config?.signers ?? []).map(s => s.name).join(', ') }}</strong>
-            ({{ state.config?.placement === 'livre' ? 'posicionamento livre' : 'assinatura ao final' }}{{ state.config?.require_initials ? ' + rubrica' : '' }}).
+            ({{ state.config?.routing === 'parallel' ? 'todos assinam juntos' : 'assinam em sequência' }} ·
+            {{ state.config?.placement === 'livre' ? 'posicionamento livre' : 'assinatura ao final' }}{{ state.config?.require_initials ? ' + rubrica' : '' }}).
           </p>
           <button v-if="canAuthorize" @click="send" :disabled="sending" class="flex items-center gap-2 px-4 py-2.5 bg-violet-600 text-white text-sm font-semibold rounded-xl hover:bg-violet-700 disabled:opacity-50 transition">
             <i :class="sending ? 'fa-spinner fa-spin' : 'fa-paper-plane'" class="fas text-xs"></i>

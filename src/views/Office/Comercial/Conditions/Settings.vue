@@ -26,12 +26,27 @@ const form = ref({
   editor_user_ids: [],
   authorizer_user_ids: [],
   auto_generate_conditions: true,
-  signature_config: { enabled: false, placement: 'final', require_initials: false, signers: [] },
+  signature_config: { enabled: false, placement: 'final', require_initials: false, routing: 'sequential', signers: [] },
 });
 
-// ── Assinatura (DocuSign): assinantes na ordem de assinatura ──────────────────
+// ── Assinatura (DocuSign): assinantes (do sistema ou manuais) ─────────────────
+const pickUserId = ref('');
+
 function addSigner() {
   form.value.signature_config.signers.push({ name: '', email: '', order: form.value.signature_config.signers.length + 1 });
+}
+
+// Adiciona um usuário do sistema (nome + e-mail preenchidos; continua editável).
+function addSignerFromSystem() {
+  const u = officeUsers.value.find(x => String(x.id) === String(pickUserId.value));
+  if (!u) return;
+  form.value.signature_config.signers.push({
+    name: u.username || '',
+    email: u.email || '',
+    order: form.value.signature_config.signers.length + 1,
+    user_id: u.id,
+  });
+  pickUserId.value = '';
 }
 function removeSigner(i) {
   form.value.signature_config.signers.splice(i, 1);
@@ -76,7 +91,7 @@ async function handleSave() {
         ...form.value.signature_config,
         signers: form.value.signature_config.signers
           .filter(s => s.name?.trim() && s.email?.trim())
-          .map((s, i) => ({ name: s.name.trim(), email: s.email.trim(), order: i + 1 })),
+          .map((s, i) => ({ name: s.name.trim(), email: s.email.trim(), order: i + 1, user_id: s.user_id ?? null })),
       },
     });
     saved.value = true;
@@ -102,7 +117,8 @@ onMounted(async () => {
           enabled: sig.enabled ?? false,
           placement: sig.placement === 'livre' ? 'livre' : 'final',
           require_initials: sig.require_initials ?? false,
-          signers: (sig.signers ?? []).map((s, i) => ({ name: s.name ?? '', email: s.email ?? '', order: s.order ?? i + 1 })),
+          routing: sig.routing === 'parallel' ? 'parallel' : 'sequential',
+          signers: (sig.signers ?? []).map((s, i) => ({ name: s.name ?? '', email: s.email ?? '', order: s.order ?? i + 1, user_id: s.user_id ?? null })),
         },
       };
     }
@@ -242,8 +258,22 @@ onMounted(async () => {
                     </label>
                   </div>
                 </div>
-                <div class="flex items-end">
-                  <label class="flex items-center gap-2.5 px-3 py-2 rounded-lg border border-line cursor-pointer text-sm text-ink-muted w-full">
+                <div>
+                  <p class="text-xs font-semibold text-ink-muted uppercase tracking-wide mb-1.5">Ordem de assinatura</p>
+                  <div class="flex gap-2">
+                    <label v-for="opt in [{ v: 'sequential', l: 'Em sequência' }, { v: 'parallel', l: 'Todos juntos' }]" :key="opt.v"
+                      class="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg border cursor-pointer text-sm transition"
+                      :class="form.signature_config.routing === opt.v ? 'border-accent bg-accent-soft text-accent font-semibold' : 'border-line text-ink-muted'">
+                      <input type="radio" :value="opt.v" v-model="form.signature_config.routing" class="sr-only" />
+                      {{ opt.l }}
+                    </label>
+                  </div>
+                  <p class="text-[11px] text-ink-subtle mt-1">
+                    {{ form.signature_config.routing === 'parallel' ? 'Todos recebem o e-mail ao mesmo tempo.' : 'O 2º só recebe depois que o 1º assinar, e assim por diante.' }}
+                  </p>
+                </div>
+                <div class="sm:col-span-2">
+                  <label class="flex items-center gap-2.5 px-3 py-2 rounded-lg border border-line cursor-pointer text-sm text-ink-muted w-fit">
                     <input type="checkbox" v-model="form.signature_config.require_initials" class="w-4 h-4 accent-violet-600 rounded" />
                     Exigir rubrica junto à assinatura
                   </label>
@@ -252,22 +282,40 @@ onMounted(async () => {
 
               <!-- Assinantes -->
               <div>
-                <div class="flex items-center justify-between mb-2">
-                  <p class="text-xs font-semibold text-ink-muted uppercase tracking-wide">Assinantes (na ordem de assinatura)</p>
-                  <button @click="addSigner" class="px-3 py-1.5 text-xs font-semibold text-accent bg-accent-soft border border-accent/20 rounded-lg hover:bg-accent-soft/70 transition">
-                    <i class="fas fa-plus mr-1"></i> Adicionar
-                  </button>
+                <div class="flex items-center justify-between gap-3 mb-2 flex-wrap">
+                  <p class="text-xs font-semibold text-ink-muted uppercase tracking-wide">
+                    Assinantes{{ form.signature_config.routing === 'sequential' ? ' (na ordem de assinatura)' : '' }}
+                  </p>
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <select v-model="pickUserId"
+                      class="px-3 py-1.5 text-xs text-ink bg-surface-sunken/60 border border-line rounded-lg outline-none focus:border-accent/40 transition max-w-[220px]">
+                      <option value="">Usuário do sistema...</option>
+                      <option v-for="u in officeUsers" :key="u.id" :value="u.id">{{ u.username }}{{ u.email ? ` (${u.email})` : '' }}</option>
+                    </select>
+                    <button @click="addSignerFromSystem" :disabled="!pickUserId" class="px-3 py-1.5 text-xs font-semibold text-accent bg-accent-soft border border-accent/20 rounded-lg hover:bg-accent-soft/70 disabled:opacity-40 transition">
+                      <i class="fas fa-user-plus mr-1"></i> Do sistema
+                    </button>
+                    <button @click="addSigner" class="px-3 py-1.5 text-xs font-semibold text-ink-muted bg-surface-sunken border border-line rounded-lg hover:bg-surface-sunken/70 transition">
+                      <i class="fas fa-plus mr-1"></i> Manual
+                    </button>
+                  </div>
                 </div>
                 <div v-if="form.signature_config.signers.length" class="space-y-2">
                   <div v-for="(sg, i) in form.signature_config.signers" :key="i" class="flex items-center gap-2">
-                    <span class="w-6 text-center text-xs font-bold text-ink-subtle flex-shrink-0">{{ i + 1 }}º</span>
+                    <span class="w-6 text-center text-xs font-bold text-ink-subtle flex-shrink-0">
+                      <template v-if="form.signature_config.routing === 'sequential'">{{ i + 1 }}º</template>
+                      <i v-else class="fas fa-user text-[10px]"></i>
+                    </span>
+                    <i v-if="sg.user_id" class="fas fa-id-badge text-accent text-xs flex-shrink-0" title="Usuário do sistema"></i>
                     <input v-model="sg.name" type="text" placeholder="Nome completo"
                       class="flex-1 min-w-0 px-3 py-2 text-sm text-ink bg-surface-sunken/60 border border-line rounded-lg outline-none focus:border-accent/40 transition" />
                     <input v-model="sg.email" type="email" placeholder="email@exemplo.com"
                       class="flex-1 min-w-0 px-3 py-2 text-sm text-ink bg-surface-sunken/60 border border-line rounded-lg outline-none focus:border-accent/40 transition" />
                     <div class="flex items-center gap-0.5 flex-shrink-0">
-                      <button @click="moveSigner(i, -1)" :disabled="i === 0" class="w-7 h-7 rounded-md text-ink-subtle hover:bg-surface-sunken disabled:opacity-30 transition"><i class="fas fa-chevron-up text-xs"></i></button>
-                      <button @click="moveSigner(i, 1)" :disabled="i === form.signature_config.signers.length - 1" class="w-7 h-7 rounded-md text-ink-subtle hover:bg-surface-sunken disabled:opacity-30 transition"><i class="fas fa-chevron-down text-xs"></i></button>
+                      <template v-if="form.signature_config.routing === 'sequential'">
+                        <button @click="moveSigner(i, -1)" :disabled="i === 0" class="w-7 h-7 rounded-md text-ink-subtle hover:bg-surface-sunken disabled:opacity-30 transition" title="Subir na ordem"><i class="fas fa-chevron-up text-xs"></i></button>
+                        <button @click="moveSigner(i, 1)" :disabled="i === form.signature_config.signers.length - 1" class="w-7 h-7 rounded-md text-ink-subtle hover:bg-surface-sunken disabled:opacity-30 transition" title="Descer na ordem"><i class="fas fa-chevron-down text-xs"></i></button>
+                      </template>
                       <button @click="removeSigner(i)" class="w-7 h-7 rounded-md text-ink-subtle hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition"><i class="fas fa-trash text-xs"></i></button>
                     </div>
                   </div>
