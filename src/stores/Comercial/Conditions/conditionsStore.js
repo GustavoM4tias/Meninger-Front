@@ -211,6 +211,78 @@ export const useConditionsStore = defineStore('conditions', () => {
         return await requestWithAuth(`${API_URL}/conditions/enterprise/${idempreendimento}/stages/${idetapa}/units`);
     }
 
+    // ─── DocuSign: settings (admin) + assinatura por ficha ───────────────────
+
+    async function fetchDocusignSettings() {
+        return await requestWithAuth(`${API_URL}/conditions/docusign-settings`);
+    }
+    async function updateDocusignSettings(payload) {
+        return await requestWithAuth(`${API_URL}/conditions/docusign-settings`, {
+            method: 'PUT',
+            body: JSON.stringify(payload),
+        });
+    }
+    async function fetchDocusignConsentUrl() {
+        return await requestWithAuth(`${API_URL}/conditions/docusign/consent-url`);
+    }
+    async function testDocusign() {
+        return await requestWithAuth(`${API_URL}/conditions/docusign/test`, { method: 'POST' });
+    }
+    async function fetchSignature(conditionId) {
+        return await requestWithAuth(`${API_URL}/conditions/${conditionId}/signature`);
+    }
+    async function sendSignature(conditionId, html) {
+        return await requestWithAuth(`${API_URL}/conditions/${conditionId}/signature/send`, {
+            method: 'POST',
+            body: JSON.stringify({ html }),
+        });
+    }
+    async function refreshSignature(conditionId) {
+        return await requestWithAuth(`${API_URL}/conditions/${conditionId}/signature/refresh`, { method: 'POST' });
+    }
+    async function voidSignature(conditionId, reason = '') {
+        return await requestWithAuth(`${API_URL}/conditions/${conditionId}/signature/void`, {
+            method: 'POST',
+            body: JSON.stringify({ reason }),
+        });
+    }
+
+    // ─── Biblioteca de campanhas (modelos reutilizáveis) ─────────────────────
+    const campaignTemplates = ref([]);
+
+    async function fetchCampaignTemplates(force = false) {
+        if (campaignTemplates.value.length && !force) return campaignTemplates.value;
+        try {
+            campaignTemplates.value = await requestWithAuth(`${API_URL}/conditions/campaign-templates`);
+        } catch (e) {
+            console.warn('[conditions] fetchCampaignTemplates:', e.message);
+        }
+        return campaignTemplates.value;
+    }
+
+    async function createCampaignTemplate(payload) {
+        const t = await requestWithAuth(`${API_URL}/conditions/campaign-templates`, {
+            method: 'POST',
+            body: JSON.stringify(payload),
+        });
+        await fetchCampaignTemplates(true);
+        return t;
+    }
+
+    // propagate=true atualiza o modelo + instâncias vinculadas em fichas rascunho.
+    async function updateCampaignTemplate(id, payload) {
+        const r = await requestWithAuth(`${API_URL}/conditions/campaign-templates/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify(payload),
+        });
+        await fetchCampaignTemplates(true);
+        return r;
+    }
+
+    async function fetchCampaignTemplateUsage(id) {
+        return await requestWithAuth(`${API_URL}/conditions/campaign-templates/${id}/usage`);
+    }
+
     // ─── Vincular avulsa ao CV (promove a série inteira) ─────────────────────
     async function linkSeriesToCv(id, idempreendimento, moduleStageMap = {}) {
         return await requestWithAuth(`${API_URL}/conditions/${id}/link-to-cv`, {
@@ -311,5 +383,8 @@ export const useConditionsStore = defineStore('conditions', () => {
         fetchSettings, updateSettings, fetchMyPermissions,
         fetchUnitsForStage,
         linkSeriesToCv, fetchCvEnterprises,
+        campaignTemplates, fetchCampaignTemplates, createCampaignTemplate, updateCampaignTemplate, fetchCampaignTemplateUsage,
+        fetchDocusignSettings, updateDocusignSettings, fetchDocusignConsentUrl, testDocusign,
+        fetchSignature, sendSignature, refreshSignature, voidSignature,
     };
 });

@@ -416,6 +416,12 @@ export default [
                         meta: { requiresAuth: true, allowedRole: 'admin', searchable: true, content: 'Credenciais do App Meta compartilhadas (WhatsApp + Lead Ads): App ID, App Secret, versão da Graph API' },
                     },
                     {
+                        path: 'docusign',
+                        name: 'Configurações DocuSign',
+                        component: () => import('@/views/Office/Settings/Docusign/Index.vue'),
+                        meta: { requiresAuth: true, allowedRole: 'admin', searchable: true, content: 'Integração DocuSign: credenciais JWT, consentimento e teste da assinatura digital das fichas comerciais' },
+                    },
+                    {
                         path: 'alerts',
                         name: 'Alertas',
                         component: () => import('@/views/Office/Settings/Alerts/Index.vue'),

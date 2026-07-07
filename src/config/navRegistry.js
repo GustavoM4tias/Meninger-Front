@@ -229,6 +229,17 @@ export const navRegistry = [
         ],
     },
 
+    {
+        key: 'docusign',
+        label: 'DocuSign',
+        icon: 'fas fa-file-signature',
+        iconColor: '#4C00FF',
+        group: 'RECURSOS',
+        pages: [
+            { route: '/settings/docusign', name: 'Assinatura Digital', icon: 'fas fa-file-signature', iconColor: '#4C00FF', adminOnly: true },
+        ],
+    },
+
     // ═══ SISTEMA ════════════════════════════════════════════════════════════════
 
     // ── Administração ───────────────────────────────────────────────────────────

@@ -973,7 +973,7 @@ const isPrinting = ref(false);
 const showDocModal = ref(false);
 function openDoc() { showDocModal.value = true; }
 // Exposto p/ o índice flutuante do Detail acionar (printModule é function declaration, hoisted).
-defineExpose({ printModule, openDoc });
+defineExpose({ printModule, openDoc, buildPrintHtml });
 
 // Tela: mostra apenas módulo ativo. Impressão: todos os módulos.
 const displayModules = computed(() =>
@@ -1286,11 +1286,11 @@ function closeDocModal() {
 // ── Print (janela isolada) ─────────────────────────────────────────────────────
 
 
-async function printModule() {
-    showDocModal.value = false;
-
+// Monta o documento HTML completo da ficha (o mesmo do Exportar PDF).
+// Também é o documento enviado ao DocuSign no envelope de assinatura.
+async function buildPrintHtml() {
     const modules = props.localModules;
-    if (!modules.length) return;
+    if (!modules.length) return null;
 
     // Pré-gera QR Codes (data URLs) para todos os anexos antes de montar o HTML
     const qrCache = {};
@@ -1309,7 +1309,8 @@ async function printModule() {
     }
 
     const detail     = props.detail;
-    const enterprise = detail?.enterprise ?? {};
+    // Avulsa não tem enterprise — o título do PDF cai no display_name da ficha.
+    const enterprise = detail?.enterprise ?? { nome: detail?.display_name };
     const now        = new Date();
 
     const escapeHtml = (value) => String(value ?? '')
@@ -2650,6 +2651,14 @@ async function printModule() {
   </div>
 </body>
 </html>`;
+
+    return html;
+}
+
+async function printModule() {
+    showDocModal.value = false;
+    const html = await buildPrintHtml();
+    if (!html) return;
 
     const printWin = window.open('', '_blank', 'width=900,height=700,scrollbars=yes');
 

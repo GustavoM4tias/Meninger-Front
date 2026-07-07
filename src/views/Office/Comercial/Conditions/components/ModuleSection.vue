@@ -854,6 +854,7 @@
           :readonly="readonly"
           @update:campaigns="patchCampaigns"
           @save="$emit('save')"
+          @template-propagated="$emit('template-propagated', $event)"
         />
       </div>
 
@@ -1061,7 +1062,7 @@ const props = defineProps({
     hideChrome:         { type: Boolean,          default: false }, // esconde a nav própria quando o Detail tem a lateral
 });
 
-const emit = defineEmits(['update:modules', 'save', 'save-silent', 'copy', 'copy-from-enterprise', 'navigate-month', 'delete-module', 'update:activeIndex']);
+const emit = defineEmits(['update:modules', 'save', 'save-silent', 'copy', 'copy-from-enterprise', 'navigate-month', 'delete-module', 'update:activeIndex', 'template-propagated']);
 
 const store = useConditionsStore();
 
