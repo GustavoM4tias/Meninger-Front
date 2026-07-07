@@ -3,8 +3,8 @@
 
     <!-- Header -->
     <div class="flex items-center gap-3">
-      <div class="w-10 h-10 rounded-xl bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center">
-        <i class="fas fa-file-signature text-violet-600 dark:text-violet-400"></i>
+      <div class="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center">
+        <img src="/icons/docusign.svg" alt="DocuSign" class="w-10 h-10" />
       </div>
       <div>
         <h1 class="text-lg font-bold text-ink">DocuSign - Assinatura Digital</h1>
