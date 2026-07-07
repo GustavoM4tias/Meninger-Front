@@ -229,17 +229,6 @@ export const navRegistry = [
         ],
     },
 
-    {
-        key: 'docusign',
-        label: 'DocuSign',
-        icon: 'fas fa-file-signature',
-        iconColor: '#4C00FF',
-        group: 'RECURSOS',
-        pages: [
-            { route: '/settings/docusign', name: 'Assinatura Digital', icon: 'fas fa-file-signature', iconColor: '#4C00FF', adminOnly: true },
-        ],
-    },
-
     // ═══ SISTEMA ════════════════════════════════════════════════════════════════
 
     // ── Administração ───────────────────────────────────────────────────────────
@@ -271,6 +260,7 @@ export const navRegistry = [
                     { route: '/tools/validator', section: 'Validador', name: 'Validador', icon: 'fas fa-check-double' },
                     { route: '/tools/bucket-upload', section: 'Envio ao Bucket', name: 'Envio ao Bucket', icon: 'fas fa-cloud-arrow-up' },
                     { route: '/settings/backup-sienge', section: 'Backup Sienge', name: 'Backup Sienge', icon: 'fas fa-database', adminOnly: true },
+                    { route: '/settings/docusign', section: 'DocuSign', name: 'DocuSign', icon: 'fas fa-file-signature', iconImg: '/icons/docusign.svg', adminOnly: true },
                 ],
             },
             {
