@@ -228,6 +228,16 @@ export const useConditionsStore = defineStore('conditions', () => {
     async function testDocusign() {
         return await requestWithAuth(`${API_URL}/conditions/docusign/test`, { method: 'POST' });
     }
+    // Login "Conectar com DocuSign": retorna { url, redirect_uri } p/ redirecionar o navegador.
+    async function fetchDocusignOauthUrl() {
+        return await requestWithAuth(`${API_URL}/conditions/docusign/oauth-url`, {
+            method: 'POST',
+            body: JSON.stringify({ front: window.location.origin }),
+        });
+    }
+    async function disconnectDocusign() {
+        return await requestWithAuth(`${API_URL}/conditions/docusign/disconnect`, { method: 'POST' });
+    }
     async function fetchSignature(conditionId) {
         return await requestWithAuth(`${API_URL}/conditions/${conditionId}/signature`);
     }
@@ -385,6 +395,7 @@ export const useConditionsStore = defineStore('conditions', () => {
         linkSeriesToCv, fetchCvEnterprises,
         campaignTemplates, fetchCampaignTemplates, createCampaignTemplate, updateCampaignTemplate, fetchCampaignTemplateUsage,
         fetchDocusignSettings, updateDocusignSettings, fetchDocusignConsentUrl, testDocusign,
+        fetchDocusignOauthUrl, disconnectDocusign,
         fetchSignature, sendSignature, refreshSignature, voidSignature,
     };
 });
