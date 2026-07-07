@@ -10,13 +10,43 @@
             {{ campaigns.length }}
           </span>
         </div>
-        <button
-          v-if="!readonly"
-          @click="addCampaign"
-          class="flex items-center gap-2 px-3.5 py-2 text-xs font-semibold bg-blue-600 text-white rounded-lg hover:bg-accent-hover transition"
-        >
-          <i class="fas fa-plus text-xs"></i> Nova Campanha
-        </button>
+        <div v-if="!readonly" class="flex items-center gap-2">
+          <button
+            @click="toggleLibrary"
+            class="flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-accent bg-accent-soft border border-accent/20 rounded-lg hover:bg-accent-soft/70 transition"
+          >
+            <i class="fas fa-book-open text-xs"></i> Biblioteca
+          </button>
+          <button
+            @click="addCampaign"
+            class="flex items-center gap-2 px-3.5 py-2 text-xs font-semibold bg-blue-600 text-white rounded-lg hover:bg-accent-hover transition"
+          >
+            <i class="fas fa-plus text-xs"></i> Nova Campanha
+          </button>
+        </div>
+      </div>
+
+      <!-- Biblioteca: campanhas reutilizáveis entre empreendimentos -->
+      <div v-if="showLibrary && !readonly" class="px-5 py-4 border-b border-line bg-accent-soft/20">
+        <p class="text-[10px] font-bold text-ink-subtle uppercase tracking-wider mb-2">Usar campanha da biblioteca</p>
+        <div v-if="loadingLibrary" class="text-xs text-ink-subtle py-2"><i class="fas fa-spinner fa-spin mr-1"></i> Carregando...</div>
+        <div v-else-if="availableTemplates.length" class="space-y-1.5 max-h-56 overflow-y-auto">
+          <button v-for="t in availableTemplates" :key="t.id" @click="addFromTemplate(t)"
+            class="w-full flex items-center justify-between gap-3 px-3 py-2 text-left bg-surface-raised border border-line rounded-lg hover:border-accent/40 hover:bg-accent-soft/40 transition">
+            <span class="min-w-0">
+              <span class="block text-sm font-semibold text-ink truncate">{{ t.title }}</span>
+              <span v-if="t.description" class="block text-xs text-ink-subtle truncate">{{ t.description }}</span>
+            </span>
+            <span class="flex items-center gap-2 flex-shrink-0 text-xs">
+              <span v-if="t.value" class="font-semibold text-accent">{{ formatCurrency(t.value) }}</span>
+              <span class="text-ink-subtle">{{ t.usage_count }} uso(s)</span>
+              <i class="fas fa-plus text-accent"></i>
+            </span>
+          </button>
+        </div>
+        <p v-else class="text-xs text-ink-subtle italic py-2">
+          Nenhum modelo na biblioteca ainda. Abra uma campanha existente e use "Salvar como modelo" para começar.
+        </p>
       </div>
 
       <!-- Lista de campanhas -->
@@ -41,6 +71,9 @@
               </p>
             </div>
             <div class="flex items-center gap-2 flex-shrink-0">
+              <span v-if="camp.template_id" class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300 flex items-center gap-1" title="Campanha vinculada à biblioteca">
+                <i class="fas fa-link text-[9px]"></i> Vinculada
+              </span>
               <span v-if="camp.value" class="text-xs font-semibold text-accent">
                 {{ formatCurrency(camp.value) }}
               </span>
@@ -67,7 +100,31 @@
 
           <!-- Corpo da campanha -->
           <div v-show="expanded.has(i)" class="px-5 pb-5 pt-4 bg-gray-50/40 dark:bg-gray-800/20 border-t border-line">
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+            <!-- Vinculada: editar em todos ou desvincular -->
+            <div v-if="camp.template_id && !readonly" class="flex items-center justify-between gap-3 flex-wrap mb-4 px-3.5 py-2.5 bg-teal-50 dark:bg-teal-900/20 border border-teal-200 dark:border-teal-800 rounded-lg">
+              <p class="text-xs text-teal-800 dark:text-teal-300">
+                <i class="fas fa-link mr-1"></i>
+                Campanha <strong>vinculada à biblioteca</strong> — escolha como editar.
+              </p>
+              <div class="flex items-center gap-2">
+                <button @click="openTemplateEditor(camp)" class="px-3 py-1.5 text-xs font-semibold text-white bg-teal-600 rounded-lg hover:bg-teal-700 transition">
+                  <i class="fas fa-pen text-[10px] mr-1"></i> Editar em todos
+                </button>
+                <button @click="unlinkCampaign(i)" class="px-3 py-1.5 text-xs font-semibold text-teal-700 dark:text-teal-300 border border-teal-300 dark:border-teal-700 rounded-lg hover:bg-teal-100 dark:hover:bg-teal-900/40 transition">
+                  <i class="fas fa-link-slash text-[10px] mr-1"></i> Editar só aqui
+                </button>
+              </div>
+            </div>
+
+            <!-- Não vinculada: salvar na biblioteca p/ reusar em outros empreendimentos -->
+            <div v-else-if="!camp.template_id && !readonly && camp.title" class="flex justify-end mb-3">
+              <button @click="saveAsTemplate(i)" :disabled="savingTemplate" class="px-3 py-1.5 text-xs font-semibold text-accent bg-accent-soft border border-accent/20 rounded-lg hover:bg-accent-soft/70 disabled:opacity-50 transition">
+                <i :class="savingTemplate ? 'fa-spinner fa-spin' : 'fa-book-bookmark'" class="fas text-[10px] mr-1"></i> Salvar como modelo
+              </button>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4" :class="camp.template_id ? 'opacity-60 pointer-events-none select-none' : ''">
 
               <div class="sm:col-span-2">
                 <label class="lbl">Título da Campanha</label>
@@ -201,18 +258,93 @@
       <!-- Campanhas salvam junto com o módulo (botão único de Salvar no rodapé do módulo). -->
     </div>
 
+    <!-- Modal: editar modelo em TODOS os empreendimentos vinculados -->
+    <div v-if="tplModal.open" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" @click.self="tplModal.open = false">
+      <div class="bg-surface-raised rounded-2xl shadow-2xl w-full max-w-lg border border-line max-h-[85vh] flex flex-col">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-line">
+          <div class="flex items-center gap-2">
+            <i class="fas fa-pen text-teal-500"></i>
+            <h2 class="text-base font-bold text-ink">Editar campanha em todos</h2>
+          </div>
+          <button @click="tplModal.open = false" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-surface-hover transition">
+            <i class="fas fa-times text-sm"></i>
+          </button>
+        </div>
+        <div class="px-6 py-5 space-y-4 overflow-y-auto">
+          <div class="flex items-start gap-3 p-3.5 bg-teal-50 dark:bg-teal-900/20 border border-teal-200 dark:border-teal-800 rounded-xl text-teal-800 dark:text-teal-300 text-xs">
+            <i class="fas fa-circle-info flex-shrink-0 mt-0.5"></i>
+            <p v-if="tplModal.usage">
+              Este modelo é usado em <strong>{{ tplModal.usage.total }}</strong> campanha(s), em <strong>{{ tplModal.usage.rows.length }}</strong> ficha(s).
+              A edição atualiza <strong>{{ tplModal.usage.editable }}</strong> ficha(s) em rascunho — autorizadas e encerradas não mudam (histórico preservado).
+            </p>
+            <p v-else>Carregando onde este modelo é usado...</p>
+          </div>
+          <div>
+            <label class="lbl">Título</label>
+            <input v-model="tplModal.fields.title" type="text" class="inp" />
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="lbl">Início da Vigência</label>
+              <input v-model="tplModal.fields.start_date" type="date" class="inp" />
+            </div>
+            <div>
+              <label class="lbl">Fim da Vigência</label>
+              <input v-model="tplModal.fields.end_date" type="date" class="inp" />
+            </div>
+            <div>
+              <label class="lbl">Valor (se aplicável)</label>
+              <div class="relative">
+                <span class="pfx">R$</span>
+                <input v-model.number="tplModal.fields.value" type="number" step="100" class="inp-pfx" placeholder="0,00" />
+              </div>
+            </div>
+            <div>
+              <label class="lbl">Pago por</label>
+              <select v-model="tplModal.fields.paid_by" class="inp">
+                <option :value="null">Não se aplica</option>
+                <option value="menin">Menin</option>
+                <option value="client">Cliente</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label class="lbl">Descrição</label>
+            <textarea v-model="tplModal.fields.description" rows="2" class="inp resize-none" />
+          </div>
+          <div>
+            <label class="lbl">Regulamento / Regras</label>
+            <textarea v-model="tplModal.fields.rules" rows="3" class="inp resize-none" />
+          </div>
+        </div>
+        <div class="flex justify-end gap-3 px-6 py-4 border-t border-line">
+          <button @click="tplModal.open = false" class="px-4 py-2.5 text-sm font-medium text-ink-muted hover:text-gray-800 dark:hover:text-white transition">
+            Cancelar
+          </button>
+          <button @click="saveTemplateForAll" :disabled="tplModal.saving || !tplModal.fields.title"
+            class="flex items-center gap-2 px-5 py-2.5 bg-teal-600 text-white text-sm font-semibold rounded-xl hover:bg-teal-700 disabled:opacity-50 transition">
+            <i :class="tplModal.saving ? 'fa-spinner fa-spin' : 'fa-check'" class="fas text-xs"></i>
+            {{ tplModal.saving ? 'Aplicando...' : `Aplicar em todos${tplModal.usage ? ` (${tplModal.usage.editable} ficha(s))` : ''}` }}
+          </button>
+        </div>
+      </div>
+    </div>
+
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
+import { useConditionsStore } from '@/stores/Comercial/Conditions/conditionsStore';
 
 const props = defineProps({
     campaigns: { type: Array,   default: () => [] },
     saving:    { type: Boolean, default: false },
     readonly:  { type: Boolean, default: false },
 });
-const emit = defineEmits(['update:campaigns', 'save']);
+const emit = defineEmits(['update:campaigns', 'save', 'template-propagated']);
+
+const store = useConditionsStore();
 
 const expanded = ref(new Set());
 
@@ -258,6 +390,116 @@ function formatDateRange(start, end) {
     if (!start) return '';
     const fmt = (d) => { const [y, m, day] = d.split('-'); return `${day}/${m}/${y}`; };
     return end ? `${fmt(start)} a ${fmt(end)}` : `a partir de ${fmt(start)}`;
+}
+
+// ── Biblioteca de campanhas (reuso entre empreendimentos) ─────────────────────
+
+const showLibrary = ref(false);
+const loadingLibrary = ref(false);
+const savingTemplate = ref(false);
+
+// Esconde modelos já vinculados a alguma campanha deste módulo.
+const availableTemplates = computed(() => {
+    const used = new Set(props.campaigns.map(c => c.template_id).filter(Boolean));
+    return (store.campaignTemplates ?? []).filter(t => !used.has(t.id));
+});
+
+async function toggleLibrary() {
+    showLibrary.value = !showLibrary.value;
+    if (showLibrary.value && !store.campaignTemplates.length) {
+        loadingLibrary.value = true;
+        await store.fetchCampaignTemplates();
+        loadingLibrary.value = false;
+    }
+}
+
+function addFromTemplate(t) {
+    const updated = [...props.campaigns, {
+        template_id: t.id,
+        title: t.title,
+        description: t.description,
+        rules: t.rules,
+        start_date: t.start_date,
+        end_date: t.end_date,
+        value: t.value,
+        paid_by: t.paid_by ?? null,
+        is_active: true,
+        sort_order: props.campaigns.length,
+    }];
+    emit('update:campaigns', updated);
+    showLibrary.value = false;
+    const s = new Set(expanded.value);
+    s.add(updated.length - 1);
+    expanded.value = s;
+}
+
+function unlinkCampaign(i) {
+    if (!window.confirm('Desvincular do modelo? A campanha vira uma variação local desta ficha (edições não afetam os outros empreendimentos).')) return;
+    patchCamp(i, 'template_id', null);
+}
+
+// Promove uma campanha local a modelo da biblioteca (e vincula a origem).
+async function saveAsTemplate(i) {
+    const camp = props.campaigns[i];
+    if (!camp?.title) return;
+    savingTemplate.value = true;
+    try {
+        const t = await store.createCampaignTemplate({
+            title: camp.title,
+            description: camp.description,
+            rules: camp.rules,
+            start_date: camp.start_date,
+            end_date: camp.end_date,
+            value: camp.value,
+            paid_by: camp.paid_by ?? null,
+            from_campaign_id: camp.id ?? null,
+        });
+        patchCamp(i, 'template_id', t.id);
+    } catch (e) {
+        window.alert(e.message || 'Erro ao salvar modelo.');
+    } finally {
+        savingTemplate.value = false;
+    }
+}
+
+// ── Modal: editar o modelo em TODOS os vinculados (só fichas rascunho) ────────
+
+const tplModal = ref({ open: false, id: null, fields: {}, usage: null, saving: false });
+
+async function openTemplateEditor(camp) {
+    tplModal.value = {
+        open: true,
+        id: camp.template_id,
+        saving: false,
+        usage: null,
+        fields: {
+            title: camp.title,
+            description: camp.description,
+            rules: camp.rules,
+            start_date: camp.start_date,
+            end_date: camp.end_date,
+            value: camp.value,
+            paid_by: camp.paid_by ?? null,
+        },
+    };
+    try { tplModal.value.usage = await store.fetchCampaignTemplateUsage(camp.template_id); }
+    catch (e) { console.warn('[CampaignManager] usage:', e.message); }
+}
+
+async function saveTemplateForAll() {
+    const m = tplModal.value;
+    if (!m.id || !m.fields.title) return;
+    m.saving = true;
+    try {
+        await store.updateCampaignTemplate(m.id, { ...m.fields, propagate: true });
+        // O backend já persistiu nas fichas rascunho (incluindo esta); o Detail
+        // sincroniza as cópias locais de TODOS os módulos sem marcar isDirty.
+        emit('template-propagated', { templateId: m.id, fields: { ...m.fields } });
+        tplModal.value = { open: false, id: null, fields: {}, usage: null, saving: false };
+    } catch (e) {
+        window.alert(e.message || 'Erro ao atualizar o modelo.');
+        m.saving = false;
+    }
 }
 </script>
 

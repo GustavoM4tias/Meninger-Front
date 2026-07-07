@@ -26,7 +26,24 @@ const form = ref({
   editor_user_ids: [],
   authorizer_user_ids: [],
   auto_generate_conditions: true,
+  signature_config: { enabled: false, placement: 'final', require_initials: false, signers: [] },
 });
+
+// ── Assinatura (DocuSign): assinantes na ordem de assinatura ──────────────────
+function addSigner() {
+  form.value.signature_config.signers.push({ name: '', email: '', order: form.value.signature_config.signers.length + 1 });
+}
+function removeSigner(i) {
+  form.value.signature_config.signers.splice(i, 1);
+  form.value.signature_config.signers.forEach((s, idx) => { s.order = idx + 1; });
+}
+function moveSigner(i, dir) {
+  const arr = form.value.signature_config.signers;
+  const j = i + dir;
+  if (j < 0 || j >= arr.length) return;
+  [arr[i], arr[j]] = [arr[j], arr[i]];
+  arr.forEach((s, idx) => { s.order = idx + 1; });
+}
 
 function filterUsers(q) {
   const s = (q || '').toLowerCase().trim();
@@ -55,6 +72,12 @@ async function handleSave() {
       editor_user_ids: form.value.editor_user_ids,
       authorizer_user_ids: form.value.authorizer_user_ids,
       auto_generate_conditions: form.value.auto_generate_conditions,
+      signature_config: {
+        ...form.value.signature_config,
+        signers: form.value.signature_config.signers
+          .filter(s => s.name?.trim() && s.email?.trim())
+          .map((s, i) => ({ name: s.name.trim(), email: s.email.trim(), order: i + 1 })),
+      },
     });
     saved.value = true;
     setTimeout(() => { saved.value = false; }, 3000);
@@ -70,10 +93,17 @@ onMounted(async () => {
     await Promise.all([store.fetchSettings(), store.fetchOfficeUsers()]);
     officeUsers.value = store.officeUsers;
     if (store.settings) {
+      const sig = store.settings.signature_config ?? {};
       form.value = {
         editor_user_ids: [...(store.settings.editor_user_ids ?? [])],
         authorizer_user_ids: [...(store.settings.authorizer_user_ids ?? [])],
         auto_generate_conditions: store.settings.auto_generate_conditions ?? true,
+        signature_config: {
+          enabled: sig.enabled ?? false,
+          placement: sig.placement === 'livre' ? 'livre' : 'final',
+          require_initials: sig.require_initials ?? false,
+          signers: (sig.signers ?? []).map((s, i) => ({ name: s.name ?? '', email: s.email ?? '', order: s.order ?? i + 1 })),
+        },
       };
     }
   } finally {
@@ -182,6 +212,69 @@ onMounted(async () => {
               </div>
               <Switch v-model="form.auto_generate_conditions" />
             </div>
+          </Surface>
+
+          <!-- Assinatura DocuSign -->
+          <Surface variant="raised" padding="lg" class="space-y-4">
+            <div class="flex items-start justify-between gap-4">
+              <div class="flex items-center gap-2">
+                <i class="fas fa-file-signature text-violet-500"></i>
+                <h2 class="text-xs font-bold text-ink uppercase tracking-wider font-mono">Assinatura (DocuSign) após autorização</h2>
+              </div>
+              <Switch v-model="form.signature_config.enabled" />
+            </div>
+            <p class="text-xs text-ink-muted leading-relaxed -mt-2">
+              Com a assinatura ativa, fichas <strong>autorizadas</strong> podem ser enviadas ao DocuSign na aba Assinatura.
+              As credenciais da integração ficam em <RouterLink to="/settings/docusign" class="text-accent underline">Configurações → DocuSign</RouterLink> (admin).
+            </p>
+
+            <template v-if="form.signature_config.enabled">
+              <!-- Modo de assinatura -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <p class="text-xs font-semibold text-ink-muted uppercase tracking-wide mb-1.5">Como assinar</p>
+                  <div class="flex gap-2">
+                    <label v-for="opt in [{ v: 'final', l: 'Ao final do documento' }, { v: 'livre', l: 'Posição livre' }]" :key="opt.v"
+                      class="flex-1 flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer text-sm transition"
+                      :class="form.signature_config.placement === opt.v ? 'border-accent bg-accent-soft text-accent font-semibold' : 'border-line text-ink-muted'">
+                      <input type="radio" :value="opt.v" v-model="form.signature_config.placement" class="sr-only" />
+                      {{ opt.l }}
+                    </label>
+                  </div>
+                </div>
+                <div class="flex items-end">
+                  <label class="flex items-center gap-2.5 px-3 py-2 rounded-lg border border-line cursor-pointer text-sm text-ink-muted w-full">
+                    <input type="checkbox" v-model="form.signature_config.require_initials" class="w-4 h-4 accent-violet-600 rounded" />
+                    Exigir rubrica junto à assinatura
+                  </label>
+                </div>
+              </div>
+
+              <!-- Assinantes -->
+              <div>
+                <div class="flex items-center justify-between mb-2">
+                  <p class="text-xs font-semibold text-ink-muted uppercase tracking-wide">Assinantes (na ordem de assinatura)</p>
+                  <button @click="addSigner" class="px-3 py-1.5 text-xs font-semibold text-accent bg-accent-soft border border-accent/20 rounded-lg hover:bg-accent-soft/70 transition">
+                    <i class="fas fa-plus mr-1"></i> Adicionar
+                  </button>
+                </div>
+                <div v-if="form.signature_config.signers.length" class="space-y-2">
+                  <div v-for="(sg, i) in form.signature_config.signers" :key="i" class="flex items-center gap-2">
+                    <span class="w-6 text-center text-xs font-bold text-ink-subtle flex-shrink-0">{{ i + 1 }}º</span>
+                    <input v-model="sg.name" type="text" placeholder="Nome completo"
+                      class="flex-1 min-w-0 px-3 py-2 text-sm text-ink bg-surface-sunken/60 border border-line rounded-lg outline-none focus:border-accent/40 transition" />
+                    <input v-model="sg.email" type="email" placeholder="email@exemplo.com"
+                      class="flex-1 min-w-0 px-3 py-2 text-sm text-ink bg-surface-sunken/60 border border-line rounded-lg outline-none focus:border-accent/40 transition" />
+                    <div class="flex items-center gap-0.5 flex-shrink-0">
+                      <button @click="moveSigner(i, -1)" :disabled="i === 0" class="w-7 h-7 rounded-md text-ink-subtle hover:bg-surface-sunken disabled:opacity-30 transition"><i class="fas fa-chevron-up text-xs"></i></button>
+                      <button @click="moveSigner(i, 1)" :disabled="i === form.signature_config.signers.length - 1" class="w-7 h-7 rounded-md text-ink-subtle hover:bg-surface-sunken disabled:opacity-30 transition"><i class="fas fa-chevron-down text-xs"></i></button>
+                      <button @click="removeSigner(i)" class="w-7 h-7 rounded-md text-ink-subtle hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition"><i class="fas fa-trash text-xs"></i></button>
+                    </div>
+                  </div>
+                </div>
+                <p v-else class="text-xs text-ink-subtle italic py-2">Nenhum assinante — adicione ao menos um.</p>
+              </div>
+            </template>
           </Surface>
 
           <!-- Erro / Sucesso -->

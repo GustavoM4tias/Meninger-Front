@@ -609,6 +609,7 @@
             @copy-from-enterprise="handleCopyFromEnterprise"
             @navigate-month="navigateToMonth"
             @delete-module="handleDeleteModule"
+            @template-propagated="handleTemplatePropagated"
           />
         </div>
 
@@ -636,6 +637,16 @@
             @authorize="handleAuthorize"
             @unlock="showUnlockModal = true"
             @cancel-approval="showCancelApprovalModal = true"
+          />
+        </div>
+
+        <!-- Assinatura (DocuSign) -->
+        <div v-if="activeTab === 'signature'">
+          <SignaturePanel
+            :detail="detail"
+            :can-authorize="canAuthorize"
+            :get-document-html="() => summaryRef?.buildPrintHtml?.()"
+            @changed="reloadAfterSignature"
           />
         </div>
 
@@ -741,6 +752,7 @@ import { useConditionsStore } from '@/stores/Comercial/Conditions/conditionsStor
 import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 import ModuleSection from './components/ModuleSection.vue';
 import SummaryExport from './components/SummaryExport.vue';
+import SignaturePanel from './components/SignaturePanel.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -853,6 +865,7 @@ const STATUS_MAP = {
 const ALL_TABS = [
     { id: 'modules', label: 'Módulos', icon: 'fas fa-layer-group', adminOnly: false },
     { id: 'summary', label: 'Resumo',  icon: 'fas fa-file-pdf',    adminOnly: false },
+    { id: 'signature', label: 'Assinatura', icon: 'fas fa-file-signature', adminOnly: false },
     { id: 'history', label: 'Histórico', icon: 'fas fa-timeline',  adminOnly: false },
 ];
 
@@ -1434,6 +1447,26 @@ async function handleSaveModulesSilent(modulesPayload = null) {
     } while (pendingSilent);
 }
 
+// Propagação da biblioteca de campanhas: o backend já atualizou as instâncias das
+// fichas em rascunho (incluindo esta); aqui só sincronizamos as cópias locais de
+// TODOS os módulos, sem marcar isDirty (nada pendente de salvar).
+function handleTemplatePropagated({ templateId, fields }) {
+    localModules.value = localModules.value.map(m => ({
+        ...m,
+        campaigns: (m.campaigns ?? []).map(c =>
+            c.template_id === templateId ? { ...c, ...fields } : c
+        ),
+    }));
+    showToast('Campanha atualizada em todos os empreendimentos vinculados (fichas em rascunho).');
+}
+
+// Após ações de assinatura (enviar/anular/concluir), recarrega a ficha para a
+// timeline refletir os eventos. Ficha autorizada está bloqueada — sem edições a perder.
+async function reloadAfterSignature() {
+    await store.fetchDetail(detail.value.id);
+    if (store.detail) populateFromDetail(store.detail);
+}
+
 async function handleDeleteModule(moduleId) {
     try {
         await store.deleteModule(detail.value.id, moduleId);
@@ -1534,6 +1567,10 @@ const EVENT_META = {
     modules_updated:         { label: 'Módulo(s) adicionado(s)',         icon: 'fa-layer-group',   cls: 'bg-blue-100 text-blue-600 dark:bg-blue-900/30',       type: 'change' },
     module_edited:           { label: 'Módulo editado',                 icon: 'fa-pen',           cls: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',   type: 'change' },
     linked_to_cv:            { label: 'Vinculada ao CV',                icon: 'fa-link',          cls: 'bg-teal-100 text-teal-700 dark:bg-teal-900/30',       type: 'approval' },
+    campaign_template_updated: { label: 'Campanha atualizada via biblioteca', icon: 'fa-bullhorn', cls: 'bg-teal-100 text-teal-700 dark:bg-teal-900/30',  type: 'change' },
+    signature_sent:      { label: 'Enviada para assinatura (DocuSign)', icon: 'fa-file-signature', cls: 'bg-violet-100 text-violet-700 dark:bg-violet-900/30', type: 'approval' },
+    signature_completed: { label: 'Documento assinado por todos',       icon: 'fa-file-circle-check', cls: 'bg-green-100 text-green-700 dark:bg-green-900/30', type: 'approval' },
+    signature_voided:    { label: 'Envelope de assinatura anulado',     icon: 'fa-ban',            cls: 'bg-gray-200 text-gray-700 dark:bg-gray-800 dark:text-gray-300', type: 'approval' },
 };
 function eventLabel(action)     { return EVENT_META[action]?.label    ?? action; }
 function eventIcon(action)      { return EVENT_META[action]?.icon     ?? 'fa-circle'; }
