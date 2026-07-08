@@ -163,6 +163,39 @@
           </div>
           <iframe :src="current.signed_doc_url" class="w-full bg-white" style="height: 560px; border: 0;" title="PDF assinado"></iframe>
         </div>
+
+        <!-- Concluído + ficha reautorizada: nova rodada de assinatura -->
+        <div v-if="current.status === 'completed' && canAuthorize && detail.status === 'approved'" class="bg-surface-raised rounded-2xl border border-line shadow-sm p-5 flex items-center justify-between gap-3 flex-wrap">
+          <p class="text-xs text-ink-muted">
+            <i class="fas fa-rotate mr-1"></i>
+            Ficha alterada e reautorizada depois desta assinatura? Envie uma nova rodada — o documento assinado acima fica preservado nos envelopes anteriores.
+          </p>
+          <button @click="send" :disabled="sending"
+            class="flex items-center gap-2 px-4 py-2 bg-violet-600 text-white text-xs font-semibold rounded-xl hover:bg-violet-700 disabled:opacity-50 transition">
+            <i :class="sending ? 'fa-spinner fa-spin' : 'fa-paper-plane'" class="fas text-xs"></i>
+            {{ sending ? 'Enviando...' : 'Enviar nova assinatura' }}
+          </button>
+        </div>
+
+        <!-- Envelopes anteriores (rodadas antigas ficam guardadas) -->
+        <div v-if="previousEnvelopes.length" class="bg-surface-raised rounded-2xl border border-line shadow-sm overflow-hidden">
+          <div class="px-5 py-3 border-b border-line bg-gray-50/60 dark:bg-gray-800/40">
+            <p class="text-[11px] font-bold text-ink-subtle uppercase tracking-wider"><i class="fas fa-clock-rotate-left mr-1.5"></i> Envelopes anteriores ({{ previousEnvelopes.length }})</p>
+          </div>
+          <div class="divide-y divide-line">
+            <div v-for="env in previousEnvelopes" :key="env.id" class="px-5 py-2.5 flex items-center justify-between gap-3 text-xs flex-wrap">
+              <span class="text-ink-muted">
+                Enviado {{ formatDate(env.sent_at) }}<template v-if="env.completed_at"> · concluído {{ formatDate(env.completed_at) }}</template>
+              </span>
+              <span class="flex items-center gap-2">
+                <span :class="statusChip(env.status)" class="px-2 py-0.5 rounded-full text-[10px] font-semibold">{{ statusLabel(env.status) }}</span>
+                <a v-if="env.signed_doc_url" :href="env.signed_doc_url" target="_blank" rel="noopener" class="text-green-600 dark:text-green-400 font-semibold hover:underline">
+                  <i class="fas fa-download mr-1"></i>PDF assinado
+                </a>
+              </span>
+            </div>
+          </div>
+        </div>
       </template>
 
       <div v-if="info" class="px-3.5 py-2.5 rounded-lg text-xs bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400">
@@ -259,6 +292,10 @@ function isStaleDelivery(sg) {
 }
 
 const eventsList = computed(() => [...(current.value?.raw?.events ?? [])].reverse());
+
+// Rodadas antigas de assinatura (ficam guardadas; a mais recente é a vigente).
+const previousEnvelopes = computed(() =>
+    (state.value.history ?? []).filter(h => h.id !== current.value?.id));
 
 const EVENT_TYPES = {
     sent:      { icon: 'fa-paper-plane',   color: '#7c3aed', text: e => `Enviado para ${(e.emails ?? []).join(', ')}${e.by ? ` por ${e.by}` : ''}` },
