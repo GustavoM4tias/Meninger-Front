@@ -14,7 +14,7 @@
             <div class="flex items-center gap-2">
               <i class="fas fa-file-contract text-blue-500"></i>
               <span class="text-sm font-bold text-ink">
-                Ficha Comercial — {{ detail?.enterprise?.nome }}
+                Ficha Comercial — {{ detail?.enterprise?.nome ?? detail?.display_name ?? '' }}
                 <span class="ml-2 text-xs font-normal text-gray-400 dark:text-slate-500">{{ currentMonthLabel }}</span>
               </span>
             </div>
@@ -226,7 +226,7 @@
           <div class="flex items-start justify-between gap-4 flex-wrap">
             <div class="min-w-0">
               <p class="doc-eyebrow">Ficha Comercial</p>
-              <h1 class="doc-title">{{ detail?.enterprise?.nome ?? '—' }}</h1>
+              <h1 class="doc-title">{{ detail?.enterprise?.nome ?? detail?.display_name ?? '(Ficha sem nome)' }}</h1>
               <div class="flex items-center gap-2 flex-wrap mt-1.5">
                 <span class="doc-meta-chip"><i class="fas fa-map-marker-alt text-[10px]"></i> {{ detail?.enterprise?.cidade ?? '—' }}</span>
                 <span class="doc-meta-chip"><i class="fas fa-calendar text-[10px]"></i> {{ currentMonthLabel }}</span>
