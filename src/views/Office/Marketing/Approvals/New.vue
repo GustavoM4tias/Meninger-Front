@@ -22,21 +22,40 @@
                         </div>
                         <div>
                             <label class="text-[11px] font-medium text-ink-muted mb-1.5 block">
-                                Valor (R$) <span class="text-red-500">*</span>
+                                Perfis de autorização <span class="text-red-500">*</span>
                             </label>
-                            <Input v-model="amountInput" inputmode="decimal" placeholder="0,00" required />
+                            <MultiSelector :model-value="profileSelection" @update:modelValue="v => profileSelection = Array.isArray(v) ? v : []"
+                                :options="profileOptions" placeholder="Quem precisa autorizar" />
                         </div>
                     </div>
+                    <p class="text-[11px] text-ink-subtle -mt-2">
+                        Todos os perfis selecionados precisam aprovar. Qualquer reprovação encerra a solicitação.
+                    </p>
 
+                    <!-- Itens -->
                     <div>
                         <label class="text-[11px] font-medium text-ink-muted mb-1.5 block">
-                            Perfis de autorização <span class="text-red-500">*</span>
+                            Itens da solicitação <span class="text-red-500">*</span>
                         </label>
-                        <MultiSelector :model-value="profileSelection" @update:modelValue="v => profileSelection = Array.isArray(v) ? v : []"
-                            :options="profileOptions" placeholder="Quem precisa autorizar" />
-                        <p class="text-[11px] text-ink-subtle mt-1">
-                            Todos os perfis selecionados precisam aprovar. Qualquer reprovação encerra a solicitação.
-                        </p>
+                        <div v-for="(it, i) in items" :key="i" class="border border-line rounded-lg p-3 mb-2 bg-surface-sunken/30">
+                            <div class="grid grid-cols-1 sm:grid-cols-12 gap-2">
+                                <Input class="sm:col-span-5" v-model="it.name" placeholder="Item (ex: Outdoor Av. Brasil)" />
+                                <Input class="sm:col-span-5" v-model="it.description" placeholder="Descrição (opcional)" />
+                                <Input class="sm:col-span-2" v-model="it.amount" inputmode="decimal" placeholder="0,00" />
+                            </div>
+                            <div class="flex justify-end mt-1">
+                                <button type="button" class="text-[11px] text-red-500 hover:text-red-600 disabled:opacity-40"
+                                    :disabled="items.length === 1" @click="removeItem(i)">
+                                    <i class="fas fa-trash-can mr-1"></i>Remover item
+                                </button>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between mt-1">
+                            <Button type="button" variant="secondary" size="sm" icon="fas fa-plus" @click="addItem">Adicionar item</Button>
+                            <div class="text-sm text-ink">
+                                Total: <span class="font-mono font-bold tabular-nums text-accent">{{ fmtBRL(total) }}</span>
+                            </div>
+                        </div>
                     </div>
 
                     <div>
@@ -47,15 +66,6 @@
                             <i class="fas fa-triangle-exclamation mr-1"></i>
                             Sienge indisponível no momento — deixe em branco e vincule depois.
                         </p>
-                    </div>
-
-                    <div>
-                        <label class="text-[11px] font-medium text-ink-muted mb-1.5 block">
-                            Descrição da solicitação <span class="text-red-500">*</span>
-                        </label>
-                        <textarea v-model="form.description" rows="3" required
-                            class="w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink placeholder:text-ink-subtle focus:outline-none focus:ring-2 focus:ring-accent/40"
-                            placeholder="O que está sendo solicitado"></textarea>
                     </div>
 
                     <div>
@@ -92,7 +102,7 @@
                             <li v-for="(att, i) in attachments" :key="att.url"
                                 class="flex items-center gap-2 text-sm text-ink-muted bg-surface-sunken rounded-lg px-3 py-1.5">
                                 <i class="fas fa-file text-ink-subtle text-xs"></i>
-                                <span class="flex-1 truncate">{{ att.file_name }}</span>
+                                <button type="button" class="flex-1 truncate text-left hover:text-accent" @click="viewerAtt = att">{{ att.file_name }}</button>
                                 <button type="button" class="text-red-500 hover:text-red-600" @click="attachments.splice(i, 1)">
                                     <i class="fas fa-xmark"></i>
                                 </button>
@@ -109,6 +119,8 @@
                 </form>
             </Surface>
         </PageContainer>
+
+        <AttachmentViewerModal v-if="viewerAtt" :attachment="viewerAtt" @close="viewerAtt = null" />
     </div>
 </template>
 
@@ -126,22 +138,26 @@ import Button from '@/components/UI/Button.vue';
 import Select from '@/components/UI/Select.vue';
 import Input from '@/components/UI/Input.vue';
 import MultiSelector from '@/components/UI/MultiSelector.vue';
+import AttachmentViewerModal from '@/views/Office/Checklist/components/AttachmentViewerModal.vue';
 
 const store = useApprovalsStore();
 const router = useRouter();
 const toast = useToast();
 
-const form = ref({ type_key: '', description: '', justification: '', supplier: '', due_date: '' });
-const amountInput = ref('');
+const form = ref({ type_key: '', justification: '', supplier: '', due_date: '' });
+const items = ref([{ name: '', description: '', amount: '' }]);
 const profileSelection = ref([]);
 const ccSelection = ref([]);
 const attachments = ref([]);
 const uploading = ref(false);
 const fileInput = ref(null);
+const viewerAtt = ref(null);
 
 // MultiSelector usa strings puras → nome do perfil + mapa p/ id.
 const profileOptions = computed(() => store.activeProfiles.map((p) => p.name));
 const profileIdByName = computed(() => new Map(store.activeProfiles.map((p) => [p.name, p.id])));
+
+const total = computed(() => items.value.reduce((s, it) => s + (parseAmount(it.amount) || 0), 0));
 
 function parseAmount(str) {
     // Aceita "1.234,56", "1234,56" e "1234.56".
@@ -150,6 +166,9 @@ function parseAmount(str) {
     const normalized = s.includes(',') ? s.replace(/\./g, '').replace(',', '.') : s;
     return Number(normalized);
 }
+
+function addItem() { items.value.push({ name: '', description: '', amount: '' }); }
+function removeItem(i) { if (items.value.length > 1) items.value.splice(i, 1); }
 
 async function onFilesPicked(ev) {
     const files = Array.from(ev.target.files || []);
@@ -174,9 +193,15 @@ async function onFilesPicked(ev) {
     }
 }
 
+const fmtBRL = (v) => Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
 async function submit() {
-    const amount = parseAmount(amountInput.value);
-    if (!Number.isFinite(amount) || amount < 0) return toast.error('Informe um valor (R$) válido.');
+    const parsedItems = items.value
+        .map((it) => ({ name: (it.name || '').trim(), description: (it.description || '').trim(), amount: parseAmount(it.amount) }))
+        .filter((it) => it.name || Number.isFinite(it.amount));
+    if (!parsedItems.length || parsedItems.some((it) => !it.name || !Number.isFinite(it.amount) || it.amount < 0)) {
+        return toast.error('Cada item precisa de um nome e um valor válido.');
+    }
     const auth_profile_ids = profileSelection.value
         .map((name) => profileIdByName.value.get(name)).filter(Boolean);
     if (!auth_profile_ids.length) return toast.error('Selecione ao menos um perfil de autorização.');
@@ -187,7 +212,7 @@ async function submit() {
     try {
         const created = await store.createRequest({
             ...form.value,
-            amount,
+            items: parsedItems,
             auth_profile_ids,
             cost_center_id,
             attachments: attachments.value,
