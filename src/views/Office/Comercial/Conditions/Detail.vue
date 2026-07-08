@@ -323,6 +323,56 @@
       </div>
     </transition>
 
+    <!-- Modal: Renomear ficha avulsa -->
+    <transition name="fade">
+      <div
+        v-if="showRenameModal"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+        @click.self="showRenameModal = false"
+      >
+        <div class="bg-surface-raised rounded-2xl shadow-2xl w-full max-w-md border border-line">
+          <div class="flex items-center justify-between px-6 py-4 border-b border-line">
+            <div class="flex items-center gap-2">
+              <i class="fas fa-pen text-accent"></i>
+              <h2 class="text-base font-bold text-ink">Renomear ficha</h2>
+            </div>
+            <button @click="showRenameModal = false" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-surface-hover transition">
+              <i class="fas fa-times text-sm"></i>
+            </button>
+          </div>
+          <div class="px-6 py-5 space-y-4">
+            <div>
+              <label class="block text-xs font-semibold text-ink-muted uppercase tracking-wide mb-1.5">Nome da ficha</label>
+              <input
+                v-model="renameValue"
+                type="text"
+                placeholder="Ex: RESIDENCIAL SANTA STELLA"
+                class="w-full px-3.5 py-2.5 text-sm text-ink bg-surface-raised/60 border border-line rounded-md shadow-sm placeholder:text-gray-400 dark:placeholder:text-slate-500 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/15 transition"
+                @keyup.enter="handleRename"
+              />
+            </div>
+            <label class="flex items-center gap-2.5 px-3 py-2 rounded-lg border border-line cursor-pointer text-sm text-ink-muted">
+              <input type="checkbox" v-model="renameSeries" class="w-4 h-4 accent-blue-600 rounded" />
+              Aplicar a todos os meses desta série ({{ detail?.history?.length ?? 1 }} ficha(s))
+            </label>
+          </div>
+          <div class="flex justify-end gap-3 px-6 pb-5">
+            <button @click="showRenameModal = false" class="px-4 py-2.5 text-sm font-medium text-ink-muted hover:text-gray-800 dark:hover:text-white transition">
+              Cancelar
+            </button>
+            <button
+              @click="handleRename"
+              :disabled="renaming || !renameValue.trim()"
+              class="flex items-center gap-2 px-5 py-2.5 bg-accent text-white text-sm font-semibold rounded-xl hover:bg-accent-hover disabled:opacity-50 transition"
+            >
+              <i :class="renaming ? 'fa-spinner fa-spin' : 'fa-check'" class="fas text-xs"></i>
+              {{ renaming ? 'Salvando...' : 'Renomear' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </transition>
+
     <!-- Erro de carregamento -->
     <div v-if="fetchError && !detail" class="flex flex-col items-center justify-center py-24 text-center px-4">
       <div class="w-14 h-14 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mb-4">
@@ -357,6 +407,14 @@
                   <h1 class="text-lg lg:text-xl font-bold text-ink truncate">
                     {{ headerTitle }}
                   </h1>
+                  <button
+                    v-if="isAvulsa && canEdit && detail.status === 'draft'"
+                    @click="openRename"
+                    class="w-6 h-6 flex items-center justify-center rounded-md text-ink-subtle hover:text-accent hover:bg-accent-soft transition flex-shrink-0"
+                    title="Renomear ficha"
+                  >
+                    <i class="fas fa-pen text-[10px]"></i>
+                  </button>
                   <!-- Badge: mostra "Reprovada" se foi rejeitada, senão status normal -->
                   <span v-if="wasRejected && detail.status === 'draft'"
                     class="px-2 py-0.5 rounded-full text-xs font-semibold flex-shrink-0 bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
@@ -1282,6 +1340,35 @@ async function handleUnlock() {
     }
 }
 
+// ─── Renomear ficha avulsa (título = identidade da série) ────────────────────
+const showRenameModal = ref(false);
+const renameValue = ref('');
+const renameSeries = ref(true);
+const renaming = ref(false);
+
+function openRename() {
+    renameValue.value = detail.value?.display_name ?? '';
+    renameSeries.value = true;
+    showRenameModal.value = true;
+}
+
+async function handleRename() {
+    const name = renameValue.value.trim();
+    if (!name) return;
+    renaming.value = true;
+    try {
+        await store.saveCondition(detail.value.id, { display_name: name, rename_series: renameSeries.value });
+        showRenameModal.value = false;
+        showToast(renameSeries.value ? 'Série renomeada em todos os meses.' : 'Ficha renomeada.');
+        await store.fetchDetail(detail.value.id);
+        populateFromDetail(store.detail);
+    } catch (e) {
+        showToast(e.message || 'Erro ao renomear.', 'error');
+    } finally {
+        renaming.value = false;
+    }
+}
+
 // ─── Vincular avulsa ao CV (promove a série inteira) ──────────────────────────
 const showLinkCvModal = ref(false);
 const cvEnterprises = ref([]);
@@ -1456,7 +1543,14 @@ function handleTemplatePropagated({ templateId, fields }) {
             c.template_id === templateId ? { ...c, ...fields } : c
         ),
     }));
-    showToast('Campanha atualizada em todos os empreendimentos vinculados (fichas em rascunho).');
+    if (detail.value?.status === 'approved') {
+        // Ficha autorizada não muda no banco pela propagação — a mudança fica na
+        // tela e o "Salvar Tudo" confirma (desbloqueia p/ rascunho e reautoriza).
+        isDirty.value = true;
+        showToast('Campanha atualizada nesta ficha — clique "Salvar Tudo" para confirmar (a ficha volta a rascunho para reautorizar).');
+    } else {
+        showToast('Campanha atualizada no modelo e nas fichas em rascunho vinculadas.');
+    }
 }
 
 // Após ações de assinatura (enviar/anular/concluir), recarrega a ficha para a

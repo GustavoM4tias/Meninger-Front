@@ -22,7 +22,7 @@ const isAuthenticated = computed(() => authStore.isAuthenticated());
 
     <!-- Office: autenticado -->
     <div v-else class="flex w-full">
-        <main class="flex flex-col h-dvh w-full">
+        <main class="flex flex-col h-dvh w-full md:overflow-hidden">
             <div class="flex">
                 <Nav />
 

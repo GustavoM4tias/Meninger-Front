@@ -273,10 +273,13 @@
         <div class="px-6 py-5 space-y-4 overflow-y-auto">
           <div class="flex items-start gap-3 p-3.5 bg-teal-50 dark:bg-teal-900/20 border border-teal-200 dark:border-teal-800 rounded-xl text-teal-800 dark:text-teal-300 text-xs">
             <i class="fas fa-circle-info flex-shrink-0 mt-0.5"></i>
-            <p v-if="tplModal.usage">
-              Este modelo é usado em <strong>{{ tplModal.usage.total }}</strong> campanha(s), em <strong>{{ tplModal.usage.rows.length }}</strong> ficha(s).
-              A edição atualiza <strong>{{ tplModal.usage.editable }}</strong> ficha(s) em rascunho — autorizadas e encerradas não mudam (histórico preservado).
-            </p>
+            <div v-if="tplModal.usage" class="space-y-1">
+              <p>Usado em <strong>{{ tplModal.usage.total }}</strong> campanha(s), em <strong>{{ tplModal.usage.rows.length }}</strong> ficha(s). Ao aplicar:</p>
+              <p>· o <strong>modelo da biblioteca</strong> é atualizado (novos usos já vêm com a versão nova);</p>
+              <p>· <strong>{{ tplModal.usage.editable }}</strong> ficha(s) em rascunho atualizam agora;</p>
+              <p v-if="tplLockedCount">· <strong>{{ tplLockedCount }}</strong> autorizada(s)/encerrada(s) não mudam (histórico preservado) — recebem a versão nova quando forem desbloqueadas e salvas.</p>
+              <p v-if="conditionStatus === 'approved'" class="font-semibold">· Esta ficha está autorizada: a campanha daqui atualiza na tela — confirme com "Salvar Tudo" (a ficha volta a rascunho para reautorizar).</p>
+            </div>
             <p v-else>Carregando onde este modelo é usado...</p>
           </div>
           <div>
@@ -324,7 +327,7 @@
           <button @click="saveTemplateForAll" :disabled="tplModal.saving || !tplModal.fields.title"
             class="flex items-center gap-2 px-5 py-2.5 bg-teal-600 text-white text-sm font-semibold rounded-xl hover:bg-teal-700 disabled:opacity-50 transition">
             <i :class="tplModal.saving ? 'fa-spinner fa-spin' : 'fa-check'" class="fas text-xs"></i>
-            {{ tplModal.saving ? 'Aplicando...' : `Aplicar em todos${tplModal.usage ? ` (${tplModal.usage.editable} ficha(s))` : ''}` }}
+            {{ tplModal.saving ? 'Aplicando...' : 'Aplicar' }}
           </button>
         </div>
       </div>
@@ -341,6 +344,7 @@ const props = defineProps({
     campaigns: { type: Array,   default: () => [] },
     saving:    { type: Boolean, default: false },
     readonly:  { type: Boolean, default: false },
+    conditionStatus: { type: String, default: '' },
 });
 const emit = defineEmits(['update:campaigns', 'save', 'template-propagated']);
 
@@ -466,6 +470,10 @@ async function saveAsTemplate(i) {
 // ── Modal: editar o modelo em TODOS os vinculados (só fichas rascunho) ────────
 
 const tplModal = ref({ open: false, id: null, fields: {}, usage: null, saving: false });
+
+// Fichas autorizadas/encerradas que usam o modelo (não mudam agora).
+const tplLockedCount = computed(() =>
+    tplModal.value.usage ? tplModal.value.usage.rows.filter(r => r.status !== 'draft').length : 0);
 
 async function openTemplateEditor(camp) {
     tplModal.value = {
