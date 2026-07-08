@@ -250,7 +250,7 @@
         <div
           class="flex items-center justify-between p-3.5 rounded-md border border-line bg-gray-50/50 dark:bg-gray-800/30">
           <div>
-            <p class="text-sm font-semibold text-ink">certificação digital ativa</p>
+            <p class="text-sm font-semibold text-ink">Certificação digital ativa</p>
             <p class="text-xs text-ink-subtle mt-0.5">Exige verificação de identidade digital no
               processo</p>
           </div>
