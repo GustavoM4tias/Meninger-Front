@@ -852,6 +852,7 @@
           :campaigns="activeModule.campaigns ?? []"
           :saving="saving"
           :readonly="readonly"
+          :condition-status="conditionStatus"
           @update:campaigns="patchCampaigns"
           @save="$emit('save')"
           @template-propagated="$emit('template-propagated', $event)"
