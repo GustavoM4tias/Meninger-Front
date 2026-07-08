@@ -319,6 +319,57 @@ export const useCampaignsStore = defineStore('marketingCampaigns', () => {
         });
     }
 
+    // ── Relatório por período (série diária meta_insights_daily) ────────────
+    // A régua de tempo: métricas recortadas pelo período, não pela janela do
+    // último sync. report = { rows, series, totals, totals_prev, period }.
+    const report = ref(null);
+    const loadingReport = ref(false);
+    const coverage = ref([]);
+
+    async function fetchReport({ since, until, level = 'campaign', accounts = [], campaignId = null, adsetId = null } = {}) {
+        loadingReport.value = true;
+        error.value = null;
+        try {
+            const qs = new URLSearchParams({ since, until, level });
+            if (accounts.length) qs.set('accounts', accounts.join(','));
+            if (campaignId) qs.set('campaign_id', campaignId);
+            if (adsetId) qs.set('adset_id', adsetId);
+            const d = await apiFetch(`/meta-report?${qs.toString()}`);
+            report.value = d;
+            return d;
+        } catch (e) {
+            error.value = e.message;
+            report.value = null;
+            return null;
+        } finally {
+            loadingReport.value = false;
+        }
+    }
+
+    async function fetchCoverage() {
+        try {
+            const d = await apiFetch('/meta-report/coverage');
+            coverage.value = Array.isArray(d.results) ? d.results : [];
+            return coverage.value;
+        } catch { return []; }
+    }
+
+    async function backfillDaily({ sinceDays = 90, levels = ['campaign', 'adset', 'ad'] } = {}) {
+        return withOp({ type: 'backfill', label: `Backfill série diária (${sinceDays}d)`, details: { sinceDays, levels } }, async () => {
+            try {
+                const d = await apiFetch('/meta-report/backfill', {
+                    method: 'POST',
+                    body: JSON.stringify({ sinceDays, levels }),
+                });
+                await fetchCoverage();
+                return d;
+            } catch (e) {
+                error.value = e.message;
+                return null;
+            }
+        });
+    }
+
     // ── Cutover: disparar backlog (histórico + fila de sombra) ao CV ────────
     async function dispatchHistorical({ cutoff = '2026-06-01', preview = false, limit = 500 } = {}) {
         dispatching.value = true;
@@ -350,5 +401,7 @@ export const useCampaignsStore = defineStore('marketingCampaigns', () => {
         runFullSync, fullSyncing, lastFullSync,
         fetchAds, syncAds, fetchAdSets,
         allAds, loadingAllAds, fetchAllAds,
+        report, loadingReport, coverage,
+        fetchReport, fetchCoverage, backfillDaily,
     };
 });

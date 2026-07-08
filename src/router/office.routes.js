@@ -104,6 +104,31 @@ export default [
                 name: 'marketing',
                 meta: { requiresAuth: true },
                 children: [
+                    // Aprovações de Marketing (tickets p/ diretoria)
+                    {
+                        path: 'aprovacoes',
+                        name: 'Aprovações de Marketing',
+                        component: () => import('@/views/Office/Marketing/Approvals/Index.vue'),
+                        meta: { requiresAuth: true, searchable: true, content: 'Solicitações de aprovação do Marketing para a diretoria: verbas, eventos, mídias e serviços' },
+                    },
+                    {
+                        path: 'aprovacoes/nova',
+                        name: 'Nova Aprovação de Marketing',
+                        component: () => import('@/views/Office/Marketing/Approvals/New.vue'),
+                        meta: { requiresAuth: true, searchable: false },
+                    },
+                    {
+                        path: 'aprovacoes/config',
+                        name: 'Config. Aprovações de Marketing',
+                        component: () => import('@/views/Office/Marketing/Approvals/Settings.vue'),
+                        meta: { requiresAuth: true, requiresAdmin: true, allowedRole: 'admin', searchable: false },
+                    },
+                    {
+                        path: 'aprovacoes/:id(\\d+)',
+                        name: 'Detalhe Aprovação de Marketing',
+                        component: () => import('@/views/Office/Marketing/Approvals/Detail.vue'),
+                        meta: { requiresAuth: true, searchable: false },
+                    },
                     {
                         path: 'events',
                         name: 'Eventos',
