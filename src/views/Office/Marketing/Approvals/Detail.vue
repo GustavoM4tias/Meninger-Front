@@ -10,12 +10,18 @@
                             @click="$router.push('/marketing/aprovacoes')">
                             <i class="fas fa-arrow-left text-[10px]"></i> Aprovações
                         </button>
-                        <h1 class="text-xl font-bold font-mono text-ink">{{ req.protocol }}</h1>
-                        <p class="text-sm text-ink-muted">{{ req.type_label }}</p>
+                        <h1 class="text-3xl font-bold font-mono text-ink">{{ req.type_label }}</h1>
+                        <p class="text-xs text-ink-muted">{{ req.protocol }}</p>
                     </div>
-                    <Badge :variant="statusMeta.variant" class="mt-5">
-                        <i :class="statusMeta.icon" class="mr-1 text-[10px]"></i>{{ statusMeta.label }}
-                    </Badge>
+                    <div class="flex flex-col items-end gap-2 mt-2">
+                        <Badge :variant="statusMeta.variant">
+                            <i :class="statusMeta.icon" class="mr-1 text-[10px]"></i>{{ statusMeta.label }}
+                        </Badge>
+                        <Button v-if="isApproved" variant="secondary" size="sm" icon="fas fa-file-pdf"
+                            :loading="pdfLoading" @click="downloadPdf">
+                            PDF de autorização
+                        </Button>
+                    </div>
                 </div>
 
                 <!-- Dados -->
@@ -46,13 +52,36 @@
                             <dd class="text-ink">{{ fmtDateTime(req.created_at) }}</dd>
                         </div>
                     </dl>
-                    <div class="mt-4 pt-3 border-t border-line">
-                        <dt class="text-[11px] text-ink-subtle mb-1">Descrição</dt>
-                        <dd class="text-sm text-ink whitespace-pre-wrap">{{ req.description }}</dd>
-                    </div>
-                    <div v-if="req.justification" class="mt-3">
+                    <div v-if="req.justification" class="mt-4 pt-3 border-t border-line">
                         <dt class="text-[11px] text-ink-subtle mb-1">Justificativa</dt>
                         <dd class="text-sm text-ink-muted whitespace-pre-wrap">{{ req.justification }}</dd>
+                    </div>
+                </Surface>
+
+                <!-- Itens -->
+                <Surface variant="raised" padding="none" class="mb-4 overflow-hidden">
+                    <h2 class="text-[11px] font-mono uppercase tracking-wider text-ink-muted px-4 pt-3 pb-1">Itens</h2>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="border-y border-line text-left">
+                                    <th class="px-4 py-2 text-[11px] font-mono uppercase tracking-wider text-ink-muted">Item</th>
+                                    <th class="px-4 py-2 text-[11px] font-mono uppercase tracking-wider text-ink-muted">Descrição</th>
+                                    <th class="px-4 py-2 text-[11px] font-mono uppercase tracking-wider text-ink-muted text-right">Valor</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="(it, i) in (req.items || [])" :key="i" class="border-b border-line/60">
+                                    <td class="px-4 py-2 text-ink">{{ it.name }}</td>
+                                    <td class="px-4 py-2 text-ink-muted">{{ it.description || '-' }}</td>
+                                    <td class="px-4 py-2 text-right font-mono tabular-nums text-ink whitespace-nowrap">{{ fmtBRL(it.amount) }}</td>
+                                </tr>
+                                <tr class="bg-surface-sunken/40">
+                                    <td class="px-4 py-2 font-semibold text-ink" colspan="2">Total</td>
+                                    <td class="px-4 py-2 text-right font-mono font-bold tabular-nums text-accent whitespace-nowrap">{{ fmtBRL(req.amount) }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </Surface>
 
@@ -84,10 +113,10 @@
                     <h2 class="text-[11px] font-mono uppercase tracking-wider text-ink-muted mb-3">Anexos</h2>
                     <ul class="space-y-1">
                         <li v-for="att in req.attachments" :key="att.id">
-                            <a :href="att.url" target="_blank" rel="noopener"
-                                class="flex items-center gap-2 text-sm text-accent hover:underline">
-                                <i class="fas fa-paperclip text-xs"></i>{{ att.file_name }}
-                            </a>
+                            <button type="button" @click="viewerAtt = att"
+                                class="flex items-center gap-2 text-sm text-accent hover:underline text-left">
+                                <i :class="isImageAtt(att) ? 'fas fa-image' : 'fas fa-paperclip'" class="text-xs"></i>{{ att.file_name }}
+                            </button>
                         </li>
                     </ul>
                 </Surface>
@@ -147,6 +176,9 @@
             </template>
         </Modal>
 
+        <!-- Preview de anexo (imagem/PDF/office) -->
+        <AttachmentViewerModal v-if="viewerAtt" :attachment="viewerAtt" @close="viewerAtt = null" />
+
         <!-- Modal de cancelamento -->
         <Modal :open="confirmCancelOpen" title="Cancelar solicitação" size="sm" @close="confirmCancelOpen = false">
             <p class="text-sm text-ink-muted">A solicitação {{ req?.protocol }} será cancelada e os aprovadores não poderão mais decidi-la.</p>
@@ -172,6 +204,8 @@ import Badge from '@/components/UI/Badge.vue';
 import Modal from '@/components/UI/Modal.vue';
 import Spinner from '@/components/UI/Spinner.vue';
 import EmptyState from '@/components/UI/EmptyState.vue';
+import AttachmentViewerModal from '@/views/Office/Checklist/components/AttachmentViewerModal.vue';
+import api from '@/utils/Marketing/approvalsApi.js';
 
 const store = useApprovalsStore();
 const route = useRoute();
@@ -179,7 +213,32 @@ const toast = useToast();
 
 const req = computed(() => store.current);
 const statusMeta = computed(() => STATUS_META[req.value?.status] || STATUS_META.pending);
+const isApproved = computed(() => ['approved', 'approved_with_notes'].includes(req.value?.status));
 const isRequester = computed(() => !!req.value?.viewer?.isRequester);
+const viewerAtt = ref(null);
+const pdfLoading = ref(false);
+
+const isImageAtt = (att) => att?.kind === 'IMAGE' || (att?.mime_type || '').startsWith('image/')
+    || /\.(png|jpe?g|webp|gif|bmp|svg)($|\?)/i.test(att?.url || '');
+
+async function downloadPdf() {
+    pdfLoading.value = true;
+    try {
+        const blob = await api.pdf(req.value.id);
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Autorizacao_${req.value.protocol}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 15000);
+    } catch (e) {
+        toast.error(e.message);
+    } finally {
+        pdfLoading.value = false;
+    }
+}
 const canDecide = computed(() => (req.value?.profiles_state || []).some((p) => p.can_decide));
 const history = computed(() => [...(req.value?.approval_history || [])].reverse());
 const decisionsWithComment = computed(() => (req.value?.decisions || []).filter((d) => d.comment));

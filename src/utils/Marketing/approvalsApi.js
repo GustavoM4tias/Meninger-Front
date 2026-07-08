@@ -39,6 +39,19 @@ export default {
     addAttachment: (id, payload) => req(`/${id}/attachments`, { method: 'POST', ...body(payload) }),
     removeAttachment: (id) => req(`/attachments/${id}`, { method: 'DELETE' }),
 
+    // PDF de autorização (blob autenticado — só após aprovação)
+    pdf: async (id) => {
+        const token = localStorage.getItem('token');
+        const resp = await fetch(`${API_URL}/marketing-approvals/${id}/pdf`, {
+            headers: { Authorization: token ? `Bearer ${token}` : '' },
+        });
+        if (!resp.ok) {
+            const data = await resp.json().catch(() => ({}));
+            throw new Error(data?.message || 'Falha ao gerar o PDF.');
+        }
+        return resp.blob();
+    },
+
     // Administração
     users: () => req('/users'),
     settings: () => req('/settings'),
