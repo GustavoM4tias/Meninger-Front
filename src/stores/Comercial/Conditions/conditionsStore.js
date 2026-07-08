@@ -18,6 +18,15 @@ export const useConditionsStore = defineStore('conditions', () => {
     const permissions = ref({ isAdmin: false, canEdit: false, canAuthorize: false });
     const error = ref(null);
 
+    // ─── Toast global das fichas (qualquer componente notifica; Detail exibe) ─
+    const toast = ref({ show: false, type: 'success', message: '' });
+    let toastTimer = null;
+    function notify(message, type = 'success') {
+        toast.value = { show: true, type, message };
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => { toast.value = { ...toast.value, show: false }; }, 3500);
+    }
+
     // ─── Listagem ────────────────────────────────────────────────────────────
 
     async function fetchList({ idempreendimento } = {}) {
@@ -390,6 +399,7 @@ export const useConditionsStore = defineStore('conditions', () => {
 
     return {
         list, detail, priceTables, priceDistribution, correspondents, officeUsers, correspondentCompanies, settings, permissions, error,
+        toast, notify,
         fetchList, fetchDetail,
         createCondition, saveCondition, publishCondition,
         submitForApproval, authorizeCondition, unlockCondition, cancelApproval, closeCondition,

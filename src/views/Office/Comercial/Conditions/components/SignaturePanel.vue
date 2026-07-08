@@ -34,15 +34,8 @@
         </div>
       </div>
 
-      <!-- Pronta para enviar -->
-      <div v-else-if="!current || ['voided', 'declined', 'error'].includes(current.status)">
-        <div v-if="current" class="panel-info mb-4">
-          <i :class="current.status === 'voided' ? 'fa-ban text-ink-subtle' : 'fa-triangle-exclamation text-red-500'" class="fas"></i>
-          <div>
-            <p class="font-semibold text-ink text-sm">{{ current.status === 'voided' ? 'Envio anterior anulado' : 'Envio anterior recusado/falhou' }}</p>
-            <p class="text-xs text-ink-muted mt-0.5">Você pode enviar novamente para assinatura.</p>
-          </div>
-        </div>
+      <!-- Pronta para enviar (nunca enviada) -->
+      <div v-else-if="!current">
         <div class="bg-surface-raised rounded-2xl border border-line shadow-sm p-6">
           <p class="text-sm font-bold text-ink mb-1"><i class="fas fa-file-signature text-violet-500 mr-1.5"></i> Enviar para assinatura</p>
           <p class="text-xs text-ink-muted mb-4">
@@ -92,7 +85,7 @@
             <p class="text-xs text-ink-subtle">
               <i class="fas fa-paper-plane text-[10px] mr-1"></i>1º envio: <strong class="text-ink-muted">{{ formatDate(current.sent_at) }}</strong>
               <template v-if="current.completed_at"> · <i class="fas fa-check text-[10px]"></i> concluído: <strong class="text-ink-muted">{{ formatDate(current.completed_at) }}</strong></template>
-              <template v-else-if="pendingNames.length"> · faltam: <strong class="text-amber-600 dark:text-amber-400">{{ pendingNames.join(', ') }}</strong></template>
+              <template v-else-if="!['voided','declined','error'].includes(current.status) && pendingNames.length"> · faltam: <strong class="text-amber-600 dark:text-amber-400">{{ pendingNames.join(', ') }}</strong></template>
             </p>
 
             <!-- Assinantes -->
@@ -143,6 +136,19 @@
               </div>
             </div>
           </div>
+        </div>
+
+        <!-- Anulado/recusado: histórico preservado acima + enviar de novo -->
+        <div v-if="['voided','declined','error'].includes(current.status)" class="bg-surface-raised rounded-2xl border border-line shadow-sm p-5 flex items-center justify-between gap-3 flex-wrap">
+          <p class="text-xs text-ink-muted">
+            <i :class="current.status === 'voided' ? 'fa-ban' : 'fa-triangle-exclamation'" class="fas mr-1"></i>
+            {{ current.status === 'voided' ? 'Envio anulado' : 'Envio recusado/falhou' }} — o histórico e o motivo continuam registrados acima e na linha do tempo da ficha.
+          </p>
+          <button v-if="canAuthorize && detail.status === 'approved'" @click="send" :disabled="sending"
+            class="flex items-center gap-2 px-4 py-2 bg-violet-600 text-white text-xs font-semibold rounded-xl hover:bg-violet-700 disabled:opacity-50 transition">
+            <i :class="sending ? 'fa-spinner fa-spin' : 'fa-paper-plane'" class="fas text-xs"></i>
+            {{ sending ? 'Enviando...' : 'Enviar novamente' }}
+          </button>
         </div>
 
         <!-- Documento assinado (anexo) -->

@@ -944,6 +944,9 @@ import QRCode from 'qrcode';
 import AppraisalQrCode from './AppraisalQrCode.vue';
 import { computeCostSummary } from './costSummary.js';
 
+import { useConditionsStore } from '@/stores/Comercial/Conditions/conditionsStore';
+const conditionsStore = useConditionsStore();
+
 const props = defineProps({
     detail:           { type: Object,  default: null },
     localModules:     { type: Array,   default: () => [] },
@@ -2663,7 +2666,7 @@ async function printModule() {
     const printWin = window.open('', '_blank', 'width=900,height=700,scrollbars=yes');
 
     if (!printWin) {
-        alert('Popup bloqueado. Permita popups para este site e tente novamente.');
+        conditionsStore.notify('Popup bloqueado pelo navegador. Permita popups para este site e tente novamente.', 'error');
         return;
     }
 

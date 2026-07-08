@@ -1207,11 +1207,16 @@ const displayUnits = computed(() =>
 );
 
 function captureUnitSnapshot() {
-    if (!unitsData.value.length) return;
+    if (!unitsData.value.length) {
+        store.notify('Sem unidades carregadas para capturar.', 'error');
+        return;
+    }
     patch('unit_snapshot', {
         capturedAt: new Date().toISOString(),
         data: JSON.parse(JSON.stringify(unitsData.value)),
     });
+    const total = unitsData.value.reduce((sum, b) => sum + (b.unidades?.length ?? 0), 0);
+    store.notify(`Estado capturado: ${total} unidade(s) congeladas para o resumo/PDF. Salve para gravar.`);
 }
 
 function formatSnapshotDate(iso) {
@@ -1324,6 +1329,7 @@ function removeOrphanedTables() {
     const activeIds = new Set(props.priceTables.map(t => t.idtabela));
     const cleaned = (activeModule.value?.price_table_ids ?? []).filter(id => activeIds.has(id));
     patch('price_table_ids', cleaned);
+    store.notify('Tabelas inativas do CV removidas da seleção.');
 }
 
 // Tables selected for this module that have price data
@@ -1365,7 +1371,9 @@ function onStageLinkChange(event) {
     emit('update:modules', updated);
 
     if (idetapa) {
-      emit('save-silent', updated); 
+      emit('save-silent', updated);
+      const stage = props.enterpriseStages.find(s => Number(s.idetapa) === idetapa);
+      store.notify(`Módulo vinculado à etapa "${stage?.nome ?? idetapa}" do CV.`);
     }
 }
 

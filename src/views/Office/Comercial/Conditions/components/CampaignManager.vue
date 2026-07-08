@@ -434,8 +434,8 @@ function addFromTemplate(t) {
 }
 
 function unlinkCampaign(i) {
-    if (!window.confirm('Desvincular do modelo? A campanha vira uma variação local desta ficha (edições não afetam os outros empreendimentos).')) return;
     patchCamp(i, 'template_id', null);
+    store.notify('Campanha desvinculada do modelo — edições agora valem só nesta ficha. Para voltar, adicione de novo pela Biblioteca.');
 }
 
 // Promove uma campanha local a modelo da biblioteca (e vincula a origem).
@@ -455,8 +455,9 @@ async function saveAsTemplate(i) {
             from_campaign_id: camp.id ?? null,
         });
         patchCamp(i, 'template_id', t.id);
+        store.notify(`Modelo "${camp.title}" salvo na biblioteca — disponível para os outros empreendimentos.`);
     } catch (e) {
-        window.alert(e.message || 'Erro ao salvar modelo.');
+        store.notify(e.message || 'Erro ao salvar modelo.', 'error');
     } finally {
         savingTemplate.value = false;
     }
@@ -497,7 +498,7 @@ async function saveTemplateForAll() {
         emit('template-propagated', { templateId: m.id, fields: { ...m.fields } });
         tplModal.value = { open: false, id: null, fields: {}, usage: null, saving: false };
     } catch (e) {
-        window.alert(e.message || 'Erro ao atualizar o modelo.');
+        store.notify(e.message || 'Erro ao atualizar o modelo.', 'error');
         m.saving = false;
     }
 }

@@ -4,14 +4,14 @@
     <!-- Toast -->
     <transition name="fade">
       <div
-        v-if="toast.show"
+        v-if="store.toast.show"
         :class="[
           'fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-xl shadow-lg text-sm font-medium',
-          toast.type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
+          store.toast.type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
         ]"
       >
-        <i :class="toast.type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'" class="fas"></i>
-        {{ toast.message }}
+        <i :class="store.toast.type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'" class="fas"></i>
+        {{ store.toast.message }}
       </div>
     </transition>
 
@@ -848,7 +848,6 @@ async function handleCloseCondition() {
 const showSaveApprovedModal = ref(false);
 const unlockNote = ref('');
 const cancelApprovalNote = ref('');
-const toast = reactive({ show: false, type: 'success', message: '' });
 const fetchError = ref(null);
 const isDirty = ref(false);
 
@@ -1150,9 +1149,9 @@ function beforeUnloadHandler(e) {
 onMounted(() => window.addEventListener('beforeunload', beforeUnloadHandler));
 onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnloadHandler));
 
+// Toast global das fichas (vive no store; qualquer componente pode notificar).
 function showToast(message, type = 'success') {
-    toast.show = true; toast.type = type; toast.message = message;
-    setTimeout(() => { toast.show = false; }, 3500);
+    store.notify(message, type);
 }
 
 async function navigateToMonth(id) {
