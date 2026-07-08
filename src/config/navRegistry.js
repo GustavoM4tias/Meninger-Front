@@ -86,6 +86,15 @@ export const navRegistry = [
                     { route: '/marketing/settings', name: 'Config. Captação', icon: 'fas fa-sliders', adminOnly: true },
                 ],
             },
+            {
+                key: 'approvals',
+                name: 'Aprovações',
+                icon: 'fas fa-stamp',
+                pages: [
+                    { route: '/marketing/aprovacoes', name: 'Aprovações', icon: 'fas fa-stamp' },
+                    { route: '/marketing/aprovacoes/config', name: 'Config. Aprovações', icon: 'fas fa-sliders', adminOnly: true },
+                ],
+            },
         ],
         pages: [
             { route: '/marketing/leads', section: 'Leads', name: 'Leads', icon: 'fas fa-user-plus' },

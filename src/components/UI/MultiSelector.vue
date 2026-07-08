@@ -10,14 +10,52 @@ const props = defineProps({
     pageSize: { type: Number, default: 150 },
     disabled: { type: Boolean, default: false },
     single: { type: Boolean, default: false },
+    // Teleporta o dropdown pro <body> (position: fixed, acima de modais).
+    // Use dentro de Modal, onde overflow-hidden/auto cortaria o painel.
+    overlay: { type: Boolean, default: false },
 });
 
 const emit = defineEmits(['update:modelValue', 'open', 'close', 'change']);
 
 const open = ref(false);
 const wrapperRef = ref(null);
+const panelRef = ref(null);
 const searchInputRef = ref(null);
 const masterRef = ref(null);
+
+// ── Overlay: dropdown fixo ancorado no trigger (segue scroll/resize) ──
+const panelStyle = ref({});
+function updatePanelPosition() {
+    if (!props.overlay || !wrapperRef.value) return;
+    const r = wrapperRef.value.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - r.bottom;
+    // Painel ~330px (busca + lista). Abre pra cima quando não cabe embaixo.
+    const openUp = spaceBelow < 330 && r.top > spaceBelow;
+    panelStyle.value = {
+        position: 'fixed',
+        left: `${r.left}px`,
+        width: `${r.width}px`,
+        ...(openUp
+            ? { bottom: `${window.innerHeight - r.top + 6}px` }
+            : { top: `${r.bottom + 6}px` }),
+    };
+}
+function onReposition() { if (open.value) updatePanelPosition(); }
+watch(open, (v) => {
+    if (!props.overlay) return;
+    if (v) {
+        updatePanelPosition();
+        window.addEventListener('scroll', onReposition, { capture: true, passive: true });
+        window.addEventListener('resize', onReposition, { passive: true });
+    } else {
+        window.removeEventListener('scroll', onReposition, { capture: true });
+        window.removeEventListener('resize', onReposition);
+    }
+});
+onBeforeUnmount(() => {
+    window.removeEventListener('scroll', onReposition, { capture: true });
+    window.removeEventListener('resize', onReposition);
+});
 
 // internal selection Set
 const selectedSet = ref(new Set(props.modelValue));
@@ -29,7 +67,11 @@ watch(() => props.modelValue, (arr) => {
 
 // click outside
 function onDocClick(e) {
-    if (open.value && wrapperRef.value && !wrapperRef.value.contains(e.target)) {
+    if (!open.value) return;
+    const inWrapper = wrapperRef.value?.contains(e.target);
+    // Com overlay, o painel vive no <body> — clique nele não pode fechar.
+    const inPanel = panelRef.value?.contains(e.target);
+    if (!inWrapper && !inPanel) {
         open.value = false;
         emit('close');
     }
@@ -150,10 +192,12 @@ function toggleSelectAllFiltered(e) {
                 :class="{ 'rotate-180': open }"></i>
         </button>
 
-        <!-- Dropdown panel -->
+        <!-- Dropdown panel (overlay: teleporta pro body, acima de modais) -->
+        <teleport to="body" :disabled="!overlay">
         <transition name="dropdown">
-            <div v-if="open"
-                class="absolute z-50 mt-1.5 w-full bg-surface-overlay border border-line
+            <div v-if="open" ref="panelRef" :style="overlay ? panelStyle : null"
+                :class="overlay ? 'z-[10000]' : 'absolute z-50 mt-1.5 w-full'"
+                class="bg-surface-overlay border border-line
                        rounded-xl shadow-overlay overflow-hidden"
                 role="listbox" aria-multiselectable="true">
                 <!-- Search -->
@@ -207,6 +251,7 @@ function toggleSelectAllFiltered(e) {
                 </div>
             </div>
         </transition>
+        </teleport>
     </div>
 </template>
 

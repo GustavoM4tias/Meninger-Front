@@ -1,6 +1,14 @@
 <script setup>
-// /marketing/campanhas — tela principal de campanhas Meta com KPIs agregados,
-// filtros (status, conta, datas, busca) e tabela com investimento + leads + CAC.
+// /marketing/campanhas — relatório de desempenho Meta no padrão de mercado:
+//
+//   RÉGUA DE TEMPO (mestre)  → PeriodPicker no topo; TODAS as métricas
+//                              (KPIs, gráfico, tabelas) são do período.
+//   RÉGUA DE ESTRUTURA       → drill Conta → Campanha → Conjunto → Anúncio
+//                              (tabs de nível + breadcrumb de escopo).
+//
+// Fonte: série diária local (meta_insights_daily) via /marketing/meta-report.
+// Os filtros do FiltersBar (status, conta, mídia...) refinam a listagem;
+// conta também recorta KPIs/gráfico (vai ao servidor).
 
 import { onMounted, ref, computed, watch } from 'vue';
 import dayjs from 'dayjs';
@@ -15,14 +23,45 @@ import CampaignsCardsView from './components/CampaignsCardsView.vue';
 import CampaignsTimelineView from './components/CampaignsTimelineView.vue';
 import CampaignsAdminModal from './components/CampaignsAdminModal.vue';
 import CampaignsFiltersBar from './components/CampaignsFiltersBar.vue';
-import CampaignsSummaryCards from './components/CampaignsSummaryCards.vue';
+import PeriodPicker from './components/PeriodPicker.vue';
+import ReportKpiCards from './components/ReportKpiCards.vue';
+import CampaignDailyChart from './components/CampaignDailyChart.vue';
+import AdSetsTable from './components/AdSetsTable.vue';
+import AdsGalleryView from './components/AdsGalleryView.vue';
 
 const store = useCampaignsStore();
 const authStore = useAuthStore();
 const isAdmin = computed(() => authStore?.user?.role === 'admin');
 
-// ── Filtros (objeto único pra simplificar) ────────────────────────────────
-// Defaults: mês atual, sem nada selecionado → mostra tudo do mês
+// ── Régua de tempo: período mestre (default: este mês) ─────────────────────
+const periodo = ref({
+    since: dayjs().startOf('month').format('YYYY-MM-DD'),
+    until: dayjs().format('YYYY-MM-DD'),
+    preset: 'this_month',
+});
+
+// ── Régua de estrutura: nível + drill ──────────────────────────────────────
+const level = ref('campaign');                       // campaign | adset | ad
+const drill = ref({ campaign: null, adset: null });  // { id, name } | null
+
+function setLevel(l) {
+    if (l === 'campaign') drill.value = { campaign: null, adset: null };
+    if (l === 'adset')    drill.value = { ...drill.value, adset: null };
+    level.value = l;
+}
+
+function drillIntoCampaign(c) {
+    drill.value = { campaign: { id: String(c.id), name: c.name || `#${c.id}` }, adset: null };
+    level.value = 'adset';
+}
+function drillIntoAdSet(a) {
+    drill.value = { ...drill.value, adset: { id: String(a.id), name: a.name || `#${a.id}` } };
+    level.value = 'ad';
+}
+function clearCampaignDrill() { setLevel('campaign'); }
+function clearAdsetDrill()    { setLevel('adset'); }
+
+// ── Filtros da listagem ─────────────────────────────────────────────────────
 const filtros = ref({
     status: [],
     conta: [],
@@ -31,13 +70,12 @@ const filtros = ref({
     busca: '',
     sort: 'spend',
     incluir_arquivadas: false,
-    data_inicio: '',
-    data_fim: '',
+    mostrar_sem_veiculacao: false,
 });
 
 const adminModalOpen = ref(false);
 
-// View mode: 'list' | 'cards' | 'timeline' (persiste por usuário)
+// View mode do nível campanha: 'list' | 'cards' | 'timeline'
 const viewMode = ref(localStorage.getItem('marketing.campaigns.viewMode') || 'list');
 function setViewMode(mode) {
     viewMode.value = mode;
@@ -47,142 +85,149 @@ function setViewMode(mode) {
 const detailOpen = ref(false);
 const detailId   = ref(null);
 
-const syncDays = ref(90);
-
 function openDetail(c) {
     detailId.value = c.id;
     detailOpen.value = true;
 }
 
-onMounted(() => {
-    store.fetchAll();
+// ── Carga do relatório ──────────────────────────────────────────────────────
+// Conta selecionada vai ao SERVIDOR (recorta KPIs + gráfico + linhas).
+const accountIdsSelected = computed(() => {
+    if (!filtros.value.conta?.length) return [];
+    const ids = new Set();
+    for (const c of store.campaigns) {
+        if (c.account_id && filtros.value.conta.includes(c.account_name)) ids.add(c.account_id);
+    }
+    return [...ids].sort();
 });
 
-// Arquivadas (flag local da aba Gestão) não vêm no fetch padrão. Quando o usuário
-// liga "Incluir arquivadas", re-busca do servidor incluindo-as (e vice-versa).
+async function loadReport() {
+    await store.fetchReport({
+        since: periodo.value.since,
+        until: periodo.value.until,
+        level: level.value,
+        accounts: accountIdsSelected.value,
+        campaignId: level.value !== 'campaign' ? (drill.value.campaign?.id || null) : null,
+        adsetId: level.value === 'ad' ? (drill.value.adset?.id || null) : null,
+    });
+}
+
+const reportKey = computed(() => JSON.stringify({
+    p: [periodo.value.since, periodo.value.until],
+    l: level.value,
+    c: drill.value.campaign?.id || null,
+    a: drill.value.adset?.id || null,
+    acc: accountIdsSelected.value,
+}));
+
+onMounted(() => {
+    store.fetchAll();
+    store.fetchCoverage();
+    loadReport();
+});
+
+watch(reportKey, () => { loadReport(); });
+
+// Arquivadas: flag local só existe no cache de campanhas → re-busca do server.
 watch(() => filtros.value.incluir_arquivadas, (incluir) => {
     store.fetchAll({ includeArchived: !!incluir });
 });
 
-// Reset pro mês atual
 function resetFilters() {
     filtros.value = {
-        status: [],
-        conta: [],
-        midia: [],
-        objetivo: [],
-        busca: '',
-        sort: 'spend',
-        incluir_arquivadas: false,
-        data_inicio: dayjs().startOf('month').format('YYYY-MM-DD'),
-        data_fim: dayjs().endOf('month').format('YYYY-MM-DD'),
+        status: [], conta: [], midia: [], objetivo: [],
+        busca: '', sort: 'spend',
+        incluir_arquivadas: false, mostrar_sem_veiculacao: false,
     };
 }
 
 function buscar() {
-    // Filtragem é client-side e reativa; este botão serve só pra refresh do server.
-    store.fetchAll();
+    store.fetchAll({ includeArchived: !!filtros.value.incluir_arquivadas });
+    loadReport();
 }
 
-// ── Opções dinâmicas pros MultiSelectors ──────────────────────────────────
+// ── Opções dinâmicas dos MultiSelectors ─────────────────────────────────────
 const contasOptions = computed(() => {
     const set = new Set();
     for (const c of store.campaigns) if (c.account_name) set.add(c.account_name);
     return [...set].sort();
 });
-
 const midiasOptions = computed(() => {
     const set = new Set();
     for (const c of store.campaigns) if (c.midia_slug) set.add(c.midia_slug);
     return [...set].sort();
 });
-
 const objetivosOptions = computed(() => {
     const set = new Set();
     for (const c of store.campaigns) if (c.objective) set.add(c.objective);
     return [...set].sort();
 });
 
-// Mapeia rótulo em pt-BR → token de status na Meta
+// ── Matching client-side (refina a listagem) ────────────────────────────────
 const STATUS_TOKENS = {
-    'Ativas':     'ACTIVE',
-    'Pausadas':   'PAUSED',
-    'Arquivadas': 'ARCHIVED',
-    'Excluídas':  'DELETED',
-    'Rascunho':   'DRAFT',
+    'Ativas': 'ACTIVE', 'Pausadas': 'PAUSED', 'Arquivadas': 'ARCHIVED',
+    'Excluídas': 'DELETED', 'Rascunho': 'DRAFT',
 };
 
-function statusMatches(c, selectedLabels) {
+function statusMatches(row, selectedLabels) {
     if (!selectedLabels?.length) return true;
-    const s = String(c.effective_status || c.status || '').toUpperCase();
+    const s = String(row.effective_status || row.status || '').toUpperCase();
     return selectedLabels.some(label => {
         const tok = STATUS_TOKENS[label];
         return tok && s.includes(tok);
     });
 }
 
-/**
- * Overlap: campanha rodou ads no período selecionado?
- *
- * Regras (conservadoras, evitam falso-positivo):
- *   1. start_time depois do fim do período → fora
- *   2. Tem stop_time → overlap padrão (start ≤ to E stop ≥ from)
- *   3. Status ATIVA sem stop_time → rodando até hoje
- *   4. Pausada/Arquivada/Excluída SEM stop_time → EXCLUI
- *      (Meta não diz quando foi pausada; assumir que rodou até hoje é falso-
- *      positivo. Pra ver essas, remova o filtro de data.)
- */
-function campaignOverlapsPeriod(c) {
+/** Filtros que dependem de atributos da campanha valem em qualquer nível (via row.campaign). */
+function rowMatches(row) {
     const f = filtros.value;
-    if (!f.data_inicio && !f.data_fim) return true;
+    const camp = row.campaign || row;
+    if (f.midia?.length && !f.midia.includes(camp.midia_slug)) return false;
+    if (f.objetivo?.length && !f.objetivo.includes(camp.objective)) return false;
+    if (!statusMatches(row, f.status)) return false;
 
-    const from = f.data_inicio ? new Date(f.data_inicio) : null;
-    const to   = f.data_fim    ? new Date(f.data_fim)    : null;
-    if (to) to.setHours(23, 59, 59, 999);
-
-    const start = c.start_time ? new Date(c.start_time) : null;
-    if (!start) return true;                                   // sem start_time = não dá pra avaliar → não esconde
-    if (to && start > to) return false;                        // começou depois do fim
-
-    const isActive = String(c.effective_status || c.status || '').toUpperCase().includes('ACTIVE');
-
-    let effectiveEnd;
-    if (c.stop_time) {
-        effectiveEnd = new Date(c.stop_time);
-    } else if (isActive) {
-        effectiveEnd = new Date();                             // ativa = rodando até agora
-    } else if (c.updated_time) {
-        // Pausada/arquivada SEM stop_time: updated_time é o melhor proxy
-        // (toda mudança — incluindo pausar — atualiza esse campo).
-        effectiveEnd = new Date(c.updated_time);
-    } else {
-        // Sem nada que indique quando parou → exclui.
-        return false;
+    const q = (f.busca || '').trim().toLowerCase();
+    if (q) {
+        const txt = [row.name, row.id, camp.name, camp.account_name, row.adset_name, row.notes, camp.midia_slug]
+            .filter(Boolean).join(' ').toLowerCase();
+        if (!txt.includes(q)) return false;
     }
-
-    if (from && effectiveEnd < from) return false;             // parou antes do início
     return true;
 }
 
+// ── Linhas do nível CAMPANHA (merge cache + período) ────────────────────────
+const cacheById = computed(() => new Map(store.campaigns.map(c => [String(c.id), c])));
+
+const campaignRows = computed(() => {
+    if (level.value !== 'campaign') return [];
+    const rep = (store.report?.rows || []);
+    // Cache primeiro (lead_stats, archived, notes...), período por cima (spend, leads, cac...)
+    const rows = rep.map(r => ({ ...(cacheById.value.get(String(r.id)) || {}), ...r }));
+
+    if (filtros.value.mostrar_sem_veiculacao) {
+        const seen = new Set(rep.map(r => String(r.id)));
+        for (const c of store.campaigns) {
+            if (seen.has(String(c.id))) continue;
+            rows.push({
+                ...c,
+                spend: 0, impressions: 0, clicks: 0,
+                meta_leads_total: 0, cac: null, ctr: null, cpm: null, cpc: null,
+                no_delivery: true,
+            });
+        }
+    }
+    return rows;
+});
+
 const filtered = computed(() => {
     const f = filtros.value;
-    const q = (f.busca || '').trim().toLowerCase();
     const sortBy = f.sort || 'spend';
 
-    let arr = store.campaigns.filter(c => {
+    let arr = campaignRows.value.filter(c => {
         if (!f.incluir_arquivadas && c.archived) return false;
-        if (!statusMatches(c, f.status)) return false;
+        // Conta já foi ao servidor, mas o merge "sem veiculação" traz do cache → refiltra local.
         if (f.conta?.length && !f.conta.includes(c.account_name)) return false;
-        if (f.midia?.length && !f.midia.includes(c.midia_slug)) return false;
-        if (f.objetivo?.length && !f.objetivo.includes(c.objective)) return false;
-        if (!campaignOverlapsPeriod(c)) return false;
-
-        if (q) {
-            const txt = [c.name, c.id, c.account_name, c.objective, c.notes, c.midia_slug]
-                .filter(Boolean).join(' ').toLowerCase();
-            if (!txt.includes(q)) return false;
-        }
-        return true;
+        return rowMatches(c);
     });
 
     arr = [...arr];
@@ -204,23 +249,54 @@ const filtered = computed(() => {
     return arr;
 });
 
-const summary = computed(() => {
-    let spend = 0, leadsMeta = 0, impressions = 0, clicks = 0;
-    for (const c of filtered.value) {
-        spend       += Number(c.spend) || 0;
-        leadsMeta   += Number(c.meta_leads_total) || 0;
-        impressions += c.impressions || 0;
-        clicks      += c.clicks      || 0;
-    }
-    // CAC médio agregado base Meta (telas Meta = só Meta).
-    const cacMedio = leadsMeta > 0 ? spend / leadsMeta : null;
-    const ctrAgg   = impressions > 0 ? (clicks / impressions) * 100 : null;
-    return { spend, leadsMeta, impressions, clicks, cacMedio, ctrAgg };
+// ── Linhas dos níveis CONJUNTO e ANÚNCIO ────────────────────────────────────
+const adsetRows = computed(() => {
+    if (level.value !== 'adset') return [];
+    return (store.report?.rows || [])
+        .filter(rowMatches)
+        .sort((a, b) => (Number(b.spend) || 0) - (Number(a.spend) || 0));
 });
 
-function fmtMoney(v, currency = 'BRL') {
+const adRows = computed(() => {
+    if (level.value !== 'ad') return [];
+    return (store.report?.rows || []).filter(rowMatches);
+});
+
+const currency = computed(() => {
+    const rows = store.report?.rows || [];
+    return rows.find(r => r.currency)?.currency || 'BRL';
+});
+
+// ── Cobertura da série diária (banner de backfill) ─────────────────────────
+const coverageInfo = computed(() => {
+    const cov = (store.coverage || []).find(c => c.level === level.value);
+    return cov || null;
+});
+
+const needsBackfill = computed(() => {
+    if (store.loadingReport || !store.report) return false;
+    const noData = !(store.report.series || []).length;
+    const cov = coverageInfo.value;
+    const beforeCoverage = cov?.min_date && periodo.value.since < String(cov.min_date).slice(0, 10);
+    return noData || beforeCoverage;
+});
+
+const backfilling = ref(false);
+async function runBackfill() {
+    backfilling.value = true;
+    try {
+        const days = Math.min(730, Math.max(35, dayjs().diff(dayjs(periodo.value.since), 'day') + 1));
+        await store.backfillDaily({ sinceDays: days });
+        await loadReport();
+    } finally {
+        backfilling.value = false;
+    }
+}
+
+// ── Formatters ──────────────────────────────────────────────────────────────
+function fmtMoney(v, curr = 'BRL') {
     if (v == null) return '—';
-    try { return new Intl.NumberFormat('pt-BR', { style: 'currency', currency }).format(Number(v)); }
+    try { return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: curr }).format(Number(v)); }
     catch { return `R$ ${v}`; }
 }
 function fmtInt(v) {
@@ -265,19 +341,11 @@ function priorityDot(p) {
     return { cls: 'bg-emerald-500', title: 'Prioridade normal' };
 }
 
-function isActive(c) {
-    return String(c.effective_status || c.status || '').toUpperCase().includes('ACTIVE');
-}
-
-/**
- * Texto da 2ª linha do "Período" (após start_time). Só mostra "Em andamento"
- * pra campanhas ativas sem stop_time; pausadas/excluídas mostram "—".
- */
-function periodEnd(c) {
-    if (c.stop_time) return { text: '→ ' + fmtShortDate(c.stop_time), cls: 'text-ink-subtle' };
-    if (isActive(c)) return { text: 'em andamento', cls: 'text-emerald-600 dark:text-emerald-300' };
-    return { text: '—', cls: 'text-ink-subtle italic' };
-}
+const LEVEL_TABS = [
+    { key: 'campaign', label: 'Campanhas', icon: 'fas fa-bullhorn' },
+    { key: 'adset',    label: 'Conjuntos', icon: 'fas fa-layer-group' },
+    { key: 'ad',       label: 'Anúncios',  icon: 'fas fa-image' },
+];
 </script>
 
 <template>
@@ -285,13 +353,13 @@ function periodEnd(c) {
     <PageContainer size="full">
       <PageHeader
         title="Campanhas Meta"
-        subtitle="Investimento, leads e desempenho por campanha. Sync automático a cada 2h em horário comercial."
+        subtitle="Desempenho por período: investimento, leads, CAC e artes. Drill campanha → conjunto → anúncio."
         icon="fab fa-meta">
         <template #actions>
-          <Button variant="secondary" size="sm" icon="fas fa-arrows-rotate" :loading="store.loading" @click="store.fetchAll">
+          <Button variant="secondary" size="sm" icon="fas fa-arrows-rotate"
+            :loading="store.loading || store.loadingReport" @click="buscar">
             Atualizar
           </Button>
-          <!-- Gear admin — só pra admin -->
           <button v-if="isAdmin" @click="adminModalOpen = true"
             title="Ferramentas admin (sincronizar, importar histórico, disparar ao CV, etc.)"
             class="inline-flex items-center justify-center w-8 h-8 rounded-md border border-line bg-surface hover:bg-surface-hover hover:border-accent/40 text-ink-muted hover:text-ink transition-colors">
@@ -300,15 +368,43 @@ function periodEnd(c) {
         </template>
       </PageHeader>
 
-      <!-- KPIs -->
+      <!-- ══ RÉGUA DE TEMPO: período mestre ══════════════════════════════ -->
       <div class="mb-4">
-        <CampaignsSummaryCards
-          :periodo="{ data_inicio: filtros.data_inicio, data_fim: filtros.data_fim }"
-          :summary="summary"
-          :total-campaigns="filtered.length" />
+        <PeriodPicker v-model:periodo="periodo" />
       </div>
 
-      <!-- FiltersBar (mesmo padrão de Leads) -->
+      <!-- KPIs do período (com delta vs período anterior) -->
+      <div class="mb-4">
+        <ReportKpiCards
+          :totals="store.report?.totals"
+          :totals-prev="store.report?.totals_prev"
+          :period-prev="store.report?.period_prev"
+          :currency="currency"
+          :loading="store.loadingReport" />
+      </div>
+
+      <!-- Banner: série diária sem cobertura no período -->
+      <div v-if="needsBackfill"
+        class="mb-4 rounded-lg border border-sky-500/30 bg-sky-500/5 px-3 py-2.5 text-sm text-sky-800 dark:text-sky-200 flex items-start gap-2.5 flex-wrap">
+        <i class="fas fa-database mt-0.5"></i>
+        <div class="flex-1 min-w-[220px]">
+          <b>Sem dados diários pra este período/nível.</b>
+          <span v-if="coverageInfo?.min_date"> Cobertura atual começa em {{ fmtShortDate(coverageInfo.min_date) }}.</span>
+          <span v-else> A série diária ainda não foi sincronizada.</span>
+          O sync automático mantém os últimos 35 dias; períodos mais antigos precisam de backfill (1x).
+        </div>
+        <Button v-if="isAdmin" size="sm" variant="secondary" icon="fas fa-cloud-arrow-down"
+          :loading="backfilling" @click="runBackfill">
+          Preencher série diária
+        </Button>
+      </div>
+
+      <!-- Gráfico diário do escopo atual -->
+      <div class="mb-4">
+        <CampaignDailyChart :daily="store.report?.series || []" :currency="currency" />
+      </div>
+
+      <!-- FiltersBar (refina a listagem; conta recorta KPIs também) -->
       <div class="mb-3">
         <CampaignsFiltersBar
           v-model:filtros="filtros"
@@ -356,20 +452,18 @@ function periodEnd(c) {
         </div>
         <ul class="divide-y divide-line/60 max-h-60 overflow-y-auto">
           <li v-for="op in store.ops" :key="op.id" class="px-3 py-2 text-xs flex items-start gap-2.5">
-            <!-- Ícone status -->
             <span class="mt-0.5 shrink-0 w-5 text-center">
               <i v-if="op.status === 'running'" class="fas fa-circle-notch fa-spin text-sky-500"></i>
               <i v-else-if="op.status === 'success'" class="fas fa-circle-check text-emerald-500"></i>
               <i v-else class="fas fa-circle-xmark text-red-500"></i>
             </span>
-
-            <!-- Conteúdo -->
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2 flex-wrap">
                 <span :class="[
                   'inline-flex rounded text-[9px] px-1.5 py-0.5 font-mono uppercase',
                   op.type === 'sync'      ? 'bg-blue-500/10 text-blue-700 dark:text-blue-300' :
                   op.type === 'import'    ? 'bg-violet-500/10 text-violet-700 dark:text-violet-300' :
+                  op.type === 'backfill'  ? 'bg-sky-500/10 text-sky-700 dark:text-sky-300' :
                   op.type === 'reconcile' ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300' :
                   op.type === 'ads'       ? 'bg-amber-500/10 text-amber-700 dark:text-amber-300' :
                   'bg-slate-500/10 text-slate-600 dark:text-slate-300'
@@ -381,7 +475,6 @@ function periodEnd(c) {
                 </span>
               </div>
 
-              <!-- Resumo do resultado -->
               <div v-if="op.status === 'running'" class="text-[11px] text-ink-subtle mt-0.5">processando...</div>
 
               <div v-else-if="op.status === 'success' && op.type === 'sync'" class="text-[11px] text-ink-muted mt-0.5">
@@ -392,6 +485,12 @@ function periodEnd(c) {
 
               <div v-else-if="op.status === 'success' && op.type === 'import'" class="text-[11px] text-ink-muted mt-0.5">
                 <b>{{ op.result.inserted }}</b> novos · {{ op.result.duplicates }} duplicados · {{ op.result.forms_count }} forms
+                <span v-if="op.result.errors?.length" class="text-amber-600 dark:text-amber-300">· {{ op.result.errors.length }} erros</span>
+              </div>
+
+              <div v-else-if="op.status === 'success' && op.type === 'backfill'" class="text-[11px] text-ink-muted mt-0.5">
+                <b>{{ fmtInt(op.result.rows_written) }}</b> linhas diárias · {{ op.result.accounts_count }} contas
+                · níveis: {{ (op.result.levels || []).join(', ') }}
                 <span v-if="op.result.errors?.length" class="text-amber-600 dark:text-amber-300">· {{ op.result.errors.length }} erros</span>
               </div>
 
@@ -407,12 +506,11 @@ function periodEnd(c) {
                 {{ op.error || 'erro desconhecido' }}
               </div>
 
-              <!-- Detalhes expandíveis se tem erros por form -->
               <details v-if="op.result?.errors?.length" class="mt-1">
                 <summary class="text-[10px] text-amber-600 dark:text-amber-300 cursor-pointer">ver detalhes dos {{ op.result.errors.length }} erro(s)</summary>
                 <ul class="mt-1 ml-2 space-y-0.5 text-[10px] text-ink-muted font-mono max-h-32 overflow-y-auto">
                   <li v-for="(e, i) in op.result.errors.slice(0, 20)" :key="i">
-                    <b>{{ e.form_name || e.page_name || '?' }}:</b> {{ e.error }}
+                    <b>{{ e.form_name || e.page_name || e.account_name || '?' }}:</b> {{ e.error }}
                   </li>
                   <li v-if="op.result.errors.length > 20" class="italic">… mais {{ op.result.errors.length - 20 }}</li>
                 </ul>
@@ -454,150 +552,212 @@ function periodEnd(c) {
         <div>{{ store.error }}</div>
       </div>
 
-      <!-- Seletor de view mode -->
+      <!-- ══ RÉGUA DE ESTRUTURA: nível + breadcrumb de drill ═════════════ -->
       <div class="mb-3 flex items-center justify-between flex-wrap gap-2">
-        <div class="inline-flex rounded-lg border border-line bg-surface p-0.5">
-          <button @click="setViewMode('list')"
-            :class="['px-3 py-1.5 rounded-md text-xs font-medium transition-colors flex items-center gap-1.5',
-              viewMode === 'list' ? 'bg-accent text-white' : 'text-ink-muted hover:text-ink hover:bg-surface-hover']">
-            <i class="fas fa-list text-[10px]"></i>Lista
-          </button>
-          <button @click="setViewMode('cards')"
-            :class="['px-3 py-1.5 rounded-md text-xs font-medium transition-colors flex items-center gap-1.5',
-              viewMode === 'cards' ? 'bg-accent text-white' : 'text-ink-muted hover:text-ink hover:bg-surface-hover']">
-            <i class="fas fa-grip text-[10px]"></i>Cards
-          </button>
-          <button @click="setViewMode('timeline')"
-            :class="['px-3 py-1.5 rounded-md text-xs font-medium transition-colors flex items-center gap-1.5',
-              viewMode === 'timeline' ? 'bg-accent text-white' : 'text-ink-muted hover:text-ink hover:bg-surface-hover']">
-            <i class="fas fa-chart-gantt text-[10px]"></i>Timeline
-          </button>
+        <div class="flex items-center gap-2 flex-wrap min-w-0">
+          <!-- Tabs de nível -->
+          <div class="inline-flex rounded-lg border border-line bg-surface p-0.5">
+            <button v-for="t in LEVEL_TABS" :key="t.key" @click="setLevel(t.key)"
+              :class="['px-3 py-1.5 rounded-md text-xs font-medium transition-colors flex items-center gap-1.5',
+                level === t.key ? 'bg-accent text-white' : 'text-ink-muted hover:text-ink hover:bg-surface-hover']">
+              <i :class="[t.icon, 'text-[10px]']"></i>{{ t.label }}
+            </button>
+          </div>
+
+          <!-- Breadcrumb do drill -->
+          <div v-if="drill.campaign" class="flex items-center gap-1.5 min-w-0 flex-wrap">
+            <i class="fas fa-chevron-right text-[9px] text-ink-subtle"></i>
+            <span class="inline-flex items-center gap-1.5 max-w-[260px] rounded-md border border-accent/30 bg-accent/10 pl-2 pr-1 py-1 text-[11px] text-accent">
+              <i class="fas fa-bullhorn text-[9px]"></i>
+              <span class="truncate" :title="drill.campaign.name">{{ drill.campaign.name }}</span>
+              <button @click="clearCampaignDrill" class="w-4 h-4 rounded grid place-items-center hover:bg-accent/20" title="Remover escopo da campanha">
+                <i class="fas fa-times text-[9px]"></i>
+              </button>
+            </span>
+            <template v-if="drill.adset">
+              <i class="fas fa-chevron-right text-[9px] text-ink-subtle"></i>
+              <span class="inline-flex items-center gap-1.5 max-w-[240px] rounded-md border border-accent/30 bg-accent/10 pl-2 pr-1 py-1 text-[11px] text-accent">
+                <i class="fas fa-layer-group text-[9px]"></i>
+                <span class="truncate" :title="drill.adset.name">{{ drill.adset.name }}</span>
+                <button @click="clearAdsetDrill" class="w-4 h-4 rounded grid place-items-center hover:bg-accent/20" title="Remover escopo do conjunto">
+                  <i class="fas fa-times text-[9px]"></i>
+                </button>
+              </span>
+            </template>
+          </div>
         </div>
-        <div class="text-[11px] text-ink-subtle">
-          <b>{{ filtered.length }}</b> de {{ store.campaigns.length }} campanha(s)
+
+        <div class="flex items-center gap-2">
+          <!-- View mode: só no nível campanha -->
+          <div v-if="level === 'campaign'" class="inline-flex rounded-lg border border-line bg-surface p-0.5">
+            <button @click="setViewMode('list')"
+              :class="['px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors flex items-center gap-1.5',
+                viewMode === 'list' ? 'bg-surface-sunken text-ink' : 'text-ink-muted hover:text-ink hover:bg-surface-hover']">
+              <i class="fas fa-list text-[10px]"></i>Lista
+            </button>
+            <button @click="setViewMode('cards')"
+              :class="['px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors flex items-center gap-1.5',
+                viewMode === 'cards' ? 'bg-surface-sunken text-ink' : 'text-ink-muted hover:text-ink hover:bg-surface-hover']">
+              <i class="fas fa-grip text-[10px]"></i>Cards
+            </button>
+            <button @click="setViewMode('timeline')"
+              :class="['px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors flex items-center gap-1.5',
+                viewMode === 'timeline' ? 'bg-surface-sunken text-ink' : 'text-ink-muted hover:text-ink hover:bg-surface-hover']">
+              <i class="fas fa-chart-gantt text-[10px]"></i>Timeline
+            </button>
+          </div>
+
+          <div v-if="level === 'campaign'" class="text-[11px] text-ink-subtle whitespace-nowrap">
+            <b>{{ filtered.length }}</b> campanha(s) no período
+          </div>
+          <div v-else-if="level === 'adset'" class="text-[11px] text-ink-subtle whitespace-nowrap">
+            <b>{{ adsetRows.length }}</b> conjunto(s)
+          </div>
         </div>
       </div>
 
-      <!-- View: Cards -->
-      <div v-if="viewMode === 'cards'">
-        <CampaignsCardsView :campaigns="filtered" @select="openDetail" />
-      </div>
+      <!-- ══ NÍVEL: CAMPANHAS ═════════════════════════════════════════════ -->
+      <template v-if="level === 'campaign'">
+        <!-- View: Cards -->
+        <div v-if="viewMode === 'cards'">
+          <CampaignsCardsView :campaigns="filtered" @select="openDetail" />
+        </div>
 
-      <!-- View: Timeline (Gantt) — janela = período do filtro -->
-      <div v-else-if="viewMode === 'timeline'">
-        <CampaignsTimelineView
-          :campaigns="filtered"
-          :period-start="filtros.data_inicio"
-          :period-end="filtros.data_fim"
-          @select="openDetail" />
-      </div>
+        <!-- View: Timeline (Gantt) — janela = período mestre -->
+        <div v-else-if="viewMode === 'timeline'">
+          <CampaignsTimelineView
+            :campaigns="filtered"
+            :period-start="periodo.since"
+            :period-end="periodo.until"
+            @select="openDetail" />
+        </div>
 
-      <!-- View: Lista (tabela atual) -->
-      <Surface v-else variant="raised" padding="none" class="overflow-hidden">
-        <div class="overflow-x-auto">
-          <table class="min-w-full text-sm">
-            <thead class="bg-surface-sunken/30 border-b border-line">
-              <tr>
-                <th class="px-3 py-2.5 text-left   text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Campanha</th>
-                <th class="px-3 py-2.5 text-left   text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Conta</th>
-                <th class="px-3 py-2.5 text-center text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Status</th>
-                <th class="px-3 py-2.5 text-left   text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Período</th>
-                <th class="px-3 py-2.5 text-right  text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Investido</th>
-                <th class="px-3 py-2.5 text-right  text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Leads</th>
-                <th class="px-3 py-2.5 text-right  text-[11px] font-mono uppercase tracking-wider text-ink-subtle" title="Custo por lead">CAC</th>
-                <th class="px-3 py-2.5 text-right  text-[11px] font-mono uppercase tracking-wider text-ink-subtle">CTR</th>
-                <th class="px-3 py-2.5 text-left   text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Último</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-line/60">
-              <tr v-if="store.loading">
-                <td colspan="9" class="px-4 py-10 text-center text-ink-subtle">
-                  <i class="fas fa-circle-notch fa-spin mr-2"></i>Carregando...
-                </td>
-              </tr>
-              <tr v-else-if="!store.campaigns.length">
-                <td colspan="9" class="px-4 py-10 text-center text-ink-subtle">
-                  Nenhuma campanha sincronizada ainda. Clique em <b>"Sincronizar com Meta"</b>.
-                </td>
-              </tr>
-              <tr v-else-if="!filtered.length">
-                <td colspan="9" class="px-4 py-10 text-center text-ink-subtle">
-                  Nenhuma campanha corresponde aos filtros.
-                </td>
-              </tr>
-              <tr v-else v-for="c in filtered" :key="c.id"
-                @click="openDetail(c)"
-                class="hover:bg-surface-hover/40 cursor-pointer transition-colors">
+        <!-- View: Lista -->
+        <Surface v-else variant="raised" padding="none" class="overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="min-w-full text-sm">
+              <thead class="bg-surface-sunken/30 border-b border-line">
+                <tr>
+                  <th class="px-3 py-2.5 text-left   text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Campanha</th>
+                  <th class="px-3 py-2.5 text-left   text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Conta</th>
+                  <th class="px-3 py-2.5 text-center text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Status</th>
+                  <th class="px-3 py-2.5 text-right  text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Investido</th>
+                  <th class="px-3 py-2.5 text-right  text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Leads</th>
+                  <th class="px-3 py-2.5 text-right  text-[11px] font-mono uppercase tracking-wider text-ink-subtle" title="Custo por lead no período">CAC</th>
+                  <th class="px-3 py-2.5 text-right  text-[11px] font-mono uppercase tracking-wider text-ink-subtle">CTR</th>
+                  <th class="px-3 py-2.5 text-right  text-[11px] font-mono uppercase tracking-wider text-ink-subtle">CPM</th>
+                  <th class="px-3 py-2.5 text-left   text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Último</th>
+                  <th class="px-3 py-2.5 w-24"></th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-line/60">
+                <tr v-if="store.loadingReport && !filtered.length">
+                  <td colspan="10" class="px-4 py-10 text-center text-ink-subtle">
+                    <i class="fas fa-circle-notch fa-spin mr-2"></i>Carregando...
+                  </td>
+                </tr>
+                <tr v-else-if="!filtered.length">
+                  <td colspan="10" class="px-4 py-10 text-center text-ink-subtle">
+                    Nenhuma campanha com veiculação no período.
+                    <span class="block text-xs mt-1">Amplie o período, ative "Sem veiculação no período" nos filtros, ou rode o backfill da série diária.</span>
+                  </td>
+                </tr>
+                <tr v-else v-for="c in filtered" :key="c.id"
+                  @click="openDetail(c)"
+                  class="hover:bg-surface-hover/40 cursor-pointer transition-colors group">
 
-                <!-- Campanha -->
-                <td class="px-3 py-2.5">
-                  <div class="flex items-center gap-2">
-                    <span :class="['inline-block w-2 h-2 rounded-full shrink-0', priorityDot(c.priority).cls]" :title="priorityDot(c.priority).title"></span>
-                    <div class="min-w-0">
-                      <div class="text-ink font-medium leading-tight truncate">{{ c.name || '(sem nome)' }}</div>
-                      <div class="text-[10px] font-mono text-ink-subtle truncate">
-                        #{{ c.id }}<span v-if="c.objective"> · {{ c.objective }}</span>
+                  <!-- Campanha -->
+                  <td class="px-3 py-2.5">
+                    <div class="flex items-center gap-2">
+                      <span :class="['inline-block w-2 h-2 rounded-full shrink-0', priorityDot(c.priority).cls]" :title="priorityDot(c.priority).title"></span>
+                      <div class="min-w-0">
+                        <div class="text-ink font-medium leading-tight truncate max-w-[320px]" :title="c.name || c.id">
+                          {{ c.name || '(sem nome)' }}
+                          <span v-if="c.no_delivery" class="ml-1 text-[9px] text-ink-subtle italic font-normal">sem veiculação</span>
+                        </div>
+                        <div class="text-[10px] font-mono text-ink-subtle truncate">
+                          #{{ c.id }}<span v-if="c.objective"> · {{ c.objective }}</span>
+                          <span v-if="c.start_time"> · {{ fmtShortDate(c.start_time) }}</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </td>
+                  </td>
 
-                <!-- Conta -->
-                <td class="px-3 py-2.5 text-ink-muted text-xs truncate max-w-[160px]">
-                  {{ c.account_name || c.account_id }}
-                </td>
+                  <!-- Conta -->
+                  <td class="px-3 py-2.5 text-ink-muted text-xs truncate max-w-[150px]">
+                    {{ c.account_name || c.account_id }}
+                  </td>
 
-                <!-- Status -->
-                <td class="px-3 py-2.5 text-center">
-                  <span :class="['inline-flex rounded-md border px-2 py-0.5 text-[10px] font-medium', statusBadge(c).cls]">
-                    {{ statusBadge(c).label }}
-                  </span>
-                </td>
+                  <!-- Status -->
+                  <td class="px-3 py-2.5 text-center">
+                    <span :class="['inline-flex rounded-md border px-2 py-0.5 text-[10px] font-medium', statusBadge(c).cls]">
+                      {{ statusBadge(c).label }}
+                    </span>
+                  </td>
 
-                <!-- Período -->
-                <td class="px-3 py-2.5">
-                  <div class="text-[11px] text-ink-muted">
-                    <span v-if="c.start_time">{{ fmtShortDate(c.start_time) }}</span>
-                    <span v-else class="text-ink-subtle italic">—</span>
-                  </div>
-                  <div class="text-[10px]" :class="periodEnd(c).cls">{{ periodEnd(c).text }}</div>
-                </td>
+                  <!-- Métricas do período -->
+                  <td class="px-3 py-2.5 text-right whitespace-nowrap">
+                    <div class="text-sm font-semibold text-ink leading-tight">{{ fmtMoney(c.spend, c.currency) }}</div>
+                    <div v-if="c.daily_budget_cents" class="text-[10px] text-ink-subtle">{{ fmtMoney(c.daily_budget_cents / 100, c.currency) }}/dia</div>
+                  </td>
 
-                <!-- Investido -->
-                <td class="px-3 py-2.5 text-right whitespace-nowrap">
-                  <div class="text-sm font-semibold text-ink leading-tight">{{ fmtMoney(c.spend, c.currency) }}</div>
-                  <div v-if="c.daily_budget_cents" class="text-[10px] text-ink-subtle">{{ fmtMoney(c.daily_budget_cents / 100, c.currency) }}/dia</div>
-                </td>
+                  <td class="px-3 py-2.5 text-right whitespace-nowrap">
+                    <div class="text-sm font-semibold text-ink leading-tight" title="Leads contados pela Meta no período">
+                      {{ fmtInt(c.meta_leads_total || 0) }}
+                      <i class="fab fa-meta text-[9px] text-ink-subtle ml-0.5"></i>
+                    </div>
+                  </td>
 
-                <!-- Leads (Meta + nosso DB) -->
-                <td class="px-3 py-2.5 text-right whitespace-nowrap">
-                  <div class="text-sm font-semibold text-ink leading-tight" title="Leads contados pela Meta (insights)">
-                    {{ fmtInt(c.meta_leads_total || 0) }}
-                    <i class="fab fa-meta text-[9px] text-ink-subtle ml-0.5"></i>
-                  </div>
-                </td>
+                  <td class="px-3 py-2.5 text-right whitespace-nowrap text-sm">
+                    <span v-if="c.cac != null" class="font-medium text-ink" title="CAC = investido ÷ leads no período">
+                      {{ fmtMoney(c.cac, c.currency) }}
+                    </span>
+                    <span v-else class="text-ink-subtle italic text-xs">—</span>
+                  </td>
 
-                <!-- CAC -->
-                <td class="px-3 py-2.5 text-right whitespace-nowrap text-sm">
-                  <span v-if="c.cac != null" class="font-medium text-ink" title="CAC = gasto ÷ leads da Meta">
-                    {{ fmtMoney(c.cac, c.currency) }}
-                    <i class="fab fa-meta text-[9px] text-ink-subtle ml-0.5"></i>
-                  </span>
-                  <span v-else class="text-ink-subtle italic text-xs">—</span>
-                </td>
+                  <td class="px-3 py-2.5 text-right text-[11px] text-ink-muted">{{ fmtPct(c.ctr) }}</td>
+                  <td class="px-3 py-2.5 text-right text-[11px] text-ink-muted">{{ c.cpm != null ? fmtMoney(c.cpm, c.currency) : '—' }}</td>
 
-                <!-- CTR -->
-                <td class="px-3 py-2.5 text-right text-[11px] text-ink-muted">{{ fmtPct(c.ctr) }}</td>
+                  <!-- Último lead -->
+                  <td class="px-3 py-2.5 text-[11px] text-ink-muted whitespace-nowrap">
+                    {{ fmtRelative(c.lead_stats?.last_lead_at) }}
+                  </td>
 
-                <!-- Último lead -->
-                <td class="px-3 py-2.5 text-[11px] text-ink-muted whitespace-nowrap">
-                  {{ fmtRelative(c.lead_stats?.last_lead_at) }}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </Surface>
+                  <!-- Drill -->
+                  <td class="px-3 py-2.5 text-right whitespace-nowrap">
+                    <button @click.stop="drillIntoCampaign(c)"
+                      class="inline-flex items-center gap-1.5 rounded-md border border-line px-2 py-1 text-[10px] font-medium text-ink-muted
+                             opacity-0 group-hover:opacity-100 hover:text-accent hover:border-accent/40 transition-all"
+                      title="Ver conjuntos desta campanha">
+                      <i class="fas fa-layer-group text-[9px]"></i>Conjuntos
+                      <i class="fas fa-chevron-right text-[8px]"></i>
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </Surface>
+      </template>
+
+      <!-- ══ NÍVEL: CONJUNTOS ═════════════════════════════════════════════ -->
+      <template v-else-if="level === 'adset'">
+        <AdSetsTable
+          :adsets="adsetRows"
+          :loading="store.loadingReport"
+          :currency="currency"
+          :show-campaign="!drill.campaign"
+          @drill="drillIntoAdSet" />
+      </template>
+
+      <!-- ══ NÍVEL: ANÚNCIOS (artes) ══════════════════════════════════════ -->
+      <template v-else>
+        <AdsGalleryView
+          :ads="adRows"
+          :loading="store.loadingReport"
+          :currency="currency"
+          :show-campaign="!drill.campaign" />
+      </template>
 
       <CampaignDetailModal
         v-model:open="detailOpen"

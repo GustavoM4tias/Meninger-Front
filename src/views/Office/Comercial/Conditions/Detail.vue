@@ -472,11 +472,12 @@
               <button
                 v-if="detail.status === 'draft' && canEdit"
                 @click="handleSubmitForApproval"
-                :disabled="actionLoading"
+                :disabled="actionLoading || saving"
+                :title="isDirty ? 'Salva as alterações pendentes e envia para autorização' : 'Envia para autorização'"
                 class="flex items-center gap-2 px-3.5 py-2 bg-indigo-600 text-white text-xs font-semibold rounded-xl hover:bg-indigo-700 disabled:opacity-50 transition"
               >
-                <i class="fas fa-paper-plane text-xs"></i>
-                <span class="hidden sm:inline">Enviar para Autorização</span>
+                <i :class="actionLoading ? 'fa-spinner fa-spin' : 'fa-paper-plane'" class="fas text-xs"></i>
+                <span class="hidden sm:inline">{{ isDirty ? 'Salvar e Enviar' : 'Enviar para Autorização' }}</span>
               </button>
 
               <!-- pending_approval → Autorizar (autorizadores) -->
@@ -1279,22 +1280,41 @@ async function captureAllUnitSnapshots() {
 }
 
 async function handleSubmitForApproval() {
+    if (isLocked.value) return;
     actionLoading.value = true;
     try {
+        // Aguarda auto-saves em voo e persiste TUDO antes de enviar — assim a ficha
+        // nunca vai para autorização com edições só na tela (fonte do erro anterior).
+        if (savingSilentPromise) { try { await savingSilentPromise; } catch {} }
         const modulesWithSnapshot = await captureAllUnitSnapshots();
-        localModules.value = modulesWithSnapshot;
-        await store.saveModules(detail.value.id, localModules.value);
+        localModules.value = applyIntendedLinks(modulesWithSnapshot);
+        const result = await store.saveModules(detail.value.id, localModules.value);
+        if (result?.modules) {
+            localModules.value = applyIntendedLinks(result.modules.map(m => moduleDefaults(m)));
+            for (const mod of localModules.value) rememberStageLink(mod);
+        }
+        isDirty.value = false;
+        // Só envia para autorização depois que o save confirmou (o await acima
+        // teria lançado antes de chegar aqui em caso de erro).
         await store.submitForApproval(detail.value.id);
         showToast('Ficha enviada para autorização! Os autorizadores foram notificados.');
         await store.fetchDetail(detail.value.id);
+        populateFromDetail(store.detail);
     } catch (e) {
-        showToast(e.message || 'Erro ao enviar para autorização.', 'error');
+        const msgs = e.errors ?? [e.message ?? 'Erro ao enviar para autorização.'];
+        showToast(`${msgs[0]} — nada foi enviado; corrija e salve antes de enviar.`, 'error');
     } finally {
         actionLoading.value = false;
     }
 }
 
 async function handleAuthorize() {
+    // Trava de segurança: não autoriza com edições pendentes na tela. (Normalmente
+    // a ficha em autorização já está travada, mas isso cobre qualquer estado sujo.)
+    if (isDirty.value) {
+        showToast('Há alterações não salvas. Salve (ou cancele) antes de autorizar.', 'error');
+        return;
+    }
     actionLoading.value = true;
     try {
         await store.authorizeCondition(detail.value.id);
