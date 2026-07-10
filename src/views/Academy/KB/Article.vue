@@ -22,6 +22,14 @@
                             {{ copied ? 'Copiado' : 'Copiar link' }}
                         </button>
 
+                        <!-- Emitir PDF do artigo — apenas admin -->
+                        <button v-if="isAdmin && article" type="button" @click="emitPdf" :disabled="emittingPdf"
+                            :title="emittingPdf ? 'Gerando PDF…' : 'Emitir PDF do artigo'"
+                            class="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-900 shadow-sm transition hover:bg-slate-50 active:scale-95 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700">
+                            <i class="fa-solid text-xs" :class="emittingPdf ? 'fa-spinner fa-spin' : 'fa-file-pdf text-rose-500'"></i>
+                            {{ emittingPdf ? 'Gerando…' : 'Emitir PDF' }}
+                        </button>
+
                         <button type="button" @click="goBack"
                             class="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-900 shadow-sm transition hover:bg-slate-50 active:scale-95 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700">
                             <i class="fa-solid fa-chevron-left text-[10px]"></i>
@@ -308,6 +316,7 @@ import StarRating from '@/views/Academy/components/StarRating.vue';
 import FollowButton from '@/views/Academy/components/FollowButton.vue';
 import CommentThread from '@/views/Academy/components/CommentThread.vue';
 import LightboxViewer from '@/views/Academy/components/LightboxViewer.vue';
+import { exportArticleToPdf } from '@/utils/Academy/articlePdf';
 
 const route = useRoute();
 const router = useRouter();
@@ -531,6 +540,26 @@ async function copyLink() {
         setTimeout(() => { copied.value = false; }, 2000);
     } catch {
         window.prompt('Copie o link:', url);
+    }
+}
+
+// ── Emitir PDF do artigo (admin) ─────────────────────────────────────
+const emittingPdf = ref(false);
+async function emitPdf() {
+    if (!article.value || emittingPdf.value) return;
+    emittingPdf.value = true;
+    try {
+        await exportArticleToPdf({
+            markdown: renderBody.value,
+            payload: article.value.payload || null,
+            article: { ...article.value, readingMinutes: readingMinutes.value },
+            user: currentUser,
+        });
+    } catch (err) {
+        console.error('Falha ao emitir PDF do artigo:', err);
+        window.alert('Não foi possível gerar o PDF. Tente novamente.');
+    } finally {
+        emittingPdf.value = false;
     }
 }
 
