@@ -205,6 +205,17 @@ export const useBoletoStore = defineStore('boletoCaixa', () => {
         }
     }
 
+    async function markCancelled(id) {
+        // Marca um boleto pendente como baixado manualmente (admin já baixou no Ecobrança).
+        try {
+            await requestWithAuth(`/boleto-caixa/history/${id}/mark-cancelled`, { method: 'POST' });
+            await fetchHistory({ silent: true });
+            return { ok: true };
+        } catch (err) {
+            return { ok: false, error: err.message || 'Erro ao marcar como baixado.' };
+        }
+    }
+
     async function fetchTitularContact(id) {
         // Busca e-mail/telefone do titular (ao vivo do CV) pra confirmação de reenvio.
         try {
@@ -409,7 +420,7 @@ export const useBoletoStore = defineStore('boletoCaixa', () => {
         // history
         history, historyTotal, historyPage, historyLimit,
         historyLoading, historyError, historyFilter,
-        fetchHistory, setPage, totalPages, retryHistoryItem, regenerateHistoryItem, fetchTitularContact, resendHistoryItem,
+        fetchHistory, setPage, totalPages, retryHistoryItem, regenerateHistoryItem, markCancelled, fetchTitularContact, resendHistoryItem,
         resetHistoryFilters,
         // stats (KPIs)
         stats, statsLoading, fetchStats,

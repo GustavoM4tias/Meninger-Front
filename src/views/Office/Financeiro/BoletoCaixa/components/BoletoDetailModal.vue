@@ -366,7 +366,7 @@ const WARNING_LABELS = {
 };
 
 // ── Ações ───────────────────────────────────────────────────────────────────
-const actionState = ref({ resending: false, retrying: false, checking: false });
+const actionState = ref({ resending: false, retrying: false, checking: false, marking: false });
 const actionMsg = ref(null);
 
 // ── Reenvio ao cliente (com confirmação mostrando e-mail + telefone) ─────────
@@ -470,6 +470,35 @@ async function handleRetry() {
     }
   } finally {
     actionState.value.retrying = false;
+  }
+}
+
+// Marca um boleto pendente como baixado manualmente — para quando a baixa
+// automática no Ecobrança falha e o admin já baixou o título no portal. Depois
+// disso, "Gerar novo boleto" emite a nova via sem tentar a baixa automática.
+async function handleMarkCancelled() {
+  if (!live.value) return;
+  const msg = `ATENÇÃO: isto NÃO baixa o boleto no Ecobrança.\n\n`
+    + `Só marque como baixado se você JÁ baixou o título ${live.value.nosso_numero || ''} diretamente no portal do Ecobrança. `
+    + `Caso contrário, o cliente ficará com dois boletos em aberto.\n\n`
+    + `Confirmo que já baixei o título no Ecobrança e quero marcar como cancelado no sistema?`;
+  if (!confirm(msg)) return;
+  actionState.value.marking = true;
+  actionMsg.value = null;
+  try {
+    const res = await store.markCancelled(live.value.id);
+    if (res.ok) {
+      actionMsg.value = { variant: 'success', text: 'Marcado como baixado. Agora use "Gerar novo boleto" para emitir a nova via.' };
+      await Promise.all([
+        store.fetchHistory({ silent: true }),
+        store.fetchTimeline(live.value.id, { silent: true }),
+      ]);
+      emit('changed');
+    } else {
+      actionMsg.value = { variant: 'error', text: `Falha: ${res.error || 'erro desconhecido'}` };
+    }
+  } finally {
+    actionState.value.marking = false;
   }
 }
 
@@ -848,6 +877,13 @@ async function copyLink() {
             {{ live?.status === 'error'
                 ? 'Reprocessar'
                 : (live?.payment_status === 'pending' ? 'Reemitir (condição atual)' : 'Gerar novo boleto') }}
+          </Button>
+          <Button v-if="isAdmin && live?.status === 'success' && live?.payment_status === 'pending'"
+            variant="ghost" size="sm" icon="fas fa-ban"
+            :loading="actionState.marking" :disabled="actionState.marking"
+            title="Use quando a baixa automática falhou e você já baixou o título no Ecobrança"
+            @click="handleMarkCancelled">
+            Marcar como baixado
           </Button>
           <Button v-if="isAdmin && live?.status === 'success' && live?.payment_status === 'pending'"
             variant="primary" size="sm" icon="fas fa-magnifying-glass-dollar"
