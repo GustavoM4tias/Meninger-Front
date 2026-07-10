@@ -19,6 +19,9 @@ coverage
 
 /config/apiUrl.js
 
+# PDFs emitidos/exportados na raiz (artefatos gerados, ex.: export de artigo da KB)
+/*.pdf
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
