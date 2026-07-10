@@ -639,6 +639,11 @@
                   @click="openDetail(item)">
                   <td class="px-4 py-3 font-mono text-accent font-semibold whitespace-nowrap">
                     #{{ item.idreserva }}
+                    <span v-if="item.attempts_count > 1"
+                      class="ml-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-ink/5 text-ink-muted border border-line align-middle"
+                      :title="`${item.attempts_count} boletos emitidos para esta reserva`">
+                      <i class="fas fa-layer-group text-[9px]"></i> {{ item.attempts_count }}
+                    </span>
                   </td>
                   <td class="px-4 py-3">
                     <div class="text-ink truncate max-w-[260px]">{{ item.titular_nome || '—' }}</div>
