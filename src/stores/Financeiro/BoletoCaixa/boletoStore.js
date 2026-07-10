@@ -84,6 +84,9 @@ export const useBoletoStore = defineStore('boletoCaixa', () => {
         const params = new URLSearchParams({
             page: historyPage.value,
             limit: historyLimit.value,
+            // 1 linha por reserva (a tentativa mais recente) — o histórico completo
+            // das reemissões fica no modal, evitando o mesmo cliente repetido.
+            groupByReserva: 'true',
         });
         const f = historyFilter.value;
         if (Array.isArray(f.status) && f.status.length) params.set('status', f.status.join(','));
