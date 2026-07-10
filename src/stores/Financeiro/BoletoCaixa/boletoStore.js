@@ -202,6 +202,16 @@ export const useBoletoStore = defineStore('boletoCaixa', () => {
         }
     }
 
+    async function fetchTitularContact(id) {
+        // Busca e-mail/telefone do titular (ao vivo do CV) pra confirmação de reenvio.
+        try {
+            const data = await requestWithAuth(`/boleto-caixa/history/${id}/titular-contact`);
+            return { ok: true, data };
+        } catch (err) {
+            return { ok: false, error: err.message || 'Erro ao buscar contato do titular.' };
+        }
+    }
+
     async function resendHistoryItem(id) {
         try {
             const data = await requestWithAuth(`/boleto-caixa/history/${id}/resend`, { method: 'POST' });
@@ -396,7 +406,7 @@ export const useBoletoStore = defineStore('boletoCaixa', () => {
         // history
         history, historyTotal, historyPage, historyLimit,
         historyLoading, historyError, historyFilter,
-        fetchHistory, setPage, totalPages, retryHistoryItem, regenerateHistoryItem, resendHistoryItem,
+        fetchHistory, setPage, totalPages, retryHistoryItem, regenerateHistoryItem, fetchTitularContact, resendHistoryItem,
         resetHistoryFilters,
         // stats (KPIs)
         stats, statsLoading, fetchStats,

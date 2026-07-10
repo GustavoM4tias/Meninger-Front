@@ -47,6 +47,7 @@ watch(() => [props.open, props.item?.id], async ([open, id]) => {
   if (open && id) {
     activeTab.value = 'summary';
     actionMsg.value = null;
+    resendConfirm.value.open = false;
     // Limpa IMEDIATAMENTE o estado do boleto anterior, antes do fetch async.
     store.timelineEvents = [];
     store.timelineHistory = null;
@@ -66,6 +67,7 @@ function close() {
   store.timelineEvents = [];
   store.timelineHistory = null;
   store.timelineAttempts = [];
+  resendConfirm.value.open = false;
   emit('close');
 }
 
@@ -367,11 +369,31 @@ const WARNING_LABELS = {
 const actionState = ref({ resending: false, retrying: false, checking: false });
 const actionMsg = ref(null);
 
-async function handleResend() {
+// ── Reenvio ao cliente (com confirmação mostrando e-mail + telefone) ─────────
+// Antes era um confirm() cego. Agora abre um modal que busca o contato do titular
+// (ao vivo do CV) e mostra pra quem vai + quando foi o último envio, evitando
+// reenvios duplicados por insegurança.
+const resendConfirm = ref({ open: false, loading: false, error: null, contact: null, sending: false });
+
+async function openResendConfirm() {
   if (!live.value) return;
-  if (!confirm(`Reenviar boleto da reserva ${live.value.idreserva} ao titular?`)) return;
-  actionState.value.resending = true;
   actionMsg.value = null;
+  resendConfirm.value = { open: true, loading: true, error: null, contact: null, sending: false };
+  const res = await store.fetchTitularContact(live.value.id);
+  if (res.ok) resendConfirm.value.contact = res.data;
+  else resendConfirm.value.error = res.error;
+  resendConfirm.value.loading = false;
+}
+
+function closeResendConfirm() {
+  if (resendConfirm.value.sending) return; // não fecha no meio do envio
+  resendConfirm.value.open = false;
+}
+
+async function doResend() {
+  if (!live.value || resendConfirm.value.sending) return;
+  resendConfirm.value.sending = true;
+  actionState.value.resending = true;
   try {
     const res = await store.resendHistoryItem(live.value.id);
     if (res.ok) {
@@ -379,18 +401,29 @@ async function handleResend() {
       const msgE = e?.ok ? `✓ E-mail enviado pra ${e.to}` : `✗ E-mail: ${e?.error || 'não enviado'}`;
       const msgW = w?.ok ? `✓ WhatsApp enviado pra ${w.to}` : `✗ WhatsApp: ${w?.error || 'não enviado'}`;
       actionMsg.value = { variant: 'success', text: `Reenvio concluído. ${msgE} / ${msgW}` };
-      // Refresh silencioso pra ver novos eventos sem piscar spinner.
+      resendConfirm.value.open = false;
       await Promise.all([
         store.fetchHistory({ silent: true }),
         store.fetchTimeline(live.value.id, { silent: true }),
       ]);
       emit('changed');
     } else {
-      actionMsg.value = { variant: 'error', text: `Falha: ${res.error || 'erro desconhecido'}` };
+      resendConfirm.value.error = res.error || 'erro desconhecido';
     }
   } finally {
+    resendConfirm.value.sending = false;
     actionState.value.resending = false;
   }
+}
+
+// Formata E.164 BR (55DDDNNNNNNNN) pra exibição: +55 (11) 99999-8888
+function formatPhoneBr(e164) {
+  if (!e164) return null;
+  const d = String(e164).replace(/\D/g, '');
+  const nat = d.startsWith('55') ? d.slice(2) : d;
+  if (nat.length === 11) return `+55 (${nat.slice(0, 2)}) ${nat.slice(2, 7)}-${nat.slice(7)}`;
+  if (nat.length === 10) return `+55 (${nat.slice(0, 2)}) ${nat.slice(2, 6)}-${nat.slice(6)}`;
+  return `+${d}`;
 }
 
 async function handleRetry() {
@@ -804,8 +837,8 @@ async function copyLink() {
         <div class="flex items-center gap-2 flex-wrap">
           <Button v-if="isAdmin && live?.boleto_supabase_url"
             variant="ghost" size="sm" icon="fas fa-paper-plane"
-            :loading="actionState.resending" :disabled="actionState.resending"
-            @click="handleResend">
+            :disabled="actionState.resending"
+            @click="openResendConfirm">
             Reenviar ao cliente
           </Button>
           <Button v-if="isAdmin && (live?.status === 'error' || (live?.status === 'success' && ['pending', 'cancelled'].includes(live?.payment_status)))"
@@ -823,6 +856,106 @@ async function copyLink() {
             Verificar pagamento
           </Button>
           <Button variant="ghost" size="sm" @click="close">Fechar</Button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Modal de confirmação de reenvio ao cliente ─────────────────────── -->
+    <div v-if="resendConfirm.open"
+      class="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4"
+      @click.self="closeResendConfirm">
+      <div class="bg-surface rounded-xl shadow-2xl border border-line w-full max-w-md overflow-hidden flex flex-col">
+        <div class="flex items-center justify-between gap-3 p-4 border-b border-line">
+          <h4 class="font-semibold text-ink text-sm flex items-center gap-2">
+            <i class="fas fa-paper-plane text-accent"></i> Reenviar boleto ao cliente
+          </h4>
+          <button @click="closeResendConfirm" :disabled="resendConfirm.sending"
+            class="text-ink-muted hover:text-ink disabled:opacity-40">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+
+        <div class="p-4 space-y-3">
+          <div v-if="resendConfirm.loading" class="text-center py-6 text-ink-muted">
+            <i class="fas fa-spinner fa-spin text-xl"></i>
+            <p class="text-xs mt-2">Buscando contato do titular no CV…</p>
+          </div>
+
+          <div v-else-if="resendConfirm.error"
+            class="rounded-lg bg-red-500/10 border border-red-500/20 px-3 py-2 text-xs text-red-700 dark:text-red-300">
+            <i class="fas fa-circle-exclamation"></i> {{ resendConfirm.error }}
+          </div>
+
+          <template v-else-if="resendConfirm.contact">
+            <p class="text-xs text-ink-muted">
+              Confirme os dados de destino antes de enviar. O boleto será enviado para:
+            </p>
+
+            <!-- E-mail -->
+            <div class="rounded-lg border border-line bg-surface-sunken/40 p-3 flex items-start gap-2.5">
+              <i class="fas fa-envelope mt-0.5 w-4 text-center"
+                :class="resendConfirm.contact.email ? 'text-emerald-500' : 'text-ink-subtle'"></i>
+              <div class="min-w-0 flex-1">
+                <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-semibold">E-mail</p>
+                <p class="text-sm text-ink break-all">{{ resendConfirm.contact.email || 'sem e-mail válido no CV' }}</p>
+              </div>
+            </div>
+
+            <!-- Telefone -->
+            <div class="rounded-lg border border-line bg-surface-sunken/40 p-3 flex items-start gap-2.5">
+              <i class="fab fa-whatsapp mt-0.5 w-4 text-center"
+                :class="resendConfirm.contact.phone ? 'text-emerald-500' : 'text-ink-subtle'"></i>
+              <div class="min-w-0 flex-1">
+                <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-semibold">WhatsApp</p>
+                <p class="text-sm text-ink">
+                  {{ resendConfirm.contact.phone ? formatPhoneBr(resendConfirm.contact.phone) : 'sem telefone válido no CV' }}
+                  <span v-if="resendConfirm.contact.phone_source" class="text-[10px] text-ink-subtle">
+                    (campo {{ resendConfirm.contact.phone_source }})
+                  </span>
+                </p>
+              </div>
+            </div>
+
+            <!-- Aviso: sem PDF -->
+            <div v-if="!resendConfirm.contact.has_pdf"
+              class="rounded-lg bg-amber-500/10 border border-amber-500/20 px-3 py-2 text-xs text-amber-700 dark:text-amber-300">
+              <i class="fas fa-triangle-exclamation"></i> Este registro não tem PDF salvo — o reenvio pode falhar.
+            </div>
+
+            <!-- Aviso: nenhum canal -->
+            <div v-if="!resendConfirm.contact.email && !resendConfirm.contact.phone"
+              class="rounded-lg bg-red-500/10 border border-red-500/20 px-3 py-2 text-xs text-red-700 dark:text-red-300">
+              <i class="fas fa-circle-exclamation"></i> Nenhum canal válido — não há para onde enviar. Corrija o cadastro no CV.
+            </div>
+
+            <!-- Último envio (reforço anti-duplicidade) -->
+            <div v-if="resendConfirm.contact.cliente_envio_em"
+              class="rounded-lg bg-blue-500/5 border border-blue-500/20 px-3 py-2 text-xs text-blue-700 dark:text-blue-300">
+              <i class="fas fa-clock-rotate-left"></i>
+              Já foi enviado em <strong>{{ formatDateTime(resendConfirm.contact.cliente_envio_em) }}</strong>
+              <span class="block mt-0.5 text-[11px]">
+                <i :class="resendConfirm.contact.cliente_email_enviado ? 'fas fa-check text-emerald-500' : 'fas fa-xmark text-ink-subtle'"></i> E-mail
+                &nbsp;·&nbsp;
+                <i :class="resendConfirm.contact.cliente_whatsapp_enviado ? 'fas fa-check text-emerald-500' : 'fas fa-xmark text-ink-subtle'"></i> WhatsApp
+              </span>
+            </div>
+            <p v-else class="text-[11px] text-ink-subtle">
+              <i class="fas fa-circle-info"></i> Nenhum envio anterior registrado para este boleto.
+            </p>
+          </template>
+        </div>
+
+        <div class="border-t border-line p-3 flex items-center justify-end gap-2 bg-surface-sunken/30">
+          <Button variant="ghost" size="sm" :disabled="resendConfirm.sending" @click="closeResendConfirm">
+            Cancelar
+          </Button>
+          <Button variant="primary" size="sm" icon="fas fa-paper-plane"
+            :loading="resendConfirm.sending"
+            :disabled="resendConfirm.sending || resendConfirm.loading || !!resendConfirm.error
+              || !resendConfirm.contact || (!resendConfirm.contact.email && !resendConfirm.contact.phone)"
+            @click="doResend">
+            {{ resendConfirm.sending ? 'Enviando…' : 'Confirmar envio' }}
+          </Button>
         </div>
       </div>
     </div>
