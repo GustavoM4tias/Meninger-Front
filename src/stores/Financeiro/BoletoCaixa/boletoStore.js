@@ -192,6 +192,16 @@ export const useBoletoStore = defineStore('boletoCaixa', () => {
         }
     }
 
+    async function regenerateHistoryItem(id) {
+        try {
+            await requestWithAuth(`/boleto-caixa/history/${id}/regenerate`, { method: 'POST' });
+            return true;
+        } catch (err) {
+            historyError.value = err.message || 'Erro ao regerar boleto internamente.';
+            return false;
+        }
+    }
+
     async function resendHistoryItem(id) {
         try {
             const data = await requestWithAuth(`/boleto-caixa/history/${id}/resend`, { method: 'POST' });
@@ -208,9 +218,14 @@ export const useBoletoStore = defineStore('boletoCaixa', () => {
     const timelineError = ref(null);
     const timelineEvents = ref([]);
     const timelineHistory = ref(null);
+    // Todas as tentativas (boletos) da MESMA reserva — alimenta a visão
+    // consolidada do modal (histórico completo do cliente num único lugar).
+    const timelineAttempts = ref([]);
 
     /**
-     * Busca eventos da timeline de um histórico específico.
+     * Busca a timeline CONSOLIDADA da reserva do histórico informado: todos os
+     * boletos emitidos para o mesmo cliente/reserva + todos os eventos de cada
+     * um, em ordem cronológica única.
      * @param {number} historyId
      * @param {object} [opts]
      * @param {boolean} [opts.silent=false] - quando true, mantém o conteúdo
@@ -224,10 +239,12 @@ export const useBoletoStore = defineStore('boletoCaixa', () => {
             timelineError.value = null;
             timelineEvents.value = [];
             timelineHistory.value = null;
+            timelineAttempts.value = [];
         }
         try {
-            const data = await requestWithAuth(`/boleto-caixa/history/${historyId}/events`);
+            const data = await requestWithAuth(`/boleto-caixa/history/${historyId}/reserva-timeline`);
             timelineEvents.value = Array.isArray(data?.events) ? data.events : [];
+            timelineAttempts.value = Array.isArray(data?.attempts) ? data.attempts : [];
             timelineHistory.value = data?.history || null;
         } catch (err) {
             if (!silent) timelineError.value = err.message || 'Erro ao carregar timeline.';
@@ -379,14 +396,14 @@ export const useBoletoStore = defineStore('boletoCaixa', () => {
         // history
         history, historyTotal, historyPage, historyLimit,
         historyLoading, historyError, historyFilter,
-        fetchHistory, setPage, totalPages, retryHistoryItem, resendHistoryItem,
+        fetchHistory, setPage, totalPages, retryHistoryItem, regenerateHistoryItem, resendHistoryItem,
         resetHistoryFilters,
         // stats (KPIs)
         stats, statsLoading, fetchStats,
         // facets
         facets, facetsLoading, fetchFacets,
         // timeline
-        timelineLoading, timelineError, timelineEvents, timelineHistory,
+        timelineLoading, timelineError, timelineEvents, timelineHistory, timelineAttempts,
         fetchTimeline, triggerPaymentCheck,
         // whatsapp template
         whatsappTemplate, whatsappTemplateLoading, whatsappTemplateError, whatsappTemplateMsg,
