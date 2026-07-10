@@ -29,7 +29,7 @@ const live = computed(() => {
 const activeTab = ref('summary');
 const tabOptions = [
   { value: 'summary',  label: 'Resumo',   icon: 'fas fa-circle-info' },
-  { value: 'timeline', label: 'Timeline', icon: 'fas fa-timeline' },
+  { value: 'timeline', label: 'Histórico', icon: 'fas fa-timeline' },
   { value: 'pdf',      label: 'PDF',      icon: 'fas fa-file-pdf' },
 ];
 
@@ -50,12 +50,14 @@ watch(() => [props.open, props.item?.id], async ([open, id]) => {
     // Limpa IMEDIATAMENTE o estado do boleto anterior, antes do fetch async.
     store.timelineEvents = [];
     store.timelineHistory = null;
+    store.timelineAttempts = [];
     await store.fetchTimeline(id);
   } else if (!open) {
     stopPolling();
     // Ao fechar, limpa pra próxima abertura não mostrar resíduo de quem fechou.
     store.timelineEvents = [];
     store.timelineHistory = null;
+    store.timelineAttempts = [];
   }
 }, { immediate: true });
 
@@ -63,6 +65,7 @@ function close() {
   stopPolling();
   store.timelineEvents = [];
   store.timelineHistory = null;
+  store.timelineAttempts = [];
   emit('close');
 }
 
@@ -175,6 +178,7 @@ const enrichedTimeline = computed(() => {
 
     events.push({
       id: `virtual-pending-${it.id}`,
+      boleto_history_id: it.id,
       type: 'situacao_pendente',
       severity: 'info',
       message: `Aguardando o lote Sienge processar antes de mudar a etapa para ${it.situacao_pendente_id} — ${tempo}. Aplicação programada para ${formatDateTime(pendingAt)}.`,
@@ -184,6 +188,48 @@ const enrichedTimeline = computed(() => {
   }
   return events;
 });
+
+// ── Tentativas (boletos) da reserva — histórico consolidado ─────────────────
+// A timeline agora junta TODOS os boletos emitidos para a mesma reserva. Este
+// bloco resume cada tentativa (emissão/reemissão) e permite taggear cada evento.
+const attempts = computed(() => store.timelineAttempts || []);
+const hasMultipleAttempts = computed(() => attempts.value.length > 1);
+
+// Mapa id do boleto → dados + nº de ordem (1 = primeira tentativa).
+const attemptMap = computed(() => {
+  const m = new Map();
+  attempts.value.forEach((a, i) => m.set(a.id, { ...a, ordem: i + 1 }));
+  return m;
+});
+
+// Tentativa à qual um evento pertence (pra rotular na timeline consolidada).
+function eventAttempt(ev) {
+  if (!ev?.boleto_history_id) return null;
+  return attemptMap.value.get(ev.boleto_history_id) || null;
+}
+
+// Situação combinada (emissão + pagamento) de uma tentativa, em 1 rótulo curto.
+function attemptOutcome(a) {
+  if (a.status === 'error') return { label: 'Erro na emissão', variant: 'danger', icon: 'fas fa-circle-exclamation' };
+  if (a.status === 'processing') return { label: 'Processando', variant: 'info', icon: 'fas fa-spinner fa-spin' };
+  if (a.status === 'skipped') return { label: 'Sem série', variant: 'neutral', icon: 'fas fa-forward' };
+  if (a.ignorado) return { label: 'Ignorado (duplicado)', variant: 'neutral', icon: 'fas fa-arrow-right-arrow-left' };
+  // status === 'success' → detalha pelo pagamento
+  const p = a.payment_status;
+  if (p === 'paid') return { label: 'Pago', variant: 'success', icon: 'fas fa-circle-check' };
+  if (p === 'cancelled') return { label: a.substituido_por_id ? 'Baixado (substituído)' : 'Baixado', variant: 'danger', icon: 'fas fa-ban' };
+  if (p === 'error') return { label: 'Erro na verificação', variant: 'warning', icon: 'fas fa-triangle-exclamation' };
+  return { label: 'Emitido · pendente', variant: 'info', icon: 'fas fa-clock' };
+}
+function outcomeChipClass(variant) {
+  return ({
+    success: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30',
+    danger:  'bg-red-500/15 text-red-700 dark:text-red-300 border border-red-500/30',
+    warning: 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30',
+    info:    'bg-blue-500/15 text-blue-700 dark:text-blue-300 border border-blue-500/30',
+    neutral: 'bg-ink/5 text-ink-muted border border-line',
+  })[variant] || 'bg-surface-sunken border border-line';
+}
 
 // ── Format helpers ──────────────────────────────────────────────────────────
 function formatCurrency(v) {
@@ -349,17 +395,45 @@ async function handleResend() {
 
 async function handleRetry() {
   if (!live.value) return;
-  if (!confirm(`Re-disparar emissão do boleto pra reserva ${live.value.idreserva}?`)) return;
+  // Reemissão manual pelo modal: emite e ENVIA ao cliente, sem mexer na etapa do
+  // CV.
+  //   • pending   → se a condição do RPV mudou, baixa o boleto atual e emite o
+  //                 atualizado; se nada mudou, backend não faz nada.
+  //   • cancelled → boleto anterior já baixado; só emite um novo.
+  //   • error     → reprocessamento normal (fluxo completo do webhook).
+  const isPending = live.value.status === 'success' && live.value.payment_status === 'pending';
+  const isCancelled = live.value.status === 'success' && live.value.payment_status === 'cancelled';
+  const isRegenerate = isPending || isCancelled;
+
+  let confirmMsg;
+  if (isPending) {
+    confirmMsg = `Este boleto ainda está EM ABERTO.\n\nSe a condição do Recurso Próprio à Vista tiver mudado, o boleto atual será CANCELADO (baixado no Ecobrança) e um novo será emitido com a condição atual e ENVIADO ao cliente. Se nada tiver mudado, nenhuma ação é feita.`;
+  } else if (isCancelled) {
+    confirmMsg = `O boleto anterior desta reserva foi baixado.\n\nGerar um NOVO boleto (com as condições atuais da série) e enviá-lo ao cliente?`;
+  } else {
+    confirmMsg = `Re-disparar emissão do boleto pra reserva ${live.value.idreserva}?`;
+  }
+  if (!confirm(confirmMsg)) return;
+
   actionState.value.retrying = true;
   try {
-    const ok = await store.retryHistoryItem(live.value.id);
+    const ok = isRegenerate
+      ? await store.regenerateHistoryItem(live.value.id)
+      : await store.retryHistoryItem(live.value.id);
     if (ok) {
-      actionMsg.value = { variant: 'success', text: 'Reprocessamento disparado — acompanhando atualizações…' };
-      // Reprocessar também roda Playwright (lento). Mesma estratégia do check.
+      actionMsg.value = {
+        variant: 'success',
+        text: isPending
+          ? 'Solicitado — se a condição mudou, o boleto atual será baixado e um novo emitido e enviado ao cliente. Acompanhe no histórico.'
+          : (isCancelled
+              ? 'Novo boleto sendo gerado e enviado ao cliente — acompanhe na lista do histórico.'
+              : 'Reprocessamento disparado — acompanhando atualizações…'),
+      };
+      // Roda Playwright (lento). Mesma estratégia do check.
       startPolling({ intervalMs: 5000, maxMs: 120000 });
       emit('changed');
     } else {
-      actionMsg.value = { variant: 'error', text: 'Falha ao reprocessar.' };
+      actionMsg.value = { variant: 'error', text: isRegenerate ? 'Falha ao gerar/reemitir boleto.' : 'Falha ao reprocessar.' };
     }
   } finally {
     actionState.value.retrying = false;
@@ -613,39 +687,87 @@ async function copyLink() {
           <div v-else-if="store.timelineError" class="text-sm text-red-500 py-3">
             <i class="fas fa-circle-exclamation"></i> {{ store.timelineError }}
           </div>
-          <div v-else-if="!enrichedTimeline.length" class="text-center py-12 text-ink-subtle">
-            <i class="fas fa-inbox text-3xl mb-2"></i>
-            <p class="text-sm">Nenhum evento registrado ainda.</p>
-            <p class="text-xs mt-1">Boletos antigos só registraram a emissão.</p>
-          </div>
-          <ul v-else class="space-y-3">
-            <li v-for="ev in enrichedTimeline" :key="ev.id"
-              class="flex items-start gap-3 pb-3 border-b border-line/40 last:border-b-0"
-              :class="ev._virtual ? 'bg-blue-500/5 border border-dashed border-blue-500/30 rounded-lg p-3' : ''">
-              <div class="h-8 w-8 rounded-full grid place-items-center shrink-0"
-                :class="ev._virtual ? 'bg-blue-500/15 text-blue-600 dark:text-blue-400' : eventIconBg(ev.severity)">
-                <i :class="eventIcon(ev.type, ev.severity)" class="text-sm"
-                  :style="ev._virtual ? 'animation: pulse 2s ease-in-out infinite' : ''"></i>
-              </div>
-              <div class="min-w-0 flex-1">
-                <div class="flex items-center justify-between gap-2 mb-0.5">
-                  <p class="text-xs font-semibold"
-                    :class="ev._virtual ? 'text-blue-700 dark:text-blue-300' : 'text-ink'">
-                    {{ eventTitle(ev.type) }}
-                    <span v-if="ev._virtual" class="ml-1 text-[9px] uppercase tracking-wider font-bold">⏳ pendente</span>
-                  </p>
-                  <span class="text-[10px] text-ink-subtle font-mono whitespace-nowrap">
-                    {{ formatDateTime(ev.created_at || ev.createdAt) }}
-                  </span>
+          <div v-else>
+            <!-- Tentativas desta reserva — histórico consolidado num só lugar -->
+            <div v-if="attempts.length" class="mb-4">
+              <p class="text-[11px] uppercase tracking-wider text-ink-subtle font-semibold mb-2">
+                Tentativas desta reserva ({{ attempts.length }})
+              </p>
+              <ul class="space-y-2">
+                <li v-for="(a, idx) in attempts" :key="a.id"
+                  class="rounded-lg border p-2.5 flex items-center gap-3"
+                  :class="a.id === live?.id ? 'border-accent/50 bg-accent/5' : 'border-line bg-surface-sunken/40'">
+                  <div class="shrink-0 h-7 w-7 rounded-full grid place-items-center bg-ink/5 text-ink-muted font-semibold text-[11px]">
+                    {{ idx + 1 }}
+                  </div>
+                  <div class="min-w-0 flex-1">
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                      <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold"
+                        :class="outcomeChipClass(attemptOutcome(a).variant)">
+                        <i :class="attemptOutcome(a).icon"></i> {{ attemptOutcome(a).label }}
+                      </span>
+                      <span v-if="a.id === live?.id" class="text-[9px] uppercase tracking-wider font-bold text-accent">aberto</span>
+                      <span class="text-[10px] text-ink-subtle font-mono">#{{ a.id }}</span>
+                    </div>
+                    <p class="text-[11px] text-ink-muted mt-0.5 truncate">
+                      {{ formatCurrency(a.valor) }} · venc {{ formatDate(a.vencimento) }}
+                      <span v-if="a.nosso_numero" class="font-mono"> · Nº {{ a.nosso_numero }}</span>
+                    </p>
+                  </div>
+                  <div class="shrink-0 text-right">
+                    <p class="text-[10px] text-ink-subtle font-mono">{{ formatDateTime(a.created_at || a.createdAt) }}</p>
+                    <a v-if="a.boleto_supabase_url" :href="a.boleto_supabase_url" target="_blank"
+                      class="text-[10px] text-accent hover:underline inline-flex items-center gap-1 mt-0.5">
+                      <i class="fas fa-file-pdf"></i> PDF
+                    </a>
+                  </div>
+                </li>
+              </ul>
+              <p class="text-[11px] uppercase tracking-wider text-ink-subtle font-semibold mt-4 pt-3 border-t border-line/60">
+                Linha do tempo completa
+              </p>
+            </div>
+
+            <!-- Eventos consolidados de TODAS as tentativas, em ordem cronológica -->
+            <div v-if="!enrichedTimeline.length" class="text-center py-12 text-ink-subtle">
+              <i class="fas fa-inbox text-3xl mb-2"></i>
+              <p class="text-sm">Nenhum evento registrado ainda.</p>
+              <p class="text-xs mt-1">Boletos antigos só registraram a emissão.</p>
+            </div>
+            <ul v-else class="space-y-3">
+              <li v-for="ev in enrichedTimeline" :key="ev.id"
+                class="flex items-start gap-3 pb-3 border-b border-line/40 last:border-b-0"
+                :class="ev._virtual ? 'bg-blue-500/5 border border-dashed border-blue-500/30 rounded-lg p-3' : ''">
+                <div class="h-8 w-8 rounded-full grid place-items-center shrink-0"
+                  :class="ev._virtual ? 'bg-blue-500/15 text-blue-600 dark:text-blue-400' : eventIconBg(ev.severity)">
+                  <i :class="eventIcon(ev.type, ev.severity)" class="text-sm"
+                    :style="ev._virtual ? 'animation: pulse 2s ease-in-out infinite' : ''"></i>
                 </div>
-                <p v-if="ev.message" class="text-xs text-ink-muted leading-snug">{{ ev.message }}</p>
-                <details v-if="ev.data" class="text-[10px] text-ink-subtle mt-1">
-                  <summary class="cursor-pointer hover:text-ink-muted">dados técnicos</summary>
-                  <pre class="bg-surface-sunken border border-line rounded p-2 mt-1 overflow-x-auto">{{ JSON.stringify(ev.data, null, 2) }}</pre>
-                </details>
-              </div>
-            </li>
-          </ul>
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-center justify-between gap-2 mb-0.5">
+                    <p class="text-xs font-semibold"
+                      :class="ev._virtual ? 'text-blue-700 dark:text-blue-300' : 'text-ink'">
+                      {{ eventTitle(ev.type) }}
+                      <span v-if="ev._virtual" class="ml-1 text-[9px] uppercase tracking-wider font-bold">⏳ pendente</span>
+                    </p>
+                    <span class="text-[10px] text-ink-subtle font-mono whitespace-nowrap">
+                      {{ formatDateTime(ev.created_at || ev.createdAt) }}
+                    </span>
+                  </div>
+                  <span v-if="hasMultipleAttempts && eventAttempt(ev)"
+                    class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-semibold mb-1 bg-ink/5 text-ink-muted border border-line">
+                    <i class="fas fa-hashtag"></i> Tentativa {{ eventAttempt(ev).ordem }}
+                    <span v-if="eventAttempt(ev).id === live?.id" class="text-accent">· aberto</span>
+                  </span>
+                  <p v-if="ev.message" class="text-xs text-ink-muted leading-snug">{{ ev.message }}</p>
+                  <details v-if="ev.data" class="text-[10px] text-ink-subtle mt-1">
+                    <summary class="cursor-pointer hover:text-ink-muted">dados técnicos</summary>
+                    <pre class="bg-surface-sunken border border-line rounded p-2 mt-1 overflow-x-auto">{{ JSON.stringify(ev.data, null, 2) }}</pre>
+                  </details>
+                </div>
+              </li>
+            </ul>
+          </div>
         </div>
 
         <!-- ── TAB: PDF ───────────────────────────────────────────────────── -->
@@ -686,11 +808,13 @@ async function copyLink() {
             @click="handleResend">
             Reenviar ao cliente
           </Button>
-          <Button v-if="isAdmin && live?.status === 'error'"
+          <Button v-if="isAdmin && (live?.status === 'error' || (live?.status === 'success' && ['pending', 'cancelled'].includes(live?.payment_status)))"
             variant="ghost" size="sm" icon="fas fa-rotate-right"
             :loading="actionState.retrying" :disabled="actionState.retrying"
             @click="handleRetry">
-            Reprocessar
+            {{ live?.status === 'error'
+                ? 'Reprocessar'
+                : (live?.payment_status === 'pending' ? 'Reemitir (condição atual)' : 'Gerar novo boleto') }}
           </Button>
           <Button v-if="isAdmin && live?.status === 'success' && live?.payment_status === 'pending'"
             variant="primary" size="sm" icon="fas fa-magnifying-glass-dollar"
