@@ -762,6 +762,8 @@ const LEVEL_TABS = [
       <CampaignDetailModal
         v-model:open="detailOpen"
         :campaign-id="detailId"
+        :since="periodo.since"
+        :until="periodo.until"
         @saved="store.fetchAll()" />
 
       <!-- Ferramentas admin (gear icon no header) -->

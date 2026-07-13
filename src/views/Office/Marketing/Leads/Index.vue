@@ -6,6 +6,7 @@ import { useLeadsStore } from '@/stores/Marketing/Lead/leadsStore';
 import Favorite from '@/components/config/Favorite.vue';
 import PageContainer from '@/components/UI/PageContainer.vue';
 import PageHeader from '@/components/UI/PageHeader.vue';
+import PageHelp from '@/components/UI/PageHelp.vue';
 import SegmentedControl from '@/components/UI/SegmentedControl.vue';
 
 import Filas from './components/Filas.vue';
@@ -14,6 +15,10 @@ import DashboardCharts from './components/DashboardCharts.vue';
 import FiltersBar from './components/FiltersBar.vue';
 import LeadsTable from './components/LeadsTable.vue';
 import LeadModal from './components/LeadModal.vue';
+import LeadsKpiCards from './components/LeadsKpiCards.vue';
+import CommercialFunnel from './components/CommercialFunnel.vue';
+import PeriodPicker from '../Campanhas/components/PeriodPicker.vue';
+import dayjs from 'dayjs';
 
 const store = useLeadsStore();
 const route = useRoute();
@@ -26,6 +31,30 @@ const error = toRef(store, 'error');
 const filtros = toRef(store, 'filtros');
 const kpiSituacoes = toRef(store, 'kpiSituacoes');
 const leadsByEnterprise = toRef(store, 'leadsByEnterprise');
+const situationsList = toRef(store, 'situationsList');
+const prevCount = toRef(store, 'prevCount');
+const prevSituacoes = toRef(store, 'prevSituacoes');
+
+// ── Período mestre (padrão do relatório Meta) ──────────────────────────────
+const periodoPicker = ref({
+  since: dayjs().startOf('month').format('YYYY-MM-DD'),
+  until: dayjs().format('YYYY-MM-DD'),
+  preset: 'this_month',
+});
+
+// Busca leads + período anterior (pros deltas) de uma vez.
+async function refreshLeads() {
+  await store.fetchLeads(true);
+  await store.fetchComparison();
+}
+
+function onPeriodChange(p) {
+  periodoPicker.value = p;
+  filtros.value.data_inicio = p.since;
+  filtros.value.data_fim = p.until;
+  syncUrlFromFilters();
+  refreshLeads();
+}
 
 const ARRAY_FIELDS = ['imobiliaria', 'corretor', 'situacao_nome', 'midia_principal', 'origem', 'empreendimento'];
 const STRING_FIELDS = ['nome', 'email', 'telefone', 'data_inicio', 'data_fim', 'cidade'];
@@ -72,20 +101,30 @@ function abrirModal([list, mode]) {
 }
 
 function buscar() {
+  // Se o usuário mexeu nas datas nos filtros, o picker vira "personalizado".
+  const fi = filtros.value.data_inicio, ff = filtros.value.data_fim;
+  if (fi && ff && (fi !== periodoPicker.value.since || ff !== periodoPicker.value.until)) {
+    periodoPicker.value = { since: fi, until: ff, preset: 'custom' };
+  }
   syncUrlFromFilters();
-  store.fetchLeads(true);
+  refreshLeads();
 }
 
 function limpar() {
+  periodoPicker.value = {
+    since: dayjs().startOf('month').format('YYYY-MM-DD'),
+    until: dayjs().format('YYYY-MM-DD'),
+    preset: 'this_month',
+  };
   Object.assign(filtros.value, {
     nome: '', email: '', telefone: '',
     imobiliaria: [], corretor: [],
     midia_principal: [], origem: [], empreendimento: [],
-    data_inicio: '', data_fim: '', cidade: '',
+    data_inicio: periodoPicker.value.since, data_fim: periodoPicker.value.until, cidade: '',
   });
   store.applyDefaultSituacoes();
   router.replace({ query: {} });
-  store.fetchLeads(true);
+  refreshLeads();
 }
 
 function onFiltrarSituacao(situacao) {
@@ -93,13 +132,20 @@ function onFiltrarSituacao(situacao) {
   if (situacao && !set.has(situacao)) set.add(situacao);
   filtros.value.situacao_nome = Array.from(set);
   syncUrlFromFilters();
-  store.fetchLeads(true);
+  refreshLeads();
 }
 
 onMounted(async () => {
   syncFiltersFromUrl();
+  // Se a URL trouxe datas, o picker reflete; senão mantém o default (este mês).
+  if (filtros.value.data_inicio && filtros.value.data_fim) {
+    periodoPicker.value = { since: filtros.value.data_inicio, until: filtros.value.data_fim, preset: 'custom' };
+  } else {
+    filtros.value.data_inicio = periodoPicker.value.since;
+    filtros.value.data_fim = periodoPicker.value.until;
+  }
   await store.fetchFilas();
-  await store.fetchLeads(true);
+  await refreshLeads();
   if (route.query.excluir_painel === '1') store.applyDefaultOrigens();
 });
 </script>
@@ -117,10 +163,27 @@ onMounted(async () => {
           <Favorite :router="'/marketing/leads'" :section="'Leads'" />
         </template>
         <template #actions>
+          <PageHelp storage-key="marketing-leads" title="Como usar o Relatório de Leads"
+            intro="Acompanhe em tempo real o desempenho dos leads captados — por situação e por empreendimento."
+            :steps="[
+              { title: 'Filtre o período', text: 'Na barra de Filtros, ajuste datas, empreendimento, mídia, situação e mais; depois clique em Buscar.' },
+              { title: 'Leia os indicadores', text: 'Os cartões mostram os leads por situação. Clique em um para filtrar por ele.' },
+              { title: 'Por empreendimento', text: 'Na tabela, veja a distribuição e abra os leads de cada empreendimento em lista, funil, barras ou pizza.' },
+              { title: 'Visão analítica', text: 'Alterne para “Dashboard” no topo para os gráficos completos.' },
+            ]"
+            :tips="[
+              'As filas de atendimento ficam no botão ao lado do seletor de visão.',
+              'Selecione vários empreendimentos na tabela para abri-los juntos.',
+            ]" />
           <Filas :filas="filas" />
           <SegmentedControl v-model="view" :options="viewOptions" size="sm" />
         </template>
       </PageHeader>
+
+      <!-- Período mestre -->
+      <div class="mb-3">
+        <PeriodPicker :periodo="periodoPicker" @update:periodo="onPeriodChange" />
+      </div>
 
       <!-- Filtros -->
       <div class="mb-4">
@@ -145,7 +208,23 @@ onMounted(async () => {
       <!-- Visão geral -->
       <template v-if="view === 'overview'">
         <div class="space-y-4">
-          <SummaryCards :periodo="periodo" :kpi="kpiSituacoes" @filtrarSituacao="onFiltrarSituacao" />
+          <!-- KPIs com variação vs período anterior -->
+          <LeadsKpiCards
+            :total="kpiSituacoes.total"
+            :prev-total="prevCount"
+            :situations="situationsList"
+            :prev-situacoes="prevSituacoes" />
+
+          <!-- Funil comercial (destaque) + situações detalhadas lado a lado -->
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <CommercialFunnel
+              :situations="situationsList"
+              :prev-situacoes="prevSituacoes"
+              :total="kpiSituacoes.total"
+              @filtrarSituacao="onFiltrarSituacao" />
+            <SummaryCards :periodo="periodo" :kpi="kpiSituacoes" @filtrarSituacao="onFiltrarSituacao" />
+          </div>
+
           <LeadsTable :data="leadsByEnterprise" @abrirModal="abrirModal" />
         </div>
       </template>
