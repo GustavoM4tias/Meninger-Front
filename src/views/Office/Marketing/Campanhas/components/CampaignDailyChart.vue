@@ -28,6 +28,13 @@ const moneyFmt = computed(() => new Intl.NumberFormat('pt-BR', {
     style: 'currency', currency: props.currency || 'BRL', minimumFractionDigits: 2,
 }));
 
+// Interpreta 'YYYY-MM-DD' como data LOCAL. `new Date('2026-07-01')` seria
+// meia-noite UTC → em UTC-3 volta pra 30/06 e o rótulo aparece um dia antes.
+function localDate(s) {
+    const [y, m, d] = String(s).slice(0, 10).split('-').map(Number);
+    return new Date(y, (m || 1) - 1, d || 1);
+}
+
 const option = computed(() => {
     const days = props.daily.map(d => d.day);
     const spend = props.daily.map(d => Number(d.spend) || 0);
@@ -52,7 +59,7 @@ const option = computed(() => {
                 if (!params?.length) return '';
                 const dayIso = params[0].axisValue;
                 let day;
-                try { day = new Date(dayIso).toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' }); }
+                try { day = localDate(dayIso).toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' }); }
                 catch { day = dayIso; }
 
                 const lines = [`<b>${day}</b>`];
@@ -74,7 +81,7 @@ const option = computed(() => {
             axisLabel: {
                 color: '#94a3b8', fontSize: 10,
                 formatter(value) {
-                    try { return new Date(value).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }); }
+                    try { return localDate(value).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }); }
                     catch { return value; }
                 },
             },
