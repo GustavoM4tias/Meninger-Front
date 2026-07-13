@@ -309,3 +309,30 @@ html.dark .kb-reading .markdown img { border-color: rgb(30 41 59); }
    O z-index do tippy.js é tratado no main.js (a lib aplica inline).
    ─────────────────────────────────────────────── */
 .Vue-Toastification__container { z-index: 100000 !important; }
+
+/* ───────────────────────────────────────────────
+   Tooltip (tippy.js) — tema 'menin'
+   Segue os tokens semânticos, então acompanha claro/escuro sozinho.
+   Aplicado globalmente pelo diretivo v-tippy (main.js).
+   ─────────────────────────────────────────────── */
+.tippy-box[data-theme~='menin'] {
+  background-color: rgb(var(--surface-overlay));
+  color: rgb(var(--ink));
+  border: 1px solid rgb(var(--line));
+  border-radius: 0.5rem;
+  box-shadow: 0 8px 24px -6px rgb(15 23 42 / 0.20), 0 2px 8px -2px rgb(15 23 42 / 0.12);
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.1rem;
+}
+
+.tippy-box[data-theme~='menin'] .tippy-content {
+  padding: 0.3rem 0.6rem;
+}
+
+/* Seta na cor da superfície (casa com o corpo do balão) */
+.tippy-box[data-theme~='menin'] .tippy-arrow { color: rgb(var(--surface-overlay)); }
+.tippy-box[data-theme~='menin'][data-placement^='top']    > .tippy-arrow::before { border-top-color: rgb(var(--surface-overlay)); }
+.tippy-box[data-theme~='menin'][data-placement^='bottom'] > .tippy-arrow::before { border-bottom-color: rgb(var(--surface-overlay)); }
+.tippy-box[data-theme~='menin'][data-placement^='left']   > .tippy-arrow::before { border-left-color: rgb(var(--surface-overlay)); }
+.tippy-box[data-theme~='menin'][data-placement^='right']  > .tippy-arrow::before { border-right-color: rgb(var(--surface-overlay)); }

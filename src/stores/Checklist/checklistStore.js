@@ -306,22 +306,36 @@ export const useChecklistStore = defineStore('checklist', () => {
         if (t && t.attachments_count) t.attachments_count -= 1;
     }
 
-    // Recalcula o anel de progresso/orçamento localmente (espelha o backend).
+    // Recalcula o anel de progresso localmente (espelha o backend).
     function recomputeLocalProgress() {
         if (!current.value) return;
         const tasks = current.value.tasks || [];
         const today = new Date().toISOString().slice(0, 10);
-        let total = 0, done = 0, overdue = 0, budget = 0, budget_monthly = 0;
+        let total = 0, done = 0, overdue = 0;
         for (const t of tasks) {
             const sc = t.state_class || (t.status_id ? statusById.value.get(t.status_id)?.state_class : 'TODO') || 'TODO';
             if (sc === 'CANCELLED') continue;
             total++;
             if (sc === 'DONE') done++;
             if (t.due_date && sc !== 'DONE' && String(t.due_date) < today) overdue++;
-            const v = Number(t.value) || 0;
-            if (t.value_kind === 'MONTHLY') budget_monthly += v; else budget += v;
         }
-        current.value.checklist.progress = { total, done, overdue, budget, budget_monthly, pct: total ? Math.round((done / total) * 100) : 0 };
+        current.value.checklist.progress = { total, done, overdue, pct: total ? Math.round((done / total) * 100) : 0 };
+    }
+
+    // Reordena/move tarefas (drag-and-drop). items: [{ id, position, category?, section_id? }].
+    // Aplica otimista no estado local e persiste; em erro, refaz do servidor.
+    async function reorderTasks(items) {
+        if (!items?.length) return;
+        const byId = new Map(items.map((i) => [i.id, i]));
+        for (const t of (current.value?.tasks || [])) {
+            const it = byId.get(t.id);
+            if (!it) continue;
+            if ('position' in it) t.position = it.position;
+            if ('category' in it) t.category = it.category;
+            if ('section_id' in it) t.section_id = it.section_id;
+        }
+        try { await api.reorderTasks(items); }
+        catch (e) { error.value = e.message; await refreshCurrent(); }
     }
 
     return {
@@ -331,7 +345,7 @@ export const useChecklistStore = defineStore('checklist', () => {
         loadHome, loadTemplates, loadUsers, loadEnterprises, loadStatusesCatalog, createFromTemplate, createBlank, importExcel,
         openChecklist, refreshCurrent, updateChecklist, archiveChecklist,
         addSection, updateSection, removeSection,
-        createTask, patchTask, setTaskStatus, setAssignee, removeTask, nudge, saveTask, deleteChecklist, cloneChecklist,
+        createTask, patchTask, setTaskStatus, setAssignee, removeTask, nudge, saveTask, deleteChecklist, cloneChecklist, reorderTasks,
         isSelected, toggleSelect, selectMany, clearSelection, bulkApply, bulkApplyTo,
         loadChecklistCobranca, saveChecklistCobranca,
         openTask, closeTask, addComment, addAttachment, removeAttachment,

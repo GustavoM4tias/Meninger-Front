@@ -14,7 +14,6 @@ const emit = defineEmits(['open-task']);
 onMounted(() => { if (!store.users.length) store.loadUsers(); });
 
 const today = dayjs().format('YYYY-MM-DD');
-const brl = (v) => (Number(v) ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(v)) : '-');
 
 // Responsáveis resolvidos p/ as bolinhas (1+). Cai no t.assignee se store.users não tiver o id.
 function assigneesOf(t) {
@@ -64,7 +63,6 @@ function categoriesOf(sectionId) {
     const seen = []; for (const t of topTasks(sectionId)) { const c = t.category || ''; if (!seen.includes(c)) seen.push(c); } return seen;
 }
 function tasksByCategory(sectionId, cat) { return topTasks(sectionId).filter((t) => (t.category || '') === cat); }
-function sectionTotal(sectionId) { return topTasks(sectionId).reduce((s, t) => s + (Number(t.value) || 0), 0); }
 
 const scColor = (sc) => ({ TODO: '#94a3b8', IN_PROGRESS: '#3b82f6', BLOCKED: '#ef4444', DONE: '#22c55e', CANCELLED: '#9ca3af' }[sc] || '#94a3b8');
 const statusColor = (id) => store.statusById.get(id)?.color || scColor(store.statusById.get(id)?.state_class);
@@ -83,6 +81,65 @@ function bulkPriority(secId, e) { if (e.target.value) store.bulkApplyTo(selected
 function bulkDue(secId, e) { store.bulkApplyTo(selectedInSection(secId), { due_date: e.target.value || null }); }
 function bulkShift(secId) { store.bulkApplyTo(selectedInSection(secId), { shiftDays: Number(shiftN.value) || 0 }); }
 function bulkDelete(secId) { const ids = selectedInSection(secId); if (confirm(`Excluir ${ids.length} tarefa(s)?`)) store.bulkApplyTo(ids, { delete: true }); }
+// Mover selecionadas para uma categoria (facilita reorganizar em lote).
+const bulkCat = ref({});
+function bulkMoveCategory(secId) {
+    const ids = selectedInSection(secId);
+    if (!ids.length) return;
+    const cat = (bulkCat.value[secId] || '').trim();
+    store.bulkApplyTo(ids, { category: cat || null });
+    bulkCat.value[secId] = '';
+}
+function categoriesInChecklist() {
+    const seen = new Set();
+    for (const t of (store.current?.tasks || [])) { const c = (t.category || '').trim(); if (c) seen.add(c); }
+    return [...seen].sort();
+}
+
+// ── Arrastar-e-soltar: reordenar dentro da categoria e mover entre categorias ──
+// Reordenar só faz sentido sem filtro ativo (a lista visível = lista real).
+const canDrag = computed(() => props.isAdmin && !filterActive.value);
+const dragId = ref(null);       // tarefa sendo arrastada
+const dragOverId = ref(null);   // linha sob o cursor (indicador visual)
+const moveConfirm = ref(null);  // { src, targetId, sectionId, toCat, fromCat }
+
+function onDragStart(t, ev) {
+    if (!canDrag.value) return;
+    dragId.value = t.id;
+    if (ev.dataTransfer) { ev.dataTransfer.effectAllowed = 'move'; try { ev.dataTransfer.setData('text/plain', String(t.id)); } catch { /* Safari */ } }
+}
+function onDragEnd() { dragId.value = null; dragOverId.value = null; }
+function onRowDragOver(t, ev) { if (!canDrag.value || dragId.value == null) return; ev.preventDefault(); dragOverId.value = t.id; }
+
+// Constrói a lista reordenada de uma categoria (na ordem visual) com o src inserido
+// antes de targetId (ou no fim, se targetId = null), e reindexa as posições.
+function buildReorder(src, targetId, sectionId, toCat) {
+    const list = tasksByCategory(sectionId, toCat).filter((t) => t.id !== src.id);
+    const idx = targetId ? list.findIndex((t) => t.id === targetId) : -1;
+    list.splice(idx < 0 ? list.length : idx, 0, src);
+    return list.map((t, i) => ({ id: t.id, position: (i + 1) * 10, category: toCat || null, section_id: sectionId }));
+}
+
+// Soltou sobre uma tarefa (targetId) ou sobre o cabeçalho da categoria (targetId=null).
+function onDrop(targetId, sectionId, cat) {
+    dragOverId.value = null;
+    const src = (store.current?.tasks || []).find((t) => t.id === dragId.value);
+    dragId.value = null;
+    if (!src || src.id === targetId) return;
+    const toCat = cat || '';
+    const fromCat = src.category || '';
+    // Categoria (ou seção) diferente: confirma antes de mover.
+    if (toCat !== fromCat || sectionId !== src.section_id) {
+        moveConfirm.value = { src, targetId, sectionId, toCat, fromCat };
+        return;
+    }
+    store.reorderTasks(buildReorder(src, targetId, sectionId, toCat));
+}
+function confirmMove() {
+    const m = moveConfirm.value; moveConfirm.value = null;
+    if (m) store.reorderTasks(buildReorder(m.src, m.targetId, m.sectionId, m.toCat));
+}
+function cancelMove() { moveConfirm.value = null; }
 
 // ── Preview ao passar o mouse (1s) ──
 const hover = ref(null);
@@ -119,7 +176,7 @@ const bulkCtrl = 'text-xs rounded-lg border border-line bg-surface-raised text-i
 
 <template>
     <div class="space-y-5">
-        <div v-for="sec in visibleSections" :key="sec.id" class="surface-card overflow-hidden">
+        <div v-for="sec in visibleSections" :key="sec.id" class="surface-card overflow-hidden animate-fade-in">
             <!-- Cabeçalho da seção -->
             <div class="flex items-center gap-2.5 px-4 py-3 border-b border-line bg-surface-sunken/40">
                 <input v-if="isAdmin" type="checkbox" :checked="allSelected(sec.id)" @change="toggleSection(sec.id, $event)" title="Selecionar seção"
@@ -127,7 +184,7 @@ const bulkCtrl = 'text-xs rounded-lg border border-line bg-surface-raised text-i
                 <span class="w-2.5 h-2.5 rounded-full shrink-0" :style="{ background: sec.color || '#64748b' }"></span>
                 <h3 class="font-semibold text-ink">{{ sec.name }}</h3>
                 <span class="text-xs text-ink-subtle bg-surface-sunken px-1.5 py-0.5 rounded-md">{{ topTasks(sec.id).length }}</span>
-                <span v-if="sectionTotal(sec.id)" class="ml-auto text-xs font-medium text-ink-muted">{{ brl(sectionTotal(sec.id)) }}</span>
+                <span v-if="canDrag" class="ml-auto text-[11px] text-ink-subtle inline-flex items-center gap-1"><i class="fas fa-up-down-left-right"></i> arraste para reordenar</span>
             </div>
 
             <!-- Barra de edição em lote -->
@@ -138,6 +195,10 @@ const bulkCtrl = 'text-xs rounded-lg border border-line bg-surface-raised text-i
                 <select @change="bulkAssignee(sec.id, $event)" :class="bulkCtrl" title="Atribuir responsável"><option value="">Atribuir responsável</option><option v-for="u in store.users" :key="u.id" :value="u.id">{{ u.username }}</option></select>
                 <select @change="bulkPriority(sec.id, $event)" :class="bulkCtrl" title="Definir prioridade"><option value="">Definir prioridade</option><option value="LOW">Baixa</option><option value="MEDIUM">Média</option><option value="HIGH">Alta</option><option value="URGENT">Urgente</option></select>
                 <label class="text-xs text-ink-muted inline-flex items-center gap-1.5">Prazo:<input type="date" @change="bulkDue(sec.id, $event)" :class="bulkCtrl" /></label>
+                <span class="inline-flex items-center gap-1.5">
+                    <input v-model="bulkCat[sec.id]" list="checklist-cats" @keyup.enter="bulkMoveCategory(sec.id)" placeholder="Mover p/ categoria" :class="[bulkCtrl, 'w-40']" title="Digite a categoria de destino (existente ou nova)" />
+                    <Button variant="normal" size="sm" @click="bulkMoveCategory(sec.id)">Mover</Button>
+                </span>
                 <!-- <span class="inline-flex items-center gap-1.5 text-xs text-ink-muted">
                     Adiar
                     <input type="number" v-model.number="shiftN" class="w-14 text-xs rounded-lg border border-line bg-surface-raised text-ink px-2 py-1.5 focus-ring" />
@@ -154,29 +215,37 @@ const bulkCtrl = 'text-xs rounded-lg border border-line bg-surface-raised text-i
             <div class="overflow-x-auto">
                 <table class="w-full text-sm border-collapse">
                     <thead>
-                        <tr class="text-ink-subtle text-[11px] uppercase tracking-wide">
+                        <tr class="text-ink-subtle text-[11px] uppercase tracking-wide border-b border-line bg-surface-sunken/20">
                             <th class="w-9 px-2 py-2"></th>
                             <th class="px-3 py-2 text-left font-semibold">Tarefa</th>
                             <th class="w-52 px-3 py-2 text-left font-semibold">Anotação</th>
                             <th class="w-48 px-3 py-2 text-left font-semibold">Status</th>
                             <th class="w-36 px-3 py-2 text-left font-semibold">Responsável</th>
                             <th class="w-36 px-3 py-2 text-left font-semibold">Prazo</th>
-                            <th class="w-28 px-3 py-2 text-right font-semibold">Valor</th>
                             <th class="w-10 px-2 py-2"></th>
                         </tr>
                     </thead>
                     <tbody>
                         <template v-for="cat in categoriesOf(sec.id)" :key="cat || 'geral'">
-                            <tr v-if="cat" class="bg-surface-sunken/30">
+                            <tr v-if="cat" class="bg-surface-sunken/30" @dragover="onRowDragOver({ id: null }, $event)" @drop="onDrop(null, sec.id, cat)">
                                 <td></td>
-                                <td colspan="7" class="px-3 py-1.5 text-[11px] font-semibold text-ink-muted uppercase tracking-wide">{{ cat }}</td>
+                                <td colspan="6" class="px-3 py-1.5 text-[11px] font-semibold text-ink-muted uppercase tracking-wide">{{ cat }}</td>
                             </tr>
                             <tr v-for="t in tasksByCategory(sec.id, cat)" :key="t.id"
+                                :draggable="canDrag"
+                                @dragstart="onDragStart(t, $event)" @dragend="onDragEnd"
+                                @dragover="onRowDragOver(t, $event)" @drop="onDrop(t.id, sec.id, cat)"
                                 class="border-t border-line-subtle group transition-colors"
-                                :class="store.isSelected(t.id) ? 'bg-accent-soft/40' : 'hover:bg-surface-sunken/50'"
+                                :class="[
+                                    store.isSelected(t.id) ? 'bg-accent-soft/40' : 'hover:bg-surface-sunken/50',
+                                    dragId === t.id ? 'opacity-40' : '',
+                                    dragOverId === t.id ? '!border-t-2 !border-accent' : '',
+                                    canDrag ? 'cursor-grab active:cursor-grabbing' : '',
+                                ]"
                                 @mouseenter="onHover(t, $event)" @mouseleave="onLeave">
-                                <td class="px-2 py-1.5 text-center align-middle">
-                                    <input v-if="isAdmin" type="checkbox" :checked="store.isSelected(t.id)" @change="store.toggleSelect(t.id)" class="h-4 w-4 cursor-pointer rounded" />
+                                <td class="px-2 py-1.5 text-center align-middle whitespace-nowrap">
+                                    <i v-if="canDrag" class="fas fa-grip-vertical text-[11px] text-ink-subtle/40 group-hover:text-ink-subtle mr-1" title="Arraste para reordenar ou mover de categoria"></i>
+                                    <input v-if="isAdmin" type="checkbox" :checked="store.isSelected(t.id)" @change="store.toggleSelect(t.id)" class="h-4 w-4 cursor-pointer rounded align-middle" />
                                 </td>
                                 <td class="px-3 py-1.5 align-middle">
                                     <button @click="emit('open-task', t.id)" class="text-left text-ink font-medium hover:text-accent transition-colors w-80 truncate">{{ t.title }}</button>
@@ -207,19 +276,13 @@ const bulkCtrl = 'text-xs rounded-lg border border-line bg-surface-raised text-i
                                     <input type="date" :value="t.due_date || ''" :disabled="!isAdmin" @change="store.patchTask(t.id, { due_date: $event.target.value || null })"
                                         class="text-center -me-6" :class="[cellInput, t.due_date && t.due_date < today && t.state_class !== 'DONE' ? '!text-red-500 font-semibold' : 'text-ink-muted']" />
                                 </td>
-                                <td class="px-2 py-1.5 align-middle relative">
-                                    <span class="text-gray-300 text-xs absolute top-1 left-1">R$</span>
-                                    <input type="number" step="0.01" :value="t.value ?? ''"
-                                        @change="store.patchTask(t.id, { value: $event.target.value !== '' ? Number($event.target.value) : null })"
-                                        :disabled="true" placeholder="0,00" :class="[cellInput, 'text-right border-none']" />
-                                </td>
                                 <td class="px-2 py-1.5 text-right align-middle">
                                     <button @click="emit('open-task', t.id)" title="Abrir" class="text-ink-subtle hover:text-accent opacity-0 group-hover:opacity-100 transition-opacity focus-ring rounded"><i class="fas fa-up-right-and-down-left-from-center text-xs"></i></button>
                                 </td>
                             </tr>
                             <tr v-if="cat && isAdmin" class="border-t border-line-subtle/40">
                                 <td></td>
-                                <td colspan="7" class="px-3 py-1.5">
+                                <td colspan="6" class="px-3 py-1.5">
                                     <input v-model="newCatTask[sec.id + '|' + cat]" @keyup.enter="addCatTask(sec.id, cat)" :placeholder="'+ tarefa em ' + cat"
                                         class="w-full text-xs bg-transparent placeholder-ink-subtle focus:outline-none text-ink-muted" />
                                 </td>
@@ -228,13 +291,13 @@ const bulkCtrl = 'text-xs rounded-lg border border-line bg-surface-raised text-i
 
                         <tr v-if="!topTasks(sec.id).length">
                             <td></td>
-                            <td colspan="7" class="px-3 py-3 text-xs text-ink-subtle">Nenhuma tarefa nesta seção.</td>
+                            <td colspan="6" class="px-3 py-3 text-xs text-ink-subtle">Nenhuma tarefa nesta seção.</td>
                         </tr>
 
                         <!-- Nova tarefa (admin) -->
                         <tr v-if="isAdmin" class="border-t border-line">
                             <td></td>
-                            <td colspan="7" class="px-3 py-2.5">
+                            <td colspan="6" class="px-3 py-2.5">
                                 <div class="flex items-center gap-2">
                                     <i class="fas fa-plus text-ink-subtle text-xs"></i>
                                     <input v-model="newTaskTitle[sec.id]" @keyup.enter="addTask(sec.id)" placeholder="Nova tarefa (Enter para adicionar)"
@@ -260,8 +323,28 @@ const bulkCtrl = 'text-xs rounded-lg border border-line bg-surface-raised text-i
             <button @click="addSection" class="text-sm text-accent hover:underline font-medium">adicionar seção</button>
         </div>
 
+        <!-- Categorias existentes p/ o "Mover p/ categoria" da barra em lote -->
+        <datalist id="checklist-cats">
+            <option v-for="c in categoriesInChecklist()" :key="c" :value="c" />
+        </datalist>
+
         <TaskPreview v-if="hover" :task="hover.task" :x="hover.x" :y="hover.y" />
         <UserInfoModal v-if="infoUser" :user="infoUser" @close="infoUser = null" />
+
+        <!-- Confirmação ao arrastar uma tarefa para OUTRA categoria/seção -->
+        <Modal :open="!!moveConfirm" size="sm" title="Mover tarefa" @close="cancelMove">
+            <div class="flex items-start gap-3">
+                <span class="h-9 w-9 grid place-items-center rounded-full bg-accent-soft text-accent shrink-0"><i class="fas fa-arrows-turn-to-dots"></i></span>
+                <p class="text-sm text-ink-muted">
+                    Mover <strong class="text-ink">{{ moveConfirm?.src?.title }}</strong>
+                    para a categoria <strong class="text-ink">{{ moveConfirm?.toCat || 'Geral (sem categoria)' }}</strong>?
+                </p>
+            </div>
+            <template #footer>
+                <Button variant="ghost" size="sm" @click="cancelMove">Cancelar</Button>
+                <Button variant="primary" size="sm" icon="fas fa-check" @click="confirmMove">Mover</Button>
+            </template>
+        </Modal>
 
         <Modal :open="!!doneConfirm" size="sm" title="Concluir tarefa" @close="cancelDone">
             <div class="flex items-start gap-3">

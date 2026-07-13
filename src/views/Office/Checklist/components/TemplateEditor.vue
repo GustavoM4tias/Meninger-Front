@@ -61,7 +61,7 @@ async function saveItem(it) {
     try {
         await api.saveTemplateItem(data.value.template.id, {
             id: it.id, section_id: it.section_id, title: it.title, category: it.category || null,
-            default_priority: it.default_priority || 'MEDIUM', default_value: it.default_value ?? null,
+            default_priority: it.default_priority || 'MEDIUM',
             default_assignee_user_id: it.default_assignee_user_id || null,
             due_anchor: it.due_anchor || null, due_offset_days: it.due_anchor ? (Number(it.due_offset_days) || 0) : null,
             notes_template: it.notes_template || null,
@@ -131,7 +131,6 @@ const fieldCls = 'rounded-lg border border-line bg-surface-raised text-ink px-2.
                             <label v-if="it.due_anchor" class="inline-flex items-center gap-1 text-xs text-ink-muted">
                                 <input type="number" v-model.number="it.due_offset_days" class="w-16 rounded-lg border border-line bg-surface-raised text-ink px-2 h-9 text-sm focus-ring" /> dias
                             </label>
-                            <input type="number" step="0.01" v-model.number="it.default_value" placeholder="valor R$" :class="[fieldCls, 'w-28']" />
                             <div class="ml-auto inline-flex gap-1.5">
                                 <Button size="sm" variant="outline" icon="fas fa-floppy-disk" @click="saveItem(it)">Salvar</Button>
                                 <Button size="sm" variant="ghost" icon="fas fa-trash" class="!text-red-500" @click="removeItem(it)" />

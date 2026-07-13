@@ -8,10 +8,14 @@ import ProgressRing from './components/ProgressRing.vue';
 import EnterprisePicker from './components/EnterprisePicker.vue';
 import Modal from '@/components/UI/Modal.vue';
 import Button from '@/components/UI/Button.vue';
+import IconButton from '@/components/UI/IconButton.vue';
 import Input from '@/components/UI/Input.vue';
 import SegmentedControl from '@/components/UI/SegmentedControl.vue';
 import MultiSelector from '@/components/UI/MultiSelector.vue';
 import Badge from '@/components/UI/Badge.vue';
+import PageContainer from '@/components/UI/PageContainer.vue';
+import PageHeader from '@/components/UI/PageHeader.vue';
+import PageHelp from '@/components/UI/PageHelp.vue';
 import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 
 const store = useChecklistStore();
@@ -34,7 +38,6 @@ async function refreshHome() { await store.loadHome(); if (showApprovals.value) 
 onMounted(refreshHome);
 onActivated(refreshHome); // recarrega ao voltar (keep-alive) — reflete tarefas recém-atribuídas
 
-const brl = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(v) || 0);
 const fmt = (d) => (d ? dayjs(d).format('DD/MM/YYYY') : '-');
 const today = dayjs().format('YYYY-MM-DD');
 
@@ -192,40 +195,49 @@ async function submitNew() {
         router.push(`/checklists/${res.checklist.id}`);
     } catch (e) { toast.error(e.message || 'Erro ao criar checklist.'); }
 }
-
-const btnPrimary = 'inline-flex items-center gap-2 bg-accent hover:bg-accent-hover text-white text-sm font-medium px-4 py-2 rounded-lg shadow-soft focus-ring';
 </script>
 
 <template>
-    <div class="p-4 md:p-6 max-w-7xl mx-auto bg-surface">
+    <PageContainer>
         <!-- Cabeçalho -->
-        <div class="flex items-center justify-between flex-wrap gap-3 mb-5">
-            <div>
-                <h1 class="text-xl md:text-2xl font-bold text-ink flex items-center gap-2">
-                    <i class="fas fa-list-check text-accent"></i> Checklists
-                </h1>
-                <p class="text-sm text-ink-muted">Lançamentos, gestão e cobrança de entregas e demandas.</p>
-            </div>
-            <div class="flex items-center gap-2">
+        <PageHeader icon="fas fa-clipboard-check" title="Checklists"
+            subtitle="Lançamentos, gestão e cobrança de entregas e demandas.">
+            <template #actions>
+                <PageHelp storage-key="checklists" title="Como usar os Checklists"
+                    intro="Aqui a equipe acompanha e executa os checklists de lançamento e as demandas — do painel geral até as suas tarefas."
+                    :steps="[
+                        { title: 'Escolha a aba', text: 'Painel (visão geral e indicadores), Checklists (a lista completa) e Minhas Tarefas (o que está sob sua responsabilidade).' },
+                        { title: 'Abrir uma tarefa', text: 'Clique em qualquer tarefa para ver detalhes, anexos e mudar o status.' },
+                        { title: 'Criar (admin)', text: 'Use “Novo checklist” a partir de um modelo, ou “Importar Excel” para subir uma planilha pronta.' },
+                    ]"
+                    :tips="[
+                        'Itens em vermelho estão em atraso — priorize-os.',
+                        'No Painel, filtrar por checklist ou responsável recalcula os indicadores.',
+                    ]" />
+
                 <label v-if="isAdmin"
-                    class="inline-flex items-center gap-2 bg-surface-raised border border-line text-ink-muted text-sm font-medium px-3 py-2 rounded-lg cursor-pointer hover:bg-surface-sunken focus-ring">
-                    <i class="fas fa-file-excel text-emerald-500"></i> {{ importing ? 'Importando...' : 'Importar Excel'
-                    }}
+                    class="inline-flex items-center gap-2 h-9 px-3 rounded-lg text-sm font-medium cursor-pointer shrink-0
+                           bg-surface-raised border border-line text-ink-muted
+                           hover:bg-surface-sunken hover:text-ink hover:border-line-strong
+                           transition-colors focus-ring">
+                    <i class="fas fa-file-excel text-emerald-500"></i>
+                    <span class="hidden sm:inline">{{ importing ? 'Importando...' : 'Importar Excel' }}</span>
                     <input type="file" accept=".xlsx,.xls,.csv" class="hidden" @change="onImport"
                         :disabled="importing" />
                 </label>
-                <button v-if="isAdmin" @click="openModal" :class="btnPrimary"><i class="fas fa-plus"></i> Novo checklist</button>
-                <button v-if="isAdmin" @click="goAdmin" title="Administração (cobrança, status, perfis de autorização)"
-                    class="inline-flex items-center justify-center h-9 w-9 rounded-lg border border-line text-ink-muted hover:bg-surface-sunken hover:text-ink focus-ring transition">
-                    <i class="fas fa-gear"></i>
-                </button>
-            </div>
-        </div>
+                <Button v-if="isAdmin" icon="fas fa-plus" @click="openModal">
+                    <span class="hidden sm:inline">Novo checklist</span>
+                    <span class="sm:hidden">Novo</span>
+                </Button>
+                <IconButton v-if="isAdmin" icon="fas fa-gear" variant="secondary"
+                    label="Administração (cobrança, status, perfis de autorização)" @click="goAdmin" />
+            </template>
+        </PageHeader>
 
-        <!-- Tabs -->
-        <div class="flex gap-1 border-b border-line mb-5">
+        <!-- Abas -->
+        <div class="flex gap-1 border-b border-line mb-5 overflow-x-auto no-scrollbar">
             <button v-for="t in TABS" :key="t" @click="tab = t"
-                class="px-4 py-2 text-sm font-medium -mb-px border-b-2 transition focus-ring"
+                class="px-4 py-2 text-sm font-medium -mb-px border-b-2 whitespace-nowrap transition focus-ring"
                 :class="tab === t ? 'border-accent text-accent' : 'border-transparent text-ink-subtle hover:text-ink'">
                 {{ t }}<span v-if="t === 'Aprovações' && pendingApprovals.length" class="ml-1.5 px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-amber-500/15 text-amber-600 dark:text-amber-400">{{ pendingApprovals.length }}</span>
             </button>
@@ -235,61 +247,50 @@ const btnPrimary = 'inline-flex items-center gap-2 bg-accent hover:bg-accent-hov
             Carregando...</div>
 
         <!-- PAINEL -->
-        <div v-else-if="tab === 'Painel'">
-            <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 mb-5">
-                <div class="surface-card p-4 flex items-center gap-3">
-                    <span class="h-10 w-10 rounded-xl grid place-items-center bg-accent-soft text-accent shrink-0"><i
+        <div v-else-if="tab === 'Painel'" class="animate-fade-in">
+            <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 mb-5">
+                <div class="surface-card p-4 flex items-center gap-3 hover:shadow-elevated hover:border-line-strong transition-all duration-200">
+                    <span class="h-11 w-11 rounded-xl grid place-items-center bg-accent-soft text-accent shrink-0 text-lg"><i
                             class="fas fa-clipboard-list"></i></span>
                     <div class="min-w-0">
-                        <p class="text-xs text-ink-muted">Checklists ativos</p>
-                        <p class="text-2xl font-bold text-ink leading-tight">{{ summary.checklists || 0 }}</p>
+                        <p class="text-[11px] font-medium uppercase tracking-wide text-ink-subtle">Checklists ativos</p>
+                        <p class="text-2xl font-bold text-ink leading-tight tabular-nums">{{ summary.checklists || 0 }}</p>
                     </div>
                 </div>
-                <div class="surface-card p-4 flex items-center gap-3">
-                    <span class="h-10 w-10 rounded-xl grid place-items-center bg-sky-500/10 text-sky-500 shrink-0"><i
+                <div class="surface-card p-4 flex items-center gap-3 hover:shadow-elevated hover:border-line-strong transition-all duration-200">
+                    <span class="h-11 w-11 rounded-xl grid place-items-center bg-sky-500/10 text-sky-500 shrink-0 text-lg"><i
                             class="fas fa-list-check"></i></span>
                     <div class="min-w-0">
-                        <p class="text-xs text-ink-muted">Tarefas</p>
-                        <p class="text-2xl font-bold text-ink leading-tight">{{ summary.totalTasks || 0 }}</p>
+                        <p class="text-[11px] font-medium uppercase tracking-wide text-ink-subtle">Tarefas</p>
+                        <p class="text-2xl font-bold text-ink leading-tight tabular-nums">{{ summary.totalTasks || 0 }}</p>
                     </div>
                 </div>
-                <div class="surface-card p-4 flex items-center gap-3">
-                    <ProgressRing :pct="summary.pct || 0" :size="40" :stroke="5" />
+                <div class="surface-card p-4 flex items-center gap-3 hover:shadow-elevated hover:border-line-strong transition-all duration-200">
+                    <ProgressRing :pct="summary.pct || 0" :size="44" :stroke="5" />
                     <div class="min-w-0">
-                        <p class="text-xs text-ink-muted">Conclusão</p>
-                        <p class="text-2xl font-bold text-ink leading-tight">{{ summary.pct || 0 }}%</p>
+                        <p class="text-[11px] font-medium uppercase tracking-wide text-ink-subtle">Conclusão</p>
+                        <p class="text-2xl font-bold text-ink leading-tight tabular-nums">{{ summary.pct || 0 }}%</p>
                     </div>
                 </div>
-                <div class="surface-card p-4 flex items-center gap-3">
-                    <span class="h-10 w-10 rounded-xl grid place-items-center shrink-0"
+                <div class="surface-card p-4 flex items-center gap-3 transition-all duration-200"
+                    :class="(summary.totalOverdue || 0) > 0 ? 'border-red-500/30 hover:shadow-elevated' : 'hover:shadow-elevated hover:border-line-strong'">
+                    <span class="h-11 w-11 rounded-xl grid place-items-center shrink-0 text-lg"
                         :class="(summary.totalOverdue || 0) > 0 ? 'bg-red-500/10 text-red-500' : 'bg-surface-sunken text-ink-subtle'"><i
                             class="fas fa-triangle-exclamation"></i></span>
                     <div class="min-w-0">
-                        <p class="text-xs text-ink-muted">Em atraso</p>
-                        <p class="text-2xl font-bold leading-tight"
+                        <p class="text-[11px] font-medium uppercase tracking-wide text-ink-subtle">Em atraso</p>
+                        <p class="text-2xl font-bold leading-tight tabular-nums"
                             :class="(summary.totalOverdue || 0) > 0 ? 'text-red-500' : 'text-ink'">{{
                             summary.totalOverdue || 0 }}</p>
                     </div>
                 </div>
-                <div class="surface-card p-4 flex items-center gap-3">
+                <div class="surface-card p-4 flex items-center gap-3 hover:shadow-elevated hover:border-line-strong transition-all duration-200">
                     <span
-                        class="h-10 w-10 rounded-xl grid place-items-center bg-amber-500/10 text-amber-500 shrink-0"><i
+                        class="h-11 w-11 rounded-xl grid place-items-center bg-amber-500/10 text-amber-500 shrink-0 text-lg"><i
                             class="fas fa-clock"></i></span>
                     <div class="min-w-0">
-                        <p class="text-xs text-ink-muted">A vencer (7d)</p>
-                        <p class="text-2xl font-bold text-ink leading-tight">{{ dueSoon.length }}</p>
-                    </div>
-                </div>
-                <div class="surface-card p-4 flex items-center gap-3">
-                    <span
-                        class="h-10 w-10 rounded-xl grid place-items-center bg-emerald-500/10 text-emerald-500 shrink-0"><i
-                            class="fas fa-coins"></i></span>
-                    <div class="min-w-0">
-                        <p class="text-xs text-ink-muted">Orçamento</p>
-                        <p class="text-base font-bold text-ink leading-tight truncate"
-                            :title="brl(summary.totalBudget)">{{ brl(summary.totalBudget) }}</p>
-                        <p v-if="summary.totalMonthly" class="text-[11px] text-ink-subtle">+ {{
-                            brl(summary.totalMonthly) }}/mês</p>
+                        <p class="text-[11px] font-medium uppercase tracking-wide text-ink-subtle">A vencer (7d)</p>
+                        <p class="text-2xl font-bold text-ink leading-tight tabular-nums">{{ dueSoon.length }}</p>
                     </div>
                 </div>
             </div>
@@ -298,53 +299,60 @@ const btnPrimary = 'inline-flex items-center gap-2 bg-accent hover:bg-accent-hov
             <div class="flex flex-col items-start gap-1 mb-5">
                 <span class="text-xs font-medium text-ink-subtle inline-flex items-center gap-1.5"><i
                         class="fas fa-filter"></i> Filtrar:</span>
-                <div class="flex flex-wrap gap-2">
-                    <div class="w-52">
+                <div class="flex flex-col sm:flex-row flex-wrap gap-2 w-full">
+                    <div class="w-full sm:w-52">
                         <MultiSelector :options="pnlChecklistOptions" v-model="pnlChecklists"
                             placeholder="Checklist" />
                     </div>
-                    <div class="w-52">
+                    <div class="w-full sm:w-52">
                         <MultiSelector :options="pnlAssigneeOptions" v-model="pnlAssignees" placeholder="Responsável" />
                     </div>
                     <button v-if="pnlActive" @click="clearPnl" type="button"
-                        class="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg text-sm text-ink-muted hover:bg-surface-sunken border border-transparent">
+                        class="inline-flex items-center justify-center gap-1.5 h-9 px-3 rounded-lg text-sm text-ink-muted hover:bg-surface-sunken border border-transparent shrink-0">
                         <i class="fas fa-xmark"></i> limpar ({{ pnlActive }})
                     </button>
                 </div>
             </div>
 
             <!-- Distribuição por status -->
-            <div class="surface-card p-4 mb-4">
-                <div class="flex items-center justify-between mb-2">
-                    <h2 class="text-sm font-semibold text-ink-muted">Distribuição das tarefas</h2>
-                    <span class="text-xs text-ink-subtle">{{ statusTotal }} no total</span>
+            <div class="surface-card p-4 mb-4 animate-slide-up">
+                <div class="flex items-center justify-between mb-3">
+                    <h2 class="text-sm font-semibold text-ink">Distribuição das tarefas</h2>
+                    <span class="text-xs text-ink-subtle tabular-nums">{{ statusTotal }} no total</span>
                 </div>
-                <div class="flex h-3 rounded-full overflow-hidden bg-surface-sunken">
-                    <div v-for="seg in STATUS_SEG" :key="seg.k"
+                <div class="flex h-2.5 rounded-full overflow-hidden bg-surface-sunken">
+                    <div v-for="seg in STATUS_SEG" :key="seg.k" class="transition-all duration-500 ease-out-expo"
                         :style="{ width: (statusTotal ? (byStatus[seg.k] || 0) / statusTotal * 100 : 0) + '%', background: seg.c }"
                         :title="`${seg.l}: ${byStatus[seg.k] || 0}`"></div>
                 </div>
-                <div class="flex flex-wrap gap-3 mt-2">
-                    <span v-for="seg in STATUS_SEG" :key="seg.k" class="flex items-center gap-1 text-xs text-ink-muted">
-                        <span class="w-2.5 h-2.5 rounded-full" :style="{ background: seg.c }"></span> {{ seg.l }} ({{
-                        byStatus[seg.k] || 0 }})
+                <div class="flex flex-wrap gap-2 mt-3">
+                    <span v-for="seg in STATUS_SEG" :key="seg.k"
+                        class="inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-md bg-surface-sunken">
+                        <span class="w-2 h-2 rounded-full shrink-0" :style="{ background: seg.c }"></span>
+                        <span class="text-ink-muted">{{ seg.l }}</span>
+                        <span class="font-semibold text-ink tabular-nums">{{ byStatus[seg.k] || 0 }}</span>
+                        <span class="text-ink-subtle tabular-nums">· {{ statusTotal ? Math.round((byStatus[seg.k] || 0) / statusTotal * 100) : 0 }}%</span>
                     </span>
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6 animate-slide-up">
                 <!-- Por responsável -->
                 <div class="surface-card p-4">
                     <div class="flex items-center justify-between mb-3">
-                        <h2 class="text-sm font-semibold text-ink">Por responsável</h2>
-                        <span class="text-xs text-ink-subtle">{{ byAssigneeF.length }} pessoa(s)</span>
+                        <h2 class="text-sm font-semibold text-ink flex items-center gap-2">
+                            <i class="fas fa-users text-ink-subtle text-xs"></i> Por responsável
+                        </h2>
+                        <span class="text-xs text-ink-subtle tabular-nums">{{ byAssigneeF.length }} pessoa(s)</span>
                     </div>
-                    <div v-if="!byAssigneeF.length" class="text-sm text-ink-subtle py-4 text-center">Sem tarefas para os
-                        filtros.</div>
-                    <div v-else class="space-y-3 max-h-80 overflow-y-auto pr-1">
+                    <div v-if="!byAssigneeF.length" class="text-sm text-ink-subtle py-8 text-center">
+                        <i class="fas fa-user-slash text-2xl mb-2 block opacity-40"></i>
+                        Sem tarefas para os filtros.
+                    </div>
+                    <div v-else class="space-y-2.5 max-h-80 overflow-y-auto -mx-1 px-1 nav-scroll">
                         <div v-for="a in byAssigneeF" :key="a.key" class="flex items-center gap-3">
                             <span
-                                class="h-7 w-7 rounded-full bg-accent-soft text-accent text-[11px] font-semibold grid place-items-center shrink-0 uppercase">{{
+                                class="h-8 w-8 rounded-full bg-gradient-to-br from-accent-soft to-surface-sunken text-accent text-[11px] font-semibold grid place-items-center shrink-0 uppercase ring-1 ring-line">{{
                                     (a.name || '?').slice(0, 2) }}</span>
                             <div class="min-w-0 flex-1">
                                 <div class="flex items-center justify-between text-xs mb-1 gap-2">
@@ -352,12 +360,14 @@ const btnPrimary = 'inline-flex items-center gap-2 bg-accent hover:bg-accent-hov
                                             v-if="!a.linked && a.name !== 'Sem responsável'"
                                             class="fas fa-link-slash text-ink-subtle text-[10px]"
                                             title="Responsável por texto (não vinculado a usuário)"></i></span>
-                                    <span class="text-ink-muted shrink-0 tabular-nums">{{ a.done }}/{{ a.total }}<span
-                                            v-if="a.overdue" class="text-red-500 font-semibold ml-1.5">· {{ a.overdue }}
-                                            atras.</span></span>
+                                    <span class="shrink-0 flex items-center gap-1.5 tabular-nums">
+                                        <span v-if="a.overdue" class="text-red-500 font-semibold">{{ a.overdue }} atras.</span>
+                                        <span class="text-ink-muted">{{ a.done }}/{{ a.total }}</span>
+                                        <span class="font-semibold text-ink w-9 text-right">{{ a.pct }}%</span>
+                                    </span>
                                 </div>
                                 <div class="h-1.5 rounded-full bg-surface-sunken overflow-hidden">
-                                    <div class="h-full rounded-full transition-all"
+                                    <div class="h-full rounded-full transition-all duration-500 ease-out-expo"
                                         :class="a.overdue ? 'bg-amber-500' : 'bg-accent'"
                                         :style="{ width: a.pct + '%' }"></div>
                                 </div>
@@ -369,15 +379,17 @@ const btnPrimary = 'inline-flex items-center gap-2 bg-accent hover:bg-accent-hov
                 <!-- Entregas: em atraso + a vencer -->
                 <div class="surface-card p-4">
                     <div class="flex items-center gap-2 mb-3">
-                        <h2 class="text-sm font-semibold text-ink">Entregas</h2>
+                        <h2 class="text-sm font-semibold text-ink flex items-center gap-2">
+                            <i class="fas fa-truck-fast text-ink-subtle text-xs"></i> Entregas
+                        </h2>
                         <Badge v-if="overdueF.length" variant="danger" size="sm">{{ overdueF.length }} em atraso</Badge>
                         <Badge variant="warning" size="sm">{{ dueSoonF.length }} a vencer</Badge>
                     </div>
 
-                    <div class="max-h-[22rem] overflow-y-auto -mx-1 px-1 space-y-3">
+                    <div class="max-h-[22rem] overflow-y-auto -mx-1 px-1 space-y-3 nav-scroll">
                         <div v-if="overdueF.length">
-                            <p class="text-[11px] font-semibold uppercase tracking-wide text-red-500/80 mb-1.5">Em
-                                atraso</p>
+                            <p class="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-red-500/80 mb-1.5">
+                                <i class="fas fa-triangle-exclamation"></i> Em atraso</p>
                             <div class="space-y-1">
                                 <button v-for="t in overdueF" :key="t.id"
                                     @click="router.push(`/checklists/${t.checklist_id}?task=${t.id}`)"
@@ -400,8 +412,8 @@ const btnPrimary = 'inline-flex items-center gap-2 bg-accent hover:bg-accent-hov
                         </div>
 
                         <div v-if="dueSoonF.length">
-                            <p class="text-[11px] font-semibold uppercase tracking-wide text-ink-subtle mb-1.5">Próximos
-                                7 dias</p>
+                            <p class="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-ink-subtle mb-1.5">
+                                <i class="fas fa-clock"></i> Próximos 7 dias</p>
                             <div class="space-y-1">
                                 <button v-for="t in dueSoonF" :key="t.id"
                                     @click="router.push(`/checklists/${t.checklist_id}?task=${t.id}`)"
@@ -452,7 +464,7 @@ const btnPrimary = 'inline-flex items-center gap-2 bg-accent hover:bg-accent-hov
                     checklist com esse termo.</div>
                 <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     <div v-for="c in filteredChecklists" :key="c.id" @click="router.push(`/checklists/${c.id}`)"
-                        class="surface-card p-4 hover:shadow-elevated hover:border-accent/40 cursor-pointer transition group">
+                        class="surface-card p-4 cursor-pointer group animate-fade-in hover:-translate-y-0.5 hover:shadow-elevated hover:border-accent/40 transition-all duration-200">
                         <div class="flex items-start justify-between gap-3">
                             <div class="min-w-0">
                                 <div class="flex items-center gap-1.5 min-w-0">
@@ -465,56 +477,63 @@ const btnPrimary = 'inline-flex items-center gap-2 bg-accent hover:bg-accent-hov
                             </div>
                             <ProgressRing :pct="c.progress_cache?.pct || 0" :size="46" />
                         </div>
-                        <div class="flex items-center gap-3 mt-3 pt-3 border-t border-line text-xs">
-                            <span class="text-ink-muted"><i class="fas fa-list-ul text-ink-subtle"></i> {{ c.progress_cache?.done || 0 }}/{{ c.progress_cache?.total || 0
-                                }}</span>
-                            <span v-if="(c.progress_cache?.overdue || 0) > 0" class="text-red-500 font-semibold"><i
-                                    class="fas fa-triangle-exclamation"></i> {{ c.progress_cache.overdue }}
-                                atras.</span>
-                            <span class="text-ink-muted ml-auto">{{ brl(c.progress_cache?.budget) }}</span>
+                        <div class="flex items-center gap-2 mt-3 pt-3 border-t border-line text-xs">
+                            <span class="inline-flex items-center gap-1.5 text-ink-muted tabular-nums">
+                                <i class="fas fa-list-ul text-ink-subtle"></i> {{ c.progress_cache?.done || 0 }}/{{ c.progress_cache?.total || 0 }}
+                            </span>
+                            <Badge v-if="(c.progress_cache?.overdue || 0) > 0" variant="danger" size="sm">
+                                {{ c.progress_cache.overdue }} em atraso
+                            </Badge>
+                            <span v-if="nextKeyDate(c)"
+                                class="ml-auto inline-flex items-center gap-1.5 text-ink-muted bg-surface-sunken px-2 py-1 rounded-md shrink-0">
+                                <i class="fas fa-flag-checkered text-ink-subtle"></i>
+                                <span class="truncate max-w-[9rem]">{{ nextKeyDate(c).label }}: <span class="font-medium text-ink">{{ fmt(nextKeyDate(c).date) }}</span></span>
+                            </span>
                         </div>
-                        <div v-if="nextKeyDate(c)" class="mt-2 text-xs text-ink-muted"><i
-                                class="fas fa-flag-checkered"></i> {{ nextKeyDate(c).label }}: {{
-                                    fmt(nextKeyDate(c).date) }}</div>
                     </div>
                 </div>
             </template>
         </div>
 
         <!-- MINHAS TAREFAS -->
-        <div class="flex flex-wrap gap-2" v-else-if="tab === 'Minhas Tarefas'">
-
-            <SegmentedControl :model-value="mtState" :options="MT_FILTERS" @update:model-value="mtState = $event" />
-            <div class="flex flex-wrap items-center gap-2 mb-4">
-                <div class="relative">
-                    <i
-                        class="fas fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-ink-subtle text-xs pointer-events-none"></i>
-                    <input v-model="mtSearch" placeholder="Buscar tarefa..."
-                        class="w-80 pl-8 pr-3 h-9 text-sm rounded-lg border border-line bg-surface-raised text-ink shadow-inner-soft placeholder:text-ink-subtle outline-none focus:border-accent-ring focus:ring-2 focus:ring-accent-ring/20 transition-all" />
+        <div v-else-if="tab === 'Minhas Tarefas'" class="space-y-4">
+            <div class="space-y-3">
+                <!-- Segmento por estado (rola no mobile) -->
+                <div class="overflow-x-auto no-scrollbar -mx-1 px-1">
+                    <SegmentedControl :model-value="mtState" :options="MT_FILTERS"
+                        @update:model-value="mtState = $event" />
                 </div>
-                <select v-model="mtChecklist"
-                    class="h-9 w-44 text-sm rounded-lg border border-line bg-surface-raised text-ink px-2.5 focus-ring">
-                    <option value="">Todos os checklists</option>
-                    <option v-for="c in myChecklistsOptions" :key="c.id" :value="c.id">{{ c.title }}</option>
-                </select>
-                <div class="w-40">
-                    <MultiSelector :options="MT_PRIORITY_OPTS" v-model="mtPriorities" placeholder="Prioridade" />
-                </div>
-                <label class="inline-flex items-center gap-1.5 text-xs text-ink-subtle">
-                    <i class="fas fa-arrow-down-wide-short"></i>
-                    <select v-model="mtSort"
-                        class="h-9 text-sm rounded-lg border border-line bg-surface-raised text-ink px-2.5 focus-ring">
-                        <option value="due">Por prazo</option>
-                        <option value="priority">Por prioridade</option>
+                <!-- Filtros -->
+                <div class="flex flex-wrap items-center gap-2">
+                    <div class="relative w-full sm:w-72">
+                        <i class="fas fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-ink-subtle text-xs pointer-events-none"></i>
+                        <input v-model="mtSearch" placeholder="Buscar tarefa..."
+                            class="w-full pl-8 pr-3 h-9 text-sm rounded-lg border border-line bg-surface-raised text-ink shadow-inner-soft placeholder:text-ink-subtle outline-none focus:border-accent-ring focus:ring-2 focus:ring-accent-ring/20 transition-all" />
+                    </div>
+                    <select v-model="mtChecklist"
+                        class="h-9 w-full sm:w-44 text-sm rounded-lg border border-line bg-surface-raised text-ink px-2.5 focus-ring">
+                        <option value="">Todos os checklists</option>
+                        <option v-for="c in myChecklistsOptions" :key="c.id" :value="c.id">{{ c.title }}</option>
                     </select>
-                </label>
-                <span class="text-xs text-ink-subtle ml-auto">{{ filteredMyTasks.length }} tarefa(s)</span>
+                    <div class="w-full sm:w-40">
+                        <MultiSelector :options="MT_PRIORITY_OPTS" v-model="mtPriorities" placeholder="Prioridade" />
+                    </div>
+                    <label class="inline-flex items-center gap-1.5 text-xs text-ink-subtle shrink-0">
+                        <i class="fas fa-arrow-down-wide-short"></i>
+                        <select v-model="mtSort"
+                            class="h-9 text-sm rounded-lg border border-line bg-surface-raised text-ink px-2.5 focus-ring">
+                            <option value="due">Por prazo</option>
+                            <option value="priority">Por prioridade</option>
+                        </select>
+                    </label>
+                    <span class="text-xs text-ink-subtle w-full sm:w-auto sm:ml-auto">{{ filteredMyTasks.length }} tarefa(s)</span>
+                </div>
             </div>
             <div v-if="!filteredMyTasks.length" class="text-center text-ink-subtle py-16">
                 <i class="fas fa-clipboard-check text-3xl mb-3 block opacity-40"></i>
                 Nenhuma tarefa com esses filtros.
             </div>
-            <div v-else class="space-y-2 w-full">
+            <div v-else class="space-y-2">
                 <button v-for="t in filteredMyTasks" :key="t.id"
                     @click="router.push(`/checklists/${t.checklist_id}?task=${t.id}`)"
                     class="w-full text-left flex items-center gap-3 surface-card px-3.5 py-3 hover:shadow-elevated transition group">
@@ -526,8 +545,6 @@ const btnPrimary = 'inline-flex items-center gap-2 bg-accent hover:bg-accent-hov
                         <p class="text-xs text-ink-muted truncate">
                             <i class="fas fa-clipboard-list text-ink-subtle/70 mr-1"></i>{{ t.checklist?.title }}
                             <span v-if="t.category" class="text-ink-subtle">· {{ t.category }}</span>
-                            <span v-if="Number(t.value)" class="text-ink-subtle">· {{ brl(t.value) }}{{ t.value_kind ===
-                                'MONTHLY' ? '/mês' : '' }}</span>
                         </p>
                     </div>
                     <div class="flex items-center gap-2 shrink-0">
@@ -609,7 +626,7 @@ const btnPrimary = 'inline-flex items-center gap-2 bg-accent hover:bg-accent-hov
                     <EnterprisePicker v-model:idempreendimento="form.idempreendimento"
                         v-model:display-name="form.display_name" v-model:cost-center="form.cost_center" />
                 </div>
-                <div class="grid grid-cols-2 gap-3">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <Input v-model="form.meeting" type="date" label="Data do Meeting" />
                     <Input v-model="form.store_opening" type="date" label="Abertura de Loja" />
                 </div>
@@ -623,5 +640,17 @@ const btnPrimary = 'inline-flex items-center gap-2 bg-accent hover:bg-accent-hov
                 <Button :loading="store.saving" icon="fas fa-check" @click="submitNew">Criar checklist</Button>
             </template>
         </Modal>
-    </div>
+    </PageContainer>
 </template>
+
+<style scoped>
+.no-scrollbar { scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
+/* Scroll fino nos painéis de relatório */
+.nav-scroll { scrollbar-width: thin; scrollbar-color: rgb(148 163 184 / 0.35) transparent; }
+.nav-scroll::-webkit-scrollbar { width: 6px; }
+.nav-scroll::-webkit-scrollbar-thumb { background: rgb(148 163 184 / 0.35); border-radius: 9999px; }
+.nav-scroll::-webkit-scrollbar-thumb:hover { background: rgb(148 163 184 / 0.6); }
+.nav-scroll::-webkit-scrollbar-track { background: transparent; }
+</style>

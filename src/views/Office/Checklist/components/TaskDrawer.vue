@@ -32,7 +32,7 @@ const saving = ref(false);
 const commentText = ref('');
 
 // Edição bufferizada: nada é persistido (nem notificado) até clicar em Salvar.
-const EDITABLE = ['title', 'status_id', 'priority', 'assignee_user_ids', 'assignee_label', 'value', 'value_kind', 'contracted_at', 'due_date', 'description', 'category', 'checklist_items', 'needs_authorization', 'auth_profile_ids'];
+const EDITABLE = ['title', 'status_id', 'priority', 'assignee_user_ids', 'assignee_label', 'contracted_at', 'due_date', 'description', 'category', 'checklist_items', 'needs_authorization', 'auth_profile_ids'];
 const draft = ref({});
 const loaded = ref({}); // baseline normalizado p/ diff confiável
 
@@ -251,7 +251,6 @@ const currentStatus = computed(() => statuses.value.find((s) => s.id === Number(
 // Concluído (state_class DONE) é terminal — usado p/ avisar antes de salvar.
 const doneWarned = ref(false);
 function isDoneStatus(id) { return statuses.value.find((s) => s.id === Number(id))?.state_class === 'DONE'; }
-const brl = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(v) || 0);
 
 // ── Histórico/atividade legível (com from → to dos campos alterados). ──
 const ACTION_PT = {
@@ -280,7 +279,7 @@ const ACTION_PT = {
     'section.created': { label: 'criou uma seção', icon: 'fas fa-folder-plus' },
     'section.removed': { label: 'removeu uma seção', icon: 'fas fa-folder-minus' },
 };
-const FIELD_PT = { title: 'título', status_id: 'status', priority: 'prioridade', value: 'valor', value_kind: 'recorrência', due_date: 'prazo', contracted_at: 'contratação', started_at: 'início', assignee_user_id: 'responsável', assignee_user_ids: 'responsáveis', assignee_label: 'responsável', checklist_items: 'subtarefas', description: 'anotações', category: 'categoria', section_id: 'seção', parent_task_id: 'subtarefa', position: 'ordem' };
+const FIELD_PT = { title: 'título', status_id: 'status', priority: 'prioridade', due_date: 'prazo', contracted_at: 'contratação', started_at: 'início', assignee_user_id: 'responsável', assignee_user_ids: 'responsáveis', assignee_label: 'responsável', checklist_items: 'subtarefas', description: 'anotações', category: 'categoria', section_id: 'seção', parent_task_id: 'subtarefa', position: 'ordem' };
 function fmtFieldVal(field, v) {
     if (v === null || v === undefined || v === '') return '—';
     if (['due_date', 'contracted_at', 'started_at'].includes(field)) return dayjs(v).format('DD/MM/YYYY');
@@ -289,8 +288,6 @@ function fmtFieldVal(field, v) {
     if (field === 'assignee_user_ids') return (Array.isArray(v) ? v : []).map((id) => store.users.find((u) => u.id === Number(id))?.username || ('#' + id)).join(', ') || '—';
     if (field === 'checklist_items') return (Array.isArray(v) ? v.length : 0) + ' subtarefa(s)';
     if (field === 'priority') return PRIORITY_PT[v] || v;
-    if (field === 'value') return brl(v);
-    if (field === 'value_kind') return v === 'MONTHLY' ? 'Mensal' : 'Avulso';
     const s = String(v); return s.length > 32 ? s.slice(0, 32) + '…' : s;
 }
 function actionMeta(a) { return ACTION_PT[a] || { label: a, icon: 'fas fa-circle' }; }
@@ -502,10 +499,6 @@ const fieldCls = `${fieldBase} px-3 py-2 text-sm rounded-lg`;
                             <option value="LOW">Baixa</option><option value="MEDIUM">Média</option><option value="HIGH">Alta</option><option value="URGENT">Urgente</option>
                         </select>
                     </div>
-                    <div>
-                        <label :class="labelBase">Recorrência</label>
-                        <select v-model="draft.value_kind" :class="fieldCls"><option :value="null">Avulso</option><option value="MONTHLY">Mensal</option></select>
-                    </div>
                     <div class="col-span-2">
                         <label :class="labelBase">Responsáveis <span class="text-ink-subtle font-normal">(1 ou mais - tarefa em grupo)</span></label>
                         <MultiSelector :options="userNames" :model-value="selectedAssigneeNames" placeholder="Selecionar responsáveis..." @change="onAssigneesChange" />
@@ -521,7 +514,6 @@ const fieldCls = `${fieldBase} px-3 py-2 text-sm rounded-lg`;
                             <Button variant="outline" size="sm" class="shrink-0" @click="catMode = catMode === 'existing' ? 'new' : 'existing'">{{ catMode === 'existing' ? '+ nova' : 'lista' }}</Button>
                         </div>
                     </div>
-                    <div><label :class="labelBase">Valor (R$)</label><input type="number" step="0.01" v-model.number="draft.value" placeholder="0,00" :class="fieldCls" /></div>
                     <div><label :class="labelBase">Contratação</label><input type="date" v-model="draft.contracted_at" :class="fieldCls" /></div>
                     <div><label :class="labelBase">Entrega</label><input type="date" v-model="draft.due_date" :class="fieldCls" /></div>
 

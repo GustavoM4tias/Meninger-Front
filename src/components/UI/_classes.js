@@ -1,4 +1,6 @@
 // Tokens de classes reutilizáveis (Tailwind) — centralizam o padrão visual.
+// Padrões globais de tela: use PageHelp.vue (instruções em toda tela) e projete
+// mobile-first (a diretoria acessa só pelo celular). Ver memória do projeto.
 
 export const sizeMap = {
   sm: { padX: 'px-2.5', padY: 'py-1.5', text: 'text-xs', height: 'h-8', gap: 'gap-1.5', radius: 'rounded-md' },

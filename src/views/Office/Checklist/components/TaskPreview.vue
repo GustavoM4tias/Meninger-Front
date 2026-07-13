@@ -12,7 +12,6 @@ const store = useChecklistStore();
 
 const status = computed(() => store.statusById.get(props.task.status_id) || null);
 const scColor = (sc) => ({ TODO: '#94a3b8', IN_PROGRESS: '#3b82f6', BLOCKED: '#ef4444', DONE: '#22c55e', CANCELLED: '#9ca3af' }[sc] || '#94a3b8');
-const brl = (v) => (Number(v) ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(v)) : null);
 const fmt = (d) => (d ? dayjs(d).format('DD/MM/YYYY') : null);
 const PRIO = { LOW: 'Baixa', MEDIUM: 'Média', HIGH: 'Alta', URGENT: 'Urgente' };
 
@@ -43,7 +42,6 @@ const style = computed(() => {
         <div class="flex flex-wrap gap-x-3 gap-y-1 text-xs text-ink-muted mb-1.5">
             <span v-if="fmt(task.contracted_at)"><i class="fas fa-file-signature"></i> {{ fmt(task.contracted_at) }}</span>
             <span v-if="fmt(task.due_date)"><i class="fas fa-clock"></i> {{ fmt(task.due_date) }}</span>
-            <span v-if="brl(task.value)"><i class="fas fa-coins"></i> {{ brl(task.value) }}</span>
         </div>
         <p v-if="task.category" class="text-[11px] text-ink-subtle mb-1.5"><i class="fas fa-layer-group"></i> {{ task.category }}</p>
         <p v-if="task.description" class="text-xs text-ink-muted line-clamp-3 border-t border-line pt-2 whitespace-pre-wrap">{{ task.description }}</p>

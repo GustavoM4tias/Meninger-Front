@@ -3,6 +3,8 @@ import { ref } from 'vue';
 import { useToast } from 'vue-toastification';
 import API_URL from '@/config/apiUrl';
 import { useChecklistStore } from '@/stores/Checklist/checklistStore.js';
+import Modal from '@/components/UI/Modal.vue';
+import Button from '@/components/UI/Button.vue';
 
 const props = defineProps({ taskId: { type: Number, required: true } });
 const emit = defineEmits(['close']);
@@ -41,37 +43,61 @@ async function onFile(ev) {
         emit('close');
     } catch (e) { toast.error(e.message); } finally { uploading.value = false; ev.target.value = ''; }
 }
-const inputCls = 'w-full rounded-lg border border-line bg-surface text-ink px-3 py-2 text-sm focus-ring';
+const inputCls = 'w-full rounded-lg border border-line bg-surface-raised text-ink px-3 py-2 text-sm shadow-inner-soft placeholder:text-ink-subtle outline-none focus:border-accent-ring focus:ring-2 focus:ring-accent-ring/20 transition-all';
 </script>
 
 <template>
-    <div class="fixed inset-0 z-[65] flex items-center justify-center bg-black/50 p-4 animate-fade-in" @click.self="emit('close')">
-        <div class="bg-surface-overlay border border-line rounded-2xl shadow-overlay w-full max-w-md p-5 animate-scale-in">
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="text-base font-bold text-ink flex items-center gap-2"><i class="fas fa-paperclip text-accent"></i> Vincular Arquivo</h3>
-                <button @click="emit('close')" class="text-ink-subtle hover:text-ink focus-ring rounded"><i class="fas fa-times"></i></button>
+    <Modal :open="true" size="sm" @close="emit('close')">
+        <template #header>
+            <div class="flex items-center gap-2.5 min-w-0">
+                <span class="grid place-items-center h-9 w-9 rounded-xl bg-accent-soft text-accent border border-accent/20 shrink-0">
+                    <i class="fas fa-paperclip"></i>
+                </span>
+                <div class="min-w-0">
+                    <h2 class="text-base font-semibold text-ink truncate">Vincular arquivo</h2>
+                    <p class="text-xs text-ink-muted">Cole um link ou envie do computador</p>
+                </div>
+            </div>
+        </template>
+
+        <div class="space-y-4">
+            <!-- Alternador de origem -->
+            <div class="grid grid-cols-2 sm:inline-flex rounded-lg border border-line overflow-hidden text-sm w-full sm:w-auto">
+                <button @click="tab = 'url'" class="px-4 py-1.5 focus-ring transition-colors"
+                    :class="tab === 'url' ? 'bg-accent text-white' : 'text-ink-muted hover:bg-surface-sunken'">
+                    <i class="fas fa-link"></i> Colar URL
+                </button>
+                <button @click="tab = 'upload'" class="px-4 py-1.5 focus-ring transition-colors"
+                    :class="tab === 'upload' ? 'bg-accent text-white' : 'text-ink-muted hover:bg-surface-sunken'">
+                    <i class="fas fa-upload"></i> Enviar Arquivo
+                </button>
             </div>
 
-            <div class="inline-flex rounded-lg border border-line overflow-hidden mb-4 text-sm">
-                <button @click="tab = 'url'" class="px-4 py-1.5 focus-ring" :class="tab === 'url' ? 'bg-accent text-white' : 'text-ink-muted hover:bg-surface-sunken'"><i class="fas fa-link"></i> Colar URL</button>
-                <button @click="tab = 'upload'" class="px-4 py-1.5 focus-ring" :class="tab === 'upload' ? 'bg-accent text-white' : 'text-ink-muted hover:bg-surface-sunken'"><i class="fas fa-upload"></i> Enviar Arquivo</button>
-            </div>
-
-            <div v-if="tab === 'url'" class="space-y-2">
+            <div v-if="tab === 'url'" class="space-y-3">
                 <p class="text-xs text-ink-muted">Cole o link direto de qualquer arquivo (Google Drive, OneDrive, SharePoint, etc.).</p>
-                <div><label class="block text-xs text-ink-muted mb-1">URL do Arquivo</label><input v-model="url" placeholder="https://..." :class="inputCls" @keyup.enter="addUrl" /></div>
-                <div><label class="block text-xs text-ink-muted mb-1">Nome (opcional)</label><input v-model="name" placeholder="Ex.: Contrato assinado" :class="inputCls" /></div>
-                <div class="flex justify-end pt-1"><button @click="addUrl" :disabled="saving || !url.trim()" class="px-4 py-2 text-sm bg-accent hover:bg-accent-hover text-white rounded-lg focus-ring disabled:opacity-50">Vincular</button></div>
+                <div>
+                    <label class="block text-xs font-medium text-ink-muted mb-1.5">URL do arquivo</label>
+                    <input v-model="url" placeholder="https://..." :class="inputCls" @keyup.enter="addUrl" />
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-ink-muted mb-1.5">Nome (opcional)</label>
+                    <input v-model="name" placeholder="Ex.: Contrato assinado" :class="inputCls" />
+                </div>
             </div>
 
             <div v-else class="space-y-3">
                 <p class="text-xs text-ink-muted">Envie um arquivo do seu computador (PDF, imagem ou documento).</p>
-                <label class="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-line rounded-xl py-8 cursor-pointer hover:border-accent hover:bg-surface-sunken transition">
+                <label class="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-line rounded-xl py-8 cursor-pointer hover:border-accent hover:bg-surface-sunken transition-colors">
                     <i class="fas fa-cloud-arrow-up text-2xl text-ink-subtle"></i>
                     <span class="text-sm text-ink-muted">{{ uploading ? 'Enviando...' : 'Clique para escolher o arquivo' }}</span>
                     <input type="file" class="hidden" @change="onFile" :disabled="uploading" />
                 </label>
             </div>
         </div>
-    </div>
+
+        <template #footer>
+            <Button variant="ghost" @click="emit('close')">Cancelar</Button>
+            <Button v-if="tab === 'url'" :loading="saving" :disabled="!url.trim()" icon="fas fa-link" @click="addUrl">Vincular</Button>
+        </template>
+    </Modal>
 </template>
