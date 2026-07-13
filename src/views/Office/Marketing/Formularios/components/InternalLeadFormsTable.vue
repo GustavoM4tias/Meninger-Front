@@ -24,21 +24,16 @@ const emit = defineEmits(['edit']);
 
 const store = useLeadFormsStore();
 
-// Período default: últimos 90 dias (limpar volta pra esse baseline; pra ver
-// tudo, basta apagar as datas manualmente).
-function localISO(d) {
-    const pad = n => String(n).padStart(2, '0');
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-}
-const DATE_TO_DEFAULT   = localISO(new Date());
-const DATE_FROM_DEFAULT = localISO(new Date(Date.now() - 90 * 24 * 60 * 60 * 1000));
-
+// As contagens de leads (colunas/resumo) são recortadas pelo PeriodPicker
+// mestre da tela (store.periodo). O filtro de datas abaixo é OUTRA coisa:
+// filtra quais FORMULÁRIOS aparecem (pela data de início/criação) — por isso
+// agora começa vazio (mostra todos).
 const search = ref('');
 const filterActive   = ref('ALL');  // ALL | ACTIVE | INACTIVE
 const filterPriority = ref('ALL');  // ALL | high | normal | low
 const filterOrigem   = ref('ALL');  // ALL | SI | FB | IG | GO | MP | OU
-const filterDateFrom = ref(DATE_FROM_DEFAULT); // start_date (ou created_at se sem start_date)
-const filterDateTo   = ref(DATE_TO_DEFAULT);
+const filterDateFrom = ref('');     // start_date (ou created_at se sem start_date)
+const filterDateTo   = ref('');
 const hideEnded      = ref(false);  // esconde forms com end_date no passado
 const sortBy         = ref('created'); // created | last_lead | total | name
 
@@ -168,25 +163,25 @@ watch([search, filterActive, filterPriority, filterOrigem, filterDateFrom, filte
 const hasFilters = computed(() =>
     !!search.value.trim() || filterActive.value !== 'ALL' || filterPriority.value !== 'ALL'
     || filterOrigem.value !== 'ALL' || hideEnded.value
-    || filterDateFrom.value !== DATE_FROM_DEFAULT || filterDateTo.value !== DATE_TO_DEFAULT);
+    || !!filterDateFrom.value || !!filterDateTo.value);
 
 function clearFilters() {
     search.value = '';
     filterActive.value = 'ALL';
     filterPriority.value = 'ALL';
     filterOrigem.value = 'ALL';
-    filterDateFrom.value = DATE_FROM_DEFAULT;
-    filterDateTo.value = DATE_TO_DEFAULT;
+    filterDateFrom.value = '';
+    filterDateTo.value = '';
     hideEnded.value = false;
 }
 
 const summary = computed(() => {
-    const acc = { total: 0, last_30d: 0, delivered: 0, held: 0, actives: 0 };
+    const acc = { total: 0, delivered: 0, held: 0, failed: 0, actives: 0 };
     for (const f of filtered.value) {
         acc.total    += f.stats?.total    || 0;
-        acc.last_30d += f.stats?.last_30d || 0;
         acc.delivered+= f.stats?.delivered|| 0;
         acc.held     += f.stats?.held     || 0;
+        acc.failed   += f.stats?.failed   || 0;
         if (f.active) acc.actives += 1;
     }
     return acc;
@@ -240,15 +235,17 @@ function fmtShortDate(iso) {
         </div>
         <div class="px-4 py-3">
           <div class="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-ink-subtle">
-            <i class="fas fa-users"></i>Leads totais
+            <i class="fas fa-users"></i>Leads no período
           </div>
           <div class="mt-1 text-xl font-semibold text-ink leading-none">{{ summary.total }}</div>
         </div>
         <div class="px-4 py-3">
           <div class="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-ink-subtle">
-            <i class="fas fa-calendar-days"></i>Últimos 30 dias
+            <i class="fas fa-circle-exclamation"></i>Com erro
           </div>
-          <div class="mt-1 text-xl font-semibold text-ink leading-none">{{ summary.last_30d }}</div>
+          <div class="mt-1 text-xl font-semibold leading-none"
+            :class="summary.failed > 0 ? 'text-red-600 dark:text-red-400' : 'text-ink'">{{ summary.failed }}</div>
+          <div v-if="summary.failed > 0" class="mt-1 text-[10px] text-red-500">falha/recusa no CV</div>
         </div>
         <div class="px-4 py-3">
           <div class="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-ink-subtle">
@@ -303,7 +300,9 @@ function fmtShortDate(iso) {
           <option v-for="(label, v) in ORIGEM_LABELS" :key="v" :value="v">{{ label }}</option>
         </select>
 
-        <div :class="[ctlClass, 'inline-flex items-center gap-1.5 px-2.5 text-ink-subtle']">
+        <div :class="[ctlClass, 'inline-flex items-center gap-1.5 px-2.5 text-ink-subtle']"
+          title="Filtra quais FORMULÁRIOS aparecem (pela data de início/criação). O recorte dos leads é o período no topo da tela.">
+          <i class="fas fa-square-poll-vertical text-[9px]" title="Data do formulário"></i>
           <input v-model="filterDateFrom" type="date"
             class="bg-transparent text-xs text-ink outline-none w-[6.8rem] border-0 p-0 focus:ring-0 shadow-none" />
           <i class="fas fa-arrow-right-long text-[9px]"></i>
@@ -408,11 +407,14 @@ function fmtShortDate(iso) {
                 <span v-else class="text-[11px] text-ink-subtle italic">—</span>
               </td>
 
-              <!-- Leads count -->
+              <!-- Leads count (recorte do período mestre) -->
               <td class="px-4 py-3 text-right whitespace-nowrap">
-                <div class="text-sm font-semibold text-ink leading-tight">{{ f.stats?.total || 0 }}</div>
-                <div class="text-[10px] text-ink-subtle leading-tight mt-0.5">
-                  <span v-if="f.stats?.last_30d">+{{ f.stats.last_30d }} (30d)</span>
+                <div class="text-sm font-semibold text-ink leading-tight" title="Leads captados no período selecionado">
+                  {{ f.stats?.total || 0 }}
+                </div>
+                <div class="text-[10px] leading-tight mt-0.5"
+                  :class="f.stats?.failed ? 'text-red-500 font-medium' : 'text-ink-subtle'">
+                  <span v-if="f.stats?.failed">{{ f.stats.failed }} com erro</span>
                   <span v-else>—</span>
                 </div>
               </td>

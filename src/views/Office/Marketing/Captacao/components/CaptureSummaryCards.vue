@@ -1,18 +1,17 @@
 <script setup>
 // KPIs principais da Captação — espelham os agregados que o backend devolve em
-// /capture/health?period=24h|7d|30d|all. Cada card é clicável: ao clicar, aplica
-// o filtro de status correspondente. Mesma linguagem visual do SummaryCards de
-// Campanhas (ícone colorido, tabular-nums, hover translate).
+// /capture/health?since=YYYY-MM-DD&until=YYYY-MM-DD (o período vem do
+// PeriodPicker mestre da tela, padronizado com Campanhas/Leads/Formulários).
+// Cada card é clicável: ao clicar, aplica o filtro de status correspondente.
+// Cards `global: true` (dead-letter) filtram SEM recorte de período.
 
 import { computed } from 'vue';
-import SegmentedControl from '@/components/UI/SegmentedControl.vue';
 
 const props = defineProps({
     health: { type: Object, default: null },
-    period: { type: String, default: '7d' },
 });
 
-const emit = defineEmits(['focus-status', 'change-period']);
+const emit = defineEmits(['focus-status']);
 
 const intFmt = new Intl.NumberFormat('pt-BR');
 
@@ -26,15 +25,6 @@ function fmtSeconds(s) {
     return `${(h / 24).toFixed(1)}d`;
 }
 
-const PERIOD_OPTIONS = [
-    { value: '24h', label: '24h' },
-    { value: '7d',  label: '7 dias' },
-    { value: '30d', label: '30 dias' },
-    { value: 'all', label: 'Tudo' },
-];
-
-const periodLabel = computed(() => PERIOD_OPTIONS.find(o => o.value === props.period)?.label || props.period);
-
 const kpis = computed(() => {
     const h = props.health;
     if (!h) return [];
@@ -46,9 +36,9 @@ const kpis = computed(() => {
     return [
         {
             key: 'total',
-            label: `Leads (${periodLabel.value})`,
+            label: 'Leads no período',
             value: intFmt.format(total),
-            sub: 'no período',
+            sub: 'captados',
             icon: 'fas fa-arrow-trend-up',
             accent: 'text-indigo-500 bg-indigo-500/10',
             filter: null,
@@ -98,7 +88,8 @@ const kpis = computed(() => {
             sub: 'sem retry (geral)',
             icon: 'fas fa-skull',
             accent: 'text-rose-500 bg-rose-500/10',
-            filter: null,
+            filter: 'failed',
+            global: true,        // fora do recorte de período
             highlight: (h.dead_letter || 0) > 0,
         },
         {
@@ -123,22 +114,12 @@ const kpis = computed(() => {
 });
 
 function onClick(k) {
-    if (k.filter) emit('focus-status', k.filter);
+    if (k.filter) emit('focus-status', k.filter, { global: !!k.global });
 }
 </script>
 
 <template>
   <section class="space-y-3">
-    <!-- Header: seletor de período -->
-    <div class="flex items-center justify-between gap-3 flex-wrap">
-      <div class="flex items-center gap-2 min-w-0">
-        <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono">Período do recorte</p>
-      </div>
-      <SegmentedControl :model-value="period"
-        @change="v => emit('change-period', v)"
-        :options="PERIOD_OPTIONS" size="sm" />
-    </div>
-
     <!-- KPIs: scroll horizontal no mobile, grid no desktop -->
     <div class="-mx-4 sm:mx-0 px-4 sm:px-0 overflow-x-auto sm:overflow-visible no-scrollbar">
       <div class="flex sm:grid gap-2.5 sm:gap-3
