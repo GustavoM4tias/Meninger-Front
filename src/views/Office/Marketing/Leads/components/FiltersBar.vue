@@ -24,9 +24,11 @@ function updateField(key, val) {
   emit('update:filtros', next);
 }
 
-// ── Defaults de data (mês atual) ─────────────────────
+// ── Defaults de data (mês atual ATÉ HOJE) ────────────
+// Mesmo default do PeriodPicker do topo da tela — antes este bar usava
+// endOf('month') e a tela nascia com dois períodos diferentes.
 const defaultStart = dayjs().startOf('month').format('YYYY-MM-DD');
-const defaultEnd = dayjs().endOf('month').format('YYYY-MM-DD');
+const defaultEnd = dayjs().format('YYYY-MM-DD');
 
 const dataInicio = computed({
   get: () => props.filtros.data_inicio || defaultStart,

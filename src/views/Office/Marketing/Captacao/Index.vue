@@ -21,6 +21,7 @@ import PageHeader from '@/components/UI/PageHeader.vue';
 import Button from '@/components/UI/Button.vue';
 import SegmentedControl from '@/components/UI/SegmentedControl.vue';
 
+import PeriodPicker from '../Campanhas/components/PeriodPicker.vue';
 import CaptureHealthBanner from './components/CaptureHealthBanner.vue';
 import CaptureSummaryCards from './components/CaptureSummaryCards.vue';
 import CaptureFiltersBar from './components/CaptureFiltersBar.vue';
@@ -71,15 +72,21 @@ function applyFilters() {
     store.fetchLeads();
 }
 
-function focusStatus(filterKey) {
+function focusStatus(filterKey, { global = false } = {}) {
     // Aceita "delivered" ou "failed,rejected" — converte em array.
+    // global = pontos de atenção: filtra a base inteira (sem recorte de período),
+    // senão dead-letter/held antigos ficariam invisíveis no mês atual.
+    if (global) {
+        store.focusGlobalStatus(filterKey);
+        return;
+    }
     store.filters.status = String(filterKey).split(',').map(s => s.trim()).filter(Boolean);
     store.page = 1;
     store.fetchLeads();
 }
 
-function changePeriod(p) {
-    store.setHealthPeriod(p);
+function onPeriodChange(p) {
+    store.setPeriodo(p);
 }
 
 function goPage(p) {
@@ -196,16 +203,19 @@ onMounted(async () => {
         </template>
       </PageHeader>
 
-      <!-- Alertas críticos -->
-      <CaptureHealthBanner :health="store.health" />
+      <!-- Alertas críticos (globais — clicáveis pra filtrar o inbox) -->
+      <CaptureHealthBanner :health="store.health" @focus-status="focusStatus" />
+
+      <!-- Período mestre (padronizado com Campanhas/Leads/Formulários) -->
+      <div class="mb-3">
+        <PeriodPicker :periodo="store.periodo" @update:periodo="onPeriodChange" />
+      </div>
 
       <!-- KPIs -->
       <div class="mb-4">
         <CaptureSummaryCards
           :health="store.health"
-          :period="store.healthPeriod"
-          @focus-status="focusStatus"
-          @change-period="changePeriod" />
+          @focus-status="focusStatus" />
       </div>
 
       <!-- Filtros -->

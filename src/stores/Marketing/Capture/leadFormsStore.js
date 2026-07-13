@@ -5,6 +5,7 @@
 
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
+import dayjs from 'dayjs';
 import API_URL from '@/config/apiUrl';
 
 function authHeaders() {
@@ -34,11 +35,27 @@ export const useLeadFormsStore = defineStore('marketingLeadForms', () => {
     const saving = ref(false);
     const error = ref(null);
 
+    // Período mestre dos stats — default MÊS ATUAL, padronizado com as demais
+    // telas de marketing (Campanhas/Leads/Captação). Recorta as contagens de
+    // leads por formulário no backend.
+    const periodo = ref({
+        since: dayjs().startOf('month').format('YYYY-MM-DD'),
+        until: dayjs().format('YYYY-MM-DD'),
+        preset: 'this_month',
+    });
+
+    function setPeriodo(p) {
+        periodo.value = { ...p };
+        fetchAll();
+    }
+
     async function fetchAll() {
         loading.value = true;
         error.value = null;
         try {
-            const data = await apiFetch('/lead-forms');
+            const { since, until } = periodo.value || {};
+            const qs = (since && until) ? `?since=${since}&until=${until}` : '';
+            const data = await apiFetch(`/lead-forms${qs}`);
             forms.value = Array.isArray(data.results) ? data.results : [];
         } catch (e) {
             error.value = e.message;
@@ -112,5 +129,5 @@ export const useLeadFormsStore = defineStore('marketingLeadForms', () => {
         }
     }
 
-    return { forms, loading, saving, error, fetchAll, create, update, toggleActive, fetchRecentLeads };
+    return { forms, loading, saving, error, periodo, setPeriodo, fetchAll, create, update, toggleActive, fetchRecentLeads };
 });

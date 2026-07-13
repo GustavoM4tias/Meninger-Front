@@ -8,6 +8,7 @@ import { useLeadFormsStore } from '@/stores/Marketing/Capture/leadFormsStore';
 import PageContainer from '@/components/UI/PageContainer.vue';
 import PageHeader from '@/components/UI/PageHeader.vue';
 import Button from '@/components/UI/Button.vue';
+import PeriodPicker from '../Campanhas/components/PeriodPicker.vue';
 import LeadFormEditModal from './components/LeadFormEditModal.vue';
 import InternalLeadFormsTable from './components/InternalLeadFormsTable.vue';
 
@@ -34,6 +35,11 @@ onMounted(() => store.fetchAll());
           <Button variant="primary" size="sm" icon="fas fa-plus" @click="openCreate">Novo formulário</Button>
         </template>
       </PageHeader>
+
+      <!-- Período mestre dos stats (padronizado com Campanhas/Leads/Captação) -->
+      <div class="mb-3">
+        <PeriodPicker :periodo="store.periodo" @update:periodo="store.setPeriodo" />
+      </div>
 
       <!-- Aviso sobre forms Meta -->
       <div class="mb-4 flex items-start gap-2.5 rounded-lg border border-line bg-surface-sunken/30 px-3 py-2.5 text-xs text-ink-muted">

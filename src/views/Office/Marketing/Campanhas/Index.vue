@@ -211,7 +211,8 @@ const campaignRows = computed(() => {
             rows.push({
                 ...c,
                 spend: 0, impressions: 0, clicks: 0,
-                meta_leads_total: 0, cac: null, ctr: null, cpm: null, cpc: null,
+                meta_leads_total: 0, meta_leads_form: 0, meta_leads_pixel: 0,
+                cac: null, ctr: null, cpm: null, cpc: null,
                 no_delivery: true,
             });
         }
@@ -705,6 +706,11 @@ const LEVEL_TABS = [
                     <div class="text-sm font-semibold text-ink leading-tight" title="Leads contados pela Meta no período">
                       {{ fmtInt(c.meta_leads_total || 0) }}
                       <i class="fab fa-meta text-[9px] text-ink-subtle ml-0.5"></i>
+                    </div>
+                    <div v-if="(c.meta_leads_form || 0) + (c.meta_leads_pixel || 0) > 0"
+                      class="text-[10px] text-ink-subtle tabular-nums"
+                      title="Formulário Meta (chega na Captação) × pixel (converte no site/LP — não passa pelo webhook)">
+                      {{ fmtInt(c.meta_leads_form || 0) }} form · {{ fmtInt(c.meta_leads_pixel || 0) }} pixel
                     </div>
                   </td>
 

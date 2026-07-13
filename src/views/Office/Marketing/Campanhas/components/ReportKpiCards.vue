@@ -50,6 +50,12 @@ const kpis = computed(() => {
             accent: 'text-violet-500 bg-violet-500/10',
             value: intFmt.format(t.meta_leads_total || 0),
             delta: delta(t.meta_leads_total, p.meta_leads_total), invert: false,
+            // Desdobramento form × pixel: só de formulário Meta chega pelo
+            // webhook — leads de pixel convertem no site/LP e explicam a
+            // diferença vs a tela de Captação.
+            sub: (Number(t.meta_leads_form) || 0) + (Number(t.meta_leads_pixel) || 0) > 0
+                ? `${intFmt.format(t.meta_leads_form || 0)} form · ${intFmt.format(t.meta_leads_pixel || 0)} pixel`
+                : null,
         },
         {
             key: 'cac', label: 'CAC', icon: 'fas fa-coins',
@@ -120,6 +126,10 @@ function deltaView(item) {
           {{ item.value }}
         </span>
         <span class="text-[11px] text-ink-muted">{{ item.label }}</span>
+        <span v-if="item.sub" class="text-[10px] text-ink-muted/80 tabular-nums leading-none"
+          title="Leads de formulário Meta (chegam na Captação) × leads de pixel (convertem no site/LP)">
+          {{ item.sub }}
+        </span>
       </div>
     </div>
   </div>

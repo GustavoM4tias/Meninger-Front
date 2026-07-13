@@ -6,10 +6,10 @@
 
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
+import dayjs from 'dayjs';
 import API_URL from '@/config/apiUrl';
 
 const VIEWMODE_KEY = 'marketing.captacao.viewMode';
-const PERIOD_KEY = 'marketing.captacao.healthPeriod';
 
 function authHeaders() {
     const token = localStorage.getItem('token');
@@ -32,8 +32,20 @@ async function apiFetch(path, opts = {}) {
     return data;
 }
 
+// Período default padronizado das telas de marketing: MÊS ATUAL (mesmo default
+// do PeriodPicker de Campanhas/Leads) — antes a Captação abria sem recorte e
+// os totais não batiam com nenhuma outra tela.
+function defaultPeriodo() {
+    return {
+        since: dayjs().startOf('month').format('YYYY-MM-DD'),
+        until: dayjs().format('YYYY-MM-DD'),
+        preset: 'this_month',
+    };
+}
+
 // Defaults dos filtros — usado pra detectar "filtros ativos" e pelo botão Limpar.
 function defaultFilters() {
+    const p = defaultPeriodo();
     return {
         status: [],            // []  | ['held','failed',...]
         channel: [],           // []  | ['meta_lead_ads','site_form']
@@ -41,8 +53,8 @@ function defaultFilters() {
         midia_slug: [],        // []  | ['meta-mond-marilia', ...]
         meta_campaign_id: [],  // []  | ['1203...', ...]
         q: '',
-        period_start: '',      // YYYY-MM-DD
-        period_end: '',        // YYYY-MM-DD
+        period_start: p.since, // YYYY-MM-DD
+        period_end: p.until,   // YYYY-MM-DD
         sort: 'recent',        // recent | oldest | stuck (presos há mais tempo)
     };
 }
@@ -56,7 +68,8 @@ export const useCaptureStore = defineStore('marketingCapture', () => {
     const filters = ref(defaultFilters());
 
     const health = ref(null);
-    const healthPeriod = ref(localStorage.getItem(PERIOD_KEY) || '7d'); // 24h | 7d | 30d | all
+    // Período mestre da tela (KPIs + inbox) — mesmo shape do PeriodPicker.
+    const periodo = ref(defaultPeriodo());
     const viewMode = ref(localStorage.getItem(VIEWMODE_KEY) || 'list'); // list | cards | timeline
 
     const loading = ref(false);
@@ -92,10 +105,12 @@ export const useCaptureStore = defineStore('marketingCapture', () => {
 
     const hasActiveFilters = computed(() => {
         const f = filters.value;
+        const dp = defaultPeriodo();
         return (
             f.status.length > 0 || f.channel.length > 0 || f.cv_origem.length > 0 ||
             f.midia_slug.length > 0 || f.meta_campaign_id.length > 0 ||
-            (f.q && f.q.trim() !== '') || !!f.period_start || !!f.period_end ||
+            (f.q && f.q.trim() !== '') ||
+            f.period_start !== dp.since || f.period_end !== dp.until ||
             f.sort !== 'recent'
         );
     });
@@ -106,14 +121,30 @@ export const useCaptureStore = defineStore('marketingCapture', () => {
         localStorage.setItem(VIEWMODE_KEY, m);
     }
 
-    function setHealthPeriod(p) {
-        healthPeriod.value = p;
-        localStorage.setItem(PERIOD_KEY, p);
+    // Período mestre: recorta KPIs (health) e o inbox de uma vez.
+    function setPeriodo(p) {
+        periodo.value = { ...p };
+        filters.value.period_start = p.since || '';
+        filters.value.period_end = p.until || '';
+        page.value = 1;
         fetchHealth();
+        fetchLeads();
     }
 
     function resetFilters() {
         filters.value = defaultFilters();
+        periodo.value = defaultPeriodo();
+        page.value = 1;
+        fetchLeads();
+        fetchHealth();
+    }
+
+    // Foco global (pontos de atenção): filtra por status SEM recorte de período —
+    // dead-letter/held/rejected antigos ficariam invisíveis no mês atual.
+    function focusGlobalStatus(statusCsv) {
+        filters.value.status = String(statusCsv).split(',').map(s => s.trim()).filter(Boolean);
+        filters.value.period_start = '';
+        filters.value.period_end = '';
         page.value = 1;
         fetchLeads();
     }
@@ -153,7 +184,11 @@ export const useCaptureStore = defineStore('marketingCapture', () => {
 
     async function fetchHealth() {
         try {
-            health.value = await apiFetch(`/capture/health?period=${encodeURIComponent(healthPeriod.value)}`);
+            const { since, until } = periodo.value || {};
+            const qs = (since && until)
+                ? `since=${encodeURIComponent(since)}&until=${encodeURIComponent(until)}`
+                : 'period=7d';
+            health.value = await apiFetch(`/capture/health?${qs}`);
         } catch (e) {
             console.warn('[capture] health:', e.message);
         }
@@ -295,7 +330,7 @@ export const useCaptureStore = defineStore('marketingCapture', () => {
     return {
         // state
         leads, total, page, pageSize, filters,
-        health, healthPeriod, viewMode,
+        health, periodo, viewMode,
         loading, error,
         detail, detailLoading, actionBusy,
         // derived
@@ -304,6 +339,6 @@ export const useCaptureStore = defineStore('marketingCapture', () => {
         fetchLeads, fetchHealth, fetchDetail,
         routeLead, redispatchLead, setSpam, reconcileCv,
         backfillCampaigns, runFullSync,
-        setViewMode, setHealthPeriod, resetFilters,
+        setViewMode, setPeriodo, focusGlobalStatus, resetFilters,
     };
 });
