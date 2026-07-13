@@ -12,6 +12,7 @@ import { useTrSatelliteStore } from '@/stores/Comercial/Contracts/trSatelliteSto
 import Favorite from '@/components/config/Favorite.vue';
 import PageContainer from '@/components/UI/PageContainer.vue';
 import PageHeader from '@/components/UI/PageHeader.vue';
+import PageHelp from '@/components/UI/PageHelp.vue';
 import Spinner from '@/components/UI/Spinner.vue';
 import Button from '@/components/UI/Button.vue';
 
@@ -480,6 +481,23 @@ onMounted(async () => {
         <template #title>
           <span>Vendas × Projeção</span>
           <Favorite :router="'/comercial/sales-projection'" :section="'Vendas x Projeção'" />
+        </template>
+        <template #actions>
+          <PageHelp
+            storage-key="sales-projection"
+            title="Como usar Vendas × Projeção"
+            intro="Este painel compara a meta projetada com o que já foi vendido, empreendimento a empreendimento, no período escolhido."
+            :steps="[
+              'Nos filtros acima, escolha o período, a empresa e os empreendimentos que quer analisar.',
+              { title: 'Leia o resumo', text: 'Os cartões no topo mostram meta, realizado e o percentual atingido do conjunto filtrado.' },
+              { title: 'Compare na tabela', text: 'Cada linha é um empreendimento. Clique na linha para abrir o detalhamento das vendas.' },
+              { title: 'Aprofunde', text: 'Use “Gráficos” para a visão visual e “Configurações” para ajustar as metas (modo de meta).' },
+            ]"
+            :tips="[
+              'O indicador de temperatura mostra se o ritmo de vendas está à frente ou atrás do tempo decorrido do período.',
+              'Selecionar linhas na tabela recalcula as métricas só para a seleção.',
+            ]"
+          />
         </template>
       </PageHeader>
 

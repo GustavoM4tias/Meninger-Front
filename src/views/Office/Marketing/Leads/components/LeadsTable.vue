@@ -92,7 +92,8 @@ function openSingle(entry, mode = 'list') {
     <!-- Mobile: cards -->
     <div v-else class="md:hidden divide-y divide-line">
       <div v-for="(e, idx) in sortedData" :key="e.name"
-        class="flex items-start gap-3 p-3 hover:bg-surface-sunken/40 transition-colors cursor-pointer"
+        class="flex items-start gap-3 p-3 hover:bg-surface-sunken/40 transition-colors cursor-pointer animate-fade-in [animation-fill-mode:backwards]"
+        :style="{ animationDelay: Math.min(idx, 12) * 25 + 'ms' }"
         @click="openSingle(e)">
         <input type="checkbox" :checked="selectedNames.has(e.name)"
           @click.stop @change="toggleOne(e.name, $event)"
@@ -131,7 +132,8 @@ function openSingle(entry, mode = 'list') {
         </thead>
         <tbody class="divide-y divide-line">
           <tr v-for="(e, idx) in sortedData" :key="e.name"
-            class="hover:bg-surface-sunken/40 transition-colors">
+            class="hover:bg-surface-sunken/40 transition-colors animate-fade-in [animation-fill-mode:backwards]"
+            :style="{ animationDelay: Math.min(idx, 12) * 25 + 'ms' }">
             <td class="px-4 py-3">
               <input type="checkbox" :checked="selectedNames.has(e.name)"
                 @change="toggleOne(e.name, $event)" />

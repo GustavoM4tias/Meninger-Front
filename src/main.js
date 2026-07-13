@@ -5,6 +5,7 @@ import '@splidejs/splide/dist/css/splide.min.css'
 
 import tippy from 'tippy.js';
 import 'tippy.js/dist/tippy.css';
+import 'tippy.js/animations/shift-away.css';
 import 'flowbite';
 
 import PrimeVue from 'primevue/config';
@@ -37,14 +38,36 @@ app.use(Toast, {
 
 app.use(PrimeVue, { theme: { preset: Aura } });
 
+// Tooltip padrão do app. Tema 'menin' (segue os tokens claro/escuro) e — importante —
+// NÃO cria tooltip quando o conteúdo está vazio (senão renderiza uma bolha vazia).
+// Placement via argumento: v-tippy:right="texto". zIndex acima do Modal (z-[9999]).
+const tippyOpts = (binding) => ({
+  content: binding.value,
+  allowHTML: true,
+  theme: 'menin',
+  placement: binding.arg || 'top',
+  animation: 'shift-away',
+  delay: [150, 0],
+  arrow: true,
+  zIndex: 100000,
+});
+
 app.directive('tippy', {
   mounted(el, binding) {
-    // zIndex acima do Modal (z-[9999]) p/ o tooltip não ficar escondido atrás dele.
-    tippy(el, { content: binding.value, allowHTML: true, zIndex: 100000 });
+    if (binding.value) tippy(el, tippyOpts(binding));
   },
   updated(el, binding) {
-    if (el._tippy) el._tippy.setContent(binding.value);
-  }
+    if (el._tippy) {
+      if (!binding.value) { el._tippy.destroy(); return; }
+      el._tippy.setContent(binding.value);
+      el._tippy.setProps({ placement: binding.arg || 'top' });
+    } else if (binding.value) {
+      tippy(el, tippyOpts(binding));
+    }
+  },
+  unmounted(el) {
+    if (el._tippy) el._tippy.destroy();
+  },
 });
 
 app.use(router);

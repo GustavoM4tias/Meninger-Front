@@ -6,7 +6,9 @@ import { useChecklistStore } from '@/stores/Checklist/checklistStore.js';
 import ProgressRing from './components/ProgressRing.vue';
 import ChecklistTable from './components/ChecklistTable.vue';
 import ChecklistBoard from './components/ChecklistBoard.vue';
-import ChecklistTimeline from './components/ChecklistTimeline.vue';
+// Linha do tempo temporariamente oculta (a pedido). Reative o import + a opção em
+// VIEW_MODES + o render abaixo quando voltar a ser usada.
+// import ChecklistTimeline from './components/ChecklistTimeline.vue';
 import TaskDrawer from './components/TaskDrawer.vue';
 import ChecklistCobrancaModal from './components/ChecklistCobrancaModal.vue';
 import ChecklistSettingsModal from './components/ChecklistSettingsModal.vue';
@@ -35,7 +37,6 @@ async function confirmApprovalPrompt() {
     if (id) { try { await store.submitForApproval(id); } catch (e) { store.error = e.message; } }
 }
 
-const brl = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(v) || 0);
 const fmt = (d) => (d ? dayjs(d).format('DD/MM/YYYY') : '-');
 
 const checklist = computed(() => store.current?.checklist || null);
@@ -73,7 +74,7 @@ function clearFilters() { filter.value = { search: '', statuses: [], assignees: 
 const VIEW_MODES = [
     { value: 'table', label: 'Tabela', icon: 'fas fa-table-list' },
     { value: 'board', label: 'Quadro', icon: 'fas fa-columns' },
-    { value: 'timeline', label: 'Linha do tempo', icon: 'fas fa-chart-gantt' },
+    // { value: 'timeline', label: 'Linha do tempo', icon: 'fas fa-chart-gantt' }, // oculto por enquanto
 ];
 </script>
 
@@ -102,7 +103,6 @@ const VIEW_MODES = [
                             <div class="flex items-center gap-4 mt-1 text-xs text-ink-muted flex-wrap">
                                 <span><i class="fas fa-list-ul"></i> {{ progress.done || 0 }}/{{ progress.total || 0 }}</span>
                                 <span v-if="(progress.overdue || 0) > 0" class="text-red-500 font-semibold"><i class="fas fa-triangle-exclamation"></i> {{ progress.overdue }} em atraso</span>
-                                <span><i class="fas fa-coins"></i> {{ brl(progress.budget) }}<span v-if="progress.budget_monthly"> + {{ brl(progress.budget_monthly) }}/mês</span></span>
                             </div>
                         </div>
                     </div>
@@ -130,13 +130,13 @@ const VIEW_MODES = [
                 <SegmentedControl :model-value="viewMode" :options="VIEW_MODES" @update:model-value="viewMode = $event" />
 
                 <div v-if="viewMode === 'table'" class="flex flex-wrap items-center gap-2">
-                    <div class="relative">
+                    <div class="relative w-full sm:w-72">
                         <i class="fas fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-ink-subtle text-xs pointer-events-none"></i>
                         <input v-model="filter.search" placeholder="Buscar tarefa..."
-                            class="w-80 pl-8 pr-3 h-9 text-sm rounded-lg border border-line bg-surface-raised text-ink shadow-inner-soft placeholder:text-ink-subtle outline-none focus:border-accent-ring focus:ring-2 focus:ring-accent-ring/20 transition-all" />
+                            class="w-full pl-8 pr-3 h-9 text-sm rounded-lg border border-line bg-surface-raised text-ink shadow-inner-soft placeholder:text-ink-subtle outline-none focus:border-accent-ring focus:ring-2 focus:ring-accent-ring/20 transition-all" />
                     </div>
-                    <div class="w-44 shrink-0"><MultiSelector :options="statusOptions" v-model="filter.statuses" placeholder="Status" /></div>
-                    <div class="w-44 shrink-0"><MultiSelector :options="assigneeOptions" v-model="filter.assignees" placeholder="Responsável" /></div>
+                    <div class="w-full sm:w-44 shrink-0"><MultiSelector :options="statusOptions" v-model="filter.statuses" placeholder="Status" /></div>
+                    <div class="w-full sm:w-44 shrink-0"><MultiSelector :options="assigneeOptions" v-model="filter.assignees" placeholder="Responsável" /></div>
                     <button @click="filter.onlyOverdue = !filter.onlyOverdue" type="button"
                         class="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg text-sm border transition shrink-0"
                         :class="filter.onlyOverdue ? 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/30' : 'text-ink-muted border-line hover:bg-surface-sunken'">
@@ -153,9 +153,10 @@ const VIEW_MODES = [
                 </div>
             </div>
 
-            <ChecklistTable v-if="viewMode === 'table'" :filter="filter" :is-admin="isAdmin" @open-task="openTask" />
-            <ChecklistBoard v-else-if="viewMode === 'board'" :is-admin="isAdmin" @open-task="openTask" />
-            <ChecklistTimeline v-else @open-task="openTask" />
+            <transition name="view-fade" mode="out-in">
+                <ChecklistTable v-if="viewMode === 'table'" key="table" :filter="filter" :is-admin="isAdmin" @open-task="openTask" />
+                <ChecklistBoard v-else key="board" :is-admin="isAdmin" @open-task="openTask" />
+            </transition>
 
             <TaskDrawer v-if="openTaskId" :task-id="openTaskId" @close="closeTask" @changed="() => {}" />
             <ChecklistCobrancaModal v-if="showCobranca" @close="showCobranca = false" />
@@ -175,3 +176,11 @@ const VIEW_MODES = [
         </template>
     </div>
 </template>
+
+<style scoped>
+/* Troca suave entre Tabela e Quadro */
+.view-fade-enter-active { transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
+.view-fade-leave-active { transition: opacity 0.12s ease; }
+.view-fade-enter-from { opacity: 0; transform: translateY(6px); }
+.view-fade-leave-to { opacity: 0; }
+</style>

@@ -65,12 +65,14 @@ const totalLeads = computed(() => props.kpi.total ?? 0);
       <div class="flex sm:grid gap-2.5 sm:gap-3
                   sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5
                   min-w-max sm:min-w-0">
-        <button v-for="item in kpi.items" :key="item.key"
+        <button v-for="(item, i) in kpi.items" :key="item.key"
           @click="emit('filtrarSituacao', item.key)"
+          :style="{ animationDelay: Math.min(i, 12) * 30 + 'ms' }"
           class="group flex flex-col gap-1 p-3 rounded-xl border border-line bg-surface-raised
                  shadow-soft hover:shadow-elevated hover:border-accent/30 hover:-translate-y-0.5
                  transition-all duration-200 ease-out-expo text-left
-                 w-44 sm:w-auto shrink-0 surface-gradient">
+                 w-44 sm:w-auto shrink-0 surface-gradient
+                 animate-slide-up [animation-fill-mode:backwards]">
           <div class="flex items-center justify-between gap-2">
             <span class="h-7 w-7 rounded-lg grid place-items-center text-xs"
               :class="accentFor(item.key)">

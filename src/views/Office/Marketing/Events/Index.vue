@@ -11,6 +11,7 @@ import Favorite from '@/components/config/Favorite.vue';
 
 import PageContainer from '@/components/UI/PageContainer.vue';
 import PageHeader from '@/components/UI/PageHeader.vue';
+import PageHelp from '@/components/UI/PageHelp.vue';
 import Input from '@/components/UI/Input.vue';
 import Button from '@/components/UI/Button.vue';
 import IconButton from '@/components/UI/IconButton.vue';
@@ -107,6 +108,18 @@ const showFinished = computed(() =>
           <Favorite :router="'/marketing/events'" :section="currentSection" />
         </template>
         <template #actions>
+          <PageHelp storage-key="marketing-events" title="Como usar os Eventos"
+            intro="Aqui você descobre, cria e acompanha os eventos da empresa."
+            :steps="[
+              { title: 'Navegue pelas abas', text: 'Geral mostra tudo; Próximos e Finalizados separam por data.' },
+              { title: 'Ver detalhes', text: 'Clique em qualquer card para abrir o evento completo — fotos, local e organizadores.' },
+              { title: 'Criar evento', text: 'Use “Novo evento”. Ao escolher o empreendimento, o endereço é preenchido automaticamente.' },
+              { title: 'Relatório', text: 'Gere um relatório dos eventos filtrados no botão “Relatório”.' },
+            ]"
+            :tips="[
+              'A busca encontra por título, descrição ou tag.',
+              'O selo colorido no card indica quando o evento acontece (Hoje, Amanhã, em X dias).',
+            ]" />
           <Button variant="secondary" icon="fas fa-file-export"
             :disabled="!eventsFiltered.length" @click="showReport = true">
             Relatório
@@ -138,7 +151,9 @@ const showFinished = computed(() =>
           <button @click="search = ''" class="text-xs text-accent hover:underline">Limpar busca</button>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          <EventCard v-for="event in eventsFiltered" :key="event.id" :event="event"
+          <EventCard v-for="(event, i) in eventsFiltered" :key="event.id" :event="event"
+            class="animate-slide-up [animation-fill-mode:backwards]"
+            :style="{ animationDelay: Math.min(i, 10) * 35 + 'ms' }"
             @click="openEventModal(event)" />
         </div>
       </section>
@@ -167,7 +182,9 @@ const showFinished = computed(() =>
             </div>
           </header>
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            <EventCard v-for="event in eventsUpcoming" :key="event.id" :event="event"
+            <EventCard v-for="(event, i) in eventsUpcoming" :key="event.id" :event="event"
+              class="animate-slide-up [animation-fill-mode:backwards]"
+              :style="{ animationDelay: Math.min(i, 10) * 35 + 'ms' }"
               @click="openEventModal(event)" />
           </div>
         </section>
@@ -189,7 +206,9 @@ const showFinished = computed(() =>
             </div>
           </header>
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            <EventCard v-for="event in eventsFinished" :key="event.id" :event="event" past
+            <EventCard v-for="(event, i) in eventsFinished" :key="event.id" :event="event" past
+              class="animate-slide-up [animation-fill-mode:backwards]"
+              :style="{ animationDelay: Math.min(i, 10) * 35 + 'ms' }"
               @click="openEventModal(event)" />
           </div>
         </section>

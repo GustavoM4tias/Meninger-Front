@@ -9,6 +9,18 @@
                     <Favorite :router="'/marketing/aprovacoes'" :section="'Aprovações'" />
                 </template>
                 <template #actions>
+                    <PageHelp storage-key="marketing-approvals" title="Como usar as Aprovações"
+                        intro="Aqui o Marketing envia solicitações (verbas, eventos, mídias, serviços) para a diretoria aprovar de forma rápida."
+                        :steps="[
+                            { title: 'Filtre a lista', text: 'Use status, tipo, centro de custo, período e a busca para achar uma solicitação.' },
+                            { title: 'Abra os detalhes', text: 'Clique em qualquer linha para ver itens, anexos, justificativa e o histórico.' },
+                            { title: 'Decida', text: 'Na solicitação, use a barra inferior para Aprovar, Aprovar com ressalva ou Reprovar.' },
+                            { title: 'Nova solicitação', text: 'O solicitante cria em “Nova solicitação” e acompanha o andamento pelo protocolo.' },
+                        ]"
+                        :tips="[
+                            'Ative “Pendentes de mim” para ver só o que aguarda a sua decisão.',
+                            'Aprovar com ressalva e reprovar exigem um comentário, que vai ao solicitante.',
+                        ]" />
                     <Button v-if="store.me.isAdmin" variant="ghost" size="sm" icon="fas fa-sliders-h"
                         @click="$router.push('/marketing/aprovacoes/config')">
                         Configurações
@@ -68,7 +80,8 @@
 
             <!-- Lista -->
             <Surface variant="raised" padding="none" class="overflow-hidden">
-                <div class="overflow-x-auto">
+                <!-- Desktop: tabela -->
+                <div class="hidden md:block overflow-x-auto">
                     <table class="w-full text-sm">
                         <thead>
                             <tr class="border-b border-line text-left">
@@ -83,8 +96,9 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-for="item in store.items" :key="item.id"
-                                class="border-b border-line/60 hover:bg-surface-sunken/60 cursor-pointer transition-colors"
+                            <tr v-for="(item, i) in store.items" :key="item.id"
+                                class="border-b border-line/60 hover:bg-surface-sunken/60 cursor-pointer transition-colors animate-fade-in [animation-fill-mode:backwards]"
+                                :style="{ animationDelay: Math.min(i, 12) * 30 + 'ms' }"
                                 @click="$router.push(`/marketing/aprovacoes/${item.id}`)">
                                 <td class="px-4 py-3 font-mono font-semibold text-ink whitespace-nowrap">{{ item.protocol }}</td>
                                 <td class="px-4 py-3 text-ink">{{ item.type_label }}</td>
@@ -103,6 +117,32 @@
                         </tbody>
                     </table>
                 </div>
+
+                <!-- Mobile: cards -->
+                <div class="md:hidden divide-y divide-line">
+                    <button v-for="(item, i) in store.items" :key="item.id" type="button"
+                        class="w-full text-left p-4 flex flex-col gap-2 hover:bg-surface-sunken/60 transition-colors animate-slide-up [animation-fill-mode:backwards]"
+                        :style="{ animationDelay: Math.min(i, 12) * 30 + 'ms' }"
+                        @click="$router.push(`/marketing/aprovacoes/${item.id}`)">
+                        <div class="flex items-center justify-between gap-2">
+                            <span class="font-mono font-semibold text-ink">{{ item.protocol }}</span>
+                            <Badge :variant="statusMeta(item.status).variant" size="sm">
+                                <i :class="statusMeta(item.status).icon" class="mr-1 text-[10px]"></i>
+                                {{ statusMeta(item.status).label }}
+                            </Badge>
+                        </div>
+                        <div class="flex items-center justify-between gap-2">
+                            <span class="text-sm text-ink truncate">{{ item.type_label }}</span>
+                            <span class="font-mono font-bold tabular-nums text-ink whitespace-nowrap">{{ fmtBRL(item.amount) }}</span>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-muted">
+                            <span class="inline-flex items-center gap-1"><i class="fas fa-user text-ink-subtle text-[10px]"></i>{{ item.requester?.username || '-' }}</span>
+                            <span v-if="item.cost_center_name" class="inline-flex items-center gap-1"><i class="fas fa-building text-ink-subtle text-[10px]"></i>{{ item.cost_center_name }}</span>
+                            <span v-if="item.due_date" class="inline-flex items-center gap-1"><i class="fas fa-clock text-ink-subtle text-[10px]"></i>{{ fmtDate(item.due_date) }}</span>
+                        </div>
+                    </button>
+                </div>
+
                 <EmptyState v-if="!store.loading && !store.items.length" icon="fas fa-stamp"
                     title="Nenhuma solicitação encontrada"
                     description="Crie uma nova solicitação ou ajuste os filtros." />
@@ -120,6 +160,7 @@ import { useApprovalsStore, STATUS_META } from '@/stores/Marketing/Approvals/app
 
 import PageContainer from '@/components/UI/PageContainer.vue';
 import PageHeader from '@/components/UI/PageHeader.vue';
+import PageHelp from '@/components/UI/PageHelp.vue';
 import Surface from '@/components/UI/Surface.vue';
 import Button from '@/components/UI/Button.vue';
 import Badge from '@/components/UI/Badge.vue';

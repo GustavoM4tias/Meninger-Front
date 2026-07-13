@@ -1,12 +1,12 @@
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue';
-import { RouterLink } from 'vue-router';
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
+import { RouterLink, useRoute } from 'vue-router';
 
 import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 import { useFavoritesStore } from '@/stores/Config/favoriteStore';
 import { useMicrosoftStore } from '@/stores/Microsoft/microsoftStore';
 import { usePermissionStore } from '@/stores/Settings/Permissions/permissionStore';
-import { navRegistry, allManagedRoutes } from '@/config/navRegistry';
+import { navRegistry, allManagedRoutes, isItemActive } from '@/config/navRegistry';
 import { academyUrl } from '@/utils/appContext';
 
 import Search from '@/components/Navigation/components/Search.vue';
@@ -18,6 +18,9 @@ import IconButton from '@/components/UI/IconButton.vue';
 import SidebarItem from './components/sidebar/SidebarItem.vue';
 import SidebarFavorites from './components/sidebar/SidebarFavorites.vue';
 import SidebarCategory from './components/sidebar/SidebarCategory.vue';
+import SidebarFlyout from './components/sidebar/SidebarFlyout.vue';
+
+const route = useRoute();
 
 // ─── Stores ──────────────────────────────────────────
 const authStore       = useAuthStore();
@@ -100,9 +103,30 @@ function initDropdownStates() {
   }
   dropdowns.value = d;
   subDropdowns.value = s;
+  openActiveTrail();
 }
+
+// ─── Trilha da rota ativa (auto-abre onde o usuário está) ─────────────
+const activeTrail = computed(() => {
+  const path = route.path, sec = route.query.section;
+  for (const key of categoryKeys.value) {
+    if (categoryFlatItems(key).some(it => isItemActive(path, sec, it))) return { cat: key, sub: null };
+    for (const sub of subcatEntries(key)) {
+      if ((sub.items || []).some(it => isItemActive(path, sec, it))) return { cat: key, sub: sub.key };
+    }
+  }
+  return { cat: null, sub: null };
+});
+
+function openActiveTrail() {
+  const { cat, sub } = activeTrail.value;
+  if (cat && cat in dropdowns.value) dropdowns.value[cat] = true;
+  if (cat && sub) subDropdowns.value[`${cat}.${sub}`] = true;
+}
+
 initDropdownStates();
 watch(categoryKeys, initDropdownStates);
+watch(() => route.fullPath, openActiveTrail);
 
 const toggleDropdown = (name) => {
   Object.keys(dropdowns.value).forEach(k => { if (k !== name) dropdowns.value[k] = false; });
@@ -142,6 +166,43 @@ const withExpand = (fn) => (...args) => {
 };
 const toggleDropdownSafe    = withExpand(toggleDropdown);
 const toggleSubDropdownSafe = withExpand(toggleSubDropdown);
+
+// ─── Flyout do rail recolhido ────────────────────────
+// Ao passar o mouse numa categoria (recolhido), abre um painel flutuante ao
+// lado com a árvore dela. Timers evitam flicker ao mover o mouse entre o
+// ícone e o painel.
+const flyout = ref({ key: null, rect: null });
+let openTimer = null, closeTimer = null;
+
+function scheduleOpenFlyout({ key, rect }) {
+  clearTimeout(openTimer); clearTimeout(closeTimer);
+  openTimer = setTimeout(() => { flyout.value = { key, rect }; }, 70);
+}
+function scheduleCloseFlyout() {
+  clearTimeout(openTimer); clearTimeout(closeTimer);
+  closeTimer = setTimeout(() => { flyout.value = { key: null, rect: null }; }, 140);
+}
+function keepFlyout()  { clearTimeout(closeTimer); }
+function closeFlyout() { clearTimeout(openTimer); clearTimeout(closeTimer); flyout.value = { key: null, rect: null }; }
+
+const flyoutCat = computed(() => {
+  const key = flyout.value.key;
+  if (!key) return null;
+  const cat = getCat(key);
+  if (!cat) return null;
+  return {
+    label: cat.label,
+    icon: cat.icon,
+    iconColor: cat.iconColor,
+    subEntries: subcatEntries(key),
+    flatItems: categoryFlatItems(key),
+    rect: flyout.value.rect,
+  };
+});
+
+// Recolher a sidebar fecha qualquer flyout aberto.
+watch(isCollapsed, (v) => { if (!v) closeFlyout(); });
+onBeforeUnmount(() => { clearTimeout(openTimer); clearTimeout(closeTimer); });
 
 // ─── Index para favoritos ────────────────────────────
 const routeIndex = computed(() => {
@@ -274,6 +335,8 @@ const closeMobile = () => { isMobileOpen.value = false; };
                 @toggleSub="(subKey) => toggleSubDropdownSafe(catKey, subKey)"
                 @expand="expandSidebar(); closeMobile();"
                 @toggleFavorite="toggleFavorite"
+                @hover="scheduleOpenFlyout"
+                @leave="scheduleCloseFlyout"
               />
             </li>
           </template>
@@ -282,8 +345,8 @@ const closeMobile = () => { isMobileOpen.value = false; };
                para a edição ATIVA (/bolao = Brasil x Japão); a 1ª chave da Copa
                fica arquivada em /bolao/copa-2026, fora da navbar. -->
           <li>
-            <SidebarItem to="/bolao" icon-img="/bolao-icon.png" label="Bolão Brasil x Japão"
-              :collapsed="isCollapsed" @click="expandSidebar(); closeMobile();" />
+            <!-- <SidebarItem to="/bolao" icon-img="/bolao-icon.png" label="Bolão Brasil x Japão"
+              :collapsed="isCollapsed" @click="expandSidebar(); closeMobile();" /> -->
           </li>
         </ul>
 
@@ -320,8 +383,25 @@ const closeMobile = () => { isMobileOpen.value = false; };
         </ul>
       </div>
     </aside>
+
+    <!-- Flyout do rail recolhido (teleportado para o body) -->
+    <SidebarFlyout
+      v-if="isCollapsed && flyoutCat"
+      :label="flyoutCat.label"
+      :icon="flyoutCat.icon"
+      :icon-color="flyoutCat.iconColor"
+      :sub-entries="flyoutCat.subEntries"
+      :flat-items="flyoutCat.flatItems"
+      :rect="flyoutCat.rect"
+      :is-favorited="isFavorited"
+      @keep="keepFlyout"
+      @release="scheduleCloseFlyout"
+      @navigate="closeFlyout"
+      @toggleFavorite="toggleFavorite"
+    />
   </div>
 </template>
+
 
 <style scoped>
 .fade-enter-active, .fade-leave-active { transition: opacity 0.18s ease; }
