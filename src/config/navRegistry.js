@@ -48,14 +48,14 @@ export const navRegistry = [
 
     // ── Checklists (lançamentos e demandas) ────────────────────────────────────
     {
+        // Tela única com abas internas (Painel/Checklists/Minhas Tarefas) → um só
+        // item de menu (link direto). As abas ficam dentro da própria tela.
         key: 'checklist',
         label: 'Checklists',
-        icon: 'fas fa-list-check',
+        icon: 'fas fa-clipboard-check',
         group: 'OPERAÇÃO',
         pages: [
-            { route: '/checklists', section: 'Painel', name: 'Painel', icon: 'fas fa-gauge-high' },
-            { route: '/checklists', section: 'Checklists', name: 'Checklists', icon: 'fas fa-list-check' },
-            { route: '/checklists', section: 'Minhas Tarefas', name: 'Minhas Tarefas', icon: 'fas fa-user-check' },
+            { route: '/checklists', name: 'Checklists', icon: 'fas fa-clipboard-check' },
         ],
     },
 
@@ -82,22 +82,16 @@ export const navRegistry = [
                 icon: 'fas fa-magnet',
                 pages: [
                     { route: '/marketing/captacao', name: 'Captação de Leads', icon: 'fas fa-inbox', adminOnly: true },
-                    { route: '/marketing/formularios', name: 'Formulários', icon: 'fas fa-list-check', adminOnly: true },
+                    { route: '/marketing/vinculos', name: 'Vínculos CV', icon: 'fas fa-link', adminOnly: true },
+                    { route: '/marketing/formularios', name: 'Formulários', icon: 'fas fa-rectangle-list', adminOnly: true },
                     { route: '/marketing/settings', name: 'Config. Captação', icon: 'fas fa-sliders', adminOnly: true },
-                ],
-            },
-            {
-                key: 'approvals',
-                name: 'Aprovações',
-                icon: 'fas fa-stamp',
-                pages: [
-                    { route: '/marketing/aprovacoes', name: 'Aprovações', icon: 'fas fa-stamp' },
-                    { route: '/marketing/aprovacoes/config', name: 'Config. Aprovações', icon: 'fas fa-sliders', adminOnly: true },
                 ],
             },
         ],
         pages: [
             { route: '/marketing/leads', section: 'Leads', name: 'Leads', icon: 'fas fa-user-plus' },
+            // Config das Aprovações fica só dentro da tela (botão "Configurações"), não no menu.
+            { route: '/marketing/aprovacoes', name: 'Aprovações', icon: 'fas fa-stamp' },
             { route: '/marketing/viability', section: 'Viabilidade', name: 'Viabilidade', icon: 'fas fa-scale-balanced' },
         ],
     },
@@ -309,6 +303,28 @@ export const navRegistry = [
     },
 
 ];
+
+// ─── Rota ativa ───────────────────────────────────────────────────────────────
+
+/**
+ * Um item está ativo quando a rota atual bate no caminho e, havendo `section`,
+ * quando o ?section= também bate. Itens sem section ativam só pelo caminho.
+ * Usado no Nav (auto-abrir + destacar) e no SidebarItem.
+ */
+export function isItemActive(currentPath, currentSection, item) {
+    if (!item || currentPath !== item.route) return false;
+    if (item.section == null) return true;
+    return (currentSection ?? '') === item.section;
+}
+
+/** Retorna todos os itens (planos + de subcategorias) de uma categoria. */
+export function categoryItems(cat) {
+    if (!cat) return [];
+    return [
+        ...(cat.pages || []),
+        ...(cat.subcategories || []).flatMap(sub => sub.pages || []),
+    ];
+}
 
 // ─── Exports auxiliares ───────────────────────────────────────────────────────
 

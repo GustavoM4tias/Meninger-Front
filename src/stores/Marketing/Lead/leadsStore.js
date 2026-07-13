@@ -158,6 +158,53 @@ export const useLeadsStore = defineStore('leads', () => {
         }
     }
 
+    // ---------- Comparação com período anterior (pros deltas dos KPIs) ----------
+    const prevCount = ref(0);
+    const prevSituacoes = ref({});   // { situacao_nome: count }
+
+    function effectiveRange() {
+        const startS = filtros.value.data_inicio || periodo.value?.data_inicio;
+        const endS   = filtros.value.data_fim    || periodo.value?.data_fim;
+        if (!startS || !endS) return null;
+        return { start: new Date(startS), end: new Date(endS) };
+    }
+
+    // Busca o período ANTERIOR de mesma duração com os mesmos filtros (menos datas)
+    // e guarda só as contagens — sem tocar em `leads`.
+    async function fetchComparison() {
+        try {
+            const range = effectiveRange();
+            if (!range) { prevCount.value = 0; prevSituacoes.value = {}; return; }
+            const days = Math.max(1, Math.round((range.end - range.start) / 86400000) + 1);
+            const prevEnd = new Date(range.start); prevEnd.setDate(prevEnd.getDate() - 1);
+            const prevStart = new Date(prevEnd); prevStart.setDate(prevStart.getDate() - (days - 1));
+            const fmt = d => d.toISOString().slice(0, 10);
+
+            const q = new URLSearchParams();
+            Object.entries(filtros.value).forEach(([k, v]) => {
+                if (k === 'data_inicio' || k === 'data_fim') return;
+                if (Array.isArray(v)) { if (v.length) q.append(k, v.join(',')); }
+                else if (String(v).trim() !== '') q.append(k, String(v).trim());
+            });
+            q.append('data_inicio', fmt(prevStart));
+            q.append('data_fim', fmt(prevEnd));
+
+            const resp = await fetch(`${API_URL}/cv/leads?${q.toString()}`, { headers: authHeaders() });
+            if (!resp.ok) { prevCount.value = 0; prevSituacoes.value = {}; return; }
+            const data = await resp.json();
+            const list = Array.isArray(data.results) ? data.results : [];
+            prevCount.value = data.count ?? list.length ?? 0;
+            const m = {};
+            for (const l of list) {
+                const k = (l.situacao_nome || 'Sem Situação').trim();
+                m[k] = (m[k] || 0) + 1;
+            }
+            prevSituacoes.value = m;
+        } catch {
+            prevCount.value = 0; prevSituacoes.value = {};
+        }
+    }
+
     async function fetchFilas() {
         try {
             const url = `${API_URL}/cv/filas`;
@@ -223,6 +270,8 @@ export const useLeadsStore = defineStore('leads', () => {
         leads, count, periodo, filas, error, filtros,
         // options
         empreendimentosOptions, origensOptions, situacoesOptions, midiasOptions, imobiliariasOptions, corretoresOptions,
+        // comparação
+        prevCount, prevSituacoes, fetchComparison,
         // getters
         kpiPorSituacao, kpiSituacoes, situationsList, leadsByEnterprise,
         // actions

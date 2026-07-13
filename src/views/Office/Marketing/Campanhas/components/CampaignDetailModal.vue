@@ -13,6 +13,11 @@ import CampaignDailyChart from './CampaignDailyChart.vue';
 const props = defineProps({
     open: { type: Boolean, default: false },
     campaignId: { type: String, default: null },
+    // Período do relatório — recorta o gráfico dia-a-dia e a lista de leads.
+    // Sem período (ex.: aberto pela Central de Vínculos) → janela padrão de 30d
+    // e leads mais recentes (comportamento legado).
+    since: { type: String, default: null },
+    until: { type: String, default: null },
 });
 const emit = defineEmits(['update:open', 'saved']);
 
@@ -42,7 +47,7 @@ const archived = ref(false);
 
 function close() { emit('update:open', false); }
 
-watch([() => props.open, () => props.campaignId], async ([isOpen, id], [prevOpen, prevId]) => {
+watch([() => props.open, () => props.campaignId, () => props.since, () => props.until], async ([isOpen, id], [prevOpen, prevId]) => {
     // Reset SEMPRE que muda de campanha (ou fecha modal) — evita ver dados
     // da campanha anterior enquanto carrega.
     campaign.value = null;
@@ -59,10 +64,11 @@ watch([() => props.open, () => props.campaignId], async ([isOpen, id], [prevOpen
     loading.value = true;
     activeSection.value = 'overview';
     try {
+        const scope = (props.since && props.until) ? { since: props.since, until: props.until } : {};
         const [c, l, d] = await Promise.all([
             store.fetchDetail(id),
-            store.fetchLeads(id, { limit: 100 }),
-            store.fetchDaily(id, { days: 30 }),
+            store.fetchLeads(id, { limit: 100, ...scope }),
+            store.fetchDaily(id, { days: 30, ...scope }),
         ]);
         campaign.value = c;
         leads.value = l;
@@ -105,6 +111,15 @@ function fmtRelative(iso) {
     if (d < 7)      return `${d}d atrás`;
     return new Date(iso).toLocaleDateString('pt-BR');
 }
+
+// Rótulo do período em uso (recorte do relatório, ou janela padrão de 30d).
+const scopeLabel = computed(() => {
+    if (props.since && props.until) {
+        const f = (d) => d ? d.split('-').reverse().slice(0, 2).join('/') : '';
+        return `${f(props.since)} a ${f(props.until)}`;
+    }
+    return 'últimos 30 dias';
+});
 
 const statusBadge = computed(() => {
     const s = String(campaign.value?.effective_status || campaign.value?.status || '').toUpperCase();
@@ -1116,9 +1131,13 @@ function onFormEditorSaved() {
 
         <!-- ── Leads ─────────────────────────────────────────────────────── -->
         <section v-if="!loading && activeSection === 'leads'" class="space-y-2">
+          <div class="text-[11px] text-ink-subtle">
+            Leads da campanha <template v-if="since && until">no período ({{ scopeLabel }})</template><template v-else>(mais recentes)</template>.
+          </div>
           <div v-if="!leads.length" class="text-center py-8 text-ink-subtle text-sm">
             <i class="fas fa-inbox text-2xl mb-2 block"></i>
-            Nenhum lead chegou por essa campanha ainda.
+            <template v-if="since && until">Nenhum lead nesse período.</template>
+            <template v-else>Nenhum lead chegou por essa campanha ainda.</template>
           </div>
           <div v-else class="rounded-lg border border-line overflow-hidden">
             <table class="min-w-full text-sm">
@@ -1151,7 +1170,7 @@ function onFormEditorSaved() {
 
         <!-- ── Dia-a-dia ─────────────────────────────────────────────────── -->
         <section v-if="!loading && activeSection === 'daily'" class="space-y-3">
-          <div class="text-[11px] text-ink-subtle">Últimos 30 dias - gasto da Meta (azul) e leads da Meta (verde).</div>
+          <div class="text-[11px] text-ink-subtle">Período: {{ scopeLabel }} - gasto da Meta (azul) e leads da Meta (verde).</div>
 
           <!-- Totais agregados -->
           <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">

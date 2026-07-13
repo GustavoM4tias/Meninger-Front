@@ -133,9 +133,11 @@ export const useCampaignsStore = defineStore('marketingCampaigns', () => {
         }
     }
 
-    async function fetchLeads(id, { limit = 50 } = {}) {
+    async function fetchLeads(id, { limit = 50, since = null, until = null } = {}) {
         try {
-            const d = await apiFetch(`/meta-campaigns/${encodeURIComponent(id)}/leads?limit=${limit}`);
+            const qs = new URLSearchParams({ limit: String(limit) });
+            if (since && until) { qs.set('since', since); qs.set('until', until); }
+            const d = await apiFetch(`/meta-campaigns/${encodeURIComponent(id)}/leads?${qs.toString()}`);
             return Array.isArray(d.results) ? d.results : [];
         } catch (e) {
             error.value = e.message;
@@ -143,9 +145,12 @@ export const useCampaignsStore = defineStore('marketingCampaigns', () => {
         }
     }
 
-    async function fetchDaily(id, { days = 30 } = {}) {
+    async function fetchDaily(id, { days = 30, since = null, until = null } = {}) {
         try {
-            const d = await apiFetch(`/meta-campaigns/${encodeURIComponent(id)}/daily?days=${days}`);
+            const qs = new URLSearchParams();
+            if (since && until) { qs.set('since', since); qs.set('until', until); }
+            else qs.set('days', String(days));
+            const d = await apiFetch(`/meta-campaigns/${encodeURIComponent(id)}/daily?${qs.toString()}`);
             return Array.isArray(d.results) ? d.results : [];
         } catch (e) {
             error.value = e.message;
@@ -370,6 +375,48 @@ export const useCampaignsStore = defineStore('marketingCampaigns', () => {
         });
     }
 
+    // ── Central de Vínculos CV (saúde da entrega ao CRM) ────────────────────
+    const bindingOverview = ref(null);
+    const loadingBinding = ref(false);
+
+    async function fetchBindingOverview({ since = null, until = null } = {}) {
+        loadingBinding.value = true;
+        error.value = null;
+        try {
+            const qs = new URLSearchParams();
+            if (since) qs.set('since', since);
+            if (until) qs.set('until', until);
+            const suffix = qs.toString() ? `?${qs.toString()}` : '';
+            const d = await apiFetch(`/cv-binding/overview${suffix}`);
+            bindingOverview.value = d;
+            return d;
+        } catch (e) {
+            error.value = e.message;
+            bindingOverview.value = null;
+            return null;
+        } finally {
+            loadingBinding.value = false;
+        }
+    }
+
+    // Envia ao CV os represados (held) que já têm vínculo. preview=true só conta.
+    async function dispatchRecoverable({ preview = false, limit = 500 } = {}) {
+        const label = preview ? 'Contar represados recuperáveis' : 'Enviar represados recuperáveis ao CV';
+        return withOp({ type: 'recover', label, details: { preview, limit } }, async () => {
+            try {
+                const d = await apiFetch('/cv-binding/dispatch-recoverable', {
+                    method: 'POST',
+                    body: JSON.stringify({ preview, limit }),
+                });
+                if (!preview) await fetchBindingOverview();
+                return d;
+            } catch (e) {
+                error.value = e.message;
+                return null;
+            }
+        });
+    }
+
     // ── Cutover: disparar backlog (histórico + fila de sombra) ao CV ────────
     async function dispatchHistorical({ cutoff = '2026-06-01', preview = false, limit = 500 } = {}) {
         dispatching.value = true;
@@ -403,5 +450,6 @@ export const useCampaignsStore = defineStore('marketingCampaigns', () => {
         allAds, loadingAllAds, fetchAllAds,
         report, loadingReport, coverage,
         fetchReport, fetchCoverage, backfillDaily,
+        bindingOverview, loadingBinding, fetchBindingOverview, dispatchRecoverable,
     };
 });

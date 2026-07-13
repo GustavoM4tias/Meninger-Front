@@ -160,6 +160,12 @@ export default [
                         meta: { requiresAuth: true, requiresAdmin: true, searchable: false, content: 'Campanhas Meta Lead Ads — investimento, leads e CAC' },
                     },
                     {
+                        path: 'vinculos',
+                        name: 'Vínculos CV',
+                        component: () => import('@/views/Office/Marketing/Vinculos/Index.vue'),
+                        meta: { requiresAuth: true, requiresAdmin: true, searchable: false, content: 'Central de vínculos com o CV — garante que os leads chegam ao CRM' },
+                    },
+                    {
                         path: 'settings',
                         name: 'Configurações de Captação',
                         component: () => import('@/views/Office/Marketing/Settings/Index.vue'),
