@@ -568,10 +568,58 @@ function rootChildren(node) {
     return [...(node.children?.values?.() || [])]
 }
 
+/* ————— Preferências persistidas por relatório (localStorage) ————— */
+// Chave = URL da tela (pathname, sem query) + título do relatório: o mesmo
+// relatório reabre com os campos/opções da última exportação. Salvo na hora
+// de exportar (não a cada clique), então só o que foi de fato usado persiste.
+const prefsKey = computed(() =>
+    `export-prefs:${window.location.pathname}:${props.title || 'relatorio'}`
+)
+
+function loadPrefs() {
+    try {
+        const raw = localStorage.getItem(prefsKey.value)
+        return raw ? JSON.parse(raw) : null
+    } catch {
+        return null
+    }
+}
+
+function savePrefs() {
+    try {
+        localStorage.setItem(prefsKey.value, JSON.stringify({
+            selection: [...selection.value],
+            arrayMode: arrayMode.value,
+            delimiter: delimiter.value,
+            savedAt: Date.now(),
+        }))
+    } catch {
+        // storage cheio/indisponível: exporta normal, só não persiste
+    }
+}
+
+/** Aplica as preferências salvas. Retorna true se restaurou algum campo
+    (campos que não existem mais no JSON atual são descartados). */
+function applyPrefs() {
+    const p = loadPrefs()
+    if (!p) return false
+    if (p.arrayMode) arrayMode.value = p.arrayMode
+    if (p.delimiter) delimiter.value = p.delimiter
+    if (Array.isArray(p.selection) && p.selection.length) {
+        const avail = new Set(allPaths.value)
+        const kept = p.selection.filter(x => avail.has(x))
+        if (kept.length) {
+            selection.value = new Set(kept)
+            return true
+        }
+    }
+    return false
+}
+
 /* ————— Tri-state seleção ————— */
 const selection = ref(new Set(props.preselect))
 watch(allPaths, () => {
-    if (!selection.value.size) selectRecommended()
+    if (!selection.value.size && !applyPrefs()) selectRecommended()
 })
 
 const expanded = ref(new Set()) // nodes abertos por path
@@ -901,6 +949,7 @@ function exportCSV(kind = 'csv') {
     const csv = rowsToCSV(dataRows, paths, delim)
     const name = `${sanitizeFilename(baseFilename.value)}.csv`
     downloadFile(csv, name, 'text/csv;charset=utf-8;')
+    savePrefs()
     emit('export', { name, kind, delimiter: delim, rows: dataRows, paths })
 }
 
@@ -1094,6 +1143,7 @@ async function exportXLSX() {
         const buf = await wb.xlsx.writeBuffer()
         const name = `${sanitizeFilename(baseFilename.value || suggestedFilename.value)}.xlsx`
         saveAs(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), name)
+        savePrefs()
         emit('export', { name, kind: 'xlsx', rows: dataRows, paths })
     } finally {
         exporting.value = false
@@ -1223,6 +1273,7 @@ async function exportPDF() {
 
         const name = `${sanitizeFilename(baseFilename.value || suggestedFilename.value)}.pdf`
         doc.save(name)
+        savePrefs()
         emit('export', { name, kind: 'pdf', rows: dataRows, paths })
     } finally {
         exporting.value = false
@@ -1266,7 +1317,11 @@ onMounted(() => {
 watch(
     () => props.modelValue,
     v => {
-        if (v) panel.value = 'fields'
+        if (v) {
+            panel.value = 'fields'
+            // Preferências salvas têm prioridade sobre o preselect da tela.
+            applyPrefs()
+        }
     }
 )
 
