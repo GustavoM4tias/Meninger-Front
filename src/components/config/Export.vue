@@ -162,10 +162,18 @@
                                 <i :class="['fas', exporting ? 'fa-spinner fa-spin' : 'fa-file-excel']"></i>
                                 <span>{{ exporting ? 'Gerando…' : 'Exportar Excel' }}</span>
                             </button>
-                            <button type="button" @click="exportCSV('csv')" :disabled="!selection.size || exporting"
-                                class="text-[11px] text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-200 disabled:opacity-40 focus:outline-none focus:underline">
-                                ou exportar como CSV
-                            </button>
+                            <div class="flex items-center justify-center gap-1.5 text-[11px] text-gray-400 dark:text-gray-500">
+                                <span>ou exportar como</span>
+                                <button type="button" @click="exportCSV('csv')" :disabled="!selection.size || exporting"
+                                    class="hover:text-gray-700 dark:hover:text-gray-200 disabled:opacity-40 focus:outline-none focus:underline underline-offset-2">
+                                    CSV
+                                </button>
+                                <span>·</span>
+                                <button type="button" @click="exportPDF()" :disabled="!selection.size || exporting"
+                                    class="hover:text-gray-700 dark:hover:text-gray-200 disabled:opacity-40 focus:outline-none focus:underline underline-offset-2">
+                                    PDF
+                                </button>
+                            </div>
                         </div>
                     </div>
 
@@ -1087,6 +1095,135 @@ async function exportXLSX() {
         const name = `${sanitizeFilename(baseFilename.value || suggestedFilename.value)}.xlsx`
         saveAs(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), name)
         emit('export', { name, kind: 'xlsx', rows: dataRows, paths })
+    } finally {
+        exporting.value = false
+    }
+}
+
+/* ————— Export PDF (mesmo cabeçalho do XLSX: logo + título + filtros) ————— */
+async function exportPDF() {
+    const selected = selectedPaths.value
+    if (!selected.length) {
+        alert('Selecione ao menos um campo.')
+        return
+    }
+    exporting.value = true
+    try {
+        const { jsPDF } = await import('jspdf')
+        const { rows: dataRows, paths } = buildExportedRows(rows.value, selected)
+
+        const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4', compress: true })
+        const pageW = doc.internal.pageSize.getWidth()
+        const pageH = doc.internal.pageSize.getHeight()
+        const margin = 10
+        const availW = pageW - margin * 2
+        let y = margin
+
+        // Logo
+        const logoData = await loadLogoData(props.logo, props.invertLogo)
+        if (logoData) {
+            const ratio = logoData.naturalWidth / logoData.naturalHeight || 3
+            const h = 10
+            const w = Math.min(h * ratio, 60)
+            const isJpeg = !props.invertLogo && /\.jpe?g$/i.test(props.logo || '')
+            doc.addImage(new Uint8Array(logoData.buffer), isJpeg ? 'JPEG' : 'PNG', margin, y, w, h)
+            y += h + 5
+        }
+
+        // Título + subtítulo + meta
+        doc.setFont('helvetica', 'bold')
+        doc.setFontSize(13)
+        doc.setTextColor(15, 23, 42)
+        doc.text(suggestedTitle.value, margin, y)
+        y += 6
+        if (props.subtitle) {
+            doc.setFont('helvetica', 'italic')
+            doc.setFontSize(9)
+            doc.setTextColor(71, 85, 105)
+            doc.text(props.subtitle, margin, y)
+            y += 5
+        }
+        doc.setFont('helvetica', 'normal')
+        doc.setFontSize(8)
+        doc.setTextColor(100, 116, 139)
+        const meta = [
+            `Emitido por ${issuerName.value}`,
+            `em ${dayjs().format('DD/MM/YYYY HH:mm')}`,
+            `${exportedRowCount.value.toLocaleString('pt-BR')} ${exportedRowCount.value === 1 ? 'registro' : 'registros'}`,
+        ].join(' · ')
+        doc.text(meta, margin, y)
+        y += 5
+
+        // Filtros aplicados
+        if (normalizedFilters.value.length) {
+            const filtersText = 'Filtros: ' + normalizedFilters.value.map(f => `${f.label}: ${f.value}`).join(' · ')
+            const lines = doc.splitTextToSize(filtersText, availW)
+            doc.text(lines, margin, y)
+            y += lines.length * 3.6 + 2
+        }
+        y += 2
+
+        // Larguras proporcionais ao conteúdo (mesma heurística do XLSX, cap em 40 chars)
+        const FONT = 7
+        const PAD = 1.6
+        const rowH = 5.4
+        const weights = paths.map(p => {
+            const label = shortLabel(p)
+            const sampleLens = dataRows.slice(0, 200).map(r => String(r[p] ?? '').length)
+            return Math.min(Math.max(label.length, ...sampleLens, 4), 40)
+        })
+        const totalWeight = weights.reduce((a, b) => a + b, 0) || 1
+        const colW = weights.map(w => (w / totalWeight) * availW)
+
+        doc.setFontSize(FONT)
+        const fit = (text, width) => {
+            const s = String(text ?? '')
+            if (!s) return ''
+            const maxW = Math.max(width - PAD * 2, 2)
+            const lines = doc.splitTextToSize(s, maxW)
+            if (lines.length <= 1) return lines[0] ?? ''
+            let first = lines[0]
+            while (first.length && doc.getTextWidth(first + '…') > maxW) first = first.slice(0, -1)
+            return first + '…'
+        }
+
+        const drawHeader = () => {
+            doc.setFillColor(30, 41, 59)
+            doc.rect(margin, y, availW, rowH + 1, 'F')
+            doc.setFont('helvetica', 'bold')
+            doc.setTextColor(226, 232, 240)
+            let x = margin
+            paths.forEach((p, i) => {
+                doc.text(fit(shortLabel(p), colW[i]), x + PAD, y + rowH - 1.2)
+                x += colW[i]
+            })
+            y += rowH + 1
+            doc.setFont('helvetica', 'normal')
+            doc.setTextColor(15, 23, 42)
+        }
+
+        drawHeader()
+        dataRows.forEach((row, ri) => {
+            if (y + rowH > pageH - margin) {
+                doc.addPage()
+                y = margin
+                drawHeader()
+            }
+            if (ri % 2 === 1) {
+                doc.setFillColor(248, 250, 252)
+                doc.rect(margin, y, availW, rowH, 'F')
+            }
+            let x = margin
+            paths.forEach((p, i) => {
+                doc.text(fit(row[p], colW[i]), x + PAD, y + rowH - 1.6)
+                x += colW[i]
+            })
+            y += rowH
+        })
+
+        const name = `${sanitizeFilename(baseFilename.value || suggestedFilename.value)}.pdf`
+        doc.save(name)
+        emit('export', { name, kind: 'pdf', rows: dataRows, paths })
     } finally {
         exporting.value = false
     }
