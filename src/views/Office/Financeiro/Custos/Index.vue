@@ -290,6 +290,11 @@
               class="md:mb-1" @click="clearModalFilters">
               Limpar
             </Button>
+
+            <Button variant="secondary" size="sm" icon="fas fa-download"
+              class="md:mb-1" @click="showExport = true">
+              Exportar
+            </Button>
           </div>
 
           <!-- Filtro de data -->
@@ -533,6 +538,20 @@
             </tbody>
           </table>
         </div>
+
+        <!-- ── EXPORT MODAL (padrão do sistema) ─────────────────── -->
+        <Export v-model="showExport" :source="modalExpenses" title="Custos"
+          :subtitle="`${resolveEnterpriseName(selectedGroup.costCenterId) || selectedGroup.costCenterName || 'Empreendimento'} (CC ${selectedGroup.costCenterId})`"
+          initial-delimiter=";" initial-array-mode="join"
+          :filters="exportFilters"
+          :preselect="[
+            'paidAt', 'dueDate', 'amount', 'status',
+            'installmentNumber', 'installmentsNumber',
+            'departmentName', 'departmentCategoryName', 'description',
+            'bill.creditor_json.name', 'bill.creditor_json.cnpj',
+            'bill.document_identification_id', 'bill.document_number',
+            'bill.totalInvoiceAmount',
+          ]" />
       </div>
 
       <template #footer>
@@ -659,6 +678,7 @@ import Select from '@/components/UI/Select.vue';
 import EmptyState from '@/components/UI/EmptyState.vue';
 import MultiSelector from '@/components/UI/MultiSelector.vue';
 import Favorite from '@/components/config/Favorite.vue';
+import Export from '@/components/config/Export.vue';
 
 const store = useExpensesStore();
 const adminMeta = useAdminMetaStore();
@@ -839,6 +859,31 @@ const hasModalFilters = computed(() =>
 const bulkCategoryId = ref(null);
 const bulkDepartment = ref('');
 
+// Exportação (modal universal do sistema)
+const showExport = ref(false);
+
+const exportFilters = computed(() => {
+  if (!selectedGroup.value) return {};
+  const range = (from, to) => {
+    if (from && to) return `${formatDate(from)} a ${formatDate(to)}`;
+    if (from) return `a partir de ${formatDate(from)}`;
+    if (to) return `até ${formatDate(to)}`;
+    return '';
+  };
+  const catName = modalFilterCat.value
+    ? (categoryOptions.value.find(c => c.id === Number(modalFilterCat.value))?.name || '')
+    : '';
+  return {
+    'Empreendimento': resolveEnterpriseName(selectedGroup.value.costCenterId) || selectedGroup.value.costCenterName || '',
+    'Centro de custo': String(selectedGroup.value.costCenterId || ''),
+    'Período': range(store.startDate, store.endDate),
+    'Busca': modalSearch.value,
+    'Departamento': modalFilterDept.value,
+    'Categoria': modalFilterNoCat.value ? 'Sem categoria' : catName,
+    'Pagamento entre': range(modalFilterDateFrom.value, modalFilterDateTo.value),
+  };
+});
+
 const modalDeptOptions = computed(() => {
   if (!selectedGroup.value) return [];
   const hidden = new Set((store.data?.hiddenDepartments || []).map(d => (d || '').toLowerCase()));
@@ -1004,6 +1049,7 @@ function openDetails(group) {
 function closeDetails() {
   selectedGroup.value = null;
   selectedExpenseIds.value = [];
+  showExport.value = false;
   clearModalFilters();
 }
 
