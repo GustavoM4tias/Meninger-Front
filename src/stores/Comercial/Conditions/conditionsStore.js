@@ -343,6 +343,8 @@ export const useConditionsStore = defineStore('conditions', () => {
 
     async function fetchPriceTables(idempreendimento) {
         priceTables.value = [];
+        // Ficha avulsa não tem empreendimento — nem chama a API.
+        if (idempreendimento == null || !Number.isInteger(Number(idempreendimento))) return;
         try {
             priceTables.value = await requestWithAuth(
                 `${API_URL}/conditions/enterprise/${idempreendimento}/price-tables`
