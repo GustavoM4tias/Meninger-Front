@@ -341,13 +341,6 @@ const closeMobile = () => { isMobileOpen.value = false; };
             </li>
           </template>
 
-          <!-- Bolão — link direto (sem dropdown), abaixo das categorias. Aponta
-               para a edição ATIVA (/bolao = Brasil x Japão); a 1ª chave da Copa
-               fica arquivada em /bolao/copa-2026, fora da navbar. -->
-          <li>
-            <!-- <SidebarItem to="/bolao" icon-img="/bolao-icon.png" label="Bolão Brasil x Japão"
-              :collapsed="isCollapsed" @click="expandSidebar(); closeMobile();" /> -->
-          </li>
         </ul>
 
         <!-- Bottom — fixo: não rola junto com a lista acima -->
