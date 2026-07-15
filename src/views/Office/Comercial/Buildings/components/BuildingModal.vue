@@ -155,8 +155,9 @@ onMounted(fetchWeather);
 
     <div class="-m-4 sm:-m-5">
 
-      <!-- Hero com foto + gradient (faixa de identidade, não protagonista) -->
-      <div class="relative h-40 sm:h-48 overflow-hidden">
+      <!-- Hero com foto + gradient (faixa de identidade, não protagonista).
+           Sem overflow-hidden: o tooltip do clima precisa escapar do hero. -->
+      <div class="relative h-40 sm:h-48">
         <img :src="building.foto || '/noimg.jpg'" :alt="building.nome"
           class="absolute inset-0 w-full h-full object-cover" />
 
@@ -203,14 +204,13 @@ onMounted(fetchWeather);
         </div>
       </div>
 
-      <!-- Barra de abas (fixa, fora do scroll) -->
-      <div class="px-4 sm:px-6 py-2.5 border-b border-line bg-surface overflow-x-auto">
+      <!-- Barra de abas — sticky no scroll único do Modal -->
+      <div class="sticky top-0 z-30 px-4 sm:px-6 py-2.5 border-b border-line bg-surface overflow-x-auto">
         <SegmentedControl v-model="activeTab" :options="tabOptions" size="sm" />
       </div>
 
-      <!-- Conteúdo scrollável (uma rolagem só) -->
-      <div class="max-h-[62vh] overflow-y-auto">
-        <div class="p-4 sm:p-6 space-y-5">
+      <!-- Conteúdo: rola junto com o body do Modal (um scroll só) -->
+      <div class="p-4 sm:p-6 space-y-5">
 
           <!-- ── Aba: Visão geral ─────────────────────────────────── -->
           <template v-if="activeTab === 'geral'">
@@ -499,7 +499,6 @@ onMounted(fetchWeather);
                   </div>
           </div>
           </template>
-        </div>
       </div>
     </div>
 
