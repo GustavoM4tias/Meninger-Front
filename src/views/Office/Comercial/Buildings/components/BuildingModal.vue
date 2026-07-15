@@ -8,6 +8,7 @@ import Modal from '@/components/UI/Modal.vue';
 import Surface from '@/components/UI/Surface.vue';
 import Button from '@/components/UI/Button.vue';
 import Badge from '@/components/UI/Badge.vue';
+import SegmentedControl from '@/components/UI/SegmentedControl.vue';
 
 import WeatherInfo from './UI/WeatherInfo.vue';
 
@@ -17,7 +18,9 @@ const props = defineProps({
 const emit = defineEmits(['close']);
 
 const buildingStore = useBuildingStore();
-const isAvailabilityOpen = ref(false);
+
+// ── Abas do modal ──────────────────────────────────────────
+const activeTab = ref('geral');
 
 const closeModal = () => emit('close');
 
@@ -88,6 +91,15 @@ const kpiCards = computed(() => [
   { label: 'Materiais',      value: props.building.materiais_campanha?.length || 0, icon: 'fas fa-images', accent: 'text-amber-500 bg-amber-500/10' },
 ]);
 
+const materialsCount = computed(() =>
+  (props.building.materiais_campanha?.length || 0) + (props.building.plantas_mapeadas?.length || 0));
+
+const tabOptions = computed(() => [
+  { value: 'geral',     label: 'Visão geral', icon: 'fas fa-grip' },
+  { value: 'unidades',  label: 'Unidades',    icon: 'fas fa-house',  count: totalUnits.value },
+  { value: 'materiais', label: 'Materiais & Plantas', icon: 'fas fa-images', count: materialsCount.value },
+]);
+
 const statusBreakdown = computed(() => [
   { key: 'disponivel',     label: 'Disponíveis',    value: unitStatusCounts.value.disponivel,     dot: 'bg-emerald-500', text: 'text-emerald-600 dark:text-emerald-400' },
   { key: 'reserva_inicio', label: 'Reserva início', value: unitStatusCounts.value.reserva_inicio, dot: 'bg-blue-500',    text: 'text-blue-600 dark:text-blue-400' },
@@ -95,17 +107,6 @@ const statusBreakdown = computed(() => [
   { key: 'vendido',        label: 'Vendidas',       value: unitStatusCounts.value.vendido,        dot: 'bg-rose-500',    text: 'text-rose-600 dark:text-rose-400' },
   { key: 'bloqueado',      label: 'Bloqueadas',     value: unitStatusCounts.value.bloqueado,      dot: 'bg-slate-400',   text: 'text-ink-muted' },
 ]);
-
-// Stage banner gradient
-const bannerGradient = computed(() => {
-  const s = props.building.situacao_comercial?.[0]?.nome;
-  if (s === 'Pré-Lançamento')     return 'from-emerald-700 via-emerald-600 to-teal-600';
-  if (s === 'Lançamento')         return 'from-sky-700 via-sky-600 to-blue-600';
-  if (s === 'Em construção')      return 'from-amber-700 via-orange-600 to-amber-600';
-  if (s === 'Finalizado')         return 'from-rose-700 via-red-600 to-rose-600';
-  if (s === 'Portal do Cliente')  return 'from-purple-700 via-violet-600 to-purple-600';
-  return 'from-slate-700 via-slate-600 to-slate-700';
-});
 
 const cvLink = computed(() =>
   `https://menin.cvcrm.com.br/gestor/cadastros/empreendimentos/${props.building.idempreendimento}/cadastro_simplificado`
@@ -154,20 +155,13 @@ onMounted(fetchWeather);
 
     <div class="-m-4 sm:-m-5">
 
-      <!-- Hero com foto + gradient -->
-      <div class="relative h-64 sm:h-80 overflow-hidden">
+      <!-- Hero com foto + gradient (faixa de identidade, não protagonista) -->
+      <div class="relative h-40 sm:h-48 overflow-hidden">
         <img :src="building.foto || '/noimg.jpg'" :alt="building.nome"
           class="absolute inset-0 w-full h-full object-cover" />
 
-        <!-- Overlay gradient (cor por status) -->
-        <div class="absolute inset-0 bg-gradient-to-t opacity-90"
-          :class="bannerGradient"
-          style="mix-blend-mode: multiply"></div>
-        <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent"></div>
-
-        <!-- Decoração: pontinhos -->
-        <div class="pointer-events-none absolute inset-0 opacity-20"
-          style="background-image:radial-gradient(circle, rgba(255,255,255,0.3) 1px, transparent 1px); background-size: 18px 18px;"></div>
+        <!-- Fade leve só na base, para o título ficar legível sem sombrear a foto -->
+        <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
 
         <!-- Close button -->
         <button @click="closeModal" aria-label="Fechar"
@@ -183,8 +177,8 @@ onMounted(fetchWeather);
         </div>
 
         <!-- Title + Chips -->
-        <div class="absolute bottom-0 left-0 right-0 p-5 sm:p-6 z-10">
-          <div class="flex flex-wrap gap-1.5 mb-3">
+        <div class="absolute bottom-0 left-0 right-0 p-4 sm:p-5 z-10">
+          <div class="flex flex-wrap gap-1.5 mb-2">
             <span v-if="stage"
               class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md
                      bg-white/20 backdrop-blur-md border border-white/30
@@ -209,40 +203,37 @@ onMounted(fetchWeather);
         </div>
       </div>
 
-      <!-- Conteúdo scrollável -->
-      <div class="max-h-[68vh] overflow-y-auto">
+      <!-- Barra de abas (fixa, fora do scroll) -->
+      <div class="px-4 sm:px-6 py-2.5 border-b border-line bg-surface overflow-x-auto">
+        <SegmentedControl v-model="activeTab" :options="tabOptions" size="sm" />
+      </div>
+
+      <!-- Conteúdo scrollável (uma rolagem só) -->
+      <div class="max-h-[62vh] overflow-y-auto">
         <div class="p-4 sm:p-6 space-y-5">
 
-          <!-- KPI Strip -->
-          <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
-            <div v-for="k in kpiCards" :key="k.label"
-              class="flex items-center gap-3 p-3 rounded-xl border border-line bg-surface-raised
-                     shadow-soft surface-gradient">
-              <span class="h-10 w-10 rounded-lg grid place-items-center text-base shrink-0" :class="k.accent">
-                <i :class="k.icon"></i>
-              </span>
-              <div class="min-w-0">
-                <p class="text-2xl font-semibold text-ink tabular-nums leading-none">{{ k.value }}</p>
-                <p class="text-[11px] uppercase tracking-wider font-mono text-ink-subtle mt-1">{{ k.label }}</p>
-              </div>
-            </div>
-          </div>
+          <!-- ── Aba: Visão geral ─────────────────────────────────── -->
+          <template v-if="activeTab === 'geral'">
 
-          <!-- Status das unidades (resumo) -->
-          <Surface v-if="building.etapas?.length" variant="raised" padding="md">
-            <div class="flex items-center gap-2 mb-3">
-              <i class="fas fa-chart-pie text-accent text-sm"></i>
-              <h3 class="text-xs uppercase tracking-wider font-mono text-ink-muted">Status das unidades</h3>
-            </div>
-            <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
-              <div v-for="s in statusBreakdown" :key="s.key"
-                class="flex flex-col items-center text-center p-2 rounded-lg bg-surface-sunken border border-line">
-                <span class="inline-flex items-center gap-1.5 mb-1">
-                  <span class="h-2 w-2 rounded-full" :class="s.dot"></span>
-                  <span class="text-[10px] uppercase tracking-wider font-mono text-ink-subtle">{{ s.label }}</span>
+          <!-- Números do empreendimento (KPIs + status das unidades) -->
+          <Surface variant="raised" padding="md">
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
+              <div v-for="k in kpiCards" :key="k.label" class="flex items-center gap-3 p-2.5 rounded-xl bg-surface-sunken border border-line">
+                <span class="h-10 w-10 rounded-lg grid place-items-center text-base shrink-0" :class="k.accent">
+                  <i :class="k.icon"></i>
                 </span>
-                <span class="text-2xl font-semibold tabular-nums" :class="s.text">{{ s.value }}</span>
+                <div class="min-w-0">
+                  <p class="text-2xl font-semibold text-ink tabular-nums leading-none">{{ k.value }}</p>
+                  <p class="text-[11px] uppercase tracking-wider font-mono text-ink-subtle mt-1">{{ k.label }}</p>
+                </div>
               </div>
+            </div>
+            <div v-if="building.etapas?.length" class="flex flex-wrap items-center gap-x-5 gap-y-2 mt-3 pt-3 border-t border-line">
+              <span v-for="s in statusBreakdown" :key="s.key" class="inline-flex items-center gap-1.5 text-xs">
+                <span class="h-2 w-2 rounded-full" :class="s.dot"></span>
+                <span class="font-semibold tabular-nums" :class="s.text">{{ s.value }}</span>
+                <span class="text-ink-subtle">{{ s.label }}</span>
+              </span>
             </div>
           </Surface>
 
@@ -365,31 +356,12 @@ onMounted(fetchWeather);
               </template>
             </Surface>
           </div>
+          </template>
 
-          <!-- Etapas (resumo) + Materiais + Plantas -->
-          <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <!-- ── Aba: Materiais & Plantas ─────────────────────────── -->
+          <template v-else-if="activeTab === 'materiais'">
 
-            <!-- Etapas -->
-            <Surface v-if="building.etapas?.length" variant="raised" padding="md" class="space-y-3">
-              <div class="flex items-center gap-2 mb-1">
-                <i class="fas fa-layer-group text-purple-500 text-sm"></i>
-                <h3 class="text-xs uppercase tracking-wider font-mono text-ink-muted">Etapas</h3>
-                <Badge variant="neutral" size="sm" class="ml-auto">{{ building.etapas.length }}</Badge>
-              </div>
-              <div class="space-y-2">
-                <div v-for="etapa in building.etapas" :key="etapa.idetapa"
-                  class="rounded-lg border border-line bg-surface-sunken p-3">
-                  <div class="flex items-center justify-between gap-2">
-                    <h4 class="text-sm font-semibold text-ink truncate">{{ etapa.nome }}</h4>
-                    <Badge variant="accent" size="sm">{{ etapa.blocos?.length || 0 }} bloco{{ (etapa.blocos?.length || 0) === 1 ? '' : 's' }}</Badge>
-                  </div>
-                  <p class="text-xs text-ink-muted mt-1 font-mono tabular-nums">
-                    {{ etapa.blocos?.reduce((t, b) => t + (b.paginacao_unidade?.total || 0), 0) || 0 }} unidades
-                  </p>
-                </div>
-              </div>
-            </Surface>
-
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <!-- Materiais campanha -->
             <Surface v-if="building.materiais_campanha?.length" variant="raised" padding="md" class="space-y-3">
               <div class="flex items-center gap-2 mb-1">
@@ -397,7 +369,7 @@ onMounted(fetchWeather);
                 <h3 class="text-xs uppercase tracking-wider font-mono text-ink-muted">Materiais de campanha</h3>
                 <Badge variant="neutral" size="sm" class="ml-auto">{{ building.materiais_campanha.length }}</Badge>
               </div>
-              <div class="space-y-2 max-h-72 overflow-y-auto pr-1">
+              <div class="space-y-2">
                 <a v-for="mat in building.materiais_campanha" :key="mat.idarquivo"
                   :href="mat.tipo === 'youtube' ? mat.servidor : mat.arquivo"
                   target="_blank" rel="noopener" @click.stop
@@ -416,68 +388,58 @@ onMounted(fetchWeather);
               </div>
             </Surface>
 
-            <!-- Plantas / Mapa preview -->
-            <Surface v-if="building.plantas_mapeadas?.length || (building.latitude && building.longitude)"
-              variant="raised" padding="md" class="space-y-3">
-              <div v-if="building.plantas_mapeadas?.length" class="space-y-3">
-                <div class="flex items-center gap-2">
-                  <i class="fas fa-drafting-compass text-teal-500 text-sm"></i>
-                  <h3 class="text-xs uppercase tracking-wider font-mono text-ink-muted">Plantas mapeadas</h3>
-                  <Badge variant="neutral" size="sm" class="ml-auto">{{ building.plantas_mapeadas.length }}</Badge>
-                </div>
-                <div class="space-y-2">
-                  <a v-for="planta in building.plantas_mapeadas" :key="planta.idplanta_mapeada"
-                    :href="planta.link" target="_blank" rel="noopener"
-                    class="flex items-center justify-between gap-2 rounded-lg border border-line bg-surface-sunken p-2.5
-                           hover:bg-surface-hover hover:border-accent/30 transition-colors group">
-                    <span class="text-sm font-medium text-ink truncate group-hover:text-accent transition-colors">
-                      {{ planta.nome }}
-                    </span>
-                    <i class="fas fa-arrow-up-right-from-square text-[10px] text-ink-subtle group-hover:text-accent transition-colors"></i>
-                  </a>
-                </div>
+            <!-- Plantas -->
+            <Surface v-if="building.plantas_mapeadas?.length" variant="raised" padding="md" class="space-y-3">
+              <div class="flex items-center gap-2">
+                <i class="fas fa-drafting-compass text-teal-500 text-sm"></i>
+                <h3 class="text-xs uppercase tracking-wider font-mono text-ink-muted">Plantas mapeadas</h3>
+                <Badge variant="neutral" size="sm" class="ml-auto">{{ building.plantas_mapeadas.length }}</Badge>
               </div>
-
-              <div v-if="building.latitude && building.longitude" class="space-y-2">
-                <div class="flex items-center gap-2">
-                  <i class="fas fa-map-location-dot text-sky-500 text-sm"></i>
-                  <h3 class="text-xs uppercase tracking-wider font-mono text-ink-muted">Mapa</h3>
-                </div>
-                <div class="rounded-lg overflow-hidden border border-line">
-                  <iframe
-                    :src="`https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d1579.2792625838822!2d${building.longitude}!3d${building.latitude}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e1!3m2!1spt-BR!2sbr!4v1738328467636!5m2!1spt-BR!2sbr`"
-                    allowfullscreen="" loading="lazy"
-                    referrerpolicy="no-referrer-when-downgrade"
-                    class="w-full h-48"></iframe>
-                </div>
+              <div class="space-y-2">
+                <a v-for="planta in building.plantas_mapeadas" :key="planta.idplanta_mapeada"
+                  :href="planta.link" target="_blank" rel="noopener"
+                  class="flex items-center justify-between gap-2 rounded-lg border border-line bg-surface-sunken p-2.5
+                         hover:bg-surface-hover hover:border-accent/30 transition-colors group">
+                  <span class="text-sm font-medium text-ink truncate group-hover:text-accent transition-colors">
+                    {{ planta.nome }}
+                  </span>
+                  <i class="fas fa-arrow-up-right-from-square text-[10px] text-ink-subtle group-hover:text-accent transition-colors"></i>
+                </a>
               </div>
             </Surface>
           </div>
 
-          <!-- Disponibilidade (collapsible) -->
-          <Surface v-if="building.etapas?.length" variant="raised" padding="none" class="overflow-hidden">
-            <button @click="isAvailabilityOpen = !isAvailabilityOpen"
-              class="w-full flex items-center justify-between gap-3 px-4 sm:px-5 py-3 hover:bg-surface-hover transition-colors">
-              <div class="flex items-center gap-2 min-w-0">
-                <i class="fas fa-table-list text-accent text-sm"></i>
-                <h3 class="text-sm font-semibold text-ink">Disponibilidade detalhada</h3>
-                <Badge variant="accent" size="sm" class="ml-1">
-                  <span class="font-mono tabular-nums">{{ totalUnits }}</span> unidade{{ totalUnits === 1 ? '' : 's' }}
-                </Badge>
-              </div>
-              <i class="fas fa-chevron-down text-xs text-ink-subtle transition-transform duration-200"
-                :class="{ 'rotate-180': isAvailabilityOpen }"></i>
-            </button>
+          <!-- Mapa -->
+          <Surface v-if="building.latitude && building.longitude" variant="raised" padding="md" class="space-y-2">
+            <div class="flex items-center gap-2">
+              <i class="fas fa-map-location-dot text-sky-500 text-sm"></i>
+              <h3 class="text-xs uppercase tracking-wider font-mono text-ink-muted">Mapa</h3>
+            </div>
+            <div class="rounded-lg overflow-hidden border border-line">
+              <iframe
+                :src="`https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d1579.2792625838822!2d${building.longitude}!3d${building.latitude}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e1!3m2!1spt-BR!2sbr!4v1738328467636!5m2!1spt-BR!2sbr`"
+                allowfullscreen="" loading="lazy"
+                referrerpolicy="no-referrer-when-downgrade"
+                class="w-full h-64"></iframe>
+            </div>
+          </Surface>
 
-            <transition
-              enter-active-class="transition-all duration-300 ease-out-expo"
-              enter-from-class="opacity-0 max-h-0"
-              enter-to-class="opacity-100 max-h-[3000px]"
-              leave-active-class="transition-all duration-200 ease-in"
-              leave-from-class="opacity-100 max-h-[3000px]"
-              leave-to-class="opacity-0 max-h-0">
-              <div v-show="isAvailabilityOpen" class="border-t border-line overflow-hidden">
-                <div class="p-4 sm:p-5 space-y-5">
+          <div v-if="!materialsCount && !(building.latitude && building.longitude)"
+            class="py-12 flex flex-col items-center gap-2 text-ink-subtle text-center">
+            <i class="fas fa-images text-xl"></i>
+            <p class="text-sm">Nenhum material, planta ou mapa cadastrado</p>
+          </div>
+          </template>
+
+          <!-- ── Aba: Unidades (disponibilidade detalhada) ────────── -->
+          <template v-else-if="activeTab === 'unidades'">
+
+          <div v-if="!building.etapas?.length" class="py-12 flex flex-col items-center gap-2 text-ink-subtle text-center">
+            <i class="fas fa-house text-xl"></i>
+            <p class="text-sm">Nenhuma etapa/unidade cadastrada no CV</p>
+          </div>
+
+          <div v-else class="space-y-5">
                   <div v-for="etapa in building.etapas" :key="etapa.idetapa">
                     <div class="flex items-center gap-2 mb-3">
                       <i class="fas fa-layer-group text-purple-500 text-xs"></i>
@@ -495,7 +457,7 @@ onMounted(fetchWeather);
                           </Badge>
                         </div>
 
-                        <div class="p-2.5 max-h-72 overflow-y-auto space-y-1.5"
+                        <div class="p-2.5 space-y-1.5"
                           v-if="bloco.unidades?.length">
                           <div v-for="unidade in bloco.unidades" :key="unidade.idunidade"
                             class="rounded-lg border border-line bg-surface-raised p-2.5
@@ -535,10 +497,8 @@ onMounted(fetchWeather);
                       </div>
                     </div>
                   </div>
-                </div>
-              </div>
-            </transition>
-          </Surface>
+          </div>
+          </template>
         </div>
       </div>
     </div>
