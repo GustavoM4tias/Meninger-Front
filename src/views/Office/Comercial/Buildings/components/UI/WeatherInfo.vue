@@ -124,8 +124,8 @@ const formattedTime = computed(() => {
         <i :class="weatherIcon" class="text-6xl text-blue-50 drop-shadow"></i>
       </div>
 
-      <!-- Tooltip bonito e clean -->
-      <div class="absolute -left-12 bottom-full -translate-x-1/2 mb-3 hidden group-hover:flex flex-col items-center gap-2 bg-surface-raised text-ink shadow-lg rounded-lg px-4 py-3 w-52 text-sm z-50">
+      <!-- Tooltip bonito e clean (abre para baixo — o hero do modal é baixo e cortava para cima) -->
+      <div class="absolute right-0 top-full mt-2 hidden group-hover:flex flex-col items-center gap-2 bg-surface-raised text-ink shadow-lg rounded-lg px-4 py-3 w-52 text-sm z-50">
         <p class="text-xl font-semibold text-center">{{ weatherText }}</p>
 
         <div class="flex items-center justify-center gap-2 text-lg">
