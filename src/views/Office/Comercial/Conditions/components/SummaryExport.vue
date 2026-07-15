@@ -29,119 +29,14 @@
               </button>
             </div>
           </div>
-          <!-- Módulos empilhados: usa mesma lógica de renderização do template principal -->
-          <div class="p-6 space-y-6">
-            <div v-for="(mod, idx) in localModules" :key="mod.id ?? idx">
-              <!-- Separador entre módulos -->
-              <div v-if="localModules.length > 1" class="flex items-center gap-3 mb-5" :class="idx > 0 ? 'mt-4' : ''">
-                <div class="h-px flex-1 bg-accent-soft"></div>
-                <span class="text-xs font-bold text-blue-500 uppercase tracking-widest px-3">
-                  {{ mod.module_name || `Módulo ${idx + 1}` }}
-                </span>
-                <div class="h-px flex-1 bg-accent-soft"></div>
-              </div>
-              <!-- KPIs do módulo -->
-              <div class="kpi-row compact mb-4">
-                <div class="kpi-card">
-                  <span class="kpi-label">Unidades</span>
-                  <span class="kpi-value" :class="mod.total_units == null ? 'kpi-empty' : ''">{{ mod.total_units ?? '—' }}</span>
-                </div> 
-                <div class="kpi-card">
-                  <span class="kpi-label">Comissão</span>
-                  <span class="kpi-value" :class="mod.commission_pct == null ? 'kpi-empty' : ''">{{ mod.commission_pct != null ? `${parseFloat(mod.commission_pct).toFixed(1)}%` : '—' }}</span>
-                </div> 
-                <div class="kpi-card">
-                  <span class="kpi-label">Parc. RP</span>
-                  <span class="kpi-value text-base" :class="mod.rp_installment_value == null ? 'kpi-empty' : ''">{{ mod.rp_installment_value != null ? formatCurrencyShort(mod.rp_installment_value) : '—' }}</span>
-                </div>
-              </div>
-              <!-- Campos essenciais em dois cards lado a lado -->
-              <div class="responsive-card-row mb-4">
-                <!-- Negociação resumida -->
-                <div class="info-card">
-                  <div class="info-card-header"><i class="fas fa-handshake text-blue-500"></i> Negociação</div>
-                  <div class="info-card-body">
-                    <div class="field-grid">
-                      <div class="field-item"><span class="field-label">Parcela mín RP</span><span class="field-value accent" :class="mod.rp_installment_value == null ? 'field-empty' : ''">{{ mod.rp_installment_value != null ? formatCurrency(mod.rp_installment_value) : 'Não informado' }}</span></div>
-                      <div class="field-item"><span class="field-label">Parcela mín Ato</span><span class="field-value accent" :class="mod.act_installment_value == null ? 'field-empty' : ''">{{ mod.act_installment_value != null ? formatCurrency(mod.act_installment_value) : 'Não informado' }}</span></div>
-                      <div class="field-item"><span class="field-label">Máx. Entrada</span><span class="field-value" :class="mod.max_entry_value == null ? 'field-empty' : ''">{{ mod.max_entry_value != null ? `${parseFloat(mod.max_entry_value).toFixed(0)}%` : 'Não informado' }}</span></div>
-                      <div class="field-item"><span class="field-label">Máximo Parcelas RP</span><span class="field-value" :class="mod.max_installments == null ? 'field-empty' : ''">{{ mod.max_installments != null ? `${mod.max_installments}x` : 'Não informado' }}</span></div>
-                      <div class="field-item"><span class="field-label">Até Habite-se</span><span class="field-value" :class="!mod.installment_until_habite_se ? 'field-empty' : ''">{{ mod.installment_until_habite_se || 'Não informado' }}</span></div>
-                      <div class="field-item"><span class="field-label">Pós Habite-se</span><span class="field-value" :class="!mod.installment_post_habite_se ? 'field-empty' : ''">{{ mod.installment_post_habite_se || 'Não informado' }}</span></div>
-                    </div>
-                    <div v-if="mod.has_state_subsidy" class="subsidy-badge mt-3">
-                      <i class="fas fa-hand-holding-usd text-xs"></i>
-                      <span class="font-semibold">Subsídio Estadual{{ modSubsidyLabel(mod) ? ` — ${modSubsidyLabel(mod)}` : '' }}</span>
-                    </div>
-                    <div v-if="mod.rp_rule" class="note-block mt-3"><span class="note-label">Regra RP</span><p>{{ mod.rp_rule }}</p></div>
-                  </div>
-                </div>
-                <!-- Operacional resumido -->
-                <div class="info-card">
-                  <div class="info-card-header"><i class="fas fa-gears text-blue-500"></i> Operacional</div>
-                  <div class="info-card-body">
-                    <div class="op-grid" style="grid-template-columns: 1fr;">
-                      <div class="op-item"><i class="fas fa-user-tie op-icon"></i><div><span class="field-label">Gestor</span><span class="field-value" :class="!modManagerLabel(mod) ? 'field-empty' : ''">{{ modManagerLabel(mod) || 'Não informado' }}</span></div></div>
-                      <div class="op-item"><i class="fas fa-file-signature op-icon"></i><div><span class="field-label">Registro do Contrato</span><span class="field-value" :class="!mod.contract_registration_by ? 'field-empty' : ''">{{ mod.contract_registration_by ? contractLabel(mod) : 'Não informado' }}</span></div></div>
-                      <div class="op-item"><i class="fas fa-handshake op-icon"></i><div><span class="field-label">Correspondente</span><span class="field-value" :class="!modCorrespondent(mod) ? 'field-empty' : ''">{{ modCorrespondent(mod)?.nome || 'Não informado' }}</span></div></div>
-                      <div class="op-item"><i class="fas fa-shield-check op-icon"></i><div><span class="field-label">Cert. Digital</span><span class="field-value" :class="!mod.has_digital_cert ? 'field-empty' : ''">{{ mod.has_digital_cert ? (mod.digital_cert_provider || 'Sim') : 'Não utiliza' }}</span></div></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <!-- Tabelas de preço -->
-              <div v-if="modSelectedPriceTables(mod).length || (mod.manual_price_tables ?? []).length || mod.price_premise_note" class="info-card">
-                <div class="info-card-header"><i class="fas fa-tag text-blue-500"></i> Tabelas de Preço</div>
-                <div class="info-card-body space-y-2">
-                  <div v-for="t in modSelectedPriceTables(mod)" :key="t.idtabela" class="price-table-row flex-col items-start gap-1">
-                    <div class="flex items-center justify-between w-full gap-2">
-                      <span class="text-sm font-medium text-ink truncate">{{ t.nome }}</span>
-                      <div class="flex items-center gap-2 flex-shrink-0">
-                        <span v-if="t.vigente" class="badge-green">vigente</span>
-                        <span class="text-xs text-gray-400 dark:text-slate-500">{{ formatDate(t.data_vigencia_de) }} → {{ formatDate(t.data_vigencia_ate) }}</span>
-                      </div>
-                    </div>
-                    <div v-if="t.unit_count > 0" class="text-xs text-gray-500 dark:text-slate-400 flex gap-3 pl-0 flex-wrap">
-                      <span><strong>{{ t.unit_count }}</strong> unidades</span>
-                      <span v-if="t.price_min != null">{{ formatCurrencyShort(t.price_min) }} — {{ formatCurrencyShort(t.price_max) }}</span>
-                    </div>
-                  </div>
-                  <div v-for="(mt, mi) in (mod.manual_price_tables ?? [])" :key="`manual-${mi}`" class="price-table-row flex-col items-start gap-1">
-                    <div class="flex items-center justify-between w-full gap-2">
-                      <span class="text-sm font-medium text-ink truncate">
-                        {{ mt.name || '(sem nome)' }}
-                        <span class="ml-1 text-[10px] font-semibold uppercase text-orange-400">manual</span>
-                      </span>
-                      <span v-if="mt.validity_from || mt.validity_to" class="text-xs text-gray-400 dark:text-slate-500 flex-shrink-0">
-                        {{ formatDate(mt.validity_from) }} → {{ formatDate(mt.validity_to) }}
-                      </span>
-                    </div>
-                    <div v-if="manualTableStats(mt)" class="text-xs text-gray-500 dark:text-slate-400 flex gap-3 pl-0 flex-wrap">
-                      <span><strong>{{ manualTableStats(mt).filled }}</strong>/{{ manualTableStats(mt).total }} unidades</span>
-                      <span v-if="manualTableStats(mt).min != null">{{ formatCurrencyShort(manualTableStats(mt).min) }} — {{ formatCurrencyShort(manualTableStats(mt).max) }}</span>
-                    </div>
-                    <p v-if="mt.note" class="text-xs text-ink-muted italic">{{ mt.note }}</p>
-                  </div>
-                  <div v-if="mod.price_premise_note" class="note-block mt-1">
-                    <span class="note-label">Premissa de Preço / Observação</span>
-                    <p>{{ mod.price_premise_note }}</p>
-                  </div>
-                </div>
-              </div>
-              <!-- Campanhas ativas -->
-              <div v-if="modActiveCampaigns(mod).length" class="info-card mb-4">
-                <div class="info-card-header"><i class="fas fa-bullhorn text-blue-500"></i> Campanhas Ativas</div>
-                <div class="info-card-body campaign-row">
-                  <div v-for="(camp, ci) in modActiveCampaigns(mod)" :key="camp.id ?? ci" class="campaign-card">
-                    <p class="text-sm font-bold text-ink">{{ camp.title }}</p>
-                    <p v-if="camp.description" class="text-xs text-gray-500 dark:text-slate-400 mt-0.5">{{ camp.description }}</p>
-                    <div class="flex gap-3 mt-1 flex-wrap">
-                      <span v-if="camp.value" class="campaign-value">{{ formatCurrency(camp.value) }}</span>
-                      <span v-if="camp.start_date" class="text-xs text-gray-400 dark:text-slate-500">{{ formatDate(camp.start_date) }}{{ camp.end_date ? ` → ${formatDate(camp.end_date)}` : '' }}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
+          <!-- Documento renderizado — o MESMO HTML da impressão/PDF/assinatura -->
+          <div class="p-3 sm:p-4">
+            <iframe v-if="docModalHtml" :srcdoc="docModalHtml"
+              class="w-full bg-white rounded-xl border border-line" style="height: 74vh;"
+              title="Documento da ficha"></iframe>
+            <div v-else class="py-20 flex flex-col items-center gap-3 text-ink-muted">
+              <i class="fas fa-spinner fa-spin text-lg"></i>
+              <p class="text-sm">Gerando documento...</p>
             </div>
           </div>
         </div>
@@ -1002,7 +897,7 @@
 </template>
 
 <script setup>
-import { ref, computed, nextTick } from 'vue';
+import { ref, computed, nextTick, watch } from 'vue';
 import QRCode from 'qrcode';
 import AppraisalQrCode from './AppraisalQrCode.vue';
 import { computeCostSummary } from './costSummary.js';
@@ -1038,6 +933,14 @@ const activeModule = computed(() => props.localModules[activeIdx.value] ?? null)
 const isPrinting = ref(false);
 const showDocModal = ref(false);
 function openDoc() { showDocModal.value = true; }
+
+// Modal renderiza o MESMO documento HTML da impressão/PDF/assinatura (via iframe).
+const docModalHtml = ref('');
+watch(showDocModal, async (open) => {
+    if (!open) return;
+    docModalHtml.value = '';
+    docModalHtml.value = (await buildPrintHtml()) ?? '';
+});
 // Exposto p/ o índice flutuante do Detail acionar (printModule é function declaration, hoisted).
 defineExpose({ printModule, openDoc, buildPrintHtml });
 
