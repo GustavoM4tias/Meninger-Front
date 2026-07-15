@@ -5,12 +5,13 @@
     <transition name="fade">
       <div
         v-if="showDocModal"
-        class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-start justify-center overflow-y-auto py-8 px-4"
+        class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
         @click.self="closeDocModal"
       >
-        <div class="bg-surface-raised rounded-2xl shadow-2xl w-full max-w-4xl">
+        <!-- Painel de altura fixa: só o documento (iframe) rola — um scroll só -->
+        <div class="bg-surface-raised rounded-2xl shadow-2xl w-full max-w-4xl h-[92vh] flex flex-col overflow-hidden">
           <!-- Header fixo da modal -->
-          <div class="flex items-center justify-between px-6 py-4 border-b border-line sticky top-0 bg-surface-raised rounded-t-2xl z-10">
+          <div class="flex items-center justify-between px-6 py-4 border-b border-line shrink-0">
             <div class="flex items-center gap-2">
               <i class="fas fa-file-contract text-blue-500"></i>
               <span class="text-sm font-bold text-ink">
@@ -30,11 +31,11 @@
             </div>
           </div>
           <!-- Documento renderizado — o MESMO HTML da impressão/PDF/assinatura -->
-          <div class="p-3 sm:p-4">
+          <div class="flex-1 min-h-0 p-3 sm:p-4">
             <iframe v-if="docModalHtml" :srcdoc="docModalHtml"
-              class="w-full bg-white rounded-xl border border-line" style="height: 74vh;"
+              class="w-full h-full bg-white rounded-xl border border-line"
               title="Documento da ficha"></iframe>
-            <div v-else class="py-20 flex flex-col items-center gap-3 text-ink-muted">
+            <div v-else class="h-full flex flex-col items-center justify-center gap-3 text-ink-muted">
               <i class="fas fa-spinner fa-spin text-lg"></i>
               <p class="text-sm">Gerando documento...</p>
             </div>
