@@ -98,6 +98,24 @@ export const getBuildings = async () => {
     return data; // Return the parsed data directly
 };
 
+// Sincroniza as tabelas de preço do CV para o banco (usadas nas fichas comerciais)
+export const syncPriceTables = async (id) => {
+    const response = await fetch(`${API_URL}/cv/price-tables/sync/${id}`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json',
+        },
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Erro ao sincronizar tabelas de preço');
+    }
+
+    return response.json(); // { ok: true, synced: n }
+};
+
 export const getBuildingById = async (id) => {
     const response = await fetchCarregamento(`${API_URL}/cv/empreendimento/${id}`, {
         method: 'GET',

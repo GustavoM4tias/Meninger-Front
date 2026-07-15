@@ -1,6 +1,8 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue';
 import { useBuildingStore } from '@/stores/Comercial/Building/buildingStore';
+import { useAuthStore } from '@/stores/Settings/Auth/authStore';
+import { syncPriceTables } from '@/utils/Building/apiBuilding';
 
 import Modal from '@/components/UI/Modal.vue';
 import Surface from '@/components/UI/Surface.vue';
@@ -108,6 +110,32 @@ const bannerGradient = computed(() => {
 const cvLink = computed(() =>
   `https://menin.cvcrm.com.br/gestor/cadastros/empreendimentos/${props.building.idempreendimento}/cadastro_simplificado`
 );
+
+// ── Sync de tabelas de preço (CV → Office) — somente admin ──
+const authStore = useAuthStore();
+const isAdmin = computed(() => authStore?.user?.role === 'admin');
+const syncingTables = ref(false);
+const syncResult = ref(null); // { ok, synced } | { ok: false, error }
+
+const syncTables = async () => {
+  syncingTables.value = true;
+  syncResult.value = null;
+  try {
+    const r = await syncPriceTables(props.building.idempreendimento);
+    syncResult.value = { ok: true, synced: r.synced ?? 0 };
+  } catch (e) {
+    syncResult.value = { ok: false, error: e.message || 'Erro ao sincronizar tabelas.' };
+  } finally {
+    syncingTables.value = false;
+  }
+};
+
+const syncLabel = computed(() => {
+  if (syncingTables.value) return 'Sincronizando...';
+  if (syncResult.value?.ok) return `${syncResult.value.synced} tabela(s) sincronizada(s)`;
+  if (syncResult.value && !syncResult.value.ok) return 'Erro — tentar de novo';
+  return 'Sincronizar tabelas';
+});
 
 const stage = computed(() => props.building.situacao_comercial?.[0]?.nome ?? null);
 const stageChips = computed(() => [
@@ -516,6 +544,14 @@ onMounted(fetchWeather);
     </div>
 
     <template #footer>
+      <button v-if="isAdmin" @click="syncTables" :disabled="syncingTables"
+        v-tippy="'Puxa do CV as tabelas de preço deste empreendimento (usadas nas fichas comerciais)'"
+        class="mr-auto inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-line bg-surface-raised hover:bg-surface-hover text-sm font-medium transition-colors shadow-soft disabled:opacity-50"
+        :class="syncResult && !syncResult.ok ? 'text-rose-600 dark:text-rose-400 border-rose-300 dark:border-rose-800' : 'text-ink'">
+        <i class="fas text-xs"
+          :class="syncingTables ? 'fa-spinner fa-spin' : syncResult?.ok ? 'fa-check text-emerald-500' : syncResult ? 'fa-triangle-exclamation' : 'fa-rotate'"></i>
+        <span>{{ syncLabel }}</span>
+      </button>
       <Button variant="ghost" @click="closeModal">Fechar</Button>
       <a :href="cvLink" target="_blank" rel="noopener" v-tippy="'Abrir no CV CRM'"
         class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-accent hover:bg-accent-hover text-white text-sm font-medium transition-colors shadow-soft">
