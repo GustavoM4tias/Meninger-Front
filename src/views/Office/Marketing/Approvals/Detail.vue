@@ -17,9 +17,9 @@
                         <Badge :variant="statusMeta.variant">
                             <i :class="statusMeta.icon" class="mr-1 text-[10px]"></i>{{ statusMeta.label }}
                         </Badge>
-                        <Button v-if="isApproved" variant="secondary" size="sm" icon="fas fa-file-pdf"
+                        <Button v-if="isApproved || isPending" variant="secondary" size="sm" icon="fas fa-file-pdf"
                             :loading="pdfLoading" @click="downloadPdf">
-                            PDF de autorização
+                            {{ isPending ? 'PDF p/ assinatura' : 'PDF de autorização' }}
                         </Button>
                     </div>
                 </div>
@@ -94,7 +94,8 @@
                             <span class="text-ink font-medium">{{ p.name }}</span>
                             <Badge v-if="p.decision" :variant="decisionMeta(p.decision.decision).variant" size="sm">
                                 {{ decisionMeta(p.decision.decision).label }}
-                                · {{ p.decision.user?.username || '' }}
+                                <template v-if="p.decision.via === 'signature'"> · doc. anexado por {{ p.decision.user?.username || '' }}</template>
+                                <template v-else> · {{ p.decision.user?.username || '' }}</template>
                             </Badge>
                             <Badge v-else variant="warning" size="sm" outlined>Pendente</Badge>
                         </li>
@@ -115,7 +116,8 @@
                         <li v-for="att in req.attachments" :key="att.id">
                             <button type="button" @click="viewerAtt = att"
                                 class="flex items-center gap-2 text-sm text-accent hover:underline text-left">
-                                <i :class="isImageAtt(att) ? 'fas fa-image' : 'fas fa-paperclip'" class="text-xs"></i>{{ att.file_name }}
+                                <i :class="att.kind === 'SIGNED_DOCUMENT' ? 'fas fa-file-signature' : isImageAtt(att) ? 'fas fa-image' : 'fas fa-paperclip'" class="text-xs"></i>{{ att.file_name }}
+                                <span v-if="att.kind === 'SIGNED_DOCUMENT'" class="text-[11px] text-ink-subtle">(documento assinado)</span>
                             </button>
                         </li>
                     </ul>
@@ -143,9 +145,11 @@
         </PageContainer>
 
         <!-- Barra de decisão (sticky, mobile-first) -->
-        <div v-if="req && req.status === 'pending' && (canDecide || isRequester)"
+        <div v-if="req && req.status === 'pending' && (canDecide || isRequester || isAdminViewer)"
             class="fixed bottom-0 inset-x-0 z-30 border-t border-line bg-surface/95 backdrop-blur px-4 py-3">
             <div class="max-w-2xl mx-auto flex flex-wrap items-center justify-end gap-2">
+                <Button v-if="isRequester || isAdminViewer" variant="secondary" size="sm" icon="fas fa-file-signature"
+                    @click="signedOpen = true">Autorização assinada</Button>
                 <template v-if="canDecide">
                     <Button variant="secondary" size="sm" icon="fas fa-xmark" class="!text-red-600"
                         @click="openDecision('rejected')">Reprovar</Button>
@@ -158,6 +162,29 @@
                     @click="confirmCancelOpen = true">Cancelar solicitação</Button>
             </div>
         </div>
+
+        <!-- Modal de documento de autorização assinado fora do sistema -->
+        <Modal :open="signedOpen" title="Documento de autorização" size="md" @close="signedOpen = false">
+            <div class="space-y-3">
+                <p class="text-sm text-ink-muted">
+                    Para autorizações feitas <strong>fora do sistema</strong>: gere o <strong>PDF p/ assinatura</strong>,
+                    colha as assinaturas em papel e anexe aqui o documento assinado (foto ou digitalização).
+                    A solicitação será aprovada com o anexo como comprovante — fica registrado quem solicitou e quem anexou.
+                </p>
+                <input ref="signedInput" type="file" class="hidden" @change="pickSignedFile" />
+                <button type="button"
+                    class="w-full rounded-lg border border-dashed border-line px-4 py-6 text-sm text-ink-muted hover:border-accent hover:text-accent transition-colors"
+                    @click="signedInput?.click()">
+                    <i :class="signedFile ? 'fas fa-file' : 'fas fa-paperclip'" class="mr-2"></i>
+                    {{ signedFile ? signedFile.name : 'Selecionar documento assinado' }}
+                </button>
+            </div>
+            <template #footer>
+                <Button variant="secondary" @click="signedOpen = false">Voltar</Button>
+                <Button variant="primary" icon="fas fa-file-signature" :loading="signedLoading"
+                    :disabled="!signedFile" @click="submitSignedDoc">Anexar e aprovar</Button>
+            </template>
+        </Modal>
 
         <!-- Modal de decisão -->
         <Modal :open="decisionOpen" :title="decisionTitle" size="md" @close="decisionOpen = false">
@@ -214,7 +241,9 @@ const toast = useToast();
 const req = computed(() => store.current);
 const statusMeta = computed(() => STATUS_META[req.value?.status] || STATUS_META.pending);
 const isApproved = computed(() => ['approved', 'approved_with_notes'].includes(req.value?.status));
+const isPending = computed(() => req.value?.status === 'pending');
 const isRequester = computed(() => !!req.value?.viewer?.isRequester);
+const isAdminViewer = computed(() => !!req.value?.viewer?.isAdmin);
 const viewerAtt = ref(null);
 const pdfLoading = ref(false);
 
@@ -289,6 +318,46 @@ async function submitDecision() {
     }
 }
 
+// ── Documento de autorização assinado fora do sistema (anexo = comprovante) ──
+const signedOpen = ref(false);
+const signedFile = ref(null);
+const signedLoading = ref(false);
+const signedInput = ref(null);
+
+function pickSignedFile(e) {
+    const f = e.target.files?.[0];
+    if (f) signedFile.value = f;
+    e.target.value = '';
+}
+
+async function submitSignedDoc() {
+    if (!signedFile.value) return toast.error('Selecione o documento assinado.');
+    signedLoading.value = true;
+    try {
+        const up = await api.upload(signedFile.value, String(req.value.id));
+        store.current = await api.registerSignedDocument(req.value.id, {
+            file_name: up.fileName || signedFile.value.name,
+            mime_type: up.mimeType || signedFile.value.type,
+            url: up.url,
+            storage_path: up.path,
+            size: up.size ?? signedFile.value.size,
+        });
+        signedOpen.value = false;
+        signedFile.value = null;
+        toast.success('Documento anexado — solicitação aprovada.');
+    } catch (e) {
+        if (e.code === 'ALREADY_DECIDED' || e.status === 409) {
+            signedOpen.value = false;
+            toast.warning(e.message);
+            await store.fetchOne(route.params.id);
+        } else {
+            toast.error(e.message);
+        }
+    } finally {
+        signedLoading.value = false;
+    }
+}
+
 async function doCancel() {
     try {
         await store.cancel(req.value.id);
@@ -310,6 +379,7 @@ const historyIcon = (action) => ({
     approved_with_notes: 'fas fa-check-double text-sky-500',
     rejected: 'fas fa-xmark text-red-500',
     cancelled: 'fas fa-ban text-ink-subtle',
+    signed: 'fas fa-file-signature text-emerald-500',
 }[action] || 'fas fa-circle text-ink-subtle');
 
 function historyLabel(h) {
@@ -321,6 +391,7 @@ function historyLabel(h) {
         approved_with_notes: `${who} aprovou com ressalva${profile}`,
         rejected: `${who} reprovou${profile}`,
         cancelled: `${who} cancelou a solicitação`,
+        signed: `${who} anexou o documento de autorização assinado`,
     }[h.action] || `${who}: ${h.action}`;
 }
 

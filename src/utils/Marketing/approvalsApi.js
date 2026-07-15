@@ -38,8 +38,11 @@ export default {
     cancel: (id) => req(`/${id}/cancel`, { method: 'POST' }),
     addAttachment: (id, payload) => req(`/${id}/attachments`, { method: 'POST', ...body(payload) }),
     removeAttachment: (id) => req(`/attachments/${id}`, { method: 'DELETE' }),
+    // Documento de autorização assinado fora do sistema → aprova a solicitação com
+    // o anexo como comprovante. payload = anexo já upado ({ url, file_name, ... }).
+    registerSignedDocument: (id, payload) => req(`/${id}/signed-document`, { method: 'POST', ...body(payload) }),
 
-    // PDF de autorização (blob autenticado — só após aprovação)
+    // PDF de autorização (blob autenticado — pendente = versão p/ assinatura presencial)
     pdf: async (id) => {
         const token = localStorage.getItem('token');
         const resp = await fetch(`${API_URL}/marketing-approvals/${id}/pdf`, {
