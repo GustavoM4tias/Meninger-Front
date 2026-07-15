@@ -90,7 +90,7 @@
                 </div>
               </div>
               <!-- Tabelas de preço -->
-              <div v-if="modSelectedPriceTables(mod).length || (mod.manual_price_tables ?? []).length" class="info-card">
+              <div v-if="modSelectedPriceTables(mod).length || (mod.manual_price_tables ?? []).length || mod.price_premise_note" class="info-card">
                 <div class="info-card-header"><i class="fas fa-tag text-blue-500"></i> Tabelas de Preço</div>
                 <div class="info-card-body space-y-2">
                   <div v-for="t in modSelectedPriceTables(mod)" :key="t.idtabela" class="price-table-row flex-col items-start gap-1">
@@ -105,6 +105,26 @@
                       <span><strong>{{ t.unit_count }}</strong> unidades</span>
                       <span v-if="t.price_min != null">{{ formatCurrencyShort(t.price_min) }} — {{ formatCurrencyShort(t.price_max) }}</span>
                     </div>
+                  </div>
+                  <div v-for="(mt, mi) in (mod.manual_price_tables ?? [])" :key="`manual-${mi}`" class="price-table-row flex-col items-start gap-1">
+                    <div class="flex items-center justify-between w-full gap-2">
+                      <span class="text-sm font-medium text-ink truncate">
+                        {{ mt.name || '(sem nome)' }}
+                        <span class="ml-1 text-[10px] font-semibold uppercase text-orange-400">manual</span>
+                      </span>
+                      <span v-if="mt.validity_from || mt.validity_to" class="text-xs text-gray-400 dark:text-slate-500 flex-shrink-0">
+                        {{ formatDate(mt.validity_from) }} → {{ formatDate(mt.validity_to) }}
+                      </span>
+                    </div>
+                    <div v-if="manualTableStats(mt)" class="text-xs text-gray-500 dark:text-slate-400 flex gap-3 pl-0 flex-wrap">
+                      <span><strong>{{ manualTableStats(mt).filled }}</strong>/{{ manualTableStats(mt).total }} unidades</span>
+                      <span v-if="manualTableStats(mt).min != null">{{ formatCurrencyShort(manualTableStats(mt).min) }} — {{ formatCurrencyShort(manualTableStats(mt).max) }}</span>
+                    </div>
+                    <p v-if="mt.note" class="text-xs text-ink-muted italic">{{ mt.note }}</p>
+                  </div>
+                  <div v-if="mod.price_premise_note" class="note-block mt-1">
+                    <span class="note-label">Premissa de Preço / Observação</span>
+                    <p>{{ mod.price_premise_note }}</p>
                   </div>
                 </div>
               </div>
@@ -792,6 +812,49 @@
                   </div>
                 </div>
               </div>
+
+              <!-- Tabelas manuais -->
+              <div v-if="(mod.manual_price_tables ?? []).length" class="p-4 space-y-3" :class="modSelectedPriceTables(mod).length ? 'pt-0' : ''">
+                <p class="text-[10px] font-bold text-orange-400 uppercase tracking-wider">Tabelas Manuais</p>
+                <div v-for="(mt, mi) in mod.manual_price_tables" :key="mi"
+                  class="price-table-row flex-col items-start gap-2 p-4 bg-surface-sunken/40 rounded-xl border border-line">
+                  <div class="flex items-center justify-between w-full gap-2">
+                    <div class="flex items-center gap-2 min-w-0">
+                      <i class="fas fa-file-invoice-dollar text-orange-400 text-xs flex-shrink-0"></i>
+                      <span class="text-sm text-ink font-bold truncate">{{ mt.name || '(sem nome)' }}</span>
+                    </div>
+                    <span v-if="mt.validity_from || mt.validity_to" class="text-xs text-gray-400 dark:text-slate-500 flex-shrink-0">
+                      {{ formatDate(mt.validity_from) }} → {{ formatDate(mt.validity_to) }}
+                    </span>
+                  </div>
+                  <div v-if="manualTableStats(mt)" class="flex items-center gap-4 text-xs text-ink-muted flex-wrap w-full">
+                    <span><i class="fas fa-home mr-1"></i><strong>{{ manualTableStats(mt).filled }}</strong>/{{ manualTableStats(mt).total }} unidades</span>
+                    <span v-if="manualTableStats(mt).min != null">
+                      <i class="fas fa-tag mr-1"></i>De <strong>{{ formatCurrencyShort(manualTableStats(mt).min) }}</strong> até <strong>{{ formatCurrencyShort(manualTableStats(mt).max) }}</strong>
+                    </span>
+                    <span v-if="manualTableStats(mt).avg != null"><i class="fas fa-chart-line mr-1"></i>Média <strong>{{ formatCurrencyShort(manualTableStats(mt).avg) }}</strong></span>
+                  </div>
+                  <div v-if="mt.note" class="note-block w-full">
+                    <span class="note-label">Observação da Tabela</span>
+                    <p>{{ mt.note }}</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Premissa de preço / observação -->
+              <div v-if="mod.price_premise_note" class="p-4 pt-0">
+                <div class="note-block">
+                  <span class="note-label">Premissa de Preço / Observação</span>
+                  <p>{{ mod.price_premise_note }}</p>
+                </div>
+              </div>
+
+              <!-- Vazio -->
+              <div v-if="!modSelectedPriceTables(mod).length && !(mod.manual_price_tables ?? []).length && !mod.price_premise_note"
+                class="empty-info-row">
+                <i class="fas fa-tag text-ink-subtle text-sm"></i>
+                <span>Nenhuma tabela de preço selecionada neste módulo</span>
+              </div>
             </div>
 
           <!-- ── Campanhas ───────────────────────────────────────────────── -->
@@ -1082,6 +1145,19 @@ function modSubsidyLabel(mod) {
 function modSelectedPriceTables(mod) {
     const ids = mod.price_table_ids ?? [];
     return props.priceTables.filter(t => ids.includes(t.idtabela));
+}
+
+function manualTableStats(mt) {
+    const units = mt.units ?? [];
+    if (!units.length) return null;
+    const values = units.map(u => u.value).filter(v => v != null);
+    return {
+        total: units.length,
+        filled: values.length,
+        min: values.length ? Math.min(...values) : null,
+        max: values.length ? Math.max(...values) : null,
+        avg: values.length ? values.reduce((a, b) => a + b, 0) / values.length : null,
+    };
 }
 
 function modActiveCampaigns(mod) {
