@@ -1,7 +1,8 @@
 <template>
-  <!-- Desktop: a ficha ocupa exatamente a área útil (100dvh - nav) e rola só por dentro;
-       o scroll geral do shell fica sem função aqui. Mobile segue com o scroll da página. -->
-  <div class="min-h-full md:h-[calc(100dvh-3rem)] md:flex md:flex-col overflow-hidden bg-surface">
+  <!-- Desktop: a ficha preenche exatamente a área útil do shell (h-full na cadeia, sem
+       depender de calc bater com a altura real) e rola só por dentro. Mobile segue com o
+       scroll da página. -->
+  <div class="min-h-full md:h-full md:min-h-0 md:flex md:flex-col overflow-hidden bg-surface">
 
     <!-- Toast -->
     <transition name="fade">
