@@ -1,5 +1,7 @@
 <template>
-  <div class="min-h-full bg-surface">
+  <!-- Desktop: a ficha ocupa exatamente a área útil (100dvh - nav) e rola só por dentro;
+       o scroll geral do shell fica sem função aqui. Mobile segue com o scroll da página. -->
+  <div class="min-h-full md:h-[calc(100dvh-3rem)] md:flex md:flex-col overflow-hidden bg-surface">
 
     <!-- Toast -->
     <transition name="fade">
@@ -393,7 +395,7 @@
 
     <template v-if="detail">
       <!-- ─── Header ─────────────────────────────────────────────────────── -->
-      <div ref="headerEl" class="bg-surface-raised border-b border-gray-200 dark:border-gray-800 sticky top-0 z-20">
+      <div ref="headerEl" class="bg-surface-raised border-b border-gray-200 dark:border-gray-800 sticky top-0 z-20 md:shrink-0">
         <div class="max-w-7xl mx-auto px-4">
           <!-- Top bar -->
           <div class="flex items-center justify-between pb-4 pt-6 gap-4">
@@ -401,7 +403,7 @@
               <button @click="$router.back()" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 dark:text-slate-500 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-surface-hover transition flex-shrink-0">
                 <i class="fas fa-arrow-left text-sm"></i>
               </button>
-              <div class="min-w-0">
+              <div class="min-w-72">
                 <div class="flex items-center gap-2 flex-wrap">
                   <i v-if="isAvulsa" class="fas fa-cube text-gray-400 dark:text-slate-500 text-sm" title="Ficha avulsa (sem CV)"></i>
                   <h1 class="text-lg lg:text-xl font-bold text-ink truncate">
@@ -629,6 +631,8 @@
       </div>
 
       <!-- ─── Corpo: conteúdo + índice flutuante (direita, estilo Academy) ── -->
+      <!-- Único scroll da ficha no desktop -->
+      <div class="md:flex-1 md:min-h-0 md:overflow-y-auto">
       <div class="max-w-7xl mx-auto px-4 py-6">
         <div class="flex gap-4">
           <main class="flex-1 min-w-0">
@@ -745,8 +749,8 @@
 
           </main>
 
-          <!-- Índice flutuante (direita, xl+) — estilo Academy -->
-          <aside v-if="(activeTab === 'modules' || activeTab === 'summary') && localModules.length" class="hidden xl:block w-[240px] shrink-0 self-start sticky" :style="{ top: 'calc(var(--cond-header-h, 120px) + 16px)' }">
+          <!-- Índice flutuante (direita, xl+) — sticky no scroll interno da ficha (o header já está fora dele) -->
+          <aside v-if="(activeTab === 'modules' || activeTab === 'summary') && localModules.length" class="hidden xl:block w-[240px] shrink-0 self-start sticky top-4">
               <div class="cond-toc">
                 <p class="cond-toc__title"><i class="fas fa-list-ul mr-1.5 text-accent"></i> Neste módulo</p>
 
@@ -799,6 +803,7 @@
           </aside>
 
         </div>
+      </div>
       </div>
     </template>
   </div>
@@ -1751,7 +1756,7 @@ onMounted(() => loadDetail(route.params.id));
 .fade-enter-active, .fade-leave-active { transition: opacity .3s; }
 .fade-enter-from, .fade-leave-to { opacity: 0; }
 .nav-grp { @apply px-2 pt-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-ink-subtle; }
-.cond-toc { @apply border border-line rounded-2xl bg-surface-raised p-2.5 overflow-y-auto shadow-sm; max-height: calc(100vh - var(--cond-header-h, 56px) - 1.5rem); }
+.cond-toc { @apply border border-line rounded-2xl bg-surface-raised p-2.5 overflow-y-auto shadow-sm; max-height: calc(100dvh - 3rem - var(--cond-header-h, 120px) - 3rem); }
 .cond-toc__title { @apply text-[11px] font-bold uppercase tracking-wider text-ink-subtle px-2 pb-1.5 flex items-center; }
 .cond-toc__grp { @apply text-[10px] font-bold uppercase tracking-wider text-ink-subtle px-2 pt-2.5 pb-1; }
 .cond-toc__link { @apply w-full flex items-center text-left rounded-lg px-2.5 py-1.5 text-sm text-ink-muted transition; border-left: 2px solid transparent; }
