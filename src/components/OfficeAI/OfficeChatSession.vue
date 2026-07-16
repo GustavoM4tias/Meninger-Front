@@ -17,6 +17,7 @@ import ChatPrecadastrosSummary from './renderers/ChatPrecadastrosSummary.vue'
 import ChatPrecadastrosActions from './renderers/ChatPrecadastrosActions.vue'
 import ChatReservasSummary from './renderers/ChatReservasSummary.vue'
 import ChatReservasActions from './renderers/ChatReservasActions.vue'
+import ChatConditionSheet from './renderers/ChatConditionSheet.vue'
 import FeedbackModal from './FeedbackModal.vue'
 
 defineOptions({ inheritAttrs: false })
@@ -273,6 +274,10 @@ async function confirmFeedback({ comment }) {
             <ChatReservasActions
               v-if="actionSource(msg) === 'reservas'"
               :context="actionContext(msg)"
+            />
+            <ChatConditionSheet
+              v-if="getAction(msg)?.type === 'condition_sheet'"
+              :action="getAction(msg)"
             />
             <div v-if="msg.response_type === 'error' && msg.metadata?.storageLimit"
               class="flex items-start gap-2 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20
