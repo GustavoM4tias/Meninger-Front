@@ -147,6 +147,17 @@
 }
 
 /* ───────────────────────────────────────────────
+   .sr-only é position:absolute. Sem um ancestral posicionado, o elemento
+   ancora no <html>: escapa do clip de containers com scroll e estica o
+   documento na posição em que "estaria" — criando um scroll fantasma na
+   janela (visto na ficha comercial, inputs a ~5000px). Ancorar no pai
+   imediato elimina o problema em todas as telas, atuais e futuras.
+   ─────────────────────────────────────────────── */
+:where(label, div, span, button, td, li):has(> .sr-only) {
+  position: relative;
+}
+
+/* ───────────────────────────────────────────────
    Checkbox global custom — render próprio (appearance:none) para ficar
    consistente em tema claro e escuro. O nativo seguia o color-scheme do SO
    e ficava "preto" no tema claro. Toggles que usam .sr-only (switches
