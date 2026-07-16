@@ -326,7 +326,7 @@
       </div>
 
       <!-- ── Seção: Produto ──────────────────────────────────────────────── -->
-      <div id="modsec-data" class="p-5 space-y-5 scroll-mt-40">
+      <div id="modsec-data" class="p-5 space-y-5 scroll-mt-40 md:scroll-mt-4">
         <h3 class="flex items-center gap-2 text-sm font-bold text-ink mb-1"><i class="fas fa-box text-blue-500"></i> Produto</h3>
         <!-- Números do Módulo -->
         <div>
@@ -564,7 +564,7 @@
       </div>
 
       <!-- ── Seção: Preços ───────────────────────────────────────────────── -->
-      <div id="modsec-prices" class="p-5 space-y-5 scroll-mt-40 border-t border-line">
+      <div id="modsec-prices" class="p-5 space-y-5 scroll-mt-40 md:scroll-mt-4 border-t border-line">
         <h3 class="flex items-center gap-2 text-sm font-bold text-ink mb-1"><i class="fas fa-tag text-blue-500"></i> Preços</h3>
         <!-- Tabelas do CV -->
         <div>
@@ -826,7 +826,7 @@
       </div>
 
       <!-- ── Seção: Negociação ───────────────────────────────────────────── -->
-      <div id="modsec-negotiation" class="p-5 scroll-mt-40 border-t border-line">
+      <div id="modsec-negotiation" class="p-5 scroll-mt-40 md:scroll-mt-4 border-t border-line">
         <h3 class="flex items-center gap-2 text-sm font-bold text-ink mb-3"><i class="fas fa-handshake text-blue-500"></i> Negociação</h3>
         <NegotiationRules
           :form="activeModule"
@@ -836,7 +836,7 @@
       </div>
 
       <!-- ── Seção: Documentação ────────────────────────────────────────── -->
-      <div id="modsec-docs" class="p-5 scroll-mt-40 border-t border-line">
+      <div id="modsec-docs" class="p-5 scroll-mt-40 md:scroll-mt-4 border-t border-line">
         <h3 class="flex items-center gap-2 text-sm font-bold text-ink mb-3"><i class="fas fa-file-contract text-blue-500"></i> Documentação</h3>
         <DocsSection
           :form="activeModule"
@@ -846,7 +846,7 @@
       </div>
 
       <!-- ── Seção: Campanhas ───────────────────────────────────────────── -->
-      <div id="modsec-campaigns" class="p-5 scroll-mt-40 border-t border-line">
+      <div id="modsec-campaigns" class="p-5 scroll-mt-40 md:scroll-mt-4 border-t border-line">
         <h3 class="flex items-center gap-2 text-sm font-bold text-ink mb-3"><i class="fas fa-bullhorn text-blue-500"></i> Campanhas</h3>
         <CampaignManager
           :campaigns="activeModule.campaigns ?? []"
@@ -860,7 +860,7 @@
       </div>
 
       <!-- ── Seção: Operacional ─────────────────────────────────────────── -->
-      <div id="modsec-operational" class="p-5 scroll-mt-40 border-t border-line">
+      <div id="modsec-operational" class="p-5 scroll-mt-40 md:scroll-mt-4 border-t border-line">
         <h3 class="flex items-center gap-2 text-sm font-bold text-ink mb-3"><i class="fas fa-gears text-blue-500"></i> Operacional</h3>
         <OperationalSection
           :form="activeModule"
@@ -872,7 +872,7 @@
       </div>
 
       <!-- ── Seção: Unidades (só módulos do CV) ──────────────────────────── -->
-      <div v-if="activeModule?.idetapa" id="modsec-units" class="p-5 scroll-mt-40 border-t border-line">
+      <div v-if="activeModule?.idetapa" id="modsec-units" class="p-5 scroll-mt-40 md:scroll-mt-4 border-t border-line">
         <h3 class="flex items-center gap-2 text-sm font-bold text-ink mb-3"><i class="fas fa-layer-group text-blue-500"></i> Unidades</h3>
 
         <!-- Barra de snapshot -->
