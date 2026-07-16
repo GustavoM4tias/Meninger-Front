@@ -16,6 +16,7 @@ import ChatReservasSummary from './renderers/ChatReservasSummary.vue';
 import ChatReservasActions from './renderers/ChatReservasActions.vue';
 import ChatAlertEditor from './renderers/ChatAlertEditor.vue';
 import ChatAcademyCards from './renderers/ChatAcademyCards.vue';
+import ChatConditionSheet from './renderers/ChatConditionSheet.vue';
 
 const props = defineProps({
   message: { type: Object, required: true },
@@ -90,6 +91,9 @@ const isError = computed(() => props.message.response_type === 'error');
 
         <!-- Academy: cards de processos / certificados / comunidade -->
         <ChatAcademyCards v-if="action?.type === 'academy_cards'" :action="action" />
+
+        <!-- Ficha Comercial: card com dados + sugestões + abrir ficha -->
+        <ChatConditionSheet v-if="action?.type === 'condition_sheet'" :action="action" />
 
         <!-- Feedback / Retry -->
         <div v-if="!streaming" class="flex items-center gap-1 mt-1.5">
