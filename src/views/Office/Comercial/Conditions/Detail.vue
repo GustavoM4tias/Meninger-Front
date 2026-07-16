@@ -632,8 +632,11 @@
       </div>
 
       <!-- ─── Corpo: conteúdo + índice flutuante (direita, estilo Academy) ── -->
-      <!-- Único scroll da ficha no desktop -->
-      <div class="md:flex-1 md:min-h-0 md:overflow-y-auto">
+      <!-- Único scroll da ficha no desktop. `relative` é essencial: os inputs sr-only
+           (checkbox/radio, position:absolute) do ModuleSection ancoravam no <html>,
+           escapavam do clip do scroller e esticavam o documento — criando o 2º scroll
+           fantasma na janela. Com o scroller relative, eles ancoram (e clipam) aqui. -->
+      <div class="relative md:flex-1 md:min-h-0 md:overflow-y-auto">
       <div class="max-w-7xl mx-auto px-4 py-6">
         <div class="flex gap-4">
           <main class="flex-1 min-w-0">
