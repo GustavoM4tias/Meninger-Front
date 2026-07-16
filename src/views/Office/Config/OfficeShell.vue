@@ -28,7 +28,10 @@ const isAuthenticated = computed(() => authStore.isAuthenticated());
 
                 <div
                     class="flex flex-1 mt-16 sm:mt-12 w-full h-auto md:h-[calc(100dvh-3rem)] break-words overflow-auto">
-                    <div class="w-full max-w-full">
+                    <!-- md:h-full dá altura definida ao wrapper: páginas que querem scroll
+                         próprio (ex.: ficha comercial) usam h-full e preenchem exatamente a
+                         área útil; páginas normais continuam crescendo e rolando aqui. -->
+                    <div class="w-full max-w-full md:h-full">
                         <router-view />
                     </div>
                 </div>
