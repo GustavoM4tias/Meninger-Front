@@ -110,6 +110,7 @@ export const navRegistry = [
                 pages: [
                     { route: '/comercial/precadastros',    section: 'Pré-Cadastros', name: 'Pré-Cadastros', icon: 'fas fa-id-card-clip', permissionManaged: false },
                     { route: '/comercial/reservas-report', section: 'Reservas',      name: 'Reservas',      icon: 'fas fa-bookmark',     permissionManaged: false },
+                    { route: '/comercial/imobiliarias',    section: 'Imobiliárias',  name: 'Imobiliárias',  icon: 'fas fa-house-flag' },
                     { route: '/comercial/faturamento',     section: 'Faturamento',   name: 'Faturamento',   icon: 'fas fa-file-invoice-dollar' },
                     { route: '/comercial/distratos',       section: 'Distratos',     name: 'Distratos',     icon: 'fas fa-file-circle-xmark' },
                 ],

@@ -235,6 +235,12 @@ export default [
                         meta: { requiresAuth: true, searchable: false, content: 'Detalhe da Ficha Comercial' },
                     },
                     {
+                        path: 'imobiliarias',
+                        name: 'Imobiliárias',
+                        component: () => import('@/views/Office/Comercial/Imobiliarias/Index.vue'),
+                        meta: { requiresAuth: true, searchable: true, content: 'Cadastro de imobiliárias no CV — direto na tela ou via link público enviado ao responsável' },
+                    },
+                    {
                         path: 'mcmv',
                         name: 'MCMV — Limites por Cidade',
                         component: () => import('@/views/Office/Comercial/Mcmv/Index.vue'),

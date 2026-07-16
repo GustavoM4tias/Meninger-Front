@@ -11,6 +11,14 @@ export default [
         meta: { requiresAuth: false },
     },
     {
+        // Cadastro público de imobiliária — link gerado na tela Comercial >
+        // Imobiliárias do Office (token de uso único).
+        path: '/imobiliaria/:token',
+        name: 'LpImobiliaria',
+        component: () => import('@/views/Lp/Imobiliaria.vue'),
+        meta: { requiresAuth: false },
+    },
+    {
         path: '/:slug',
         name: 'LpPage',
         component: () => import('@/views/Lp/Page.vue'),
