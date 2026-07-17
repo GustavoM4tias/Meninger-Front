@@ -58,6 +58,7 @@ onMounted(() => {
             icon="fas fa-house-flag"
         >
             <template #actions>
+                <Button variant="ghost" icon="fas fa-rotate" :loading="store.syncing" v-tippy="'Sincronizar com o CV'" @click="syncNow" />
                 <PageHelp
                     storage-key="comercial-imobiliarias"
                     title="Como usar a tela de Imobiliárias"
@@ -74,7 +75,6 @@ onMounted(() => {
                         'A validade do CRECI em branco assume 31/12 do ano que vem.',
                     ]"
                 />
-                <Button variant="ghost" icon="fas fa-rotate" :loading="store.syncing" v-tippy="'Sincronizar com o CV'" @click="syncNow" />
                 <Button variant="secondary" icon="fas fa-link" @click="inviteOpen = true">Gerar link</Button>
                 <Button variant="primary" icon="fas fa-plus" @click="createOpen = true">Nova imobiliária</Button>
             </template>

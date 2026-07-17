@@ -20,7 +20,7 @@ const props = defineProps({
 
 const emit = defineEmits(['submit']);
 
-const UFS = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO']
+const UFS = ['AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO']
     .map(uf => ({ value: uf, label: uf }));
 
 const imob = reactive({
@@ -178,16 +178,13 @@ const nextYearHint = computed(() => `Se ficar vazio, usamos 31/12/${new Date().g
         <section>
             <h3 class="text-sm font-semibold text-ink mb-1">Cartão CNPJ</h3>
             <p class="text-xs text-ink-muted mb-3">
-                Envie o cartão CNPJ (PDF da Receita Federal) para preencher os dados automaticamente. Todos os campos continuam editáveis.
+                Envie o cartão CNPJ (PDF da Receita Federal) para preencher os dados automaticamente. Todos os campos
+                continuam editáveis.
             </p>
-            <div
-                class="rounded-xl border-2 border-dashed p-5 text-center cursor-pointer transition-colors"
+            <div class="rounded-xl border-2 border-dashed p-5 text-center cursor-pointer transition-colors"
                 :class="dragging ? 'border-accent bg-accent-soft' : 'border-line hover:border-accent/60'"
-                @click="pickFile"
-                @dragover.prevent="dragging = true"
-                @dragleave.prevent="dragging = false"
-                @drop.prevent="onDrop"
-            >
+                @click="pickFile" @dragover.prevent="dragging = true" @dragleave.prevent="dragging = false"
+                @drop.prevent="onDrop">
                 <input ref="fileInput" type="file" accept="application/pdf" class="hidden" @change="onFileSelected" />
                 <template v-if="parsing">
                     <i class="fas fa-circle-notch fa-spin text-accent text-lg"></i>
@@ -213,29 +210,24 @@ const nextYearHint = computed(() => `Se ficar vazio, usamos 31/12/${new Date().g
         <section>
             <h3 class="text-sm font-semibold text-ink mb-3">Dados da imobiliária</h3>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Input v-model="imob.nome" label="Nome (fantasia)" required placeholder="Ex.: Menin Imóveis" class="sm:col-span-2" />
-                <Input v-model="imob.razao_social" label="Razão social" required placeholder="Como consta no cartão CNPJ" class="sm:col-span-2" />
-                <Input
-                    :model-value="imob.cnpj"
-                    label="CNPJ" required placeholder="00.000.000/0000-00"
-                    @update:model-value="v => imob.cnpj = maskCnpj(v)"
-                />
-                <Input
-                    :model-value="imob.sigla"
-                    label="Sigla" required hint="Sugerida a partir do nome; pode ajustar."
-                    @update:model-value="v => { siglaTouched = true; imob.sigla = String(v).toUpperCase().slice(0, 10); }"
-                />
+                <Input v-model="imob.nome" label="Nome (fantasia)" required placeholder="Ex.: Menin Imóveis"
+                    class="sm:col-span-2" />
+                <Input v-model="imob.razao_social" label="Razão social" required
+                    placeholder="Como consta no cartão CNPJ" class="sm:col-span-2" />
+                <Input :model-value="imob.cnpj" label="CNPJ" required placeholder="00.000.000/0000-00"
+                    @update:model-value="v => imob.cnpj = maskCnpj(v)" />
+                <Input :model-value="imob.sigla" label="Sigla" required hint="Sugerida a partir do nome; pode ajustar."
+                    @update:model-value="v => { siglaTouched = true; imob.sigla = String(v).toUpperCase().slice(0, 10); }" />
                 <Input v-model="imob.creci" label="CRECI da imobiliária" required placeholder="Ex.: 12345-J" />
                 <Input v-model="imob.validade_creci" type="date" label="Validade do CRECI" :hint="nextYearHint" />
                 <Input v-model="imob.email" type="email" label="E-mail" placeholder="contato@imobiliaria.com.br" />
-                <Input
-                    :model-value="imob.telefone"
-                    label="Telefone" placeholder="(00) 00000-0000"
-                    @update:model-value="v => imob.telefone = maskPhone(v)"
-                />
+                <Input :model-value="imob.telefone" label="Telefone" placeholder="(00) 00000-0000"
+                    @update:model-value="v => imob.telefone = maskPhone(v)" />
                 <div class="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <Switch v-model="imob.micro_empresa" label="Microempresa (ME/EPP)" description="Vem preenchido pelo porte do cartão CNPJ." />
-                    <Switch v-model="imob.escala_plantao" label="Administra escala de plantão" description="Padrão: sim." />
+                    <Switch v-model="imob.micro_empresa" label="Microempresa (ME/EPP)"
+                        description="Vem preenchido pelo porte do cartão CNPJ." />
+                    <Switch v-model="imob.escala_plantao" label="Administra escala de plantão"
+                        description="Padrão: sim." />
                 </div>
             </div>
         </section>
@@ -250,7 +242,8 @@ const nextYearHint = computed(() => `Se ficar vazio, usamos 31/12/${new Date().g
                 <Input v-model="imob.complemento" label="Complemento" class="col-span-1 sm:col-span-2" />
                 <Input v-model="imob.bairro" label="Bairro" class="col-span-2 sm:col-span-3" />
                 <Input v-model="imob.cidade" label="Cidade" class="col-span-1 sm:col-span-4" />
-                <Select v-model="imob.estado" :options="UFS" label="UF" placeholder="UF" class="col-span-1 sm:col-span-2" />
+                <Select v-model="imob.estado" :options="UFS" label="UF" placeholder="UF"
+                    class="col-span-1 sm:col-span-2" />
             </div>
         </section>
 
@@ -267,28 +260,19 @@ const nextYearHint = computed(() => `Se ficar vazio, usamos 31/12/${new Date().g
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Input v-model="ger.nome" label="Nome completo" required class="sm:col-span-2" />
-                <Input
-                    :model-value="ger.documento"
-                    label="CPF" required placeholder="000.000.000-00"
-                    @update:model-value="v => ger.documento = maskCpf(v)"
-                />
+                <Input :model-value="ger.documento" label="CPF" required placeholder="000.000.000-00"
+                    @update:model-value="v => ger.documento = maskCpf(v)" />
                 <Input v-model="ger.data_nasc" type="date" label="Data de nascimento" required />
                 <Input v-model="ger.email" type="email" label="E-mail" required />
-                <Input
-                    :model-value="ger.celular"
-                    label="Celular" required placeholder="(00) 00000-0000"
-                    @update:model-value="v => ger.celular = maskPhone(v)"
-                />
-                <Input
-                    :model-value="ger.telefone"
-                    label="Telefone" hint="Se vazio, usamos o celular."
-                    @update:model-value="v => ger.telefone = maskPhone(v)"
-                />
+                <Input :model-value="ger.celular" label="Celular" required placeholder="(00) 00000-0000"
+                    @update:model-value="v => ger.celular = maskPhone(v)" />
+                <Input :model-value="ger.telefone" label="Telefone" hint="Se vazio, usamos o celular."
+                    @update:model-value="v => ger.telefone = maskPhone(v)" />
                 <Input v-model="ger.creci" label="CRECI do gerente" hint="Opcional." />
             </div>
             <details class="mt-4 group">
-                <summary class="text-xs font-medium text-accent cursor-pointer select-none">
-                    <i class="fas fa-chevron-right mr-1 transition-transform group-open:rotate-90"></i>
+                HTML
+                <summary class="text-xs font-medium text-accent cursor-pointer select-none"> 
                     Endereço do gerente (opcional)
                 </summary>
                 <div class="grid grid-cols-2 sm:grid-cols-6 gap-4 mt-3">
@@ -298,13 +282,15 @@ const nextYearHint = computed(() => `Se ficar vazio, usamos 31/12/${new Date().g
                     <Input v-model="ger.complemento" label="Complemento" class="col-span-1 sm:col-span-2" />
                     <Input v-model="ger.bairro" label="Bairro" class="col-span-2 sm:col-span-3" />
                     <Input v-model="ger.cidade" label="Cidade" class="col-span-1 sm:col-span-4" />
-                    <Select v-model="ger.estado" :options="UFS" label="UF" placeholder="UF" class="col-span-1 sm:col-span-2" />
+                    <Select v-model="ger.estado" :options="UFS" label="UF" placeholder="UF"
+                        class="col-span-1 sm:col-span-2" />
                 </div>
             </details>
         </section>
 
         <!-- Erros -->
-        <div v-if="errors.length || serverError" class="rounded-lg border border-red-300 dark:border-red-800 bg-red-50 dark:bg-red-950/40 p-3">
+        <div v-if="errors.length || serverError"
+            class="rounded-lg border border-red-300 dark:border-red-800 bg-red-50 dark:bg-red-950/40 p-3">
             <p v-if="serverError" class="text-sm text-red-700 dark:text-red-300 font-medium">{{ serverError }}</p>
             <ul class="text-sm text-red-700 dark:text-red-300 list-disc list-inside space-y-0.5">
                 <li v-for="e in errors" :key="e">{{ e }}</li>

@@ -58,7 +58,7 @@ const fmt = (v) => v || '-';
                 <Badge variant="neutral" outlined>{{ r.source === 'public' ? 'Via link' : 'Interno' }}</Badge>
                 <a v-if="cvUrl" :href="cvUrl" target="_blank" rel="noopener"
                     v-tippy="`CV #${r.result.idimobiliaria_cv}`">
-                    <Button class="text-xs py-[4px] px-[8px]" variant="outline"
+                    <Button class="text-xs py-[3px] px-[8px]" variant="outline"
                         icon="fas fa-arrow-up-right-from-square">Abrir no CV</Button>
                 </a>
             </div>
