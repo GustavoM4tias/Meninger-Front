@@ -47,6 +47,17 @@ const cvUrl = computed(() => r.value?.result?.idimobiliaria_cv
     : null);
 
 const fmt = (v) => v || '-';
+
+const fmtDay = (d) => d ? new Date(`${d}T00:00:00`).toLocaleDateString('pt-BR') : '';
+const fmtDateTime = (d) => d ? new Date(d).toLocaleString('pt-BR') : '-';
+
+const WINDOW = {
+    not_started: { label: 'Agendado', variant: 'info' },
+    open:        { label: 'Ativo',     variant: 'success' },
+    expired:     { label: 'Encerrado', variant: 'neutral' },
+};
+const windowBadge = computed(() => WINDOW[r.value?.window_state] || WINDOW.open);
+const SUB_STATUS = { completed: 'Concluída', error: 'Pendente' };
 </script>
 
 <template>
@@ -54,8 +65,12 @@ const fmt = (v) => v || '-';
         @close="emit('close')">
         <div v-if="r" class="space-y-6">
             <div class="flex flex-wrap items-center gap-2">
-                <Badge :variant="status.variant">{{ status.label }}</Badge>
-                <Badge variant="neutral" outlined>{{ r.source === 'public' ? 'Via link' : 'Interno' }}</Badge>
+                <Badge v-if="r.multi_use && r.status !== 'revoked'" :variant="windowBadge.variant">{{ windowBadge.label }}</Badge>
+                <Badge v-else :variant="status.variant">{{ status.label }}</Badge>
+                <Badge variant="neutral" outlined>
+                    <i :class="r.multi_use ? 'fas fa-link' : (r.source === 'public' ? 'fas fa-link' : 'fas fa-desktop')" class="mr-1"></i>
+                    {{ r.multi_use ? 'Link múltiplo' : (r.source === 'public' ? 'Via link' : 'Interno') }}
+                </Badge>
                 <a v-if="cvUrl" :href="cvUrl" target="_blank" rel="noopener"
                     v-tippy="`CV #${r.result.idimobiliaria_cv}`">
                     <Button class="text-xs py-[3px] px-[8px]" variant="outline"
@@ -68,14 +83,39 @@ const fmt = (v) => v || '-';
                 {{ r.error }}
             </p>
 
-            <!-- Convite pendente: link -->
-            <div v-if="r.status === 'invite' && r.token" class="space-y-2">
-                <h4 class="text-xs font-semibold uppercase tracking-wide text-ink-muted">Link público</h4>
+            <!-- Convite com link ativo (uso único aguardando OU multi-uso não revogado) -->
+            <div v-if="r.token && (r.status === 'invite' || (r.multi_use && r.status !== 'revoked'))" class="space-y-2">
+                <div class="flex items-center justify-between">
+                    <h4 class="text-xs font-semibold uppercase tracking-wide text-ink-muted">Link público</h4>
+                    <span v-if="r.multi_use && r.ends_at" class="text-xs text-ink-subtle">
+                        <i class="fas fa-clock mr-1"></i>{{ fmtDay(r.starts_at) }} até {{ fmtDay(r.ends_at) }}
+                    </span>
+                </div>
                 <div class="flex items-center gap-2 rounded-lg border border-line bg-surface-sunken p-2">
                     <code
                         class="flex-1 text-xs text-ink-muted break-all">https://lp.menin.com.br/imobiliaria/{{ r.token }}</code>
                     <Button variant="outline" size="sm" icon="fas fa-copy" @click="emit('copy', r)">Copiar</Button>
                 </div>
+            </div>
+
+            <!-- Link múltiplo: quem já cadastrou por este link -->
+            <div v-if="r.multi_use">
+                <h4 class="text-xs font-semibold uppercase tracking-wide text-ink-muted mb-2">
+                    Cadastros por este link
+                    <span class="text-ink-subtle font-normal normal-case">({{ (r.submissions || []).length }})</span>
+                </h4>
+                <ul v-if="(r.submissions || []).length" class="space-y-1.5">
+                    <li v-for="(s, idx) in r.submissions" :key="idx"
+                        class="flex items-center gap-2 rounded-lg border border-line px-3 py-2 text-sm">
+                        <i :class="s.status === 'error' ? 'fas fa-clock text-amber-500' : 'fas fa-circle-check text-emerald-500'"></i>
+                        <div class="min-w-0 flex-1">
+                            <p class="text-ink truncate">{{ s.nome || 'Imobiliária' }}</p>
+                            <p class="text-xs text-ink-muted">{{ s.gerente || '-' }} · {{ fmtDateTime(s.at) }}</p>
+                        </div>
+                        <span class="text-xs text-ink-subtle">{{ SUB_STATUS[s.status] || s.status }}</span>
+                    </li>
+                </ul>
+                <p v-else class="text-sm text-ink-subtle">Nenhum cadastro ainda por este link.</p>
             </div>
 
             <!-- Empreendimentos -->
