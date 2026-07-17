@@ -41,6 +41,11 @@ const stepIcon = (ok, tried = true) => !tried ? 'fas fa-minus text-ink-subtle'
     : ok ? 'fas fa-circle-check text-emerald-500'
     : 'fas fa-circle-xmark text-red-500';
 
+// Link direto para a ficha da imobiliária no painel gestor do CV.
+const cvUrl = computed(() => r.value?.result?.idimobiliaria_cv
+    ? `https://menin.cvcrm.com.br/gestor/cadastros/imobiliarias/${r.value.result.idimobiliaria_cv}/editar`
+    : null);
+
 const fmt = (v) => v || '-';
 </script>
 
@@ -138,7 +143,10 @@ const fmt = (v) => v || '-';
         </div>
 
         <template #footer>
-            <div class="flex justify-end gap-2">
+            <div class="flex flex-wrap justify-end gap-2">
+                <a v-if="cvUrl" :href="cvUrl" target="_blank" rel="noopener">
+                    <Button variant="outline" icon="fas fa-arrow-up-right-from-square">Abrir no CV</Button>
+                </a>
                 <Button variant="ghost" @click="emit('close')">Fechar</Button>
                 <Button v-if="r?.status === 'error'" variant="primary" icon="fas fa-rotate-right" :loading="retrying" @click="emit('retry', r)">
                     Reprocessar
