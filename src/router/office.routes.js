@@ -240,12 +240,8 @@ export default [
                         component: () => import('@/views/Office/Comercial/Imobiliarias/Index.vue'),
                         meta: { requiresAuth: true, searchable: true, content: 'Cadastro de imobiliárias no CV — direto na tela ou via link público enviado ao responsável' },
                     },
-                    {
-                        path: 'imobiliarias-report',
-                        name: 'Relatório de Imobiliárias',
-                        component: () => import('@/views/Office/Comercial/Imobiliarias/Report.vue'),
-                        meta: { requiresAuth: true, searchable: true, content: 'Relatório de imobiliárias do CV — filtros por cidade e empreendimento' },
-                    },
+                    // Tela unificada: o antigo relatório virou aba da tela de Imobiliárias.
+                    { path: 'imobiliarias-report', redirect: '/comercial/imobiliarias' },
                     {
                         path: 'mcmv',
                         name: 'MCMV — Limites por Cidade',

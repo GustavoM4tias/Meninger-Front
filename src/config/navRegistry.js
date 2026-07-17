@@ -110,6 +110,7 @@ export const navRegistry = [
                 pages: [
                     { route: '/comercial/precadastros',    section: 'Pré-Cadastros', name: 'Pré-Cadastros', icon: 'fas fa-id-card-clip', permissionManaged: false },
                     { route: '/comercial/reservas-report', section: 'Reservas',      name: 'Reservas',      icon: 'fas fa-bookmark',     permissionManaged: false },
+                    { route: '/comercial/imobiliarias',    section: 'Imobiliárias',  name: 'Imobiliárias',  icon: 'fas fa-house-flag' },
                     { route: '/comercial/faturamento',     section: 'Faturamento',   name: 'Faturamento',   icon: 'fas fa-file-invoice-dollar' },
                     { route: '/comercial/distratos',       section: 'Distratos',     name: 'Distratos',     icon: 'fas fa-file-circle-xmark' },
                 ],
@@ -121,15 +122,6 @@ export const navRegistry = [
                 pages: [
                     { route: '/comercial/sales-projection', section: 'Vendas x Projeção', name: 'Vendas X Projeção', icon: 'fas fa-arrow-trend-up' },
                     { route: '/comercial/projections',      section: 'Projeção',          name: 'Projeção',          icon: 'fas fa-chart-line' },
-                ],
-            },
-            {
-                key: 'imobiliarias',
-                name: 'Imobiliárias',
-                icon: 'fas fa-house-flag',
-                pages: [
-                    { route: '/comercial/imobiliarias-report', section: 'Relatório', name: 'Relatório', icon: 'fas fa-table-list' },
-                    { route: '/comercial/imobiliarias',        section: 'Cadastro',  name: 'Cadastro',  icon: 'fas fa-user-plus' },
                 ],
             },
             {

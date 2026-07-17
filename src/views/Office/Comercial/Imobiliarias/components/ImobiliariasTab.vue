@@ -1,32 +1,40 @@
 <script setup>
-// Relatório de imobiliárias: lê o backup local do CV (cv_imobiliarias) com
-// filtros por cidade, empreendimento e busca. A cidade da imobiliária vem do
-// cadastro dela no CV; quando não tem endereço, é herdada das cidades dos
-// empreendimentos vinculados (cadastros do Office + atividade em reservas).
-// Filtros aplicados no cliente: a lista completa chega de uma vez (escopada
-// por cidade do usuário no backend) e as opções derivam dos próprios dados.
+// Aba "Imobiliárias" da tela unificada: listagem do backup do CV com filtros
+// (por padrão só ativas e com empreendimento vinculado), atalhos de contato
+// (WhatsApp/e-mail), cartão do gerente e modal de detalhe. Filtragem no
+// cliente: a lista completa chega escopada por cidade do usuário no backend.
 
 import { computed, onMounted, ref } from 'vue';
-import { useToast } from 'vue-toastification';
 import { useRealEstateStore } from '@/stores/Comercial/RealEstate/realEstateStore';
+import { whatsappUrl, mailtoUrl } from '@/utils/contactLinks';
 
-import PageContainer from '@/components/UI/PageContainer.vue';
-import PageHeader from '@/components/UI/PageHeader.vue';
-import PageHelp from '@/components/UI/PageHelp.vue';
-import Button from '@/components/UI/Button.vue';
 import Badge from '@/components/UI/Badge.vue';
 import Input from '@/components/UI/Input.vue';
 import Select from '@/components/UI/Select.vue';
 import Spinner from '@/components/UI/Spinner.vue';
 import EmptyState from '@/components/UI/EmptyState.vue';
-import ReportDetailModal from './components/ReportDetailModal.vue';
+import ReportDetailModal from './ReportDetailModal.vue';
+import GerenteModal from './GerenteModal.vue';
 
 const store = useRealEstateStore();
-const toast = useToast();
 
+// ── Filtros (padrão: ativas + com empreendimento vinculado) ──────────────────
 const q = ref('');
 const cidade = ref('');
 const empreendimento = ref('');
+const situacao = ref('S');       // S | N | '' (todas)
+const vinculo = ref('com');      // com | sem | '' (todos)
+
+const SITUACAO_OPTIONS = [
+    { value: 'S', label: 'Ativas' },
+    { value: 'N', label: 'Inativas' },
+    { value: '', label: 'Todas as situações' },
+];
+const VINCULO_OPTIONS = [
+    { value: 'com', label: 'Com empreendimento' },
+    { value: 'sem', label: 'Sem empreendimento' },
+    { value: '', label: 'Com e sem empreendimento' },
+];
 
 const norm = (s) => String(s || '').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
 
@@ -47,6 +55,10 @@ const empreendimentoOptions = computed(() => {
 });
 
 const rows = computed(() => all.value.filter(i => {
+    if (situacao.value && i.ativo !== situacao.value) return false;
+    const nVinculos = (i.empreendimentos || []).length;
+    if (vinculo.value === 'com' && !nVinculos) return false;
+    if (vinculo.value === 'sem' && nVinculos) return false;
     if (cidade.value && !(i.cidades || []).includes(cidade.value)) return false;
     if (empreendimento.value && !(i.empreendimentos || []).some(e => e.nome === empreendimento.value)) return false;
     if (q.value.trim()) {
@@ -56,21 +68,16 @@ const rows = computed(() => all.value.filter(i => {
     return true;
 }));
 
-const ativas = computed(() => rows.value.filter(i => i.ativo === 'S').length);
-
-const fmtCnpj = (c) => {
-    const d = String(c || '').replace(/\D/g, '');
-    if (d.length !== 14) return c || '-';
-    return d.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5');
-};
-const fmtDate = (d) => d ? new Date(d).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }) : '-';
-
-// Ficha da imobiliária no painel gestor do CV.
-const cvUrl = (i) => `https://menin.cvcrm.com.br/gestor/cadastros/imobiliarias/${i.idimobiliaria}/editar`;
-
-// Detalhe por ID contra a store: refetch/sync atualizam o modal aberto.
+// ── Detalhe / gerente (por ID contra a store: refetch atualiza o modal) ──────
 const selectedId = ref(null);
 const selected = computed(() => all.value.find(i => i.idimobiliaria === selectedId.value) || null);
+const gerenteId = ref(null);
+const gerenteDe = computed(() => all.value.find(i => i.idimobiliaria === gerenteId.value) || null);
+
+const ORIGEM_ICON = {
+    link:   { icon: 'fas fa-link',    tip: 'Cadastrada via link público' },
+    office: { icon: 'fas fa-desktop', tip: 'Cadastrada pelo Office' },
+};
 
 const initials = (i) => {
     const sigla = String(i.sigla || '').trim();
@@ -79,48 +86,25 @@ const initials = (i) => {
     return ((words[0]?.[0] || '') + (words[1]?.[0] || '')).toUpperCase() || '?';
 };
 
-async function syncNow() {
-    try {
-        await store.syncImobiliarias();
-        toast.success('Imobiliárias sincronizadas com o CV!');
-    } catch (err) {
-        toast.error(err?.message || 'Erro ao sincronizar.');
-    }
-}
+const fmtCnpj = (c) => {
+    const d = String(c || '').replace(/\D/g, '');
+    if (d.length !== 14) return c || '-';
+    return d.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5');
+};
+const fmtDate = (d) => d ? new Date(d).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }) : '-';
 
-onMounted(() => store.fetchReport());
+const cvUrl = (i) => `https://menin.cvcrm.com.br/gestor/cadastros/imobiliarias/${i.idimobiliaria}/editar`;
+
+onMounted(() => { if (!all.value.length) store.fetchReport(); });
 </script>
 
 <template>
-    <PageContainer>
-        <PageHeader
-            title="Relatório de Imobiliárias"
-            subtitle="Imobiliárias cadastradas no CV, com cidades e empreendimentos vinculados"
-            icon="fas fa-house-flag"
-        >
-            <template #actions>
-                <PageHelp
-                    storage-key="comercial-imobiliarias-report"
-                    title="Como usar o Relatório de Imobiliárias"
-                    intro="A lista espelha as imobiliárias cadastradas no CV (backup local sincronizado)."
-                    :steps="[
-                        { title: 'Filtre', text: 'Use a busca (nome, CNPJ, gerente) e os filtros de cidade e empreendimento para achar a imobiliária.' },
-                        { title: 'Cidade da imobiliária', text: 'Quando a imobiliária não tem endereço no CV, a cidade mostrada é herdada dos empreendimentos em que ela atua (marcada com o selo \'via empreendimentos\').' },
-                        { title: 'Sincronize', text: 'O botão Sincronizar busca a lista mais recente no CV. Cadastros feitos pelo Office já entram automaticamente.' },
-                    ]"
-                    :tips="[
-                        'Os empreendimentos vinculados vêm dos cadastros feitos pelo Office e da atividade de reservas no CV.',
-                        'Para cadastrar uma nova imobiliária, use a tela Cadastro no menu Imobiliárias.',
-                    ]"
-                />
-                <Button variant="secondary" icon="fas fa-rotate" :loading="store.syncing" @click="syncNow">Sincronizar</Button>
-                <Button variant="primary" icon="fas fa-plus" @click="$router.push('/comercial/imobiliarias')">Cadastro</Button>
-            </template>
-        </PageHeader>
-
+    <div>
         <!-- Filtros -->
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
-            <Input v-model="q" placeholder="Buscar por nome, CNPJ, gerente..." icon-left="fas fa-magnifying-glass" />
+        <div class="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-4">
+            <Input v-model="q" placeholder="Buscar nome, CNPJ, gerente..." icon-left="fas fa-magnifying-glass" class="col-span-2 lg:col-span-1" />
+            <Select v-model="situacao" :options="SITUACAO_OPTIONS" />
+            <Select v-model="vinculo" :options="VINCULO_OPTIONS" />
             <Select v-model="cidade" :options="cidadeOptions" placeholder="Todas as cidades" />
             <Select v-model="empreendimento" :options="empreendimentoOptions" placeholder="Todos os empreendimentos" />
         </div>
@@ -128,7 +112,6 @@ onMounted(() => store.fetchReport());
         <!-- Resumo -->
         <div class="flex flex-wrap items-center gap-2 mb-4 text-xs text-ink-muted">
             <Badge variant="accent" outlined>{{ rows.length }} imobiliárias</Badge>
-            <Badge variant="success" outlined>{{ ativas }} ativas</Badge>
             <span v-if="store.report?.last_sync">Última sincronização: {{ fmtDate(store.report.last_sync) }}</span>
         </div>
 
@@ -140,11 +123,11 @@ onMounted(() => store.fetchReport());
             v-else-if="!rows.length"
             icon="fas fa-house-flag"
             title="Nenhuma imobiliária encontrada"
-            description="Ajuste os filtros ou sincronize com o CV."
+            description="Ajuste os filtros (situação e vínculo) ou sincronize com o CV."
         />
 
         <template v-else>
-            <!-- Mobile: cards compactos (altura fixa, detalhe no modal) -->
+            <!-- Mobile: cards compactos -->
             <div class="md:hidden space-y-2.5">
                 <button
                     v-for="i in rows" :key="i.idimobiliaria"
@@ -156,7 +139,10 @@ onMounted(() => store.fetchReport());
                         {{ initials(i) }}
                     </div>
                     <div class="min-w-0 flex-1">
-                        <p class="font-medium text-ink truncate leading-tight">{{ i.nome }}</p>
+                        <p class="font-medium text-ink truncate leading-tight">
+                            {{ i.nome }}
+                            <i v-if="ORIGEM_ICON[i.origem]" :class="ORIGEM_ICON[i.origem].icon" class="ml-1 text-[10px] text-accent"></i>
+                        </p>
                         <p class="text-xs text-ink-muted truncate">
                             <i class="fas fa-location-dot mr-1"></i>{{ (i.cidades || [])[0] || 'Sem cidade' }}
                             <template v-if="(i.empreendimentos || []).length">
@@ -166,14 +152,13 @@ onMounted(() => store.fetchReport());
                         <p class="text-xs text-ink-subtle truncate">{{ fmtCnpj(i.cnpj) }}</p>
                     </div>
                     <div class="shrink-0 flex flex-col items-end gap-1.5">
-                        <span class="h-2 w-2 rounded-full" :class="i.ativo === 'S' ? 'bg-emerald-500' : 'bg-slate-400'"
-                            :title="i.ativo === 'S' ? 'Ativa' : 'Inativa'"></span>
+                        <span class="h-2 w-2 rounded-full" :class="i.ativo === 'S' ? 'bg-emerald-500' : 'bg-slate-400'"></span>
                         <i class="fas fa-chevron-right text-ink-subtle text-xs"></i>
                     </div>
                 </button>
             </div>
 
-            <!-- Desktop: tabela com linhas de altura fixa -->
+            <!-- Desktop: tabela com linhas fixas -->
             <div class="hidden md:block rounded-xl border border-line bg-surface-raised overflow-x-auto">
                 <table class="w-full text-sm table-fixed min-w-[960px]">
                     <thead>
@@ -198,23 +183,35 @@ onMounted(() => store.fetchReport());
                                         {{ initials(i) }}
                                     </div>
                                     <div class="min-w-0">
-                                        <p class="font-medium text-ink truncate">{{ i.nome }}</p>
+                                        <p class="font-medium text-ink truncate">
+                                            {{ i.nome }}
+                                            <i v-if="ORIGEM_ICON[i.origem]" :class="ORIGEM_ICON[i.origem].icon"
+                                                class="ml-1 text-[10px] text-accent" v-tippy="ORIGEM_ICON[i.origem].tip"></i>
+                                        </p>
                                         <p class="text-xs text-ink-muted truncate">{{ fmtCnpj(i.cnpj) }}</p>
                                     </div>
                                 </div>
                             </td>
-                            <td class="px-4">
-                                <p class="text-ink-muted truncate text-xs">
-                                    <i class="fas fa-envelope mr-1.5 text-ink-subtle"></i>{{ i.email || '-' }}
-                                </p>
-                                <p class="text-ink-muted truncate text-xs mt-0.5">
-                                    <i class="fas fa-phone mr-1.5 text-ink-subtle"></i>{{ i.telefone || i.celular || '-' }}
-                                </p>
+                            <td class="px-4" @click.stop>
+                                <a v-if="i.email" :href="mailtoUrl(i.email)"
+                                    class="block text-ink-muted truncate text-xs hover:text-accent" v-tippy="'Enviar e-mail'">
+                                    <i class="fas fa-envelope mr-1.5 text-ink-subtle"></i>{{ i.email }}
+                                </a>
+                                <p v-else class="text-ink-muted truncate text-xs"><i class="fas fa-envelope mr-1.5 text-ink-subtle"></i>-</p>
+                                <a v-if="i.telefone || i.celular" :href="whatsappUrl(i.telefone || i.celular)" target="_blank" rel="noopener"
+                                    class="block text-ink-muted truncate text-xs mt-0.5 hover:text-emerald-500" v-tippy="'Abrir no WhatsApp'">
+                                    <i class="fab fa-whatsapp mr-1.5 text-ink-subtle"></i>{{ i.telefone || i.celular }}
+                                </a>
+                                <p v-else class="text-ink-muted truncate text-xs mt-0.5"><i class="fas fa-phone mr-1.5 text-ink-subtle"></i>-</p>
                             </td>
-                            <td class="px-4">
-                                <p class="text-ink-muted truncate text-xs">
-                                    <i class="fas fa-user-tie mr-1.5 text-ink-subtle"></i>{{ i.gerente_nome || '-' }}
-                                </p>
+                            <td class="px-4" @click.stop>
+                                <button v-if="i.gerente_nome" type="button"
+                                    class="text-ink-muted truncate text-xs hover:text-accent max-w-full text-left"
+                                    v-tippy="'Ver dados do gerente'"
+                                    @click="gerenteId = i.idimobiliaria">
+                                    <i class="fas fa-user-tie mr-1.5 text-ink-subtle"></i>{{ i.gerente_nome }}
+                                </button>
+                                <p v-else class="text-ink-muted text-xs"><i class="fas fa-user-tie mr-1.5 text-ink-subtle"></i>-</p>
                             </td>
                             <td class="px-4">
                                 <p class="text-ink-muted truncate text-xs">
@@ -253,6 +250,7 @@ onMounted(() => store.fetchReport());
             </div>
         </template>
 
-        <ReportDetailModal :imobiliaria="selected" @close="selectedId = null" />
-    </PageContainer>
+        <ReportDetailModal :imobiliaria="selected" @close="selectedId = null" @gerente="(i) => { gerenteId = i.idimobiliaria; }" />
+        <GerenteModal :imobiliaria="gerenteDe" @close="gerenteId = null" />
+    </div>
 </template>
