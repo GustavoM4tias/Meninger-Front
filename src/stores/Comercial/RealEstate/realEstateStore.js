@@ -39,10 +39,10 @@ export const useRealEstateStore = defineStore('realEstate', () => {
         }
     }
 
-    async function createInvite({ label, enterprises: ents }) {
+    async function createInvite({ label, enterprises: ents, multi_use, starts_at, ends_at }) {
         const data = await requestWithAuth('/realestate/invites', {
             method: 'POST',
-            body: JSON.stringify({ label, enterprises: ents }),
+            body: JSON.stringify({ label, enterprises: ents, multi_use, starts_at, ends_at }),
         });
         await fetchRegistrations();
         return data.registration;

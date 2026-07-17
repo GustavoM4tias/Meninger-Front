@@ -25,7 +25,20 @@ const STATUS = {
     error:      { label: 'Erro',                     variant: 'danger' },
     revoked:    { label: 'Revogado',                 variant: 'neutral' },
 };
-const statusOf = (r) => STATUS[r.status] || { label: r.status, variant: 'neutral' };
+const WINDOW = {
+    not_started: { label: 'Agendado', variant: 'info' },
+    open:        { label: 'Ativo',     variant: 'success' },
+    expired:     { label: 'Encerrado', variant: 'neutral' },
+};
+// Convite multi-uso mostra o estado da janela; os demais, o status normal.
+const statusOf = (r) => {
+    if (r.status === 'revoked') return STATUS.revoked;
+    if (r.multi_use) return WINDOW[r.window_state] || STATUS.invite;
+    return STATUS[r.status] || { label: r.status, variant: 'neutral' };
+};
+
+// Link multi-uso ainda utilizável (dá para copiar/enviar).
+const isLiveMulti = (r) => r.multi_use && r.status !== 'revoked' && r.window_state !== 'expired';
 
 const rows = computed(() => store.registrations);
 
@@ -69,6 +82,13 @@ async function retry(r) {
 
 const displayName = (r) => r.form?.imobiliaria?.nome || r.label || `Cadastro #${r.id}`;
 const fmtDate = (d) => d ? new Date(d).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }) : '-';
+
+const originIcon = (r) => r.multi_use ? 'fas fa-link' : (r.source === 'public' ? 'fas fa-link' : 'fas fa-desktop');
+const originLabel = (r) => r.multi_use ? 'Link múltiplo' : (r.source === 'public' ? 'Via link' : 'Interno');
+// Resumo dos empreendimentos, ou contagem de cadastros num link múltiplo.
+const summaryText = (r) => r.multi_use
+    ? `${r.submissions_count || 0} cadastro(s) · ${(r.enterprises || []).length} empreend.`
+    : ((r.enterprises || []).map(e => e.nome).join(', ') || '-');
 </script>
 
 <template>
@@ -96,19 +116,18 @@ const fmtDate = (d) => d ? new Date(d).toLocaleDateString('pt-BR', { day: '2-dig
                         <div class="min-w-0">
                             <p class="font-medium text-ink truncate">{{ displayName(r) }}</p>
                             <p class="text-xs text-ink-muted">
-                                <i :class="r.source === 'public' ? 'fas fa-link' : 'fas fa-desktop'" class="mr-1"></i>
-                                {{ r.source === 'public' ? 'Via link' : 'Cadastro interno' }} · {{ fmtDate(r.createdAt) }}
+                                <i :class="originIcon(r)" class="mr-1"></i>
+                                {{ originLabel(r) }} · {{ fmtDate(r.createdAt) }}
                             </p>
                         </div>
                         <Badge :variant="statusOf(r).variant" size="sm">{{ statusOf(r).label }}</Badge>
                     </div>
                     <p class="text-xs text-ink-muted truncate">
-                        <i class="fas fa-building mr-1"></i>
-                        {{ (r.enterprises || []).map(e => e.nome).join(', ') || '-' }}
+                        <i class="fas fa-building mr-1"></i>{{ summaryText(r) }}
                     </p>
-                    <div v-if="r.status === 'invite' || r.status === 'error'" class="flex gap-2 pt-1" @click.stop>
-                        <Button v-if="r.status === 'invite'" variant="outline" size="sm" icon="fas fa-copy" @click="copyLink(r)">Copiar link</Button>
-                        <Button v-if="r.status === 'invite'" variant="ghost" size="sm" icon="fas fa-ban" @click="revoke(r)">Revogar</Button>
+                    <div v-if="isLiveMulti(r) || r.status === 'invite' || r.status === 'error'" class="flex gap-2 pt-1" @click.stop>
+                        <Button v-if="isLiveMulti(r) || r.status === 'invite'" variant="outline" size="sm" icon="fas fa-copy" @click="copyLink(r)">Copiar link</Button>
+                        <Button v-if="isLiveMulti(r) || r.status === 'invite'" variant="ghost" size="sm" icon="fas fa-ban" @click="revoke(r)">Revogar</Button>
                         <Button v-if="r.status === 'error'" variant="outline" size="sm" icon="fas fa-rotate-right" :loading="retrying === r.id" @click="retry(r)">Reprocessar</Button>
                     </div>
                 </div>
@@ -136,19 +155,16 @@ const fmtDate = (d) => d ? new Date(d).toLocaleDateString('pt-BR', { day: '2-dig
                         >
                             <td class="px-4 font-medium text-ink truncate max-w-[240px]">{{ displayName(r) }}</td>
                             <td class="px-4 text-ink-muted whitespace-nowrap">
-                                <i :class="r.source === 'public' ? 'fas fa-link' : 'fas fa-desktop'" class="mr-1.5 text-ink-subtle"></i>
-                                {{ r.source === 'public' ? 'Via link' : 'Interno' }}
+                                <i :class="originIcon(r)" class="mr-1.5 text-ink-subtle"></i>{{ originLabel(r) }}
                             </td>
-                            <td class="px-4 text-ink-muted max-w-[280px] truncate">
-                                {{ (r.enterprises || []).map(e => e.nome).join(', ') || '-' }}
-                            </td>
+                            <td class="px-4 text-ink-muted max-w-[280px] truncate">{{ summaryText(r) }}</td>
                             <td class="px-4"><Badge :variant="statusOf(r).variant" size="sm">{{ statusOf(r).label }}</Badge></td>
                             <td class="px-4 text-ink-muted truncate max-w-[140px]">{{ r.creator_name || '-' }}</td>
                             <td class="px-4 text-ink-muted whitespace-nowrap">{{ fmtDate(r.createdAt) }}</td>
                             <td class="px-4" @click.stop>
                                 <div class="flex justify-end gap-1.5">
-                                    <Button v-if="r.status === 'invite'" variant="ghost" size="sm" icon="fas fa-copy" @click="copyLink(r)" v-tippy="'Copiar link'" />
-                                    <Button v-if="r.status === 'invite'" variant="ghost" size="sm" icon="fas fa-ban" @click="revoke(r)" v-tippy="'Revogar link'" />
+                                    <Button v-if="isLiveMulti(r) || r.status === 'invite'" variant="ghost" size="sm" icon="fas fa-copy" @click="copyLink(r)" v-tippy="'Copiar link'" />
+                                    <Button v-if="isLiveMulti(r) || r.status === 'invite'" variant="ghost" size="sm" icon="fas fa-ban" @click="revoke(r)" v-tippy="'Revogar link'" />
                                     <Button v-if="r.status === 'error'" variant="ghost" size="sm" icon="fas fa-rotate-right" :loading="retrying === r.id" @click="retry(r)" v-tippy="'Reprocessar'" />
                                     <Button variant="ghost" size="sm" icon="fas fa-eye" @click="detailId = r.id" v-tippy="'Detalhes'" />
                                 </div>

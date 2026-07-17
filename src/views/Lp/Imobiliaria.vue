@@ -2,7 +2,8 @@
 // Página pública de cadastro de imobiliária — lp.menin.com.br/imobiliaria/<token>.
 // O responsável recebe o link de um usuário do Office, envia o cartão CNPJ
 // (preenchimento automático) e completa o formulário; o cadastro roda no CV
-// automaticamente. Token de uso único gerado na tela de Imobiliárias do Office.
+// automaticamente. O link pode ser de uso único (padrão) ou reutilizável
+// (aceita vários cadastros dentro de uma janela; cada CNPJ só uma vez).
 
 import { onMounted, ref, computed } from 'vue';
 import { useRoute } from 'vue-router';
@@ -14,6 +15,7 @@ const token = computed(() => String(route.params.token || ''));
 
 const loading = ref(true);
 const invalid = ref(false);
+const invalidMessage = ref('');
 const invite = ref(null);
 
 const submitting = ref(false);
@@ -21,8 +23,14 @@ const serverError = ref('');
 const finished = ref(false);
 const finishedMessage = ref('');
 const honeypot = ref('');
+const formKey = ref(0);   // remonta o RealEstateForm ao cadastrar outra
 
 const BASE = computed(() => `${API_URL}/realestate/public/invite/${encodeURIComponent(token.value)}`);
+
+const isMulti = computed(() => !!invite.value?.multi_use);
+const windowState = computed(() => invite.value?.window_state || 'open');
+
+const fmtDate = (d) => d ? new Date(`${d}T00:00:00`).toLocaleDateString('pt-BR') : '';
 
 async function load() {
     loading.value = true;
@@ -74,6 +82,15 @@ async function onSubmit(form) {
     }
 }
 
+// Multi-uso: volta ao formulário limpo para cadastrar outra imobiliária.
+function cadastrarOutra() {
+    finished.value = false;
+    finishedMessage.value = '';
+    serverError.value = '';
+    formKey.value++;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
 onMounted(() => {
     // Página pública com card branco: força o tema claro para os tokens do
     // design system usados no formulário (o main.js pode ter aplicado .dark
@@ -107,11 +124,35 @@ onMounted(() => {
                     </p>
                 </div>
 
+                <!-- Multi-uso fora da janela -->
+                <div v-else-if="isMulti && windowState !== 'open'" class="py-14 text-center">
+                    <i class="fas fa-calendar-xmark text-3xl text-slate-400"></i>
+                    <h1 class="mt-4 text-lg font-semibold text-slate-800">
+                        {{ windowState === 'not_started' ? 'Cadastro ainda não liberado' : 'Período encerrado' }}
+                    </h1>
+                    <p class="mt-1 text-sm text-slate-500">
+                        <template v-if="windowState === 'not_started'">
+                            Este cadastro abre em {{ fmtDate(invite.starts_at) }}. Volte a partir dessa data.
+                        </template>
+                        <template v-else>
+                            O período para cadastro por este link foi encerrado em {{ fmtDate(invite.ends_at) }}.
+                        </template>
+                    </p>
+                </div>
+
                 <!-- Concluído / já utilizado -->
                 <div v-else-if="finished" class="py-14 text-center">
                     <i class="fas fa-circle-check text-4xl text-emerald-500"></i>
                     <h1 class="mt-4 text-lg font-semibold text-slate-800">Tudo certo!</h1>
                     <p class="mt-1 text-sm text-slate-500">{{ finishedMessage }}</p>
+                    <button
+                        v-if="isMulti"
+                        type="button"
+                        class="mt-5 inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-slate-800"
+                        @click="cadastrarOutra"
+                    >
+                        <i class="fas fa-plus"></i>Cadastrar outra imobiliária
+                    </button>
                 </div>
 
                 <!-- Formulário -->
@@ -121,6 +162,9 @@ onMounted(() => {
                         <p class="mt-1 text-sm text-slate-500">
                             <template v-if="invite?.label">Convite: {{ invite.label }}. </template>
                             Preencha os dados abaixo para cadastrar a imobiliária e o gerente responsável.
+                        </p>
+                        <p v-if="isMulti && invite?.ends_at" class="mt-1 text-xs text-slate-400">
+                            <i class="fas fa-clock mr-1"></i>Link disponível até {{ fmtDate(invite.ends_at) }}.
                         </p>
                         <div v-if="invite?.enterprises?.length" class="mt-3 flex flex-wrap gap-1.5">
                             <span
@@ -136,6 +180,7 @@ onMounted(() => {
                     <input v-model="honeypot" type="text" name="website" tabindex="-1" autocomplete="off" class="hidden" aria-hidden="true" />
 
                     <RealEstateForm
+                        :key="formKey"
                         :parse-card="parseCard"
                         :submitting="submitting"
                         :server-error="serverError"
