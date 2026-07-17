@@ -24,7 +24,7 @@ const celular = computed(() => i.value?.gerente_celular || i.value?.gerente_tele
 </script>
 
 <template>
-    <Modal :open="!!i" size="sm" @close="emit('close')">
+    <Modal :open="!!i" size="sm" :z-index="10050" @close="emit('close')">
         <template #header>
             <div class="flex items-center gap-3 min-w-0">
                 <div class="h-11 w-11 shrink-0 rounded-full bg-accent-soft text-accent flex items-center justify-center font-semibold">

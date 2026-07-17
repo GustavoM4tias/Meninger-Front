@@ -10,6 +10,9 @@ const props = defineProps({
   closeOnBackdrop: { type: Boolean, default: true },
   hideClose: { type: Boolean, default: false },
   scrollable: { type: Boolean, default: true },
+  // Sobreposição de modais (ex.: cartão do gerente sobre o detalhe da
+  // imobiliária): passe um valor maior que 9999 no modal de cima.
+  zIndex: { type: Number, default: 9999 },
 });
 
 const emit = defineEmits(['close', 'update:open']);
@@ -37,10 +40,10 @@ const wrapperClass = computed(() => {
 
 const panelClass = computed(() => {
   if (props.position === 'right') {
-    return 'h-screen rounded-none sm:rounded-l-2xl border-l shadow-overlay';
+    return 'h-screen rounded-none border-l shadow-overlay';
   }
   if (props.position === 'left') {
-    return 'h-screen rounded-none sm:rounded-r-2xl border-r shadow-overlay';
+    return 'h-screen rounded-none border-r shadow-overlay';
   }
   return 'rounded-2xl border shadow-overlay max-h-[92vh]';
 });
@@ -103,7 +106,8 @@ onBeforeUnmount(() => {
     >
       <div
         v-if="open"
-        :class="['fixed inset-0 z-[9999] flex', wrapperClass]"
+        :class="['fixed inset-0 flex', wrapperClass]"
+        :style="{ zIndex }"
         @mousedown="onBackdrop"
       >
         <div class="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"></div>
