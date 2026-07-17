@@ -78,7 +78,17 @@ const openBuildingModal = async (building) => {
   await buildingStore.fetchBuildingById(building.idempreendimento);
   selectedBuilding.value = buildingStore.selectedBuilding;
 };
-const closeBuildingModal = () => { selectedBuilding.value = null; };
+const closeBuildingModal = () => {
+  selectedBuilding.value = null;
+  if (route.query.open) router.replace({ query: { ...route.query, open: undefined } });
+};
+
+// Deep-link: /comercial/buildings?open=<idempreendimento> abre o modal do
+// empreendimento direto (usado pelo relatório de imobiliárias, entre outros).
+watch(() => route.query.open, (id) => {
+  const num = Number(id);
+  if (Number.isFinite(num) && num > 0) openBuildingModal({ idempreendimento: num });
+}, { immediate: true });
 
 // ── Render decisions ───────────────────────────────────────
 const visibleSections = computed(() => {
