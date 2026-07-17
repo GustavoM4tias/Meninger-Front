@@ -64,6 +64,9 @@ const fmtCnpj = (c) => {
 };
 const fmtDate = (d) => d ? new Date(d).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }) : '-';
 
+// Ficha da imobiliária no painel gestor do CV.
+const cvUrl = (i) => `https://menin.cvcrm.com.br/gestor/cadastros/imobiliarias/${i.idimobiliaria}/editar`;
+
 async function syncNow() {
     try {
         await store.syncImobiliarias();
@@ -137,7 +140,14 @@ onMounted(() => store.fetchReport());
                             <p class="font-medium text-ink truncate">{{ i.nome }}</p>
                             <p class="text-xs text-ink-muted">{{ fmtCnpj(i.cnpj) }} · CRECI {{ i.creci || '-' }}</p>
                         </div>
-                        <Badge :variant="i.ativo === 'S' ? 'success' : 'neutral'" size="sm">{{ i.ativo === 'S' ? 'Ativa' : 'Inativa' }}</Badge>
+                        <div class="flex items-center gap-1.5 shrink-0">
+                            <Badge :variant="i.ativo === 'S' ? 'success' : 'neutral'" size="sm">{{ i.ativo === 'S' ? 'Ativa' : 'Inativa' }}</Badge>
+                            <a :href="cvUrl(i)" target="_blank" rel="noopener"
+                                class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-line text-ink-muted hover:text-accent hover:border-accent/60"
+                                title="Abrir no CV">
+                                <i class="fas fa-arrow-up-right-from-square text-xs"></i>
+                            </a>
+                        </div>
                     </div>
                     <p class="text-xs text-ink-muted truncate">
                         <i class="fas fa-location-dot mr-1"></i>{{ (i.cidades || []).join(', ') || '-' }}
@@ -202,7 +212,14 @@ onMounted(() => store.fetchReport());
                                 </div>
                             </td>
                             <td class="px-4 py-3">
-                                <Badge :variant="i.ativo === 'S' ? 'success' : 'neutral'" size="sm">{{ i.ativo === 'S' ? 'Ativa' : 'Inativa' }}</Badge>
+                                <div class="flex items-center gap-2">
+                                    <Badge :variant="i.ativo === 'S' ? 'success' : 'neutral'" size="sm">{{ i.ativo === 'S' ? 'Ativa' : 'Inativa' }}</Badge>
+                                    <a :href="cvUrl(i)" target="_blank" rel="noopener"
+                                        class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-line text-ink-muted hover:text-accent hover:border-accent/60"
+                                        title="Abrir no CV">
+                                        <i class="fas fa-arrow-up-right-from-square text-xs"></i>
+                                    </a>
+                                </div>
                             </td>
                         </tr>
                     </tbody>
