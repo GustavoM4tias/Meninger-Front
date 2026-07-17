@@ -71,6 +71,30 @@ export const useRealEstateStore = defineStore('realEstate', () => {
         }
     }
 
+    // ── Relatório (backup cv_imobiliarias) ───────────────────────────────────
+    const report = ref({ imobiliarias: [], total: 0, last_sync: null });
+    const loadingReport = ref(false);
+    const syncing = ref(false);
+
+    async function fetchReport() {
+        loadingReport.value = true;
+        try {
+            report.value = await requestWithAuth('/realestate/report');
+        } finally {
+            loadingReport.value = false;
+        }
+    }
+
+    async function syncImobiliarias() {
+        syncing.value = true;
+        try {
+            await requestWithAuth('/realestate/sync', { method: 'POST' });
+            await fetchReport();
+        } finally {
+            syncing.value = false;
+        }
+    }
+
     async function parseCnpjCard(file) {
         const form = new FormData();
         form.append('file', file);
@@ -86,8 +110,13 @@ export const useRealEstateStore = defineStore('realEstate', () => {
         enterprises,
         loading,
         loadingEnterprises,
+        report,
+        loadingReport,
+        syncing,
         fetchRegistrations,
         fetchEnterprises,
+        fetchReport,
+        syncImobiliarias,
         createInvite,
         revokeInvite,
         createRegistration,

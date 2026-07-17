@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted, nextTick, watch, computed } from 'vue';
 import { updateEvent } from '@/utils/Event/apiEvents';
+import { useEventStore } from '@/stores/Marketing/Event/eventStore';
 import { usePersistedRef, clearPersisted } from '@/utils/usePersistedRef';
 
 import Modal from '@/components/UI/Modal.vue';
@@ -94,6 +95,9 @@ async function submit() {
     }
 
     await updateEvent(payload);
+    // Recarrega a store antes de fechar: o EventModal (pai) continua aberto
+    // e precisa exibir o evento já atualizado, sem esperar o close geral.
+    await useEventStore().fetchEvents();
     clearPersisted(persistKey.value);
     emit('close');
   } catch {

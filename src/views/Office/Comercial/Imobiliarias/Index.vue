@@ -27,7 +27,12 @@ const toast = useToast();
 
 const inviteOpen = ref(false);
 const createOpen = ref(false);
-const detail = ref(null);
+
+// O detalhe referencia o registro PELO ID e resolve contra a lista da store:
+// qualquer refetch (reprocessar, revogar) atualiza o modal em tempo real —
+// guardar o objeto direto congelaria um snapshot antigo.
+const detailId = ref(null);
+const detail = computed(() => rows.value.find(x => x.id === detailId.value) || null);
 
 const STATUS = {
     invite:     { label: 'Aguardando preenchimento', variant: 'info' },
@@ -129,7 +134,7 @@ onMounted(() => {
                 <div
                     v-for="r in rows" :key="r.id"
                     class="rounded-xl border border-line bg-surface-raised p-4 space-y-2"
-                    @click="detail = r"
+                    @click="detailId = r.id"
                 >
                     <div class="flex items-start justify-between gap-2">
                         <div class="min-w-0">
@@ -170,7 +175,7 @@ onMounted(() => {
                         <tr
                             v-for="r in rows" :key="r.id"
                             class="border-b border-line-subtle last:border-0 hover:bg-surface-sunken/60 cursor-pointer"
-                            @click="detail = r"
+                            @click="detailId = r.id"
                         >
                             <td class="px-4 py-3 font-medium text-ink">{{ displayName(r) }}</td>
                             <td class="px-4 py-3 text-ink-muted">{{ r.source === 'public' ? 'Via link' : 'Interno' }}</td>
@@ -185,7 +190,7 @@ onMounted(() => {
                                     <Button v-if="r.status === 'invite'" variant="ghost" size="sm" icon="fas fa-copy" @click="copyLink(r)" title="Copiar link" />
                                     <Button v-if="r.status === 'invite'" variant="ghost" size="sm" icon="fas fa-ban" @click="revoke(r)" title="Revogar link" />
                                     <Button v-if="r.status === 'error'" variant="ghost" size="sm" icon="fas fa-rotate-right" :loading="retrying === r.id" @click="retry(r)" title="Reprocessar" />
-                                    <Button variant="ghost" size="sm" icon="fas fa-eye" @click="detail = r" title="Detalhes" />
+                                    <Button variant="ghost" size="sm" icon="fas fa-eye" @click="detailId = r.id" title="Detalhes" />
                                 </div>
                             </td>
                         </tr>
@@ -196,6 +201,6 @@ onMounted(() => {
 
         <InviteModal :open="inviteOpen" @close="inviteOpen = false" />
         <CreateModal :open="createOpen" @close="createOpen = false" />
-        <DetailModal :registration="detail" :retrying="retrying === detail?.id" @close="detail = null" @retry="retry" @copy="copyLink" />
+        <DetailModal :registration="detail" :retrying="retrying === detail?.id" @close="detailId = null" @retry="retry" @copy="copyLink" />
     </PageContainer>
 </template>

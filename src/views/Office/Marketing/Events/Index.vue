@@ -23,7 +23,12 @@ const router = useRouter();
 const eventStore = useEventStore();
 
 const search = ref('');
-const selectedEvent = ref(null);
+// Resolve o evento aberto PELO ID contra a store: quando a lista é
+// recarregada (ex.: após editar), o modal reflete o dado novo em vez de
+// congelar o snapshot antigo.
+const selectedEventId = ref(null);
+const selectedEvent = computed(() =>
+  eventStore.events.find(e => e.id === selectedEventId.value) || null);
 const addEvent = ref(false);
 const showReport = ref(false);
 let searchTimer = null;
@@ -80,8 +85,8 @@ function changeSection(value) {
 }
 
 // ─── Modal handlers ──────────────────────────────────
-function openEventModal(event) { selectedEvent.value = event; }
-function closeEventModal() { selectedEvent.value = null; eventStore.fetchEvents(); }
+function openEventModal(event) { selectedEventId.value = event.id; }
+function closeEventModal() { selectedEventId.value = null; eventStore.fetchEvents(); }
 function closeAddEventModal() { addEvent.value = false; eventStore.fetchEvents(); }
 
 // ─── Init ────────────────────────────────────────────
