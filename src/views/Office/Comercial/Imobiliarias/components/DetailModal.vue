@@ -16,11 +16,11 @@ const emit = defineEmits(['close', 'retry', 'copy']);
 const r = computed(() => props.registration);
 
 const STATUS = {
-    invite:     { label: 'Aguardando preenchimento', variant: 'info' },
-    processing: { label: 'Processando',              variant: 'warning' },
-    completed:  { label: 'Concluída',                variant: 'success' },
-    error:      { label: 'Erro',                     variant: 'danger' },
-    revoked:    { label: 'Revogado',                 variant: 'neutral' },
+    invite: { label: 'Aguardando preenchimento', variant: 'info' },
+    processing: { label: 'Processando', variant: 'warning' },
+    completed: { label: 'Concluída', variant: 'success' },
+    error: { label: 'Erro', variant: 'danger' },
+    revoked: { label: 'Revogado', variant: 'neutral' },
 };
 const status = computed(() => STATUS[r.value?.status] || { label: r.value?.status, variant: 'neutral' });
 
@@ -39,7 +39,7 @@ const assocList = computed(() => {
 
 const stepIcon = (ok, tried = true) => !tried ? 'fas fa-minus text-ink-subtle'
     : ok ? 'fas fa-circle-check text-emerald-500'
-    : 'fas fa-circle-xmark text-red-500';
+        : 'fas fa-circle-xmark text-red-500';
 
 // Link direto para a ficha da imobiliária no painel gestor do CV.
 const cvUrl = computed(() => r.value?.result?.idimobiliaria_cv
@@ -50,22 +50,21 @@ const fmt = (v) => v || '-';
 </script>
 
 <template>
-    <Modal
-        :open="!!r"
-        :title="imob?.nome || r?.label || `Cadastro #${r?.id}`"
-        size="md"
-        position="right"
-        scrollable
-        @close="emit('close')"
-    >
+    <Modal :open="!!r" :title="imob?.nome || r?.label || `Cadastro #${r?.id}`" size="md" position="right" scrollable
+        @close="emit('close')">
         <div v-if="r" class="space-y-6">
             <div class="flex flex-wrap items-center gap-2">
                 <Badge :variant="status.variant">{{ status.label }}</Badge>
                 <Badge variant="neutral" outlined>{{ r.source === 'public' ? 'Via link' : 'Interno' }}</Badge>
-                <Badge v-if="r.result?.idimobiliaria_cv" variant="accent" outlined>CV #{{ r.result.idimobiliaria_cv }}</Badge>
+                <a v-if="cvUrl" :href="cvUrl" target="_blank" rel="noopener"
+                    v-tippy="`CV #${r.result.idimobiliaria_cv}`">
+                    <Button class="text-xs py-[4px] px-[8px]" variant="outline"
+                        icon="fas fa-arrow-up-right-from-square">Abrir no CV</Button>
+                </a>
             </div>
 
-            <p v-if="r.error" class="rounded-lg border border-red-300 dark:border-red-800 bg-red-50 dark:bg-red-950/40 p-3 text-sm text-red-700 dark:text-red-300">
+            <p v-if="r.error"
+                class="rounded-lg border border-red-300 dark:border-red-800 bg-red-50 dark:bg-red-950/40 p-3 text-sm text-red-700 dark:text-red-300">
                 {{ r.error }}
             </p>
 
@@ -73,7 +72,8 @@ const fmt = (v) => v || '-';
             <div v-if="r.status === 'invite' && r.token" class="space-y-2">
                 <h4 class="text-xs font-semibold uppercase tracking-wide text-ink-muted">Link público</h4>
                 <div class="flex items-center gap-2 rounded-lg border border-line bg-surface-sunken p-2">
-                    <code class="flex-1 text-xs text-ink-muted break-all">https://lp.menin.com.br/imobiliaria/{{ r.token }}</code>
+                    <code
+                        class="flex-1 text-xs text-ink-muted break-all">https://lp.menin.com.br/imobiliaria/{{ r.token }}</code>
                     <Button variant="outline" size="sm" icon="fas fa-copy" @click="emit('copy', r)">Copiar</Button>
                 </div>
             </div>
@@ -108,47 +108,93 @@ const fmt = (v) => v || '-';
             <div v-if="imob">
                 <h4 class="text-xs font-semibold uppercase tracking-wide text-ink-muted mb-2">Imobiliária</h4>
                 <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
-                    <div><dt class="text-ink-muted text-xs">Nome</dt><dd class="text-ink">{{ fmt(imob.nome) }}</dd></div>
-                    <div><dt class="text-ink-muted text-xs">Sigla</dt><dd class="text-ink">{{ fmt(imob.sigla) }}</dd></div>
-                    <div class="sm:col-span-2"><dt class="text-ink-muted text-xs">Razão social</dt><dd class="text-ink">{{ fmt(imob.razao_social) }}</dd></div>
-                    <div><dt class="text-ink-muted text-xs">CNPJ</dt><dd class="text-ink">{{ fmt(imob.cnpj) }}</dd></div>
-                    <div><dt class="text-ink-muted text-xs">CRECI</dt><dd class="text-ink">{{ fmt(imob.creci) }} <span v-if="imob.validade_creci" class="text-ink-muted">(val. {{ imob.validade_creci }})</span></dd></div>
-                    <div><dt class="text-ink-muted text-xs">E-mail</dt><dd class="text-ink break-all">{{ fmt(imob.email) }}</dd></div>
-                    <div><dt class="text-ink-muted text-xs">Telefone</dt><dd class="text-ink">{{ fmt(imob.telefone) }}</dd></div>
+                    <div>
+                        <dt class="text-ink-muted text-xs">Nome</dt>
+                        <dd class="text-ink">{{ fmt(imob.nome) }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-ink-muted text-xs">Sigla</dt>
+                        <dd class="text-ink">{{ fmt(imob.sigla) }}</dd>
+                    </div>
+                    <div class="sm:col-span-2">
+                        <dt class="text-ink-muted text-xs">Razão social</dt>
+                        <dd class="text-ink">{{ fmt(imob.razao_social) }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-ink-muted text-xs">CNPJ</dt>
+                        <dd class="text-ink">{{ fmt(imob.cnpj) }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-ink-muted text-xs">CRECI</dt>
+                        <dd class="text-ink">{{ fmt(imob.creci) }} <span v-if="imob.validade_creci"
+                                class="text-ink-muted">(val. {{ imob.validade_creci }})</span></dd>
+                    </div>
+                    <div>
+                        <dt class="text-ink-muted text-xs">E-mail</dt>
+                        <dd class="text-ink break-all">{{ fmt(imob.email) }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-ink-muted text-xs">Telefone</dt>
+                        <dd class="text-ink">{{ fmt(imob.telefone) }}</dd>
+                    </div>
                     <div class="sm:col-span-2">
                         <dt class="text-ink-muted text-xs">Endereço</dt>
-                        <dd class="text-ink">{{ [imob.logradouro, imob.numero, imob.complemento, imob.bairro, imob.cidade, imob.estado].filter(Boolean).join(', ') || '-' }}</dd>
+                        <dd class="text-ink">{{ [imob.logradouro, imob.numero, imob.complemento, imob.bairro,
+                        imob.cidade, imob.estado].filter(Boolean).join(', ') || '-' }}</dd>
                     </div>
-                    <div><dt class="text-ink-muted text-xs">Microempresa</dt><dd class="text-ink">{{ imob.micro_empresa === 'S' ? 'Sim' : 'Não' }}</dd></div>
-                    <div><dt class="text-ink-muted text-xs">Escala de plantão</dt><dd class="text-ink">{{ imob.escala_plantao === 'N' ? 'Não' : 'Sim' }}</dd></div>
+                    <div>
+                        <dt class="text-ink-muted text-xs">Microempresa</dt>
+                        <dd class="text-ink">{{ imob.micro_empresa === 'S' ? 'Sim' : 'Não' }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-ink-muted text-xs">Escala de plantão</dt>
+                        <dd class="text-ink">{{ imob.escala_plantao === 'N' ? 'Não' : 'Sim' }}</dd>
+                    </div>
                 </dl>
             </div>
 
             <div v-if="ger">
                 <h4 class="text-xs font-semibold uppercase tracking-wide text-ink-muted mb-2">Gerente</h4>
                 <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
-                    <div class="sm:col-span-2"><dt class="text-ink-muted text-xs">Nome</dt><dd class="text-ink">{{ fmt(ger.nome) }}</dd></div>
-                    <div><dt class="text-ink-muted text-xs">CPF</dt><dd class="text-ink">{{ fmt(ger.documento) }}</dd></div>
-                    <div><dt class="text-ink-muted text-xs">Nascimento</dt><dd class="text-ink">{{ fmt(ger.data_nasc) }}</dd></div>
-                    <div><dt class="text-ink-muted text-xs">E-mail</dt><dd class="text-ink break-all">{{ fmt(ger.email) }}</dd></div>
-                    <div><dt class="text-ink-muted text-xs">Celular</dt><dd class="text-ink">{{ fmt(ger.celular) }}</dd></div>
-                    <div><dt class="text-ink-muted text-xs">CRECI</dt><dd class="text-ink">{{ fmt(ger.creci) }}</dd></div>
+                    <div class="sm:col-span-2">
+                        <dt class="text-ink-muted text-xs">Nome</dt>
+                        <dd class="text-ink">{{ fmt(ger.nome) }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-ink-muted text-xs">CPF</dt>
+                        <dd class="text-ink">{{ fmt(ger.documento) }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-ink-muted text-xs">Nascimento</dt>
+                        <dd class="text-ink">{{ fmt(ger.data_nasc) }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-ink-muted text-xs">E-mail</dt>
+                        <dd class="text-ink break-all">{{ fmt(ger.email) }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-ink-muted text-xs">Celular</dt>
+                        <dd class="text-ink">{{ fmt(ger.celular) }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-ink-muted text-xs">CRECI</dt>
+                        <dd class="text-ink">{{ fmt(ger.creci) }}</dd>
+                    </div>
                 </dl>
             </div>
 
             <p class="text-xs text-ink-subtle">
                 Criado por {{ r.creator_name || '-' }}
-                <template v-if="r.submitted_at"> · preenchido em {{ new Date(r.submitted_at).toLocaleString('pt-BR') }}</template>
+                <template v-if="r.submitted_at"> · preenchido em {{ new Date(r.submitted_at).toLocaleString('pt-BR')
+                    }}</template>
             </p>
         </div>
 
         <template #footer>
             <div class="flex flex-wrap justify-end gap-2">
-                <a v-if="cvUrl" :href="cvUrl" target="_blank" rel="noopener">
-                    <Button variant="outline" icon="fas fa-arrow-up-right-from-square">Abrir no CV</Button>
-                </a>
                 <Button variant="ghost" @click="emit('close')">Fechar</Button>
-                <Button v-if="r?.status === 'error'" variant="primary" icon="fas fa-rotate-right" :loading="retrying" @click="emit('retry', r)">
+                <Button v-if="r?.status === 'error'" variant="primary" icon="fas fa-rotate-right" :loading="retrying"
+                    @click="emit('retry', r)">
                     Reprocessar
                 </Button>
             </div>
