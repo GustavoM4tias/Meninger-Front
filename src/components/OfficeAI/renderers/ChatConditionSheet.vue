@@ -99,12 +99,29 @@ function openFicha() {
   }))
 }
 
-const sugestoes = computed(() => [
-  { id: 'campanhas',  icon: 'fas fa-bullhorn',          label: 'Campanhas',  prompt: `Quais campanhas estão valendo na ficha do ${nome.value}?` },
-  { id: 'custos',     icon: 'fas fa-hand-holding-usd',  label: 'Custos',     prompt: `Quais os custos Menin e Cliente na ficha do ${nome.value}?` },
-  { id: 'negociacao', icon: 'fas fa-handshake',         label: 'Negociação', prompt: `Quais as regras de negociação (entrada, parcelas, correção) da ficha do ${nome.value}?` },
-  { id: 'mudancas',   icon: 'fas fa-code-compare',      label: 'O que mudou?', prompt: `Compare a ficha do ${nome.value} com o mês anterior: o que mudou?` },
+// Pool de sugestões por tema. O backend ecoa em context.foco o tema que o
+// usuário acabou de perguntar — esse sai da lista e entram as próximas do pool.
+const foco = computed(() => props.action.context?.foco || 'geral')
+
+const POOL = computed(() => [
+  { id: 'campanhas',    icon: 'fas fa-bullhorn',         label: 'Campanhas',        prompt: `Quais campanhas estão valendo na ficha do ${nome.value}?` },
+  { id: 'custos',       icon: 'fas fa-hand-holding-usd', label: 'Custos',           prompt: `Quais os custos Menin e Cliente na ficha do ${nome.value}?` },
+  { id: 'negociacao',   icon: 'fas fa-handshake',        label: 'Negociação',       prompt: `Quais as regras de negociação (entrada, parcelas, correção) da ficha do ${nome.value}?` },
+  { id: 'comissao',     icon: 'fas fa-percent',          label: 'Comissão',         prompt: `Qual a comissão na ficha do ${nome.value}?` },
+  { id: 'precos',       icon: 'fas fa-table-list',       label: 'Tabelas de preço', prompt: `Quais tabelas de preço estão valendo na ficha do ${nome.value}?` },
+  { id: 'documentacao', icon: 'fas fa-file-signature',   label: 'ITBI & Docs',      prompt: `Como ficam ITBI, cartório e pacote CEF na ficha do ${nome.value}? Quem paga cada um?` },
+  { id: 'prazo',        icon: 'fas fa-clock',            label: 'Prazo',            prompt: `Qual o prazo de entrega na ficha do ${nome.value}?` },
 ])
+
+const sugestoes = computed(() => {
+  const list = POOL.value.filter(s => s.id !== foco.value).slice(0, 3)
+  list.push({ id: 'mudancas', icon: 'fas fa-code-compare', label: 'O que mudou?', prompt: `Compare a ficha do ${nome.value} com o mês anterior: o que mudou?` })
+  // Evolução só faz sentido com 3+ meses de histórico na série
+  if ((props.action.meses_disponiveis || '').split(',').length >= 3) {
+    list.push({ id: 'evolucao', icon: 'fas fa-chart-line', label: 'Evolução', prompt: `Mostre a evolução da ficha do ${nome.value} desde o início: o que mudou?` })
+  }
+  return list
+})
 
 function send(prompt) {
   if (aiStore.isStreaming) return
