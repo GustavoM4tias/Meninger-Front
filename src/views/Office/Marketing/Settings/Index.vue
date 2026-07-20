@@ -1,6 +1,7 @@
 <script setup>
 import { onMounted, ref, computed } from 'vue';
 import { useMarketingSettingsStore } from '@/stores/Marketing/Settings/marketingSettingsStore';
+import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 import PageContainer from '@/components/UI/PageContainer.vue';
 import PageHeader from '@/components/UI/PageHeader.vue';
 import Surface from '@/components/UI/Surface.vue';
@@ -8,6 +9,7 @@ import Button from '@/components/UI/Button.vue';
 import Input from '@/components/UI/Input.vue';
 
 const store = useMarketingSettingsStore();
+const authStore = useAuthStore();
 const tab = ref('geral');
 
 // Buffer de edição separado da config persistida — usuário edita sem afetar
@@ -17,6 +19,7 @@ const draft = ref({
     retry_max_attempts: 6,
     form_rate_limit_per_min: 10,
     cv_leads_endpoint: '/v1/comercial/leads',
+    alert_recipient_user_ids: [],
     meta_app_id: '',
     meta_graph_api_version: 'v21.0',
     meta_app_secret: '',
@@ -33,6 +36,7 @@ function resetDraft() {
         retry_max_attempts: c.retry_max_attempts ?? 6,
         form_rate_limit_per_min: c.form_rate_limit_per_min ?? 10,
         cv_leads_endpoint: c.cv_leads_endpoint || '/v1/comercial/leads',
+        alert_recipient_user_ids: Array.isArray(c.alert_recipient_user_ids) ? [...c.alert_recipient_user_ids] : [],
         meta_app_id: c.meta_app_id || '',
         meta_graph_api_version: c.meta_graph_api_version || 'v21.0',
         meta_app_secret: '',
@@ -45,11 +49,44 @@ function resetDraft() {
 onMounted(async () => {
     await store.fetchConfig();
     resetDraft();
+    // Lista de usuários pro seletor de destinatários (não bloqueia a tela).
+    authStore.getAllUsers().catch(() => {});
 });
 
 const cfg = computed(() => store.config || {});
 
 const META_GRAPH_VERSIONS = ['v25.0', 'v24.0', 'v23.0', 'v22.0', 'v21.0', 'v20.0'];
+
+// ── Destinatários dos alertas ────────────────────────────────────────────────
+const allUsers = computed(() =>
+    (authStore.users || [])
+        .filter(u => u.status !== false)
+        .sort((a, b) => String(a.username || '').localeCompare(String(b.username || ''), 'pt-BR')));
+
+const selectedRecipients = computed(() =>
+    draft.value.alert_recipient_user_ids.map(id => {
+        const u = allUsers.value.find(x => Number(x.id) === Number(id));
+        return { id, label: u ? (u.username || u.email) : `Usuário #${id}` };
+    }));
+
+const availableRecipients = computed(() =>
+    allUsers.value.filter(u => !draft.value.alert_recipient_user_ids.some(id => Number(id) === Number(u.id))));
+
+const recipientToAdd = ref('');
+
+function addRecipient() {
+    const id = Number(recipientToAdd.value);
+    if (!id) return;
+    if (!draft.value.alert_recipient_user_ids.some(x => Number(x) === id)) {
+        draft.value.alert_recipient_user_ids.push(id);
+    }
+    recipientToAdd.value = '';
+}
+
+function removeRecipient(id) {
+    draft.value.alert_recipient_user_ids = draft.value.alert_recipient_user_ids
+        .filter(x => Number(x) !== Number(id));
+}
 
 async function save() {
     // Só envia secrets que o usuário digitou (vazios são preservados pelo backend).
@@ -58,6 +95,7 @@ async function save() {
         retry_max_attempts: Number(draft.value.retry_max_attempts) || 6,
         form_rate_limit_per_min: Number(draft.value.form_rate_limit_per_min) || 10,
         cv_leads_endpoint: draft.value.cv_leads_endpoint || '/v1/comercial/leads',
+        alert_recipient_user_ids: draft.value.alert_recipient_user_ids,
         meta_app_id: draft.value.meta_app_id || null,
         meta_graph_api_version: draft.value.meta_graph_api_version || 'v21.0',
         meta_app_secret: draft.value.meta_app_secret || '',
@@ -169,6 +207,52 @@ const test = computed(() => store.testResult);
             <Input v-model="draft.form_rate_limit_per_min" label="Limite de submissões por IP/min" type="number" size="sm"
               hint="Anti-flood do formulário público. Default 10" />
           </div>
+        </Surface>
+
+        <Surface variant="raised" padding="md">
+          <h3 class="text-sm font-semibold text-ink mb-1">
+            <i class="fas fa-bell mr-1"></i>Destinatários dos alertas
+          </h3>
+          <p class="text-xs text-ink-muted mb-3">
+            Quem recebe os alertas automáticos da captação: campanha sem vínculo represando leads,
+            lead não entregue ao CV, webhook do Meta rejeitando e token do Meta expirando.
+            <strong>Se a lista ficar vazia, todos os admins ativos recebem</strong> (comportamento antigo).
+          </p>
+
+          <div v-if="selectedRecipients.length" class="flex flex-wrap gap-2 mb-3">
+            <span v-for="r in selectedRecipients" :key="r.id"
+              class="inline-flex items-center gap-1.5 rounded-full border border-accent/30 bg-accent-soft
+                     pl-3 pr-1.5 py-1.5 text-xs font-medium text-ink">
+              {{ r.label }}
+              <button type="button" @click="removeRecipient(r.id)"
+                class="grid h-6 w-6 place-items-center rounded-full text-ink-muted hover:text-red-500 hover:bg-surface-hover transition-colors"
+                :aria-label="`Remover ${r.label}`">
+                <i class="fas fa-xmark text-[11px]"></i>
+              </button>
+            </span>
+          </div>
+          <p v-else class="mb-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-300">
+            <i class="fas fa-triangle-exclamation mr-1"></i>
+            Nenhum destinatário selecionado — os alertas irão para <strong>todos os admins ativos</strong>.
+          </p>
+
+          <div class="flex flex-col sm:flex-row gap-2">
+            <select v-model="recipientToAdd"
+              class="w-full sm:max-w-xs rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink
+                     focus:outline-none focus:ring-2 focus:ring-accent/40">
+              <option value="" disabled>Adicionar destinatário…</option>
+              <option v-for="u in availableRecipients" :key="u.id" :value="u.id">
+                {{ u.username || u.email }}{{ u.role === 'admin' ? ' (admin)' : '' }}
+              </option>
+            </select>
+            <Button variant="secondary" size="sm" icon="fas fa-plus" :disabled="!recipientToAdd" @click="addRecipient">
+              Adicionar
+            </Button>
+          </div>
+          <p class="mt-2 text-[11px] text-ink-subtle">
+            Vale pra notificação in-app e e-mail. Cada pessoa ainda pode silenciar esses avisos nas
+            preferências de notificação dela.
+          </p>
         </Surface>
 
         <Surface variant="raised" padding="md">
