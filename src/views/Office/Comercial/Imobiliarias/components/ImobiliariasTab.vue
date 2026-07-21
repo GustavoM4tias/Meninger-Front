@@ -16,14 +16,21 @@ import EmptyState from '@/components/UI/EmptyState.vue';
 import ReportDetailModal from './ReportDetailModal.vue';
 import GerenteModal from './GerenteModal.vue';
 
+const props = defineProps({
+    // Deep-link (?q= na URL, ex.: card da Eme): prefiltra a busca e libera os
+    // filtros de situação/vínculo — senão uma imobiliária inativa ou sem
+    // empreendimento ficaria oculta pelos padrões e o link "não acharia" nada.
+    initialQuery: { type: String, default: '' },
+});
+
 const store = useRealEstateStore();
 
 // ── Filtros (padrão: ativas + com empreendimento vinculado) ──────────────────
-const q = ref('');
+const q = ref(props.initialQuery);
 const cidade = ref('');
 const empreendimento = ref('');
-const situacao = ref('S');       // S | N | '' (todas)
-const vinculo = ref('com');      // com | sem | '' (todos)
+const situacao = ref(props.initialQuery ? '' : 'S');       // S | N | '' (todas)
+const vinculo = ref(props.initialQuery ? '' : 'com');      // com | sem | '' (todos)
 
 const SITUACAO_OPTIONS = [
     { value: 'S', label: 'Ativas' },
@@ -63,7 +70,12 @@ const rows = computed(() => all.value.filter(i => {
     if (empreendimento.value && !(i.empreendimentos || []).some(e => e.nome === empreendimento.value)) return false;
     if (q.value.trim()) {
         const alvo = norm(`${i.nome} ${i.razao_social} ${i.cnpj} ${i.gerente_nome || ''} ${i.email || ''}`);
-        if (!alvo.includes(norm(q.value))) return false;
+        // Busca numérica (ex.: CNPJ vindo do deep-link da Eme) compara só
+        // dígitos — o CNPJ do CV vem formatado (00.000.000/0001-00).
+        const qDigits = q.value.replace(/\D/g, '');
+        const cnpjDigits = String(i.cnpj || '').replace(/\D/g, '');
+        const hitDigits = qDigits.length >= 4 && cnpjDigits.includes(qDigits);
+        if (!alvo.includes(norm(q.value)) && !hitDigits) return false;
     }
     return true;
 }));

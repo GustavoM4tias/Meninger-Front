@@ -5,6 +5,7 @@
 // As ações de criar (Nova imobiliária / Gerar link) ficam no cabeçalho.
 
 import { computed, onMounted, ref } from 'vue';
+import { useRoute } from 'vue-router';
 import { useToast } from 'vue-toastification';
 import { useRealEstateStore } from '@/stores/Comercial/RealEstate/realEstateStore';
 
@@ -21,8 +22,12 @@ import CreateModal from './components/CreateModal.vue';
 
 const store = useRealEstateStore();
 const toast = useToast();
+const route = useRoute();
 
-const tab = ref('imobiliarias');
+// Deep-link (usado pela Eme e por atalhos): ?tab=cadastros abre direto a aba
+// de cadastros; ?q=<termo> é repassado à aba de imobiliárias (prefiltra).
+const tab = ref(route.query.tab === 'cadastros' ? 'cadastros' : 'imobiliarias');
+const initialQuery = String(route.query.q || '');
 const inviteOpen = ref(false);
 const createOpen = ref(false);
 
@@ -84,7 +89,7 @@ onMounted(() => {
             <SegmentedControl v-model="tab" :options="tabOptions" />
         </div>
 
-        <ImobiliariasTab v-show="tab === 'imobiliarias'" />
+        <ImobiliariasTab v-show="tab === 'imobiliarias'" :initial-query="initialQuery" />
         <RegistrationsTab v-show="tab === 'cadastros'" />
 
         <InviteModal :open="inviteOpen" @close="inviteOpen = false" />
