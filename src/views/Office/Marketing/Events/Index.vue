@@ -13,6 +13,7 @@ import PageContainer from '@/components/UI/PageContainer.vue';
 import PageHeader from '@/components/UI/PageHeader.vue';
 import PageHelp from '@/components/UI/PageHelp.vue';
 import Input from '@/components/UI/Input.vue';
+import Select from '@/components/UI/Select.vue';
 import Button from '@/components/UI/Button.vue';
 import IconButton from '@/components/UI/IconButton.vue';
 import SegmentedControl from '@/components/UI/SegmentedControl.vue';
@@ -49,13 +50,29 @@ watch(() => [route.query.search, route.query.busca],
 // ─── Filtros ─────────────────────────────────────────
 const now = new Date();
 
+// Acento-insensível: "inga" encontra "Ingá".
+const norm = (s) => String(s || '').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
+
+// Filtro por empreendimento vinculado (opções derivadas dos eventos carregados;
+// o select só aparece quando algum evento tem vínculo).
+const enterpriseFilter = ref('');
+const enterpriseOptions = computed(() => {
+  const set = new Set(eventStore.events.map(e => e.enterprise_name).filter(Boolean));
+  return [{ value: '', label: 'Todos os empreendimentos' },
+    ...[...set].sort((a, b) => a.localeCompare(b)).map(n => ({ value: n, label: n }))];
+});
+const hasEnterpriseOptions = computed(() => enterpriseOptions.value.length > 1);
+
 const eventsFiltered = computed(() => {
-  if (!search.value) return eventStore.events;
-  const q = search.value.toLowerCase().trim();
-  return eventStore.events.filter(e =>
-    e.title?.toLowerCase().includes(q) ||
-    e.description?.toLowerCase().includes(q) ||
-    e.tags?.some(t => t.toLowerCase().includes(q))
+  let list = eventStore.events;
+  if (enterpriseFilter.value) list = list.filter(e => e.enterprise_name === enterpriseFilter.value);
+  if (!search.value) return list;
+  const q = norm(search.value.trim());
+  return list.filter(e =>
+    norm(e.title).includes(q) ||
+    norm(e.description).includes(q) ||
+    norm(e.enterprise_name).includes(q) ||
+    e.tags?.some(t => norm(t).includes(q))
   );
 });
 
@@ -122,7 +139,8 @@ const showFinished = computed(() =>
               { title: 'Relatório', text: 'Gere um relatório dos eventos filtrados no botão “Relatório”.' },
             ]"
             :tips="[
-              'A busca encontra por título, descrição ou tag.',
+              'A busca encontra por título, descrição, tag ou empreendimento vinculado (sem se importar com acentos).',
+              'Quando houver eventos com empreendimento vinculado, aparece um filtro por empreendimento ao lado da busca.',
               'O selo colorido no card indica quando o evento acontece (Hoje, Amanhã, em X dias).',
             ]" />
           <Button variant="secondary" icon="fas fa-file-export"
@@ -135,11 +153,14 @@ const showFinished = computed(() =>
         </template>
       </PageHeader>
 
-      <!-- Busca + tabs -->
+      <!-- Busca + empreendimento + tabs -->
       <div class="flex flex-col sm:flex-row sm:items-center gap-3 mb-6 min-w-0">
         <div class="flex-1 min-w-0 sm:max-w-xl">
-          <Input v-model="search" placeholder="Buscar por título, descrição ou tag..."
+          <Input v-model="search" placeholder="Buscar por título, descrição, tag ou empreendimento..."
             iconLeft="fas fa-magnifying-glass" />
+        </div>
+        <div v-if="hasEnterpriseOptions" class="w-full sm:w-56">
+          <Select v-model="enterpriseFilter" :options="enterpriseOptions" />
         </div>
         <SegmentedControl v-if="!hasSearch" class="w-full sm:w-auto"
           :model-value="currentSection" :options="sections" @change="changeSection" />
