@@ -92,7 +92,6 @@ export const navRegistry = [
             { route: '/marketing/leads', section: 'Leads', name: 'Leads', icon: 'fas fa-user-plus' },
             // Config das Aprovações fica só dentro da tela (botão "Configurações"), não no menu.
             { route: '/marketing/aprovacoes', name: 'Aprovações', icon: 'fas fa-stamp' },
-            { route: '/marketing/viability', section: 'Viabilidade', name: 'Viabilidade', icon: 'fas fa-scale-balanced' },
         ],
     },
 
@@ -164,6 +163,7 @@ export const navRegistry = [
                 pages: [
                     { route: '/financeiro/titulos', section: 'Títulos', name: 'Títulos', icon: 'fas fa-money-bill-transfer' },
                     { route: '/financeiro/custos', section: 'Custos', name: 'Custos', icon: 'fas fa-coins' },
+                    { route: '/financeiro/gastos-departamento', section: 'Gastos por Departamento', name: 'Gastos por Departamento', icon: 'fas fa-chart-pie' },
                     { route: '/financeiro/inadimplencia', name: 'Inadimplência', icon: 'fas fa-triangle-exclamation', adminOnly: true },
                 ],
             },

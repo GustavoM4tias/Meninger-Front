@@ -155,12 +155,6 @@ export default [
                         component: () => import('@/views/Office/Marketing/Settings/Index.vue'),
                         meta: { requiresAuth: true, requiresAdmin: true, searchable: false, content: 'Configurações da captação de marketing (Geral + Meta Lead Ads)' },
                     },
-                    {
-                        path: 'viability',
-                        name: 'Viabilidade',
-                        component: () => import('@/views/Office/Marketing/Viability/ViabilityDashboard.vue'),
-                        meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Dashboard de Viabilidade Marketing' },
-                    },
                 ],
             },
             {
@@ -279,6 +273,12 @@ export default [
                         name: 'Custos',
                         component: () => import('@/views/Office/Financeiro/Custos/Index.vue'),
                         meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Custos do Financeiro' },
+                    },
+                    {
+                        path: 'gastos-departamento',
+                        name: 'Gastos por Departamento',
+                        component: () => import('@/views/Office/Financeiro/DeptSpending/DeptSpendingDashboard.vue'),
+                        meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Gastos por Departamento — orçamento de marketing por empreendimento (VGV × %), gasto real e saldo' },
                     },
                     {
                         path: 'boleto-caixa',
