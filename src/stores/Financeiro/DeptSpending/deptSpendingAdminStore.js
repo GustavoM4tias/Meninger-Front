@@ -1,8 +1,9 @@
-// src/stores/Marketing/Viability/viabilityAdminStore.js
+// src/stores/Financeiro/DeptSpending/deptSpendingAdminStore.js
 //
-// Config admin da Viabilidade de Marketing (admin-only no backend):
-//  - quais departamentos do Custos contam como "marketing" (global)
-//  - configuração por empreendimento (bloqueadas consideradas disponíveis + overrides)
+// Config admin da tela "Gastos por Departamento" (admin-only no backend):
+//  - quais departamentos do Custos têm o gasto acompanhado (global)
+//  - configuração por empreendimento (bloqueadas + overrides + status)
+//  - LIBERAÇÃO por empreendimento (rascunho → liberado)
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import API_URL from '@/config/apiUrl';
@@ -11,20 +12,19 @@ import { useCarregamentoStore } from '@/stores/Config/carregamento';
 
 const lc = (s) => String(s || '').trim().toLowerCase();
 
-export const useViabilityAdminStore = defineStore('marketingViabilityAdmin', () => {
+export const useDeptSpendingAdminStore = defineStore('marketingDeptSpendingAdmin', () => {
     const carregamento = useCarregamentoStore();
 
-    const known = ref([]);              // ['Marketing','Comercial',...] (deptos vistos nas despesas)
+    const known = ref([]);              // ['Marketing','Comercial',...]
     const configured = ref([]);         // [{ department_name, is_marketing }]
-    const enterpriseSettings = ref([]); // [{ enterprise_key, blocked_considered_available, marketing_dept_overrides }]
+    const enterpriseSettings = ref([]); // [{ company_id, ..., is_released }]
     const error = ref(null);
-    const savingName = ref(null);       // depto em gravação (para spinner por linha)
+    const savingName = ref(null);       // depto em gravação (spinner por linha)
+    const releasingId = ref(null);      // company_id em liberação (spinner por linha)
 
     const isLoading = computed(() => carregamento.carregando);
 
-    const marketingCount = computed(
-        () => configured.value.filter((c) => c.is_marketing).length
-    );
+    const marketingCount = computed(() => configured.value.filter((c) => c.is_marketing).length);
 
     function isMarketing(name) {
         const found = configured.value.find((c) => lc(c.department_name) === lc(name));
@@ -35,7 +35,7 @@ export const useViabilityAdminStore = defineStore('marketingViabilityAdmin', () 
         error.value = null;
         try {
             carregamento.iniciarCarregamento();
-            const res = await requestWithAuth(`${API_URL}/viability/admin/marketing-departments`);
+            const res = await requestWithAuth(`${API_URL}/dept-spending/admin/marketing-departments`);
             known.value = res?.known || [];
             configured.value = res?.configured || [];
         } catch (e) {
@@ -50,7 +50,7 @@ export const useViabilityAdminStore = defineStore('marketingViabilityAdmin', () 
     async function setMarketingDepartment(name, isMkt) {
         savingName.value = name;
         try {
-            await requestWithAuth(`${API_URL}/viability/admin/marketing-departments`, {
+            await requestWithAuth(`${API_URL}/dept-spending/admin/marketing-departments`, {
                 method: 'PUT',
                 body: JSON.stringify({ name, is_marketing: !!isMkt }),
             });
@@ -63,34 +63,42 @@ export const useViabilityAdminStore = defineStore('marketingViabilityAdmin', () 
     }
 
     async function fetchEnterpriseSettings() {
-        const res = await requestWithAuth(`${API_URL}/viability/admin/enterprise-settings`);
+        const res = await requestWithAuth(`${API_URL}/dept-spending/admin/enterprise-settings`);
         enterpriseSettings.value = res?.results || [];
     }
 
     async function setEnterpriseSettings(companyId, payload) {
         const res = await requestWithAuth(
-            `${API_URL}/viability/admin/enterprise-settings/${encodeURIComponent(companyId)}`,
+            `${API_URL}/dept-spending/admin/enterprise-settings/${encodeURIComponent(companyId)}`,
             { method: 'PUT', body: JSON.stringify(payload) }
         );
-        // atualiza cache local
         const idx = enterpriseSettings.value.findIndex((e) => String(e.company_id) === String(companyId));
         if (idx >= 0) enterpriseSettings.value[idx] = res;
         else if (res) enterpriseSettings.value = [...enterpriseSettings.value, res];
         return res;
     }
 
+    // Liberação (rascunho → liberado) por empreendimento.
+    async function setEnterpriseRelease(companyId, isReleased, notes) {
+        releasingId.value = companyId;
+        try {
+            const res = await requestWithAuth(
+                `${API_URL}/dept-spending/admin/release/${encodeURIComponent(companyId)}`,
+                { method: 'PUT', body: JSON.stringify({ is_released: !!isReleased, notes }) }
+            );
+            const idx = enterpriseSettings.value.findIndex((e) => String(e.company_id) === String(companyId));
+            if (idx >= 0) enterpriseSettings.value[idx] = res;
+            else if (res) enterpriseSettings.value = [...enterpriseSettings.value, res];
+            return res;
+        } finally {
+            releasingId.value = null;
+        }
+    }
+
     return {
-        known,
-        configured,
-        enterpriseSettings,
-        error,
-        savingName,
-        isLoading,
-        marketingCount,
-        isMarketing,
-        fetchMarketingDepartments,
-        setMarketingDepartment,
-        fetchEnterpriseSettings,
-        setEnterpriseSettings,
+        known, configured, enterpriseSettings, error, savingName, releasingId,
+        isLoading, marketingCount, isMarketing,
+        fetchMarketingDepartments, setMarketingDepartment,
+        fetchEnterpriseSettings, setEnterpriseSettings, setEnterpriseRelease,
     };
 });

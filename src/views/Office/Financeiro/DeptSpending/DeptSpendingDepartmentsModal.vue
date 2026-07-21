@@ -1,10 +1,11 @@
 <template>
-    <Modal :open="open" size="lg" title="Departamentos de marketing"
-        subtitle="Quais despesas do Custos contam como gasto de marketing na viabilidade" @close="$emit('close')">
+    <Modal :open="open" size="lg" title="Departamentos acompanhados"
+        subtitle="Quais despesas do Custos são somadas como gasto acompanhado nesta tela" @close="$emit('close')">
         <div>
             <p class="text-xs text-ink-muted mb-3">
-                Marque os departamentos que devem ser somados como <strong>gasto de marketing</strong>. Vale para todos
-                os empreendimentos — exceções por empresa ficam na engrenagem de cada linha do relatório.
+                Marque os departamentos cujo gasto deve ser <strong>acompanhado</strong>. Vale para todos os
+                empreendimentos - exceções por empresa ficam na engrenagem de cada linha do relatório.
+                <span class="text-ink-subtle">Na Fase 1 o orçamento é calculado sobre o Marketing.</span>
             </p>
 
             <Input v-model="search" icon-left="fas fa-search" placeholder="Buscar departamento..." class="mb-3" />
@@ -54,7 +55,7 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue';
-import { useViabilityAdminStore } from '@/stores/Marketing/Viability/viabilityAdminStore';
+import { useDeptSpendingAdminStore } from '@/stores/Financeiro/DeptSpending/deptSpendingAdminStore';
 import Modal from '@/components/UI/Modal.vue';
 import Button from '@/components/UI/Button.vue';
 import Badge from '@/components/UI/Badge.vue';
@@ -64,7 +65,7 @@ import EmptyState from '@/components/UI/EmptyState.vue';
 const props = defineProps({ open: { type: Boolean, default: false } });
 defineEmits(['close']);
 
-const store = useViabilityAdminStore();
+const store = useDeptSpendingAdminStore();
 const search = ref('');
 
 const filtered = computed(() => {
