@@ -16,6 +16,7 @@ import ChatReservasSummary from './renderers/ChatReservasSummary.vue';
 import ChatReservasActions from './renderers/ChatReservasActions.vue';
 import ChatAlertEditor from './renderers/ChatAlertEditor.vue';
 import ChatAcademyCards from './renderers/ChatAcademyCards.vue';
+import ChatImobiliariaCards from './renderers/ChatImobiliariaCards.vue';
 import ChatConditionSheet from './renderers/ChatConditionSheet.vue';
 
 const props = defineProps({
@@ -91,6 +92,9 @@ const isError = computed(() => props.message.response_type === 'error');
 
         <!-- Academy: cards de processos / certificados / comunidade -->
         <ChatAcademyCards v-if="action?.type === 'academy_cards'" :action="action" />
+
+        <!-- Imobiliárias: cards de parceiras / cadastros e convites -->
+        <ChatImobiliariaCards v-if="action?.type === 'imobiliaria_cards'" :action="action" />
 
         <!-- Ficha Comercial: card com dados + sugestões + abrir ficha -->
         <ChatConditionSheet v-if="action?.type === 'condition_sheet'" :action="action" />

@@ -35,6 +35,7 @@ const SUGGESTIONS = [
   { label: 'Eventos do mês',               icon: '📅', prompt: 'Quais eventos temos este mes?' },
   { label: 'Relatório de eventos',         icon: '📚', prompt: 'Gere o relatório de eventos para o mes atual' },
   { label: 'Faixas Minha Casa Minha Vida', icon: '🏠', prompt: 'Qual o teto do Minha Casa Minha Vida na minha cidade' },
+  { label: 'Imobiliárias parceiras',       icon: '🏘️', prompt: 'Quais imobiliárias parceiras atuam na minha cidade?' },
 ];
 
 // ─── Lifecycle ──────────────────────────────────────────
