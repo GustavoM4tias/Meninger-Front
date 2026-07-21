@@ -79,6 +79,10 @@ const creatorAvatar = computed(() => {
           <i class="fas fa-location-dot text-ink-subtle"></i>
           <span class="truncate">{{ event.address.city }}<span v-if="event.address.state">, {{ event.address.state }}</span></span>
         </span>
+        <span v-if="event.enterprise_name" class="inline-flex items-center gap-1.5 truncate">
+          <i class="fas fa-building text-ink-subtle"></i>
+          <span class="truncate">{{ event.enterprise_name }}</span>
+        </span>
       </div>
 
       <!-- Tags -->
