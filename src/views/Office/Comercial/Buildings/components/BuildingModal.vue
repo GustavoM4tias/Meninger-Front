@@ -172,8 +172,8 @@ onMounted(fetchWeather);
           <i class="fas fa-xmark text-sm"></i>
         </button>
 
-        <!-- Weather (hover tooltip) -->
-        <div class="absolute bottom-4 right-4 z-10 text-3xl z-20">
+        <!-- Weather (hover tooltip) — acima da barra de abas sticky (z-30) para o tooltip abrir por cima -->
+        <div class="absolute bottom-4 right-4 text-3xl z-40">
           <WeatherInfo :weather="buildingStore.weather" :city="building.cidade" />
         </div>
 
