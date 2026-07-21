@@ -26,6 +26,12 @@ const live = computed(() => {
   return fromStore || props.item;
 });
 
+// Link direto pra reserva no CV CRM (aba administrar).
+const cvLink = computed(() => {
+  if (!live.value?.idreserva) return null;
+  return `https://menin.cvcrm.com.br/gestor/comercial/reservas/${live.value.idreserva}/administrar#index_condicao_pagamento`;
+});
+
 const activeTab = ref('summary');
 const tabOptions = [
   { value: 'summary',  label: 'Resumo',   icon: 'fas fa-circle-info' },
@@ -33,49 +39,18 @@ const tabOptions = [
   { value: 'pdf',      label: 'PDF',      icon: 'fas fa-file-pdf' },
 ];
 
-// Carrega timeline quando abre / quando troca o item.
-//
-// IMPORTANTE: `store.timelineEvents` e `store.timelineHistory` são singletons
-// no Pinia — compartilhados entre QUALQUER modal/componente que use o store.
-// Se abrir boleto A, fechar, abrir boleto B → enquanto o fetchTimeline(B)
-// está pendente, o modal renderiza os eventos do A (resíduo). Por isso
-// limpamos SINCRONAMENTE antes de fazer fetch.
-//
-// `props.live` é um computed, NÃO uma prop — o watch deve observar
-// `props.item?.id` (a prop real recebida do pai).
-watch(() => [props.open, props.item?.id], async ([open, id]) => {
-  if (open && id) {
-    activeTab.value = 'summary';
-    actionMsg.value = null;
-    resendConfirm.value.open = false;
-    // Limpa IMEDIATAMENTE o estado do boleto anterior, antes do fetch async.
-    store.timelineEvents = [];
-    store.timelineHistory = null;
-    store.timelineAttempts = [];
-    await store.fetchTimeline(id);
-  } else if (!open) {
-    stopPolling();
-    // Ao fechar, limpa pra próxima abertura não mostrar resíduo de quem fechou.
-    store.timelineEvents = [];
-    store.timelineHistory = null;
-    store.timelineAttempts = [];
-  }
-}, { immediate: true });
-
-function close() {
-  stopPolling();
-  store.timelineEvents = [];
-  store.timelineHistory = null;
-  store.timelineAttempts = [];
-  resendConfirm.value.open = false;
-  emit('close');
-}
+// Estado das ações — declarado ANTES do watch abaixo (que roda immediate no
+// setup e zera essas refs; se ficassem depois, dava TDZ "before initialization").
+const actionState = ref({ resending: false, retrying: false, checking: false, marking: false });
+const actionMsg = ref(null);
+const resendConfirm = ref({ open: false, loading: false, error: null, contact: null, sending: false });
 
 // ── Polling reativo (após ações assíncronas que rodam em background) ────────
 // Quando o admin dispara "Verificar pagamento", o backend retorna 202 e segue
 // processando no Playwright (8-20s). Em vez de exigir refresh manual, polamos
 // store + timeline em intervalos crescentes até o payment_status mudar ou
 // estourar o tempo máximo.
+// (Também precisa vir antes do watch immediate — stopPolling é chamado nele.)
 const pollTimer = ref(null);
 function stopPolling() {
   if (pollTimer.value) {
@@ -113,6 +88,44 @@ function startPolling({ intervalMs = 5000, maxMs = 90000 } = {}) {
       }
     } catch (_) { /* segue o polling */ }
   }, intervalMs);
+}
+
+// Carrega timeline quando abre / quando troca o item.
+//
+// IMPORTANTE: `store.timelineEvents` e `store.timelineHistory` são singletons
+// no Pinia — compartilhados entre QUALQUER modal/componente que use o store.
+// Se abrir boleto A, fechar, abrir boleto B → enquanto o fetchTimeline(B)
+// está pendente, o modal renderiza os eventos do A (resíduo). Por isso
+// limpamos SINCRONAMENTE antes de fazer fetch.
+//
+// `props.live` é um computed, NÃO uma prop — o watch deve observar
+// `props.item?.id` (a prop real recebida do pai).
+watch(() => [props.open, props.item?.id], async ([open, id]) => {
+  if (open && id) {
+    activeTab.value = 'summary';
+    actionMsg.value = null;
+    resendConfirm.value.open = false;
+    // Limpa IMEDIATAMENTE o estado do boleto anterior, antes do fetch async.
+    store.timelineEvents = [];
+    store.timelineHistory = null;
+    store.timelineAttempts = [];
+    await store.fetchTimeline(id);
+  } else if (!open) {
+    stopPolling();
+    // Ao fechar, limpa pra próxima abertura não mostrar resíduo de quem fechou.
+    store.timelineEvents = [];
+    store.timelineHistory = null;
+    store.timelineAttempts = [];
+  }
+}, { immediate: true });
+
+function close() {
+  stopPolling();
+  store.timelineEvents = [];
+  store.timelineHistory = null;
+  store.timelineAttempts = [];
+  resendConfirm.value.open = false;
+  emit('close');
 }
 
 onUnmounted(() => {
@@ -366,15 +379,12 @@ const WARNING_LABELS = {
 };
 
 // ── Ações ───────────────────────────────────────────────────────────────────
-const actionState = ref({ resending: false, retrying: false, checking: false, marking: false });
-const actionMsg = ref(null);
+// (refs actionState/actionMsg/resendConfirm declaradas no topo, antes do watch)
 
 // ── Reenvio ao cliente (com confirmação mostrando e-mail + telefone) ─────────
 // Antes era um confirm() cego. Agora abre um modal que busca o contato do titular
 // (ao vivo do CV) e mostra pra quem vai + quando foi o último envio, evitando
 // reenvios duplicados por insegurança.
-const resendConfirm = ref({ open: false, loading: false, error: null, contact: null, sending: false });
-
 async function openResendConfirm() {
   if (!live.value) return;
   actionMsg.value = null;
@@ -554,6 +564,13 @@ async function copyLink() {
               Boleto Caixa · Reserva
               <span class="font-mono text-accent">#{{ live?.idreserva }}</span>
             </h3>
+            <!-- Abrir a reserva direto no CV CRM (nova aba) -->
+            <a v-if="cvLink" :href="cvLink" target="_blank" rel="noopener"
+              class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold
+                     bg-accent/10 text-accent border border-accent/30 hover:bg-accent/20 transition-colors">
+              <i class="fas fa-arrow-up-right-from-square text-[10px]"></i>
+              Abrir no CV
+            </a>
             <Badge v-if="live?.status" :variant="statusVariant(live.status)" size="sm">
               <i :class="live.status === 'success' ? 'fas fa-check' : live.status === 'error' ? 'fas fa-times' : 'fas fa-spinner fa-spin'" class="mr-1"></i>
               {{ statusLabel(live.status) }}
