@@ -13,6 +13,7 @@ export const useProjectionsStore = defineStore('projections', () => {
 
     const list = ref([]);
     const allActive = ref([]);
+    const allProjections = ref([]);
     const detail = ref(null);
     const logs = ref([]);
     const error = ref(null);
@@ -51,6 +52,12 @@ export const useProjectionsStore = defineStore('projections', () => {
     async function fetchAllActive() {
         const raw = await requestWithAuth(`${API_URL}/projections?only_active=1&start_month=1900-01&end_month=2999-12`);
         allActive.value = (raw || []).map(p => ({ ...p, is_active: toBool(p.is_active), is_locked: toBool(p.is_locked) }));
+    }
+
+    // TODAS as projeções (ativas ou não) — usado no seletor de clonar.
+    async function fetchAll() {
+        const raw = await requestWithAuth(`${API_URL}/projections?start_month=1900-01&end_month=2999-12`);
+        allProjections.value = (raw || []).map(p => ({ ...p, is_active: toBool(p.is_active), is_locked: toBool(p.is_locked) }));
     }
 
     async function createProjection({ name, is_active = false }) {
@@ -94,6 +101,25 @@ export const useProjectionsStore = defineStore('projections', () => {
             method: 'PUT',
             body: JSON.stringify({ rows, remove_missing: !!removeMissing })
         });
+    }
+
+    // ✅ Salvamento UNIFICADO da tela nova: defaults + linhas + reconciliação por período,
+    // tudo numa transação no backend. Substitui o duo saveLines/saveDefaults.
+    async function saveGrid(id, { defaults, lines, rangeStart, rangeEnd }) {
+        return await requestWithAuth(`${API_URL}/projections/${id}/grid`, {
+            method: 'PUT',
+            body: JSON.stringify({
+                defaults: defaults || [],
+                lines: lines || [],
+                range_start: rangeStart,
+                range_end: rangeEnd,
+            })
+        });
+    }
+
+    // ✅ Exclusão real de uma projeção (admin)
+    async function deleteProjection(id) {
+        return await requestWithAuth(`${API_URL}/projections/${id}`, { method: 'DELETE' });
     }
 
     async function saveDefaults(id, items, { removeMissing = false } = {}) {
@@ -180,7 +206,7 @@ export const useProjectionsStore = defineStore('projections', () => {
     }
 
     return {
-        list, allActive, detail, logs, error,
+        list, allActive, allProjections, detail, logs, error,
 
         // ✅ picker
         enterprisePicker,
@@ -189,9 +215,9 @@ export const useProjectionsStore = defineStore('projections', () => {
         fetchEnterprisePicker,
         filterEnterprisePicker,
 
-        fetchList, fetchAllActive,
-        createProjection, cloneProjection,
-        fetchDetail, saveLines, saveDefaults,
+        fetchList, fetchAllActive, fetchAll,
+        createProjection, cloneProjection, deleteProjection,
+        fetchDetail, saveLines, saveDefaults, saveGrid,
         updateMeta, fetchLogs
     };
 });
