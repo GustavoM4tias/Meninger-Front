@@ -22,6 +22,14 @@ export default [
         component: () => import('@/views/Office/Config/ErrorPage.vue'),
         meta: { requiresAuth: false },
     },
+    {
+        // Link PÚBLICO de relatório da Eme (sem login) — token CSPRNG com
+        // vencimento validado no backend; 404 genérico para token inválido.
+        path: '/r/:token',
+        name: 'Relatório Público',
+        component: () => import('@/views/Public/ReportPublic.vue'),
+        meta: { requiresAuth: false },
+    },
 
     // shell do office (privadas e também as "normais" do app)
     {
@@ -48,6 +56,26 @@ export default [
                 name: 'Gestão de Comunicados',
                 component: () => import('@/views/Office/Mural/Admin.vue'),
                 meta: { requiresAuth: true, requiresAdmin: true, allowedRole: 'admin', searchable: false, content: 'Gestão do mural de avisos e comunicados' },
+            },
+
+            // Relatórios da Eme — relatórios customizados gerados por IA.
+            {
+                path: 'relatorios',
+                name: 'Relatórios',
+                component: () => import('@/views/Office/Relatorios/Index.vue'),
+                meta: { requiresAuth: true, searchable: true, content: 'Relatórios customizados gerados pela Eme: leads, pré-cadastros, reservas, funil comercial' },
+            },
+            {
+                path: 'relatorios/:id',
+                name: 'Builder de Relatório',
+                component: () => import('@/views/Office/Relatorios/Builder.vue'),
+                meta: { requiresAuth: true, requiresAdmin: true, allowedRole: 'admin', searchable: false, content: 'Construção de relatório com a Eme' },
+            },
+            {
+                path: 'relatorios/:id/view',
+                name: 'Visualizar Relatório',
+                component: () => import('@/views/Office/Relatorios/View.vue'),
+                meta: { requiresAuth: true, searchable: false, content: 'Visualização de relatório' },
             },
 
             // Checklist (gestão de lançamentos e demandas) — substitui o Planner.

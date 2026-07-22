@@ -59,6 +59,20 @@ export const navRegistry = [
         ],
     },
 
+    // ── Relatórios da Eme (relatórios customizados gerados por IA) ─────────────
+    {
+        // Item único: a lista mostra "Meus relatórios" (admin cria via Eme) e
+        // "Compartilhados comigo" (qualquer usuário). Por isso o item NÃO é
+        // adminOnly — o gate de criação fica na tela/rota do builder.
+        key: 'relatorios',
+        label: 'Relatórios',
+        icon: 'fas fa-chart-column',
+        group: 'OPERAÇÃO',
+        pages: [
+            { route: '/relatorios', name: 'Relatórios', icon: 'fas fa-wand-magic-sparkles', permissionManaged: false },
+        ],
+    },
+
     // ── Marketing ──────────────────────────────────────────────────────────────
     {
         key: 'marketing',
