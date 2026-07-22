@@ -702,6 +702,11 @@
           </div>
         </Surface>
       </div>
+
+      <!-- ── TAB: Relatório ───────────────────────────────────────────────────── -->
+      <div v-if="activeTab === 'report'">
+        <BoletoReport />
+      </div>
     </PageContainer>
 
     <!-- Modal consolidado de detalhes (Resumo / Timeline / PDF) -->
@@ -732,19 +737,24 @@ import EmptyState from '@/components/UI/EmptyState.vue';
 // Componentes próprios desta tela
 import BoletoFilters from './components/BoletoFilters.vue';
 import BoletoDetailModal from './components/BoletoDetailModal.vue';
+import BoletoReport from './components/BoletoReport.vue';
 
 const store = useBoletoStore();
 const auth = useAuthStore();
 const isAdmin = computed(() => auth.hasRole('admin'));
 
 // ── Tabs ──────────────────────────────────────────────────────────────────────
-// Não-admins só veem a aba "Histórico" — a aba de configurações nem aparece.
-const activeTab = ref(isAdmin.value ? 'settings' : 'history');
+// Sempre abre no Histórico. A aba "Configurações" só aparece (e só é acessível)
+// para admins — o backend também exige admin em todas as rotas de config.
+const activeTab = ref('history');
 
 const tabOptions = computed(() => {
-  const base = [{ value: 'history', label: 'Histórico', icon: 'fas fa-clock-rotate-left' }];
+  const base = [
+    { value: 'history', label: 'Histórico', icon: 'fas fa-clock-rotate-left' },
+    { value: 'report',  label: 'Relatório', icon: 'fas fa-chart-line' },
+  ];
   if (isAdmin.value) {
-    base.unshift({ value: 'settings', label: 'Configurações', icon: 'fas fa-gear' });
+    base.push({ value: 'settings', label: 'Configurações', icon: 'fas fa-gear' });
   }
   return base;
 });

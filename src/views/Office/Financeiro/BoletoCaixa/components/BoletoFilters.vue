@@ -33,14 +33,21 @@ const DEFAULT_DATE_TO   = toIsoDateLocal(today);
 // Estado local (espelho do store.historyFilter pra controlar v-model). Ao
 // aplicar (botão Filtrar ou input com debounce), copia pro store + emite.
 const local = ref({
-  status: [],
+  status: ['success', 'error', 'processing'], // default sem "Sem série"
   paymentStatus: [],
   empreendimento: [],
   idreserva: '',
   dateFrom: DEFAULT_DATE_FROM,
   dateTo: DEFAULT_DATE_TO,
+  dateField: 'created_at', // 'created_at' = emissão | 'paid_at' = pagamento
   q: '',
 });
+
+// Data de referência da busca por período: emissão (created_at) ou pagamento (paid_at).
+const DATE_FIELD_OPTIONS = [
+  { value: 'created_at', label: 'Emissão' },
+  { value: 'paid_at',    label: 'Pagamento' },
+];
 
 // ── Opções dos selects ──────────────────────────────────────────────────────
 const STATUS_OPTIONS = [
@@ -89,6 +96,7 @@ function syncFiltersFromUrl() {
   if (q.idreserva) local.value.idreserva = String(q.idreserva);
   if (q.dateFrom) local.value.dateFrom = String(q.dateFrom);
   if (q.dateTo)   local.value.dateTo = String(q.dateTo);
+  if (q.dateField === 'paid_at') local.value.dateField = 'paid_at';
   if (q.q)        local.value.q = String(q.q);
 }
 
@@ -101,6 +109,7 @@ function syncUrlFromFilters() {
   if (f.idreserva)              q.idreserva = f.idreserva;
   if (f.dateFrom)               q.dateFrom = f.dateFrom;
   if (f.dateTo)                 q.dateTo = f.dateTo;
+  if (f.dateField === 'paid_at') q.dateField = f.dateField;
   if (f.q)                      q.q = f.q;
   router.replace({ query: q }).catch(() => {});
 }
@@ -117,8 +126,9 @@ function clearFilters() {
   // Limpa tudo mas mantém o range padrão de 30 dias — evita "ah, sumiu tudo"
   // quando o usuário clica Limpar e nada aparece porque base é gigante.
   local.value = {
-    status: [], paymentStatus: [], empreendimento: [],
-    idreserva: '', dateFrom: DEFAULT_DATE_FROM, dateTo: DEFAULT_DATE_TO, q: '',
+    status: ['success', 'error', 'processing'], paymentStatus: [], empreendimento: [],
+    idreserva: '', dateFrom: DEFAULT_DATE_FROM, dateTo: DEFAULT_DATE_TO,
+    dateField: 'created_at', q: '',
   };
   store.historyFilter = { ...local.value };
   store.historyPage = 1;
@@ -190,8 +200,27 @@ onMounted(async () => {
       class="p-3 sm:p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 animate-fade-in"
       style="overflow:visible">
 
-      <Input v-model="local.dateFrom" type="date" label="Emitido a partir de" />
-      <Input v-model="local.dateTo" type="date" label="Emitido até" />
+      <!-- Data de referência: emissão ou pagamento -->
+      <div>
+        <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+          <i class="fas fa-calendar-day text-[10px] mr-1 text-ink-subtle"></i>Buscar por data de
+        </label>
+        <div class="inline-flex rounded-lg border border-line bg-surface-sunken p-0.5 w-full">
+          <button v-for="opt in DATE_FIELD_OPTIONS" :key="opt.value" type="button"
+            @click="local.dateField = opt.value"
+            class="flex-1 px-3 py-1.5 rounded-md text-xs font-medium transition-colors"
+            :class="local.dateField === opt.value
+              ? 'bg-accent text-white shadow-sm'
+              : 'text-ink-muted hover:text-ink'">
+            {{ opt.label }}
+          </button>
+        </div>
+      </div>
+
+      <Input v-model="local.dateFrom" type="date"
+        :label="local.dateField === 'paid_at' ? 'Pago a partir de' : 'Emitido a partir de'" />
+      <Input v-model="local.dateTo" type="date"
+        :label="local.dateField === 'paid_at' ? 'Pago até' : 'Emitido até'" />
 
       <div>
         <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
