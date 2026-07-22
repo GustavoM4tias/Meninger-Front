@@ -702,11 +702,6 @@
           </div>
         </Surface>
       </div>
-
-      <!-- ── TAB: Relatório ───────────────────────────────────────────────────── -->
-      <div v-if="activeTab === 'report'">
-        <BoletoReport />
-      </div>
     </PageContainer>
 
     <!-- Modal consolidado de detalhes (Resumo / Timeline / PDF) -->
@@ -737,7 +732,6 @@ import EmptyState from '@/components/UI/EmptyState.vue';
 // Componentes próprios desta tela
 import BoletoFilters from './components/BoletoFilters.vue';
 import BoletoDetailModal from './components/BoletoDetailModal.vue';
-import BoletoReport from './components/BoletoReport.vue';
 
 const store = useBoletoStore();
 const auth = useAuthStore();
@@ -751,7 +745,6 @@ const activeTab = ref('history');
 const tabOptions = computed(() => {
   const base = [
     { value: 'history', label: 'Histórico', icon: 'fas fa-clock-rotate-left' },
-    { value: 'report',  label: 'Relatório', icon: 'fas fa-chart-line' },
   ];
   if (isAdmin.value) {
     base.push({ value: 'settings', label: 'Configurações', icon: 'fas fa-gear' });

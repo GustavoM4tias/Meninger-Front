@@ -238,7 +238,7 @@ onMounted(async () => {
           :options="paymentLabels" placeholder="Todos" :select-all="false" />
       </div>
 
-      <div class="sm:col-span-2">
+      <div class="sm:col-span-1">
         <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
           <i class="fas fa-city text-[10px] mr-1 text-ink-subtle"></i>Empreendimento(s)
         </label>
