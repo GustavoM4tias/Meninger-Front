@@ -71,12 +71,13 @@ export const useBoletoStore = defineStore('boletoCaixa', () => {
     // Filtros expandidos (alinhados com o backend listHistory). Arrays viram CSV
     // na query string; strings vazias são omitidas.
     const historyFilter = ref({
-        status: [],            // multi: processing/success/error
+        status: ['success', 'error', 'processing'], // multi: default sem 'skipped' (Sem série)
         paymentStatus: [],     // multi: pending/paid/cancelled/error
         empreendimento: [],    // multi (nomes exatos)
         idreserva: '',
         dateFrom: '',
         dateTo: '',
+        dateField: 'created_at', // 'created_at' (emissão) | 'paid_at' (pagamento)
         q: '',                 // titular / nosso número / nº documento
     });
 
@@ -95,6 +96,7 @@ export const useBoletoStore = defineStore('boletoCaixa', () => {
         if (f.idreserva) params.set('idreserva', f.idreserva);
         if (f.dateFrom)  params.set('dateFrom', f.dateFrom);
         if (f.dateTo)    params.set('dateTo', f.dateTo);
+        if (f.dateField && f.dateField !== 'created_at') params.set('dateField', f.dateField);
         if (f.q)         params.set('q', f.q);
         return params;
     }
@@ -141,6 +143,7 @@ export const useBoletoStore = defineStore('boletoCaixa', () => {
             if (f.idreserva) params.set('idreserva', f.idreserva);
             if (f.dateFrom)  params.set('dateFrom', f.dateFrom);
             if (f.dateTo)    params.set('dateTo', f.dateTo);
+            if (f.dateField && f.dateField !== 'created_at') params.set('dateField', f.dateField);
             if (f.q)         params.set('q', f.q);
 
             stats.value = await requestWithAuth(`/boleto-caixa/history-stats?${params}`);
@@ -167,15 +170,45 @@ export const useBoletoStore = defineStore('boletoCaixa', () => {
 
     function resetHistoryFilters() {
         historyFilter.value = {
-            status: [],
+            status: ['success', 'error', 'processing'],
             paymentStatus: [],
             empreendimento: [],
             idreserva: '',
             dateFrom: '',
             dateTo: '',
+            dateField: 'created_at',
             q: '',
         };
         historyPage.value = 1;
+    }
+
+    // ── Relatório: série temporal (evolução dos boletos pagos) ────────────────
+    const timeseries = ref(null);
+    const timeseriesLoading = ref(false);
+    const timeseriesError = ref(null);
+
+    /**
+     * Busca a evolução período a período dos boletos pagos (+ emitidos como
+     * comparação) pro Relatório.
+     * @param {object} f - { granularity, dateFrom, dateTo, empreendimento[] }
+     */
+    async function fetchTimeseries(f = {}) {
+        timeseriesLoading.value = true;
+        timeseriesError.value = null;
+        try {
+            const params = new URLSearchParams();
+            if (f.granularity) params.set('granularity', f.granularity);
+            if (f.dateFrom)    params.set('dateFrom', f.dateFrom);
+            if (f.dateTo)      params.set('dateTo', f.dateTo);
+            if (Array.isArray(f.empreendimento) && f.empreendimento.length) {
+                params.set('empreendimento', f.empreendimento.join(','));
+            }
+            timeseries.value = await requestWithAuth(`/boleto-caixa/history-timeseries?${params}`);
+        } catch (err) {
+            timeseriesError.value = err.message || 'Erro ao carregar o relatório.';
+        } finally {
+            timeseriesLoading.value = false;
+        }
     }
 
     const totalPages = computed(() => Math.ceil(historyTotal.value / historyLimit.value));
@@ -424,6 +457,8 @@ export const useBoletoStore = defineStore('boletoCaixa', () => {
         resetHistoryFilters,
         // stats (KPIs)
         stats, statsLoading, fetchStats,
+        // relatório (série temporal)
+        timeseries, timeseriesLoading, timeseriesError, fetchTimeseries,
         // facets
         facets, facetsLoading, fetchFacets,
         // timeline
