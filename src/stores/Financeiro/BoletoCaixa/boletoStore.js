@@ -182,35 +182,6 @@ export const useBoletoStore = defineStore('boletoCaixa', () => {
         historyPage.value = 1;
     }
 
-    // ── Relatório: série temporal (evolução dos boletos pagos) ────────────────
-    const timeseries = ref(null);
-    const timeseriesLoading = ref(false);
-    const timeseriesError = ref(null);
-
-    /**
-     * Busca a evolução período a período dos boletos pagos (+ emitidos como
-     * comparação) pro Relatório.
-     * @param {object} f - { granularity, dateFrom, dateTo, empreendimento[] }
-     */
-    async function fetchTimeseries(f = {}) {
-        timeseriesLoading.value = true;
-        timeseriesError.value = null;
-        try {
-            const params = new URLSearchParams();
-            if (f.granularity) params.set('granularity', f.granularity);
-            if (f.dateFrom)    params.set('dateFrom', f.dateFrom);
-            if (f.dateTo)      params.set('dateTo', f.dateTo);
-            if (Array.isArray(f.empreendimento) && f.empreendimento.length) {
-                params.set('empreendimento', f.empreendimento.join(','));
-            }
-            timeseries.value = await requestWithAuth(`/boleto-caixa/history-timeseries?${params}`);
-        } catch (err) {
-            timeseriesError.value = err.message || 'Erro ao carregar o relatório.';
-        } finally {
-            timeseriesLoading.value = false;
-        }
-    }
-
     const totalPages = computed(() => Math.ceil(historyTotal.value / historyLimit.value));
 
     function setPage(p) {
@@ -457,8 +428,6 @@ export const useBoletoStore = defineStore('boletoCaixa', () => {
         resetHistoryFilters,
         // stats (KPIs)
         stats, statsLoading, fetchStats,
-        // relatório (série temporal)
-        timeseries, timeseriesLoading, timeseriesError, fetchTimeseries,
         // facets
         facets, facetsLoading, fetchFacets,
         // timeline
