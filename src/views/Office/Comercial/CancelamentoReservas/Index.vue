@@ -333,7 +333,7 @@
             <li>Nenhuma parcela paga no contrato e nenhum boleto de ato pendente, pago ou em processamento.</li>
             <li>Nenhum outro contrato ativo na mesma unidade no Sienge.</li>
             <li>Exclusão confirmada por releitura (por reserva e por unidade) antes de liberar a unidade no CV.</li>
-            <li>Sem contrato no Sienge: a unidade só é liberada após cruzar todas as referências (reserva, unidade, número de integração e documento do cliente) sem achar contrato ativo.</li>
+            <li>Sem contrato no Sienge: a unidade só é liberada após cruzar todas as referências (reserva, unidade, número de integração e documento do cliente) sem achar contrato ativo - e o gate do ato vale aqui também (boleto pendente, pago ou em processamento bloqueia a liberação).</li>
             <li>Sucesso mantém a reserva em <strong>Cancelada</strong>; bloqueio ou erro move para <strong>Pendência</strong> no CV, com mensagem orientando o e-mail ao administrativo interno.</li>
           </ul>
         </Surface>
