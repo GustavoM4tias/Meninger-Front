@@ -56,6 +56,10 @@ export const useReservaCancelStore = defineStore('reservaCancel', () => {
         q: '',
     });
 
+    // ── Ordenação (server-side) — padrão: caso mais recente primeiro ───────────
+    const sortBy = ref('caso');  // caso | titular | unidade | contrato | status | quando
+    const sortDir = ref('desc'); // asc | desc
+
     function buildParams(extra = {}) {
         const params = new URLSearchParams(extra);
         const f = historyFilter.value;
@@ -75,7 +79,12 @@ export const useReservaCancelStore = defineStore('reservaCancel', () => {
             historyError.value = null;
         }
         try {
-            const params = buildParams({ page: historyPage.value, limit: historyLimit.value });
+            const params = buildParams({
+                page: historyPage.value,
+                limit: historyLimit.value,
+                sortBy: sortBy.value,
+                sortDir: sortDir.value,
+            });
             const data = await requestWithAuth(`/cancelamento-reservas/history?${params}`);
             history.value = data.rows || [];
             historyTotal.value = data.total || 0;
@@ -90,6 +99,17 @@ export const useReservaCancelStore = defineStore('reservaCancel', () => {
 
     function setPage(p) {
         historyPage.value = p;
+        fetchHistory();
+    }
+
+    function setSort(key) {
+        if (sortBy.value === key) {
+            sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc';
+        } else {
+            sortBy.value = key;
+            sortDir.value = 'asc';
+        }
+        historyPage.value = 1;
         fetchHistory();
     }
 
@@ -182,7 +202,7 @@ export const useReservaCancelStore = defineStore('reservaCancel', () => {
     return {
         settings, settingsLoading, settingsError, settingsSaved, fetchSettings, saveSettings,
         history, historyTotal, historyPage, historyLimit, historyLoading, historyError,
-        historyFilter, fetchHistory, setPage, totalPages, resetHistoryFilters,
+        historyFilter, fetchHistory, setPage, setSort, sortBy, sortDir, totalPages, resetHistoryFilters,
         stats, fetchStats, facets, fetchFacets,
         timelineLoading, timelineError, timelineEvents, timelineHistory, timelineAttempts, fetchTimeline,
         retryHistoryItem, processManual, simulateWebhook,

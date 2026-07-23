@@ -81,10 +81,27 @@ export const useBoletoStore = defineStore('boletoCaixa', () => {
         q: '',                 // titular / nosso número / nº documento
     });
 
+    // ── Ordenação (server-side) — padrão: emissão mais recente primeiro ────────
+    const sortBy = ref('data');   // reserva | titular | valor | vencimento | status | pagamento | data
+    const sortDir = ref('desc');  // asc | desc
+
+    function setSort(key) {
+        if (sortBy.value === key) {
+            sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc';
+        } else {
+            sortBy.value = key;
+            sortDir.value = 'asc';
+        }
+        historyPage.value = 1;
+        fetchHistory();
+    }
+
     function buildHistoryParams() {
         const params = new URLSearchParams({
             page: historyPage.value,
             limit: historyLimit.value,
+            sortBy: sortBy.value,
+            sortDir: sortDir.value,
             // 1 linha por reserva (a tentativa mais recente) — o histórico completo
             // das reemissões fica no modal, evitando o mesmo cliente repetido.
             groupByReserva: 'true',
@@ -424,6 +441,7 @@ export const useBoletoStore = defineStore('boletoCaixa', () => {
         // history
         history, historyTotal, historyPage, historyLimit,
         historyLoading, historyError, historyFilter,
+        sortBy, sortDir, setSort,
         fetchHistory, setPage, totalPages, retryHistoryItem, regenerateHistoryItem, markCancelled, fetchTitularContact, resendHistoryItem,
         resetHistoryFilters,
         // stats (KPIs)
