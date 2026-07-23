@@ -18,6 +18,11 @@ import ChatPrecadastrosActions from './renderers/ChatPrecadastrosActions.vue'
 import ChatReservasSummary from './renderers/ChatReservasSummary.vue'
 import ChatReservasActions from './renderers/ChatReservasActions.vue'
 import ChatConditionSheet from './renderers/ChatConditionSheet.vue'
+import ChatAlertEditor from './renderers/ChatAlertEditor.vue'
+import ChatAcademyCards from './renderers/ChatAcademyCards.vue'
+import ChatImobiliariaCards from './renderers/ChatImobiliariaCards.vue'
+import ChatPersonCards from './renderers/ChatPersonCards.vue'
+import ChatNotificationPrefs from './renderers/ChatNotificationPrefs.vue'
 import FeedbackModal from './FeedbackModal.vue'
 
 defineOptions({ inheritAttrs: false })
@@ -279,6 +284,13 @@ async function confirmFeedback({ comment }) {
               v-if="getAction(msg)?.type === 'condition_sheet'"
               :action="getAction(msg)"
             />
+            <!-- Renderers que faltavam no chat flutuante (existiam só na Home) -->
+            <ChatAlertEditor v-if="getAction(msg)?.type === 'open_alert_editor'" :action="getAction(msg)" />
+            <ChatAcademyCards v-if="getAction(msg)?.type === 'academy_cards'" :action="getAction(msg)" />
+            <ChatImobiliariaCards v-if="getAction(msg)?.type === 'imobiliaria_cards'" :action="getAction(msg)" />
+            <!-- Pessoas/Organograma + Preferências de notificação -->
+            <ChatPersonCards v-if="getAction(msg)?.type === 'person_cards'" :action="getAction(msg)" />
+            <ChatNotificationPrefs v-if="getAction(msg)?.type === 'notification_prefs'" :action="getAction(msg)" />
             <div v-if="msg.response_type === 'error' && msg.metadata?.storageLimit"
               class="flex items-start gap-2 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20
                      text-sm text-amber-700 dark:text-amber-300 mt-2">
