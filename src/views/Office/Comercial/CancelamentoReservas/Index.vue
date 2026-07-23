@@ -99,13 +99,19 @@
               <table class="w-full text-sm">
                 <thead>
                   <tr class="text-left text-[11px] uppercase tracking-wider text-ink-subtle border-b border-line">
-                    <th class="px-4 py-3 font-medium">Caso</th>
-                    <th class="px-4 py-3 font-medium">Reserva / Titular</th>
-                    <th class="px-4 py-3 font-medium">Unidade</th>
-                    <th class="px-4 py-3 font-medium">Contrato Sienge</th>
-                    <th class="px-4 py-3 font-medium">Status</th>
-                    <th class="px-4 py-3 font-medium">Ações executadas</th>
-                    <th class="px-4 py-3 font-medium text-right">Quando</th>
+                    <th v-for="col in histColumns" :key="col.key"
+                      class="px-4 py-3 font-medium"
+                      :class="[
+                        col.align === 'right' ? 'text-right' : 'text-left',
+                        col.sortable ? 'select-none cursor-pointer hover:text-ink transition-colors' : '',
+                      ]"
+                      @click="col.sortable && store.setSort(col.key)">
+                      <span class="inline-flex items-center gap-1.5"
+                        :class="col.align === 'right' ? 'flex-row-reverse' : ''">
+                        {{ col.label }}
+                        <i v-if="col.sortable" class="text-[9px]" :class="sortIcon(col.key)"></i>
+                      </span>
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -139,7 +145,7 @@
                       </div>
                     </td>
                     <td class="px-4 py-3 text-right text-xs text-ink-muted whitespace-nowrap">
-                      {{ formatDateTime(item.created_at) }}
+                      {{ formatDateTime(item.createdAt ?? item.created_at) }}
                     </td>
                   </tr>
                 </tbody>
@@ -165,7 +171,7 @@
                     <Badge v-if="item.sienge_contrato_excluido" variant="danger" size="sm" outlined>Contrato excluído</Badge>
                     <Badge v-if="item.cv_unidade_disponibilizada" variant="success" size="sm" outlined>Unidade liberada</Badge>
                   </div>
-                  <span class="text-[11px] text-ink-subtle">{{ formatDateTime(item.created_at) }}</span>
+                  <span class="text-[11px] text-ink-subtle">{{ formatDateTime(item.createdAt ?? item.created_at) }}</span>
                 </div>
               </button>
             </div>
@@ -494,6 +500,24 @@ function statusMeta(s) {
 }
 const kpiChips = computed(() =>
   Object.entries(STATUS_META).map(([value, m]) => ({ value, ...m })));
+
+// ── Colunas ordenáveis do histórico ───────────────────────────────────────────
+const histColumns = [
+  { key: 'caso',     label: 'Caso',             align: 'left',  sortable: true },
+  { key: 'titular',  label: 'Reserva / Titular', align: 'left', sortable: true },
+  { key: 'unidade',  label: 'Unidade',          align: 'left',  sortable: true },
+  { key: 'contrato', label: 'Contrato Sienge',  align: 'left',  sortable: true },
+  { key: 'status',   label: 'Status',           align: 'left',  sortable: true },
+  { key: '_acoes',   label: 'Ações executadas', align: 'left',  sortable: false },
+  { key: 'quando',   label: 'Quando',           align: 'right', sortable: true },
+];
+
+function sortIcon(key) {
+  if (store.sortBy !== key) return 'fas fa-sort text-ink-subtle/40';
+  return store.sortDir === 'asc'
+    ? 'fas fa-sort-up text-accent'
+    : 'fas fa-sort-down text-accent';
+}
 
 function toggleStatusFilter(value) {
   const arr = store.historyFilter.status;

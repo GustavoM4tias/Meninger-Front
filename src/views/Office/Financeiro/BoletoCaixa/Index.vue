@@ -618,13 +618,16 @@
             <table class="w-full text-sm">
               <thead>
                 <tr class="bg-surface-sunken/60 border-b border-line">
-                  <th class="text-left px-4 py-3 text-[11px] font-mono uppercase tracking-wider text-ink-subtle">#Reserva</th>
-                  <th class="text-left px-4 py-3 text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Titular / Empreendimento</th>
-                  <th class="text-right px-4 py-3 text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Valor</th>
-                  <th class="text-center px-4 py-3 text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Vencimento</th>
-                  <th class="text-center px-4 py-3 text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Emissão</th>
-                  <th class="text-center px-4 py-3 text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Pagamento</th>
-                  <th class="text-center px-4 py-3 text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Data</th>
+                  <th v-for="col in historyColumns" :key="col.key"
+                    class="px-4 py-3 text-[11px] font-mono uppercase tracking-wider text-ink-subtle select-none cursor-pointer hover:text-ink transition-colors"
+                    :class="col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : 'text-left'"
+                    @click="store.setSort(col.key)">
+                    <span class="inline-flex items-center gap-1.5"
+                      :class="col.align === 'right' ? 'flex-row-reverse' : col.align === 'center' ? 'justify-center' : ''">
+                      {{ col.label }}
+                      <i class="text-[9px]" :class="sortIcon(col.key)"></i>
+                    </span>
+                  </th>
                   <th class="text-center px-4 py-3 text-[11px] font-mono uppercase tracking-wider text-ink-subtle"></th>
                 </tr>
               </thead>
@@ -861,6 +864,24 @@ function removeSerieId(id) {
 async function handleSave() {
   const payload = { ...form.value };
   await store.saveSettings(payload);
+}
+
+// ── Colunas ordenáveis do histórico ───────────────────────────────────────────
+const historyColumns = [
+  { key: 'reserva',    label: '#Reserva',                 align: 'left' },
+  { key: 'titular',    label: 'Titular / Empreendimento', align: 'left' },
+  { key: 'valor',      label: 'Valor',                    align: 'right' },
+  { key: 'vencimento', label: 'Vencimento',               align: 'center' },
+  { key: 'status',     label: 'Emissão',                  align: 'center' },
+  { key: 'pagamento',  label: 'Pagamento',                align: 'center' },
+  { key: 'data',       label: 'Data',                     align: 'center' },
+];
+
+function sortIcon(key) {
+  if (store.sortBy !== key) return 'fas fa-sort text-ink-subtle/40';
+  return store.sortDir === 'asc'
+    ? 'fas fa-sort-up text-accent'
+    : 'fas fa-sort-down text-accent';
 }
 
 // ── Filtros: ao aplicar, refaz history + stats em paralelo ────────────────────

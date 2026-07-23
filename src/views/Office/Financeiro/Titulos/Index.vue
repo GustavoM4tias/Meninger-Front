@@ -64,6 +64,23 @@
           </div>
         </div>
 
+        <!-- Busca livre -->
+        <div class="mt-4">
+          <label class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1.5 flex items-center gap-1.5">
+            <i class="fas fa-magnifying-glass text-accent text-[10px]"></i>
+            Buscar
+          </label>
+          <div class="relative">
+            <Input v-model="store.searchTerm" icon-left="fas fa-search"
+              placeholder="Tipo (ALUG, NFE, NFS...), nº do título (#), credor, documento, status..." />
+            <button v-if="store.searchTerm" type="button"
+              class="absolute right-3 top-1/2 -translate-y-1/2 text-ink-subtle hover:text-ink transition-colors"
+              title="Limpar busca" @click="store.searchTerm = ''">
+              <i class="fas fa-times-circle"></i>
+            </button>
+          </div>
+        </div>
+
         <!-- Aviso de range excessivo -->
         <Surface v-if="store.dateRangeWarning" variant="raised" padding="sm"
           class="mt-3 border-amber-500/30 bg-amber-500/10">
@@ -113,13 +130,16 @@
           <table class="min-w-full table-auto">
             <thead class="bg-surface-sunken/60 border-b border-line">
               <tr>
-                <th class="px-4 py-3 text-left text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Fornecedor</th>
-                <th class="px-4 py-3 text-left text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Documento</th>
-                <th class="px-4 py-3 text-center text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Parcelas</th>
-                <th class="px-4 py-3 text-right text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Valor Total</th>
-                <th class="px-4 py-3 text-center text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Emissão</th>
-                <th class="px-4 py-3 text-center text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Departamento</th>
-                <th class="px-4 py-3 text-center text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Status</th>
+                <th v-for="col in columns" :key="col.key"
+                  class="px-4 py-3 text-[11px] font-mono uppercase tracking-wider text-ink-subtle select-none cursor-pointer hover:text-ink transition-colors"
+                  :class="col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : 'text-left'"
+                  @click="store.setSort(col.key)">
+                  <span class="inline-flex items-center gap-1.5"
+                    :class="col.align === 'right' ? 'flex-row-reverse' : ''">
+                    {{ col.label }}
+                    <i class="text-[9px]" :class="sortIcon(col.key)"></i>
+                  </span>
+                </th>
               </tr>
             </thead>
 
@@ -266,6 +286,24 @@ function handleCostCenterChange(v) {
   store.costCenterIds = arr
     .map(label => costCenterIdByName.value.get(label))
     .filter(id => Number.isFinite(id));
+}
+
+// ── Colunas ordenáveis ────────────────────────────────────────────────────────
+const columns = [
+  { key: 'creditor',     label: 'Fornecedor',   align: 'left' },
+  { key: 'document',     label: 'Documento',    align: 'left' },
+  { key: 'installments', label: 'Parcelas',     align: 'center' },
+  { key: 'amount',       label: 'Valor Total',  align: 'right' },
+  { key: 'issue_date',   label: 'Emissão',      align: 'center' },
+  { key: 'department',   label: 'Departamento', align: 'center' },
+  { key: 'status',       label: 'Status',       align: 'center' },
+];
+
+function sortIcon(key) {
+  if (store.sortKey !== key) return 'fas fa-sort text-ink-subtle/40';
+  return store.sortDir === 'asc'
+    ? 'fas fa-sort-up text-accent'
+    : 'fas fa-sort-down text-accent';
 }
 
 // ── Status badge ──────────────────────────────────────────────────────────────
