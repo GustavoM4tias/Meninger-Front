@@ -13,8 +13,5 @@ const html = computed(() =>
 </script>
 
 <template>
-  <div
-    class="prose prose-sm sm:prose-base max-w-none dark:prose-invert prose-p:text-ink-muted prose-strong:text-ink prose-headings:font-display prose-headings:text-ink prose-a:text-accent"
-    v-html="html"
-  />
+  <div class="md-body text-[15px] sm:text-base" v-html="html" />
 </template>

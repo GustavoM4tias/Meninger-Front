@@ -20,6 +20,7 @@ const store = useReportsStore()
 
 const rendererRef = ref(null)
 const mobileTab = ref('chat') // chat | preview (Fase A no mobile)
+const floatOpen = ref(true)   // painel da Eme na Fase B (persiste ao trocar de fase)
 const showShare = ref(false)
 const showPublic = ref(false)
 const publishing = ref(false)
@@ -150,8 +151,12 @@ watch(() => store.highlightId, (id) => {
       </div>
     </div>
 
-    <!-- FASE B: relatório em tela cheia + Eme flutuante -->
-    <div v-else class="flex-1 min-h-0 overflow-y-auto bg-surface px-4 py-6 sm:px-8 pb-28">
+    <!-- FASE B: relatório em tela cheia + Eme flutuante (painel à esquerda) -->
+    <div
+      v-else
+      class="flex-1 min-h-0 overflow-y-auto bg-surface px-4 py-6 sm:px-8 pb-28 transition-[padding] duration-300"
+      :class="floatOpen ? 'sm:pl-[27rem]' : ''"
+    >
       <ReportRenderer
         ref="rendererRef"
         :spec="store.spec"
@@ -160,7 +165,7 @@ watch(() => store.highlightId, (id) => {
         :highlight-id="store.highlightId"
         @select="onSelectBlock"
       />
-      <EmeReportFloat @goto-block="gotoBlock" />
+      <EmeReportFloat v-model:open="floatOpen" @goto-block="gotoBlock" />
     </div>
 
     <ShareModal :open="showShare" :current-access="currentAccess" @close="showShare = false" />

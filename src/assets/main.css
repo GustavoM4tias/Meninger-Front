@@ -110,6 +110,70 @@
     letter-spacing: -0.015em;
   }
 
+  /* Tipografia de texto corrido gerado por markdown (relatórios e chat da Eme).
+     O projeto não usa @tailwindcss/typography — estas regras fazem o papel do
+     `prose`, com os tokens semânticos (funciona em light e dark). */
+  .md-body {
+    @apply text-ink-muted leading-relaxed;
+  }
+  .md-body > *:first-child { margin-top: 0; }
+  .md-body > *:last-child { margin-bottom: 0; }
+  .md-body p {
+    @apply my-3;
+  }
+  .md-body strong {
+    @apply font-semibold text-ink;
+  }
+  .md-body em { @apply italic; }
+  .md-body h1, .md-body h2, .md-body h3, .md-body h4 {
+    @apply font-display text-ink mt-5 mb-2 leading-snug;
+  }
+  .md-body h1 { @apply text-xl; }
+  .md-body h2 { @apply text-lg; }
+  .md-body h3 { @apply text-base font-semibold; }
+  .md-body h4 { @apply text-sm font-semibold; }
+  .md-body ul, .md-body ol {
+    @apply my-3 pl-5 space-y-1.5;
+  }
+  .md-body ul { @apply list-disc; }
+  .md-body ol { @apply list-decimal; }
+  .md-body li::marker { @apply text-ink-subtle; }
+  .md-body li > p { @apply my-0; }
+  .md-body a {
+    @apply text-accent underline underline-offset-2 hover:opacity-80;
+  }
+  .md-body blockquote {
+    @apply my-3 pl-3.5 border-l-2 border-accent/40 text-ink-muted italic;
+  }
+  .md-body code {
+    @apply rounded bg-surface-sunken px-1.5 py-0.5 text-[0.85em] text-ink font-mono;
+  }
+  .md-body pre {
+    @apply my-3 rounded-lg bg-surface-sunken p-3 overflow-x-auto text-xs;
+  }
+  .md-body pre code { @apply bg-transparent p-0; }
+  .md-body hr { @apply my-4 border-line; }
+  .md-body table {
+    @apply my-3 w-full text-sm border-collapse;
+  }
+  .md-body th {
+    @apply border-b border-line px-2.5 py-1.5 text-left text-xs font-semibold uppercase tracking-wider text-ink-subtle;
+  }
+  .md-body td {
+    @apply border-b border-line/60 px-2.5 py-1.5 text-ink-muted;
+  }
+
+  /* Variante compacta — bolhas de chat da Eme */
+  .md-body-sm {
+    @apply text-sm;
+  }
+  .md-body-sm p { @apply my-2; }
+  .md-body-sm ul, .md-body-sm ol { @apply my-2 pl-4 space-y-1; }
+  .md-body-sm h1, .md-body-sm h2, .md-body-sm h3, .md-body-sm h4 { @apply mt-3 mb-1.5; }
+  .md-body-sm h1 { @apply text-base; }
+  .md-body-sm h2 { @apply text-[15px]; }
+  .md-body-sm h3, .md-body-sm h4 { @apply text-sm; }
+
   /* gradiente sutil top-down em surfaces (dá leve "viço" sem ser chamativo) */
   .surface-gradient {
     background-image:
