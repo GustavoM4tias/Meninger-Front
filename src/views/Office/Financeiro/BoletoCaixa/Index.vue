@@ -453,7 +453,7 @@
               </p>
               <p class="flex items-start gap-1.5">
                 <i class="fab fa-whatsapp text-emerald-600 mt-0.5"></i>
-                <span><strong>WhatsApp:</strong> usa o template HSM <code class="font-mono bg-surface-sunken px-1 rounded text-[10px]">{{ store.whatsappTemplate?.name || 'boleto_caixa_ato_v1' }}</code>. Cliente que responder recebe aviso automático informando que é canal só de avisos.</span>
+                <span><strong>WhatsApp:</strong> se o cliente nos escreveu nas últimas 24h, o boleto vai como documento <strong>gratuito</strong> (janela de serviço); fora disso, usa o template HSM <code class="font-mono bg-surface-sunken px-1 rounded text-[10px]">{{ store.whatsappTemplate?.name || 'boleto_caixa_ato_v2' }}</code>. Cliente que responder recebe aviso automático informando que é canal só de avisos.</span>
               </p>
             </div>
           </Surface>
