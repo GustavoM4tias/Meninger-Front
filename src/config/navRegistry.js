@@ -123,10 +123,24 @@ export const navRegistry = [
                 pages: [
                     { route: '/comercial/precadastros',    section: 'Pré-Cadastros', name: 'Pré-Cadastros', icon: 'fas fa-id-card-clip', permissionManaged: false },
                     { route: '/comercial/reservas-report', section: 'Reservas',      name: 'Reservas',      icon: 'fas fa-bookmark',     permissionManaged: false },
-                    { route: '/comercial/imobiliarias',    section: 'Imobiliárias',  name: 'Imobiliárias',  icon: 'fas fa-house-flag' },
                     { route: '/comercial/faturamento',     section: 'Faturamento',   name: 'Faturamento',   icon: 'fas fa-file-invoice-dollar' },
-                    { route: '/comercial/distratos',       section: 'Distratos',     name: 'Distratos',     icon: 'fas fa-file-circle-xmark' },
-                    { route: '/comercial/cancelamento-reservas', section: 'Cancelamentos CV × Sienge', name: 'Cancelamentos CV × Sienge', icon: 'fas fa-eraser', adminOnly: true },
+                ],
+            },
+            {
+                key: 'terminations',
+                name: 'Distratos & Cancelamentos',
+                icon: 'fas fa-file-circle-xmark',
+                pages: [
+                    { route: '/comercial/distratos',             section: 'Distratos',     name: 'Distratos',     icon: 'fas fa-file-circle-xmark' },
+                    { route: '/comercial/cancelamento-reservas', section: 'Cancelamentos', name: 'Cancelamentos', icon: 'fas fa-eraser', adminOnly: true },
+                ],
+            },
+            {
+                key: 'registers',
+                name: 'Cadastros',
+                icon: 'fas fa-address-book',
+                pages: [
+                    { route: '/comercial/imobiliarias',    section: 'Imobiliárias',  name: 'Imobiliárias',  icon: 'fas fa-house-flag' },
                 ],
             },
             {
