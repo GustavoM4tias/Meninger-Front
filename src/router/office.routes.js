@@ -221,6 +221,12 @@ export default [
                         meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Gestão e análise de distratos (rescisões de contrato)' },
                     },
                     {
+                        path: 'cancelamento-reservas',
+                        name: 'Cancelamentos CV × Sienge',
+                        component: () => import('@/views/Office/Comercial/CancelamentoReservas/Index.vue'),
+                        meta: { requiresAuth: true, requiresAdmin: true, allowedRole: 'admin', searchable: false, content: 'Automação de exclusão no Sienge de contratos de reservas canceladas no CV' },
+                    },
+                    {
                         path: 'buildings',
                         name: 'Empreendimentos',
                         component: () => import('@/views/Office/Comercial/Buildings/Index.vue'),
