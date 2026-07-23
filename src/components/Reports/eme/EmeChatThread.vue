@@ -38,7 +38,7 @@ watch(
           : 'bg-surface-sunken text-ink rounded-bl-md'"
       >
         <div v-if="m.role === 'user'" class="whitespace-pre-wrap">{{ m.content }}</div>
-        <div v-else class="prose prose-sm dark:prose-invert max-w-none" v-html="md(m.content)" />
+        <div v-else class="md-body md-body-sm" v-html="md(m.content)" />
       </div>
     </div>
 
@@ -62,7 +62,7 @@ watch(
     <!-- Texto em streaming -->
     <div v-if="streamingText" class="flex justify-start">
       <div class="max-w-[88%] rounded-2xl rounded-bl-md px-3.5 py-2 text-sm bg-surface-sunken text-ink">
-        <div class="prose prose-sm dark:prose-invert max-w-none" v-html="md(streamingText)" />
+        <div class="md-body md-body-sm" v-html="md(streamingText)" />
         <span class="inline-block w-1.5 h-4 bg-accent animate-pulse rounded-sm align-text-bottom" />
       </div>
     </div>
