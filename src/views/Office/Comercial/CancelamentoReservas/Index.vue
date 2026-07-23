@@ -13,11 +13,12 @@
             :steps="[
               { title: 'Acompanhe o Histórico', text: 'Cada cancelamento recebido vira um caso com status: Sucesso (executado), Pendência (validação barrou, nada foi alterado - trate manualmente), Não aplicável, Duplicado ou Erro.' },
               { title: 'Abra o detalhe', text: 'Clique em um caso para ver todas as validações executadas (contrato, unidade, cliente, ato) e a linha do tempo completa.' },
-              { title: 'Resolva pendências', text: 'Casos em Pendência ou Erro têm o botão Reprocessar: a automação refaz todas as conferências do zero antes de agir.' },
-              { title: 'Configurações', text: 'Copie o endereço do webhook para o CV, ative a automação e, se precisar, processe uma reserva manualmente pelo ID.' },
+              { title: 'Resolva pendências', text: 'Casos barrados movem a reserva para a etapa Pendência no CV. Resolva a causa e use Reprocessar (ou retorne a reserva para Cancelada no CV) - a automação refaz todas as conferências do zero antes de agir.' },
+              { title: 'Configurações', text: 'Copie o endereço do webhook para o CV, confira os IDs das etapas Pendência/Cancelada, ative a automação e, se precisar, processe uma reserva manualmente pelo ID.' },
             ]"
             :tips="[
               'A automação NUNCA exclui contrato emitido, com parcela paga ou com boleto de ato pendente/pago - esses casos viram pendência.',
+              'Sucesso mantém a reserva em Cancelada; bloqueio/erro move para Pendência no CV. Assim, Cancelada só contém o que foi realmente cancelado nos dois sistemas.',
               'Com a automação pausada, os webhooks continuam sendo registrados e podem ser reprocessados depois.',
             ]" />
           <div v-if="store.settings" class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border"
@@ -249,6 +250,34 @@
           </Surface>
         </Surface>
 
+        <!-- Card: Etapas do workflow CV -->
+        <Surface variant="raised" padding="md" class="space-y-4 surface-gradient">
+          <div class="flex items-center gap-3">
+            <div class="h-9 w-9 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 grid place-items-center">
+              <i class="fas fa-diagram-project"></i>
+            </div>
+            <div>
+              <h2 class="font-semibold text-ink text-sm">Etapas do workflow CV</h2>
+              <p class="text-xs text-ink-muted">
+                Sucesso mantém/devolve a reserva para <strong>Cancelada</strong>; bloqueio ou erro move para
+                <strong>Pendência</strong>. Mover Pendência de volta para Cancelada no CV re-dispara a automação.
+              </p>
+            </div>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Input v-model="situacaoForm.situacao_pendencia_id" type="number"
+              label="ID da etapa Pendência" placeholder="30"
+              hint="Etapa aplicada quando o cancelamento é barrado ou falha." />
+            <Input v-model="situacaoForm.situacao_cancelada_id" type="number"
+              label="ID da etapa Cancelada" placeholder="4"
+              hint="Etapa de cancelamento concluído (mantida no sucesso)." />
+          </div>
+          <div class="flex justify-end">
+            <Button variant="primary" size="sm" icon="fas fa-check" :loading="store.settingsLoading"
+              @click="handleSaveSituacoes">Salvar etapas</Button>
+          </div>
+        </Surface>
+
         <!-- Card: Processamento manual -->
         <Surface variant="raised" padding="md" class="space-y-3 surface-gradient">
           <div class="flex items-center gap-3">
@@ -294,11 +323,12 @@
           <ul class="text-xs text-ink-muted space-y-1.5 list-disc pl-5">
             <li>Reserva confirmada como cancelada/distratada ao vivo no CV (nunca só pelo webhook).</li>
             <li>Exatamente 1 contrato ativo no Sienge vinculado à reserva, na situação <strong>Autorizado</strong> (aguardando emissão) e sem data de emissão.</li>
-            <li>Unidade, empreendimento e cliente do contrato conferidos contra a reserva.</li>
+            <li>Unidade, empreendimento e cliente (por CPF/CNPJ) do contrato conferidos contra a reserva.</li>
             <li>Nenhuma parcela paga no contrato e nenhum boleto de ato pendente, pago ou em processamento.</li>
             <li>Nenhum outro contrato ativo na mesma unidade no Sienge.</li>
-            <li>Exclusão confirmada por releitura antes de liberar a unidade no CV.</li>
-            <li>Sem contrato no Sienge: a unidade só é liberada se o Sienge confirmar estoque comercial <strong>Disponível</strong>.</li>
+            <li>Exclusão confirmada por releitura (por reserva e por unidade) antes de liberar a unidade no CV.</li>
+            <li>Sem contrato no Sienge: a unidade só é liberada após cruzar todas as referências (reserva, unidade, número de integração e documento do cliente) sem achar contrato ativo.</li>
+            <li>Sucesso mantém a reserva em <strong>Cancelada</strong>; bloqueio ou erro move para <strong>Pendência</strong> no CV, com mensagem orientando o e-mail ao administrativo interno.</li>
           </ul>
         </Surface>
 
@@ -325,6 +355,12 @@
           <Badge v-if="detail.item.sienge_contrato_excluido" variant="danger" outlined>Contrato excluído no Sienge</Badge>
           <Badge v-if="detail.item.cv_unidade_disponibilizada" variant="success" outlined>Unidade liberada no CV</Badge>
           <Badge v-if="detail.item.cv_mensagem_enviada" variant="neutral" outlined>Mensagem no CV</Badge>
+          <Badge v-if="detail.item.cv_situacao_alterada"
+            :variant="detail.item.situacao_aplicada_id === store.settings?.situacao_pendencia_id ? 'warning' : 'success'" outlined>
+            {{ detail.item.situacao_aplicada_id === store.settings?.situacao_pendencia_id
+              ? 'Reserva movida para Pendência no CV'
+              : `Etapa CV aplicada (ID ${detail.item.situacao_aplicada_id})` }}
+          </Badge>
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
@@ -418,7 +454,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useReservaCancelStore } from '@/stores/Comercial/ReservaCancel/reservaCancelStore';
 import API_URL from '@/config/apiUrl';
 
@@ -529,6 +565,24 @@ function copyWebhook() {
 
 async function handleToggleActive(value) {
   await store.saveSettings({ active: value });
+}
+
+// ── Etapas do workflow CV ─────────────────────────────────────────────────────
+const situacaoForm = ref({ situacao_pendencia_id: '', situacao_cancelada_id: '' });
+
+watch(() => store.settings, (s) => {
+  if (!s) return;
+  situacaoForm.value = {
+    situacao_pendencia_id: s.situacao_pendencia_id ?? '',
+    situacao_cancelada_id: s.situacao_cancelada_id ?? '',
+  };
+}, { immediate: true });
+
+async function handleSaveSituacoes() {
+  await store.saveSettings({
+    situacao_pendencia_id: Number(situacaoForm.value.situacao_pendencia_id) || null,
+    situacao_cancelada_id: Number(situacaoForm.value.situacao_cancelada_id) || null,
+  });
 }
 
 // ── Processamento manual ──────────────────────────────────────────────────────
