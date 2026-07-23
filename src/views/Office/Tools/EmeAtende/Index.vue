@@ -32,9 +32,9 @@ function notify(text, type = 'ok') {
   setTimeout(() => { if (toast.text === text) toast.text = '' }, 3500)
 }
 const fmt = (d) => d ? new Date(d).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '-'
-const stateVariant = (s) => ({ bot: 'info', human: 'warning', closed: 'neutral' }[s] || 'neutral')
-const stateLabel = (s) => ({ bot: 'Eme (IA)', human: 'Humano', closed: 'Encerrada' }[s] || s)
-const leadVariant = (s) => ({ received: 'neutral', opened: 'info', engaged: 'accent', qualified: 'success', handoff: 'warning', closed: 'neutral', opted_out: 'danger' }[s] || 'neutral')
+const stateVariant = (s) => ({ bot: 'info', closed: 'neutral' }[s] || 'neutral')
+const stateLabel = (s) => ({ bot: 'Eme (IA)', closed: 'Encerrada' }[s] || s)
+const leadVariant = (s) => ({ received: 'neutral', opened: 'info', engaged: 'accent', qualified: 'success', closed: 'neutral', opted_out: 'danger' }[s] || 'neutral')
 
 // ── Conversas ────────────────────────────────────────────────────────────────
 const convLoading = ref(false)
@@ -45,7 +45,6 @@ const convDetail = ref(null)   // detalhe carregado (messages)
 const convFilterOpts = [
   { value: '', label: 'Todas' },
   { value: 'bot', label: 'Eme (IA)' },
-  { value: 'human', label: 'Humano' },
   { value: 'closed', label: 'Encerradas' },
 ]
 
@@ -65,7 +64,7 @@ async function changeConvState(c, state) {
     await api.setConversationState(c.id, state)
     c.state = state
     if (convDetail.value?.id === c.id) convDetail.value.state = state
-    notify(state === 'human' ? 'Você assumiu a conversa - a Eme silenciou.' : state === 'bot' ? 'Conversa devolvida pra Eme.' : 'Conversa encerrada.')
+    notify(state === 'bot' ? 'Conversa devolvida pra Eme.' : 'Conversa encerrada.')
   } catch (e) { notify(e.message, 'err') }
 }
 watch(convFilter, loadConversations)
@@ -76,7 +75,7 @@ const flows = ref([])
 const rules = ref([])
 const templates = ref([])
 const flowOpen = ref(null)
-const flowEdit = reactive({ openerVars: '', triggersJson: '', handoffMessage: '' })
+const flowEdit = reactive({ openerVars: '', triggersJson: '' })
 const newFlowName = ref('')
 const newRule = reactive({ field: 'campaign', operator: 'contains', value: '', flow_id: null, priority: 100 })
 
@@ -115,7 +114,6 @@ function openFlow(f) {
   flowOpen.value = f.id
   flowEdit.openerVars = (f.opener_variables || []).join(', ')
   flowEdit.triggersJson = JSON.stringify(f.triggers || [], null, 2)
-  flowEdit.handoffMessage = f.handoff?.message || ''
 }
 async function saveFlow(f) {
   busy.value = true
@@ -129,7 +127,6 @@ async function saveFlow(f) {
       opener_template: f.opener_template || null, opener_language: f.opener_language || 'pt_BR',
       opener_variables: flowEdit.openerVars.split(',').map(s => s.trim()).filter(Boolean),
       triggers,
-      handoff: { ...(f.handoff || {}), message: flowEdit.handoffMessage || undefined },
     }
     const saved = await api.updateFlow(f.id, payload)
     Object.assign(f, saved)
@@ -180,7 +177,6 @@ const leadStatusOpts = [
   { value: 'opened', label: 'Abertura enviada' },
   { value: 'engaged', label: 'Em conversa' },
   { value: 'qualified', label: 'Qualificado' },
-  { value: 'handoff', label: 'Com humano' },
   { value: 'closed', label: 'Encerrado' },
   { value: 'opted_out', label: 'Opt-out' },
 ]
@@ -301,10 +297,8 @@ onMounted(loadConversations)
                   </div>
                   <EmptyState v-if="!convDetail.messages?.length" size="sm" icon="fas fa-comments" title="Sem mensagens" description="Nenhuma troca registrada ainda." />
                 </div>
-                <div class="mt-3 flex items-center gap-2 flex-wrap">
-                  <span v-if="c.handoff_reason" class="text-xs text-ink-muted mr-auto"><i class="fas fa-hand-point-right mr-1"></i>{{ c.handoff_reason }}</span>
-                  <Button v-if="c.state === 'bot'" variant="primary" size="sm" icon="fas fa-user" @click="changeConvState(c, 'human')">Assumir (silencia a Eme)</Button>
-                  <Button v-if="c.state === 'human'" variant="primary" size="sm" icon="fas fa-robot" @click="changeConvState(c, 'bot')">Devolver pra Eme</Button>
+                <div class="mt-3 flex items-center gap-2 flex-wrap justify-end">
+                  <Button v-if="c.state === 'closed'" variant="primary" size="sm" icon="fas fa-robot" @click="changeConvState(c, 'bot')">Reabrir pra Eme</Button>
                   <Button v-if="c.state !== 'closed'" variant="ghost" size="sm" icon="fas fa-box-archive" @click="changeConvState(c, 'closed')">Encerrar</Button>
                 </div>
               </template>
@@ -346,11 +340,11 @@ onMounted(loadConversations)
                 <Select :model-value="f.opener_template || ''" :options="templateOpts" label="Template de abertura (aprovado na Meta)" @change="(v) => f.opener_template = v" />
                 <Input v-model="flowEdit.openerVars" label="Variáveis do template (campos do lead, na ordem)" placeholder="name, empreendimento" />
               </div>
-              <div><label :class="LABEL">Comportamento da Eme (persona e instruções)</label><textarea v-model="f.system_prompt" :class="TA" rows="5" placeholder="Você é a Eme… tom, o que pode e não pode fazer, quando transferir…"></textarea></div>
+              <div><label :class="LABEL">Comportamento da Eme (persona e instruções)</label><textarea v-model="f.system_prompt" :class="TA" rows="5" placeholder="Você é a Eme… tom, o que pode e não pode fazer, o que perguntar…"></textarea></div>
               <div><label :class="LABEL">Contexto do negócio (única fonte de verdade sobre produto/valores)</label><textarea v-model="f.business_context" :class="TA" rows="5" placeholder="Empreendimentos, diferenciais, condições vigentes, horário do plantão…"></textarea></div>
-              <div class="grid sm:grid-cols-2 gap-4">
-                <Input v-model="flowEdit.handoffMessage" label="Mensagem ao transferir pra humano (opcional)" placeholder="Vou te conectar com um consultor…" />
-                <div><label :class="LABEL">Gatilhos (JSON) - rodam antes da IA</label><textarea v-model="flowEdit.triggersJson" :class="TA + ' font-mono'" rows="4" placeholder='[{ "value": "corretor", "action": "handoff" }]'></textarea></div>
+              <div>
+                <label :class="LABEL">Gatilhos (JSON) - rodam antes da IA</label>
+                <textarea v-model="flowEdit.triggersJson" :class="TA + ' font-mono'" rows="4" placeholder='[{ "value": "quero visitar", "action": "reply", "reply_text": "Que ótimo!" }]'></textarea>
               </div>
               <div class="flex items-center justify-between">
                 <Button variant="danger" size="sm" icon="fas fa-ban" @click="api.deleteFlow(f.id).then(() => { f.active = false; notify('Fluxo desativado.') }).catch(e => notify(e.message, 'err'))">Desativar</Button>
