@@ -18,6 +18,8 @@ import ChatAlertEditor from './renderers/ChatAlertEditor.vue';
 import ChatAcademyCards from './renderers/ChatAcademyCards.vue';
 import ChatImobiliariaCards from './renderers/ChatImobiliariaCards.vue';
 import ChatConditionSheet from './renderers/ChatConditionSheet.vue';
+import ChatPersonCards from './renderers/ChatPersonCards.vue';
+import ChatNotificationPrefs from './renderers/ChatNotificationPrefs.vue';
 
 const props = defineProps({
   message: { type: Object, required: true },
@@ -98,6 +100,12 @@ const isError = computed(() => props.message.response_type === 'error');
 
         <!-- Ficha Comercial: card com dados + sugestões + abrir ficha -->
         <ChatConditionSheet v-if="action?.type === 'condition_sheet'" :action="action" />
+
+        <!-- Pessoas/Organograma: cards com modal de detalhe -->
+        <ChatPersonCards v-if="action?.type === 'person_cards'" :action="action" />
+
+        <!-- Preferências de notificação: painel de toggles -->
+        <ChatNotificationPrefs v-if="action?.type === 'notification_prefs'" :action="action" />
 
         <!-- Feedback / Retry -->
         <div v-if="!streaming" class="flex items-center gap-1 mt-1.5">
