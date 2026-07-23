@@ -409,10 +409,10 @@ export default [
                         meta: { requiresAuth: true, adminOnly: true, searchable: true, content: 'Configure regras, comportamento, glossário e relatórios do assistente Eme sem código.' },
                     },
                     {
+                        // Consolidado em /settings/whatsapp (aba Automações). Mantém a
+                        // rota antiga viva como redirect — links/atalhos não quebram.
                         path: 'whatsapp-automations',
-                        name: 'Automações WhatsApp',
-                        component: () => import('@/views/Office/Tools/WhatsappAutomations/Index.vue'),
-                        meta: { requiresAuth: true, adminOnly: true, searchable: true, content: 'Configure templates e automações de WhatsApp sem código.' },
+                        redirect: { path: '/settings/whatsapp', query: { tab: 'automations' } },
                     },
                     {
                         path: 'eme-atende',

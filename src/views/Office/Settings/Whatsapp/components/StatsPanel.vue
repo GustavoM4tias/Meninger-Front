@@ -1,4 +1,8 @@
 <script setup>
+// Painel de GASTOS — antes só contava mensagens por categoria; agora estima o
+// custo em R$ (modelo PMP: cobra por template entregue, por categoria) e mostra
+// quanto foi economizado enviando dentro da janela de serviço grátis de 24h.
+// Estimativa interna: a fatura real é a da Meta. Tarifas ajustáveis por env.
 import { onMounted, ref, computed, watch } from 'vue';
 import { useWhatsappStore } from '@/stores/Whatsapp/whatsappStore';
 import Spinner from '@/components/UI/Spinner.vue';
@@ -17,51 +21,114 @@ const fetchData = () => store.fetchStats(days.value);
 onMounted(fetchData);
 watch(days, fetchData);
 
-const cards = computed(() => {
-  const s = store.stats;
-  if (!s) return [];
-  const f = (n) => Number(n || 0).toLocaleString('pt-BR');
+const brl = (n) => 'R$ ' + Number(n || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const int = (n) => Number(n || 0).toLocaleString('pt-BR');
+
+const cost = computed(() => store.stats?.cost || null);
+
+// Cards principais de custo.
+const costCards = computed(() => {
+  const c = cost.value;
+  if (!c) return [];
   return [
-    { label: 'Total enviadas',  value: f(s.total),                    accent: 'text-ink' },
-    { label: 'Entregues',       value: f(s.byStatus?.delivered),      accent: 'text-emerald-600 dark:text-emerald-400' },
-    { label: 'Lidas',           value: f(s.byStatus?.read),           accent: 'text-sky-600 dark:text-sky-400' },
-    { label: 'Falhas',          value: f(s.byStatus?.failed),         accent: 'text-red-600 dark:text-red-400' },
-    { label: 'Simulação (dry_run)', value: f(s.byStatus?.dry_run),    accent: 'text-amber-600 dark:text-amber-400' },
-    { label: 'Taxa entrega',    value: ((s.deliveryRate || 0) * 100).toFixed(1) + '%', accent: 'text-ink' },
+    { label: 'Custo estimado', value: brl(c.estimatedBRL), accent: 'text-ink', hint: 'no período' },
+    { label: 'Cobradas', value: int(c.billableCount), accent: 'text-amber-600 dark:text-amber-400', hint: 'geraram custo' },
+    { label: 'Gratuitas', value: int(c.freeCount), accent: 'text-emerald-600 dark:text-emerald-400', hint: 'serviço / janela 24h' },
+    { label: 'Economia da janela', value: brl(c.freeWindowSavedBRL), accent: 'text-emerald-600 dark:text-emerald-400', hint: 'não viraram template pago' },
   ];
 });
+
+// Cards de entrega (secundários).
+const deliveryCards = computed(() => {
+  const s = store.stats;
+  if (!s) return [];
+  return [
+    { label: 'Total enviadas', value: int(s.total) },
+    { label: 'Entregues', value: int(s.byStatus?.delivered) },
+    { label: 'Lidas', value: int(s.byStatus?.read) },
+    { label: 'Falhas', value: int(s.byStatus?.failed) },
+    { label: 'Simulação', value: int(s.byStatus?.dry_run) },
+    { label: 'Taxa entrega', value: ((s.deliveryRate || 0) * 100).toFixed(1) + '%' },
+  ];
+});
+
+const categories = computed(() => {
+  const by = cost.value?.byCategory;
+  if (!by) return [];
+  return Object.entries(by)
+    .map(([cat, v]) => ({ cat, ...v }))
+    .sort((a, b) => b.estBRL - a.estBRL);
+});
+
+const usdToBrl = computed(() => store.stats?.rates?.usdToBrl);
 </script>
 
 <template>
   <div class="space-y-5">
-    <div class="flex items-center justify-end">
+    <div class="flex items-center justify-between gap-3 flex-wrap">
+      <p class="text-xs text-ink-muted">
+        Custo <strong>estimado</strong> pelas tarifas configuradas — a cobrança real é a fatura da Meta.
+        <span v-if="usdToBrl">Câmbio usado: US$ 1 = R$ {{ Number(usdToBrl).toFixed(2) }}.</span>
+      </p>
       <SegmentedControl v-model="days" :options="ranges" size="sm" />
     </div>
 
     <div v-if="store.loadingStats" class="py-12 grid place-items-center"><Spinner /></div>
 
-    <div v-else-if="!store.stats" class="py-12 text-center text-sm text-ink-muted">
-      Sem dados.
-    </div>
+    <div v-else-if="!store.stats" class="py-12 text-center text-sm text-ink-muted">Sem dados.</div>
 
-    <div v-else class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-      <div v-for="c in cards" :key="c.label"
-        class="rounded-xl border border-line bg-surface-raised shadow-soft p-4">
-        <p class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle">{{ c.label }}</p>
-        <p :class="['text-2xl font-semibold mt-1', c.accent]">{{ c.value }}</p>
+    <template v-else>
+      <!-- Custo -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div v-for="c in costCards" :key="c.label"
+          class="rounded-xl border border-line bg-surface-raised shadow-soft p-4">
+          <p class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle">{{ c.label }}</p>
+          <p :class="['text-2xl font-semibold mt-1', c.accent]">{{ c.value }}</p>
+          <p class="text-[11px] text-ink-subtle mt-0.5">{{ c.hint }}</p>
+        </div>
       </div>
-    </div>
 
-    <div v-if="store.stats?.byCostCategory && Object.keys(store.stats.byCostCategory).length"
-      class="rounded-xl border border-line bg-surface-raised p-4">
-      <p class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-2">Por categoria de cobrança</p>
-      <div class="flex flex-wrap gap-2">
-        <span v-for="(count, cat) in store.stats.byCostCategory" :key="cat"
-          class="inline-flex items-center gap-2 px-2.5 py-1 rounded-md border border-line bg-surface-sunken text-xs">
-          <span class="font-medium text-ink">{{ cat }}</span>
-          <span class="text-ink-muted">{{ count }}</span>
-        </span>
+      <!-- Por categoria de cobrança -->
+      <div v-if="categories.length" class="rounded-xl border border-line bg-surface-raised overflow-hidden">
+        <p class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle px-4 pt-4 pb-2">Por categoria de cobrança</p>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle border-y border-line">
+                <th class="text-left font-medium px-4 py-2">Categoria</th>
+                <th class="text-right font-medium px-4 py-2">Total</th>
+                <th class="text-right font-medium px-4 py-2">Cobradas</th>
+                <th class="text-right font-medium px-4 py-2">Grátis</th>
+                <th class="text-right font-medium px-4 py-2">Custo est.</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="row in categories" :key="row.cat" class="border-b border-line/60 last:border-0">
+                <td class="px-4 py-2 font-medium text-ink capitalize">{{ row.cat }}</td>
+                <td class="px-4 py-2 text-right text-ink-muted">{{ int(row.count) }}</td>
+                <td class="px-4 py-2 text-right text-amber-600 dark:text-amber-400">{{ int(row.billable) }}</td>
+                <td class="px-4 py-2 text-right text-emerald-600 dark:text-emerald-400">{{ int(row.free) }}</td>
+                <td class="px-4 py-2 text-right font-medium text-ink">{{ brl(row.estBRL) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p v-if="cost?.unknownCount" class="text-[11px] text-ink-subtle px-4 py-2 border-t border-line">
+          {{ int(cost.unknownCount) }} mensagem(ns) ainda sem categoria confirmada pela Meta (status pendente do webhook) — não somadas ao custo.
+        </p>
       </div>
-    </div>
+
+      <!-- Entrega -->
+      <div>
+        <p class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-2">Entrega</p>
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          <div v-for="c in deliveryCards" :key="c.label"
+            class="rounded-xl border border-line bg-surface-raised p-3">
+            <p class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle">{{ c.label }}</p>
+            <p class="text-xl font-semibold mt-1 text-ink">{{ c.value }}</p>
+          </div>
+        </div>
+      </div>
+    </template>
   </div>
 </template>
