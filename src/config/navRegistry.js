@@ -126,6 +126,7 @@ export const navRegistry = [
                     { route: '/comercial/imobiliarias',    section: 'Imobiliárias',  name: 'Imobiliárias',  icon: 'fas fa-house-flag' },
                     { route: '/comercial/faturamento',     section: 'Faturamento',   name: 'Faturamento',   icon: 'fas fa-file-invoice-dollar' },
                     { route: '/comercial/distratos',       section: 'Distratos',     name: 'Distratos',     icon: 'fas fa-file-circle-xmark' },
+                    { route: '/comercial/cancelamento-reservas', section: 'Cancelamentos CV × Sienge', name: 'Cancelamentos CV × Sienge', icon: 'fas fa-eraser', adminOnly: true },
                 ],
             },
             {
