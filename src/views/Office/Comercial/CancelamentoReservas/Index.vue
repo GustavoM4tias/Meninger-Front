@@ -61,21 +61,7 @@
         </div>
 
         <!-- Filtros -->
-        <Surface variant="raised" padding="sm" class="space-y-3">
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            <Input v-model="store.historyFilter.q" placeholder="Titular, unidade, contrato ou motivo..."
-              @keyup.enter="applyFilters" />
-            <Input v-model="store.historyFilter.idreserva" type="number" placeholder="ID da reserva"
-              @keyup.enter="applyFilters" />
-            <Input v-model="store.historyFilter.dateFrom" type="date" />
-            <Input v-model="store.historyFilter.dateTo" type="date" />
-          </div>
-          <div class="flex flex-wrap items-center justify-end gap-2">
-            <Button variant="ghost" size="sm" icon="fas fa-rotate-left" @click="clearFilters">Limpar</Button>
-            <Button variant="primary" size="sm" icon="fas fa-magnifying-glass" :loading="store.historyLoading"
-              @click="applyFilters">Filtrar</Button>
-          </div>
-        </Surface>
+        <ReservaCancelFilters @filter-changed="applyFilters" />
 
         <div v-if="store.historyError"
           class="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-300">
@@ -581,6 +567,7 @@ import Modal from '@/components/UI/Modal.vue';
 import SegmentedControl from '@/components/UI/SegmentedControl.vue';
 import EmptyState from '@/components/UI/EmptyState.vue';
 import Spinner from '@/components/UI/Spinner.vue';
+import ReservaCancelFilters from './components/ReservaCancelFilters.vue';
 
 const store = useReservaCancelStore();
 
@@ -743,13 +730,9 @@ function toggleStatusFilter(value) {
 }
 
 // ── Filtros ───────────────────────────────────────────────────────────────────
+// Aplicado pelos KPIs (toggleStatusFilter) e pelo componente ReservaCancelFilters.
 function applyFilters() {
   store.historyPage = 1;
-  store.fetchHistory();
-  store.fetchStats();
-}
-function clearFilters() {
-  store.resetHistoryFilters();
   store.fetchHistory();
   store.fetchStats();
 }
