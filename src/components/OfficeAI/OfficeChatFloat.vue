@@ -176,12 +176,15 @@ function onVoiceShortcut(e) {
 }
 
 // ── Visibilidade ────────────────────────────────────────────────────────────
-// Mostra como pill em qualquer rota EXCETO a home (que tem UI própria da Eme).
+// Mostra como pill em qualquer rota EXCETO a home (que tem UI própria da Eme)
+// e o builder de relatórios (onde a Eme já é o painel fixo da tela — dois
+// chats flutuantes ao mesmo tempo confundem).
 const isOnHome = computed(() => {
   const p = route.path || '';
   return p === '/' || p === '' || route.name === 'Home';
 });
-const showFloat = computed(() => !isOnHome.value);
+const isOnReportBuilder = computed(() => route.name === 'Builder de Relatório');
+const showFloat = computed(() => !isOnHome.value && !isOnReportBuilder.value);
 
 // ── Posição do FAB (persistida em localStorage) ─────────────────────────────
 const POS_KEY = 'eme:fab:pos';

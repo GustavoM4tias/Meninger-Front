@@ -174,6 +174,28 @@
   .md-body-sm h2 { @apply text-[15px]; }
   .md-body-sm h3, .md-body-sm h4 { @apply text-sm; }
 
+  /* ── Temas do relatório ────────────────────────────────────────────────
+     O container .report-doc recebe as variáveis --rp-* do tema escolhido
+     (ver components/Reports/themes.js). Estas regras redirecionam os
+     utilitários usados pelos blocos para as variáveis do tema, então nenhum
+     bloco precisa saber qual tema está ativo. */
+  .report-doc {
+    font-family: var(--rp-font-body, inherit);
+  }
+  .report-doc .font-display {
+    font-family: var(--rp-font-display, 'Fraunces', Georgia, serif);
+    font-weight: var(--rp-title-weight, 400);
+  }
+  .report-doc .text-accent { color: rgb(var(--rp-accent)); }
+  .report-doc .bg-accent { background-color: rgb(var(--rp-accent)); }
+  .report-doc .bg-accent-soft { background-color: rgb(var(--rp-accent) / 0.14); }
+  .report-doc .border-accent\/40 { border-color: rgb(var(--rp-accent) / 0.4); }
+  .report-doc .border-accent\/30 { border-color: rgb(var(--rp-accent) / 0.3); }
+  .report-doc .rounded-xl { border-radius: var(--rp-radius, 0.75rem); }
+  .report-doc .rounded-2xl { border-radius: calc(var(--rp-radius, 0.75rem) * 1.35); }
+  .report-doc .rounded-lg { border-radius: calc(var(--rp-radius, 0.75rem) * 0.7); }
+  .report-doc .md-body a { color: rgb(var(--rp-accent)); }
+
   /* gradiente sutil top-down em surfaces (dá leve "viço" sem ser chamativo) */
   .surface-gradient {
     background-image:

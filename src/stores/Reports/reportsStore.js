@@ -43,15 +43,28 @@ export const useReportsStore = defineStore('reports', () => {
 
   const isStreaming = ref(false)
   const streamingText = ref('')
-  // Progresso das tools (Fase A): [{ name, label, status: running|ok|error, summary }]
+  // Progresso das tools: [{ name, label, status: running|ok|error, summary }]
   const toolProgress = ref([])
-  // build (Fase A: Eme protagonista) | refine (Fase B: Eme flutuante)
-  const phase = ref('build')
   const highlightId = ref(null)
-  const selectedBlock = ref(null)
+
+  // Seleção MÚLTIPLA de blocos: ids marcados no relatório para editar/remover
+  const selectedIds = ref([])
 
   const spec = computed(() => report.value?.spec || { version: 1, blocks: [] })
   const blockCount = computed(() => spec.value.blocks?.length || 0)
+  const theme = computed(() => report.value?.theme || 'classic')
+
+  const selectedBlocks = computed(() =>
+    (spec.value.blocks || []).filter((b) => selectedIds.value.includes(b.id))
+  )
+
+  function toggleBlock(id) {
+    const i = selectedIds.value.indexOf(id)
+    if (i >= 0) selectedIds.value.splice(i, 1)
+    else selectedIds.value.push(id)
+  }
+  function clearSelection() { selectedIds.value = [] }
+  function selectOnly(id) { selectedIds.value = [id] }
 
   async function fetchReport(id) {
     loadingReport.value = true
@@ -59,19 +72,54 @@ export const useReportsStore = defineStore('reports', () => {
       const data = await requestWithAuth(`/reports/${id}`)
       report.value = data.report
       messages.value = data.messages || []
-      phase.value = (data.report?.spec?.blocks?.length || 0) >= 4 ? 'refine' : 'build'
+      selectedIds.value = []
     } finally {
       loadingReport.value = false
     }
   }
 
-  function setPhase(p) { phase.value = p }
-  function selectBlock(block) { selectedBlock.value = block }
+  // ── Edição direta do spec (sem passar pela Eme) ────────────────────────────
+  async function saveSpec(newSpec) {
+    const data = await requestWithAuth(`/reports/${report.value.id}`, {
+      method: 'PUT',
+      body: JSON.stringify({ spec: newSpec }),
+    })
+    report.value.spec = data.spec || newSpec
+  }
+
+  async function removeBlocks(ids) {
+    const next = {
+      ...spec.value,
+      blocks: (spec.value.blocks || []).filter((b) => !ids.includes(b.id)),
+    }
+    report.value.spec = next
+    selectedIds.value = selectedIds.value.filter((id) => !ids.includes(id))
+    await saveSpec(next)
+  }
+
+  async function moveBlock(id, direction) {
+    const blocks = [...(spec.value.blocks || [])]
+    const i = blocks.findIndex((b) => b.id === id)
+    const j = direction === 'up' ? i - 1 : i + 1
+    if (i < 0 || j < 0 || j >= blocks.length) return
+    ;[blocks[i], blocks[j]] = [blocks[j], blocks[i]]
+    const next = { ...spec.value, blocks }
+    report.value.spec = next
+    await saveSpec(next)
+  }
+
+  async function setTheme(themeKey) {
+    report.value.theme = themeKey
+    await requestWithAuth(`/reports/${report.value.id}`, {
+      method: 'PUT',
+      body: JSON.stringify({ theme: themeKey }),
+    })
+  }
 
   async function sendMessage(text) {
     if (!report.value || isStreaming.value || !text.trim()) return
     const reportId = report.value.id
-    const selectedId = selectedBlock.value?.id || null
+    const selected = [...selectedIds.value]
 
     messages.value.push({ id: `local-${Date.now()}`, role: 'user', content: text })
     isStreaming.value = true
@@ -85,7 +133,7 @@ export const useReportsStore = defineStore('reports', () => {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
-        body: JSON.stringify({ message: text, selected_block_id: selectedId }),
+        body: JSON.stringify({ message: text, selected_block_ids: selected }),
       })
       if (!response.ok || !response.body) {
         const err = await response.json().catch(() => ({}))
@@ -112,9 +160,7 @@ export const useReportsStore = defineStore('reports', () => {
       messages.value.push({ id: `err-${Date.now()}`, role: 'model', content: `⚠️ ${err.message}` })
     } finally {
       isStreaming.value = false
-      selectedBlock.value = null
-      // Transição automática Fase A → B quando o relatório tomou corpo
-      if (phase.value === 'build' && blockCount.value >= 4) phase.value = 'refine'
+      selectedIds.value = []
     }
   }
 
@@ -214,8 +260,10 @@ export const useReportsStore = defineStore('reports', () => {
   return {
     own, shared, isAdmin, loadingList, fetchList, createReport, deleteReport,
     report, messages, loadingReport, fetchReport,
-    isStreaming, streamingText, toolProgress, phase, setPhase, highlightId,
-    selectedBlock, selectBlock, spec, blockCount, sendMessage,
+    isStreaming, streamingText, toolProgress, highlightId,
+    selectedIds, selectedBlocks, toggleBlock, clearSelection, selectOnly,
+    spec, blockCount, theme, sendMessage,
+    saveSpec, removeBlocks, moveBlock, setTheme,
     publish, shareInternal, shareOptions,
     publicCheck, enablePublic, revokePublic, rotatePublicToken, renewPublic, publicLog, publicUrl,
   }
