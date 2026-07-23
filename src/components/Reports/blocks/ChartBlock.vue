@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, inject } from 'vue'
 import VChart from 'vue-echarts'
 import * as echarts from 'echarts/core'
 import { BarChart, PieChart, LineChart } from 'echarts/charts'
@@ -9,7 +9,17 @@ import { formatValue } from '../format.js'
 
 echarts.use([BarChart, PieChart, LineChart, GridComponent, TooltipComponent, LegendComponent, MarkLineComponent, CanvasRenderer])
 
-const PALETTE = ['#6366f1', '#22d3ee', '#34d399', '#f59e0b', '#f43f5e', '#a78bfa', '#fb923c', '#38bdf8', '#4ade80', '#e879f9']
+// A primeira cor vem do tema do relatório (ver themes.js); as demais compõem
+// a paleta de apoio, para séries múltiplas continuarem distinguíveis.
+const SUPPORT = ['#22d3ee', '#34d399', '#f59e0b', '#f43f5e', '#a78bfa', '#fb923c', '#38bdf8', '#4ade80', '#e879f9']
+const THEME_PRIMARY = {
+  classic: '#2563eb',
+  modern: '#7c3aed',
+  executive: '#475569',
+  vibrant: '#ea580c',
+  nature: '#059669',
+  minimal: '#334155',
+}
 
 const props = defineProps({
   blockType: { type: String, default: 'chart-bar' }, // chart-bar | chart-line | chart-donut
@@ -26,6 +36,13 @@ const props = defineProps({
   height: { type: Number, default: 260 },
   caption: { type: String, default: '' },
 })
+
+// Tema injetado pelo ReportRenderer (fallback: clássico, se usado solto)
+const reportTheme = inject('reportTheme', computed(() => 'classic'))
+const PALETTE = computed(() => [
+  THEME_PRIMARY[reportTheme.value] || THEME_PRIMARY.classic,
+  ...SUPPORT,
+])
 
 const isDark = ref(typeof document !== 'undefined' && document.documentElement.classList.contains('dark'))
 let observer
@@ -59,7 +76,7 @@ const option = computed(() => {
   if (kind.value === 'donut') {
     return {
       backgroundColor: 'transparent',
-      color: PALETTE,
+      color: PALETTE.value,
       tooltip: { trigger: 'item', ...tooltip },
       legend: {
         orient: 'horizontal', bottom: 0,
@@ -71,7 +88,7 @@ const option = computed(() => {
         center: ['50%', '44%'],
         data: props.labels.map((l, i) => ({
           name: l ?? '-', value: allSeries.value[0]?.data?.[i] ?? 0,
-          itemStyle: { color: PALETTE[i % PALETTE.length], borderRadius: 4 },
+          itemStyle: { color: PALETTE.value[i % PALETTE.value.length], borderRadius: 4 },
         })),
         label: { show: false },
         emphasis: { scale: true, scaleSize: 6 },
@@ -97,7 +114,7 @@ const option = computed(() => {
 
   return {
     backgroundColor: 'transparent',
-    color: PALETTE,
+    color: PALETTE.value,
     tooltip: { trigger: 'axis', ...tooltip },
     legend: allSeries.value.length > 1
       ? { top: 0, right: 0, textStyle: { color: labelClr, fontSize: 11 }, itemWidth: 10, itemHeight: 10 }
@@ -116,7 +133,7 @@ const option = computed(() => {
         : undefined,
       data: s.data,
       barMaxWidth: 42,
-      itemStyle: isLine ? undefined : { borderRadius: props.horizontal ? [0, 5, 5, 0] : [5, 5, 0, 0], color: PALETTE[si % PALETTE.length] },
+      itemStyle: isLine ? undefined : { borderRadius: props.horizontal ? [0, 5, 5, 0] : [5, 5, 0, 0], color: PALETTE.value[si % PALETTE.value.length] },
       label: allSeries.value.length === 1 && (s.data?.length ?? 0) <= 12 && !isLine
         ? { show: true, position: props.horizontal ? 'right' : 'top', color: labelClr, fontSize: 10, formatter: (p) => fmt(p.value) }
         : undefined,
