@@ -147,6 +147,13 @@
                     <td class="px-4 py-3 text-right text-xs text-ink-muted whitespace-nowrap">
                       {{ formatDateTime(item.createdAt ?? item.created_at) }}
                     </td>
+                    <td class="pr-3 py-3 text-right">
+                      <a :href="cvReservaUrl(item)" target="_blank" rel="noopener" @click.stop
+                        class="inline-flex h-8 w-8 items-center justify-center rounded-lg text-ink-subtle hover:text-accent hover:bg-surface-sunken transition-colors"
+                        title="Abrir reserva no CV">
+                        <i class="fas fa-arrow-up-right-from-square text-xs"></i>
+                      </a>
+                    </td>
                   </tr>
                 </tbody>
               </table>
@@ -154,14 +161,21 @@
 
             <!-- Mobile: cards -->
             <div class="md:hidden divide-y divide-line">
-              <button v-for="item in store.history" :key="item.id"
-                class="w-full text-left px-4 py-3 active:bg-surface-hover"
+              <div v-for="item in store.history" :key="item.id"
+                class="w-full text-left px-4 py-3 active:bg-surface-hover cursor-pointer"
                 @click="openDetail(item)">
                 <div class="flex items-center justify-between gap-2 mb-1">
                   <span class="font-medium text-ink truncate">{{ item.titular_nome || `Reserva ${item.idreserva}` }}</span>
-                  <Badge :variant="statusMeta(item.status).variant" size="sm" dot>
-                    {{ statusMeta(item.status).label }}
-                  </Badge>
+                  <div class="flex items-center gap-1 shrink-0">
+                    <Badge :variant="statusMeta(item.status).variant" size="sm" dot>
+                      {{ statusMeta(item.status).label }}
+                    </Badge>
+                    <a :href="cvReservaUrl(item)" target="_blank" rel="noopener" @click.stop
+                      class="inline-flex h-10 w-10 items-center justify-center rounded-lg text-ink-subtle active:text-accent"
+                      title="Abrir reserva no CV">
+                      <i class="fas fa-arrow-up-right-from-square text-xs"></i>
+                    </a>
+                  </div>
                 </div>
                 <div class="text-xs text-ink-muted">
                   Reserva {{ item.idreserva }} · {{ item.unidade_nome || '-' }} · {{ item.empreendimento || '-' }}
@@ -173,7 +187,7 @@
                   </div>
                   <span class="text-[11px] text-ink-subtle">{{ formatDateTime(item.createdAt ?? item.created_at) }}</span>
                 </div>
-              </button>
+              </div>
             </div>
 
             <!-- Paginação -->
@@ -349,77 +363,162 @@
       </div>
     </PageContainer>
 
-    <!-- ── Modal de detalhe ──────────────────────────────────────────────────── -->
-    <Modal :open="detail.open" size="lg" :title="detail.item ? `Caso #${detail.item.id} - Reserva ${detail.item.idreserva}` : ''"
+    <!-- ── Modal de detalhe (relatório do caso) ─────────────────────────────── -->
+    <Modal :open="detail.open" size="xl" :title="detail.item ? `Caso #${detail.item.id} - Reserva ${detail.item.idreserva}` : ''"
       :subtitle="detail.item?.titular_nome || ''" @close="closeDetail">
-      <div v-if="detail.item" class="space-y-4">
+      <div v-if="detail.item" class="space-y-5">
 
-        <!-- Resumo -->
-        <div class="flex flex-wrap items-center gap-2">
-          <Badge :variant="statusMeta(detail.item.status).variant" dot>{{ statusMeta(detail.item.status).label }}</Badge>
-          <Badge v-if="detail.item.manual" variant="info" outlined>Disparo manual</Badge>
-          <Badge v-if="detail.item.sienge_contrato_excluido" variant="danger" outlined>Contrato excluído no Sienge</Badge>
-          <Badge v-if="detail.item.cv_unidade_disponibilizada" variant="success" outlined>Unidade liberada no CV</Badge>
-          <Badge v-if="detail.item.cv_mensagem_enviada" variant="neutral" outlined>Mensagem no CV</Badge>
-          <Badge v-if="detail.item.cv_situacao_alterada"
-            :variant="detail.item.situacao_aplicada_id === store.settings?.situacao_pendencia_id ? 'warning' : 'success'" outlined>
-            {{ detail.item.situacao_aplicada_id === store.settings?.situacao_pendencia_id
-              ? 'Reserva movida para Pendência no CV'
-              : `Etapa CV aplicada (ID ${detail.item.situacao_aplicada_id})` }}
-          </Badge>
+        <!-- Cabeçalho do caso -->
+        <div class="rounded-xl border p-4" :class="heroClass(detail.item.status)">
+          <div class="flex items-start gap-3">
+            <div class="h-10 w-10 rounded-xl grid place-items-center border shrink-0"
+              :class="heroIconClass(detail.item.status)">
+              <i :class="statusMeta(detail.item.status).icon"></i>
+            </div>
+            <div class="min-w-0 flex-1">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="font-semibold text-ink">{{ statusMeta(detail.item.status).label }}</span>
+                <Badge v-if="detail.item.manual" variant="info" size="sm" outlined>Disparo manual</Badge>
+                <span class="text-xs text-ink-subtle sm:ml-auto whitespace-nowrap">
+                  {{ formatDateTime(detail.item.createdAt ?? detail.item.created_at) }}
+                </span>
+              </div>
+              <p class="text-sm text-ink-muted mt-1">{{ resumoCaso(detail.item) }}</p>
+            </div>
+          </div>
+          <div v-if="detail.item.motivo" class="mt-3 pt-3 border-t border-line/60 text-sm"
+            :class="detail.item.status === 'error' ? 'text-red-700 dark:text-red-300' : 'text-amber-700 dark:text-amber-300'">
+            <i class="fas fa-circle-info mr-1.5"></i>{{ detail.item.motivo }}
+          </div>
         </div>
 
+        <!-- Navegação rápida -->
+        <div>
+          <h3 class="text-xs font-semibold uppercase tracking-wider text-ink-subtle mb-2">Ir para</h3>
+          <div class="flex flex-wrap gap-2">
+            <a :href="cvReservaUrl(detail.item)" target="_blank" rel="noopener"
+              class="inline-flex items-center gap-2 px-3 py-2 min-h-10 rounded-lg border border-line bg-surface-sunken hover:bg-surface-hover hover:text-accent text-sm text-ink transition-colors">
+              <i class="fas fa-bookmark text-ink-subtle"></i>
+              Reserva no CV
+              <i class="fas fa-arrow-up-right-from-square text-[10px] text-ink-subtle"></i>
+            </a>
+            <a :href="cvCondicoesUrl(detail.item)" target="_blank" rel="noopener"
+              class="inline-flex items-center gap-2 px-3 py-2 min-h-10 rounded-lg border border-line bg-surface-sunken hover:bg-surface-hover hover:text-accent text-sm text-ink transition-colors">
+              <i class="fas fa-file-invoice-dollar text-ink-subtle"></i>
+              Condições da reserva
+              <i class="fas fa-arrow-up-right-from-square text-[10px] text-ink-subtle"></i>
+            </a>
+            <a v-if="cvMapaUrl(detail.item)" :href="cvMapaUrl(detail.item)" target="_blank" rel="noopener"
+              class="inline-flex items-center gap-2 px-3 py-2 min-h-10 rounded-lg border border-line bg-surface-sunken hover:bg-surface-hover hover:text-accent text-sm text-ink transition-colors">
+              <i class="fas fa-map-location-dot text-ink-subtle"></i>
+              Mapa de disponibilidade
+              <i class="fas fa-arrow-up-right-from-square text-[10px] text-ink-subtle"></i>
+            </a>
+            <a v-if="detail.item.contrato_id" :href="SIENGE_URL" target="_blank" rel="noopener"
+              class="inline-flex items-center gap-2 px-3 py-2 min-h-10 rounded-lg border border-line bg-surface-sunken hover:bg-surface-hover hover:text-accent text-sm text-ink transition-colors">
+              <i class="fas fa-building-columns text-ink-subtle"></i>
+              Sienge
+              <i class="fas fa-arrow-up-right-from-square text-[10px] text-ink-subtle"></i>
+            </a>
+          </div>
+        </div>
+
+        <!-- Ações da automação -->
+        <div>
+          <h3 class="text-xs font-semibold uppercase tracking-wider text-ink-subtle mb-2">Ações da automação</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div v-for="acao in acoesCaso(detail.item)" :key="acao.label"
+              class="flex items-center gap-3 rounded-lg border border-line bg-surface-sunken px-3 py-2.5">
+              <div class="h-8 w-8 rounded-lg grid place-items-center border shrink-0"
+                :class="acao.done
+                  ? (acao.warn
+                    ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'
+                    : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20')
+                  : 'bg-surface text-ink-subtle border-line'">
+                <i :class="acao.icon" class="text-xs"></i>
+              </div>
+              <div class="min-w-0">
+                <div class="text-xs text-ink-subtle">{{ acao.label }}</div>
+                <div class="text-sm font-medium truncate"
+                  :class="acao.done
+                    ? (acao.warn ? 'text-amber-700 dark:text-amber-300' : 'text-emerald-700 dark:text-emerald-300')
+                    : 'text-ink-muted'">
+                  {{ acao.text }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dados -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-          <div class="bg-surface-sunken border border-line rounded-lg p-3 space-y-1">
-            <div class="text-[11px] uppercase tracking-wider text-ink-subtle">Reserva CV</div>
-            <div class="text-ink">{{ detail.item.titular_nome || '-' }}</div>
-            <div class="text-xs text-ink-muted">Reserva {{ detail.item.idreserva }} · {{ detail.item.unidade_nome || '-' }}</div>
-            <div class="text-xs text-ink-muted">{{ detail.item.empreendimento || '-' }}</div>
-            <div class="text-xs text-ink-muted">Cancelada em: {{ formatDateBr(detail.item.data_cancelamento) }}</div>
-            <div v-if="detail.item.motivo_cancelamento" class="text-xs text-ink-muted">Motivo: {{ detail.item.motivo_cancelamento }}</div>
+          <div class="bg-surface-sunken border border-line rounded-xl p-3.5 space-y-2">
+            <div class="flex items-center gap-2 text-[11px] uppercase tracking-wider text-ink-subtle">
+              <i class="fas fa-bookmark"></i> Reserva no CV
+            </div>
+            <div class="space-y-1.5">
+              <div class="flex justify-between gap-3"><span class="text-ink-muted">Titular</span><span class="text-ink text-right font-medium">{{ detail.item.titular_nome || '-' }}</span></div>
+              <div class="flex justify-between gap-3"><span class="text-ink-muted">Documento</span><span class="text-ink font-mono text-xs">{{ formatDoc(detail.item.titular_documento) }}</span></div>
+              <div class="flex justify-between gap-3"><span class="text-ink-muted">Reserva</span><span class="text-ink font-mono text-xs">{{ detail.item.idreserva }}</span></div>
+              <div class="flex justify-between gap-3"><span class="text-ink-muted">Unidade</span><span class="text-ink text-right">{{ detail.item.unidade_nome || '-' }}</span></div>
+              <div class="flex justify-between gap-3"><span class="text-ink-muted">Empreendimento</span><span class="text-ink text-right">{{ detail.item.empreendimento || '-' }}</span></div>
+              <div class="flex justify-between gap-3"><span class="text-ink-muted">Cancelada em</span><span class="text-ink">{{ formatDateBr(detail.item.data_cancelamento) }}</span></div>
+              <div v-if="detail.item.motivo_cancelamento" class="flex justify-between gap-3"><span class="text-ink-muted">Motivo</span><span class="text-ink text-right">{{ detail.item.motivo_cancelamento }}</span></div>
+            </div>
           </div>
-          <div class="bg-surface-sunken border border-line rounded-lg p-3 space-y-1">
-            <div class="text-[11px] uppercase tracking-wider text-ink-subtle">Contrato Sienge</div>
-            <template v-if="detail.item.contrato_id">
-              <div class="text-ink font-mono text-xs">{{ detail.item.contrato_numero }}</div>
-              <div class="text-xs text-ink-muted">ID {{ detail.item.contrato_id }} · Situação: {{ detail.item.contrato_situacao || '-' }}</div>
-              <div class="text-xs text-ink-muted">Valor: {{ formatCurrency(detail.item.contrato_valor) }}</div>
-            </template>
-            <div v-else class="text-xs text-ink-muted">Nenhum contrato ativo localizado no Sienge.</div>
+          <div class="bg-surface-sunken border border-line rounded-xl p-3.5 space-y-2">
+            <div class="flex items-center gap-2 text-[11px] uppercase tracking-wider text-ink-subtle">
+              <i class="fas fa-file-contract"></i> Contrato no Sienge
+            </div>
+            <div v-if="detail.item.contrato_id" class="space-y-1.5">
+              <div class="flex justify-between gap-3"><span class="text-ink-muted">Número</span><span class="text-ink font-mono text-xs">{{ detail.item.contrato_numero }}</span></div>
+              <div class="flex justify-between gap-3"><span class="text-ink-muted">ID</span><span class="text-ink font-mono text-xs">{{ detail.item.contrato_id }}</span></div>
+              <div class="flex justify-between gap-3"><span class="text-ink-muted">Situação</span><span class="text-ink">{{ detail.item.contrato_situacao || '-' }}</span></div>
+              <div class="flex justify-between gap-3"><span class="text-ink-muted">Valor</span><span class="text-ink font-medium">{{ formatCurrency(detail.item.contrato_valor) }}</span></div>
+              <div class="flex justify-between gap-3"><span class="text-ink-muted">Resultado</span>
+                <span :class="detail.item.sienge_contrato_excluido ? 'text-emerald-600 dark:text-emerald-400 font-medium' : 'text-ink'">
+                  {{ detail.item.sienge_contrato_excluido ? 'Excluído' : 'Mantido' }}
+                </span>
+              </div>
+            </div>
+            <div v-else class="flex flex-col items-center justify-center py-4 text-center gap-1.5">
+              <i class="fas fa-file-circle-question text-ink-subtle text-lg"></i>
+              <span class="text-xs text-ink-muted">Nenhum contrato ativo localizado no Sienge para esta reserva.</span>
+            </div>
           </div>
-        </div>
-
-        <div v-if="detail.item.motivo"
-          class="rounded-lg border px-3 py-2 text-sm"
-          :class="detail.item.status === 'error'
-            ? 'border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-300'
-            : 'border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300'">
-          {{ detail.item.motivo }}
         </div>
 
         <!-- Validações -->
         <div v-if="detail.item.checks?.length">
-          <h3 class="text-xs font-semibold uppercase tracking-wider text-ink-subtle mb-2">Validações</h3>
+          <div class="flex items-center gap-2 mb-2">
+            <h3 class="text-xs font-semibold uppercase tracking-wider text-ink-subtle">Validações</h3>
+            <Badge :variant="checksFalhas(detail.item) ? 'warning' : 'success'" size="sm" outlined>
+              {{ checksOk(detail.item) }} de {{ detail.item.checks.length }} aprovadas
+            </Badge>
+          </div>
           <ul class="space-y-1.5">
-            <li v-for="(c, i) in detail.item.checks" :key="i" class="flex items-start gap-2 text-sm">
+            <li v-for="(c, i) in detail.item.checks" :key="i"
+              class="flex items-start gap-2.5 text-sm rounded-lg px-3 py-2 border"
+              :class="c.ok ? 'border-line bg-surface-sunken' : 'border-red-500/30 bg-red-500/10'">
               <i :class="c.ok ? 'fas fa-circle-check text-emerald-500' : 'fas fa-circle-xmark text-red-500'" class="mt-0.5"></i>
-              <span class="text-ink"><strong>{{ c.check }}:</strong> <span class="text-ink-muted">{{ c.detalhe }}</span></span>
+              <span class="text-ink"><strong>{{ c.check }}</strong><span class="text-ink-muted"> - {{ c.detalhe }}</span></span>
             </li>
           </ul>
         </div>
 
-        <!-- Warnings -->
+        <!-- Avisos -->
         <div v-if="detail.item.warnings?.length">
           <h3 class="text-xs font-semibold uppercase tracking-wider text-ink-subtle mb-2">Avisos</h3>
           <ul class="space-y-1.5">
-            <li v-for="(w, i) in detail.item.warnings" :key="i" class="flex items-start gap-2 text-sm">
+            <li v-for="(w, i) in detail.item.warnings" :key="i"
+              class="flex items-start gap-2.5 text-sm rounded-lg px-3 py-2 border border-amber-500/30 bg-amber-500/10">
               <i class="fas fa-triangle-exclamation text-amber-500 mt-0.5"></i>
-              <span class="text-ink-muted">{{ w.etapa }}: {{ w.erro }}</span>
+              <span class="text-ink-muted"><strong class="text-ink">{{ w.etapa }}</strong> - {{ w.erro }}</span>
             </li>
           </ul>
         </div>
 
-        <!-- Timeline -->
+        <!-- Linha do tempo -->
         <div>
           <h3 class="text-xs font-semibold uppercase tracking-wider text-ink-subtle mb-2">Linha do tempo</h3>
           <div v-if="store.timelineLoading" class="py-6 grid place-items-center"><Spinner /></div>
@@ -433,8 +532,14 @@
                   'bg-red-500': evt.severity === 'error',
                   'bg-ink-subtle': !['success','warning','error'].includes(evt.severity),
                 }"></span>
-              <div class="text-xs text-ink-subtle">{{ formatDateTime(evt.created_at) }} · caso #{{ evt.history_id }}</div>
-              <div class="text-sm text-ink">{{ evt.message || evt.type }}</div>
+              <div class="flex flex-wrap items-center gap-1.5 text-xs text-ink-subtle">
+                <span class="font-mono">{{ formatDateTime(evt.created_at) }}</span>
+                <span class="px-1.5 py-0.5 rounded bg-surface-sunken border border-line text-[10px] uppercase tracking-wide">
+                  {{ eventTypeLabel(evt.type) }}
+                </span>
+                <span>caso #{{ evt.history_id }}</span>
+              </div>
+              <div class="text-sm text-ink mt-0.5">{{ evt.message || evt.type }}</div>
             </li>
           </ol>
         </div>
@@ -501,6 +606,115 @@ function statusMeta(s) {
 const kpiChips = computed(() =>
   Object.entries(STATUS_META).map(([value, m]) => ({ value, ...m })));
 
+// ── Links externos (CV / Sienge) ─────────────────────────────────────────────
+const SIENGE_URL = 'https://menin.sienge.com.br/sienge/';
+const cvReservaUrl = (item) => `https://menin.cvcrm.com.br/gestor/comercial/reservas/${item.idreserva}/administrar`;
+const cvCondicoesUrl = (item) => `${cvReservaUrl(item)}#index_condicao_pagamento`;
+const cvMapaUrl = (item) => item.idempreendimento_cv
+  ? `https://menin.cvcrm.com.br/gestor/comercial/mapadisponibilidade/${item.idempreendimento_cv}`
+  : null;
+
+// ── Relatório do caso ────────────────────────────────────────────────────────
+function resumoCaso(item) {
+  switch (item.status) {
+    case 'success':
+      return item.sienge_contrato_excluido
+        ? 'Contrato excluído no Sienge (exclusão confirmada por releitura) e unidade disponibilizada no CV.'
+        : 'Sem contrato ativo no Sienge - unidade disponibilizada no CV após o cruzamento de todas as referências.';
+    case 'blocked':
+      return 'Uma validação de segurança barrou o cancelamento. Nada foi alterado no Sienge e a reserva foi movida para Pendência no CV.';
+    case 'error':
+      return 'Falha técnica durante o processamento. Verifique o motivo abaixo e reprocesse.';
+    case 'skipped':
+      return 'O fluxo não se aplicava a este disparo (reserva não cancelada ou automação pausada).';
+    case 'ignored':
+      return 'Disparo duplicado - já existia processamento ou sucesso para esta reserva.';
+    case 'processing':
+      return 'Processamento em andamento.';
+    default:
+      return '';
+  }
+}
+
+function heroClass(status) {
+  return {
+    success: 'border-emerald-500/30 bg-emerald-500/10',
+    blocked: 'border-amber-500/30 bg-amber-500/10',
+    error: 'border-red-500/30 bg-red-500/10',
+    processing: 'border-sky-500/30 bg-sky-500/10',
+  }[status] || 'border-line bg-surface-sunken';
+}
+function heroIconClass(status) {
+  return {
+    success: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30',
+    blocked: 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30',
+    error: 'bg-red-500/15 text-red-600 dark:text-red-400 border-red-500/30',
+    processing: 'bg-sky-500/15 text-sky-600 dark:text-sky-400 border-sky-500/30',
+  }[status] || 'bg-surface text-ink-muted border-line';
+}
+
+function acoesCaso(item) {
+  const pendencia = item.situacao_aplicada_id != null
+    && item.situacao_aplicada_id === store.settings?.situacao_pendencia_id;
+  return [
+    {
+      icon: 'fas fa-file-circle-xmark',
+      label: 'Contrato no Sienge',
+      done: !!item.sienge_contrato_excluido,
+      text: item.sienge_contrato_excluido ? 'Excluído e confirmado' : 'Não alterado',
+    },
+    {
+      icon: 'fas fa-house-circle-check',
+      label: 'Unidade no CV',
+      done: !!item.cv_unidade_disponibilizada,
+      text: item.cv_unidade_disponibilizada ? 'Disponibilizada' : 'Sem alteração',
+    },
+    {
+      icon: 'fas fa-diagram-project',
+      label: 'Etapa da reserva',
+      done: !!item.cv_situacao_alterada,
+      warn: pendencia,
+      text: item.cv_situacao_alterada
+        ? (pendencia ? 'Movida para Pendência' : `Etapa ID ${item.situacao_aplicada_id} aplicada`)
+        : 'Sem alteração',
+    },
+    {
+      icon: 'fas fa-message',
+      label: 'Mensagem na reserva',
+      done: !!item.cv_mensagem_enviada,
+      text: item.cv_mensagem_enviada ? 'Registrada no CV' : 'Não registrada',
+    },
+  ];
+}
+
+const checksOk = (item) => (item.checks || []).filter(c => c.ok).length;
+const checksFalhas = (item) => (item.checks || []).some(c => !c.ok);
+
+const EVENT_TYPE_LABELS = {
+  received: 'Recebido',
+  reserva_loaded: 'Reserva',
+  contract_found: 'Contrato',
+  contract_none: 'Contrato',
+  check_passed: 'Validação',
+  check_failed: 'Validação',
+  unit_stock: 'Unidade',
+  contract_deleted: 'Exclusão',
+  delete_confirmed: 'Confirmação',
+  cv_unit_released: 'Unidade CV',
+  cv_message_sent: 'Mensagem',
+  cv_situacao: 'Etapa CV',
+  blocked: 'Bloqueio',
+  error: 'Erro',
+};
+const eventTypeLabel = (t) => EVENT_TYPE_LABELS[t] || t;
+
+function formatDoc(v) {
+  const d = String(v || '').replace(/\D/g, '');
+  if (d.length === 11) return d.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+  if (d.length === 14) return d.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
+  return d || '-';
+}
+
 // ── Colunas ordenáveis do histórico ───────────────────────────────────────────
 const histColumns = [
   { key: 'caso',     label: 'Caso',             align: 'left',  sortable: true },
@@ -510,6 +724,7 @@ const histColumns = [
   { key: 'status',   label: 'Status',           align: 'left',  sortable: true },
   { key: '_acoes',   label: 'Ações executadas', align: 'left',  sortable: false },
   { key: 'quando',   label: 'Quando',           align: 'right', sortable: true },
+  { key: '_link',    label: '',                 align: 'right', sortable: false },
 ];
 
 function sortIcon(key) {
