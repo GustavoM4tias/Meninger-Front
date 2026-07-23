@@ -48,6 +48,7 @@ const tip = computed(() => (props.collapsed ? props.label : ''));
     <component :is="asButton ? 'button' : RouterLink"
       v-bind="asButton ? {} : { to }"
       @click="$emit('click', $event)"
+      :title="collapsed ? null : label"
       :class="[
         'flex-1 flex items-center px-2 min-w-0',
         textClass,
