@@ -4,12 +4,18 @@
 // inverte a cor do delta.
 
 import { computed } from 'vue';
+import Sparkline from './Sparkline.vue';
+import { seriesValues, matchSituacao, KW as SERIES_KW } from '@/utils/Leads/series';
 
 const props = defineProps({
     total:      { type: Number, default: 0 },
     prevTotal:  { type: Number, default: 0 },
     situations: { type: Array, default: () => [] },   // [{ key, count }] período atual
     prevSituacoes: { type: Object, default: () => ({}) },
+    // Para as sparklines: lista bruta + janela do período.
+    leads:      { type: Array, default: () => [] },
+    from:       { type: String, default: '' },
+    to:         { type: String, default: '' },
 });
 
 const norm = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
@@ -56,18 +62,28 @@ const kpis = computed(() => {
     const conv = props.total > 0 ? +(((qual + res) / props.total) * 100).toFixed(1) : null;
     const convP = props.prevTotal > 0 ? ((qualP + resP) / props.prevTotal) * 100 : null;
 
+    // Sparklines: série diária de cada métrica dentro do período exibido.
+    const spark = (pred) => seriesValues(props.leads, props.from, props.to, pred);
+
     return [
         { key: 'total', label: 'Total de leads', icon: 'fas fa-users', accent: 'text-blue-500 bg-blue-500/10',
+          sparkColor: '#3b82f6', series: spark(null),
           value: props.total, delta: delta(props.total, props.prevTotal), invert: false },
         { key: 'atd', label: 'Em atendimento', icon: 'fas fa-headset', accent: 'text-violet-500 bg-violet-500/10',
+          sparkColor: '#8b5cf6', series: spark(l => matchSituacao(l, SERIES_KW.atendimento)),
           value: atd, delta: delta(atd, atdP), invert: false },
         { key: 'qual', label: 'Qualificados', icon: 'fas fa-star', accent: 'text-amber-500 bg-amber-500/10',
+          sparkColor: '#f59e0b', series: spark(l => matchSituacao(l, SERIES_KW.qualificado)),
           value: qual, delta: delta(qual, qualP), invert: false },
         { key: 'res', label: 'Reservas', icon: 'fas fa-handshake', accent: 'text-emerald-500 bg-emerald-500/10',
+          sparkColor: '#10b981', series: spark(l => matchSituacao(l, SERIES_KW.reserva)),
           value: res, delta: delta(res, resP), invert: false },
         { key: 'conv', label: 'Conversão', icon: 'fas fa-percent', accent: 'text-teal-500 bg-teal-500/10',
+          sparkColor: '#14b8a6',
+          series: spark(l => matchSituacao(l, SERIES_KW.qualificado) || matchSituacao(l, SERIES_KW.reserva)),
           value: conv, isPct: true, delta: conv != null && convP != null ? delta(conv, convP) : null, invert: false },
         { key: 'desc', label: 'Descartados', icon: 'fas fa-ban', accent: 'text-rose-500 bg-rose-500/10',
+          sparkColor: '#f43f5e', series: spark(l => matchSituacao(l, SERIES_KW.descartado)),
           value: desc, delta: delta(desc, descP), invert: true },
     ];
 });
@@ -108,7 +124,10 @@ function deltaView(k) {
           </span>
         </div>
         <span class="text-lg font-semibold text-ink tabular-nums tracking-tight leading-none mt-1">{{ fmtValue(k) }}</span>
-        <span class="text-[11px] text-ink-muted">{{ k.label }}</span>
+        <div class="flex items-end justify-between gap-2">
+          <span class="text-[11px] text-ink-muted leading-tight">{{ k.label }}</span>
+          <Sparkline :values="k.series" :color="k.sparkColor" class="shrink-0" />
+        </div>
       </div>
     </div>
   </div>
