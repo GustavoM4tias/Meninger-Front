@@ -112,7 +112,7 @@ function deltaView(item) {
         class="group flex flex-col gap-1 p-3 rounded-xl border border-line bg-surface-raised
                shadow-soft transition-all duration-200 ease-out-expo w-40 sm:w-auto shrink-0
                surface-gradient card-enter
-               hover:border-accent/60 hover:-translate-y-0.5 hover:ring-2 hover:ring-accent-ring/25 hover:shadow-glow-blue">
+               hover:border-accent/40 hover:-translate-y-px hover:shadow-elevated">
         <div class="flex items-center justify-between gap-2">
           <span class="h-7 w-7 rounded-lg grid place-items-center text-xs" :class="item.accent">
             <i :class="item.icon"></i>

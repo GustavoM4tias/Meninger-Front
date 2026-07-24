@@ -153,7 +153,7 @@ function statusBadge(s) {
           <div v-for="(c, i) in funnelCards" :key="c.key" :style="{ '--i': i }"
             class="flex flex-col gap-1 p-3 rounded-xl border border-line bg-surface-raised shadow-soft surface-gradient
                    card-enter transition-all duration-200 ease-out-expo
-                   hover:border-accent/60 hover:-translate-y-0.5 hover:ring-2 hover:ring-accent-ring/25 hover:shadow-glow-blue">
+                   hover:border-accent/40 hover:-translate-y-px hover:shadow-elevated">
             <div class="flex items-center justify-between">
               <span class="h-7 w-7 rounded-lg grid place-items-center text-xs" :class="c.accent">
                 <i :class="c.icon"></i>
