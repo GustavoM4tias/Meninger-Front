@@ -130,11 +130,11 @@ function onClick(k) {
           :disabled="!item.filter"
           :style="{ '--i': i, ...(item.highlight ? { color: `var(--c-${item.key === 'held' ? 'amber' : item.key === 'deadletter' || item.key === 'error' ? 'red' : 'accent'})` } : {}) }"
           class="group flex flex-col gap-1 p-3 rounded-xl border bg-surface-raised
-                 shadow-soft hover:-translate-y-0.5 hover:ring-2 hover:ring-accent-ring/25 hover:shadow-glow-blue
+                 shadow-soft hover:-translate-y-px hover:shadow-elevated
                  transition-all duration-200 ease-out-expo text-left card-enter
                  w-44 sm:w-auto shrink-0 surface-gradient
-                 disabled:cursor-default disabled:hover:translate-y-0 disabled:hover:shadow-soft disabled:hover:ring-0"
-          :class="item.highlight ? 'border-current/30 ring-1 ring-current/10' : 'border-line hover:border-accent/60'">
+                 disabled:cursor-default disabled:hover:translate-y-0 disabled:hover:shadow-soft"
+          :class="item.highlight ? 'border-current/30 ring-1 ring-current/10' : 'border-line hover:border-accent/40'">
           <div class="flex items-center justify-between gap-2">
             <span class="h-7 w-7 rounded-lg grid place-items-center text-xs" :class="item.accent">
               <i :class="item.icon"></i>
