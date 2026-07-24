@@ -2,7 +2,7 @@
 // Painel da Eme no builder de relatórios: fixo à esquerda, altura total.
 // É a ÚNICA Eme da tela (o player global fica oculto nesta rota).
 // Abas: Chat (conversa), Itens (outline + seleção) e Tema (layout do relatório).
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useReportsStore } from '@/stores/Reports/reportsStore.js'
 import { specOutline, BLOCK_LABELS } from '../blocks/registry.js'
 import { REPORT_THEMES } from '../themes.js'
@@ -11,8 +11,30 @@ import EmeChatThread from './EmeChatThread.vue'
 const emit = defineEmits(['goto-block'])
 
 const store = useReportsStore()
-const tab = ref('chat') // chat | outline | theme
+const tab = ref('chat') // chat | outline | theme | memory
 const draft = ref('')
+
+// ── Memória ────────────────────────────────────────────────────────────────
+const memoryDraft = ref('')
+const memoryScope = ref('report')
+const savingMemory = ref(false)
+
+onMounted(() => store.fetchMemories().catch(() => {}))
+
+const globalMemories = computed(() => store.memories.filter((m) => !m.reportId))
+const localMemories = computed(() => store.memories.filter((m) => m.reportId))
+
+async function addMemory() {
+  const text = memoryDraft.value.trim()
+  if (!text) return
+  savingMemory.value = true
+  try {
+    await store.addMemory(text, memoryScope.value)
+    memoryDraft.value = ''
+  } finally {
+    savingMemory.value = false
+  }
+}
 
 const outline = computed(() => specOutline(store.spec))
 const emptyThread = computed(() => !store.messages.length && !store.isStreaming)
@@ -59,9 +81,10 @@ const placeholder = computed(() => {
           { key: 'chat', label: 'Chat', icon: 'fas fa-comments' },
           { key: 'outline', label: `Itens (${store.blockCount})`, icon: 'fas fa-list-ul' },
           { key: 'theme', label: 'Tema', icon: 'fas fa-palette' },
+          { key: 'memory', label: 'Memória', icon: 'fas fa-brain' },
         ]"
         :key="t.key"
-        class="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg text-xs transition"
+        class="flex-1 flex items-center justify-center gap-1 px-1.5 py-1.5 rounded-lg text-[11px] transition"
         :class="tab === t.key ? 'bg-accent-soft text-accent font-medium' : 'text-ink-subtle hover:bg-surface-sunken'"
         @click="tab = t.key"
       >
@@ -172,6 +195,82 @@ const placeholder = computed(() => {
         </div>
       </div>
       <p v-if="!outline.length" class="text-xs text-ink-subtle px-2.5 py-4 text-center">Nenhum bloco ainda.</p>
+    </div>
+
+    <!-- ── MEMÓRIA ─────────────────────────────────────────────────────────── -->
+    <div v-else-if="tab === 'memory'" class="flex-1 overflow-y-auto px-3 py-3 min-h-0">
+      <p class="text-xs text-ink-muted mb-3">
+        O que a Eme deve lembrar sobre como você quer os relatórios. Ela consulta isto
+        antes de montar e vai anotando o que você pedir para valer nas próximas vezes.
+      </p>
+
+      <!-- Adicionar -->
+      <div class="rounded-xl border border-line bg-surface p-2.5 mb-4">
+        <textarea
+          v-model="memoryDraft"
+          rows="2"
+          placeholder="Ex.: nunca comparar leads de Painel com mídia paga"
+          class="w-full resize-none rounded-lg border border-line bg-surface-raised px-2.5 py-2 text-xs text-ink placeholder:text-ink-subtle focus-ring"
+        />
+        <div class="mt-2 flex items-center gap-1.5">
+          <div class="flex items-center rounded-lg bg-surface-sunken p-0.5">
+            <button
+              class="px-2 py-1 rounded-md text-[11px] transition"
+              :class="memoryScope === 'report' ? 'bg-surface-raised shadow-soft text-ink font-medium' : 'text-ink-subtle'"
+              @click="memoryScope = 'report'"
+            >Só este</button>
+            <button
+              class="px-2 py-1 rounded-md text-[11px] transition"
+              :class="memoryScope === 'global' ? 'bg-surface-raised shadow-soft text-ink font-medium' : 'text-ink-subtle'"
+              @click="memoryScope = 'global'"
+            >Todos</button>
+          </div>
+          <button
+            class="ml-auto px-3 py-1.5 rounded-lg bg-accent text-white text-xs hover:bg-accent-hover disabled:opacity-40 transition"
+            :disabled="savingMemory || !memoryDraft.trim()"
+            @click="addMemory"
+          >Guardar</button>
+        </div>
+      </div>
+
+      <!-- Listas -->
+      <template v-for="group in [
+        { title: 'Vale para todos os relatórios', items: globalMemories, empty: 'Nenhuma preferência geral ainda.' },
+        { title: 'Só neste relatório', items: localMemories, empty: 'Nenhuma preferência específica ainda.' },
+      ]" :key="group.title">
+        <p class="text-[11px] font-semibold uppercase tracking-wider text-ink-subtle mb-1.5">{{ group.title }}</p>
+        <p v-if="!group.items.length" class="text-xs text-ink-subtle mb-4">{{ group.empty }}</p>
+        <ul v-else class="space-y-1.5 mb-4">
+          <li
+            v-for="m in group.items" :key="m.id"
+            class="group/mem rounded-lg border border-line bg-surface px-2.5 py-2 flex items-start gap-2"
+          >
+            <i
+              class="mt-0.5 text-[10px] flex-shrink-0"
+              :class="m.source === 'user' ? 'fas fa-user text-ink-subtle' : 'fas fa-wand-magic-sparkles text-accent'"
+              :title="m.source === 'user' ? 'Escrita por você' : 'Anotada pela Eme'"
+            />
+            <span class="text-xs text-ink leading-snug min-w-0">{{ m.text }}</span>
+            <div class="ml-auto flex items-center gap-0.5 opacity-0 group-hover/mem:opacity-100 transition-opacity flex-shrink-0">
+              <button
+                class="w-6 h-6 rounded text-ink-subtle hover:text-accent transition"
+                :title="m.pinned ? 'Desafixar' : 'Fixar (nunca é removida automaticamente)'"
+                @click="store.updateMemory(m.id, { pinned: !m.pinned })"
+              ><i :class="m.pinned ? 'fas fa-thumbtack text-accent' : 'fas fa-thumbtack'" class="text-[10px]" /></button>
+              <button
+                class="w-6 h-6 rounded text-ink-subtle hover:text-accent transition"
+                :title="m.reportId ? 'Passar a valer para todos' : 'Restringir a este relatório'"
+                @click="store.updateMemory(m.id, { scope: m.reportId ? 'global' : 'report' })"
+              ><i class="fas fa-right-left text-[10px]" /></button>
+              <button
+                class="w-6 h-6 rounded text-ink-subtle hover:text-rose-500 transition"
+                title="Esquecer"
+                @click="store.deleteMemory(m.id)"
+              ><i class="far fa-trash-can text-[10px]" /></button>
+            </div>
+          </li>
+        </ul>
+      </template>
     </div>
 
     <!-- ── TEMA ────────────────────────────────────────────────────────────── -->
