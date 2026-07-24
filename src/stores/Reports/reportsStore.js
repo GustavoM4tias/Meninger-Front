@@ -31,9 +31,43 @@ export const useReportsStore = defineStore('reports', () => {
     return requestWithAuth('/reports', { method: 'POST', body: JSON.stringify({ title }) })
   }
 
+  // ── Exclusão (lixeira) ─────────────────────────────────────────────────────
+  const trash = ref([])
+
+  async function deletionImpact(id) {
+    return requestWithAuth(`/reports/${id}/deletion-impact`)
+  }
+
   async function deleteReport(id) {
-    await requestWithAuth(`/reports/${id}`, { method: 'DELETE' })
-    own.value = own.value.filter((r) => r.id !== id)
+    const r = await requestWithAuth(`/reports/${id}`, { method: 'DELETE' })
+    own.value = own.value.filter((x) => x.id !== id)
+    return r
+  }
+
+  async function fetchTrash() {
+    trash.value = await requestWithAuth('/reports/trash/all')
+  }
+
+  async function restoreReport(id) {
+    await requestWithAuth(`/reports/${id}/restore`, { method: 'POST' })
+    trash.value = trash.value.filter((r) => r.id !== id)
+    await fetchList()
+  }
+
+  async function purgeReport(id) {
+    await requestWithAuth(`/reports/${id}/purge`, { method: 'DELETE' })
+    trash.value = trash.value.filter((r) => r.id !== id)
+  }
+
+  // ── Compartilhado comigo: sair da lista ────────────────────────────────────
+  async function dismissShared(id) {
+    await requestWithAuth(`/reports/${id}/dismiss`, { method: 'POST' })
+    shared.value = shared.value.filter((r) => r.id !== id)
+  }
+
+  async function undoDismissShared(id) {
+    await requestWithAuth(`/reports/${id}/dismiss`, { method: 'DELETE' })
+    await fetchList()
   }
 
   // ── Builder (relatório corrente) ───────────────────────────────────────────
@@ -342,7 +376,9 @@ export const useReportsStore = defineStore('reports', () => {
   }
 
   return {
-    own, shared, isAdmin, loadingList, fetchList, createReport, deleteReport,
+    own, shared, isAdmin, loadingList, fetchList, createReport,
+    trash, deletionImpact, deleteReport, fetchTrash, restoreReport, purgeReport,
+    dismissShared, undoDismissShared,
     report, messages, loadingReport, fetchReport,
     isStreaming, streamingText, toolProgress, highlightId,
     selectedIds, selectedBlocks, toggleBlock, clearSelection, selectOnly,
