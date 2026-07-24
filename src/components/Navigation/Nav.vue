@@ -297,10 +297,10 @@ const closeMobile = () => { isMobileOpen.value = false; };
           <IconButton @click.prevent="toggleSidebar" icon="fas fa-bars" size="md" label="Abrir menu" class=""
             @click="isMobileOpen = !isMobileOpen" />
 
-          <a href="#" 
+          <a href="/" 
              class="flex items-center select-none cursor-pointer">
             <img src="/Mlogotext.png" alt="Menin Logo"
-                 class="h-7 sm:h-8 hover:cursor-auto -my-2 dark:invert-0 invert" />
+                 class="h-7 sm:h-8 -my-2 dark:invert-0 invert" />
           </a>
         </div>
 
