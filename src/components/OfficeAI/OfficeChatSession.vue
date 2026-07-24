@@ -4,6 +4,7 @@ import { useOfficeAIStore } from '@/stores/officeAIStore'
 import { useAuthStore } from '@/stores/Settings/Auth/authStore'
 import { usePermissionStore } from '@/stores/Settings/Permissions/permissionStore'
 import { useEmeVoice } from '@/composables/useEmeVoice'
+import { randomEmePlaceholder } from '@/utils/OfficeAI/emePlaceholders'
 import ChatText from './renderers/ChatText.vue'
 import ChatTable from './renderers/ChatTable.vue'
 import ChatChart from './renderers/ChatChart.vue'
@@ -23,6 +24,8 @@ import ChatAcademyCards from './renderers/ChatAcademyCards.vue'
 import ChatImobiliariaCards from './renderers/ChatImobiliariaCards.vue'
 import ChatPersonCards from './renderers/ChatPersonCards.vue'
 import ChatNotificationPrefs from './renderers/ChatNotificationPrefs.vue'
+import ChatReportCards from './renderers/ChatReportCards.vue'
+import ChatChecklistCards from './renderers/ChatChecklistCards.vue'
 import FeedbackModal from './FeedbackModal.vue'
 
 defineOptions({ inheritAttrs: false })
@@ -41,6 +44,9 @@ const permStore = usePermissionStore()
 const voice = useEmeVoice()
 const voiceAvailable = computed(() => permStore.isAdmin && voice.isSupported)
 
+// Placeholder-exemplo sorteado uma vez por carga — muda "de vez em quando".
+const basePlaceholder = randomEmePlaceholder('Pergunte à Eme: ')
+
 const composerPlaceholder = computed(() => {
   // Prioridade: estados de voz (incluindo PROCESSING) > streaming genérico
   const fromVoice = ({
@@ -51,7 +57,7 @@ const composerPlaceholder = computed(() => {
   }[voice.state.value])
   if (fromVoice) return fromVoice
   if (aiStore.isStreaming) return 'Aguarde…'
-  return 'Pergunte ao Eme…'
+  return basePlaceholder
 })
 
 const composerStateClass = computed(() => ({
@@ -192,7 +198,7 @@ async function confirmFeedback({ comment }) {
       :class="compact ? 'text-sm' : ''">
       <div v-if="!aiStore.messages.length && !aiStore.isStreaming"
         class="flex flex-col items-center justify-center h-full gap-4 px-2 text-center">
-        <div class="h-12 w-12 rounded-2xl bg-accent-soft border border-accent/20 grid place-items-center">
+        <div class="h-12 w-12 rounded-2xl bg-accent-soft border border-accent/20 grid place-items-center animate-glow-pulse">
           <img src="/Mlogo.png" class="h-6 invert dark:invert-0" alt="Eme" />
         </div>
         <div>
@@ -291,6 +297,9 @@ async function confirmFeedback({ comment }) {
             <!-- Pessoas/Organograma + Preferências de notificação -->
             <ChatPersonCards v-if="getAction(msg)?.type === 'person_cards'" :action="getAction(msg)" />
             <ChatNotificationPrefs v-if="getAction(msg)?.type === 'notification_prefs'" :action="getAction(msg)" />
+            <!-- Relatórios + Checklist -->
+            <ChatReportCards v-if="getAction(msg)?.type === 'report_cards'" :action="getAction(msg)" />
+            <ChatChecklistCards v-if="getAction(msg)?.type === 'checklist_cards' || getAction(msg)?.type === 'checklist_tasks'" :action="getAction(msg)" />
             <div v-if="msg.response_type === 'error' && msg.metadata?.storageLimit"
               class="flex items-start gap-2 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20
                      text-sm text-amber-700 dark:text-amber-300 mt-2">
@@ -369,10 +378,10 @@ async function confirmFeedback({ comment }) {
 
           <button type="button" @click="send"
             :disabled="!messageInput.trim() || aiStore.isStreaming || aiStore.isAtStorageLimit"
-            class="w-8 h-8 rounded-full flex items-center justify-center transition-colors"
+            class="w-8 h-8 rounded-full flex items-center justify-center border transition-colors"
             :class="messageInput.trim() && !aiStore.isStreaming
-              ? 'bg-accent text-white hover:bg-accent-hover'
-              : 'bg-surface-raised text-ink-subtle cursor-not-allowed'">
+              ? 'bg-accent text-white border-accent hover:bg-accent-hover shadow-glow-accent'
+              : 'bg-surface-raised text-ink-subtle border-line cursor-not-allowed'">
             <i class="fas fa-arrow-up text-xs" />
           </button>
         </div>
