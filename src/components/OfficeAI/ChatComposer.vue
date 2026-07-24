@@ -10,6 +10,7 @@ const props = defineProps({
   size: { type: String, default: 'md' },        // md | lg (lg = landing, md = chat)
   isStreaming: { type: Boolean, default: false },
   showHistoryButton: { type: Boolean, default: false },
+  assistantBadge: { type: Boolean, default: false }, // selo "Eme · Assistente" à esquerda (landing)
 });
 
 const emit = defineEmits(['update:modelValue', 'send', 'history']);
@@ -109,9 +110,10 @@ defineExpose({ focus: () => textareaEl.value?.focus() });
 
 <template>
   <div :class="[
-        'relative bg-surface-raised border border-line rounded-2xl',
-        'shadow-soft hover:shadow-elevated focus-within:border-accent/40',
-        'focus-within:shadow-glow-accent transition-all duration-200',
+        'relative bg-surface-raised border border-line rounded-2xl transition-all duration-200 shadow-soft',
+        size === 'lg'
+          ? 'animate-slide-up hover:-translate-y-0.5 hover:border-accent/50 hover:shadow-elevated focus-within:border-accent focus-within:[box-shadow:0_0_0_4px_rgb(59_130_246/0.22),0_0_44px_8px_rgb(59_130_246/0.30)]'
+          : 'hover:shadow-elevated focus-within:border-accent/40 focus-within:shadow-glow-accent',
         containerStateClass,
       ]">
     <textarea
@@ -132,7 +134,15 @@ defineExpose({ focus: () => textareaEl.value?.focus() });
       style="max-height: 180px;"
     />
     <div class="flex items-center justify-between px-3 pb-2 pt-1">
-      <button v-if="showHistoryButton" type="button" @click="$emit('history')"
+      <!-- Selo do assistente (landing) -->
+      <span v-if="assistantBadge"
+        class="inline-flex items-center gap-1.5 text-xs font-medium text-ink-muted
+               bg-surface-sunken border border-emerald-500/30 px-2.5 py-1.5 rounded-full select-none
+               animate-glow-green">
+        <span class="h-2 w-2 rounded-full bg-emerald-500 animate-dot-pulse"></span>
+        Eme · Assistente
+      </span>
+      <button v-else-if="showHistoryButton" type="button" @click="$emit('history')"
         class="flex items-center gap-1.5 text-xs text-ink-subtle hover:text-accent
                hover:bg-accent-soft px-2.5 py-1.5 rounded-lg transition-colors">
         <i class="fas fa-clock-rotate-left"></i>
@@ -160,10 +170,10 @@ defineExpose({ focus: () => textareaEl.value?.focus() });
           :disabled="!modelValue.trim() || disabled || isStreaming"
           :class="[
             buttonSize,
-            'rounded-full grid place-items-center transition-all duration-150',
+            'rounded-full grid place-items-center border transition-all duration-150',
             modelValue.trim() && !isStreaming
-              ? 'bg-accent text-white hover:bg-accent-hover hover:scale-105 shadow-soft'
-              : 'bg-surface-sunken text-ink-subtle cursor-not-allowed'
+              ? 'bg-accent text-white border-accent hover:bg-accent-hover hover:scale-105 shadow-glow-accent'
+              : 'bg-surface-sunken text-ink-subtle border-line cursor-not-allowed'
           ]">
           <i :class="['fas fa-arrow-up', size === 'lg' ? 'text-sm' : 'text-xs']"></i>
         </button>

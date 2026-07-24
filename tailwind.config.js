@@ -48,6 +48,8 @@ module.exports = {
         'elevated':     '0 4px 14px -3px rgb(15 23 42 / 0.10), 0 2px 6px -2px rgb(15 23 42 / 0.06)',
         'overlay':      '0 16px 40px -10px rgb(15 23 42 / 0.22), 0 6px 14px -4px rgb(15 23 42 / 0.10)',
         'glow-accent':  '0 0 0 4px rgb(59 130 246 / 0.15)',
+        // Sombra/brilho azul para hover de cards e itens
+        'glow-blue':    '0 10px 30px -6px rgb(59 130 246 / 0.45), 0 0 0 1px rgb(59 130 246 / 0.12)',
         'inner-soft':   'inset 0 1px 2px 0 rgb(0 0 0 / 0.04)',
         // Inset highlight no topo (efeito "borda de luz" sutil)
         'highlight':    'inset 0 1px 0 0 rgb(255 255 255 / 0.08)',
@@ -78,6 +80,21 @@ module.exports = {
           '0%, 100%': { opacity: '1' },
           '50%': { opacity: '0.6' },
         },
+        // Halo pulsante de luz (logo/avatar "vivo") — bem visível
+        'glow-pulse': {
+          '0%, 100%': { boxShadow: '0 0 0 0 rgb(59 130 246 / 0.55), 0 0 22px 3px rgb(59 130 246 / 0.30)' },
+          '50%':      { boxShadow: '0 0 0 12px rgb(59 130 246 / 0.00), 0 0 46px 12px rgb(59 130 246 / 0.60)' },
+        },
+        // Anel pulsante em pontinho de "ativo"
+        'dot-pulse': {
+          '0%, 100%': { boxShadow: '0 0 0 0 rgb(16 185 129 / 0.60)' },
+          '50%':      { boxShadow: '0 0 0 5px rgb(16 185 129 / 0.00)' },
+        },
+        // Sombra verde pulsante no selo "Eme · Assistente" (suave)
+        'glow-green': {
+          '0%, 100%': { boxShadow: '0 0 0 0 rgb(16 185 129 / 0.28), 0 0 8px 0 rgb(16 185 129 / 0.10)' },
+          '50%':      { boxShadow: '0 0 0 3px rgb(16 185 129 / 0.00), 0 0 14px 2px rgb(16 185 129 / 0.26)' },
+        },
       },
       animation: {
         'fade-in': 'fade-in 180ms ease-out',
@@ -86,6 +103,9 @@ module.exports = {
         'scale-in': 'scale-in 160ms cubic-bezier(0.16, 1, 0.3, 1)',
         'shimmer': 'shimmer 2.4s linear infinite',
         'pulse-soft': 'pulse-soft 2s ease-in-out infinite',
+        'glow-pulse': 'glow-pulse 2.6s ease-in-out infinite',
+        'dot-pulse': 'dot-pulse 1.8s ease-in-out infinite',
+        'glow-green': 'glow-green 2s ease-in-out infinite',
       },
       transitionTimingFunction: {
         'out-expo': 'cubic-bezier(0.16, 1, 0.3, 1)',
