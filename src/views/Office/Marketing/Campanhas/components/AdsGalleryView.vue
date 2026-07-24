@@ -83,9 +83,10 @@ function openLightbox(ad) {
 
     <!-- Grid de artes -->
     <div v-else class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-      <div v-for="ad in sorted" :key="ad.id"
+      <div v-for="(ad, i) in sorted" :key="ad.id" :style="{ '--i': Math.min(i, 14) }"
         class="group rounded-xl border border-line bg-surface-raised shadow-soft overflow-hidden
-               hover:shadow-elevated hover:border-accent/30 hover:-translate-y-0.5
+               card-enter hover:border-accent/60 hover:-translate-y-0.5
+               hover:ring-2 hover:ring-accent-ring/25 hover:shadow-glow-blue
                transition-all duration-200 ease-out-expo flex flex-col">
 
         <!-- Arte -->

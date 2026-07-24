@@ -66,7 +66,8 @@ const contato = (l) => l.email || l.telefone || '(sem contato)';
           <button v-for="lead in grouped[col.key]" :key="lead.id"
             @click="emit('open-detail', lead.id)"
             class="w-full text-left rounded-lg border border-line bg-surface px-2.5 py-2
-                   hover:border-accent/40 hover:shadow-soft transition-all">
+                   transition-all duration-200 ease-out-expo
+                   hover:border-accent/60 hover:-translate-y-0.5 hover:ring-2 hover:ring-accent-ring/25 hover:shadow-glow-blue">
             <div class="flex items-center justify-between gap-2">
               <LeadStatusBadge :status="lead.status" size="sm" :dot="false" />
               <span class="flex items-center gap-1">

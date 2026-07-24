@@ -125,16 +125,16 @@ function onClick(k) {
       <div class="flex sm:grid gap-2.5 sm:gap-3
                   sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-8
                   min-w-max sm:min-w-0">
-        <button v-for="item in kpis" :key="item.key"
+        <button v-for="(item, i) in kpis" :key="item.key"
           @click="onClick(item)"
           :disabled="!item.filter"
+          :style="{ '--i': i, ...(item.highlight ? { color: `var(--c-${item.key === 'held' ? 'amber' : item.key === 'deadletter' || item.key === 'error' ? 'red' : 'accent'})` } : {}) }"
           class="group flex flex-col gap-1 p-3 rounded-xl border bg-surface-raised
-                 shadow-soft hover:shadow-elevated hover:-translate-y-0.5
-                 transition-all duration-200 ease-out-expo text-left
+                 shadow-soft hover:-translate-y-0.5 hover:ring-2 hover:ring-accent-ring/25 hover:shadow-glow-blue
+                 transition-all duration-200 ease-out-expo text-left card-enter
                  w-44 sm:w-auto shrink-0 surface-gradient
-                 disabled:cursor-default disabled:hover:translate-y-0 disabled:hover:shadow-soft"
-          :class="item.highlight ? 'border-current/30 ring-1 ring-current/10' : 'border-line hover:border-accent/30'"
-          :style="item.highlight ? `color: var(--c-${item.key === 'held' ? 'amber' : item.key === 'deadletter' || item.key === 'error' ? 'red' : 'accent'});` : ''">
+                 disabled:cursor-default disabled:hover:translate-y-0 disabled:hover:shadow-soft disabled:hover:ring-0"
+          :class="item.highlight ? 'border-current/30 ring-1 ring-current/10' : 'border-line hover:border-accent/60'">
           <div class="flex items-center justify-between gap-2">
             <span class="h-7 w-7 rounded-lg grid place-items-center text-xs" :class="item.accent">
               <i :class="item.icon"></i>

@@ -107,10 +107,12 @@ function deltaView(item) {
 <template>
   <div class="-mx-4 sm:mx-0 px-4 sm:px-0 overflow-x-auto sm:overflow-visible no-scrollbar">
     <div class="flex sm:grid gap-2.5 sm:gap-3 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-7 min-w-max sm:min-w-0">
-      <div v-for="item in kpis" :key="item.key"
+      <div v-for="(item, i) in kpis" :key="item.key"
+        :style="{ '--i': i }"
         class="group flex flex-col gap-1 p-3 rounded-xl border border-line bg-surface-raised
-               shadow-soft hover:shadow-elevated hover:border-accent/30 hover:-translate-y-0.5
-               transition-all duration-200 ease-out-expo w-40 sm:w-auto shrink-0 surface-gradient">
+               shadow-soft transition-all duration-200 ease-out-expo w-40 sm:w-auto shrink-0
+               surface-gradient card-enter
+               hover:border-accent/60 hover:-translate-y-0.5 hover:ring-2 hover:ring-accent-ring/25 hover:shadow-glow-blue">
         <div class="flex items-center justify-between gap-2">
           <span class="h-7 w-7 rounded-lg grid place-items-center text-xs" :class="item.accent">
             <i :class="item.icon"></i>

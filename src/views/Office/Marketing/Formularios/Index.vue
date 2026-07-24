@@ -7,7 +7,6 @@
 import { onMounted, ref } from 'vue';
 import { useLeadFormsStore } from '@/stores/Marketing/Capture/leadFormsStore';
 import Button from '@/components/UI/Button.vue';
-import PeriodPicker from '../Campanhas/components/PeriodPicker.vue';
 import LeadFormEditModal from './components/LeadFormEditModal.vue';
 import InternalLeadFormsTable from './components/InternalLeadFormsTable.vue';
 
@@ -28,11 +27,6 @@ onMounted(() => store.fetchAll());
       <!-- Toolbar da aba (o header vive no hub Central Meta) -->
       <div class="flex items-center justify-end gap-2 mb-3">
           <Button variant="primary" size="sm" icon="fas fa-plus" @click="openCreate">Novo formulário</Button>
-      </div>
-
-      <!-- Período mestre dos stats (padronizado com Campanhas/Leads/Captação) -->
-      <div class="mb-3">
-        <PeriodPicker :periodo="store.periodo" @update:periodo="store.setPeriodo" />
       </div>
 
       <!-- Aviso sobre forms Meta -->

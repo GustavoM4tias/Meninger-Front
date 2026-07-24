@@ -713,9 +713,8 @@ const levelTabs = computed(() => [
           description="Amplie o período ou rode o backfill da série diária." />
         <div v-else class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3.5">
           <button v-for="(a, idx) in accountRows" :key="a.id" @click="focusAccount(a.name)"
-            class="text-left rounded-xl border border-line bg-surface-raised shadow-soft surface-gradient overflow-hidden
-                   hover:border-accent/40 hover:-translate-y-0.5 transition-all animate-fade-in [animation-fill-mode:backwards]"
-            :style="{ animationDelay: Math.min(idx, 12) * 25 + 'ms' }"
+            class="text-left card-interactive card-enter surface-gradient overflow-hidden"
+            :style="{ '--i': Math.min(idx, 14) }"
             :title="`Ver campanhas de ${a.name}`">
             <div class="px-4 py-3.5 flex items-center gap-3 border-b border-line">
               <span class="w-10 h-10 shrink-0 rounded-xl grid place-items-center text-white text-base"
@@ -936,9 +935,8 @@ const levelTabs = computed(() => [
           description="Clique em Sincronizar forms para puxar os formulários da Página." />
         <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
           <button v-for="(f, idx) in metaFormRows" :key="f.id" @click="openMetaForm(f)"
-            class="text-left rounded-xl border border-line bg-surface-raised shadow-soft surface-gradient p-4
-                   hover:border-accent/40 hover:-translate-y-0.5 transition-all flex flex-col gap-3 animate-fade-in [animation-fill-mode:backwards]"
-            :style="{ animationDelay: Math.min(idx, 12) * 25 + 'ms' }"
+            class="text-left card-interactive card-enter surface-gradient p-4 flex flex-col gap-3"
+            :style="{ '--i': Math.min(idx, 14) }"
             :title="`Abrir mapeamento de ${f.name}`">
             <div class="flex items-start gap-3">
               <span class="w-10 h-10 shrink-0 rounded-xl grid place-items-center text-[15px] bg-accent-soft text-accent">
