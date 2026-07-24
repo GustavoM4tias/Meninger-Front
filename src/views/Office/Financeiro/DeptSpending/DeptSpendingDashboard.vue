@@ -228,8 +228,9 @@
                                             @click="quickToggleRelease(item)">
                                             {{ item.released ? 'Rascunho' : 'Liberar' }}
                                         </Button>
-                                        <Button variant="secondary" size="sm" icon="fas fa-chart-line" @click="openDetail(item)">
-                                            Detalhes
+                                        <Button variant="secondary" size="sm" icon="fas fa-file-invoice-dollar"
+                                            :disabled="item.companyId == null" @click="openReport(item)">
+                                            Relatório
                                         </Button>
                                     </div>
                                 </td>
@@ -372,6 +373,7 @@
 
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 import dayjs from 'dayjs';
 import { useDeptSpendingStore } from '@/stores/Financeiro/DeptSpending/deptSpendingStore';
 import { useDeptSpendingAdminStore } from '@/stores/Financeiro/DeptSpending/deptSpendingAdminStore';
@@ -393,6 +395,7 @@ import Favorite from '@/components/config/Favorite.vue';
 import DeptSpendingDepartmentsModal from './DeptSpendingDepartmentsModal.vue';
 import DeptSpendingEnterpriseModal from './DeptSpendingEnterpriseModal.vue';
 
+const router = useRouter();
 const store = useDeptSpendingStore();
 const adminStore = useDeptSpendingAdminStore();
 const auth = useAuthStore();
@@ -530,6 +533,10 @@ function statusInfo(item) {
 function openEnterpriseSettings(item) { entSettingsTarget.value = item; entSettingsOpen.value = true; }
 function openDetail(item) { detailItem.value = item; }
 function closeDetail() { detailItem.value = null; }
+function openReport(item) {
+    if (item.companyId == null) return;
+    router.push(`/financeiro/gastos-departamento/${item.companyId}`);
+}
 
 async function quickToggleRelease(item) {
     if (item.companyId == null) return;

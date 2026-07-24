@@ -301,6 +301,12 @@ export default [
                         meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Gastos por Departamento — orçamento de marketing por empreendimento (VGV × %), gasto real e saldo' },
                     },
                     {
+                        path: 'gastos-departamento/:companyId',
+                        name: 'Relatório de Investimento',
+                        component: () => import('@/views/Office/Financeiro/DeptSpending/DeptSpendingReport.vue'),
+                        meta: { requiresAuth: true, allowedPosition: '', searchable: false, content: 'Relatório gerencial de investimento por empreendimento' },
+                    },
+                    {
                         path: 'boleto-caixa',
                         name: 'Boleto Caixa',
                         component: () => import('@/views/Office/Financeiro/BoletoCaixa/Index.vue'),
