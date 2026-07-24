@@ -73,10 +73,9 @@
     background-attachment: fixed;
   }
 
-  /* Dark: sem véu de fundo — uma camada de cor sobre a tela inteira levanta o
-     preto e achata o contraste. Fundo sólido (bg-surface) apenas. */
   .dark body {
-    background-image: none;
+    background-image:
+      radial-gradient(ellipse 80% 60% at 50% -20%, rgb(var(--accent) / 0.10), transparent 60%);
   }
 
   #academy {
