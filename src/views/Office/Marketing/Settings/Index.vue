@@ -12,6 +12,7 @@ import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 import Surface from '@/components/UI/Surface.vue';
 import Button from '@/components/UI/Button.vue';
 import Input from '@/components/UI/Input.vue';
+import Switch from '@/components/UI/Switch.vue';
 
 const store = useMarketingSettingsStore();
 const authStore = useAuthStore();
@@ -22,7 +23,6 @@ const draft = ref({
     dry_run: true,
     retry_max_attempts: 6,
     form_rate_limit_per_min: 10,
-    cv_leads_endpoint: '/v1/comercial/leads',
     alert_recipient_user_ids: [],
 });
 
@@ -32,7 +32,6 @@ function resetDraft() {
         dry_run: !!c.dry_run,
         retry_max_attempts: c.retry_max_attempts ?? 6,
         form_rate_limit_per_min: c.form_rate_limit_per_min ?? 10,
-        cv_leads_endpoint: c.cv_leads_endpoint || '/v1/comercial/leads',
         alert_recipient_user_ids: Array.isArray(c.alert_recipient_user_ids) ? [...c.alert_recipient_user_ids] : [],
     };
 }
@@ -76,11 +75,11 @@ function removeRecipient(id) {
 }
 
 async function save() {
+    // cv_leads_endpoint saiu da tela (padrão do sistema) — o backend preserva o valor.
     const patch = {
         dry_run: draft.value.dry_run,
         retry_max_attempts: Number(draft.value.retry_max_attempts) || 6,
         form_rate_limit_per_min: Number(draft.value.form_rate_limit_per_min) || 10,
-        cv_leads_endpoint: draft.value.cv_leads_endpoint || '/v1/comercial/leads',
         alert_recipient_user_ids: draft.value.alert_recipient_user_ids,
     };
     const ok = await store.updateConfig(patch);
@@ -121,17 +120,22 @@ async function save() {
         </div>
 
         <Surface variant="raised" padding="md">
-          <h3 class="text-sm font-semibold text-ink mb-1">Modo sombra (dry-run)</h3>
-          <p class="text-xs text-ink-muted mb-3">
-            Quando ligado, leads são capturados e o JSON que iria pro CV é registrado como
-            evento <code class="font-mono">dry_run</code> na timeline — mas <strong>nada é enviado</strong> pro CV.
-            Use pra testar em paralelo com o RD sem duplicar nada no CRM.
+          <div class="flex items-start justify-between gap-4">
+            <div class="flex-1 min-w-0">
+              <h3 class="text-sm font-semibold text-ink mb-1">Modo sombra (dry-run)</h3>
+              <p class="text-xs text-ink-muted">
+                Quando ligado, leads são capturados e o JSON que iria pro CV é registrado como
+                evento <code class="font-mono">dry_run</code> na timeline — mas <strong>nada é enviado</strong> pro CV.
+                Use pra testar em paralelo sem duplicar nada no CRM.
+              </p>
+            </div>
+            <Switch v-model="draft.dry_run" size="sm" class="shrink-0" />
+          </div>
+          <p v-if="draft.dry_run" class="mt-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-300">
+            <i class="fas fa-eye-slash mr-1"></i>
+            Modo sombra ligado — os leads não estão sendo enviados ao CV.
           </p>
-          <label class="inline-flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" v-model="draft.dry_run" class="h-4 w-4" />
-            <span class="text-sm text-ink">Modo sombra ligado (não envia ao CV)</span>
-          </label>
-          <p v-if="!draft.dry_run" class="mt-2 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-700 dark:text-red-300">
+          <p v-else class="mt-3 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-700 dark:text-red-300">
             <i class="fas fa-triangle-exclamation mr-1"></i>
             <strong>Atenção:</strong> entrega real ligada. Próximos leads vão pro CV de verdade.
           </p>
@@ -197,16 +201,6 @@ async function save() {
           </p>
         </Surface>
 
-        <Surface variant="raised" padding="md">
-          <h3 class="text-sm font-semibold text-ink mb-1">CV CRM</h3>
-          <p class="text-xs text-ink-muted mb-3">
-            Endpoint relativo a <code class="font-mono">CV_API_BASE_URL</code> (configurado no .env).
-            Em condições normais, não precisa mexer.
-          </p>
-          <Input v-model="draft.cv_leads_endpoint" label="Endpoint de criação de lead" size="sm"
-            placeholder="/v1/comercial/leads"
-            hint="Concatena com CV_API_BASE_URL pra montar a URL final" />
-        </Surface>
       </div>
 
       <!-- Footer fixo -->

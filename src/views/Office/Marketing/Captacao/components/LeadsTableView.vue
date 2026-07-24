@@ -3,7 +3,9 @@
 //   Status | Canal | Lead (nome + contato) | Origem (campanha/form/page) |
 //   Mídia / Vínculo | Datas (Meta/Office/CV) | Erro
 //
-// Click na linha abre o modal de detalhe.
+// Click na linha abre o modal de detalhe. Direcionamento por coluna:
+//   Status → filtra o inbox pelo status · Canal → filtra pelo canal ·
+//   Campanha → abre o detalhe da campanha · Mídia → filtra pela mídia.
 
 import LeadStatusBadge from './LeadStatusBadge.vue';
 import LeadDatesCell from './LeadDatesCell.vue';
@@ -15,7 +17,7 @@ const props = defineProps({
     loading: { type: Boolean, default: false },
 });
 
-const emit = defineEmits(['open-detail']);
+const emit = defineEmits(['open-detail', 'open-campaign', 'filter-status', 'filter-channel', 'filter-midia']);
 
 const CHANNEL_META = {
     meta_lead_ads: { label: 'Meta', icon: 'fab fa-meta', cls: 'text-violet-500' },
@@ -62,9 +64,12 @@ const CV_ORIGEM_LABEL = {
             @click="emit('open-detail', lead.id)"
             class="hover:bg-surface-hover/40 cursor-pointer transition-colors group">
 
-            <!-- Status -->
+            <!-- Status (clique = filtra o inbox por este status) -->
             <td class="px-3 py-2.5 align-top">
-              <LeadStatusBadge :status="lead.status" size="sm" />
+              <button @click.stop="emit('filter-status', lead.status)"
+                class="hover:opacity-80 transition" :title="`Filtrar por este status`">
+                <LeadStatusBadge :status="lead.status" size="sm" />
+              </button>
               <Badge v-if="lead.is_reentry" variant="info" size="sm" class="ml-1" :dot="false" title="Re-entrada — pessoa já era lead no CV">
                 <i class="fas fa-arrows-rotate text-[10px]"></i> reentry
               </Badge>
@@ -75,12 +80,15 @@ const CV_ORIGEM_LABEL = {
               </Badge>
             </td>
 
-            <!-- Canal -->
+            <!-- Canal (clique = filtra o inbox por este canal) -->
             <td class="px-3 py-2.5 align-top">
-              <span class="inline-flex items-center gap-1.5 text-xs" :class="channelMeta(lead.channel).cls">
+              <button @click.stop="emit('filter-channel', lead.channel)"
+                class="inline-flex items-center gap-1.5 text-xs hover:underline"
+                :class="channelMeta(lead.channel).cls"
+                :title="`Filtrar pelo canal ${channelMeta(lead.channel).label}`">
                 <i :class="channelMeta(lead.channel).icon"></i>
                 <span class="text-ink-muted">{{ channelMeta(lead.channel).label }}</span>
-              </span>
+              </button>
             </td>
 
             <!-- Lead (nome + contato) -->
@@ -99,9 +107,15 @@ const CV_ORIGEM_LABEL = {
 
             <!-- Origem (campanha + form + page) -->
             <td class="px-3 py-2.5 align-top max-w-[260px]">
-              <!-- 1) Tem campanha Meta -->
+              <!-- 1) Tem campanha Meta (clique = abre o detalhe da campanha) -->
               <template v-if="lead.meta_campaign_name">
-                <div class="text-xs text-ink truncate" :title="lead.meta_campaign_name">
+                <button v-if="lead.meta_campaign_id"
+                  @click.stop="emit('open-campaign', lead.meta_campaign_id)"
+                  class="block text-xs text-ink truncate max-w-full text-left hover:text-accent hover:underline"
+                  :title="`Abrir campanha ${lead.meta_campaign_name}`">
+                  <i class="fas fa-bullhorn text-[10px] text-orange-500 mr-1"></i>{{ lead.meta_campaign_name }}
+                </button>
+                <div v-else class="text-xs text-ink truncate" :title="lead.meta_campaign_name">
                   <i class="fas fa-bullhorn text-[10px] text-orange-500 mr-1"></i>{{ lead.meta_campaign_name }}
                 </div>
                 <div v-if="lead.meta_form_name" class="text-[11px] text-ink-muted truncate" :title="lead.meta_form_name">
@@ -138,11 +152,13 @@ const CV_ORIGEM_LABEL = {
               <span v-else class="text-xs text-ink-subtle italic">—</span>
             </td>
 
-            <!-- Mídia / Vínculo -->
+            <!-- Mídia / Vínculo (clique = filtra o inbox por esta mídia) -->
             <td class="px-3 py-2.5 align-top max-w-[200px]">
-              <div v-if="lead.midia_slug" class="text-xs font-mono text-ink truncate" :title="lead.midia_slug">
+              <button v-if="lead.midia_slug" @click.stop="emit('filter-midia', lead.midia_slug)"
+                class="block text-xs font-mono text-ink truncate max-w-full text-left hover:text-accent hover:underline"
+                :title="`Filtrar pela mídia ${lead.midia_slug}`">
                 {{ lead.midia_slug }}
-              </div>
+              </button>
               <div v-else class="text-xs text-amber-600 dark:text-amber-400 italic">sem mídia</div>
               <div v-if="lead.cv_origem" class="text-[10px] text-ink-muted">
                 {{ CV_ORIGEM_LABEL[lead.cv_origem] || lead.cv_origem }}

@@ -207,7 +207,12 @@ function statusBadge(s) {
                 <tr v-for="c in held.campaigns.filter(c => !c.is_bound)" :key="c.campaign_id"
                   class="hover:bg-surface-hover/40 transition-colors">
                   <td class="px-3 py-2.5">
-                    <div class="text-ink font-medium leading-tight truncate max-w-[280px]" :title="c.name || c.campaign_id">
+                    <button v-if="!c.not_synced" @click="openCampaign(c.campaign_id)"
+                      class="text-ink font-medium leading-tight truncate max-w-[280px] text-left hover:text-accent hover:underline block"
+                      :title="`Abrir campanha ${c.name || c.campaign_id}`">
+                      {{ c.name || '(não sincronizada)' }}
+                    </button>
+                    <div v-else class="text-ink font-medium leading-tight truncate max-w-[280px]" :title="c.name || c.campaign_id">
                       {{ c.name || '(não sincronizada)' }}
                     </div>
                     <div class="text-[10px] font-mono text-ink-subtle">#{{ c.campaign_id }}</div>
@@ -276,7 +281,9 @@ function statusBadge(s) {
               <li v-for="c in held.campaigns.filter(c => c.is_bound)" :key="c.campaign_id"
                 class="py-2 flex items-center gap-3 text-sm">
                 <i class="fas fa-hand text-ink-subtle text-xs"></i>
-                <span class="flex-1 min-w-0 truncate text-ink" :title="c.name">{{ c.name || `#${c.campaign_id}` }}</span>
+                <button @click="openCampaign(c.campaign_id)"
+                  class="flex-1 min-w-0 truncate text-ink text-left hover:text-accent hover:underline"
+                  :title="`Abrir campanha ${c.name || c.campaign_id}`">{{ c.name || `#${c.campaign_id}` }}</button>
                 <span class="text-ink-muted">{{ fmtInt(c.held_count) }} lead(s)</span>
                 <RouterLink to="/meta?tab=captacao" class="text-[11px] text-accent hover:underline whitespace-nowrap">
                   ver na inbox →
@@ -300,7 +307,9 @@ function statusBadge(s) {
               <tbody class="divide-y divide-line/60">
                 <tr v-for="c in activeUnbound" :key="c.campaign_id" class="hover:bg-surface-hover/40 transition-colors">
                   <td class="px-3 py-2.5">
-                    <div class="text-ink font-medium leading-tight truncate max-w-[320px]" :title="c.name">{{ c.name || `#${c.campaign_id}` }}</div>
+                    <button @click="openCampaign(c.campaign_id)"
+                      class="text-ink font-medium leading-tight truncate max-w-[320px] text-left hover:text-accent hover:underline block"
+                      :title="`Abrir campanha ${c.name || c.campaign_id}`">{{ c.name || `#${c.campaign_id}` }}</button>
                     <div class="text-[10px] font-mono text-ink-subtle">{{ c.account_name || '—' }}</div>
                   </td>
                   <td class="px-3 py-2.5 text-xs text-ink-muted">
