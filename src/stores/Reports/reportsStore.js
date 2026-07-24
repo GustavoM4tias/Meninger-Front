@@ -66,20 +66,37 @@ export const useReportsStore = defineStore('reports', () => {
   function clearSelection() { selectedIds.value = [] }
   function selectOnly(id) { selectedIds.value = [id] }
 
-  async function fetchReport(id) {
-    loadingReport.value = true
-    try {
-      const data = await requestWithAuth(`/reports/${id}`)
-      report.value = data.report
-      messages.value = data.messages || []
-      selectedIds.value = []
-    } finally {
-      loadingReport.value = false
-    }
+  // ── Histórico de desfazer/refazer ──────────────────────────────────────────
+  // Guarda snapshots do spec a cada alteração (da Eme ou manual), para o
+  // usuário voltar de uma remoção acidental sem perder o resto do trabalho.
+  const HISTORY_LIMIT = 60
+  const history = ref([])      // [{ spec, label }]
+  const historyIndex = ref(-1)
+
+  const canUndo = computed(() => historyIndex.value > 0)
+  const canRedo = computed(() => historyIndex.value >= 0 && historyIndex.value < history.value.length - 1)
+  const undoLabel = computed(() => (canUndo.value ? history.value[historyIndex.value]?.label : null))
+  const redoLabel = computed(() => (canRedo.value ? history.value[historyIndex.value + 1]?.label : null))
+
+  const clone = (obj) => JSON.parse(JSON.stringify(obj || { version: 1, blocks: [] }))
+
+  function resetHistory(initialSpec) {
+    history.value = [{ spec: clone(initialSpec), label: 'Estado inicial' }]
+    historyIndex.value = 0
   }
 
-  // ── Edição direta do spec (sem passar pela Eme) ────────────────────────────
-  async function saveSpec(newSpec) {
+  function pushHistory(newSpec, label) {
+    // Uma ação nova descarta o "futuro" que existia à frente do ponteiro
+    if (historyIndex.value < history.value.length - 1) {
+      history.value = history.value.slice(0, historyIndex.value + 1)
+    }
+    history.value.push({ spec: clone(newSpec), label: label || 'Alteração' })
+    if (history.value.length > HISTORY_LIMIT) history.value.shift()
+    historyIndex.value = history.value.length - 1
+  }
+
+  // Persiste sem mexer no histórico (usado pelo undo/redo)
+  async function persistSpec(newSpec) {
     const data = await requestWithAuth(`/reports/${report.value.id}`, {
       method: 'PUT',
       body: JSON.stringify({ spec: newSpec }),
@@ -87,14 +104,52 @@ export const useReportsStore = defineStore('reports', () => {
     report.value.spec = data.spec || newSpec
   }
 
+  async function undo() {
+    if (!canUndo.value) return
+    historyIndex.value -= 1
+    const snap = history.value[historyIndex.value]
+    report.value.spec = clone(snap.spec)
+    selectedIds.value = []
+    await persistSpec(report.value.spec)
+  }
+
+  async function redo() {
+    if (!canRedo.value) return
+    historyIndex.value += 1
+    const snap = history.value[historyIndex.value]
+    report.value.spec = clone(snap.spec)
+    selectedIds.value = []
+    await persistSpec(report.value.spec)
+  }
+
+  async function fetchReport(id) {
+    loadingReport.value = true
+    try {
+      const data = await requestWithAuth(`/reports/${id}`)
+      report.value = data.report
+      messages.value = data.messages || []
+      selectedIds.value = []
+      resetHistory(data.report?.spec)
+    } finally {
+      loadingReport.value = false
+    }
+  }
+
+  // ── Edição direta do spec (sem passar pela Eme) ────────────────────────────
+  async function saveSpec(newSpec, label = 'Alteração manual') {
+    pushHistory(newSpec, label)
+    await persistSpec(newSpec)
+  }
+
   async function removeBlocks(ids) {
+    const removed = (spec.value.blocks || []).filter((b) => ids.includes(b.id))
     const next = {
       ...spec.value,
       blocks: (spec.value.blocks || []).filter((b) => !ids.includes(b.id)),
     }
     report.value.spec = next
     selectedIds.value = selectedIds.value.filter((id) => !ids.includes(id))
-    await saveSpec(next)
+    await saveSpec(next, removed.length > 1 ? `Remoção de ${removed.length} blocos` : 'Remoção de bloco')
   }
 
   async function moveBlock(id, direction) {
@@ -105,7 +160,7 @@ export const useReportsStore = defineStore('reports', () => {
     ;[blocks[i], blocks[j]] = [blocks[j], blocks[i]]
     const next = { ...spec.value, blocks }
     report.value.spec = next
-    await saveSpec(next)
+    await saveSpec(next, 'Reordenação de bloco')
   }
 
   async function setTheme(themeKey) {
@@ -183,6 +238,7 @@ export const useReportsStore = defineStore('reports', () => {
       case 'spec':
         if (report.value) {
           report.value.spec = evt.spec
+          pushHistory(evt.spec, 'Alteração da Eme')
           if (evt.meta) Object.assign(report.value, {
             title: evt.meta.title ?? report.value.title,
             enterpriseName: evt.meta.enterpriseName ?? report.value.enterpriseName,
@@ -264,6 +320,7 @@ export const useReportsStore = defineStore('reports', () => {
     selectedIds, selectedBlocks, toggleBlock, clearSelection, selectOnly,
     spec, blockCount, theme, sendMessage,
     saveSpec, removeBlocks, moveBlock, setTheme,
+    canUndo, canRedo, undoLabel, redoLabel, undo, redo,
     publish, shareInternal, shareOptions,
     publicCheck, enablePublic, revokePublic, rotatePublicToken, renewPublic, publicLog, publicUrl,
   }

@@ -2,7 +2,7 @@
 // Builder de relatório com a Eme.
 // Layout fixo: Eme à esquerda em altura total (única Eme da tela — o player
 // global fica oculto nesta rota) e o relatório à direita, com scroll próprio.
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import Button from '@/components/UI/Button.vue'
 import Badge from '@/components/UI/Badge.vue'
@@ -29,7 +29,22 @@ const currentAccess = ref([])
 
 const selCount = computed(() => store.selectedIds.length)
 
-onMounted(load)
+// Ctrl+Z / Ctrl+Shift+Z (Cmd no Mac). Ignora quando o foco está num campo de
+// texto — ali o desfazer nativo do navegador é o esperado.
+function onUndoShortcut(e) {
+  if (!(e.ctrlKey || e.metaKey) || e.key.toLowerCase() !== 'z') return
+  const el = e.target
+  if (el?.tagName === 'INPUT' || el?.tagName === 'TEXTAREA' || el?.isContentEditable) return
+  e.preventDefault()
+  if (e.shiftKey) store.redo()
+  else store.undo()
+}
+
+onMounted(() => {
+  load()
+  window.addEventListener('keydown', onUndoShortcut)
+})
+onUnmounted(() => window.removeEventListener('keydown', onUndoShortcut))
 watch(() => route.params.id, load)
 
 async function load() {
@@ -72,9 +87,28 @@ watch(() => store.highlightId, (id) => {
   <div class="h-[calc(100vh-3.5rem)] flex flex-col overflow-hidden">
     <!-- Barra do builder -->
     <div class="flex items-center gap-2 px-3 sm:px-5 py-2.5 border-b border-line bg-surface-raised flex-shrink-0">
-      <button class="w-8 h-8 rounded-lg text-ink-subtle hover:bg-surface-sunken transition flex-shrink-0" aria-label="Voltar" @click="router.push('/relatorios')">
+      <button class="w-8 h-8 rounded-lg text-ink-subtle hover:bg-surface-sunken transition flex-shrink-0" aria-label="Sair do relatório" @click="router.push('/relatorios')">
         <i class="fas fa-arrow-left" />
       </button>
+
+      <!-- Desfazer / refazer -->
+      <div class="flex items-center rounded-lg bg-surface-sunken p-0.5 flex-shrink-0">
+        <button
+          class="w-7 h-7 rounded-md text-ink-muted hover:text-ink hover:bg-surface-raised disabled:opacity-30 disabled:hover:bg-transparent transition"
+          :disabled="!store.canUndo"
+          :title="store.canUndo ? `Desfazer: ${store.undoLabel} (Ctrl+Z)` : 'Nada a desfazer'"
+          aria-label="Desfazer"
+          @click="store.undo()"
+        ><i class="fas fa-rotate-left text-xs" /></button>
+        <button
+          class="w-7 h-7 rounded-md text-ink-muted hover:text-ink hover:bg-surface-raised disabled:opacity-30 disabled:hover:bg-transparent transition"
+          :disabled="!store.canRedo"
+          :title="store.canRedo ? `Refazer: ${store.redoLabel} (Ctrl+Shift+Z)` : 'Nada a refazer'"
+          aria-label="Refazer"
+          @click="store.redo()"
+        ><i class="fas fa-rotate-right text-xs" /></button>
+      </div>
+
       <div class="min-w-0">
         <p class="text-sm font-semibold text-ink truncate">{{ store.report?.title || 'Relatório' }}</p>
         <p class="text-[11px] text-ink-subtle truncate">
