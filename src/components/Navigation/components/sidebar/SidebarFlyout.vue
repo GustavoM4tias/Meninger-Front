@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, nextTick } from 'vue';
+import { ref, computed, onMounted, nextTick, watch } from 'vue';
 import SidebarItem from './SidebarItem.vue';
 
 /**
@@ -14,27 +14,51 @@ const props = defineProps({
   iconColor: { type: String, default: '' },
   subEntries: { type: Array, default: () => [] },   // [{ key, name, icon, items }]
   flatItems: { type: Array, default: () => [] },
+  emptyText: { type: String, default: '' },         // texto quando não há nenhum item (ex.: Favoritos vazio)
   isFavorited: { type: Function, required: true },
   rect: { type: Object, required: true },           // DOMRect do ícone-âncora
 });
 
 const emit = defineEmits(['navigate', 'toggleFavorite', 'keep', 'release']);
 
+const MARGIN = 12;
+const PANEL_W = 256; // w-64
+
 const panel = ref(null);
 const top = ref(props.rect.top);
+const left = ref(props.rect.right + 8);
 
-// Alinha o topo do painel ao ícone e mantém dentro da viewport.
-onMounted(async () => {
+// Altura máxima do painel = viewport menos as margens. O corpo rola por dentro,
+// então o painel nunca ultrapassa a tela verticalmente.
+const maxHeight = computed(() => `calc(100vh - ${MARGIN * 2}px)`);
+
+// Recalcula posição medindo a altura REAL já renderizada e prende dentro da
+// viewport. Roda no mount e sempre que a âncora ou o conteúdo mudam (o mesmo
+// componente é reaproveitado ao trocar de categoria no rail).
+async function reposition() {
   await nextTick();
   const h = panel.value?.offsetHeight || 0;
-  const margin = 12;
-  const maxTop = window.innerHeight - h - margin;
-  top.value = Math.max(margin, Math.min(props.rect.top - 6, maxTop));
-});
+  const maxTop = window.innerHeight - h - MARGIN;
+  top.value = Math.max(MARGIN, Math.min(props.rect.top - 6, maxTop));
+
+  // Horizontal: abre à direita do ícone; se não couber, vira para a esquerda.
+  const wouldOverflowRight = props.rect.right + 8 + PANEL_W > window.innerWidth - MARGIN;
+  left.value = wouldOverflowRight
+    ? Math.max(MARGIN, props.rect.left - 8 - PANEL_W)
+    : props.rect.right + 8;
+}
+
+onMounted(reposition);
+watch(
+  () => [props.rect, props.subEntries, props.flatItems],
+  reposition,
+  { deep: true }
+);
 
 const style = computed(() => ({
   top: `${top.value}px`,
-  left: `${props.rect.right + 8}px`,
+  left: `${left.value}px`,
+  maxHeight: maxHeight.value,
 }));
 </script>
 
@@ -51,11 +75,11 @@ const style = computed(() => ({
     >
       <div ref="panel" :style="style"
         @mouseenter="$emit('keep')" @mouseleave="$emit('release')"
-        class="fixed z-[60] w-64 origin-left rounded-xl border border-line
+        class="fixed z-[60] w-64 flex flex-col origin-left rounded-xl border border-line
                bg-surface-overlay shadow-overlay overflow-hidden">
 
         <!-- Cabeçalho -->
-        <div class="flex items-center gap-2.5 px-3 h-11 border-b border-line
+        <div class="shrink-0 flex items-center gap-2.5 px-3 h-11 border-b border-line
                     bg-gradient-to-br from-surface-raised to-surface-sunken">
           <i v-if="icon" :class="icon"
              :style="iconColor ? { color: iconColor } : undefined"
@@ -64,7 +88,10 @@ const style = computed(() => ({
         </div>
 
         <!-- Árvore -->
-        <div class="max-h-[70vh] overflow-y-auto nav-scroll p-1.5 space-y-0.5">
+        <div class="flex-1 min-h-0 overflow-y-auto nav-scroll p-1.5 space-y-0.5">
+          <p v-if="emptyText && !subEntries.length && !flatItems.length"
+             class="px-2 py-2 text-xs text-ink-subtle">{{ emptyText }}</p>
+
           <!-- Subcategorias -->
           <template v-for="sub in subEntries" :key="sub.key">
             <p class="px-2 pt-1.5 pb-0.5 text-[11px] font-semibold uppercase tracking-wider text-ink-subtle">

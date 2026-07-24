@@ -59,7 +59,7 @@ const tip = computed(() => (props.collapsed ? props.label : ''));
            class="w-5 h-5 rounded-sm object-cover shrink-0" />
       <i v-else-if="icon"
          :style="iconColor ? { color: iconColor } : undefined"
-         class="w-5 text-sm shrink-0 transition-colors"
+         class="w-5 text-center text-sm shrink-0 transition-colors"
          :class="[icon, isActive ? 'text-accent' : 'text-ink-muted group-hover/item:text-accent']"></i>
       <span v-show="!collapsed"
             class="ms-3 truncate transition-opacity duration-200">{{ label }}</span>

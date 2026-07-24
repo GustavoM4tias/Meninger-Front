@@ -33,7 +33,7 @@ defineEmits(['toggle']);
       <slot v-if="iconSlot" name="icon" />
       <i v-else-if="icon"
          :style="iconColor ? { color: iconColor } : undefined"
-         class="w-5 text-sm shrink-0 transition-colors"
+         class="w-5 text-center text-sm shrink-0 transition-colors"
          :class="[icon, (active || open) ? 'text-accent' : 'text-ink-muted group-hover:text-accent']"></i>
 
       <span v-show="!collapsed"

@@ -10,9 +10,21 @@ const props = defineProps({
   routeIndex: { type: Object, required: true },
 });
 
-defineEmits(['toggle', 'expand']);
+const emit = defineEmits(['toggle', 'expand', 'hover', 'leave']);
 
 const favoritesStore = useFavoritesStore();
+
+// Flyout (só recolhido): mesma mecânica das categorias — passa o retângulo do
+// ícone-âncora para o Nav posicionar o painel. Sem isso, o Favoritos ficaria
+// mudo no rail recolhido (a lista é v-show="!collapsed && open").
+function onEnter(e) {
+  if (!props.collapsed) return;
+  emit('hover', { key: 'favorites', rect: e.currentTarget.getBoundingClientRect() });
+}
+function onLeave() {
+  if (!props.collapsed) return;
+  emit('leave');
+}
 
 const groupedFavorites = computed(() => {
   const list = Array.isArray(favoritesStore.favorites) ? favoritesStore.favorites : [];
@@ -35,7 +47,8 @@ async function removeFavorite(router, section) {
 </script>
 
 <template>
-  <SidebarGroup label="Favoritos" icon="fas fa-star" :open="open" :collapsed="collapsed" @toggle="$emit('toggle')">
+  <SidebarGroup label="Favoritos" icon="fas fa-star" :open="open" :collapsed="collapsed"
+    @toggle="$emit('toggle')" @mouseenter="onEnter" @mouseleave="onLeave">
     <template v-if="Object.keys(groupedFavorites).length > 0">
       <li v-for="(subGroups, category) in groupedFavorites" :key="category" class="py-1">
         <p class="text-[11px] font-semibold uppercase tracking-wider text-ink-subtle mb-1 px-2">

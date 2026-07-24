@@ -129,13 +129,13 @@ const isMac = computed(() => typeof navigator !== 'undefined' && /Mac|iPhone|iPa
 <template>
   <!-- Trigger -->
   <button type="button" @click="openModal"
-    class="group hidden md:inline-flex items-center gap-2 w-56 lg:w-72 px-3 h-9 rounded-lg
-           bg-surface-raised border border-line text-ink-muted whitespace-nowrap
-           hover:border-accent/40 hover:bg-surface-sunken transition-colors duration-150">
+    class="group hidden md:inline-flex items-center gap-2 w-56 lg:w-72 px-3.5 h-9 rounded-lg
+           bg-surface-sunken border border-line/70 text-ink-muted whitespace-nowrap
+           hover:border-accent/40 hover:bg-surface-raised transition-colors duration-150">
     <i class="fas fa-magnifying-glass text-xs shrink-0 group-hover:text-accent transition-colors"></i>
-    <span class="flex-1 min-w-0 text-left text-sm text-ink-subtle truncate">Pesquisar...</span>
+    <span class="flex-1 min-w-0 text-left text-sm text-ink-subtle truncate">Buscar no sistema...</span>
     <kbd class="hidden lg:inline-flex shrink-0 items-center gap-0.5 font-mono text-[10px] uppercase tracking-tighter
-                text-ink-subtle px-1.5 py-0.5 rounded border border-line bg-surface
+                text-ink-subtle px-1.5 py-0.5 rounded-md border border-line bg-surface
                 group-hover:border-accent/30 group-hover:text-accent transition-colors">
       <span>{{ isMac ? '⌘' : 'Ctrl' }}</span><span>K</span>
     </kbd>

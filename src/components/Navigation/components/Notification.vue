@@ -27,8 +27,8 @@ const handleMarkAll = () => notificationStore.markAllRead();
   <Dropdown align="right" :offset="10" :close-on-click="false" @open="handleOpen">
     <template #trigger>
       <button type="button"
-        class="relative h-9 w-9 grid place-items-center rounded-lg
-               text-ink-muted hover:text-ink hover:bg-surface-sunken
+        class="relative h-9 w-9 grid place-items-center rounded-lg border border-line
+               text-ink-muted hover:text-ink hover:bg-surface-sunken hover:border-accent/40
                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ring/40
                transition-colors">
         <i class="far fa-bell text-base"></i>
