@@ -15,7 +15,6 @@ import FeedbackModal from '@/components/OfficeAI/FeedbackModal.vue';
 import ChatComposer from '@/components/OfficeAI/ChatComposer.vue';
 import ChatMessage from '@/components/OfficeAI/ChatMessage.vue';
 import ChatLandingSuggestions from '@/components/OfficeAI/ChatLandingSuggestions.vue';
-import EmeInputGlow from '@/components/OfficeAI/EmeInputGlow.vue';
 import ChatTitleEditor from '@/components/OfficeAI/ChatTitleEditor.vue';
 
 import IconButton from '@/components/UI/IconButton.vue';
@@ -156,9 +155,6 @@ async function confirmFeedback({ comment }) {
             <!-- Input -->
             <div class="w-full">
               <div class="relative">
-                <!-- Halo colorido preso ao input: fica atrás do conteúdo (z-10)
-                     e não se espalha pela tela, então não achata o contraste. -->
-                <EmeInputGlow />
                 <ChatComposer
                   v-model="messageInput"
                   size="lg"
