@@ -59,6 +59,13 @@ export const useReportsStore = defineStore('reports', () => {
     trash.value = trash.value.filter((r) => r.id !== id)
   }
 
+  // ── Relatórios sem responsável ativo ───────────────────────────────────────
+  const orphans = ref([])
+
+  async function fetchOrphans() {
+    orphans.value = await requestWithAuth('/reports/orphans/all')
+  }
+
   // ── Compartilhado comigo: sair da lista ────────────────────────────────────
   async function dismissShared(id) {
     await requestWithAuth(`/reports/${id}/dismiss`, { method: 'POST' })
@@ -378,7 +385,7 @@ export const useReportsStore = defineStore('reports', () => {
   return {
     own, shared, isAdmin, loadingList, fetchList, createReport,
     trash, deletionImpact, deleteReport, fetchTrash, restoreReport, purgeReport,
-    dismissShared, undoDismissShared,
+    dismissShared, undoDismissShared, orphans, fetchOrphans,
     report, messages, loadingReport, fetchReport,
     isStreaming, streamingText, toolProgress, highlightId,
     selectedIds, selectedBlocks, toggleBlock, clearSelection, selectOnly,
