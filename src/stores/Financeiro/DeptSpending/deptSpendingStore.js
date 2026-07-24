@@ -25,6 +25,11 @@ export const useDeptSpendingStore = defineStore('marketingDeptSpending', () => {
     const error = ref(null);
     const isAdminView = ref(false); // veio do backend: usuário é admin (vê rascunhos)
 
+    // Relatório Gerencial de Investimento (1 empreendimento)
+    const report = ref(null);
+    const reportError = ref(null);
+    const reportLoading = ref(false);
+
     const search = ref('');
     const statusFilter = ref('all'); // all | UNDER | ON_TRACK | OVER
 
@@ -128,13 +133,46 @@ export const useDeptSpendingStore = defineStore('marketingDeptSpending', () => {
         }
     }
 
+    /* Relatório Gerencial de Investimento de 1 empreendimento (empresa Sienge). */
+    async function fetchReport(companyId, month) {
+        reportError.value = null;
+        reportLoading.value = true;
+        try {
+            const params = new URLSearchParams();
+            if (month) params.set('month', month);
+            const url = `${API_URL}/dept-spending/report/${encodeURIComponent(companyId)}?${params.toString()}`;
+            report.value = await requestWithAuth(url);
+        } catch (e) {
+            console.error('[DeptSpendingStore] fetchReport: erro', e);
+            reportError.value = e.message || 'Erro ao carregar o relatório.';
+            report.value = null;
+        } finally {
+            reportLoading.value = false;
+        }
+        return report.value;
+    }
+
+    /* Regenerar a "Leitura para decisão" (admin). */
+    async function regenerateInsights(companyId, month) {
+        const params = new URLSearchParams();
+        if (month) params.set('month', month);
+        const insights = await requestWithAuth(
+            `${API_URL}/dept-spending/admin/report/${encodeURIComponent(companyId)}/insights/regenerate?${params.toString()}`,
+            { method: 'POST' }
+        );
+        if (report.value) report.value = { ...report.value, insights };
+        return insights;
+    }
+
     return {
         // state
         selectedYear, selectedAliasId, selectedMonth,
         list, error, isAdminView, search, statusFilter,
+        report, reportError, reportLoading,
         // computed
         isLoading, items: normalizedItems, filtered, sorted,
         // actions
         setYear, setAlias, setSearch, setStatusFilter, setMonth, fetchList,
+        fetchReport, regenerateInsights,
     };
 });

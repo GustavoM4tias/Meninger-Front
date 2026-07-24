@@ -89,6 +89,33 @@
                 </div>
             </div>
 
+            <!-- Departamentos da LOJA (relatório gerencial) -->
+            <div :class="companyId == null ? 'opacity-50 pointer-events-none' : ''">
+                <h4 class="text-sm font-semibold text-ink flex items-center gap-2 mb-1">
+                    <i class="fas fa-store text-accent"></i>
+                    Departamentos da Loja
+                </h4>
+                <p class="text-xs text-ink-muted mb-3">
+                    Para o relatório de investimento: quais departamentos compõem o gasto da <strong>loja física</strong>
+                    desta empresa. O teto da loja vem do <strong>Custo Loja</strong> cadastrado na projeção.
+                    Um departamento marcado aqui sai do bucket de marketing (não conta duas vezes).
+                </p>
+                <div v-if="known.length" class="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                    <label v-for="d in known" :key="`loja-${d}`"
+                        class="flex items-center justify-between gap-3 px-3 py-2 rounded-lg border transition-colors cursor-pointer"
+                        :class="lojaState[d] ? 'border-accent/30 bg-accent-soft/40' : 'border-line hover:bg-surface-hover/40'">
+                        <span class="text-sm text-ink flex items-center gap-2">
+                            <i class="fas fa-store text-[10px]" :class="lojaState[d] ? 'text-accent' : 'text-ink-subtle'"></i>
+                            {{ d }}
+                        </span>
+                        <input type="checkbox" v-model="lojaState[d]"
+                            class="h-4 w-4 rounded border-line text-accent focus:ring-accent-ring/30" />
+                    </label>
+                </div>
+                <EmptyState v-else size="sm" icon="fas fa-inbox" title="Sem departamentos"
+                    description="Nenhum departamento encontrado nas despesas." />
+            </div>
+
             <p v-if="err" class="text-sm text-red-600 dark:text-red-400">
                 <i class="fas fa-circle-exclamation mr-1"></i>{{ err }}
             </p>
@@ -118,6 +145,7 @@ const emit = defineEmits(['close', 'saved']);
 const adminStore = useDeptSpendingAdminStore();
 
 const overrideState = ref({});
+const lojaState = ref({}); // { deptName: bool } — bucket Loja do relatório
 const statusOverride = ref(''); // '' = automático
 const isReleased = ref(false);
 const releaseNotes = ref('');
@@ -154,6 +182,11 @@ watch(() => props.open, async (v) => {
         else state[d] = 'default';
     }
     overrideState.value = state;
+
+    const lojaList = Array.isArray(cur?.loja_departments) ? cur.loja_departments : [];
+    const lojaMap = {};
+    for (const d of known.value) lojaMap[d] = lojaList.includes(d);
+    lojaState.value = lojaMap;
 });
 
 async function save() {
@@ -172,6 +205,7 @@ async function save() {
         await adminStore.setEnterpriseSettings(companyId.value, {
             marketing_dept_overrides: overrides,
             status_override: statusOverride.value || null,
+            loja_departments: Object.entries(lojaState.value).filter(([, v]) => v).map(([d]) => d),
         });
         // liberação é um endpoint separado (trilha released_by/at)
         await adminStore.setEnterpriseRelease(companyId.value, isReleased.value, releaseNotes.value || null);
