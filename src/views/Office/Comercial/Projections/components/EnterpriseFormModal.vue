@@ -54,6 +54,10 @@ watch(() => props.open, (v) => {
     manual.value = { name: '', city: '', defaultPrice: 0, defaultMarketingPct: 0, defaultCommissionPct: 0, totalUnits: 0, custoLoja: 0 };
     store.fetchEnterprisePicker();
   } else if (props.row) {
+    linkOpen.value = false;
+    linkSearch.value = '';
+    linkCityFilter.value = [];
+    linkPick.value = null;
     edit.value = {
       name: props.row.name || '',
       city: props.row.city || '',
@@ -114,6 +118,12 @@ function submitEdit() {
     const tu = edit.value.totalUnits;
     patch.totalUnits = (tu !== null && tu !== '') ? Math.max(0, parseInt(tu, 10) || 0) : null;
   }
+  if (linkPick.value) {
+    patch.erp_id = String(linkPick.value.id);
+    patch.city = linkPick.value.city || null;
+    patch.totalUnits = null;      // com CC, o total passa a vir do Sienge
+    patch.units_summary = null;   // estoque re-enriquecido no próximo load
+  }
   emit('submit-edit', { patch });
 }
 
@@ -132,6 +142,32 @@ const stock = computed(() => {
   };
 });
 const stockPct = (v) => (stock.value?.total ? Math.min(100, Math.round((v / stock.value.total) * 100)) : 0);
+
+/* Vínculo com CC do Sienge (modo edit): vincular linha manual ou trocar o CC */
+const linkOpen = ref(false);
+const linkSearch = ref('');
+const linkCityFilter = ref([]);
+const linkPick = ref(null); // { id, name, city } pendente até Aplicar
+
+const linkResults = computed(() =>
+  store.filterEnterprisePicker({ search: linkSearch.value, selectedCities: linkCityFilter.value }).slice(0, 400)
+);
+
+function openLinkPicker() {
+  linkOpen.value = !linkOpen.value;
+  if (linkOpen.value) {
+    linkSearch.value = '';
+    linkCityFilter.value = [];
+    store.fetchEnterprisePicker();
+  }
+}
+function pickLink(e) {
+  if (existingSet.value.has(String(e.id))) return;
+  linkPick.value = { id: String(e.id), name: e.name || String(e.id), city: e.city || null };
+  linkOpen.value = false;
+  // Apelido continua livre; só sugere o nome do Sienge se o campo estiver vazio.
+  if (!(edit.value.name || '').trim()) edit.value.name = linkPick.value.name;
+}
 </script>
 
 <template>
@@ -201,6 +237,53 @@ const stockPct = (v) => (stock.value?.total ? Math.min(100, Math.round((v / stoc
 
     <!-- ════════ EDIT ════════ -->
     <div v-else class="space-y-4">
+      <!-- Vínculo com CC do Sienge -->
+      <div class="rounded-xl border p-3"
+        :class="(row?.erp_id || linkPick) ? 'border-line' : 'border-dashed border-amber-200 dark:border-amber-800 bg-amber-50/40 dark:bg-amber-950/20'">
+        <div class="flex items-center justify-between gap-2">
+          <div class="min-w-0">
+            <p class="text-[10px] font-bold text-ink-subtle uppercase tracking-widest mb-1">
+              <i class="fas fa-hashtag mr-1"></i>Centro de custo (Sienge)
+            </p>
+            <p v-if="linkPick" class="text-sm font-semibold text-accent truncate">
+              CC {{ linkPick.id }} <span class="font-normal text-ink-muted">• {{ linkPick.name }}</span>
+              <span class="ml-1.5 text-[10px] font-semibold text-amber-600 dark:text-amber-400">(aplica ao confirmar)</span>
+            </p>
+            <p v-else-if="row?.erp_id" class="text-sm font-semibold text-ink truncate">CC {{ row.erp_id }}</p>
+            <p v-else class="text-sm font-medium text-amber-700 dark:text-amber-400">
+              <i class="fas fa-triangle-exclamation text-xs mr-1"></i>Sem vínculo (manual)
+            </p>
+          </div>
+          <Button size="sm" variant="ghost" :icon="linkOpen ? 'fas fa-chevron-up' : 'fas fa-link'" @click="openLinkPicker">
+            {{ linkOpen ? 'Fechar' : (row?.erp_id || linkPick ? 'Trocar vínculo' : 'Vincular') }}
+          </Button>
+        </div>
+
+        <div v-if="linkOpen" class="mt-3 space-y-2">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <Input v-model="linkSearch" placeholder="Buscar por nome ou código..." iconLeft="fas fa-magnifying-glass" />
+            <MultiSelector v-model="linkCityFilter" :options="cityOptions" placeholder="Filtrar por cidade" overlay />
+          </div>
+          <div class="rounded-xl border border-line divide-y divide-line max-h-56 overflow-auto">
+            <p v-if="!linkResults.length" class="p-5 text-center text-sm text-ink-subtle">
+              Nenhum empreendimento encontrado.
+            </p>
+            <button v-for="e in linkResults" :key="e.id" type="button" @click="pickLink(e)"
+              class="w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-surface-sunken transition-colors"
+              :class="existingSet.has(String(e.id)) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'"
+              :disabled="existingSet.has(String(e.id))">
+              <div class="min-w-0 flex-1">
+                <p class="text-sm text-ink truncate">{{ e.name }}</p>
+                <p class="text-[11px] text-ink-subtle font-mono">
+                  CC {{ e.id }}<span v-if="e.city"> • {{ e.city }}</span>
+                </p>
+              </div>
+              <span v-if="existingSet.has(String(e.id))" class="text-[10px] text-ink-subtle shrink-0">já incluído</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
       <!-- Estoque atual (Sienge) -->
       <div v-if="isErpRow()" class="rounded-xl border border-line bg-surface-sunken p-3">
         <div class="flex items-center justify-between mb-2.5">
@@ -248,8 +331,8 @@ const stockPct = (v) => (stock.value?.total ? Math.min(100, Math.round((v / stoc
       </div>
 
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <Input v-model="edit.name" label="Nome" :disabled="isErpRow()"
-          :hint="isErpRow() ? 'Nome vem do Sienge' : ''" />
+        <Input v-model="edit.name" label="Nome"
+          :hint="isErpRow() ? 'Apelido livre; o vínculo com o CC não muda' : ''" />
         <Input v-model="edit.city" label="Cidade" :disabled="isErpRow()"
           :hint="isErpRow() ? 'Cidade vem do Sienge' : ''" />
         <Input v-model.number="edit.defaultPrice" type="number" label="Ticket médio (R$)"
