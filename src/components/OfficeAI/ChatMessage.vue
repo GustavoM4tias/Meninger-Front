@@ -20,6 +20,8 @@ import ChatImobiliariaCards from './renderers/ChatImobiliariaCards.vue';
 import ChatConditionSheet from './renderers/ChatConditionSheet.vue';
 import ChatPersonCards from './renderers/ChatPersonCards.vue';
 import ChatNotificationPrefs from './renderers/ChatNotificationPrefs.vue';
+import ChatReportCards from './renderers/ChatReportCards.vue';
+import ChatChecklistCards from './renderers/ChatChecklistCards.vue';
 
 const props = defineProps({
   message: { type: Object, required: true },
@@ -106,6 +108,12 @@ const isError = computed(() => props.message.response_type === 'error');
 
         <!-- Preferências de notificação: painel de toggles -->
         <ChatNotificationPrefs v-if="action?.type === 'notification_prefs'" :action="action" />
+
+        <!-- Relatórios: cards de resumo -->
+        <ChatReportCards v-if="action?.type === 'report_cards'" :action="action" />
+
+        <!-- Checklist: cards de checklist / tarefas -->
+        <ChatChecklistCards v-if="action?.type === 'checklist_cards' || action?.type === 'checklist_tasks'" :action="action" />
 
         <!-- Feedback / Retry -->
         <div v-if="!streaming" class="flex items-center gap-1 mt-1.5">
