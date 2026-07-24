@@ -38,6 +38,35 @@ const router = createRouter({
   routes: isLpHost() ? lpRoutes : (isAcademyHost() ? maintenanceRoutes : officeRoutes),
 });
 
+// ─── Auto-recuperação de build obsoleto ──────────────────────────────────────
+// Após um deploy novo, uma aba antiga ainda aponta para os chunks com hash do
+// build anterior. Esses arquivos deixam de existir e o servidor devolve o
+// index.html (text/html) no lugar do .js/.css → o navegador recusa por MIME e a
+// navegação lazy quebra ("Failed to fetch dynamically imported module"). Quando
+// isso acontece, recarregamos a página UMA vez para baixar o index.html fresco
+// (com os novos hashes). Trava por tempo evita loop se a falha for real.
+const RELOAD_FLAG = 'app:chunk-reload-at';
+function isStaleChunkError(err) {
+  const msg = String(err?.message || err || '');
+  return /dynamically imported module|module script|Importing a module script failed|error loading dynamically imported/i.test(msg);
+}
+function reloadForFreshBuild(targetPath) {
+  const last = Number(sessionStorage.getItem(RELOAD_FLAG) || 0);
+  if (Date.now() - last < 10000) return; // já recarregou há pouco: não insiste (evita loop)
+  sessionStorage.setItem(RELOAD_FLAG, String(Date.now()));
+  if (targetPath) window.location.assign(targetPath);
+  else window.location.reload();
+}
+// Falha de import dinâmico durante uma navegação (router lazy).
+router.onError((error, to) => {
+  if (isStaleChunkError(error)) reloadForFreshBuild(to?.fullPath);
+});
+// Falha de preload de chunk do Vite (mesma causa, fora de navegação).
+window.addEventListener('vite:preloadError', (event) => {
+  event.preventDefault(); // não deixa virar erro não tratado
+  reloadForFreshBuild();
+});
+
 // ✅ Guard unificado: autenticação + role + permissões de alçada
 router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore();
