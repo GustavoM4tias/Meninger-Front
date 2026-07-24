@@ -51,6 +51,12 @@ async function load() {
   if (!route.params.id) return
   await store.fetchReport(route.params.id)
   currentAccess.value = []
+  // Rascunho criado pelo chat da Eme (create_report): o pedido original vem em
+  // briefing e vira a 1ª mensagem automaticamente. Só dispara quando o relatório
+  // está virgem (sem conversa e sem blocos) — depois disso a thread já existe.
+  if (store.report?.briefing && !store.messages.length && !store.blockCount && !store.isStreaming) {
+    store.sendMessage(store.report.briefing)
+  }
 }
 
 function gotoBlock(id) {
