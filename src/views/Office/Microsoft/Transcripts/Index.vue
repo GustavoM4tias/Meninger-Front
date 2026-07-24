@@ -85,7 +85,13 @@
               class="rounded-2xl border p-4 cursor-pointer transition-all group shadow-soft">
               <div class="flex items-start justify-between gap-2 mb-2">
                 <p class="text-sm font-semibold text-ink leading-snug line-clamp-2 flex-1">{{ m.subject }}</p>
-                <i class="fas fa-video text-purple-500 shrink-0 mt-0.5"></i>
+                <i :class="m.isInstant ? 'fas fa-bolt text-amber-500' : 'fas fa-video text-purple-500'"
+                  class="shrink-0 mt-0.5"></i>
+              </div>
+              <div v-if="m.isInstant" class="mb-2">
+                <span class="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                  <i class="fas fa-bolt text-[9px]"></i> Instantânea
+                </span>
               </div>
               <div class="flex items-center gap-2 text-xs text-ink-muted mb-2">
                 <i class="fas fa-calendar-day"></i>
