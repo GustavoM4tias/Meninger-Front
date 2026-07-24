@@ -118,6 +118,20 @@ function submitEdit() {
 }
 
 const canManual = computed(() => (manual.value.name || '').trim() && (manual.value.city || '').trim());
+
+/* Estoque ao vivo do Sienge (units_summary da linha vinculada a CC) */
+const stock = computed(() => {
+  const s = props.row?.units_summary;
+  if (!s) return null;
+  return {
+    total: Number(s.totalUnits || 0),
+    sold: Number(s.soldUnitsStock ?? s.soldUnits ?? 0),
+    reserved: Number(s.reservedUnits || 0),
+    blocked: Number(s.blockedUnits || 0),
+    available: Number(s.availableUnits || 0),
+  };
+});
+const stockPct = (v) => (stock.value?.total ? Math.min(100, Math.round((v / stock.value.total) * 100)) : 0);
 </script>
 
 <template>
@@ -186,7 +200,53 @@ const canManual = computed(() => (manual.value.name || '').trim() && (manual.val
     </div>
 
     <!-- ════════ EDIT ════════ -->
-    <div v-else class="space-y-3">
+    <div v-else class="space-y-4">
+      <!-- Estoque atual (Sienge) -->
+      <div v-if="isErpRow()" class="rounded-xl border border-line bg-surface-sunken p-3">
+        <div class="flex items-center justify-between mb-2.5">
+          <span class="text-[10px] font-bold text-ink-subtle uppercase tracking-widest">
+            <i class="fas fa-cubes mr-1"></i>Estoque atual no Sienge
+          </span>
+          <span v-if="stock" class="text-[11px] font-semibold text-ink-muted tabular-nums bg-surface-raised px-2 py-0.5 rounded-full border border-line">
+            {{ stock.total }} unidades
+          </span>
+        </div>
+
+        <template v-if="stock">
+          <div class="h-3 w-full rounded-full bg-emerald-400 overflow-hidden flex"
+            v-tippy="`Vendidos: ${stock.sold} · Reservados: ${stock.reserved} · Disponíveis: ${stock.available} · Bloqueados: ${stock.blocked}`">
+            <div class="h-full bg-rose-500 transition-all duration-700" :style="{ width: stockPct(stock.sold) + '%' }" />
+            <div class="h-full bg-amber-400 transition-all duration-700" :style="{ width: stockPct(stock.reserved) + '%' }" />
+            <div class="h-full bg-slate-400 transition-all duration-700" :style="{ width: stockPct(stock.blocked) + '%' }" />
+          </div>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5 mt-3">
+            <div class="text-center px-1 py-1.5 rounded-lg bg-rose-50 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/40">
+              <p class="text-[9px] text-rose-500 font-bold uppercase tracking-wide">Vendidos</p>
+              <p class="text-base font-black text-rose-700 dark:text-rose-400 tabular-nums leading-none mt-0.5">{{ stock.sold }}</p>
+              <p class="text-[9px] text-rose-400 tabular-nums">{{ stockPct(stock.sold) }}%</p>
+            </div>
+            <div class="text-center px-1 py-1.5 rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/40">
+              <p class="text-[9px] text-amber-500 font-bold uppercase tracking-wide">Reservados</p>
+              <p class="text-base font-black text-amber-700 dark:text-amber-400 tabular-nums leading-none mt-0.5">{{ stock.reserved }}</p>
+              <p class="text-[9px] text-amber-400 tabular-nums">{{ stockPct(stock.reserved) }}%</p>
+            </div>
+            <div class="text-center px-1 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/40">
+              <p class="text-[9px] text-emerald-600 font-bold uppercase tracking-wide">Disponíveis</p>
+              <p class="text-base font-black text-emerald-700 dark:text-emerald-400 tabular-nums leading-none mt-0.5">{{ stock.available }}</p>
+              <p class="text-[9px] text-emerald-500 tabular-nums">{{ stockPct(stock.available) }}%</p>
+            </div>
+            <div class="text-center px-1 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-900/30 border border-slate-100 dark:border-slate-800">
+              <p class="text-[9px] text-slate-500 font-bold uppercase tracking-wide">Bloqueados</p>
+              <p class="text-base font-black text-slate-600 dark:text-slate-400 tabular-nums leading-none mt-0.5">{{ stock.blocked }}</p>
+              <p class="text-[9px] text-slate-400 tabular-nums">{{ stockPct(stock.blocked) }}%</p>
+            </div>
+          </div>
+        </template>
+        <p v-else class="text-[11px] text-ink-subtle italic">
+          Dados de estoque do Sienge indisponíveis para o CC {{ row?.erp_id }}.
+        </p>
+      </div>
+
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <Input v-model="edit.name" label="Nome" :disabled="isErpRow()"
           :hint="isErpRow() ? 'Nome vem do Sienge' : ''" />
