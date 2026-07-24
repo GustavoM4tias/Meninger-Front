@@ -163,26 +163,26 @@ export const useReportsStore = defineStore('reports', () => {
     await saveSpec(next, 'Reordenação de bloco')
   }
 
-  // ── Memória do relatório ───────────────────────────────────────────────────
+  // ── Memória (GERAL: vale para todos os relatórios do usuário) ──────────────
   const memories = ref([])
 
   async function fetchMemories() {
-    memories.value = await requestWithAuth(`/reports/${report.value.id}/memories`)
+    memories.value = await requestWithAuth('/reports/memories/all')
   }
-  async function addMemory(text, scope = 'report') {
-    memories.value = await requestWithAuth(`/reports/${report.value.id}/memories`, {
+  async function addMemory(text) {
+    memories.value = await requestWithAuth('/reports/memories/all', {
       method: 'POST',
-      body: JSON.stringify({ text, scope }),
+      body: JSON.stringify({ text }),
     })
   }
   async function updateMemory(memoryId, patch) {
-    memories.value = await requestWithAuth(`/reports/${report.value.id}/memories/${memoryId}`, {
+    memories.value = await requestWithAuth(`/reports/memories/all/${memoryId}`, {
       method: 'PUT',
       body: JSON.stringify(patch),
     })
   }
   async function deleteMemory(memoryId) {
-    memories.value = await requestWithAuth(`/reports/${report.value.id}/memories/${memoryId}`, {
+    memories.value = await requestWithAuth(`/reports/memories/all/${memoryId}`, {
       method: 'DELETE',
     })
   }

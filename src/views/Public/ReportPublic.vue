@@ -52,7 +52,12 @@ const fmtDate = (d) => (d ? new Date(d).toLocaleDateString('pt-BR') : null)
         <p class="mt-2 text-sm text-ink-muted">Este link não está mais ativo. Se você recebeu este endereço de alguém, peça um link atualizado.</p>
       </div>
 
-      <ReportRenderer v-else :spec="data.spec" :theme="data.theme || 'classic'" />
+      <ReportRenderer
+        v-else
+        :spec="data.spec"
+        :theme="data.theme || 'classic'"
+        :meta="{ generatedAt: data.publishedAt, refreshedAt: data.refreshedAt }"
+      />
     </main>
 
     <footer v-if="data" class="pb-8 text-center text-[11px] text-ink-subtle">
