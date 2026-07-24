@@ -21,6 +21,7 @@ import Button from '@/components/UI/Button.vue';
 import SegmentedControl from '@/components/UI/SegmentedControl.vue';
 
 import PeriodPicker from '../Campanhas/components/PeriodPicker.vue';
+import CampaignDetailModal from '../Campanhas/components/CampaignDetailModal.vue';
 import CaptureHealthBanner from './components/CaptureHealthBanner.vue';
 import CaptureSummaryCards from './components/CaptureSummaryCards.vue';
 import CaptureFiltersBar from './components/CaptureFiltersBar.vue';
@@ -97,6 +98,33 @@ function goPage(p) {
 async function openDetail(id) {
     detailOpen.value = true;
     await store.fetchDetail(id);
+}
+
+// ── Direcionamento por coluna (padrão das tabelas do Office) ────────────────
+// Campanha → abre o detalhe da campanha; Status/Canal/Mídia → filtram o inbox.
+const campModalOpen = ref(false);
+const campModalId = ref(null);
+function openCampaign(id) {
+    campModalId.value = String(id);
+    campModalOpen.value = true;
+}
+function filterByStatus(status) {
+    if (!status) return;
+    const cur = store.filters.status || [];
+    store.filters.status = cur.length === 1 && cur[0] === status ? [] : [status];
+    applyFilters();
+}
+function filterByChannel(channel) {
+    if (!channel) return;
+    const cur = store.filters.channel || [];
+    store.filters.channel = cur.length === 1 && cur[0] === channel ? [] : [channel];
+    applyFilters();
+}
+function filterByMidia(slug) {
+    if (!slug) return;
+    const cur = store.filters.midia_slug || [];
+    store.filters.midia_slug = cur.length === 1 && cur[0] === slug ? [] : [slug];
+    applyFilters();
 }
 
 function refresh() {
@@ -249,7 +277,11 @@ onMounted(async () => {
       <!-- View -->
       <LeadsTableView v-if="store.viewMode === 'list'"
         :leads="orderedLeads" :loading="store.loading"
-        @open-detail="openDetail" />
+        @open-detail="openDetail"
+        @open-campaign="openCampaign"
+        @filter-status="filterByStatus"
+        @filter-channel="filterByChannel"
+        @filter-midia="filterByMidia" />
       <LeadsCardsView v-else-if="store.viewMode === 'cards'"
         :leads="orderedLeads" :loading="store.loading"
         @open-detail="openDetail" />
@@ -281,6 +313,9 @@ onMounted(async () => {
 
       <!-- Detalhe -->
       <LeadDetailModal v-model:open="detailOpen" />
+
+      <!-- Detalhe de campanha (direcionamento pela coluna Origem) -->
+      <CampaignDetailModal v-model:open="campModalOpen" :campaign-id="campModalId" />
 
   </div>
 </template>

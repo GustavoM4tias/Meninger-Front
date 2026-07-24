@@ -4,8 +4,11 @@
 //
 //   RÉGUA DE TEMPO (mestre)  → PeriodPicker no topo; TODAS as métricas
 //                              (KPIs, gráfico, tabelas) são do período.
-//   RÉGUA DE ESTRUTURA       → drill Conta → Campanha → Conjunto → Anúncio
-//                              (tabs de nível + breadcrumb de escopo).
+//   RÉGUA DE ESTRUTURA       → drill Contas → Campanhas → Conjuntos → Anúncios
+//                              → Formulários (tabs de nível com contadores +
+//                              breadcrumb de escopo). Contas agrega o relatório
+//                              de campanhas client-side; Formulários lista os
+//                              lead forms da Meta (asset da Página, sem série).
 //
 // Fonte: série diária local (meta_insights_daily) via /marketing/meta-report.
 // Os filtros do FiltersBar (status, conta, mídia...) refinam a listagem;
@@ -14,9 +17,14 @@
 import { onMounted, ref, computed, watch } from 'vue';
 import dayjs from 'dayjs';
 import { useCampaignsStore } from '@/stores/Marketing/Campaigns/campaignsStore';
+import { useMetaFormsStore } from '@/stores/Marketing/Capture/metaFormsStore';
 import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 import Surface from '@/components/UI/Surface.vue';
 import Button from '@/components/UI/Button.vue';
+import IconButton from '@/components/UI/IconButton.vue';
+import EmptyState from '@/components/UI/EmptyState.vue';
+import Badge from '@/components/UI/Badge.vue';
+import MetaFormMappingModal from '../Formularios/components/MetaFormMappingModal.vue';
 import CampaignDetailModal from './components/CampaignDetailModal.vue';
 import CampaignsCardsView from './components/CampaignsCardsView.vue';
 import CampaignsTimelineView from './components/CampaignsTimelineView.vue';
@@ -40,12 +48,12 @@ const periodo = ref({
 });
 
 // ── Régua de estrutura: nível + drill ──────────────────────────────────────
-const level = ref('campaign');                       // campaign | adset | ad
+const level = ref('campaign');                       // account | campaign | adset | ad | forms
 const drill = ref({ campaign: null, adset: null });  // { id, name } | null
 
 function setLevel(l) {
-    if (l === 'campaign') drill.value = { campaign: null, adset: null };
-    if (l === 'adset')    drill.value = { ...drill.value, adset: null };
+    if (l === 'account' || l === 'campaign' || l === 'forms') drill.value = { campaign: null, adset: null };
+    if (l === 'adset') drill.value = { ...drill.value, adset: null };
     level.value = l;
 }
 
@@ -53,12 +61,30 @@ function drillIntoCampaign(c) {
     drill.value = { campaign: { id: String(c.id), name: c.name || `#${c.id}` }, adset: null };
     level.value = 'adset';
 }
+// Direcionamento por coluna: "Anúncios" da linha → artes só daquela campanha.
+function drillIntoCampaignAds(c) {
+    drill.value = { campaign: { id: String(c.id), name: c.name || `#${c.id}` }, adset: null };
+    level.value = 'ad';
+}
 function drillIntoAdSet(a) {
     drill.value = { ...drill.value, adset: { id: String(a.id), name: a.name || `#${a.id}` } };
     level.value = 'ad';
 }
 function clearCampaignDrill() { setLevel('campaign'); }
 function clearAdsetDrill()    { setLevel('adset'); }
+
+// Direcionamento por coluna: Conta da linha → nível Campanhas filtrado na conta.
+function focusAccount(name) {
+    if (!name) return;
+    filtros.value = { ...filtros.value, conta: [name] };
+    setLevel('campaign');
+}
+// Direcionamento por coluna: Status da linha → filtra a listagem pelo status.
+function focusStatus(label) {
+    if (!label || !STATUS_TOKENS[label]) return;
+    const cur = filtros.value.status || [];
+    filtros.value = { ...filtros.value, status: cur.includes(label) ? [] : [label] };
+}
 
 // ── Filtros da listagem ─────────────────────────────────────────────────────
 const filtros = ref({
@@ -101,13 +127,17 @@ const accountIdsSelected = computed(() => {
 });
 
 async function loadReport() {
+    // Formulários não têm série diária (asset da Página); Contas agrega o
+    // relatório de campanhas client-side.
+    if (level.value === 'forms') return;
+    const apiLevel = level.value === 'account' ? 'campaign' : level.value;
     await store.fetchReport({
         since: periodo.value.since,
         until: periodo.value.until,
-        level: level.value,
+        level: apiLevel,
         accounts: accountIdsSelected.value,
-        campaignId: level.value !== 'campaign' ? (drill.value.campaign?.id || null) : null,
-        adsetId: level.value === 'ad' ? (drill.value.adset?.id || null) : null,
+        campaignId: apiLevel !== 'campaign' ? (drill.value.campaign?.id || null) : null,
+        adsetId: apiLevel === 'ad' ? (drill.value.adset?.id || null) : null,
     });
 }
 
@@ -126,6 +156,33 @@ onMounted(() => {
 });
 
 watch(reportKey, () => { loadReport(); });
+
+// ── Nível FORMULÁRIOS (lead forms da Meta — carrega 1x ao entrar no nível) ──
+const metaFormsStore = useMetaFormsStore();
+const metaFormsLoaded = ref(false);
+watch(level, (l) => {
+    if (l === 'forms' && !metaFormsLoaded.value) {
+        metaFormsLoaded.value = true;
+        metaFormsStore.fetchAll();
+    }
+});
+
+const formModalOpen = ref(false);
+const formModalForm = ref(null);
+function openMetaForm(f) { formModalForm.value = f; formModalOpen.value = true; }
+
+const metaFormRows = computed(() => {
+    if (level.value !== 'forms') return [];
+    const q = (filtros.value.busca || '').trim().toLowerCase();
+    let arr = metaFormsStore.forms || [];
+    if (q) arr = arr.filter(f => `${f.name || ''} ${f.page_name || ''} ${f.id}`.toLowerCase().includes(q));
+    return arr;
+});
+
+function formQuestionChips(f) {
+    const qs = Array.isArray(f.questions) ? f.questions : [];
+    return qs.slice(0, 4).map(q => q.label || q.key).filter(Boolean);
+}
 
 // Arquivadas: flag local só existe no cache de campanhas → re-busca do server.
 watch(() => filtros.value.incluir_arquivadas, (incluir) => {
@@ -249,6 +306,32 @@ const filtered = computed(() => {
     return arr;
 });
 
+// ── Nível CONTAS (agregado client-side do relatório de campanhas) ───────────
+const accountRows = computed(() => {
+    if (level.value !== 'account') return [];
+    const rows = store.report?.rows || [];
+    const map = new Map();
+    for (const r of rows) {
+        const cache = cacheById.value.get(String(r.id)) || {};
+        const id = r.account_id || cache.account_id || '—';
+        const name = r.account_name || cache.account_name || id;
+        const cur = map.get(id) || {
+            id, name, spend: 0, leads: 0, campaigns: 0, active: 0,
+            currency: r.currency || cache.currency || 'BRL',
+        };
+        cur.spend += Number(r.spend) || 0;
+        cur.leads += Number(r.meta_leads_total) || 0;
+        cur.campaigns += 1;
+        const st = String(r.effective_status || r.status || cache.effective_status || cache.status || '').toUpperCase();
+        if (st.includes('ACTIVE')) cur.active += 1;
+        map.set(id, cur);
+    }
+    const q = (filtros.value.busca || '').trim().toLowerCase();
+    let arr = [...map.values()].map(a => ({ ...a, cac: a.leads > 0 ? a.spend / a.leads : null }));
+    if (q) arr = arr.filter(a => `${a.name} ${a.id}`.toLowerCase().includes(q));
+    return arr.sort((x, y) => y.spend - x.spend);
+});
+
 // ── Linhas dos níveis CONJUNTO e ANÚNCIO ────────────────────────────────────
 const adsetRows = computed(() => {
     if (level.value !== 'adset') return [];
@@ -341,11 +424,19 @@ function priorityDot(p) {
     return { cls: 'bg-emerald-500', title: 'Prioridade normal' };
 }
 
-const LEVEL_TABS = [
-    { key: 'campaign', label: 'Campanhas', icon: 'fas fa-bullhorn' },
-    { key: 'adset',    label: 'Conjuntos', icon: 'fas fa-layer-group' },
-    { key: 'ad',       label: 'Anúncios',  icon: 'fas fa-image' },
-];
+// Contador aparece quando o dado do nível já está carregado (senão null = oculto).
+const levelTabs = computed(() => [
+    { key: 'account',  label: 'Contas',      icon: 'fas fa-building-columns',
+      count: level.value === 'account' ? accountRows.value.length : null },
+    { key: 'campaign', label: 'Campanhas',   icon: 'fas fa-bullhorn',
+      count: level.value === 'campaign' ? filtered.value.length : null },
+    { key: 'adset',    label: 'Conjuntos',   icon: 'fas fa-layer-group',
+      count: level.value === 'adset' ? adsetRows.value.length : null },
+    { key: 'ad',       label: 'Anúncios',    icon: 'fas fa-image',
+      count: level.value === 'ad' ? adRows.value.length : null },
+    { key: 'forms',    label: 'Formulários', icon: 'fas fa-rectangle-list',
+      count: metaFormsLoaded.value ? metaFormRows.value.length : null },
+]);
 </script>
 
 <template>
@@ -368,8 +459,9 @@ const LEVEL_TABS = [
         <PeriodPicker v-model:periodo="periodo" />
       </div>
 
-      <!-- KPIs do período (com delta vs período anterior) -->
-      <div class="mb-4">
+      <!-- KPIs do período (com delta vs período anterior). Formulários são
+           asset da Página — sem métrica de período, esconde a régua numérica. -->
+      <div v-if="level !== 'forms'" class="mb-4">
         <ReportKpiCards
           :totals="store.report?.totals"
           :totals-prev="store.report?.totals_prev"
@@ -379,7 +471,7 @@ const LEVEL_TABS = [
       </div>
 
       <!-- Banner: série diária sem cobertura no período -->
-      <div v-if="needsBackfill"
+      <div v-if="needsBackfill && level !== 'forms'"
         class="mb-4 rounded-lg border border-sky-500/30 bg-sky-500/5 px-3 py-2.5 text-sm text-sky-800 dark:text-sky-200 flex items-start gap-2.5 flex-wrap">
         <i class="fas fa-database mt-0.5"></i>
         <div class="flex-1 min-w-[220px]">
@@ -395,7 +487,7 @@ const LEVEL_TABS = [
       </div>
 
       <!-- Gráfico diário do escopo atual -->
-      <div class="mb-4">
+      <div v-if="level !== 'forms'" class="mb-4">
         <CampaignDailyChart :daily="store.report?.series || []" :currency="currency" />
       </div>
 
@@ -550,12 +642,13 @@ const LEVEL_TABS = [
       <!-- ══ RÉGUA DE ESTRUTURA: nível + breadcrumb de drill ═════════════ -->
       <div class="mb-3 flex items-center justify-between flex-wrap gap-2">
         <div class="flex items-center gap-2 flex-wrap min-w-0">
-          <!-- Tabs de nível -->
-          <div class="inline-flex rounded-lg border border-line bg-surface p-0.5">
-            <button v-for="t in LEVEL_TABS" :key="t.key" @click="setLevel(t.key)"
-              :class="['px-3 py-1.5 rounded-md text-xs font-medium transition-colors flex items-center gap-1.5',
+          <!-- Tabs de nível (com contador quando o nível está carregado) -->
+          <div class="inline-flex rounded-lg border border-line bg-surface p-0.5 max-w-full overflow-x-auto">
+            <button v-for="t in levelTabs" :key="t.key" @click="setLevel(t.key)"
+              :class="['px-3 py-1.5 rounded-md text-xs font-medium transition-colors flex items-center gap-1.5 whitespace-nowrap shrink-0',
                 level === t.key ? 'bg-accent text-white' : 'text-ink-muted hover:text-ink hover:bg-surface-hover']">
               <i :class="[t.icon, 'text-[10px]']"></i>{{ t.label }}
+              <span v-if="t.count != null" class="text-[10px] opacity-70 tabular-nums">{{ t.count }}</span>
             </button>
           </div>
 
@@ -611,8 +704,61 @@ const LEVEL_TABS = [
         </div>
       </div>
 
+      <!-- ══ NÍVEL: CONTAS (cards com direcionamento pro nível Campanhas) ══ -->
+      <template v-if="level === 'account'">
+        <div v-if="store.loadingReport && !accountRows.length"
+          class="py-16 text-center text-ink-subtle rounded-xl border border-line bg-surface-raised">
+          <i class="fas fa-circle-notch fa-spin mr-2"></i>Carregando contas...
+        </div>
+        <EmptyState v-else-if="!accountRows.length"
+          icon="fas fa-building-columns" title="Nenhuma conta com veiculação no período"
+          description="Amplie o período ou rode o backfill da série diária." />
+        <div v-else class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3.5">
+          <button v-for="(a, idx) in accountRows" :key="a.id" @click="focusAccount(a.name)"
+            class="text-left rounded-xl border border-line bg-surface-raised shadow-soft surface-gradient overflow-hidden
+                   hover:border-accent/40 hover:-translate-y-0.5 transition-all animate-fade-in [animation-fill-mode:backwards]"
+            :style="{ animationDelay: Math.min(idx, 12) * 25 + 'ms' }"
+            :title="`Ver campanhas de ${a.name}`">
+            <div class="px-4 py-3.5 flex items-center gap-3 border-b border-line">
+              <span class="w-10 h-10 shrink-0 rounded-xl grid place-items-center text-white text-base"
+                style="background:linear-gradient(135deg,#0866ff,#0653cc)">
+                <i class="fab fa-meta"></i>
+              </span>
+              <div class="flex-1 min-w-0">
+                <div class="text-sm font-semibold text-ink truncate" :title="a.name">{{ a.name }}</div>
+                <div class="text-[10px] font-mono text-ink-subtle truncate">{{ a.id }}</div>
+              </div>
+              <span v-if="a.active" class="inline-flex rounded-md border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-600 dark:text-emerald-300 whitespace-nowrap">
+                {{ a.active }} ativa{{ a.active > 1 ? 's' : '' }}
+              </span>
+            </div>
+            <div class="px-4 py-3 grid grid-cols-2 gap-x-3 gap-y-2.5">
+              <div>
+                <div class="text-[10px] font-mono uppercase tracking-wider text-ink-subtle">Investido</div>
+                <div class="text-base font-semibold text-ink tabular-nums mt-0.5">{{ fmtMoney(a.spend, a.currency) }}</div>
+              </div>
+              <div>
+                <div class="text-[10px] font-mono uppercase tracking-wider text-ink-subtle">Leads</div>
+                <div class="text-base font-semibold text-ink tabular-nums mt-0.5">{{ fmtInt(a.leads) }}</div>
+              </div>
+              <div>
+                <div class="text-[10px] font-mono uppercase tracking-wider text-ink-subtle">CAC médio</div>
+                <div class="text-sm font-semibold text-ink tabular-nums mt-0.5">{{ a.cac != null ? fmtMoney(a.cac, a.currency) : '—' }}</div>
+              </div>
+              <div>
+                <div class="text-[10px] font-mono uppercase tracking-wider text-ink-subtle">Campanhas</div>
+                <div class="text-sm font-semibold text-ink tabular-nums mt-0.5">{{ fmtInt(a.campaigns) }}</div>
+              </div>
+            </div>
+            <div class="px-4 pb-3 flex items-center gap-2 text-xs font-medium text-accent">
+              Ver campanhas <i class="fas fa-arrow-right text-[10px]"></i>
+            </div>
+          </button>
+        </div>
+      </template>
+
       <!-- ══ NÍVEL: CAMPANHAS ═════════════════════════════════════════════ -->
-      <template v-if="level === 'campaign'">
+      <template v-else-if="level === 'campaign'">
         <!-- View: Cards -->
         <div v-if="viewMode === 'cards'">
           <CampaignsCardsView :campaigns="filtered" @select="openDetail" />
@@ -642,7 +788,7 @@ const LEVEL_TABS = [
                   <th class="px-3 py-2.5 text-right  text-[11px] font-mono uppercase tracking-wider text-ink-subtle">CTR</th>
                   <th class="px-3 py-2.5 text-right  text-[11px] font-mono uppercase tracking-wider text-ink-subtle">CPM</th>
                   <th class="px-3 py-2.5 text-left   text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Último</th>
-                  <th class="px-3 py-2.5 w-24"></th>
+                  <th class="px-3 py-2.5 text-center text-[11px] font-mono uppercase tracking-wider text-ink-subtle w-32">Ações</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-line/60">
@@ -678,16 +824,23 @@ const LEVEL_TABS = [
                     </div>
                   </td>
 
-                  <!-- Conta -->
-                  <td class="px-3 py-2.5 text-ink-muted text-xs truncate max-w-[150px]">
-                    {{ c.account_name || c.account_id }}
+                  <!-- Conta (clique = filtra a listagem nesta conta) -->
+                  <td class="px-3 py-2.5 text-xs max-w-[150px]">
+                    <button v-if="c.account_name" @click.stop="focusAccount(c.account_name)"
+                      class="text-ink-muted hover:text-accent hover:underline truncate max-w-full text-left"
+                      :title="`Filtrar pela conta ${c.account_name}`">
+                      {{ c.account_name }}
+                    </button>
+                    <span v-else class="text-ink-muted">{{ c.account_id }}</span>
                   </td>
 
-                  <!-- Status -->
+                  <!-- Status (clique = filtra a listagem por este status) -->
                   <td class="px-3 py-2.5 text-center">
-                    <span :class="['inline-flex rounded-md border px-2 py-0.5 text-[10px] font-medium', statusBadge(c).cls]">
+                    <button @click.stop="focusStatus(statusBadge(c).label)"
+                      :class="['inline-flex rounded-md border px-2 py-0.5 text-[10px] font-medium hover:ring-1 hover:ring-accent/40 transition', statusBadge(c).cls]"
+                      :title="`Filtrar por ${statusBadge(c).label}`">
                       {{ statusBadge(c).label }}
-                    </span>
+                    </button>
                   </td>
 
                   <!-- Métricas do período -->
@@ -723,15 +876,16 @@ const LEVEL_TABS = [
                     {{ fmtRelative(c.lead_stats?.last_lead_at) }}
                   </td>
 
-                  <!-- Drill -->
-                  <td class="px-3 py-2.5 text-right whitespace-nowrap">
-                    <button @click.stop="drillIntoCampaign(c)"
-                      class="inline-flex items-center gap-1.5 rounded-md border border-line px-2 py-1 text-[10px] font-medium text-ink-muted
-                             opacity-0 group-hover:opacity-100 hover:text-accent hover:border-accent/40 transition-all"
-                      title="Ver conjuntos desta campanha">
-                      <i class="fas fa-layer-group text-[9px]"></i>Conjuntos
-                      <i class="fas fa-chevron-right text-[8px]"></i>
-                    </button>
+                  <!-- Ações: direcionamento por item (detalhe / conjuntos / anúncios) -->
+                  <td class="px-3 py-2.5">
+                    <div class="flex gap-1 justify-center">
+                      <IconButton icon="fas fa-eye" size="sm" label="Detalhe da campanha (vínculo, leads)"
+                        @click.stop="openDetail(c)" />
+                      <IconButton icon="fas fa-layer-group" size="sm" label="Ver conjuntos desta campanha"
+                        @click.stop="drillIntoCampaign(c)" />
+                      <IconButton icon="fas fa-image" size="sm" label="Ver anúncios (artes) desta campanha"
+                        @click.stop="drillIntoCampaignAds(c)" />
+                    </div>
                   </td>
                 </tr>
               </tbody>
@@ -751,12 +905,75 @@ const LEVEL_TABS = [
       </template>
 
       <!-- ══ NÍVEL: ANÚNCIOS (artes) ══════════════════════════════════════ -->
-      <template v-else>
+      <template v-else-if="level === 'ad'">
         <AdsGalleryView
           :ads="adRows"
           :loading="store.loadingReport"
           :currency="currency"
           :show-campaign="!drill.campaign" />
+      </template>
+
+      <!-- ══ NÍVEL: FORMULÁRIOS (lead forms da Meta — clique abre o mapping) ══ -->
+      <template v-else>
+        <div class="flex items-center justify-between gap-2 mb-3 flex-wrap">
+          <p class="text-xs text-ink-muted">
+            <i class="fab fa-meta text-blue-500 mr-1"></i>
+            Formulários de Lead Ads da Página. O vínculo (empreendimento/mídia) vive na <b>campanha</b>;
+            aqui você mapeia os <b>campos</b> (pergunta → CV) e vê os leads recentes de cada form.
+          </p>
+          <Button v-if="isAdmin" variant="secondary" size="sm" icon="fas fa-arrows-rotate"
+            :loading="metaFormsStore.syncing" @click="metaFormsStore.syncFromMeta()">
+            Sincronizar forms
+          </Button>
+        </div>
+
+        <div v-if="metaFormsStore.loading && !metaFormRows.length"
+          class="py-16 text-center text-ink-subtle rounded-xl border border-line bg-surface-raised">
+          <i class="fas fa-circle-notch fa-spin mr-2"></i>Carregando formulários...
+        </div>
+        <EmptyState v-else-if="!metaFormRows.length"
+          icon="fas fa-rectangle-list" title="Nenhum formulário Meta no cache"
+          description="Clique em Sincronizar forms para puxar os formulários da Página." />
+        <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+          <button v-for="(f, idx) in metaFormRows" :key="f.id" @click="openMetaForm(f)"
+            class="text-left rounded-xl border border-line bg-surface-raised shadow-soft surface-gradient p-4
+                   hover:border-accent/40 hover:-translate-y-0.5 transition-all flex flex-col gap-3 animate-fade-in [animation-fill-mode:backwards]"
+            :style="{ animationDelay: Math.min(idx, 12) * 25 + 'ms' }"
+            :title="`Abrir mapeamento de ${f.name}`">
+            <div class="flex items-start gap-3">
+              <span class="w-10 h-10 shrink-0 rounded-xl grid place-items-center text-[15px] bg-accent-soft text-accent">
+                <i class="fas fa-rectangle-list"></i>
+              </span>
+              <div class="flex-1 min-w-0">
+                <div class="text-sm font-semibold text-ink truncate" :title="f.name">{{ f.name || `#${f.id}` }}</div>
+                <div class="text-[11px] text-ink-subtle truncate mt-0.5">
+                  <i class="fab fa-facebook text-[10px] mr-1"></i>{{ f.page_name || f.page_id }}
+                </div>
+              </div>
+              <span :class="['inline-flex rounded-md border px-2 py-0.5 text-[10px] font-medium whitespace-nowrap',
+                String(f.status).toUpperCase() === 'ACTIVE'
+                  ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300'
+                  : 'border-slate-500/20 bg-slate-500/10 text-slate-500']">
+                {{ String(f.status).toUpperCase() === 'ACTIVE' ? 'Ativo' : (f.status || '—') }}
+              </span>
+            </div>
+            <div class="flex items-center gap-4 text-xs text-ink-muted">
+              <span v-if="Array.isArray(f.questions)" class="tabular-nums">
+                <i class="fas fa-list-check text-[10px] mr-1 text-ink-subtle"></i>{{ f.questions.length }} pergunta{{ f.questions.length === 1 ? '' : 's' }}
+              </span>
+              <span v-if="f.midia_slug" class="font-mono truncate" :title="`Mídia (fallback): ${f.midia_slug}`">
+                <i class="fas fa-hashtag text-[10px] mr-1 text-ink-subtle"></i>{{ f.midia_slug }}
+              </span>
+              <Badge v-if="f.mapping_active === false" variant="warning" size="sm" :dot="false">mapping off</Badge>
+            </div>
+            <div v-if="formQuestionChips(f).length" class="flex flex-wrap gap-1.5">
+              <span v-for="q in formQuestionChips(f)" :key="q"
+                class="text-[11px] px-2 py-0.5 rounded-md bg-surface-sunken border border-line text-ink-muted truncate max-w-[160px]">
+                {{ q }}
+              </span>
+            </div>
+          </button>
+        </div>
       </template>
 
       <CampaignDetailModal
@@ -768,5 +985,9 @@ const LEVEL_TABS = [
 
       <!-- Ferramentas admin (gear icon na toolbar) -->
       <CampaignsAdminModal v-if="isAdmin" v-model:open="adminModalOpen" />
+
+      <!-- Mapeamento de campos do form Meta (nível Formulários) -->
+      <MetaFormMappingModal v-model:open="formModalOpen" :form="formModalForm"
+        @saved="metaFormsStore.fetchAll()" />
   </div>
 </template>
