@@ -27,7 +27,7 @@ import ProjectionHistory from './components/ProjectionHistory.vue';
 
 import {
   ensureYM, buildMonthRange, monthLabel, rowKey, emptyCell,
-  rowHasValue, cellVgv, rowUnits, rowVgv, brl, brlCompact, int,
+  rowHasValue, cellVgv, rowUnits, rowVgv, brl, brlCompact, int, projectionCategory,
   cityKey, buildCityCanonicalMap, canonicalCity,
 } from './projectionUtils';
 
@@ -96,6 +96,7 @@ function inflateFromBackend() {
       name: d.enterprise_name_cache || (erp ? `CC ${erp}` : 'Empreendimento'),
       city: d.manual_city || (erp ? cityByErpId.value.get(erp) : null) || null,
       units_summary: d.units_summary || null,
+      category: projectionCategory(d.cv_segment),
       totalUnits: d.total_units == null ? null : Number(d.total_units),
       defaultPrice: Number(d.default_avg_price || 0),
       defaultMarketingPct: Number(d.default_marketing_pct || 0),
@@ -200,6 +201,16 @@ function clearDraft() { localStorage.removeItem(draftKey.value); dirty.value = f
 /* ── Filtros (cliente) ─────────────────────────────────────────────────────── */
 const filterEnterprises = ref([]);
 const filterCities = ref([]);
+const filterCategories = ref([]);
+
+const rowCategory = (r) => r.category || projectionCategory(null);
+const categoryOptions = computed(() => {
+  const set = new Set(rows.value.map(rowCategory));
+  // SBPE e MCMV primeiro; demais em ordem alfabética.
+  const head = ['SBPE', 'MCMV'].filter((c) => set.has(c));
+  const rest = [...set].filter((c) => !head.includes(c)).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  return [...head, ...rest];
+});
 
 const enterpriseOptions = computed(() => [...new Set(rows.value.map((r) => r.name))].sort((a, b) => a.localeCompare(b, 'pt-BR')));
 const cityCanonMap = computed(() => buildCityCanonicalMap(rows.value.map((r) => r.city).filter(Boolean)));
@@ -220,10 +231,14 @@ const visibleRows = computed(() => {
     const keys = new Set(filterCities.value.map(cityKey));
     arr = arr.filter((r) => r.city && keys.has(cityKey(r.city)));
   }
+  if (filterCategories.value.length) {
+    const set = new Set(filterCategories.value);
+    arr = arr.filter((r) => set.has(rowCategory(r)));
+  }
   return arr;
 });
-const activeFilters = computed(() => filterEnterprises.value.length + filterCities.value.length + (hideZero.value ? 1 : 0));
-function clearFilters() { filterEnterprises.value = []; filterCities.value = []; hideZero.value = false; }
+const activeFilters = computed(() => filterEnterprises.value.length + filterCities.value.length + filterCategories.value.length + (hideZero.value ? 1 : 0));
+function clearFilters() { filterEnterprises.value = []; filterCities.value = []; filterCategories.value = []; hideZero.value = false; }
 
 /* ── Totais (todas as linhas) ──────────────────────────────────────────────── */
 const totals = computed(() => {
@@ -534,9 +549,10 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload));
           </div>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:w-[440px]">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 lg:w-[600px]">
           <MultiSelector v-model="filterEnterprises" :options="enterpriseOptions" placeholder="Filtrar empreendimento" />
           <MultiSelector v-model="filterCities" :options="cityOptions" placeholder="Filtrar cidade" />
+          <MultiSelector v-model="filterCategories" :options="categoryOptions" placeholder="Filtrar categoria" />
         </div>
       </div>
 
