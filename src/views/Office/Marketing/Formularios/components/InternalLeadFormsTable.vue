@@ -24,10 +24,10 @@ const emit = defineEmits(['edit']);
 
 const store = useLeadFormsStore();
 
-// As contagens de leads (colunas/resumo) são recortadas pelo PeriodPicker
-// mestre da tela (store.periodo). O filtro de datas abaixo é OUTRA coisa:
-// filtra quais FORMULÁRIOS aparecem (pela data de início/criação) — por isso
-// agora começa vazio (mostra todos).
+// As contagens de leads (colunas/resumo) são recortadas pelo período mestre da
+// store (store.periodo, default mês atual — sem picker na tela). O filtro de
+// datas abaixo é OUTRA coisa: filtra quais FORMULÁRIOS aparecem (pela data de
+// início/criação) — por isso começa vazio (mostra todos).
 const search = ref('');
 const filterActive   = ref('ALL');  // ALL | ACTIVE | INACTIVE
 const filterPriority = ref('ALL');  // ALL | high | normal | low

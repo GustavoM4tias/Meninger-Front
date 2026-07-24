@@ -150,8 +150,10 @@ function statusBadge(s) {
 
         <!-- ══ Funil de entrega (fluxo AO VIVO) ═════════════════════════════ -->
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3 mb-2">
-          <div v-for="c in funnelCards" :key="c.key"
-            class="flex flex-col gap-1 p-3 rounded-xl border border-line bg-surface-raised shadow-soft surface-gradient">
+          <div v-for="(c, i) in funnelCards" :key="c.key" :style="{ '--i': i }"
+            class="flex flex-col gap-1 p-3 rounded-xl border border-line bg-surface-raised shadow-soft surface-gradient
+                   card-enter transition-all duration-200 ease-out-expo
+                   hover:border-accent/60 hover:-translate-y-0.5 hover:ring-2 hover:ring-accent-ring/25 hover:shadow-glow-blue">
             <div class="flex items-center justify-between">
               <span class="h-7 w-7 rounded-lg grid place-items-center text-xs" :class="c.accent">
                 <i :class="c.icon"></i>

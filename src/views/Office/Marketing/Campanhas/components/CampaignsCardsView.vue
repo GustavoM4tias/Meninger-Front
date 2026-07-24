@@ -67,9 +67,10 @@ function objectiveLabel(o) {
 
 <template>
   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-    <button v-for="c in campaigns" :key="c.id"
+    <button v-for="(c, i) in campaigns" :key="c.id"
       @click="emit('select', c)"
-      class="text-left rounded-xl border border-line bg-surface hover:border-accent/40 hover:shadow-md transition-all overflow-hidden flex flex-col">
+      :style="{ '--i': Math.min(i, 14) }"
+      class="text-left card-interactive card-enter surface-gradient overflow-hidden flex flex-col">
 
       <!-- Top: status + Lead Ads + nome -->
       <div class="px-3 pt-3 pb-2 flex items-start gap-2 flex-wrap">
