@@ -13,7 +13,7 @@
  *   sistema cresce. A ordem das seções segue a 1ª aparição no array abaixo.
  *     OPERAÇÃO  — o dia a dia do negócio (Marketing, Comercial, Financeiro)
  *     RECURSOS  — canais e integrações externas (Microsoft, Meta)
- *     SISTEMA   — administração, suporte e a conta do próprio usuário
+ *     SISTEMA   — administração, suporte, conta e preferências do próprio usuário
  *
  * ─── Propriedades de categoria ────────────────────────────────────────────────
  *   key               — identificador único (snake_case)
@@ -79,30 +79,11 @@ export const navRegistry = [
         label: 'Marketing',
         icon: 'fas fa-bullhorn',
         group: 'OPERAÇÃO',
-        subcategories: [
-            {
-                key: 'events',
-                name: 'Eventos',
-                icon: 'fas fa-calendar-days',
-                pages: [
-                    { route: '/marketing/events', section: 'Geral', name: 'Geral', icon: 'fas fa-list' },
-                    { route: '/marketing/events', section: 'Próximos', name: 'Próximos', icon: 'fas fa-calendar-plus' },
-                    { route: '/marketing/events', section: 'Finalizados', name: 'Finalizados', icon: 'fas fa-calendar-check' },
-                ],
-            },
-            {
-                key: 'capture',
-                name: 'Captação',
-                icon: 'fas fa-magnet',
-                pages: [
-                    { route: '/marketing/captacao', name: 'Captação de Leads', icon: 'fas fa-inbox', adminOnly: true },
-                    { route: '/marketing/vinculos', name: 'Vínculos CV', icon: 'fas fa-link', adminOnly: true },
-                    { route: '/marketing/formularios', name: 'Formulários', icon: 'fas fa-rectangle-list', adminOnly: true },
-                    { route: '/marketing/settings', name: 'Config. Captação', icon: 'fas fa-sliders', adminOnly: true },
-                ],
-            },
-        ],
+        // A subcategoria "Captação" (Captação de Leads, Vínculos CV, Formulários,
+        // Config. Captação) foi consolidada na Central Meta (/meta) em 2026-07-23.
         pages: [
+            // Tela única com abas internas (Geral/Próximos/Finalizados) → um só item.
+            { route: '/marketing/events', name: 'Eventos', icon: 'fas fa-calendar-days' },
             { route: '/marketing/leads', section: 'Leads', name: 'Leads', icon: 'fas fa-user-plus' },
             // Config das Aprovações fica só dentro da tela (botão "Configurações"), não no menu.
             { route: '/marketing/aprovacoes', name: 'Aprovações', icon: 'fas fa-stamp' },
@@ -127,19 +108,12 @@ export const navRegistry = [
                 ],
             },
             {
-                key: 'terminations',
-                name: 'Distratos & Cancelamentos',
-                icon: 'fas fa-file-circle-xmark',
-                pages: [
-                    { route: '/comercial/distratos',             section: 'Distratos',     name: 'Distratos',     icon: 'fas fa-file-circle-xmark' },
-                    { route: '/comercial/cancelamento-reservas', section: 'Cancelamentos', name: 'Cancelamentos', icon: 'fas fa-eraser', adminOnly: true },
-                ],
-            },
-            {
                 key: 'registers',
                 name: 'Cadastros',
                 icon: 'fas fa-address-book',
                 pages: [
+                    // Tela única com abas internas (Geral/Lançamentos/Em Obras/…) → um só item.
+                    { route: '/comercial/buildings',       name: 'Empreendimentos', icon: 'fas fa-building' },
                     { route: '/comercial/imobiliarias',    section: 'Imobiliárias',  name: 'Imobiliárias',  icon: 'fas fa-house-flag' },
                 ],
             },
@@ -153,26 +127,22 @@ export const navRegistry = [
                 ],
             },
             {
-                key: 'buildings',
-                name: 'Empreendimentos',
-                icon: 'fas fa-building',
-                pages: [
-                    { route: '/comercial/buildings', section: 'Geral', name: 'Geral', icon: 'fas fa-list' },
-                    { route: '/comercial/buildings', section: 'Pré Lançamentos', name: 'Pré Lançamentos', icon: 'fas fa-hourglass-start' },
-                    { route: '/comercial/buildings', section: 'Lançamentos', name: 'Lançamentos', icon: 'fas fa-rocket' },
-                    { route: '/comercial/buildings', section: 'Em Obras', name: 'Em Obras', icon: 'fas fa-helmet-safety' },
-                    { route: '/comercial/buildings', section: 'Finalizados', name: 'Finalizados', icon: 'fas fa-building-circle-check' },
-                    { route: '/comercial/buildings', section: 'Portal do Cliente', name: 'Portal do Cliente', icon: 'fas fa-house-user' },
-                ],
-            },
-            {
                 key: 'conditions',
                 name: 'Condições & Regras',
                 icon: 'fas fa-clipboard-list',
                 pages: [
                     { route: '/comercial/conditions',      section: 'Fichas Comerciais', name: 'Fichas Comerciais', icon: 'fas fa-file-contract' },
-                    { route: '/comercial/mcmv',            section: 'MCMV',              name: 'MCMV - Limites',    icon: 'fas fa-house-circle-check' },
+                    { route: '/comercial/mcmv',            section: 'MCMV',              name: 'Minha Casa Minha Vida',    icon: 'fas fa-house-circle-check' },
                     { route: '/comercial/workflow/groups', section: 'Grupos Workflow',   name: 'Grupos Workflow',   icon: 'fas fa-chart-diagram' },
+                ],
+            },
+            {
+                key: 'terminations',
+                name: 'Distratos & Cancelamentos',
+                icon: 'fas fa-handshake-slash',
+                pages: [
+                    { route: '/comercial/distratos',             section: 'Distratos',     name: 'Distratos',     icon: 'fas fa-file-circle-xmark' },
+                    { route: '/comercial/cancelamento-reservas', section: 'Cancelamentos', name: 'Cancelamentos', icon: 'fas fa-eraser', adminOnly: true },
                 ],
             },
         ],
@@ -224,7 +194,7 @@ export const navRegistry = [
             { route: '/academy/panel', name: 'Painel', icon: 'fas fa-gauge-high', permissionManaged: false },
             { route: '/academy/kb', name: 'Base de Conhecimento', icon: 'fas fa-book-open', permissionManaged: false },
             { route: '/academy/tracks', name: 'Trilhas', icon: 'fas fa-route', permissionManaged: false },
-            { route: '/academy/admin', name: 'Gestão do Academy', icon: 'fas fa-shield-halved', adminOnly: true },
+            { route: '/academy/admin', name: 'Gestão do Academy', icon: 'fas fa-chalkboard-user', adminOnly: true },
         ],
     },
 
@@ -255,18 +225,24 @@ export const navRegistry = [
         iconColor: '#0866FF',
         group: 'RECURSOS',
         pages: [
-            { route: '/marketing/campanhas', name: 'Campanhas Meta', icon: 'fas fa-rectangle-ad', iconColor: '#0866FF', adminOnly: true },
-            // WhatsApp unificado: Configuração · Templates · Automações · Gastos · Mensagens.
+            // Central Meta unificada (2026-07-23): Captação · Campanhas · Vínculos CV
+            // · Formulários · Credenciais · Configurações — tudo em abas de /meta.
+            { route: '/meta', name: 'Central Meta', icon: 'fab fa-meta', iconColor: '#0866FF', adminOnly: true },
+            // WhatsApp segue em tela própria (Configuração · Templates · Automações · Gastos · Mensagens).
             { route: '/settings/whatsapp', section: 'WhatsApp', name: 'WhatsApp', icon: 'fab fa-whatsapp', iconColor: '#25D366', adminOnly: true },
-            { route: '/settings/meta', name: 'Credenciais do App', icon: 'fas fa-key', iconColor: '#0866FF', adminOnly: true },
         ],
     },
 
     // ═══ SISTEMA ════════════════════════════════════════════════════════════════
 
     // ── Administração ───────────────────────────────────────────────────────────
-    // adminOnly:true → sempre oculto para não-admin (ex: Usuários, Alçadas, Backup Sienge)
-    // sem flag       → gerenciado por alçada (ex: Organograma — admin pode delegar/revogar)
+    // adminOnly:true            → sempre oculto para não-admin (ex: Usuários, Alçadas, Backup Sienge)
+    // sem flag                  → gerenciado por alçada (ex: Organograma — admin pode delegar/revogar)
+    // permissionManaged:false   → sempre visível para todos e fora das Alçadas. É o caso da conta e
+    //                             das preferências do próprio usuário (Minha Conta, Notificações,
+    //                             Alertas, Reportar Problema), que vivem aqui em vez de uma categoria
+    //                             própria. Por causa deles, a categoria aparece para qualquer usuário
+    //                             — o não-admin só enxerga esses itens.
     {
         key: 'admin',
         label: 'Administração',
@@ -278,6 +254,8 @@ export const navRegistry = [
                 name: 'Usuários & Acessos',
                 icon: 'fas fa-users-gear',
                 pages: [
+                    // Conta do próprio usuário — permissionManaged:false → visível a todos.
+                    { route: '/settings/Account', section: 'Minha Conta', name: 'Minha Conta', icon: 'fas fa-user-gear', permissionManaged: false },
                     { route: '/settings/users', section: 'Usuários', name: 'Usuários', icon: 'fas fa-users', adminOnly: true },
                     { route: '/settings/organograma', section: 'Organograma', name: 'Organograma', icon: 'fas fa-sitemap' },
                     { route: '/settings/permissions', section: 'Alçadas', name: 'Alçadas', icon: 'fas fa-shield-halved', adminOnly: true },
@@ -291,9 +269,9 @@ export const navRegistry = [
                 icon: 'fas fa-plug',
                 pages: [
                     { route: '/tools/validator', section: 'Validador', name: 'Validador', icon: 'fas fa-check-double' },
-                    { route: '/tools/bucket-upload', section: 'Envio ao Bucket', name: 'Envio ao Bucket', icon: 'fas fa-cloud-arrow-up' },
-                    { route: '/settings/backup-sienge', section: 'Backup Sienge', name: 'Backup Sienge', icon: 'fas fa-database', adminOnly: true },
-                    { route: '/settings/docusign', section: 'DocuSign', name: 'DocuSign', icon: 'fas fa-file-signature', iconImg: '/icons/docusign.svg', adminOnly: true },
+                    { route: '/tools/bucket-upload', section: 'Looqbox', name: 'Looqbox', icon: 'fas fa-cloud-arrow-up', iconImg: '/icons/looqbox.png' },
+                    { route: '/settings/backup-sienge', section: 'Backup Sienge', name: 'Backup Sienge', icon: 'fas fa-database', iconImg: '/icons/sienge.png', adminOnly: true },
+                    { route: '/settings/docusign', section: 'DocuSign', name: 'DocuSign', icon: 'fas fa-file-signature', iconImg: '/icons/docusign.png', adminOnly: true },
                 ],
             },
             {
@@ -311,24 +289,12 @@ export const navRegistry = [
                 icon: 'fas fa-comments',
                 pages: [
                     { route: '/mural/admin', section: 'Mural de Avisos', name: 'Mural de Avisos', icon: 'fas fa-thumbtack', adminOnly: true },
+                    // Preferências do próprio usuário — permissionManaged:false → visíveis a todos.
+                    { route: '/settings/notifications', section: 'Notificações', name: 'Notificações', icon: 'fas fa-bell', permissionManaged: false },
+                    { route: '/settings/alerts', section: 'Alertas', name: 'Alertas', icon: 'fas fa-tower-broadcast', permissionManaged: false },
+                    { route: '/report', name: 'Reportar Problema', icon: 'fas fa-bug', permissionManaged: false },
                 ],
             },
-        ],
-    },
-
-    // ── Conta & Preferências ─────────────────────────────────────────────────────
-    // permissionManaged:false → sempre visível para todos, não aparece nas alçadas.
-    {
-        key: 'account',
-        label: 'Conta & Preferências',
-        icon: 'fas fa-circle-user',
-        group: 'SISTEMA',
-        permissionManaged: false,
-        pages: [
-            { route: '/settings/Account', section: 'Minha Conta', name: 'Minha Conta', icon: 'fas fa-user-gear', permissionManaged: false },
-            { route: '/settings/notifications', section: 'Notificações', name: 'Notificações', icon: 'fas fa-bell', permissionManaged: false },
-            { route: '/settings/alerts', section: 'Alertas', name: 'Alertas', icon: 'fas fa-tower-broadcast', permissionManaged: false },
-            { route: '/report', name: 'Reportar Problema', icon: 'fas fa-bug', permissionManaged: false },
         ],
     },
 

@@ -291,7 +291,7 @@ const sections = [
           <div v-else-if="!fmEditor || !fmEditor.items?.length"
             class="text-center py-8 text-ink-subtle text-sm rounded-lg border border-dashed border-line">
             <i class="fas fa-circle-info text-xl mb-1 block"></i>
-            Sem perguntas no form ainda. Sincronize em <span class="font-mono">/marketing/formularios → Meta → Sincronizar</span>.
+            Sem perguntas no form ainda. Sincronize na Central Meta → <span class="font-mono">Captação → Sincronizar Meta</span>.
           </div>
 
           <div v-else class="space-y-2">

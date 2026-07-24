@@ -226,7 +226,7 @@ const onRestart = () => {
       <p class="text-xs text-ink-muted rounded-lg border border-line bg-surface-sunken/50 p-3">
         <i class="fas fa-key mr-1 text-[#0866FF]"></i>
         O <b>App Secret</b> (valida a assinatura do webhook) é compartilhado com o Lead Ads e fica em
-        <RouterLink to="/settings/meta" class="text-accent underline">Configurações Meta (App)</RouterLink>. Configure lá uma vez - vale pros dois.
+        <RouterLink to="/meta?tab=credenciais" class="text-accent underline">Central Meta › Credenciais</RouterLink>. Configure lá uma vez - vale pros dois.
       </p>
 
       <div class="flex flex-col sm:flex-row gap-4 border-t border-line pt-4">

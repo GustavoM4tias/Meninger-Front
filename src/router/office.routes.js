@@ -111,6 +111,14 @@ export default [
                 children: academyAppRoutes,
             },
 
+            // Central Meta — hub único: Captação, Campanhas, Vínculos CV,
+            // Formulários, Credenciais e Configurações num só lugar (abas ?tab=).
+            {
+                path: 'meta',
+                name: 'Central Meta',
+                component: () => import('@/views/Office/Meta/Central/Index.vue'),
+                meta: { requiresAuth: true, requiresAdmin: true, allowedRole: 'admin', searchable: true, content: 'Central Meta: captação de leads, campanhas Meta, vínculos com o CV CRM, formulários de captação, credenciais do App e configurações' },
+            },
             {
                 path: 'marketing',
                 name: 'marketing',
@@ -153,36 +161,14 @@ export default [
                         component: () => import('@/views/Office/Marketing/Leads/Index.vue'),
                         meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Dashboard de leads' },
                     },
-                    {
-                        path: 'captacao',
-                        name: 'Captação de Leads',
-                        component: () => import('@/views/Office/Marketing/Captacao/Index.vue'),
-                        meta: { requiresAuth: true, requiresAdmin: true, searchable: false, content: 'Inbox de captação de leads — formulários e Meta Lead Ads' },
-                    },
-                    {
-                        path: 'formularios',
-                        name: 'Formulários de Captação',
-                        component: () => import('@/views/Office/Marketing/Formularios/Index.vue'),
-                        meta: { requiresAuth: true, requiresAdmin: true, searchable: false, content: 'Gestão dos formulários de captação de leads' },
-                    },
-                    {
-                        path: 'campanhas',
-                        name: 'Campanhas Meta',
-                        component: () => import('@/views/Office/Marketing/Campanhas/Index.vue'),
-                        meta: { requiresAuth: true, requiresAdmin: true, searchable: false, content: 'Campanhas Meta Lead Ads — investimento, leads e CAC' },
-                    },
-                    {
-                        path: 'vinculos',
-                        name: 'Vínculos CV',
-                        component: () => import('@/views/Office/Marketing/Vinculos/Index.vue'),
-                        meta: { requiresAuth: true, requiresAdmin: true, searchable: false, content: 'Central de vínculos com o CV — garante que os leads chegam ao CRM' },
-                    },
-                    {
-                        path: 'settings',
-                        name: 'Configurações de Captação',
-                        component: () => import('@/views/Office/Marketing/Settings/Index.vue'),
-                        meta: { requiresAuth: true, requiresAdmin: true, searchable: false, content: 'Configurações da captação de marketing (Geral + Meta Lead Ads)' },
-                    },
+                    // Consolidadas na Central Meta (/meta) em 2026-07-23. As rotas
+                    // antigas seguem vivas como redirect (preservam a query — links
+                    // de notificação, favoritos e atalhos não quebram).
+                    { path: 'captacao',    redirect: to => ({ path: '/meta', query: { ...to.query, tab: 'captacao' } }) },
+                    { path: 'formularios', redirect: to => ({ path: '/meta', query: { ...to.query, tab: 'formularios' } }) },
+                    { path: 'campanhas',   redirect: to => ({ path: '/meta', query: { ...to.query, tab: 'campanhas' } }) },
+                    { path: 'vinculos',    redirect: to => ({ path: '/meta', query: { ...to.query, tab: 'vinculos' } }) },
+                    { path: 'settings',    redirect: to => ({ path: '/meta', query: { ...to.query, tab: 'config' } }) },
                 ],
             },
             {
@@ -400,7 +386,7 @@ export default [
                         path: 'bucket-upload',
                         name: 'BucketUpload',
                         component: () => import('@/views/Office/Tools/BucketUpload/Index.vue'),
-                        meta: { searchable: true, content: 'Envio de planilhas de Engenharia e Área Construída ao bucket GCS.' },
+                        meta: { searchable: true, content: 'Looqbox - envio de planilhas de Engenharia e Área Construída ao bucket GCS.' },
                     },
                     {
                         path: 'eme-brain',
@@ -467,10 +453,10 @@ export default [
                         meta: { requiresAuth: true, allowedRole: 'admin', searchable: true, content: 'Integração WhatsApp Business: config, templates, mensagens' },
                     },
                     {
+                        // Consolidada na Central Meta (aba Credenciais). Redirect
+                        // mantém links antigos (notificações, WhatsApp) vivos.
                         path: 'meta',
-                        name: 'Configurações Meta',
-                        component: () => import('@/views/Office/Settings/Meta/Index.vue'),
-                        meta: { requiresAuth: true, allowedRole: 'admin', searchable: true, content: 'Credenciais do App Meta compartilhadas (WhatsApp + Lead Ads): App ID, App Secret, versão da Graph API' },
+                        redirect: to => ({ path: '/meta', query: { ...to.query, tab: 'credenciais' } }),
                     },
                     {
                         path: 'docusign',

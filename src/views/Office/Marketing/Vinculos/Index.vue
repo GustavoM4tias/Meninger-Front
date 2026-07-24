@@ -1,5 +1,6 @@
 <script setup>
-// /marketing/vinculos — Central de Vínculos CV.
+// Central Meta › aba Vínculos CV.
+// (Panel do hub /meta — sem PageContainer/PageHeader próprios.)
 //
 // Responde: tudo que deveria chegar ao CV está chegando? E onde vaza?
 //   • Funil de entrega (recebidos → entregues / represados / falhas / aguardando)
@@ -12,8 +13,6 @@
 
 import { onMounted, ref, computed } from 'vue';
 import { useCampaignsStore } from '@/stores/Marketing/Campaigns/campaignsStore';
-import PageContainer from '@/components/UI/PageContainer.vue';
-import PageHeader from '@/components/UI/PageHeader.vue';
 import Surface from '@/components/UI/Surface.vue';
 import Button from '@/components/UI/Button.vue';
 import CampaignDetailModal from '../Campanhas/components/CampaignDetailModal.vue';
@@ -118,18 +117,13 @@ function statusBadge(s) {
 </script>
 
 <template>
-  <div class="min-h-[calc(100vh-3.5rem)]">
-    <PageContainer size="full">
-      <PageHeader
-        title="Vínculos CV"
-        subtitle="Garanta que todo lead captado chega ao CRM. Campanhas sem vínculo represam leads."
-        icon="fas fa-link">
-        <template #actions>
+  <div>
+      <!-- Toolbar da aba (o header vive no hub Central Meta) -->
+      <div class="flex items-center justify-end gap-2 mb-3">
           <Button variant="secondary" size="sm" icon="fas fa-arrows-rotate" :loading="store.loadingBinding" @click="reload">
             Atualizar
           </Button>
-        </template>
-      </PageHeader>
+      </div>
 
       <!-- Loading inicial -->
       <div v-if="store.loadingBinding && !ov" class="py-20 text-center text-ink-subtle">
@@ -284,7 +278,7 @@ function statusBadge(s) {
                 <i class="fas fa-hand text-ink-subtle text-xs"></i>
                 <span class="flex-1 min-w-0 truncate text-ink" :title="c.name">{{ c.name || `#${c.campaign_id}` }}</span>
                 <span class="text-ink-muted">{{ fmtInt(c.held_count) }} lead(s)</span>
-                <RouterLink to="/marketing/captacao" class="text-[11px] text-accent hover:underline whitespace-nowrap">
+                <RouterLink to="/meta?tab=captacao" class="text-[11px] text-accent hover:underline whitespace-nowrap">
                   ver na inbox →
                 </RouterLink>
               </li>
@@ -337,7 +331,7 @@ function statusBadge(s) {
                 <span v-if="backlog.shadow_mode" class="text-amber-600 dark:text-amber-300">Modo sombra ligado — desligue antes de disparar.</span>
               </div>
             </div>
-            <RouterLink to="/marketing/campanhas"
+            <RouterLink to="/meta?tab=campanhas"
               class="inline-flex items-center gap-1.5 rounded-md border border-line px-2.5 py-1.5 text-[11px] font-medium text-ink-muted hover:text-accent hover:border-accent/40 transition-colors whitespace-nowrap">
               Disparar em Campanhas <i class="fas fa-arrow-right text-[9px]"></i>
             </RouterLink>
@@ -359,7 +353,7 @@ function statusBadge(s) {
                 <i class="fas fa-file-lines text-ink-subtle text-xs"></i>
                 <span class="flex-1 min-w-0 truncate text-ink" :title="f.name">{{ f.name || `#${f.form_id}` }}</span>
                 <span class="text-ink-muted">{{ fmtInt(f.held_count) }} lead(s)</span>
-                <RouterLink to="/marketing/formularios" class="text-[11px] text-accent hover:underline whitespace-nowrap">
+                <RouterLink to="/meta?tab=formularios" class="text-[11px] text-accent hover:underline whitespace-nowrap">
                   configurar →
                 </RouterLink>
               </li>
@@ -377,6 +371,5 @@ function statusBadge(s) {
 
       <!-- Modal de campanha (vincular) -->
       <CampaignDetailModal v-model:open="detailOpen" :campaign-id="detailId" @saved="reload" />
-    </PageContainer>
   </div>
 </template>

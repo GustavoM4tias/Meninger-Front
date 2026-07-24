@@ -201,7 +201,7 @@ const onTestSend = async () => {
         <p class="text-[11px] text-ink-subtle mt-3 rounded-md border border-line bg-surface-sunken/40 px-3 py-2">
           <i class="fas fa-key mr-1 text-[#0866FF]"></i>
           O <b>App Secret</b> e a <b>versão da Graph API</b> são compartilhados com o Lead Ads e ficam em
-          <RouterLink to="/settings/meta" class="text-accent underline">Configurações Meta (App)</RouterLink>.
+          <RouterLink to="/meta?tab=credenciais" class="text-accent underline">Central Meta › Credenciais</RouterLink>.
         </p>
       </div>
 
