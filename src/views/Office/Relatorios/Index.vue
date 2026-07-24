@@ -9,6 +9,7 @@ import Button from '@/components/UI/Button.vue'
 import Badge from '@/components/UI/Badge.vue'
 import EmptyState from '@/components/UI/EmptyState.vue'
 import DeleteReportModal from '@/components/Reports/eme/DeleteReportModal.vue'
+import TransferOwnerModal from '@/components/Reports/eme/TransferOwnerModal.vue'
 import { useReportsStore } from '@/stores/Reports/reportsStore.js'
 
 const router = useRouter()
@@ -17,6 +18,7 @@ const store = useReportsStore()
 const creating = ref(false)
 const showTrash = ref(false)
 const deleteId = ref(null)
+const transferReport = ref(null)
 // Aviso com desfazer, para saída de compartilhamento e exclusão
 const flash = ref(null) // { text, undo: fn }
 
@@ -79,6 +81,16 @@ const visBadge = (r) => {
 }
 
 const trashCount = computed(() => store.trash.length)
+
+// Dono inativo (ou removido): o relatório segue visível para quem tem acesso,
+// mas ninguém além de admin consegue editá-lo até ser reatribuído.
+const semResponsavel = (r) => !r.owner || r.owner.status === false
+const orfaos = computed(() => store.own.filter(semResponsavel))
+
+async function onTransferred() {
+  await store.fetchList()
+  showFlash('Responsabilidade transferida.', null)
+}
 </script>
 
 <template>
@@ -176,6 +188,17 @@ const trashCount = computed(() => store.trash.length)
           <!-- ── MEUS RELATÓRIOS ───────────────────────────────────────────── -->
           <section v-if="store.isAdmin" class="mb-8">
             <h2 class="text-sm font-semibold uppercase tracking-wider text-ink-subtle mb-3">Relatórios</h2>
+
+            <!-- Sem responsável: nada quebra, mas precisa de dono para edição -->
+            <div v-if="orfaos.length" class="mb-3 flex items-start gap-2.5 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-2.5">
+              <i class="fas fa-user-slash text-amber-600 dark:text-amber-400 mt-0.5" />
+              <p class="text-xs text-amber-700 dark:text-amber-400">
+                <strong>{{ orfaos.length }} relatório(s) sem responsável ativo.</strong>
+                Continuam visíveis para quem tem acesso, mas só admins podem editá-los.
+                Use o botão de transferir no card para reatribuir.
+              </p>
+            </div>
+
             <EmptyState
               v-if="!store.own.length"
               icon="fas fa-wand-magic-sparkles"
@@ -195,9 +218,21 @@ const trashCount = computed(() => store.trash.length)
                   </Badge>
                 </div>
                 <p v-if="r.enterpriseName" class="text-xs text-ink-muted"><i class="fas fa-building mr-1.5 text-ink-subtle" />{{ r.enterpriseName }}</p>
+                <p v-if="semResponsavel(r)" class="flex items-center gap-1.5 text-[11px] text-amber-600 dark:text-amber-400">
+                  <i class="fas fa-user-slash" />
+                  Sem responsável<template v-if="r.owner"> ({{ r.owner.username }} inativo)</template>
+                </p>
                 <div class="mt-auto flex items-center gap-2 pt-1">
                   <Badge :variant="visBadge(r).variant" size="sm" dot>{{ visBadge(r).label }}</Badge>
                   <span class="text-[11px] text-ink-subtle ml-auto">{{ fmtDate(r.updatedAt || r.updated_at) }}</span>
+                  <button
+                    class="w-7 h-7 rounded-lg transition"
+                    :class="semResponsavel(r)
+                      ? 'text-amber-600 dark:text-amber-400 hover:bg-surface-sunken'
+                      : 'text-ink-subtle hover:text-accent hover:bg-surface-sunken'"
+                    title="Transferir responsabilidade"
+                    @click.stop="transferReport = r"
+                  ><i class="fas fa-user-pen text-xs" /></button>
                   <button
                     class="w-7 h-7 rounded-lg text-ink-subtle hover:text-accent hover:bg-surface-sunken transition"
                     title="Editar com a Eme"
@@ -253,6 +288,12 @@ const trashCount = computed(() => store.trash.length)
       :report-id="deleteId"
       @close="deleteId = null"
       @deleted="onDeleted"
+    />
+    <TransferOwnerModal
+      :open="!!transferReport"
+      :report="transferReport"
+      @close="transferReport = null"
+      @transferred="onTransferred"
     />
   </div>
 </template>
