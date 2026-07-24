@@ -77,7 +77,10 @@ const storageColor = computed(() =>
           enter-to-class="opacity-100 translate-x-0">
           <div v-for="s in favoriteSessions" :key="s.id"
             class="group flex items-center gap-2 px-3 py-2 mx-2 rounded-lg cursor-pointer
-                   hover:bg-accent-soft/40 transition-colors">
+                   hover:bg-accent-soft/40 transition-all"
+            :class="s.id === aiStore.currentSessionId
+              ? 'bg-accent-soft/60 ring-2 ring-accent-ring/50'
+              : ''">
             <div class="flex-1 min-w-0" @click="open(s.id)">
               <p class="text-sm text-ink truncate">{{ s.title || 'Chat sem título' }}</p>
               <p class="text-[11px] text-ink-subtle font-mono">{{ fromNow(s.updated_at) }}</p>
@@ -105,7 +108,10 @@ const storageColor = computed(() =>
           enter-to-class="opacity-100 translate-x-0">
           <div v-for="s in recentSessions" :key="s.id"
             class="group flex items-center gap-2 px-3 py-2 mx-2 rounded-lg cursor-pointer
-                   hover:bg-accent-soft/40 transition-colors">
+                   hover:bg-accent-soft/40 transition-all"
+            :class="s.id === aiStore.currentSessionId
+              ? 'bg-accent-soft/60 ring-2 ring-accent-ring/50'
+              : ''">
             <div class="flex-1 min-w-0" @click="open(s.id)">
               <p class="text-sm text-ink truncate">{{ s.title || 'Chat sem título' }}</p>
               <p class="text-[11px] text-ink-subtle font-mono">{{ fromNow(s.updated_at) }}</p>
