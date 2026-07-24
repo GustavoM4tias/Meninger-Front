@@ -64,7 +64,7 @@ watch(() => props.open, (v) => {
       defaultPrice: Number(props.row.defaultPrice || 0),
       defaultMarketingPct: Number(props.row.defaultMarketingPct || 0),
       defaultCommissionPct: Number(props.row.defaultCommissionPct || 0),
-      totalUnits: props.row.erp_id ? null : (props.row.totalUnits ?? null),
+      totalUnits: props.row.totalUnits ?? null,
       custoLoja: Number(props.row.custoLoja || 0),
       blockedConsideredAvailable: Number(props.row.blockedConsideredAvailable || 0),
     };
@@ -114,14 +114,15 @@ function submitEdit() {
     custoLoja: Number(edit.value.custoLoja || 0),
     blockedConsideredAvailable: Math.max(0, parseInt(edit.value.blockedConsideredAvailable, 10) || 0),
   };
-  if (!isErpRow()) {
+  if (!isErpRow() || !stock.value) {
+    // Sem estoque do CV, o total manual vale como fallback (CC ou não);
+    // quando o CV trouxer as unidades, o resumo sobrepõe.
     const tu = edit.value.totalUnits;
     patch.totalUnits = (tu !== null && tu !== '') ? Math.max(0, parseInt(tu, 10) || 0) : null;
   }
   if (linkPick.value) {
     patch.erp_id = String(linkPick.value.id);
     patch.city = linkPick.value.city || null;
-    patch.totalUnits = null;      // com CC, o total passa a vir do Sienge
     patch.units_summary = null;   // estoque re-enriquecido no próximo load
   }
   emit('submit-edit', { patch });
@@ -293,6 +294,9 @@ function pickLink(e) {
           <span v-if="stock" class="text-[11px] font-semibold text-ink-muted tabular-nums bg-surface-raised px-2 py-0.5 rounded-full border border-line">
             {{ stock.total }} unidades
           </span>
+          <span v-else-if="edit.totalUnits" class="text-[11px] font-semibold text-ink-muted tabular-nums bg-surface-raised px-2 py-0.5 rounded-full border border-line">
+            {{ edit.totalUnits }} unidades (manual)
+          </span>
         </div>
 
         <template v-if="stock">
@@ -326,7 +330,9 @@ function pickLink(e) {
           </div>
         </template>
         <p v-else class="text-[11px] text-ink-subtle italic">
-          Dados de estoque do Sienge indisponíveis para o CC {{ row?.erp_id }}.
+          Dados de estoque do CV indisponíveis para o CC {{ row?.erp_id }}.
+          <template v-if="edit.totalUnits">Usando total manual de {{ edit.totalUnits }} unidades.</template>
+          <template v-else>Informe o total manual abaixo; quando o CV trouxer as unidades, ele sobrepõe.</template>
         </p>
       </div>
 
@@ -337,7 +343,8 @@ function pickLink(e) {
           :hint="isErpRow() ? 'Cidade vem do Sienge' : ''" />
         <Input v-model.number="edit.defaultPrice" type="number" label="Ticket médio (R$)"
           hint="Usado no VGV de cada mês" />
-        <Input v-if="!isErpRow()" v-model.number="edit.totalUnits" type="number" label="Total de unidades" />
+        <Input v-if="!isErpRow() || !stock" v-model.number="edit.totalUnits" type="number" label="Total de unidades"
+          :hint="isErpRow() ? 'Fallback enquanto o CV não trouxer o estoque; quando aparecer, ele sobrepõe' : ''" />
         <Input v-model.number="edit.defaultMarketingPct" type="number" label="Marketing (%)" />
         <Input v-model.number="edit.defaultCommissionPct" type="number" label="Comissão (%)" />
         <Input v-model.number="edit.custoLoja" type="number" label="Custo loja (R$)" />

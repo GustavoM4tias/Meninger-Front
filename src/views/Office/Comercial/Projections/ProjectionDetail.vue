@@ -319,7 +319,8 @@ async function doSave() {
       default_avg_price: Number(r.defaultPrice || 0),
       default_marketing_pct: Number(r.defaultMarketingPct || 0),
       default_commission_pct: Number(r.defaultCommissionPct || 0),
-      total_units: r.erp_id ? null : Number(r.totalUnits ?? 0),
+      // Com CC, o total manual persiste como fallback p/ quando o CV não tem as unidades.
+      total_units: r.erp_id ? (r.totalUnits == null ? null : Number(r.totalUnits)) : Number(r.totalUnits ?? 0),
       custo_loja: Number(r.custoLoja || 0),
       blocked_considered_available: Number(r.blockedConsideredAvailable || 0),
       city: r.erp_id ? null : (r.city || null),
