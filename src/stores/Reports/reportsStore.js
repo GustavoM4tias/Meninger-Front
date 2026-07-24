@@ -163,6 +163,30 @@ export const useReportsStore = defineStore('reports', () => {
     await saveSpec(next, 'Reordenação de bloco')
   }
 
+  // ── Memória do relatório ───────────────────────────────────────────────────
+  const memories = ref([])
+
+  async function fetchMemories() {
+    memories.value = await requestWithAuth(`/reports/${report.value.id}/memories`)
+  }
+  async function addMemory(text, scope = 'report') {
+    memories.value = await requestWithAuth(`/reports/${report.value.id}/memories`, {
+      method: 'POST',
+      body: JSON.stringify({ text, scope }),
+    })
+  }
+  async function updateMemory(memoryId, patch) {
+    memories.value = await requestWithAuth(`/reports/${report.value.id}/memories/${memoryId}`, {
+      method: 'PUT',
+      body: JSON.stringify(patch),
+    })
+  }
+  async function deleteMemory(memoryId) {
+    memories.value = await requestWithAuth(`/reports/${report.value.id}/memories/${memoryId}`, {
+      method: 'DELETE',
+    })
+  }
+
   async function setTheme(themeKey) {
     report.value.theme = themeKey
     await requestWithAuth(`/reports/${report.value.id}`, {
@@ -255,6 +279,10 @@ export const useReportsStore = defineStore('reports', () => {
           streamingText.value = ''
         }
         break
+      case 'memory_saved':
+        // A Eme guardou uma preferência: reflete na aba Memória sem recarregar
+        fetchMemories().catch(() => {})
+        break
       case 'error':
         messages.value.push({ id: `err-${Date.now()}`, role: 'model', content: `⚠️ ${evt.message || 'Erro.'}` })
         break
@@ -321,6 +349,7 @@ export const useReportsStore = defineStore('reports', () => {
     spec, blockCount, theme, sendMessage,
     saveSpec, removeBlocks, moveBlock, setTheme,
     canUndo, canRedo, undoLabel, redoLabel, undo, redo,
+    memories, fetchMemories, addMemory, updateMemory, deleteMemory,
     publish, shareInternal, shareOptions,
     publicCheck, enablePublic, revokePublic, rotatePublicToken, renewPublic, publicLog, publicUrl,
   }
