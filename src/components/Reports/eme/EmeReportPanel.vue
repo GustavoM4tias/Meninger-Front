@@ -14,22 +14,18 @@ const store = useReportsStore()
 const tab = ref('chat') // chat | outline | theme | memory
 const draft = ref('')
 
-// ── Memória ────────────────────────────────────────────────────────────────
+// ── Memória (geral: vale para todos os relatórios) ─────────────────────────
 const memoryDraft = ref('')
-const memoryScope = ref('report')
 const savingMemory = ref(false)
 
 onMounted(() => store.fetchMemories().catch(() => {}))
-
-const globalMemories = computed(() => store.memories.filter((m) => !m.reportId))
-const localMemories = computed(() => store.memories.filter((m) => m.reportId))
 
 async function addMemory() {
   const text = memoryDraft.value.trim()
   if (!text) return
   savingMemory.value = true
   try {
-    await store.addMemory(text, memoryScope.value)
+    await store.addMemory(text)
     memoryDraft.value = ''
   } finally {
     savingMemory.value = false
@@ -200,8 +196,8 @@ const placeholder = computed(() => {
     <!-- ── MEMÓRIA ─────────────────────────────────────────────────────────── -->
     <div v-else-if="tab === 'memory'" class="flex-1 overflow-y-auto px-3 py-3 min-h-0">
       <p class="text-xs text-ink-muted mb-3">
-        O que a Eme deve lembrar sobre como você quer os relatórios. Ela consulta isto
-        antes de montar e vai anotando o que você pedir para valer nas próximas vezes.
+        Como você quer seus relatórios. Vale para <strong class="text-ink">todos</strong> - a Eme
+        consulta isto antes de montar e vai anotando o que você pedir para valer sempre.
       </p>
 
       <!-- Adicionar -->
@@ -211,66 +207,44 @@ const placeholder = computed(() => {
           rows="2"
           placeholder="Ex.: nunca comparar leads de Painel com mídia paga"
           class="w-full resize-none rounded-lg border border-line bg-surface-raised px-2.5 py-2 text-xs text-ink placeholder:text-ink-subtle focus-ring"
+          @keydown.enter.exact.prevent="addMemory"
         />
-        <div class="mt-2 flex items-center gap-1.5">
-          <div class="flex items-center rounded-lg bg-surface-sunken p-0.5">
-            <button
-              class="px-2 py-1 rounded-md text-[11px] transition"
-              :class="memoryScope === 'report' ? 'bg-surface-raised shadow-soft text-ink font-medium' : 'text-ink-subtle'"
-              @click="memoryScope = 'report'"
-            >Só este</button>
-            <button
-              class="px-2 py-1 rounded-md text-[11px] transition"
-              :class="memoryScope === 'global' ? 'bg-surface-raised shadow-soft text-ink font-medium' : 'text-ink-subtle'"
-              @click="memoryScope = 'global'"
-            >Todos</button>
-          </div>
-          <button
-            class="ml-auto px-3 py-1.5 rounded-lg bg-accent text-white text-xs hover:bg-accent-hover disabled:opacity-40 transition"
-            :disabled="savingMemory || !memoryDraft.trim()"
-            @click="addMemory"
-          >Guardar</button>
-        </div>
+        <button
+          class="mt-2 w-full px-3 py-1.5 rounded-lg bg-accent text-white text-xs hover:bg-accent-hover disabled:opacity-40 transition"
+          :disabled="savingMemory || !memoryDraft.trim()"
+          @click="addMemory"
+        >Guardar preferência</button>
       </div>
 
-      <!-- Listas -->
-      <template v-for="group in [
-        { title: 'Vale para todos os relatórios', items: globalMemories, empty: 'Nenhuma preferência geral ainda.' },
-        { title: 'Só neste relatório', items: localMemories, empty: 'Nenhuma preferência específica ainda.' },
-      ]" :key="group.title">
-        <p class="text-[11px] font-semibold uppercase tracking-wider text-ink-subtle mb-1.5">{{ group.title }}</p>
-        <p v-if="!group.items.length" class="text-xs text-ink-subtle mb-4">{{ group.empty }}</p>
-        <ul v-else class="space-y-1.5 mb-4">
-          <li
-            v-for="m in group.items" :key="m.id"
-            class="group/mem rounded-lg border border-line bg-surface px-2.5 py-2 flex items-start gap-2"
-          >
-            <i
-              class="mt-0.5 text-[10px] flex-shrink-0"
-              :class="m.source === 'user' ? 'fas fa-user text-ink-subtle' : 'fas fa-wand-magic-sparkles text-accent'"
-              :title="m.source === 'user' ? 'Escrita por você' : 'Anotada pela Eme'"
-            />
-            <span class="text-xs text-ink leading-snug min-w-0">{{ m.text }}</span>
-            <div class="ml-auto flex items-center gap-0.5 opacity-0 group-hover/mem:opacity-100 transition-opacity flex-shrink-0">
-              <button
-                class="w-6 h-6 rounded text-ink-subtle hover:text-accent transition"
-                :title="m.pinned ? 'Desafixar' : 'Fixar (nunca é removida automaticamente)'"
-                @click="store.updateMemory(m.id, { pinned: !m.pinned })"
-              ><i :class="m.pinned ? 'fas fa-thumbtack text-accent' : 'fas fa-thumbtack'" class="text-[10px]" /></button>
-              <button
-                class="w-6 h-6 rounded text-ink-subtle hover:text-accent transition"
-                :title="m.reportId ? 'Passar a valer para todos' : 'Restringir a este relatório'"
-                @click="store.updateMemory(m.id, { scope: m.reportId ? 'global' : 'report' })"
-              ><i class="fas fa-right-left text-[10px]" /></button>
-              <button
-                class="w-6 h-6 rounded text-ink-subtle hover:text-rose-500 transition"
-                title="Esquecer"
-                @click="store.deleteMemory(m.id)"
-              ><i class="far fa-trash-can text-[10px]" /></button>
-            </div>
-          </li>
-        </ul>
-      </template>
+      <p v-if="!store.memories.length" class="text-xs text-ink-subtle text-center py-4">
+        Nada memorizado ainda. Diga à Eme "sempre faça assim" e ela anota sozinha.
+      </p>
+      <ul v-else class="space-y-1.5">
+        <li
+          v-for="m in store.memories" :key="m.id"
+          class="group/mem rounded-lg border border-line bg-surface px-2.5 py-2 flex items-start gap-2"
+        >
+          <i
+            class="mt-0.5 text-[10px] flex-shrink-0"
+            :class="m.source === 'user' ? 'fas fa-user text-ink-subtle' : 'fas fa-wand-magic-sparkles text-accent'"
+            :title="m.source === 'user' ? 'Escrita por você' : 'Anotada pela Eme'"
+          />
+          <span class="text-xs text-ink leading-snug min-w-0">{{ m.text }}</span>
+          <div class="ml-auto flex items-center gap-0.5 flex-shrink-0">
+            <button
+              class="w-6 h-6 rounded transition"
+              :class="m.pinned ? 'text-accent' : 'text-ink-subtle opacity-0 group-hover/mem:opacity-100 hover:text-accent'"
+              :title="m.pinned ? 'Desafixar' : 'Fixar (nunca é removida automaticamente)'"
+              @click="store.updateMemory(m.id, { pinned: !m.pinned })"
+            ><i class="fas fa-thumbtack text-[10px]" /></button>
+            <button
+              class="w-6 h-6 rounded text-ink-subtle opacity-0 group-hover/mem:opacity-100 hover:text-rose-500 transition"
+              title="Esquecer"
+              @click="store.deleteMemory(m.id)"
+            ><i class="far fa-trash-can text-[10px]" /></button>
+          </div>
+        </li>
+      </ul>
     </div>
 
     <!-- ── TEMA ────────────────────────────────────────────────────────────── -->

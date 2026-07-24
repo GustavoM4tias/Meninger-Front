@@ -15,6 +15,8 @@ const props = defineProps({
   editable: { type: Boolean, default: false },
   selectedIds: { type: Array, default: () => [] },
   highlightId: { type: String, default: null }, // bloco recém-alterado pela Eme
+  // Datas do próprio relatório — o rodapé usa estas, nunca o que a IA escrever
+  meta: { type: Object, default: () => ({}) },
 })
 
 const emit = defineEmits(['toggle', 'remove', 'move', 'add-after'])
@@ -22,6 +24,8 @@ const root = ref(null)
 
 // Gráficos leem o tema para casar a paleta com o acento escolhido
 provide('reportTheme', computed(() => props.theme))
+// Rodapé lê as datas oficiais do relatório
+provide('reportMeta', computed(() => props.meta || {}))
 
 const isDark = typeof document !== 'undefined' && document.documentElement.classList.contains('dark')
 const containerStyle = computed(() => ({

@@ -88,7 +88,11 @@ const fmtDate = (d) => (d ? new Date(d).toLocaleDateString('pt-BR') : null)
     </div>
     <div v-else class="px-4 py-6 sm:px-8 bg-surface">
       <div ref="reportEl">
-        <ReportRenderer :spec="data.spec" :theme="data.theme || 'classic'" />
+        <ReportRenderer
+          :spec="data.spec"
+          :theme="data.theme || 'classic'"
+          :meta="{ generatedAt: data.publishedAt, refreshedAt: data.refreshedAt }"
+        />
       </div>
     </div>
   </div>

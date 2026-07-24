@@ -1,14 +1,15 @@
 <script setup>
-// Rodapé do relatório. Datas chegam em formatos variados (ISO da Eme, string
-// solta) — sempre exibimos em pt-BR legível, nunca o timestamp cru.
-import { computed } from 'vue'
+// Rodapé do relatório. A data é SEMPRE a do próprio relatório (injetada pelo
+// renderer), nunca o que a IA escrever — e exibida em pt-BR, nunca ISO cru.
+import { computed, inject } from 'vue'
 
 const props = defineProps({
   sources: { type: Array, default: () => [] }, // ['Leads (Office)', 'Reservas (CV)']
-  generatedAt: { type: [String, Number, Date], default: '' },
-  refreshedAt: { type: [String, Number, Date], default: '' },
   note: { type: String, default: '' },
 })
+
+// { generatedAt, refreshedAt } vindos do relatório (publicação / última carga)
+const reportMeta = inject('reportMeta', computed(() => ({})))
 
 function pretty(value, withTime = false) {
   if (!value) return ''
@@ -22,8 +23,8 @@ function pretty(value, withTime = false) {
   })
 }
 
-const generated = computed(() => pretty(props.generatedAt))
-const refreshed = computed(() => pretty(props.refreshedAt, true))
+const generated = computed(() => pretty(reportMeta.value?.generatedAt))
+const refreshed = computed(() => pretty(reportMeta.value?.refreshedAt, true))
 </script>
 
 <template>
