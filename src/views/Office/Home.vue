@@ -59,7 +59,6 @@ const SUGGESTIONS = [
   { label: 'Relatório de eventos',   sublabel: 'Gerar para o mês atual',        icon: 'fas fa-calendar-days',       route: '/marketing/events',       prompt: 'Gere o relatório de eventos para o mês atual' },
   { label: 'Faixas MCMV',            sublabel: 'Teto na sua cidade',            icon: 'fas fa-house-circle-check',  route: '/comercial/mcmv',         prompt: 'Qual o teto do Minha Casa Minha Vida na minha cidade?' },
   { label: 'Imobiliárias parceiras', sublabel: 'Quem atua na sua região',       icon: 'fas fa-house-flag',          route: '/comercial/imobiliarias', prompt: 'Quais imobiliárias parceiras atuam na minha região?' },
-  { label: 'Fluxo de pagamento',     sublabel: 'Recebíveis e vencimentos',      icon: 'fas fa-diagram-project',     route: '/financeiro/paymentflow', prompt: 'Como está o fluxo de pagamento? Mostre recebíveis e vencimentos' },
   { label: 'Empreendimentos ativos', sublabel: 'Portfólio em vendas',           icon: 'fas fa-building',            route: '/comercial/buildings',    prompt: 'Quais empreendimentos estão ativos em vendas?' },
 ];
 
