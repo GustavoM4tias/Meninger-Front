@@ -43,9 +43,12 @@ export function int(v) { const n = Number(v); return nfInt.format(Number.isFinit
 export function brlCompact(v) {
   const n = Number(v);
   if (!n) return 'R$ 0';
-  if (n >= 1e9) return `R$ ${(n / 1e9).toFixed(2).replace('.', ',')} bi`;
-  if (n >= 1e6) return `R$ ${(n / 1e6).toFixed(2).replace('.', ',')} mi`;
-  if (n >= 1e3) return `R$ ${(n / 1e3).toFixed(0)} mil`;
+  // Um dígito a mais que o padrão e sem zeros sobrando: 2.220.000 → "2,22 mi",
+  // mas 20.905.000 → "20,905 mi" (antes arredondava para "20,91 mi").
+  const num = (val, digits) => val.toFixed(digits).replace(/\.?0+$/, '').replace('.', ',');
+  if (n >= 1e9) return `R$ ${num(n / 1e9, 3)} bi`;
+  if (n >= 1e6) return `R$ ${num(n / 1e6, 3)} mi`;
+  if (n >= 1e3) return `R$ ${num(n / 1e3, 1)} mil`;
   return nfBRLFull.format(n);
 }
 export function formatDateTime(d) {
