@@ -16,7 +16,7 @@ const props = defineProps({
   monthKeys: { type: Array, default: () => [] },
   disabled: { type: Boolean, default: false },
 });
-const emit = defineEmits(['edit', 'duplicate', 'remove', 'changed']);
+const emit = defineEmits(['edit', 'remove', 'changed']);
 
 function cell(row, ym) {
   row.values ||= {};
@@ -85,10 +85,6 @@ const uid = (r) => `${r.enterprise_key}|${r.alias_id || 'default'}`;
                     <button v-tippy:left="'Configurar (ticket, %, cidade)'" @click="emit('edit', row)"
                       class="h-7 w-7 grid place-items-center rounded-md text-ink-muted hover:bg-surface-sunken hover:text-accent transition-colors">
                       <i class="fas fa-sliders text-xs"></i>
-                    </button>
-                    <button v-tippy:left="'Duplicar (fase/torre)'" @click="emit('duplicate', row)"
-                      class="h-7 w-7 grid place-items-center rounded-md text-ink-muted hover:bg-surface-sunken hover:text-ink transition-colors">
-                      <i class="fas fa-copy text-xs"></i>
                     </button>
                     <button v-tippy:left="'Remover empreendimento'" @click="emit('remove', row)"
                       class="h-7 w-7 grid place-items-center rounded-md text-ink-muted hover:bg-red-500/10 hover:text-red-500 transition-colors">
@@ -161,9 +157,6 @@ const uid = (r) => `${r.enterprise_key}|${r.alias_id || 'default'}`;
           <div v-if="!disabled" class="flex gap-1 shrink-0">
             <button @click="emit('edit', row)" class="h-9 w-9 grid place-items-center rounded-lg text-ink-muted hover:bg-surface-sunken hover:text-accent">
               <i class="fas fa-sliders text-sm"></i>
-            </button>
-            <button @click="emit('duplicate', row)" class="h-9 w-9 grid place-items-center rounded-lg text-ink-muted hover:bg-surface-sunken">
-              <i class="fas fa-copy text-sm"></i>
             </button>
             <button @click="emit('remove', row)" class="h-9 w-9 grid place-items-center rounded-lg text-ink-muted hover:bg-red-500/10 hover:text-red-500">
               <i class="fas fa-trash-can text-sm"></i>
