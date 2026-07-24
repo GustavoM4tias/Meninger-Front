@@ -757,9 +757,9 @@ const levelTabs = computed(() => [
 
       <!-- ══ NÍVEL: CAMPANHAS ═════════════════════════════════════════════ -->
       <template v-else-if="level === 'campaign'">
-        <!-- View: Cards (clique segue o drill campanha → anúncios) -->
+        <!-- View: Cards -->
         <div v-if="viewMode === 'cards'">
-          <CampaignsCardsView :campaigns="filtered" @select="drillIntoCampaignAds" />
+          <CampaignsCardsView :campaigns="filtered" @select="openDetail" />
         </div>
 
         <!-- View: Timeline (Gantt) — janela = período mestre -->
@@ -768,7 +768,7 @@ const levelTabs = computed(() => [
             :campaigns="filtered"
             :period-start="periodo.since"
             :period-end="periodo.until"
-            @select="drillIntoCampaignAds" />
+            @select="openDetail" />
         </div>
 
         <!-- View: Lista -->
@@ -801,10 +801,10 @@ const levelTabs = computed(() => [
                     <span class="block text-xs mt-1">Amplie o período, ative "Sem veiculação no período" nos filtros, ou rode o backfill da série diária.</span>
                   </td>
                 </tr>
-                <!-- Clique na linha segue o drill (campanha → anúncios);
-                     o detalhe/vínculo fica no olho da coluna Ações. -->
+                <!-- Clique na linha abre o modal de detalhe (é onde se configura
+                     o vínculo); o drill pra conjuntos/anúncios fica na coluna Ações. -->
                 <tr v-else v-for="c in filtered" :key="c.id"
-                  @click="drillIntoCampaignAds(c)"
+                  @click="openDetail(c)"
                   class="hover:bg-surface-hover/40 cursor-pointer transition-colors group">
 
                   <!-- Campanha -->
