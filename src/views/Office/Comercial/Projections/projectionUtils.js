@@ -62,6 +62,18 @@ export function formatDate(d) {
   return isNaN(dt) ? '—' : dt.toLocaleDateString('pt-BR');
 }
 
+/* ── Categoria (segmento do CV → rótulo comercial) ─────────────────────────── */
+export const NO_CATEGORY = 'Sem categoria';
+/** Luxo → SBPE, Popular → MCMV; outros segmentos aparecem como vêm do CV. */
+export function projectionCategory(segment) {
+  const s = String(segment || '').trim();
+  if (!s) return NO_CATEGORY;
+  const up = s.toUpperCase();
+  if (up.includes('LUXO')) return 'SBPE';
+  if (up.includes('POPULAR')) return 'MCMV';
+  return s;
+}
+
 /* ── Cidades: normalização (Marília == Marilia == MARÍLIA) ─────────────────── */
 /** Chave de comparação: sem acento, sem espaço duplo, maiúsculo. */
 export function cityKey(s) {

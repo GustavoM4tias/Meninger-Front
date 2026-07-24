@@ -8,7 +8,7 @@
 import { computed } from 'vue';
 import {
   cellVgv, rowUnits, rowVgv, brl, brlCompact, int,
-  shortMonthLabel, monthLabel, emptyCell,
+  shortMonthLabel, monthLabel, emptyCell, NO_CATEGORY,
 } from '../projectionUtils';
 
 const props = defineProps({
@@ -76,6 +76,7 @@ const uid = (r) => `${r.enterprise_key}|${r.alias_id || 'default'}`;
                       <span v-if="row.erp_id">CC {{ row.erp_id }}</span>
                       <span v-else class="text-amber-600 dark:text-amber-400">manual</span>
                       <span v-if="row.city"> • {{ row.city }}</span>
+                      <span v-if="row.category && row.category !== NO_CATEGORY" class="text-accent"> • {{ row.category }}</span>
                     </p>
                     <p class="text-[11px] text-ink-muted mt-0.5">
                       Ticket {{ brlCompact(row.defaultPrice) }}
@@ -150,7 +151,7 @@ const uid = (r) => `${r.enterprise_key}|${r.alias_id || 'default'}`;
           <div class="min-w-0">
             <p class="font-semibold text-ink truncate">{{ row.name }}</p>
             <p class="text-[11px] text-ink-subtle font-mono">
-              <span v-if="row.erp_id">CC {{ row.erp_id }}</span><span v-else>manual</span>
+              <span v-if="row.erp_id">CC {{ row.erp_id }}</span><span v-else>manual</span><span v-if="row.category && row.category !== NO_CATEGORY" class="text-accent"> • {{ row.category }}</span>
               <span v-if="row.city"> • {{ row.city }}</span> • Ticket {{ brlCompact(row.defaultPrice) }}
             </p>
           </div>
