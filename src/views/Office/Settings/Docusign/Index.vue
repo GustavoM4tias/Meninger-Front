@@ -4,7 +4,7 @@
     <!-- Header -->
     <div class="flex items-center gap-3">
       <div class="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center">
-        <img src="/icons/docusign.svg" alt="DocuSign" class="w-10 h-10" />
+        <img src="/icons/docusign.png" alt="DocuSign" class="w-10 h-10" />
       </div>
       <div>
         <h1 class="text-lg font-bold text-ink">DocuSign - Assinatura Digital</h1>
