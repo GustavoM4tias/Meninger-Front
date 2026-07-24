@@ -240,11 +240,11 @@ const visibleRows = computed(() => {
 const activeFilters = computed(() => filterEnterprises.value.length + filterCities.value.length + filterCategories.value.length + (hideZero.value ? 1 : 0));
 function clearFilters() { filterEnterprises.value = []; filterCities.value = []; filterCategories.value = []; hideZero.value = false; }
 
-/* ── Totais (todas as linhas) ──────────────────────────────────────────────── */
+/* ── Totais (acompanham os filtros ativos) ─────────────────────────────────── */
 const totals = computed(() => {
   let units = 0, vgv = 0;
-  for (const r of rows.value) { units += rowUnits(r, monthKeys.value); vgv += rowVgv(r, monthKeys.value); }
-  return { units, vgv, enterprises: rows.value.length, ticket: units > 0 ? vgv / units : 0 };
+  for (const r of visibleRows.value) { units += rowUnits(r, monthKeys.value); vgv += rowVgv(r, monthKeys.value); }
+  return { units, vgv, enterprises: visibleRows.value.length, ticket: units > 0 ? vgv / units : 0 };
 });
 
 /* ── Add / edit / remove ───────────────────────────────────────────────────── */
