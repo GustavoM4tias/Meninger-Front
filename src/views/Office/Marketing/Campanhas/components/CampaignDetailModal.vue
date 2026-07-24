@@ -1310,7 +1310,7 @@ function onFormEditorSaved() {
             <div v-if="!Array.isArray(formDetailData.questions) || !formDetailData.questions.length"
               class="text-center py-6 text-ink-subtle text-sm rounded-lg border border-dashed border-line">
               <i class="fas fa-circle-info text-xl mb-1 block"></i>
-              Sincronize os Forms Meta em <span class="font-mono">/marketing/formularios → Meta → Sincronizar</span> pra puxar as perguntas.
+              Sincronize os Forms Meta na Central Meta → <span class="font-mono">Captação → Sincronizar Meta</span> pra puxar as perguntas.
             </div>
             <ol v-else class="space-y-1.5 text-sm">
               <li v-for="(q, i) in formDetailData.questions" :key="i"

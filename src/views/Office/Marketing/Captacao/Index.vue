@@ -1,8 +1,9 @@
 <script setup>
-// /marketing/captacao — Inbox da captação de leads inbound.
+// Central Meta › aba Captação — Inbox da captação de leads inbound.
+// (Panel do hub /meta — sem PageContainer/PageHeader próprios.)
 //
 // Estrutura:
-//   1. PageHeader com badge "Modo sombra" e ações (atualizar, abrir Campanhas)
+//   1. Toolbar com badge "Modo sombra" e ações (atualizar, sincronizar, abrir Campanhas)
 //   2. CaptureHealthBanner — alertas críticos quando há (dry-run, dead-letter, oldest_held>2d)
 //   3. CaptureSummaryCards — 8 KPIs do período + seletor de período
 //   4. CaptureFiltersBar — toolbar expansível com todos os filtros
@@ -16,8 +17,6 @@ import { useRoute, useRouter } from 'vue-router';
 import { useCaptureStore } from '@/stores/Marketing/Capture/captureStore';
 import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 
-import PageContainer from '@/components/UI/PageContainer.vue';
-import PageHeader from '@/components/UI/PageHeader.vue';
 import Button from '@/components/UI/Button.vue';
 import SegmentedControl from '@/components/UI/SegmentedControl.vue';
 
@@ -166,14 +165,10 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="min-h-[calc(100vh-3.5rem)]">
-    <PageContainer size="full">
+  <div>
 
-      <PageHeader
-        title="Captação de Leads"
-        subtitle="Inbox dos leads inbound (Meta Lead Ads e formulários do site) até o despacho ao CV CRM."
-        icon="fas fa-inbox">
-        <template #actions>
+      <!-- Toolbar da aba (o header vive no hub Central Meta) -->
+      <div class="flex items-center justify-end gap-2 flex-wrap mb-3">
           <span v-if="store.health?.dry_run"
             class="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs font-medium text-amber-600 dark:text-amber-300"
             title="Os leads não estão sendo enviados ao CV — modo sombra ligado">
@@ -190,18 +185,17 @@ onMounted(async () => {
             <span class="hidden lg:inline">Resolver campanhas</span>
           </Button>
           <Button v-if="isAdmin" variant="secondary" size="sm" icon="fas fa-gear"
-            @click="router.push('/marketing/settings')" title="Settings de captação">
-            <span class="hidden lg:inline">Settings</span>
+            @click="router.push('/meta?tab=config')" title="Configurações de captação">
+            <span class="hidden lg:inline">Configurações</span>
           </Button>
           <Button variant="secondary" size="sm" icon="fas fa-bullhorn"
-            @click="router.push('/marketing/campanhas')" title="Ver campanhas Meta">
+            @click="router.push('/meta?tab=campanhas')" title="Ver campanhas Meta">
             <span class="hidden lg:inline">Campanhas</span>
           </Button>
           <Button variant="primary" size="sm" icon="fas fa-arrows-rotate" @click="refresh" :loading="store.loading">
             Atualizar
           </Button>
-        </template>
-      </PageHeader>
+      </div>
 
       <!-- Alertas críticos (globais — clicáveis pra filtrar o inbox) -->
       <CaptureHealthBanner :health="store.health" @focus-status="focusStatus" />
@@ -288,6 +282,5 @@ onMounted(async () => {
       <!-- Detalhe -->
       <LeadDetailModal v-model:open="detailOpen" />
 
-    </PageContainer>
   </div>
 </template>

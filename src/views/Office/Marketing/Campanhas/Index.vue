@@ -1,5 +1,6 @@
 <script setup>
-// /marketing/campanhas — relatório de desempenho Meta no padrão de mercado:
+// Central Meta › aba Campanhas — relatório de desempenho Meta no padrão de mercado:
+// (Panel do hub /meta — sem PageContainer/PageHeader próprios.)
 //
 //   RÉGUA DE TEMPO (mestre)  → PeriodPicker no topo; TODAS as métricas
 //                              (KPIs, gráfico, tabelas) são do período.
@@ -14,8 +15,6 @@ import { onMounted, ref, computed, watch } from 'vue';
 import dayjs from 'dayjs';
 import { useCampaignsStore } from '@/stores/Marketing/Campaigns/campaignsStore';
 import { useAuthStore } from '@/stores/Settings/Auth/authStore';
-import PageContainer from '@/components/UI/PageContainer.vue';
-import PageHeader from '@/components/UI/PageHeader.vue';
 import Surface from '@/components/UI/Surface.vue';
 import Button from '@/components/UI/Button.vue';
 import CampaignDetailModal from './components/CampaignDetailModal.vue';
@@ -350,13 +349,9 @@ const LEVEL_TABS = [
 </script>
 
 <template>
-  <div class="min-h-[calc(100vh-3.5rem)]">
-    <PageContainer size="full">
-      <PageHeader
-        title="Campanhas Meta"
-        subtitle="Desempenho por período: investimento, leads, CAC e artes. Drill campanha → conjunto → anúncio."
-        icon="fab fa-meta">
-        <template #actions>
+  <div>
+      <!-- Toolbar da aba (o header vive no hub Central Meta) -->
+      <div class="flex items-center justify-end gap-2 flex-wrap mb-3">
           <Button variant="secondary" size="sm" icon="fas fa-arrows-rotate"
             :loading="store.loading || store.loadingReport" @click="buscar">
             Atualizar
@@ -366,8 +361,7 @@ const LEVEL_TABS = [
             class="inline-flex items-center justify-center w-8 h-8 rounded-md border border-line bg-surface hover:bg-surface-hover hover:border-accent/40 text-ink-muted hover:text-ink transition-colors">
             <i class="fas fa-screwdriver-wrench text-xs"></i>
           </button>
-        </template>
-      </PageHeader>
+      </div>
 
       <!-- ══ RÉGUA DE TEMPO: período mestre ══════════════════════════════ -->
       <div class="mb-4">
@@ -540,7 +534,7 @@ const LEVEL_TABS = [
               </span>
             </div>
             <div class="text-[11px] mt-1">
-              <RouterLink to="/marketing/captacao" class="underline">Ver leads em Captação →</RouterLink>
+              <RouterLink to="/meta?tab=captacao" class="underline">Ver leads em Captação →</RouterLink>
             </div>
           </div>
         </div>
@@ -772,8 +766,7 @@ const LEVEL_TABS = [
         :until="periodo.until"
         @saved="store.fetchAll()" />
 
-      <!-- Ferramentas admin (gear icon no header) -->
+      <!-- Ferramentas admin (gear icon na toolbar) -->
       <CampaignsAdminModal v-if="isAdmin" v-model:open="adminModalOpen" />
-    </PageContainer>
   </div>
 </template>

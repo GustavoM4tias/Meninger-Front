@@ -31,7 +31,7 @@ const signals = computed(() => {
             tone: 'warning',
             icon: 'fas fa-eye-slash',
             title: 'Modo sombra ativo',
-            detail: 'Os leads não estão sendo enviados ao CV — desligue o modo sombra em /marketing/settings quando estiver pronto.',
+            detail: 'Os leads não estão sendo enviados ao CV — desligue o modo sombra na aba Configurações quando estiver pronto.',
         });
     }
 
@@ -65,7 +65,7 @@ const signals = computed(() => {
             tone: 'warning',
             icon: 'fas fa-cloud-arrow-down',
             title: `${h.pending_fetch} lead${h.pending_fetch > 1 ? 's' : ''} aguardando dados da Meta`,
-            detail: 'O webhook avisou do lead, mas a busca dos dados na Graph API falhou. Re-tentando automaticamente — se persistir, confira o token em /settings/meta.',
+            detail: 'O webhook avisou do lead, mas a busca dos dados na Graph API falhou. Re-tentando automaticamente — se persistir, confira o token na aba Credenciais.',
             filter: 'received',
         });
     }
@@ -75,7 +75,7 @@ const signals = computed(() => {
             tone: 'warning',
             icon: 'fas fa-hourglass-half',
             title: `Lead mais antigo em "Aguardando vínculo": ${oldestHeldAge.value} dia${oldestHeldAge.value > 1 ? 's' : ''}`,
-            detail: 'Defina mapping de campanha em /marketing/campanhas pra rotear automaticamente — ou clique pra abrir os leads e resolver o vínculo.',
+            detail: 'Defina mapping de campanha na aba Campanhas pra rotear automaticamente — ou clique pra abrir os leads e resolver o vínculo.',
             filter: 'held',
         });
     }

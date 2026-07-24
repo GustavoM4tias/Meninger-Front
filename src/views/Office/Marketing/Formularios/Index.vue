@@ -1,12 +1,11 @@
 <script setup>
-// Gerencia formulários INTERNOS (LPs hospedadas, embeds em site externo).
-// Forms da Meta agora são gerenciados dentro das Campanhas — abrindo o anúncio
-// que usa aquele form.
+// Central Meta › aba Formulários — gerencia formulários INTERNOS (LPs
+// hospedadas, embeds em site externo). Forms da Meta são gerenciados dentro
+// das Campanhas — abrindo o anúncio que usa aquele form.
+// (Panel do hub /meta — sem PageContainer/PageHeader próprios.)
 
 import { onMounted, ref } from 'vue';
 import { useLeadFormsStore } from '@/stores/Marketing/Capture/leadFormsStore';
-import PageContainer from '@/components/UI/PageContainer.vue';
-import PageHeader from '@/components/UI/PageHeader.vue';
 import Button from '@/components/UI/Button.vue';
 import PeriodPicker from '../Campanhas/components/PeriodPicker.vue';
 import LeadFormEditModal from './components/LeadFormEditModal.vue';
@@ -25,16 +24,11 @@ onMounted(() => store.fetchAll());
 </script>
 
 <template>
-  <div class="min-h-[calc(100vh-3.5rem)]">
-    <PageContainer size="full">
-      <PageHeader
-        title="Formulários de Captação"
-        subtitle="Formulários internos hospedados (LPs em lp.menin.com.br + embeds em site externo)."
-        icon="fas fa-square-poll-vertical">
-        <template #actions>
+  <div>
+      <!-- Toolbar da aba (o header vive no hub Central Meta) -->
+      <div class="flex items-center justify-end gap-2 mb-3">
           <Button variant="primary" size="sm" icon="fas fa-plus" @click="openCreate">Novo formulário</Button>
-        </template>
-      </PageHeader>
+      </div>
 
       <!-- Período mestre dos stats (padronizado com Campanhas/Leads/Captação) -->
       <div class="mb-3">
@@ -46,7 +40,7 @@ onMounted(() => store.fetchAll());
         <i class="fab fa-meta text-blue-500 mt-0.5"></i>
         <div>
           <b class="text-ink">Forms da Meta?</b> São gerenciados em
-          <RouterLink to="/marketing/campanhas" class="text-accent hover:underline">Campanhas → abrir campanha → aba Anúncios → badge do form</RouterLink>.
+          <RouterLink to="/meta?tab=campanhas" class="text-accent hover:underline">Campanhas → abrir campanha → aba Anúncios → badge do form</RouterLink>.
           O mapeamento (empreendimento, mídia) vive na campanha; o de campos (pergunta → CV) vive no form.
         </div>
       </div>
@@ -54,6 +48,5 @@ onMounted(() => store.fetchAll());
       <InternalLeadFormsTable @edit="openEdit" />
 
       <LeadFormEditModal v-model:open="modalOpen" :form="editing" @saved="onSaved" />
-    </PageContainer>
   </div>
 </template>
