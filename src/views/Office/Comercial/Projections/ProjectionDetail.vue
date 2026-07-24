@@ -232,7 +232,7 @@ const totals = computed(() => {
   return { units, vgv, enterprises: rows.value.length, ticket: units > 0 ? vgv / units : 0 };
 });
 
-/* ── Add / edit / duplicate / remove ───────────────────────────────────────── */
+/* ── Add / edit / remove ───────────────────────────────────────────────────── */
 const formOpen = ref(false);
 const formMode = ref('add');
 const editTarget = ref(null);
@@ -278,13 +278,6 @@ function onSubmitEdit({ patch }) {
   formOpen.value = false;
 }
 
-function duplicateRow(row) {
-  const clone = JSON.parse(JSON.stringify(row));
-  clone.alias_id = crypto?.randomUUID?.() ?? `${Date.now().toString(36)}`;
-  clone.name = `${row.name} (cópia)`;
-  rows.value.push(clone);
-  rows.value = [...rows.value];
-}
 function removeRow(row) {
   rows.value = rows.value.filter((r) => rowKey(r) !== rowKey(row));
 }
@@ -563,7 +556,7 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload));
 
     <ProjectionEditorGrid v-else
       :rows="visibleRows" :month-keys="monthKeys" :disabled="!editable"
-      @edit="openEdit" @duplicate="duplicateRow" @remove="removeRow" @changed="dirty = true" />
+      @edit="openEdit" @remove="removeRow" @changed="dirty = true" />
 
     <p v-if="!editable && isAdmin && locked" class="mt-3 text-xs text-ink-subtle">
       <i class="fas fa-lock mr-1"></i> Projeção bloqueada - desbloqueie no topo para editar.
