@@ -157,19 +157,19 @@
                                     <span class="font-semibold text-gray-700 dark:text-gray-200">{{ previewPaths.length }}</span> cols
                                 </span>
                             </p>
-                            <button type="button" @click="exportXLSX()" :disabled="!selection.size || exporting"
+                            <button type="button" @click="pedirExport('xlsx')" :disabled="!selection.size || exporting"
                                 class="flex items-center justify-center gap-2 w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:cursor-not-allowed text-white text-sm font-semibold px-4 py-2.5 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/40 transition active:scale-[0.99]">
                                 <i :class="['fas', exporting ? 'fa-spinner fa-spin' : 'fa-file-excel']"></i>
                                 <span>{{ exporting ? 'Gerando…' : 'Exportar Excel' }}</span>
                             </button>
                             <div class="flex items-center justify-center gap-1.5 text-[11px] text-gray-400 dark:text-gray-500">
                                 <span>ou exportar como</span>
-                                <button type="button" @click="exportCSV('csv')" :disabled="!selection.size || exporting"
+                                <button type="button" @click="pedirExport('csv')" :disabled="!selection.size || exporting"
                                     class="hover:text-gray-700 dark:hover:text-gray-200 disabled:opacity-40 focus:outline-none focus:underline underline-offset-2">
                                     CSV
                                 </button>
                                 <span>·</span>
-                                <button type="button" @click="exportPDF()" :disabled="!selection.size || exporting"
+                                <button type="button" @click="pedirExport('pdf')" :disabled="!selection.size || exporting"
                                     class="hover:text-gray-700 dark:hover:text-gray-200 disabled:opacity-40 focus:outline-none focus:underline underline-offset-2">
                                     PDF
                                 </button>
@@ -240,6 +240,11 @@
                 </div>
             </div>
         </div>
+
+        <!-- Aviso de responsabilidade — obrigatório antes de qualquer formato -->
+        <ExportDisclaimerModal :open="disclaimer.open" :formato="disclaimer.kind"
+            :titulo="suggestedTitle" :autor="autorExport"
+            @confirmar="confirmarDisclaimer" @cancelar="cancelarDisclaimer" />
     </div>
 </template>
 
@@ -257,6 +262,8 @@ import ExcelJS from 'exceljs/dist/exceljs.min.js'
 import saveAs from 'file-saver'
 import dayjs from 'dayjs'
 import { useAuthStore } from '@/stores/Settings/Auth/authStore'
+import ExportDisclaimerModal from './ExportDisclaimerModal.vue'
+import { registrarExport, slugReport } from '@/utils/Config/exportLog'
 
 /**
  * UniversalExportModal.vue
@@ -950,6 +957,7 @@ function exportCSV(kind = 'csv') {
     const name = `${sanitizeFilename(baseFilename.value)}.csv`
     downloadFile(csv, name, 'text/csv;charset=utf-8;')
     savePrefs()
+    logExport('csv')
     emit('export', { name, kind, delimiter: delim, rows: dataRows, paths })
 }
 
@@ -1006,6 +1014,50 @@ function loadImageFromBlob(blob) {
 }
 
 const exporting = ref(false)
+
+/* ————— Aviso de responsabilidade + trilha de auditoria —————
+   Toda exportação (Excel, CSV ou PDF) passa antes pelo aviso, e é registrada
+   na trilha depois de concluída. Vale para TODOS os relatórios que usam este
+   componente. */
+const disclaimer = ref({ open: false, kind: '' })
+
+const autorExport = computed(() => ({
+    nome: authStore?.user?.username || props.issuer || '',
+    email: authStore?.user?.email || '',
+}))
+
+function pedirExport(kind) {
+    if (exporting.value) return
+    if (!selectedPaths.value.length) {
+        alert('Selecione ao menos um campo.')
+        return
+    }
+    disclaimer.value = { open: true, kind }
+}
+
+function cancelarDisclaimer() {
+    disclaimer.value = { open: false, kind: '' }
+}
+
+async function confirmarDisclaimer() {
+    const kind = disclaimer.value.kind
+    disclaimer.value = { open: false, kind: '' }
+    if (kind === 'xlsx') await exportXLSX()
+    else if (kind === 'csv') await exportCSV('csv')
+    else if (kind === 'pdf') await exportPDF()
+}
+
+// Registro "best effort": nunca atrapalha o download já concluído.
+function logExport(format) {
+    const filtros = {}
+    for (const f of normalizedFilters.value) filtros[f.label] = f.value
+    registrarExport({
+        report: slugReport(props.title),
+        format,
+        recordCount: exportedRowCount.value,
+        filters: Object.keys(filtros).length ? filtros : null,
+    })
+}
 
 async function exportXLSX() {
     const selected = selectedPaths.value
@@ -1144,6 +1196,7 @@ async function exportXLSX() {
         const name = `${sanitizeFilename(baseFilename.value || suggestedFilename.value)}.xlsx`
         saveAs(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), name)
         savePrefs()
+        logExport('excel')
         emit('export', { name, kind: 'xlsx', rows: dataRows, paths })
     } finally {
         exporting.value = false
@@ -1274,6 +1327,7 @@ async function exportPDF() {
         const name = `${sanitizeFilename(baseFilename.value || suggestedFilename.value)}.pdf`
         doc.save(name)
         savePrefs()
+        logExport('pdf')
         emit('export', { name, kind: 'pdf', rows: dataRows, paths })
     } finally {
         exporting.value = false
@@ -1309,7 +1363,8 @@ function coerceForExcel(v) {
 
 /* ————— UX ————— */
 function onKey(e) {
-    if (e.key === 'Escape') emitClose()
+    // Com o aviso aberto, o ESC pertence a ele — não fecha o modal de exportação junto.
+    if (e.key === 'Escape' && !disclaimer.value.open) emitClose()
 }
 onMounted(() => {
     window.addEventListener('keydown', onKey)
