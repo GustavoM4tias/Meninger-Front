@@ -56,8 +56,9 @@ const activeFiltersCount = computed(() => {
 const hasActiveFilters = computed(() => activeFiltersCount.value > 0);
 
 // ── Expandir/recolher ────────────────────────────────
-// No desktop: aberto por default. No mobile: recolhido.
-const isExpanded = ref(window.innerWidth >= 1024);
+// Recolhido por padrão em qualquer tela — o usuário abre quando precisar.
+// O contador de filtros ativos no cabeçalho mostra o que está aplicado.
+const isExpanded = ref(false);
 function toggle() { isExpanded.value = !isExpanded.value; }
 </script>
 

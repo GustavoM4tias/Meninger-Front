@@ -2,25 +2,37 @@
 import { onMounted, ref, toRef, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useLeadsStore } from '@/stores/Marketing/Lead/leadsStore';
+import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 
 import Favorite from '@/components/config/Favorite.vue';
 import PageContainer from '@/components/UI/PageContainer.vue';
 import PageHeader from '@/components/UI/PageHeader.vue';
 import PageHelp from '@/components/UI/PageHelp.vue';
-import SegmentedControl from '@/components/UI/SegmentedControl.vue';
 
 import Filas from './components/Filas.vue';
-import SummaryCards from './components/SummaryCards.vue';
-import DashboardCharts from './components/DashboardCharts.vue';
+// SummaryCards (bloco "Período" + situações detalhadas) está oculto por
+// enquanto — descomente junto com o uso no template para trazer de volta.
+// import SummaryCards from './components/SummaryCards.vue';
 import FiltersBar from './components/FiltersBar.vue';
 import LeadsTable from './components/LeadsTable.vue';
 import LeadModal from './components/LeadModal.vue';
+import LeadDetailModal from './components/LeadDetailModal.vue';
 import LeadsKpiCards from './components/LeadsKpiCards.vue';
 import CommercialFunnel from './components/CommercialFunnel.vue';
-import PeriodPicker from '../Campanhas/components/PeriodPicker.vue';
+import LeadsTrendCard from './components/LeadsTrendCard.vue';
+import EnterpriseDonut from './components/EnterpriseDonut.vue';
+import CaptureHeatmap from './components/CaptureHeatmap.vue';
+import RecentLeads from './components/RecentLeads.vue';
+import LeadsBySource from './components/LeadsBySource.vue';
+import Dropdown from '@/components/UI/Dropdown.vue';
+import ExportDisclaimerModal from '@/components/config/ExportDisclaimerModal.vue';
+import ExportLogModal from './components/ExportLogModal.vue';
+import { exportReportPdf, exportReportHtml } from '@/utils/Leads/exportLeads';
+import { registrarExport } from '@/utils/Config/exportLog';
 import dayjs from 'dayjs';
 
 const store = useLeadsStore();
+const authStore = useAuthStore();
 const route = useRoute();
 const router = useRouter();
 
@@ -35,25 +47,16 @@ const situationsList = toRef(store, 'situationsList');
 const prevCount = toRef(store, 'prevCount');
 const prevSituacoes = toRef(store, 'prevSituacoes');
 
-// ── Período mestre (padrão do relatório Meta) ──────────────────────────────
-const periodoPicker = ref({
-  since: dayjs().startOf('month').format('YYYY-MM-DD'),
-  until: dayjs().format('YYYY-MM-DD'),
-  preset: 'this_month',
-});
+// Período padrão = mês atual. As datas moram nos Filtros (Data início/fim);
+// não há seletor de período separado.
+const defaultSince = () => dayjs().startOf('month').format('YYYY-MM-DD');
+const defaultUntil = () => dayjs().format('YYYY-MM-DD');
 
 // Busca leads + período anterior (pros deltas) de uma vez.
 async function refreshLeads() {
   await store.fetchLeads(true);
   await store.fetchComparison();
-}
-
-function onPeriodChange(p) {
-  periodoPicker.value = p;
-  filtros.value.data_inicio = p.since;
-  filtros.value.data_fim = p.until;
-  syncUrlFromFilters();
-  refreshLeads();
+  atualizadoEm.value = dayjs();
 }
 
 const ARRAY_FIELDS = ['imobiliaria', 'corretor', 'situacao_nome', 'midia_principal', 'origem', 'empreendimento'];
@@ -84,11 +87,95 @@ function syncUrlFromFilters() {
   router.replace({ query: q });
 }
 
-const view = ref('overview'); // overview | dashboard
-const viewOptions = computed(() => [
-  { value: 'overview',  label: 'Visão geral', icon: 'fas fa-chart-simple' },
-  { value: 'dashboard', label: 'Dashboard',   icon: 'fas fa-chart-line' },
-]);
+// ── Cabeçalho dinâmico ─────────────────────────────────────────────────────
+const atualizadoEm = ref(dayjs());
+const subtitleText = computed(() => {
+  const n = kpiSituacoes.value.total || 0;
+  const emps = leadsByEnterprise.value.length || 0;
+  const intFmt = new Intl.NumberFormat('pt-BR');
+  return `${intFmt.format(n)} leads captados · ${emps} empreendimento${emps === 1 ? '' : 's'} · atualizado ${atualizadoEm.value.format('HH:mm')}`;
+});
+
+// ── Exportação ─────────────────────────────────────────────────────────────
+const exporting = ref('');
+const exportError = ref('');
+
+// Só os filtros realmente preenchidos, para a trilha guardar o recorte exato.
+function filtrosAplicados() {
+  const out = {};
+  Object.entries(filtros.value).forEach(([k, v]) => {
+    if (Array.isArray(v)) { if (v.length) out[k] = v; }
+    else if (v && String(v).trim()) out[k] = v;
+  });
+  return out;
+}
+
+// Toda exportação passa pelo aviso de responsabilidade antes de gerar.
+const disclaimer = ref({ open: false, kind: '' });
+const autorExport = computed(() => ({
+  nome: authStore.user?.username || '',
+  email: authStore.user?.email || '',
+}));
+
+// Trilha de exportações — exclusiva do admin.
+const isAdmin = computed(() => authStore.user?.role === 'admin');
+const logAberto = ref(false);
+
+function pedirExport(kind) {
+  if (exporting.value) return;
+  disclaimer.value = { open: true, kind };
+}
+function cancelarExport() {
+  disclaimer.value = { open: false, kind: '' };
+}
+function confirmarExport() {
+  const kind = disclaimer.value.kind;
+  disclaimer.value = { open: false, kind: '' };
+  doExport(kind);
+}
+
+async function doExport(kind) {
+  if (exporting.value) return;
+  exporting.value = kind;
+  exportError.value = '';
+  try {
+    // Carimbo de autoria: quem exportou e quando (vai no HTML e no PDF).
+    const range = {
+      leads: leads.value,
+      from: filtros.value.data_inicio,
+      to: filtros.value.data_fim,
+      geradoPor: autorExport.value,
+    };
+    if (kind === 'pdf') {
+      await exportReportPdf(range);
+    } else if (kind === 'html') {
+      await exportReportHtml(range);
+    }
+
+    // Trilha de auditoria — só depois de a exportação ter dado certo.
+    registrarExport({
+      report: 'leads',
+      format: kind,
+      periodStart: filtros.value.data_inicio || null,
+      periodEnd: filtros.value.data_fim || null,
+      recordCount: leads.value.length,
+      filters: filtrosAplicados(),
+    });
+  } catch (e) {
+    exportError.value = e?.message || 'Falha ao exportar.';
+  } finally {
+    exporting.value = '';
+  }
+}
+
+// Detalhe de um lead — abre direto no modal do próprio lead.
+const leadDetalhe = ref(null);
+const leadDetalheVisivel = ref(false);
+function abrirLeadDetalhe(lead) {
+  if (!lead) return;
+  leadDetalhe.value = lead;
+  leadDetalheVisivel.value = true;
+}
 
 const modalVisivel = ref(false);
 const modalLeads = ref([]);
@@ -101,29 +188,28 @@ function abrirModal([list, mode]) {
 }
 
 function buscar() {
-  // Se o usuário mexeu nas datas nos filtros, o picker vira "personalizado".
-  const fi = filtros.value.data_inicio, ff = filtros.value.data_fim;
-  if (fi && ff && (fi !== periodoPicker.value.since || ff !== periodoPicker.value.until)) {
-    periodoPicker.value = { since: fi, until: ff, preset: 'custom' };
-  }
   syncUrlFromFilters();
   refreshLeads();
 }
 
 function limpar() {
-  periodoPicker.value = {
-    since: dayjs().startOf('month').format('YYYY-MM-DD'),
-    until: dayjs().format('YYYY-MM-DD'),
-    preset: 'this_month',
-  };
   Object.assign(filtros.value, {
     nome: '', email: '', telefone: '',
     imobiliaria: [], corretor: [],
     midia_principal: [], origem: [], empreendimento: [],
-    data_inicio: periodoPicker.value.since, data_fim: periodoPicker.value.until, cidade: '',
+    data_inicio: defaultSince(), data_fim: defaultUntil(), cidade: '',
   });
   store.applyDefaultSituacoes();
+  store.applyDefaultOrigens();
   router.replace({ query: {} });
+  refreshLeads();
+}
+
+function onFiltrarOrigem(origem) {
+  const set = new Set(filtros.value.origem || []);
+  if (origem && !set.has(origem)) set.add(origem);
+  filtros.value.origem = Array.from(set);
+  syncUrlFromFilters();
   refreshLeads();
 }
 
@@ -137,13 +223,9 @@ function onFiltrarSituacao(situacao) {
 
 onMounted(async () => {
   syncFiltersFromUrl();
-  // Se a URL trouxe datas, o picker reflete; senão mantém o default (este mês).
-  if (filtros.value.data_inicio && filtros.value.data_fim) {
-    periodoPicker.value = { since: filtros.value.data_inicio, until: filtros.value.data_fim, preset: 'custom' };
-  } else {
-    filtros.value.data_inicio = periodoPicker.value.since;
-    filtros.value.data_fim = periodoPicker.value.until;
-  }
+  // A URL manda; sem datas nela, cai no default (mês atual).
+  if (!filtros.value.data_inicio) filtros.value.data_inicio = defaultSince();
+  if (!filtros.value.data_fim)    filtros.value.data_fim    = defaultUntil();
   await store.fetchFilas();
   await refreshLeads();
   if (route.query.excluir_painel === '1') store.applyDefaultOrigens();
@@ -155,37 +237,76 @@ onMounted(async () => {
     <PageContainer size="full">
 
       <!-- Header -->
-      <PageHeader title="Relatório de Leads"
-        subtitle="Acompanhe o desempenho dos leads em tempo real."
+      <PageHeader title="Leads"
+        :subtitle="subtitleText"
         icon="fas fa-chart-line">
         <template #title>
-          <span>Relatório de Leads</span>
+          <span>Leads</span>
           <Favorite :router="'/marketing/leads'" :section="'Leads'" />
         </template>
         <template #actions>
+          <!-- Exportar: PDF/HTML saem do próprio relatório renderizado -->
+          <Dropdown align="right" :offset="8">
+            <template #trigger>
+              <button type="button" :disabled="!!exporting"
+                class="inline-flex items-center gap-2 h-9 px-3 rounded-lg text-sm font-medium
+                       border border-line bg-surface-raised text-ink
+                       hover:bg-surface-sunken hover:border-accent/40
+                       disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                <i :class="exporting ? 'fas fa-circle-notch fa-spin' : 'fas fa-file-export'" class="text-xs"></i>
+                {{ exporting ? 'Gerando...' : 'Exportar' }}
+              </button>
+            </template>
+
+            <div class="w-60 bg-surface-overlay border border-line rounded-xl shadow-overlay overflow-hidden py-1">
+              <!-- Excel não entra aqui: sai pelo modal de leads (Export.vue) -->
+              <button v-for="opt in [
+                  { k: 'pdf',  i: 'fas fa-file-pdf',  t: 'PDF',  d: 'Relatório como está na tela' },
+                  { k: 'html', i: 'fas fa-file-code', t: 'HTML', d: 'Arquivo único p/ encaminhar' },
+                ]" :key="opt.k"
+                type="button" data-dropdown-item @click="pedirExport(opt.k)"
+                class="w-full flex items-start gap-3 px-3 py-2.5 text-left hover:bg-surface-sunken transition-colors group">
+                <i :class="opt.i" class="mt-0.5 w-4 text-ink-muted group-hover:text-accent transition-colors"></i>
+                <span class="min-w-0">
+                  <span class="block text-sm text-ink group-hover:text-accent transition-colors">{{ opt.t }}</span>
+                  <span class="block text-[11px] text-ink-subtle">{{ opt.d }}</span>
+                </span>
+              </button>
+
+              <!-- Trilha de exportações: admin apenas -->
+              <template v-if="isAdmin">
+                <div class="my-1 border-t border-line"></div>
+                <button type="button" data-dropdown-item @click="logAberto = true"
+                  class="w-full flex items-start gap-3 px-3 py-2.5 text-left hover:bg-surface-sunken transition-colors group">
+                  <i class="fas fa-clipboard-list mt-0.5 w-4 text-ink-muted group-hover:text-accent transition-colors"></i>
+                  <span class="min-w-0">
+                    <span class="block text-sm text-ink group-hover:text-accent transition-colors">
+                      Trilha de exportações
+                    </span>
+                    <span class="block text-[11px] text-ink-subtle">Quem exportou o quê e quando</span>
+                  </span>
+                </button>
+              </template>
+            </div>
+          </Dropdown>
+
           <PageHelp storage-key="marketing-leads" title="Como usar o Relatório de Leads"
             intro="Acompanhe em tempo real o desempenho dos leads captados — por situação e por empreendimento."
             :steps="[
               { title: 'Filtre o período', text: 'Na barra de Filtros, ajuste datas, empreendimento, mídia, situação e mais; depois clique em Buscar.' },
               { title: 'Leia os indicadores', text: 'Os cartões mostram os leads por situação. Clique em um para filtrar por ele.' },
               { title: 'Por empreendimento', text: 'Na tabela, veja a distribuição e abra os leads de cada empreendimento em lista, funil, barras ou pizza.' },
-              { title: 'Visão analítica', text: 'Alterne para “Dashboard” no topo para os gráficos completos.' },
+              { title: 'Exporte e compartilhe', text: 'Em “Exportar” você gera o relatório em HTML interativo ou PDF. Para planilha, abra os leads e use Exportar dentro do modal.' },
             ]"
             :tips="[
-              'As filas de atendimento ficam no botão ao lado do seletor de visão.',
+              'As filas de atendimento ficam no botão ao lado de Exportar.',
               'Selecione vários empreendimentos na tabela para abri-los juntos.',
             ]" />
           <Filas :filas="filas" />
-          <SegmentedControl v-model="view" :options="viewOptions" size="sm" />
         </template>
       </PageHeader>
 
-      <!-- Período mestre -->
-      <div class="mb-3">
-        <PeriodPicker :periodo="periodoPicker" @update:periodo="onPeriodChange" />
-      </div>
-
-      <!-- Filtros -->
+      <!-- Filtros (inclui Data início/fim) -->
       <div class="mb-4">
         <FiltersBar
           v-model:filtros="filtros"
@@ -204,39 +325,71 @@ onMounted(async () => {
         class="mb-4 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2.5 text-sm text-red-700 dark:text-red-300 flex items-center gap-2">
         <i class="fas fa-circle-exclamation"></i>{{ error }}
       </div>
+      <div v-if="exportError"
+        class="mb-4 rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2.5 text-sm text-amber-700 dark:text-amber-300 flex items-center gap-2">
+        <i class="fas fa-triangle-exclamation"></i>{{ exportError }}
+      </div>
 
-      <!-- Visão geral -->
-      <template v-if="view === 'overview'">
-        <div class="space-y-4">
-          <!-- KPIs com variação vs período anterior -->
+      <!-- Visão geral (única visão da tela) -->
+      <div class="space-y-4">
+          <!-- KPIs com variação vs período anterior + sparkline do período -->
           <LeadsKpiCards
             :total="kpiSituacoes.total"
             :prev-total="prevCount"
             :situations="situationsList"
-            :prev-situacoes="prevSituacoes" />
+            :prev-situacoes="prevSituacoes"
+            :leads="leads"
+            :from="filtros.data_inicio"
+            :to="filtros.data_fim" />
 
-          <!-- Funil comercial (destaque) + situações detalhadas lado a lado -->
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <!-- Entradas de leads (série diária) + funil comercial -->
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <LeadsTrendCard class="lg:col-span-2"
+              :leads="leads"
+              :from="filtros.data_inicio"
+              :to="filtros.data_fim" />
             <CommercialFunnel
               :situations="situationsList"
               :prev-situacoes="prevSituacoes"
               :total="kpiSituacoes.total"
               @filtrarSituacao="onFiltrarSituacao" />
-            <SummaryCards :periodo="periodo" :kpi="kpiSituacoes" @filtrarSituacao="onFiltrarSituacao" />
           </div>
 
-          <LeadsTable :data="leadsByEnterprise" @abrirModal="abrirModal" />
-        </div>
-      </template>
+          <!-- Leads por empreendimento + distribuição.
+               items-start: cada card usa a altura natural (o donut não estica
+               atrás da listagem, que é bem mais alta). -->
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
+            <div class="lg:col-span-2 space-y-4 min-w-0">
+              <LeadsTable :data="leadsByEnterprise" @abrirModal="abrirModal" />
+              <CaptureHeatmap :leads="leads" />
+            </div>
+            <!-- Coluna lateral: distribuição, origem, captação e recentes -->
+            <div class="space-y-4 min-w-0">
+              <EnterpriseDonut :data="leadsByEnterprise" />
+              <LeadsBySource :leads="leads" @filtrarOrigem="onFiltrarOrigem" />
+              <RecentLeads :leads="leads"
+                @verTodos="abrirModal([leads, 'list'])"
+                @abrirLead="abrirLeadDetalhe" />
+            </div>
+          </div>
 
-      <!-- Dashboard analítico -->
-      <template v-else>
-        <DashboardCharts :leads="leads" :leads-by-enterprise="leadsByEnterprise"
-          @abrirModal="abrirModal" @filtrarSituacao="onFiltrarSituacao" />
-      </template>
+          <!-- Situações detalhadas (Período + lista de situações) — OCULTO por
+               enquanto a pedido. Para reativar, descomente aqui e o import de
+               SummaryCards no topo do arquivo.
+          <SummaryCards :periodo="periodo" :kpi="kpiSituacoes" @filtrarSituacao="onFiltrarSituacao" />
+          -->
+      </div>
     </PageContainer>
 
     <LeadModal :leads="modalLeads" :visivel="modalVisivel" :initial-mode="modalMode"
       @fechar="modalVisivel = false" />
+
+    <LeadDetailModal v-if="leadDetalhe" :lead="leadDetalhe" :visivel="leadDetalheVisivel"
+      @fechar="leadDetalheVisivel = false" />
+
+    <ExportDisclaimerModal :open="disclaimer.open" :formato="disclaimer.kind" :autor="autorExport"
+      @confirmar="confirmarExport" @cancelar="cancelarExport" />
+
+    <ExportLogModal v-if="isAdmin" :open="logAberto" @fechar="logAberto = false" />
   </div>
 </template>

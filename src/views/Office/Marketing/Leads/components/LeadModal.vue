@@ -422,7 +422,7 @@ const onLimpar = () => {
 </script>
 
 <template>
-  <Modal :open="visivel" size="full" @close="$emit('fechar')">
+  <Modal :open="visivel" size="xl" @close="$emit('fechar')">
     <template #header>
       <div class="flex items-center gap-3 min-w-0">
         <div class="h-9 w-9 rounded-lg bg-accent-soft text-accent border border-accent/20 grid place-items-center shrink-0">

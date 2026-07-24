@@ -43,7 +43,8 @@ export const useLeadsStore = defineStore('leads', () => {
     const imobiliariasOptions = ref(loadLS(LS.imo))
     const corretoresOptions = ref(loadLS(LS.cor))
 
-    const SITUACOES_EXCLUIDAS = ['Painel Corretor', 'Painel Gestor', 'Painel Imobiliária'];
+    // Origens de painel interno — não são captação real, então saem do padrão.
+    const ORIGENS_EXCLUIDAS = ['Painel Corretor', 'Painel Gestor', 'Painel Imobiliária'];
 
     // filtros
     const filtros = ref({
@@ -52,18 +53,22 @@ export const useLeadsStore = defineStore('leads', () => {
         data_inicio: '', data_fim: '', cidade: ''
     })
 
+    // Situações: sem whitelist por padrão. A versão antiga montava a lista a
+    // partir do cache do localStorage, o que ESCONDIA qualquer situação ainda
+    // não cacheada (lead novo com situação inédita sumia do relatório).
     function applyDefaultSituacoes() {
-        if (situacoesOptions.value.length === 0) return;
-        filtros.value.situacao_nome = situacoesOptions.value.filter(s => !SITUACOES_EXCLUIDAS.includes(s));
+        filtros.value.situacao_nome = [];
     }
 
+    // Origens: por padrão todas, menos os painéis internos.
     function applyDefaultOrigens() {
         if (origensOptions.value.length === 0) return;
-        filtros.value.origem = origensOptions.value.filter(o => !String(o).startsWith('Painel'));
+        filtros.value.origem = origensOptions.value
+            .filter(o => !ORIGENS_EXCLUIDAS.includes(String(o).trim()));
     }
 
     // Aplica o default imediatamente se as opções já estão no localStorage
-    applyDefaultSituacoes();
+    applyDefaultOrigens();
 
     const buildQuery = () => {
         const q = new URLSearchParams()
@@ -71,6 +76,16 @@ export const useLeadsStore = defineStore('leads', () => {
             if (v === undefined || v === null) return
             if (Array.isArray(v)) { if (v.length) q.append(k, v.join(',')) } else if (String(v).trim() !== '') { q.append(k, String(v).trim()) }
         })
+
+        // Painéis internos saem SEMPRE por exclusão de nome, não pela lista
+        // branca de origens. A lista branca vem do cache do localStorage e na
+        // primeira abertura ela está vazia — era por isso que a primeira carga
+        // vinha sem o filtro. A exclusão não depende de cache nenhum.
+        // Se o usuário escolher explicitamente um painel, ele deixa de ser excluído.
+        const selecionadas = filtros.value.origem || []
+        const excluir = ORIGENS_EXCLUIDAS.filter(o => !selecionadas.includes(o))
+        if (excluir.length) q.append('origem_excluir', excluir.join(','))
+
         return q.toString()
     }
     const authHeaders = () => {
@@ -121,10 +136,10 @@ export const useLeadsStore = defineStore('leads', () => {
         saveLS(LS.imo, imobiliariasOptions.value);
         saveLS(LS.cor, corretoresOptions.value);
 
-        // Aplica default de situações se o filtro ainda está vazio
-        // (não sobrescreve seleção manual do usuário)
-        if (filtros.value.situacao_nome.length === 0 && situacoesOptions.value.length > 0) {
-            applyDefaultSituacoes();
+        // Aplica o default de origens assim que elas forem descobertas
+        // (não sobrescreve seleção manual do usuário).
+        if (filtros.value.origem.length === 0 && origensOptions.value.length > 0) {
+            applyDefaultOrigens();
         }
     }
 
@@ -186,6 +201,13 @@ export const useLeadsStore = defineStore('leads', () => {
                 if (Array.isArray(v)) { if (v.length) q.append(k, v.join(',')); }
                 else if (String(v).trim() !== '') q.append(k, String(v).trim());
             });
+
+            // Mesma exclusão de painéis do período atual — sem isso o período
+            // anterior viria sem filtro e as variações % ficariam infladas.
+            const selecionadas = filtros.value.origem || [];
+            const excluir = ORIGENS_EXCLUIDAS.filter(o => !selecionadas.includes(o));
+            if (excluir.length) q.append('origem_excluir', excluir.join(','));
+
             q.append('data_inicio', fmt(prevStart));
             q.append('data_fim', fmt(prevEnd));
 
