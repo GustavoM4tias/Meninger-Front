@@ -20,7 +20,6 @@ import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 import Button from '@/components/UI/Button.vue';
 import SegmentedControl from '@/components/UI/SegmentedControl.vue';
 
-import PeriodPicker from '../Campanhas/components/PeriodPicker.vue';
 import CampaignDetailModal from '../Campanhas/components/CampaignDetailModal.vue';
 import CaptureHealthBanner from './components/CaptureHealthBanner.vue';
 import CaptureSummaryCards from './components/CaptureSummaryCards.vue';
@@ -68,8 +67,16 @@ const orderedLeads = computed(() => {
 });
 
 function applyFilters() {
+    // As datas do filtro SÃO o período mestre — KPIs/health acompanham o recorte
+    // (não há mais picker separado no topo).
+    store.periodo = {
+        since: store.filters.period_start || '',
+        until: store.filters.period_end || '',
+        preset: 'custom',
+    };
     store.page = 1;
     store.fetchLeads();
+    store.fetchHealth();
 }
 
 function focusStatus(filterKey, { global = false } = {}) {
@@ -83,10 +90,6 @@ function focusStatus(filterKey, { global = false } = {}) {
     store.filters.status = String(filterKey).split(',').map(s => s.trim()).filter(Boolean);
     store.page = 1;
     store.fetchLeads();
-}
-
-function onPeriodChange(p) {
-    store.setPeriodo(p);
 }
 
 function goPage(p) {
@@ -228,10 +231,7 @@ onMounted(async () => {
       <!-- Alertas críticos (globais — clicáveis pra filtrar o inbox) -->
       <CaptureHealthBanner :health="store.health" @focus-status="focusStatus" />
 
-      <!-- Período mestre (padronizado com Campanhas/Leads/Formulários) -->
-      <div class="mb-3">
-        <PeriodPicker :periodo="store.periodo" @update:periodo="onPeriodChange" />
-      </div>
+      <!-- Período mestre: as datas moram nos Filtros (Entrada Office de/até). -->
 
       <!-- KPIs -->
       <div class="mb-4">

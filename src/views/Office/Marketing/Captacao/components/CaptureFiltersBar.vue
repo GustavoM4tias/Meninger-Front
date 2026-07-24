@@ -97,7 +97,8 @@ const periodEnd = computed({
 });
 
 // ── Expand/collapse ──────────────────────────────────────────────────────────
-const isExpanded = ref(typeof window !== 'undefined' && window.innerWidth >= 1024);
+// Recolhido por padrão (padrão do sistema) — o usuário abre quando precisar.
+const isExpanded = ref(false);
 function toggle() { isExpanded.value = !isExpanded.value; }
 </script>
 

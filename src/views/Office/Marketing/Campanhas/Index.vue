@@ -30,7 +30,6 @@ import CampaignsCardsView from './components/CampaignsCardsView.vue';
 import CampaignsTimelineView from './components/CampaignsTimelineView.vue';
 import CampaignsAdminModal from './components/CampaignsAdminModal.vue';
 import CampaignsFiltersBar from './components/CampaignsFiltersBar.vue';
-import PeriodPicker from './components/PeriodPicker.vue';
 import ReportKpiCards from './components/ReportKpiCards.vue';
 import CampaignDailyChart from './components/CampaignDailyChart.vue';
 import AdSetsTable from './components/AdSetsTable.vue';
@@ -454,10 +453,8 @@ const levelTabs = computed(() => [
           </button>
       </div>
 
-      <!-- ══ RÉGUA DE TEMPO: período mestre ══════════════════════════════ -->
-      <div class="mb-4">
-        <PeriodPicker v-model:periodo="periodo" />
-      </div>
+      <!-- Período mestre: as datas moram nos Filtros (Data início/fim) — sem
+           picker separado no topo, igual ao dashboard de Leads. -->
 
       <!-- KPIs do período (com delta vs período anterior). Formulários são
            asset da Página — sem métrica de período, esconde a régua numérica. -->
@@ -495,6 +492,7 @@ const levelTabs = computed(() => [
       <div class="mb-3">
         <CampaignsFiltersBar
           v-model:filtros="filtros"
+          v-model:periodo="periodo"
           :contas-options="contasOptions"
           :midias-options="midiasOptions"
           :objetivos-options="objetivosOptions"
@@ -759,9 +757,9 @@ const levelTabs = computed(() => [
 
       <!-- ══ NÍVEL: CAMPANHAS ═════════════════════════════════════════════ -->
       <template v-else-if="level === 'campaign'">
-        <!-- View: Cards -->
+        <!-- View: Cards (clique segue o drill campanha → anúncios) -->
         <div v-if="viewMode === 'cards'">
-          <CampaignsCardsView :campaigns="filtered" @select="openDetail" />
+          <CampaignsCardsView :campaigns="filtered" @select="drillIntoCampaignAds" />
         </div>
 
         <!-- View: Timeline (Gantt) — janela = período mestre -->
@@ -770,7 +768,7 @@ const levelTabs = computed(() => [
             :campaigns="filtered"
             :period-start="periodo.since"
             :period-end="periodo.until"
-            @select="openDetail" />
+            @select="drillIntoCampaignAds" />
         </div>
 
         <!-- View: Lista -->
@@ -803,8 +801,10 @@ const levelTabs = computed(() => [
                     <span class="block text-xs mt-1">Amplie o período, ative "Sem veiculação no período" nos filtros, ou rode o backfill da série diária.</span>
                   </td>
                 </tr>
+                <!-- Clique na linha segue o drill (campanha → anúncios);
+                     o detalhe/vínculo fica no olho da coluna Ações. -->
                 <tr v-else v-for="c in filtered" :key="c.id"
-                  @click="openDetail(c)"
+                  @click="drillIntoCampaignAds(c)"
                   class="hover:bg-surface-hover/40 cursor-pointer transition-colors group">
 
                   <!-- Campanha -->

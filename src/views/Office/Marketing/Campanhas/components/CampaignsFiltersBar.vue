@@ -17,17 +17,29 @@ import Badge from '@/components/UI/Badge.vue';
 
 const props = defineProps({
     filtros: { type: Object, required: true },
+    // Período mestre da tela — as datas moram AQUI no filtro (sem picker no topo).
+    periodo: { type: Object, default: () => ({ since: '', until: '', preset: 'custom' }) },
     contasOptions: { type: Array, default: () => [] },
     midiasOptions: { type: Array, default: () => [] },
     objetivosOptions: { type: Array, default: () => [] },
 });
 
-const emit = defineEmits(['update:filtros', 'buscar', 'limpar']);
+const emit = defineEmits(['update:filtros', 'update:periodo', 'buscar', 'limpar']);
 
 function updateField(key, val) {
     const next = { ...props.filtros, [key]: Array.isArray(val) ? [...val] : val };
     emit('update:filtros', next);
 }
+
+// ── Datas (período mestre — recorta KPIs/gráfico/tabelas) ──────────────────
+const dataInicio = computed({
+    get: () => props.periodo?.since || '',
+    set: v => emit('update:periodo', { ...props.periodo, since: v || '', preset: 'custom' }),
+});
+const dataFim = computed({
+    get: () => props.periodo?.until || '',
+    set: v => emit('update:periodo', { ...props.periodo, until: v || '', preset: 'custom' }),
+});
 
 // ── Status: lista fixa estilo das opções do MultiSelector (strings) ────────
 const statusOptions = ['Ativas', 'Pausadas', 'Arquivadas', 'Excluídas', 'Rascunho'];
@@ -56,7 +68,8 @@ const activeFiltersCount = computed(() => {
 const hasActiveFilters = computed(() => activeFiltersCount.value > 0);
 
 // ── Expandir/recolher ──────────────────────────────────────────────────────
-const isExpanded = ref(window.innerWidth >= 1024);
+// Recolhido por padrão (padrão do sistema) — o usuário abre quando precisar.
+const isExpanded = ref(false);
 function toggle() { isExpanded.value = !isExpanded.value; }
 </script>
 
@@ -89,6 +102,10 @@ function toggle() { isExpanded.value = !isExpanded.value; }
     <div v-show="isExpanded"
       class="p-3 sm:p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 animate-fade-in"
       style="overflow: visible;">
+
+      <!-- Datas (período mestre) -->
+      <Input v-model="dataInicio" type="date" label="Data início" size="sm" />
+      <Input v-model="dataFim" type="date" label="Data fim" size="sm" />
 
       <!-- Status -->
       <div>
@@ -175,8 +192,8 @@ function toggle() { isExpanded.value = !isExpanded.value; }
       <!-- Dica da régua de tempo -->
       <div class="sm:col-span-2 lg:col-span-4 text-[10px] text-ink-subtle">
         <i class="fas fa-circle-info mr-1"></i>
-        As métricas (investido, leads, CAC, CTR...) são do <b>período selecionado no topo</b> —
-        mude o período pra recortar os números. Estes filtros só refinam a listagem.
+        As <b>datas</b> recortam TODAS as métricas (investido, leads, CAC, gráfico, tabelas).
+        Os demais filtros só refinam a listagem.
       </div>
     </div>
   </section>
