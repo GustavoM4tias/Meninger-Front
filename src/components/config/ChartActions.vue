@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { getInstanceByDom } from 'echarts/core'
 import { useToast } from 'vue-toastification';
 
@@ -8,6 +8,8 @@ const toast = useToast();
 const props = defineProps({
     /** opcional: CSS selector ou HTMLElement do gráfico alvo */
     target: { type: [String, Object], default: null },
+    /** opcional: id do elemento do gráfico (ex.: <VChart id="chart-trend" />) */
+    chartId: { type: String, default: null },
     filename: { type: String, default: 'grafico' },
     pixelRatio: { type: Number, default: 2 },
     bg: { type: String, default: '#ffffff' }
@@ -16,10 +18,23 @@ const props = defineProps({
 const root = ref(null)
 let cachedEC = null
 
+// Resolve o elemento raiz do ECharts a partir de um nó qualquer: o próprio
+// nó (se for o alvo do init) ou o primeiro descendente com o atributo.
+function echartsDomFrom(el) {
+    if (!el) return null
+    if (el.hasAttribute?.('_echarts_instance_')) return el
+    return el.querySelector?.('[_echarts_instance_]') || null
+}
+
 function findDomFromTarget() {
+    // 1) id explícito (mais confiável quando há vários gráficos na mesma tela)
+    if (props.chartId) {
+        const byId = echartsDomFrom(document.getElementById(props.chartId))
+        if (byId) return byId
+    }
     if (!props.target) return null
-    if (props.target instanceof HTMLElement) return props.target
-    if (typeof props.target === 'string') return document.querySelector(props.target)
+    if (props.target instanceof HTMLElement) return echartsDomFrom(props.target) || props.target
+    if (typeof props.target === 'string') return echartsDomFrom(document.querySelector(props.target))
     return null
 }
 
@@ -57,14 +72,32 @@ function findNearestEchartsDom() {
 }
 
 function resolveEC() {
-    if (cachedEC) return cachedEC
+    // Instância em cache só vale se ainda existir (não foi descartada por um
+    // re-render/troca de visualização). Caso contrário, resolve de novo.
+    if (cachedEC && !cachedEC.isDisposed?.()) return cachedEC
+    cachedEC = null
     const dom = findNearestEchartsDom()
     if (!dom) return null
-    cachedEC = getInstanceByDom(dom)
+    const ec = getInstanceByDom(dom)
+    if (!ec) return null
+    cachedEC = ec
     return cachedEC
 }
 
-const isReady = computed(() => !!resolveEC())
+// Prontidão REATIVA: resolveEC()/DOM não são dependências reativas, então um
+// `computed` avaliaria só uma vez (quando o gráfico ainda não foi inicializado,
+// caso comum dentro de modal/aba) e ficaria travado em false — deixando os
+// botões desabilitados para sempre. Aqui usamos um ref e sondamos até o
+// ECharts existir.
+const isReady = ref(false)
+let pollTimer = null
+let pollAttempts = 0
+
+function pollReady() {
+    if (resolveEC()) { isReady.value = true; return }
+    if (pollAttempts++ > 40) return // ~2.5s de tentativas; desiste em silêncio
+    pollTimer = setTimeout(() => requestAnimationFrame(pollReady), 60)
+}
 
 function getDataURL(type = 'png') {
     const ec = resolveEC()
@@ -148,9 +181,14 @@ async function downloadPdf() {
     }
 }
 
-onMounted(() => {
-    // força a resolução após montagem
-    resolveEC()
+onMounted(async () => {
+    // Espera o irmão <VChart> montar e rodar echarts.init antes de sondar.
+    await nextTick()
+    pollReady()
+})
+
+onBeforeUnmount(() => {
+    if (pollTimer) clearTimeout(pollTimer)
 })
 </script>
 
