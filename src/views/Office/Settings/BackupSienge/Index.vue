@@ -3,11 +3,9 @@
         <!-- Header -->
         <div class="px-6 pt-6 pb-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900/60">
             <div class="flex items-center justify-between flex-wrap gap-3">
-                <div>
-                    <h1 class="text-2xl font-bold flex items-center gap-2">
-                        <i class="fas fa-database text-indigo-500"></i> Backup Sienge
-                    </h1>
-                    <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">
+                <div class="flex gap-2">
+                    <img class="h-12" src="/icons/sienge.png" alt="Sienge">
+                    <p class="my-auto text-sm text-gray-600 dark:text-gray-300">
                         Backup diário automatizado do banco Sienge (5h da manhã). Pipeline blue-green:
                         restore acontece em banco staging — produção só é trocada por rename atômico após
                         validação. Em caso de falha, o dado antigo é preservado.
@@ -17,14 +15,12 @@
                 <div class="flex flex-wrap items-center gap-2">
                     <button
                         class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800 transition"
-                        :disabled="store.loading"
-                        @click="refresh">
+                        :disabled="store.loading" @click="refresh">
                         <i class="fas fa-rotate" :class="{ 'animate-spin': store.loading }"></i>
                         Atualizar
                     </button>
 
-                    <button
-                        v-if="isRunning"
+                    <button v-if="isRunning"
                         class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-red-200 text-red-700 bg-red-50 hover:bg-red-100 dark:border-red-700 dark:text-red-200 dark:bg-red-900/30 dark:hover:bg-red-900/50 transition disabled:opacity-50"
                         :disabled="cancelling"
                         title="Use somente se o processo morreu (ex: após deploy). Marca o log como falho — não mata processo nenhum."
@@ -35,8 +31,7 @@
 
                     <button
                         class="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
-                        :disabled="isRunning || store.triggering"
-                        @click="onTriggerFullBackup">
+                        :disabled="isRunning || store.triggering" @click="onTriggerFullBackup">
                         <i class="fas fa-play"></i>
                         Rodar backup agora
                     </button>
@@ -54,8 +49,7 @@
 
         <!-- Status atual -->
         <div class="px-6 pt-4">
-            <div
-                v-if="isRunning"
+            <div v-if="isRunning"
                 class="rounded-2xl border border-indigo-200 bg-indigo-50/60 dark:bg-indigo-900/20 dark:border-indigo-700 shadow-sm overflow-hidden">
                 <!-- Header -->
                 <div class="p-4 flex items-center gap-4">
@@ -70,8 +64,7 @@
                             Iniciado em {{ formatDate(store.runningBackup.started_at) }} • atualizando a cada 5s
                         </p>
                     </div>
-                    <button
-                        type="button"
+                    <button type="button"
                         class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-indigo-700 dark:text-indigo-200 hover:bg-white/70 dark:hover:bg-black/20 transition"
                         @click="showTimeline = !showTimeline">
                         {{ showTimeline ? 'Ocultar etapas' : 'Ver etapas' }}
@@ -80,14 +73,10 @@
                 </div>
 
                 <!-- Timeline -->
-                <div
-                    v-if="showTimeline"
+                <div v-if="showTimeline"
                     class="px-4 pb-4 pt-3 border-t border-indigo-200/60 dark:border-indigo-700/40 bg-white/40 dark:bg-black/10">
                     <ol class="space-y-3">
-                        <li
-                            v-for="stage in PIPELINE_STAGES"
-                            :key="stage.key"
-                            class="flex items-start gap-3"
+                        <li v-for="stage in PIPELINE_STAGES" :key="stage.key" class="flex items-start gap-3"
                             :class="stageRowClass(stage.key)">
                             <div :class="stageDotClass(stage.key)">
                                 <i :class="stageDotIcon(stage.key)"></i>
@@ -103,25 +92,21 @@
                                         {{ stageDetail(stage.key) }}
                                     </p>
                                     <!-- Barra de progresso (download tem; restore tem painel detalhado abaixo) -->
-                                    <div
-                                        v-if="stageState(stage.key) === 'current' && stageProgress(stage.key) !== null"
+                                    <div v-if="stageState(stage.key) === 'current' && stageProgress(stage.key) !== null"
                                         class="ml-6 mt-1.5 h-1.5 w-full max-w-xs rounded-full bg-indigo-100 dark:bg-indigo-900/40 overflow-hidden">
-                                        <div
-                                            class="h-full bg-indigo-500 dark:bg-indigo-400 transition-all duration-500"
+                                        <div class="h-full bg-indigo-500 dark:bg-indigo-400 transition-all duration-500"
                                             :style="{ width: stageProgress(stage.key) + '%' }">
                                         </div>
                                     </div>
 
                                     <!-- Mensagem antes do TOC ser parseado -->
-                                    <p
-                                        v-if="stage.key === 'restoring' && stageState('restoring') === 'current' && restoreTotal.total === 0"
+                                    <p v-if="stage.key === 'restoring' && stageState('restoring') === 'current' && restoreTotal.total === 0"
                                         class="text-xs mt-1 ml-6 opacity-60 italic">
                                         Calculando totais do dump…
                                     </p>
 
                                     <!-- Painel detalhado das 5 sub-fases do pg_restore -->
-                                    <div
-                                        v-if="stage.key === 'restoring' && stageState('restoring') === 'current' && restoreTotal.total > 0"
+                                    <div v-if="stage.key === 'restoring' && stageState('restoring') === 'current' && restoreTotal.total > 0"
                                         class="ml-6 mt-2 space-y-2">
                                         <!-- TOTAL geral consolidado -->
                                         <div>
@@ -131,40 +116,42 @@
                                                     {{ restoreTotal.donePct.toFixed(1) }}%
                                                     <span class="opacity-50">·</span>
                                                     {{ restoreTotal.done }}/{{ restoreTotal.total }}
-                                                    <span v-if="restoreTotal.etaMs" class="opacity-50">· ETA {{ formatDuration(restoreTotal.etaMs) }}</span>
+                                                    <span v-if="restoreTotal.etaMs" class="opacity-50">· ETA {{
+                                                        formatDuration(restoreTotal.etaMs) }}</span>
                                                 </span>
                                             </div>
-                                            <div class="h-2 w-full rounded-full bg-indigo-100 dark:bg-indigo-900/40 overflow-hidden">
-                                                <div
-                                                    class="h-full bg-indigo-500 dark:bg-indigo-400 transition-all duration-500"
+                                            <div
+                                                class="h-2 w-full rounded-full bg-indigo-100 dark:bg-indigo-900/40 overflow-hidden">
+                                                <div class="h-full bg-indigo-500 dark:bg-indigo-400 transition-all duration-500"
                                                     :style="{ width: restoreTotal.donePct + '%' }">
                                                 </div>
                                             </div>
                                         </div>
                                         <!-- 5 sub-fases -->
-                                        <div
-                                            v-for="phase in RESTORE_PHASES"
-                                            :key="phase.key"
+                                        <div v-for="phase in RESTORE_PHASES" :key="phase.key"
                                             class="grid grid-cols-[7rem_1fr_auto] items-center gap-2 text-xs">
                                             <span class="opacity-75 truncate">
                                                 <i :class="phase.icon" class="mr-1 opacity-60"></i>
                                                 {{ phase.label }}
                                             </span>
-                                            <div class="h-1.5 rounded-full bg-gray-100 dark:bg-gray-700 overflow-hidden">
-                                                <div
-                                                    class="h-full transition-all duration-500"
+                                            <div
+                                                class="h-1.5 rounded-full bg-gray-100 dark:bg-gray-700 overflow-hidden">
+                                                <div class="h-full transition-all duration-500"
                                                     :class="phaseBarColor(phase.key)"
                                                     :style="{ width: phasePct(phase.key) + '%' }">
                                                 </div>
                                             </div>
                                             <span class="font-mono whitespace-nowrap opacity-75">
                                                 {{ phasePct(phase.key).toFixed(0) }}%
-                                                <span class="opacity-50">({{ phaseDone(phase.key) }}/{{ phaseTotal(phase.key) }})</span>
-                                                <span v-if="phaseEta(phase.key)" class="opacity-50">· {{ formatDuration(phaseEta(phase.key)) }}</span>
+                                                <span class="opacity-50">({{ phaseDone(phase.key) }}/{{
+                                                    phaseTotal(phase.key) }})</span>
+                                                <span v-if="phaseEta(phase.key)" class="opacity-50">· {{
+                                                    formatDuration(phaseEta(phase.key)) }}</span>
                                             </span>
                                         </div>
                                         <!-- Atividade textual: tabela/item atual -->
-                                        <p v-if="restoreCurrentActivity" class="text-[11px] opacity-60 truncate font-mono">
+                                        <p v-if="restoreCurrentActivity"
+                                            class="text-[11px] opacity-60 truncate font-mono">
                                             {{ restoreCurrentActivity }}
                                         </p>
                                     </div>
@@ -174,7 +161,8 @@
                                         <span class="opacity-75">{{ stageStateLabel(stage.key) }}</span>
                                     </div>
                                     <div class="opacity-60 mt-0.5">
-                                        <span v-if="stageDurationMs(stage.key)">{{ formatDuration(stageDurationMs(stage.key)) }}</span>
+                                        <span v-if="stageDurationMs(stage.key)">{{
+                                            formatDuration(stageDurationMs(stage.key)) }}</span>
                                         <span v-else-if="stage.estimate">~ {{ stage.estimate }}</span>
                                     </div>
                                 </div>
@@ -185,7 +173,7 @@
             </div>
 
             <div v-else-if="store.latestSuccess"
-                 class="rounded-2xl border border-emerald-200 bg-emerald-50/60 dark:bg-emerald-900/20 dark:border-emerald-700 p-4 flex items-center gap-4 shadow-sm">
+                class="rounded-2xl border border-emerald-200 bg-emerald-50/60 dark:bg-emerald-900/20 dark:border-emerald-700 p-4 flex items-center gap-4 shadow-sm">
                 <div class="text-emerald-600 dark:text-emerald-300 text-2xl">
                     <i class="fas fa-circle-check"></i>
                 </div>
@@ -196,13 +184,14 @@
                     <p class="text-xs text-emerald-700 dark:text-emerald-200 mt-0.5">
                         Duração total: {{ formatDuration(store.latestSuccess.duration_ms) }}
                         • Tamanho: {{ formatBytes(store.latestSuccess.file_size_bytes) }}
-                        <span v-if="store.latestSuccess.import_duration_ms"> • Restore: {{ formatDuration(store.latestSuccess.import_duration_ms) }}</span>
+                        <span v-if="store.latestSuccess.import_duration_ms"> • Restore: {{
+                            formatDuration(store.latestSuccess.import_duration_ms) }}</span>
                     </p>
                 </div>
             </div>
 
             <div v-else
-                 class="rounded-2xl border border-gray-200 bg-gray-50 dark:bg-gray-800/50 dark:border-gray-700 p-4 text-sm text-gray-600 dark:text-gray-300">
+                class="rounded-2xl border border-gray-200 bg-gray-50 dark:bg-gray-800/50 dark:border-gray-700 p-4 text-sm text-gray-600 dark:text-gray-300">
                 Nenhum backup registrado ainda. Dispare manualmente ou aguarde o cron das 5h.
             </div>
         </div>
@@ -219,19 +208,37 @@
             </div>
 
             <div v-else
-                 class="overflow-auto rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900/70 shadow-sm">
+                class="overflow-auto rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900/70 shadow-sm">
                 <table class="min-w-full text-sm">
                     <thead class="bg-gray-50 dark:bg-gray-800/80">
                         <tr>
-                            <th class="px-4 py-2.5 text-left font-medium text-xs uppercase tracking-wide text-gray-500 dark:text-slate-400">#</th>
-                            <th class="px-4 py-2.5 text-left font-medium text-xs uppercase tracking-wide text-gray-500 dark:text-slate-400">Início</th>
-                            <th class="px-4 py-2.5 text-left font-medium text-xs uppercase tracking-wide text-gray-500 dark:text-slate-400">Disparo</th>
-                            <th class="px-4 py-2.5 text-left font-medium text-xs uppercase tracking-wide text-gray-500 dark:text-slate-400">Etapa</th>
-                            <th class="px-4 py-2.5 text-left font-medium text-xs uppercase tracking-wide text-gray-500 dark:text-slate-400">Status</th>
-                            <th class="px-4 py-2.5 text-left font-medium text-xs uppercase tracking-wide text-gray-500 dark:text-slate-400">Restore</th>
-                            <th class="px-4 py-2.5 text-right font-medium text-xs uppercase tracking-wide text-gray-500 dark:text-slate-400">Duração</th>
-                            <th class="px-4 py-2.5 text-right font-medium text-xs uppercase tracking-wide text-gray-500 dark:text-slate-400">Tamanho</th>
-                            <th class="px-4 py-2.5 text-left font-medium text-xs uppercase tracking-wide text-gray-500 dark:text-slate-400">Erro</th>
+                            <th
+                                class="px-4 py-2.5 text-left font-medium text-xs uppercase tracking-wide text-gray-500 dark:text-slate-400">
+                                #</th>
+                            <th
+                                class="px-4 py-2.5 text-left font-medium text-xs uppercase tracking-wide text-gray-500 dark:text-slate-400">
+                                Início</th>
+                            <th
+                                class="px-4 py-2.5 text-left font-medium text-xs uppercase tracking-wide text-gray-500 dark:text-slate-400">
+                                Disparo</th>
+                            <th
+                                class="px-4 py-2.5 text-left font-medium text-xs uppercase tracking-wide text-gray-500 dark:text-slate-400">
+                                Etapa</th>
+                            <th
+                                class="px-4 py-2.5 text-left font-medium text-xs uppercase tracking-wide text-gray-500 dark:text-slate-400">
+                                Status</th>
+                            <th
+                                class="px-4 py-2.5 text-left font-medium text-xs uppercase tracking-wide text-gray-500 dark:text-slate-400">
+                                Restore</th>
+                            <th
+                                class="px-4 py-2.5 text-right font-medium text-xs uppercase tracking-wide text-gray-500 dark:text-slate-400">
+                                Duração</th>
+                            <th
+                                class="px-4 py-2.5 text-right font-medium text-xs uppercase tracking-wide text-gray-500 dark:text-slate-400">
+                                Tamanho</th>
+                            <th
+                                class="px-4 py-2.5 text-left font-medium text-xs uppercase tracking-wide text-gray-500 dark:text-slate-400">
+                                Erro</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
@@ -273,7 +280,7 @@
                             </td>
                             <td class="px-4 py-3 align-top text-xs max-w-md">
                                 <span v-if="row.error_message || row.import_error_message"
-                                      class="text-red-600 dark:text-red-300 break-words">
+                                    class="text-red-600 dark:text-red-300 break-words">
                                     {{ row.error_message || row.import_error_message }}
                                 </span>
                                 <span v-else class="text-gray-400 dark:text-slate-500">—</span>
@@ -306,23 +313,23 @@ const runningStage = computed(() => store.runningBackup?.stage || 'starting')
 // de produção só é trocado por rename atômico após validação OK. Em caso de
 // falha, staging é descartado e produção fica intocada.
 const PIPELINE_STAGES = [
-    { key: 'fetching_md5',      label: 'Validação inicial (MD5)',   icon: 'fas fa-fingerprint',      estimate: '5s' },
-    { key: 'downloading',       label: 'Download do Sienge',        icon: 'fas fa-cloud-arrow-down', estimate: '5–20 min' },
-    { key: 'decompressing',     label: 'Descompactação local',      icon: 'fas fa-file-zipper',      estimate: '30s' },
-    { key: 'preparing_staging', label: 'Preparando banco staging',  icon: 'fas fa-flask',            estimate: '5s' },
-    { key: 'restoring',         label: 'pg_restore no staging',     icon: 'fas fa-database',         estimate: '15–30 min' },
-    { key: 'validating',        label: 'Validando staging',         icon: 'fas fa-check-double',     estimate: '5s' },
-    { key: 'swapping',          label: 'Swap atômico (rename)',     icon: 'fas fa-rotate',           estimate: '1s' },
-    { key: 'applying_grants',   label: 'Reaplicando permissões',    icon: 'fas fa-user-shield',      estimate: '2s' },
+    { key: 'fetching_md5', label: 'Validação inicial (MD5)', icon: 'fas fa-fingerprint', estimate: '5s' },
+    { key: 'downloading', label: 'Download do Sienge', icon: 'fas fa-cloud-arrow-down', estimate: '5–20 min' },
+    { key: 'decompressing', label: 'Descompactação local', icon: 'fas fa-file-zipper', estimate: '30s' },
+    { key: 'preparing_staging', label: 'Preparando banco staging', icon: 'fas fa-flask', estimate: '5s' },
+    { key: 'restoring', label: 'pg_restore no staging', icon: 'fas fa-database', estimate: '15–30 min' },
+    { key: 'validating', label: 'Validando staging', icon: 'fas fa-check-double', estimate: '5s' },
+    { key: 'swapping', label: 'Swap atômico (rename)', icon: 'fas fa-rotate', estimate: '1s' },
+    { key: 'applying_grants', label: 'Reaplicando permissões', icon: 'fas fa-user-shield', estimate: '2s' },
 ]
 
 // Sub-fases do pg_restore (corresponde a `log.phase_progress` no backend).
 const RESTORE_PHASES = [
-    { key: 'data',       label: 'Dados',       icon: 'fas fa-table',         barColor: 'bg-blue-500 dark:bg-blue-400' },
-    { key: 'index',      label: 'Índices',     icon: 'fas fa-key',           barColor: 'bg-violet-500 dark:bg-violet-400' },
+    { key: 'data', label: 'Dados', icon: 'fas fa-table', barColor: 'bg-blue-500 dark:bg-blue-400' },
+    { key: 'index', label: 'Índices', icon: 'fas fa-key', barColor: 'bg-violet-500 dark:bg-violet-400' },
     { key: 'constraint', label: 'Constraints', icon: 'fas fa-shield-halved', barColor: 'bg-amber-500 dark:bg-amber-400' },
-    { key: 'fk',         label: 'FKs',         icon: 'fas fa-link',          barColor: 'bg-rose-500 dark:bg-rose-400' },
-    { key: 'trigger',    label: 'Triggers',    icon: 'fas fa-bolt',          barColor: 'bg-emerald-500 dark:bg-emerald-400' },
+    { key: 'fk', label: 'FKs', icon: 'fas fa-link', barColor: 'bg-rose-500 dark:bg-rose-400' },
+    { key: 'trigger', label: 'Triggers', icon: 'fas fa-bolt', barColor: 'bg-emerald-500 dark:bg-emerald-400' },
 ]
 
 const showTimeline = ref(true)
@@ -334,7 +341,7 @@ let tickInterval = null
 const currentStageInfo = computed(() => {
     const cur = runningStage.value
     if (cur === 'starting') return { label: 'Inicializando…' }
-    if (cur === 'done')     return { label: 'Finalizando…' }
+    if (cur === 'done') return { label: 'Finalizando…' }
     return PIPELINE_STAGES.find(s => s.key === cur) ?? { label: cur }
 })
 
@@ -342,49 +349,49 @@ function stageState(key) {
     const running = store.runningBackup
     if (!running) return 'pending'
     const order = PIPELINE_STAGES.map(s => s.key)
-    const cur   = running.stage
+    const cur = running.stage
     const curIdx = cur === 'done' ? order.length : order.indexOf(cur)
     const thisIdx = order.indexOf(key)
     if (running.status === 'failed' && thisIdx === curIdx) return 'failed'
-    if (thisIdx < curIdx)  return 'done'
+    if (thisIdx < curIdx) return 'done'
     if (thisIdx === curIdx) return 'current'
     return 'pending'
 }
 
 function stageStateLabel(key) {
     return {
-        done:    'concluído',
+        done: 'concluído',
         current: 'em andamento',
         pending: 'aguardando',
-        failed:  'falhou',
+        failed: 'falhou',
     }[stageState(key)]
 }
 
 function stageRowClass(key) {
     return {
-        done:    'text-emerald-700 dark:text-emerald-300',
+        done: 'text-emerald-700 dark:text-emerald-300',
         current: 'text-indigo-700 dark:text-indigo-200 font-medium',
         pending: 'text-gray-500 dark:text-gray-400',
-        failed:  'text-red-700 dark:text-red-300 font-medium',
+        failed: 'text-red-700 dark:text-red-300 font-medium',
     }[stageState(key)]
 }
 
 function stageDotClass(key) {
     const base = 'w-7 h-7 rounded-full flex items-center justify-center text-xs flex-shrink-0'
     return {
-        done:    `${base} bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300`,
+        done: `${base} bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300`,
         current: `${base} bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-200 ring-2 ring-indigo-300 dark:ring-indigo-600`,
         pending: `${base} bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-500`,
-        failed:  `${base} bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300`,
+        failed: `${base} bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300`,
     }[stageState(key)]
 }
 
 function stageDotIcon(key) {
     return {
-        done:    'fas fa-check',
+        done: 'fas fa-check',
         current: 'fas fa-circle-notch fa-spin',
         pending: 'far fa-circle',
-        failed:  'fas fa-xmark',
+        failed: 'fas fa-xmark',
     }[stageState(key)]
 }
 
@@ -415,7 +422,7 @@ function stageProgress(key) {
 // { done, total, current, started_at, finished_at }.
 const restorePhases = computed(() => store.runningBackup?.phase_progress || null)
 
-function phaseDone(key)  { return Number(restorePhases.value?.[key]?.done  || 0) }
+function phaseDone(key) { return Number(restorePhases.value?.[key]?.done || 0) }
 function phaseTotal(key) { return Number(restorePhases.value?.[key]?.total || 0) }
 function phasePct(key) {
     const total = phaseTotal(key)
@@ -452,7 +459,7 @@ const restoreTotal = computed(() => {
     if (!restorePhases.value) return { done: 0, total: 0, donePct: 0, etaMs: null }
     let done = 0, total = 0, etaSum = 0
     for (const p of RESTORE_PHASES) {
-        done  += phaseDone(p.key)
+        done += phaseDone(p.key)
         total += phaseTotal(p.key)
         const eta = phaseEta(p.key)
         if (eta) etaSum += eta
@@ -538,13 +545,13 @@ async function refresh() {
 
 async function onTriggerFullBackup() {
     if (!confirm('Disparar pipeline completo?\n\n' +
-                 '• Download do Sienge (~5-20 min)\n' +
-                 '• pg_restore no banco staging (~15-30 min)\n' +
-                 '• Validação + swap atômico (~1s)\n' +
-                 '• Reaplicação de permissões\n\n' +
-                 'Banco de produção fica intocado até validação OK. ' +
-                 'Em caso de falha, dado antigo é preservado.\n\n' +
-                 'Duração total estimada: 20-50 min.')) return
+        '• Download do Sienge (~5-20 min)\n' +
+        '• pg_restore no banco staging (~15-30 min)\n' +
+        '• Validação + swap atômico (~1s)\n' +
+        '• Reaplicação de permissões\n\n' +
+        'Banco de produção fica intocado até validação OK. ' +
+        'Em caso de falha, dado antigo é preservado.\n\n' +
+        'Duração total estimada: 20-50 min.')) return
     try {
         await store.triggerFullBackup()
         toast.success('Backup iniciado. Acompanhe o status abaixo.')
@@ -610,19 +617,19 @@ function statusBadgeClass(status) {
     const base = 'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium'
     switch (status) {
         case 'success': return `${base} bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200`
-        case 'failed':  return `${base} bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-200`
+        case 'failed': return `${base} bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-200`
         case 'running': return `${base} bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-200`
         case 'skipped': return `${base} bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300`
-        default:        return `${base} bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300`
+        default: return `${base} bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300`
     }
 }
 function statusIcon(status) {
     switch (status) {
         case 'success': return 'fas fa-check'
-        case 'failed':  return 'fas fa-xmark'
+        case 'failed': return 'fas fa-xmark'
         case 'running': return 'fas fa-circle-notch fa-spin'
         case 'skipped': return 'fas fa-forward'
-        default:        return 'fas fa-circle'
+        default: return 'fas fa-circle'
     }
 }
 

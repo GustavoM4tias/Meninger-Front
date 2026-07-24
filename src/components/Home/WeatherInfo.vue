@@ -109,11 +109,60 @@ const subtitle = computed(() => {
 
 
 <template>
-    <div v-if="w" class="w-fit max-w-full text-end">
-        <p class="text-sm md:text-base font-medium text-ink truncate flex items-center gap-2 justify-end">
-            <span class="truncate">{{ headline }}</span>
-            <i :class="[weatherIcon, iconColor]" class="text-base md:text-lg shrink-0"></i>
-        </p>
-        <p class="text-[11px] md:text-xs text-ink-muted truncate font-mono">{{ subtitle }}</p>
+    <div v-if="w" class="group relative w-fit">
+        <!-- Chip compacto -->
+        <button type="button"
+            class="flex items-center gap-2 px-3 h-9 rounded-xl bg-surface-raised border border-line
+                   hover:border-accent/40 hover:bg-surface-sunken transition-colors cursor-default">
+            <i :class="[weatherIcon, iconColor]" class="text-base shrink-0"></i>
+            <span class="text-sm font-semibold text-ink whitespace-nowrap" v-if="temperature != null">{{ temperature }}°C</span>
+            <span class="text-ink-subtle">·</span>
+            <span class="text-sm text-ink-muted whitespace-nowrap truncate max-w-[9rem]">{{ city }}</span>
+        </button>
+
+        <!-- Modal ao hover -->
+        <div class="pointer-events-none absolute right-0 top-full mt-2 w-64 z-50
+                    opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0
+                    focus-within:opacity-100 transition-all duration-150 ease-out">
+            <div class="bg-surface-overlay border border-line rounded-xl shadow-overlay overflow-hidden text-left">
+                <!-- Cabeçalho -->
+                <div class="flex items-center gap-3 px-4 py-3 border-b border-line
+                            bg-gradient-to-br from-surface-raised to-surface-sunken">
+                    <i :class="[weatherIcon, iconColor]" class="text-2xl shrink-0"></i>
+                    <div class="min-w-0">
+                        <p class="text-lg font-semibold text-ink leading-none">
+                            <span v-if="temperature != null">{{ temperature }}°C</span>
+                            <span v-else>--</span>
+                        </p>
+                        <p class="text-xs text-ink-muted truncate mt-1">{{ city }}</p>
+                    </div>
+                </div>
+                <!-- Detalhes -->
+                <div class="px-4 py-3 space-y-2 text-sm">
+                    <div class="flex items-center justify-between">
+                        <span class="text-ink-muted flex items-center gap-1.5">
+                            <i class="fas fa-cloud text-[11px] text-ink-subtle"></i> Condição
+                        </span>
+                        <span class="text-ink font-medium">{{ weatherText || '—' }}</span>
+                    </div>
+                    <div v-if="wind != null" class="flex items-center justify-between">
+                        <span class="text-ink-muted flex items-center gap-1.5">
+                            <i class="fas fa-wind text-[11px] text-ink-subtle"></i> Vento
+                        </span>
+                        <span class="text-ink font-medium">{{ wind }} km/h</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-ink-muted flex items-center gap-1.5">
+                            <i class="fas fa-clock text-[11px] text-ink-subtle"></i> Período
+                        </span>
+                        <span class="text-ink font-medium">{{ isDay ? 'Dia' : 'Noite' }}</span>
+                    </div>
+                </div>
+                <!-- Frase corporativa -->
+                <div v-if="headline" class="px-4 py-2.5 border-t border-line bg-surface-sunken/50">
+                    <p class="text-xs text-ink-muted italic leading-snug">{{ headline }}</p>
+                </div>
+            </div>
+        </div>
     </div>
 </template>

@@ -107,12 +107,13 @@ const folderPath = computed(() => `bucket-menin/${folderName.value}/`);
     <PageContainer size="xl">
 
       <PageHeader
-        title="Envio ao Bucket GCS"
-        subtitle="Converta e envie as abas Engenharia e Area Construída Total para o Google Cloud Storage."
-        icon="fas fa-cloud-arrow-up">
+        title="Looqbox"
+        subtitle="Converta e envie as abas Engenharia e Area Construída Total para o bucket lido pelo Looqbox."
+        icon="fas fa-cloud-arrow-up"
+        icon-img="/icons/looqbox.png">
         <template #title>
-          <span>Envio ao Bucket GCS</span>
-          <Favorite :router="'/tools/bucket-upload'" :section="'Envio ao Bucket'" />
+          <span>Looqbox</span>
+          <Favorite :router="'/tools/bucket-upload'" :section="'Looqbox'" />
         </template>
       </PageHeader>
 
