@@ -72,7 +72,7 @@ async function add(type) {
     const block = { id: `b${Date.now().toString(36)}`, type, props: { ...DIRECT[type] } }
     const at = props.afterId ? blocks.findIndex((b) => b.id === props.afterId) : -1
     blocks.splice(at >= 0 ? at + 1 : blocks.length, 0, block)
-    await store.saveSpec({ ...store.spec, blocks })
+    await store.saveSpec({ ...store.spec, blocks }, `Bloco adicionado (${BLOCK_LABELS[type] || type})`)
     store.selectOnly(block.id)
     emit('close')
     return
