@@ -19,8 +19,8 @@ onBeforeUnmount(() => store.stopPolling());
 <template>
   <button
     type="button"
-    class="relative h-9 w-9 grid place-items-center rounded-lg text-ink-muted hover:text-ink hover:bg-surface-sunken focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ring/40 transition-colors"
-    :class="store.panelOpen ? 'text-accent bg-surface-sunken' : ''"
+    class="relative h-9 w-9 grid place-items-center rounded-lg border border-line text-ink-muted hover:text-ink hover:bg-surface-sunken hover:border-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ring/40 transition-colors"
+    :class="store.panelOpen ? 'text-accent bg-surface-sunken border-accent/40' : ''"
     aria-label="Mural de avisos"
     title="Mural de avisos"
     @click="store.togglePanel()">

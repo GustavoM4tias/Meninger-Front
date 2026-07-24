@@ -12,6 +12,7 @@ import { academyUrl } from '@/utils/appContext';
 import Search from '@/components/Navigation/components/Search.vue';
 import Notification from '@/components/Navigation/components/Notification.vue';
 import MuralBell from '@/components/Navigation/components/MuralBell.vue';
+import ThemeToggle from '@/components/Navigation/components/ThemeToggle.vue';
 import Profile from '@/components/Navigation/components/Profile.vue';
 
 import IconButton from '@/components/UI/IconButton.vue';
@@ -144,7 +145,9 @@ const toggleSubDropdown = (cat, subKey) => {
 };
 
 // ─── Sidebar collapse ────────────────────────────────
-const isCollapsed = ref(false);
+// Padrão: recolhida. Desktop abre como rail de ícones; mobile fica fechada
+// (overlay escondido). Só expande/abre ao clicar no botão de menu (barras).
+const isCollapsed = ref(true);
 // No mobile (<sm) o wrapper reserva 0px (sidebar abre como overlay).
 // No desktop (sm+) reserva a largura real pra empurrar o conteúdo.
 const sidebarWidthClass = computed(() =>
@@ -160,17 +163,16 @@ const collapseSidebar = () => {
 const expandSidebar = () => { isCollapsed.value = false; };
 const toggleSidebar = () => { isCollapsed.value ? expandSidebar() : collapseSidebar(); };
 
-const withExpand = (fn) => (...args) => {
-  if (isCollapsed.value) { expandSidebar(); requestAnimationFrame(() => fn(...args)); return; }
-  fn(...args);
-};
-const toggleDropdownSafe    = withExpand(toggleDropdown);
-const toggleSubDropdownSafe = withExpand(toggleSubDropdown);
+// Recolhido: cliques em categorias/itens NÃO expandem a sidebar — só o botão de
+// barras (toggleSidebar) faz isso. Recolhido, a navegação acontece pelo flyout.
+const toggleDropdownSafe    = toggleDropdown;
+const toggleSubDropdownSafe = toggleSubDropdown;
 
 // ─── Flyout do rail recolhido ────────────────────────
 // Ao passar o mouse numa categoria (recolhido), abre um painel flutuante ao
 // lado com a árvore dela. Timers evitam flicker ao mover o mouse entre o
 // ícone e o painel.
+const FAVORITES_KEY = 'favorites';
 const flyout = ref({ key: null, rect: null });
 let openTimer = null, closeTimer = null;
 
@@ -188,6 +190,21 @@ function closeFlyout() { clearTimeout(openTimer); clearTimeout(closeTimer); flyo
 const flyoutCat = computed(() => {
   const key = flyout.value.key;
   if (!key) return null;
+
+  // Favoritos não vem do registry — monta o painel a partir da lista salva,
+  // agrupada por categoria (mesmo agrupamento da sidebar expandida).
+  if (key === FAVORITES_KEY) {
+    return {
+      label: 'Favoritos',
+      icon: 'fas fa-star',
+      iconColor: '',
+      subEntries: favoriteEntries.value,
+      flatItems: [],
+      emptyText: 'Nenhum favorito adicionado',
+      rect: flyout.value.rect,
+    };
+  }
+
   const cat = getCat(key);
   if (!cat) return null;
   return {
@@ -209,7 +226,10 @@ const routeIndex = computed(() => {
   const idx = {};
   const add = (catKey, subcatName, item) => {
     const k = `${item.route}@@${item.section ?? ''}`;
-    idx[k] = { category: getCat(catKey)?.label || catKey, subcategory: subcatName || null };
+    // `item` guarda o nome/ícone do registry — usado pelo flyout de favoritos
+    // para exibir a entrada igualzinha à do menu (o favorito salvo só tem
+    // router + section).
+    idx[k] = { category: getCat(catKey)?.label || catKey, subcategory: subcatName || null, item };
   };
   for (const catKey of categoryKeys.value) {
     for (const it of categoryFlatItems(catKey)) add(catKey, null, it);
@@ -218,6 +238,29 @@ const routeIndex = computed(() => {
     }
   }
   return idx;
+});
+
+// Favoritos no formato do flyout: [{ key, name, items }] agrupados por categoria.
+// O flyout tem um só nível de cabeçalho, então a subcategoria não entra aqui
+// (na sidebar expandida ela continua aparecendo).
+const favoriteEntries = computed(() => {
+  const list = Array.isArray(favoritesStore.favorites) ? favoritesStore.favorites : [];
+  const order = [];
+  const buckets = {};
+  for (const fav of list) {
+    const meta = routeIndex.value[`${fav.router}@@${fav.section ?? ''}`] || {};
+    const category = meta.category || 'Outros';
+    if (!buckets[category]) { buckets[category] = []; order.push(category); }
+    buckets[category].push({
+      route: fav.router,
+      section: fav.section,
+      name: meta.item?.name || fav.section || fav.router,
+      icon: meta.item?.icon || 'far fa-file',
+      iconImg: meta.item?.iconImg,
+      iconColor: meta.item?.iconColor,
+    });
+  }
+  return order.map(category => ({ key: category, name: category, items: buckets[category] }));
 });
 
 // ─── Favoritos ───────────────────────────────────────
@@ -250,19 +293,20 @@ const closeMobile = () => { isMobileOpen.value = false; };
     <!-- ─── Top Bar ─── -->
     <nav class="fixed top-0 z-50 w-full bg-surface/80 backdrop-blur-xl border-b border-line">
       <div class="px-3 py-2 lg:px-5 lg:pl-3 flex items-center justify-between gap-3">
-        <div class="flex items-center gap-2">
-          <IconButton icon="fas fa-bars" size="md" label="Abrir menu" class="sm:hidden"
+        <div class="flex items-center gap-3">
+          <IconButton @click.prevent="toggleSidebar" icon="fas fa-bars" size="md" label="Abrir menu" class=""
             @click="isMobileOpen = !isMobileOpen" />
 
-          <a href="#" @click.prevent="toggleSidebar"
+          <a href="#" 
              class="flex items-center select-none cursor-pointer">
             <img src="/Mlogotext.png" alt="Menin Logo"
-                 class="h-9 sm:h-10 -my-2 dark:invert-0 invert" />
+                 class="h-7 sm:h-8 hover:cursor-auto -my-2 dark:invert-0 invert" />
           </a>
         </div>
 
-        <div class="flex items-center gap-1">
-          <div class="hidden md:block"><Search /></div>
+        <div class="flex items-center gap-1.5">
+          <div class="hidden md:block mr-1"><Search /></div>
+          <ThemeToggle />
           <MuralBell />
           <Notification />
           <Profile />
@@ -298,7 +342,7 @@ const closeMobile = () => { isMobileOpen.value = false; };
         <ul class="flex-1 min-h-0 overflow-y-auto nav-scroll space-y-0.5 mt-1 pb-2">
           <li>
             <SidebarItem to="/" icon="fas fa-house" label="Dashboard"
-              :collapsed="isCollapsed" @click="expandSidebar(); closeMobile();" />
+              :collapsed="isCollapsed" @click="closeMobile()" />
           </li>
 
           <li>
@@ -307,7 +351,9 @@ const closeMobile = () => { isMobileOpen.value = false; };
               :collapsed="isCollapsed"
               :route-index="routeIndex"
               @toggle="toggleDropdownSafe('favorites')"
-              @expand="expandSidebar(); closeMobile();"
+              @expand="closeMobile()"
+              @hover="scheduleOpenFlyout"
+              @leave="scheduleCloseFlyout"
             />
           </li>
 
@@ -333,7 +379,7 @@ const closeMobile = () => { isMobileOpen.value = false; };
                 :is-favorited="isFavorited"
                 @toggle="toggleDropdownSafe(catKey)"
                 @toggleSub="(subKey) => toggleSubDropdownSafe(catKey, subKey)"
-                @expand="expandSidebar(); closeMobile();"
+                @expand="closeMobile()"
                 @toggleFavorite="toggleFavorite"
                 @hover="scheduleOpenFlyout"
                 @leave="scheduleCloseFlyout"
@@ -349,7 +395,7 @@ const closeMobile = () => { isMobileOpen.value = false; };
 
           <li v-if="authStore?.user?.role === 'admin'">
             <SidebarItem to="/support" icon="fas fa-headset" label="Suporte"
-              :collapsed="isCollapsed" @click="expandSidebar(); closeMobile();" />
+              :collapsed="isCollapsed" @click="closeMobile()" />
           </li>
           <!-- Documentação ocultada temporariamente — não utilizada por enquanto.
                A rota /docs continua funcional; basta reativar este item quando voltar a ser usada. -->
@@ -385,6 +431,7 @@ const closeMobile = () => { isMobileOpen.value = false; };
       :icon-color="flyoutCat.iconColor"
       :sub-entries="flyoutCat.subEntries"
       :flat-items="flyoutCat.flatItems"
+      :empty-text="flyoutCat.emptyText"
       :rect="flyoutCat.rect"
       :is-favorited="isFavorited"
       @keep="keepFlyout"
