@@ -608,7 +608,8 @@ onMounted(async () => {
     const qMes = String(route.query.mes || '');
     if (/^\d{4}-\d{2}$/.test(qMes)) refMonth.value = qMes;
     const qIds = String(route.query.empresas || '')
-        .split(',').map(Number).filter(Number.isFinite);
+        .split(',').map((s) => s.trim()).filter(Boolean)
+        .map(Number).filter(Number.isFinite);
 
     store.setMonth(refMonth.value);
     if (refMonth.value) store.setYear(Number(String(refMonth.value).slice(0, 4)));
