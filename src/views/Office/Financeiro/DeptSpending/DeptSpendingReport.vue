@@ -284,7 +284,7 @@ const monthLabelShort = computed(() => (r.value ? `${shortMonth(r.value.monthInd
 const bucketCards = computed(() => {
     if (!r.value) return [];
     return [
-        { key: 'mkt', title: 'Investimento MKT', value: mkt.value.planoAno, pct: mkt.value.pctConsumido, teto: mkt.value.teto, status: mkt.value.status },
+        { key: 'mkt', title: 'Investimento MKT', value: mkt.value.consumido, pct: mkt.value.pctConsumido, teto: mkt.value.teto, status: mkt.value.status },
         { key: 'loja', title: 'Investimento Loja', value: loja.value.consumido, pct: loja.value.pctConsumido, teto: loja.value.teto, status: loja.value.status },
         { key: 'total', title: 'Investimento Total', value: total.value.consumido, pct: total.value.pctConsumido, teto: total.value.teto, status: total.value.status },
     ];
