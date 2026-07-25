@@ -258,6 +258,9 @@ onMounted(() => {
         isDark.value = document.documentElement.classList.contains('dark');
     });
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    // deep link: /financeiro/gastos-departamento/<id>?mes=YYYY-MM
+    const qMes = String(route.query.mes || '');
+    if (/^\d{4}-\d{2}$/.test(qMes)) refMonth.value = qMes;
     load();
 });
 onBeforeUnmount(() => observer?.disconnect());
@@ -390,6 +393,7 @@ const helpTips = [
 /* ---------- ações ---------- */
 async function load() {
     store.setMonth(refMonth.value);
+    router.replace({ query: { ...route.query, mes: refMonth.value } });
     await store.fetchReport(companyId.value, refMonth.value);
 }
 function goBack() { router.push('/financeiro/gastos-departamento'); }

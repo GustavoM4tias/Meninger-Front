@@ -106,7 +106,9 @@ export const useDeptSpendingStore = defineStore('marketingDeptSpending', () => {
     function setStatusFilter(v) { statusFilter.value = v || 'all'; }
     function setMonth(ym) { selectedMonth.value = ym || ''; }
 
-    async function fetchList() {
+    /* companyIds (opcional): filtro server-side — o backend calcula SÓ essas empresas
+       (deep link compartilhável e resposta rápida). */
+    async function fetchList(companyIds = null) {
         error.value = null;
         const year = Number(selectedYear.value);
         if (!year || year < 2000) {
@@ -118,6 +120,8 @@ export const useDeptSpendingStore = defineStore('marketingDeptSpending', () => {
             const params = new URLSearchParams();
             params.set('year', String(year));
             if (selectedMonth.value) params.set('month', selectedMonth.value);
+            const ids = (companyIds || []).map(Number).filter(Number.isFinite);
+            if (ids.length) params.set('company_ids', ids.join(','));
 
             const url = `${API_URL}/dept-spending/enterprises?${params.toString()}`;
             const res = await requestWithAuth(url);
