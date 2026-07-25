@@ -81,10 +81,13 @@
                         class="p-4 rounded-xl border border-line bg-surface-raised shadow-soft surface-gradient">
                         <div class="flex items-center justify-between gap-2">
                             <p class="text-[10px] uppercase tracking-wider font-mono text-ink-subtle">{{ b.title }}</p>
-                            <Badge :variant="statusVariant(b.status)" size="sm">{{ statusLabel(b.status) }}</Badge>
+                            <Badge :variant="statusVariant(b.status)" size="sm">{{ b.statusText || statusLabel(b.status) }}</Badge>
                         </div>
                         <p class="text-2xl font-semibold tabular-nums tracking-tight mt-1" :class="b.valueClass || 'text-ink'">{{ fmtBRL(b.value) }}</p>
                         <p class="text-[11px] text-ink-muted mt-1">{{ fmtPct(b.pct) }} da viabilidade · teto {{ fmtBRL(b.teto) }}</p>
+                        <p v-if="b.note" class="text-[10px] text-orange-600 dark:text-orange-400 mt-0.5 truncate" :title="b.note">
+                            <i class="fas fa-arrow-right-arrow-left mr-0.5"></i>{{ b.note }}
+                        </p>
                     </div>
                 </div>
 
@@ -102,7 +105,12 @@
                             <div class="p-3 rounded-lg border border-line bg-surface-sunken/40">
                                 <p class="text-[10px] uppercase tracking-wider font-mono text-ink-subtle">Realizado (Jan-{{ shortMonth(r.monthIndex) }})</p>
                                 <p class="text-lg font-bold tabular-nums text-ink">{{ fmtBRL(mkt.realizadoAno) }}</p>
-                                <p class="text-[11px] text-ink-muted">{{ fmtPct(distribution.pctRealizado) }} do plano anual de MKT</p>
+                                <p class="text-[11px] text-ink-muted">
+                                    {{ fmtPct(distribution.pctRealizado) }} do plano anual de MKT
+                                    <span v-if="Number(mkt.lojaExcedenteAno || 0) > 0" class="text-orange-600 dark:text-orange-400">
+                                        · inclui {{ fmtBRL(mkt.lojaExcedenteAno) }} da loja
+                                    </span>
+                                </p>
                             </div>
                             <div class="p-3 rounded-lg border border-line bg-surface-sunken/40">
                                 <p class="text-[10px] uppercase tracking-wider font-mono text-ink-subtle">Projetado ({{ shortMonth(r.monthIndex + 1) }}-Dez)</p>
@@ -134,14 +142,29 @@
                                     <span class="font-mono tabular-nums text-ink-muted text-xs">{{ fmtBRL(b.consumido) }} / {{ fmtBRL(b.teto) }}</span>
                                 </div>
                                 <div class="relative h-2.5 rounded-full bg-surface-sunken overflow-hidden">
-                                    <div class="h-full rounded-full transition-all" :class="barClass(b.status)"
-                                        :style="{ width: Math.min(100, b.pctConsumido * 100) + '%' }"></div>
+                                    <div class="absolute inset-y-0 left-0 flex w-full">
+                                        <div class="h-full transition-all" :class="barClass(b.status)"
+                                            :style="{ width: segMainPct(b) + '%' }"></div>
+                                        <!-- excedente da loja dentro do MKT (separado, laranja) -->
+                                        <div v-if="segExcedPct(b) > 0" class="h-full bg-orange-500 transition-all"
+                                            :style="{ width: segExcedPct(b) + '%' }"
+                                            v-tippy="`Excedente da loja: ${fmtBRL(b.lojaExcedenteVida)}`"></div>
+                                    </div>
                                     <!-- marcador do ritmo linear -->
                                     <div class="absolute top-0 bottom-0 w-0.5 bg-ink/40" :style="{ left: Math.min(100, ritmo * 100) + '%' }"
                                         v-tippy="`Ritmo linear esperado: ${fmtPct(ritmo)}`"></div>
                                 </div>
                                 <div class="flex items-center justify-between mt-1 text-[11px] text-ink-subtle flex-wrap gap-1">
-                                    <span>{{ fmtPct(b.pctConsumido) }} consumido</span>
+                                    <span>
+                                        {{ fmtPct(b.pctConsumido) }} consumido
+                                        <template v-if="Number(b.lojaExcedenteVida || 0) > 0">
+                                            · <span class="text-ink-muted">{{ fmtBRL(b.realizadoProprioVida) }} próprio</span>
+                                            + <span class="text-orange-600 dark:text-orange-400">{{ fmtBRL(b.lojaExcedenteVida) }} da loja</span>
+                                        </template>
+                                        <template v-else-if="Number(b.excedenteVida || 0) > 0">
+                                            · <span class="text-orange-600 dark:text-orange-400">pagou {{ fmtBRL(b.pagoTotalVida) }}, excedente {{ fmtBRL(b.excedenteVida) }} → MKT</span>
+                                        </template>
+                                    </span>
                                     <span :class="b.saldo < 0 ? 'text-red-600 dark:text-red-400 font-semibold' : ''">saldo {{ fmtBRL(b.saldo) }}</span>
                                 </div>
                             </div>
@@ -283,16 +306,44 @@ const monthLabelShort = computed(() => (r.value ? `${shortMonth(r.value.monthInd
 /* ---------- KPI cards ---------- */
 const bucketCards = computed(() => {
     if (!r.value) return [];
+    const exced = Number(mkt.value.lojaExcedenteVida || 0);
     return [
-        { key: 'mkt', title: 'Investimento MKT', value: mkt.value.consumido, pct: mkt.value.pctConsumido, teto: mkt.value.teto, status: mkt.value.status },
-        { key: 'loja', title: 'Investimento Loja', value: loja.value.consumido, pct: loja.value.pctConsumido, teto: loja.value.teto, status: loja.value.status },
-        { key: 'total', title: 'Investimento Total', value: total.value.consumido, pct: total.value.pctConsumido, teto: total.value.teto, status: total.value.status },
+        {
+            key: 'mkt', title: 'Investimento MKT', value: mkt.value.consumido,
+            pct: mkt.value.pctConsumido, teto: mkt.value.teto, status: mkt.value.status,
+            note: exced > 0 ? `inclui ${fmtBRL(exced)} de excedente da loja` : '',
+        },
+        {
+            key: 'loja', title: 'Investimento Loja', value: loja.value.consumido,
+            pct: loja.value.pctConsumido, teto: loja.value.teto, status: loja.value.status,
+            statusText: exced > 0 ? 'Teto atingido' : '',
+            note: exced > 0 ? `pagou ${fmtBRL(loja.value.pagoTotalVida)} · excedente foi p/ o MKT` : '',
+        },
+        {
+            key: 'total', title: 'Investimento Total', value: total.value.consumido,
+            pct: total.value.pctConsumido, teto: total.value.teto, status: total.value.status,
+            note: '',
+        },
     ];
 });
 const governanceRows = computed(() => {
     if (!r.value) return [];
     return [loja.value, mkt.value, total.value].filter((b) => b && (b.teto > 0 || b.consumido > 0));
 });
+
+/* Barra da governança: parcela própria × excedente da loja (só no bucket MKT). */
+function segExcedPct(b) {
+    const teto = Number(b.teto || 0);
+    const exced = Number(b.lojaExcedenteVida || 0);
+    if (!teto || !exced) return 0;
+    return Math.min(100, (exced / teto) * 100);
+}
+function segMainPct(b) {
+    const teto = Number(b.teto || 0);
+    if (!teto) return 0;
+    const proprio = Number(b.lojaExcedenteVida || 0) > 0 ? Number(b.realizadoProprioVida || 0) : Number(b.consumido || 0);
+    return Math.max(0, Math.min(100 - segExcedPct(b), (proprio / teto) * 100));
+}
 
 function statusVariant(s) { return s === 'acima' ? 'danger' : s === 'atencao' ? 'warning' : 'success'; }
 function statusLabel(s) { return s === 'acima' ? 'Estourado' : s === 'atencao' ? 'Atenção' : 'Dentro'; }
@@ -338,6 +389,7 @@ const mktChartOption = computed(() => {
         yAxis: { type: 'value', axisLabel: { color: c.txt, fontSize: 10, formatter: (v) => `${Math.round(v / 1000)}k` }, splitLine: { lineStyle: { color: c.grid } } },
         series: [
             { name: 'Realizado', type: 'bar', stack: 'mkt', barMaxWidth: 22, data: months.map((m) => Math.round(m.mktRealizado)), itemStyle: { color: '#10b981', borderRadius: [3, 3, 0, 0] } },
+            { name: 'Excedente da loja', type: 'bar', stack: 'mkt', barMaxWidth: 22, data: months.map((m) => Math.round(m.mktLojaExcedente || 0)), itemStyle: { color: '#f97316', borderRadius: [3, 3, 0, 0] } },
             { name: 'Projetado', type: 'bar', stack: 'mkt', barMaxWidth: 22, data: months.map((m) => Math.round(m.mktProjetado)), itemStyle: { color: '#38bdf8', borderRadius: [3, 3, 0, 0], opacity: 0.75 } },
         ],
     };
@@ -355,6 +407,7 @@ const cashflowChartOption = computed(() => {
         yAxis: { type: 'value', axisLabel: { color: c.txt, fontSize: 10, formatter: (v) => `${Math.round(v / 1000)}k` }, splitLine: { lineStyle: { color: c.grid } } },
         series: [
             { name: 'Marketing', type: 'bar', stack: 'fluxo', barMaxWidth: 22, data: months.map((m) => Math.round(m.mktRealizado + m.mktProjetado)), itemStyle: { color: '#10b981' } },
+            { name: 'Loja → MKT (excedente)', type: 'bar', stack: 'fluxo', barMaxWidth: 22, data: months.map((m) => Math.round(m.mktLojaExcedente || 0)), itemStyle: { color: '#f97316' } },
             { name: 'Loja', type: 'bar', stack: 'fluxo', barMaxWidth: 22, data: months.map((m) => Math.round(m.lojaRealizado + m.lojaProjetado)), itemStyle: { color: '#f59e0b', borderRadius: [3, 3, 0, 0] } },
         ],
     };
