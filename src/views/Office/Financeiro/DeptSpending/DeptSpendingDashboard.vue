@@ -172,9 +172,14 @@
                                     </div>
                                 </td>
 
-                                <!-- GASTO ACUMULADO (para trás) -->
+                                <!-- GASTO ACUMULADO (pago no exercício) -->
                                 <td class="px-5 py-3 text-right whitespace-nowrap">
                                     <div class="text-sm font-bold text-ink font-mono tabular-nums">{{ fmtBRL(item.header?.spentAccumulated) }}</div>
+                                    <div v-if="Number(item.header?.lojaExcedenteAno || 0) > 0"
+                                        class="text-[10px] text-orange-600 dark:text-orange-400"
+                                        v-tippy="'Excedente da loja acima do teto conta como gasto de MKT'">
+                                        inclui {{ fmtBRL(item.header.lojaExcedenteAno) }} da loja
+                                    </div>
                                     <div class="mt-1 w-28 ml-auto">
                                         <div class="h-1.5 rounded-full bg-surface-sunken overflow-hidden">
                                             <div class="h-full rounded-full" :class="pctBarClass(item.header?.pctInvested)"
@@ -420,7 +425,7 @@ const detailItem = ref(null);
 const helpSteps = [
     { title: 'Mês de referência', text: 'Escolha o mês e clique em Filtrar. É o divisor entre passado e futuro.' },
     { title: 'Para trás (acumulado)', text: 'O "Gasto acumulado" soma tudo que o financeiro registrou até o mês, mesmo antes das vendas começarem.' },
-    { title: 'Orçamento e saldo', text: 'Orçamento = VGV projetado × % do empreendimento. Saldo = orçamento − acumulado.' },
+    { title: 'Orçamento e saldo', text: 'Orçamento = projeção do EXERCÍCIO × % do empreendimento (mesma regra do relatório). Gasto = pago de fato dentro do ano; o que a loja estoura do pool entra como gasto de MKT. Saldo = orçamento − pago.' },
     { title: 'Pela frente (a comercializar)', text: 'Unidades que faltam vender: da projeção futura, ou, se não houver, do estoque disponível no CV.' },
     { title: 'Recomendado/unid', text: 'Saldo dividido pelas unidades a comercializar - quanto dá para investir por unidade daqui pra frente.' },
 ];
@@ -519,7 +524,7 @@ const cards = computed(() => {
     const pctInvested = budget > 0 ? spent / budget : 0;
     const recPerUnit = futureUnits > 0 ? saldo / futureUnits : 0;
     return [
-        { key: 'budget', label: 'Orçamento', value: fmtBRL(budget), sub: 'VGV projetado × %', icon: 'fas fa-wallet', accent: 'text-sky-500 bg-sky-500/10' },
+        { key: 'budget', label: 'Orçamento do exercício', value: fmtBRL(budget), sub: 'projeção do ano × %', icon: 'fas fa-wallet', accent: 'text-sky-500 bg-sky-500/10' },
         { key: 'spent', label: `Acumulado até ${monthLabel.value}`, value: fmtBRL(spent), sub: `${fmtPct(pctInvested)} do orçamento`, icon: 'fas fa-clock-rotate-left', accent: 'text-amber-500 bg-amber-500/10' },
         { key: 'saldo', label: 'Saldo a investir', value: fmtBRL(saldo), sub: 'orçamento − acumulado', icon: 'fas fa-piggy-bank', accent: 'text-emerald-500 bg-emerald-500/10', valueClass: saldo < 0 ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400' },
         { key: 'future', label: 'A comercializar', value: `${futureUnits} un`, sub: 'unidades pela frente', icon: 'fas fa-key', accent: 'text-violet-500 bg-violet-500/10' },
