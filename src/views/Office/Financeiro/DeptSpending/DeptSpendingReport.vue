@@ -84,10 +84,11 @@
                             <Badge :variant="statusVariant(b.status)" size="sm">{{ b.statusText || statusLabel(b.status) }}</Badge>
                         </div>
                         <p class="text-2xl font-semibold tabular-nums tracking-tight mt-1" :class="b.valueClass || 'text-ink'">{{ fmtBRL(b.value) }}</p>
-                        <p class="text-[11px] text-ink-muted mt-1">{{ fmtPct(b.pct) }} da viabilidade · teto {{ fmtBRL(b.teto) }}</p>
+                        <p class="text-[11px] text-ink-muted mt-1">{{ fmtPct(b.pct) }} consumido · {{ b.tetoLabel }} {{ fmtBRL(b.teto) }}</p>
                         <p v-if="b.note" class="text-[10px] text-orange-600 dark:text-orange-400 mt-0.5 truncate" :title="b.note">
                             <i class="fas fa-arrow-right-arrow-left mr-0.5"></i>{{ b.note }}
                         </p>
+                        <p v-if="b.note2" class="text-[10px] text-ink-subtle mt-0.5 truncate" :title="b.note2">{{ b.note2 }}</p>
                     </div>
                 </div>
 
@@ -148,7 +149,7 @@
                                         <!-- excedente da loja dentro do MKT (separado, laranja) -->
                                         <div v-if="segExcedPct(b) > 0" class="h-full bg-orange-500 transition-all"
                                             :style="{ width: segExcedPct(b) + '%' }"
-                                            v-tippy="`Excedente da loja: ${fmtBRL(b.lojaExcedenteVida)}`"></div>
+                                            v-tippy="`Excedente da loja: ${fmtBRL(b.lojaExcedenteAno)}`"></div>
                                     </div>
                                     <!-- marcador do ritmo linear -->
                                     <div class="absolute top-0 bottom-0 w-0.5 bg-ink/40" :style="{ left: Math.min(100, ritmo * 100) + '%' }"
@@ -157,15 +158,22 @@
                                 <div class="flex items-center justify-between mt-1 text-[11px] text-ink-subtle flex-wrap gap-1">
                                     <span>
                                         {{ fmtPct(b.pctConsumido) }} consumido
-                                        <template v-if="Number(b.lojaExcedenteVida || 0) > 0">
-                                            · <span class="text-ink-muted">{{ fmtBRL(b.realizadoProprioVida) }} próprio</span>
-                                            + <span class="text-orange-600 dark:text-orange-400">{{ fmtBRL(b.lojaExcedenteVida) }} da loja</span>
+                                        <template v-if="Number(b.lojaExcedenteAno || 0) > 0">
+                                            · <span class="text-ink-muted">{{ fmtBRL(b.realizadoProprioAno) }} próprio</span>
+                                            + <span class="text-orange-600 dark:text-orange-400">{{ fmtBRL(b.lojaExcedenteAno) }} da loja</span>
                                         </template>
                                         <template v-else-if="Number(b.excedenteVida || 0) > 0">
                                             · <span class="text-orange-600 dark:text-orange-400">pagou {{ fmtBRL(b.pagoTotalVida) }}, excedente {{ fmtBRL(b.excedenteVida) }} → MKT</span>
                                         </template>
                                     </span>
                                     <span :class="b.saldo < 0 ? 'text-red-600 dark:text-red-400 font-semibold' : ''">saldo {{ fmtBRL(b.saldo) }}</span>
+                                </div>
+                                <!-- plano do ano vs teto do exercício (só MKT) -->
+                                <div v-if="b.key === 'marketing'" class="mt-0.5 text-[11px] text-ink-subtle">
+                                    plano do ano (pago + projetado): <strong class="font-mono tabular-nums"
+                                        :class="Number(b.planoAno) > Number(b.teto) ? 'text-red-600 dark:text-red-400' : 'text-ink-muted'">
+                                        {{ fmtBRL(b.planoAno) }} ({{ b.teto > 0 ? fmtPct(b.planoAno / b.teto) : '—' }} do teto)
+                                    </strong>
                                 </div>
                             </div>
                         </div>
@@ -306,23 +314,30 @@ const monthLabelShort = computed(() => (r.value ? `${shortMonth(r.value.monthInd
 /* ---------- KPI cards ---------- */
 const bucketCards = computed(() => {
     if (!r.value) return [];
-    const exced = Number(mkt.value.lojaExcedenteVida || 0);
+    const exced = Number(mkt.value.lojaExcedenteAno || 0);
+    const excedVida = Number(loja.value.excedenteVida || 0);
     return [
         {
             key: 'mkt', title: 'Investimento MKT', value: mkt.value.consumido,
             pct: mkt.value.pctConsumido, teto: mkt.value.teto, status: mkt.value.status,
+            tetoLabel: 'teto do exercício',
             note: exced > 0 ? `inclui ${fmtBRL(exced)} de excedente da loja` : '',
+            note2: `viabilidade vida útil ${fmtBRL(mkt.value.tetoVidaUtil)}`,
         },
         {
             key: 'loja', title: 'Investimento Loja', value: loja.value.consumido,
             pct: loja.value.pctConsumido, teto: loja.value.teto, status: loja.value.status,
-            statusText: exced > 0 ? 'Teto atingido' : '',
-            note: exced > 0 ? `pagou ${fmtBRL(loja.value.pagoTotalVida)} · excedente foi p/ o MKT` : '',
+            tetoLabel: 'pool vida útil',
+            statusText: excedVida > 0 ? 'Teto atingido' : '',
+            note: excedVida > 0 ? `pagou ${fmtBRL(loja.value.pagoTotalVida)} · excedente foi p/ o MKT` : '',
+            note2: '',
         },
         {
             key: 'total', title: 'Investimento Total', value: total.value.consumido,
             pct: total.value.pctConsumido, teto: total.value.teto, status: total.value.status,
+            tetoLabel: 'teto combinado',
             note: '',
+            note2: '',
         },
     ];
 });
@@ -334,14 +349,14 @@ const governanceRows = computed(() => {
 /* Barra da governança: parcela própria × excedente da loja (só no bucket MKT). */
 function segExcedPct(b) {
     const teto = Number(b.teto || 0);
-    const exced = Number(b.lojaExcedenteVida || 0);
+    const exced = Number(b.lojaExcedenteAno || 0);
     if (!teto || !exced) return 0;
     return Math.min(100, (exced / teto) * 100);
 }
 function segMainPct(b) {
     const teto = Number(b.teto || 0);
     if (!teto) return 0;
-    const proprio = Number(b.lojaExcedenteVida || 0) > 0 ? Number(b.realizadoProprioVida || 0) : Number(b.consumido || 0);
+    const proprio = Number(b.lojaExcedenteAno || 0) > 0 ? Number(b.realizadoProprioAno || 0) : Number(b.consumido || 0);
     return Math.max(0, Math.min(100 - segExcedPct(b), (proprio / teto) * 100));
 }
 
