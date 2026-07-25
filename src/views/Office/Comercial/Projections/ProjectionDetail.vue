@@ -52,14 +52,6 @@ const monthKeys = computed(() => {
 });
 const rangeValid = computed(() => monthKeys.value.length > 0);
 
-function setYear(y) { startMonth.value = `${y}-01`; endMonth.value = `${y}-12`; }
-function setNext12() {
-  const d = new Date();
-  startMonth.value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-  const e = new Date(d.getFullYear(), d.getMonth() + 11, 1);
-  endMonth.value = `${e.getFullYear()}-${String(e.getMonth() + 1).padStart(2, '0')}`;
-}
-
 /* ── Projeção / permissões ─────────────────────────────────────────────────── */
 const projection = computed(() => store.detail?.projection || null);
 const locked = computed(() => !!projection.value?.is_locked);
@@ -239,6 +231,33 @@ const visibleRows = computed(() => {
 });
 const activeFilters = computed(() => filterEnterprises.value.length + filterCities.value.length + filterCategories.value.length + (hideZero.value ? 1 : 0));
 function clearFilters() { filterEnterprises.value = []; filterCities.value = []; filterCategories.value = []; hideZero.value = false; }
+
+// Painel de filtros retrátil (aberto no desktop, recolhido no mobile) — padrão dos outros relatórios.
+const filtersOpen = ref(typeof window !== 'undefined' && window.innerWidth >= 1024);
+function toggleFilters() { filtersOpen.value = !filtersOpen.value; }
+
+/* ── Ordenação por header ──────────────────────────────────────────────────── */
+// Chave: 'name' | 'total' | um YYYY-MM. Padrão = nome asc (mesma ordem natural da grade).
+const sortKey = ref('name');
+const sortDir = ref('asc');
+function setSort(key) {
+  if (sortKey.value === key) { sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc'; }
+  else { sortKey.value = key; sortDir.value = key === 'name' ? 'asc' : 'desc'; }
+}
+const sortedRows = computed(() => {
+  const arr = [...visibleRows.value];
+  const dir = sortDir.value === 'asc' ? 1 : -1;
+  const byName = (a, b) => String(a.name).localeCompare(String(b.name), 'pt-BR');
+  const val = (r) => sortKey.value === 'total'
+    ? rowVgv(r, monthKeys.value)
+    : Number(r.values?.[sortKey.value]?.units || 0);
+  arr.sort((a, b) => {
+    if (sortKey.value === 'name') return dir * byName(a, b);
+    const d = val(a) - val(b);
+    return d !== 0 ? dir * d : byName(a, b);
+  });
+  return arr;
+});
 
 /* ── Totais (acompanham os filtros ativos) ─────────────────────────────────── */
 const totals = computed(() => {
@@ -534,36 +553,66 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload));
       </div>
     </div>
 
-    <!-- ═══════ Barra de período + filtros ═══════ -->
-    <div class="rounded-xl border border-line bg-surface-raised shadow-soft surface-gradient p-3 sm:p-4 mb-4">
-      <div class="flex flex-col lg:flex-row lg:items-end gap-3">
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 flex-1">
+    <!-- ═══════ Filtros (retrátil, padrão dos relatórios) ═══════ -->
+    <section class="rounded-xl border border-line bg-surface-raised shadow-soft surface-gradient mb-4">
+      <!-- Toolbar -->
+      <div class="flex items-center gap-2 px-3 sm:px-4 py-2.5 border-b border-line bg-surface-sunken/40 rounded-t-xl">
+        <button @click="toggleFilters"
+          class="flex items-center gap-2 text-sm font-medium text-ink hover:text-accent transition-colors">
+          <i class="fas fa-filter text-xs text-ink-muted"></i>
+          <span>Filtros</span>
+          <Badge v-if="activeFilters" variant="accent" size="sm">
+            {{ activeFilters }} ativo{{ activeFilters > 1 ? 's' : '' }}
+          </Badge>
+          <i class="fas fa-chevron-down text-[10px] text-ink-subtle transition-transform duration-200"
+            :class="{ 'rotate-180': filtersOpen }"></i>
+        </button>
+
+        <div class="ml-auto flex items-center gap-1.5">
+          <Button v-if="activeFilters" variant="ghost" size="sm" icon="fas fa-eraser" @click="clearFilters">
+            <span class="hidden sm:inline">Limpar</span>
+          </Button>
+        </div>
+      </div>
+
+      <!-- Campos -->
+      <div v-show="filtersOpen" class="p-3 sm:p-4 animate-fade-in space-y-3" style="overflow:visible">
+        <!-- Período -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <Input :model-value="startMonth" type="month" label="Mês inicial"
             @update:model-value="(v) => changePeriod(() => startMonth = v)" />
           <Input :model-value="endMonth" type="month" label="Mês final"
             @update:model-value="(v) => changePeriod(() => endMonth = v)" />
-          <div class="col-span-2 flex items-end gap-2">
-            <Button variant="outline" size="sm" @click="changePeriod(() => setYear(currentYear))">Ano {{ currentYear }}</Button>
-            <Button variant="outline" size="sm" @click="changePeriod(() => setYear(currentYear + 1))">{{ currentYear + 1 }}</Button>
-            <Button variant="outline" size="sm" @click="changePeriod(setNext12)">Próx. 12m</Button>
+        </div>
+
+        <!-- Filtros de recorte -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div>
+            <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+              <i class="fas fa-building text-[10px] mr-1 text-ink-subtle"></i>Empreendimento
+            </label>
+            <MultiSelector v-model="filterEnterprises" :options="enterpriseOptions" placeholder="Selecione..." />
+          </div>
+          <div>
+            <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+              <i class="fas fa-location-dot text-[10px] mr-1 text-ink-subtle"></i>Cidade
+            </label>
+            <MultiSelector v-model="filterCities" :options="cityOptions" placeholder="Selecione..." />
+          </div>
+          <div>
+            <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+              <i class="fas fa-layer-group text-[10px] mr-1 text-ink-subtle"></i>Categoria
+            </label>
+            <MultiSelector v-model="filterCategories" :options="categoryOptions" placeholder="Selecione..." />
           </div>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 lg:w-[600px]">
-          <MultiSelector v-model="filterEnterprises" :options="enterpriseOptions" placeholder="Filtrar empreendimento" />
-          <MultiSelector v-model="filterCities" :options="cityOptions" placeholder="Filtrar cidade" />
-          <MultiSelector v-model="filterCategories" :options="categoryOptions" placeholder="Filtrar categoria" />
+        <!-- Toggle -->
+        <div class="pt-2 border-t border-line">
+          <Switch v-model="hideZero" size="sm" label="Ocultar sem metas" />
         </div>
       </div>
-
-      <div class="flex items-center justify-between gap-3 mt-3 pt-3 border-t border-line-subtle">
-        <Switch v-model="hideZero" size="sm" label="Ocultar sem metas" />
-        <button v-if="activeFilters" @click="clearFilters"
-          class="text-xs text-ink-muted hover:text-ink flex items-center gap-1.5">
-          <i class="fas fa-filter-circle-xmark"></i> Limpar filtros ({{ activeFilters }})
-        </button>
-      </div>
-    </div>
+    </section>
 
     <!-- ═══════ Grade ═══════ -->
     <div v-if="!rangeValid" class="rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-600 dark:text-red-400">
@@ -571,8 +620,9 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload));
     </div>
 
     <ProjectionEditorGrid v-else
-      :rows="visibleRows" :month-keys="monthKeys" :disabled="!editable"
-      @edit="openEdit" @remove="removeRow" @changed="dirty = true" />
+      :rows="sortedRows" :month-keys="monthKeys" :disabled="!editable"
+      :sort-key="sortKey" :sort-dir="sortDir"
+      @edit="openEdit" @remove="removeRow" @changed="dirty = true" @sort="setSort" />
 
     <p v-if="!editable && isAdmin && locked" class="mt-3 text-xs text-ink-subtle">
       <i class="fas fa-lock mr-1"></i> Projeção bloqueada - desbloqueie no topo para editar.

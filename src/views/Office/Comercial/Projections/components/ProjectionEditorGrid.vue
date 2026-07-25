@@ -15,8 +15,16 @@ const props = defineProps({
   rows: { type: Array, default: () => [] },
   monthKeys: { type: Array, default: () => [] },
   disabled: { type: Boolean, default: false },
+  sortKey: { type: String, default: 'name' },
+  sortDir: { type: String, default: 'asc' },
 });
-const emit = defineEmits(['edit', 'remove', 'changed']);
+const emit = defineEmits(['edit', 'remove', 'changed', 'sort']);
+
+// Ícone de ordenação no header (padrão dos relatórios: neutro / ativo com acento).
+function sortIcon(key) {
+  if (props.sortKey !== key) return 'fas fa-sort text-ink-subtle/40';
+  return props.sortDir === 'asc' ? 'fas fa-sort-up text-accent' : 'fas fa-sort-down text-accent';
+}
 
 function cell(row, ym) {
   row.values ||= {};
@@ -55,13 +63,28 @@ const uid = (r) => `${r.enterprise_key}|${r.alias_id || 'default'}`;
         <table class="w-full border-collapse text-sm">
           <thead>
             <tr class="bg-surface-sunken/60 border-b border-line">
-              <th class="sticky left-0 z-10 bg-surface-sunken text-left px-3 py-2.5 font-semibold text-ink min-w-[220px]">
-                Empreendimento
+              <th class="sticky left-0 z-10 bg-surface-sunken text-left px-3 py-2.5 font-semibold text-ink min-w-[220px] select-none cursor-pointer hover:text-accent transition-colors"
+                @click="emit('sort', 'name')">
+                <span class="inline-flex items-center gap-1.5">
+                  Empreendimento
+                  <i class="text-[9px]" :class="sortIcon('name')"></i>
+                </span>
               </th>
-              <th v-for="ym in monthKeys" :key="ym" class="px-2 py-2.5 text-center font-semibold text-ink-muted whitespace-nowrap min-w-[92px]">
-                {{ shortMonthLabel(ym) }}
+              <th v-for="ym in monthKeys" :key="ym"
+                class="px-2 py-2.5 text-center font-semibold text-ink-muted whitespace-nowrap min-w-[92px] select-none cursor-pointer hover:text-accent transition-colors"
+                @click="emit('sort', ym)">
+                <span class="inline-flex items-center gap-1.5">
+                  {{ shortMonthLabel(ym) }}
+                  <i class="text-[9px]" :class="sortIcon(ym)"></i>
+                </span>
               </th>
-              <th class="px-3 py-2.5 text-right font-semibold text-ink whitespace-nowrap">Total</th>
+              <th class="px-3 py-2.5 text-right font-semibold text-ink whitespace-nowrap select-none cursor-pointer hover:text-accent transition-colors"
+                @click="emit('sort', 'total')">
+                <span class="inline-flex items-center gap-1.5 flex-row-reverse">
+                  Total
+                  <i class="text-[9px]" :class="sortIcon('total')"></i>
+                </span>
+              </th>
             </tr>
           </thead>
 
@@ -142,6 +165,21 @@ const uid = (r) => `${r.enterprise_key}|${r.alias_id || 'default'}`;
 
     <!-- ═══════════ MOBILE ═══════════ -->
     <div class="md:hidden space-y-3">
+      <!-- Ordenação (mobile não tem header clicável) -->
+      <div v-if="rows.length" class="flex items-center gap-2 text-xs">
+        <span class="text-ink-muted shrink-0">Ordenar:</span>
+        <button @click="emit('sort', 'name')"
+          class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-line hover:bg-surface-sunken transition-colors"
+          :class="sortKey === 'name' ? 'text-accent border-accent/40' : 'text-ink-muted'">
+          Nome <i class="text-[9px]" :class="sortIcon('name')"></i>
+        </button>
+        <button @click="emit('sort', 'total')"
+          class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-line hover:bg-surface-sunken transition-colors"
+          :class="sortKey === 'total' ? 'text-accent border-accent/40' : 'text-ink-muted'">
+          Total <i class="text-[9px]" :class="sortIcon('total')"></i>
+        </button>
+      </div>
+
       <p v-if="!rows.length" class="rounded-xl border border-line bg-surface-raised p-6 text-center text-sm text-ink-subtle">
         Nenhum empreendimento neste período.
       </p>
