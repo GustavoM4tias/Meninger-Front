@@ -98,7 +98,7 @@
                         <h3 class="text-base font-semibold text-ink flex items-center gap-2">
                             <i class="fas fa-bullhorn text-emerald-500"></i> Marketing - realizado × projetado por mês
                         </h3>
-                        <span class="text-xs text-ink-subtle">projetado deriva da projeção de vendas (unidades × ticket × %)</span>
+                        <span class="text-xs text-ink-subtle">projetado = saldo do exercício ÷ meses restantes (não segue a curva de vendas)</span>
                     </div>
                     <div class="p-3 sm:p-4">
                         <VChart :option="mktChartOption" autoresize class="w-full" style="height: 280px" />
@@ -115,8 +115,8 @@
                             </div>
                             <div class="p-3 rounded-lg border border-line bg-surface-sunken/40">
                                 <p class="text-[10px] uppercase tracking-wider font-mono text-ink-subtle">Projetado ({{ shortMonth(r.monthIndex + 1) }}-Dez)</p>
-                                <p class="text-lg font-bold tabular-nums text-ink">{{ fmtBRL(mkt.projetadoAno) }}</p>
-                                <p class="text-[11px] text-ink-muted">{{ fmtBRL(mkt.projetadoMes) }} / mês recorrente</p>
+                                <p class="text-lg font-bold tabular-nums" :class="moneyClass(mkt.projetadoAno)">{{ fmtBRL(mkt.projetadoAno) }}</p>
+                                <p class="text-[11px] text-ink-muted">{{ fmtBRL(mkt.projetadoMes) }} / mês · saldo ÷ meses restantes</p>
                             </div>
                             <div class="p-3 rounded-lg border border-line bg-surface-sunken/40">
                                 <p class="text-[10px] uppercase tracking-wider font-mono text-ink-subtle">Plano do ano</p>
@@ -168,12 +168,12 @@
                                     </span>
                                     <span :class="b.saldo < 0 ? 'text-red-600 dark:text-red-400 font-semibold' : ''">saldo {{ fmtBRL(b.saldo) }}</span>
                                 </div>
-                                <!-- plano do ano vs teto do exercício (só MKT) -->
+                                <!-- projetado p/ frente (só MKT): saldo ÷ meses restantes -->
                                 <div v-if="b.key === 'marketing'" class="mt-0.5 text-[11px] text-ink-subtle">
-                                    plano do ano (pago + projetado): <strong class="font-mono tabular-nums"
-                                        :class="Number(b.planoAno) > Number(b.teto) ? 'text-red-600 dark:text-red-400' : 'text-ink-muted'">
-                                        {{ fmtBRL(b.planoAno) }} ({{ b.teto > 0 ? fmtPct(b.planoAno / b.teto) : '—' }} do teto)
-                                    </strong>
+                                    a investir pela frente: <strong class="font-mono tabular-nums"
+                                        :class="Number(b.projetadoMes) < 0 ? 'text-red-600 dark:text-red-400' : 'text-ink-muted'">
+                                        {{ fmtBRL(b.projetadoMes) }} / mês
+                                    </strong> (saldo ÷ meses restantes)
                                 </div>
                             </div>
                         </div>
@@ -449,7 +449,7 @@ const donutOption = computed(() => {
 const helpSteps = [
     { title: 'Mês de referência', text: 'Divide o ano entre realizado (até o mês) e projetado (depois dele). Troque e clique em Aplicar.' },
     { title: 'Cards de investimento', text: 'Cada verba mostra o consumido contra o teto aprovado na viabilidade, com status Dentro, Atenção ou Estourado.' },
-    { title: 'Gráfico de marketing', text: 'Barras verdes = gasto registrado no financeiro. Barras azuis = projeção (unidades × ticket × % de marketing).' },
+    { title: 'Gráfico de marketing', text: 'Barras verdes = pago de fato. Laranja = excedente da loja. Azuis = a investir por mês (saldo do exercício dividido pelos meses restantes; pode ficar negativo quando o teto já foi ultrapassado).' },
     { title: 'Governança', text: 'A barra mostra o consumo da verba; o traço vertical é o ritmo linear esperado do ano até o mês escolhido.' },
     { title: 'Leitura para decisão', text: 'Resumo em linguagem simples do que os números significam, gerado automaticamente a partir das regras de análise.' },
 ];
