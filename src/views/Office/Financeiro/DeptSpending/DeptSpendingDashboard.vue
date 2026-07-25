@@ -373,7 +373,7 @@
 
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import dayjs from 'dayjs';
 import { useDeptSpendingStore } from '@/stores/Financeiro/DeptSpending/deptSpendingStore';
 import { useDeptSpendingAdminStore } from '@/stores/Financeiro/DeptSpending/deptSpendingAdminStore';
@@ -396,6 +396,7 @@ import DeptSpendingDepartmentsModal from './DeptSpendingDepartmentsModal.vue';
 import DeptSpendingEnterpriseModal from './DeptSpendingEnterpriseModal.vue';
 
 const router = useRouter();
+const route = useRoute();
 const store = useDeptSpendingStore();
 const adminStore = useDeptSpendingAdminStore();
 const auth = useAuthStore();
@@ -436,11 +437,40 @@ function fmtPct(v) { return `${(Number(v || 0) * 100).toFixed(0)}%`; }
 const monthLabel = computed(() => fmtMonth(store.selectedMonth) || 'mês');
 
 /* ---------- opções de empresa / filtro cliente ---------- */
+// Mapa nome→companyId e opções da ÚLTIMA carga completa (sem filtro server-side),
+// p/ o seletor não encolher depois de uma busca filtrada.
+const knownNameToId = ref({});
+const knownOptions = ref([]);
+
+function rememberFullList() {
+    const map = {};
+    const names = new Set();
+    for (const it of store.list) {
+        if (!it.enterpriseName) continue;
+        names.add(it.enterpriseName);
+        if (it.companyId != null) map[it.enterpriseName] = it.companyId;
+    }
+    knownNameToId.value = map;
+    knownOptions.value = [...names].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+}
+
 const companyOptions = computed(() => {
+    if (knownOptions.value.length) return knownOptions.value;
     const names = new Set();
     for (const it of store.sorted) if (it.enterpriseName) names.add(it.enterpriseName);
     return [...names].sort((a, b) => a.localeCompare(b, 'pt-BR'));
 });
+
+function selectedCompanyIds() {
+    const fromKnown = selectedCompanies.value
+        .map((n) => knownNameToId.value[n])
+        .filter((v) => v != null);
+    if (fromKnown.length === selectedCompanies.value.length) return fromKnown;
+    // fallback: resolve pelo que está carregado agora
+    const map = {};
+    for (const it of store.list) if (it.enterpriseName && it.companyId != null) map[it.enterpriseName] = it.companyId;
+    return selectedCompanies.value.map((n) => knownNameToId.value[n] ?? map[n]).filter((v) => v != null);
+}
 const activeItems = computed(() => {
     let list = store.sorted;
     if (selectedCompanies.value.length) {
@@ -542,7 +572,7 @@ async function quickToggleRelease(item) {
     if (item.companyId == null) return;
     try {
         await adminStore.setEnterpriseRelease(item.companyId, !item.released, null);
-        await store.fetchList();
+        await applyFilters(); // preserva o filtro atual (URL + server-side)
     } catch (e) {
         store.error = e?.message || 'Erro ao liberar empreendimento.';
     }
@@ -555,12 +585,43 @@ function clearFilters() {
     applyFilters();
 }
 
+/* URL espelha os filtros (?mes=YYYY-MM&empresas=id,id) — link compartilhável que
+   abre já filtrado e busca SÓ as empresas pedidas no servidor. */
+function syncUrl(ids) {
+    const query = {};
+    if (refMonth.value && refMonth.value !== dayjs().format('YYYY-MM')) query.mes = refMonth.value;
+    if (ids?.length) query.empresas = ids.join(',');
+    router.replace({ query });
+}
+
 async function applyFilters() {
     store.setMonth(refMonth.value);
     if (refMonth.value && String(refMonth.value).length >= 4) store.setYear(Number(String(refMonth.value).slice(0, 4)));
-    await store.fetchList();
+    const ids = selectedCompanyIds();
+    syncUrl(ids);
+    await store.fetchList(ids.length ? ids : null);
+    if (!ids.length) rememberFullList();
 }
 const load = applyFilters;
 
-onMounted(applyFilters);
+onMounted(async () => {
+    const qMes = String(route.query.mes || '');
+    if (/^\d{4}-\d{2}$/.test(qMes)) refMonth.value = qMes;
+    const qIds = String(route.query.empresas || '')
+        .split(',').map(Number).filter(Number.isFinite);
+
+    store.setMonth(refMonth.value);
+    if (refMonth.value) store.setYear(Number(String(refMonth.value).slice(0, 4)));
+    await store.fetchList(qIds.length ? qIds : null);
+
+    if (qIds.length) {
+        // deep link: marca no seletor os nomes que vieram do servidor
+        selectedCompanies.value = store.list
+            .filter((i) => qIds.includes(Number(i.companyId)))
+            .map((i) => i.enterpriseName)
+            .filter(Boolean);
+    } else {
+        rememberFullList();
+    }
+});
 </script>
