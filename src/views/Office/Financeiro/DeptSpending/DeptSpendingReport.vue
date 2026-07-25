@@ -346,6 +346,10 @@ const governanceRows = computed(() => {
     return [loja.value, mkt.value, total.value].filter((b) => b && (b.teto > 0 || b.consumido > 0));
 });
 
+function moneyClass(v) {
+    return Number(v || 0) < 0 ? 'text-red-600 dark:text-red-400' : 'text-ink';
+}
+
 /* Barra da governança: parcela própria × excedente da loja (só no bucket MKT). */
 function segExcedPct(b) {
     const teto = Number(b.teto || 0);
