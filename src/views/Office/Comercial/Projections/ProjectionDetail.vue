@@ -236,15 +236,21 @@ function clearFilters() { filterEnterprises.value = []; filterCities.value = [];
 const filtersOpen = ref(typeof window !== 'undefined' && window.innerWidth >= 1024);
 function toggleFilters() { filtersOpen.value = !filtersOpen.value; }
 
-/* ── Ordenação por header ──────────────────────────────────────────────────── */
-// Chave: 'name' | 'total' | um YYYY-MM. Padrão = nome asc (mesma ordem natural da grade).
-const sortKey = ref('name');
+/* ── Ordenação por header (tri-estado, padrão dos relatórios) ──────────────── */
+// '' = ordem natural (alfabética). 1º clique asc, 2º desc, 3º volta ao normal.
+const sortKey = ref('');
 const sortDir = ref('asc');
 function setSort(key) {
-  if (sortKey.value === key) { sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc'; }
-  else { sortKey.value = key; sortDir.value = key === 'name' ? 'asc' : 'desc'; }
+  if (sortKey.value === key) {
+    if (sortDir.value === 'asc') sortDir.value = 'desc';
+    else { sortKey.value = ''; sortDir.value = 'asc'; }
+  } else {
+    sortKey.value = key;
+    sortDir.value = 'asc';
+  }
 }
 const sortedRows = computed(() => {
+  if (!sortKey.value) return visibleRows.value;
   const arr = [...visibleRows.value];
   const dir = sortDir.value === 'asc' ? 1 : -1;
   const byName = (a, b) => String(a.name).localeCompare(String(b.name), 'pt-BR');
@@ -575,18 +581,13 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload));
         </div>
       </div>
 
-      <!-- Campos -->
-      <div v-show="filtersOpen" class="p-3 sm:p-4 animate-fade-in space-y-3" style="overflow:visible">
-        <!-- Período -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      <!-- Campos (tudo em uma linha no desktop) -->
+      <div v-show="filtersOpen" class="p-3 sm:p-4 animate-fade-in" style="overflow:visible">
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 items-end">
           <Input :model-value="startMonth" type="month" label="Mês inicial"
             @update:model-value="(v) => changePeriod(() => startMonth = v)" />
           <Input :model-value="endMonth" type="month" label="Mês final"
             @update:model-value="(v) => changePeriod(() => endMonth = v)" />
-        </div>
-
-        <!-- Filtros de recorte -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           <div>
             <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
               <i class="fas fa-building text-[10px] mr-1 text-ink-subtle"></i>Empreendimento
@@ -605,11 +606,9 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload));
             </label>
             <MultiSelector v-model="filterCategories" :options="categoryOptions" placeholder="Selecione..." />
           </div>
-        </div>
-
-        <!-- Toggle -->
-        <div class="pt-2 border-t border-line">
-          <Switch v-model="hideZero" size="sm" label="Ocultar sem metas" />
+          <div class="flex items-center h-9">
+            <Switch v-model="hideZero" size="sm" label="Ocultar sem metas" />
+          </div>
         </div>
       </div>
     </section>
