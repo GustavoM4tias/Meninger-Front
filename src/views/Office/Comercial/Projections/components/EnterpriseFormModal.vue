@@ -130,7 +130,7 @@ function submitEdit() {
 
 const canManual = computed(() => (manual.value.name || '').trim() && (manual.value.city || '').trim());
 
-/* Estoque ao vivo do Sienge (units_summary da linha vinculada a CC) */
+/* Estoque ao vivo do CV (units_summary da linha vinculada a CC do Sienge) */
 const stock = computed(() => {
   const s = props.row?.units_summary;
   if (!s) return null;
@@ -285,11 +285,11 @@ function pickLink(e) {
         </div>
       </div>
 
-      <!-- Estoque atual (Sienge) -->
+      <!-- Estoque atual (CV) -->
       <div v-if="isErpRow()" class="rounded-xl border border-line bg-surface-sunken p-3">
         <div class="flex items-center justify-between mb-2.5">
           <span class="text-[10px] font-bold text-ink-subtle uppercase tracking-widest">
-            <i class="fas fa-cubes mr-1"></i>Estoque atual no Sienge
+            <i class="fas fa-cubes mr-1"></i>Estoque atual no CV
           </span>
           <span v-if="stock" class="text-[11px] font-semibold text-ink-muted tabular-nums bg-surface-raised px-2 py-0.5 rounded-full border border-line">
             {{ stock.total }} unidades
