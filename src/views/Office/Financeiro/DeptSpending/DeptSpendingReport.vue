@@ -408,7 +408,9 @@ const mktChartOption = computed(() => {
         yAxis: { type: 'value', axisLabel: { color: c.txt, fontSize: 10, formatter: (v) => `${Math.round(v / 1000)}k` }, splitLine: { lineStyle: { color: c.grid } } },
         series: [
             { name: 'Realizado', type: 'bar', stack: 'mkt', barMaxWidth: 22, data: months.map((m) => Math.round(m.mktRealizado)), itemStyle: { color: '#10b981', borderRadius: [3, 3, 0, 0] } },
-            { name: 'Excedente da loja', type: 'bar', stack: 'mkt', barMaxWidth: 22, data: months.map((m) => Math.round(m.mktLojaExcedente || 0)), itemStyle: { color: '#f97316', borderRadius: [3, 3, 0, 0] } },
+            ...(months.some((m) => Number(m.mktLojaExcedente || 0) > 0)
+                ? [{ name: 'Excedente da loja', type: 'bar', stack: 'mkt', barMaxWidth: 22, data: months.map((m) => Math.round(m.mktLojaExcedente || 0)), itemStyle: { color: '#f97316', borderRadius: [3, 3, 0, 0] } }]
+                : []),
             { name: 'Projetado', type: 'bar', stack: 'mkt', barMaxWidth: 22, data: months.map((m) => Math.round(m.mktProjetado)), itemStyle: { color: '#38bdf8', borderRadius: [3, 3, 0, 0], opacity: 0.75 } },
         ],
     };
@@ -426,7 +428,9 @@ const cashflowChartOption = computed(() => {
         yAxis: { type: 'value', axisLabel: { color: c.txt, fontSize: 10, formatter: (v) => `${Math.round(v / 1000)}k` }, splitLine: { lineStyle: { color: c.grid } } },
         series: [
             { name: 'Marketing', type: 'bar', stack: 'fluxo', barMaxWidth: 22, data: months.map((m) => Math.round(m.mktRealizado + m.mktProjetado)), itemStyle: { color: '#10b981' } },
-            { name: 'Loja → MKT (excedente)', type: 'bar', stack: 'fluxo', barMaxWidth: 22, data: months.map((m) => Math.round(m.mktLojaExcedente || 0)), itemStyle: { color: '#f97316' } },
+            ...(months.some((m) => Number(m.mktLojaExcedente || 0) > 0)
+                ? [{ name: 'Loja → MKT (excedente)', type: 'bar', stack: 'fluxo', barMaxWidth: 22, data: months.map((m) => Math.round(m.mktLojaExcedente || 0)), itemStyle: { color: '#f97316' } }]
+                : []),
             { name: 'Loja', type: 'bar', stack: 'fluxo', barMaxWidth: 22, data: months.map((m) => Math.round(m.lojaRealizado + m.lojaProjetado)), itemStyle: { color: '#f59e0b', borderRadius: [3, 3, 0, 0] } },
         ],
     };
