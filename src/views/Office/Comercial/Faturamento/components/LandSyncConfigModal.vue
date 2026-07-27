@@ -5,6 +5,7 @@ import { useContractsStore } from '@/stores/Comercial/Contracts/contractsStore';
 import { useHiddenEnterprisesStore } from '@/stores/Comercial/Contracts/hiddenEnterprisesStore';
 import { useStageCommissionRulesStore } from '@/stores/Comercial/Contracts/stageCommissionRulesStore';
 import { useEnterpriseValueRulesStore } from '@/stores/Comercial/Contracts/enterpriseValueRulesStore';
+import { useEnterpriseErpLinksStore } from '@/stores/Comercial/Contracts/enterpriseErpLinksStore';
 import { useTrSatelliteStore } from '@/stores/Comercial/Contracts/trSatelliteStore';
 
 import Modal from '@/components/UI/Modal.vue';
@@ -27,16 +28,72 @@ const contractsStore = useContractsStore();
 const hiddenStore = useHiddenEnterprisesStore();
 const commissionRulesStore = useStageCommissionRulesStore();
 const valueRulesStore = useEnterpriseValueRulesStore();
+const erpLinksStore = useEnterpriseErpLinksStore();
 const trSatStore = useTrSatelliteStore();
 
-const activeTab = ref('obstit');
+const activeTab = ref('links');
 const tabOptions = [
+  { value: 'links',      label: 'Vínculo CV ↔ Sienge', icon: 'fas fa-code-branch' },
   { value: 'obstit',     label: 'Terreno externo',     icon: 'fas fa-mountain' },
   { value: 'hidden',     label: 'Ocultar empreend.',   icon: 'fas fa-eye-slash' },
   { value: 'value',      label: 'Composição de VGV',   icon: 'fas fa-scale-balanced' },
   { value: 'commission', label: 'Comissão',            icon: 'fas fa-percent' },
   { value: 'trsat',      label: 'Satélite de TR',      icon: 'fas fa-link' },
 ];
+
+// ── Vínculo CV ↔ Sienge ────────────────────────────────────────────
+const MOTIVO_LABEL = {
+  sem_id_cv: 'A reserva não traz o ID do empreendimento',
+  sem_ponte: 'O cadastro do CV está sem o ID do Sienge',
+};
+
+const newLink = ref({
+  cv_enterprise_name: '',
+  cv_enterprise_id: null,
+  erp_enterprise_id: '',
+  description: '',
+});
+
+const isNewLinkValid = computed(() =>
+  (!!(newLink.value.cv_enterprise_name || '').trim() || newLink.value.cv_enterprise_id != null) &&
+  newLink.value.erp_enterprise_id !== '' &&
+  Number(newLink.value.erp_enterprise_id) > 0
+);
+
+// Preenche o formulário a partir de um pendente do diagnóstico.
+function pickPending(p) {
+  newLink.value = {
+    cv_enterprise_name: p.cv_enterprise_name || '',
+    cv_enterprise_id: p.cv_enterprise_id ?? p.cv_enterprise_int_id ?? null,
+    erp_enterprise_id: '',
+    description: '',
+  };
+}
+
+async function handleLinkAdd() {
+  if (!isNewLinkValid.value) return;
+  const erpId = Number(newLink.value.erp_enterprise_id);
+  const ent = contractsStore.enterprises.find(e => Number(e.id) === erpId);
+  try {
+    await erpLinksStore.addLink({
+      cv_enterprise_id: newLink.value.cv_enterprise_id,
+      cv_enterprise_name: (newLink.value.cv_enterprise_name || '').trim() || null,
+      erp_enterprise_id: erpId,
+      erp_enterprise_name: ent?.name || null,
+      description: newLink.value.description || null,
+    });
+    newLink.value = { cv_enterprise_name: '', cv_enterprise_id: null, erp_enterprise_id: '', description: '' };
+    contractsStore.clearContractsCache();
+  } catch (e) {
+    window.alert(e?.message || 'Erro ao salvar vínculo.');
+  }
+}
+
+async function handleLinkRemove(id) {
+  if (!window.confirm('Remover este vínculo? A projeção desse empreendimento volta a ficar solta.')) return;
+  await erpLinksStore.removeLink(id);
+  contractsStore.clearContractsCache();
+}
 
 // ── Composição de VGV ──────────────────────────────────────────────
 const VALUE_MODE_LABEL = {
@@ -128,12 +185,13 @@ const enterpriseSelectOptions = computed(() => [
 
 watch(() => props.open, async (isOpen) => {
   if (!isOpen) return;
-  activeTab.value = 'obstit';
+  activeTab.value = 'links';
   selectedLandNames.value = [];
   selectedHiddenNames.value = [];
   newRule.value = { enterprise_id: '', stage_id: null, commission_pct_display: null, stage_name: '', description: '' };
   newTrSat.value = { satellite_enterprise_id: '', partner_names: [], description: '' };
   newValueRule.value = { enterprise_id: '', net_mode: 'FULL', gross_mode: 'FULL', description: '' };
+  newLink.value = { cv_enterprise_name: '', cv_enterprise_id: null, erp_enterprise_id: '', description: '' };
 
   if (!contractsStore.enterprises.length) await contractsStore.fetchEnterprises();
   await Promise.all([
@@ -141,6 +199,8 @@ watch(() => props.open, async (isOpen) => {
     hiddenStore.fetchAll(),
     commissionRulesStore.fetchAll(),
     valueRulesStore.fetchAll(),
+    erpLinksStore.fetchAll(),
+    erpLinksStore.fetchPending(),
     trSatStore.fetchAll(),
   ]);
 });
@@ -300,6 +360,139 @@ const closeModal = () => emit('close');
 
       <!-- Conteúdo -->
       <div class="flex-1 overflow-y-auto max-h-[60vh]">
+
+        <!-- ═══════════════ TAB: VÍNCULO CV ↔ SIENGE ═══════════════ -->
+        <div v-if="activeTab === 'links'" class="p-4 sm:p-5 space-y-4">
+
+          <div v-if="erpLinksStore.error"
+            class="rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2.5 text-xs text-red-700 dark:text-red-300 flex items-center gap-2">
+            <i class="fas fa-circle-exclamation"></i>{{ erpLinksStore.error }}
+          </div>
+
+          <div class="rounded-xl border border-line bg-surface-sunken px-3 py-2.5 text-[11px] text-ink-muted">
+            A projeção vem dos Grupos de Workflow (CV) e precisa achar o empreendimento
+            correspondente no Sienge. Normalmente isso acontece sozinho, pelo campo
+            <code class="font-mono">idempreendimento_int</code> do cadastro do CV. Quando esse campo
+            está vazio, o empreendimento aparece como linha separada no dashboard. Vincule aqui e ele
+            passa a somar junto das vendas reais.
+          </div>
+
+          <!-- Pendentes -->
+          <Surface variant="raised" padding="md" class="space-y-3">
+            <div class="flex items-center justify-between gap-2">
+              <div class="min-w-0">
+                <h3 class="text-sm font-semibold text-ink">Sem vínculo</h3>
+                <p class="text-[11px] text-ink-muted">Empreendimentos das projeções que não acharam par no Sienge.</p>
+              </div>
+              <Badge :variant="erpLinksStore.pendingCount ? 'warning' : 'accent'" size="sm">
+                <span class="font-mono tabular-nums">{{ erpLinksStore.pendingCount }}</span>
+              </Badge>
+            </div>
+
+            <div v-if="erpLinksStore.loadingPending" class="flex items-center gap-2 text-xs text-ink-muted">
+              <Spinner size="sm" /> Procurando empreendimentos sem vínculo...
+            </div>
+
+            <div v-else class="rounded-lg border border-line bg-surface-sunken max-h-60 overflow-y-auto">
+              <EmptyState v-if="!erpLinksStore.pending.length"
+                size="sm" icon="fas fa-circle-check"
+                title="Nenhum pendente"
+                description="Todas as projeções acharam o empreendimento do Sienge." />
+              <ul v-else class="divide-y divide-line">
+                <li v-for="p in erpLinksStore.pending" :key="p.cv_enterprise_name"
+                  class="px-3 py-2.5 flex items-start justify-between gap-2 hover:bg-surface-hover transition-colors">
+                  <div class="min-w-0">
+                    <p class="text-xs font-medium text-ink truncate">{{ p.cv_enterprise_name }}</p>
+                    <p class="text-[10px] text-ink-subtle mt-0.5">
+                      <span class="font-mono">{{ p.reservas }}</span> reserva(s) ·
+                      {{ MOTIVO_LABEL[p.motivo] || p.motivo }}
+                    </p>
+                  </div>
+                  <Button variant="outline" size="sm" icon="fas fa-link" class="shrink-0"
+                    @click="pickPending(p)">
+                    <span class="hidden sm:inline">Vincular</span>
+                  </Button>
+                </li>
+              </ul>
+            </div>
+          </Surface>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+            <!-- Novo vínculo -->
+            <Surface variant="raised" padding="md" class="space-y-3">
+              <div>
+                <h3 class="text-sm font-semibold text-ink">Novo vínculo</h3>
+                <p class="text-[11px] text-ink-muted">Use "Vincular" na lista acima para preencher automaticamente.</p>
+              </div>
+
+              <Input v-model="newLink.cv_enterprise_name"
+                label="Empreendimento no CV"
+                placeholder="ex: RESIDENCIAL DOS ANJOS" />
+
+              <div>
+                <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+                  <i class="fas fa-building text-[10px] mr-1 text-ink-subtle"></i>
+                  Empreendimento no Sienge
+                </label>
+                <Select v-model="newLink.erp_enterprise_id" :options="enterpriseSelectOptions" />
+              </div>
+
+              <Input v-model="newLink.description"
+                label="Observação (opcional)"
+                placeholder="ex: cadastro do CV sem o ID do Sienge" />
+
+              <div class="flex justify-end pt-1">
+                <Button size="sm" icon="fas fa-plus" :disabled="!isNewLinkValid" @click="handleLinkAdd">
+                  Salvar vínculo
+                </Button>
+              </div>
+            </Surface>
+
+            <!-- Vínculos ativos -->
+            <Surface variant="raised" padding="md" class="space-y-3">
+              <div class="flex items-center justify-between gap-2">
+                <div class="min-w-0">
+                  <h3 class="text-sm font-semibold text-ink">Vínculos ativos</h3>
+                  <p class="text-[11px] text-ink-muted">Valem para todos os usuários.</p>
+                </div>
+                <Badge variant="accent" size="sm">
+                  <span class="font-mono tabular-nums">{{ erpLinksStore.items.length }}</span>
+                </Badge>
+              </div>
+
+              <div class="rounded-lg border border-line bg-surface-sunken max-h-72 overflow-y-auto">
+                <EmptyState v-if="!erpLinksStore.items.length && !erpLinksStore.loading"
+                  size="sm" icon="fas fa-code-branch"
+                  title="Nenhum vínculo manual"
+                  description="Todos resolvem pelo cadastro do CV." />
+                <ul v-else class="divide-y divide-line">
+                  <li v-for="link in erpLinksStore.items" :key="link.id"
+                    class="px-3 py-2.5 flex items-start justify-between gap-2 hover:bg-surface-hover transition-colors">
+                    <div class="min-w-0">
+                      <p class="text-xs font-medium text-ink truncate">
+                        {{ link.cv_enterprise_name || `CV #${link.cv_enterprise_id}` }}
+                      </p>
+                      <p class="text-[10px] text-ink-subtle font-mono mt-0.5 truncate">
+                        <i class="fas fa-arrow-right text-[8px] mx-0.5"></i>
+                        {{ link.erp_enterprise_name || enterpriseNameById.get(Number(link.erp_enterprise_id)) || '—' }}
+                        ({{ link.erp_enterprise_id }})
+                      </p>
+                      <p v-if="link.description" class="text-[10px] text-ink-subtle mt-0.5 truncate">
+                        {{ link.description }}
+                      </p>
+                    </div>
+                    <Button variant="ghost" size="sm" icon="fas fa-trash"
+                      class="!text-red-500 hover:!bg-red-500/10 shrink-0"
+                      @click="handleLinkRemove(link.id)">
+                      <span class="hidden sm:inline">Remover</span>
+                    </Button>
+                  </li>
+                </ul>
+              </div>
+            </Surface>
+          </div>
+        </div>
 
         <!-- ═══════════════ TAB: TERRENO EXTERNO (OBSTIT) ═══════════════ -->
         <div v-if="activeTab === 'obstit'" class="p-4 sm:p-5 space-y-4">
@@ -807,6 +1000,10 @@ const closeModal = () => emit('close');
       <p v-else-if="activeTab === 'commission'" class="text-[10px] text-ink-subtle leading-tight mr-auto hidden sm:block">
         Sem etapa, a comissão vale para toda venda do empreendimento.<br>
         Alterações são aplicadas imediatamente. Recarregue os contratos para ver os novos valores.
+      </p>
+      <p v-else-if="activeTab === 'links'" class="text-[10px] text-ink-subtle leading-tight mr-auto hidden sm:block">
+        O vínculo é resolvido no servidor: a projeção passa a chegar já casada.<br>
+        Recarregue os contratos para ver o efeito no dashboard.
       </p>
       <p v-else-if="activeTab === 'value'" class="text-[10px] text-ink-subtle leading-tight mr-auto hidden sm:block">
         Vale para todos os usuários, no Faturamento e no Vendas × Projeção.<br>

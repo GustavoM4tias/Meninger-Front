@@ -169,6 +169,21 @@
                                     <code>cv_enterprises.segmento_nome</code>.
                                 </p>
                             </div>
+
+                            <!-- Corte por inatividade -->
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                    Ignorar paradas há mais de (dias)
+                                </label>
+                                <input v-model.number="form.stale_days" type="number" min="0" step="1"
+                                    placeholder="30"
+                                    class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                    Reserva ou repasse sem movimentação há mais dias que isso deixa de contar como
+                                    próxima entrada na projeção do Faturamento. Encalhado não é previsão de venda.
+                                    Use <code>0</code> para não descartar nada.
+                                </p>
+                            </div>
                         </div>
 
                         <!-- Situações com busca -->
@@ -232,7 +247,7 @@ const store = useWorkflowGroupsStore()
 
 const showModal = ref(false)
 const editing = ref(null)
-const form = ref({ nome: '', descricao: '', segmentoSelecionado: '' })
+const form = ref({ nome: '', descricao: '', segmentoSelecionado: '', stale_days: 30 })
 const selectedSituacoes = ref([])
 const q = ref('')
 
@@ -257,11 +272,12 @@ const openModal = (grupo) => {
         form.value = {
             nome: grupo.nome,
             descricao: grupo.descricao || '',
-            segmentoSelecionado: Array.isArray(grupo.segmentos) && grupo.segmentos.length ? grupo.segmentos[0] : ''
+            segmentoSelecionado: Array.isArray(grupo.segmentos) && grupo.segmentos.length ? grupo.segmentos[0] : '',
+            stale_days: grupo.stale_days ?? 30
         }
         selectedSituacoes.value = (grupo.situacoes || []).map((s) => s.id)
     } else {
-        form.value = { nome: '', descricao: '', segmentoSelecionado: '' }
+        form.value = { nome: '', descricao: '', segmentoSelecionado: '', stale_days: 30 }
         selectedSituacoes.value = []
     }
 }
@@ -286,7 +302,8 @@ const saveGroup = async () => {
         nome: form.value.nome.trim(),
         descricao: form.value.descricao.trim(),
         situacoes_ids: selectedSituacoes.value,
-        segmentos: form.value.segmentoSelecionado ? [form.value.segmentoSelecionado] : []
+        segmentos: form.value.segmentoSelecionado ? [form.value.segmentoSelecionado] : [],
+        stale_days: Number.isFinite(Number(form.value.stale_days)) ? Number(form.value.stale_days) : 30
     }
 
     try {

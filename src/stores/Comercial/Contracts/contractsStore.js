@@ -58,6 +58,18 @@ function isDiscountCondition(pc) {
     return DISCOUNT_CODES.has(String(pc?.condition_type_id ?? '').toUpperCase())
 }
 
+// Normaliza nome de empreendimento para comparação: sem acento, sem
+// pontuação, espaços colapsados. Usado só para casamento EXATO — comparação
+// por substring foi abandonada porque casava com fases erradas.
+function normalizeEnterpriseName(name) {
+    return String(name ?? '')
+        .normalize('NFD')
+        .replace(/[̀-ͯ]/g, '')
+        .toUpperCase()
+        .replace(/[^A-Z0-9]+/g, ' ')
+        .trim()
+}
+
 function contractTotals(contract) {
     const pcs = Array.isArray(contract.payment_conditions) ? contract.payment_conditions : []
     let full = 0
@@ -402,6 +414,14 @@ export const useContractsStore = defineStore('contracts', {
                 return n > 0 ? this.realizedValueForRow(row) / n : 0
             }
         },
+
+        // Linha de projeção que ficou solta porque o backend não conseguiu
+        // resolver o empreendimento do Sienge (enterprise_id nulo). É falha de
+        // vínculo, não ausência de vendas — e precisa aparecer como tal, senão
+        // o empreendimento parece dois no dashboard sem explicação.
+        // Resolve-se na engrenagem → Vínculo CV ↔ Sienge.
+        isUnlinkedProjectionRow: () => (row) =>
+            !!row?.onlyProjectionRow && (row.enterprise_id == null || row.enterprise_id === ''),
         totalSales() { return this.nonDistratoSales.length },
         totalValueNet() {
             return this.nonDistratoSales.reduce((s, x) => s + (Number(x.total_value_net) || 0), 0)
@@ -692,47 +712,35 @@ export const useContractsStore = defineStore('contracts', {
 
             // Helper: resolve which real-enterprise key a projection belongs to.
             // Mirrors the same cascading strategy used in salesByCompany.
+            // Casamento projeção → empreendimento real.
+            //
+            // Só duas fontes valem: o enterprise_id que o backend resolveu (que
+            // já considera o vínculo manual CV ↔ Sienge) e o nome EXATO.
+            //
+            // O antigo fallback por substring foi removido: ele errava nos dois
+            // sentidos. "RESIDENCIAL DOS ANJOS" não casava com
+            // "...RESIDENCIAL JARDIM DOS ANJOS..." (palavra no meio), e
+            // "TERRAS DE SÃO PAULO V" casava com a FASE 2 e a FASE 3 ao mesmo
+            // tempo. Nos dois casos a projeção virava linha solta, sem dizer o
+            // porquê. Agora, quando não há id, o caminho é criar o vínculo na
+            // central (engrenagem → Vínculo CV ↔ Sienge).
             const resolveRealKeyForProj = (s) => {
                 const first = s.contracts[0] || {}
                 const id = first.enterprise_id ?? null
 
-                // Strategy 1: direct enterprise_id match (works when backend correctly resolves idemp_erp_resolvido)
                 if (id != null) {
                     const direct = [...realMap.keys()].find((k) => realMap.get(k)?.id === id)
                     if (direct) return direct
                 }
 
-                // Strategy 2: name-prefix/contains match (fallback when backend resolves null)
-                // "TERRAS DE SÃO PAULO V" ⊂ "MARILIA/SP - TERRAS DE SÃO PAULO V - FASE 3 ..."
-                const projName = (first.enterprise_name || s.enterprise_name || '').toUpperCase().trim()
+                const projName = normalizeEnterpriseName(first.enterprise_name || s.enterprise_name)
                 if (!projName) return null
 
-                const candidates = []
+                const exact = []
                 for (const [k, row] of realMap) {
-                    const realName = (row.name || '').toUpperCase().trim()
-                    if (realName.includes(projName) || projName.includes(realName)) {
-                        candidates.push(k)
-                    }
+                    if (normalizeEnterpriseName(row.name) === projName) exact.push(k)
                 }
-
-                if (candidates.length === 1) return candidates[0]
-
-                // Multiple candidates: use company_id to narrow down
-                if (candidates.length > 1 && first.company_id != null) {
-                    const companyFiltered = candidates.filter((k) => {
-                        const row = realMap.get(k)
-                        // Find any real contract for this enterprise with the same company
-                        return this.contracts.some(
-                            (c) => !c._projection
-                                && Number(c.enterprise_id) === row.id
-                                && Number(c.company_id) === Number(first.company_id)
-                        )
-                    })
-                    if (companyFiltered.length === 1) return companyFiltered[0]
-                }
-
-                // Ambiguous — don't guess
-                return null
+                return exact.length === 1 ? exact[0] : null
             }
 
             // Merge projections: into real row if resolvable, else orphan row
@@ -846,18 +854,17 @@ export const useContractsStore = defineStore('contracts', {
                     }
                 }
 
-                // Strategy 4: name-prefix matching
-                // Projections often have a shorter/general enterprise name (e.g. "TERRAS DE SÃO PAULO")
-                // while real contracts have fase-specific names (e.g. "TERRAS DE SÃO PAULO V - FASE 1")
-                const projName = (first.enterprise_name || s.enterprise_name || '').toUpperCase().trim()
+                // Strategy 4: nome EXATO normalizado.
+                // Antes isso era startsWith nos dois sentidos, o que atribuía a
+                // projeção à empresa da primeira fase que casasse por prefixo.
+                // Quando o nome não bate exatamente, o certo é não adivinhar e
+                // deixar a linha solta, sinalizada para vínculo manual.
+                const projName = normalizeEnterpriseName(first.enterprise_name || s.enterprise_name)
                 if (projName) {
-                    // Build a prefix index from current contracts if needed
                     for (const c of this.contracts) {
                         if (c._projection) continue
                         if (!c.company_id || !c.enterprise_name) continue
-                        const realName = c.enterprise_name.toUpperCase().trim()
-                        // Check: real enterprise name starts with projection enterprise name OR vice-versa
-                        if (realName.startsWith(projName) || projName.startsWith(realName)) {
+                        if (normalizeEnterpriseName(c.enterprise_name) === projName) {
                             return { company_id: c.company_id, company_name: c.company_name ?? null }
                         }
                     }
