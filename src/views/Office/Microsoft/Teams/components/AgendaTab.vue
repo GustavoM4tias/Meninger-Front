@@ -1,7 +1,9 @@
 <script setup>
 // Central Microsoft › aba Agenda — calendário Teams (panel do hub, sem
-// PageContainer próprio). Extraído do antigo Teams/Index.vue em 2026-07-27.
+// PageContainer próprio).
 //
+// Layout: faixa "Hoje" (próxima reunião) → barra de controle única (período à
+// esquerda, visão + ações à direita) → calendário.
 // Visões: Semana/Mês/Lista no desktop; Dia/Lista/Mês no celular (a visão Dia
 // reusa o CalendarWeek com uma única coluna; Lista é o padrão mobile).
 
@@ -10,7 +12,6 @@ import { useTeamsStore } from '@/stores/Microsoft/teamsStore';
 
 import Button from '@/components/UI/Button.vue';
 import IconButton from '@/components/UI/IconButton.vue';
-import Badge from '@/components/UI/Badge.vue';
 import SegmentedControl from '@/components/UI/SegmentedControl.vue';
 
 import TodayPanel from './TodayPanel.vue';
@@ -44,7 +45,7 @@ const viewProxy = computed({
 });
 
 onMounted(() => {
-  // Semana não existe no celular; se o estado persistiu de uma sessão desktop, cai p/ Lista.
+  // Semana não existe no celular; se o estado veio de uma sessão desktop, cai p/ Lista.
   if (isMobile && ts.currentView === 'week') ts.switchView('list');
 });
 
@@ -55,19 +56,23 @@ const WEEKDAYS_LONG = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sext
 
 const periodLabel = computed(() => {
   const vd = ts.viewDate;
-  if (ts.currentView === 'month') {
-    return `${MONTHS_LONG[vd.getMonth()]} ${vd.getFullYear()}`;
-  }
+  if (ts.currentView === 'month') return `${MONTHS_LONG[vd.getMonth()]} ${vd.getFullYear()}`;
   if (ts.currentView === 'day') {
-    return `${WEEKDAYS_LONG[vd.getDay()]}, ${vd.getDate()} de ${MONTHS_LONG[vd.getMonth()].toLowerCase()} ${vd.getFullYear()}`;
+    return `${WEEKDAYS_LONG[vd.getDay()]}, ${vd.getDate()} de ${MONTHS_LONG[vd.getMonth()].toLowerCase()}`;
   }
   const days = ts.weekDays;
   if (!days.length) return '';
   const [first, last] = [days[0], days[6]];
   if (first.getMonth() === last.getMonth()) {
-    return `${first.getDate()}–${last.getDate()} de ${MONTHS_LONG[first.getMonth()]} ${first.getFullYear()}`;
+    return `${first.getDate()} a ${last.getDate()} de ${MONTHS_LONG[first.getMonth()].toLowerCase()}`;
   }
-  return `${first.getDate()} ${MONTHS_SHORT[first.getMonth()]} – ${last.getDate()} ${MONTHS_SHORT[last.getMonth()]} ${last.getFullYear()}`;
+  return `${first.getDate()} ${MONTHS_SHORT[first.getMonth()]} a ${last.getDate()} ${MONTHS_SHORT[last.getMonth()]}`;
+});
+
+const periodYear = computed(() => {
+  const days = ts.weekDays;
+  if (ts.currentView === 'week' || ts.currentView === 'list') return days.length ? days[0].getFullYear() : '';
+  return ts.viewDate.getFullYear();
 });
 
 // ── Modais ────────────────────────────────────────────────────────────────────
@@ -79,10 +84,7 @@ const editingEvent = ref(null);
 const slotPrefill = ref(null);
 
 function openCreateModal(type) {
-  if (type === 'instant') {
-    handleInstantMeeting();
-    return;
-  }
+  if (type === 'instant') { handleInstantMeeting(); return; }
   editingEvent.value = null;
   slotPrefill.value = null;
   showCreateModal.value = true;
@@ -173,102 +175,93 @@ const DONE_MESSAGES = {
   'delete:occurrence': 'Evento removido do seu calendário.',
   'delete:series':     'Série removida do seu calendário.',
 };
-
 function onEventDone({ kind, scope }) {
   emit('toast', DONE_MESSAGES[`${kind}:${scope}`] || 'Evento removido.', 'success');
 }
-
-function onEventError(message) {
-  emit('toast', `Erro: ${message}`, 'error');
-}
+function onEventError(message) { emit('toast', `Erro: ${message}`, 'error'); }
 </script>
 
 <template>
   <div>
-    <!-- Painel "Hoje": próximas reuniões, tarefas e ações rápidas -->
-    <TodayPanel
-      @new-event="openCreateModal()"
-      @instant="openCreateModal('instant')" />
+    <!-- Faixa "Hoje": próxima reunião -->
+    <TodayPanel />
 
     <!-- Banner reunião instantânea -->
     <Transition name="slide">
       <div v-if="instantMeeting"
-        class="flex flex-wrap items-center gap-3 p-4 rounded-xl
-               bg-emerald-500/10 border border-emerald-500/30 surface-gradient mb-4">
-        <div class="h-10 w-10 rounded-xl bg-emerald-600 flex items-center justify-center shrink-0">
+        class="flex flex-wrap items-center gap-3 p-3.5 rounded-xl mb-4
+               bg-emerald-500/10 border border-emerald-500/30 surface-gradient">
+        <div class="h-10 w-10 rounded-xl bg-emerald-600 grid place-items-center shrink-0">
           <i class="fas fa-video text-white"></i>
         </div>
         <div class="min-w-0 flex-1">
           <p class="text-sm font-semibold text-emerald-700 dark:text-emerald-200 truncate">
             {{ instantMeeting.subject }}
           </p>
-          <p class="text-xs text-emerald-600 dark:text-emerald-400">
-            Reunião ativa · link pronto para compartilhar
-          </p>
+          <p class="text-xs text-emerald-600 dark:text-emerald-400">Reunião ativa · link pronto para compartilhar</p>
         </div>
         <div class="flex items-center gap-2 shrink-0 flex-wrap">
           <a :href="instantMeeting.joinUrl" target="_blank" rel="noopener"
-            class="inline-flex items-center gap-1.5 px-3 py-2 min-h-10 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition-colors">
+            class="inline-flex items-center gap-1.5 px-3 min-h-10 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition-colors">
             <i class="fas fa-video text-[10px]"></i> Entrar agora
           </a>
           <button @click="copyInstantLink"
-            class="inline-flex items-center gap-1.5 px-3 py-2 min-h-10 rounded-lg
-                   bg-surface-raised border border-emerald-500/30 text-emerald-700 dark:text-emerald-300
-                   text-xs font-medium hover:bg-emerald-500/10 transition-colors">
+            class="inline-flex items-center gap-1.5 px-3 min-h-10 rounded-lg bg-surface-raised border border-emerald-500/30
+                   text-emerald-700 dark:text-emerald-300 text-xs font-medium hover:bg-emerald-500/10 transition-colors">
             <i class="fas fa-link text-[10px]"></i> Copiar link
           </button>
           <a :href="instantMailto"
-            class="inline-flex items-center gap-1.5 px-3 py-2 min-h-10 rounded-lg
-                   bg-surface-raised border border-emerald-500/30 text-emerald-700 dark:text-emerald-300
-                   text-xs font-medium hover:bg-emerald-500/10 transition-colors">
+            class="inline-flex items-center gap-1.5 px-3 min-h-10 rounded-lg bg-surface-raised border border-emerald-500/30
+                   text-emerald-700 dark:text-emerald-300 text-xs font-medium hover:bg-emerald-500/10 transition-colors">
             <i class="fas fa-envelope text-[10px]"></i> Convidar
           </a>
-          <button @click="instantMeeting = null"
-            class="h-10 w-10 rounded-lg text-emerald-500 hover:bg-emerald-500/20 flex items-center justify-center transition-colors">
+          <button @click="instantMeeting = null" aria-label="Fechar"
+            class="h-10 w-10 rounded-lg text-emerald-500 hover:bg-emerald-500/20 grid place-items-center transition-colors">
             <i class="fas fa-xmark text-xs"></i>
           </button>
         </div>
       </div>
     </Transition>
 
-    <!-- Toolbar: visões + ações -->
-    <div class="flex flex-wrap items-center gap-2 mb-3">
-      <SegmentedControl v-model="viewProxy" :options="VIEWS" size="sm" />
-      <span class="flex-1"></span>
-      <Button variant="primary" size="sm" :icon="creatingInstant ? 'fas fa-circle-notch fa-spin' : 'fas fa-bolt'"
-        :disabled="creatingInstant" class="!bg-emerald-600 hover:!bg-emerald-700 max-sm:!min-h-10"
-        @click="openCreateModal('instant')">
-        Instantânea
-      </Button>
-      <Button variant="primary" size="sm" icon="fas fa-plus"
-        class="!bg-purple-600 hover:!bg-purple-700 max-sm:!min-h-10"
-        @click="openCreateModal()">
-        Novo evento
-      </Button>
-      <IconButton icon="fas fa-rotate-right" size="sm" label="Atualizar"
-        :disabled="ts.loading" :class="{ 'animate-spin': ts.loading }"
-        class="max-sm:!h-10 max-sm:!w-10"
-        @click="ts.fetchCurrent()" />
-    </div>
+    <!-- Barra de controle única: período à esquerda, visão + ações à direita -->
+    <div class="flex flex-wrap items-center gap-x-3 gap-y-2.5 mb-3">
 
-    <!-- Toolbar: navegação de período -->
-    <div class="flex flex-wrap items-center gap-2 mb-4">
-      <IconButton icon="fas fa-chevron-left" size="sm" label="Período anterior"
-        :disabled="ts.loading" class="max-sm:!h-10 max-sm:!w-10" @click="ts.prevPeriod()" />
-      <IconButton icon="fas fa-chevron-right" size="sm" label="Próximo período"
-        :disabled="ts.loading" class="max-sm:!h-10 max-sm:!w-10" @click="ts.nextPeriod()" />
+      <!-- Navegação de período -->
+      <div class="flex items-center gap-1">
+        <IconButton icon="fas fa-chevron-left" size="sm" label="Período anterior"
+          :disabled="ts.loading" class="max-sm:!h-10 max-sm:!w-10" @click="ts.prevPeriod()" />
+        <IconButton icon="fas fa-chevron-right" size="sm" label="Próximo período"
+          :disabled="ts.loading" class="max-sm:!h-10 max-sm:!w-10" @click="ts.nextPeriod()" />
+        <Button v-if="!ts.isCurrentPeriod" variant="ghost" size="sm"
+          class="ml-1 max-sm:!min-h-10" @click="ts.goToToday()">
+          Hoje
+        </Button>
+      </div>
 
-      <h2 class="text-sm font-semibold text-ink px-2">{{ periodLabel }}</h2>
+      <!-- Título do período -->
+      <div class="min-w-0 flex items-baseline gap-2">
+        <h2 class="text-base font-semibold text-ink capitalize truncate">{{ periodLabel }}</h2>
+        <span class="text-xs font-mono text-ink-subtle tabular-nums shrink-0">{{ periodYear }}</span>
+      </div>
 
-      <Button v-if="!ts.isCurrentPeriod" variant="ghost" size="sm" icon="fas fa-circle-dot"
-        class="max-sm:!min-h-10" @click="ts.goToToday()">
-        Hoje
-      </Button>
+      <div class="flex-1 min-w-0"></div>
 
-      <Badge variant="neutral" size="sm" class="ml-auto">
-        <span class="font-mono">{{ ts.events.length }}</span>
-        evento{{ ts.events.length !== 1 ? 's' : '' }}
-      </Badge>
+      <!-- Visão + ações -->
+      <div class="flex items-center gap-2 flex-wrap">
+        <SegmentedControl v-model="viewProxy" :options="VIEWS" size="sm" />
+        <IconButton icon="fas fa-rotate-right" size="sm" label="Atualizar"
+          :disabled="ts.loading" :class="{ 'animate-spin': ts.loading }"
+          class="max-sm:!h-10 max-sm:!w-10" @click="ts.fetchCurrent()" />
+        <IconButton :icon="creatingInstant ? 'fas fa-circle-notch fa-spin' : 'fas fa-bolt'"
+          size="sm" label="Reunião instantânea" :disabled="creatingInstant"
+          class="max-sm:!h-10 max-sm:!w-10 !text-emerald-600 dark:!text-emerald-400"
+          @click="openCreateModal('instant')" />
+        <Button variant="primary" size="sm" icon="fas fa-plus"
+          class="!bg-purple-600 hover:!bg-purple-700 max-sm:!min-h-10"
+          @click="openCreateModal()">
+          Novo evento
+        </Button>
+      </div>
     </div>
 
     <!-- Calendário -->

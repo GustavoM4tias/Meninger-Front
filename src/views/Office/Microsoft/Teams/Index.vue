@@ -1,8 +1,8 @@
 <script setup>
-// /microsoft/teams — Central Microsoft: hub único de agenda, tarefas e reuniões.
+// /microsoft/teams — Central Microsoft: hub de agenda e reuniões.
 //
-// Consolida (2026-07-27) as 3 telas que viviam soltas na categoria Microsoft:
-//   Agenda (calendário Teams) · Tarefas (To Do) · Reuniões (Transcrições & IA)
+// Consolida (2026-07-27) as telas que viviam soltas na categoria Microsoft:
+//   Agenda (calendário Teams) · Reuniões (Transcrições & IA)
 //
 // Mesmo padrão da Central Meta (/meta): SegmentedControl + deep-link ?tab= +
 // rotas antigas vivas como redirect (preservam a query, então links de
@@ -28,7 +28,6 @@ import EmptyState from '@/components/UI/EmptyState.vue';
 import Button from '@/components/UI/Button.vue';
 
 const AgendaTab   = defineAsyncComponent(() => import('./components/AgendaTab.vue'));
-const TarefasTab  = defineAsyncComponent(() => import('@/views/Office/Microsoft/Todo/Index.vue'));
 const ReunioesTab = defineAsyncComponent(() => import('@/views/Office/Microsoft/Transcripts/Index.vue'));
 
 const ts = useTeamsStore();
@@ -39,7 +38,6 @@ const router = useRouter();
 // ── Abas ──────────────────────────────────────────────────────────────────────
 const TABS = [
   { value: 'agenda',   label: 'Agenda',   icon: 'fas fa-calendar-days' },
-  { value: 'tarefas',  label: 'Tarefas',  icon: 'fas fa-list-check' },
   { value: 'reunioes', label: 'Reuniões', icon: 'fas fa-wand-magic-sparkles' },
 ];
 const VALID_TABS = TABS.map(t => t.value);
@@ -58,12 +56,11 @@ watch(() => route.query.tab, (v) => {
 // Painéis internos (TodayPanel) podem trocar de aba sem conhecer o router
 provide('msSetTab', (v) => { if (VALID_TABS.includes(v)) tab.value = v; });
 
-const PANELS = { agenda: AgendaTab, tarefas: TarefasTab, reunioes: ReunioesTab };
+const PANELS = { agenda: AgendaTab, reunioes: ReunioesTab };
 const currentPanel = computed(() => PANELS[tab.value] || AgendaTab);
 
 const SUBTITLES = {
   agenda:   'Calendário e reuniões do Teams: agende, entre com um clique e gerencie séries recorrentes.',
-  tarefas:  'Suas tarefas do Microsoft To Do: listas, etapas, anexos e vínculo com reuniões.',
   reunioes: 'Transcrições das reuniões (Teams e presenciais) com relatório de IA por e-mail.',
 };
 const subtitle = computed(() => SUBTITLES[tab.value] || '');
@@ -141,17 +138,16 @@ function showToast(message, type = 'success') {
         icon-img="/icons/ms-teams.svg">
         <template #actions>
           <PageHelp storage-key="central-microsoft" title="Como usar a Central Microsoft"
-            intro="Agenda, tarefas e reuniões num lugar só. Cada aba cobre uma parte do seu dia: o calendário do Teams, o que você precisa fazer e o que ficou registrado das reuniões."
+            intro="Sua agenda do Teams e o registro das reuniões num lugar só."
             :steps="[
-              { title: 'Agenda', text: 'Seu calendário do Teams. Toque num horário vazio para agendar, ou num evento para ver detalhes, entrar na reunião, editar ou cancelar. Reuniões recorrentes perguntam se a ação vale só para o dia ou para a série toda.' },
+              { title: 'Agenda', text: 'Seu calendário do Teams. Toque num horário vazio para agendar, ou num evento para ver detalhes, entrar na reunião, editar ou cancelar.' },
+              { title: 'Reuniões recorrentes', text: 'Ao editar ou cancelar uma reunião que se repete, o sistema pergunta se a ação vale só para aquele dia ou para a série toda.' },
               { title: 'Instantânea', text: 'Cria uma reunião Teams na hora, com link pronto para copiar ou enviar por e-mail.' },
-              { title: 'Tarefas', text: 'Suas tarefas do Microsoft To Do. Crie listas, marque etapas, anexe arquivos e vincule uma reunião do Teams à tarefa.' },
-              { title: 'Reuniões', text: 'Transcrições das reuniões do Teams e das presenciais (gravadas pelo navegador), com relatório de IA que pode ser enviado por e-mail.' },
+              { title: 'Reuniões (transcrições)', text: 'Transcrições das reuniões do Teams e das presenciais (gravadas pelo navegador), com relatório de IA que pode ser enviado por e-mail.' },
             ]"
             :tips="[
-              'Os links antigos de To Do e Transcrições continuam funcionando - eles abrem a aba certa aqui.',
-              'No celular, a visão Lista é a mais confortável para a agenda; a visão Dia mostra os horários.',
-              'O aviso de reunião começando aparece em qualquer aba.',
+              'No celular, a visão Lista é a mais confortável; a visão Dia mostra os horários lado a lado.',
+              'O aviso de reunião começando aparece nas duas abas.',
             ]" />
         </template>
       </PageHeader>
@@ -160,7 +156,7 @@ function showToast(message, type = 'success') {
       <div v-if="!ms.connected && !ms.loading" class="py-16">
         <EmptyState icon="fab fa-microsoft" size="lg"
           title="Conecte sua conta Microsoft"
-          description="A Central Microsoft precisa da sua conta @menin.com.br para mostrar agenda, tarefas e reuniões.">
+          description="A Central Microsoft precisa da sua conta @menin.com.br para mostrar sua agenda e suas reuniões.">
           <template #actions>
             <Button variant="primary" icon="fab fa-microsoft" @click="ms.redirectToLogin()">
               Conectar conta Microsoft

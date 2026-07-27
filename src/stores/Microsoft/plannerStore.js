@@ -2,6 +2,7 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import * as api from '@/utils/Microsoft/apiPlanner';
+import { readDefaultPref, writeDefaultPref } from '@/utils/Microsoft/defaultPref';
 
 export const usePlannerStore = defineStore('planner', () => {
 
@@ -74,6 +75,48 @@ export const usePlannerStore = defineStore('planner', () => {
         buckets.value = [];
         tasks.value   = [];
         await _loadPlanFull(plan.id);
+    }
+
+    // ── Plano padrão (abre sempre neste) ──────────────────────────────────────
+    const defaultPlan = ref(readDefaultPref('planner')); // { groupId, groupName, planId, planTitle }
+
+    const isCurrentDefault = computed(() =>
+        !!defaultPlan.value && defaultPlan.value.planId === selectedPlan.value?.id
+    );
+
+    function setDefaultPlan() {
+        if (!selectedGroup.value || !selectedPlan.value) return;
+        defaultPlan.value = {
+            groupId:   selectedGroup.value.id,
+            groupName: selectedGroup.value.displayName || selectedGroup.value.name || '',
+            planId:    selectedPlan.value.id,
+            planTitle: selectedPlan.value.title || '',
+        };
+        writeDefaultPref('planner', defaultPlan.value);
+    }
+
+    function clearDefaultPlan() {
+        defaultPlan.value = null;
+        writeDefaultPref('planner', null);
+    }
+
+    /**
+     * Carrega os grupos e, havendo plano padrão, já abre nele.
+     * Se o grupo/plano padrão sumiu (acesso removido, plano excluído), a
+     * preferência é descartada em silêncio.
+     */
+    async function initWithDefault() {
+        if (!groups.value.length) await fetchGroups();
+        const pref = defaultPlan.value;
+        if (!pref || selectedPlan.value) return;
+
+        const group = groups.value.find(g => g.id === pref.groupId);
+        if (!group) { clearDefaultPlan(); return; }
+
+        await selectGroup(group);
+        const plan = plans.value.find(p => p.id === pref.planId);
+        if (!plan) { clearDefaultPlan(); return; }
+        await selectPlan(plan);
     }
 
     async function _loadPlanFull(planId) {
@@ -194,6 +237,7 @@ export const usePlannerStore = defineStore('planner', () => {
         buckets, bucketsOrdered, tasks, tasksByBucket,
         loadingGroups, loadingPlan, savingTask, error,
         fetchGroups, selectGroup, selectPlan, refreshPlan,
+        defaultPlan, isCurrentDefault, setDefaultPlan, clearDefaultPlan, initWithDefault,
         createPlan, deletePlan,
         createBucket, renameBucket, deleteBucket,
         createTask, updateTask, moveTask, toggleTaskComplete, deleteTask,

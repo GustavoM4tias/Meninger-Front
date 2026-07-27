@@ -3,6 +3,7 @@ import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import API_URL from '@/config/apiUrl';
 import { requestWithAuth } from '@/utils/Auth/requestWithAuth';
+import { readDefaultPref, writeDefaultPref } from '@/utils/Microsoft/defaultPref';
 
 const BASE = `${API_URL}/microsoft/sharepoint`;
 
@@ -89,6 +90,49 @@ export const useSharepointStore = defineStore('sharepoint', () => {
         try { sites.value = await requestWithAuth(`${BASE}/sites`); }
         catch (err) { error.value = err.message; }
         finally { loading.value = false; }
+    }
+
+    // ── Local padrão (abre sempre aqui) ───────────────────────────────────────
+    const defaultLocation = ref(readDefaultPref('sharepoint')); // { siteId, siteName, driveId, driveName }
+
+    const isCurrentDefault = computed(() =>
+        !!defaultLocation.value
+        && defaultLocation.value.siteId === selectedSite.value?.id
+        && defaultLocation.value.driveId === selectedDrive.value?.id
+    );
+
+    function setDefaultLocation() {
+        if (!selectedSite.value || !selectedDrive.value) return;
+        defaultLocation.value = {
+            siteId:    selectedSite.value.id,
+            siteName:  selectedSite.value.displayName || selectedSite.value.name || '',
+            driveId:   selectedDrive.value.id,
+            driveName: selectedDrive.value.name || '',
+        };
+        writeDefaultPref('sharepoint', defaultLocation.value);
+    }
+
+    function clearDefaultLocation() {
+        defaultLocation.value = null;
+        writeDefaultPref('sharepoint', null);
+    }
+
+    /**
+     * Carrega os sites e, se houver local padrão, já abre nele.
+     * Se o site/biblioteca padrão não existir mais, a preferência é descartada.
+     */
+    async function initWithDefault() {
+        if (!sites.value.length) await fetchSites();
+        const pref = defaultLocation.value;
+        if (!pref || selectedDrive.value) return;
+
+        const site = sites.value.find(s => s.id === pref.siteId);
+        if (!site) { clearDefaultLocation(); return; }
+
+        await selectSite(site);                       // já carrega as bibliotecas
+        const drive = drives.value.find(d => d.id === pref.driveId);
+        if (!drive) { clearDefaultLocation(); return; }
+        if (selectedDrive.value?.id !== drive.id) await selectDrive(drive);
     }
 
     async function selectSite(site) {
@@ -296,6 +340,7 @@ export const useSharepointStore = defineStore('sharepoint', () => {
         loading, error,
         currentFolderId, isAtRoot,
         fetchSites, selectSite, selectDrive,
+        defaultLocation, isCurrentDefault, setDefaultLocation, clearDefaultLocation, initWithDefault,
         openFolder, navigateToBreadcrumb,
         doSearch, clearSearch,
         deleteItem, renameItem, moveItem, uploadFile, createSharingLink, fetchItemDetail,

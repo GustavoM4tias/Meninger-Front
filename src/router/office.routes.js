@@ -341,10 +341,8 @@ export default [
                     },
                     // Consolidadas na Central Microsoft (/microsoft/teams) em 2026-07-27.
                     // Redirects PERMANENTES: links de notificação/favoritos antigos dependem deles.
-                    {
-                        path: 'todo',
-                        redirect: to => ({ path: '/microsoft/teams', query: { ...to.query, tab: 'tarefas' } }),
-                    },
+                    // O módulo To Do foi removido (2026-07-27) — a rota antiga cai na Agenda.
+                    { path: 'todo', redirect: { path: '/microsoft/teams' } },
                     {
                         path: 'transcripts',
                         redirect: to => ({ path: '/microsoft/teams', query: { ...to.query, tab: 'reunioes' } }),
