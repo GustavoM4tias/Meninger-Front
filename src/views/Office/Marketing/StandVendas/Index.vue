@@ -140,8 +140,16 @@
                         </div>
                         <Badge variant="neutral" size="sm">{{ m.stands_count }} stand{{ m.stands_count === 1 ? '' : 's' }}</Badge>
                     </div>
-                    <p class="mt-3 text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Valor médio</p>
-                    <p class="font-mono tabular-nums font-bold text-ink text-lg">{{ fmtRange(m) }}</p>
+                    <div class="mt-3 flex items-end justify-between gap-3">
+                        <div class="min-w-0">
+                            <p class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Valor médio</p>
+                            <p class="font-mono tabular-nums font-bold text-ink text-lg truncate">{{ fmtRange(m) }}</p>
+                        </div>
+                        <div v-if="Number(m.avg_area_m2) > 0" class="text-right shrink-0">
+                            <p class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Metragem</p>
+                            <p class="font-mono tabular-nums font-bold text-ink text-lg">{{ Number(m.avg_area_m2) }} m²</p>
+                        </div>
+                    </div>
                     <div v-if="m.items?.length" class="flex flex-wrap gap-1.5 mt-3">
                         <span v-for="item in m.items.slice(0, 6)" :key="item"
                             class="px-2 py-0.5 rounded-md bg-surface-sunken border border-line text-[11px] text-ink-muted">{{ item }}</span>
