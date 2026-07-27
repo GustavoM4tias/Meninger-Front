@@ -1,139 +1,9 @@
-<template>
-  <div class="flex flex-col min-h-0">
-
-    <!-- Day headers -->
-    <div class="grid grid-cols-[48px_repeat(var(--cols),1fr)] border-b border-line bg-surface-sunken/50 shrink-0"
-      :style="{ '--cols': weekDays.length }">
-      <div></div>
-      <div v-for="day in weekDays" :key="fmtYMD(day)"
-        :class="isToday(day) ? 'text-accent' : 'text-ink-muted'"
-        class="py-2 text-center text-xs font-semibold uppercase tracking-wide border-l border-line">
-        <div>{{ DAY_NAMES[day.getDay()] }}</div>
-        <div :class="isToday(day)
-          ? 'w-7 h-7 rounded-full bg-blue-600 text-white flex items-center justify-center mx-auto mt-0.5 text-sm font-bold'
-          : 'text-base font-bold text-ink mt-0.5'">
-          {{ day.getDate() }}
-        </div>
-      </div>
-    </div>
-
-    <!-- All-day events row -->
-    <div v-if="hasAllDay"
-      class="grid border-b border-line shrink-0 bg-surface-raised"
-      :style="{ gridTemplateColumns: `48px repeat(${weekDays.length}, 1fr)` }">
-      <div class="text-xs text-gray-400 dark:text-gray-500 flex items-center justify-end pr-2 py-1">Todo dia</div>
-      <div v-for="day in weekDays" :key="fmtYMD(day)"
-        class="border-l border-line p-0.5 min-h-[28px]">
-        <div v-for="ev in allDayByDay[fmtYMD(day)]" :key="ev.id"
-          @click="$emit('event-click', ev)"
-          class="truncate text-xs px-1.5 py-0.5 rounded-md cursor-pointer mb-0.5 font-medium transition-all hover:shadow-sm hover:scale-[1.01]"
-          :class="ev.isOnlineMeeting
-            ? 'bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 hover:bg-purple-200 dark:hover:bg-purple-800/60'
-            : 'bg-accent-soft text-accent hover:bg-blue-200 dark:hover:bg-blue-800/40'">
-          {{ ev.subject }}
-        </div>
-      </div>
-    </div>
-
-    <!-- Time grid -->
-    <div class="flex-1 overflow-y-auto" style="max-height: 600px">
-      <div class="relative" :style="{ height: TOTAL_HEIGHT + 'px' }">
-        <!-- Grid overlay (colunas + linhas de hora) -->
-        <div class="absolute inset-0"
-          :style="{ display: 'grid', gridTemplateColumns: `48px repeat(${weekDays.length}, 1fr)` }">
-
-          <!-- Hour lines + labels (coluna de tempo) -->
-          <div class="relative">
-            <div v-for="h in hours" :key="h"
-              class="absolute left-0 right-0 flex items-start"
-              :style="{ top: ((h - HOUR_START) * SLOT_PX) + 'px' }">
-              <span class="text-xs text-ink-subtle w-11 text-right pr-2 -mt-2 select-none">
-                {{ h === 12 ? '12:00' : h > 12 ? `${h - 12}pm` : `${h}am` }}
-              </span>
-            </div>
-          </div>
-
-          <!-- Day columns -->
-          <div
-            v-for="day in weekDays" :key="fmtYMD(day)"
-            class="relative border-l border-line cursor-pointer"
-            :class="isToday(day) ? 'bg-blue-50/30 dark:bg-blue-900/5' : ''"
-            @click.self="onColumnClick($event, day)"
-            @mousemove="onColumnMouseMove($event, day)"
-            @mouseleave="onColumnMouseLeave">
-
-            <!-- Half-hour dividers (pontilhados) -->
-            <div v-for="h in hours" :key="h"
-              class="absolute left-0 right-0 border-t border-dashed border-line/80 pointer-events-none"
-              :style="{ top: ((h - HOUR_START) * SLOT_PX + SLOT_PX / 2) + 'px' }" />
-
-            <!-- Hour dividers (sólidos) -->
-            <div v-for="h in hours" :key="'hr' + h"
-              class="absolute left-0 right-0 border-t border-line pointer-events-none"
-              :style="{ top: ((h - HOUR_START) * SLOT_PX) + 'px' }" />
-
-            <!-- Ghost preview (hover em slot vazio) -->
-            <Transition name="ghost">
-              <div
-                v-if="hoverDay === fmtYMD(day) && hoverTop !== null"
-                class="absolute left-0.5 right-0.5 rounded-md border border-dashed border-violet-400 dark:border-violet-500 bg-violet-50 dark:bg-violet-900/20 pointer-events-none z-[5] flex items-center gap-1 px-2"
-                :style="{ top: (hoverTop - 2) + 'px', height: '30px' }">
-                <i class="fas fa-plus text-violet-500 dark:text-violet-400 text-[9px] shrink-0"></i>
-                <span class="text-[10px] font-semibold text-violet-600 dark:text-violet-400">{{ hoverTime }}</span>
-              </div>
-            </Transition>
-
-            <!-- Current time indicator -->
-            <div v-if="isToday(day) && nowOffset >= 0"
-              class="absolute left-0 right-0 flex items-center z-10 pointer-events-none"
-              :style="{ top: nowOffset + 'px' }">
-              <div class="w-2 h-2 rounded-full bg-red-500 -ml-1 shrink-0"></div>
-              <div class="flex-1 h-px bg-red-500"></div>
-            </div>
-
-            <!-- Events -->
-            <div
-              v-for="ev in timedByDay[fmtYMD(day)]" :key="ev.id"
-              @click="$emit('event-click', ev)"
-              @mouseenter="onEventEnter"
-              @mouseleave="onEventLeave"
-              class="absolute left-0.5 right-0.5 rounded-lg px-1.5 py-0.5 cursor-pointer overflow-hidden z-10 group transition-all duration-150 hover:shadow-md hover:z-20 hover:left-0 hover:right-0"
-              :class="eventClass(ev)"
-              :style="eventStyle(ev)">
-              <div :class="['text-[11px] font-semibold truncate leading-tight', { 'pe-3': ev.isOnlineMeeting }]">
-                {{ ev.subject }}
-              </div>
-              <div class="text-[9px] opacity-75 truncate">{{ fmtTime(ev.start) }} – {{ fmtTime(ev.end) }}</div>
-              <i v-if="ev.isOnlineMeeting"
-                class="fas fa-video absolute top-1 right-1 text-xs opacity-50 group-hover:opacity-100"></i>
-            </div>
-
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Empty state -->
-    <div v-if="!loading && !hasAnyEvent"
-      class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none mt-24">
-      <i class="fas fa-calendar-xmark text-4xl text-ink-subtle mb-3"></i>
-      <p class="text-sm text-gray-400 dark:text-gray-500">Nenhum evento nesta semana</p>
-    </div>
-
-    <!-- Loading overlay -->
-    <div v-if="loading"
-      class="absolute inset-0 flex items-center justify-center bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm">
-      <div class="flex items-center gap-2 text-ink-muted">
-        <i class="fas fa-circle-notch animate-spin"></i>
-        <span class="text-sm">Carregando...</span>
-      </div>
-    </div>
-
-  </div>
-</template>
-
 <script setup>
-import { computed, ref, onMounted, onUnmounted } from 'vue';
+// Grade de horários — usada pelas visões Semana (7 colunas) e Dia (1 coluna).
+// Eventos simultâneos são distribuídos lado a lado (algoritmo de colunas), a
+// faixa de horas se adapta aos eventos do período e o scroll abre na hora atual.
+
+import { computed, ref, onMounted, onUnmounted, nextTick, watch } from 'vue';
 
 const props = defineProps({
   events:   { type: Array,   default: () => [] },
@@ -142,12 +12,11 @@ const props = defineProps({
 });
 const emit = defineEmits(['event-click', 'slot-click']);
 
-const DAY_NAMES  = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-const HOUR_START = 6;
-const HOUR_END   = 22;
-const SLOT_PX    = 64;
-const TOTAL_HEIGHT = (HOUR_END - HOUR_START) * SLOT_PX;
-const hours = Array.from({ length: HOUR_END - HOUR_START + 1 }, (_, i) => HOUR_START + i);
+const DAY_SHORT = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+const SLOT_PX   = 56;   // altura de 1 hora
+const MIN_EVENT_PX = 24;
+
+const isSingleDay = computed(() => props.weekDays.length === 1);
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function fmtYMD(date) {
@@ -156,98 +25,27 @@ function fmtYMD(date) {
   const d = String(date.getDate()).padStart(2, '0');
   return `${y}-${m}-${d}`;
 }
-
 function isToday(date) {
   const t = new Date();
-  return date.getFullYear() === t.getFullYear() &&
-    date.getMonth()    === t.getMonth() &&
-    date.getDate()     === t.getDate();
+  return date.getFullYear() === t.getFullYear()
+      && date.getMonth() === t.getMonth()
+      && date.getDate() === t.getDate();
 }
-
-function fmtTime(dt) {
-  if (!dt) return '';
-  return dt.split('T')[1]?.slice(0, 5) || '';
-}
-
-function eventMinutes(dt) {
+function isWeekend(date) { const d = date.getDay(); return d === 0 || d === 6; }
+function fmtTime(dt) { return dt ? (dt.split('T')[1]?.slice(0, 5) || '') : ''; }
+function eventDay(dt) { return dt ? dt.split('T')[0] : ''; }
+function minutesOf(dt) {
   if (!dt) return 0;
-  const time = dt.split('T')[1] || '00:00:00';
-  const [h, m] = time.split(':');
+  const [h, m] = (dt.split('T')[1] || '00:00').split(':');
   return parseInt(h) * 60 + parseInt(m);
 }
 
-function eventDay(dt) {
-  if (!dt) return '';
-  return dt.split('T')[0];
-}
-
-// ── Slot click ────────────────────────────────────────────────────────────────
-function onColumnClick(e, day) {
-  const rect = e.currentTarget.getBoundingClientRect();
-  const y    = e.clientY - rect.top;
-  const minutesFromStart = (y / SLOT_PX) * 60;
-  const totalMinutes     = HOUR_START * 60 + minutesFromStart;
-  // Snap to 30-minute intervals (:00 ou :30 apenas)
-  const snapped = Math.round(totalMinutes / 30) * 30;
-  const hour    = Math.floor(snapped / 60);
-  const minute  = snapped % 60;
-  emit('slot-click', { date: day, hour, minute });
-}
-
-// ── Hover ghost ───────────────────────────────────────────────────────────────
-const hoverDay  = ref(null);
-const hoverTop  = ref(null);
-const hoverTime = ref('');
-let   overEvent = false;  // true quando o mouse está sobre um evento
-
-function onEventEnter() { overEvent = true;  hoverDay.value = null; }
-function onEventLeave() { overEvent = false; }
-
-function onColumnMouseMove(e, day) {
-  if (overEvent) return;
-
-  const rect             = e.currentTarget.getBoundingClientRect();
-  const y                = e.clientY - rect.top;
-  const minutesFromStart = (y / SLOT_PX) * 60;
-  const totalMinutes     = HOUR_START * 60 + minutesFromStart;
-
-  // snap to 30 min para o ghost
-  const snapped    = Math.round(totalMinutes / 30) * 30;
-  const snapH      = Math.min(Math.max(Math.floor(snapped / 60), HOUR_START), HOUR_END - 1);
-  const snapM      = snapped % 60;
-  const snapTop    = (snapped - HOUR_START * 60) * SLOT_PX / 60;
-
-  hoverDay.value  = fmtYMD(day);
-  hoverTop.value  = Math.max(0, Math.min(snapTop, TOTAL_HEIGHT - 30));
-  hoverTime.value = `${String(snapH).padStart(2, '0')}:${String(snapM).padStart(2, '0')}`;
-}
-
-function onColumnMouseLeave() {
-  hoverDay.value = null;
-  hoverTop.value = null;
-  overEvent      = false;
-}
-
-// ── Current time indicator ────────────────────────────────────────────────────
-const nowOffset = ref(-1);
-function updateNow() {
-  const now = new Date();
-  const min = now.getHours() * 60 + now.getMinutes();
-  if (min < HOUR_START * 60 || min > HOUR_END * 60) { nowOffset.value = -1; return; }
-  nowOffset.value = (min - HOUR_START * 60) * SLOT_PX / 60;
-}
-let timer;
-onMounted(() => { updateNow(); timer = setInterval(updateNow, 60000); });
-onUnmounted(() => clearInterval(timer));
-
-// ── Event grouping ────────────────────────────────────────────────────────────
+// ── Agrupamento ───────────────────────────────────────────────────────────────
 const allDayByDay = computed(() => {
   const map = {};
   for (const ev of props.events) {
     if (!ev.isAllDay) continue;
-    const day = eventDay(ev.start);
-    if (!map[day]) map[day] = [];
-    map[day].push(ev);
+    (map[eventDay(ev.start)] ||= []).push(ev);
   }
   return map;
 });
@@ -256,33 +54,308 @@ const timedByDay = computed(() => {
   const map = {};
   for (const ev of props.events) {
     if (ev.isAllDay) continue;
-    const day = eventDay(ev.start);
-    if (!map[day]) map[day] = [];
-    map[day].push(ev);
+    (map[eventDay(ev.start)] ||= []).push(ev);
   }
   return map;
 });
 
-const hasAllDay  = computed(() => Object.values(allDayByDay.value).some(a => a.length));
+const hasAllDay = computed(() => Object.values(allDayByDay.value).some(a => a.length));
 const hasAnyEvent = computed(() => props.events.length > 0);
 
-// ── Event positioning ─────────────────────────────────────────────────────────
-function eventStyle(ev) {
-  const startMin = Math.max(eventMinutes(ev.start), HOUR_START * 60);
-  const endMin   = Math.min(eventMinutes(ev.end),   HOUR_END   * 60);
-  const top      = (startMin - HOUR_START * 60) * SLOT_PX / 60;
-  const height   = Math.max((endMin - startMin) * SLOT_PX / 60, 28);
-  return { top: `${top}px`, height: `${height}px`, minHeight: '28px' };
+// ── Faixa de horas dinâmica ───────────────────────────────────────────────────
+// Padrão 7h–21h, mas expande para caber eventos fora dessa janela (antes,
+// um evento às 5h simplesmente não aparecia).
+const hourRange = computed(() => {
+  let start = 7, end = 21;
+  for (const ev of props.events) {
+    if (ev.isAllDay || !ev.start) continue;
+    start = Math.min(start, Math.floor(minutesOf(ev.start) / 60));
+    end   = Math.max(end,   Math.ceil(minutesOf(ev.end || ev.start) / 60));
+  }
+  return { start: Math.max(0, start), end: Math.min(24, Math.max(end, start + 4)) };
+});
+
+const hours = computed(() => {
+  const { start, end } = hourRange.value;
+  return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+});
+const totalHeight = computed(() => (hourRange.value.end - hourRange.value.start) * SLOT_PX);
+
+function topFor(minutes) {
+  return (minutes - hourRange.value.start * 60) * SLOT_PX / 60;
+}
+
+// ── Layout de eventos sobrepostos ─────────────────────────────────────────────
+// Agrupa eventos que se cruzam no tempo e distribui em colunas lado a lado,
+// para que reuniões simultâneas não fiquem uma escondendo a outra.
+// Devolve wrappers { ev, col, cols } — nunca muta o evento da store.
+function layoutDay(events) {
+  const sorted = [...events].sort((a, b) =>
+    minutesOf(a.start) - minutesOf(b.start) || minutesOf(b.end) - minutesOf(a.end)
+  );
+
+  const out = [];
+  let cluster = [];
+  let clusterEnd = -1;
+
+  const flush = () => {
+    if (!cluster.length) return;
+    const colEnds = [];                       // fim do último evento de cada coluna
+    const placed = [];
+    for (const ev of cluster) {
+      const s = minutesOf(ev.start);
+      let col = colEnds.findIndex(end => s >= end);
+      if (col === -1) { col = colEnds.length; colEnds.push(0); }
+      colEnds[col] = Math.max(minutesOf(ev.end), s + 15);
+      placed.push({ ev, col });
+    }
+    for (const p of placed) out.push({ ...p, cols: colEnds.length });
+    cluster = [];
+    clusterEnd = -1;
+  };
+
+  for (const ev of sorted) {
+    if (cluster.length && minutesOf(ev.start) >= clusterEnd) flush();
+    cluster.push(ev);
+    clusterEnd = Math.max(clusterEnd, minutesOf(ev.end));
+  }
+  flush();
+  return out;
+}
+
+const laidOutByDay = computed(() => {
+  const map = {};
+  for (const [day, evs] of Object.entries(timedByDay.value)) map[day] = layoutDay(evs);
+  return map;
+});
+
+function eventStyle({ ev, col, cols }) {
+  const { start: hStart, end: hEnd } = hourRange.value;
+  const startMin = Math.max(minutesOf(ev.start), hStart * 60);
+  const endMin   = Math.min(minutesOf(ev.end),   hEnd * 60);
+  const widthPct = 100 / cols;
+  return {
+    top:    `${topFor(startMin)}px`,
+    height: `${Math.max((endMin - startMin) * SLOT_PX / 60, MIN_EVENT_PX)}px`,
+    left:   `calc(${col * widthPct}% + 2px)`,
+    width:  `calc(${widthPct}% - 4px)`,
+    zIndex: 10 + col,
+  };
+}
+
+// Compacto = evento curto: esconde a linha de horário para não estourar
+function isCompact(ev) {
+  return (minutesOf(ev.end) - minutesOf(ev.start)) < 45;
 }
 
 function eventClass(ev) {
   if (ev.isCancelled)
-    return 'bg-surface-sunken text-gray-400 line-through border border-line hover:bg-surface-hover';
+    return 'bg-surface-sunken border-line text-ink-subtle line-through';
   if (ev.isOnlineMeeting)
-    return 'bg-purple-100 dark:bg-purple-900/50 text-purple-800 dark:text-purple-200 border border-purple-200 dark:border-purple-700/50 hover:bg-purple-200 dark:hover:bg-purple-800/70';
-  return 'bg-accent-soft text-blue-800 dark:text-blue-200 border border-accent/30/50 hover:bg-blue-200 dark:hover:bg-blue-800/60';
+    return 'bg-purple-500/15 border-purple-500/40 text-purple-700 dark:text-purple-200 hover:bg-purple-500/25';
+  return 'bg-accent-soft border-accent/40 text-accent hover:bg-accent/20';
 }
+
+// ── Clique em slot vazio ──────────────────────────────────────────────────────
+function slotFromEvent(e) {
+  const rect = e.currentTarget.getBoundingClientRect();
+  const y = e.clientY - rect.top;
+  const total = hourRange.value.start * 60 + (y / SLOT_PX) * 60;
+  const snapped = Math.round(total / 30) * 30;                     // snap 30 min
+  return { hour: Math.floor(snapped / 60), minute: snapped % 60, snapped };
+}
+
+function onColumnClick(e, day) {
+  const { hour, minute } = slotFromEvent(e);
+  emit('slot-click', { date: day, hour, minute });
+}
+
+// ── Ghost de hover (só no desktop) ────────────────────────────────────────────
+const hoverDay = ref(null);
+const hoverTop = ref(null);
+const hoverTime = ref('');
+let overEvent = false;
+
+function onEventEnter() { overEvent = true; hoverDay.value = null; }
+function onEventLeave() { overEvent = false; }
+
+function onColumnMouseMove(e, day) {
+  if (overEvent) return;
+  const { hour, minute, snapped } = slotFromEvent(e);
+  hoverDay.value  = fmtYMD(day);
+  hoverTop.value  = Math.max(0, Math.min(topFor(snapped), totalHeight.value - 28));
+  hoverTime.value = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+}
+function onColumnMouseLeave() { hoverDay.value = null; hoverTop.value = null; overEvent = false; }
+
+// ── Linha do horário atual ────────────────────────────────────────────────────
+const nowOffset = ref(-1);
+function updateNow() {
+  const now = new Date();
+  const min = now.getHours() * 60 + now.getMinutes();
+  const { start, end } = hourRange.value;
+  nowOffset.value = (min < start * 60 || min > end * 60) ? -1 : topFor(min);
+}
+let timer;
+
+// ── Scroll inicial na hora atual ──────────────────────────────────────────────
+const scroller = ref(null);
+function scrollToNow() {
+  if (!scroller.value) return;
+  const target = nowOffset.value >= 0 ? nowOffset.value : topFor(8 * 60);
+  scroller.value.scrollTop = Math.max(0, target - 120);
+}
+
+onMounted(async () => {
+  updateNow();
+  timer = setInterval(updateNow, 60_000);
+  await nextTick();
+  scrollToNow();
+});
+onUnmounted(() => clearInterval(timer));
+
+watch(() => props.weekDays, () => nextTick(scrollToNow));
+
+const gridCols = computed(() => `56px repeat(${props.weekDays.length}, minmax(0, 1fr))`);
 </script>
+
+<template>
+  <div class="relative flex flex-col min-h-0">
+
+    <!-- Cabeçalho dos dias -->
+    <div class="grid border-b border-line bg-surface-sunken/60 shrink-0"
+      :style="{ gridTemplateColumns: gridCols }">
+      <div class="border-r border-line"></div>
+      <div v-for="day in weekDays" :key="fmtYMD(day)"
+        class="py-2 px-1 text-center border-r border-line last:border-r-0"
+        :class="isWeekend(day) && !isToday(day) ? 'bg-surface-sunken/40' : ''">
+        <div class="text-[10px] font-mono uppercase tracking-wider"
+          :class="isToday(day) ? 'text-accent' : 'text-ink-subtle'">
+          {{ isSingleDay ? DAY_SHORT[day.getDay()] : DAY_SHORT[day.getDay()] }}
+        </div>
+        <div class="mt-1 mx-auto flex items-center justify-center text-sm font-bold leading-none"
+          :class="isToday(day)
+            ? 'h-7 w-7 rounded-full bg-accent text-white shadow-soft'
+            : 'h-7 text-ink'">
+          {{ day.getDate() }}
+        </div>
+      </div>
+    </div>
+
+    <!-- Faixa de eventos de dia inteiro -->
+    <div v-if="hasAllDay" class="grid border-b border-line bg-surface-raised shrink-0"
+      :style="{ gridTemplateColumns: gridCols }">
+      <div class="flex items-center justify-end pr-2 py-1.5 border-r border-line">
+        <span class="text-[10px] font-mono uppercase tracking-wider text-ink-subtle">Dia</span>
+      </div>
+      <div v-for="day in weekDays" :key="fmtYMD(day)"
+        class="border-r border-line last:border-r-0 p-1 space-y-1 min-h-[34px]">
+        <button v-for="ev in allDayByDay[fmtYMD(day)]" :key="ev.id"
+          @click="$emit('event-click', ev)"
+          class="w-full truncate text-left text-[11px] px-2 py-1 rounded-md font-medium border transition-colors"
+          :class="eventClass(ev)">
+          {{ ev.subject }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Grade de horários -->
+    <div ref="scroller" class="flex-1 overflow-y-auto overscroll-contain"
+      style="max-height: min(68vh, 620px)">
+      <div class="relative" :style="{ height: totalHeight + 'px' }">
+        <div class="absolute inset-0 grid" :style="{ gridTemplateColumns: gridCols }">
+
+          <!-- Coluna de horas -->
+          <div class="relative border-r border-line bg-surface-sunken/30">
+            <div v-for="h in hours" :key="h"
+              class="absolute right-2 -translate-y-1/2 text-[11px] font-mono tabular-nums text-ink-subtle select-none"
+              :style="{ top: ((h - hourRange.start) * SLOT_PX) + 'px' }">
+              {{ String(h).padStart(2, '0') }}:00
+            </div>
+          </div>
+
+          <!-- Colunas dos dias -->
+          <div v-for="day in weekDays" :key="fmtYMD(day)"
+            class="relative border-r border-line last:border-r-0 cursor-pointer transition-colors"
+            :class="isToday(day)
+              ? 'bg-accent/[0.04]'
+              : isWeekend(day) ? 'bg-surface-sunken/25' : ''"
+            @click.self="onColumnClick($event, day)"
+            @mousemove="onColumnMouseMove($event, day)"
+            @mouseleave="onColumnMouseLeave">
+
+            <!-- Meia hora (pontilhado) -->
+            <div v-for="h in hours" :key="'half' + h"
+              class="absolute inset-x-0 border-t border-dashed border-line/60 pointer-events-none"
+              :style="{ top: ((h - hourRange.start) * SLOT_PX + SLOT_PX / 2) + 'px' }" />
+            <!-- Hora cheia (sólido) -->
+            <div v-for="h in hours" :key="'full' + h"
+              class="absolute inset-x-0 border-t border-line pointer-events-none"
+              :style="{ top: ((h - hourRange.start) * SLOT_PX) + 'px' }" />
+
+            <!-- Ghost de criação -->
+            <Transition name="ghost">
+              <div v-if="hoverDay === fmtYMD(day) && hoverTop !== null"
+                class="absolute inset-x-1 rounded-md border border-dashed border-accent/60 bg-accent-soft
+                       pointer-events-none z-[5] flex items-center gap-1.5 px-2"
+                :style="{ top: hoverTop + 'px', height: '26px' }">
+                <i class="fas fa-plus text-accent text-[9px]"></i>
+                <span class="text-[10px] font-mono font-semibold text-accent">{{ hoverTime }}</span>
+              </div>
+            </Transition>
+
+            <!-- Linha do agora -->
+            <div v-if="isToday(day) && nowOffset >= 0"
+              class="absolute inset-x-0 flex items-center z-30 pointer-events-none"
+              :style="{ top: nowOffset + 'px' }">
+              <div class="h-2 w-2 rounded-full bg-red-500 -ml-1 shrink-0 ring-2 ring-surface-raised"></div>
+              <div class="flex-1 h-px bg-red-500"></div>
+            </div>
+
+            <!-- Eventos (posicionados lado a lado quando há sobreposição) -->
+            <button v-for="slot in laidOutByDay[fmtYMD(day)]" :key="slot.ev.id"
+              @click="$emit('event-click', slot.ev)"
+              @mouseenter="onEventEnter"
+              @mouseleave="onEventLeave"
+              class="absolute rounded-lg border px-1.5 py-1 text-left overflow-hidden
+                     transition-colors hover:shadow-soft focus:outline-none focus:ring-2 focus:ring-accent-ring"
+              :class="eventClass(slot.ev)"
+              :style="eventStyle(slot)">
+              <div class="flex items-start gap-1">
+                <span class="text-[11px] font-semibold leading-tight truncate flex-1">{{ slot.ev.subject }}</span>
+                <i v-if="slot.ev.isOnlineMeeting" class="fas fa-video text-[8px] mt-0.5 opacity-60 shrink-0"></i>
+              </div>
+              <div v-if="!isCompact(slot.ev)" class="text-[9px] font-mono tabular-nums opacity-70 truncate">
+                {{ fmtTime(slot.ev.start) }}–{{ fmtTime(slot.ev.end) }}
+              </div>
+            </button>
+
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Vazio -->
+    <div v-if="!loading && !hasAnyEvent"
+      class="absolute inset-x-0 bottom-0 top-24 flex flex-col items-center justify-center pointer-events-none">
+      <div class="grid place-items-center h-12 w-12 rounded-2xl bg-surface-sunken border border-line text-ink-subtle mb-3">
+        <i class="fas fa-calendar-xmark"></i>
+      </div>
+      <p class="text-sm text-ink-muted">Nenhum evento neste período</p>
+      <p class="text-xs text-ink-subtle mt-1">Clique em um horário para agendar</p>
+    </div>
+
+    <!-- Carregando -->
+    <div v-if="loading"
+      class="absolute inset-0 z-40 flex items-center justify-center bg-surface-raised/60 backdrop-blur-sm">
+      <div class="flex items-center gap-2 text-ink-muted">
+        <i class="fas fa-circle-notch animate-spin"></i>
+        <span class="text-sm">Carregando...</span>
+      </div>
+    </div>
+
+  </div>
+</template>
 
 <style scoped>
 .ghost-enter-active { transition: opacity 0.1s, transform 0.1s; }
