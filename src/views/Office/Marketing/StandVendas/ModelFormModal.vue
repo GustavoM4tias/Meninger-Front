@@ -5,8 +5,14 @@
         <div class="flex flex-col gap-4">
             <Input v-model="form.name" label="Nome do modelo" placeholder="Ex.: Stand contêiner, Loja decorada..." required />
 
-            <Input v-model="form.avg_value" type="number" label="Valor médio (R$)" placeholder="0,00"
-                hint="Custo médio de construção deste modelo de stand." />
+            <div>
+                <label class="text-[11px] font-medium text-ink-muted mb-1.5 block">Valor médio (R$)</label>
+                <div class="grid grid-cols-2 gap-2">
+                    <Input v-model="form.avg_value_min" type="number" placeholder="De" />
+                    <Input v-model="form.avg_value_max" type="number" placeholder="Até" />
+                </div>
+                <p class="text-xs text-ink-subtle mt-1.5">Faixa do custo médio de construção deste modelo de stand.</p>
+            </div>
 
             <Input v-model="form.description" label="Descrição" placeholder="Opcional" />
 
@@ -70,7 +76,7 @@ const emit = defineEmits(['close', 'saved']);
 const store = useSalesStandStore();
 const newItem = ref('');
 const errorMsg = ref('');
-const form = ref({ name: '', avg_value: '', description: '', items: [] });
+const form = ref({ name: '', avg_value_min: '', avg_value_max: '', description: '', items: [] });
 
 watch(() => props.open, (open) => {
     if (!open) return;
@@ -79,11 +85,12 @@ watch(() => props.open, (open) => {
     form.value = props.model
         ? {
             name: props.model.name || '',
-            avg_value: props.model.avg_value != null ? String(Number(props.model.avg_value)) : '',
+            avg_value_min: props.model.avg_value_min != null ? String(Number(props.model.avg_value_min)) : '',
+            avg_value_max: props.model.avg_value_max != null ? String(Number(props.model.avg_value_max)) : '',
             description: props.model.description || '',
             items: [...(props.model.items || [])],
         }
-        : { name: '', avg_value: '', description: '', items: [] };
+        : { name: '', avg_value_min: '', avg_value_max: '', description: '', items: [] };
 });
 
 function addItem() {
@@ -96,10 +103,14 @@ function addItem() {
 async function save() {
     errorMsg.value = '';
     if (!form.value.name.trim()) { errorMsg.value = 'Informe o nome do modelo.'; return; }
+    const min = Number(form.value.avg_value_min) || 0;
+    const max = Number(form.value.avg_value_max) || 0;
+    if (max && min > max) { errorMsg.value = 'O valor "de" não pode ser maior que o valor "até".'; return; }
     try {
         await store.saveModel({
             name: form.value.name,
-            avg_value: Number(form.value.avg_value) || 0,
+            avg_value_min: min,
+            avg_value_max: max,
             description: form.value.description,
             items: form.value.items,
         }, props.model?.id || null);

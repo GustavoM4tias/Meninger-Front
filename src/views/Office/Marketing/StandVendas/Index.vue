@@ -141,7 +141,7 @@
                         <Badge variant="neutral" size="sm">{{ m.stands_count }} stand{{ m.stands_count === 1 ? '' : 's' }}</Badge>
                     </div>
                     <p class="mt-3 text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Valor médio</p>
-                    <p class="font-mono tabular-nums font-bold text-ink text-lg">{{ fmtBRL(m.avg_value) }}</p>
+                    <p class="font-mono tabular-nums font-bold text-ink text-lg">{{ fmtRange(m) }}</p>
                     <div v-if="m.items?.length" class="flex flex-wrap gap-1.5 mt-3">
                         <span v-for="item in m.items.slice(0, 6)" :key="item"
                             class="px-2 py-0.5 rounded-md bg-surface-sunken border border-line text-[11px] text-ink-muted">{{ item }}</span>
@@ -200,6 +200,13 @@ const detailStand = ref(null);
 
 const statusMeta = (s) => STATUS_META[s] || STATUS_META.draft;
 const fmtBRL = (v) => Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+// Faixa de valor médio do modelo: "de X até Y" (ou valor único quando a faixa não varia).
+function fmtRange(m) {
+    const min = Number(m?.avg_value_min) || 0;
+    const max = Number(m?.avg_value_max) || 0;
+    if (min && max && min !== max) return `${fmtBRL(min)} a ${fmtBRL(max)}`;
+    return fmtBRL(max || min);
+}
 
 function openNewModel() { editingModel.value = null; modelModalOpen.value = true; }
 function openEditModel(m) { editingModel.value = m; modelModalOpen.value = true; }

@@ -25,7 +25,7 @@
                 <Surface variant="flat" padding="sm" bordered>
                     <p class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1">Valor médio do modelo</p>
                     <p class="font-mono tabular-nums font-bold text-ink">
-                        {{ stand.model ? fmtBRL(stand.model.avg_value) : '-' }}
+                        {{ stand.model ? fmtRange(stand.model) : '-' }}
                     </p>
                 </Surface>
             </div>
@@ -189,6 +189,13 @@ async function doUndefine() {
 }
 
 const fmtBRL = (v) => Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+// Faixa de valor médio do modelo: "de X até Y" (ou valor único quando a faixa não varia).
+function fmtRange(m) {
+    const min = Number(m?.avg_value_min) || 0;
+    const max = Number(m?.avg_value_max) || 0;
+    if (min && max && min !== max) return `${fmtBRL(min)} a ${fmtBRL(max)}`;
+    return fmtBRL(max || min);
+}
 const fmtDate = (d) => (d ? dayjs(d).format('DD/MM/YYYY') : '-');
 const fmtYm = (ym) => (ym ? dayjs(`${ym}-01`).format('MMM/YYYY') : '-');
 </script>
