@@ -1,5 +1,7 @@
+<!-- Central Microsoft › aba Tarefas — panel do hub /microsoft/teams (sem
+     PageContainer próprio). A rota antiga /microsoft/todo virou redirect. -->
 <template>
-  <div class="min-h-[calc(100vh-3.5rem)] flex flex-col">
+  <div class="flex flex-col">
 
     <!-- ── Sem conta Microsoft conectada ─────────────────────────────────────── -->
     <div v-if="!ms.connected && !ms.loading" class="flex-1 flex items-center justify-center p-8">

@@ -339,16 +339,21 @@ export default [
                         meta: { requiresAuth: true, searchable: true, content: 'Gestão de arquivos SharePoint' },
                     },
                     {
+                        // Central Microsoft: hub com abas ?tab=agenda|tarefas|reunioes
                         path: 'teams',
                         name: 'Teams',
                         component: () => import('@/views/Office/Microsoft/Teams/Index.vue'),
-                        meta: { requiresAuth: true, searchable: true, content: 'Reuniões e calendário Microsoft Teams' },
+                        meta: { requiresAuth: true, searchable: true, content: 'Central Microsoft - agenda e calendário Teams, tarefas To Do e transcrições de reuniões com relatório IA' },
+                    },
+                    // Consolidadas na Central Microsoft (/microsoft/teams) em 2026-07-27.
+                    // Redirects PERMANENTES: links de notificação/favoritos antigos dependem deles.
+                    {
+                        path: 'todo',
+                        redirect: to => ({ path: '/microsoft/teams', query: { ...to.query, tab: 'tarefas' } }),
                     },
                     {
                         path: 'transcripts',
-                        name: 'Transcrições',
-                        component: () => import('@/views/Office/Microsoft/Transcripts/Index.vue'),
-                        meta: { requiresAuth: true, searchable: true, content: 'Transcrições de reuniões com relatório IA' },
+                        redirect: to => ({ path: '/microsoft/teams', query: { ...to.query, tab: 'reunioes' } }),
                     },
                     {
                         path: 'planner',
@@ -356,18 +361,6 @@ export default [
                         component: () => import('@/views/Office/Microsoft/Planner/Index.vue'),
                         meta: { requiresAuth: true, searchable: true, content: 'Quadro Kanban integrado com Microsoft Planner' },
                     },
-                    {
-                        path: 'todo',
-                        name: 'To Do',
-                        component: () => import('@/views/Office/Microsoft/Todo/Index.vue'),
-                        meta: { requiresAuth: true, searchable: true, content: 'Microsoft To Do — gestão de tarefas pessoais com prazos, etapas, anexos e reuniões' },
-                    },
-                    // {
-                    //     path: 'inperson',
-                    //     name: 'InPersonMeetings',
-                    //     component: () => import('@/views/Office/Microsoft/Transcripts/InPerson/Index.vue'),
-                    //     meta: { requiresAuth: true, searchable: false, content: 'Reuniões presenciais transcritas com IA' },
-                    // },
                     {
                         path: 'inperson/recording',
                         name: 'InPersonRecording',

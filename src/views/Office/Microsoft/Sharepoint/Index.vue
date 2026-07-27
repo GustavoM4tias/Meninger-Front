@@ -19,10 +19,22 @@
 
     <PageContainer size="full">
       <PageHeader
+        title="SharePoint"
         subtitle="Navegue, visualize e gerencie seus arquivos"
         icon-img="/icons/ms-sharepoint.svg">
-        <template #title>SharePoint</template>
         <template #actions>
+          <PageHelp storage-key="ms-sharepoint" title="Como usar o SharePoint"
+            intro="Todos os arquivos da empresa que vivem no SharePoint/OneDrive, sem sair do Office."
+            :steps="[
+              { title: 'Escolha o local', text: 'Selecione o Site e a Biblioteca. As pastas aparecem abaixo - toque para navegar; use as migalhas no topo para voltar.' },
+              { title: 'Abra ou visualize', text: 'Toque num arquivo para visualizar. Pelo menu de ações dá para abrir no Word/Excel instalado, baixar ou abrir em nova aba.' },
+              { title: 'Envie arquivos', text: 'Use o botão Upload ou simplesmente arraste os arquivos do computador para a janela.' },
+              { title: 'Compartilhe e organize', text: 'No menu de cada arquivo: copiar link, compartilhar, renomear, mover (arrastando para uma pasta ou migalha) e excluir.' },
+            ]"
+            :tips="[
+              'Marque como favorito os arquivos que usa sempre - eles ficam no topo.',
+              'Se o arquivo estiver aberto no Office Online por alguém, o sistema avisa e pede para tentar de novo depois.',
+            ]" />
           <Button v-if="sp.selectedDrive"
             variant="primary"
             size="sm"
@@ -295,6 +307,7 @@ import FilePreview from './components/FilePreview.vue';
 
 import PageContainer from '@/components/UI/PageContainer.vue';
 import PageHeader from '@/components/UI/PageHeader.vue';
+import PageHelp from '@/components/UI/PageHelp.vue';
 import Surface from '@/components/UI/Surface.vue';
 import Button from '@/components/UI/Button.vue';
 import IconButton from '@/components/UI/IconButton.vue';
