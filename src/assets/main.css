@@ -123,6 +123,29 @@
     @apply border-t border-line-subtle;
   }
 
+  /* ── Barra de filtros ──────────────────────────────────────────────
+     Cabeçalho "Filtros" dos painéis de filtro do Office.
+
+     A altura é FIXA de propósito. Ela precisa acomodar o maior conteúdo
+     possível da linha (o selo "N ativos" e os botões Limpar/Filtrar) para que
+     aparecer ou sumir o selo não empurre a página. Sem isso, a tela dá um
+     pulinho a cada seleção de filtro.
+
+     Toda barra de filtros do sistema usa esta classe. Se a altura precisar
+     mudar, muda aqui e vale para todas. */
+  .filters-toolbar {
+    @apply flex items-center gap-2 px-3 sm:px-4 border-b border-line
+           bg-surface-sunken/40 rounded-t-xl;
+    height: 3.25rem; /* 52px: Button sm (28px) + respiro vertical */
+  }
+
+  /* O gatilho de abrir/fechar também tem altura própria, para que o selo
+     "N ativos" não estique a linha dentro da barra. */
+  .filters-toolbar-trigger {
+    @apply flex items-center gap-2 h-8 text-sm font-medium text-ink
+           hover:text-accent transition-colors;
+  }
+
   /* Tipografia de display do Academy (serif Fraunces) — usada em títulos de
      telas e seções para o ar editorial. */
   .font-display {
