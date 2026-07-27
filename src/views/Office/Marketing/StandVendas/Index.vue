@@ -128,36 +128,59 @@
             </Surface>
 
             <!-- ══ Aba Modelos ══ -->
-            <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                <Surface v-for="(m, i) in store.models" :key="m.id" variant="raised" padding="md" interactive
-                    class="cursor-pointer animate-fade-in [animation-fill-mode:backwards]"
+            <div v-else class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+                <Surface v-for="(m, i) in sortedModels" :key="m.id" variant="raised" padding="none" interactive
+                    class="cursor-pointer overflow-hidden flex flex-col animate-fade-in [animation-fill-mode:backwards]"
                     :style="{ animationDelay: Math.min(i, 12) * 30 + 'ms' }"
                     @click="openEditModel(m)">
-                    <div class="flex items-start justify-between gap-2">
-                        <div class="min-w-0">
-                            <p class="font-semibold text-ink truncate">{{ m.name }}</p>
-                            <p v-if="m.description" class="text-xs text-ink-muted mt-0.5 line-clamp-2">{{ m.description }}</p>
+
+                    <div class="p-4 sm:p-5 flex-1">
+                        <div class="flex items-start justify-between gap-2">
+                            <div class="flex items-center gap-2.5 min-w-0">
+                                <div class="w-9 h-9 rounded-lg bg-accent-soft text-accent flex items-center justify-center shrink-0">
+                                    <i class="fas fa-store text-sm"></i>
+                                </div>
+                                <div class="min-w-0">
+                                    <p class="font-semibold text-ink truncate">{{ m.name }}</p>
+                                    <p class="text-[11px] text-ink-subtle">
+                                        {{ m.stands_count }} stand{{ m.stands_count === 1 ? '' : 's' }} vinculado{{ m.stands_count === 1 ? '' : 's' }}
+                                    </p>
+                                </div>
+                            </div>
+                            <i class="fas fa-pen text-[11px] text-ink-subtle mt-1 shrink-0"></i>
                         </div>
-                        <Badge variant="neutral" size="sm">{{ m.stands_count }} stand{{ m.stands_count === 1 ? '' : 's' }}</Badge>
+                        <p v-if="m.description" class="text-xs text-ink-muted leading-relaxed mt-3 line-clamp-3">{{ m.description }}</p>
                     </div>
-                    <div class="mt-3 flex items-end justify-between gap-3">
-                        <div class="min-w-0">
-                            <p class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Valor médio</p>
-                            <p class="font-mono tabular-nums font-bold text-ink text-lg truncate">{{ fmtRange(m) }}</p>
+
+                    <!-- Faixas em destaque -->
+                    <div class="grid grid-cols-2 divide-x divide-line border-y border-line bg-surface-sunken/60">
+                        <div class="px-4 py-3 min-w-0">
+                            <p class="text-[10px] font-mono uppercase tracking-wider text-ink-subtle mb-0.5">Valor médio</p>
+                            <p class="font-mono tabular-nums font-bold text-ink truncate"
+                                :class="fmtValueRange(m) ? '' : 'text-ink-subtle font-normal'">
+                                {{ fmtValueRange(m) || 'A definir' }}
+                            </p>
                         </div>
-                        <div v-if="fmtArea(m)" class="text-right shrink-0">
-                            <p class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Metragem</p>
-                            <p class="font-mono tabular-nums font-bold text-ink text-lg">{{ fmtArea(m) }}</p>
+                        <div class="px-4 py-3 min-w-0">
+                            <p class="text-[10px] font-mono uppercase tracking-wider text-ink-subtle mb-0.5">Metragem</p>
+                            <p class="font-mono tabular-nums font-bold text-ink truncate"
+                                :class="fmtAreaRange(m) ? '' : 'text-ink-subtle font-normal'">
+                                {{ fmtAreaRange(m) || 'A definir' }}
+                            </p>
                         </div>
                     </div>
-                    <div v-if="m.items?.length" class="flex flex-wrap gap-1.5 mt-3">
-                        <span v-for="item in m.items.slice(0, 6)" :key="item"
-                            class="px-2 py-0.5 rounded-md bg-surface-sunken border border-line text-[11px] text-ink-muted">{{ item }}</span>
-                        <span v-if="m.items.length > 6" class="px-2 py-0.5 text-[11px] text-ink-subtle">
-                            +{{ m.items.length - 6 }}
-                        </span>
+
+                    <div class="p-4 sm:px-5 pt-3">
+                        <div v-if="m.items?.length" class="flex flex-wrap gap-1.5">
+                            <span v-for="item in m.items.slice(0, 5)" :key="item"
+                                class="px-2 py-0.5 rounded-md bg-surface-sunken border border-line text-[11px] text-ink-muted">{{ item }}</span>
+                            <span v-if="m.items.length > 5"
+                                class="px-2 py-0.5 rounded-md border border-dashed border-line text-[11px] text-ink-subtle">
+                                +{{ m.items.length - 5 }} itens
+                            </span>
+                        </div>
+                        <p v-else class="text-xs text-ink-subtle">Sem itens cadastrados.</p>
                     </div>
-                    <p v-else class="text-xs text-ink-subtle mt-3">Sem itens cadastrados.</p>
                 </Surface>
 
                 <div v-if="!store.models.length" class="sm:col-span-2 lg:col-span-3">
@@ -178,8 +201,9 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useSalesStandStore, STATUS_META } from '@/stores/Marketing/SalesStand/salesStandStore';
+import { fmtBRL, fmtValueRange, fmtAreaRange, sortModelsByTier } from './standFormat';
 
 import PageContainer from '@/components/UI/PageContainer.vue';
 import PageHeader from '@/components/UI/PageHeader.vue';
@@ -207,24 +231,8 @@ const detailModalOpen = ref(false);
 const detailStand = ref(null);
 
 const statusMeta = (s) => STATUS_META[s] || STATUS_META.draft;
-const fmtBRL = (v) => Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-// Faixa de valor médio do modelo: "de X até Y", "X+" (aberta) ou valor único.
-function fmtRange(m) {
-    const min = Number(m?.avg_value_min) || 0;
-    const max = Number(m?.avg_value_max) || 0;
-    if (min && max && min !== max) return `${fmtBRL(min)} a ${fmtBRL(max)}`;
-    if (min && !max) return `${fmtBRL(min)}+`;
-    return fmtBRL(max || min);
-}
-// Faixa de metragem: "14 a 22 m²", "80+ m²" (aberta) ou valor único.
-function fmtArea(m) {
-    const min = Number(m?.avg_area_min) || 0;
-    const max = Number(m?.avg_area_max) || 0;
-    if (!min && !max) return '';
-    if (min && max && min !== max) return `${min} a ${max} m²`;
-    if (min && !max) return `${min}+ m²`;
-    return `${max || min} m²`;
-}
+// Modelos por porte (Standard → Premium), não alfabético.
+const sortedModels = computed(() => sortModelsByTier(store.models));
 
 function openNewModel() { editingModel.value = null; modelModalOpen.value = true; }
 function openEditModel(m) { editingModel.value = m; modelModalOpen.value = true; }
