@@ -58,17 +58,6 @@ function isDiscountCondition(pc) {
     return DISCOUNT_CODES.has(String(pc?.condition_type_id ?? '').toUpperCase())
 }
 
-// Normaliza nome de empreendimento para comparação: sem acento, sem
-// pontuação, espaços colapsados. Usado só para casamento EXATO — comparação
-// por substring foi abandonada porque casava com fases erradas.
-function normalizeEnterpriseName(name) {
-    return String(name ?? '')
-        .normalize('NFD')
-        .replace(/[̀-ͯ]/g, '')
-        .toUpperCase()
-        .replace(/[^A-Z0-9]+/g, ' ')
-        .trim()
-}
 
 function contractTotals(contract) {
     const pcs = Array.isArray(contract.payment_conditions) ? contract.payment_conditions : []
@@ -712,35 +701,16 @@ export const useContractsStore = defineStore('contracts', {
 
             // Helper: resolve which real-enterprise key a projection belongs to.
             // Mirrors the same cascading strategy used in salesByCompany.
-            // Casamento projeção → empreendimento real.
+            // Casamento projeção → empreendimento real: SÓ POR CÓDIGO.
             //
-            // Só duas fontes valem: o enterprise_id que o backend resolveu (que
-            // já considera o vínculo manual CV ↔ Sienge) e o nome EXATO.
-            //
-            // O antigo fallback por substring foi removido: ele errava nos dois
-            // sentidos. "RESIDENCIAL DOS ANJOS" não casava com
-            // "...RESIDENCIAL JARDIM DOS ANJOS..." (palavra no meio), e
-            // "TERRAS DE SÃO PAULO V" casava com a FASE 2 e a FASE 3 ao mesmo
-            // tempo. Nos dois casos a projeção virava linha solta, sem dizer o
-            // porquê. Agora, quando não há id, o caminho é criar o vínculo na
-            // central (engrenagem → Vínculo CV ↔ Sienge).
+            // O enterprise_id vem resolvido do backend a partir do idetapa_int
+            // do CV (o centro de custo da fase). Nome não entra na conta em
+            // hipótese alguma: comparar texto mandava a projeção para o centro
+            // de custo errado sem avisar.
             const resolveRealKeyForProj = (s) => {
-                const first = s.contracts[0] || {}
-                const id = first.enterprise_id ?? null
-
-                if (id != null) {
-                    const direct = [...realMap.keys()].find((k) => realMap.get(k)?.id === id)
-                    if (direct) return direct
-                }
-
-                const projName = normalizeEnterpriseName(first.enterprise_name || s.enterprise_name)
-                if (!projName) return null
-
-                const exact = []
-                for (const [k, row] of realMap) {
-                    if (normalizeEnterpriseName(row.name) === projName) exact.push(k)
-                }
-                return exact.length === 1 ? exact[0] : null
+                const id = (s.contracts[0] || {}).enterprise_id ?? null
+                if (id == null) return null
+                return [...realMap.keys()].find((k) => realMap.get(k)?.id === id) ?? null
             }
 
             // Merge projections: into real row if resolvable, else orphan row
@@ -854,22 +824,8 @@ export const useContractsStore = defineStore('contracts', {
                     }
                 }
 
-                // Strategy 4: nome EXATO normalizado.
-                // Antes isso era startsWith nos dois sentidos, o que atribuía a
-                // projeção à empresa da primeira fase que casasse por prefixo.
-                // Quando o nome não bate exatamente, o certo é não adivinhar e
-                // deixar a linha solta, sinalizada para vínculo manual.
-                const projName = normalizeEnterpriseName(first.enterprise_name || s.enterprise_name)
-                if (projName) {
-                    for (const c of this.contracts) {
-                        if (c._projection) continue
-                        if (!c.company_id || !c.enterprise_name) continue
-                        if (normalizeEnterpriseName(c.enterprise_name) === projName) {
-                            return { company_id: c.company_id, company_name: c.company_name ?? null }
-                        }
-                    }
-                }
-
+                // Sem mais estratégias: empresa se resolve por código de
+                // empreendimento, nunca por nome.
                 return null // unresolved
             }
 
