@@ -23,17 +23,7 @@ export const useEnterpriseErpLinksStore = defineStore('enterpriseErpLinks', {
     }),
 
     getters: {
-        pendingCount: (state) => state.pending.length,
-        // Nome normalizado dos empreendimentos ainda sem vínculo — usado pela
-        // tabela para marcar a linha solta com o motivo certo.
-        pendingByName: (state) => {
-            const map = new Map()
-            for (const p of state.pending) {
-                const key = (p.cv_enterprise_name || '').trim().toUpperCase()
-                if (key) map.set(key, p)
-            }
-            return map
-        }
+        pendingCount: (state) => state.pending.length
     },
 
     actions: {
@@ -67,12 +57,12 @@ export const useEnterpriseErpLinksStore = defineStore('enterpriseErpLinks', {
             }
         },
 
-        async addLink({ cv_enterprise_id, cv_enterprise_name, erp_enterprise_id, erp_enterprise_name, description }) {
+        async addLink({ cv_enterprise_id, cv_enterprise_name, cv_stage_name, erp_enterprise_id, erp_enterprise_name, description }) {
             this.error = null
             const res = await fetch(`${API_URL}/admin/enterprise-erp-links`, {
                 method: 'POST',
                 headers: authHeaders(),
-                body: JSON.stringify({ cv_enterprise_id, cv_enterprise_name, erp_enterprise_id, erp_enterprise_name, description })
+                body: JSON.stringify({ cv_enterprise_id, cv_enterprise_name, cv_stage_name, erp_enterprise_id, erp_enterprise_name, description })
             })
             const body = await res.json().catch(() => ({}))
             if (!res.ok) {

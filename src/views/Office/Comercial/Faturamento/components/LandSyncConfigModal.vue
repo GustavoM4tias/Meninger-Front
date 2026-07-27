@@ -47,12 +47,8 @@ const MOTIVO_LABEL = {
   sem_ponte: 'O cadastro do CV está sem o ID do Sienge',
 };
 
-const newLink = ref({
-  cv_enterprise_name: '',
-  cv_enterprise_id: null,
-  erp_enterprise_id: '',
-  description: '',
-});
+const EMPTY_LINK = { cv_enterprise_name: '', cv_stage_name: '', cv_enterprise_id: null, erp_enterprise_id: '', description: '' };
+const newLink = ref({ ...EMPTY_LINK });
 
 const isNewLinkValid = computed(() =>
   (!!(newLink.value.cv_enterprise_name || '').trim() || newLink.value.cv_enterprise_id != null) &&
@@ -61,9 +57,12 @@ const isNewLinkValid = computed(() =>
 );
 
 // Preenche o formulário a partir de um pendente do diagnóstico.
+// A etapa vem junto: quando o empreendimento do CV se divide em fases e o
+// Sienge tem um empreendimento por fase, é a etapa que diz qual é o destino.
 function pickPending(p) {
   newLink.value = {
     cv_enterprise_name: p.cv_enterprise_name || '',
+    cv_stage_name: p.cv_stage_name || '',
     cv_enterprise_id: p.cv_enterprise_id ?? p.cv_enterprise_int_id ?? null,
     erp_enterprise_id: '',
     description: '',
@@ -78,11 +77,12 @@ async function handleLinkAdd() {
     await erpLinksStore.addLink({
       cv_enterprise_id: newLink.value.cv_enterprise_id,
       cv_enterprise_name: (newLink.value.cv_enterprise_name || '').trim() || null,
+      cv_stage_name: (newLink.value.cv_stage_name || '').trim() || null,
       erp_enterprise_id: erpId,
       erp_enterprise_name: ent?.name || null,
       description: newLink.value.description || null,
     });
-    newLink.value = { cv_enterprise_name: '', cv_enterprise_id: null, erp_enterprise_id: '', description: '' };
+    newLink.value = { ...EMPTY_LINK };
     contractsStore.clearContractsCache();
   } catch (e) {
     window.alert(e?.message || 'Erro ao salvar vínculo.');
@@ -191,7 +191,7 @@ watch(() => props.open, async (isOpen) => {
   newRule.value = { enterprise_id: '', stage_id: null, commission_pct_display: null, stage_name: '', description: '' };
   newTrSat.value = { satellite_enterprise_id: '', partner_names: [], description: '' };
   newValueRule.value = { enterprise_id: '', net_mode: 'FULL', gross_mode: 'FULL', description: '' };
-  newLink.value = { cv_enterprise_name: '', cv_enterprise_id: null, erp_enterprise_id: '', description: '' };
+  newLink.value = { ...EMPTY_LINK };
 
   if (!contractsStore.enterprises.length) await contractsStore.fetchEnterprises();
   await Promise.all([
@@ -399,13 +399,24 @@ const closeModal = () => emit('close');
                 title="Nenhum pendente"
                 description="Todas as projeções acharam o empreendimento do Sienge." />
               <ul v-else class="divide-y divide-line">
-                <li v-for="p in erpLinksStore.pending" :key="p.cv_enterprise_name"
+                <li v-for="p in erpLinksStore.pending" :key="`${p.cv_enterprise_name}|${p.cv_stage_name || ''}`"
                   class="px-3 py-2.5 flex items-start justify-between gap-2 hover:bg-surface-hover transition-colors">
                   <div class="min-w-0">
-                    <p class="text-xs font-medium text-ink truncate">{{ p.cv_enterprise_name }}</p>
+                    <p class="text-xs font-medium text-ink truncate">
+                      {{ p.cv_enterprise_name }}
+                      <span v-if="p.cv_stage_name" class="text-ink-muted font-normal">
+                        · {{ p.cv_stage_name }}
+                      </span>
+                    </p>
                     <p class="text-[10px] text-ink-subtle mt-0.5">
                       <span class="font-mono">{{ p.reservas }}</span> reserva(s) ·
                       {{ MOTIVO_LABEL[p.motivo] || p.motivo }}
+                    </p>
+                    <p v-if="p.etapas_no_empreendimento > 1"
+                      class="text-[10px] text-amber-600 dark:text-amber-400 mt-0.5">
+                      <i class="fas fa-diagram-project text-[9px] mr-0.5"></i>
+                      Este empreendimento tem {{ p.etapas_no_empreendimento }} fases no CV; no Sienge
+                      cada fase costuma ser um empreendimento. Vincule fase por fase.
                     </p>
                   </div>
                   <Button variant="outline" size="sm" icon="fas fa-link" class="shrink-0"
@@ -429,6 +440,10 @@ const closeModal = () => emit('close');
               <Input v-model="newLink.cv_enterprise_name"
                 label="Empreendimento no CV"
                 placeholder="ex: RESIDENCIAL DOS ANJOS" />
+
+              <Input v-model="newLink.cv_stage_name"
+                label="Fase / etapa no CV (opcional)"
+                placeholder="ex: FASE 3 — deixe vazio p/ valer no empreendimento todo" />
 
               <div>
                 <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
@@ -472,6 +487,9 @@ const closeModal = () => emit('close');
                     <div class="min-w-0">
                       <p class="text-xs font-medium text-ink truncate">
                         {{ link.cv_enterprise_name || `CV #${link.cv_enterprise_id}` }}
+                        <span v-if="link.cv_stage_name" class="text-ink-muted font-normal">
+                          · {{ link.cv_stage_name }}
+                        </span>
                       </p>
                       <p class="text-[10px] text-ink-subtle font-mono mt-0.5 truncate">
                         <i class="fas fa-arrow-right text-[8px] mx-0.5"></i>
