@@ -47,71 +47,23 @@ export const useSalesProjectionReportStore = defineStore('salesProjectionReport'
     const isGross        = computed(() => valueMode.value === 'gross');
     const valueModeLabel = computed(() => isGross.value ? 'VGV + DC' : 'VGV');
 
-    // ── enterprisesResolved — aplica valueMode ────────────────────────────────
-    const enterprisesResolved = computed(() => {
-        return enterprises.value.map(ent => {
-            const months = (ent.months ?? []).map(m => {
-                const realized_vgv = isGross.value
-                    ? (m.realized_vgv_gross ?? m.realized_vgv ?? 0)
-                    : (m.realized_vgv_net   ?? m.realized_vgv ?? 0);
-                const achievement_pct = (m.projected_vgv ?? 0) > 0
-                    ? parseFloat(((realized_vgv / m.projected_vgv) * 100).toFixed(2))
-                    : 0;
-                return { ...m, realized_vgv, achievement_pct };
-            });
-
-            const totalProjectedVgv   = months.reduce((s, m) => s + (m.projected_vgv   ?? 0), 0);
-            const totalRealizedVgv    = months.reduce((s, m) => s + (m.realized_vgv     ?? 0), 0);
-            const totalRealizedUnits  = months.reduce((s, m) => s + (m.realized_units   ?? 0), 0);
-            const totalProjectedUnits = months.reduce((s, m) => s + (m.projected_units  ?? 0), 0);
-
-            const achievement_pct = totalProjectedVgv > 0
-                ? parseFloat(((totalRealizedVgv / totalProjectedVgv) * 100).toFixed(2))
-                : 0;
-
-            const performance_ratio = (timeElapsedPct.value > 0 && totalProjectedVgv > 0)
-                ? parseFloat((achievement_pct / timeElapsedPct.value).toFixed(4))
-                : null;
-
-            let status;
-            if (totalProjectedVgv === 0)      status = 'no_projection';
-            else if (totalRealizedVgv === 0)  status = 'no_sales';
-            else if (performance_ratio === null) status = 'on_track';
-            else if (performance_ratio >= 1.1) status = 'ahead';
-            else if (performance_ratio >= 0.8) status = 'on_track';
-            else if (performance_ratio >= 0.4) status = 'behind';
-            else                               status = 'at_risk';
-
+    // ── enterprisesResolved — totais projetados por empreendimento ────────────
+    // Este store cuida SÓ das metas. O realizado vem do contractsStore (mesma
+    // fonte do Faturamento), para que as duas telas nunca divirjam.
+    const enterprisesResolved = computed(() =>
+        enterprises.value.map(ent => {
+            const months = ent.months ?? [];
             return {
                 ...ent,
                 months,
                 summary: {
                     ...ent.summary,
-                    realized_vgv:    totalRealizedVgv,
-                    projected_vgv:   totalProjectedVgv,
-                    realized_units:  totalRealizedUnits,
-                    projected_units: totalProjectedUnits,
-                    achievement_pct,
-                    performance_ratio,
-                    status,
+                    projected_vgv: months.reduce((s, m) => s + (m.projected_vgv ?? 0), 0),
+                    projected_units: months.reduce((s, m) => s + (m.projected_units ?? 0), 0),
                 },
             };
-        });
-    });
-
-    /** Temperatura geral — VGV-based */
-    const overallTemperature = computed(() => {
-        const s = summary.value;
-        if (!s || s.projected_vgv === 0) return 'neutral';
-        const elapsed = report.value?.time_elapsed_pct ?? 0;
-        const ach = s.achievement_pct;
-        if (elapsed === 0) return ach > 0 ? 'ahead' : 'neutral';
-        const ratio = ach / elapsed;
-        if (ratio >= 1.1) return 'ahead';
-        if (ratio >= 0.8) return 'on_track';
-        if (ratio >= 0.4) return 'behind';
-        return 'at_risk';
-    });
+        })
+    );
 
     // ── workflowGroupOptions ──────────────────────────────────────────────────
     const workflowGroupOptions = computed(() =>
@@ -277,7 +229,7 @@ export const useSalesProjectionReportStore = defineStore('salesProjectionReport'
         // computed
         projection, summary, enterprises, enterprisesResolved,
         reportRange, currentMonth, timeElapsedPct, currentDay, daysInMonth,
-        overallTemperature, isGross, valueModeLabel, workflowGroupOptions,
+        isGross, valueModeLabel, workflowGroupOptions,
         // actions
         fetchReport, setFilters, clearFilters,
         fetchProjectionsList, fetchWorkflowGroups, fetchEnterprises,

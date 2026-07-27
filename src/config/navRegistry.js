@@ -138,10 +138,9 @@ export const navRegistry = [
             },
             {
                 key: 'terminations',
-                name: 'Distratos & Cancelamentos',
+                name: 'Cancelamentos',
                 icon: 'fas fa-handshake-slash',
                 pages: [
-                    { route: '/comercial/distratos',             section: 'Distratos',     name: 'Distratos',     icon: 'fas fa-file-circle-xmark' },
                     { route: '/comercial/cancelamento-reservas', section: 'Cancelamentos', name: 'Cancelamentos', icon: 'fas fa-eraser', adminOnly: true },
                 ],
             },

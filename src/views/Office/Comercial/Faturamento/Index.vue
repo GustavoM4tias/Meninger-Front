@@ -3,11 +3,13 @@ import { onMounted, ref, computed } from 'vue';
 import { useContractsStore } from '@/stores/Comercial/Contracts/contractsStore';
 import { useHiddenEnterprisesStore } from '@/stores/Comercial/Contracts/hiddenEnterprisesStore';
 import { useStageCommissionRulesStore } from '@/stores/Comercial/Contracts/stageCommissionRulesStore';
+import { useEnterpriseValueRulesStore } from '@/stores/Comercial/Contracts/enterpriseValueRulesStore';
 import { useTrSatelliteStore } from '@/stores/Comercial/Contracts/trSatelliteStore';
 
 import Favorite from '@/components/config/Favorite.vue';
 import PageContainer from '@/components/UI/PageContainer.vue';
 import PageHeader from '@/components/UI/PageHeader.vue';
+import PageHelp from '@/components/UI/PageHelp.vue';
 import Spinner from '@/components/UI/Spinner.vue';
 import Button from '@/components/UI/Button.vue';
 
@@ -19,6 +21,7 @@ import LandSyncConfigModal from './components/LandSyncConfigModal.vue';
 const contractsStore = useContractsStore();
 const hiddenStore = useHiddenEnterprisesStore();
 const stageCommissionRulesStore = useStageCommissionRulesStore();
+const valueRulesStore = useEnterpriseValueRulesStore();
 const trSatelliteStore = useTrSatelliteStore();
 const isLandSyncModalOpen = ref(false);
 const selectionMetrics = ref(null);
@@ -32,6 +35,14 @@ const metricsToShow = computed(() => selectionMetrics.value || contractsStore.me
 
 const loadData = async () => {
   loading.value = true;
+  // As regras de valor precisam estar carregadas ANTES do primeiro cálculo:
+  // elas definem como o VGV de cada empreendimento é somado.
+  await Promise.all([
+    valueRulesStore.fetchAll(),
+    stageCommissionRulesStore.fetchAll(),
+    trSatelliteStore.fetchAll(),
+    hiddenStore.fetchAll(),
+  ]);
   await Promise.all([
     contractsStore.fetchContracts(),
     contractsStore.fetchEnterprises(),
@@ -44,12 +55,7 @@ const handleFilterChange = async () => {
   await contractsStore.fetchContracts();
 };
 
-onMounted(() => {
-  loadData();
-  if (isAdmin.value) hiddenStore.fetchAll();
-  stageCommissionRulesStore.fetchAll();
-  trSatelliteStore.fetchAll();
-});
+onMounted(loadData);
 </script>
 
 <template>
@@ -63,6 +69,25 @@ onMounted(() => {
         <template #title>
           <span>Dashboard de vendas</span>
           <Favorite :router="'/comercial/faturamento'" :section="'Faturamento'" />
+        </template>
+        <template #actions>
+          <PageHelp
+            storage-key="faturamento"
+            title="Como usar o Dashboard de vendas"
+            intro="Esta tela mostra quanto foi vendido no período, somando os contratos do Sienge e as reservas/repasses do CV."
+            :steps="[
+              'Nos filtros acima, escolha o período e, se quiser, as empresas. Clique em Filtrar para aplicar.',
+              { title: 'Escolha o corte', text: 'No topo da tabela, alterne entre ver por Empresa ou por Empreendimento.' },
+              { title: 'Entenda o valor', text: 'VGV é o valor da venda sem os descontos da construtora. VGV+DC soma esses descontos de volta. Os cartões e a tabela seguem o modo escolhido.' },
+              { title: 'Abra o detalhe', text: 'Clique na linha para ver venda a venda: cliente, unidade, imobiliária e as condições de pagamento.' },
+              { title: 'Compare', text: 'Marque as caixas de seleção para recalcular os cartões só com as linhas escolhidas.' },
+            ]"
+            :tips="[
+              'O número verde com + são projeções de reservas/repasses ainda não contratados, somadas à parte.',
+              'O número vermelho com − são distratos, que já saíram do total.',
+              'Exportar gera uma planilha com exatamente o que está na tela.',
+            ]"
+          />
         </template>
       </PageHeader>
 

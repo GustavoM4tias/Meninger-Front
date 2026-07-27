@@ -201,12 +201,6 @@ export default [
                         meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Dashboard de Vendas X Projeção de Vendas' },
                     },
                     {
-                        path: 'distratos',
-                        name: 'Distratos',
-                        component: () => import('@/views/Office/Comercial/Distratos/Index.vue'),
-                        meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Gestão e análise de distratos (rescisões de contrato)' },
-                    },
-                    {
                         path: 'cancelamento-reservas',
                         name: 'Cancelamentos CV × Sienge',
                         component: () => import('@/views/Office/Comercial/CancelamentoReservas/Index.vue'),

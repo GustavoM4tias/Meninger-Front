@@ -67,49 +67,27 @@ const formatCurrency = (v) =>
     minimumFractionDigits: 2, maximumFractionDigits: 2,
   }).format(v || 0);
 
-const appendedValue = (e) => {
-  if (e.onlyProjectionRow) return 0;
-  return contractsStore.valueMode === 'net' ? (e.proj_value_net || 0) : (e.proj_value_gross || 0);
-};
-
-const totalCombined = (e) => baseValue(e) + appendedValue(e);
-
-/* ===================== DISTRATO ===================== */
-// Detecção e agregação centralizadas no contractsStore.
+/* ===================== VALORES =====================
+ * Toda a regra (distrato, projeção vinculada, ticket) mora no contractsStore
+ * para que esta tabela e a de Vendas × Projeção mostrem o mesmo número.
+ */
 const distratoCount = (row) => contractsStore.distratoCountForRow(row);
 const distratoValue = (row) => contractsStore.distratoValueForRow(row);
-
-const baseValue = (e) => {
-  if (e.onlyProjectionRow) {
-    return contractsStore.isNet ? Number(e.total_value_net || 0) : Number(e.total_value_gross || 0);
-  }
-  const base = Number(contractsStore.valuePicker(e) || 0);
-  const dv = Number(distratoValue(e) || 0);
-  return (Number.isFinite(base) ? base : 0) - (Number.isFinite(dv) ? dv : 0);
-};
-
-const ticketMedio = (e) => {
-  const denom = (e.count || 0) - distratoCount(e);
-  const safeDenom = denom > 0 ? denom : 1;
-  return baseValue(e) / safeDenom;
-};
+const baseValue = (row) => contractsStore.realizedValueForRow(row);
+const appendedValue = (row) => contractsStore.projectedValueForRow(row);
+const totalCombined = (row) => contractsStore.combinedValueForRow(row);
+const realizedCount = (row) => contractsStore.realizedCountForRow(row);
+const combinedCount = (row) => contractsStore.combinedCountForRow(row);
+const ticketMedio = (row) => contractsStore.ticketForRow(row);
 
 /* ===================== SORT ===================== */
 const sortedData = computed(() => {
   const data = [...props.data];
   switch (sortBy.value) {
     case 'count':
-      return data.sort(
-        (a, b) =>
-          ((a.count - distratoCount(a)) + (a.onlyProjectionRow ? 0 : a.proj_count)) -
-          ((b.count - distratoCount(b)) + (b.onlyProjectionRow ? 0 : b.proj_count))
-      );
+      return data.sort((a, b) => combinedCount(a) - combinedCount(b));
     case 'count-desc':
-      return data.sort(
-        (a, b) =>
-          ((b.count - distratoCount(b)) + (b.onlyProjectionRow ? 0 : b.proj_count)) -
-          ((a.count - distratoCount(a)) + (a.onlyProjectionRow ? 0 : a.proj_count))
-      );
+      return data.sort((a, b) => combinedCount(b) - combinedCount(a));
     case 'value':
       return data.sort((a, b) => totalCombined(a) - totalCombined(b));
     case 'value-desc':
@@ -119,7 +97,7 @@ const sortedData = computed(() => {
 });
 
 const totalCount = computed(() =>
-  sortedData.value.reduce((s, e) => s + (e.count || 0) - distratoCount(e), 0)
+  sortedData.value.reduce((s, e) => s + realizedCount(e), 0)
 );
 const totalValueAll = computed(() =>
   sortedData.value.reduce((s, e) => s + totalCombined(e), 0)
@@ -480,7 +458,7 @@ const onViewChange = (mode) => {
 
           <div class="flex items-center gap-3 mt-1.5 flex-wrap text-[11px]">
             <span class="text-ink-muted font-mono">
-              <span class="text-ink font-semibold">{{ enterprise.count - distratoCount(enterprise) }}</span> venda(s)
+              <span class="text-ink font-semibold">{{ realizedCount(enterprise) }}</span> venda(s)
               <span v-if="!enterprise.onlyProjectionRow && enterprise.proj_count"
                 class="text-emerald-500 font-semibold">+{{ enterprise.proj_count }}</span>
               <span v-if="!enterprise.onlyProjectionRow && distratoCount(enterprise) > 0"
@@ -559,7 +537,7 @@ const onViewChange = (mode) => {
             <!-- Vendas -->
             <td class="px-4 py-3 text-right">
               <div class="text-sm font-semibold text-ink tabular-nums relative inline-block">
-                {{ enterprise.count - distratoCount(enterprise) }}
+                {{ realizedCount(enterprise) }}
 
                 <span v-if="!enterprise.onlyProjectionRow && enterprise.proj_count"
                   class="absolute -top-3 -right-2 text-[10px] font-bold text-emerald-500 font-mono"

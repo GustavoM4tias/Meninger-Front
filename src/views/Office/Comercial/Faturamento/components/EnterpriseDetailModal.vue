@@ -1,7 +1,6 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue';
 import { useContractsStore } from '@/stores/Comercial/Contracts/contractsStore';
-import { useStageCommissionRulesStore } from '@/stores/Comercial/Contracts/stageCommissionRulesStore';
 import ChartActions from '@/components/config/ChartActions.vue';
 import Export from '@/components/config/Export.vue';
 
@@ -35,21 +34,6 @@ const emit = defineEmits(['close']);
 const open = ref(false);
 
 const contractsStore = useContractsStore();
-const stageRulesStore = useStageCommissionRulesStore();
-
-// Local helper — mirrors contractHadStageInHistory in contractsStore
-const hadStageInHistory = (contract, stageId) => {
-  const repasses = Array.isArray(contract?.repasse) ? contract.repasse : [];
-  const stageNum = Number(stageId);
-  if (!Number.isFinite(stageNum)) return false;
-  for (const rp of repasses) {
-    if (!rp) continue;
-    if (Number(rp.idsituacao_repasse) === stageNum) return true;
-    const history = Array.isArray(rp.status) ? rp.status : [];
-    if (history.some((s) => Number(s?.idsituacao_repasse) === stageNum)) return true;
-  }
-  return false;
-};
 
 const viewMode = ref(['list', 'pie', 'bar'].includes(props.initialMode) ? props.initialMode : 'list');
 
@@ -287,35 +271,10 @@ const toNumSafe = (v) => {
   return Number.isFinite(n) ? n : 0;
 };
 
-const sumTR = (c) => {
-  const pcs = Array.isArray(c.payment_conditions) ? c.payment_conditions : [];
-  return pcs
-    .filter((pc) => contractsStore._isTR(pc))
-    .reduce((s, pc) => s + (Number(pc.total_value) || 0), 0);
-};
-
-const uplift = (base, pct) => (pct > 0 ? base * (pct / (1 - pct)) : 0);
-
-const contractValueByMode = (contract) => {
-  if (!contract) return 0;
-
-  const pct = Number(contractsStore.enterpriseCommissionFor(contract)?.commission_pct) || 0;
-  const rule = contractsStore.enterpriseRuleFor(contract) || {};
-
-  let base = 0;
-
-  if (contractsStore.isGross) {
-    if (rule.gross === 'LAND_VALUE_ONLY') base = Number(contract.land_value) || 0;
-    else base = toNumSafe(contractsStore._contractTotals(contract).gross);
-  } else {
-    if (rule.net === 'TR_ONLY') base = sumTR(contract);
-    else if (rule.net === 'LAND_VALUE_ONLY') base = Number(contract.land_value) || 0;
-    else base = toNumSafe(contractsStore._contractTotals(contract).net);
-  }
-
-  const add = pct > 0 ? uplift(base, pct) : 0;
-  return base + (Number.isFinite(add) ? add : 0);
-};
+// Regras de valor e comissão vêm inteiras do contractsStore — este modal não
+// reimplementa nenhuma delas (antes tinha uma cópia que divergia da tabela).
+const uplift = (base, pct) => contractsStore.upliftFor(base, pct);
+const contractValueByMode = (contract) => (contract ? toNumSafe(contractsStore.contractValue(contract)) : 0);
 
 const saleValueFromConditions = (sale) => {
   const contracts = Array.isArray(sale?.contracts) ? sale.contracts : [];
@@ -580,8 +539,6 @@ const displayedConditions = (contract) => {
 };
 
 const ruleFor = computed(() => contractsStore.enterpriseRuleFor);
-const comFor = computed(() => contractsStore.enterpriseCommissionFor);
-const totalsOf = computed(() => contractsStore._contractTotals);
 
 /* ===================== comparison view (projection context) ===================== */
 const achievementPctUnits = computed(() => {
@@ -614,35 +571,9 @@ function achievementTextColor(pct) {
   return 'text-red-600 dark:text-red-400';
 }
 
-const baseGross = (c) => {
-  const r = ruleFor.value(c) || {};
-  if (r.gross === 'LAND_VALUE_ONLY') return Number(c.land_value) || 0;
-  return totalsOf.value(c).gross || 0;
-};
-const baseNet = (c) => {
-  const r = ruleFor.value(c) || {};
-  if (r.net === 'TR_ONLY') return sumTR(c);
-  if (r.net === 'LAND_VALUE_ONLY') return Number(c.land_value) || 0;
-  return totalsOf.value(c).net || 0;
-};
-
-const resolveCommissionPct = (contract) => {
-  const hardcoded = comFor.value(contract);
-  if (hardcoded) {
-    const p = Number(hardcoded.commission_pct) || 0;
-    if (p > 0) return p;
-  }
-  if (contract?._projection) return 0;
-  const eid = Number(contract?.enterprise_id);
-  if (!Number.isFinite(eid) || eid <= 0) return 0;
-  const dynamicRules = stageRulesStore.rulesByEnterprise.get(eid) || [];
-  for (const rule of dynamicRules) {
-    if (hadStageInHistory(contract, rule.stage_id)) {
-      return Number(rule.commission_pct) || 0;
-    }
-  }
-  return 0;
-};
+const baseGross = (c) => contractsStore.contractBaseGross(c);
+const baseNet = (c) => contractsStore.contractBaseNet(c);
+const resolveCommissionPct = (contract) => contractsStore.commissionPctFor(contract);
 
 const commissionConditionFor = (contract) => {
   const pct = resolveCommissionPct(contract);

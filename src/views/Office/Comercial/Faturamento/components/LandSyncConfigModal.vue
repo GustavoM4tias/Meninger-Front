@@ -4,6 +4,7 @@ import { useLandSyncStore } from '@/stores/Comercial/Contracts/landSyncStore';
 import { useContractsStore } from '@/stores/Comercial/Contracts/contractsStore';
 import { useHiddenEnterprisesStore } from '@/stores/Comercial/Contracts/hiddenEnterprisesStore';
 import { useStageCommissionRulesStore } from '@/stores/Comercial/Contracts/stageCommissionRulesStore';
+import { useEnterpriseValueRulesStore } from '@/stores/Comercial/Contracts/enterpriseValueRulesStore';
 import { useTrSatelliteStore } from '@/stores/Comercial/Contracts/trSatelliteStore';
 
 import Modal from '@/components/UI/Modal.vue';
@@ -25,15 +26,39 @@ const landSyncStore = useLandSyncStore();
 const contractsStore = useContractsStore();
 const hiddenStore = useHiddenEnterprisesStore();
 const commissionRulesStore = useStageCommissionRulesStore();
+const valueRulesStore = useEnterpriseValueRulesStore();
 const trSatStore = useTrSatelliteStore();
 
 const activeTab = ref('obstit');
 const tabOptions = [
   { value: 'obstit',     label: 'Terreno externo',     icon: 'fas fa-mountain' },
   { value: 'hidden',     label: 'Ocultar empreend.',   icon: 'fas fa-eye-slash' },
-  { value: 'commission', label: 'Comissão por etapa',  icon: 'fas fa-percent' },
+  { value: 'value',      label: 'Composição de VGV',   icon: 'fas fa-scale-balanced' },
+  { value: 'commission', label: 'Comissão',            icon: 'fas fa-percent' },
   { value: 'trsat',      label: 'Satélite de TR',      icon: 'fas fa-link' },
 ];
+
+// ── Composição de VGV ──────────────────────────────────────────────
+const VALUE_MODE_LABEL = {
+  FULL: 'Condições de pagamento',
+  LAND_VALUE_ONLY: 'Somente terreno (land_value)',
+  TR_ONLY: 'Somente condições TR',
+};
+
+const valueModeSelectOptions = Object.entries(VALUE_MODE_LABEL)
+  .map(([value, label]) => ({ value, label }));
+
+const newValueRule = ref({
+  enterprise_id: '',
+  net_mode: 'FULL',
+  gross_mode: 'FULL',
+  description: '',
+});
+
+const isNewValueRuleValid = computed(() =>
+  newValueRule.value.enterprise_id !== '' &&
+  !(newValueRule.value.net_mode === 'FULL' && newValueRule.value.gross_mode === 'FULL')
+);
 
 const selectedLandNames = ref([]);
 const selectedHiddenNames = ref([]);
@@ -72,9 +97,11 @@ const enterpriseNameById = computed(() => {
   return m;
 });
 
+// Etapa é opcional: sem etapa, a comissão vale para toda venda do empreendimento.
 const isNewRuleValid = computed(() =>
   newRule.value.enterprise_id !== '' &&
-  Number.isInteger(newRule.value.stage_id) && newRule.value.stage_id > 0 &&
+  (newRule.value.stage_id == null || newRule.value.stage_id === '' ||
+    (Number.isInteger(Number(newRule.value.stage_id)) && Number(newRule.value.stage_id) > 0)) &&
   Number.isFinite(newRule.value.commission_pct_display) && newRule.value.commission_pct_display > 0 && newRule.value.commission_pct_display < 100
 );
 
@@ -106,15 +133,43 @@ watch(() => props.open, async (isOpen) => {
   selectedHiddenNames.value = [];
   newRule.value = { enterprise_id: '', stage_id: null, commission_pct_display: null, stage_name: '', description: '' };
   newTrSat.value = { satellite_enterprise_id: '', partner_names: [], description: '' };
+  newValueRule.value = { enterprise_id: '', net_mode: 'FULL', gross_mode: 'FULL', description: '' };
 
   if (!contractsStore.enterprises.length) await contractsStore.fetchEnterprises();
   await Promise.all([
     landSyncStore.fetchAll(),
     hiddenStore.fetchAll(),
     commissionRulesStore.fetchAll(),
+    valueRulesStore.fetchAll(),
     trSatStore.fetchAll(),
   ]);
 });
+
+// ── Composição de VGV: handlers ────────────────────────────────────
+async function handleValueRuleAdd() {
+  if (!isNewValueRuleValid.value) return;
+  const eid = Number(newValueRule.value.enterprise_id);
+  const ent = contractsStore.enterprises.find(e => Number(e.id) === eid);
+  try {
+    await valueRulesStore.addRule({
+      enterprise_id: eid,
+      enterprise_name: ent?.name || null,
+      net_mode: newValueRule.value.net_mode,
+      gross_mode: newValueRule.value.gross_mode,
+      description: newValueRule.value.description || null,
+    });
+    newValueRule.value = { enterprise_id: '', net_mode: 'FULL', gross_mode: 'FULL', description: '' };
+    contractsStore.clearContractsCache();
+  } catch (e) {
+    window.alert(e?.message || 'Erro ao salvar regra de composição de VGV.');
+  }
+}
+
+async function handleValueRuleRemove(id) {
+  if (!window.confirm('Remover esta regra? O empreendimento volta a somar pelas condições de pagamento.')) return;
+  await valueRulesStore.removeRule(id);
+  contractsStore.clearContractsCache();
+}
 
 // ── OBSTIT handlers ────────────────────────────────────────────────
 async function handleLandAdd() {
@@ -470,7 +525,9 @@ const closeModal = () => emit('close');
                       <p class="text-[10px] text-ink-subtle mt-0.5 flex flex-wrap items-center gap-x-2">
                         <span class="font-mono">ERP: {{ rule.enterprise_id }}</span>
                         <span>·</span>
-                        <span class="font-mono">Etapa: {{ rule.stage_id }}</span>
+                        <span class="font-mono">
+                          {{ rule.stage_id == null ? 'Todas as vendas' : `Etapa: ${rule.stage_id}` }}
+                        </span>
                         <span v-if="rule.stage_name" class="truncate">({{ rule.stage_name }})</span>
                         <span>·</span>
                         <span class="text-emerald-600 dark:text-emerald-400 font-semibold tabular-nums">
@@ -495,7 +552,8 @@ const closeModal = () => emit('close');
               <div>
                 <h3 class="text-sm font-semibold text-ink">Adicionar regra</h3>
                 <p class="text-[11px] text-ink-muted">
-                  O cálculo aplica-se apenas a contratos cujo repasse <em>já passou</em> pela etapa indicada.
+                  Com etapa, o cálculo aplica-se apenas a contratos cujo repasse <em>já passou</em> por ela.
+                  Deixe a etapa em branco para valer em toda venda do empreendimento.
                 </p>
               </div>
 
@@ -505,7 +563,7 @@ const closeModal = () => emit('close');
 
               <div class="grid grid-cols-2 gap-2">
                 <Input v-model.number="newRule.stage_id" type="number" min="1"
-                  label="Repasse CV ID" placeholder="ex: 52" />
+                  label="Repasse CV ID (opcional)" placeholder="vazio = todas" />
                 <Input v-model.number="newRule.commission_pct_display" type="number" min="0.01" max="99.99" step="0.01"
                   label="Comissão (%)" placeholder="ex: 4" />
               </div>
@@ -640,6 +698,104 @@ const closeModal = () => emit('close');
             </Surface>
           </div>
         </div>
+
+        <!-- ═══════════════ TAB: COMPOSIÇÃO DE VGV ═══════════════ -->
+        <div v-if="activeTab === 'value'" class="p-4 sm:p-5 space-y-4">
+
+          <div v-if="valueRulesStore.error"
+            class="rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2.5 text-xs text-red-700 dark:text-red-300 flex items-center gap-2">
+            <i class="fas fa-circle-exclamation"></i>{{ valueRulesStore.error }}
+          </div>
+
+          <div class="rounded-xl border border-line bg-surface-sunken px-3 py-2.5 text-[11px] text-ink-muted">
+            Por padrão o VGV de um empreendimento é a soma das condições de pagamento do contrato.
+            Use esta aba quando um empreendimento precisar de outra conta: apenas o valor do terreno
+            (campo <code class="font-mono">land_value</code>) ou apenas as condições de Terreno (TR).
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+            <!-- Lista -->
+            <Surface variant="raised" padding="md" class="space-y-3">
+              <div class="flex items-center justify-between gap-2">
+                <div class="min-w-0">
+                  <h3 class="text-sm font-semibold text-ink">Regras ativas</h3>
+                  <p class="text-[11px] text-ink-muted">Valem para todos os usuários do dashboard.</p>
+                </div>
+                <Badge variant="accent" size="sm">
+                  <span class="font-mono tabular-nums">{{ valueRulesStore.items.length }}</span>
+                </Badge>
+              </div>
+
+              <div class="rounded-lg border border-line bg-surface-sunken max-h-72 overflow-y-auto">
+                <EmptyState v-if="!valueRulesStore.items.length && !valueRulesStore.loading"
+                  size="sm" icon="fas fa-scale-balanced"
+                  title="Nenhuma regra"
+                  description="Todos os empreendimentos somam pelas condições de pagamento." />
+                <ul v-else class="divide-y divide-line">
+                  <li v-for="rule in valueRulesStore.items" :key="rule.id"
+                    class="px-3 py-2.5 flex items-start justify-between gap-2 hover:bg-surface-hover transition-colors">
+                    <div class="min-w-0">
+                      <p class="text-xs font-medium text-ink truncate">
+                        {{ rule.enterprise_name || enterpriseNameById.get(Number(rule.enterprise_id)) || 'Sem nome' }}
+                      </p>
+                      <p class="text-[10px] text-ink-subtle font-mono mt-0.5">
+                        ID {{ rule.enterprise_id }} · VGV: {{ VALUE_MODE_LABEL[rule.net_mode] || rule.net_mode }}
+                        · VGV+DC: {{ VALUE_MODE_LABEL[rule.gross_mode] || rule.gross_mode }}
+                      </p>
+                      <p v-if="rule.description" class="text-[10px] text-ink-subtle mt-0.5 truncate">
+                        {{ rule.description }}
+                      </p>
+                    </div>
+                    <Button variant="ghost" size="sm" icon="fas fa-trash"
+                      class="!text-red-500 hover:!bg-red-500/10"
+                      @click="handleValueRuleRemove(rule.id)">
+                      <span class="hidden sm:inline">Remover</span>
+                    </Button>
+                  </li>
+                </ul>
+              </div>
+            </Surface>
+
+            <!-- Adicionar -->
+            <Surface variant="raised" padding="md" class="space-y-3">
+              <div>
+                <h3 class="text-sm font-semibold text-ink">Nova regra</h3>
+                <p class="text-[11px] text-ink-muted">Uma regra por empreendimento. Salvar de novo sobrescreve.</p>
+              </div>
+
+              <div>
+                <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+                  <i class="fas fa-city text-[10px] mr-1 text-ink-subtle"></i>Empreendimento
+                </label>
+                <Select v-model="newValueRule.enterprise_id" :options="enterpriseSelectOptions" />
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-[11px] font-medium text-ink-muted mb-1.5">Modo no VGV</label>
+                  <Select v-model="newValueRule.net_mode" :options="valueModeSelectOptions" />
+                </div>
+                <div>
+                  <label class="block text-[11px] font-medium text-ink-muted mb-1.5">Modo no VGV+DC</label>
+                  <Select v-model="newValueRule.gross_mode" :options="valueModeSelectOptions" />
+                </div>
+              </div>
+
+              <Input v-model="newValueRule.description"
+                label="Descrição (opcional)"
+                placeholder="ex: só o terreno entra no faturamento deste estoque" />
+
+              <div class="flex justify-end pt-1">
+                <Button size="sm" icon="fas fa-plus"
+                  :disabled="!isNewValueRuleValid"
+                  @click="handleValueRuleAdd">
+                  Salvar regra
+                </Button>
+              </div>
+            </Surface>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -648,8 +804,13 @@ const closeModal = () => emit('close');
         Coleta de TR é D-1, feita 1×/dia às 07:05.<br>
         Sincronização manual: 1–10 minutos.
       </p>
-      <p v-else-if="activeTab === 'commission'" class="text-[10px] text-ink-subtle mr-auto hidden sm:block">
+      <p v-else-if="activeTab === 'commission'" class="text-[10px] text-ink-subtle leading-tight mr-auto hidden sm:block">
+        Sem etapa, a comissão vale para toda venda do empreendimento.<br>
         Alterações são aplicadas imediatamente. Recarregue os contratos para ver os novos valores.
+      </p>
+      <p v-else-if="activeTab === 'value'" class="text-[10px] text-ink-subtle leading-tight mr-auto hidden sm:block">
+        Vale para todos os usuários, no Faturamento e no Vendas × Projeção.<br>
+        Recarregue os contratos para ver os novos valores.
       </p>
       <p v-else-if="activeTab === 'trsat'" class="text-[10px] text-ink-subtle leading-tight mr-auto hidden sm:block">
         Match por <code class="font-mono">customer_id + unit_name</code>.<br>
