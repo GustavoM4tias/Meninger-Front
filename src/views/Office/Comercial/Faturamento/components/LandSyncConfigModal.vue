@@ -45,26 +45,33 @@ const tabOptions = [
 // Como cada origem do CV achou (ou não) o centro de custo do Sienge.
 const VIA_LABEL = {
   manual: 'Vínculo manual',
-  projecao: 'Cadastro da projeção',
-  projecao_fase: 'Cadastro da projeção (por fase)',
+  etapa_reserva: 'Código da fase (reserva)',
+  etapa_cadastro: 'Código da fase (cadastro CV)',
+  empreendimento: 'Código do empreendimento',
   cadastro_cv: 'Cadastro do CV',
 };
 const VIA_VARIANT = {
   manual: 'accent',
-  projecao: 'success',
-  projecao_fase: 'success',
+  etapa_reserva: 'success',
+  etapa_cadastro: 'success',
+  empreendimento: 'info',
   cadastro_cv: 'neutral',
 };
 
 const unresolved = computed(() => erpLinksStore.pending.filter(p => !p.via));
 const resolved = computed(() => erpLinksStore.pending.filter(p => p.via));
-const alertCount = computed(() => erpLinksStore.pending.filter(p => p.alerta_fase_generica).length);
+const alertCount = computed(() => erpLinksStore.pending.filter(p => p.alerta_sem_codigo_etapa).length);
 
-const EMPTY_LINK = { cv_enterprise_name: '', cv_stage_name: '', cv_enterprise_id: null, erp_enterprise_id: '', description: '' };
+const EMPTY_LINK = {
+  cv_enterprise_name: '', cv_stage_name: '',
+  cv_enterprise_id: null, cv_stage_id: null,
+  erp_enterprise_id: '', description: '',
+};
 const newLink = ref({ ...EMPTY_LINK });
 
+// A chave é código: etapa do CV (preferida) ou empreendimento do CV.
 const isNewLinkValid = computed(() =>
-  (!!(newLink.value.cv_enterprise_name || '').trim() || newLink.value.cv_enterprise_id != null) &&
+  (newLink.value.cv_stage_id != null || newLink.value.cv_enterprise_id != null) &&
   newLink.value.erp_enterprise_id !== '' &&
   Number(newLink.value.erp_enterprise_id) > 0
 );
@@ -76,7 +83,8 @@ function pickPending(p) {
   newLink.value = {
     cv_enterprise_name: p.cv_enterprise_name || '',
     cv_stage_name: p.cv_stage_name || '',
-    cv_enterprise_id: p.cv_enterprise_id ?? p.cv_enterprise_int_id ?? null,
+    cv_enterprise_id: p.cv_enterprise_id ?? null,
+    cv_stage_id: p.cv_stage_id ?? null,
     erp_enterprise_id: '',
     description: '',
   };
@@ -90,6 +98,7 @@ async function handleLinkAdd() {
     await erpLinksStore.addLink({
       cv_enterprise_id: newLink.value.cv_enterprise_id,
       cv_enterprise_name: (newLink.value.cv_enterprise_name || '').trim() || null,
+      cv_stage_id: newLink.value.cv_stage_id,
       cv_stage_name: (newLink.value.cv_stage_name || '').trim() || null,
       erp_enterprise_id: erpId,
       erp_enterprise_name: ent?.name || null,
@@ -426,7 +435,7 @@ const closeModal = () => emit('close');
                 <li v-for="p in [...unresolved, ...resolved]"
                   :key="`${p.cv_enterprise_name}|${p.cv_stage_name || ''}`"
                   class="px-3 py-2.5 flex items-start justify-between gap-2 hover:bg-surface-hover transition-colors"
-                  :class="!p.via ? 'bg-red-500/5' : (p.alerta_fase_generica ? 'bg-amber-500/5' : '')">
+                  :class="!p.via ? 'bg-red-500/5' : (p.alerta_sem_codigo_etapa ? 'bg-amber-500/5' : '')">
                   <div class="min-w-0">
                     <p class="text-xs font-medium text-ink truncate">
                       {{ p.cv_enterprise_name }}
@@ -452,18 +461,20 @@ const closeModal = () => emit('close');
                       <Badge v-if="p.via" :variant="VIA_VARIANT[p.via] || 'neutral'" size="sm">
                         {{ VIA_LABEL[p.via] || p.via }}
                       </Badge>
-                      <span v-if="p.fases_no_empreendimento > 1"
-                        class="text-[10px] text-ink-subtle font-mono">
-                        {{ p.fases_no_empreendimento }} fases no CV
+                      <span v-if="p.cv_stage_int_id" class="text-[10px] text-ink-subtle font-mono">
+                        etapa {{ p.cv_stage_id }} → CC {{ p.cv_stage_int_id }}
+                      </span>
+                      <span v-else class="text-[10px] text-ink-subtle font-mono">
+                        etapa {{ p.cv_stage_id ?? '—' }} sem código
                       </span>
                     </div>
 
-                    <p v-if="p.alerta_fase_generica"
+                    <p v-if="p.alerta_sem_codigo_etapa"
                       class="text-[10px] text-amber-600 dark:text-amber-400 mt-1">
                       <i class="fas fa-triangle-exclamation text-[9px] mr-0.5"></i>
-                      Resolveu pelo cadastro do CV, que não conhece fase: todas as fases deste
-                      empreendimento caem neste mesmo centro de custo. Confira se é o módulo certo e,
-                      se não for, crie o vínculo por fase.
+                      A fase não tem código no CV, então a resolução caiu no nível do empreendimento
+                      e todas as fases dele vão para este mesmo centro de custo. O certo é preencher
+                      o código interno da etapa no CV; enquanto isso, dá para vincular por aqui.
                     </p>
                   </div>
 
@@ -485,13 +496,17 @@ const closeModal = () => emit('close');
                 <p class="text-[11px] text-ink-muted">Use "Vincular" na lista acima para preencher automaticamente.</p>
               </div>
 
-              <Input v-model="newLink.cv_enterprise_name"
-                label="Empreendimento no CV"
-                placeholder="ex: RESIDENCIAL DOS ANJOS" />
-
-              <Input v-model="newLink.cv_stage_name"
-                label="Fase / etapa no CV (opcional)"
-                placeholder="ex: FASE 3 — deixe vazio p/ valer no empreendimento todo" />
+              <div class="rounded-lg border border-line bg-surface-sunken px-2.5 py-2 text-[11px] text-ink-muted">
+                <span v-if="newLink.cv_enterprise_name">
+                  <span class="text-ink font-medium">{{ newLink.cv_enterprise_name }}</span>
+                  <span v-if="newLink.cv_stage_name"> · {{ newLink.cv_stage_name }}</span>
+                  <span class="block font-mono text-[10px] text-ink-subtle mt-0.5">
+                    etapa CV {{ newLink.cv_stage_id ?? '—' }} · empreendimento CV
+                    {{ newLink.cv_enterprise_id ?? '—' }}
+                  </span>
+                </span>
+                <span v-else>Clique em "Vincular" na lista acima para escolher a origem.</span>
+              </div>
 
               <div>
                 <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
