@@ -124,6 +124,13 @@ export default [
                 name: 'marketing',
                 meta: { requiresAuth: true },
                 children: [
+                    // Stand de Vendas (modelos/categorias + stands reais com custo do Sienge)
+                    {
+                        path: 'stand-vendas',
+                        name: 'Stand de Vendas',
+                        component: () => import('@/views/Office/Marketing/StandVendas/Index.vue'),
+                        meta: { requiresAuth: true, searchable: true, content: 'Stands de vendas: modelos com valor médio e itens, cadastro dos stands reais, custo de construção e manutenção apurado do Sienge (Despesas com Stand)' },
+                    },
                     // Aprovações de Marketing (tickets p/ diretoria)
                     {
                         path: 'aprovacoes',
