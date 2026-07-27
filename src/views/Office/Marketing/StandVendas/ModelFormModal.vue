@@ -14,6 +14,8 @@
                 <p class="text-xs text-ink-subtle mt-1.5">Faixa do custo médio de construção deste modelo de stand.</p>
             </div>
 
+            <Input v-model="form.avg_area_m2" type="number" label="Metragem média (m²)" placeholder="Ex.: 100" />
+
             <Input v-model="form.description" label="Descrição" placeholder="Opcional" />
 
             <!-- Itens do stand -->
@@ -76,7 +78,7 @@ const emit = defineEmits(['close', 'saved']);
 const store = useSalesStandStore();
 const newItem = ref('');
 const errorMsg = ref('');
-const form = ref({ name: '', avg_value_min: '', avg_value_max: '', description: '', items: [] });
+const form = ref({ name: '', avg_value_min: '', avg_value_max: '', avg_area_m2: '', description: '', items: [] });
 
 watch(() => props.open, (open) => {
     if (!open) return;
@@ -87,10 +89,11 @@ watch(() => props.open, (open) => {
             name: props.model.name || '',
             avg_value_min: props.model.avg_value_min != null ? String(Number(props.model.avg_value_min)) : '',
             avg_value_max: props.model.avg_value_max != null ? String(Number(props.model.avg_value_max)) : '',
+            avg_area_m2: props.model.avg_area_m2 != null ? String(Number(props.model.avg_area_m2)) : '',
             description: props.model.description || '',
             items: [...(props.model.items || [])],
         }
-        : { name: '', avg_value_min: '', avg_value_max: '', description: '', items: [] };
+        : { name: '', avg_value_min: '', avg_value_max: '', avg_area_m2: '', description: '', items: [] };
 });
 
 function addItem() {
@@ -111,6 +114,7 @@ async function save() {
             name: form.value.name,
             avg_value_min: min,
             avg_value_max: max,
+            avg_area_m2: Number(form.value.avg_area_m2) || 0,
             description: form.value.description,
             items: form.value.items,
         }, props.model?.id || null);

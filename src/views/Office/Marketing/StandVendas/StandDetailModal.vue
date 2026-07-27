@@ -27,6 +27,9 @@
                     <p class="font-mono tabular-nums font-bold text-ink">
                         {{ stand.model ? fmtRange(stand.model) : '-' }}
                     </p>
+                    <p v-if="Number(stand.model?.avg_area_m2) > 0" class="text-xs text-ink-muted font-mono tabular-nums">
+                        {{ Number(stand.model.avg_area_m2) }} m² médios
+                    </p>
                 </Surface>
             </div>
 
