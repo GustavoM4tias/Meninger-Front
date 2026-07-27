@@ -42,10 +42,23 @@ const tabOptions = [
 ];
 
 // ── Vínculo CV ↔ Sienge ────────────────────────────────────────────
-const MOTIVO_LABEL = {
-  sem_id_cv: 'A reserva não traz o ID do empreendimento',
-  sem_ponte: 'O cadastro do CV está sem o ID do Sienge',
+// Como cada origem do CV achou (ou não) o centro de custo do Sienge.
+const VIA_LABEL = {
+  manual: 'Vínculo manual',
+  projecao: 'Cadastro da projeção',
+  projecao_fase: 'Cadastro da projeção (por fase)',
+  cadastro_cv: 'Cadastro do CV',
 };
+const VIA_VARIANT = {
+  manual: 'accent',
+  projecao: 'success',
+  projecao_fase: 'success',
+  cadastro_cv: 'neutral',
+};
+
+const unresolved = computed(() => erpLinksStore.pending.filter(p => !p.via));
+const resolved = computed(() => erpLinksStore.pending.filter(p => p.via));
+const alertCount = computed(() => erpLinksStore.pending.filter(p => p.alerta_fase_generica).length);
 
 const EMPTY_LINK = { cv_enterprise_name: '', cv_stage_name: '', cv_enterprise_id: null, erp_enterprise_id: '', description: '' };
 const newLink = ref({ ...EMPTY_LINK });
@@ -377,51 +390,86 @@ const closeModal = () => emit('close');
             passa a somar junto das vendas reais.
           </div>
 
-          <!-- Pendentes -->
+          <!-- Raio-X: cada origem do CV e o centro de custo que ela resolve -->
           <Surface variant="raised" padding="md" class="space-y-3">
-            <div class="flex items-center justify-between gap-2">
+            <div class="flex items-center justify-between gap-2 flex-wrap">
               <div class="min-w-0">
-                <h3 class="text-sm font-semibold text-ink">Sem vínculo</h3>
-                <p class="text-[11px] text-ink-muted">Empreendimentos das projeções que não acharam par no Sienge.</p>
+                <h3 class="text-sm font-semibold text-ink">De onde vem cada projeção</h3>
+                <p class="text-[11px] text-ink-muted">
+                  Cada empreendimento e fase do CV que está gerando projeção, e o centro de custo do
+                  Sienge em que ele cai.
+                </p>
               </div>
-              <Badge :variant="erpLinksStore.pendingCount ? 'warning' : 'accent'" size="sm">
-                <span class="font-mono tabular-nums">{{ erpLinksStore.pendingCount }}</span>
-              </Badge>
+              <div class="flex items-center gap-1.5">
+                <Badge v-if="unresolved.length" variant="danger" size="sm">
+                  <span class="font-mono tabular-nums">{{ unresolved.length }}</span> sem vínculo
+                </Badge>
+                <Badge v-if="alertCount" variant="warning" size="sm">
+                  <span class="font-mono tabular-nums">{{ alertCount }}</span> a conferir
+                </Badge>
+                <Badge v-if="!unresolved.length && !alertCount" variant="success" size="sm">
+                  <i class="fas fa-circle-check text-[9px]"></i>Tudo resolvido
+                </Badge>
+              </div>
             </div>
 
             <div v-if="erpLinksStore.loadingPending" class="flex items-center gap-2 text-xs text-ink-muted">
-              <Spinner size="sm" /> Procurando empreendimentos sem vínculo...
+              <Spinner size="sm" /> Levantando as origens das projeções...
             </div>
 
-            <div v-else class="rounded-lg border border-line bg-surface-sunken max-h-60 overflow-y-auto">
+            <div v-else class="rounded-lg border border-line bg-surface-sunken max-h-80 overflow-y-auto">
               <EmptyState v-if="!erpLinksStore.pending.length"
-                size="sm" icon="fas fa-circle-check"
-                title="Nenhum pendente"
-                description="Todas as projeções acharam o empreendimento do Sienge." />
+                size="sm" icon="fas fa-diagram-project"
+                title="Nenhuma projeção em aberto"
+                description="Não há reservas nas etapas dos grupos de workflow ativos." />
               <ul v-else class="divide-y divide-line">
-                <li v-for="p in erpLinksStore.pending" :key="`${p.cv_enterprise_name}|${p.cv_stage_name || ''}`"
-                  class="px-3 py-2.5 flex items-start justify-between gap-2 hover:bg-surface-hover transition-colors">
+                <li v-for="p in [...unresolved, ...resolved]"
+                  :key="`${p.cv_enterprise_name}|${p.cv_stage_name || ''}`"
+                  class="px-3 py-2.5 flex items-start justify-between gap-2 hover:bg-surface-hover transition-colors"
+                  :class="!p.via ? 'bg-red-500/5' : (p.alerta_fase_generica ? 'bg-amber-500/5' : '')">
                   <div class="min-w-0">
                     <p class="text-xs font-medium text-ink truncate">
                       {{ p.cv_enterprise_name }}
                       <span v-if="p.cv_stage_name" class="text-ink-muted font-normal">
                         · {{ p.cv_stage_name }}
                       </span>
+                      <span class="text-[10px] text-ink-subtle font-mono ml-1">
+                        ({{ p.reservas }})
+                      </span>
                     </p>
-                    <p class="text-[10px] text-ink-subtle mt-0.5">
-                      <span class="font-mono">{{ p.reservas }}</span> reserva(s) ·
-                      {{ MOTIVO_LABEL[p.motivo] || p.motivo }}
+
+                    <!-- Resolveu: mostra o centro de custo e o caminho -->
+                    <p v-if="p.via" class="text-[10px] text-ink-subtle font-mono mt-0.5 truncate">
+                      <i class="fas fa-arrow-right text-[8px] mr-0.5"></i>
+                      <span class="text-ink">{{ p.erp_enterprise_id }}</span>
+                      {{ p.erp_enterprise_name || '(sem contrato no período)' }}
                     </p>
-                    <p v-if="p.etapas_no_empreendimento > 1"
-                      class="text-[10px] text-amber-600 dark:text-amber-400 mt-0.5">
-                      <i class="fas fa-diagram-project text-[9px] mr-0.5"></i>
-                      Este empreendimento tem {{ p.etapas_no_empreendimento }} fases no CV; no Sienge
-                      cada fase costuma ser um empreendimento. Vincule fase por fase.
+                    <p v-else class="text-[10px] text-red-600 dark:text-red-400 mt-0.5">
+                      Não achou centro de custo. Aparece como linha separada no dashboard.
+                    </p>
+
+                    <div class="flex items-center gap-1.5 mt-1 flex-wrap">
+                      <Badge v-if="p.via" :variant="VIA_VARIANT[p.via] || 'neutral'" size="sm">
+                        {{ VIA_LABEL[p.via] || p.via }}
+                      </Badge>
+                      <span v-if="p.fases_no_empreendimento > 1"
+                        class="text-[10px] text-ink-subtle font-mono">
+                        {{ p.fases_no_empreendimento }} fases no CV
+                      </span>
+                    </div>
+
+                    <p v-if="p.alerta_fase_generica"
+                      class="text-[10px] text-amber-600 dark:text-amber-400 mt-1">
+                      <i class="fas fa-triangle-exclamation text-[9px] mr-0.5"></i>
+                      Resolveu pelo cadastro do CV, que não conhece fase: todas as fases deste
+                      empreendimento caem neste mesmo centro de custo. Confira se é o módulo certo e,
+                      se não for, crie o vínculo por fase.
                     </p>
                   </div>
-                  <Button variant="outline" size="sm" icon="fas fa-link" class="shrink-0"
-                    @click="pickPending(p)">
-                    <span class="hidden sm:inline">Vincular</span>
+
+                  <Button :variant="p.via ? 'ghost' : 'outline'" size="sm" icon="fas fa-link"
+                    class="shrink-0" @click="pickPending(p)">
+                    <span class="hidden sm:inline">{{ p.via ? 'Corrigir' : 'Vincular' }}</span>
                   </Button>
                 </li>
               </ul>
