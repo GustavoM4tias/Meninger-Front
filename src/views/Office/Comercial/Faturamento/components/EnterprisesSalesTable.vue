@@ -79,6 +79,7 @@ const totalCombined = (row) => contractsStore.combinedValueForRow(row);
 const realizedCount = (row) => contractsStore.realizedCountForRow(row);
 const combinedCount = (row) => contractsStore.combinedCountForRow(row);
 const ticketMedio = (row) => contractsStore.ticketForRow(row);
+const isUnlinked = (row) => contractsStore.isUnlinkedProjectionRow(row);
 
 /* ===================== SORT ===================== */
 const sortedData = computed(() => {
@@ -528,7 +529,11 @@ const onViewChange = (mode) => {
                 </span>
                 <span v-if="!enterprise.onlyProjectionRow && enterprise.proj_count > 0" v-tippy="'Projeção vinculada'"
                   class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
-                <Badge v-if="enterprise.onlyProjectionRow" variant="success" size="sm">
+                <Badge v-if="isUnlinked(enterprise)" variant="warning" size="sm"
+                  v-tippy="'Esta projeção não achou o empreendimento correspondente no Sienge, por isso aparece em linha separada. Um admin resolve na engrenagem, aba Vínculo CV ↔ Sienge.'">
+                  <i class="fas fa-link-slash text-[9px]"></i>Sem vínculo
+                </Badge>
+                <Badge v-else-if="enterprise.onlyProjectionRow" variant="success" size="sm">
                   <i class="fas fa-chart-line text-[9px]"></i>Projeção
                 </Badge>
               </div>

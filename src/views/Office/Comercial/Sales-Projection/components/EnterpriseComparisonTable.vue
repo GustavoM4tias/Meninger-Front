@@ -36,6 +36,7 @@ const appendedValue = (row) => contractsStore.projectedValueForRow(row);
 const realizedCount = (row) => contractsStore.realizedCountForRow(row);
 const combinedValue = (row) => contractsStore.combinedValueForRow(row);
 const combinedCount = (row) => contractsStore.combinedCountForRow(row);
+const isUnlinked = (row) => contractsStore.isUnlinkedProjectionRow(row);
 
 // ── Seleção ──────────────────────────────────
 const selectedKeys = ref(new Set());
@@ -458,7 +459,11 @@ const sortOptions = computed(() => [
                   class="text-sm font-medium text-ink hover:text-accent text-left truncate transition-colors">
                   {{ row.name }}
                 </button>
-                <Badge v-if="row.onlyProjectionRow" variant="success" size="sm">
+                <Badge v-if="isUnlinked(row)" variant="warning" size="sm"
+                  v-tippy="'Esta projeção não achou o empreendimento correspondente no Sienge, por isso aparece em linha separada. Um admin resolve na engrenagem, aba Vínculo CV ↔ Sienge.'">
+                  <i class="fas fa-link-slash text-[9px]"></i>Sem vínculo
+                </Badge>
+                <Badge v-else-if="row.onlyProjectionRow" variant="success" size="sm">
                   <i class="fas fa-chart-line text-[9px]"></i>Projeção
                 </Badge>
               </div>
