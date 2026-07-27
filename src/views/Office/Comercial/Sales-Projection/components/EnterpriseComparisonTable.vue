@@ -27,21 +27,15 @@ const isAdmin = computed(() => {
   try { return localStorage.getItem('role') === 'admin'; } catch { return false; }
 });
 
-// ── Distrato ──────────────────────────────
-// Detecção e agregação centralizadas no contractsStore.
+// ── Valores ───────────────────────────────
+// Mesmos getters do Faturamento: distrato descontado, projeção somada à parte.
 const distratoCount = (row) => contractsStore.distratoCountForRow(row);
 const distratoValue = (row) => contractsStore.distratoValueForRow(row);
-
-function baseValue(row) {
-  const base = Number(contractsStore.isNet ? (row.total_value_net || 0) : (row.total_value_gross || 0));
-  const dv = Number(distratoValue(row) || 0);
-  return (Number.isFinite(base) ? base : 0) - (Number.isFinite(dv) ? dv : 0);
-}
-
-function appendedValue(row) {
-  if (row.onlyProjectionRow) return 0;
-  return contractsStore.isNet ? Number(row.proj_value_net || 0) : Number(row.proj_value_gross || 0);
-}
+const baseValue = (row) => contractsStore.realizedValueForRow(row);
+const appendedValue = (row) => contractsStore.projectedValueForRow(row);
+const realizedCount = (row) => contractsStore.realizedCountForRow(row);
+const combinedValue = (row) => contractsStore.combinedValueForRow(row);
+const combinedCount = (row) => contractsStore.combinedCountForRow(row);
 
 // ── Seleção ──────────────────────────────────
 const selectedKeys = ref(new Set());
@@ -78,27 +72,24 @@ const selectionMetricsComputed = computed(() => {
   const rows = selectedRows.value;
   const useNet = contractsStore.isNet;
 
-  const totalSales = rows.reduce((s, r) => s + Math.max(0, (r.count || 0) - distratoCount(r)), 0);
-  const totalValueNet = rows.reduce((s, r) => s + (r.total_value_net || 0), 0);
-  const totalValueGross = rows.reduce((s, r) => s + (r.total_value_gross || 0), 0);
+  const totalSales = rows.reduce((s, r) => s + realizedCount(r), 0);
   const projectedVgv = rows.reduce((s, r) => s + (r.projectedVgv || 0), 0);
   const projectedUnits = rows.reduce((s, r) => s + (r.projectedUnits || 0), 0);
 
-  const wfValueNet = rows.reduce((s, r) => s + (r.proj_value_net || 0), 0);
-  const wfValueGross = rows.reduce((s, r) => s + (r.proj_value_gross || 0), 0);
-  const effectiveValueNet = totalValueNet + wfValueNet;
-  const effectiveValueGross = totalValueGross + wfValueGross;
-
-  const avgSaleValueNet = totalSales > 0 ? effectiveValueNet / totalSales : 0;
-  const avgSaleValueGross = totalSales > 0 ? effectiveValueGross / totalSales : 0;
+  // Realizado pela mesma regra do Faturamento, nos dois modos (os cartões
+  // escolhem qual mostrar conforme VGV / VGV+DC).
+  const totalValueNet = rows.reduce((s, r) => s + contractsStore.combinedValuesForRow(r).net, 0);
+  const totalValueGross = rows.reduce((s, r) => s + contractsStore.combinedValuesForRow(r).gross, 0);
+  const realizedVgv = useNet ? totalValueNet : totalValueGross;
+  const avgSaleValueNet = totalSales > 0 ? totalValueNet / totalSales : 0;
+  const avgSaleValueGross = totalSales > 0 ? totalValueGross / totalSales : 0;
   const avgProjectedTicket = projectedUnits > 0 ? projectedVgv / projectedUnits : 0;
 
-  const realizedVgv = useNet ? effectiveValueNet : effectiveValueGross;
   const achievementPctVgv = projectedVgv > 0
     ? parseFloat((realizedVgv / projectedVgv * 100).toFixed(1))
     : null;
 
-  const realizedUnits = rows.reduce((s, r) => s + Math.max(0, (r.count || 0) - distratoCount(r)), 0);
+  const realizedUnits = rows.reduce((s, r) => s + combinedCount(r), 0);
   const achievementPctUnits = projectedUnits > 0
     ? parseFloat((realizedUnits / projectedUnits * 100).toFixed(1))
     : null;
@@ -122,17 +113,10 @@ const selectionMetricsComputed = computed(() => {
     let pct = null;
     if (mode === 'units') {
       const proj = r.projectedUnits || 0;
-      if (proj > 0) {
-        const realized = Math.max(0, ((r.count || 0) > 0 ? (r.count || 0) : (r.proj_count || 0)) - distratoCount(r));
-        pct = (realized / proj) * 100;
-      }
+      if (proj > 0) pct = (combinedCount(r) / proj) * 100;
     } else {
       const projVgv = r.projectedVgv || 0;
-      if (projVgv > 0) {
-        const baseReal = useNet ? (r.total_value_net || 0) : (r.total_value_gross || 0);
-        const wfVgv = r.onlyProjectionRow ? 0 : (useNet ? (r.proj_value_net || 0) : (r.proj_value_gross || 0));
-        pct = ((baseReal + wfVgv) / projVgv) * 100;
-      }
+      if (projVgv > 0) pct = (combinedValue(r) / projVgv) * 100;
     }
     if (pct == null) continue;
     const w = r.projectedVgv || 0;
@@ -151,8 +135,8 @@ const selectionMetricsComputed = computed(() => {
     totalValueGross,
     avgSaleValueNet,
     avgSaleValueGross,
-    totalValue: totalValueNet,
-    avgSaleValue: avgSaleValueNet,
+    totalValue: realizedVgv,
+    avgSaleValue: useNet ? avgSaleValueNet : avgSaleValueGross,
     totalEnterprises: rows.length,
     projectedVgv, projectedUnits,
     avgProjectedTicket,
@@ -204,14 +188,10 @@ const sortedData = computed(() => {
 });
 
 const totalCount = computed(() =>
-  sortedData.value.reduce((s, e) => s + Math.max(0, (e.count || 0) - distratoCount(e)), 0)
+  sortedData.value.reduce((s, e) => s + realizedCount(e), 0)
 );
 const totalRealized = computed(() =>
-  sortedData.value.reduce((s, e) => {
-    const baseReal = contractsStore.isNet ? (e.total_value_net || 0) : (e.total_value_gross || 0);
-    const wfVgv = contractsStore.isNet ? (e.proj_value_net || 0) : (e.proj_value_gross || 0);
-    return s + baseReal + wfVgv;
-  }, 0)
+  sortedData.value.reduce((s, e) => s + combinedValue(e), 0)
 );
 
 // ── Helpers de cor / status ──────────────
@@ -390,7 +370,7 @@ const sortOptions = computed(() => [
 
           <div class="flex items-center gap-3 mt-1.5 flex-wrap text-[11px]">
             <span class="text-ink-muted font-mono">
-              <span class="text-ink font-semibold">{{ row.count - distratoCount(row) }}</span> venda(s)
+              <span class="text-ink font-semibold">{{ realizedCount(row) }}</span> venda(s)
               <span v-if="!row.onlyProjectionRow && row.proj_count" class="text-emerald-500 font-semibold">
                 +{{ row.proj_count }}
               </span>
@@ -487,7 +467,7 @@ const sortOptions = computed(() => [
             <!-- Vendas -->
             <td class="px-4 py-3 text-right">
               <div class="text-sm font-semibold text-ink tabular-nums relative inline-block">
-                {{ row.count - distratoCount(row) }}
+                {{ realizedCount(row) }}
                 <span v-if="!row.onlyProjectionRow && row.proj_count"
                   class="absolute -top-3 -right-2 text-[10px] font-bold text-emerald-500 font-mono"
                   v-tippy="'Projeção'">

@@ -6,6 +6,7 @@ import { useContractsStore } from '@/stores/Comercial/Contracts/contractsStore';
 import { useSalesProjectionReportStore } from '@/stores/Comercial/Projections/salesProjectionReportStore';
 import { useProjectionGoalModeStore } from '@/stores/Comercial/Projections/projectionGoalModeStore';
 import { useStageCommissionRulesStore } from '@/stores/Comercial/Contracts/stageCommissionRulesStore';
+import { useEnterpriseValueRulesStore } from '@/stores/Comercial/Contracts/enterpriseValueRulesStore';
 import { useHiddenEnterprisesStore } from '@/stores/Comercial/Contracts/hiddenEnterprisesStore';
 import { useTrSatelliteStore } from '@/stores/Comercial/Contracts/trSatelliteStore';
 
@@ -28,6 +29,7 @@ const contractsStore = useContractsStore();
 const projStore = useSalesProjectionReportStore();
 const goalStore = useProjectionGoalModeStore();
 const stageRulesStore = useStageCommissionRulesStore();
+const valueRulesStore = useEnterpriseValueRulesStore();
 const hiddenStore = useHiddenEnterprisesStore();
 const trSatelliteStore = useTrSatelliteStore();
 
@@ -189,9 +191,8 @@ const combinedData = computed(() => {
       const restricted = (proj && cid != null) ? projOnlyAggByCompany.get(cid) : null;
       const effectiveRow = restricted ? { ...row, ...restricted } : row;
 
-      const wfVgv = isNet ? (effectiveRow.proj_value_net || 0) : (effectiveRow.proj_value_gross || 0);
-      const realizedVgvBase = isNet ? (effectiveRow.total_value_net || 0) : (effectiveRow.total_value_gross || 0);
-      const realizedVgv = realizedVgvBase > 0 ? realizedVgvBase : wfVgv;
+      // Mesma conta do Faturamento (desconta distrato, soma projeção vinculada).
+      const realizedVgv = contractsStore.combinedValueForRow(effectiveRow);
       const projectedVgv = proj?.projected_vgv ?? 0;
       const projectedUnits = proj?.projected_units ?? 0;
       const achievementPct = projectedVgv > 0
@@ -240,10 +241,8 @@ const combinedData = computed(() => {
       if (eidStr) seen.add(eidStr);
 
       const proj = getProj(row);
-      const realizedVgv = isNet ? (row.total_value_net || 0) : (row.total_value_gross || 0);
-      const effectiveRealized = row.onlyProjectionRow
-        ? (isNet ? Number(row.total_value_net || 0) : Number(row.total_value_gross || 0))
-        : realizedVgv;
+      // Mesma conta do Faturamento (desconta distrato, soma projeção vinculada).
+      const effectiveRealized = contractsStore.combinedValueForRow(row);
       const projectedVgv = proj?.summary?.projected_vgv ?? 0;
       const projectedUnits = proj?.summary?.projected_units ?? 0;
       const achievementPct = projectedVgv > 0
@@ -286,27 +285,6 @@ const combinedData = computed(() => {
   }
 });
 
-// ── % Atingida por linha (respeita modo de meta units|vgv) ───────────────
-// Distratos são subtraídos via contractsStore.distratoCountForRow para alinhar
-// com a tabela (effectiveAchievementPct no EnterpriseComparisonTable).
-function rowEffectivePct(row, useNet) {
-  const eid = row.enterprise_id ?? row.id ?? null;
-  const mode = goalStore.modeForEnterprise(eid);
-  if (mode === 'units') {
-    const projected = row.projectedUnits || 0;
-    if (projected <= 0) return null;
-    const effectiveCount = (row.count || 0) > 0 ? (row.count || 0) : (row.proj_count || 0);
-    const realized = Math.max(0, effectiveCount - contractsStore.distratoCountForRow(row));
-    return (realized / projected) * 100;
-  }
-  const projectedVgv = row.projectedVgv || 0;
-  if (projectedVgv <= 0) return null;
-  const baseReal = useNet ? (row.total_value_net || 0) : (row.total_value_gross || 0);
-  const wfVgv = row.onlyProjectionRow ? 0 : (useNet ? (row.proj_value_net || 0) : (row.proj_value_gross || 0));
-  const realizedVgv = baseReal + wfVgv;
-  return (realizedVgv / projectedVgv) * 100;
-}
-
 // ── Métricas completas ────────────────────────────────────────────────────
 // % Atingida e aggregateMode são SEMPRE calculados no nível de empreendimento,
 // respeitando o goal-mode individual (units|vgv) configurado para cada um.
@@ -332,18 +310,14 @@ const fullSummaryMetrics = computed(() => {
 
   // 1) Numerador — soma realizado (em unidades OU vgv) de TODOS os
   //    empreendimentos com vendas, no mode efetivo de cada um.
+  //    Os getters combined*ForRow são os MESMOS que o Faturamento usa: já
+  //    descontam distrato e somam a projeção de workflow vinculada.
   for (const entRow of contractsStore.salesByEnterprise) {
     const eid = entRow.enterprise_id != null ? Number(entRow.enterprise_id) : null;
-    const mode = goalStore.modeForEnterprise(eid);
-    if (mode === 'units') {
-      const distratoCount = contractsStore.distratoCountForRow(entRow);
-      const effectiveCount = (entRow.count || 0) > 0 ? (entRow.count || 0) : (entRow.proj_count || 0);
-      const realizedUnits = Math.max(0, effectiveCount - distratoCount);
-      unitsRealized += realizedUnits;
+    if (goalStore.modeForEnterprise(eid) === 'units') {
+      unitsRealized += contractsStore.combinedCountForRow(entRow);
     } else {
-      const baseReal = useNet ? (entRow.total_value_net || 0) : (entRow.total_value_gross || 0);
-      const wfVgv = entRow.onlyProjectionRow ? 0 : (useNet ? (entRow.proj_value_net || 0) : (entRow.proj_value_gross || 0));
-      vgvRealized += baseReal + wfVgv;
+      vgvRealized += contractsStore.combinedValueForRow(entRow);
     }
   }
 
@@ -448,10 +422,6 @@ onMounted(async () => {
   contractsStore.groupBy = 'enterprise';
   goalStore.load();
 
-  const isAdmin = (() => {
-    try { return localStorage.getItem('role') === 'admin'; } catch { return false; }
-  })();
-
   await Promise.all([
     contractsStore.fetchCompanies(),
     contractsStore.fetchEnterprises(),
@@ -459,8 +429,10 @@ onMounted(async () => {
     projStore.fetchProjectionsList(),
     projStore.fetchEnterprises(),
     stageRulesStore.fetchAll(),
+    valueRulesStore.fetchAll(),
     trSatelliteStore.fetchAll(),
-    ...(isAdmin ? [hiddenStore.fetchAll()] : []),
+    // Ocultos valem para todos, não só para quem configurou.
+    hiddenStore.fetchAll(),
   ]);
 
   const startDate = dayjs().startOf('month').format('YYYY-MM-DD');

@@ -14,9 +14,14 @@ const contractsStore = useContractsStore();
 const route = useRoute();
 const router = useRouter();
 
+// O backend, sem datas, consulta do 1º do mês até HOJE. A tela mostrava até o
+// fim do mês, sugerindo um período maior do que o consultado.
+const DEFAULT_START = dayjs().startOf('month').format('YYYY-MM-DD');
+const DEFAULT_END = dayjs().format('YYYY-MM-DD');
+
 const localFilters = ref({
-  startDate: dayjs().startOf('month').format('YYYY-MM-DD'),
-  endDate: dayjs().endOf('month').format('YYYY-MM-DD'),
+  startDate: DEFAULT_START,
+  endDate: DEFAULT_END,
   situation: '',
   selectedCompanyNames: [],
   groupIds: [],
@@ -110,10 +115,8 @@ const activeFiltersCount = computed(() => {
   if (localFilters.value.groupIds?.length) n++;
   if (localFilters.value.situation) n++;
   // Datas só contam quando diferentes do default do mês atual
-  const defaultStart = dayjs().startOf('month').format('YYYY-MM-DD');
-  const defaultEnd = dayjs().endOf('month').format('YYYY-MM-DD');
-  if (localFilters.value.startDate && localFilters.value.startDate !== defaultStart) n++;
-  if (localFilters.value.endDate && localFilters.value.endDate !== defaultEnd) n++;
+  if (localFilters.value.startDate && localFilters.value.startDate !== DEFAULT_START) n++;
+  if (localFilters.value.endDate && localFilters.value.endDate !== DEFAULT_END) n++;
   return n;
 });
 

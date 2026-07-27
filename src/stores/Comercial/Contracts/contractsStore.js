@@ -4,33 +4,24 @@ import { useCarregamentoStore } from '@/stores/Config/carregamento'
 import API_URL from '@/config/apiUrl'
 import { useHiddenEnterprisesStore } from '@/stores/Comercial/Contracts/hiddenEnterprisesStore'
 import { useStageCommissionRulesStore } from '@/stores/Comercial/Contracts/stageCommissionRulesStore'
+import { useEnterpriseValueRulesStore } from '@/stores/Comercial/Contracts/enterpriseValueRulesStore'
 import { useTrSatelliteStore } from '@/stores/Comercial/Contracts/trSatelliteStore'
 
 // ─── Debug helpers ──────────────────────────────────────────────────────────
-const DEBUG = true
-const DEBUG_PROJECTIONS = true
+// Ligue via localStorage.setItem('debug:contracts', '1') quando precisar
+// investigar; desligado por padrão para não poluir o console em produção.
+const DEBUG = (() => {
+    try { return localStorage.getItem('debug:contracts') === '1' } catch { return false }
+})()
 const log = (...a) => { if (DEBUG) console.log('[contractsStore]', ...a) }
-const logProj = (...a) => { if (DEBUG && DEBUG_PROJECTIONS) console.log('[contractsStore][PROJ]', ...a) }
+const logProj = (...a) => { if (DEBUG) console.log('[contractsStore][PROJ]', ...a) }
 
 // ─── Business-rule constants ─────────────────────────────────────────────────
-const ENTERPRISE_OVERRIDES = {
-    byId: {
-        17004: { gross: 'LAND_VALUE_ONLY', net: 'LAND_VALUE_ONLY' }
-    },
-    byName: {
-        'JACAREZINHO/PR - RESIDENCIAL PARQUE DOS IPÊS - COMERCIAL/INCORPORAÇÃO/ESTOQUE': {
-            gross: 'LAND_VALUE_ONLY',
-            net: 'LAND_VALUE_ONLY'
-        }
-    }
-}
-
-const ENTERPRISE_COMMISSION_RULES = {
-    byId: {
-        80001: { commission_pct: 0.04 }
-    }
-}
-
+// As regras por empreendimento (composição de VGV e comissão fora de contrato)
+// vivem no banco e são geridas pela engrenagem do Faturamento. Antes eram
+// constantes aqui e mudar um percentual exigia deploy do front.
+//   • composição de VGV  → enterpriseValueRulesStore  (/admin/enterprise-value-rules)
+//   • comissão           → stageCommissionRulesStore  (/admin/stage-commission-rules)
 const DISCOUNT_CODES = new Set(['DC', 'DESCONTO_CONSTRUTORA'])
 
 // ─── Pure helpers (no this) ──────────────────────────────────────────────────
@@ -102,20 +93,18 @@ function saleIsDistrato(sale) {
     return String(repasseStatusOfSale(sale) ?? '').trim().toLowerCase() === 'distrato'
 }
 
+// Regra de composição de VGV do contrato, vinda do banco.
+// Retorna { gross, net } com um de: 'FULL' | 'LAND_VALUE_ONLY' | 'TR_ONLY'.
+// Projeções nunca têm override (o valor já vem pronto do CV).
 function overrideRuleFor(c) {
     if (c?._projection) return null
-    const norm = (s) => (s || '').trim().toUpperCase()
-    return ENTERPRISE_OVERRIDES.byId[c?.enterprise_id]
-        || ENTERPRISE_OVERRIDES.byName[norm(c?.enterprise_name)]
-        || null
-}
-
-function commissionRuleFor(c) {
-    if (c?._projection) return null
-    const norm = (s) => (s || '').trim().toUpperCase()
-    return ENTERPRISE_COMMISSION_RULES.byId[c?.enterprise_id]
-        || ENTERPRISE_COMMISSION_RULES.byName?.[norm(c?.enterprise_name)]
-        || null
+    const eid = Number(c?.enterprise_id)
+    if (!Number.isFinite(eid) || eid <= 0) return null
+    try {
+        return useEnterpriseValueRulesStore().ruleByEnterprise.get(eid) || null
+    } catch {
+        return null
+    }
 }
 
 // ─── Stage-history helper ────────────────────────────────────────────────────
@@ -134,6 +123,64 @@ function contractHadStageInHistory(contract, stageId) {
         if (history.some(s => Number(s?.idsituacao_repasse) === stageNum)) return true
     }
     return false
+}
+
+// ─── Valor e comissão do contrato (fonte única) ──────────────────────────────
+// Estas funções são a ÚNICA implementação das regras de dinheiro do módulo.
+// Dashboard, modal de detalhe e Vendas × Projeção consomem todas daqui (pelos
+// getters do store) — antes o modal tinha uma cópia própria que divergia.
+
+const uplift = (base, pct) => (pct > 0 ? base * (pct / (1 - pct)) : 0)
+
+function baseGrossOf(c) {
+    const r = overrideRuleFor(c) || {}
+    if (r.gross === 'LAND_VALUE_ONLY') return Number(c.land_value) || 0
+    if (r.gross === 'TR_ONLY') return sumTRConditions(c)
+    return contractTotals(c).gross
+}
+
+function baseNetOf(c) {
+    const r = overrideRuleFor(c) || {}
+    if (r.net === 'TR_ONLY') return sumTRConditions(c)
+    if (r.net === 'LAND_VALUE_ONLY') return Number(c.land_value) || 0
+    return contractTotals(c).net
+}
+
+function sumTRConditions(c) {
+    const pcs = Array.isArray(c?.payment_conditions) ? c.payment_conditions : []
+    return pcs.filter(isTRCondition).reduce((s, pc) => s + (Number(pc.total_value) || 0), 0)
+}
+
+// Percentual de comissão fora do contrato aplicável a este contrato.
+// Regras vêm de stage_commission_rules: as de stage_id nulo valem sempre para o
+// empreendimento; as com stage_id só valem se o repasse passou por aquela etapa
+// do CV. O backend já devolve as fixas primeiro, então a primeira que casar vence.
+function resolveCommissionPct(c) {
+    if (c?._projection) return 0
+    const eid = Number(c?.enterprise_id)
+    if (!Number.isFinite(eid) || eid <= 0) return 0
+
+    let rules = []
+    try {
+        rules = useStageCommissionRulesStore().rulesByEnterprise.get(eid) || []
+    } catch {
+        return 0
+    }
+
+    for (const rule of rules) {
+        const isFixed = rule.stage_id === null || rule.stage_id === undefined
+        if (isFixed || contractHadStageInHistory(c, rule.stage_id)) {
+            return Number(rule.commission_pct) || 0
+        }
+    }
+    return 0
+}
+
+// Valor do contrato no modo corrente (net/gross), já com a comissão embutida.
+function contractValueOf(c, isGross) {
+    const base = isGross ? baseGrossOf(c) : baseNetOf(c)
+    const add = uplift(base, resolveCommissionPct(c))
+    return base + (Number.isFinite(add) ? add : 0)
 }
 
 // ─── Enterprise ID extraction from projection rows ────────────────────────────
@@ -245,15 +292,17 @@ export const useContractsStore = defineStore('contracts', {
         // Conta quantas vendas distratadas pertencem à row (empreendimento ou
         // empresa) do dashboard. Usado por todas as tabelas do Faturamento e
         // do Sales-Projection para subtrair distratos sem duplicar lógica.
+        // Devolve { count, net, gross } para que quem precisa dos dois modos
+        // (cartões de métrica) não dependa do valueMode corrente.
         distratoMetaForRow() {
             return (row) => {
-                if (!row || row.onlyProjectionRow) return { count: 0, value: 0 }
+                if (!row || row.onlyProjectionRow) return { count: 0, net: 0, gross: 0 }
                 const sales = this.uniqueSales
-                const valuePicker = this.valuePicker
                 const rowEntId = row.enterprise_id != null ? Number(row.enterprise_id) : null
                 const rowCompanyId = row.company_id != null ? Number(row.company_id) : null
                 let count = 0
-                let value = 0
+                let net = 0
+                let gross = 0
                 for (const s of sales) {
                     if (!saleIsDistrato(s)) continue
                     const contracts = Array.isArray(s?.contracts) ? s.contracts : []
@@ -266,13 +315,93 @@ export const useContractsStore = defineStore('contracts', {
                     }
                     if (!belongs) continue
                     count += 1
-                    value += Number(valuePicker(s) || 0)
+                    net += Number(s.total_value_net) || 0
+                    gross += Number(s.total_value_gross) || 0
                 }
-                return { count, value }
+                return { count, net, gross }
             }
         },
         distratoCountForRow() { return (row) => this.distratoMetaForRow(row).count },
-        distratoValueForRow() { return (row) => this.distratoMetaForRow(row).value },
+        distratoValueForRow() {
+            return (row) => {
+                const m = this.distratoMetaForRow(row)
+                return this.isNet ? m.net : m.gross
+            }
+        },
+
+        // ── Realizado por linha (fonte única das duas telas) ───────────────
+        // Faturamento e Vendas × Projeção precisam responder o MESMO número
+        // para o mesmo empreendimento. Toda a regra mora aqui:
+        //   • distratos são subtraídos (em quantidade e em valor);
+        //   • linha só de projeção usa o valor da própria projeção;
+        //   • projeção vinculada a vendas reais entra somada à parte.
+        realizedCountForRow() {
+            return (row) => {
+                if (!row) return 0
+                if (row.onlyProjectionRow) return Number(row.count) || 0
+                return Math.max(0, (Number(row.count) || 0) - this.distratoCountForRow(row))
+            }
+        },
+        // Realizado nos dois modos de uma vez: { net, gross }.
+        realizedValuesForRow() {
+            return (row) => {
+                if (!row) return { net: 0, gross: 0 }
+                if (row.onlyProjectionRow) {
+                    return {
+                        net: Number(row.total_value_net) || 0,
+                        gross: Number(row.total_value_gross) || 0
+                    }
+                }
+                const d = this.distratoMetaForRow(row)
+                return {
+                    net: (Number(row.total_value_net) || 0) - d.net,
+                    gross: (Number(row.total_value_gross) || 0) - d.gross
+                }
+            }
+        },
+        realizedValueForRow() {
+            return (row) => {
+                const v = this.realizedValuesForRow(row)
+                return this.isNet ? v.net : v.gross
+            }
+        },
+        // Projeções de workflow vinculadas à linha (mostradas em verde, somadas à parte).
+        projectedValuesForRow: () => (row) => (
+            !row || row.onlyProjectionRow
+                ? { net: 0, gross: 0 }
+                : { net: Number(row.proj_value_net) || 0, gross: Number(row.proj_value_gross) || 0 }
+        ),
+        projectedValueForRow() {
+            return (row) => {
+                const v = this.projectedValuesForRow(row)
+                return this.isNet ? v.net : v.gross
+            }
+        },
+        projectedCountForRow: () => (row) => (!row || row.onlyProjectionRow ? 0 : Number(row.proj_count) || 0),
+        // Realizado + projeção vinculada: é o total que a tabela exibe e o que
+        // o Vendas × Projeção compara contra a meta.
+        combinedValuesForRow() {
+            return (row) => {
+                const r = this.realizedValuesForRow(row)
+                const p = this.projectedValuesForRow(row)
+                return { net: r.net + p.net, gross: r.gross + p.gross }
+            }
+        },
+        combinedValueForRow() {
+            return (row) => {
+                const v = this.combinedValuesForRow(row)
+                return this.isNet ? v.net : v.gross
+            }
+        },
+        combinedCountForRow() {
+            return (row) => this.realizedCountForRow(row) + this.projectedCountForRow(row)
+        },
+        ticketForRow() {
+            return (row) => {
+                const n = this.realizedCountForRow(row)
+                return n > 0 ? this.realizedValueForRow(row) / n : 0
+            }
+        },
         totalSales() { return this.nonDistratoSales.length },
         totalValueNet() {
             return this.nonDistratoSales.reduce((s, x) => s + (Number(x.total_value_net) || 0), 0)
@@ -287,11 +416,15 @@ export const useContractsStore = defineStore('contracts', {
             ).length
         },
 
-        // ── Enterprise overrides (kept for rule access in getters below) ───
-        enterpriseOverrides: () => ENTERPRISE_OVERRIDES,
-        enterpriseCommissionRules: () => ENTERPRISE_COMMISSION_RULES,
+        // ── Regras por empreendimento (fonte única, vinda do banco) ────────
         enterpriseRuleFor: () => (c) => overrideRuleFor(c),
-        enterpriseCommissionFor: () => (c) => commissionRuleFor(c),
+        commissionPctFor: () => (c) => resolveCommissionPct(c),
+        contractBaseGross: () => (c) => baseGrossOf(c),
+        contractBaseNet: () => (c) => baseNetOf(c),
+        // Valor do contrato no modo atual (net/gross) já com comissão embutida.
+        contractValue() { return (c) => contractValueOf(c, this.isGross) },
+        upliftFor: () => (base, pct) => uplift(base, pct),
+        contractHadStage: () => (c, stageId) => contractHadStageInHistory(c, stageId),
         isLandOnlyForContract() {
             return (c) => {
                 const rule = overrideRuleFor(c)
@@ -503,53 +636,7 @@ export const useContractsStore = defineStore('contracts', {
                     }, 0)
                 }
 
-                // Commission uplift
-                const uplift = (base, pct) => (pct > 0 ? base * (pct / (1 - pct)) : 0)
-                const baseGrossOf = (c) => {
-                    const r = overrideRuleFor(c) || {}
-                    if (r.gross === 'LAND_VALUE_ONLY') return Number(c.land_value) || 0
-                    return contractTotals(c).gross
-                }
-                const baseNetOf = (c) => {
-                    const r = overrideRuleFor(c) || {}
-                    if (r.net === 'TR_ONLY') {
-                        const pcs = Array.isArray(c.payment_conditions) ? c.payment_conditions : []
-                        return pcs.filter(isTRCondition).reduce((s, pc) => s + (Number(pc.total_value) || 0), 0)
-                    }
-                    if (r.net === 'LAND_VALUE_ONLY') return Number(c.land_value) || 0
-                    return contractTotals(c).net
-                }
-
-                // Resolve commission pct: hardcoded rules first, then dynamic stage-based rules.
-                // Dynamic rules check if the contract's repasse ever passed through a specific CV stage.
-                // If no rule applies the pct is 0 and no uplift is added — identical to the old behaviour.
-                let _dynamicRulesByEid = null
-                const getDynamicRulesForEnterprise = (eid) => {
-                    if (_dynamicRulesByEid === null) {
-                        try {
-                            _dynamicRulesByEid = useStageCommissionRulesStore().rulesByEnterprise
-                        } catch { _dynamicRulesByEid = new Map() }
-                    }
-                    return _dynamicRulesByEid.get(Number(eid)) || []
-                }
-
-                const resolveCommissionPct = (c) => {
-                    // 1) Existing hardcoded rules — preserved exactly
-                    const hardcoded = commissionRuleFor(c)
-                    if (hardcoded) return Number(hardcoded.commission_pct) || 0
-
-                    // 2) Dynamic stage-based rules from DB
-                    if (c?._projection) return 0
-                    const eid = Number(c?.enterprise_id)
-                    if (!Number.isFinite(eid) || eid <= 0) return 0
-                    for (const rule of getDynamicRulesForEnterprise(eid)) {
-                        if (contractHadStageInHistory(c, rule.stage_id)) {
-                            return Number(rule.commission_pct) || 0
-                        }
-                    }
-                    return 0
-                }
-
+                // Comissão fora do contrato (uplift) — regras no banco.
                 let addGross = 0
                 let addNet = 0
                 for (const c of real) {
@@ -886,10 +973,7 @@ export const useContractsStore = defineStore('contracts', {
             }))
         },
 
-        discountCodes: () => DISCOUNT_CODES,
-
-        // compat aliases
-        _contractTotals: () => (contract) => contractTotals(contract)
+        discountCodes: () => DISCOUNT_CODES
     },
 
     // =========================================================================
@@ -936,11 +1020,6 @@ export const useContractsStore = defineStore('contracts', {
             this.clearDetailCache()
             this.clearContractsCache()
         },
-
-        // ── Compat accessor (used in EnterprisesSalesTable) ────────────────
-        _isTR: (pc) => isTRCondition(pc),
-        _toNumber: (v) => toNumber(v),
-        _parseLeadingNumber: (v) => parseLeadingNumber(v),
 
         // ── Normalisation helpers ─────────────────────────────────────────
         _normalizePaymentCondition(pc) {
@@ -1579,10 +1658,6 @@ export const useContractsStore = defineStore('contracts', {
                 console.warn('Erro ao carregar grupos de workflow:', e)
                 this.workflowGroups = []
             }
-        },
-
-        // Compat: expose extraction helpers for external usage (e.g. modal components)
-        _extractEnterpriseIdFromProjectionRow: (row) => extractEnterpriseIdFromProjectionRow(row),
-        _extractCompanyFromProjectionRow: (row) => extractCompanyFromProjectionRow(row)
+        }
     }
 })
