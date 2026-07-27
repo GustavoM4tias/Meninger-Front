@@ -145,9 +145,9 @@
                             <p class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Valor médio</p>
                             <p class="font-mono tabular-nums font-bold text-ink text-lg truncate">{{ fmtRange(m) }}</p>
                         </div>
-                        <div v-if="Number(m.avg_area_m2) > 0" class="text-right shrink-0">
+                        <div v-if="fmtArea(m)" class="text-right shrink-0">
                             <p class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Metragem</p>
-                            <p class="font-mono tabular-nums font-bold text-ink text-lg">{{ Number(m.avg_area_m2) }} m²</p>
+                            <p class="font-mono tabular-nums font-bold text-ink text-lg">{{ fmtArea(m) }}</p>
                         </div>
                     </div>
                     <div v-if="m.items?.length" class="flex flex-wrap gap-1.5 mt-3">
@@ -208,12 +208,22 @@ const detailStand = ref(null);
 
 const statusMeta = (s) => STATUS_META[s] || STATUS_META.draft;
 const fmtBRL = (v) => Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-// Faixa de valor médio do modelo: "de X até Y" (ou valor único quando a faixa não varia).
+// Faixa de valor médio do modelo: "de X até Y", "X+" (aberta) ou valor único.
 function fmtRange(m) {
     const min = Number(m?.avg_value_min) || 0;
     const max = Number(m?.avg_value_max) || 0;
     if (min && max && min !== max) return `${fmtBRL(min)} a ${fmtBRL(max)}`;
+    if (min && !max) return `${fmtBRL(min)}+`;
     return fmtBRL(max || min);
+}
+// Faixa de metragem: "14 a 22 m²", "80+ m²" (aberta) ou valor único.
+function fmtArea(m) {
+    const min = Number(m?.avg_area_min) || 0;
+    const max = Number(m?.avg_area_max) || 0;
+    if (!min && !max) return '';
+    if (min && max && min !== max) return `${min} a ${max} m²`;
+    if (min && !max) return `${min}+ m²`;
+    return `${max || min} m²`;
 }
 
 function openNewModel() { editingModel.value = null; modelModalOpen.value = true; }

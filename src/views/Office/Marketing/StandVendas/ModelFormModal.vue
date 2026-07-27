@@ -11,10 +11,17 @@
                     <Input v-model="form.avg_value_min" type="number" placeholder="De" />
                     <Input v-model="form.avg_value_max" type="number" placeholder="Até" />
                 </div>
-                <p class="text-xs text-ink-subtle mt-1.5">Faixa do custo médio de construção deste modelo de stand.</p>
+                <p class="text-xs text-ink-subtle mt-1.5">Faixa do custo médio de construção. Deixe o "até" vazio para faixa aberta (ex.: 110 mil+).</p>
             </div>
 
-            <Input v-model="form.avg_area_m2" type="number" label="Metragem média (m²)" placeholder="Ex.: 100" />
+            <div>
+                <label class="text-[11px] font-medium text-ink-muted mb-1.5 block">Metragem (m²)</label>
+                <div class="grid grid-cols-2 gap-2">
+                    <Input v-model="form.avg_area_min" type="number" placeholder="De" />
+                    <Input v-model="form.avg_area_max" type="number" placeholder="Até" />
+                </div>
+                <p class="text-xs text-ink-subtle mt-1.5">Deixe o "até" vazio para faixa aberta (ex.: 80 m²+).</p>
+            </div>
 
             <Input v-model="form.description" label="Descrição" placeholder="Opcional" />
 
@@ -78,7 +85,7 @@ const emit = defineEmits(['close', 'saved']);
 const store = useSalesStandStore();
 const newItem = ref('');
 const errorMsg = ref('');
-const form = ref({ name: '', avg_value_min: '', avg_value_max: '', avg_area_m2: '', description: '', items: [] });
+const form = ref({ name: '', avg_value_min: '', avg_value_max: '', avg_area_min: '', avg_area_max: '', description: '', items: [] });
 
 watch(() => props.open, (open) => {
     if (!open) return;
@@ -89,11 +96,12 @@ watch(() => props.open, (open) => {
             name: props.model.name || '',
             avg_value_min: props.model.avg_value_min != null ? String(Number(props.model.avg_value_min)) : '',
             avg_value_max: props.model.avg_value_max != null ? String(Number(props.model.avg_value_max)) : '',
-            avg_area_m2: props.model.avg_area_m2 != null ? String(Number(props.model.avg_area_m2)) : '',
+            avg_area_min: props.model.avg_area_min != null ? String(Number(props.model.avg_area_min)) : '',
+            avg_area_max: props.model.avg_area_max != null ? String(Number(props.model.avg_area_max)) : '',
             description: props.model.description || '',
             items: [...(props.model.items || [])],
         }
-        : { name: '', avg_value_min: '', avg_value_max: '', avg_area_m2: '', description: '', items: [] };
+        : { name: '', avg_value_min: '', avg_value_max: '', avg_area_min: '', avg_area_max: '', description: '', items: [] };
 });
 
 function addItem() {
@@ -109,12 +117,16 @@ async function save() {
     const min = Number(form.value.avg_value_min) || 0;
     const max = Number(form.value.avg_value_max) || 0;
     if (max && min > max) { errorMsg.value = 'O valor "de" não pode ser maior que o valor "até".'; return; }
+    const areaMin = Number(form.value.avg_area_min) || 0;
+    const areaMax = Number(form.value.avg_area_max) || 0;
+    if (areaMax && areaMin > areaMax) { errorMsg.value = 'A metragem "de" não pode ser maior que a metragem "até".'; return; }
     try {
         await store.saveModel({
             name: form.value.name,
             avg_value_min: min,
             avg_value_max: max,
-            avg_area_m2: Number(form.value.avg_area_m2) || 0,
+            avg_area_min: areaMin,
+            avg_area_max: areaMax,
             description: form.value.description,
             items: form.value.items,
         }, props.model?.id || null);
