@@ -48,16 +48,29 @@
             @click="showCreatePlan = true" />
         </template>
 
-        <!-- Refresh -->
-        <IconButton
-          v-if="store.selectedPlan"
-          icon="fas fa-rotate-right"
-          label="Recarregar"
-          variant="ghost"
-          size="sm"
-          :disabled="store.loadingPlan"
-          :class="['ml-auto', store.loadingPlan ? 'animate-spin' : '']"
-          @click="store.refreshPlan()" />
+        <!-- Ajuda + Refresh -->
+        <div class="ml-auto flex items-center gap-2">
+          <PageHelp storage-key="ms-planner" title="Como usar o Planner"
+            intro="Quadro Kanban conectado ao Microsoft Planner dos grupos que você participa."
+            :steps="[
+              { title: 'Escolha grupo e plano', text: 'Selecione o grupo do Teams e depois o plano. Dá para criar um plano novo pelo botão +.' },
+              { title: 'Organize em colunas', text: 'Cada coluna é uma etapa. Crie, renomeie ou exclua colunas conforme o fluxo do time.' },
+              { title: 'Gerencie as tarefas', text: 'Toque numa tarefa para abrir o detalhe: status, prioridade, prazo, checklist e notas. O círculo marca como concluída.' },
+            ]"
+            :tips="[
+              'As alterações aparecem também no app Planner/Teams da Microsoft - é a mesma base.',
+              'Se outra pessoa mexeu na tarefa ao mesmo tempo, recarregue o plano antes de tentar de novo.',
+            ]" />
+          <IconButton
+            v-if="store.selectedPlan"
+            icon="fas fa-rotate-right"
+            label="Recarregar"
+            variant="ghost"
+            size="sm"
+            :disabled="store.loadingPlan"
+            :class="[store.loadingPlan ? 'animate-spin' : '']"
+            @click="store.refreshPlan()" />
+        </div>
       </div>
     </div>
 
@@ -294,6 +307,7 @@ import { usePlannerStore } from '@/stores/Microsoft/plannerStore';
 import TaskDetailModal from './components/TaskDetailModal.vue';
 
 import Modal from '@/components/UI/Modal.vue';
+import PageHelp from '@/components/UI/PageHelp.vue';
 import Button from '@/components/UI/Button.vue';
 import IconButton from '@/components/UI/IconButton.vue';
 import Input from '@/components/UI/Input.vue';

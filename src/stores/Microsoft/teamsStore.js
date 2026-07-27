@@ -212,17 +212,42 @@ export const useTeamsStore = defineStore('teams', () => {
         });
     }
 
-    async function cancelEvent(eventId, comment = '') {
-        await requestWithAuth(`${BASE}/events/${eventId}/cancel`, {
-            method: 'POST',
-            body: JSON.stringify({ comment }),
-        });
-        events.value = events.value.filter(e => e.id !== eventId);
+    /** Busca um evento pontual (usado p/ hidratar a recorrência do seriesMaster na edição). */
+    async function getEvent(eventId) {
+        return await requestWithAuth(`${BASE}/events/${eventId}`);
     }
 
-    async function deleteEvent(eventId) {
-        await requestWithAuth(`${BASE}/events/${eventId}`, { method: 'DELETE' });
-        events.value = events.value.filter(e => e.id !== eventId);
+    // Remove localmente: escopo 'series' derruba o master e TODAS as ocorrências
+    // da série (ids de ocorrência não batem com o id do master).
+    function removeLocal(eventId, scope, seriesMasterId) {
+        if (scope === 'series') {
+            const masterId = seriesMasterId || eventId;
+            events.value = events.value.filter(e =>
+                e.id !== eventId && e.id !== masterId && e.seriesMasterId !== masterId
+            );
+        } else {
+            events.value = events.value.filter(e => e.id !== eventId);
+        }
+    }
+
+    /**
+     * Cancela como organizador (participantes são notificados).
+     * scope: 'single' (não recorrente) | 'occurrence' (só esta) | 'series' (toda a série)
+     */
+    async function cancelEvent(eventId, comment = '', { scope = 'single', seriesMasterId = null } = {}) {
+        await requestWithAuth(`${BASE}/events/${eventId}/cancel`, {
+            method: 'POST',
+            body: JSON.stringify({ comment, scope, seriesMasterId }),
+        });
+        removeLocal(eventId, scope, seriesMasterId);
+    }
+
+    /** Remove do próprio calendário (caminho do participante). */
+    async function deleteEvent(eventId, { scope = 'occurrence', seriesMasterId = null } = {}) {
+        const qs = new URLSearchParams({ scope });
+        if (seriesMasterId) qs.set('seriesMasterId', seriesMasterId);
+        await requestWithAuth(`${BASE}/events/${eventId}?${qs}`, { method: 'DELETE' });
+        removeLocal(eventId, scope, seriesMasterId);
     }
 
     async function updateEvent(eventId, data) {
@@ -240,7 +265,7 @@ export const useTeamsStore = defineStore('teams', () => {
         weekStart, weekDays, weekEnd, dayDays, monthDays,
         isCurrentWeek, isCurrentPeriod, eventsByDay, upcomingEvents,
         nextWeek, prevWeek, nextPeriod, prevPeriod, goToToday, switchView,
-        fetchWeek, fetchCurrent, fetchRange,
+        fetchWeek, fetchCurrent, fetchRange, getEvent,
         createScheduledMeeting, createInstantMeeting,
         cancelEvent, deleteEvent, updateEvent,
     };

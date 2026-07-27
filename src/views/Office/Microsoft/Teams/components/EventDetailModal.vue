@@ -5,7 +5,8 @@
         class="fixed inset-0 z-[8500] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
         @click.self="$emit('close')">
 
-        <div class="bg-surface-raised rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col" @click.stop>
+        <div class="bg-surface-raised rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col
+                    max-sm:max-w-full max-sm:h-full max-sm:max-h-full max-sm:rounded-none" @click.stop>
 
           <!-- Color bar -->
           <div :class="event.isOnlineMeeting ? 'bg-purple-600' : 'bg-blue-500'" class="h-1.5 rounded-t-2xl shrink-0"></div>
@@ -125,28 +126,61 @@
             <!-- Spacer -->
             <div class="flex-1"></div>
 
-            <!-- Cancel event -->
-            <button v-if="!event.isCancelled" @click="confirmCancel = true"
-              class="flex items-center gap-2 px-3 py-2 rounded-xl border border-red-200 dark:border-red-800 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 text-sm transition-colors">
-              <i class="fas fa-ban text-xs"></i> Cancelar
+            <!-- Ação destrutiva: organizador cancela (notifica); participante remove do calendário -->
+            <button v-if="!event.isCancelled" @click="openConfirm"
+              class="flex items-center gap-2 px-3 py-2 min-h-10 rounded-xl border border-red-200 dark:border-red-800 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 text-sm transition-colors">
+              <i :class="isOrganizer ? 'fas fa-ban' : 'fas fa-trash-can'" class="text-xs"></i>
+              {{ isOrganizer ? 'Cancelar' : 'Remover' }}
             </button>
           </div>
 
-          <!-- Cancel confirm -->
+          <!-- Confirmação (com escolha ocorrência/série p/ recorrentes) -->
           <Transition name="confirm">
-            <div v-if="confirmCancel" class="px-6 py-4 border-t border-red-100 dark:border-red-900 bg-red-50 dark:bg-red-900/20 rounded-b-2xl shrink-0">
-              <p class="text-sm text-red-700 dark:text-red-300 font-medium mb-3">Cancelar e notificar participantes?</p>
-              <input v-model="cancelComment" type="text" placeholder="Motivo (opcional)"
-                class="w-full px-3 py-1.5 rounded-lg border border-red-200 dark:border-red-700 bg-surface-raised text-sm text-ink focus:outline-none focus:ring-2 focus:ring-red-400 mb-3" />
+            <div v-if="confirmOpen" class="px-6 py-4 border-t border-red-100 dark:border-red-900 bg-red-50 dark:bg-red-900/20 rounded-b-2xl max-sm:rounded-none shrink-0">
+
+              <!-- Recorrente: escolher alcance -->
+              <template v-if="event.isRecurring">
+                <p class="text-sm text-red-700 dark:text-red-300 font-medium mb-2">
+                  {{ isOrganizer ? 'Cancelar reunião recorrente' : 'Remover reunião recorrente' }}
+                </p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
+                  <button @click="chosenScope = 'occurrence'"
+                    :class="chosenScope === 'occurrence'
+                      ? 'border-red-400 bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-200'
+                      : 'border-red-200 dark:border-red-800 text-red-500 hover:bg-red-100/50 dark:hover:bg-red-900/30'"
+                    class="min-h-10 px-3 py-2 rounded-lg border text-sm font-medium text-left transition-colors">
+                    <i class="fas fa-calendar-day mr-1.5 text-xs"></i> Somente esta ocorrência
+                  </button>
+                  <button @click="chosenScope = 'series'"
+                    :class="chosenScope === 'series'
+                      ? 'border-red-400 bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-200'
+                      : 'border-red-200 dark:border-red-800 text-red-500 hover:bg-red-100/50 dark:hover:bg-red-900/30'"
+                    class="min-h-10 px-3 py-2 rounded-lg border text-sm font-medium text-left transition-colors">
+                    <i class="fas fa-rotate mr-1.5 text-xs"></i> Toda a série
+                  </button>
+                </div>
+              </template>
+              <p v-else class="text-sm text-red-700 dark:text-red-300 font-medium mb-3">
+                {{ isOrganizer ? 'Cancelar e notificar participantes?' : 'Remover este evento do seu calendário?' }}
+              </p>
+
+              <!-- Comentário: só nos caminhos de cancel que o Graph aceita comentário -->
+              <input v-if="showComment" v-model="cancelComment" type="text" placeholder="Motivo (opcional)"
+                class="w-full px-3 py-2 min-h-10 rounded-lg border border-red-200 dark:border-red-700 bg-surface-raised text-sm text-ink focus:outline-none focus:ring-2 focus:ring-red-400 mb-3" />
+              <p v-if="isOrganizer && event.isRecurring && chosenScope === 'occurrence'"
+                class="text-xs text-red-600/80 dark:text-red-300/70 mb-3">
+                Os participantes serão avisados da exclusão desta ocorrência.
+              </p>
+
               <div class="flex gap-2 justify-end">
-                <button @click="confirmCancel = false"
-                  class="px-3 py-1.5 rounded-lg text-sm text-ink-muted border border-line hover:bg-surface-hover transition-colors">
+                <button @click="confirmOpen = false"
+                  class="px-3 py-2 min-h-10 rounded-lg text-sm text-ink-muted border border-line hover:bg-surface-hover transition-colors">
                   Voltar
                 </button>
-                <button @click="doCancel" :disabled="cancelling"
-                  class="px-3 py-1.5 rounded-lg text-sm font-medium text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 transition-colors">
-                  <i v-if="cancelling" class="fas fa-circle-notch animate-spin mr-1"></i>
-                  Sim, cancelar
+                <button @click="doDestroy" :disabled="busy || (event.isRecurring && !chosenScope)"
+                  class="px-3 py-2 min-h-10 rounded-lg text-sm font-medium text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 transition-colors">
+                  <i v-if="busy" class="fas fa-circle-notch animate-spin mr-1"></i>
+                  {{ isOrganizer ? 'Sim, cancelar' : 'Sim, remover' }}
                 </button>
               </div>
             </div>
@@ -159,14 +193,70 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
+import { useTeamsStore } from '@/stores/Microsoft/teamsStore';
 
 const props = defineProps({ event: { type: Object, default: null } });
-const emit = defineEmits(['close', 'cancelled', 'edit']);
+const emit = defineEmits(['close', 'done', 'error', 'edit']);
 
-const confirmCancel = ref(false);
+const ts = useTeamsStore();
+
+// ── Ação destrutiva ───────────────────────────────────────────────────────────
+// Organizador → CANCELA (Graph notifica os participantes).
+// Participante → REMOVE do próprio calendário (delete, sem notificar).
+// Recorrente → escolha obrigatória: somente esta ocorrência | toda a série.
+const confirmOpen = ref(false);
+const chosenScope = ref(null); // 'occurrence' | 'series' (só recorrentes)
 const cancelComment = ref('');
-const cancelling = ref(false);
+const busy = ref(false);
+
+const isOrganizer = computed(() => props.event?.isOrganizer === true);
+
+// O Graph só aceita comentário no /cancel de evento único ou da série inteira;
+// "só esta ocorrência" vira DELETE (sem comentário).
+const showComment = computed(() => {
+  if (!isOrganizer.value) return false;
+  if (!props.event?.isRecurring) return true;
+  return chosenScope.value === 'series';
+});
+
+watch(() => props.event, () => {
+  confirmOpen.value = false;
+  chosenScope.value = null;
+  cancelComment.value = '';
+  busy.value = false;
+});
+
+function openConfirm() {
+  chosenScope.value = props.event?.isRecurring ? null : (isOrganizer.value ? 'single' : 'occurrence');
+  confirmOpen.value = true;
+}
+
+async function doDestroy() {
+  const ev = props.event;
+  if (!ev) return;
+  const scope = ev.isRecurring ? chosenScope.value : (isOrganizer.value ? 'single' : 'occurrence');
+  if (!scope) return;
+
+  busy.value = true;
+  try {
+    const kind = isOrganizer.value ? 'cancel' : 'delete';
+    if (kind === 'cancel') {
+      await ts.cancelEvent(ev.id, showComment.value ? cancelComment.value : '', {
+        scope, seriesMasterId: ev.seriesMasterId,
+      });
+    } else {
+      await ts.deleteEvent(ev.id, { scope, seriesMasterId: ev.seriesMasterId });
+    }
+    emit('done', { kind, scope });
+    emit('close');
+  } catch (err) {
+    emit('error', err.message || 'Falha ao remover o evento.');
+  } finally {
+    busy.value = false;
+    confirmOpen.value = false;
+  }
+}
 
 function fmtTime(dt) {
   if (!dt) return '';
@@ -198,17 +288,6 @@ async function copyLink() {
   const url = props.event.joinUrl || props.event.webLink;
   if (!url) return;
   await navigator.clipboard.writeText(url).catch(() => {});
-}
-
-async function doCancel() {
-  cancelling.value = true;
-  try {
-    emit('cancelled', { eventId: props.event.id, comment: cancelComment.value });
-    emit('close');
-  } finally {
-    cancelling.value = false;
-    confirmCancel.value = false;
-  }
 }
 
 function statusLabel(s) {

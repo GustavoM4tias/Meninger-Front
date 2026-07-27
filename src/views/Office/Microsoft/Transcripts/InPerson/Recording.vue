@@ -213,21 +213,21 @@ const store  = useInPersonRecordingStore();
 const confirmStop = ref(false);
 
 function handleMinimize() {
-  router.push('/microsoft/transcripts');
+  router.push('/microsoft/teams?tab=reunioes');
 }
 
 async function handleStop() {
   confirmStop.value = false;
   stopVisualization();
   await store.stop();
-  router.push('/microsoft/transcripts');
+  router.push('/microsoft/teams?tab=reunioes');
 }
 
 async function handleDiscard() {
   confirmStop.value = false;
   stopVisualization();
   await store.discard();
-  router.push('/microsoft/transcripts');
+  router.push('/microsoft/teams?tab=reunioes');
 }
 
 // ── Audio visualization ───────────────────────────────────────────────────────

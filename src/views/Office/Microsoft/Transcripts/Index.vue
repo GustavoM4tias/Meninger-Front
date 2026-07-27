@@ -1,33 +1,35 @@
+<!-- Central Microsoft › aba Reuniões — panel do hub /microsoft/teams (sem
+     PageContainer/PageHeader próprios). A rota antiga /microsoft/transcripts
+     virou redirect; deep-link nas sub-abas via ?sub=meetings|reports|inperson. -->
 <template>
-  <div class="min-h-[calc(100vh-3.5rem)]">
-    <PageContainer size="full">
+  <div>
 
-      <PageHeader
-        subtitle="Relatórios gerados por IA a partir das reuniões"
-        icon="fas fa-wand-magic-sparkles">
-        <template #title>Transcrições & IA</template>
-        <template #actions>
-          <SegmentedControl
-            v-model="activeTab"
-            :options="tabOptions"
-            size="md"
-            @update:model-value="onTabChange" />
-          <Button v-if="activeTab === 'inperson'"
-            variant="primary"
-            icon="fas fa-microphone"
-            class="!bg-purple-600 hover:!bg-purple-700"
-            @click="openNewRecordingModal">
-            Nova gravação
-          </Button>
-          <IconButton
-            icon="fas fa-rotate-right"
-            label="Atualizar"
-            variant="secondary"
-            :disabled="isRefreshing"
-            :class="isRefreshing ? 'animate-spin' : ''"
-            @click="refresh" />
-        </template>
-      </PageHeader>
+      <!-- Toolbar: sub-abas + ações -->
+      <div class="flex flex-wrap items-center gap-2 mb-4">
+        <SegmentedControl
+          v-model="activeTab"
+          :options="tabOptions"
+          size="sm"
+          @update:model-value="onTabChange" />
+        <span class="flex-1"></span>
+        <Button v-if="activeTab === 'inperson'"
+          variant="primary"
+          size="sm"
+          icon="fas fa-microphone"
+          class="!bg-purple-600 hover:!bg-purple-700 max-sm:!min-h-10"
+          @click="openNewRecordingModal">
+          Nova gravação
+        </Button>
+        <IconButton
+          icon="fas fa-rotate-right"
+          size="sm"
+          label="Atualizar"
+          variant="secondary"
+          :disabled="isRefreshing"
+          :class="isRefreshing ? 'animate-spin' : ''"
+          class="max-sm:!h-10 max-sm:!w-10"
+          @click="refresh" />
+      </div>
 
       <!-- Gravação ativa (banner) -->
       <Surface v-if="recStore.isActive"
@@ -509,7 +511,6 @@
 
         </section>
       </div>
-    </PageContainer>
 
     <!-- ── Modal: Nova gravação presencial ── -->
     <Modal :open="showNewRecordingModal"
@@ -631,7 +632,7 @@
 
 <script setup>
 import { ref, computed, reactive, watch, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import { useTranscriptStore } from '@/stores/Microsoft/transcriptStore';
 import { useInPersonRecordingStore } from '@/stores/Microsoft/inPersonRecording';
 import { requestWithAuth } from '@/utils/Auth/requestWithAuth';
@@ -639,8 +640,6 @@ import API_URL from '@/config/apiUrl';
 import ReportPanel from './components/ReportPanel.vue';
 import EmailReportModal from './components/EmailReportModal.vue';
 
-import PageContainer from '@/components/UI/PageContainer.vue';
-import PageHeader from '@/components/UI/PageHeader.vue';
 import Surface from '@/components/UI/Surface.vue';
 import Button from '@/components/UI/Button.vue';
 import IconButton from '@/components/UI/IconButton.vue';
@@ -651,10 +650,16 @@ import SegmentedControl from '@/components/UI/SegmentedControl.vue';
 import EmptyState from '@/components/UI/EmptyState.vue';
 
 const router   = useRouter();
+const route    = useRoute();
 const ts       = useTranscriptStore();
 const recStore = useInPersonRecordingStore();
 
-onMounted(() => ts.fetchMeetings());
+onMounted(() => {
+  ts.fetchMeetings();
+  // Deep-link nas sub-abas (?sub=): links antigos redirecionados preservam a query
+  const sub = route.query.sub;
+  if (sub === 'reports' || sub === 'inperson') onTabChange(sub);
+});
 
 watch(() => ts.error, (msg) => {
   if (msg) { showToast(msg, 'error'); ts.error = null; }

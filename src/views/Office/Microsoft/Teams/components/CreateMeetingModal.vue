@@ -5,7 +5,8 @@
         class="fixed inset-0 z-[8500] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
         @click.self="close">
 
-        <div class="bg-surface-raised rounded-2xl shadow-2xl w-full max-w-xl max-h-[90vh] flex flex-col overflow-hidden" @click.stop>
+        <div class="bg-surface-raised rounded-2xl shadow-2xl w-full max-w-xl max-h-[90vh] flex flex-col overflow-hidden
+                    max-sm:max-w-full max-sm:h-full max-sm:max-h-full max-sm:rounded-none" @click.stop>
 
           <!-- ── Colored header ── -->
           <div :class="headerGradient" class="px-6 pt-5 pb-4 shrink-0">
@@ -40,6 +41,33 @@
 
           <!-- ── Form body ── -->
           <div class="flex-1 overflow-y-auto px-6 py-5 space-y-4">
+
+            <!-- Edição de evento recorrente: escolher alcance -->
+            <div v-if="isEdit && props.editEvent?.isRecurring"
+              class="p-3 rounded-xl bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800">
+              <p class="text-xs font-semibold text-purple-700 dark:text-purple-300 mb-2">
+                <i class="fas fa-rotate mr-1"></i> Este evento é recorrente. O que você quer editar?
+              </p>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <button type="button" @click="setEditScope('occurrence')"
+                  :class="editScope === 'occurrence'
+                    ? 'border-purple-400 bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-200'
+                    : 'border-purple-200 dark:border-purple-800 text-purple-500 hover:bg-purple-100/50 dark:hover:bg-purple-900/30'"
+                  class="min-h-10 px-3 py-2 rounded-lg border text-sm font-medium text-left transition-colors">
+                  <i class="fas fa-calendar-day mr-1.5 text-xs"></i> Somente esta ocorrência
+                </button>
+                <button type="button" @click="setEditScope('series')"
+                  :class="editScope === 'series'
+                    ? 'border-purple-400 bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-200'
+                    : 'border-purple-200 dark:border-purple-800 text-purple-500 hover:bg-purple-100/50 dark:hover:bg-purple-900/30'"
+                  class="min-h-10 px-3 py-2 rounded-lg border text-sm font-medium text-left transition-colors">
+                  <i class="fas fa-rotate mr-1.5 text-xs"></i> Toda a série
+                </button>
+              </div>
+              <p v-if="seriesLoading" class="text-xs text-purple-500 mt-2">
+                <i class="fas fa-circle-notch animate-spin mr-1"></i> Carregando dados da série...
+              </p>
+            </div>
 
             <!-- Instant info card -->
             <div v-if="form.type === 'instant'"
@@ -103,8 +131,15 @@
                 </div>
               </div>
 
-              <!-- Recorrência -->
-              <div class="space-y-3">
+              <!-- Recorrência (oculta ao editar só uma ocorrência; read-only se o
+                   padrão da série veio de fora do subset suportado) -->
+              <div v-if="recurrenceUnsupported"
+                class="p-3 rounded-xl bg-surface-sunken border border-line text-xs text-ink-muted">
+                <i class="fas fa-rotate mr-1.5"></i>
+                Esta série usa uma recorrência avançada (criada no Outlook). Para alterá-la, edite no Outlook -
+                os demais campos podem ser salvos normalmente.
+              </div>
+              <div v-else-if="showRecurrenceSection" class="space-y-3">
                 <div>
                   <label class="field-label">Recorrência</label>
                   <select v-model="form.recurrenceType" class="field-input">
@@ -216,7 +251,7 @@
             <p v-if="!canSubmit && form.subject.trim() === ''" class="text-xs text-gray-400 dark:text-slate-500">
               Preencha o assunto para continuar
             </p>
-            <button @click="submit" :disabled="!canSubmit || submitting"
+            <button @click="submit" :disabled="!canSubmit || submitting || seriesLoading"
               :class="submitBtnClass"
               class="flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold text-white disabled:opacity-50 transition-all shadow-sm hover:shadow-md">
               <i v-if="submitting" class="fas fa-circle-notch animate-spin text-xs"></i>
@@ -233,6 +268,7 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue';
+import { useTeamsStore } from '@/stores/Microsoft/teamsStore';
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
@@ -240,6 +276,8 @@ const props = defineProps({
   prefill:    { type: Object,  default: null }, // { date, hour, minute }
 });
 const emit = defineEmits(['update:modelValue', 'created', 'updated', 'instant']);
+
+const ts = useTeamsStore();
 
 const EVENT_TYPES = [
   {
@@ -292,13 +330,33 @@ function defaultForm() {
 
 const form = ref(defaultForm());
 
-// ── Watchers ──────────────────────────────────────────────────────────────────
+// ── Edição: alcance (ocorrência × série) e recorrência ────────────────────────
+// Ao editar só a ocorrência, a seção de recorrência fica oculta e a chave
+// `recurrence` NUNCA vai no PATCH (antes ia `recurrence: null` e destruía a
+// série). No modo série, os campos são hidratados do seriesMaster e a chave só
+// vai se o usuário mexer neles (recurrenceTouched).
+const editScope = ref('occurrence');      // 'occurrence' | 'series'
+const seriesMaster = ref(null);            // evento master carregado sob demanda
+const seriesLoading = ref(false);
+const recurrenceTouched = ref(false);
+let hydrating = false;                     // evita marcar touched durante hidratação
 
-// Populate from edit event
-watch(() => props.editEvent, (ev) => {
-  if (!ev) return;
+const isRecurringEdit = computed(() => isEdit.value && !!props.editEvent?.isRecurring);
+
+const recurrenceUnsupported = computed(() =>
+  isRecurringEdit.value && editScope.value === 'series' && seriesMaster.value?.recurrence?.unsupported === true
+);
+
+// Cria: sempre mostra. Edita evento único: mostra. Edita recorrente: só no modo série.
+const showRecurrenceSection = computed(() =>
+  !isRecurringEdit.value || editScope.value === 'series'
+);
+
+function hydrateForm(ev, { keepType = false } = {}) {
+  hydrating = true;
+  const rec = ev.recurrence && !ev.recurrence.unsupported ? ev.recurrence : null;
   form.value = {
-    type: ev.isOnlineMeeting ? 'meeting' : 'event',
+    type: keepType ? form.value.type : (ev.isOnlineMeeting ? 'meeting' : 'event'),
     subject:   ev.subject || '',
     date:      ev.start ? ev.start.split('T')[0] : todayStr(),
     endDate:   ev.end   ? ev.end.split('T')[0]   : todayStr(),
@@ -308,12 +366,52 @@ watch(() => props.editEvent, (ev) => {
     location:  ev.location || '',
     attendees: (ev.attendees || []).map(a => a.email).filter(Boolean),
     body:      ev.bodyPreview || '',
-    recurrenceType: '',
-    recurrenceInterval: 1,
-    recurrenceEndType: 'noEnd',
-    recurrenceEndDate: '',
-    recurrenceOccurrences: 10,
+    recurrenceType:        rec?.type || '',
+    recurrenceInterval:    rec?.interval || 1,
+    recurrenceEndType:     rec?.endType || 'noEnd',
+    recurrenceEndDate:     rec?.endDate || '',
+    recurrenceOccurrences: rec?.occurrences || 10,
   };
+  // libera o flag no próximo tick de watchers
+  setTimeout(() => { hydrating = false; }, 0);
+}
+
+async function setEditScope(scope) {
+  if (editScope.value === scope) return;
+  editScope.value = scope;
+  recurrenceTouched.value = false;
+
+  if (scope === 'series') {
+    // Hidrata do master (datas/recorrência valem para a série toda)
+    if (!seriesMaster.value && props.editEvent?.seriesMasterId) {
+      seriesLoading.value = true;
+      try {
+        seriesMaster.value = await ts.getEvent(props.editEvent.seriesMasterId);
+      } catch { /* mantém dados da ocorrência */ }
+      seriesLoading.value = false;
+    }
+    if (seriesMaster.value) hydrateForm(seriesMaster.value, { keepType: true });
+  } else if (props.editEvent) {
+    hydrateForm(props.editEvent, { keepType: true });
+  }
+}
+
+// Qualquer mexida manual nos campos de recorrência marca touched
+watch(
+  () => [form.value.recurrenceType, form.value.recurrenceInterval, form.value.recurrenceEndType,
+         form.value.recurrenceEndDate, form.value.recurrenceOccurrences],
+  () => { if (!hydrating) recurrenceTouched.value = true; }
+);
+
+// ── Watchers ──────────────────────────────────────────────────────────────────
+
+// Populate from edit event
+watch(() => props.editEvent, (ev) => {
+  if (!ev) return;
+  editScope.value = 'occurrence';
+  seriesMaster.value = null;
+  recurrenceTouched.value = false;
+  hydrateForm(ev);
 }, { immediate: true });
 
 // Pre-fill from calendar slot click
@@ -341,6 +439,9 @@ watch(() => props.modelValue, (v) => {
     applyPrefill(props.prefill);
     attendeeInput.value = '';
     submitting.value = false;
+    editScope.value = 'occurrence';
+    seriesMaster.value = null;
+    recurrenceTouched.value = false;
   }
 });
 
@@ -437,11 +538,23 @@ async function submit() {
         isOnlineMeeting: form.value.type === 'meeting',
         location:        form.value.location,
         isAllDay:        form.value.isAllDay,
-        recurrence:      buildRecurrence(),
       };
 
-      if (isEdit.value) emit('updated', { eventId: props.editEvent.id, ...payload });
-      else              emit('created', payload);
+      if (isEdit.value) {
+        // A chave `recurrence` só entra no PATCH se o usuário mexeu nela
+        // (e nunca no modo "somente esta ocorrência" nem em séries unsupported).
+        if (recurrenceTouched.value && showRecurrenceSection.value && !recurrenceUnsupported.value) {
+          payload.recurrence = buildRecurrence();
+        }
+        const isSeries = isRecurringEdit.value && editScope.value === 'series';
+        const targetId = isSeries
+          ? (props.editEvent.seriesMasterId || props.editEvent.id)
+          : props.editEvent.id;
+        emit('updated', { eventId: targetId, editScope: isSeries ? 'series' : 'occurrence', ...payload });
+      } else {
+        payload.recurrence = buildRecurrence();
+        emit('created', payload);
+      }
     }
     close();
   } finally {
