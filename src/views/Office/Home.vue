@@ -53,18 +53,49 @@ const firstName = computed(() => (authStore.user?.username || '').split(/\s+/)[0
 // ─── Sugestões ──────────────────────────────────────────
 // `route` gera o filtro por permissão: quem não pode acessar a tela não vê a
 // sugestão. Sem `route` = sempre visível. Admin vê tudo (hasAccess retorna true).
-const SUGGESTIONS = [
+// Pool de sugestões. Cada item mapeia uma capacidade REAL da Eme (uma tool que
+// responde de fato) + `route` para o gate de permissão (quem não acessa a tela
+// não vê a sugestão; sem `route` = sempre visível; admin vê tudo).
+const SUGGESTION_POOL = [
+  // Marketing
   { label: 'Leads deste mês',        sublabel: 'Resumo e conversão do período', icon: 'fas fa-chart-simple',        route: '/marketing/leads',        prompt: 'Mostre o resumo de leads deste mês' },
   { label: 'Relatório de eventos',   sublabel: 'Gerar para o mês atual',        icon: 'fas fa-calendar-days',       route: '/marketing/events',       prompt: 'Gere o relatório de eventos para o mês atual' },
+  // Comercial
   { label: 'Faixas MCMV',            sublabel: 'Teto na sua cidade',            icon: 'fas fa-house-circle-check',  route: '/comercial/mcmv',         prompt: 'Qual o teto do Minha Casa Minha Vida na minha cidade?' },
-  { label: 'Imobiliárias parceiras', sublabel: 'Quem atua na sua região',       icon: 'fas fa-house-flag',          route: '/comercial/imobiliarias', prompt: 'Quais imobiliárias parceiras atuam na minha região?' },
   { label: 'Empreendimentos ativos', sublabel: 'Portfólio em vendas',           icon: 'fas fa-building',            route: '/comercial/buildings',    prompt: 'Quais empreendimentos estão ativos em vendas?' },
+  { label: 'Pré-cadastros',          sublabel: 'Análises de crédito do mês',    icon: 'fas fa-folder-open',         route: '/comercial/precadastros', prompt: 'Como estão os pré-cadastros deste mês?' },
+  { label: 'Reservas',               sublabel: 'Funil da reserva à venda',      icon: 'fas fa-file-signature',      route: '/comercial/reservas-report', prompt: 'Como está o funil de reservas?' },
+  { label: 'Imobiliárias parceiras', sublabel: 'Quem atua na sua região',       icon: 'fas fa-house-flag',          route: '/comercial/imobiliarias', prompt: 'Quais imobiliárias parceiras atuam na minha região?' },
+  { label: 'Fichas comerciais',      sublabel: 'Condições por empreendimento',  icon: 'fas fa-clipboard-list',      route: '/comercial/conditions',   prompt: 'Quais fichas comerciais temos disponíveis?' },
+  // Financeiro (gated por alçada)
+  { label: 'Custos do mês',          sublabel: 'Pago por empreendimento',       icon: 'fas fa-coins',               route: '/financeiro/custos',      prompt: 'Quais os custos deste mês por empreendimento?' },
+  { label: 'Boletos Caixa',          sublabel: 'Emitidos, pagos e pendentes',   icon: 'fas fa-barcode',             route: '/financeiro/boleto-caixa', prompt: 'Como estão os boletos Caixa deste mês?' },
+  // Pessoas / Contratos
+  { label: 'Quem é o gestor',        sublabel: 'Pessoas e organograma',         icon: 'fas fa-user-tie',            route: '/settings/organograma',   prompt: 'Quem é o gestor do Marketing?' },
+  { label: 'Contratos no validador', sublabel: 'Quantos e em que etapa',        icon: 'fas fa-file-circle-check',   route: '/tools/validator',        prompt: 'Quantos contratos estão na análise do validador?' },
+  // Perfil (sempre disponível)
+  { label: 'Minhas tarefas',         sublabel: 'Do checklist, com prazos',      icon: 'fas fa-list-check',          route: '/checklists',             prompt: 'Quais são as minhas tarefas de checklist?' },
+  { label: 'Meus relatórios',        sublabel: 'Os que você pode ver',          icon: 'fas fa-chart-pie',           route: '/relatorios',             prompt: 'Quais relatórios eu tenho acesso?' },
+  { label: 'Minhas notificações',    sublabel: 'Ativar/desativar por canal',    icon: 'fas fa-bell',                route: null,                      prompt: 'Quero ver e ajustar minhas preferências de notificação' },
 ];
 
-// Filtra pelas permissões/perfil do usuário (admin vê tudo).
-const visibleSuggestions = computed(() =>
-  SUGGESTIONS.filter(s => !s.route || permStore.hasAccess(s.route))
+const MAX_SUGGESTIONS = 6;
+
+// Só as que o usuário pode acessar (admin vê tudo; sem route = sempre visível).
+const permittedSuggestions = computed(() =>
+  SUGGESTION_POOL.filter(s => !s.route || permStore.hasAccess(s.route))
 );
+
+// Mostra até 6, girando a janela por PERFIL (usuário) + DIA: varia por pessoa e
+// ao longo dos dias sem ficar estático, mas fica estável dentro do dia (não
+// "pisca" a cada render nem quando o histórico carrega).
+const visibleSuggestions = computed(() => {
+  const pool = permittedSuggestions.value;
+  if (pool.length <= MAX_SUGGESTIONS) return pool;
+  const seed = (Number(authStore.user?.id) || 0) + new Date().getDate();
+  const off = ((seed % pool.length) + pool.length) % pool.length;
+  return [...pool.slice(off), ...pool.slice(0, off)].slice(0, MAX_SUGGESTIONS);
+});
 
 // ─── Conversas recentes (inline na landing) ─────────────
 const recentSessions = computed(() =>
