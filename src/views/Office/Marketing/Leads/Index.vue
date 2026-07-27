@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref, toRef, computed } from 'vue';
+import { onMounted, onUnmounted, ref, toRef, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useLeadsStore } from '@/stores/Marketing/Lead/leadsStore';
 import { useAuthStore } from '@/stores/Settings/Auth/authStore';
@@ -46,6 +46,8 @@ const leadsByEnterprise = toRef(store, 'leadsByEnterprise');
 const situationsList = toRef(store, 'situationsList');
 const prevCount = toRef(store, 'prevCount');
 const prevSituacoes = toRef(store, 'prevSituacoes');
+// "Leads recentes": lista à parte, sempre os últimos captados (fora do filtro).
+const recentLeads = toRef(store, 'recentLeads');
 
 // Período padrão = mês atual. As datas moram nos Filtros (Data início/fim);
 // não há seletor de período separado.
@@ -221,6 +223,10 @@ function onFiltrarSituacao(situacao) {
   refreshLeads();
 }
 
+// Painel "Leads recentes" atualiza ao ABRIR a tela e ao FOCAR a aba (sem polling).
+function refreshRecent() { store.fetchRecentLeads(); }
+function onVisibility() { if (document.visibilityState === 'visible') refreshRecent(); }
+
 onMounted(async () => {
   syncFiltersFromUrl();
   // A URL manda; sem datas nela, cai no default (mês atual).
@@ -228,7 +234,15 @@ onMounted(async () => {
   if (!filtros.value.data_fim)    filtros.value.data_fim    = defaultUntil();
   await store.fetchFilas();
   await refreshLeads();
+  refreshRecent(); // últimos leads captados, independente do filtro do dashboard
+  window.addEventListener('focus', refreshRecent);
+  document.addEventListener('visibilitychange', onVisibility);
   if (route.query.excluir_painel === '1') store.applyDefaultOrigens();
+});
+
+onUnmounted(() => {
+  window.removeEventListener('focus', refreshRecent);
+  document.removeEventListener('visibilitychange', onVisibility);
 });
 </script>
 
@@ -367,8 +381,8 @@ onMounted(async () => {
             <div class="space-y-4 min-w-0">
               <EnterpriseDonut :data="leadsByEnterprise" />
               <LeadsBySource :leads="leads" @filtrarOrigem="onFiltrarOrigem" />
-              <RecentLeads :leads="leads"
-                @verTodos="abrirModal([leads, 'list'])"
+              <RecentLeads :leads="recentLeads"
+                @verTodos="abrirModal([recentLeads, 'list'])"
                 @abrirLead="abrirLeadDetalhe" />
             </div>
           </div>
