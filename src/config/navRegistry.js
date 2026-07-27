@@ -87,6 +87,7 @@ export const navRegistry = [
             { route: '/marketing/leads', section: 'Leads', name: 'Leads', icon: 'fas fa-user-plus' },
             // Config das Aprovações fica só dentro da tela (botão "Configurações"), não no menu.
             { route: '/marketing/aprovacoes', name: 'Aprovações', icon: 'fas fa-stamp' },
+            { route: '/marketing/stand-vendas', name: 'Stand de Vendas', icon: 'fas fa-store' },
         ],
     },
 
