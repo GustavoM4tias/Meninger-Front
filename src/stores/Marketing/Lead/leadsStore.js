@@ -173,6 +173,30 @@ export const useLeadsStore = defineStore('leads', () => {
         }
     }
 
+    // ---------- Leads recentes (INDEPENDENTES do filtro do dashboard) ----------
+    // O painel "Leads recentes" deve mostrar os últimos leads captados DE VERDADE,
+    // não os mais recentes dentro do período/filtros escolhidos no dashboard.
+    // Por isso busca à parte: janela recente fixa (últimos 30 dias) + exclusão dos
+    // painéis internos. O componente ordena por data_cad desc e corta os N mais novos.
+    const recentLeads = ref([]);
+    async function fetchRecentLeads() {
+        try {
+            const hoje = new Date();
+            const ini = new Date(hoje); ini.setDate(ini.getDate() - 30);
+            const fmt = d => d.toISOString().slice(0, 10);
+            const q = new URLSearchParams();
+            q.append('data_inicio', fmt(ini));
+            q.append('data_fim', fmt(hoje));
+            q.append('origem_excluir', ORIGENS_EXCLUIDAS.join(','));
+            const resp = await fetch(`${API_URL}/cv/leads?${q.toString()}`, { headers: authHeaders() });
+            if (!resp.ok) return;
+            const data = await resp.json();
+            recentLeads.value = Array.isArray(data.results) ? data.results : [];
+        } catch {
+            // Painel de apoio: falha silenciosa não deve quebrar o dashboard.
+        }
+    }
+
     // ---------- Comparação com período anterior (pros deltas dos KPIs) ----------
     const prevCount = ref(0);
     const prevSituacoes = ref({});   // { situacao_nome: count }
@@ -289,7 +313,7 @@ export const useLeadsStore = defineStore('leads', () => {
 
     return {
         // state
-        leads, count, periodo, filas, error, filtros,
+        leads, count, periodo, filas, error, filtros, recentLeads,
         // options
         empreendimentosOptions, origensOptions, situacoesOptions, midiasOptions, imobiliariasOptions, corretoresOptions,
         // comparação
@@ -297,6 +321,6 @@ export const useLeadsStore = defineStore('leads', () => {
         // getters
         kpiPorSituacao, kpiSituacoes, situationsList, leadsByEnterprise,
         // actions
-        fetchLeads, fetchFilas, applyDefaultSituacoes, applyDefaultOrigens,
+        fetchLeads, fetchRecentLeads, fetchFilas, applyDefaultSituacoes, applyDefaultOrigens,
     }
 })
