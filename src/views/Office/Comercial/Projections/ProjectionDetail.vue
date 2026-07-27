@@ -562,9 +562,9 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload));
     <!-- ═══════ Filtros (retrátil, padrão dos relatórios) ═══════ -->
     <section class="rounded-xl border border-line bg-surface-raised shadow-soft surface-gradient mb-4">
       <!-- Toolbar (altura fixa p/ não pular quando aparece o badge/Limpar) -->
-      <div class="flex items-center gap-2 px-3 sm:px-4 min-h-[52px] border-b border-line bg-surface-sunken/40 rounded-t-xl">
+      <div class="filters-toolbar">
         <button @click="toggleFilters"
-          class="flex items-center gap-2 text-sm font-medium text-ink hover:text-accent transition-colors">
+          class="filters-toolbar-trigger">
           <i class="fas fa-filter text-xs text-ink-muted"></i>
           <span>Filtros</span>
           <Badge v-if="activeFilters" variant="accent" size="sm">

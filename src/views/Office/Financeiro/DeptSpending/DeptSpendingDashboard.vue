@@ -32,9 +32,9 @@
 
             <!-- Filtros (padrão da projeção: barra recolhível) -->
             <section class="mb-5 rounded-xl border border-line bg-surface-raised shadow-soft surface-gradient">
-                <div class="flex items-center gap-2 px-3 sm:px-4 py-2.5 border-b border-line bg-surface-sunken/40 rounded-t-xl">
+                <div class="filters-toolbar">
                     <button @click="filtersExpanded = !filtersExpanded"
-                        class="flex items-center gap-2 text-sm font-medium text-ink hover:text-accent transition-colors">
+                        class="filters-toolbar-trigger">
                         <i class="fas fa-filter text-xs text-ink-muted"></i>
                         <span>Filtros</span>
                         <Badge v-if="activeFiltersCount" variant="accent" size="sm">
