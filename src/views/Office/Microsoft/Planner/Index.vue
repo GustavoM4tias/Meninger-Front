@@ -46,6 +46,16 @@
             variant="ghost"
             size="sm"
             @click="showCreatePlan = true" />
+
+          <!-- Plano padrão: o Planner abre direto nele na próxima vez -->
+          <IconButton
+            v-if="store.selectedPlan"
+            :icon="store.isCurrentDefault ? 'fas fa-thumbtack' : 'far fa-bookmark'"
+            :label="store.isCurrentDefault ? 'Este é o seu plano padrão (clique para remover)' : 'Definir como plano padrão'"
+            variant="ghost"
+            size="sm"
+            :class="store.isCurrentDefault ? '!text-accent' : ''"
+            @click="toggleDefaultPlan" />
         </template>
 
         <!-- Ajuda + Refresh -->
@@ -56,6 +66,7 @@
               { title: 'Escolha grupo e plano', text: 'Selecione o grupo do Teams e depois o plano. Dá para criar um plano novo pelo botão +.' },
               { title: 'Organize em colunas', text: 'Cada coluna é uma etapa. Crie, renomeie ou exclua colunas conforme o fluxo do time.' },
               { title: 'Gerencie as tarefas', text: 'Toque numa tarefa para abrir o detalhe: status, prioridade, prazo, checklist e notas. O círculo marca como concluída.' },
+              { title: 'Defina seu padrão', text: 'Com o plano aberto, clique no marcador ao lado do seletor. Da próxima vez o Planner já abre direto nesse plano.' },
             ]"
             :tips="[
               'As alterações aparecem também no app Planner/Teams da Microsoft - é a mesma base.',
@@ -461,5 +472,21 @@ function formatShortDate(iso) {
   return new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
 }
 
-onMounted(() => store.fetchGroups());
+// ── Plano padrão ("abrir sempre neste") ──────────────────────────────────────
+function toggleDefaultPlan() {
+  if (store.isCurrentDefault) {
+    store.clearDefaultPlan();
+    toast.success('Plano padrão removido.');
+  } else {
+    store.setDefaultPlan();
+    toast.success(`Padrão definido: ${store.defaultPlan.planTitle}`);
+  }
+}
+
+onMounted(async () => {
+  await store.initWithDefault();
+  // Reflete nos seletores o que o padrão abriu automaticamente
+  selectedGroupId.value = store.selectedGroup?.id || '';
+  selectedPlanId.value  = store.selectedPlan?.id  || '';
+});
 </script>

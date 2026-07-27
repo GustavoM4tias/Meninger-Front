@@ -96,6 +96,24 @@
                 @input="sp.searchQuery ? null : sp.clearSearch()" />
             </div>
           </div>
+
+          <!-- Local padrão: a tela abre direto aqui na próxima vez -->
+          <div v-if="sp.selectedDrive" class="mt-3 pt-3 border-t border-line flex flex-wrap items-center gap-2">
+            <button @click="toggleDefaultLocation"
+              class="inline-flex items-center gap-2 px-3 min-h-10 rounded-lg border text-xs font-medium transition-colors"
+              :class="sp.isCurrentDefault
+                ? 'border-accent/40 bg-accent-soft text-accent'
+                : 'border-line text-ink-muted hover:bg-surface-hover'">
+              <i :class="sp.isCurrentDefault ? 'fas fa-thumbtack' : 'far fa-bookmark'" class="text-[11px]"></i>
+              {{ sp.isCurrentDefault ? 'Este é o seu padrão' : 'Definir como padrão' }}
+            </button>
+            <p v-if="sp.defaultLocation && !sp.isCurrentDefault" class="text-[11px] text-ink-subtle">
+              Padrão atual: <span class="text-ink-muted">{{ sp.defaultLocation.siteName }} › {{ sp.defaultLocation.driveName }}</span>
+            </p>
+            <p v-else-if="sp.isCurrentDefault" class="text-[11px] text-ink-subtle">
+              O SharePoint vai abrir direto nesta biblioteca.
+            </p>
+          </div>
         </Surface>
 
         <!-- ── Upload progress ── -->
@@ -319,7 +337,18 @@ import EmptyState from '@/components/UI/EmptyState.vue';
 const breadcrumbDragOver = ref(null);
 const sp = useSharepointStore();
 
-onMounted(() => sp.fetchSites());
+onMounted(() => sp.initWithDefault());
+
+// ── Local padrão ("abrir sempre aqui") ───────────────────────────────────────
+function toggleDefaultLocation() {
+  if (sp.isCurrentDefault) {
+    sp.clearDefaultLocation();
+    showToast('Local padrão removido.', 'success');
+  } else {
+    sp.setDefaultLocation();
+    showToast(`Padrão definido: ${sp.defaultLocation.siteName} › ${sp.defaultLocation.driveName}`, 'success');
+  }
+}
 
 // Converte erros do store em toasts (evita o banner vermelho permanente)
 watch(() => sp.error, (msg) => {
