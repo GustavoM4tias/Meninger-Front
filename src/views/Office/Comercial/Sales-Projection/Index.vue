@@ -71,14 +71,33 @@ const detailSales = computed(() => {
   });
 });
 
-function openDetail(row) {
+async function openDetail(row) {
   detailRow.value = row;
   detailEnterprise.value = {
     name: row.name || 'Empreendimento',
     id: row.enterprise_id ?? row.id ?? null,
     cost_center_code: null,
   };
+
+  // O dashboard trafega um payload enxuto (sem corretor, imobiliária, unidade
+  // e demais campos do CV) porque a tabela não usa nada disso. O modal usa —
+  // então carrega a visão completa do empreendimento antes de abrir, igual ao
+  // Faturamento faz. Sem isto o detalhe abre com "Sem imobiliária" em tudo.
+  const eid = Number(row.enterprise_id ?? row.id);
+  if (Number.isFinite(eid) && eid > 0) {
+    await contractsStore.fetchContracts({ view: 'detail', enterpriseIds: [eid] });
+  }
+
   isDetailOpen.value = true;
+}
+
+// Ao fechar, volta o dashboard do cache para não deixar a tabela presa no
+// recorte de um empreendimento só.
+function closeDetail() {
+  isDetailOpen.value = false;
+  if (!contractsStore.restoreDashboardFromCache()) {
+    contractsStore.fetchContracts({ view: 'dashboard' });
+  }
 }
 
 // ── Lookups de projeção (nível empreendimento) ────────────────────────────────
@@ -517,7 +536,7 @@ onMounted(async () => {
       :projection-row="detailRow"
       :time-elapsed-pct="projStore.timeElapsedPct"
       initial-mode="list"
-      @close="isDetailOpen = false" />
+      @close="closeDetail" />
 
     <ProjectionSettingsModal :open="isSettingsOpen" @close="isSettingsOpen = false" />
     <LandSyncConfigModal :open="isRulesOpen" @close="isRulesOpen = false" />
