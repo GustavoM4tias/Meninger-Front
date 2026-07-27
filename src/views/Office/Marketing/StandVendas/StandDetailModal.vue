@@ -27,8 +27,8 @@
                     <p class="font-mono tabular-nums font-bold text-ink">
                         {{ stand.model ? fmtRange(stand.model) : '-' }}
                     </p>
-                    <p v-if="Number(stand.model?.avg_area_m2) > 0" class="text-xs text-ink-muted font-mono tabular-nums">
-                        {{ Number(stand.model.avg_area_m2) }} m² médios
+                    <p v-if="stand.model && fmtArea(stand.model)" class="text-xs text-ink-muted font-mono tabular-nums">
+                        {{ fmtArea(stand.model) }}
                     </p>
                 </Surface>
             </div>
@@ -192,12 +192,22 @@ async function doUndefine() {
 }
 
 const fmtBRL = (v) => Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-// Faixa de valor médio do modelo: "de X até Y" (ou valor único quando a faixa não varia).
+// Faixa de valor médio do modelo: "de X até Y", "X+" (aberta) ou valor único.
 function fmtRange(m) {
     const min = Number(m?.avg_value_min) || 0;
     const max = Number(m?.avg_value_max) || 0;
     if (min && max && min !== max) return `${fmtBRL(min)} a ${fmtBRL(max)}`;
+    if (min && !max) return `${fmtBRL(min)}+`;
     return fmtBRL(max || min);
+}
+// Faixa de metragem: "14 a 22 m²", "80+ m²" (aberta) ou valor único.
+function fmtArea(m) {
+    const min = Number(m?.avg_area_min) || 0;
+    const max = Number(m?.avg_area_max) || 0;
+    if (!min && !max) return '';
+    if (min && max && min !== max) return `${min} a ${max} m²`;
+    if (min && !max) return `${min}+ m²`;
+    return `${max || min} m²`;
 }
 const fmtDate = (d) => (d ? dayjs(d).format('DD/MM/YYYY') : '-');
 const fmtYm = (ym) => (ym ? dayjs(`${ym}-01`).format('MMM/YYYY') : '-');
