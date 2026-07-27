@@ -25,10 +25,10 @@
                 <Surface variant="flat" padding="sm" bordered>
                     <p class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1">Valor médio do modelo</p>
                     <p class="font-mono tabular-nums font-bold text-ink">
-                        {{ stand.model ? fmtRange(stand.model) : '-' }}
+                        {{ (stand.model && fmtValueRange(stand.model)) || '-' }}
                     </p>
-                    <p v-if="stand.model && fmtArea(stand.model)" class="text-xs text-ink-muted font-mono tabular-nums">
-                        {{ fmtArea(stand.model) }}
+                    <p v-if="stand.model && fmtAreaRange(stand.model)" class="text-xs text-ink-muted font-mono tabular-nums">
+                        {{ fmtAreaRange(stand.model) }}
                     </p>
                 </Surface>
             </div>
@@ -132,6 +132,7 @@
 import { ref, computed, watch } from 'vue';
 import dayjs from 'dayjs';
 import { useSalesStandStore, STATUS_META } from '@/stores/Marketing/SalesStand/salesStandStore';
+import { fmtBRL, fmtValueRange, fmtAreaRange } from './standFormat';
 import Modal from '@/components/UI/Modal.vue';
 import Surface from '@/components/UI/Surface.vue';
 import Badge from '@/components/UI/Badge.vue';
@@ -191,24 +192,6 @@ async function doUndefine() {
     }
 }
 
-const fmtBRL = (v) => Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-// Faixa de valor médio do modelo: "de X até Y", "X+" (aberta) ou valor único.
-function fmtRange(m) {
-    const min = Number(m?.avg_value_min) || 0;
-    const max = Number(m?.avg_value_max) || 0;
-    if (min && max && min !== max) return `${fmtBRL(min)} a ${fmtBRL(max)}`;
-    if (min && !max) return `${fmtBRL(min)}+`;
-    return fmtBRL(max || min);
-}
-// Faixa de metragem: "14 a 22 m²", "80+ m²" (aberta) ou valor único.
-function fmtArea(m) {
-    const min = Number(m?.avg_area_min) || 0;
-    const max = Number(m?.avg_area_max) || 0;
-    if (!min && !max) return '';
-    if (min && max && min !== max) return `${min} a ${max} m²`;
-    if (min && !max) return `${min}+ m²`;
-    return `${max || min} m²`;
-}
 const fmtDate = (d) => (d ? dayjs(d).format('DD/MM/YYYY') : '-');
 const fmtYm = (ym) => (ym ? dayjs(`${ym}-01`).format('MMM/YYYY') : '-');
 </script>
