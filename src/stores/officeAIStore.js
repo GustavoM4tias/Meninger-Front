@@ -24,6 +24,15 @@ export const useOfficeAIStore = defineStore('officeAI', () => {
   const storageUsage = ref(null)
   const historyOpen = ref(false)
 
+  // ── Transparência do agente ───────────────────────────────────────────────
+  // O que a Eme está fazendo agora: passos de tool (tool_start/tool_result do
+  // SSE), início do turno (cronômetro) e sinal de conexão instável (watchdog).
+  const agentSteps = ref([])        // [{ name, label, status:'running'|'done'|'error', ms? }]
+  const streamStartedAt = ref(null) // Date.now() do envio — cronômetro na UI
+  const streamStale = ref(false)    // true = sem bytes do servidor há tempo demais
+  let abortCtrl = null              // AbortController do fetch em andamento
+  let cancelReason = null           // 'user' | 'timeout' — motivo do abort
+
   // Texto compartilhado da caixa de envio (permite pré-preencher de fora —
   // ex: botão "Criar via Eme" na página de alertas dispara eme:open com prompt)
   const composerDraft = ref('')
@@ -98,6 +107,26 @@ export const useOfficeAIStore = defineStore('officeAI', () => {
     isStreaming.value = true
     streamingText.value = ''
     pendingAction.value = null
+    agentSteps.value = []
+    streamStartedAt.value = Date.now()
+    streamStale.value = false
+    cancelReason = null
+    abortCtrl = new AbortController()
+
+    // Watchdog: o servidor manda `: ping` a cada 15s mesmo sem conteúdo, então
+    // silêncio prolongado = conexão/backend realmente mudos (não é "demora").
+    // 45s sem bytes → avisa o usuário; 90s → encerra com mensagem clara em vez
+    // de deixar o "..." pulsando para sempre com o composer travado.
+    let lastByteAt = Date.now()
+    const watchdog = setInterval(() => {
+      const idle = Date.now() - lastByteAt
+      if (idle > 90_000) {
+        cancelReason = 'timeout'
+        abortCtrl?.abort()
+      } else if (idle > 45_000) {
+        streamStale.value = true
+      }
+    }, 5_000)
 
     const t0 = performance.now()
     try {
@@ -112,6 +141,7 @@ export const useOfficeAIStore = defineStore('officeAI', () => {
           session_id: currentSessionId.value,
           via_voice: viaVoice,
         }),
+        signal: abortCtrl.signal,
       })
       console.log('[officeAIStore] HTTP', response.status, 'em', Math.round(performance.now() - t0), 'ms')
 
@@ -136,6 +166,9 @@ export const useOfficeAIStore = defineStore('officeAI', () => {
         const { done, value } = await reader.read()
         if (done) break
 
+        lastByteAt = Date.now()
+        streamStale.value = false
+
         buffer += decoder.decode(value, { stream: true })
         const lines = buffer.split('\n')
         buffer = lines.pop()
@@ -150,12 +183,43 @@ export const useOfficeAIStore = defineStore('officeAI', () => {
         }
       }
     } catch (err) {
-      console.error('[officeAIStore] SSE error:', err, '— após', Math.round(performance.now() - t0), 'ms')
-      pushAssistantMessage('Erro de conexão. Tente novamente.', 'error')
+      if (err?.name === 'AbortError') {
+        // Abort intencional (cancelar do usuário ou watchdog de conexão morta).
+        console.warn('[officeAIStore] stream abortado:', cancelReason, '— após', Math.round(performance.now() - t0), 'ms')
+        if (streamingText.value.trim()) {
+          // Preserva o que já foi escrito, marcando que foi interrompido.
+          const meta = pendingAction.value ? { action: pendingAction.value } : {}
+          meta.interrupted = true
+          pushAssistantMessage(streamingText.value, pendingAction.value?.type || 'text', meta)
+        } else {
+          pushAssistantMessage(
+            cancelReason === 'timeout'
+              ? 'A conexão com a Eme ficou sem resposta por muito tempo e foi encerrada. Tente novamente.'
+              : 'Geração cancelada.',
+            'error'
+          )
+        }
+        streamingText.value = ''
+      } else {
+        console.error('[officeAIStore] SSE error:', err, '— após', Math.round(performance.now() - t0), 'ms')
+        pushAssistantMessage('Erro de conexão. Tente novamente.', 'error')
+      }
     } finally {
       console.log('[officeAIStore] ✓ streaming finalizado em', Math.round(performance.now() - t0), 'ms')
+      clearInterval(watchdog)
       isStreaming.value = false
+      streamStartedAt.value = null
+      streamStale.value = false
+      agentSteps.value = []
+      abortCtrl = null
     }
+  }
+
+  // Cancela a geração em andamento (botão "cancelar" na timeline do agente).
+  function cancelStream() {
+    if (!isStreaming.value || !abortCtrl) return
+    cancelReason = 'user'
+    abortCtrl.abort()
   }
 
   function handleSSEEvent(evt) {
@@ -183,6 +247,24 @@ export const useOfficeAIStore = defineStore('officeAI', () => {
         }
         break
 
+      case 'tool_start':
+        // A Eme começou uma consulta — vira o passo "rodando" da timeline.
+        agentSteps.value.push({
+          name: evt.name,
+          label: evt.label || evt.name,
+          status: 'running',
+        })
+        break
+
+      case 'tool_result': {
+        const step = [...agentSteps.value].reverse().find(s => s.name === evt.name && s.status === 'running')
+        if (step) {
+          step.status = evt.ok === false ? 'error' : 'done'
+          if (evt.ms != null) step.ms = evt.ms
+        }
+        break
+      }
+
       case 'action':
         pendingAction.value = evt.action
         if (evt.action.type === 'navigate') {
@@ -198,12 +280,18 @@ export const useOfficeAIStore = defineStore('officeAI', () => {
           if (!sessions.value.find(s => s.id === evt.sessionId)) loadSessions()
         }
         {
+          // O backend pode mandar `action` explícita no done (ex.: null quando
+          // suprimiu um card órfão de consulta plural) — ela tem a palavra
+          // final. Sem o campo, vale o último `action` recebido (histórico).
+          const finalAction = ('action' in evt) ? evt.action : pendingAction.value
           const meta = {}
-          if (pendingAction.value)  meta.action  = pendingAction.value
+          if (finalAction)          meta.action  = finalAction
           if (pendingWarning.value) meta.warning = pendingWarning.value
+          if (agentSteps.value.length) meta.steps = agentSteps.value.map(s => ({ ...s }))
+          if (streamStartedAt.value)   meta.elapsed_ms = Date.now() - streamStartedAt.value
           pushAssistantMessage(
             streamingText.value,
-            pendingAction.value?.type || 'text',
+            finalAction?.type || 'text',
             meta
           )
         }
@@ -215,6 +303,7 @@ export const useOfficeAIStore = defineStore('officeAI', () => {
         streamingText.value = ''
         pendingAction.value = null
         pendingWarning.value = null
+        agentSteps.value = []
         loadStorageUsage()
         break
 
@@ -305,9 +394,10 @@ export const useOfficeAIStore = defineStore('officeAI', () => {
   return {
     mode, sessions, currentSessionId, messages, isStreaming, streamingText,
     pendingAction, storageUsage, historyOpen, composerDraft,
+    agentSteps, streamStartedAt, streamStale,
     isAtStorageLimit, hasSession,
     loadSessions, loadMessages, newSession, favoriteSession, deleteSession,
-    loadStorageUsage, sendMessage, retryMessage, renameSession, sendFeedback,
+    loadStorageUsage, sendMessage, cancelStream, retryMessage, renameSession, sendFeedback,
     setMode, minimize, expand, setDraft,
     currentSessionTitle,
   }

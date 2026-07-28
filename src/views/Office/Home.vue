@@ -156,7 +156,8 @@ async function confirmFeedback({ comment }) {
 </script>
 
 <template>
-  <main class="flex flex-col w-full h-[calc(100vh-3rem)] overflow-hidden bg-surface">
+  <!-- dvh: no iOS Safari 100vh inclui a barra de URL e cortava o composer -->
+  <main class="flex flex-col w-full h-[calc(100vh-3rem)] supports-[height:100dvh]:h-[calc(100dvh-3rem)] overflow-hidden bg-surface">
 
     <Transition name="fade" mode="out-in">
 
@@ -278,19 +279,11 @@ async function confirmFeedback({ comment }) {
                 @storageHelp="aiStore.historyOpen = true"
               />
 
-              <div v-if="aiStore.isStreaming" class="flex gap-3 items-start">
-                <img src="/Mlogo.png" class="h-7 invert dark:invert-0" alt="Eme" />
-                <div class="flex-1 min-w-0 pt-0.5">
-                  <ChatMessage v-if="aiStore.streamingText"
-                    :message="{ role: 'assistant', content: aiStore.streamingText, metadata: {} }"
-                    :streaming="true" />
-                  <div v-else class="flex gap-1.5 py-1">
-                    <span class="w-2 h-2 rounded-full bg-ink-subtle animate-bounce" style="animation-delay:0ms"></span>
-                    <span class="w-2 h-2 rounded-full bg-ink-subtle animate-bounce" style="animation-delay:150ms"></span>
-                    <span class="w-2 h-2 rounded-full bg-ink-subtle animate-bounce" style="animation-delay:300ms"></span>
-                  </div>
-                </div>
-              </div>
+              <!-- Streaming: timeline do agente + texto parcial (o ChatMessage
+                   já desenha o avatar — antes apareciam dois logos lado a lado) -->
+              <ChatMessage v-if="aiStore.isStreaming"
+                :message="{ role: 'assistant', content: aiStore.streamingText, metadata: {} }"
+                :streaming="true" />
             </div>
           </div>
         </div>

@@ -1,5 +1,9 @@
 <script setup>
-import { computed } from 'vue';
+// Balão de mensagem do chat da Eme — ÚNICO renderer das duas superfícies
+// (Home.vue e OfficeChatSession.vue via prop `compact`). Antes cada uma tinha
+// sua cópia da cadeia de renderers e elas divergiam (warning e action.source
+// só funcionavam no flutuante).
+import { computed, ref } from 'vue';
 
 import ChatText from './renderers/ChatText.vue';
 import ChatTable from './renderers/ChatTable.vue';
@@ -22,10 +26,12 @@ import ChatPersonCards from './renderers/ChatPersonCards.vue';
 import ChatNotificationPrefs from './renderers/ChatNotificationPrefs.vue';
 import ChatReportCards from './renderers/ChatReportCards.vue';
 import ChatChecklistCards from './renderers/ChatChecklistCards.vue';
+import EmeAgentStatus from './EmeAgentStatus.vue';
 
 const props = defineProps({
   message: { type: Object, required: true },
   streaming: { type: Boolean, default: false },
+  compact: { type: Boolean, default: false },
 });
 
 const emit = defineEmits(['feedback', 'retry', 'storageHelp']);
@@ -33,22 +39,46 @@ const emit = defineEmits(['feedback', 'retry', 'storageHelp']);
 const action = computed(() => props.message.metadata?.action || null);
 const isUser = computed(() => props.message.role === 'user');
 const isError = computed(() => props.message.response_type === 'error');
+const warning = computed(() => props.message.metadata?.warning || null);
+
+// Detecta o módulo da action olhando em vários lugares (context.source, source
+// top-level e tipo) — robusto a variações entre tools.
+const actionSource = computed(() => {
+  const a = action.value;
+  if (!a) return null;
+  if (a.context?.source) return a.context.source;
+  if (a.source) return a.source;
+  if (a.type === 'precadastros_summary') return 'precadastros';
+  if (a.type === 'reservas_summary') return 'reservas';
+  if (a.type === 'enterprise_detail') return 'enterprises';
+  return null;
+});
+
+// "O que a Eme fez": passos de tool + tempo total, gravados pelo store no done.
+const steps = computed(() => props.message.metadata?.steps || []);
+const elapsedSec = computed(() => {
+  const ms = props.message.metadata?.elapsed_ms;
+  return ms ? Math.round(ms / 1000) : null;
+});
+const stepsOpen = ref(false);
 </script>
 
 <template>
   <!-- USER -->
   <div v-if="isUser" class="flex justify-end">
-    <div class="max-w-[75%] bg-accent text-white rounded-2xl rounded-br-md
-                px-4 py-2.5 text-sm leading-relaxed shadow-soft">
+    <div class="bg-accent text-white rounded-2xl px-4 py-2.5 text-sm leading-relaxed shadow-soft
+                whitespace-pre-wrap break-words [overflow-wrap:anywhere]"
+      :class="compact ? 'max-w-[85%] rounded-br-sm' : 'max-w-[85%] sm:max-w-[75%] rounded-br-md'">
       {{ message.content }}
     </div>
   </div>
 
   <!-- ASSISTANT -->
-  <div v-else class="flex gap-3 items-start">
-    <img src="/Mlogo.png" class="h-6 md:h-7 invert dark:invert-0 shrink-0 mt-0.5" alt="Eme" />
+  <div v-else class="flex items-start" :class="compact ? 'gap-2.5' : 'gap-3'">
+    <img src="/Mlogo.png" alt="Eme" class="invert dark:invert-0 shrink-0 mt-0.5"
+      :class="compact ? 'h-5' : 'h-6 md:h-7'" />
 
-    <div class="flex-1 min-w-0 space-y-2">
+    <div class="flex-1 min-w-0" :class="compact ? 'space-y-1.5' : 'space-y-2'">
       <!-- Erro com limite de storage -->
       <div v-if="isError && message.metadata?.storageLimit"
         class="flex items-start gap-2 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-sm text-amber-700 dark:text-amber-300">
@@ -60,12 +90,34 @@ const isError = computed(() => props.message.response_type === 'error');
       </div>
 
       <!-- Erro genérico -->
-      <span v-else-if="isError" class="text-sm text-ink-muted italic">{{ message.content }}</span>
+      <span v-else-if="isError" class="text-sm text-ink-muted italic break-words">{{ message.content }}</span>
 
       <!-- Renderers -->
       <template v-else>
+        <!-- Timeline do agente (só durante o streaming) -->
+        <EmeAgentStatus v-if="streaming" :compact="compact" />
+
         <ChatNavAction v-if="action?.type === 'navigate'" :action="action" />
         <ChatText v-if="message.content" :content="message.content" :streaming="streaming" />
+
+        <!-- Resposta interrompida (cancelamento/timeout preservou o parcial) -->
+        <p v-if="message.metadata?.interrupted"
+          class="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
+          <i class="fas fa-triangle-exclamation"></i>
+          Resposta interrompida antes do fim.
+        </p>
+
+        <!-- Warning anti-alucinação: número/nome não verificado no texto -->
+        <div v-if="warning"
+          class="flex items-start gap-2 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-700 dark:text-amber-300">
+          <i class="fas fa-triangle-exclamation mt-0.5 text-amber-500"></i>
+          <div class="min-w-0">
+            <p>{{ warning.message }}</p>
+            <p v-if="warning.details?.length" class="text-[10px] opacity-80 mt-0.5 break-words">
+              Valor(es) suspeito(s): {{ warning.details.map(d => d.value).join(', ') }}
+            </p>
+          </div>
+        </div>
 
         <ChatTable v-if="action?.type === 'table'"
           :title="action.title" :subtitle="action.subtitle"
@@ -76,20 +128,20 @@ const isError = computed(() => props.message.response_type === 'error');
           :labels="action.labels" :data="action.data"
           :total="action.total" :top-breakdown="action.top_breakdown || []" />
 
-        <ChatLeadsActions v-if="action?.context?.source === 'leads'" :context="action.context" />
-        <ChatEventsActions v-if="action?.context?.source === 'events'"
-          :context="action.context" :rows="action.rows || action.rawRows || []" />
-        <ChatEnterprisesActions v-if="action?.context?.source === 'enterprises' || action?.type === 'enterprise_detail'" :context="action.context || {}" />
+        <ChatLeadsActions v-if="actionSource === 'leads'" :context="action.context || {}" />
+        <ChatEventsActions v-if="actionSource === 'events'"
+          :context="action.context || {}" :rows="action.rows || action.rawRows || []" />
+        <ChatEnterprisesActions v-if="actionSource === 'enterprises'" :context="action.context || {}" />
         <ChatEnterpriseDetail v-if="action?.type === 'detail'" :action="action" />
-        <ChatMcmvActions v-if="action?.context?.source === 'mcmv'" :context="action.context" />
+        <ChatMcmvActions v-if="actionSource === 'mcmv'" :context="action.context || {}" />
 
         <!-- Pré-cadastros -->
         <ChatPrecadastrosSummary v-if="action?.type === 'precadastros_summary'" :action="action" />
-        <ChatPrecadastrosActions v-if="action?.context?.source === 'precadastros'" :context="action.context" />
+        <ChatPrecadastrosActions v-if="actionSource === 'precadastros'" :context="action.context || {}" />
 
         <!-- Reservas -->
         <ChatReservasSummary v-if="action?.type === 'reservas_summary'" :action="action" />
-        <ChatReservasActions v-if="action?.context?.source === 'reservas'" :context="action.context" />
+        <ChatReservasActions v-if="actionSource === 'reservas'" :context="action.context || {}" />
 
         <!-- Editor de Alerta inline -->
         <ChatAlertEditor v-if="action?.type === 'open_alert_editor'" :action="action" />
@@ -100,8 +152,9 @@ const isError = computed(() => props.message.response_type === 'error');
         <!-- Imobiliárias: cards de parceiras / cadastros e convites -->
         <ChatImobiliariaCards v-if="action?.type === 'imobiliaria_cards'" :action="action" />
 
-        <!-- Ficha Comercial: card com dados + sugestões + abrir ficha -->
-        <ChatConditionSheet v-if="action?.type === 'condition_sheet'" :action="action" />
+        <!-- Ficha Comercial: card com dados + sugestões + abrir ficha.
+             precisa_desambiguar não renderiza card (viria com header vazio). -->
+        <ChatConditionSheet v-if="action?.type === 'condition_sheet' && !action?.precisa_desambiguar" :action="action" />
 
         <!-- Pessoas/Organograma: cards com modal de detalhe -->
         <ChatPersonCards v-if="action?.type === 'person_cards'" :action="action" />
@@ -114,6 +167,24 @@ const isError = computed(() => props.message.response_type === 'error');
 
         <!-- Checklist: cards de checklist / tarefas -->
         <ChatChecklistCards v-if="action?.type === 'checklist_cards' || action?.type === 'checklist_tasks'" :action="action" />
+
+        <!-- "O que a Eme fez" — transparência pós-resposta -->
+        <div v-if="!streaming && steps.length" class="text-[11px] text-ink-subtle">
+          <button type="button" @click="stepsOpen = !stepsOpen"
+            class="inline-flex items-center gap-1.5 hover:text-ink-muted transition-colors">
+            <i class="fas fa-circle-check text-emerald-500/80"></i>
+            <span>{{ steps.length }} consulta{{ steps.length > 1 ? 's' : '' }}<template v-if="elapsedSec"> · {{ elapsedSec }}s</template></span>
+            <i class="fas text-[9px]" :class="stepsOpen ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+          </button>
+          <ul v-if="stepsOpen" class="mt-1 space-y-0.5 pl-0.5">
+            <li v-for="(s, i) in steps" :key="i" class="flex items-center gap-1.5">
+              <i class="shrink-0 text-[10px]"
+                :class="s.status === 'error' ? 'fas fa-circle-exclamation text-amber-500' : 'fas fa-check text-emerald-500/80'"></i>
+              <span class="truncate">{{ s.label }}</span>
+              <span v-if="s.ms != null" class="shrink-0 font-mono text-[10px] opacity-70">{{ (s.ms / 1000).toFixed(1) }}s</span>
+            </li>
+          </ul>
+        </div>
 
         <!-- Feedback / Retry -->
         <div v-if="!streaming" class="flex items-center gap-1 mt-1.5">

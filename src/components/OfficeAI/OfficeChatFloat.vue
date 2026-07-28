@@ -191,6 +191,10 @@ const POS_KEY = 'eme:fab:pos';
 const DEFAULT_POS = { right: 20, bottom: 20 };
 
 const pos = ref({ ...DEFAULT_POS });
+// Largura da viewport reativa — decide mobile (bottom-sheet) × desktop (painel).
+const viewportW = ref(window.innerWidth);
+const isMobileViewport = computed(() => viewportW.value < 640);
+
 function loadPos() {
   try {
     const raw = localStorage.getItem(POS_KEY);
@@ -204,20 +208,37 @@ function loadPos() {
 function savePos(p) {
   try { localStorage.setItem(POS_KEY, JSON.stringify(p)); } catch { /* ignore */ }
 }
+// Clamp considerando o TAMANHO REAL do box: pill 64px ou painel expandido
+// (antes só considerava o pill — o painel aberto vazava para fora da tela).
 function clampPos(p) {
   const padding = 8;
   const w = window.innerWidth;
   const h = window.innerHeight;
+  const boxW = expanded.value ? (w >= 640 ? 384 : 320) : 64;
+  const boxH = expanded.value ? 512 : 64;
   return {
-    right:  Math.max(padding, Math.min(p.right,  w - 64 - padding)),
-    bottom: Math.max(padding, Math.min(p.bottom, h - 64 - padding)),
+    right:  Math.max(padding, Math.min(p.right,  Math.max(padding, w - boxW - padding))),
+    bottom: Math.max(padding, Math.min(p.bottom, Math.max(padding, h - boxH - padding))),
   };
 }
 
-const fabStyle = computed(() => ({
-  right:  `${pos.value.right}px`,
-  bottom: `${pos.value.bottom}px`,
-}));
+// No mobile expandido o painel vira bottom-sheet (classes cuidam da posição);
+// nos demais casos vale a posição arrastável persistida.
+const fabStyle = computed(() => (
+  expanded.value && isMobileViewport.value
+    ? {}
+    : { right: `${pos.value.right}px`, bottom: `${pos.value.bottom}px` }
+));
+
+// Ao expandir, re-clampa para o painel caber na viewport a partir da posição do pill.
+watch(expanded, () => { pos.value = clampPos(pos.value); });
+
+// Rótulo do que a Eme está fazendo — preview no pill colapsado enquanto não há texto.
+const streamLabel = computed(() => {
+  const running = [...aiStore.agentSteps].reverse().find(s => s.status === 'running');
+  if (running) return `Consultando ${running.label}…`;
+  return 'Eme está pensando…';
+});
 
 // ── Drag-to-move ────────────────────────────────────────────────────────────
 const DRAG_THRESHOLD = 5; // px — abaixo disso é click, acima é drag
@@ -279,6 +300,7 @@ function onEmeOpen(e) {
 }
 
 function onResize() {
+  viewportW.value = window.innerWidth;
   pos.value = clampPos(pos.value);
 }
 
@@ -314,7 +336,9 @@ function rename(title) { aiStore.renameSession(title); }
         v-if="showFloat"
         class="fixed z-50 flex flex-col"
         :style="fabStyle"
-        :class="expanded ? 'w-80 sm:w-96 h-[32rem]' : 'w-auto h-auto'"
+        :class="expanded
+          ? 'max-sm:inset-x-2 max-sm:bottom-2 max-sm:w-auto max-sm:h-[min(calc(100dvh-4rem),34rem)] sm:w-96 sm:h-[32rem]'
+          : 'w-auto h-auto'"
       >
         <!-- ── Modo expandido ───────────────────────────────────────── -->
         <div v-if="expanded"
@@ -355,11 +379,21 @@ function rename(title) { aiStore.renameSession(title); }
         <!-- ── Modo pill (FAB) — arrastável ────────────────────────── -->
         <div v-else class="flex items-end gap-2">
           <Transition name="fade">
-            <div v-if="aiStore.isStreaming && aiStore.streamingText"
+            <div v-if="aiStore.isStreaming && aiStore.streamingText" key="preview-text"
               class="max-w-56 bg-surface-overlay border border-line rounded-2xl rounded-br-sm
                      px-3 py-2 text-xs text-ink shadow-elevated mb-2">
-              <p class="line-clamp-2">{{ aiStore.streamingText }}</p>
+              <p class="line-clamp-2 break-words">{{ aiStore.streamingText }}</p>
               <span class="inline-block w-1.5 h-3 ml-0.5 bg-accent animate-pulse rounded-sm align-middle"></span>
+            </div>
+            <!-- Sem texto ainda: mostra O QUE a Eme está fazendo (não só a bolinha) -->
+            <div v-else-if="aiStore.isStreaming" key="preview-status"
+              class="max-w-56 bg-surface-overlay border border-line rounded-2xl rounded-br-sm
+                     px-3 py-2 text-xs text-ink-muted shadow-elevated mb-2 flex items-center gap-2">
+              <span class="relative flex h-2 w-2 shrink-0">
+                <span class="absolute inline-flex h-full w-full rounded-full bg-accent opacity-60 animate-ping"></span>
+                <span class="relative inline-flex h-2 w-2 rounded-full bg-accent"></span>
+              </span>
+              <span class="truncate">{{ streamLabel }}</span>
             </div>
           </Transition>
 
