@@ -62,7 +62,11 @@ const statusOptions = [
   { value: 'pending',  label: 'Aguardando aprovação' },
 ];
 
+// 'pending' = concluiu o formulário de primeiro acesso (fila de aprovação);
+// 'incomplete' = criado pelo login Microsoft mas ainda NÃO enviou o formulário
+// (não entra na fila nem no banner).
 const isPendingUser = (u) => u.approval_status === 'pending';
+const isIncompleteUser = (u) => u.approval_status === 'incomplete';
 const pendingCount = computed(() => users.value.filter(isPendingUser).length);
 
 const cityOptions = computed(() => [
@@ -266,6 +270,12 @@ onMounted(async () => {
                 <p class="text-sm font-semibold text-ink truncate">{{ user.username }}</p>
                 <Badge v-if="isPendingUser(user)" variant="warning" size="sm">
                   Aguardando aprovação
+                </Badge>
+                <Badge v-else-if="isIncompleteUser(user)" variant="neutral" size="sm">
+                  Cadastro não concluído
+                </Badge>
+                <Badge v-else-if="user.approval_status === 'rejected'" variant="danger" size="sm">
+                  Reprovado
                 </Badge>
                 <Badge v-else :variant="user.status ? 'success' : 'danger'" size="sm">
                   {{ user.status ? 'Ativo' : 'Inativo' }}
