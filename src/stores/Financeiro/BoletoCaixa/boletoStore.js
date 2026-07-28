@@ -79,6 +79,8 @@ export const useBoletoStore = defineStore('boletoCaixa', () => {
         dateTo: '',
         dateField: 'created_at', // 'created_at' (emissão) | 'paid_at' (pagamento)
         q: '',                 // titular / nosso número / nº documento
+        cvSituacao: [],        // multi: ids de situação da RESERVA no CV
+        cvRepasse: [],         // multi: ids de situação do REPASSE no CV
     });
 
     // ── Ordenação (server-side) — padrão: emissão mais recente primeiro ────────
@@ -115,6 +117,8 @@ export const useBoletoStore = defineStore('boletoCaixa', () => {
         if (f.dateTo)    params.set('dateTo', f.dateTo);
         if (f.dateField && f.dateField !== 'created_at') params.set('dateField', f.dateField);
         if (f.q)         params.set('q', f.q);
+        if (Array.isArray(f.cvSituacao) && f.cvSituacao.length) params.set('cvSituacao', f.cvSituacao.join(','));
+        if (Array.isArray(f.cvRepasse) && f.cvRepasse.length) params.set('cvRepasse', f.cvRepasse.join(','));
         return params;
     }
 
@@ -162,6 +166,8 @@ export const useBoletoStore = defineStore('boletoCaixa', () => {
             if (f.dateTo)    params.set('dateTo', f.dateTo);
             if (f.dateField && f.dateField !== 'created_at') params.set('dateField', f.dateField);
             if (f.q)         params.set('q', f.q);
+            if (Array.isArray(f.cvSituacao) && f.cvSituacao.length) params.set('cvSituacao', f.cvSituacao.join(','));
+            if (Array.isArray(f.cvRepasse) && f.cvRepasse.length) params.set('cvRepasse', f.cvRepasse.join(','));
 
             stats.value = await requestWithAuth(`/boleto-caixa/history-stats?${params}`);
         } catch (err) {
@@ -172,7 +178,7 @@ export const useBoletoStore = defineStore('boletoCaixa', () => {
     }
 
     // Facets pra alimentar selects do filtro (empreendimentos distintos + contagens)
-    const facets = ref({ empreendimentos: [], statusCounts: [], paymentCounts: [] });
+    const facets = ref({ empreendimentos: [], statusCounts: [], paymentCounts: [], cvSituacoes: [], cvRepasses: [] });
     const facetsLoading = ref(false);
     async function fetchFacets() {
         facetsLoading.value = true;
@@ -195,6 +201,8 @@ export const useBoletoStore = defineStore('boletoCaixa', () => {
             dateTo: '',
             dateField: 'created_at',
             q: '',
+            cvSituacao: [],
+            cvRepasse: [],
         };
         historyPage.value = 1;
     }
