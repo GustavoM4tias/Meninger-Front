@@ -982,7 +982,7 @@ function statusLabel(status) {
     processing: 'Processando',
     success: 'Sucesso',
     error: 'Erro',
-    skipped: 'Sem série',
+    skipped: 'Ignorado',
   }[status] || status;
 }
 
