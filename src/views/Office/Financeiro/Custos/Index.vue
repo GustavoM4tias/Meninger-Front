@@ -35,17 +35,6 @@
 
           <div>
             <label class="text-[11px] font-medium text-ink-muted mb-1.5 flex items-center gap-1.5">
-              <i class="fas fa-tags text-ink-subtle text-[10px]"></i>
-              Categoria
-            </label>
-            <Select
-              v-model.number="categoryFilterId"
-              :options="categoryFilterOptions"
-              placeholder="Todas as categorias" />
-          </div>
-
-          <div>
-            <label class="text-[11px] font-medium text-ink-muted mb-1.5 flex items-center gap-1.5">
               <i class="fas fa-calendar-day text-ink-subtle text-[10px]"></i>
               De
             </label>
@@ -269,23 +258,6 @@
                 placeholder="Todos departamentos" />
             </div>
 
-            <div class="w-full md:w-48">
-              <label class="text-[11px] font-medium text-ink-muted mb-1.5 flex items-center gap-1.5">
-                <i class="fas fa-tags text-ink-subtle text-[10px]"></i>
-                Categoria
-              </label>
-              <Select
-                v-model.number="modalFilterCat"
-                :options="categoryFilterOptions"
-                placeholder="Todas categorias" />
-            </div>
-
-            <label class="flex items-center gap-2 text-sm text-ink-muted whitespace-nowrap cursor-pointer select-none px-1 md:pb-2.5">
-              <input type="checkbox" v-model="modalFilterNoCat"
-                class="w-4 h-4 text-emerald-600 border-line rounded focus:ring-emerald-500" />
-              Sem categoria
-            </label>
-
             <Button v-if="hasModalFilters" variant="ghost" size="sm" icon="fas fa-times"
               class="md:mb-1" @click="clearModalFilters">
               Limpar
@@ -340,23 +312,6 @@
               </span>
               <span class="opacity-40">|</span>
 
-              <div class="flex items-center gap-2 flex-wrap">
-                <select v-model.number="bulkCategoryId"
-                  class="px-3 py-1.5 rounded-lg bg-white/20 border border-white/30 text-white text-sm focus:outline-none focus:ring-2 focus:ring-white/50">
-                  <option :value="null" class="text-gray-800">Categoria (opcional)...</option>
-                  <option v-for="cat in categoryOptions" :key="cat.id" :value="cat.id" class="text-gray-800">
-                    {{ cat.name }}
-                  </option>
-                </select>
-                <button @click="applyBulkBoth"
-                  :disabled="bulkCategoryId === null"
-                  class="px-3 py-1.5 bg-white text-emerald-700 font-semibold rounded-lg text-sm hover:bg-emerald-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
-                  <i class="fas fa-check mr-1"></i> Aplicar
-                </button>
-              </div>
-
-              <span class="opacity-40">|</span>
-
               <button @click="removeSelectedExpenses"
                 class="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-lg text-sm transition-colors">
                 <i class="fas fa-trash mr-1"></i> Excluir
@@ -401,10 +356,6 @@
                 <th @click="handleModalSort('department')"
                   class="px-3 py-3 text-left text-[11px] font-mono uppercase tracking-wider text-ink-subtle cursor-pointer hover:text-ink">
                   <span class="flex items-center gap-1">Departamento <i :class="getModalSortIcon('department')"></i></span>
-                </th>
-                <th @click="handleModalSort('category')"
-                  class="px-3 py-3 text-left text-[11px] font-mono uppercase tracking-wider text-ink-subtle cursor-pointer hover:text-ink">
-                  <span class="flex items-center gap-1">Categoria <i :class="getModalSortIcon('category')"></i></span>
                 </th>
                 <th class="px-3 py-3 text-left text-[11px] font-mono uppercase tracking-wider text-ink-subtle min-w-[80px]">Observação</th>
                 <th class="px-3 py-3 text-center text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Ações</th>
@@ -491,16 +442,6 @@
                   <span v-else class="text-xs text-ink-subtle">—</span>
                 </td>
 
-                <td class="px-3 py-3 whitespace-nowrap">
-                  <Badge v-if="exp.departmentCategoryName" variant="warning" size="sm">
-                    {{ exp.departmentCategoryName }}
-                  </Badge>
-                  <span v-else
-                    class="inline-flex items-center px-2 py-0.5 text-[10px] text-ink-subtle bg-surface-sunken rounded-full border border-dashed border-line">
-                    sem categoria
-                  </span>
-                </td>
-
                 <td class="px-3 py-3">
                   <div v-if="exp.description"
                     class="text-xs text-ink-muted truncate max-w-[120px]"
@@ -547,7 +488,7 @@
           :preselect="[
             'paidAt', 'dueDate', 'amount', 'status',
             'installmentNumber', 'installmentsNumber',
-            'departmentName', 'departmentCategoryName', 'description',
+            'departmentName', 'description',
             'bill.creditor_json.name', 'bill.creditor_json.cnpj',
             'bill.document_identification_id', 'bill.document_number',
             'bill.totalInvoiceAmount',
@@ -625,13 +566,6 @@
           </div>
         </div>
 
-        <!-- Categoria -->
-        <Select
-          v-model.number="editForm.departmentCategoryId"
-          :options="editCategoryOptions"
-          placeholder="(sem categoria)"
-          label="Categoria" />
-
         <!-- Observação -->
         <div>
           <label class="text-[11px] font-medium text-ink-muted mb-1.5 block">
@@ -660,7 +594,6 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useExpensesStore } from '@/stores/Financeiro/Expenses/expensesStore';
-import { useAdminMetaStore } from '@/stores/Settings/Admin/metaStore';
 import { useContractsStore } from '@/stores/Comercial/Contracts/contractsStore';
 import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 import { useCostCenterNamesStore } from '@/stores/Financeiro/costCenterNamesStore';
@@ -681,7 +614,6 @@ import Favorite from '@/components/config/Favorite.vue';
 import Export from '@/components/config/Export.vue';
 
 const store = useExpensesStore();
-const adminMeta = useAdminMetaStore();
 const contractsStore = useContractsStore();
 const auth = useAuthStore();
 const ccNames = useCostCenterNamesStore();
@@ -745,23 +677,7 @@ const selectedEnterpriseIds = computed(() =>
     .filter(Boolean)
 );
 
-// ── Categoria filter (página principal) ──────────────────
-const categoryFilterId = ref(null);
 const sortConfig = ref({ key: 'total', direction: 'desc' });
-
-const categoryOptions = computed(() =>
-  (adminMeta.departmentCategories || []).filter(c => c.active).map(c => ({ id: c.id, name: c.name }))
-);
-
-const categoryFilterOptions = computed(() => [
-  { value: null, label: '(Todas)' },
-  ...categoryOptions.value.map(c => ({ value: c.id, label: c.name })),
-]);
-
-const editCategoryOptions = computed(() => [
-  { value: null, label: '(sem categoria)' },
-  ...categoryOptions.value.map(c => ({ value: c.id, label: c.name })),
-]);
 
 const editDepartmentOptions = computed(() => [
   { value: '', label: '(sem departamento)' },
@@ -779,13 +695,11 @@ const datePresets = [
 // ── Grupos filtrados (página principal) ──────────────────
 const filteredGroups = computed(() => {
   const base = store.groups || [];
-  const catId = categoryFilterId.value ? Number(categoryFilterId.value) : null;
   const selIds = selectedEnterpriseIds.value;
 
   return base
     .map(g => {
       let exps = g.expenses || [];
-      if (catId) exps = exps.filter(e => e.departmentCategoryId === catId);
       // Cancelados continuam na lista, mas NÃO somam no total ativo — vão num total à parte
       const total = exps.reduce(
         (sum, e) => sum + (e.status === 'cancelled' ? 0 : Number(e.amount || 0)), 0);
@@ -844,19 +758,16 @@ const modalSort = ref({ key: 'date', direction: 'asc' });
 // Filtros do modal
 const modalSearch = ref('');
 const modalFilterDept = ref('');
-const modalFilterCat = ref(null);
-const modalFilterNoCat = ref(false);
 const modalFilterDateFrom = ref('');
 const modalFilterDateTo = ref('');
 const modalDatePreset = ref('all');
 
 const hasModalFilters = computed(() =>
-  !!(modalSearch.value || modalFilterDept.value || modalFilterCat.value
-    || modalFilterNoCat.value || modalFilterDateFrom.value || modalFilterDateTo.value)
+  !!(modalSearch.value || modalFilterDept.value
+    || modalFilterDateFrom.value || modalFilterDateTo.value)
 );
 
 // Bulk actions
-const bulkCategoryId = ref(null);
 const bulkDepartment = ref('');
 
 // Exportação (modal universal do sistema)
@@ -870,16 +781,12 @@ const exportFilters = computed(() => {
     if (to) return `até ${formatDate(to)}`;
     return '';
   };
-  const catName = modalFilterCat.value
-    ? (categoryOptions.value.find(c => c.id === Number(modalFilterCat.value))?.name || '')
-    : '';
   return {
     'Empreendimento': resolveEnterpriseName(selectedGroup.value.costCenterId) || selectedGroup.value.costCenterName || '',
     'Centro de custo': String(selectedGroup.value.costCenterId || ''),
     'Período': range(store.startDate, store.endDate),
     'Busca': modalSearch.value,
     'Departamento': modalFilterDept.value,
-    'Categoria': modalFilterNoCat.value ? 'Sem categoria' : catName,
     'Pagamento entre': range(modalFilterDateFrom.value, modalFilterDateTo.value),
   };
 });
@@ -903,8 +810,6 @@ const modalDeptSelectOptions = computed(() => [
 function clearModalFilters() {
   modalSearch.value = '';
   modalFilterDept.value = '';
-  modalFilterCat.value = null;
-  modalFilterNoCat.value = false;
   modalFilterDateFrom.value = '';
   modalFilterDateTo.value = '';
   modalDatePreset.value = 'all';
@@ -944,11 +849,10 @@ const modalExpenses = computed(() => {
       const notes = (exp.bill?.notes || '').toLowerCase();
       const cnpj = (exp.bill?.creditor_json?.cnpj || '').toLowerCase();
       const dept = (exp.departmentName || exp.bill?.mainDepartmentName || '').toLowerCase();
-      const cat = (exp.departmentCategoryName || '').toLowerCase();
       const billId = String(exp.bill?.id || '');
       const amount = String(exp.amount || '');
       return name.includes(q) || doc.includes(q) || obs.includes(q) || notes.includes(q)
-        || cnpj.includes(q) || dept.includes(q) || cat.includes(q) || billId.includes(q) || amount.includes(q);
+        || cnpj.includes(q) || dept.includes(q) || billId.includes(q) || amount.includes(q);
     });
   }
 
@@ -957,14 +861,6 @@ const modalExpenses = computed(() => {
     list = list.filter(exp =>
       (exp.departmentName || exp.bill?.mainDepartmentName || '').toLowerCase() === d
     );
-  }
-
-  if (modalFilterCat.value) {
-    list = list.filter(exp => exp.departmentCategoryId === Number(modalFilterCat.value));
-  }
-
-  if (modalFilterNoCat.value) {
-    list = list.filter(exp => !exp.departmentCategoryId && !exp.departmentCategoryName);
   }
 
   if (modalFilterDateFrom.value) {
@@ -999,10 +895,6 @@ const modalExpenses = computed(() => {
       case 'department':
         aVal = (a.departmentName || a.bill?.mainDepartmentName || '').toLowerCase();
         bVal = (b.departmentName || b.bill?.mainDepartmentName || '').toLowerCase();
-        break;
-      case 'category':
-        aVal = (a.departmentCategoryName || '').toLowerCase();
-        bVal = (b.departmentCategoryName || '').toLowerCase();
         break;
       default:
         return 0;
@@ -1042,7 +934,6 @@ function openDetails(group) {
   selectedExpenseIds.value = [];
   clearModalFilters();
   modalDatePreset.value = 'all';
-  bulkCategoryId.value = null;
   bulkDepartment.value = '';
 }
 
@@ -1066,42 +957,11 @@ function toggleSelectAllExpenses() {
   selectedExpenseIds.value = selectedExpenseIds.value.length === allIds.length ? [] : allIds;
 }
 
-// ── Bulk action: aplica CATEGORIA nos selecionados (departamento vem do Sienge) ──
-async function applyBulkBoth() {
-  const n = selectedExpenseIds.value.length;
-  if (!n) return;
-  if (bulkCategoryId.value === null) return;
-
-  const catId = Number(bulkCategoryId.value);
-  const foundCat = categoryOptions.value.find(c => c.id === catId);
-
-  if (!confirm(`Aplicar categoria "${foundCat?.name}" em ${n} lançamento(s)?`)) return;
-
-  const payload = {
-    departmentCategoryId: catId,
-    departmentCategoryName: foundCat?.name || null,
-  };
-
-  try {
-    await Promise.all(
-      selectedExpenseIds.value.map(id => store.updateExpense(id, { ...payload }))
-    );
-    toast.success(`Aplicado em ${n} lançamento(s)!`);
-    bulkCategoryId.value = null;
-    bulkDepartment.value = '';
-    selectedExpenseIds.value = [];
-    await refreshAfterEdit();
-  } catch (e) {
-    toast.error(e.message || 'Erro ao aplicar.');
-  }
-}
-
 // ── Modal de edição ───────────────────────────────────────
 const editingExpense = ref(null);
 const editSaving = ref(false);
 const editForm = ref({
   departmentName: '',
-  departmentCategoryId: null,
   description: '',
 });
 
@@ -1109,7 +969,6 @@ function openEditModal(exp) {
   editingExpense.value = exp;
   editForm.value = {
     departmentName: exp.departmentName || exp.bill?.mainDepartmentName || '',
-    departmentCategoryId: exp.departmentCategoryId ?? null,
     description: exp.description || '',
   };
 }
@@ -1123,13 +982,8 @@ async function saveEdit() {
   if (!editingExpense.value) return;
   editSaving.value = true;
   try {
-    const catId = editForm.value.departmentCategoryId ? Number(editForm.value.departmentCategoryId) : null;
-    const found = catId ? categoryOptions.value.find(c => c.id === catId) : null;
-
     await store.updateExpense(editingExpense.value.id, {
       description: editForm.value.description || null,
-      departmentCategoryId: catId,
-      departmentCategoryName: found?.name || null,
     });
 
     toast.success('Lançamento atualizado!');
@@ -1221,7 +1075,6 @@ function formatMonth(d) {
 onMounted(async () => {
   store.selectedDepartments = [];
   await Promise.all([
-    adminMeta.fetchDepartmentCategories(),
     contractsStore.fetchEnterpriseCities(),
     ccNames.fetchOverrideMap(),
     store.fetchExpenses(),
