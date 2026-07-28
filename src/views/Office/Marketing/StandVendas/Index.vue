@@ -134,7 +134,7 @@
                     :style="{ animationDelay: Math.min(i, 12) * 30 + 'ms' }"
                     @click="openEditModel(m)">
 
-                    <div class="p-4 sm:p-5 flex-1">
+                    <div class="p-4 sm:p-5">
                         <div class="flex items-start justify-between gap-2">
                             <div class="flex items-center gap-2.5 min-w-0">
                                 <div class="w-9 h-9 rounded-lg bg-accent-soft text-accent flex items-center justify-center shrink-0">
@@ -149,29 +149,30 @@
                             </div>
                             <i class="fas fa-pen text-[11px] text-ink-subtle mt-1 shrink-0"></i>
                         </div>
-                        <p v-if="m.description" class="text-xs text-ink-muted leading-relaxed mt-3 line-clamp-3">{{ m.description }}</p>
+                        <!-- Altura fixa (3 linhas) p/ as faixas de valor alinharem entre os cards. -->
+                        <p class="text-xs text-ink-muted leading-relaxed mt-3 line-clamp-3 min-h-[3.75rem]">{{ m.description }}</p>
                     </div>
 
                     <!-- Faixas em destaque -->
                     <div class="grid grid-cols-2 divide-x divide-line border-y border-line bg-surface-sunken/60">
-                        <div class="px-4 py-3 min-w-0">
+                        <div class="px-3.5 py-3 min-w-0">
                             <p class="text-[10px] font-mono uppercase tracking-wider text-ink-subtle mb-0.5">Valor médio</p>
-                            <p class="font-mono tabular-nums font-bold text-ink truncate"
+                            <p class="font-mono tabular-nums font-bold text-[13px] leading-snug text-ink whitespace-nowrap"
                                 :class="fmtValueRange(m) ? '' : 'text-ink-subtle font-normal'">
                                 {{ fmtValueRange(m) || 'A definir' }}
                             </p>
                         </div>
-                        <div class="px-4 py-3 min-w-0">
+                        <div class="px-3.5 py-3 min-w-0">
                             <p class="text-[10px] font-mono uppercase tracking-wider text-ink-subtle mb-0.5">Metragem</p>
-                            <p class="font-mono tabular-nums font-bold text-ink truncate"
+                            <p class="font-mono tabular-nums font-bold text-[13px] leading-snug text-ink whitespace-nowrap"
                                 :class="fmtAreaRange(m) ? '' : 'text-ink-subtle font-normal'">
                                 {{ fmtAreaRange(m) || 'A definir' }}
                             </p>
                         </div>
                     </div>
 
-                    <div class="p-4 sm:px-5 pt-3">
-                        <div v-if="m.items?.length" class="flex flex-wrap gap-1.5">
+                    <div class="p-4 sm:px-5 pt-3 flex-1">
+                        <div v-if="m.items?.length" class="flex flex-wrap content-start gap-1.5">
                             <span v-for="item in m.items.slice(0, 5)" :key="item"
                                 class="px-2 py-0.5 rounded-md bg-surface-sunken border border-line text-[11px] text-ink-muted">{{ item }}</span>
                             <span v-if="m.items.length > 5"
