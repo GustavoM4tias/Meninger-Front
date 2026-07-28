@@ -54,7 +54,7 @@ const STATUS_OPTIONS = [
   { value: 'success',    label: 'Sucesso' },
   { value: 'error',      label: 'Erro' },
   { value: 'processing', label: 'Processando' },
-  { value: 'skipped',    label: 'Sem série' },
+  { value: 'skipped',    label: 'Ignorado' },
 ];
 const PAYMENT_OPTIONS = [
   { value: 'pending',   label: 'Pendente' },

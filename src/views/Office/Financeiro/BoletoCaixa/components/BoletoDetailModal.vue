@@ -227,7 +227,7 @@ function eventAttempt(ev) {
 function attemptOutcome(a) {
   if (a.status === 'error') return { label: 'Erro na emissão', variant: 'danger', icon: 'fas fa-circle-exclamation' };
   if (a.status === 'processing') return { label: 'Processando', variant: 'info', icon: 'fas fa-spinner fa-spin' };
-  if (a.status === 'skipped') return { label: 'Sem série', variant: 'neutral', icon: 'fas fa-forward' };
+  if (a.status === 'skipped') return { label: 'Ignorado', variant: 'neutral', icon: 'fas fa-forward' };
   if (a.ignorado) return { label: 'Ignorado (duplicado)', variant: 'neutral', icon: 'fas fa-arrow-right-arrow-left' };
   // status === 'success' → detalha pelo pagamento
   const p = a.payment_status;
