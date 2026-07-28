@@ -89,7 +89,7 @@
                     <th v-for="col in histColumns" :key="col.key"
                       class="px-4 py-3 font-medium"
                       :class="[
-                        col.align === 'right' ? 'text-right' : 'text-left',
+                        col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : 'text-left',
                         col.sortable ? 'select-none cursor-pointer hover:text-ink transition-colors' : '',
                       ]"
                       @click="col.sortable && store.setSort(col.key)">
@@ -130,16 +130,16 @@
                         {{ statusMeta(item.status).label }}
                       </Badge>
                     </td>
-                    <td class="px-4 py-3 whitespace-nowrap">
-                      <div class="flex flex-wrap gap-1">
+                    <td class="px-4 py-3 whitespace-nowrap text-center">
+                      <div class="flex flex-wrap gap-1 justify-center">
                         <a v-if="item.cv_situacao" :href="cvReservaUrl(item)" target="_blank" rel="noopener" @click.stop
-                          class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold border border-line bg-surface-sunken text-ink-muted hover:opacity-80 transition-opacity"
+                          class="inline-flex items-center gap-1 px-2.5 rounded-full text-[10px] font-semibold border border-line bg-surface-sunken text-ink-muted hover:opacity-80 transition-opacity"
                           :style="cvBadgeStyle(item.cv_situacao_cor_bg, item.cv_situacao_cor_nome)"
                           :title="`Reserva: ${item.cv_situacao} - abrir no CV`">
                           <i class="fas fa-flag text-[9px]"></i>{{ item.cv_situacao }}
                         </a>
                         <a v-if="item.cv_situacao_repasse" :href="cvRepasseUrl(item)" target="_blank" rel="noopener" @click.stop
-                          class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold border border-line bg-surface-sunken text-ink-muted hover:opacity-80 transition-opacity"
+                          class="inline-flex items-center gap-1 px-2.5 rounded-full text-[10px] font-semibold border border-line bg-surface-sunken text-ink-muted hover:opacity-80 transition-opacity"
                           :style="cvBadgeStyle(item.cv_repasse_cor_bg, item.cv_repasse_cor_nome)"
                           :title="`Repasse: ${item.cv_situacao_repasse} - abrir no CV`">
                           <i class="fas fa-building-columns text-[9px]"></i>{{ item.cv_situacao_repasse }}
@@ -798,7 +798,7 @@ const histColumns = [
   { key: 'unidade',  label: 'Unidade',          align: 'left',  sortable: true },
   { key: 'contrato', label: 'Contrato Sienge',  align: 'left',  sortable: true },
   { key: 'status',   label: 'Status',           align: 'left',  sortable: true },
-  { key: '_etapa',   label: 'Etapa CV',         align: 'left',  sortable: false },
+  { key: '_etapa',   label: 'Etapa CV',         align: 'center',  sortable: false },
   { key: '_acoes',   label: 'Ações executadas', align: 'left',  sortable: false },
   { key: 'quando',   label: 'Quando',           align: 'right', sortable: true },
   { key: '_link',    label: '',                 align: 'right', sortable: false },
