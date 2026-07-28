@@ -5,27 +5,7 @@ import { useAuthStore } from '@/stores/Settings/Auth/authStore'
 import { usePermissionStore } from '@/stores/Settings/Permissions/permissionStore'
 import { useEmeVoice } from '@/composables/useEmeVoice'
 import { randomEmePlaceholder } from '@/utils/OfficeAI/emePlaceholders'
-import ChatText from './renderers/ChatText.vue'
-import ChatTable from './renderers/ChatTable.vue'
-import ChatChart from './renderers/ChatChart.vue'
-import ChatNavAction from './renderers/ChatNavAction.vue'
-import ChatLeadsActions from './renderers/ChatLeadsActions.vue'
-import ChatEventsActions from './renderers/ChatEventsActions.vue'
-import ChatEnterprisesActions from './renderers/ChatEnterprisesActions.vue'
-import ChatEnterpriseDetail from './renderers/ChatEnterpriseDetail.vue'
-import ChatMcmvActions from './renderers/ChatMcmvActions.vue'
-import ChatPrecadastrosSummary from './renderers/ChatPrecadastrosSummary.vue'
-import ChatPrecadastrosActions from './renderers/ChatPrecadastrosActions.vue'
-import ChatReservasSummary from './renderers/ChatReservasSummary.vue'
-import ChatReservasActions from './renderers/ChatReservasActions.vue'
-import ChatConditionSheet from './renderers/ChatConditionSheet.vue'
-import ChatAlertEditor from './renderers/ChatAlertEditor.vue'
-import ChatAcademyCards from './renderers/ChatAcademyCards.vue'
-import ChatImobiliariaCards from './renderers/ChatImobiliariaCards.vue'
-import ChatPersonCards from './renderers/ChatPersonCards.vue'
-import ChatNotificationPrefs from './renderers/ChatNotificationPrefs.vue'
-import ChatReportCards from './renderers/ChatReportCards.vue'
-import ChatChecklistCards from './renderers/ChatChecklistCards.vue'
+import ChatMessage from './ChatMessage.vue'
 import FeedbackModal from './FeedbackModal.vue'
 
 defineOptions({ inheritAttrs: false })
@@ -146,36 +126,6 @@ function onKeydown(e) {
   }
 }
 
-function getAction(msg) {
-  return msg.metadata?.action || null
-}
-
-// Detecta se a action é de um determinado módulo, olhando em vários lugares
-// (context.source, source top-level e tipo). Robusto a variações.
-function actionSource(msg) {
-  const a = getAction(msg)
-  if (!a) return null
-  if (a.context?.source) return a.context.source
-  if (a.source)          return a.source
-  if (typeof a.type === 'string') {
-    if (a.type === 'precadastros_summary') return 'precadastros'
-    if (a.type === 'reservas_summary')     return 'reservas'
-    if (a.type === 'enterprise_detail')    return 'enterprises'
-  }
-  return null
-}
-
-function actionContext(msg) {
-  return getAction(msg)?.context || {}
-}
-
-function parseContent(msg) {
-  if (msg.role === 'assistant' && msg.metadata?.action) {
-    return msg.content || ''
-  }
-  return msg.content || ''
-}
-
 function openFeedback(msg, rating) {
   feedbackModal.value = { open: true, msgId: msg.id, rating }
 }
@@ -217,134 +167,20 @@ async function confirmFeedback({ comment }) {
         </div>
       </div>
 
-      <template v-for="msg in aiStore.messages" :key="msg.id">
-        <!-- Usuário -->
-        <div v-if="msg.role === 'user'" class="flex justify-end">
-          <div
-            class="max-w-[80%] bg-accent text-white rounded-2xl rounded-br-sm px-4 py-2.5 text-sm leading-relaxed shadow-soft">
-            {{ msg.content }}
-          </div>
-        </div>
+      <ChatMessage v-for="msg in aiStore.messages" :key="msg.id"
+        :message="msg"
+        :compact="compact"
+        @feedback="(rating) => openFeedback(msg, rating)"
+        @retry="aiStore.retryMessage(msg)"
+        @storageHelp="aiStore.historyOpen = true"
+      />
 
-        <!-- Assistente -->
-        <div v-else class="flex gap-2.5 items-start max-w-[90%]">
-          <img src="/Mlogo.png" class="h-5 mt-0.5 invert dark:invert-0" alt="Eme" />
-          <div class="flex-1 min-w-0">
-            <ChatNavAction v-if="getAction(msg)?.type === 'navigate'" :action="getAction(msg)" />
-            <ChatText v-if="parseContent(msg)" :content="parseContent(msg)" />
-            <!-- Warning anti-alucinação: detectou número/nome não verificado no texto -->
-            <div
-              v-if="msg.metadata?.warning"
-              class="mt-2 flex items-start gap-2 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-700 dark:text-amber-300"
-            >
-              <i class="fas fa-triangle-exclamation mt-0.5 text-amber-500" />
-              <div>
-                <p>{{ msg.metadata.warning.message }}</p>
-                <p v-if="msg.metadata.warning.details?.length" class="text-[10px] opacity-80 mt-0.5">
-                  Valor(es) suspeito(s): {{ msg.metadata.warning.details.map(d => d.value).join(', ') }}
-                </p>
-              </div>
-            </div>
-            <ChatTable v-if="getAction(msg)?.type === 'table'" :title="getAction(msg).title"
-              :subtitle="getAction(msg).subtitle"
-              :columns="getAction(msg).columns" :rows="getAction(msg).rows" :total="getAction(msg).total" />
-            <ChatChart v-if="getAction(msg)?.type === 'chart'" :chart-type="getAction(msg).chartType"
-              :title="getAction(msg).title" :subtitle="getAction(msg).subtitle"
-              :labels="getAction(msg).labels" :data="getAction(msg).data"
-              :total="getAction(msg).total" :top-breakdown="getAction(msg).top_breakdown || []" />
-            <ChatLeadsActions v-if="actionSource(msg) === 'leads'" :context="actionContext(msg)" />
-            <ChatEventsActions
-              v-if="actionSource(msg) === 'events'"
-              :context="actionContext(msg)"
-              :rows="getAction(msg).rows || getAction(msg).rawRows || []"
-            />
-            <ChatEnterprisesActions
-              v-if="actionSource(msg) === 'enterprises'"
-              :context="actionContext(msg)"
-            />
-            <ChatEnterpriseDetail
-              v-if="getAction(msg)?.type === 'detail'"
-              :action="getAction(msg)"
-            />
-            <ChatPrecadastrosSummary
-              v-if="getAction(msg)?.type === 'precadastros_summary'"
-              :action="getAction(msg)"
-            />
-            <ChatReservasSummary
-              v-if="getAction(msg)?.type === 'reservas_summary'"
-              :action="getAction(msg)"
-            />
-            <ChatMcmvActions
-              v-if="actionSource(msg) === 'mcmv'"
-              :context="actionContext(msg)"
-            />
-            <ChatPrecadastrosActions
-              v-if="actionSource(msg) === 'precadastros'"
-              :context="actionContext(msg)"
-            />
-            <ChatReservasActions
-              v-if="actionSource(msg) === 'reservas'"
-              :context="actionContext(msg)"
-            />
-            <ChatConditionSheet
-              v-if="getAction(msg)?.type === 'condition_sheet'"
-              :action="getAction(msg)"
-            />
-            <!-- Renderers que faltavam no chat flutuante (existiam só na Home) -->
-            <ChatAlertEditor v-if="getAction(msg)?.type === 'open_alert_editor'" :action="getAction(msg)" />
-            <ChatAcademyCards v-if="getAction(msg)?.type === 'academy_cards'" :action="getAction(msg)" />
-            <ChatImobiliariaCards v-if="getAction(msg)?.type === 'imobiliaria_cards'" :action="getAction(msg)" />
-            <!-- Pessoas/Organograma + Preferências de notificação -->
-            <ChatPersonCards v-if="getAction(msg)?.type === 'person_cards'" :action="getAction(msg)" />
-            <ChatNotificationPrefs v-if="getAction(msg)?.type === 'notification_prefs'" :action="getAction(msg)" />
-            <!-- Relatórios + Checklist -->
-            <ChatReportCards v-if="getAction(msg)?.type === 'report_cards'" :action="getAction(msg)" />
-            <ChatChecklistCards v-if="getAction(msg)?.type === 'checklist_cards' || getAction(msg)?.type === 'checklist_tasks'" :action="getAction(msg)" />
-            <div v-if="msg.response_type === 'error' && msg.metadata?.storageLimit"
-              class="flex items-start gap-2 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20
-                     text-sm text-amber-700 dark:text-amber-300 mt-2">
-              <i class="fas fa-database mt-0.5" />
-              <div>
-                Você atingiu o limite de armazenamento (20 MB).
-                <button class="underline ml-1" @click="aiStore.historyOpen = true">Exclua alguns chats</button> para
-                continuar.
-              </div>
-            </div>
-
-            <!-- Feedback + Retry -->
-            <div v-if="msg.response_type !== 'error'" class="flex items-center gap-1 mt-1.5">
-              <button @click="openFeedback(msg, 'up')" class="p-1 rounded-lg transition text-xs"
-                :class="msg.feedback === 'up' ? 'text-emerald-500' : 'text-ink-subtle hover:text-ink-muted'"
-                title="Boa resposta">
-                <i class="fas fa-thumbs-up" />
-              </button>
-              <button @click="openFeedback(msg, 'down')" class="p-1 rounded-lg transition text-xs"
-                :class="msg.feedback === 'down' ? 'text-red-500' : 'text-ink-subtle hover:text-ink-muted'"
-                title="Resposta ruim">
-                <i class="fas fa-thumbs-down" />
-              </button>
-              <button @click="aiStore.retryMessage(msg)" :disabled="aiStore.isStreaming"
-                class="p-1 rounded-lg transition text-xs text-ink-subtle hover:text-ink-muted disabled:opacity-30"
-                title="Refazer resposta">
-                <i class="fas fa-rotate-right" />
-              </button>
-            </div>
-          </div>
-        </div>
-      </template>
-
-      <!-- Streaming -->
-      <div v-if="aiStore.isStreaming" class="flex gap-2.5 items-start max-w-[90%]">
-        <img src="/Mlogo.png" class="h-6 invert dark:invert-0" alt="Eme" />
-        <div class="flex-1 min-w-0">
-          <ChatText v-if="aiStore.streamingText" :content="aiStore.streamingText" :streaming="true" />
-          <div v-else class="flex gap-1 py-2">
-            <span class="w-2 h-2 rounded-full bg-ink-subtle animate-bounce" style="animation-delay: 0ms" />
-            <span class="w-2 h-2 rounded-full bg-ink-subtle animate-bounce" style="animation-delay: 150ms" />
-            <span class="w-2 h-2 rounded-full bg-ink-subtle animate-bounce" style="animation-delay: 300ms" />
-          </div>
-        </div>
-      </div>
+      <!-- Streaming: timeline do agente + texto parcial (dentro do ChatMessage) -->
+      <ChatMessage v-if="aiStore.isStreaming"
+        :message="{ role: 'assistant', content: aiStore.streamingText, metadata: {} }"
+        :streaming="true"
+        :compact="compact"
+      />
     </div>
 
     <!-- Input -->
