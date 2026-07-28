@@ -39,11 +39,10 @@ const citiesOptions = ref([]);
 const permissionProfiles = ref([]);
 
 // Cadastro de primeiro acesso: 'pending' = formulário enviado, aguardando o
-// admin; 'incomplete' = usuário ainda não concluiu o formulário (não ativável);
-// 'rejected' = reprovado (pode ser reconsiderado via Aprovar e ativar).
+// admin; 'incomplete' = usuário ainda não concluiu o formulário (não ativável).
+// Reprovar EXCLUI o cadastro (a pessoa pode solicitar acesso novamente).
 const isPending = computed(() => isEdit.value && props.user?.approval_status === 'pending');
 const isIncomplete = computed(() => isEdit.value && props.user?.approval_status === 'incomplete');
-const isRejected = computed(() => isEdit.value && props.user?.approval_status === 'rejected');
 
 // Departamento escolhido pelo usuário no formulário de primeiro acesso
 const departmentsList = ref([]);
@@ -94,7 +93,7 @@ onMounted(async () => {
 
     // Perfis de alçada (para exibir as alçadas padrão do departamento na
     // ativação) + departamentos (para mostrar o escolhido no cadastro)
-    if (isAdmin.value && (isPending.value || isRejected.value)) {
+    if (isAdmin.value && isPending.value) {
       try {
         const [resProfiles, resDepts] = await Promise.allSettled([
           fetch(`${API_URL}/permissions/profiles`, { headers }),
@@ -347,19 +346,6 @@ async function saveUser() {
         </div>
       </div>
 
-      <!-- Cadastro reprovado -->
-      <div v-else-if="isRejected"
-        class="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2.5 flex items-start gap-2.5">
-        <i class="fas fa-user-xmark text-red-600 dark:text-red-400 mt-0.5 shrink-0"></i>
-        <div class="text-xs leading-relaxed">
-          <p class="font-semibold text-red-700 dark:text-red-300">Cadastro reprovado</p>
-          <p class="text-red-700/80 dark:text-red-300/80 mt-0.5">
-            O usuário foi avisado por e-mail. Se mudar de ideia, você ainda pode
-            <strong>Aprovar e ativar</strong> este cadastro.
-          </p>
-        </div>
-      </div>
-
       <!-- Cadastro ainda não concluído pelo usuário -->
       <div v-else-if="isIncomplete"
         class="rounded-lg border border-line bg-surface-sunken px-3 py-2.5 flex items-start gap-2.5">
@@ -469,7 +455,7 @@ async function saveUser() {
                      focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-ring/20" />
           </div>
 
-          <div v-if="!isPending && !isIncomplete && !isRejected"
+          <div v-if="!isPending && !isIncomplete"
             class="flex items-center justify-between gap-3 p-3 rounded-lg border border-line bg-surface-sunken">
             <div class="flex items-center gap-2.5 min-w-0">
               <div class="h-8 w-8 rounded-lg grid place-items-center shrink-0"
@@ -497,7 +483,6 @@ async function saveUser() {
               <p class="text-sm font-medium text-ink">Acesso bloqueado até a aprovação</p>
               <p class="text-xs text-ink-muted">
                 {{ isPending ? 'Use "Aprovar e ativar" para liberar o login'
-                  : isRejected ? 'Cadastro reprovado - use "Aprovar e ativar" para reconsiderar'
                   : 'Disponível após o usuário concluir o formulário de primeiro acesso' }}
               </p>
             </div>
@@ -533,7 +518,7 @@ async function saveUser() {
       <Button v-if="isPending && isAdmin" variant="secondary" icon="fas fa-floppy-disk" @click="saveUser">
         Salvar
       </Button>
-      <Button v-if="(isPending || isRejected) && isAdmin" icon="fas fa-user-check" @click="openActivateConfirm">
+      <Button v-if="isPending && isAdmin" icon="fas fa-user-check" @click="openActivateConfirm">
         Aprovar e ativar
       </Button>
       <Button v-else icon="fas fa-check" @click="saveUser">
@@ -641,8 +626,8 @@ async function saveUser() {
         <div class="rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2.5 text-xs text-amber-700 dark:text-amber-300 flex items-start gap-2">
           <i class="fas fa-envelope shrink-0 mt-0.5"></i>
           <span><strong>{{ editableUser.email }}</strong> será avisado por e-mail que o cadastro não foi
-          aprovado{{ rejectModal.reason ? ', com o motivo informado' : '' }}. O acesso permanece bloqueado,
-          mas você pode reconsiderar depois.</span>
+          aprovado{{ rejectModal.reason ? ', com o motivo informado' : '' }}. O cadastro será
+          <strong>removido</strong>; se necessário, a pessoa pode solicitar acesso novamente.</span>
         </div>
       </div>
 

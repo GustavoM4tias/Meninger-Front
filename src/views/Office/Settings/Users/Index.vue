@@ -274,9 +274,6 @@ onMounted(async () => {
                 <Badge v-else-if="isIncompleteUser(user)" variant="neutral" size="sm">
                   Cadastro não concluído
                 </Badge>
-                <Badge v-else-if="user.approval_status === 'rejected'" variant="danger" size="sm">
-                  Reprovado
-                </Badge>
                 <Badge v-else :variant="user.status ? 'success' : 'danger'" size="sm">
                   {{ user.status ? 'Ativo' : 'Inativo' }}
                 </Badge>
