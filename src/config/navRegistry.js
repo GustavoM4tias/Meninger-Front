@@ -46,30 +46,23 @@ export const navRegistry = [
 
     // ═══ OPERAÇÃO ═══════════════════════════════════════════════════════════════
 
-    // ── Checklists (lançamentos e demandas) ────────────────────────────────────
+    // ── Ferramentas (transversais ao negócio) ──────────────────────────────────
+    // Reúne num só lugar as ferramentas que antes ocupavam uma categoria de topo
+    // cada (Checklists, Relatórios) + Aprovações (ex "Aprovações de Marketing",
+    // generalizada em 2026-07-28) — navbar mais limpa e acessível.
     {
-        // Tela única com abas internas (Painel/Checklists/Minhas Tarefas) → um só
-        // item de menu (link direto). As abas ficam dentro da própria tela.
-        key: 'checklist',
-        label: 'Checklists',
-        icon: 'fas fa-clipboard-check',
+        key: 'ferramentas',
+        label: 'Ferramentas',
+        icon: 'fas fa-toolbox',
         group: 'OPERAÇÃO',
         pages: [
+            // Tela única com abas internas (Painel/Checklists/Minhas Tarefas) → um só item.
             { route: '/checklists', name: 'Checklists', icon: 'fas fa-clipboard-check' },
-        ],
-    },
-
-    // ── Relatórios da Eme (relatórios customizados gerados por IA) ─────────────
-    {
-        // Item único: a lista mostra "Meus relatórios" (admin cria via Eme) e
-        // "Compartilhados comigo" (qualquer usuário). Por isso o item NÃO é
-        // adminOnly — o gate de criação fica na tela/rota do builder.
-        key: 'relatorios',
-        label: 'Relatórios',
-        icon: 'fas fa-chart-column',
-        group: 'OPERAÇÃO',
-        pages: [
+            // "Meus relatórios" (admin cria via Eme) + "Compartilhados comigo"
+            // (qualquer usuário) → NÃO é adminOnly; o gate de criação fica no builder.
             { route: '/relatorios', name: 'Relatórios', icon: 'fas fa-wand-magic-sparkles', permissionManaged: false },
+            // Config das Aprovações fica só dentro da tela (botão "Configurações"), não no menu.
+            { route: '/aprovacoes', name: 'Aprovações', icon: 'fas fa-stamp' },
         ],
     },
 
@@ -85,9 +78,9 @@ export const navRegistry = [
             // Tela única com abas internas (Geral/Próximos/Finalizados) → um só item.
             { route: '/marketing/events', name: 'Eventos', icon: 'fas fa-calendar-days' },
             { route: '/marketing/leads', section: 'Leads', name: 'Leads', icon: 'fas fa-user-plus' },
-            // Config das Aprovações fica só dentro da tela (botão "Configurações"), não no menu.
-            { route: '/marketing/aprovacoes', name: 'Aprovações', icon: 'fas fa-stamp' },
             { route: '/marketing/stand-vendas', name: 'Stand de Vendas', icon: 'fas fa-store' },
+            // Viabilidade (ex "Gastos por Departamento" do Financeiro, 2026-07-28).
+            { route: '/marketing/viabilidade', section: 'Viabilidade', name: 'Viabilidade', icon: 'fas fa-chart-pie' },
         ],
     },
 
@@ -162,8 +155,15 @@ export const navRegistry = [
                 pages: [
                     { route: '/financeiro/titulos', section: 'Títulos', name: 'Títulos', icon: 'fas fa-money-bill-transfer' },
                     { route: '/financeiro/custos', section: 'Custos', name: 'Custos', icon: 'fas fa-coins' },
-                    { route: '/financeiro/gastos-departamento', section: 'Gastos por Departamento', name: 'Gastos por Departamento', icon: 'fas fa-chart-pie' },
-                    { route: '/financeiro/inadimplencia', name: 'Inadimplência', icon: 'fas fa-triangle-exclamation', adminOnly: true },
+                ],
+            },
+            {
+                key: 'receber',
+                name: 'Contas a Receber',
+                icon: 'fas fa-file-invoice-dollar',
+                pages: [
+                    { route: '/financeiro/consulta-cef', name: 'Consulta de nº CEF', icon: 'fas fa-hashtag' },
+                    { route: '/financeiro/boleto-caixa', name: 'Boleto Caixa', icon: 'fas fa-barcode', adminOnly: true },
                 ],
             },
             {
@@ -172,7 +172,6 @@ export const navRegistry = [
                 icon: 'fas fa-money-check-dollar',
                 pages: [
                     { route: '/financeiro/paymentflow', section: 'Fluxo de Pagamento', name: 'Fluxo de Pagamento', icon: 'fas fa-diagram-project' },
-                    { route: '/financeiro/boleto-caixa', name: 'Boleto Caixa', icon: 'fas fa-barcode', adminOnly: true },
                 ],
             },
         ],

@@ -4,7 +4,7 @@
             <PageHeader icon="fas fa-stamp" subtitle="Preencha os dados do pedido — a diretoria decide direto pelo Office ou WhatsApp.">
                 <template #title>Nova solicitação</template>
                 <template #actions>
-                    <Button variant="ghost" size="sm" icon="fas fa-arrow-left" @click="$router.push('/marketing/aprovacoes')">
+                    <Button variant="ghost" size="sm" icon="fas fa-arrow-left" @click="$router.push('/aprovacoes')">
                         Voltar
                     </Button>
                 </template>
@@ -39,7 +39,7 @@
                         </label>
                         <div v-for="(it, i) in items" :key="i" class="border border-line rounded-lg p-3 mb-2 bg-surface-sunken/30">
                             <div class="grid grid-cols-1 sm:grid-cols-12 gap-2">
-                                <Input class="sm:col-span-5" v-model="it.name" placeholder="Item (ex: Outdoor Av. Brasil)" />
+                                <Input class="sm:col-span-5" v-model="it.name" placeholder="Item (ex: Serviço de manutenção)" />
                                 <Input class="sm:col-span-5" v-model="it.description" placeholder="Descrição (opcional)" />
                                 <Input class="sm:col-span-2" v-model="it.amount" inputmode="decimal" placeholder="0,00" />
                             </div>
@@ -111,7 +111,7 @@
                     </div>
 
                     <div class="flex justify-end gap-2 pt-2 border-t border-line">
-                        <Button type="button" variant="secondary" @click="$router.push('/marketing/aprovacoes')">Cancelar</Button>
+                        <Button type="button" variant="secondary" @click="$router.push('/aprovacoes')">Cancelar</Button>
                         <Button type="submit" variant="primary" icon="fas fa-paper-plane" :loading="store.saving">
                             Enviar para aprovação
                         </Button>
@@ -218,7 +218,7 @@ async function submit() {
             attachments: attachments.value,
         });
         toast.success(`Solicitação ${created.protocol} enviada para aprovação.`);
-        router.push(`/marketing/aprovacoes/${created.id}`);
+        router.push(`/aprovacoes/${created.id}`);
     } catch (e) {
         toast.error(e.message);
     }
