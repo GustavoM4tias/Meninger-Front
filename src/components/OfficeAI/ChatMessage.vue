@@ -22,6 +22,7 @@ import ChatAlertEditor from './renderers/ChatAlertEditor.vue';
 import ChatAcademyCards from './renderers/ChatAcademyCards.vue';
 import ChatImobiliariaCards from './renderers/ChatImobiliariaCards.vue';
 import ChatConditionSheet from './renderers/ChatConditionSheet.vue';
+import ChatCampaignCards from './renderers/ChatCampaignCards.vue';
 import ChatPersonCards from './renderers/ChatPersonCards.vue';
 import ChatNotificationPrefs from './renderers/ChatNotificationPrefs.vue';
 import ChatReportCards from './renderers/ChatReportCards.vue';
@@ -155,6 +156,9 @@ const stepsOpen = ref(false);
         <!-- Ficha Comercial: card com dados + sugestões + abrir ficha.
              precisa_desambiguar não renderiza card (viria com header vazio). -->
         <ChatConditionSheet v-if="action?.type === 'condition_sheet' && !action?.precisa_desambiguar" :action="action" />
+
+        <!-- Campanhas das fichas (busca plural): cards com descrição/regulamento -->
+        <ChatCampaignCards v-if="action?.type === 'campaign_cards'" :action="action" />
 
         <!-- Pessoas/Organograma: cards com modal de detalhe -->
         <ChatPersonCards v-if="action?.type === 'person_cards'" :action="action" />
