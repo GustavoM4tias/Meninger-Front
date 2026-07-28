@@ -289,7 +289,7 @@ onMounted(() => {
         isDark.value = document.documentElement.classList.contains('dark');
     });
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
-    // deep link: /financeiro/gastos-departamento/<id>?mes=YYYY-MM
+    // deep link: /marketing/viabilidade/<id>?mes=YYYY-MM
     const qMes = String(route.query.mes || '');
     if (/^\d{4}-\d{2}$/.test(qMes)) refMonth.value = qMes;
     load();
@@ -462,7 +462,7 @@ const helpSteps = [
     { title: 'Leitura para decisão', text: 'Resumo em linguagem simples do que os números significam, gerado automaticamente a partir das regras de análise.' },
 ];
 const helpTips = [
-    'Se o realizado aparecer zerado, confira os departamentos acompanhados na tela de Gastos por Departamento.',
+    'Se o realizado aparecer zerado, confira os departamentos acompanhados na tela de Viabilidade.',
     'O relatório só aparece para a diretoria depois que um admin configura e libera o empreendimento.',
 ];
 
@@ -472,7 +472,7 @@ async function load() {
     router.replace({ query: { ...route.query, mes: refMonth.value } });
     await store.fetchReport(companyId.value, refMonth.value);
 }
-function goBack() { router.push('/financeiro/gastos-departamento'); }
+function goBack() { router.push('/marketing/viabilidade'); }
 async function regenerate() {
     regenLoading.value = true;
     try {

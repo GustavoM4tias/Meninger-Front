@@ -7,7 +7,7 @@
                 <div class="flex items-start justify-between gap-3 py-4">
                     <div>
                         <button class="text-[11px] text-ink-subtle hover:text-ink mb-1 flex items-center gap-1"
-                            @click="$router.push('/marketing/aprovacoes')">
+                            @click="$router.push('/aprovacoes')">
                             <i class="fas fa-arrow-left text-[10px]"></i> Aprovações
                         </button>
                         <h1 class="text-3xl font-bold font-mono text-ink">{{ req.type_label }}</h1>

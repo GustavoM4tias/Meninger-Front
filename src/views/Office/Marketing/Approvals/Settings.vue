@@ -2,9 +2,9 @@
     <div class="min-h-[calc(100vh-3.5rem)]">
         <PageContainer size="full">
             <PageHeader icon="fas fa-sliders-h" subtitle="Perfis de autorização, tipos de solicitação e cobrança de pendências.">
-                <template #title>Configurações · Aprovações de Marketing</template>
+                <template #title>Configurações · Aprovações</template>
                 <template #actions>
-                    <Button variant="ghost" size="sm" icon="fas fa-arrow-left" @click="$router.push('/marketing/aprovacoes')">
+                    <Button variant="ghost" size="sm" icon="fas fa-arrow-left" @click="$router.push('/aprovacoes')">
                         Voltar
                     </Button>
                 </template>

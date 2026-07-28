@@ -3,14 +3,14 @@
         <PageContainer size="full">
 
             <PageHeader icon="fas fa-stamp"
-                subtitle="Solicitações do Marketing para a diretoria: verbas, eventos, mídias e serviços com aprovação rápida.">
+                subtitle="Solicitações para a diretoria: verbas, eventos, serviços e compras com aprovação rápida.">
                 <template #title>
-                    Aprovações de Marketing
-                    <Favorite :router="'/marketing/aprovacoes'" :section="'Aprovações'" />
+                    Aprovações
+                    <Favorite :router="'/aprovacoes'" :section="'Aprovações'" />
                 </template>
                 <template #actions>
                     <PageHelp storage-key="marketing-approvals" title="Como usar as Aprovações"
-                        intro="Aqui o Marketing envia solicitações (verbas, eventos, mídias, serviços) para a diretoria aprovar de forma rápida."
+                        intro="Aqui qualquer área envia solicitações (verbas, eventos, serviços, compras) para a diretoria aprovar de forma rápida."
                         :steps="[
                             { title: 'Filtre a lista', text: 'Use status, tipo, centro de custo, período e a busca para achar uma solicitação.' },
                             { title: 'Abra os detalhes', text: 'Clique em qualquer linha para ver itens, anexos, justificativa e o histórico.' },
@@ -22,11 +22,11 @@
                             'Aprovar com ressalva e reprovar exigem um comentário, que vai ao solicitante.',
                         ]" />
                     <Button v-if="store.me.isAdmin" variant="ghost" size="sm" icon="fas fa-sliders-h"
-                        @click="$router.push('/marketing/aprovacoes/config')">
+                        @click="$router.push('/aprovacoes/config')">
                         Configurações
                     </Button>
                     <Button variant="primary" size="sm" icon="fas fa-plus"
-                        @click="$router.push('/marketing/aprovacoes/nova')">
+                        @click="$router.push('/aprovacoes/nova')">
                         Nova solicitação
                     </Button>
                 </template>
@@ -99,7 +99,7 @@
                             <tr v-for="(item, i) in store.items" :key="item.id"
                                 class="border-b border-line/60 hover:bg-surface-sunken/60 cursor-pointer transition-colors animate-fade-in [animation-fill-mode:backwards]"
                                 :style="{ animationDelay: Math.min(i, 12) * 30 + 'ms' }"
-                                @click="$router.push(`/marketing/aprovacoes/${item.id}`)">
+                                @click="$router.push(`/aprovacoes/${item.id}`)">
                                 <td class="px-4 py-3 font-mono font-semibold text-ink whitespace-nowrap">{{ item.protocol }}</td>
                                 <td class="px-4 py-3 text-ink">{{ item.type_label }}</td>
                                 <td class="px-4 py-3 text-ink-muted">{{ item.requester?.username || '-' }}</td>
@@ -123,7 +123,7 @@
                     <button v-for="(item, i) in store.items" :key="item.id" type="button"
                         class="w-full text-left p-4 flex flex-col gap-2 hover:bg-surface-sunken/60 transition-colors animate-slide-up [animation-fill-mode:backwards]"
                         :style="{ animationDelay: Math.min(i, 12) * 30 + 'ms' }"
-                        @click="$router.push(`/marketing/aprovacoes/${item.id}`)">
+                        @click="$router.push(`/aprovacoes/${item.id}`)">
                         <div class="flex items-center justify-between gap-2">
                             <span class="font-mono font-semibold text-ink">{{ item.protocol }}</span>
                             <Badge :variant="statusMeta(item.status).variant" size="sm">

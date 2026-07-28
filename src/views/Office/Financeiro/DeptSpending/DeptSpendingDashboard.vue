@@ -5,12 +5,12 @@
             <PageHeader icon="fas fa-chart-pie"
                 subtitle="Até o mês escolhido: quanto cada empreendimento já gastou (acumulado) e quanto ainda tem pela frente para comercializar.">
                 <template #title>
-                    Gastos por Departamento
-                    <Favorite :router="'/financeiro/gastos-departamento'" :section="'Gastos por Departamento'" />
+                    Viabilidade
+                    <Favorite :router="'/marketing/viabilidade'" :section="'Viabilidade'" />
                 </template>
                 <template #actions>
                     <PageHelp storage-key="gastos-departamento"
-                        title="Como usar - Gastos por Departamento"
+                        title="Como usar - Viabilidade"
                         intro="Escolha um mês de referência. A tela mostra o gasto acumulado até ele (para trás) e o que resta a comercializar dali em diante (projeção futura ou estoque)."
                         :steps="helpSteps" :tips="helpTips" />
                     <Button v-if="isAdmin" variant="ghost" size="sm" icon="fas fa-sliders-h"
@@ -570,7 +570,7 @@ function openDetail(item) { detailItem.value = item; }
 function closeDetail() { detailItem.value = null; }
 function openReport(item) {
     if (item.companyId == null) return;
-    router.push(`/financeiro/gastos-departamento/${item.companyId}`);
+    router.push(`/marketing/viabilidade/${item.companyId}`);
 }
 
 async function quickToggleRelease(item) {

@@ -78,6 +78,33 @@ export default [
                 meta: { requiresAuth: true, searchable: false, content: 'Visualização de relatório' },
             },
 
+            // Aprovações — ferramenta geral de tickets de aprovação para a
+            // diretoria (ex "Aprovações de Marketing"; movida de /marketing/aprovacoes).
+            {
+                path: 'aprovacoes',
+                name: 'Aprovações',
+                component: () => import('@/views/Office/Marketing/Approvals/Index.vue'),
+                meta: { requiresAuth: true, searchable: true, content: 'Solicitações de aprovação para a diretoria: verbas, eventos, mídias e serviços' },
+            },
+            {
+                path: 'aprovacoes/nova',
+                name: 'Nova Aprovação',
+                component: () => import('@/views/Office/Marketing/Approvals/New.vue'),
+                meta: { requiresAuth: true, searchable: false },
+            },
+            {
+                path: 'aprovacoes/config',
+                name: 'Config. Aprovações',
+                component: () => import('@/views/Office/Marketing/Approvals/Settings.vue'),
+                meta: { requiresAuth: true, requiresAdmin: true, allowedRole: 'admin', searchable: false },
+            },
+            {
+                path: 'aprovacoes/:id(\\d+)',
+                name: 'Detalhe Aprovação',
+                component: () => import('@/views/Office/Marketing/Approvals/Detail.vue'),
+                meta: { requiresAuth: true, searchable: false },
+            },
+
             // Checklist (gestão de lançamentos e demandas) — substitui o Planner.
             {
                 path: 'checklists',
@@ -131,31 +158,26 @@ export default [
                         component: () => import('@/views/Office/Marketing/StandVendas/Index.vue'),
                         meta: { requiresAuth: true, searchable: true, content: 'Stands de vendas: modelos com valor médio e itens, cadastro dos stands reais, custo de construção e manutenção apurado do Sienge (Despesas com Stand)' },
                     },
-                    // Aprovações de Marketing (tickets p/ diretoria)
+                    // Viabilidade (ex "Gastos por Departamento" do Financeiro):
+                    // orçamento por empreendimento (VGV × %), gasto real e saldo.
                     {
-                        path: 'aprovacoes',
-                        name: 'Aprovações de Marketing',
-                        component: () => import('@/views/Office/Marketing/Approvals/Index.vue'),
-                        meta: { requiresAuth: true, searchable: true, content: 'Solicitações de aprovação do Marketing para a diretoria: verbas, eventos, mídias e serviços' },
+                        path: 'viabilidade',
+                        name: 'Viabilidade',
+                        component: () => import('@/views/Office/Financeiro/DeptSpending/DeptSpendingDashboard.vue'),
+                        meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Viabilidade - orçamento de marketing por empreendimento (VGV × %), gasto real e saldo' },
                     },
                     {
-                        path: 'aprovacoes/nova',
-                        name: 'Nova Aprovação de Marketing',
-                        component: () => import('@/views/Office/Marketing/Approvals/New.vue'),
-                        meta: { requiresAuth: true, searchable: false },
+                        path: 'viabilidade/:companyId',
+                        name: 'Relatório de Investimento',
+                        component: () => import('@/views/Office/Financeiro/DeptSpending/DeptSpendingReport.vue'),
+                        meta: { requiresAuth: true, allowedPosition: '', searchable: false, content: 'Relatório gerencial de investimento por empreendimento' },
                     },
-                    {
-                        path: 'aprovacoes/config',
-                        name: 'Config. Aprovações de Marketing',
-                        component: () => import('@/views/Office/Marketing/Approvals/Settings.vue'),
-                        meta: { requiresAuth: true, requiresAdmin: true, allowedRole: 'admin', searchable: false },
-                    },
-                    {
-                        path: 'aprovacoes/:id(\\d+)',
-                        name: 'Detalhe Aprovação de Marketing',
-                        component: () => import('@/views/Office/Marketing/Approvals/Detail.vue'),
-                        meta: { requiresAuth: true, searchable: false },
-                    },
+                    // Aprovações virou ferramenta geral (2026-07-28) e mudou para
+                    // /aprovacoes. Redirects preservam links de notificação/WhatsApp.
+                    { path: 'aprovacoes', redirect: to => ({ path: '/aprovacoes', query: to.query }) },
+                    { path: 'aprovacoes/nova', redirect: to => ({ path: '/aprovacoes/nova', query: to.query }) },
+                    { path: 'aprovacoes/config', redirect: to => ({ path: '/aprovacoes/config', query: to.query }) },
+                    { path: 'aprovacoes/:id(\\d+)', redirect: to => ({ path: `/aprovacoes/${to.params.id}`, query: to.query }) },
                     {
                         path: 'events',
                         name: 'Eventos',
@@ -295,17 +317,15 @@ export default [
                         component: () => import('@/views/Office/Financeiro/Custos/Index.vue'),
                         meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Custos do Financeiro' },
                     },
+                    // Viabilidade mudou para o Marketing (2026-07-28). Redirects
+                    // preservam links antigos (notificações, favoritos, atalhos).
+                    { path: 'gastos-departamento', redirect: to => ({ path: '/marketing/viabilidade', query: to.query }) },
+                    { path: 'gastos-departamento/:companyId', redirect: to => ({ path: `/marketing/viabilidade/${to.params.companyId}`, query: to.query }) },
                     {
-                        path: 'gastos-departamento',
-                        name: 'Gastos por Departamento',
-                        component: () => import('@/views/Office/Financeiro/DeptSpending/DeptSpendingDashboard.vue'),
-                        meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Gastos por Departamento — orçamento de marketing por empreendimento (VGV × %), gasto real e saldo' },
-                    },
-                    {
-                        path: 'gastos-departamento/:companyId',
-                        name: 'Relatório de Investimento',
-                        component: () => import('@/views/Office/Financeiro/DeptSpending/DeptSpendingReport.vue'),
-                        meta: { requiresAuth: true, allowedPosition: '', searchable: false, content: 'Relatório gerencial de investimento por empreendimento' },
+                        path: 'consulta-cef',
+                        name: 'Consulta de nº CEF',
+                        component: () => import('@/views/Office/Financeiro/ConsultaCef/Index.vue'),
+                        meta: { requiresAuth: true, searchable: true, content: 'Consulta do nº do contrato na instituição financeira (CEF) por empreendimento ou busca geral' },
                     },
                     {
                         path: 'boleto-caixa',
@@ -318,12 +338,6 @@ export default [
                         name: 'Fluxo de Pagamento',
                         component: () => import('@/views/Office/Tools/PaymentoFlow/Index.vue'),
                         meta: { searchable: true, content: 'Lançamentos de pagamento Sienge.' },
-                    },
-                    {
-                        path: 'inadimplencia',
-                        name: 'Inadimplência',
-                        component: () => import('@/views/Office/Financeiro/Inadimplencia/Index.vue'),
-                        meta: { requiresAuth: true, requiresAdmin: true, searchable: false, content: 'Acompanhamento da inadimplência de clientes (backup Sienge)' },
                     },
                 ],
             },
