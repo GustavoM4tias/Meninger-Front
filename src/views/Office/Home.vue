@@ -72,7 +72,7 @@ const SUGGESTION_POOL = [
   { label: 'Boletos Caixa',          sublabel: 'Emitidos, pagos e pendentes',   icon: 'fas fa-barcode',             route: '/financeiro/boleto-caixa', prompt: 'Como estão os boletos Caixa deste mês?' },
   // Pessoas / Contratos
   { label: 'Quem é o gestor',        sublabel: 'Pessoas e organograma',         icon: 'fas fa-user-tie',            route: '/settings/organograma',   prompt: 'Quem é o gestor do Marketing?' },
-  { label: 'Contratos no validador', sublabel: 'Quantos e em que etapa',        icon: 'fas fa-file-circle-check',   route: '/tools/validator',        prompt: 'Quantos contratos estão na análise do validador?' },
+  { label: 'Contratos no validador', sublabel: 'Quantos e em que etapa',        icon: 'fas fa-file-circle-check',   route: '/validator',        prompt: 'Quantos contratos estão na análise do validador?' },
   // Perfil (sempre disponível)
   { label: 'Minhas tarefas',         sublabel: 'Do checklist, com prazos',      icon: 'fas fa-list-check',          route: '/checklists',             prompt: 'Quais são as minhas tarefas de checklist?' },
   { label: 'Meus relatórios',        sublabel: 'Os que você pode ver',          icon: 'fas fa-chart-pie',           route: '/relatorios',             prompt: 'Quais relatórios eu tenho acesso?' },

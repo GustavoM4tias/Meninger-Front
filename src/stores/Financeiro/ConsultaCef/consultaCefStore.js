@@ -74,7 +74,9 @@ export const useConsultaCefStore = defineStore('consultaCef', () => {
             total.value = Number(data?.total || 0);
             summary.value = data?.summary || { total: 0, withCef: 0, withoutCef: 0 };
             if (typeof data?.isAdmin === 'boolean') isAdmin.value = data.isAdmin;
-            searched.value = true;
+            // needsFilter = backend recusou consulta sem filtro (defesa extra);
+            // mantém o estado "faça uma consulta" em vez de "nenhum resultado".
+            searched.value = !data?.needsFilter;
         } catch (e) {
             console.error('[consulta-cef] search', e);
             error.value = e.message || 'Falha ao consultar os contratos.';
@@ -98,6 +100,21 @@ export const useConsultaCefStore = defineStore('consultaCef', () => {
         return search();
     }
 
+    /** Limpa filtros e resultados (a tela volta ao estado "faça uma consulta"). */
+    function clear() {
+        enterpriseIds.value = [];
+        q.value = '';
+        cef.value = '';
+        page.value = 1;
+        sort.value = 'financial_institution_date';
+        dir.value = 'desc';
+        rows.value = [];
+        total.value = 0;
+        summary.value = { total: 0, withCef: 0, withoutCef: 0 };
+        error.value = null;
+        searched.value = false;
+    }
+
     function setSort(col) {
         if (sort.value === col) {
             dir.value = dir.value === 'asc' ? 'desc' : 'asc';
@@ -119,6 +136,6 @@ export const useConsultaCefStore = defineStore('consultaCef', () => {
         // estado
         loading, loadingEnterprises, error, searched,
         // ações
-        fetchEnterprises, search, applyFilters, goToPage, setSort,
+        fetchEnterprises, search, applyFilters, goToPage, setSort, clear,
     };
 });

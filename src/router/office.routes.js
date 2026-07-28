@@ -383,17 +383,21 @@ export default [
                 ],
             },
 
+            // Validador — movido de /tools/validator para /validator (2026-07-28).
+            {
+                path: 'validator',
+                name: 'Validador',
+                component: () => import('@/views/Office/Tools/Validator/Index.vue'),
+                meta: { requiresAuth: true, searchable: true, content: 'Validador de Contratos de Venda.' },
+            },
+
             {
                 path: 'tools',
                 name: 'tools',
                 meta: { requiresAuth: true },
                 children: [
-                    {
-                        path: 'validator',
-                        name: 'Validador',
-                        component: () => import('@/views/Office/Tools/Validator/Index.vue'),
-                        meta: { searchable: true, content: 'Validador de Contratos de Venda.' },
-                    },
+                    // Rota antiga do Validador — redirect preserva links/favoritos/notificações.
+                    { path: 'validator', redirect: to => ({ path: '/validator', query: to.query }) },
                     {
                         path: 'bucket-upload',
                         name: 'BucketUpload',

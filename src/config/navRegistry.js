@@ -46,25 +46,6 @@ export const navRegistry = [
 
     // ═══ OPERAÇÃO ═══════════════════════════════════════════════════════════════
 
-    // ── Ferramentas (transversais ao negócio) ──────────────────────────────────
-    // Reúne num só lugar as ferramentas que antes ocupavam uma categoria de topo
-    // cada (Checklists, Relatórios) + Aprovações (ex "Aprovações de Marketing",
-    // generalizada em 2026-07-28) — navbar mais limpa e acessível.
-    {
-        key: 'ferramentas',
-        label: 'Ferramentas',
-        icon: 'fas fa-toolbox',
-        group: 'OPERAÇÃO',
-        pages: [
-            // Tela única com abas internas (Painel/Checklists/Minhas Tarefas) → um só item.
-            { route: '/checklists', name: 'Checklists', icon: 'fas fa-clipboard-check' },
-            // "Meus relatórios" (admin cria via Eme) + "Compartilhados comigo"
-            // (qualquer usuário) → NÃO é adminOnly; o gate de criação fica no builder.
-            { route: '/relatorios', name: 'Relatórios', icon: 'fas fa-wand-magic-sparkles', permissionManaged: false },
-            // Config das Aprovações fica só dentro da tela (botão "Configurações"), não no menu.
-            { route: '/aprovacoes', name: 'Aprovações', icon: 'fas fa-stamp' },
-        ],
-    },
 
     // ── Marketing ──────────────────────────────────────────────────────────────
     {
@@ -92,13 +73,32 @@ export const navRegistry = [
         group: 'OPERAÇÃO',
         subcategories: [
             {
+                key: 'projection',
+                name: 'Projeção & Metas',
+                icon: 'fas fa-bullseye',
+                pages: [
+                    { route: '/comercial/sales-projection', section: 'Vendas x Projeção', name: 'Vendas X Projeção', icon: 'fas fa-arrow-trend-up' },
+                    { route: '/comercial/projections', section: 'Projeção', name: 'Projeção', icon: 'fas fa-chart-line' },
+                ],
+            },
+            {
                 key: 'sales',
                 name: 'Vendas',
                 icon: 'fas fa-handshake',
                 pages: [
-                    { route: '/comercial/precadastros',    section: 'Pré-Cadastros', name: 'Pré-Cadastros', icon: 'fas fa-id-card-clip', permissionManaged: false },
-                    { route: '/comercial/reservas-report', section: 'Reservas',      name: 'Reservas',      icon: 'fas fa-bookmark',     permissionManaged: false },
-                    { route: '/comercial/faturamento',     section: 'Faturamento',   name: 'Faturamento',   icon: 'fas fa-file-invoice-dollar' },
+                    { route: '/comercial/precadastros', section: 'Pré-Cadastros', name: 'Pré-Cadastros', icon: 'fas fa-id-card-clip', permissionManaged: false },
+                    { route: '/comercial/reservas-report', section: 'Reservas', name: 'Reservas', icon: 'fas fa-bookmark', permissionManaged: false },
+                    { route: '/comercial/faturamento', section: 'Faturamento', name: 'Faturamento', icon: 'fas fa-file-invoice-dollar' },
+                ],
+            },
+            {
+                key: 'conditions',
+                name: 'Condições & Regras',
+                icon: 'fas fa-clipboard-list',
+                pages: [
+                    { route: '/comercial/conditions', section: 'Fichas Comerciais', name: 'Fichas Comerciais', icon: 'fas fa-file-contract' },
+                    { route: '/comercial/mcmv', section: 'MCMV', name: 'Minha Casa Minha Vida', icon: 'fas fa-house-circle-check' },
+                    { route: '/comercial/workflow/groups', section: 'Grupos Workflow', name: 'Grupos Workflow', icon: 'fas fa-chart-diagram' },
                 ],
             },
             {
@@ -107,27 +107,8 @@ export const navRegistry = [
                 icon: 'fas fa-address-book',
                 pages: [
                     // Tela única com abas internas (Geral/Lançamentos/Em Obras/…) → um só item.
-                    { route: '/comercial/buildings',       name: 'Empreendimentos', icon: 'fas fa-building' },
-                    { route: '/comercial/imobiliarias',    section: 'Imobiliárias',  name: 'Imobiliárias',  icon: 'fas fa-house-flag' },
-                ],
-            },
-            {
-                key: 'projection',
-                name: 'Projeção & Metas',
-                icon: 'fas fa-bullseye',
-                pages: [
-                    { route: '/comercial/sales-projection', section: 'Vendas x Projeção', name: 'Vendas X Projeção', icon: 'fas fa-arrow-trend-up' },
-                    { route: '/comercial/projections',      section: 'Projeção',          name: 'Projeção',          icon: 'fas fa-chart-line' },
-                ],
-            },
-            {
-                key: 'conditions',
-                name: 'Condições & Regras',
-                icon: 'fas fa-clipboard-list',
-                pages: [
-                    { route: '/comercial/conditions',      section: 'Fichas Comerciais', name: 'Fichas Comerciais', icon: 'fas fa-file-contract' },
-                    { route: '/comercial/mcmv',            section: 'MCMV',              name: 'Minha Casa Minha Vida',    icon: 'fas fa-house-circle-check' },
-                    { route: '/comercial/workflow/groups', section: 'Grupos Workflow',   name: 'Grupos Workflow',   icon: 'fas fa-chart-diagram' },
+                    { route: '/comercial/buildings', name: 'Empreendimentos', icon: 'fas fa-building' },
+                    { route: '/comercial/imobiliarias', section: 'Imobiliárias', name: 'Imobiliárias', icon: 'fas fa-house-flag' },
                 ],
             },
             {
@@ -150,8 +131,8 @@ export const navRegistry = [
         subcategories: [
             {
                 key: 'analise',
-                name: 'Análise',
-                icon: 'fas fa-magnifying-glass-chart',
+                name: 'Contas a Pagar',
+                icon: 'fas fa-file-invoice',
                 pages: [
                     { route: '/financeiro/titulos', section: 'Títulos', name: 'Títulos', icon: 'fas fa-money-bill-transfer' },
                     { route: '/financeiro/custos', section: 'Custos', name: 'Custos', icon: 'fas fa-coins' },
@@ -177,6 +158,27 @@ export const navRegistry = [
         ],
     },
 
+    // ── Ferramentas (transversais ao negócio) ──────────────────────────────────
+    // Reúne num só lugar as ferramentas que antes ocupavam uma categoria de topo
+    // cada (Checklists, Relatórios) + Aprovações (ex "Aprovações de Marketing",
+    // generalizada em 2026-07-28) — navbar mais limpa e acessível.
+    {
+        key: 'ferramentas',
+        label: 'Ferramentas',
+        icon: 'fas fa-toolbox',
+        group: 'OPERAÇÃO',
+        pages: [
+            // Tela única com abas internas (Painel/Checklists/Minhas Tarefas) → um só item.
+            { route: '/checklists', name: 'Checklists', icon: 'fas fa-clipboard-check' },
+            // "Meus relatórios" (admin cria via Eme) + "Compartilhados comigo"
+            // (qualquer usuário) → NÃO é adminOnly; o gate de criação fica no builder.
+            { route: '/relatorios', name: 'Relatórios', icon: 'fas fa-wand-magic-sparkles', permissionManaged: false },
+
+            { route: '/validator', section: 'Validador', name: 'Validador', icon: 'fas fa-check-double' },
+            // Config das Aprovações fica só dentro da tela (botão "Configurações"), não no menu.
+            { route: '/aprovacoes', name: 'Aprovações', icon: 'fas fa-stamp' },
+        ],
+    },
     // ── Academy (Conhecimento & Trilhas) ───────────────────────────────────────
     // Academy migrado para dentro do Office — área /academy renderizada DENTRO do
     // OfficeShell (nav do Office). permissionManaged:false → visível a todos os
@@ -209,9 +211,9 @@ export const navRegistry = [
         pages: [
             // Central Microsoft (2026-07-27): Agenda · Tarefas (To Do) · Reuniões
             // (Transcrições & IA). Rotas antigas viram redirect p/ ?tab=.
-            { route: '/microsoft/teams',       section: 'Central Microsoft', name: 'Central Microsoft', icon: 'fas fa-people-group',  iconImg: '/icons/ms-teams.svg' },
-            { route: '/microsoft/sharepoint',  section: 'SharePoint',        name: 'SharePoint',        icon: 'fas fa-folder-open',   iconImg: '/icons/ms-sharepoint.svg' },
-            { route: '/microsoft/planner',     section: 'Planner',           name: 'Planner',           icon: 'fas fa-table-columns', iconImg: '/icons/ms-planner.svg' },
+            { route: '/microsoft/teams', section: 'Central Microsoft', name: 'Central Microsoft', icon: 'fas fa-people-group', iconImg: '/icons/ms-teams.svg' },
+            { route: '/microsoft/sharepoint', section: 'SharePoint', name: 'SharePoint', icon: 'fas fa-folder-open', iconImg: '/icons/ms-sharepoint.svg' },
+            { route: '/microsoft/planner', section: 'Planner', name: 'Planner', icon: 'fas fa-table-columns', iconImg: '/icons/ms-planner.svg' },
         ],
     },
 
@@ -266,7 +268,6 @@ export const navRegistry = [
                 name: 'Integrações & Dados',
                 icon: 'fas fa-plug',
                 pages: [
-                    { route: '/tools/validator', section: 'Validador', name: 'Validador', icon: 'fas fa-check-double' },
                     { route: '/tools/bucket-upload', section: 'Looqbox', name: 'Looqbox', icon: 'fas fa-cloud-arrow-up', iconImg: '/icons/looqbox.png' },
                     { route: '/settings/backup-sienge', section: 'Backup Sienge', name: 'Backup Sienge', icon: 'fas fa-database', iconImg: '/icons/sienge.png', adminOnly: true },
                     { route: '/settings/docusign', section: 'DocuSign', name: 'DocuSign', icon: 'fas fa-file-signature', iconImg: '/icons/docusign.png', adminOnly: true },
