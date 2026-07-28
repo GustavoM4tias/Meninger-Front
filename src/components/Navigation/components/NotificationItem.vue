@@ -16,6 +16,7 @@ const TYPE_META = {
   'support.opened':  { icon: 'fas fa-life-ring',       accent: 'text-sky-500',      label: 'Suporte' },
   'support.updated': { icon: 'fas fa-comments',        accent: 'text-sky-500',      label: 'Suporte' },
   'generic':         { icon: 'fas fa-circle-info',     accent: 'text-ink-muted',    label: 'Aviso' },
+  'user.signup.pending': { icon: 'fas fa-user-clock',  accent: 'text-amber-500',    label: 'Cadastro' },
 };
 
 const meta = computed(() => TYPE_META[props.notification?.type] || TYPE_META.generic);

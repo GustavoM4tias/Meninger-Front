@@ -1,8 +1,8 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/Settings/Auth/authStore';
-import { updateMeInfo } from '@/utils/Auth/apiAuth';
+import { getSignupOptions, completeSignup } from '@/utils/Auth/apiAuth';
 import API_URL from '@/config/apiUrl';
 
 import Input from '@/components/UI/Input.vue';
@@ -14,21 +14,39 @@ import Surface from '@/components/UI/Surface.vue';
 const router    = useRouter();
 const authStore = useAuthStore();
 
+// loading | setup | pending | success | error
 const state        = ref('loading');
 const isNew        = ref(false);
 const errorMessage = ref('Ocorreu um erro ao autenticar com a Microsoft.');
 
-const setupForm = ref({ username: '', birth_date: '', phone: '', position: '', city: '' });
+const setupForm = ref({ username: '', birth_date: '', phone: '', department_id: '', position: '', city: '' });
 const setupLoading = ref(false);
 const setupError   = ref('');
 
-const positionsOptions = ref([]);
-const positionDescMap  = ref({});
-const citiesOptions    = ref([]);
+const allPositions      = ref([]);   // [{name, description, department_id}]
+const departmentsOptions = ref([]);
+const citiesOptions      = ref([]);
 
-const selectedPositionDesc = computed(() =>
-  setupForm.value.position ? positionDescMap.value[setupForm.value.position] || '' : ''
-);
+// Cargos filtrados pelo departamento escolhido
+const positionsOptions = computed(() => {
+  const deptId = Number(setupForm.value.department_id);
+  if (!deptId) return [];
+  return allPositions.value
+    .filter(p => Number(p.department_id) === deptId)
+    .map(p => ({ label: p.name, value: p.name }))
+    .sort((a, b) => a.label.localeCompare(b.label));
+});
+
+// Trocou de departamento e o cargo escolhido não pertence a ele → limpa
+watch(() => setupForm.value.department_id, () => {
+  const valid = positionsOptions.value.some(o => o.value === setupForm.value.position);
+  if (!valid) setupForm.value.position = '';
+});
+
+const selectedPositionDesc = computed(() => {
+  const p = allPositions.value.find(x => x.name === setupForm.value.position);
+  return p?.description || '';
+});
 
 const ERROR_MESSAGES = {
   missing_params: 'Parâmetros ausentes na resposta da Microsoft.',
@@ -39,51 +57,44 @@ const ERROR_MESSAGES = {
 
 async function loadSetupOptions() {
   try {
-    const headers = { Authorization: `Bearer ${localStorage.getItem('token')}` };
-    const [posRes, cityRes] = await Promise.allSettled([
-      fetch(`${API_URL}/admin/positions`,   { headers }).then(r => r.json()),
-      fetch(`${API_URL}/admin/user-cities`, { headers }).then(r => r.json()),
-    ]);
+    const data = await getSignupOptions();
+    allPositions.value = Array.isArray(data.positions) ? data.positions : [];
+    departmentsOptions.value = (Array.isArray(data.departments) ? data.departments : [])
+      .map(d => ({ label: d.name, value: String(d.id) }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+    citiesOptions.value = (Array.isArray(data.cities) ? data.cities : [])
+      .map(c => ({ label: c.uf ? `${c.name} - ${c.uf}` : c.name, value: c.name }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+  } catch (err) {
+    console.error('[MicrosoftCallback] Erro ao carregar opções de cadastro:', err);
+    setupError.value = 'Não foi possível carregar as opções de cadastro. Recarregue a página e tente novamente.';
+  }
+}
 
-    if (posRes.status === 'fulfilled') {
-      const list   = Array.isArray(posRes.value) ? posRes.value : (posRes.value?.data || []);
-      const active = list.filter(p => p?.active && p?.is_internal);
-      positionsOptions.value = active
-        .map(p => ({ label: p.name, value: p.name }))
-        .sort((a, b) => a.label.localeCompare(b.label));
-      positionDescMap.value = Object.fromEntries(active.map(p => [p.name, p.description || '']));
-    }
-
-    if (cityRes.status === 'fulfilled') {
-      const list = Array.isArray(cityRes.value) ? cityRes.value : (cityRes.value?.data || []);
-      citiesOptions.value = list
-        .map(c => ({ label: c.name || c, value: c.name || c }))
-        .sort((a, b) => a.label.localeCompare(b.label));
-    }
-  } catch { /* silencioso */ }
+// Cadastro enviado: encerra a sessão local (o acesso só abre após aprovação).
+function endPendingSession() {
+  try { authStore.clearUser(); } catch { /* segue */ }
 }
 
 async function submitSetup() {
   setupError.value = '';
-  if (!setupForm.value.birth_date || !setupForm.value.position || !setupForm.value.city) {
+  const f = setupForm.value;
+  if (!f.username?.trim() || !f.birth_date || !f.department_id || !f.position || !f.city) {
     setupError.value = 'Preencha todos os campos obrigatórios.';
     return;
   }
   setupLoading.value = true;
   try {
-    await updateMeInfo(
-      setupForm.value.username,
-      authStore.user.email,
-      setupForm.value.position,
-      setupForm.value.city,
-      setupForm.value.birth_date,
-      authStore.user.status,
-      authStore.user.face_enabled,
-      setupForm.value.phone || null,
-    );
-    await authStore.fetchUserInfo();
-    state.value = 'success';
-    setTimeout(() => router.push('/'), 1200);
+    await completeSignup({
+      username: f.username.trim(),
+      birth_date: f.birth_date,
+      phone: f.phone || null,
+      department_id: Number(f.department_id),
+      position: f.position,
+      city: f.city,
+    });
+    endPendingSession();
+    state.value = 'pending';
   } catch (err) {
     setupError.value = err?.message || 'Erro ao salvar informações. Tente novamente.';
   } finally {
@@ -123,10 +134,16 @@ onMounted(async () => {
     authStore.setRefreshToken(resp.data.refreshToken);
     await authStore.fetchUserInfo();
 
-    const newAcc = resp.data.isNew === true;
+    const newAcc   = resp.data.isNew === true;
+    const pending  = resp.data.pending === true;
+    const complete = resp.data.profileComplete === true;
     isNew.value = newAcc;
 
-    if (newAcc) {
+    if (pending && complete) {
+      // Já concluiu o formulário antes; segue aguardando o gestor liberar.
+      endPendingSession();
+      state.value = 'pending';
+    } else if (pending || newAcc) {
       setupForm.value.username = authStore.user?.username || '';
       await loadSetupOptions();
       state.value = 'setup';
@@ -178,9 +195,15 @@ function goToLogin() { router.push({ name: 'login' }); }
             <Input v-model="setupForm.phone" type="tel" label="Telefone (DDD)" placeholder="(11) 99999-9999" />
           </div>
 
+          <Select v-model="setupForm.department_id" :options="departmentsOptions"
+            label="Departamento" placeholder="Selecione seu departamento" required />
+
           <div>
             <Select v-model="setupForm.position" :options="positionsOptions"
-              label="Cargo" placeholder="Selecione seu cargo" required />
+              :disabled="!setupForm.department_id"
+              label="Cargo"
+              :placeholder="setupForm.department_id ? 'Selecione seu cargo' : 'Escolha o departamento primeiro'"
+              required />
             <Transition name="fade">
               <div v-if="selectedPositionDesc"
                 class="mt-2 flex items-start gap-2 rounded-lg border border-accent/20 bg-accent-soft/40 px-3 py-2">
@@ -193,6 +216,12 @@ function goToLogin() { router.push({ name: 'login' }); }
           <Select v-model="setupForm.city" :options="citiesOptions"
             label="Cidade" placeholder="Selecione sua cidade" required />
 
+          <p class="text-xs text-ink-muted flex items-start gap-1.5">
+            <i class="fas fa-circle-info text-accent mt-0.5 shrink-0"></i>
+            <span>Após concluir, seu cadastro passa pela aprovação do gestor responsável.
+            Você receberá um e-mail quando o acesso for liberado.</span>
+          </p>
+
           <Transition name="fade">
             <p v-if="setupError" class="text-xs text-red-500 flex items-center gap-1">
               <i class="fas fa-circle-exclamation"></i>{{ setupError }}
@@ -204,6 +233,22 @@ function goToLogin() { router.push({ name: 'login' }); }
           </Button>
         </form>
       </Surface>
+    </template>
+
+    <!-- Pendente de aprovação -->
+    <template v-else-if="state === 'pending'">
+      <div class="text-center max-w-sm px-6">
+        <div class="h-12 w-12 grid place-items-center mx-auto mb-3 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400">
+          <i class="fas fa-user-clock text-lg" />
+        </div>
+        <h2 class="text-base font-semibold text-ink mb-2">Cadastro em aprovação</h2>
+        <p class="text-sm text-ink-muted mb-4">
+          Seu cadastro foi concluído e está passando pela aprovação do gestor responsável.
+          Assim que for liberado, você receberá um <strong class="text-ink">e-mail</strong> com as
+          instruções e a senha de acesso.
+        </p>
+        <Button variant="ghost" @click="goToLogin">Voltar ao login</Button>
+      </div>
     </template>
 
     <!-- Sucesso -->

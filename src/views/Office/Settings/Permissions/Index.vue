@@ -9,6 +9,7 @@ import PageHeader from '@/components/UI/PageHeader.vue';
 import Surface from '@/components/UI/Surface.vue';
 import Modal from '@/components/UI/Modal.vue';
 import Input from '@/components/UI/Input.vue';
+import Select from '@/components/UI/Select.vue';
 import Button from '@/components/UI/Button.vue';
 import IconButton from '@/components/UI/IconButton.vue';
 import Badge from '@/components/UI/Badge.vue';
@@ -43,7 +44,17 @@ const profiles = ref([]);
 const showProfileModal = ref(false);
 const editingProfile = ref(null);
 const savingProfile = ref(false);
-const profileForm = ref({ name: '', description: '', routes: [] });
+const profileForm = ref({ name: '', description: '', routes: [], department_id: '' });
+
+// Departamentos (para vincular um perfil como PADRÃO de um departamento:
+// aplicado automaticamente ao ativar usuários novos daquele departamento)
+const departments = ref([]);
+const departmentOptions = computed(() => [
+  { value: '', label: 'Nenhum (perfil avulso)' },
+  ...departments.value.map(d => ({ value: String(d.id), label: d.name })),
+]);
+const departmentName = (id) =>
+  departments.value.find(d => Number(d.id) === Number(id))?.name || null;
 
 const clipboard = ref(null);
 
@@ -148,6 +159,7 @@ function openProfileModal(profile) {
     name: profile?.name ?? '',
     description: profile?.description ?? '',
     routes: profile ? [...profile.routes] : [],
+    department_id: profile?.department_id ? String(profile.department_id) : '',
   };
   showProfileModal.value = true;
 }
@@ -182,19 +194,20 @@ async function saveProfile() {
       name: profileForm.value.name.trim(),
       description: profileForm.value.description.trim() || null,
       routes: profileForm.value.routes,
+      department_id: profileForm.value.department_id ? Number(profileForm.value.department_id) : null,
     };
     if (editingProfile.value) {
-      const updated = await requestWithAuth(`/permissions/profiles/${editingProfile.value.id}`, {
+      await requestWithAuth(`/permissions/profiles/${editingProfile.value.id}`, {
         method: 'PUT', body: JSON.stringify(body),
       });
-      const idx = profiles.value.findIndex(p => p.id === editingProfile.value.id);
-      if (idx !== -1) profiles.value[idx] = updated;
     } else {
-      const created = await requestWithAuth('/permissions/profiles', {
+      await requestWithAuth('/permissions/profiles', {
         method: 'POST', body: JSON.stringify(body),
       });
-      profiles.value.push(created);
     }
+    // Recarrega a lista inteira: vincular um departamento desvincula o perfil
+    // que apontava para ele antes (o server garante 1 padrão por departamento).
+    await loadProfiles();
     closeProfileModal();
   } catch (err) {
     alert(err.message || 'Erro ao salvar perfil.');
@@ -237,7 +250,17 @@ async function loadProfiles() {
   }
 }
 
-onMounted(() => { loadUsers(); loadProfiles(); });
+async function loadDepartments() {
+  try {
+    const data = await requestWithAuth('/admin/departments');
+    const list = Array.isArray(data) ? data : (data?.data || []);
+    departments.value = list.filter(d => d.active !== false);
+  } catch (err) {
+    console.error('[Permissions] loadDepartments error:', err);
+  }
+}
+
+onMounted(() => { loadUsers(); loadProfiles(); loadDepartments(); });
 </script>
 
 <template>
@@ -459,7 +482,13 @@ onMounted(() => { loadUsers(); loadProfiles(); });
                   <h3 class="text-sm font-semibold text-ink truncate">{{ profile.name }}</h3>
                   <p class="text-xs text-ink-muted mt-0.5 line-clamp-2">{{ profile.description || 'Sem descrição' }}</p>
                 </div>
-                <Badge variant="accent" size="sm">{{ profile.routes.length }} rotas</Badge>
+                <div class="flex flex-col items-end gap-1 shrink-0">
+                  <Badge variant="accent" size="sm">{{ profile.routes.length }} rotas</Badge>
+                  <Badge v-if="profile.department_id && departmentName(profile.department_id)"
+                    variant="warning" size="sm">
+                    Padrão: {{ departmentName(profile.department_id) }}
+                  </Badge>
+                </div>
               </div>
             </div>
 
@@ -509,6 +538,17 @@ onMounted(() => { loadUsers(); loadProfiles(); });
         <div class="grid sm:grid-cols-2 gap-3">
           <Input v-model="profileForm.name" label="Nome do perfil" placeholder="Ex: Vendas - Padrão" required />
           <Input v-model="profileForm.description" label="Descrição" placeholder="Breve descrição do perfil" />
+        </div>
+
+        <div>
+          <Select v-model="profileForm.department_id" :options="departmentOptions"
+            label="Perfil padrão do departamento" placeholder="Nenhum (perfil avulso)" />
+          <p class="text-xs text-ink-muted mt-1.5 flex items-start gap-1.5">
+            <i class="fas fa-circle-info text-accent mt-0.5 shrink-0"></i>
+            <span>Vinculado a um departamento, este perfil vira o conjunto de alçadas aplicado
+            automaticamente ao <strong>ativar usuários novos</strong> daquele departamento
+            (cada departamento aceita um único perfil padrão).</span>
+          </p>
         </div>
 
         <div class="flex gap-3">

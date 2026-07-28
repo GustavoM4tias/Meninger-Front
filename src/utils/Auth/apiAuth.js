@@ -139,6 +139,54 @@ export const updateUserInfo = async (id, username, email, position, manager_id, 
   return response.json();
 };
 
+// ── Cadastro de primeiro acesso (usuário pendente de aprovação) ──────────────
+
+export const getSignupOptions = async () => {
+  const response = await fetch(`${API_URL}/auth/signup-options`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      'Content-Type': 'application/json',
+    },
+  });
+  const data = await response.json();
+  if (!response.ok || data.success === false) {
+    throw new Error(data.error || data.message || 'Erro ao carregar opções de cadastro');
+  }
+  return data.data || data;
+};
+
+export const completeSignup = async (payload) => {
+  const response = await fetchCarregamento(`${API_URL}/auth/complete-signup`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+  const data = await response.json();
+  if (!response.ok || data.success === false) {
+    throw new Error(data.error || data.message || 'Erro ao concluir o cadastro');
+  }
+  return data;
+};
+
+export const activateUser = async (id) => {
+  const response = await fetchCarregamento(`${API_URL}/auth/users/${id}/activate`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      'Content-Type': 'application/json',
+    },
+  });
+  const data = await response.json();
+  if (!response.ok || data.success === false) {
+    throw new Error(data.error || data.message || 'Erro ao ativar usuário');
+  }
+  return data;
+};
+
 export const adminResetUserPassword = async (id) => {
   const response = await fetchCarregamento(`${API_URL}/auth/users/${id}/reset-password`, {
     method: 'POST',
