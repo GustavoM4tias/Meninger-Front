@@ -1,6 +1,5 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount, nextTick, computed } from 'vue';
-import { useToast } from 'vue-toastification';
 import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 import { useMicrosoftStore } from '@/stores/Microsoft/microsoftStore';
 
@@ -10,11 +9,11 @@ import Select from '@/components/UI/Select.vue';
 
 import ForgotPasswordModal from './ForgotPasswordModal.vue';
 import FaceLoginModal from './FaceLoginModal.vue';
+import RequestAccessModal from './RequestAccessModal.vue';
 import { sanitizeEmail } from './composables/useForgotPassword';
 import { usePersistedRef, clearPersisted } from '@/utils/usePersistedRef';
 import { academyUrl, officeUrl } from '@/utils/appContext';
 
-const toast = useToast();
 const authStore = useAuthStore();
 const microsoftStore = useMicrosoftStore();
 
@@ -72,7 +71,10 @@ async function handleLogin() {
 
 function openFaceLogin() { faceModalOpen.value = true; }
 function openForgotPassword() { authStore.openForgotPasswordModal(sanitizeEmail(email.value)); }
-async function register() { toast.info('Solicite acesso a seu gestor.'); }
+
+// "Solicite acesso" abre o formulário de cadastro (vai pra aprovação do gestor)
+const requestAccessOpen = ref(false);
+function register() { requestAccessOpen.value = true; }
 
 // ─── Lifecycle ──────────────────────────────────────
 onMounted(() => {
@@ -169,6 +171,7 @@ onBeforeUnmount(() => { faceModalOpen.value = false; });
     <!-- Modais -->
     <ForgotPasswordModal />
     <FaceLoginModal v-model:open="faceModalOpen" :on-success="redirectAfterLogin" />
+    <RequestAccessModal v-model:open="requestAccessOpen" />
   </form>
 </template>
 

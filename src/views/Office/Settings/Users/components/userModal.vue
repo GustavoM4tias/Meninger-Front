@@ -2,7 +2,7 @@
 import { ref, watchEffect, onMounted, computed } from 'vue';
 import { useToast } from 'vue-toastification';
 import { useAuthStore } from '@/stores/Settings/Auth/authStore';
-import { adminResetUserPassword, activateUser } from '@/utils/Auth/apiAuth';
+import { adminResetUserPassword, activateUser, rejectUser } from '@/utils/Auth/apiAuth';
 import { managedRegistry, getDeptManagedPages } from '@/config/navRegistry';
 import API_URL from '@/config/apiUrl';
 
@@ -38,8 +38,20 @@ const positionDescMap = ref({});
 const citiesOptions = ref([]);
 const permissionProfiles = ref([]);
 
-// Cadastro de primeiro acesso aguardando aprovação do admin
+// Cadastro de primeiro acesso: 'pending' = formulário enviado, aguardando o
+// admin; 'incomplete' = usuário ainda não concluiu o formulário (não ativável);
+// 'rejected' = reprovado (pode ser reconsiderado via Aprovar e ativar).
 const isPending = computed(() => isEdit.value && props.user?.approval_status === 'pending');
+const isIncomplete = computed(() => isEdit.value && props.user?.approval_status === 'incomplete');
+const isRejected = computed(() => isEdit.value && props.user?.approval_status === 'rejected');
+
+// Departamento escolhido pelo usuário no formulário de primeiro acesso
+const departmentsList = ref([]);
+const signupDepartmentName = computed(() => {
+  const id = props.user?.signup_department_id;
+  if (!id) return null;
+  return departmentsList.value.find(d => Number(d.id) === Number(id))?.name || null;
+});
 
 watchEffect(() => {
   if (editableUser.value?.birth_date) {
@@ -80,13 +92,21 @@ onMounted(async () => {
         .sort((a, b) => a.label.localeCompare(b.label));
     }
 
-    // Perfis de alçada (para exibir as alçadas padrão do departamento na ativação)
-    if (isAdmin.value && isPending.value) {
+    // Perfis de alçada (para exibir as alçadas padrão do departamento na
+    // ativação) + departamentos (para mostrar o escolhido no cadastro)
+    if (isAdmin.value && (isPending.value || isRejected.value)) {
       try {
-        const resProfiles = await fetch(`${API_URL}/permissions/profiles`, { headers });
-        if (resProfiles.ok) {
-          const data = await resProfiles.json();
+        const [resProfiles, resDepts] = await Promise.allSettled([
+          fetch(`${API_URL}/permissions/profiles`, { headers }),
+          fetch(`${API_URL}/admin/departments`, { headers }),
+        ]);
+        if (resProfiles.status === 'fulfilled' && resProfiles.value.ok) {
+          const data = await resProfiles.value.json();
           permissionProfiles.value = Array.isArray(data) ? data : [];
+        }
+        if (resDepts.status === 'fulfilled' && resDepts.value.ok) {
+          const data = await resDepts.value.json();
+          departmentsList.value = Array.isArray(data) ? data : (data?.data || []);
         }
       } catch { /* segue sem preview de alçadas */ }
     }
@@ -152,6 +172,29 @@ const roleOptions = [
 
 // ── Ativação de cadastro pendente ────────────────────
 const activateModal = ref({ open: false, loading: false });
+const rejectModal = ref({ open: false, loading: false, reason: '' });
+
+function openRejectConfirm() {
+  rejectModal.value = { open: true, loading: false, reason: '' };
+}
+
+async function confirmReject() {
+  if (rejectModal.value.loading) return;
+  rejectModal.value.loading = true;
+  try {
+    const result = await rejectUser(editableUser.value.id, rejectModal.value.reason);
+    const msg = result?.data?.message || result?.message || 'Cadastro reprovado.';
+    if (result?.data?.emailSent === false) toast.warning(msg);
+    else toast.success(msg);
+    rejectModal.value.open = false;
+    emit('close');
+    emit('reload');
+  } catch (error) {
+    toast.error(error?.message || 'Erro ao reprovar cadastro.');
+  } finally {
+    rejectModal.value.loading = false;
+  }
+}
 
 // Nome amigável de cada rota gerenciável (para listar as alçadas na confirmação)
 const routeNameMap = (() => {
@@ -296,8 +339,36 @@ async function saveUser() {
         <div class="text-xs leading-relaxed">
           <p class="font-semibold text-amber-700 dark:text-amber-300">Cadastro aguardando aprovação</p>
           <p class="text-amber-700/80 dark:text-amber-300/80 mt-0.5">
-            Este usuário concluiu o cadastro de primeiro acesso. Revise os dados abaixo e
-            clique em <strong>Aprovar e ativar</strong> para liberar o acesso.
+            Este usuário concluiu o cadastro de primeiro acesso<template v-if="signupDepartmentName">
+            e escolheu o departamento <strong>{{ signupDepartmentName }}</strong></template>.
+            Defina o <strong>cargo</strong> e os demais pontos abaixo e clique em
+            <strong>Aprovar e ativar</strong> para liberar o acesso.
+          </p>
+        </div>
+      </div>
+
+      <!-- Cadastro reprovado -->
+      <div v-else-if="isRejected"
+        class="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2.5 flex items-start gap-2.5">
+        <i class="fas fa-user-xmark text-red-600 dark:text-red-400 mt-0.5 shrink-0"></i>
+        <div class="text-xs leading-relaxed">
+          <p class="font-semibold text-red-700 dark:text-red-300">Cadastro reprovado</p>
+          <p class="text-red-700/80 dark:text-red-300/80 mt-0.5">
+            O usuário foi avisado por e-mail. Se mudar de ideia, você ainda pode
+            <strong>Aprovar e ativar</strong> este cadastro.
+          </p>
+        </div>
+      </div>
+
+      <!-- Cadastro ainda não concluído pelo usuário -->
+      <div v-else-if="isIncomplete"
+        class="rounded-lg border border-line bg-surface-sunken px-3 py-2.5 flex items-start gap-2.5">
+        <i class="fas fa-hourglass-half text-ink-muted mt-0.5 shrink-0"></i>
+        <div class="text-xs leading-relaxed">
+          <p class="font-semibold text-ink">Cadastro não concluído</p>
+          <p class="text-ink-muted mt-0.5">
+            Este usuário entrou com a conta Microsoft mas ainda não enviou o formulário de
+            primeiro acesso. A ativação fica disponível quando ele concluir.
           </p>
         </div>
       </div>
@@ -398,7 +469,7 @@ async function saveUser() {
                      focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-ring/20" />
           </div>
 
-          <div v-if="!isPending"
+          <div v-if="!isPending && !isIncomplete && !isRejected"
             class="flex items-center justify-between gap-3 p-3 rounded-lg border border-line bg-surface-sunken">
             <div class="flex items-center gap-2.5 min-w-0">
               <div class="h-8 w-8 rounded-lg grid place-items-center shrink-0"
@@ -424,7 +495,11 @@ async function saveUser() {
             </div>
             <div class="min-w-0">
               <p class="text-sm font-medium text-ink">Acesso bloqueado até a aprovação</p>
-              <p class="text-xs text-ink-muted">Use "Aprovar e ativar" para liberar o login</p>
+              <p class="text-xs text-ink-muted">
+                {{ isPending ? 'Use "Aprovar e ativar" para liberar o login'
+                  : isRejected ? 'Cadastro reprovado - use "Aprovar e ativar" para reconsiderar'
+                  : 'Disponível após o usuário concluir o formulário de primeiro acesso' }}
+              </p>
             </div>
           </div>
 
@@ -451,10 +526,14 @@ async function saveUser() {
 
     <template #footer>
       <Button variant="ghost" @click="$emit('close')">Cancelar</Button>
+      <Button v-if="(isPending || isIncomplete) && isAdmin" variant="outline" icon="fas fa-user-xmark"
+        class="text-red-500" @click="openRejectConfirm">
+        Reprovar
+      </Button>
       <Button v-if="isPending && isAdmin" variant="secondary" icon="fas fa-floppy-disk" @click="saveUser">
         Salvar
       </Button>
-      <Button v-if="isPending && isAdmin" icon="fas fa-user-check" @click="openActivateConfirm">
+      <Button v-if="(isPending || isRejected) && isAdmin" icon="fas fa-user-check" @click="openActivateConfirm">
         Aprovar e ativar
       </Button>
       <Button v-else icon="fas fa-check" @click="saveUser">
@@ -532,6 +611,46 @@ async function saveUser() {
         <Button variant="ghost" :disabled="activateModal.loading" @click="activateModal.open = false">Cancelar</Button>
         <Button icon="fas fa-user-check" :loading="activateModal.loading" @click="confirmActivate">
           {{ activateModal.loading ? 'Ativando...' : 'Confirmar ativação' }}
+        </Button>
+      </template>
+    </Modal>
+
+    <!-- Submodal: confirmação de reprovação -->
+    <Modal :open="rejectModal.open" size="sm" @close="rejectModal.open = false">
+      <template #header>
+        <div class="flex items-center gap-3">
+          <div class="h-9 w-9 rounded-lg bg-red-500/15 text-red-600 dark:text-red-400 border border-red-500/20 grid place-items-center shrink-0">
+            <i class="fas fa-user-xmark text-sm"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-semibold text-ink">Reprovar este cadastro?</h3>
+            <p class="text-xs text-ink-muted mt-0.5">{{ editableUser.username }}</p>
+          </div>
+        </div>
+      </template>
+
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-ink-muted mb-1.5">Motivo (opcional)</label>
+          <textarea v-model="rejectModal.reason" rows="3"
+            placeholder="Ex.: cadastro não reconhecido, dados incorretos..."
+            class="w-full px-3 py-2 text-sm bg-surface-raised text-ink border border-line rounded-lg
+                   focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-ring/20 resize-none"></textarea>
+        </div>
+
+        <div class="rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2.5 text-xs text-amber-700 dark:text-amber-300 flex items-start gap-2">
+          <i class="fas fa-envelope shrink-0 mt-0.5"></i>
+          <span><strong>{{ editableUser.email }}</strong> será avisado por e-mail que o cadastro não foi
+          aprovado{{ rejectModal.reason ? ', com o motivo informado' : '' }}. O acesso permanece bloqueado,
+          mas você pode reconsiderar depois.</span>
+        </div>
+      </div>
+
+      <template #footer>
+        <Button variant="ghost" :disabled="rejectModal.loading" @click="rejectModal.open = false">Cancelar</Button>
+        <Button variant="outline" class="text-red-500" icon="fas fa-user-xmark"
+          :loading="rejectModal.loading" @click="confirmReject">
+          {{ rejectModal.loading ? 'Reprovando...' : 'Confirmar reprovação' }}
         </Button>
       </template>
     </Modal>

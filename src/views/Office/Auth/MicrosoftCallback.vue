@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 import { getSignupOptions, completeSignup } from '@/utils/Auth/apiAuth';
@@ -19,34 +19,14 @@ const state        = ref('loading');
 const isNew        = ref(false);
 const errorMessage = ref('Ocorreu um erro ao autenticar com a Microsoft.');
 
-const setupForm = ref({ username: '', birth_date: '', phone: '', department_id: '', position: '', city: '' });
+// O usuário NÃO escolhe o próprio cargo: só o departamento. O cargo é
+// definido pelo admin na aprovação do cadastro.
+const setupForm = ref({ username: '', birth_date: '', phone: '', department_id: '', city: '' });
 const setupLoading = ref(false);
 const setupError   = ref('');
 
-const allPositions      = ref([]);   // [{name, description, department_id}]
 const departmentsOptions = ref([]);
 const citiesOptions      = ref([]);
-
-// Cargos filtrados pelo departamento escolhido
-const positionsOptions = computed(() => {
-  const deptId = Number(setupForm.value.department_id);
-  if (!deptId) return [];
-  return allPositions.value
-    .filter(p => Number(p.department_id) === deptId)
-    .map(p => ({ label: p.name, value: p.name }))
-    .sort((a, b) => a.label.localeCompare(b.label));
-});
-
-// Trocou de departamento e o cargo escolhido não pertence a ele → limpa
-watch(() => setupForm.value.department_id, () => {
-  const valid = positionsOptions.value.some(o => o.value === setupForm.value.position);
-  if (!valid) setupForm.value.position = '';
-});
-
-const selectedPositionDesc = computed(() => {
-  const p = allPositions.value.find(x => x.name === setupForm.value.position);
-  return p?.description || '';
-});
 
 const ERROR_MESSAGES = {
   missing_params: 'Parâmetros ausentes na resposta da Microsoft.',
@@ -58,7 +38,6 @@ const ERROR_MESSAGES = {
 async function loadSetupOptions() {
   try {
     const data = await getSignupOptions();
-    allPositions.value = Array.isArray(data.positions) ? data.positions : [];
     departmentsOptions.value = (Array.isArray(data.departments) ? data.departments : [])
       .map(d => ({ label: d.name, value: String(d.id) }))
       .sort((a, b) => a.label.localeCompare(b.label));
@@ -79,7 +58,7 @@ function endPendingSession() {
 async function submitSetup() {
   setupError.value = '';
   const f = setupForm.value;
-  if (!f.username?.trim() || !f.birth_date || !f.department_id || !f.position || !f.city) {
+  if (!f.username?.trim() || !f.birth_date || !f.department_id || !f.city) {
     setupError.value = 'Preencha todos os campos obrigatórios.';
     return;
   }
@@ -90,7 +69,6 @@ async function submitSetup() {
       birth_date: f.birth_date,
       phone: f.phone || null,
       department_id: Number(f.department_id),
-      position: f.position,
       city: f.city,
     });
     endPendingSession();
@@ -197,21 +175,6 @@ function goToLogin() { router.push({ name: 'login' }); }
 
           <Select v-model="setupForm.department_id" :options="departmentsOptions"
             label="Departamento" placeholder="Selecione seu departamento" required />
-
-          <div>
-            <Select v-model="setupForm.position" :options="positionsOptions"
-              :disabled="!setupForm.department_id"
-              label="Cargo"
-              :placeholder="setupForm.department_id ? 'Selecione seu cargo' : 'Escolha o departamento primeiro'"
-              required />
-            <Transition name="fade">
-              <div v-if="selectedPositionDesc"
-                class="mt-2 flex items-start gap-2 rounded-lg border border-accent/20 bg-accent-soft/40 px-3 py-2">
-                <i class="fas fa-circle-info text-accent text-xs mt-0.5 shrink-0"></i>
-                <p class="text-xs text-accent leading-relaxed">{{ selectedPositionDesc }}</p>
-              </div>
-            </Transition>
-          </div>
 
           <Select v-model="setupForm.city" :options="citiesOptions"
             label="Cidade" placeholder="Selecione sua cidade" required />

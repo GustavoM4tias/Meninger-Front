@@ -172,6 +172,36 @@ export const completeSignup = async (payload) => {
   return data;
 };
 
+// Solicitação pública de acesso (tela de login, sem Microsoft)
+export const requestSignup = async (payload) => {
+  const response = await fetchCarregamento(`${API_URL}/auth/signup-request`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  const data = await response.json();
+  if (!response.ok || data.success === false) {
+    throw new Error(data.error || data.message || 'Erro ao enviar o cadastro');
+  }
+  return data;
+};
+
+export const rejectUser = async (id, reason = '') => {
+  const response = await fetchCarregamento(`${API_URL}/auth/users/${id}/reject`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ reason }),
+  });
+  const data = await response.json();
+  if (!response.ok || data.success === false) {
+    throw new Error(data.error || data.message || 'Erro ao reprovar cadastro');
+  }
+  return data;
+};
+
 export const activateUser = async (id) => {
   const response = await fetchCarregamento(`${API_URL}/auth/users/${id}/activate`, {
     method: 'POST',
