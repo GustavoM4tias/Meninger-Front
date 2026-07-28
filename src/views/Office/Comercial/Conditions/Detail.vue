@@ -1727,7 +1727,6 @@ async function loadDetail(id) {
             store.fetchCorrespondents(),
             store.fetchCorrespondentCompanies(),
             store.fetchOfficeUsers(),
-            store.fetchSettings(),
             store.fetchMyPermissions(),
         ]);
         try {
