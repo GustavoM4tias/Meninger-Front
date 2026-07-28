@@ -50,11 +50,17 @@ export const useReservaCancelStore = defineStore('reservaCancel', () => {
     const historyFilter = ref({
         status: [],            // multi: processing/success/blocked/skipped/ignored/error
         empreendimento: [],
+        cvSituacao: [],        // ids de situação da RESERVA no CV
+        cvRepasse: [],         // ids de situação do REPASSE no CV
         idreserva: '',
         dateFrom: '',
         dateTo: '',
         q: '',
     });
+
+    // Lista agrupada por reserva (1 linha por reserva, com o nº de ocorrências).
+    // O histórico completo de cada reserva fica no modal.
+    const groupByReserva = ref(true);
 
     // ── Ordenação (server-side) — padrão: caso mais recente primeiro ───────────
     const sortBy = ref('caso');  // caso | titular | unidade | contrato | status | quando
@@ -65,6 +71,9 @@ export const useReservaCancelStore = defineStore('reservaCancel', () => {
         const f = historyFilter.value;
         if (Array.isArray(f.status) && f.status.length) params.set('status', f.status.join(','));
         if (Array.isArray(f.empreendimento) && f.empreendimento.length) params.set('empreendimento', f.empreendimento.join(','));
+        if (Array.isArray(f.cvSituacao) && f.cvSituacao.length) params.set('cvSituacao', f.cvSituacao.join(','));
+        if (Array.isArray(f.cvRepasse) && f.cvRepasse.length) params.set('cvRepasse', f.cvRepasse.join(','));
+        params.set('groupByReserva', groupByReserva.value ? 'true' : 'false');
         if (f.idreserva) params.set('idreserva', f.idreserva);
         if (f.dateFrom)  params.set('dateFrom', f.dateFrom);
         if (f.dateTo)    params.set('dateTo', f.dateTo);
@@ -114,7 +123,10 @@ export const useReservaCancelStore = defineStore('reservaCancel', () => {
     }
 
     function resetHistoryFilters() {
-        historyFilter.value = { status: [], empreendimento: [], idreserva: '', dateFrom: '', dateTo: '', q: '' };
+        historyFilter.value = {
+            status: [], empreendimento: [], cvSituacao: [], cvRepasse: [],
+            idreserva: '', dateFrom: '', dateTo: '', q: '',
+        };
         historyPage.value = 1;
     }
 
@@ -128,7 +140,7 @@ export const useReservaCancelStore = defineStore('reservaCancel', () => {
         }
     }
 
-    const facets = ref({ empreendimentos: [] });
+    const facets = ref({ empreendimentos: [], cvSituacoes: [], cvRepasses: [] });
     async function fetchFacets() {
         try {
             facets.value = await requestWithAuth('/cancelamento-reservas/history-facets');
@@ -143,6 +155,7 @@ export const useReservaCancelStore = defineStore('reservaCancel', () => {
     const timelineEvents = ref([]);
     const timelineHistory = ref(null);
     const timelineAttempts = ref([]);
+    const timelineCv = ref(null); // etapa atual da reserva e do repasse no CV
 
     async function fetchTimeline(historyId, opts = {}) {
         const silent = !!opts.silent;
@@ -152,12 +165,14 @@ export const useReservaCancelStore = defineStore('reservaCancel', () => {
             timelineEvents.value = [];
             timelineHistory.value = null;
             timelineAttempts.value = [];
+            timelineCv.value = null;
         }
         try {
             const data = await requestWithAuth(`/cancelamento-reservas/history/${historyId}/events`);
             timelineEvents.value = Array.isArray(data?.events) ? data.events : [];
             timelineAttempts.value = Array.isArray(data?.attempts) ? data.attempts : [];
             timelineHistory.value = data?.history || null;
+            timelineCv.value = data?.cv || null;
         } catch (err) {
             if (!silent) timelineError.value = err.message || 'Erro ao carregar timeline.';
         } finally {
@@ -202,9 +217,9 @@ export const useReservaCancelStore = defineStore('reservaCancel', () => {
     return {
         settings, settingsLoading, settingsError, settingsSaved, fetchSettings, saveSettings,
         history, historyTotal, historyPage, historyLimit, historyLoading, historyError,
-        historyFilter, fetchHistory, setPage, setSort, sortBy, sortDir, totalPages, resetHistoryFilters,
+        historyFilter, groupByReserva, fetchHistory, setPage, setSort, sortBy, sortDir, totalPages, resetHistoryFilters,
         stats, fetchStats, facets, fetchFacets,
-        timelineLoading, timelineError, timelineEvents, timelineHistory, timelineAttempts, fetchTimeline,
+        timelineLoading, timelineError, timelineEvents, timelineHistory, timelineAttempts, timelineCv, fetchTimeline,
         retryHistoryItem, processManual, simulateWebhook,
     };
 });

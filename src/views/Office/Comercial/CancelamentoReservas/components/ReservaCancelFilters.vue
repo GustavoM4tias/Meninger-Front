@@ -29,6 +29,24 @@ const statusToLabel = Object.fromEntries(STATUS_OPTIONS.map(o => [o.value, o.lab
 // Empreendimentos vêm de /history-facets (array de strings) — cached no store.
 const empreendimentosOptions = computed(() => store.facets?.empreendimentos || []);
 
+// Etapas do CV (reserva e repasse) — o filtro guarda IDs, o seletor mostra os
+// nomes do workflow do CV, como no relatório do Boleto do Ato.
+const cvSituacaoOptions = computed(() => (store.facets?.cvSituacoes || []).map(s => s.nome).filter(Boolean));
+const cvRepasseOptions  = computed(() => (store.facets?.cvRepasses  || []).map(s => s.nome).filter(Boolean));
+const cvSitByLabel = computed(() => Object.fromEntries((store.facets?.cvSituacoes || []).map(s => [s.nome, String(s.id)])));
+const cvSitById    = computed(() => Object.fromEntries((store.facets?.cvSituacoes || []).map(s => [String(s.id), s.nome])));
+const cvRepByLabel = computed(() => Object.fromEntries((store.facets?.cvRepasses  || []).map(s => [s.nome, String(s.id)])));
+const cvRepById    = computed(() => Object.fromEntries((store.facets?.cvRepasses  || []).map(s => [String(s.id), s.nome])));
+
+const selectedCvSituacaoLabels = computed({
+  get: () => (store.historyFilter.cvSituacao || []).map(v => cvSitById.value[String(v)] || String(v)),
+  set: (labels) => { store.historyFilter.cvSituacao = labels.map(l => cvSitByLabel.value[l]).filter(Boolean); },
+});
+const selectedCvRepasseLabels = computed({
+  get: () => (store.historyFilter.cvRepasse || []).map(v => cvRepById.value[String(v)] || String(v)),
+  set: (labels) => { store.historyFilter.cvRepasse = labels.map(l => cvRepByLabel.value[l]).filter(Boolean); },
+});
+
 // V-model de labels ↔ valores para o MultiSelector de status. Escreve direto no
 // store.historyFilter, então os KPIs da tela ficam sempre em sincronia.
 const selectedStatusLabels = computed({
@@ -56,6 +74,8 @@ const activeFiltersCount = computed(() => {
   const f = store.historyFilter;
   if (f.status?.length) n++;
   if (f.empreendimento?.length) n++;
+  if (f.cvSituacao?.length) n++;
+  if (f.cvRepasse?.length) n++;
   if (f.idreserva) n++;
   if (f.dateFrom)  n++;
   if (f.dateTo)    n++;
@@ -118,6 +138,22 @@ onMounted(() => {
           @update:modelValue="v => store.historyFilter.empreendimento = Array.isArray(v) ? v : []"
           :options="empreendimentosOptions" placeholder="Todos os empreendimentos"
           :page-size="200" :select-all="true" />
+      </div>
+
+      <div>
+        <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+          <i class="fas fa-flag text-[10px] mr-1 text-ink-subtle"></i>Etapa da reserva (CV)
+        </label>
+        <MultiSelector v-model="selectedCvSituacaoLabels"
+          :options="cvSituacaoOptions" placeholder="Todas as etapas" :select-all="false" />
+      </div>
+
+      <div>
+        <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+          <i class="fas fa-building-columns text-[10px] mr-1 text-ink-subtle"></i>Etapa do repasse (CV)
+        </label>
+        <MultiSelector v-model="selectedCvRepasseLabels"
+          :options="cvRepasseOptions" placeholder="Todas as etapas" :select-all="false" />
       </div>
 
       <Input v-model="store.historyFilter.dateFrom" type="date" label="Cancelado a partir de" />
