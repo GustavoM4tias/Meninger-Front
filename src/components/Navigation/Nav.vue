@@ -340,10 +340,10 @@ const closeMobile = () => { isMobileOpen.value = false; };
 
         <!-- Topo — área rolável que ocupa o espaço restante (não empurra o rodapé) -->
         <ul class="flex-1 min-h-0 overflow-y-auto nav-scroll space-y-0.5 mt-1 pb-2">
-          <li>
+          <!-- <li>
             <SidebarItem to="/" icon="fas fa-house" label="Dashboard"
               :collapsed="isCollapsed" @click="closeMobile()" />
-          </li>
+          </li> -->
 
           <li>
             <SidebarFavorites

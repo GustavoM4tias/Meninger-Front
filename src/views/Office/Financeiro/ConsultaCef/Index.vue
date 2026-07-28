@@ -19,50 +19,65 @@
         </template>
       </PageHeader>
 
-      <!-- Filtros -->
-      <Surface variant="raised" padding="md" class="mb-5 surface-gradient">
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 items-end">
-          <div>
-            <label class="text-[11px] font-medium text-ink-muted mb-1.5 flex items-center gap-1.5">
-              <i class="fas fa-city text-ink-subtle text-[10px]"></i> Empreendimento
+      <!-- Filtros (padrão da projeção: barra recolhível) -->
+      <section class="mb-5 rounded-xl border border-line bg-surface-raised shadow-soft surface-gradient">
+        <div class="filters-toolbar">
+          <button @click="filtersExpanded = !filtersExpanded" class="filters-toolbar-trigger">
+            <i class="fas fa-filter text-xs text-ink-muted"></i>
+            <span>Filtros</span>
+            <Badge v-if="activeFiltersCount" variant="accent" size="sm">
+              {{ activeFiltersCount }} ativo{{ activeFiltersCount > 1 ? 's' : '' }}
+            </Badge>
+            <i class="fas fa-chevron-down text-[10px] text-ink-subtle transition-transform duration-200"
+              :class="{ 'rotate-180': filtersExpanded }"></i>
+          </button>
+          <div class="ml-auto flex items-center gap-1.5">
+            <Button variant="ghost" size="sm" icon="fas fa-eraser" @click="clearFilters">
+              <span class="hidden sm:inline">Limpar</span>
+            </Button>
+            <Button size="sm" icon="fas fa-magnifying-glass" :loading="store.loading" @click="apply">
+              <span class="hidden sm:inline">Filtrar</span>
+            </Button>
+          </div>
+        </div>
+
+        <div v-show="filtersExpanded" class="p-3 sm:p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div class="lg:col-span-2">
+            <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+              <i class="fas fa-city text-[10px] mr-1 text-ink-subtle"></i>Empreendimento(s)
             </label>
             <MultiSelector :model-value="selectedEnterpriseLabels" @update:modelValue="onEnterprisesChange"
-              :options="enterpriseOptions" placeholder="Todos os empreendimentos" :page-size="200" :select-all="true" />
+              :options="enterpriseOptions" placeholder="Selecione..." :page-size="200" :select-all="true" />
           </div>
 
           <div>
-            <label class="text-[11px] font-medium text-ink-muted mb-1.5 flex items-center gap-1.5">
-              <i class="fas fa-magnifying-glass text-ink-subtle text-[10px]"></i> Busca geral
+            <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+              <i class="fas fa-magnifying-glass text-[10px] mr-1 text-ink-subtle"></i>Busca geral
             </label>
             <Input v-model="store.q" placeholder="Cliente, contrato, unidade ou nº CEF" @keyup.enter="apply" />
           </div>
 
           <div>
-            <label class="text-[11px] font-medium text-ink-muted mb-1.5 flex items-center gap-1.5">
-              <i class="fas fa-hashtag text-ink-subtle text-[10px]"></i> Nº CEF
+            <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+              <i class="fas fa-hashtag text-[10px] mr-1 text-ink-subtle"></i>Nº CEF
             </label>
             <Select v-model="store.cef" :options="CEF_OPTIONS" />
           </div>
         </div>
 
-        <div class="flex justify-end mt-3">
-          <Button variant="primary" icon="fas fa-filter"
-            :loading="store.loading" :disabled="store.loading"
-            @click="apply">
-            {{ store.loading ? 'Consultando...' : 'Filtrar' }}
-          </Button>
+        <div v-if="filterHint" class="px-3 sm:px-4 pb-3 text-xs text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
+          <i class="fas fa-circle-info"></i>{{ filterHint }}
         </div>
+      </section>
 
-        <Surface v-if="store.error" variant="raised" padding="sm"
-          class="mt-3 border-red-500/30 bg-red-500/10">
-          <div class="text-sm text-red-600 dark:text-red-400 flex items-center gap-2">
-            <i class="fas fa-circle-exclamation"></i>{{ store.error }}
-          </div>
-        </Surface>
+      <Surface v-if="store.error" variant="raised" padding="sm" class="mb-4 border-red-500/30 bg-red-500/10">
+        <div class="text-sm text-red-600 dark:text-red-400 flex items-center gap-2">
+          <i class="fas fa-circle-exclamation"></i>{{ store.error }}
+        </div>
       </Surface>
 
       <!-- Resumo -->
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
+      <div v-if="store.searched" class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
         <Surface variant="raised" padding="md" class="surface-gradient">
           <div class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono mb-1">Contratos</div>
           <div class="text-xl font-bold text-ink font-mono tabular-nums">{{ num(store.summary.total) }}</div>
@@ -183,7 +198,7 @@
             :title="store.searched ? 'Nenhum contrato encontrado' : 'Faça uma consulta'"
             :description="store.searched
               ? 'Nenhum contrato para os filtros selecionados. Ajuste o empreendimento ou a busca.'
-              : 'Escolha um empreendimento ou digite algo na busca geral e clique em Filtrar.'" />
+              : 'A tela traz só o que você buscar: escolha um empreendimento ou digite o cliente na busca geral e clique em Filtrar.'" />
         </div>
 
         <!-- Paginação -->
@@ -247,8 +262,8 @@ const columns = [
 ];
 
 const helpSteps = [
-  { title: 'Escolha o empreendimento', text: 'Selecione um ou mais empreendimentos no filtro. Você só enxerga os empreendimentos liberados para a sua alçada.' },
-  { title: 'Ou use a busca geral', text: 'Digite o nome do cliente, o nº do contrato, a unidade ou o próprio nº CEF e aperte Enter ou Filtrar.' },
+  { title: 'Abra os Filtros', text: 'A tela só consulta o que você pedir: escolha um empreendimento ou digite o cliente na busca geral e clique em Filtrar.' },
+  { title: 'Busca geral', text: 'Aceita nome do cliente, nº do contrato, unidade ou o próprio nº CEF. Aperte Enter ou Filtrar.' },
   { title: 'Refine por nº CEF', text: 'Use o filtro "Nº CEF" para ver só contratos que já têm número na Caixa ou só os que ainda não têm.' },
   { title: 'Copie o número', text: 'Toque em "Copiar" na linha do contrato para levar o nº CEF para outro sistema sem erro de digitação.' },
 ];
@@ -303,11 +318,34 @@ async function copyCef(r) {
   }
 }
 
-// ── Ações ──
-function apply() { store.applyFilters(); }
+// ── Filtros (barra recolhível, consulta sob demanda) ──
+const filtersExpanded = ref(true);
+const filterHint = ref('');
 
-onMounted(async () => {
-  await store.fetchEnterprises();
-  await store.applyFilters();
+const activeFiltersCount = computed(() => {
+  let n = 0;
+  if (store.enterpriseIds.length) n++;
+  if (store.q.trim()) n++;
+  if (store.cef) n++;
+  return n;
+});
+
+function apply() {
+  if (!store.q.trim() && !store.enterpriseIds.length) {
+    filterHint.value = 'Escolha ao menos um empreendimento ou digite algo na busca geral para consultar.';
+    filtersExpanded.value = true;
+    return;
+  }
+  filterHint.value = '';
+  store.applyFilters();
+}
+
+function clearFilters() {
+  filterHint.value = '';
+  store.clear();
+}
+
+onMounted(() => {
+  store.fetchEnterprises();
 });
 </script>

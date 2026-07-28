@@ -73,7 +73,7 @@ function clearFile(target) {
         icon="fas fa-file-shield">
         <template #title>
           <span>Validador de Contratos</span>
-          <Favorite :router="'/tools/validator'" :section="'Validador'" />
+          <Favorite :router="'/validator'" :section="'Validador'" />
         </template>
         <template #actions>
           <History />

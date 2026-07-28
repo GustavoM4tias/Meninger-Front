@@ -3,7 +3,7 @@
         <PageContainer size="full">
 
             <PageHeader icon="fas fa-store"
-                subtitle="Stands modelo com valor médio e itens, e os stands reais com o custo apurado ao vivo do Sienge (Despesas com Stand).">
+                subtitle="Stands modelo com valor médio e itens, e os stands reais com o custo apurado do Sienge (Despesas com Stand).">
                 <template #title>
                     Stand de Vendas
                     <Favorite :router="'/marketing/stand-vendas'" :section="'Stand de Vendas'" />
