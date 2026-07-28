@@ -67,7 +67,7 @@ window.addEventListener('vite:preloadError', (event) => {
   reloadForFreshBuild();
 });
 
-// ✅ Guard unificado: autenticação + role + permissões de alçada
+// ✅ Guard unificado: autenticação + role + admin + permissões de alçada
 router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore();
 
@@ -78,7 +78,16 @@ router.beforeEach(async (to, from, next) => {
     return next(isAcademyHost() ? { name: 'AcademyLogin' } : { name: 'login' });
   }
 
-  // 2. Checks de position e role (comportamento original)
+  // 1b. Garante o usuário carregado do servidor antes de avaliar role/cargo.
+  //     hasRole/hasPosition não têm mais fallback de localStorage; sem isso,
+  //     um F5 numa rota admin negaria acesso antes do fetchMe terminar.
+  //     Falha de rede: segue sem user → checks de role negam (fail-closed),
+  //     sem deslogar o usuário.
+  if (requiresAuth && authStore.isAuthenticated() && !authStore.user) {
+    try { await authStore.fetchMe(); } catch { /* fail-closed nos checks abaixo */ }
+  }
+
+  // 2. Checks de position e role
   const allowedPosition = to.meta?.allowedPosition;
   const allowedRole     = to.meta?.allowedRole;
 
@@ -96,7 +105,14 @@ router.beforeEach(async (to, from, next) => {
     const permStore = usePermissionStore();
     await permStore.ensureLoaded();
 
-    // Apenas verifica rotas que estão no registro gerenciado (ignora rotas internas, params, etc.)
+    // 3a. Rotas admin (meta.requiresAdmin/adminOnly em qualquer nível do match):
+    //     exige admin confirmado pelo servidor (/permissions/me), nunca cache.
+    const needsAdmin = to.matched.some(r => r.meta?.requiresAdmin || r.meta?.adminOnly);
+    if (needsAdmin && !permStore.isAdmin) {
+      return next({ path: '/error', query: { message: 'Você não tem permissão para acessar esta página.' } });
+    }
+
+    // 3b. Apenas verifica rotas que estão no registro gerenciado (ignora rotas internas, params, etc.)
     const isManagedRoute = allManagedRoutes.some(managed =>
       to.path === managed || to.path.startsWith(managed + '/')
     );

@@ -19,10 +19,12 @@ export const usePermissionStore = defineStore('permissions', () => {
             isAdmin.value  = data.isAdmin  ?? false;
             allowedRoutes.value = data.routes ?? [];
             loaded.value = true;
-            // Cache local para evitar flicker no reload
-            localStorage.setItem('_perm', JSON.stringify({ isAdmin: isAdmin.value, routes: allowedRoutes.value }));
+            // Cache local só das ROTAS (evita flicker do menu no reload).
+            // isAdmin nunca vai para o cache: admin só vale confirmado pelo servidor.
+            localStorage.setItem('_perm', JSON.stringify({ routes: allowedRoutes.value }));
         } catch {
-            // Fallback para cache local em caso de falha de rede
+            // Fallback para cache local em caso de falha de rede (só rotas;
+            // isAdmin permanece false — fail-closed para telas admin)
             _loadFromCache();
             loaded.value = true;
         }
@@ -65,12 +67,14 @@ export const usePermissionStore = defineStore('permissions', () => {
     }
 
     // ── Privado: carrega do localStorage ────────────────────────────────────
+    // Restaura APENAS as rotas. isAdmin é ignorado de propósito: um valor de
+    // localStorage nunca pode conceder admin (o guard exige confirmação do
+    // servidor via fetchMyPermissions).
     function _loadFromCache() {
         try {
             const cached = JSON.parse(localStorage.getItem('_perm'));
             if (cached) {
-                isAdmin.value       = cached.isAdmin  ?? false;
-                allowedRoutes.value = cached.routes   ?? [];
+                allowedRoutes.value = cached.routes ?? [];
             }
         } catch { /* ignora */ }
     }

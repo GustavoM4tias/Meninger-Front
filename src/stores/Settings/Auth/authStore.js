@@ -212,14 +212,17 @@ export const useAuthStore = defineStore('user', {
       localStorage.setItem('position', userById?.position || '');
     },
 
+    // Segurança: sem fallback de localStorage — cargo/role só valem vindos do
+    // servidor (fetchMe). O guard garante que o user esteja carregado antes
+    // de avaliar estas checagens.
     hasPosition(position) {
       if (!position) return true;
-      return this.user?.position === position || localStorage.getItem('position') === position;
+      return this.user?.position === position;
     },
 
     hasRole(role) {
       if (!role) return true;
-      return this.user?.role === role || localStorage.getItem('role') === role;
+      return this.user?.role === role;
     },
 
     async fetchUserInfo() {
