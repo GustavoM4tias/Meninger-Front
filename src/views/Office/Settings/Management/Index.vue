@@ -31,7 +31,6 @@ const toast = (() => {
 const tabs = [
   { value: 'departments', label: 'Departamentos', icon: 'fas fa-sitemap' },
   { value: 'positions',   label: 'Cargos',        icon: 'fas fa-id-badge' },
-  { value: 'categories',  label: 'Categorias',    icon: 'fas fa-tags' },
   { value: 'cities',      label: 'Cidades',       icon: 'fas fa-city' },
 ];
 
@@ -50,14 +49,12 @@ const form = ref({
 const items = computed(() => ({
   departments: store.departments,
   positions:   store.positions,
-  categories:  store.departmentCategories,
   cities:      store.userCities,
 }[activeTab.value] || []));
 
 const labelSingular = computed(() => ({
   departments: 'Departamento',
   positions:   'Cargo',
-  categories:  'Categoria',
   cities:      'Cidade',
 }[activeTab.value]));
 
@@ -98,12 +95,6 @@ function openModal(item) {
     form.value = {
       name: item.name, code: item.code, description: item.description || '',
       departmentId: '', is_internal: true, is_partner: false, uf: '',
-    };
-  } else if (activeTab.value === 'categories') {
-    form.value = {
-      name: item.name, code: item.code, description: item.description || '',
-      departmentId: item.department_id || item.department?.id || '',
-      is_internal: true, is_partner: false, uf: '',
     };
   } else {
     form.value = {
@@ -157,24 +148,6 @@ async function saveItem() {
         await store.createDepartment(payload);
         successMessage = 'Departamento criado com sucesso!';
       }
-    } else if (activeTab.value === 'categories') {
-      if (!form.value.departmentId) { toast.error('Selecione um departamento para a categoria.'); return; }
-      if (!form.value.name.trim() || !form.value.code.trim()) {
-        toast.error('Nome e código da categoria são obrigatórios.'); return;
-      }
-      const payload = {
-        name: form.value.name.trim(),
-        code: form.value.code.trim().toUpperCase(),
-        description: form.value.description?.trim() || null,
-        departmentId: Number(form.value.departmentId),
-      };
-      if (editingItem.value?.id) {
-        await store.updateDepartmentCategory(editingItem.value.id, payload);
-        successMessage = 'Categoria atualizada com sucesso!';
-      } else {
-        await store.createDepartmentCategory(payload);
-        successMessage = 'Categoria criada com sucesso!';
-      }
     } else {
       if (!form.value.name.trim()) { toast.error('Nome da cidade é obrigatório.'); return; }
       const payload = {
@@ -203,7 +176,6 @@ async function deactivateItem(item) {
     const map = {
       positions:   store.deactivatePosition,
       departments: store.deactivateDepartment,
-      categories:  store.deactivateDepartmentCategory,
       cities:      store.deactivateUserCity,
     };
     await map[activeTab.value](item.id);
@@ -221,7 +193,6 @@ onMounted(async () => {
     store.fetchDepartments(),
     store.fetchPositions(),
     store.fetchUserCities(),
-    store.fetchDepartmentCategories(),
   ]);
 });
 </script>
@@ -232,11 +203,11 @@ onMounted(async () => {
 
       <!-- Header -->
       <PageHeader
-        title="Cargos, departamentos e categorias"
-        subtitle="Configure departamentos, categorias, cargos e cidades disponíveis para os usuários."
+        title="Departamentos, cargos e cidades"
+        subtitle="Configure departamentos, cargos e cidades disponíveis para os usuários."
         icon="fas fa-sliders">
         <template #title>
-          <span>Cargos, departamentos & categorias</span>
+          <span>Departamentos, cargos & cidades</span>
           <Favorite :router="'/settings/management'" :section="'Departamentos'" />
         </template>
         <template #actions>
@@ -290,37 +261,6 @@ onMounted(async () => {
                 <Button size="sm" variant="ghost" icon="fas fa-pen" @click="openModal(d)">Editar</Button>
                 <Button v-if="d.active" size="sm" variant="ghost" icon="fas fa-ban"
                   class="text-red-500" @click="deactivateItem(d)">Desativar</Button>
-              </div>
-            </div>
-          </Surface>
-        </template>
-
-        <!-- CATEGORIAS -->
-        <template v-else-if="activeTab === 'categories'">
-          <Surface v-for="c in items" :key="c.id" variant="raised" padding="none" class="overflow-hidden">
-            <div class="flex items-start justify-between gap-3 p-4 border-b border-line">
-              <div class="min-w-0 flex-1">
-                <h3 class="text-sm font-semibold text-ink truncate">{{ c.name }}</h3>
-                <div class="mt-1.5 flex flex-wrap gap-1.5">
-                  <Badge size="sm">
-                    <i class="fas fa-hashtag text-[9px]"></i>{{ c.code }}
-                  </Badge>
-                  <Badge v-if="c.department || c.department_id" variant="accent" size="sm">
-                    <i class="fas fa-sitemap text-[9px]"></i>
-                    {{ c.department?.name || departmentNameById(c.department_id) || 'Sem departamento' }}
-                  </Badge>
-                </div>
-              </div>
-              <Badge :variant="c.active ? 'success' : 'danger'" size="sm">
-                {{ c.active ? 'Ativo' : 'Inativo' }}
-              </Badge>
-            </div>
-            <div class="p-4 space-y-2 text-sm">
-              <p class="text-ink-muted leading-relaxed">{{ c.description || '—' }}</p>
-              <div class="flex items-center gap-1 pt-2 border-t border-line/50">
-                <Button size="sm" variant="ghost" icon="fas fa-pen" @click="openModal(c)">Editar</Button>
-                <Button v-if="c.active" size="sm" variant="ghost" icon="fas fa-ban"
-                  class="text-red-500" @click="deactivateItem(c)">Desativar</Button>
               </div>
             </div>
           </Surface>
@@ -402,7 +342,6 @@ onMounted(async () => {
             <p class="text-xs text-ink-muted mt-0.5">
               {{ activeTab === 'positions' ? 'Defina departamento, nome, código e tipo do cargo.'
               : activeTab === 'departments' ? 'Defina nome, código e descrição do departamento.'
-              : activeTab === 'categories' ? 'Defina nome, código e descrição da categoria.'
               : 'Defina nome e UF da cidade.' }}
             </p>
           </div>
@@ -439,22 +378,6 @@ onMounted(async () => {
             <label class="block text-xs font-medium text-ink-muted mb-1.5">Descrição</label>
             <textarea v-model="form.description" rows="3"
               placeholder="Ex: Atividades ligadas à divulgação, branding etc."
-              class="w-full px-3.5 py-2 text-sm bg-surface-raised text-ink border border-line rounded-lg
-                     placeholder:text-ink-subtle outline-none resize-none transition-all shadow-inner-soft
-                     focus:border-accent-ring focus:ring-2 focus:ring-accent-ring/20" />
-          </div>
-        </template>
-
-        <!-- Categorias -->
-        <template v-else-if="activeTab === 'categories'">
-          <Select v-model="form.departmentId" :options="departmentOptions" label="Departamento" required />
-          <Input v-model="form.name" label="Nome da categoria" placeholder="Ex: Mídia, Eventos, Taxas..." required />
-          <Input v-model="form.code" label="Código (único)" placeholder="Ex: MIDIA, EVENTOS"
-            class="uppercase" required />
-          <div>
-            <label class="block text-xs font-medium text-ink-muted mb-1.5">Descrição</label>
-            <textarea v-model="form.description" rows="3"
-              placeholder="Ex: Agrupamento de despesas de mídia, anúncios, etc."
               class="w-full px-3.5 py-2 text-sm bg-surface-raised text-ink border border-line rounded-lg
                      placeholder:text-ink-subtle outline-none resize-none transition-all shadow-inner-soft
                      focus:border-accent-ring focus:ring-2 focus:ring-accent-ring/20" />
