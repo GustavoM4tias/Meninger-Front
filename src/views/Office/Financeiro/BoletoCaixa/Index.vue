@@ -655,27 +655,6 @@
                     <div class="text-ink truncate max-w-[260px]">{{ item.titular_nome || '—' }}</div>
                     <div class="text-ink-subtle text-[11px] truncate max-w-[260px]">{{ item.empreendimento || '—' }}</div>
                   </td>
-                  <td class="px-4 py-3 whitespace-nowrap">
-                    <!-- Etapa da RESERVA + do REPASSE no CV — badge na cor do
-                         workflow, clicável: abre a tela correspondente do CV. -->
-                    <div class="flex flex-col items-start gap-1">
-                      <a v-if="item.cv_situacao" :href="cvReservaUrl(item)" target="_blank" rel="noopener"
-                        @click.stop
-                        class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border border-line bg-surface-sunken text-ink-muted hover:opacity-80 transition-opacity"
-                        :style="cvBadgeStyle(item.cv_situacao_cor_bg, item.cv_situacao_cor_nome)"
-                        :title="`Reserva: ${item.cv_situacao} — abrir no CV`">
-                        <i class="fas fa-flag text-[9px]"></i>{{ item.cv_situacao }}
-                      </a>
-                      <a v-if="item.cv_situacao_repasse" :href="cvRepasseUrl(item)" target="_blank" rel="noopener"
-                        @click.stop
-                        class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border border-line bg-surface-sunken text-ink-muted hover:opacity-80 transition-opacity"
-                        :style="cvBadgeStyle(item.cv_repasse_cor_bg, item.cv_repasse_cor_nome)"
-                        :title="`Repasse: ${item.cv_situacao_repasse} — abrir no CV`">
-                        <i class="fas fa-building-columns text-[9px]"></i>{{ item.cv_situacao_repasse }}
-                      </a>
-                      <span v-if="!item.cv_situacao && !item.cv_situacao_repasse" class="text-ink-subtle text-xs">—</span>
-                    </div>
-                  </td>
                   <td class="px-4 py-3 text-right font-semibold text-ink whitespace-nowrap font-mono tabular-nums">
                     {{ item.valor ? formatCurrency(item.valor) : '—' }}
                   </td>
@@ -695,7 +674,28 @@
                       {{ paymentBadgeLabel(item.payment_status || 'pending') }}
                     </span>
                   </td>
-                  <td class="px-4 py-3 text-center text-xs text-ink-subtle whitespace-nowrap font-mono tabular-nums">
+                  <td class="py-3 whitespace-nowrap">
+                    <!-- Etapa da RESERVA + do REPASSE no CV — badge na cor do
+                         workflow, clicável: abre a tela correspondente do CV. -->
+                    <div class="flex flex-row justify-center gap-1">
+                      <a v-if="item.cv_situacao" :href="cvReservaUrl(item)" target="_blank" rel="noopener"
+                        @click.stop
+                        class="inline-flex items-center gap-1 px-2.5 rounded-full text-[10px] font-semibold border border-line bg-surface-sunken text-ink-muted hover:opacity-80 transition-opacity"
+                        :style="cvBadgeStyle(item.cv_situacao_cor_bg, item.cv_situacao_cor_nome)"
+                        :title="`Reserva: ${item.cv_situacao} — abrir no CV`">
+                        <i class="fas fa-flag text-[9px]"></i>{{ item.cv_situacao }}
+                      </a>
+                      <a v-if="item.cv_situacao_repasse" :href="cvRepasseUrl(item)" target="_blank" rel="noopener"
+                        @click.stop
+                        class="inline-flex items-center gap-1 px-2.5 rounded-full text-[10px] font-semibold border border-line bg-surface-sunken text-ink-muted hover:opacity-80 transition-opacity"
+                        :style="cvBadgeStyle(item.cv_repasse_cor_bg, item.cv_repasse_cor_nome)"
+                        :title="`Repasse: ${item.cv_situacao_repasse} — abrir no CV`">
+                        <i class="fas fa-building-columns text-[9px]"></i>{{ item.cv_situacao_repasse }}
+                      </a>
+                      <span v-if="!item.cv_situacao && !item.cv_situacao_repasse" class="text-ink-subtle text-xs">—</span>
+                    </div>
+                  </td>
+                  <td class="px-1 py-3 text-center text-xs text-ink-subtle whitespace-nowrap font-mono tabular-nums">
                     {{ formatDateTime(item.createdAt) }}
                   </td>
                   <td class="px-4 py-3 text-center whitespace-nowrap">
@@ -894,11 +894,11 @@ async function handleSave() {
 const historyColumns = [
   { key: 'reserva',    label: '#Reserva',                 align: 'left' },
   { key: 'titular',    label: 'Titular / Empreendimento', align: 'left' },
-  { key: 'etapa',      label: 'Etapa CV',                 align: 'left', sortable: false },
   { key: 'valor',      label: 'Valor',                    align: 'right' },
   { key: 'vencimento', label: 'Vencimento',               align: 'center' },
   { key: 'status',     label: 'Emissão',                  align: 'center' },
   { key: 'pagamento',  label: 'Pagamento',                align: 'center' },
+  { key: 'etapa',      label: 'Etapa CV',                 align: 'center', sortable: false },
   { key: 'data',       label: 'Data',                     align: 'center' },
 ];
 
