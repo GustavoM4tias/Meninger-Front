@@ -11,8 +11,9 @@
             storage-key="cancelamento-reservas"
             intro="Quando uma reserva é cancelada no CV, esta automação confere o contrato no Sienge e, somente se todas as validações de segurança passarem, exclui o contrato aguardando emissão, disponibiliza a unidade no CV e registra uma mensagem na reserva."
             :steps="[
-              { title: 'Acompanhe o Histórico', text: 'Cada cancelamento recebido vira um caso com status: Sucesso (executado), Pendência (validação barrou, nada foi alterado - trate manualmente), Não aplicável, Duplicado ou Erro.' },
-              { title: 'Abra o detalhe', text: 'Clique em um caso para ver todas as validações executadas (contrato, unidade, cliente, ato) e a linha do tempo completa.' },
+              { title: 'Acompanhe o Histórico', text: 'A lista mostra uma linha por RESERVA, com a situação mais recente: Sucesso (executado), Pendência (validação barrou, nada foi alterado - trate manualmente), Não aplicável, Duplicado ou Erro. Quando a reserva passou mais de uma vez pela automação, aparece o total de ocorrências ao lado do número do caso.' },
+              { title: 'Confira a etapa no CV', text: 'A coluna Etapa CV mostra a etapa atual da reserva e a do repasse, nas cores do workflow do CV. Clique na etapa para abrir a tela correspondente no CV.' },
+              { title: 'Abra o detalhe', text: 'Clique em uma linha para ver as validações executadas (contrato, unidade, cliente, ato), a lista de ocorrências da reserva e a linha do tempo consolidada de todas elas.' },
               { title: 'Resolva pendências', text: 'Casos barrados movem a reserva para a etapa Pendência no CV. Resolva a causa e use Reprocessar (ou retorne a reserva para Cancelada no CV) - a automação refaz todas as conferências do zero antes de agir.' },
               { title: 'Configurações', text: 'Copie o endereço do webhook para o CV, confira os IDs das etapas Pendência/Cancelada, ative a automação e, se precisar, processe uma reserva manualmente pelo ID.' },
             ]"
@@ -104,7 +105,14 @@
                   <tr v-for="item in store.history" :key="item.id"
                     class="border-b border-line last:border-0 hover:bg-surface-hover cursor-pointer transition-colors"
                     @click="openDetail(item)">
-                    <td class="px-4 py-3 font-mono text-ink-muted">#{{ item.id }}</td>
+                    <td class="px-4 py-3 font-mono text-ink-muted whitespace-nowrap">
+                      #{{ item.id }}
+                      <span v-if="item.casos_count > 1"
+                        class="ml-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-ink/5 text-ink-muted border border-line align-middle"
+                        :title="`${item.casos_count} ocorrências desta reserva - abra o caso para ver todas`">
+                        <i class="fas fa-layer-group text-[9px]"></i> {{ item.casos_count }}
+                      </span>
+                    </td>
                     <td class="px-4 py-3">
                       <div class="font-medium text-ink">{{ item.titular_nome || '-' }}</div>
                       <div class="text-xs text-ink-muted">Reserva {{ item.idreserva }}</div>
@@ -121,6 +129,23 @@
                       <Badge :variant="statusMeta(item.status).variant" size="sm" dot>
                         {{ statusMeta(item.status).label }}
                       </Badge>
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap">
+                      <div class="flex flex-wrap gap-1">
+                        <a v-if="item.cv_situacao" :href="cvReservaUrl(item)" target="_blank" rel="noopener" @click.stop
+                          class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold border border-line bg-surface-sunken text-ink-muted hover:opacity-80 transition-opacity"
+                          :style="cvBadgeStyle(item.cv_situacao_cor_bg, item.cv_situacao_cor_nome)"
+                          :title="`Reserva: ${item.cv_situacao} - abrir no CV`">
+                          <i class="fas fa-flag text-[9px]"></i>{{ item.cv_situacao }}
+                        </a>
+                        <a v-if="item.cv_situacao_repasse" :href="cvRepasseUrl(item)" target="_blank" rel="noopener" @click.stop
+                          class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold border border-line bg-surface-sunken text-ink-muted hover:opacity-80 transition-opacity"
+                          :style="cvBadgeStyle(item.cv_repasse_cor_bg, item.cv_repasse_cor_nome)"
+                          :title="`Repasse: ${item.cv_situacao_repasse} - abrir no CV`">
+                          <i class="fas fa-building-columns text-[9px]"></i>{{ item.cv_situacao_repasse }}
+                        </a>
+                        <span v-if="!item.cv_situacao && !item.cv_situacao_repasse" class="text-xs text-ink-subtle">-</span>
+                      </div>
                     </td>
                     <td class="px-4 py-3">
                       <div class="flex flex-wrap gap-1">
@@ -165,6 +190,23 @@
                 </div>
                 <div class="text-xs text-ink-muted">
                   Reserva {{ item.idreserva }} · {{ item.unidade_nome || '-' }} · {{ item.empreendimento || '-' }}
+                </div>
+                <div v-if="item.cv_situacao || item.cv_situacao_repasse || item.casos_count > 1"
+                  class="flex flex-wrap items-center gap-1 mt-1.5">
+                  <span v-if="item.cv_situacao"
+                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border border-line bg-surface-sunken text-ink-muted"
+                    :style="cvBadgeStyle(item.cv_situacao_cor_bg, item.cv_situacao_cor_nome)">
+                    <i class="fas fa-flag text-[9px]"></i>{{ item.cv_situacao }}
+                  </span>
+                  <span v-if="item.cv_situacao_repasse"
+                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border border-line bg-surface-sunken text-ink-muted"
+                    :style="cvBadgeStyle(item.cv_repasse_cor_bg, item.cv_repasse_cor_nome)">
+                    <i class="fas fa-building-columns text-[9px]"></i>{{ item.cv_situacao_repasse }}
+                  </span>
+                  <span v-if="item.casos_count > 1"
+                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-ink/5 text-ink-muted border border-line">
+                    <i class="fas fa-layer-group text-[9px]"></i> {{ item.casos_count }} ocorrências
+                  </span>
                 </div>
                 <div class="flex items-center justify-between mt-1.5">
                   <div class="flex flex-wrap gap-1">
@@ -329,7 +371,8 @@
           <ul class="text-xs text-ink-muted space-y-1.5 list-disc pl-5">
             <li>Reserva confirmada como cancelada/distratada ao vivo no CV (nunca só pelo webhook).</li>
             <li>Exatamente 1 contrato ativo no Sienge vinculado à reserva, na situação <strong>Autorizado</strong> (aguardando emissão) e sem data de emissão.</li>
-            <li>Unidade, empreendimento e cliente (por CPF/CNPJ) do contrato conferidos contra a reserva.</li>
+            <li>Unidade e cliente (por CPF/CNPJ) do contrato conferidos contra a reserva.</li>
+            <li>Empreendimento do contrato conferido por código - centro de custo da etapa, vínculo manual CV × Sienge ou, quando o CV não manda o centro de custo, empresa × empresa. Se a unidade já casou pelo código interno (id único no Sienge), a divergência de código vira aviso; sem esse casamento, bloqueia.</li>
             <li>Nenhuma parcela paga no contrato e nenhum boleto de ato pendente, pago ou em processamento.</li>
             <li>Nenhum outro contrato ativo na mesma unidade no Sienge.</li>
             <li>Exclusão confirmada por releitura (por reserva e por unidade) antes de liberar a unidade no CV.</li>
@@ -450,6 +493,25 @@
               <div class="flex justify-between gap-3"><span class="text-ink-muted">Empreendimento</span><span class="text-ink text-right">{{ detail.item.empreendimento || '-' }}</span></div>
               <div class="flex justify-between gap-3"><span class="text-ink-muted">Cancelada em</span><span class="text-ink">{{ formatDateBr(detail.item.data_cancelamento) }}</span></div>
               <div v-if="detail.item.motivo_cancelamento" class="flex justify-between gap-3"><span class="text-ink-muted">Motivo</span><span class="text-ink text-right">{{ detail.item.motivo_cancelamento }}</span></div>
+              <!-- Etapa ATUAL no CV (reserva e repasse são workflows distintos) -->
+              <div class="flex justify-between items-center gap-3">
+                <span class="text-ink-muted">Etapa da reserva</span>
+                <a v-if="etapaCv?.cv_situacao" :href="cvReservaUrl(detail.item)" target="_blank" rel="noopener"
+                  class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border border-line bg-surface text-ink-muted hover:opacity-80 transition-opacity"
+                  :style="cvBadgeStyle(etapaCv.cv_situacao_cor_bg, etapaCv.cv_situacao_cor_nome)">
+                  <i class="fas fa-flag text-[9px]"></i>{{ etapaCv.cv_situacao }}
+                </a>
+                <span v-else class="text-ink-subtle text-xs">-</span>
+              </div>
+              <div class="flex justify-between items-center gap-3">
+                <span class="text-ink-muted">Etapa do repasse</span>
+                <a v-if="etapaCv?.cv_situacao_repasse" :href="cvRepasseUrl(etapaCv)" target="_blank" rel="noopener"
+                  class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border border-line bg-surface text-ink-muted hover:opacity-80 transition-opacity"
+                  :style="cvBadgeStyle(etapaCv.cv_repasse_cor_bg, etapaCv.cv_repasse_cor_nome)">
+                  <i class="fas fa-building-columns text-[9px]"></i>{{ etapaCv.cv_situacao_repasse }}
+                </a>
+                <span v-else class="text-ink-subtle text-xs">sem repasse</span>
+              </div>
             </div>
           </div>
           <div class="bg-surface-sunken border border-line rounded-xl p-3.5 space-y-2">
@@ -500,6 +562,33 @@
               class="flex items-start gap-2.5 text-sm rounded-lg px-3 py-2 border border-amber-500/30 bg-amber-500/10">
               <i class="fas fa-triangle-exclamation text-amber-500 mt-0.5"></i>
               <span class="text-ink-muted"><strong class="text-ink">{{ w.etapa }}</strong> - {{ w.erro }}</span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Ocorrências desta reserva - toda vez que a reserva passou pela
+             automação. Clicar troca o caso exibido acima. -->
+        <div v-if="store.timelineAttempts.length > 1">
+          <div class="flex items-center gap-2 mb-2">
+            <h3 class="text-xs font-semibold uppercase tracking-wider text-ink-subtle">Ocorrências desta reserva</h3>
+            <Badge variant="neutral" size="sm" outlined>{{ store.timelineAttempts.length }}</Badge>
+          </div>
+          <ul class="space-y-1.5">
+            <li v-for="(a, i) in store.timelineAttempts" :key="a.id">
+              <button type="button" @click="openOcorrencia(a)"
+                class="w-full text-left flex flex-wrap items-center gap-2 rounded-lg border px-3 py-2 transition-colors"
+                :class="a.id === detail.item.id
+                  ? 'border-accent/50 bg-accent-soft'
+                  : 'border-line bg-surface-sunken hover:bg-surface-hover'">
+                <span class="text-[11px] font-mono text-ink-subtle">{{ i + 1 }}ª</span>
+                <span class="font-mono text-xs text-ink-muted">caso #{{ a.id }}</span>
+                <Badge :variant="statusMeta(a.status).variant" size="sm" dot>{{ statusMeta(a.status).label }}</Badge>
+                <Badge v-if="a.manual" variant="info" size="sm" outlined>Manual</Badge>
+                <span class="text-[11px] text-ink-subtle ml-auto whitespace-nowrap">
+                  {{ formatDateTime(a.createdAt ?? a.created_at) }}
+                </span>
+                <span v-if="a.motivo" class="w-full text-xs text-ink-muted truncate">{{ a.motivo }}</span>
+              </button>
             </li>
           </ul>
         </div>
@@ -658,7 +747,7 @@ function acoesCaso(item) {
     },
     {
       icon: 'fas fa-diagram-project',
-      label: 'Etapa da reserva',
+      label: 'Etapa aplicada pela automação',
       done: !!item.cv_situacao_alterada,
       warn: pendencia,
       text: item.cv_situacao_alterada
@@ -709,10 +798,22 @@ const histColumns = [
   { key: 'unidade',  label: 'Unidade',          align: 'left',  sortable: true },
   { key: 'contrato', label: 'Contrato Sienge',  align: 'left',  sortable: true },
   { key: 'status',   label: 'Status',           align: 'left',  sortable: true },
+  { key: '_etapa',   label: 'Etapa CV',         align: 'left',  sortable: false },
   { key: '_acoes',   label: 'Ações executadas', align: 'left',  sortable: false },
   { key: 'quando',   label: 'Quando',           align: 'right', sortable: true },
   { key: '_link',    label: '',                 align: 'right', sortable: false },
 ];
+
+// ── Etapa CV: badge na cor do workflow do CV, clicável ────────────────────────
+// Reserva e repasse são workflows diferentes no CV: a reserva pode estar em
+// Pendência enquanto o repasse segue em outra etapa, então mostramos os dois.
+const cvRepasseUrl = (item) => item.cv_idrepasse
+  ? `https://menin.cvcrm.com.br/gestor/financeiro/repasses/${item.cv_idrepasse}/administrar`
+  : cvReservaUrl(item);
+function cvBadgeStyle(bg, txt) {
+  if (!bg) return null;
+  return { backgroundColor: bg, color: txt || '#fff', borderColor: 'transparent' };
+}
 
 function sortIcon(key) {
   if (store.sortBy !== key) return 'fas fa-sort text-ink-subtle/40';
@@ -747,6 +848,28 @@ function openDetail(item) {
   retryFeedback.value = null;
   store.fetchTimeline(item.id);
 }
+
+// Troca o caso exibido no modal entre as ocorrências da MESMA reserva - a
+// linha do tempo já é consolidada, então não precisa recarregar.
+function openOcorrencia(a) {
+  if (!a || a.id === detail.value.item?.id) return;
+  detail.value = { open: true, item: a };
+  retryFeedback.value = null;
+}
+
+// Etapa CV do modal: a da linha clicada, completada pela leitura ao vivo que
+// vem junto da timeline (mais recente).
+const CV_KEYS = [
+  'cv_idsituacao', 'cv_situacao', 'cv_situacao_cor_bg', 'cv_situacao_cor_nome',
+  'cv_idsituacao_repasse', 'cv_situacao_repasse', 'cv_repasse_cor_bg', 'cv_repasse_cor_nome',
+  'cv_idrepasse',
+];
+const etapaCv = computed(() => {
+  const item = detail.value.item;
+  if (!item) return null;
+  const doItem = Object.fromEntries(CV_KEYS.filter(k => item[k] != null).map(k => [k, item[k]]));
+  return { idreserva: item.idreserva, ...doItem, ...(store.timelineCv || {}) };
+});
 function closeDetail() {
   detail.value = { open: false, item: null };
 }
