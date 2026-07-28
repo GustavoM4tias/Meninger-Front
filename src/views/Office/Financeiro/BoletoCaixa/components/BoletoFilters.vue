@@ -41,6 +41,8 @@ const local = ref({
   dateTo: DEFAULT_DATE_TO,
   dateField: 'created_at', // 'created_at' = emissão | 'paid_at' = pagamento
   q: '',
+  cvSituacao: [], // ids de situação da RESERVA no CV
+  cvRepasse: [],  // ids de situação do REPASSE no CV
 });
 
 // Data de referência da busca por período: emissão (created_at) ou pagamento (paid_at).
@@ -76,6 +78,24 @@ const empreendimentosOptions = computed(() =>
   (store.facets?.empreendimentos || []).map(e => e.name)
 );
 
+// ── Etapas CV (reserva + repasse) — opções vindas dos facets, filtro por id ──
+// MultiSelector trabalha com labels (nome da etapa); convertemos pra ids.
+const cvSituacaoOptions = computed(() => (store.facets?.cvSituacoes || []).map(s => s.nome));
+const cvRepasseOptions  = computed(() => (store.facets?.cvRepasses  || []).map(s => s.nome));
+const cvSitByLabel = computed(() => Object.fromEntries((store.facets?.cvSituacoes || []).map(s => [s.nome, String(s.id)])));
+const cvSitById    = computed(() => Object.fromEntries((store.facets?.cvSituacoes || []).map(s => [String(s.id), s.nome])));
+const cvRepByLabel = computed(() => Object.fromEntries((store.facets?.cvRepasses  || []).map(s => [s.nome, String(s.id)])));
+const cvRepById    = computed(() => Object.fromEntries((store.facets?.cvRepasses  || []).map(s => [String(s.id), s.nome])));
+
+const selectedCvSituacaoLabels = computed({
+  get: () => local.value.cvSituacao.map(v => cvSitById.value[String(v)] || String(v)),
+  set: (labels) => { local.value.cvSituacao = labels.map(l => cvSitByLabel.value[l]).filter(Boolean); },
+});
+const selectedCvRepasseLabels = computed({
+  get: () => local.value.cvRepasse.map(v => cvRepById.value[String(v)] || String(v)),
+  set: (labels) => { local.value.cvRepasse = labels.map(l => cvRepByLabel.value[l]).filter(Boolean); },
+});
+
 // V-model adaptado: MultiSelector trabalha com labels; convertemos pra valores.
 const selectedStatusLabels = computed({
   get: () => local.value.status.map(v => statusToLabel[v] || v),
@@ -98,6 +118,8 @@ function syncFiltersFromUrl() {
   if (q.dateTo)   local.value.dateTo = String(q.dateTo);
   if (q.dateField === 'paid_at') local.value.dateField = 'paid_at';
   if (q.q)        local.value.q = String(q.q);
+  if (q.cvSituacao) local.value.cvSituacao = String(q.cvSituacao).split(',').filter(Boolean);
+  if (q.cvRepasse)  local.value.cvRepasse = String(q.cvRepasse).split(',').filter(Boolean);
 }
 
 function syncUrlFromFilters() {
@@ -111,6 +133,8 @@ function syncUrlFromFilters() {
   if (f.dateTo)                 q.dateTo = f.dateTo;
   if (f.dateField === 'paid_at') q.dateField = f.dateField;
   if (f.q)                      q.q = f.q;
+  if (f.cvSituacao.length)      q.cvSituacao = f.cvSituacao.join(',');
+  if (f.cvRepasse.length)       q.cvRepasse = f.cvRepasse.join(',');
   router.replace({ query: q }).catch(() => {});
 }
 
@@ -128,7 +152,7 @@ function clearFilters() {
   local.value = {
     status: ['success', 'error', 'processing'], paymentStatus: [], empreendimento: [],
     idreserva: '', dateFrom: DEFAULT_DATE_FROM, dateTo: DEFAULT_DATE_TO,
-    dateField: 'created_at', q: '',
+    dateField: 'created_at', q: '', cvSituacao: [], cvRepasse: [],
   };
   store.historyFilter = { ...local.value };
   store.historyPage = 1;
@@ -148,6 +172,8 @@ const activeFiltersCount = computed(() => {
   if (f.dateFrom)  n++;
   if (f.dateTo)    n++;
   if (f.q)         n++;
+  if (f.cvSituacao.length) n++;
+  if (f.cvRepasse.length)  n++;
   return n;
 });
 
@@ -246,6 +272,22 @@ onMounted(async () => {
           @update:modelValue="v => local.empreendimento = Array.isArray(v) ? v : []"
           :options="empreendimentosOptions" placeholder="Todos os empreendimentos"
           :page-size="200" :select-all="true" />
+      </div>
+
+      <div>
+        <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+          <i class="fas fa-flag text-[10px] mr-1 text-ink-subtle"></i>Etapa CV (reserva)
+        </label>
+        <MultiSelector v-model="selectedCvSituacaoLabels"
+          :options="cvSituacaoOptions" placeholder="Todas as etapas" :select-all="false" />
+      </div>
+
+      <div>
+        <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+          <i class="fas fa-building-columns text-[10px] mr-1 text-ink-subtle"></i>Etapa CV (repasse)
+        </label>
+        <MultiSelector v-model="selectedCvRepasseLabels"
+          :options="cvRepasseOptions" placeholder="Todas as etapas" :select-all="false" />
       </div>
 
       <Input v-model="local.idreserva" type="number" label="ID Reserva" placeholder="Ex: 7460"

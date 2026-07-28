@@ -619,13 +619,16 @@
               <thead>
                 <tr class="bg-surface-sunken/60 border-b border-line">
                   <th v-for="col in historyColumns" :key="col.key"
-                    class="px-4 py-3 text-[11px] font-mono uppercase tracking-wider text-ink-subtle select-none cursor-pointer hover:text-ink transition-colors"
-                    :class="col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : 'text-left'"
-                    @click="store.setSort(col.key)">
+                    class="px-4 py-3 text-[11px] font-mono uppercase tracking-wider text-ink-subtle select-none transition-colors"
+                    :class="[
+                      col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : 'text-left',
+                      col.sortable === false ? '' : 'cursor-pointer hover:text-ink',
+                    ]"
+                    @click="col.sortable === false ? null : store.setSort(col.key)">
                     <span class="inline-flex items-center gap-1.5"
                       :class="col.align === 'right' ? 'flex-row-reverse' : col.align === 'center' ? 'justify-center' : ''">
                       {{ col.label }}
-                      <i class="text-[9px]" :class="sortIcon(col.key)"></i>
+                      <i v-if="col.sortable !== false" class="text-[9px]" :class="sortIcon(col.key)"></i>
                     </span>
                   </th>
                   <th class="text-center px-4 py-3 text-[11px] font-mono uppercase tracking-wider text-ink-subtle"></th>
@@ -633,7 +636,7 @@
               </thead>
               <tbody>
                 <tr v-if="!store.history.length">
-                  <td colspan="8" class="text-center py-12">
+                  <td colspan="9" class="text-center py-12">
                     <EmptyState icon="fas fa-inbox" title="Sem registros" description="Nenhum registro encontrado com os filtros atuais." />
                   </td>
                 </tr>
@@ -651,6 +654,27 @@
                   <td class="px-4 py-3">
                     <div class="text-ink truncate max-w-[260px]">{{ item.titular_nome || '—' }}</div>
                     <div class="text-ink-subtle text-[11px] truncate max-w-[260px]">{{ item.empreendimento || '—' }}</div>
+                  </td>
+                  <td class="px-4 py-3 whitespace-nowrap">
+                    <!-- Etapa da RESERVA + do REPASSE no CV — badge na cor do
+                         workflow, clicável: abre a tela correspondente do CV. -->
+                    <div class="flex flex-col items-start gap-1">
+                      <a v-if="item.cv_situacao" :href="cvReservaUrl(item)" target="_blank" rel="noopener"
+                        @click.stop
+                        class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border border-line bg-surface-sunken text-ink-muted hover:opacity-80 transition-opacity"
+                        :style="cvBadgeStyle(item.cv_situacao_cor_bg, item.cv_situacao_cor_nome)"
+                        :title="`Reserva: ${item.cv_situacao} — abrir no CV`">
+                        <i class="fas fa-flag text-[9px]"></i>{{ item.cv_situacao }}
+                      </a>
+                      <a v-if="item.cv_situacao_repasse" :href="cvRepasseUrl(item)" target="_blank" rel="noopener"
+                        @click.stop
+                        class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border border-line bg-surface-sunken text-ink-muted hover:opacity-80 transition-opacity"
+                        :style="cvBadgeStyle(item.cv_repasse_cor_bg, item.cv_repasse_cor_nome)"
+                        :title="`Repasse: ${item.cv_situacao_repasse} — abrir no CV`">
+                        <i class="fas fa-building-columns text-[9px]"></i>{{ item.cv_situacao_repasse }}
+                      </a>
+                      <span v-if="!item.cv_situacao && !item.cv_situacao_repasse" class="text-ink-subtle text-xs">—</span>
+                    </div>
                   </td>
                   <td class="px-4 py-3 text-right font-semibold text-ink whitespace-nowrap font-mono tabular-nums">
                     {{ item.valor ? formatCurrency(item.valor) : '—' }}
@@ -870,12 +894,23 @@ async function handleSave() {
 const historyColumns = [
   { key: 'reserva',    label: '#Reserva',                 align: 'left' },
   { key: 'titular',    label: 'Titular / Empreendimento', align: 'left' },
+  { key: 'etapa',      label: 'Etapa CV',                 align: 'left', sortable: false },
   { key: 'valor',      label: 'Valor',                    align: 'right' },
   { key: 'vencimento', label: 'Vencimento',               align: 'center' },
   { key: 'status',     label: 'Emissão',                  align: 'center' },
   { key: 'pagamento',  label: 'Pagamento',                align: 'center' },
   { key: 'data',       label: 'Data',                     align: 'center' },
 ];
+
+// ── Etapa CV: links diretos + badge na cor do workflow do CV ─────────────────
+const cvReservaUrl = (item) => `https://menin.cvcrm.com.br/gestor/comercial/reservas/${item.idreserva}/administrar`;
+const cvRepasseUrl = (item) => item.cv_idrepasse
+  ? `https://menin.cvcrm.com.br/gestor/financeiro/repasses/${item.cv_idrepasse}/administrar`
+  : cvReservaUrl(item);
+function cvBadgeStyle(bg, txt) {
+  if (!bg) return null;
+  return { backgroundColor: bg, color: txt || '#fff', borderColor: 'transparent' };
+}
 
 function sortIcon(key) {
   if (store.sortBy !== key) return 'fas fa-sort text-ink-subtle/40';
