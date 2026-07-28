@@ -441,6 +441,8 @@ export const useAuthStore = defineStore('user', {
         role: payload.role ?? 'user',
         show_in_organogram: payload.show_in_organogram ?? false,
         phone: payload.phone ?? null,
+        // undefined é descartado pelo JSON.stringify — só envia se veio no payload
+        daily_alert_limit: payload.daily_alert_limit,
       };
 
       try {

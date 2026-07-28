@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 import { useMicrosoftStore } from '@/stores/Microsoft/microsoftStore';
 import { useCarregamentoStore } from '@/stores/Config/carregamento';
@@ -22,6 +22,7 @@ import userModal from '@/views/Office/Settings/Users/components/userModal.vue';
 import MicrosoftImportPanel from '@/views/Office/Settings/Users/components/MicrosoftImportPanel.vue';
 
 const router = useRouter();
+const route = useRoute();
 const userStore = useAuthStore();
 const microsoftStore = useMicrosoftStore();
 const carregamento = useCarregamentoStore();
@@ -58,7 +59,11 @@ const statusOptions = [
   { value: '',         label: 'Todos' },
   { value: 'active',   label: 'Ativo' },
   { value: 'inactive', label: 'Inativo' },
+  { value: 'pending',  label: 'Aguardando aprovação' },
 ];
+
+const isPendingUser = (u) => u.approval_status === 'pending';
+const pendingCount = computed(() => users.value.filter(isPendingUser).length);
 
 const cityOptions = computed(() => [
   { value: '', label: 'Todas' },
@@ -78,8 +83,13 @@ const filteredUsers = computed(() => {
     const matchesCity = !filterCity.value || u.city === filterCity.value;
     const matchesPosition = !filterPosition.value || u.position === filterPosition.value;
     const matchesStatus = filterStatus.value === ''
-      || (filterStatus.value === 'active' ? Boolean(u.status) : !u.status);
-    return matchesSearch && matchesCity && matchesPosition && matchesStatus;
+      || (filterStatus.value === 'pending'
+        ? isPendingUser(u)
+        : (filterStatus.value === 'active' ? Boolean(u.status) : !u.status));
+    // Pendentes de aprovação sempre aparecem no filtro padrão "Ativo":
+    // são justamente os que o admin precisa ver para liberar.
+    const visible = matchesStatus || (filterStatus.value === 'active' && isPendingUser(u));
+    return matchesSearch && matchesCity && matchesPosition && visible;
   });
 });
 
@@ -128,6 +138,13 @@ function avatarUrl(user) {
 
 onMounted(async () => {
   await Promise.all([fetchUsers(), microsoftStore.fetchStatus()]);
+  // Deep-link vindo da notificação/e-mail de cadastro pendente:
+  // /settings/users?user=<id> abre o modal do usuário direto.
+  const qid = Number(route.query.user);
+  if (qid) {
+    const found = users.value.find(u => u.id === qid);
+    if (found) startEditing(found);
+  }
 });
 </script>
 
@@ -177,6 +194,28 @@ onMounted(async () => {
       <!-- ───── Aba Office ───── -->
       <template v-if="activeTab === 'office'">
 
+        <!-- Cadastros aguardando aprovação -->
+        <Surface v-if="pendingCount" variant="raised" padding="md"
+          class="mb-4 border-amber-500/30 bg-amber-500/5">
+          <div class="flex items-center gap-3 flex-wrap">
+            <div class="h-9 w-9 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 grid place-items-center shrink-0">
+              <i class="fas fa-user-clock"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-semibold text-ink">
+                {{ pendingCount }} cadastro{{ pendingCount > 1 ? 's' : '' }} aguardando aprovação
+              </p>
+              <p class="text-xs text-ink-muted mt-0.5">
+                Abra o usuário e clique em "Aprovar e ativar" para liberar o acesso.
+              </p>
+            </div>
+            <Button size="sm" variant="outline" icon="fas fa-filter"
+              @click="filterStatus = 'pending'">
+              Ver pendentes
+            </Button>
+          </div>
+        </Surface>
+
         <!-- Filtros -->
         <Surface variant="raised" padding="md" class="mb-4">
           <div class="space-y-3">
@@ -218,14 +257,17 @@ onMounted(async () => {
               <img :src="avatarUrl(user)" alt="avatar"
                 class="w-10 h-10 rounded-lg object-cover ring-1 ring-line" />
               <span class="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full ring-2 ring-surface-raised"
-                :class="user.status ? 'bg-emerald-500' : 'bg-red-400'"></span>
+                :class="isPendingUser(user) ? 'bg-amber-400' : (user.status ? 'bg-emerald-500' : 'bg-red-400')"></span>
             </div>
 
             <!-- Info -->
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2 flex-wrap">
                 <p class="text-sm font-semibold text-ink truncate">{{ user.username }}</p>
-                <Badge :variant="user.status ? 'success' : 'danger'" size="sm">
+                <Badge v-if="isPendingUser(user)" variant="warning" size="sm">
+                  Aguardando aprovação
+                </Badge>
+                <Badge v-else :variant="user.status ? 'success' : 'danger'" size="sm">
                   {{ user.status ? 'Ativo' : 'Inativo' }}
                 </Badge>
               </div>

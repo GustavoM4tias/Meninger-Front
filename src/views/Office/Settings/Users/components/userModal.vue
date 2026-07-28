@@ -2,7 +2,8 @@
 import { ref, watchEffect, onMounted, computed } from 'vue';
 import { useToast } from 'vue-toastification';
 import { useAuthStore } from '@/stores/Settings/Auth/authStore';
-import { adminResetUserPassword } from '@/utils/Auth/apiAuth';
+import { adminResetUserPassword, activateUser } from '@/utils/Auth/apiAuth';
+import { managedRegistry, getDeptManagedPages } from '@/config/navRegistry';
 import API_URL from '@/config/apiUrl';
 
 import Modal from '@/components/UI/Modal.vue';
@@ -32,8 +33,13 @@ const allUsers = ref([]);
 const password = ref('');
 const passwordConfirm = ref('');
 const positionsOptions = ref([]);
+const positionsRaw = ref([]);   // cargos com o departamento (para a ativação)
 const positionDescMap = ref({});
 const citiesOptions = ref([]);
+const permissionProfiles = ref([]);
+
+// Cadastro de primeiro acesso aguardando aprovação do admin
+const isPending = computed(() => isEdit.value && props.user?.approval_status === 'pending');
 
 watchEffect(() => {
   if (editableUser.value?.birth_date) {
@@ -59,6 +65,7 @@ onMounted(async () => {
       const data = await resPos.value.json();
       const list = Array.isArray(data) ? data : (data?.data || []);
       const active = list.filter(p => p?.active && p?.is_internal);
+      positionsRaw.value = active;
       positionsOptions.value = active
         .map(p => ({ label: p.name, value: p.name }))
         .sort((a, b) => a.label.localeCompare(b.label));
@@ -71,6 +78,17 @@ onMounted(async () => {
       citiesOptions.value = list.filter(c => c?.active)
         .map(c => ({ label: c.uf ? `${c.name} - ${c.uf}` : c.name, value: c.name }))
         .sort((a, b) => a.label.localeCompare(b.label));
+    }
+
+    // Perfis de alçada (para exibir as alçadas padrão do departamento na ativação)
+    if (isAdmin.value && isPending.value) {
+      try {
+        const resProfiles = await fetch(`${API_URL}/permissions/profiles`, { headers });
+        if (resProfiles.ok) {
+          const data = await resProfiles.json();
+          permissionProfiles.value = Array.isArray(data) ? data : [];
+        }
+      } catch { /* segue sem preview de alçadas */ }
     }
   } catch (e) {
     console.error(e);
@@ -131,6 +149,73 @@ const roleOptions = [
   { label: 'Usuário', value: 'user' },
   { label: 'Admin',   value: 'admin' },
 ];
+
+// ── Ativação de cadastro pendente ────────────────────
+const activateModal = ref({ open: false, loading: false });
+
+// Nome amigável de cada rota gerenciável (para listar as alçadas na confirmação)
+const routeNameMap = (() => {
+  const map = {};
+  managedRegistry.forEach(cat => {
+    getDeptManagedPages(cat).forEach(p => { map[p.route] = `${cat.label} · ${p.name}`; });
+  });
+  return map;
+})();
+
+// Departamento derivado do cargo escolhido no formulário
+const activationDepartment = computed(() => {
+  const pos = positionsRaw.value.find(p => p.name === editableUser.value.position);
+  return pos?.department || null;
+});
+
+// Perfil de alçadas padrão vinculado ao departamento (se existir)
+const activationProfile = computed(() => {
+  const dept = activationDepartment.value;
+  if (!dept) return null;
+  return permissionProfiles.value.find(p => Number(p.department_id) === Number(dept.id)) || null;
+});
+
+const activationRouteNames = computed(() => {
+  const routes = Array.isArray(activationProfile.value?.routes) ? activationProfile.value.routes : [];
+  return routes.map(r => routeNameMap[r] || r).sort((a, b) => a.localeCompare(b));
+});
+
+function openActivateConfirm() {
+  const u = editableUser.value;
+  if (!u.username?.trim() || !u.email?.trim() || !u.position || !u.city || !u.birth_date) {
+    toast.error('Preencha todos os campos obrigatórios antes de ativar.');
+    return;
+  }
+  activateModal.value.open = true;
+}
+
+async function confirmActivate() {
+  if (activateModal.value.loading) return;
+  activateModal.value.loading = true;
+  try {
+    // 1) Persiste eventuais ajustes feitos no formulário (cargo, cidade, etc.)
+    const u = editableUser.value;
+    await authStore.updateUser({
+      id: u.id, username: u.username, email: u.email, phone: u.phone || null,
+      position: u.position, manager_id: u.manager_id, city: u.city,
+      birth_date: u.birth_date, status: u.status, role: u.role,
+      show_in_organogram: u.show_in_organogram ?? false,
+      daily_alert_limit: Math.max(0, Number(u.daily_alert_limit) || 5),
+    });
+    // 2) Ativa: aplica alçadas padrão, gera senha provisória e envia o e-mail
+    const result = await activateUser(u.id);
+    const msg = result?.data?.message || result?.message || 'Usuário ativado com sucesso.';
+    if (result?.data?.emailSent === false) toast.warning(msg);
+    else toast.success(msg);
+    activateModal.value.open = false;
+    emit('close');
+    emit('reload');
+  } catch (error) {
+    toast.error(error?.message || 'Erro ao ativar usuário.');
+  } finally {
+    activateModal.value.loading = false;
+  }
+}
 
 async function saveUser() {
   const u = editableUser.value;
@@ -203,6 +288,19 @@ async function saveUser() {
     </template>
 
     <form @submit.prevent="saveUser" class="space-y-5">
+
+      <!-- Cadastro pendente de aprovação -->
+      <div v-if="isPending"
+        class="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2.5 flex items-start gap-2.5">
+        <i class="fas fa-user-clock text-amber-600 dark:text-amber-400 mt-0.5 shrink-0"></i>
+        <div class="text-xs leading-relaxed">
+          <p class="font-semibold text-amber-700 dark:text-amber-300">Cadastro aguardando aprovação</p>
+          <p class="text-amber-700/80 dark:text-amber-300/80 mt-0.5">
+            Este usuário concluiu o cadastro de primeiro acesso. Revise os dados abaixo e
+            clique em <strong>Aprovar e ativar</strong> para liberar o acesso.
+          </p>
+        </div>
+      </div>
 
       <!-- Identidade -->
       <section>
@@ -300,7 +398,8 @@ async function saveUser() {
                      focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-ring/20" />
           </div>
 
-          <div class="flex items-center justify-between gap-3 p-3 rounded-lg border border-line bg-surface-sunken">
+          <div v-if="!isPending"
+            class="flex items-center justify-between gap-3 p-3 rounded-lg border border-line bg-surface-sunken">
             <div class="flex items-center gap-2.5 min-w-0">
               <div class="h-8 w-8 rounded-lg grid place-items-center shrink-0"
                 :class="editableUser.status
@@ -316,6 +415,17 @@ async function saveUser() {
               </div>
             </div>
             <Switch v-model="editableUser.status" size="sm" />
+          </div>
+
+          <div v-else
+            class="flex items-center gap-2.5 p-3 rounded-lg border border-amber-500/20 bg-amber-500/5">
+            <div class="h-8 w-8 rounded-lg bg-amber-500/15 text-amber-600 dark:text-amber-400 grid place-items-center shrink-0">
+              <i class="fas fa-lock text-xs"></i>
+            </div>
+            <div class="min-w-0">
+              <p class="text-sm font-medium text-ink">Acesso bloqueado até a aprovação</p>
+              <p class="text-xs text-ink-muted">Use "Aprovar e ativar" para liberar o login</p>
+            </div>
           </div>
 
           <!-- Resetar senha (admin only, edição) -->
@@ -341,10 +451,90 @@ async function saveUser() {
 
     <template #footer>
       <Button variant="ghost" @click="$emit('close')">Cancelar</Button>
-      <Button icon="fas fa-check" @click="saveUser">
+      <Button v-if="isPending && isAdmin" variant="secondary" icon="fas fa-floppy-disk" @click="saveUser">
+        Salvar
+      </Button>
+      <Button v-if="isPending && isAdmin" icon="fas fa-user-check" @click="openActivateConfirm">
+        Aprovar e ativar
+      </Button>
+      <Button v-else icon="fas fa-check" @click="saveUser">
         {{ isEdit ? 'Salvar alterações' : 'Criar usuário' }}
       </Button>
     </template>
+
+    <!-- Submodal: confirmação de ativação -->
+    <Modal :open="activateModal.open" size="md" @close="activateModal.open = false">
+      <template #header>
+        <div class="flex items-center gap-3">
+          <div class="h-9 w-9 rounded-lg bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 grid place-items-center shrink-0">
+            <i class="fas fa-user-check text-sm"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-semibold text-ink">Ativar este usuário?</h3>
+            <p class="text-xs text-ink-muted mt-0.5">Confira as configurações que serão liberadas</p>
+          </div>
+        </div>
+      </template>
+
+      <div class="space-y-4">
+        <div class="rounded-lg border border-line bg-surface-sunken divide-y divide-line text-sm">
+          <div class="flex items-center justify-between gap-3 px-3 py-2">
+            <span class="text-xs text-ink-muted">Nome</span>
+            <span class="text-ink font-medium truncate">{{ editableUser.username }}</span>
+          </div>
+          <div class="flex items-center justify-between gap-3 px-3 py-2">
+            <span class="text-xs text-ink-muted">E-mail</span>
+            <span class="text-ink truncate">{{ editableUser.email }}</span>
+          </div>
+          <div class="flex items-center justify-between gap-3 px-3 py-2">
+            <span class="text-xs text-ink-muted">Cargo</span>
+            <span class="text-ink truncate">{{ editableUser.position }}</span>
+          </div>
+          <div class="flex items-center justify-between gap-3 px-3 py-2">
+            <span class="text-xs text-ink-muted">Departamento</span>
+            <span class="text-ink truncate">{{ activationDepartment?.name || 'Sem departamento' }}</span>
+          </div>
+          <div class="flex items-center justify-between gap-3 px-3 py-2">
+            <span class="text-xs text-ink-muted">Cidade</span>
+            <span class="text-ink truncate">{{ editableUser.city }}</span>
+          </div>
+        </div>
+
+        <!-- Alçadas padrão do departamento -->
+        <div>
+          <p class="text-[10px] font-mono uppercase tracking-wider text-ink-subtle mb-2">
+            Alçadas de visualização aplicadas
+            <span v-if="activationProfile" class="normal-case font-sans text-ink-muted">
+              ({{ activationProfile.name }})
+            </span>
+          </p>
+          <div v-if="activationRouteNames.length"
+            class="rounded-lg border border-line bg-surface-sunken px-3 py-2 max-h-40 overflow-y-auto space-y-1">
+            <p v-for="name in activationRouteNames" :key="name"
+              class="text-xs text-ink flex items-center gap-1.5">
+              <i class="fas fa-check text-emerald-500 text-[10px]"></i>{{ name }}
+            </p>
+          </div>
+          <p v-else class="text-xs text-ink-muted rounded-lg border border-line bg-surface-sunken px-3 py-2">
+            Nenhum perfil padrão de alçadas configurado para este departamento.
+            O usuário será ativado sem telas liberadas; ajuste depois em Alçadas.
+          </p>
+        </div>
+
+        <div class="rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2.5 text-xs text-amber-700 dark:text-amber-300 flex items-start gap-2">
+          <i class="fas fa-envelope shrink-0 mt-0.5"></i>
+          <span>Ao confirmar, <strong>{{ editableUser.email }}</strong> receberá um e-mail informando a
+          liberação do acesso com uma <strong>senha provisória</strong>.</span>
+        </div>
+      </div>
+
+      <template #footer>
+        <Button variant="ghost" :disabled="activateModal.loading" @click="activateModal.open = false">Cancelar</Button>
+        <Button icon="fas fa-user-check" :loading="activateModal.loading" @click="confirmActivate">
+          {{ activateModal.loading ? 'Ativando...' : 'Confirmar ativação' }}
+        </Button>
+      </template>
+    </Modal>
 
     <!-- Submodal: senha gerada -->
     <Modal :open="resetPwdModal.open" size="sm" @close="closeResetPwdModal">
