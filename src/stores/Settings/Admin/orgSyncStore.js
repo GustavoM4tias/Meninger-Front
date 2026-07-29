@@ -23,7 +23,10 @@ export const useOrgSyncStore = defineStore('orgSync', () => {
     const pageSize = ref(50);
     const loading = ref(false);
     const error = ref(null);
-    const filtros = ref({ q: '', status: '', companyId: '' });
+    const filtros = ref({ q: '', status: '', companyId: '', active: '' });
+    // Ordenação server-side (a lista é paginada — ordenar só a página seria
+    // enganoso). Chave = coluna da tabela `enterprises`.
+    const sort = ref({ by: 'name', dir: 'asc' });
 
     async function fetchList({ resetPage = false } = {}) {
         if (resetPage) page.value = 1;
@@ -33,10 +36,13 @@ export const useOrgSyncStore = defineStore('orgSync', () => {
             const params = new URLSearchParams({
                 page: String(page.value),
                 pageSize: String(pageSize.value),
+                sortBy: sort.value.by,
+                sortDir: sort.value.dir,
             });
             if (filtros.value.q) params.set('q', filtros.value.q);
             if (filtros.value.status) params.set('status', filtros.value.status);
             if (filtros.value.companyId) params.set('companyId', String(filtros.value.companyId));
+            if (filtros.value.active) params.set('active', filtros.value.active);
 
             const res = await fetch(`${API_URL}/admin/org/enterprises?${params}`, { headers: authHeaders() });
             if (!res.ok) throw new Error(`Erro ao listar empreendimentos (${res.status})`);
@@ -97,8 +103,19 @@ export const useOrgSyncStore = defineStore('orgSync', () => {
         return data;
     }
 
+    // Ações em lote: uma requisição só para N empreendimentos.
+    async function bulkUpdate(ids, patch) {
+        const res = await fetch(`${API_URL}/admin/org/enterprises/bulk`, {
+            method: 'PUT', headers: authHeaders(),
+            body: JSON.stringify({ ids, ...patch }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || `Falha na ação em lote (${res.status})`);
+        return data;
+    }
+
     return {
-        items, total, companies, page, pageSize, loading, error, filtros,
-        fetchList, fetchCompanies, runSync, consolidate, pair, updateEnterprise,
+        items, total, companies, page, pageSize, loading, error, filtros, sort,
+        fetchList, fetchCompanies, runSync, consolidate, pair, updateEnterprise, bulkUpdate,
     };
 });
