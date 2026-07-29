@@ -86,8 +86,10 @@ export const navRegistry = [
                 name: 'Vendas',
                 icon: 'fas fa-handshake',
                 pages: [
-                    { route: '/comercial/precadastros', section: 'Pré-Cadastros', name: 'Pré-Cadastros', icon: 'fas fa-id-card-clip', permissionManaged: false },
-                    { route: '/comercial/reservas-report', section: 'Reservas', name: 'Reservas', icon: 'fas fa-bookmark', permissionManaged: false },
+                    // Gerenciadas por alçada desde 2026-07-29 (as APIs já exigiam
+                    // a tela liberada; sem isso não-admin ficava 403 sem ter onde liberar).
+                    { route: '/comercial/precadastros', section: 'Pré-Cadastros', name: 'Pré-Cadastros', icon: 'fas fa-id-card-clip' },
+                    { route: '/comercial/reservas-report', section: 'Reservas', name: 'Reservas', icon: 'fas fa-bookmark' },
                     { route: '/comercial/faturamento', section: 'Faturamento', name: 'Faturamento', icon: 'fas fa-file-invoice-dollar' },
                 ],
             },
@@ -260,7 +262,7 @@ export const navRegistry = [
                     { route: '/settings/organograma', section: 'Organograma', name: 'Organograma', icon: 'fas fa-sitemap' },
                     { route: '/settings/permissions', section: 'Alçadas', name: 'Alçadas', icon: 'fas fa-shield-halved', adminOnly: true },
                     { route: '/settings/management', section: 'Departamentos', name: 'Departamentos', icon: 'fas fa-building-user', adminOnly: true },
-                    { route: '/settings/empresas', section: 'Empresas', name: 'Sincronização de empresas', icon: 'fas fa-building-circle-arrow-right', adminOnly: true },
+                    { route: '/settings/empresas', section: 'Empresas', name: 'Empresas', icon: 'fas fa-building-circle-arrow-right', adminOnly: true },
                     { route: '/settings/integrity', section: 'Integridade', name: 'Integridade', icon: 'fas fa-shield-heart', adminOnly: true },
                 ],
             },
@@ -288,7 +290,10 @@ export const navRegistry = [
                 name: 'Comunicação',
                 icon: 'fas fa-comments',
                 pages: [
-                    { route: '/mural/admin', section: 'Mural de Avisos', name: 'Mural de Avisos', icon: 'fas fa-thumbtack', adminOnly: true },
+                    // Mural do usuário: broadcast interno — visível a todos (o gate é
+                    // a audiência de cada comunicado, não alçada de tela).
+                    { route: '/mural', name: 'Mural de Avisos', icon: 'fas fa-thumbtack', permissionManaged: false },
+                    { route: '/mural/admin', section: 'Mural de Avisos', name: 'Gestão do Mural', icon: 'fas fa-thumbtack', adminOnly: true },
                     // Preferências do próprio usuário — permissionManaged:false → visíveis a todos.
                     { route: '/settings/notifications', section: 'Notificações', name: 'Notificações', icon: 'fas fa-bell', permissionManaged: false },
                     { route: '/settings/alerts', section: 'Alertas', name: 'Alertas', icon: 'fas fa-tower-broadcast', permissionManaged: false },
@@ -369,3 +374,38 @@ export const allManagedRoutes = [
         ])
     ),
 ];
+
+// ─── Visibilidade TOTAL na tela de Alçadas ────────────────────────────────────
+// Todas as telas do sistema aparecem no perfil — as gerenciáveis com switch e
+// estas duas listas como blocos informativos (nada fica "invisível"):
+
+/** Telas exclusivas de admin (adminOnly) — nunca delegáveis. */
+export function getAdminOnlyPages() {
+    const seen = new Set();
+    const out = [];
+    for (const cat of navRegistry) {
+        for (const p of categoryItems(cat)) {
+            if (!p.adminOnly || seen.has(p.route)) continue;
+            seen.add(p.route);
+            out.push({ ...p, catLabel: cat.label });
+        }
+    }
+    return out;
+}
+
+/** Telas sempre liberadas (permissionManaged:false) — pessoais/broadcast, fora de alçada. */
+export function getAlwaysFreePages() {
+    const seen = new Set();
+    const out = [];
+    for (const cat of navRegistry) {
+        const catFree = cat.permissionManaged === false;
+        for (const p of categoryItems(cat)) {
+            if (p.adminOnly) continue;
+            if (!(catFree || p.permissionManaged === false)) continue;
+            if (seen.has(p.route)) continue;
+            seen.add(p.route);
+            out.push({ ...p, catLabel: cat.label });
+        }
+    }
+    return out;
+}

@@ -10,7 +10,7 @@
 
 import { ref, computed, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
-import { managedRegistry, getDeptManagedPages } from '@/config/navRegistry';
+import { managedRegistry, getDeptManagedPages, getAdminOnlyPages, getAlwaysFreePages } from '@/config/navRegistry';
 import { requestWithAuth } from '@/utils/Auth/requestWithAuth';
 
 import PageContainer from '@/components/UI/PageContainer.vue';
@@ -84,6 +84,10 @@ function openGrants(type, id, name) {
 const clipboard = ref(null);
 
 const totalManaged = managedRegistry.reduce((acc, d) => acc + getDeptManagedPages(d).length, 0);
+
+// Visibilidade TOTAL: telas não-delegáveis também aparecem (informativas).
+const adminOnlyPages = getAdminOnlyPages();
+const alwaysFreePages = getAlwaysFreePages();
 
 const filteredUsers = computed(() => {
   const q = (userSearch.value || '').toLowerCase();
@@ -560,6 +564,35 @@ onMounted(() => { loadUsers(); loadProfiles(); loadDepartments(); });
                   <Switch :model-value="routeState(page.route).effective" size="sm"
                     @update:model-value="(v) => setRoute(page.route, v)" />
                 </div>
+              </div>
+            </Surface>
+
+            <!-- Telas não-delegáveis (informativo — visibilidade total) -->
+            <Surface variant="raised" padding="none" class="overflow-hidden">
+              <div class="px-4 py-2.5 bg-surface-sunken/40 border-b border-line flex items-center gap-2">
+                <i class="fas fa-crown text-amber-500 text-xs w-4 text-center"></i>
+                <span class="text-sm font-medium text-ink">Exclusivas de admin</span>
+                <span class="text-xs text-ink-subtle font-mono">{{ adminOnlyPages.length }}</span>
+                <span class="text-[11px] text-ink-subtle ml-auto">nunca delegáveis — só administradores acessam</span>
+              </div>
+              <div class="px-4 py-2.5 flex flex-wrap gap-1.5">
+                <Badge v-for="p in adminOnlyPages" :key="p.route" variant="neutral" size="sm" :title="p.route">
+                  <i :class="p.icon" class="text-[9px] mr-1 opacity-70"></i>{{ p.name }}
+                </Badge>
+              </div>
+            </Surface>
+
+            <Surface variant="raised" padding="none" class="overflow-hidden">
+              <div class="px-4 py-2.5 bg-surface-sunken/40 border-b border-line flex items-center gap-2">
+                <i class="fas fa-unlock text-emerald-500 text-xs w-4 text-center"></i>
+                <span class="text-sm font-medium text-ink">Sempre liberadas</span>
+                <span class="text-xs text-ink-subtle font-mono">{{ alwaysFreePages.length }}</span>
+                <span class="text-[11px] text-ink-subtle ml-auto">pessoais/broadcast — todos os usuários têm acesso</span>
+              </div>
+              <div class="px-4 py-2.5 flex flex-wrap gap-1.5">
+                <Badge v-for="p in alwaysFreePages" :key="p.route" variant="neutral" size="sm" :title="p.route">
+                  <i :class="p.icon" class="text-[9px] mr-1 opacity-70"></i>{{ p.name }}
+                </Badge>
               </div>
             </Surface>
           </div>

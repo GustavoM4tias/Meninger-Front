@@ -544,12 +544,6 @@ export default [
                 meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Documentação do sistema' },
             },
 
-            {
-                path: 'teste',
-                name: 'Teste',
-                component: () => import('@/views/Office/Config/teste.vue'),
-                meta: { requiresAuth: true, allowedPosition: '', allowedRole: 'admin' },
-            },
         ],
     },
 ];
