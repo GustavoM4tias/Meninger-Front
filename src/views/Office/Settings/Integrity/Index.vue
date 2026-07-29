@@ -3,8 +3,9 @@
 // (security/integrityCheck.js) e exibe o resultado por check.
 // Uso: depois de qualquer funcionalidade nova, rodar e garantir zero FAIL.
 
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { requestWithAuth } from '@/utils/Auth/requestWithAuth';
+import { runRouteAudit } from '@/config/routeAudit';
 
 import PageContainer from '@/components/UI/PageContainer.vue';
 import PageHeader from '@/components/UI/PageHeader.vue';
@@ -47,6 +48,20 @@ function toggle(id) {
   if (s.has(id)) s.delete(id); else s.add(id);
   expanded.value = s;
 }
+
+// ── Auditoria de rotas do FRONT (pontas soltas) ──────────────────────────────
+// Calculada localmente (o front conhece as próprias rotas + navRegistry) —
+// sempre atual com o build em produção, sem depender do backend.
+const routeAudit = computed(() => runRouteAudit());
+const routeListOpen = ref(false);
+
+const clsMeta = {
+  gerenciada:  { label: 'Gerenciada (Alçadas)', variant: 'success' },
+  admin:       { label: 'Exclusiva admin',      variant: 'accent' },
+  livre:       { label: 'Sempre liberada',      variant: 'neutral' },
+  publica:     { label: 'Pública',              variant: 'neutral' },
+  ponta_solta: { label: 'PONTA SOLTA',          variant: 'danger' },
+};
 </script>
 
 <template>
@@ -84,10 +99,58 @@ function toggle(id) {
         <i class="fas fa-circle-exclamation mr-1"></i>{{ error }}
       </div>
 
+      <!-- ── Rotas do FRONT (sempre visível, calculado localmente) ────────── -->
+      <Surface variant="raised" padding="none" class="overflow-hidden mb-4">
+        <button class="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-surface-sunken/30 transition-colors"
+          @click="routeListOpen = !routeListOpen">
+          <i class="fas text-sm w-5 text-center"
+            :class="routeAudit.healthy ? 'fa-route text-emerald-500' : 'fa-triangle-exclamation text-red-500'"></i>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-medium text-ink">Rotas do front (navbar × alçadas)</p>
+            <p class="text-xs text-ink-muted truncate">
+              {{ routeAudit.rows.length }} rotas ·
+              {{ routeAudit.counts.gerenciada || 0 }} gerenciadas ·
+              {{ routeAudit.counts.admin || 0 }} admin ·
+              {{ routeAudit.counts.livre || 0 }} livres ·
+              {{ routeAudit.counts.publica || 0 }} públicas
+              <template v-if="routeAudit.loose.length"> · {{ routeAudit.loose.length }} PONTA(S) SOLTA(S)</template>
+              <template v-if="routeAudit.deadLinks.length"> · {{ routeAudit.deadLinks.length }} link(s) morto(s) no menu</template>
+            </p>
+          </div>
+          <Badge :variant="routeAudit.healthy ? 'success' : 'danger'" size="sm">
+            {{ routeAudit.healthy ? 'Sem pontas soltas' : 'CORRIGIR' }}
+          </Badge>
+          <i class="fas fa-chevron-down text-ink-subtle text-xs transition-transform"
+            :class="{ 'rotate-180': routeListOpen }"></i>
+        </button>
+
+        <div v-if="routeAudit.loose.length || routeAudit.deadLinks.length"
+          class="border-t border-line bg-red-500/5 px-4 py-3 space-y-1">
+          <p v-for="r in routeAudit.loose" :key="r.path" class="text-xs font-mono text-red-600 dark:text-red-400">
+            <i class="fas fa-circle-exclamation mr-1"></i>{{ r.path }} — autenticada sem classificação (navbar/alçada/admin/livre)
+          </p>
+          <p v-for="d in routeAudit.deadLinks" :key="d" class="text-xs font-mono text-red-600 dark:text-red-400">
+            <i class="fas fa-link-slash mr-1"></i>{{ d }} — item do menu sem rota correspondente
+          </p>
+        </div>
+
+        <div v-if="routeListOpen" class="border-t border-line bg-surface-sunken/40 px-4 py-3">
+          <ul class="space-y-1 max-h-80 overflow-y-auto">
+            <li v-for="r in routeAudit.rows" :key="r.path"
+              class="flex items-center justify-between gap-3 text-xs">
+              <span class="font-mono text-ink-muted truncate" :title="r.reason || ''">{{ r.path }}</span>
+              <Badge :variant="clsMeta[r.cls]?.variant || 'neutral'" size="sm" class="shrink-0">
+                {{ clsMeta[r.cls]?.label || r.cls }}
+              </Badge>
+            </li>
+          </ul>
+        </div>
+      </Surface>
+
       <EmptyState v-if="!report && !running"
         icon="fas fa-shield-halved" size="lg"
-        title="Nenhuma validação nesta sessão"
-        description="Clique em Rodar validação para varrer o sistema agora.">
+        title="Nenhuma validação do servidor nesta sessão"
+        description="Clique em Rodar validação para varrer rotas de API, tools da Eme e banco.">
         <template #actions>
           <Button icon="fas fa-play" @click="run">Rodar validação</Button>
         </template>
