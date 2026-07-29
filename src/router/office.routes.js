@@ -439,16 +439,25 @@ export default [
                     { path: 'account', name: 'Minha Conta', component: () => import('@/views/Office/Settings/Account/Index.vue'), meta: { searchable: true, content: 'Sua conta pessoal' } },
                     { path: 'organograma', name: 'Organograma', component: () => import('@/views/Office/Settings/Organogram/Index.vue'), meta: { searchable: true, content: 'Organograma estrutural' } },
                     {
-                        path: 'cidades',
-                        name: 'Cidades',
-                        component: () => import('@/views/Office/Settings/EnterpriseCities/Index.vue'),
-                        meta: { requiresAuth: true, allowedPosition: '', allowedRole: 'admin', searchable: true, content: 'Gerenciamento de Cidades x Empreendimentos' },
+                        path: 'empresas',
+                        name: 'Sincronização de empresas',
+                        component: () => import('@/views/Office/Settings/OrgSync/Index.vue'),
+                        meta: { requiresAuth: true, allowedPosition: '', allowedRole: 'admin', searchable: true, content: 'Sincronização de empresas e empreendimentos do CV e do Sienge, pareamento CRM x ERP' },
                     },
+                    // Vínculos de cidades foi substituído pela Sincronização de
+                    // empresas (2026-07-28). Redirect preserva favoritos/links.
+                    { path: 'cidades', redirect: to => ({ path: '/settings/empresas', query: to.query }) },
                     {
                         path: 'management',
                         name: 'Cargos',
                         component: () => import('@/views/Office/Settings/Management/Index.vue'),
                         meta: { requiresAuth: true, allowedPosition: '', allowedRole: 'admin', searchable: true, content: 'Departamentos, Cargos e Cidades do sistema' },
+                    },
+                    {
+                        path: 'integrity',
+                        name: 'Integridade',
+                        component: () => import('@/views/Office/Settings/Integrity/Index.vue'),
+                        meta: { requiresAuth: true, requiresAdmin: true, allowedRole: 'admin', searchable: true, content: 'Validador de integridade de segurança: rotas, alçadas, tools da Eme e modelo de acesso' },
                     },
                     {
                         path: 'permissions',

@@ -260,7 +260,8 @@ export const navRegistry = [
                     { route: '/settings/organograma', section: 'Organograma', name: 'Organograma', icon: 'fas fa-sitemap' },
                     { route: '/settings/permissions', section: 'Alçadas', name: 'Alçadas', icon: 'fas fa-shield-halved', adminOnly: true },
                     { route: '/settings/management', section: 'Departamentos', name: 'Departamentos', icon: 'fas fa-building-user', adminOnly: true },
-                    { route: '/settings/cidades', section: 'Cidades', name: 'Cidades', icon: 'fas fa-city', adminOnly: true },
+                    { route: '/settings/empresas', section: 'Empresas', name: 'Sincronização de empresas', icon: 'fas fa-building-circle-arrow-right', adminOnly: true },
+                    { route: '/settings/integrity', section: 'Integridade', name: 'Integridade', icon: 'fas fa-shield-heart', adminOnly: true },
                 ],
             },
             {
