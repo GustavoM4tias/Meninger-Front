@@ -57,12 +57,14 @@ export const useEnterpriseErpLinksStore = defineStore('enterpriseErpLinks', {
             }
         },
 
-        async addLink({ cv_enterprise_id, cv_enterprise_name, cv_stage_name, erp_enterprise_id, erp_enterprise_name, description }) {
+        // cv_stage_id é a CHAVE preferida do vínculo (fase do CV). Antes ele era
+        // descartado aqui e todo vínculo caía no nível do empreendimento.
+        async addLink({ cv_enterprise_id, cv_enterprise_name, cv_stage_id, cv_stage_name, erp_enterprise_id, erp_enterprise_name, description }) {
             this.error = null
             const res = await fetch(`${API_URL}/admin/enterprise-erp-links`, {
                 method: 'POST',
                 headers: authHeaders(),
-                body: JSON.stringify({ cv_enterprise_id, cv_enterprise_name, cv_stage_name, erp_enterprise_id, erp_enterprise_name, description })
+                body: JSON.stringify({ cv_enterprise_id, cv_enterprise_name, cv_stage_id, cv_stage_name, erp_enterprise_id, erp_enterprise_name, description })
             })
             const body = await res.json().catch(() => ({}))
             if (!res.ok) {
