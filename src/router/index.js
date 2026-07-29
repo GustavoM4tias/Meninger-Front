@@ -105,9 +105,12 @@ router.beforeEach(async (to, from, next) => {
     const permStore = usePermissionStore();
     await permStore.ensureLoaded();
 
-    // 3a. Rotas admin (meta.requiresAdmin/adminOnly em qualquer nível do match):
-    //     exige admin confirmado pelo servidor (/permissions/me), nunca cache.
-    const needsAdmin = to.matched.some(r => r.meta?.requiresAdmin || r.meta?.adminOnly);
+    // 3a. Rotas admin: por CÓDIGO (meta.requiresAdmin/adminOnly em qualquer
+    //     nível do match) ou por CONFIGURAÇÃO (tela travada como somente-admin
+    //     na tela de Alçadas). Exige admin confirmado pelo servidor
+    //     (/permissions/me), nunca cache.
+    const needsAdmin = to.matched.some(r => r.meta?.requiresAdmin || r.meta?.adminOnly)
+      || permStore.isRouteAdminOnly(to.path);
     if (needsAdmin && !permStore.isAdmin) {
       return next({ path: '/error', query: { message: 'Você não tem permissão para acessar esta página.' } });
     }

@@ -38,7 +38,19 @@
  *   iconImg   — (opcional) URL de PNG/SVG (em /public) p/ logos de marca; vence o icon
  *   iconColor — (opcional) cor fixa do ícone (ex.: '#25D366'); usa o glifo da marca
  *   section   — (opcional) query param ?section= para navegação interna
- *   adminOnly — (opcional) true = visível apenas para admin
+ *   adminOnly — (opcional) true = visível apenas para admin (trava de CÓDIGO)
+ *
+ * ─── Como uma tela vira exclusiva de admin ────────────────────────────────────
+ *   a) PELA TELA DE ALÇADAS (padrão, sem deploy): o admin liga "somente admin"
+ *      no item em /settings/permissions. O backend grava em route_policies e a
+ *      rota sai das alçadas efetivas de todo não-admin na hora — menu, guard,
+ *      API (requireRoutePermission) e tools da Eme fecham juntos. Reversível
+ *      pela mesma tela.
+ *   b) NO CÓDIGO (quando a tela NÃO pode ser delegável nunca): adminOnly:true
+ *      aqui + requiresAdmin no meta da rota (office.routes.js) + requireAdmin
+ *      nas rotas de API. O validador (/settings/integrity) cobra os três níveis.
+ *   Regra prática: use (a). Só use (b) para telas de administração do próprio
+ *   sistema (Usuários, Alçadas, Backup, credenciais).
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
@@ -379,7 +391,7 @@ export const allManagedRoutes = [
 // Todas as telas do sistema aparecem no perfil — as gerenciáveis com switch e
 // estas duas listas como blocos informativos (nada fica "invisível"):
 
-/** Telas exclusivas de admin (adminOnly) — nunca delegáveis. */
+/** Telas exclusivas de admin POR CÓDIGO (adminOnly) — nunca delegáveis pela tela. */
 export function getAdminOnlyPages() {
     const seen = new Set();
     const out = [];

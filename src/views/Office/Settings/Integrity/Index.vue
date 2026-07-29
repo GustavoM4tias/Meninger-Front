@@ -6,6 +6,7 @@
 import { ref, computed } from 'vue';
 import { requestWithAuth } from '@/utils/Auth/requestWithAuth';
 import { runRouteAudit } from '@/config/routeAudit';
+import { usePermissionStore } from '@/stores/Settings/Permissions/permissionStore';
 
 import PageContainer from '@/components/UI/PageContainer.vue';
 import PageHeader from '@/components/UI/PageHeader.vue';
@@ -51,8 +52,11 @@ function toggle(id) {
 
 // ── Auditoria de rotas do FRONT (pontas soltas) ──────────────────────────────
 // Calculada localmente (o front conhece as próprias rotas + navRegistry) —
-// sempre atual com o build em produção, sem depender do backend.
-const routeAudit = computed(() => runRouteAudit());
+// sempre atual com o build em produção, sem depender do backend. As telas
+// travadas como somente-admin na tela de Alçadas entram como "admin".
+const permissionStore = usePermissionStore();
+const routeAudit = computed(() =>
+  runRouteAudit({ adminOnlyRoutes: permissionStore.adminOnlyRoutes }));
 const routeListOpen = ref(false);
 
 const clsMeta = {
