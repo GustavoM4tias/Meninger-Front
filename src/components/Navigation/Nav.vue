@@ -38,7 +38,8 @@ const getCat = (key) => navRegistry.find(c => c.key === key);
 
 const canSeeItem = (item) => {
   if (isAdmin.value) return true;
-  if (item.adminOnly) return false;
+  // adminOnly do código + telas travadas pelo admin na tela de Alçadas.
+  if (item.adminOnly || permissionStore.isRouteAdminOnly(item.route)) return false;
   if (!allManagedRoutes.includes(item.route)) return true;
   return permissionStore.hasAccess(item.route);
 };

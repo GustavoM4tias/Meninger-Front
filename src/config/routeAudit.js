@@ -7,8 +7,9 @@
 //
 // Classes:
 //   publica     — sem requiresAuth (login, callbacks, /r/<token>)
-//   admin       — meta requiresAdmin/adminOnly/allowedRole:'admin' OU
-//                 adminOnly no navRegistry (guard bloqueia não-admin)
+//   admin       — meta requiresAdmin/adminOnly/allowedRole:'admin', adminOnly no
+//                 navRegistry OU travada como somente-admin na tela de Alçadas
+//                 (route_policies, passadas em adminOnlyRoutes)
 //   gerenciada  — coberta pelas Alçadas (allManagedRoutes, com herança de prefixo)
 //   livre       — sempre liberada por decisão (permissionManaged:false,
 //                 pessoais/broadcast) ou allowlist intencional abaixo
@@ -48,7 +49,12 @@ function walkRoutes(routes, base = '', inherited = {}) {
     return out;
 }
 
-export function runRouteAudit() {
+/**
+ * @param {object} [opts]
+ * @param {string[]} [opts.adminOnlyRoutes] telas travadas como somente-admin
+ *   pela tela de Alçadas (GET /permissions/route-policies ou /permissions/me).
+ */
+export function runRouteAudit({ adminOnlyRoutes = [] } = {}) {
     const routes = walkRoutes(officeRoutes);
 
     const regPages = [];
@@ -58,7 +64,10 @@ export function runRouteAudit() {
             regPages.push({ ...p, catFree });
         }
     }
-    const adminRoutes = regPages.filter(p => p.adminOnly).map(p => norm(p.route));
+    const adminRoutes = [
+        ...regPages.filter(p => p.adminOnly).map(p => norm(p.route)),
+        ...adminOnlyRoutes.map(norm),
+    ];
     const freeRoutes = regPages
         .filter(p => !p.adminOnly && (p.catFree || p.permissionManaged === false))
         .map(p => norm(p.route));

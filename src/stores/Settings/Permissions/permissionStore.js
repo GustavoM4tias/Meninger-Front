@@ -9,6 +9,10 @@ const ALWAYS_ALLOWED = ['/', '/settings/account', '/settings/Account', '/report'
 
 export const usePermissionStore = defineStore('permissions', () => {
     const allowedRoutes = ref([]);   // array de strings — vazio = sem acesso a nada controlado
+    // Telas marcadas como "somente admin" pelo admin na tela de Alçadas
+    // (route_policies no backend). O servidor já remove essas rotas das alçadas
+    // efetivas; a lista vem para o menu esconder e o guard barrar com clareza.
+    const adminOnlyRoutes = ref([]);
     const isAdmin = ref(false);
     const loaded = ref(false);
 
@@ -18,10 +22,14 @@ export const usePermissionStore = defineStore('permissions', () => {
             const data = await requestWithAuth('/permissions/me');
             isAdmin.value  = data.isAdmin  ?? false;
             allowedRoutes.value = data.routes ?? [];
+            adminOnlyRoutes.value = data.adminOnlyRoutes ?? [];
             loaded.value = true;
             // Cache local só das ROTAS (evita flicker do menu no reload).
             // isAdmin nunca vai para o cache: admin só vale confirmado pelo servidor.
-            localStorage.setItem('_perm', JSON.stringify({ routes: allowedRoutes.value }));
+            localStorage.setItem('_perm', JSON.stringify({
+                routes: allowedRoutes.value,
+                adminOnlyRoutes: adminOnlyRoutes.value,
+            }));
         } catch {
             // Fallback para cache local em caso de falha de rede (só rotas;
             // isAdmin permanece false — fail-closed para telas admin)
@@ -43,11 +51,24 @@ export const usePermissionStore = defineStore('permissions', () => {
     // Rota sempre permitida: true
     // Rota gerenciada: verifica se está no array
     // Rota não gerenciada (ex: sub-páginas internas): herda da raiz
+    // ── Tela travada como somente-admin na tela de Alçadas ───────────────────
+    // Cobre sub-rotas (/tela/123 herda de /tela), igual ao backend.
+    function isRouteAdminOnly(routePath) {
+        const path = String(routePath || '').toLowerCase().replace(/\/$/, '') || '/';
+        return adminOnlyRoutes.value.some(r => {
+            const locked = String(r || '').toLowerCase().replace(/\/$/, '');
+            return locked && (path === locked || path.startsWith(locked + '/'));
+        });
+    }
+
     function hasAccess(routePath) {
         if (isAdmin.value) return true;
 
         // Normaliza para remover trailing slash
         const path = routePath.replace(/\/$/, '') || '/';
+
+        // Travada pelo admin: nem a allowlist local libera (o servidor também nega).
+        if (isRouteAdminOnly(path)) return false;
 
         if (ALWAYS_ALLOWED.includes(path)) return true;
 
@@ -61,6 +82,7 @@ export const usePermissionStore = defineStore('permissions', () => {
     // ── Limpa ao fazer logout ────────────────────────────────────────────────
     function clearPermissions() {
         allowedRoutes.value = [];
+        adminOnlyRoutes.value = [];
         isAdmin.value = false;
         loaded.value = false;
         localStorage.removeItem('_perm');
@@ -75,17 +97,20 @@ export const usePermissionStore = defineStore('permissions', () => {
             const cached = JSON.parse(localStorage.getItem('_perm'));
             if (cached) {
                 allowedRoutes.value = cached.routes ?? [];
+                adminOnlyRoutes.value = cached.adminOnlyRoutes ?? [];
             }
         } catch { /* ignora */ }
     }
 
     return {
         allowedRoutes,
+        adminOnlyRoutes,
         isAdmin,
         loaded,
         fetchMyPermissions,
         ensureLoaded,
         hasAccess,
+        isRouteAdminOnly,
         clearPermissions,
     };
 });

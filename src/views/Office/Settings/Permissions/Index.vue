@@ -7,6 +7,9 @@
 //     (removidas do perfil). Efetivas = (perfil ∪ extras) − negadas.
 //   - Dados: liberação por EMPREENDIMENTO (GrantsModal), por usuário e por
 //     perfil, com atalhos por empresa e por cidade.
+//   - Somente admin: o admin trava qualquer tela delegável aqui mesmo
+//     (route_policies). A tela sai das alçadas efetivas de todo não-admin na
+//     hora — menu, guard de rota, API e tools da Eme fecham juntos, sem deploy.
 
 import { ref, computed, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
@@ -83,11 +86,95 @@ function openGrants(type, id, name) {
 
 const clipboard = ref(null);
 
-const totalManaged = managedRegistry.reduce((acc, d) => acc + getDeptManagedPages(d).length, 0);
-
 // Visibilidade TOTAL: telas não-delegáveis também aparecem (informativas).
 const adminOnlyPages = getAdminOnlyPages();
 const alwaysFreePages = getAlwaysFreePages();
+
+// ── Telas travadas como "somente admin" pela própria tela ────────────────────
+// route_policies no backend: travar remove a rota das alçadas efetivas de todo
+// não-admin (menu, guard, API e tools da Eme fecham juntos). Reversível aqui.
+const routePolicies = ref([]);
+const lockBusy = ref('');
+const lockModal = ref({ open: false, page: null, lock: true, note: '' });
+
+const normRoute = (r) => String(r || '').toLowerCase().replace(/\/+$/, '');
+
+const lockedRoutes = computed(() =>
+  new Set(routePolicies.value.filter(p => p.adminOnly).map(p => normRoute(p.route))));
+const isLocked = (route) => lockedRoutes.value.has(normRoute(route));
+const policyFor = (route) =>
+  routePolicies.value.find(p => normRoute(p.route) === normRoute(route)) || null;
+
+// Telas realmente delegáveis de uma categoria (as travadas saem das contas e
+// das ações em massa — ligar o switch delas não daria acesso nenhum).
+const delegablePages = (dept) => getDeptManagedPages(dept).filter(p => !isLocked(p.route));
+
+const totalManaged = computed(() =>
+  managedRegistry.reduce((acc, d) => acc + delegablePages(d).length, 0));
+
+// Travadas pela tela, agrupadas para o bloco informativo.
+const lockedPages = computed(() => {
+  const out = [];
+  for (const cat of managedRegistry) {
+    for (const p of getDeptManagedPages(cat)) {
+      if (isLocked(p.route)) out.push({ ...p, catLabel: cat.label, policy: policyFor(p.route) });
+    }
+  }
+  return out;
+});
+
+// Política apontando para rota que não existe mais no menu (tela renomeada):
+// fica visível para poder destravar, senão viraria trava fantasma.
+const orphanPolicies = computed(() => {
+  const known = new Set(managedRegistry.flatMap(d => getDeptManagedPages(d).map(p => normRoute(p.route))));
+  return routePolicies.value.filter(p => p.adminOnly && !known.has(normRoute(p.route)));
+});
+
+// Travar tira a tela de todo mundo de uma vez: pede confirmação e um motivo
+// opcional (fica registrado no validador de integridade).
+function askLock(page) {
+  lockModal.value = { open: true, page, lock: true, note: '' };
+}
+
+async function confirmLock() {
+  const { page, note } = lockModal.value;
+  if (!page) return;
+  lockBusy.value = page.route;
+  try {
+    await requestWithAuth('/permissions/route-policies', {
+      method: 'PUT',
+      body: JSON.stringify({ route: page.route, adminOnly: true, note: note?.trim() || null }),
+    });
+    await loadRoutePolicies();
+    feedbackOk.value = true;
+    feedbackMsg.value = `"${page.name}" agora é exclusiva de administradores.`;
+  } catch (err) {
+    feedbackOk.value = false;
+    feedbackMsg.value = err.message || 'Erro ao alterar a política da tela.';
+  } finally {
+    lockBusy.value = '';
+    lockModal.value = { open: false, page: null, lock: true, note: '' };
+    setTimeout(() => { feedbackMsg.value = ''; }, 5000);
+  }
+}
+
+// Destravar é reversível e sem risco de acesso indevido (a tela volta a
+// depender do perfil de cada um) — vai direto, sem confirmação.
+async function unlockRoute(route) {
+  lockBusy.value = route;
+  try {
+    await requestWithAuth('/permissions/route-policies', {
+      method: 'PUT', body: JSON.stringify({ route, adminOnly: false }),
+    });
+    await loadRoutePolicies();
+  } catch (err) {
+    // Pode ser acionado fora do painel de um usuário (bloco de panorama), onde
+    // não há área de feedback — alerta direto, igual às outras ações globais.
+    alert(err.message || 'Erro ao destravar a tela.');
+  } finally {
+    lockBusy.value = '';
+  }
+}
 
 const filteredUsers = computed(() => {
   const q = (userSearch.value || '').toLowerCase();
@@ -123,7 +210,7 @@ function setRoute(r, grant) {
 }
 
 const effectiveRoutes = computed(() =>
-  managedRegistry.flatMap(d => getDeptManagedPages(d).map(p => p.route))
+  managedRegistry.flatMap(d => delegablePages(d).map(p => p.route))
     .filter(r => routeState(r).effective)
 );
 
@@ -136,9 +223,11 @@ const dirty = computed(() => {
 
 const countGranted = computed(() => effectiveRoutes.value.length);
 const countGrantedInDept = (dept) =>
-  getDeptManagedPages(dept).filter(p => routeState(p.route).effective).length;
-const allGrantedInDept = (dept) =>
-  getDeptManagedPages(dept).every(p => routeState(p.route).effective);
+  delegablePages(dept).filter(p => routeState(p.route).effective).length;
+const allGrantedInDept = (dept) => {
+  const pages = delegablePages(dept);
+  return pages.length > 0 && pages.every(p => routeState(p.route).effective);
+};
 
 const exceptionsCount = computed(() => localExtra.value.length + localRemoved.value.length);
 
@@ -164,7 +253,7 @@ function selectUser(user) {
 }
 
 function toggleDept(dept, grant) {
-  for (const p of getDeptManagedPages(dept)) setRoute(p.route, grant);
+  for (const p of delegablePages(dept)) setRoute(p.route, grant);
 }
 function grantAll() {
   for (const d of managedRegistry) toggleDept(d, true);
@@ -255,13 +344,13 @@ function profileToggleRoute(routePath) {
 }
 
 function profileToggleDept(dept, grant) {
-  const routes = getDeptManagedPages(dept).map(p => p.route);
+  const routes = delegablePages(dept).map(p => p.route);
   if (grant) routes.forEach(r => { if (!profileForm.value.routes.includes(r)) profileForm.value.routes.push(r); });
   else profileForm.value.routes = profileForm.value.routes.filter(r => !routes.includes(r));
 }
 
 function profileGrantAll() {
-  profileForm.value.routes = managedRegistry.flatMap(d => getDeptManagedPages(d).map(p => p.route));
+  profileForm.value.routes = managedRegistry.flatMap(d => delegablePages(d).map(p => p.route));
 }
 function profileRevokeAll() { profileForm.value.routes = []; }
 
@@ -290,6 +379,18 @@ async function saveProfile() {
     alert(err.message || 'Erro ao salvar perfil.');
   } finally {
     savingProfile.value = false;
+  }
+}
+
+// Volta o perfil para o conjunto padrão do departamento (e devolve o perfil ao
+// seed, que passa a mantê-lo em dia quando o sistema ganhar telas novas).
+async function resetProfileDefault(profile) {
+  if (!confirm(`Restaurar as telas padrão do departamento no perfil "${profile.name}"? As telas escolhidas à mão são substituídas.`)) return;
+  try {
+    await requestWithAuth(`/permissions/profiles/${profile.id}/reset-default`, { method: 'POST' });
+    await loadProfiles();
+  } catch (err) {
+    alert(err.message || 'Erro ao restaurar o padrão.');
   }
 }
 
@@ -337,6 +438,15 @@ async function loadProfiles() {
   }
 }
 
+async function loadRoutePolicies() {
+  try {
+    const data = await requestWithAuth('/permissions/route-policies');
+    routePolicies.value = Array.isArray(data?.policies) ? data.policies : [];
+  } catch (err) {
+    console.error('[Permissions] loadRoutePolicies error:', err);
+  }
+}
+
 async function loadDepartments() {
   try {
     const data = await requestWithAuth('/admin/departments');
@@ -347,7 +457,7 @@ async function loadDepartments() {
   }
 }
 
-onMounted(() => { loadUsers(); loadProfiles(); loadDepartments(); });
+onMounted(() => { loadUsers(); loadProfiles(); loadDepartments(); loadRoutePolicies(); });
 </script>
 
 <template>
@@ -371,11 +481,13 @@ onMounted(() => { loadUsers(); loadProfiles(); loadDepartments(); });
               { title: 'Ajuste exceções', text: 'Ligue/desligue telas individualmente. Tela do perfil desligada vira NEGADA; tela fora do perfil ligada vira EXTRA.' },
               { title: 'Libere empreendimentos', text: 'Em Empreendimentos liberados, marque o que a pessoa pode ver - com atalhos por empresa e por cidade. Sem liberação, o usuário não vê dado nenhum.' },
               { title: 'Salvar', text: 'Nada vale até clicar em Salvar.' },
+              { title: 'Tornar uma tela exclusiva de admin', text: 'Na lista de telas (aba Usuários, com alguém selecionado), clique no cadeado ao lado da tela. O servidor passa a negar os dados para todo não-admin na hora e o item some do menu de cada um na próxima carga da página. Para devolver a tela às alçadas, clique no cadeado de novo ou use o bloco Travadas como somente admin no fim da página.' },
             ]"
             :tips="[
               'Clonar acesso: use o ícone de copiar na lista e depois Colar - ou simplesmente aplique o mesmo perfil.',
               'Liberações no PERFIL propagam para todos os usuários daquele perfil.',
               'A alçada vale de verdade no servidor: sem a tela liberada a API nega os dados, inclusive para a Eme.',
+              'Tela travada no cadeado continua marcada nos perfis, mas não dá acesso: destravar devolve tudo como estava.',
             ]" />
           <SegmentedControl v-model="mainTab" :options="mainTabs" size="sm" />
         </template>
@@ -536,7 +648,7 @@ onMounted(() => { loadUsers(); loadProfiles(); loadDepartments(); });
                   <i :class="dept.icon" class="text-ink-subtle text-xs w-4 text-center"></i>
                   <span class="text-sm font-medium text-ink truncate">{{ dept.label }}</span>
                   <span class="text-xs text-ink-subtle font-mono">
-                    {{ countGrantedInDept(dept) }}/{{ getDeptManagedPages(dept).length }}
+                    {{ countGrantedInDept(dept) }}/{{ delegablePages(dept).length }}
                   </span>
                 </div>
                 <div class="flex items-center gap-2 shrink-0">
@@ -556,47 +668,106 @@ onMounted(() => { loadUsers(); loadProfiles(); loadDepartments(); });
                       <p class="text-sm text-ink truncate">{{ page.name }}</p>
                       <p class="text-[11px] font-mono text-ink-subtle truncate">{{ page.route }}</p>
                     </div>
-                    <Badge v-if="routeState(page.route).inRemoved" variant="danger" size="sm">negada</Badge>
-                    <Badge v-else-if="routeState(page.route).inExtra && !routeState(page.route).inProfile"
-                      variant="warning" size="sm">extra</Badge>
-                    <Badge v-else-if="routeState(page.route).inProfile" variant="accent" size="sm">perfil</Badge>
+                    <Badge v-if="isLocked(page.route)" variant="warning" size="sm">
+                      <i class="fas fa-crown text-[9px] mr-1"></i>somente admin
+                    </Badge>
+                    <template v-else>
+                      <Badge v-if="routeState(page.route).inRemoved" variant="danger" size="sm">negada</Badge>
+                      <Badge v-else-if="routeState(page.route).inExtra && !routeState(page.route).inProfile"
+                        variant="warning" size="sm">extra</Badge>
+                      <Badge v-else-if="routeState(page.route).inProfile" variant="accent" size="sm">perfil</Badge>
+                    </template>
                   </div>
-                  <Switch :model-value="routeState(page.route).effective" size="sm"
-                    @update:model-value="(v) => setRoute(page.route, v)" />
+                  <div class="flex items-center gap-1.5 shrink-0">
+                    <IconButton
+                      :icon="isLocked(page.route) ? 'fas fa-lock' : 'fas fa-lock-open'"
+                      size="sm"
+                      :disabled="lockBusy === page.route"
+                      :label="isLocked(page.route)
+                        ? `Devolver ${page.name} às alçadas`
+                        : `Tornar ${page.name} exclusiva de administradores`"
+                      :class="isLocked(page.route) ? 'text-amber-500' : ''"
+                      @click="isLocked(page.route) ? unlockRoute(page.route) : askLock(page)" />
+                    <Switch :model-value="!isLocked(page.route) && routeState(page.route).effective" size="sm"
+                      :disabled="isLocked(page.route)"
+                      @update:model-value="(v) => setRoute(page.route, v)" />
+                  </div>
                 </div>
               </div>
             </Surface>
 
-            <!-- Telas não-delegáveis (informativo — visibilidade total) -->
-            <Surface variant="raised" padding="none" class="overflow-hidden">
-              <div class="px-4 py-2.5 bg-surface-sunken/40 border-b border-line flex items-center gap-2">
-                <i class="fas fa-crown text-amber-500 text-xs w-4 text-center"></i>
-                <span class="text-sm font-medium text-ink">Exclusivas de admin</span>
-                <span class="text-xs text-ink-subtle font-mono">{{ adminOnlyPages.length }}</span>
-                <span class="text-[11px] text-ink-subtle ml-auto">nunca delegáveis — só administradores acessam</span>
-              </div>
-              <div class="px-4 py-2.5 flex flex-wrap gap-1.5">
-                <Badge v-for="p in adminOnlyPages" :key="p.route" variant="neutral" size="sm" :title="p.route">
-                  <i :class="p.icon" class="text-[9px] mr-1 opacity-70"></i>{{ p.name }}
-                </Badge>
-              </div>
-            </Surface>
-
-            <Surface variant="raised" padding="none" class="overflow-hidden">
-              <div class="px-4 py-2.5 bg-surface-sunken/40 border-b border-line flex items-center gap-2">
-                <i class="fas fa-unlock text-emerald-500 text-xs w-4 text-center"></i>
-                <span class="text-sm font-medium text-ink">Sempre liberadas</span>
-                <span class="text-xs text-ink-subtle font-mono">{{ alwaysFreePages.length }}</span>
-                <span class="text-[11px] text-ink-subtle ml-auto">pessoais/broadcast — todos os usuários têm acesso</span>
-              </div>
-              <div class="px-4 py-2.5 flex flex-wrap gap-1.5">
-                <Badge v-for="p in alwaysFreePages" :key="p.route" variant="neutral" size="sm" :title="p.route">
-                  <i :class="p.icon" class="text-[9px] mr-1 opacity-70"></i>{{ p.name }}
-                </Badge>
-              </div>
-            </Surface>
           </div>
         </main>
+
+        <!-- Panorama das telas do sistema — vale para TODOS os usuários, então
+             fica fora do painel de um usuário só (visível com ou sem seleção). -->
+        <section class="lg:col-span-4 space-y-3">
+          <Surface v-if="lockedPages.length || orphanPolicies.length" variant="raised" padding="none" class="overflow-hidden">
+            <div class="px-4 py-2.5 bg-surface-sunken/40 border-b border-line flex items-center gap-2 flex-wrap">
+              <i class="fas fa-lock text-amber-500 text-xs w-4 text-center"></i>
+              <span class="text-sm font-medium text-ink">Travadas como somente admin</span>
+              <span class="text-xs text-ink-subtle font-mono">{{ lockedPages.length + orphanPolicies.length }}</span>
+              <span class="text-[11px] text-ink-subtle sm:ml-auto">definidas nesta tela - clique no cadeado para devolver às alçadas</span>
+            </div>
+            <div class="divide-y divide-line">
+              <div v-for="p in lockedPages" :key="p.route"
+                class="flex items-center justify-between gap-3 px-4 py-2.5">
+                <div class="flex items-center gap-2.5 min-w-0">
+                  <i :class="p.icon" class="text-amber-500 text-xs w-3.5 text-center"></i>
+                  <div class="min-w-0">
+                    <p class="text-sm text-ink truncate">{{ p.catLabel }} · {{ p.name }}</p>
+                    <p class="text-[11px] text-ink-subtle truncate">
+                      <span class="font-mono">{{ p.route }}</span>
+                      <template v-if="p.policy?.updatedBy"> · por {{ p.policy.updatedBy }}</template>
+                      <template v-if="p.policy?.note"> · {{ p.policy.note }}</template>
+                    </p>
+                  </div>
+                </div>
+                <IconButton icon="fas fa-lock-open" size="sm" :disabled="lockBusy === p.route"
+                  :label="`Devolver ${p.name} às alçadas`" @click="unlockRoute(p.route)" />
+              </div>
+
+              <div v-for="p in orphanPolicies" :key="p.route"
+                class="flex items-center justify-between gap-3 px-4 py-2.5">
+                <div class="min-w-0">
+                  <p class="text-sm text-ink truncate font-mono">{{ p.route }}</p>
+                  <p class="text-[11px] text-red-500">tela travada que não existe mais no menu (renomeada ou removida)</p>
+                </div>
+                <IconButton icon="fas fa-lock-open" size="sm" :disabled="lockBusy === p.route"
+                  label="Remover trava órfã" @click="unlockRoute(p.route)" />
+              </div>
+            </div>
+          </Surface>
+
+          <!-- Telas não-delegáveis (informativo — visibilidade total) -->
+          <Surface variant="raised" padding="none" class="overflow-hidden">
+            <div class="px-4 py-2.5 bg-surface-sunken/40 border-b border-line flex items-center gap-2 flex-wrap">
+              <i class="fas fa-crown text-amber-500 text-xs w-4 text-center"></i>
+              <span class="text-sm font-medium text-ink">Exclusivas de admin no código</span>
+              <span class="text-xs text-ink-subtle font-mono">{{ adminOnlyPages.length }}</span>
+              <span class="text-[11px] text-ink-subtle sm:ml-auto">administração do sistema - não podem ser delegadas nem por aqui</span>
+            </div>
+            <div class="px-4 py-2.5 flex flex-wrap gap-1.5">
+              <Badge v-for="p in adminOnlyPages" :key="p.route" variant="neutral" size="sm" :title="p.route">
+                <i :class="p.icon" class="text-[9px] mr-1 opacity-70"></i>{{ p.name }}
+              </Badge>
+            </div>
+          </Surface>
+
+          <Surface variant="raised" padding="none" class="overflow-hidden">
+            <div class="px-4 py-2.5 bg-surface-sunken/40 border-b border-line flex items-center gap-2 flex-wrap">
+              <i class="fas fa-unlock text-emerald-500 text-xs w-4 text-center"></i>
+              <span class="text-sm font-medium text-ink">Sempre liberadas</span>
+              <span class="text-xs text-ink-subtle font-mono">{{ alwaysFreePages.length }}</span>
+              <span class="text-[11px] text-ink-subtle sm:ml-auto">pessoais/broadcast - todos os usuários têm acesso</span>
+            </div>
+            <div class="px-4 py-2.5 flex flex-wrap gap-1.5">
+              <Badge v-for="p in alwaysFreePages" :key="p.route" variant="neutral" size="sm" :title="p.route">
+                <i :class="p.icon" class="text-[9px] mr-1 opacity-70"></i>{{ p.name }}
+              </Badge>
+            </div>
+          </Surface>
+        </section>
       </div>
 
       <!-- ───── Aba Departamentos ───── -->
@@ -636,6 +807,13 @@ onMounted(() => { loadUsers(); loadProfiles(); loadDepartments(); });
                     variant="warning" size="sm">
                     Padrão: {{ departmentName(profile.department_id) }}
                   </Badge>
+                  <Badge v-if="profile.department_id"
+                    :variant="profile.routes_customized ? 'neutral' : 'success'" size="sm"
+                    :title="profile.routes_customized
+                      ? 'Telas escolhidas à mão — o sistema não atualiza mais este perfil sozinho'
+                      : 'Telas mantidas pelo padrão do departamento — acompanham as telas novas do sistema'">
+                    {{ profile.routes_customized ? 'editado' : 'padrão do sistema' }}
+                  </Badge>
                 </div>
               </div>
             </div>
@@ -658,6 +836,10 @@ onMounted(() => { loadUsers(); loadProfiles(); loadDepartments(); });
                 @click="openGrants('profile', profile.id, profile.name)">
                 Empreend.
               </Button>
+              <IconButton v-if="profile.department_id && profile.routes_customized"
+                icon="fas fa-rotate-left" size="sm"
+                :label="`Restaurar as telas padrão do departamento em ${profile.name}`"
+                @click="resetProfileDefault(profile)" />
               <Button size="sm" variant="ghost" icon="fas fa-trash" class="text-red-500"
                 @click="confirmDeleteProfile(profile)">
               </Button>
@@ -666,6 +848,44 @@ onMounted(() => { loadUsers(); loadProfiles(); loadDepartments(); });
         </div>
       </div>
     </PageContainer>
+
+    <!-- Modal: tornar uma tela exclusiva de admin -->
+    <Modal :open="lockModal.open" size="md" @close="lockModal.open = false">
+      <template #header>
+        <div class="flex items-center gap-3">
+          <div class="h-9 w-9 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400
+                      border border-amber-500/20 grid place-items-center shrink-0">
+            <i class="fas fa-lock text-sm"></i>
+          </div>
+          <div>
+            <h2 class="text-base font-semibold text-ink">Tornar exclusiva de administradores</h2>
+            <p class="text-xs text-ink-muted mt-0.5 font-mono">{{ lockModal.page?.route }}</p>
+          </div>
+        </div>
+      </template>
+
+      <div class="space-y-3">
+        <p class="text-sm text-ink-muted">
+          <strong class="text-ink">{{ lockModal.page?.name }}</strong> passa a valer só para
+          administradores. O servidor bloqueia na hora: as APIs da tela negam os dados de qualquer
+          não-admin, inclusive quando pedidos pela Eme.
+        </p>
+        <ul class="text-xs text-ink-muted space-y-1 pl-1">
+          <li><i class="fas fa-check text-emerald-500 mr-1.5"></i>O item some do menu e o acesso pela URL é barrado na próxima carga da página de cada usuário.</li>
+          <li><i class="fas fa-check text-emerald-500 mr-1.5"></i>Os perfis continuam com a tela marcada; ela só deixa de valer.</li>
+          <li><i class="fas fa-check text-emerald-500 mr-1.5"></i>Reversível: basta clicar no cadeado de novo.</li>
+        </ul>
+        <Input v-model="lockModal.note" label="Motivo (opcional)"
+          placeholder="Ex: tela em revisão pela diretoria" />
+      </div>
+
+      <template #footer>
+        <Button variant="ghost" @click="lockModal.open = false">Cancelar</Button>
+        <Button icon="fas fa-lock" :loading="!!lockBusy" @click="confirmLock">
+          Tornar exclusiva de admin
+        </Button>
+      </template>
+    </Modal>
 
     <!-- Modal de liberação de empreendimentos -->
     <GrantsModal
@@ -730,11 +950,11 @@ onMounted(() => { loadUsers(); loadProfiles(); loadDepartments(); });
               <i :class="dept.icon" class="text-ink-subtle text-xs w-4 text-center"></i>
               <span class="text-xs font-medium text-ink truncate">{{ dept.label }}</span>
               <span class="text-[10px] text-ink-subtle font-mono">
-                {{ getDeptManagedPages(dept).filter(p => profileForm.routes.includes(p.route)).length }}/{{ getDeptManagedPages(dept).length }}
+                {{ delegablePages(dept).filter(p => profileForm.routes.includes(p.route)).length }}/{{ delegablePages(dept).length }}
               </span>
             </div>
             <Switch
-              :model-value="getDeptManagedPages(dept).every(p => profileForm.routes.includes(p.route))"
+              :model-value="delegablePages(dept).length > 0 && delegablePages(dept).every(p => profileForm.routes.includes(p.route))"
               size="sm"
               @update:model-value="(v) => profileToggleDept(dept, v)" />
           </div>
@@ -745,8 +965,12 @@ onMounted(() => { loadUsers(); loadProfiles(); loadDepartments(); });
                 <i :class="page.icon" class="text-ink-subtle text-xs w-3.5 text-center"></i>
                 <span class="text-xs text-ink truncate">{{ page.name }}</span>
                 <span class="text-[10px] font-mono text-ink-subtle truncate">{{ page.route }}</span>
+                <Badge v-if="isLocked(page.route)" variant="warning" size="sm">
+                  <i class="fas fa-crown text-[9px] mr-1"></i>somente admin
+                </Badge>
               </div>
-              <Switch :model-value="profileForm.routes.includes(page.route)" size="sm"
+              <Switch :model-value="!isLocked(page.route) && profileForm.routes.includes(page.route)" size="sm"
+                :disabled="isLocked(page.route)"
                 @update:model-value="() => profileToggleRoute(page.route)" />
             </div>
           </div>
