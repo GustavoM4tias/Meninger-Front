@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 import { getSignupOptions, completeSignup } from '@/utils/Auth/apiAuth';
@@ -7,6 +7,7 @@ import API_URL from '@/config/apiUrl';
 
 import Input from '@/components/UI/Input.vue';
 import Select from '@/components/UI/Select.vue';
+import MultiSelector from '@/components/UI/MultiSelector.vue';
 import Button from '@/components/UI/Button.vue';
 import Spinner from '@/components/UI/Spinner.vue';
 import Surface from '@/components/UI/Surface.vue';
@@ -21,12 +22,29 @@ const errorMessage = ref('Ocorreu um erro ao autenticar com a Microsoft.');
 
 // O usuário NÃO escolhe o próprio cargo: só o departamento. O cargo é
 // definido pelo admin na aprovação do cadastro.
-const setupForm = ref({ username: '', birth_date: '', phone: '', department_id: '', city: '' });
+const setupForm = ref({ username: '', birth_date: '', phone: '', department_id: '', city_id: '' });
 const setupLoading = ref(false);
 const setupError   = ref('');
 
 const departmentsOptions = ref([]);
-const citiesOptions      = ref([]);
+// Catálogo completo de municípios (IBGE): o seletor tem BUSCA e o valor
+// trafega por ID — existem municípios homônimos em UFs diferentes.
+const citiesRaw = ref([]);
+const cityLabel = (c) => (c.uf ? `${c.name} - ${c.uf}` : c.name);
+const cityOptions = computed(() =>
+  citiesRaw.value.map(cityLabel).sort((a, b) => a.localeCompare(b, 'pt-BR'))
+);
+const citySelection = computed({
+  get: () => {
+    const found = citiesRaw.value.find(c => Number(c.id) === Number(setupForm.value.city_id));
+    return found ? [cityLabel(found)] : [];
+  },
+  set: (arr) => {
+    const label = Array.isArray(arr) ? arr[arr.length - 1] : null;
+    const rec = label ? citiesRaw.value.find(c => cityLabel(c) === label) : null;
+    setupForm.value.city_id = rec?.id ?? '';
+  },
+});
 
 const ERROR_MESSAGES = {
   missing_params: 'Parâmetros ausentes na resposta da Microsoft.',
@@ -41,9 +59,7 @@ async function loadSetupOptions() {
     departmentsOptions.value = (Array.isArray(data.departments) ? data.departments : [])
       .map(d => ({ label: d.name, value: String(d.id) }))
       .sort((a, b) => a.label.localeCompare(b.label));
-    citiesOptions.value = (Array.isArray(data.cities) ? data.cities : [])
-      .map(c => ({ label: c.uf ? `${c.name} - ${c.uf}` : c.name, value: c.name }))
-      .sort((a, b) => a.label.localeCompare(b.label));
+    citiesRaw.value = Array.isArray(data.cities) ? data.cities : [];
   } catch (err) {
     console.error('[MicrosoftCallback] Erro ao carregar opções de cadastro:', err);
     setupError.value = 'Não foi possível carregar as opções de cadastro. Recarregue a página e tente novamente.';
@@ -58,7 +74,7 @@ function endPendingSession() {
 async function submitSetup() {
   setupError.value = '';
   const f = setupForm.value;
-  if (!f.username?.trim() || !f.birth_date || !f.department_id || !f.city) {
+  if (!f.username?.trim() || !f.birth_date || !f.department_id || !f.city_id) {
     setupError.value = 'Preencha todos os campos obrigatórios.';
     return;
   }
@@ -69,7 +85,7 @@ async function submitSetup() {
       birth_date: f.birth_date,
       phone: f.phone || null,
       department_id: Number(f.department_id),
-      city: f.city,
+      city_id: Number(f.city_id),
     });
     endPendingSession();
     state.value = 'pending';
@@ -176,8 +192,15 @@ function goToLogin() { router.push({ name: 'login' }); }
           <Select v-model="setupForm.department_id" :options="departmentsOptions"
             label="Departamento" placeholder="Selecione seu departamento" required />
 
-          <Select v-model="setupForm.city" :options="citiesOptions"
-            label="Cidade" placeholder="Selecione sua cidade" required />
+          <div>
+            <label class="block text-xs font-medium text-ink-muted mb-1.5">
+              Cidade <span class="text-red-500">*</span>
+            </label>
+            <MultiSelector :model-value="citySelection"
+              @update:modelValue="citySelection = $event"
+              :options="cityOptions" placeholder="Busque sua cidade…"
+              :single="true" :page-size="120" />
+          </div>
 
           <p class="text-xs text-ink-muted flex items-start gap-1.5">
             <i class="fas fa-circle-info text-accent mt-0.5 shrink-0"></i>
