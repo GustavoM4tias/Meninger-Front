@@ -145,7 +145,8 @@ const getColor = (idx) => palette[idx % palette.length];
 
       <div class="flex items-center w-full gap-2 md:flex-nowrap flex-wrap justify-center md:justify-end">
         <Select v-model="sortBy" :options="sortOptions" size="sm" class="md:max-w-20" />
-        <SegmentedControl :model-value="lastView" :options="viewOptions" size="md" @change="openInView" />
+        <!-- @select: abre em QUALQUER clique, inclusive na opção já ativa -->
+        <SegmentedControl :model-value="lastView" :options="viewOptions" size="md" @select="openInView" />
       </div>
     </div>
 

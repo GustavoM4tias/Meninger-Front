@@ -79,8 +79,9 @@ function openSingle(entry, mode = 'list') {
       </div>
 
       <div class="flex items-center gap-2 flex-wrap">
+        <!-- @select: abre em QUALQUER clique, inclusive na opção já ativa -->
         <SegmentedControl :model-value="lastView" :options="viewOptions" size="sm"
-          @change="openInView" />
+          @select="openInView" />
       </div>
     </div>
 

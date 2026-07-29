@@ -7,14 +7,15 @@ import Export from '@/components/config/Export.vue';
 import IconButton from '@/components/UI/IconButton.vue';
 import EmptyState from '@/components/UI/EmptyState.vue';
 import SegmentedControl from '@/components/UI/SegmentedControl.vue';
-import Select from '@/components/UI/Select.vue';
 import Badge from '@/components/UI/Badge.vue';
 
 const props = defineProps({ data: { type: Array, required: true } });
 const emit = defineEmits(['open-land-sync', 'selection-metrics']);
 
 const contractsStore = useContractsStore();
-const sortBy = ref('value-desc');
+// Ordenação pelo CABEÇALHO da tabela (padrão do sistema) — o dropdown de
+// direcionamento saiu da toolbar.
+const sortConfig = ref({ key: 'value', direction: 'desc' });
 const open = ref(false);
 
 const selectedKeys = ref(new Set());
@@ -31,11 +32,6 @@ const isAdmin = computed(() => {
   try { return localStorage.getItem('role') === 'admin'; } catch { return false; }
 });
 
-const valueModeOptions = [
-  { value: 'net', label: 'VGV' },
-  { value: 'gross', label: 'VGV+DC' },
-];
-
 const groupByOptions = [
   { value: 'enterprise', label: 'Empreendimento', icon: 'fas fa-building' },
   { value: 'company', label: 'Empresa', icon: 'fas fa-city' },
@@ -47,11 +43,12 @@ const viewOptions = [
   { value: 'bar', label: 'Colunas', icon: 'fas fa-chart-column' },
 ];
 
-const sortOptions = [
-  { value: 'value-desc', label: 'Valor ↓' },
-  { value: 'value', label: 'Valor ↑' },
-  { value: 'count-desc', label: 'Vendas ↓' },
-  { value: 'count', label: 'Vendas ↑' },
+// Colunas ordenáveis — usadas no cabeçalho (desktop) e nos chips (mobile).
+const sortColumns = [
+  { key: 'name', label: 'Nome' },
+  { key: 'count', label: 'Vendas' },
+  { key: 'value', label: 'Valor total' },
+  { key: 'ticket', label: 'Ticket médio' },
 ];
 
 const colors = [
@@ -81,20 +78,47 @@ const combinedCount = (row) => contractsStore.combinedCountForRow(row);
 const ticketMedio = (row) => contractsStore.ticketForRow(row);
 const isUnlinked = (row) => contractsStore.isUnlinkedProjectionRow(row);
 
-/* ===================== SORT ===================== */
-const sortedData = computed(() => {
-  const data = [...props.data];
-  switch (sortBy.value) {
-    case 'count':
-      return data.sort((a, b) => combinedCount(a) - combinedCount(b));
-    case 'count-desc':
-      return data.sort((a, b) => combinedCount(b) - combinedCount(a));
+/* ===================== SORT (pelo cabeçalho) ===================== */
+const sortValueOf = (row, key) => {
+  switch (key) {
+    case 'name': return (row.name || '').toLowerCase();
+    case 'count': return combinedCount(row);
+    case 'ticket': return ticketMedio(row);
     case 'value':
-      return data.sort((a, b) => totalCombined(a) - totalCombined(b));
-    case 'value-desc':
-    default:
-      return data.sort((a, b) => totalCombined(b) - totalCombined(a));
+    default: return totalCombined(row);
   }
+};
+
+const sortedData = computed(() => {
+  const { key, direction } = sortConfig.value;
+  const dir = direction === 'asc' ? 1 : -1;
+  return [...props.data].sort((a, b) => {
+    const av = sortValueOf(a, key);
+    const bv = sortValueOf(b, key);
+    if (typeof av === 'string' || typeof bv === 'string') {
+      return String(av).localeCompare(String(bv), 'pt-BR') * dir;
+    }
+    return ((Number(av) || 0) - (Number(bv) || 0)) * dir;
+  });
+});
+
+// Texto começa A→Z; número começa do maior (o que interessa em valores).
+function handleSort(key) {
+  if (sortConfig.value.key === key) {
+    sortConfig.value = { key, direction: sortConfig.value.direction === 'asc' ? 'desc' : 'asc' };
+  } else {
+    sortConfig.value = { key, direction: key === 'name' ? 'asc' : 'desc' };
+  }
+}
+
+function sortIcon(key) {
+  if (sortConfig.value.key !== key) return 'fas fa-sort text-ink-subtle/40';
+  return sortConfig.value.direction === 'asc' ? 'fas fa-sort-up text-accent' : 'fas fa-sort-down text-accent';
+}
+
+const sortLabel = computed(() => {
+  const col = sortColumns.find(c => c.key === sortConfig.value.key);
+  return `${col?.label || sortConfig.value.key} ${sortConfig.value.direction === 'asc' ? '↑' : '↓'}`;
 });
 
 const totalCount = computed(() =>
@@ -381,15 +405,14 @@ const closeModal = () => {
 };
 
 // ── Bridges para SegmentedControl ────────────────────────
-const valueModeProxy = computed({
-  get: () => contractsStore.valueMode,
-  set: (v) => contractsStore.setValueMode(v),
-});
+// VGV / VGV+DC mudou para os filtros do topo (DashboardFilters).
 const groupByProxy = computed({
   get: () => contractsStore.groupBy,
   set: (v) => contractsStore.setGroupBy(v),
 });
 const lastView = ref('list');
+// @select (e não @change): abre o modal em QUALQUER clique, inclusive na opção
+// já ativa — antes "Listagem" (valor inicial) não respondia ao clique.
 const onViewChange = (mode) => {
   lastView.value = mode;
   openGroup(mode);
@@ -426,10 +449,21 @@ const onViewChange = (mode) => {
           @click="emit('open-land-sync')" />
         <IconButton icon="fas fa-download" size="md" label="Exportar dados" @click="open = true" />
         <div class="ml-auto flex items-center gap-2 flex-wrap">
-          <Select v-model="sortBy" :options="sortOptions" size="sm" class="md:max-w-20" />
-          <SegmentedControl v-model="valueModeProxy" :options="valueModeOptions" size="sm" />
-          <SegmentedControl :model-value="lastView" :options="viewOptions" size="sm" @change="onViewChange" />
+          <SegmentedControl :model-value="lastView" :options="viewOptions" size="sm" @select="onViewChange" />
         </div>
+      </div>
+
+      <!-- Ordenação no mobile (no desktop é o cabeçalho da tabela) -->
+      <div class="md:hidden flex items-center gap-1.5 flex-wrap">
+        <span class="text-[10px] text-ink-subtle uppercase tracking-wider font-mono mr-0.5">Ordenar</span>
+        <button v-for="col in sortColumns" :key="col.key" @click="handleSort(col.key)"
+          class="px-2 py-1 text-[11px] rounded-lg border transition-colors inline-flex items-center gap-1"
+          :class="sortConfig.key === col.key
+            ? 'border-accent/40 text-accent bg-accent-soft/40'
+            : 'border-line text-ink-muted hover:bg-surface-hover'">
+          {{ col.label }}
+          <i :class="sortIcon(col.key)" class="text-[9px]"></i>
+        </button>
       </div>
     </div>
 
@@ -493,18 +527,32 @@ const onViewChange = (mode) => {
               <input type="checkbox" :checked="allVisibleChecked" @change="toggleAllVisible($event)"
                 class="accent-accent" />
             </th>
-            <th class="px-4 py-2.5 text-left text-[10px] font-mono uppercase tracking-wider text-ink-subtle">
-              {{ contractsStore.groupBy === 'company' ? 'Empresa' : 'Empreendimento' }}
+            <th @click="handleSort('name')"
+              class="px-4 py-2.5 text-left text-[10px] font-mono uppercase tracking-wider text-ink-subtle cursor-pointer select-none hover:text-ink transition-colors">
+              <span class="inline-flex items-center gap-1">
+                {{ contractsStore.groupBy === 'company' ? 'Empresa' : 'Empreendimento' }}
+                <i :class="sortIcon('name')"></i>
+              </span>
             </th>
-            <th class="px-4 py-2.5 text-right text-[10px] font-mono uppercase tracking-wider text-ink-subtle">Vendas
+            <th @click="handleSort('count')"
+              class="px-4 py-2.5 text-right text-[10px] font-mono uppercase tracking-wider text-ink-subtle cursor-pointer select-none hover:text-ink transition-colors">
+              <span class="inline-flex items-center gap-1">Vendas <i :class="sortIcon('count')"></i></span>
             </th>
-            <th class="px-4 py-2.5 text-right text-[10px] font-mono uppercase tracking-wider text-ink-subtle">
-              Valor total
-              <span class="text-ink-subtle/70">({{ valueModeLabel }})</span>
+            <th @click="handleSort('value')"
+              class="px-4 py-2.5 text-right text-[10px] font-mono uppercase tracking-wider text-ink-subtle cursor-pointer select-none hover:text-ink transition-colors">
+              <span class="inline-flex items-center gap-1">
+                Valor total
+                <span class="text-ink-subtle/70">({{ valueModeLabel }})</span>
+                <i :class="sortIcon('value')"></i>
+              </span>
             </th>
-            <th class="px-4 py-2.5 text-right text-[10px] font-mono uppercase tracking-wider text-ink-subtle">
-              Ticket médio
-              <span class="text-ink-subtle/70">({{ valueModeLabel }})</span>
+            <th @click="handleSort('ticket')"
+              class="px-4 py-2.5 text-right text-[10px] font-mono uppercase tracking-wider text-ink-subtle cursor-pointer select-none hover:text-ink transition-colors">
+              <span class="inline-flex items-center gap-1">
+                Ticket médio
+                <span class="text-ink-subtle/70">({{ valueModeLabel }})</span>
+                <i :class="sortIcon('ticket')"></i>
+              </span>
             </th>
             <th class="px-4 py-2.5 text-center text-[10px] font-mono uppercase tracking-wider text-ink-subtle">Ações
             </th>
@@ -600,7 +648,7 @@ const onViewChange = (mode) => {
       initial-delimiter=";" initial-array-mode="join" :preselect="[]"
       :filters="{
         'Modo de valor': valueModeLabel,
-        'Ordenação': sortBy,
+        'Ordenação': sortLabel,
         'Total de empreendimentos': totalCount,
       }" />
 

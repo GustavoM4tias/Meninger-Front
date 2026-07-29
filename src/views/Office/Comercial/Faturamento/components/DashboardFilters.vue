@@ -8,6 +8,7 @@ import MultiSelector from '@/components/UI/MultiSelector.vue';
 import Input from '@/components/UI/Input.vue';
 import Button from '@/components/UI/Button.vue';
 import Badge from '@/components/UI/Badge.vue';
+import SegmentedControl from '@/components/UI/SegmentedControl.vue';
 
 const emit = defineEmits(['filter-changed']);
 const contractsStore = useContractsStore();
@@ -25,6 +26,18 @@ const localFilters = ref({
   situation: '',
   selectedCompanyNames: [],
   groupIds: [],
+});
+
+// Modo de valor (VGV × VGV+DC) — mora aqui, junto dos demais filtros do topo.
+// Não entra em `localFilters`: é modo de exibição (aplica na hora, sem
+// depender do botão Filtrar) e não conta no selo de filtros ativos.
+const valueModeOptions = [
+  { value: 'net', label: 'VGV' },
+  { value: 'gross', label: 'VGV+DC' },
+];
+const valueModeProxy = computed({
+  get: () => contractsStore.valueMode,
+  set: (v) => contractsStore.setValueMode(v),
 });
 
 // Empresas
@@ -209,6 +222,16 @@ onMounted(async () => {
         <MultiSelector :model-value="localFilters.selectedCompanyNames"
           @update:modelValue="v => localFilters.selectedCompanyNames = Array.isArray(v) ? v : []"
           :options="companiesOptions" placeholder="Empresas" :page-size="150" :select-all="true" />
+      </div>
+
+      <div>
+        <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+          <i class="fas fa-coins text-[10px] mr-1 text-ink-subtle"></i>Modo de valor
+        </label>
+        <SegmentedControl v-model="valueModeProxy" :options="valueModeOptions" size="md" block />
+        <p class="text-[10px] text-ink-subtle mt-1">
+          VGV+DC inclui despesas de comercialização. Aplica na hora, sem filtrar.
+        </p>
       </div>
     </div>
   </section>
