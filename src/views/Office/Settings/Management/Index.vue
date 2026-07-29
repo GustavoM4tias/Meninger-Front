@@ -28,10 +28,11 @@ const toast = (() => {
   catch { return { success: console.log, error: console.error }; }
 })();
 
+// Cidades saíram daqui (2026-07-29): o catálogo agora se alimenta sozinho das
+// cidades dos empreendimentos sincronizados (Settings > Empresas).
 const tabs = [
   { value: 'departments', label: 'Departamentos', icon: 'fas fa-sitemap' },
   { value: 'positions',   label: 'Cargos',        icon: 'fas fa-id-badge' },
-  { value: 'cities',      label: 'Cidades',       icon: 'fas fa-city' },
 ];
 
 const activeTab = ref('departments');
@@ -49,13 +50,11 @@ const form = ref({
 const items = computed(() => ({
   departments: store.departments,
   positions:   store.positions,
-  cities:      store.userCities,
 }[activeTab.value] || []));
 
 const labelSingular = computed(() => ({
   departments: 'Departamento',
   positions:   'Cargo',
-  cities:      'Cidade',
 }[activeTab.value]));
 
 const modalTitle = computed(() =>
@@ -95,12 +94,6 @@ function openModal(item) {
     form.value = {
       name: item.name, code: item.code, description: item.description || '',
       departmentId: '', is_internal: true, is_partner: false, uf: '',
-    };
-  } else {
-    form.value = {
-      name: item.name, uf: item.uf || '',
-      code: '', description: '',
-      departmentId: '', is_internal: true, is_partner: false,
     };
   }
   showModal.value = true;
@@ -148,19 +141,6 @@ async function saveItem() {
         await store.createDepartment(payload);
         successMessage = 'Departamento criado com sucesso!';
       }
-    } else {
-      if (!form.value.name.trim()) { toast.error('Nome da cidade é obrigatório.'); return; }
-      const payload = {
-        name: form.value.name.trim(),
-        uf: form.value.uf ? form.value.uf.trim().toUpperCase() : null,
-      };
-      if (editingItem.value?.id) {
-        await store.updateUserCity(editingItem.value.id, payload);
-        successMessage = 'Cidade atualizada com sucesso!';
-      } else {
-        await store.createUserCity(payload);
-        successMessage = 'Cidade criada com sucesso!';
-      }
     }
     toast.success(successMessage);
     closeModal();
@@ -176,7 +156,6 @@ async function deactivateItem(item) {
     const map = {
       positions:   store.deactivatePosition,
       departments: store.deactivateDepartment,
-      cities:      store.deactivateUserCity,
     };
     await map[activeTab.value](item.id);
   } catch (e) {
@@ -192,7 +171,6 @@ onMounted(async () => {
   await Promise.all([
     store.fetchDepartments(),
     store.fetchPositions(),
-    store.fetchUserCities(),
   ]);
 });
 </script>
@@ -203,11 +181,11 @@ onMounted(async () => {
 
       <!-- Header -->
       <PageHeader
-        title="Departamentos, cargos e cidades"
-        subtitle="Configure departamentos, cargos e cidades disponíveis para os usuários."
+        title="Departamentos e cargos"
+        subtitle="Configure departamentos e cargos dos usuários. Cidades entram sozinhas a partir dos empreendimentos sincronizados."
         icon="fas fa-sliders">
         <template #title>
-          <span>Departamentos, cargos & cidades</span>
+          <span>Departamentos & cargos</span>
           <Favorite :router="'/settings/management'" :section="'Departamentos'" />
         </template>
         <template #actions>
@@ -303,30 +281,6 @@ onMounted(async () => {
           </Surface>
         </template>
 
-        <!-- CIDADES -->
-        <template v-else>
-          <Surface v-for="c in items" :key="c.id" variant="raised" padding="none" class="overflow-hidden">
-            <div class="flex items-start justify-between gap-3 p-4 border-b border-line">
-              <div class="min-w-0 flex-1">
-                <h3 class="text-sm font-semibold text-ink truncate">{{ c.name }}</h3>
-                <Badge size="sm" class="mt-1.5">
-                  <i class="fas fa-location-dot text-[9px]"></i>{{ c.uf || 'UF não informada' }}
-                </Badge>
-              </div>
-              <Badge :variant="c.active ? 'success' : 'danger'" size="sm">
-                {{ c.active ? 'Ativo' : 'Inativo' }}
-              </Badge>
-            </div>
-            <div class="p-4 space-y-2 text-sm">
-              <p class="text-[11px] text-ink-subtle font-mono">ID interno: {{ c.id }}</p>
-              <div class="flex items-center gap-1 pt-2 border-t border-line/50">
-                <Button size="sm" variant="ghost" icon="fas fa-pen" @click="openModal(c)">Editar</Button>
-                <Button v-if="c.active" size="sm" variant="ghost" icon="fas fa-ban"
-                  class="text-red-500" @click="deactivateItem(c)">Desativar</Button>
-              </div>
-            </div>
-          </Surface>
-        </template>
       </div>
     </PageContainer>
 
@@ -341,8 +295,7 @@ onMounted(async () => {
             <h2 class="text-base font-semibold text-ink">{{ modalTitle }}</h2>
             <p class="text-xs text-ink-muted mt-0.5">
               {{ activeTab === 'positions' ? 'Defina departamento, nome, código e tipo do cargo.'
-              : activeTab === 'departments' ? 'Defina nome, código e descrição do departamento.'
-              : 'Defina nome e UF da cidade.' }}
+              : 'Defina nome, código e descrição do departamento.' }}
             </p>
           </div>
         </div>
@@ -370,7 +323,7 @@ onMounted(async () => {
         </template>
 
         <!-- Departamentos -->
-        <template v-else-if="activeTab === 'departments'">
+        <template v-else>
           <Input v-model="form.name" label="Nome do departamento" placeholder="Ex: Marketing" required />
           <Input v-model="form.code" label="Código (único)" placeholder="Ex: MARKETING"
             class="uppercase" required />
@@ -384,11 +337,6 @@ onMounted(async () => {
           </div>
         </template>
 
-        <!-- Cidades -->
-        <template v-else>
-          <Input v-model="form.name" label="Nome da cidade" placeholder="Ex: Marília" required />
-          <Input v-model="form.uf" label="UF" placeholder="SP" maxlength="2" class="w-24 uppercase" />
-        </template>
       </div>
 
       <template #footer>

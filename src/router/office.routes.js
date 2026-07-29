@@ -451,7 +451,7 @@ export default [
                         path: 'management',
                         name: 'Cargos',
                         component: () => import('@/views/Office/Settings/Management/Index.vue'),
-                        meta: { requiresAuth: true, allowedPosition: '', allowedRole: 'admin', searchable: true, content: 'Departamentos, Cargos e Cidades do sistema' },
+                        meta: { requiresAuth: true, allowedPosition: '', allowedRole: 'admin', searchable: true, content: 'Departamentos e Cargos do sistema (cidades entram sozinhas pelos empreendimentos sincronizados)' },
                     },
                     {
                         path: 'integrity',
