@@ -1,4 +1,17 @@
 <script setup>
+// Configurações do dashboard de Faturamento (e Vendas × Projeção).
+//
+// Padrões desta tela (revisão 2026-07-29):
+//   - TODO seletor de empreendimento usa o MultiSelector padrão do sistema
+//     (busca + paginação) com `overlay` — sem overlay o dropdown era CORTADO
+//     pelo scroll do modal e parecia "travado".
+//   - Onde faz sentido, a seleção é MÚLTIPLA e cria uma regra por
+//     empreendimento (Composição de VGV, Comissão, Terreno externo, Ocultar).
+//     Satélite de TR e o destino do Vínculo CV↔Sienge são únicos por natureza
+//     (MultiSelector em modo `single`).
+//   - Toda lista tem EDITAR (prefill do formulário) além de remover.
+//   - Trocar de aba ou salvar limpa o formulário correspondente.
+
 import { ref, computed, watch } from 'vue';
 import { useLandSyncStore } from '@/stores/Comercial/Contracts/landSyncStore';
 import { useContractsStore } from '@/stores/Comercial/Contracts/contractsStore';
@@ -11,7 +24,6 @@ import { useTrSatelliteStore } from '@/stores/Comercial/Contracts/trSatelliteSto
 import Modal from '@/components/UI/Modal.vue';
 import Surface from '@/components/UI/Surface.vue';
 import Button from '@/components/UI/Button.vue';
-import IconButton from '@/components/UI/IconButton.vue';
 import Badge from '@/components/UI/Badge.vue';
 import Input from '@/components/UI/Input.vue';
 import Select from '@/components/UI/Select.vue';
@@ -41,8 +53,33 @@ const tabOptions = [
   { value: 'trsat',      label: 'Satélite de TR',      icon: 'fas fa-link' },
 ];
 
+// ── Opções de empreendimento (padrão em TODAS as abas) ─────────────────────
+// Rótulo "Nome (id)": preciso mesmo com nomes duplicados entre CCs — a
+// seleção antiga por nome puro adicionava TODOS os ids com o mesmo nome.
+const enterpriseIdOptions = computed(() =>
+  (contractsStore.enterprises || [])
+    .filter(e => e?.id != null && e?.name)
+    .map(e => `${e.name} (${e.id})`)
+);
+
+const idFromLabel = (label) => {
+  const m = String(label || '').match(/\((\d+)\)\s*$/);
+  return m ? Number(m[1]) : null;
+};
+const labelForId = (id) => {
+  const ent = (contractsStore.enterprises || []).find(e => Number(e.id) === Number(id));
+  return ent ? `${ent.name} (${ent.id})` : null;
+};
+const idsFromLabels = (labels) =>
+  [...new Set((labels || []).map(idFromLabel).filter(n => Number.isFinite(n) && n > 0))];
+
+const enterpriseNameById = computed(() => {
+  const m = new Map();
+  for (const e of contractsStore.enterprises || []) m.set(Number(e.id), e.name);
+  return m;
+});
+
 // ── Vínculo CV ↔ Sienge ────────────────────────────────────────────
-// Como cada origem do CV achou (ou não) o centro de custo do Sienge.
 const VIA_LABEL = {
   manual: 'Vínculo manual',
   etapa_reserva: 'Código da fase (reserva)',
@@ -65,46 +102,70 @@ const alertCount = computed(() => erpLinksStore.pending.filter(p => p.alerta_sem
 const EMPTY_LINK = {
   cv_enterprise_name: '', cv_stage_name: '',
   cv_enterprise_id: null, cv_stage_id: null,
-  erp_enterprise_id: '', description: '',
+  description: '',
 };
 const newLink = ref({ ...EMPTY_LINK });
+const newLinkErpSel = ref([]);       // MultiSelector single: ["Nome (id)"]
+const editingLink = ref(null);       // link ativo sendo editado (remove+add ao salvar)
+
+const newLinkErpId = computed(() => idsFromLabels(newLinkErpSel.value)[0] ?? null);
 
 // A chave é código: etapa do CV (preferida) ou empreendimento do CV.
 const isNewLinkValid = computed(() =>
   (newLink.value.cv_stage_id != null || newLink.value.cv_enterprise_id != null) &&
-  newLink.value.erp_enterprise_id !== '' &&
-  Number(newLink.value.erp_enterprise_id) > 0
+  newLinkErpId.value != null
 );
+
+function resetLinkForm() {
+  newLink.value = { ...EMPTY_LINK };
+  newLinkErpSel.value = [];
+  editingLink.value = null;
+}
 
 // Preenche o formulário a partir de um pendente do diagnóstico.
 // A etapa vem junto: quando o empreendimento do CV se divide em fases e o
 // Sienge tem um empreendimento por fase, é a etapa que diz qual é o destino.
 function pickPending(p) {
+  editingLink.value = null;
   newLink.value = {
     cv_enterprise_name: p.cv_enterprise_name || '',
     cv_stage_name: p.cv_stage_name || '',
     cv_enterprise_id: p.cv_enterprise_id ?? null,
     cv_stage_id: p.cv_stage_id ?? null,
-    erp_enterprise_id: '',
     description: '',
   };
+  newLinkErpSel.value = [];
 }
 
-async function handleLinkAdd() {
+// Editar um vínculo ativo: prefill completo; salvar substitui (remove + cria).
+function pickLinkForEdit(link) {
+  editingLink.value = link;
+  newLink.value = {
+    cv_enterprise_name: link.cv_enterprise_name || '',
+    cv_stage_name: link.cv_stage_name || '',
+    cv_enterprise_id: link.cv_enterprise_id ?? null,
+    cv_stage_id: link.cv_stage_id ?? null,
+    description: link.description || '',
+  };
+  const label = labelForId(link.erp_enterprise_id);
+  newLinkErpSel.value = label ? [label] : [];
+}
+
+async function handleLinkSave() {
   if (!isNewLinkValid.value) return;
-  const erpId = Number(newLink.value.erp_enterprise_id);
-  const ent = contractsStore.enterprises.find(e => Number(e.id) === erpId);
+  const erpId = newLinkErpId.value;
   try {
+    if (editingLink.value) await erpLinksStore.removeLink(editingLink.value.id);
     await erpLinksStore.addLink({
       cv_enterprise_id: newLink.value.cv_enterprise_id,
       cv_enterprise_name: (newLink.value.cv_enterprise_name || '').trim() || null,
       cv_stage_id: newLink.value.cv_stage_id,
       cv_stage_name: (newLink.value.cv_stage_name || '').trim() || null,
       erp_enterprise_id: erpId,
-      erp_enterprise_name: ent?.name || null,
+      erp_enterprise_name: enterpriseNameById.value.get(erpId) || null,
       description: newLink.value.description || null,
     });
-    newLink.value = { ...EMPTY_LINK };
+    resetLinkForm();
     contractsStore.clearContractsCache();
   } catch (e) {
     window.alert(e?.message || 'Erro ao salvar vínculo.');
@@ -114,6 +175,7 @@ async function handleLinkAdd() {
 async function handleLinkRemove(id) {
   if (!window.confirm('Remover este vínculo? A projeção desse empreendimento volta a ficar solta.')) return;
   await erpLinksStore.removeLink(id);
+  if (editingLink.value?.id === id) resetLinkForm();
   contractsStore.clearContractsCache();
 }
 
@@ -127,120 +189,45 @@ const VALUE_MODE_LABEL = {
 const valueModeSelectOptions = Object.entries(VALUE_MODE_LABEL)
   .map(([value, label]) => ({ value, label }));
 
-const newValueRule = ref({
-  enterprise_id: '',
-  net_mode: 'FULL',
-  gross_mode: 'FULL',
-  description: '',
-});
+const newValueRule = ref({ net_mode: 'FULL', gross_mode: 'FULL', description: '' });
+const newValueRuleEnts = ref([]);    // múltiplos: uma regra por empreendimento
+const editingValueRule = ref(null);  // backend faz upsert por empreendimento
 
 const isNewValueRuleValid = computed(() =>
-  newValueRule.value.enterprise_id !== '' &&
+  idsFromLabels(newValueRuleEnts.value).length > 0 &&
   !(newValueRule.value.net_mode === 'FULL' && newValueRule.value.gross_mode === 'FULL')
 );
 
-const selectedLandNames = ref([]);
-const selectedHiddenNames = ref([]);
+function resetValueForm() {
+  newValueRule.value = { net_mode: 'FULL', gross_mode: 'FULL', description: '' };
+  newValueRuleEnts.value = [];
+  editingValueRule.value = null;
+}
 
-// ── Commission rule form ───────────────────────────────────────────
-const newRule = ref({
-  enterprise_id: '',
-  stage_id: null,
-  commission_pct_display: null,
-  stage_name: '',
-  description: '',
-});
+function pickValueRuleForEdit(rule) {
+  editingValueRule.value = rule;
+  newValueRule.value = {
+    net_mode: rule.net_mode || 'FULL',
+    gross_mode: rule.gross_mode || 'FULL',
+    description: rule.description || '',
+  };
+  const label = labelForId(rule.enterprise_id);
+  newValueRuleEnts.value = label ? [label] : [];
+}
 
-// ── TR-satellite form ──────────────────────────────────────────────
-const newTrSat = ref({
-  satellite_enterprise_id: '',
-  partner_names: [],
-  description: '',
-});
-
-const isNewTrSatValid = computed(() => {
-  const sid = Number(newTrSat.value.satellite_enterprise_id);
-  if (!Number.isInteger(sid) || sid <= 0) return false;
-  const partners = (newTrSat.value.partner_names || [])
-    .map(n => contractsStore.enterprises.find(e => e.name === n)?.id)
-    .map(Number)
-    .filter(n => Number.isFinite(n) && n > 0);
-  if (!partners.length) return false;
-  if (partners.includes(sid)) return false;
-  return true;
-});
-
-const enterpriseNameById = computed(() => {
-  const m = new Map();
-  for (const e of contractsStore.enterprises || []) m.set(Number(e.id), e.name);
-  return m;
-});
-
-// Etapa é opcional: sem etapa, a comissão vale para toda venda do empreendimento.
-const isNewRuleValid = computed(() =>
-  newRule.value.enterprise_id !== '' &&
-  (newRule.value.stage_id == null || newRule.value.stage_id === '' ||
-    (Number.isInteger(Number(newRule.value.stage_id)) && Number(newRule.value.stage_id) > 0)) &&
-  Number.isFinite(newRule.value.commission_pct_display) && newRule.value.commission_pct_display > 0 && newRule.value.commission_pct_display < 100
-);
-
-const enterprisesOptions = computed(() =>
-  [...new Set((contractsStore.enterprises || []).map(e => e.name).filter(Boolean))]
-);
-
-const enterprisesNotHiddenOptions = computed(() => {
-  const hiddenIds = hiddenStore.hiddenIds;
-  const names = (contractsStore.enterprises || [])
-    .filter(e => !hiddenIds.has(Number(e.id)))
-    .map(e => e.name)
-    .filter(Boolean);
-  return [...new Set(names)];
-});
-
-const enterpriseSelectOptions = computed(() => [
-  { value: '', label: 'Selecione...' },
-  ...(contractsStore.enterprises || []).map(e => ({
-    value: e.id,
-    label: `${e.name} (${e.id})`,
-  })),
-]);
-
-watch(() => props.open, async (isOpen) => {
-  if (!isOpen) return;
-  activeTab.value = 'links';
-  selectedLandNames.value = [];
-  selectedHiddenNames.value = [];
-  newRule.value = { enterprise_id: '', stage_id: null, commission_pct_display: null, stage_name: '', description: '' };
-  newTrSat.value = { satellite_enterprise_id: '', partner_names: [], description: '' };
-  newValueRule.value = { enterprise_id: '', net_mode: 'FULL', gross_mode: 'FULL', description: '' };
-  newLink.value = { ...EMPTY_LINK };
-
-  if (!contractsStore.enterprises.length) await contractsStore.fetchEnterprises();
-  await Promise.all([
-    landSyncStore.fetchAll(),
-    hiddenStore.fetchAll(),
-    commissionRulesStore.fetchAll(),
-    valueRulesStore.fetchAll(),
-    erpLinksStore.fetchAll(),
-    erpLinksStore.fetchPending(),
-    trSatStore.fetchAll(),
-  ]);
-});
-
-// ── Composição de VGV: handlers ────────────────────────────────────
-async function handleValueRuleAdd() {
+async function handleValueRuleSave() {
   if (!isNewValueRuleValid.value) return;
-  const eid = Number(newValueRule.value.enterprise_id);
-  const ent = contractsStore.enterprises.find(e => Number(e.id) === eid);
   try {
-    await valueRulesStore.addRule({
-      enterprise_id: eid,
-      enterprise_name: ent?.name || null,
-      net_mode: newValueRule.value.net_mode,
-      gross_mode: newValueRule.value.gross_mode,
-      description: newValueRule.value.description || null,
-    });
-    newValueRule.value = { enterprise_id: '', net_mode: 'FULL', gross_mode: 'FULL', description: '' };
+    for (const eid of idsFromLabels(newValueRuleEnts.value)) {
+      await valueRulesStore.addRule({
+        enterprise_id: eid,
+        enterprise_name: enterpriseNameById.value.get(eid) || null,
+        net_mode: newValueRule.value.net_mode,
+        gross_mode: newValueRule.value.gross_mode,
+        description: newValueRule.value.description || null,
+      });
+    }
+    resetValueForm();
     contractsStore.clearContractsCache();
   } catch (e) {
     window.alert(e?.message || 'Erro ao salvar regra de composição de VGV.');
@@ -250,24 +237,23 @@ async function handleValueRuleAdd() {
 async function handleValueRuleRemove(id) {
   if (!window.confirm('Remover esta regra? O empreendimento volta a somar pelas condições de pagamento.')) return;
   await valueRulesStore.removeRule(id);
+  if (editingValueRule.value?.id === id) resetValueForm();
   contractsStore.clearContractsCache();
 }
 
-// ── OBSTIT handlers ────────────────────────────────────────────────
+// ── Terreno externo (OBSTIT) ───────────────────────────────────────
+const selectedLandLabels = ref([]);
+
 async function handleLandAdd() {
-  if (!selectedLandNames.value.length) return;
-  const byName = new Map();
-  for (const e of contractsStore.enterprises || []) {
-    const key = (e.name || '').toString();
-    if (!byName.has(key)) byName.set(key, []);
-    byName.get(key).push(e);
+  const ids = idsFromLabels(selectedLandLabels.value);
+  if (!ids.length) return;
+  for (const eid of ids) {
+    await landSyncStore.addItem({
+      enterprise_id: eid,
+      enterprise_name: enterpriseNameById.value.get(eid) || null,
+    });
   }
-  for (const name of selectedLandNames.value) {
-    for (const ent of byName.get(name) || []) {
-      await landSyncStore.addItem({ enterprise_id: ent.id, enterprise_name: ent.name });
-    }
-  }
-  selectedLandNames.value = [];
+  selectedLandLabels.value = [];
 }
 
 async function handleLandRemove(id) {
@@ -284,21 +270,26 @@ async function handleRunSync() {
   }
 }
 
-// ── Hidden enterprises handlers ────────────────────────────────────
+// ── Ocultar empreendimentos ────────────────────────────────────────
+const selectedHiddenLabels = ref([]);
+
+const hiddenSelectableOptions = computed(() => {
+  const hiddenIds = hiddenStore.hiddenIds;
+  return (contractsStore.enterprises || [])
+    .filter(e => e?.id != null && e?.name && !hiddenIds.has(Number(e.id)))
+    .map(e => `${e.name} (${e.id})`);
+});
+
 async function handleHiddenAdd() {
-  if (!selectedHiddenNames.value.length) return;
-  const byName = new Map();
-  for (const e of contractsStore.enterprises || []) {
-    const key = (e.name || '').toString();
-    if (!byName.has(key)) byName.set(key, []);
-    byName.get(key).push(e);
+  const ids = idsFromLabels(selectedHiddenLabels.value);
+  if (!ids.length) return;
+  for (const eid of ids) {
+    await hiddenStore.addItem({
+      enterprise_id: eid,
+      enterprise_name: enterpriseNameById.value.get(eid) || null,
+    });
   }
-  for (const name of selectedHiddenNames.value) {
-    for (const ent of byName.get(name) || []) {
-      await hiddenStore.addItem({ enterprise_id: ent.id, enterprise_name: ent.name });
-    }
-  }
-  selectedHiddenNames.value = [];
+  selectedHiddenLabels.value = [];
   contractsStore.clearContractsCache();
   await contractsStore.fetchContracts({ force: true });
 }
@@ -310,60 +301,166 @@ async function handleHiddenRemove(id) {
   await contractsStore.fetchContracts({ force: true });
 }
 
-// ── Commission rule handlers ───────────────────────────────────────
-async function handleCommissionAdd() {
+// ── Comissão por etapa ─────────────────────────────────────────────
+const newRule = ref({ stage_id: null, commission_pct_display: null, stage_name: '', description: '' });
+const newRuleEnts = ref([]);         // múltiplos: uma regra por empreendimento
+const editingCommission = ref(null); // sem PUT no backend: salvar = remove + cria
+
+// Etapa é opcional: sem etapa, a comissão vale para toda venda do empreendimento.
+const normalizedStageId = computed(() => {
+  const v = newRule.value.stage_id;
+  if (v === '' || v == null) return null;
+  const n = Number(v);
+  return Number.isInteger(n) && n > 0 ? n : NaN;
+});
+
+const isNewRuleValid = computed(() =>
+  idsFromLabels(newRuleEnts.value).length > 0 &&
+  !Number.isNaN(normalizedStageId.value) &&
+  Number.isFinite(newRule.value.commission_pct_display) &&
+  newRule.value.commission_pct_display > 0 && newRule.value.commission_pct_display < 100
+);
+
+function resetCommissionForm() {
+  newRule.value = { stage_id: null, commission_pct_display: null, stage_name: '', description: '' };
+  newRuleEnts.value = [];
+  editingCommission.value = null;
+}
+
+function pickCommissionForEdit(rule) {
+  editingCommission.value = rule;
+  newRule.value = {
+    stage_id: rule.stage_id ?? null,
+    commission_pct_display: Math.round(rule.commission_pct * 10000) / 100,
+    stage_name: rule.stage_name || '',
+    description: rule.description || '',
+  };
+  const label = labelForId(rule.enterprise_id);
+  newRuleEnts.value = label ? [label] : [];
+}
+
+async function handleCommissionSave() {
   if (!isNewRuleValid.value) return;
-  const eid = Number(newRule.value.enterprise_id);
-  const ent = contractsStore.enterprises.find(e => Number(e.id) === eid);
   try {
-    await commissionRulesStore.addRule({
-      enterprise_id: eid,
-      enterprise_name: ent?.name || null,
-      stage_id: newRule.value.stage_id,
-      stage_name: newRule.value.stage_name || null,
-      commission_pct: newRule.value.commission_pct_display / 100,
-      description: newRule.value.description || null,
-    });
-    newRule.value = { enterprise_id: '', stage_id: null, commission_pct_display: null, stage_name: '', description: '' };
+    if (editingCommission.value) await commissionRulesStore.removeRule(editingCommission.value.id);
+    for (const eid of idsFromLabels(newRuleEnts.value)) {
+      await commissionRulesStore.addRule({
+        enterprise_id: eid,
+        enterprise_name: enterpriseNameById.value.get(eid) || null,
+        stage_id: normalizedStageId.value,
+        stage_name: newRule.value.stage_name || null,
+        commission_pct: newRule.value.commission_pct_display / 100,
+        description: newRule.value.description || null,
+      });
+    }
+    resetCommissionForm();
     contractsStore.clearContractsCache();
   } catch (e) {
-    window.alert(e?.message || 'Erro ao adicionar regra.');
+    window.alert(e?.message || 'Erro ao salvar regra.');
   }
 }
 
 async function handleCommissionRemove(id) {
   if (!window.confirm('Remover esta regra de comissão por etapa?')) return;
   await commissionRulesStore.removeRule(id);
+  if (editingCommission.value?.id === id) resetCommissionForm();
   contractsStore.clearContractsCache();
 }
 
-// ── TR-satellite handlers ──────────────────────────────────────────
-async function handleTrSatAdd() {
+// ── Satélite de TR ─────────────────────────────────────────────────
+const newTrSat = ref({ description: '' });
+const newTrSatSel = ref([]);          // MultiSelector single: satélite
+const newTrSatPartnersSel = ref([]);  // múltiplos: partners
+const editingTrSat = ref(null);       // backend tem PUT: salvar = updateItem
+
+const newTrSatId = computed(() => idsFromLabels(newTrSatSel.value)[0] ?? null);
+const newTrSatPartnerIds = computed(() =>
+  idsFromLabels(newTrSatPartnersSel.value).filter(id => id !== newTrSatId.value)
+);
+
+const isNewTrSatValid = computed(() =>
+  newTrSatId.value != null && newTrSatPartnerIds.value.length > 0
+);
+
+function resetTrSatForm() {
+  newTrSat.value = { description: '' };
+  newTrSatSel.value = [];
+  newTrSatPartnersSel.value = [];
+  editingTrSat.value = null;
+}
+
+function pickTrSatForEdit(item) {
+  editingTrSat.value = item;
+  newTrSat.value = { description: item.description || '' };
+  const satLabel = labelForId(item.satellite_enterprise_id);
+  newTrSatSel.value = satLabel ? [satLabel] : [];
+  newTrSatPartnersSel.value = (item.partner_enterprise_ids || [])
+    .map(labelForId)
+    .filter(Boolean);
+}
+
+async function handleTrSatSave() {
   if (!isNewTrSatValid.value) return;
-  const sid = Number(newTrSat.value.satellite_enterprise_id);
-  const satEnt = contractsStore.enterprises.find(e => Number(e.id) === sid);
-  const partnerIds = (newTrSat.value.partner_names || [])
-    .map(n => Number(contractsStore.enterprises.find(e => e.name === n)?.id))
-    .filter(Number.isFinite);
+  const sid = newTrSatId.value;
   try {
-    await trSatStore.addItem({
-      satellite_enterprise_id: sid,
-      satellite_enterprise_name: satEnt?.name || null,
-      partner_enterprise_ids: partnerIds,
-      description: newTrSat.value.description || null,
-    });
-    newTrSat.value = { satellite_enterprise_id: '', partner_names: [], description: '' };
+    if (editingTrSat.value) {
+      await trSatStore.updateItem(editingTrSat.value.id, {
+        satellite_enterprise_name: enterpriseNameById.value.get(sid) || null,
+        partner_enterprise_ids: newTrSatPartnerIds.value,
+        description: newTrSat.value.description || null,
+      });
+    } else {
+      await trSatStore.addItem({
+        satellite_enterprise_id: sid,
+        satellite_enterprise_name: enterpriseNameById.value.get(sid) || null,
+        partner_enterprise_ids: newTrSatPartnerIds.value,
+        description: newTrSat.value.description || null,
+      });
+    }
+    resetTrSatForm();
     contractsStore.clearContractsCache();
   } catch (e) {
-    window.alert(e?.message || 'Erro ao adicionar satélite de TR.');
+    window.alert(e?.message || 'Erro ao salvar satélite de TR.');
   }
 }
 
 async function handleTrSatRemove(id) {
   if (!window.confirm('Remover este vínculo de satélite de TR?')) return;
   await trSatStore.removeItem(id);
+  if (editingTrSat.value?.id === id) resetTrSatForm();
   contractsStore.clearContractsCache();
 }
+
+// ── Reset de formulários ───────────────────────────────────────────
+function resetAllForms() {
+  resetLinkForm();
+  resetValueForm();
+  resetCommissionForm();
+  resetTrSatForm();
+  selectedLandLabels.value = [];
+  selectedHiddenLabels.value = [];
+}
+
+// Trocar de aba limpa o formulário — nada de campo "esquecido" de uma aba
+// aparecer preenchido quando o admin volta nela.
+watch(activeTab, () => resetAllForms());
+
+watch(() => props.open, async (isOpen) => {
+  if (!isOpen) return;
+  activeTab.value = 'links';
+  resetAllForms();
+
+  if (!contractsStore.enterprises.length) await contractsStore.fetchEnterprises();
+  await Promise.all([
+    landSyncStore.fetchAll(),
+    hiddenStore.fetchAll(),
+    commissionRulesStore.fetchAll(),
+    valueRulesStore.fetchAll(),
+    erpLinksStore.fetchAll(),
+    erpLinksStore.fetchPending(),
+    trSatStore.fetchAll(),
+  ]);
+});
 
 const closeModal = () => emit('close');
 </script>
@@ -489,16 +586,24 @@ const closeModal = () => emit('close');
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-            <!-- Novo vínculo -->
+            <!-- Novo vínculo / edição -->
             <Surface variant="raised" padding="md" class="space-y-3">
-              <div>
-                <h3 class="text-sm font-semibold text-ink">Novo vínculo</h3>
-                <p class="text-[11px] text-ink-muted">Use "Vincular" na lista acima para preencher automaticamente.</p>
+              <div class="flex items-center justify-between gap-2">
+                <div>
+                  <h3 class="text-sm font-semibold text-ink">
+                    {{ editingLink ? 'Editando vínculo' : 'Novo vínculo' }}
+                  </h3>
+                  <p class="text-[11px] text-ink-muted">
+                    Use "Vincular" na lista acima (ou "Editar" num vínculo ativo) para preencher.
+                  </p>
+                </div>
+                <Button v-if="editingLink" variant="ghost" size="sm" icon="fas fa-xmark"
+                  @click="resetLinkForm">Cancelar</Button>
               </div>
 
               <div class="rounded-lg border border-line bg-surface-sunken px-2.5 py-2 text-[11px] text-ink-muted">
-                <span v-if="newLink.cv_enterprise_name">
-                  <span class="text-ink font-medium">{{ newLink.cv_enterprise_name }}</span>
+                <span v-if="newLink.cv_enterprise_name || newLink.cv_enterprise_id != null || newLink.cv_stage_id != null">
+                  <span class="text-ink font-medium">{{ newLink.cv_enterprise_name || `CV #${newLink.cv_enterprise_id}` }}</span>
                   <span v-if="newLink.cv_stage_name"> · {{ newLink.cv_stage_name }}</span>
                   <span class="block font-mono text-[10px] text-ink-subtle mt-0.5">
                     etapa CV {{ newLink.cv_stage_id ?? '—' }} · empreendimento CV
@@ -513,7 +618,10 @@ const closeModal = () => emit('close');
                   <i class="fas fa-building text-[10px] mr-1 text-ink-subtle"></i>
                   Empreendimento no Sienge
                 </label>
-                <Select v-model="newLink.erp_enterprise_id" :options="enterpriseSelectOptions" />
+                <MultiSelector :model-value="newLinkErpSel"
+                  @update:modelValue="newLinkErpSel = Array.isArray($event) ? $event : []"
+                  :options="enterpriseIdOptions" placeholder="Busque o empreendimento..."
+                  :single="true" :overlay="true" :page-size="150" />
               </div>
 
               <Input v-model="newLink.description"
@@ -521,8 +629,9 @@ const closeModal = () => emit('close');
                 placeholder="ex: cadastro do CV sem o ID do Sienge" />
 
               <div class="flex justify-end pt-1">
-                <Button size="sm" icon="fas fa-plus" :disabled="!isNewLinkValid" @click="handleLinkAdd">
-                  Salvar vínculo
+                <Button size="sm" :icon="editingLink ? 'fas fa-floppy-disk' : 'fas fa-plus'"
+                  :disabled="!isNewLinkValid" @click="handleLinkSave">
+                  {{ editingLink ? 'Salvar alterações' : 'Salvar vínculo' }}
                 </Button>
               </div>
             </Surface>
@@ -546,7 +655,8 @@ const closeModal = () => emit('close');
                   description="Todos resolvem pelo cadastro do CV." />
                 <ul v-else class="divide-y divide-line">
                   <li v-for="link in erpLinksStore.items" :key="link.id"
-                    class="px-3 py-2.5 flex items-start justify-between gap-2 hover:bg-surface-hover transition-colors">
+                    class="px-3 py-2.5 flex items-start justify-between gap-2 hover:bg-surface-hover transition-colors"
+                    :class="editingLink?.id === link.id ? 'bg-accent-soft/40' : ''">
                     <div class="min-w-0">
                       <p class="text-xs font-medium text-ink truncate">
                         {{ link.cv_enterprise_name || `CV #${link.cv_enterprise_id}` }}
@@ -563,11 +673,15 @@ const closeModal = () => emit('close');
                         {{ link.description }}
                       </p>
                     </div>
-                    <Button variant="ghost" size="sm" icon="fas fa-trash"
-                      class="!text-red-500 hover:!bg-red-500/10 shrink-0"
-                      @click="handleLinkRemove(link.id)">
-                      <span class="hidden sm:inline">Remover</span>
-                    </Button>
+                    <div class="flex items-center gap-0.5 shrink-0">
+                      <Button variant="ghost" size="sm" icon="fas fa-pen"
+                        @click="pickLinkForEdit(link)">
+                        <span class="hidden sm:inline">Editar</span>
+                      </Button>
+                      <Button variant="ghost" size="sm" icon="fas fa-trash"
+                        class="!text-red-500 hover:!bg-red-500/10"
+                        @click="handleLinkRemove(link.id)" />
+                    </div>
                   </li>
                 </ul>
               </div>
@@ -578,7 +692,6 @@ const closeModal = () => emit('close');
         <!-- ═══════════════ TAB: TERRENO EXTERNO (OBSTIT) ═══════════════ -->
         <div v-if="activeTab === 'obstit'" class="p-4 sm:p-5 space-y-4">
 
-          <!-- Erro / Loading -->
           <div v-if="landSyncStore.error"
             class="rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2.5 text-xs text-red-700 dark:text-red-300 flex items-center gap-2">
             <i class="fas fa-circle-exclamation"></i>{{ landSyncStore.error }}
@@ -638,10 +751,10 @@ const closeModal = () => emit('close');
                   <i class="fas fa-city text-[10px] mr-1 text-ink-subtle"></i>
                   Empreendimento(s)
                 </label>
-                <MultiSelector :model-value="selectedLandNames"
-                  @update:modelValue="selectedLandNames = Array.isArray($event) ? $event : []"
-                  :options="enterprisesOptions" placeholder="Selecione empreendimentos"
-                  :page-size="150" :select-all="true" />
+                <MultiSelector :model-value="selectedLandLabels"
+                  @update:modelValue="selectedLandLabels = Array.isArray($event) ? $event : []"
+                  :options="enterpriseIdOptions" placeholder="Selecione empreendimentos"
+                  :overlay="true" :page-size="150" :select-all="true" />
               </div>
 
               <div class="flex items-center justify-between gap-2 pt-1 flex-wrap">
@@ -650,7 +763,7 @@ const closeModal = () => emit('close');
                   Ao salvar, o próximo job de OBSTIT usará essa configuração.
                 </p>
                 <Button size="sm" icon="fas fa-plus"
-                  :disabled="!selectedLandNames.length"
+                  :disabled="!selectedLandLabels.length"
                   @click="handleLandAdd">
                   Adicionar
                 </Button>
@@ -731,16 +844,16 @@ const closeModal = () => emit('close');
                   <i class="fas fa-eye-slash text-[10px] mr-1 text-ink-subtle"></i>
                   Empreendimento(s)
                 </label>
-                <MultiSelector :model-value="selectedHiddenNames"
-                  @update:modelValue="selectedHiddenNames = Array.isArray($event) ? $event : []"
-                  :options="enterprisesNotHiddenOptions" placeholder="Selecione para ocultar"
-                  :page-size="150" :select-all="false" />
+                <MultiSelector :model-value="selectedHiddenLabels"
+                  @update:modelValue="selectedHiddenLabels = Array.isArray($event) ? $event : []"
+                  :options="hiddenSelectableOptions" placeholder="Selecione para ocultar"
+                  :overlay="true" :page-size="150" :select-all="false" />
               </div>
 
               <div class="flex justify-end pt-1">
                 <Button size="sm" icon="fas fa-eye-slash"
                   class="!bg-amber-500 hover:!bg-amber-600"
-                  :disabled="!selectedHiddenNames.length"
+                  :disabled="!selectedHiddenLabels.length"
                   @click="handleHiddenAdd">
                   Ocultar selecionados
                 </Button>
@@ -791,7 +904,8 @@ const closeModal = () => emit('close');
                   description="Use o painel ao lado para adicionar." />
                 <ul v-else class="divide-y divide-line">
                   <li v-for="rule in commissionRulesStore.rules" :key="rule.id"
-                    class="px-3 py-2.5 flex items-start justify-between gap-2 hover:bg-surface-hover transition-colors">
+                    class="px-3 py-2.5 flex items-start justify-between gap-2 hover:bg-surface-hover transition-colors"
+                    :class="editingCommission?.id === rule.id ? 'bg-accent-soft/40' : ''">
                     <div class="min-w-0 flex-1">
                       <p class="text-xs font-medium text-ink truncate">
                         {{ rule.enterprise_name || `Empreendimento ${rule.enterprise_id}` }}
@@ -811,29 +925,47 @@ const closeModal = () => emit('close');
                       <p v-if="rule.description"
                         class="text-[10px] text-ink-subtle mt-0.5 italic truncate">{{ rule.description }}</p>
                     </div>
-                    <Button variant="ghost" size="sm" icon="fas fa-trash"
-                      class="!text-red-500 hover:!bg-red-500/10 shrink-0"
-                      @click="handleCommissionRemove(rule.id)">
-                      <span class="hidden sm:inline">Remover</span>
-                    </Button>
+                    <div class="flex items-center gap-0.5 shrink-0">
+                      <Button variant="ghost" size="sm" icon="fas fa-pen"
+                        @click="pickCommissionForEdit(rule)">
+                        <span class="hidden sm:inline">Editar</span>
+                      </Button>
+                      <Button variant="ghost" size="sm" icon="fas fa-trash"
+                        class="!text-red-500 hover:!bg-red-500/10"
+                        @click="handleCommissionRemove(rule.id)" />
+                    </div>
                   </li>
                 </ul>
               </div>
             </Surface>
 
-            <!-- Adicionar regra -->
+            <!-- Adicionar/editar regra -->
             <Surface variant="raised" padding="md" class="space-y-3">
-              <div>
-                <h3 class="text-sm font-semibold text-ink">Adicionar regra</h3>
-                <p class="text-[11px] text-ink-muted">
-                  Com etapa, o cálculo aplica-se apenas a contratos cujo repasse <em>já passou</em> por ela.
-                  Deixe a etapa em branco para valer em toda venda do empreendimento.
-                </p>
+              <div class="flex items-center justify-between gap-2">
+                <div>
+                  <h3 class="text-sm font-semibold text-ink">
+                    {{ editingCommission ? 'Editando regra' : 'Adicionar regra' }}
+                  </h3>
+                  <p class="text-[11px] text-ink-muted">
+                    Com etapa, aplica-se apenas a contratos cujo repasse <em>já passou</em> por ela.
+                    Sem etapa, vale para toda venda. Selecione vários empreendimentos para criar a
+                    mesma regra em lote.
+                  </p>
+                </div>
+                <Button v-if="editingCommission" variant="ghost" size="sm" icon="fas fa-xmark"
+                  @click="resetCommissionForm">Cancelar</Button>
               </div>
 
-              <Select v-model="newRule.enterprise_id"
-                :options="enterpriseSelectOptions"
-                label="Empreendimento (ERP)" />
+              <div>
+                <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+                  <i class="fas fa-building text-[10px] mr-1 text-ink-subtle"></i>
+                  Empreendimento(s) (ERP)
+                </label>
+                <MultiSelector :model-value="newRuleEnts"
+                  @update:modelValue="newRuleEnts = Array.isArray($event) ? $event : []"
+                  :options="enterpriseIdOptions" placeholder="Busque o(s) empreendimento(s)..."
+                  :single="!!editingCommission" :overlay="true" :page-size="150" />
+              </div>
 
               <div class="grid grid-cols-2 gap-2">
                 <Input v-model.number="newRule.stage_id" type="number" min="1"
@@ -851,10 +983,10 @@ const closeModal = () => emit('close');
                 placeholder="ex: Contratos 30/70 — comissão apartada 4%" />
 
               <div class="flex justify-end pt-1">
-                <Button size="sm" icon="fas fa-plus"
+                <Button size="sm" :icon="editingCommission ? 'fas fa-floppy-disk' : 'fas fa-plus'"
                   :disabled="!isNewRuleValid"
-                  @click="handleCommissionAdd">
-                  Adicionar regra
+                  @click="handleCommissionSave">
+                  {{ editingCommission ? 'Salvar alterações' : 'Adicionar regra' }}
                 </Button>
               </div>
             </Surface>
@@ -904,7 +1036,8 @@ const closeModal = () => emit('close');
                   description="Use o painel ao lado para adicionar." />
                 <ul v-else class="divide-y divide-line">
                   <li v-for="item in trSatStore.items" :key="item.id"
-                    class="px-3 py-2.5 flex items-start justify-between gap-2 hover:bg-surface-hover transition-colors">
+                    class="px-3 py-2.5 flex items-start justify-between gap-2 hover:bg-surface-hover transition-colors"
+                    :class="editingTrSat?.id === item.id ? 'bg-accent-soft/40' : ''">
                     <div class="min-w-0 flex-1">
                       <p class="text-xs font-medium text-ink truncate">
                         {{ item.satellite_enterprise_name || `Empreendimento ${item.satellite_enterprise_id}` }}
@@ -924,38 +1057,59 @@ const closeModal = () => emit('close');
                       <p v-if="item.description"
                         class="text-[10px] text-ink-subtle mt-0.5 italic truncate">{{ item.description }}</p>
                     </div>
-                    <Button variant="ghost" size="sm" icon="fas fa-trash"
-                      class="!text-red-500 hover:!bg-red-500/10 shrink-0"
-                      @click="handleTrSatRemove(item.id)">
-                      <span class="hidden sm:inline">Remover</span>
-                    </Button>
+                    <div class="flex items-center gap-0.5 shrink-0">
+                      <Button variant="ghost" size="sm" icon="fas fa-pen"
+                        @click="pickTrSatForEdit(item)">
+                        <span class="hidden sm:inline">Editar</span>
+                      </Button>
+                      <Button variant="ghost" size="sm" icon="fas fa-trash"
+                        class="!text-red-500 hover:!bg-red-500/10"
+                        @click="handleTrSatRemove(item.id)" />
+                    </div>
                   </li>
                 </ul>
               </div>
             </Surface>
 
-            <!-- Adicionar vínculo -->
+            <!-- Adicionar/editar vínculo -->
             <Surface variant="raised" padding="md" class="space-y-3">
-              <div>
-                <h3 class="text-sm font-semibold text-ink">Adicionar vínculo</h3>
-                <p class="text-[11px] text-ink-muted">
-                  Selecione o empreendimento <em>satélite</em> (que carrega o TR) e os <em>partners</em> de incorporação.
-                </p>
+              <div class="flex items-center justify-between gap-2">
+                <div>
+                  <h3 class="text-sm font-semibold text-ink">
+                    {{ editingTrSat ? 'Editando vínculo' : 'Adicionar vínculo' }}
+                  </h3>
+                  <p class="text-[11px] text-ink-muted">
+                    Selecione o empreendimento <em>satélite</em> (que carrega o TR) e os <em>partners</em> de incorporação.
+                  </p>
+                </div>
+                <Button v-if="editingTrSat" variant="ghost" size="sm" icon="fas fa-xmark"
+                  @click="resetTrSatForm">Cancelar</Button>
               </div>
 
-              <Select v-model="newTrSat.satellite_enterprise_id"
-                :options="enterpriseSelectOptions"
-                label="Empreendimento satélite (TR)" />
+              <div>
+                <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+                  <i class="fas fa-building text-[10px] mr-1 text-ink-subtle"></i>
+                  Empreendimento satélite (TR)
+                </label>
+                <MultiSelector :model-value="newTrSatSel"
+                  @update:modelValue="newTrSatSel = Array.isArray($event) ? $event : []"
+                  :options="enterpriseIdOptions" placeholder="Busque o satélite..."
+                  :single="true" :overlay="true" :page-size="150"
+                  :disabled="!!editingTrSat" />
+                <p v-if="editingTrSat" class="text-[10px] text-ink-subtle mt-1">
+                  O satélite não muda na edição — para trocar, remova e crie outro vínculo.
+                </p>
+              </div>
 
               <div>
                 <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
                   <i class="fas fa-handshake text-[10px] mr-1 text-ink-subtle"></i>
                   Partners (incorporação)
                 </label>
-                <MultiSelector :model-value="newTrSat.partner_names"
-                  @update:modelValue="newTrSat.partner_names = Array.isArray($event) ? $event : []"
-                  :options="enterprisesOptions" placeholder="Selecione um ou mais partners"
-                  :page-size="150" :select-all="false" />
+                <MultiSelector :model-value="newTrSatPartnersSel"
+                  @update:modelValue="newTrSatPartnersSel = Array.isArray($event) ? $event : []"
+                  :options="enterpriseIdOptions" placeholder="Selecione um ou mais partners"
+                  :overlay="true" :page-size="150" :select-all="false" />
               </div>
 
               <Input v-model="newTrSat.description"
@@ -963,10 +1117,10 @@ const closeModal = () => emit('close');
                 placeholder="ex: Parque dos Ipês — TR no pai, incorporação nos módulos" />
 
               <div class="flex justify-end pt-1">
-                <Button size="sm" icon="fas fa-plus"
+                <Button size="sm" :icon="editingTrSat ? 'fas fa-floppy-disk' : 'fas fa-plus'"
                   :disabled="!isNewTrSatValid"
-                  @click="handleTrSatAdd">
-                  Adicionar vínculo
+                  @click="handleTrSatSave">
+                  {{ editingTrSat ? 'Salvar alterações' : 'Adicionar vínculo' }}
                 </Button>
               </div>
             </Surface>
@@ -1008,7 +1162,8 @@ const closeModal = () => emit('close');
                   description="Todos os empreendimentos somam pelas condições de pagamento." />
                 <ul v-else class="divide-y divide-line">
                   <li v-for="rule in valueRulesStore.items" :key="rule.id"
-                    class="px-3 py-2.5 flex items-start justify-between gap-2 hover:bg-surface-hover transition-colors">
+                    class="px-3 py-2.5 flex items-start justify-between gap-2 hover:bg-surface-hover transition-colors"
+                    :class="editingValueRule?.id === rule.id ? 'bg-accent-soft/40' : ''">
                     <div class="min-w-0">
                       <p class="text-xs font-medium text-ink truncate">
                         {{ rule.enterprise_name || enterpriseNameById.get(Number(rule.enterprise_id)) || 'Sem nome' }}
@@ -1021,28 +1176,44 @@ const closeModal = () => emit('close');
                         {{ rule.description }}
                       </p>
                     </div>
-                    <Button variant="ghost" size="sm" icon="fas fa-trash"
-                      class="!text-red-500 hover:!bg-red-500/10"
-                      @click="handleValueRuleRemove(rule.id)">
-                      <span class="hidden sm:inline">Remover</span>
-                    </Button>
+                    <div class="flex items-center gap-0.5 shrink-0">
+                      <Button variant="ghost" size="sm" icon="fas fa-pen"
+                        @click="pickValueRuleForEdit(rule)">
+                        <span class="hidden sm:inline">Editar</span>
+                      </Button>
+                      <Button variant="ghost" size="sm" icon="fas fa-trash"
+                        class="!text-red-500 hover:!bg-red-500/10"
+                        @click="handleValueRuleRemove(rule.id)" />
+                    </div>
                   </li>
                 </ul>
               </div>
             </Surface>
 
-            <!-- Adicionar -->
+            <!-- Adicionar/editar -->
             <Surface variant="raised" padding="md" class="space-y-3">
-              <div>
-                <h3 class="text-sm font-semibold text-ink">Nova regra</h3>
-                <p class="text-[11px] text-ink-muted">Uma regra por empreendimento. Salvar de novo sobrescreve.</p>
+              <div class="flex items-center justify-between gap-2">
+                <div>
+                  <h3 class="text-sm font-semibold text-ink">
+                    {{ editingValueRule ? 'Editando regra' : 'Nova regra' }}
+                  </h3>
+                  <p class="text-[11px] text-ink-muted">
+                    Uma regra por empreendimento (salvar de novo sobrescreve). Selecione vários
+                    para aplicar a mesma composição em lote.
+                  </p>
+                </div>
+                <Button v-if="editingValueRule" variant="ghost" size="sm" icon="fas fa-xmark"
+                  @click="resetValueForm">Cancelar</Button>
               </div>
 
               <div>
                 <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
-                  <i class="fas fa-city text-[10px] mr-1 text-ink-subtle"></i>Empreendimento
+                  <i class="fas fa-city text-[10px] mr-1 text-ink-subtle"></i>Empreendimento(s)
                 </label>
-                <Select v-model="newValueRule.enterprise_id" :options="enterpriseSelectOptions" />
+                <MultiSelector :model-value="newValueRuleEnts"
+                  @update:modelValue="newValueRuleEnts = Array.isArray($event) ? $event : []"
+                  :options="enterpriseIdOptions" placeholder="Busque o(s) empreendimento(s)..."
+                  :single="!!editingValueRule" :overlay="true" :page-size="150" />
               </div>
 
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1061,10 +1232,10 @@ const closeModal = () => emit('close');
                 placeholder="ex: só o terreno entra no faturamento deste estoque" />
 
               <div class="flex justify-end pt-1">
-                <Button size="sm" icon="fas fa-plus"
+                <Button size="sm" :icon="editingValueRule ? 'fas fa-floppy-disk' : 'fas fa-plus'"
                   :disabled="!isNewValueRuleValid"
-                  @click="handleValueRuleAdd">
-                  Salvar regra
+                  @click="handleValueRuleSave">
+                  {{ editingValueRule ? 'Salvar alterações' : 'Salvar regra' }}
                 </Button>
               </div>
             </Surface>
