@@ -1555,25 +1555,25 @@ export const useContractsStore = defineStore('contracts', {
             }
         },
 
+        // Rótulos de empreendimento (nome/cidade por CC) — registro unificado,
+        // já limitado ao escopo do usuário no servidor (/api/org).
         async fetchEnterpriseCities() {
             if (this.enterpriseCities.length > 0) return this.enterpriseCities
             try {
-                const qs = new URLSearchParams({ page: '1', pageSize: '2000' })
-                const res = await fetch(`${API_URL}/admin/enterprise-cities?${qs}`, {
+                const res = await fetch(`${API_URL}/org/enterprise-labels`, {
                     headers: {
                         Authorization: `Bearer ${localStorage.getItem('token')}`,
                         'Content-Type': 'application/json'
                     }
                 })
-                if (!res.ok) throw new Error(`Erro ao buscar enterprise-cities: ${res.status}`)
+                if (!res.ok) throw new Error(`Erro ao buscar rótulos de empreendimentos: ${res.status}`)
                 const data = await res.json()
                 this.enterpriseCities = (Array.isArray(data?.items) ? data.items : [])
                     .filter((i) => i?.erp_id)
                     .map((i) => ({
                         erp_id: String(i.erp_id),
-                        name: i.enterprise_name || '—',
-                        city: i.effective_city || i.default_city || null,
-                        source: i.source
+                        name: i.name || '—',
+                        city: i.city || null,
                     }))
                 return this.enterpriseCities
             } catch (e) {
