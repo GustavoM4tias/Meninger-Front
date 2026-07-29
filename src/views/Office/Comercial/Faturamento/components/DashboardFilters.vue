@@ -200,7 +200,7 @@ onMounted(async () => {
 
     <!-- Campos -->
     <div v-show="isExpanded"
-      class="p-3 sm:p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 animate-fade-in"
+      class="p-3 sm:p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 animate-fade-in"
       style="overflow:visible">
 
       <Input v-model="localFilters.startDate" type="date" label="Data início" />
@@ -225,13 +225,10 @@ onMounted(async () => {
       </div>
 
       <div>
-        <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+        <label class="block cursor-pointer text-[11px] font-medium text-ink-muted mb-1.5" :title="`VGV+DC inclui despesas de comercialização. Aplica na hora, sem filtrar.`">
           <i class="fas fa-coins text-[10px] mr-1 text-ink-subtle"></i>Modo de valor
         </label>
-        <SegmentedControl v-model="valueModeProxy" :options="valueModeOptions" size="md" block />
-        <p class="text-[10px] text-ink-subtle mt-1">
-          VGV+DC inclui despesas de comercialização. Aplica na hora, sem filtrar.
-        </p>
+        <SegmentedControl v-model="valueModeProxy" :options="valueModeOptions" size="md" block /> 
       </div>
     </div>
   </section>
