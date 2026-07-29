@@ -8,9 +8,14 @@ const props = defineProps({
   block: { type: Boolean, default: false },
 });
 
-const emit = defineEmits(['update:modelValue', 'change']);
+// `select` dispara em TODO clique, inclusive na opção já ativa. Use quando o
+// controle serve de AÇÃO (ex.: abrir o modal em Listagem/Pizza/Colunas) — com
+// `change` a opção inicial nunca respondia ao clique. `update:modelValue` e
+// `change` seguem só na mudança real (v-model normal, sem emissão redundante).
+const emit = defineEmits(['update:modelValue', 'change', 'select']);
 
 function select(v) {
+  emit('select', v);
   if (v === props.modelValue) return;
   emit('update:modelValue', v);
   emit('change', v);
