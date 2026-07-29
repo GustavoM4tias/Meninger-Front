@@ -1,4 +1,14 @@
 <script setup>
+// Sincronização de empresas — registro unificado (companies + enterprises).
+//
+// Padrões desta tela:
+//   - Barra de filtros no padrão do sistema (filters-toolbar + expandir).
+//   - Ordenação pelo CABEÇALHO da tabela, server-side (a lista é paginada:
+//     ordenar só a página exibida daria um resultado enganoso).
+//   - Seleção em lote com ações (vincular empresa, ativar, inativar).
+//   - Linha de ALTURA FIXA: o selo "Inativo" fica na mesma linha do nome, à
+//     direita — antes ele caía embaixo e esticava a linha.
+
 import { ref, onMounted, computed } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useOrgSyncStore } from '@/stores/Settings/Admin/orgSyncStore';
@@ -24,7 +34,7 @@ const toast = (() => {
   catch { return { success: console.log, error: console.error }; }
 })();
 
-const { items, total, companies, page, pageSize, loading, error, filtros } = storeToRefs(store);
+const { items, total, companies, page, pageSize, loading, error, filtros, sort } = storeToRefs(store);
 
 const searchQuery = computed({
   get: () => filtros.value.q || '',
@@ -38,6 +48,10 @@ const filterCompany = computed({
   get: () => filtros.value.companyId || '',
   set: (v) => { filtros.value.companyId = v; },
 });
+const filterActive = computed({
+  get: () => filtros.value.active || '',
+  set: (v) => { filtros.value.active = v; },
+});
 
 const totalPages = computed(() => Math.max(1, Math.ceil((total.value || 0) / (pageSize.value || 50))));
 
@@ -48,29 +62,160 @@ const statusOptions = [
   { value: 'erp_only', label: 'Só Sienge' },
 ];
 
+const activeOptions = [
+  { value: '',      label: 'Ativos e inativos' },
+  { value: 'true',  label: 'Somente ativos' },
+  { value: 'false', label: 'Somente inativos' },
+];
+
+const pageSizeOptions = [
+  { value: 25, label: '25 por página' },
+  { value: 50, label: '50 por página' },
+  { value: 100, label: '100 por página' },
+  { value: 200, label: '200 por página' },
+];
+
 const companyOptions = computed(() => [
   { value: '', label: 'Todas as empresas' },
   ...companies.value.map(c => ({ value: String(c.id), label: c.name })),
 ]);
 
+const companyPickOptions = computed(() => [
+  { value: '', label: '(sem empresa)' },
+  ...companies.value.map(c => ({ value: String(c.id), label: c.name })),
+]);
+
 const statusMeta = {
-  paired:   { label: 'Pareado',  variant: 'success', icon: 'fa-link' },
-  cv_only:  { label: 'Só CV',    variant: 'accent',  icon: 'fa-database' },
+  paired:   { label: 'Pareado',   variant: 'success', icon: 'fa-link' },
+  cv_only:  { label: 'Só CV',     variant: 'accent',  icon: 'fa-database' },
   erp_only: { label: 'Só Sienge', variant: 'warning', icon: 'fa-building' },
 };
 
-async function buscar(reset = false) { await store.fetchList({ resetPage: reset }); }
+// ── Filtros (padrão do sistema) ─────────────────────────────────────────────
+const isExpanded = ref(typeof window !== 'undefined' && window.innerWidth >= 1024);
+function toggleFilters() { isExpanded.value = !isExpanded.value; }
+
+const activeFiltersCount = computed(() => {
+  let n = 0;
+  if (filtros.value.q) n++;
+  if (filtros.value.status) n++;
+  if (filtros.value.companyId) n++;
+  if (filtros.value.active) n++;
+  return n;
+});
+
+async function buscar(reset = false) {
+  await store.fetchList({ resetPage: reset });
+  // A seleção é por id da página atual; trocar o resultado a invalida.
+  selectedIds.value = new Set();
+}
+
 function clearFilters() {
-  searchQuery.value = ''; filterStatus.value = ''; filterCompany.value = '';
+  searchQuery.value = '';
+  filterStatus.value = '';
+  filterCompany.value = '';
+  filterActive.value = '';
   buscar(true);
 }
+
 async function goTo(p) {
   if (p < 1 || p > totalPages.value) return;
   page.value = p;
   await buscar(false);
 }
 
-// ── Sync com confirmação em 2 passos (mesmo padrão da tela anterior) ─────────
+async function changePageSize(v) {
+  pageSize.value = Number(v) || 50;
+  await buscar(true);
+}
+
+// ── Ordenação pelo cabeçalho (server-side) ──────────────────────────────────
+async function handleSort(key) {
+  if (sort.value.by === key) {
+    sort.value = { by: key, dir: sort.value.dir === 'asc' ? 'desc' : 'asc' };
+  } else {
+    // Texto começa A→Z; número/status começam do maior — mais útil ao varrer.
+    sort.value = { by: key, dir: ['name', 'city'].includes(key) ? 'asc' : 'desc' };
+  }
+  await buscar(true);
+}
+
+function sortIcon(key) {
+  if (sort.value.by !== key) return 'fas fa-sort text-ink-subtle/40';
+  return sort.value.dir === 'asc' ? 'fas fa-sort-up text-accent' : 'fas fa-sort-down text-accent';
+}
+
+// ── Seleção em lote ─────────────────────────────────────────────────────────
+const selectedIds = ref(new Set());
+
+const allVisibleSelected = computed(() =>
+  items.value.length > 0 && items.value.every(i => selectedIds.value.has(i.id))
+);
+const someVisibleSelected = computed(() =>
+  items.value.some(i => selectedIds.value.has(i.id)) && !allVisibleSelected.value
+);
+
+function toggleOne(id) {
+  const s = new Set(selectedIds.value);
+  if (s.has(id)) s.delete(id); else s.add(id);
+  selectedIds.value = s;
+}
+
+function toggleAllVisible() {
+  const s = new Set(selectedIds.value);
+  if (allVisibleSelected.value) items.value.forEach(i => s.delete(i.id));
+  else items.value.forEach(i => s.add(i.id));
+  selectedIds.value = s;
+}
+
+function clearSelection() { selectedIds.value = new Set(); }
+
+const selectedCount = computed(() => selectedIds.value.size);
+
+// ── Ações em lote ───────────────────────────────────────────────────────────
+const bulkCompanyModal = ref(false);
+const bulkCompanyValue = ref('');
+
+async function runBulk(patch, confirmMsg, successMsg) {
+  const ids = [...selectedIds.value];
+  if (!ids.length) return;
+  if (confirmMsg && !confirm(confirmMsg)) return;
+  try {
+    carregamento.iniciarCarregamento();
+    const r = await store.bulkUpdate(ids, patch);
+    await buscar(false);
+    toast.success(`${successMsg} (${r.updated ?? ids.length}).`);
+  } catch (e) {
+    toast.error(e.message);
+  } finally {
+    carregamento.finalizarCarregamento();
+  }
+}
+
+const bulkActivate = () => runBulk(
+  { active: true },
+  `Reativar ${selectedCount.value} empreendimento(s)?`,
+  'Empreendimento(s) reativado(s)'
+);
+
+const bulkDeactivate = () => runBulk(
+  { active: false },
+  `Inativar ${selectedCount.value} empreendimento(s)? Eles somem das liberações de acesso.`,
+  'Empreendimento(s) inativado(s)'
+);
+
+function openBulkCompany() {
+  bulkCompanyValue.value = '';
+  bulkCompanyModal.value = true;
+}
+
+async function confirmBulkCompany() {
+  const companyId = bulkCompanyValue.value ? Number(bulkCompanyValue.value) : null;
+  bulkCompanyModal.value = false;
+  await runBulk({ companyId }, null, 'Empresa aplicada');
+}
+
+// ── Sync com confirmação em 2 passos ────────────────────────────────────────
 const confirmVisible = ref(false);
 const confirmStep = ref(1);
 const confirmSource = ref('');
@@ -120,13 +265,12 @@ async function runConsolidate() {
   }
 }
 
-// ── Pareamento manual ────────────────────────────────────────────────────────
-const pairModalRow = ref(null);      // linha base (sobrevivente)
+// ── Pareamento manual ───────────────────────────────────────────────────────
+const pairModalRow = ref(null);
 const pairSearch = ref('');
 
 const pairCandidates = computed(() => {
   if (!pairModalRow.value) return [];
-  // par válido: um tem CV, o outro tem Sienge
   const needErp = !pairModalRow.value.erp_cost_center_id;
   const q = pairSearch.value.trim().toLowerCase();
   return items.value
@@ -153,7 +297,7 @@ async function confirmPair(candidate) {
   }
 }
 
-// ── Empresa / ativo ──────────────────────────────────────────────────────────
+// ── Empresa / ativo (individual) ────────────────────────────────────────────
 const companyModalRow = ref(null);
 const companyModalValue = ref('');
 
@@ -209,10 +353,11 @@ onMounted(() => {
           <PageHelp
             title="Como usar a Sincronização de empresas"
             :steps="[
-              { title: 'Sincronizar', text: 'Use Sync CV para trazer os empreendimentos do CRM e Sync Sienge para trazer empresas e centros de custo do ERP. Rode os dois na primeira vez.' },
+              { title: 'Sincronizar', text: 'Use Sync CV para trazer os empreendimentos do CRM e Sync Sienge para trazer empresas e centros de custo do ERP. O sistema também roda isso sozinho toda madrugada.' },
               { title: 'Conferir pareamento', text: 'Cada linha mostra o status: Pareado (CV e Sienge casados), Só CV ou Só Sienge. O ideal é tudo Pareado.' },
               { title: 'Parear manualmente', text: 'Se o mesmo empreendimento aparece em duas linhas (uma Só CV e outra Só Sienge), clique em Parear e escolha a outra metade.' },
-              { title: 'Vincular empresa', text: 'Linhas sem empresa podem ser vinculadas manualmente pelo botão Empresa.' },
+              { title: 'Trabalhar em lote', text: 'Marque as caixas das linhas (ou a do cabeçalho para a página toda) e use a barra que aparece para vincular empresa, inativar ou reativar de uma vez.' },
+              { title: 'Filtrar e ordenar', text: 'Use os filtros do topo para achar o que precisa e clique no cabeçalho da tabela para ordenar.' },
             ]"
             :tips="[
               'Este cadastro é a base das liberações de acesso por empreendimento na tela de Alçadas.',
@@ -231,21 +376,85 @@ onMounted(() => {
         </template>
       </PageHeader>
 
-      <!-- Filtros -->
-      <Surface variant="raised" padding="md" class="mb-4">
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-          <div class="lg:col-span-2">
-            <Input v-model="searchQuery" placeholder="Buscar por nome ou cidade…"
-              iconLeft="fas fa-magnifying-glass" @keyup.enter="buscar(true)" />
-          </div>
-          <Select v-model="filterStatus" :options="statusOptions" />
-          <Select v-model="filterCompany" :options="companyOptions" />
-          <div class="flex items-center gap-2">
-            <Button block icon="fas fa-magnifying-glass" @click="buscar(true)">Buscar</Button>
-            <Button variant="ghost" icon="fas fa-eraser" @click="clearFilters" />
+      <!-- Filtros (padrão do sistema) -->
+      <section class="rounded-xl border border-line bg-surface-raised shadow-soft surface-gradient mb-4">
+        <div class="filters-toolbar">
+          <button @click="toggleFilters" class="filters-toolbar-trigger">
+            <i class="fas fa-filter text-xs text-ink-muted"></i>
+            <span>Filtros</span>
+            <Badge v-if="activeFiltersCount" variant="accent" size="sm">
+              {{ activeFiltersCount }} ativo{{ activeFiltersCount > 1 ? 's' : '' }}
+            </Badge>
+            <i class="fas fa-chevron-down text-[10px] text-ink-subtle transition-transform duration-200"
+              :class="{ 'rotate-180': isExpanded }"></i>
+          </button>
+
+          <div class="ml-auto flex items-center gap-1.5">
+            <Button variant="ghost" size="sm" icon="fas fa-eraser" @click="clearFilters">
+              <span class="hidden sm:inline">Limpar</span>
+            </Button>
+            <Button size="sm" icon="fas fa-magnifying-glass" @click="buscar(true)">
+              <span class="hidden sm:inline">Filtrar</span>
+            </Button>
           </div>
         </div>
-      </Surface>
+
+        <div v-show="isExpanded"
+          class="p-3 sm:p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 animate-fade-in">
+          <div class="sm:col-span-2 lg:col-span-1">
+            <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+              <i class="fas fa-magnifying-glass text-[10px] mr-1 text-ink-subtle"></i>Buscar
+            </label>
+            <Input v-model="searchQuery" placeholder="Nome ou cidade…" @keyup.enter="buscar(true)" />
+          </div>
+          <div>
+            <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+              <i class="fas fa-link text-[10px] mr-1 text-ink-subtle"></i>Pareamento
+            </label>
+            <Select v-model="filterStatus" :options="statusOptions" />
+          </div>
+          <div>
+            <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+              <i class="fas fa-building text-[10px] mr-1 text-ink-subtle"></i>Empresa
+            </label>
+            <Select v-model="filterCompany" :options="companyOptions" />
+          </div>
+          <div>
+            <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+              <i class="fas fa-toggle-on text-[10px] mr-1 text-ink-subtle"></i>Situação
+            </label>
+            <Select v-model="filterActive" :options="activeOptions" />
+          </div>
+        </div>
+      </section>
+
+      <!-- Barra de ações em lote -->
+      <transition name="slide-down">
+        <div v-if="selectedCount"
+          class="mb-3 rounded-xl bg-accent text-white px-4 py-2.5 flex flex-wrap items-center gap-3">
+          <span class="text-sm font-semibold">
+            <i class="fas fa-square-check mr-1"></i>
+            <span class="font-mono tabular-nums">{{ selectedCount }}</span> selecionado(s)
+          </span>
+          <span class="opacity-40">|</span>
+          <button @click="openBulkCompany"
+            class="px-3 py-1.5 bg-white/15 hover:bg-white/25 rounded-lg text-sm font-medium transition-colors">
+            <i class="fas fa-building mr-1"></i> Vincular empresa
+          </button>
+          <button @click="bulkActivate"
+            class="px-3 py-1.5 bg-white/15 hover:bg-white/25 rounded-lg text-sm font-medium transition-colors">
+            <i class="fas fa-rotate-left mr-1"></i> Reativar
+          </button>
+          <button @click="bulkDeactivate"
+            class="px-3 py-1.5 bg-white/15 hover:bg-white/25 rounded-lg text-sm font-medium transition-colors">
+            <i class="fas fa-ban mr-1"></i> Inativar
+          </button>
+          <button @click="clearSelection"
+            class="ml-auto text-sm underline opacity-90 hover:opacity-100">
+            Limpar seleção
+          </button>
+        </div>
+      </transition>
 
       <!-- Tabela -->
       <Surface variant="raised" padding="none" class="overflow-hidden mb-4">
@@ -256,56 +465,95 @@ onMounted(() => {
 
         <div v-else-if="loading" class="animate-pulse divide-y divide-line">
           <div class="h-10 bg-surface-sunken/50"></div>
-          <div v-for="i in 8" :key="i" class="h-12 bg-surface-raised"></div>
+          <div v-for="i in 8" :key="i" class="h-[3.25rem] bg-surface-raised"></div>
         </div>
 
         <EmptyState v-else-if="!items.length"
           icon="far fa-folder-open" title="Nenhum empreendimento"
-          description="Rode o Sync CV e o Sync Sienge para popular o registro." />
+          description="Ajuste os filtros ou rode o Sync CV e o Sync Sienge para popular o registro." />
 
         <div v-else class="overflow-x-auto">
-          <table class="min-w-full text-sm">
+          <table class="min-w-full text-sm table-fixed">
             <thead class="bg-surface-sunken/40 border-b border-line">
               <tr>
-                <th class="text-left px-4 py-2.5 text-[10px] font-mono uppercase tracking-wider text-ink-subtle">Empreendimento</th>
-                <th class="text-left px-4 py-2.5 text-[10px] font-mono uppercase tracking-wider text-ink-subtle">Empresa</th>
-                <th class="text-left px-4 py-2.5 text-[10px] font-mono uppercase tracking-wider text-ink-subtle">Cidade</th>
-                <th class="text-left px-4 py-2.5 text-[10px] font-mono uppercase tracking-wider text-ink-subtle">CV</th>
-                <th class="text-left px-4 py-2.5 text-[10px] font-mono uppercase tracking-wider text-ink-subtle">CC Sienge</th>
-                <th class="text-left px-4 py-2.5 text-[10px] font-mono uppercase tracking-wider text-ink-subtle">Status</th>
+                <th class="px-3 py-2.5 w-10">
+                  <input type="checkbox" class="accent-accent"
+                    :checked="allVisibleSelected"
+                    :indeterminate="someVisibleSelected"
+                    @change="toggleAllVisible" />
+                </th>
+                <th @click="handleSort('name')"
+                  class="px-4 py-2.5 text-left text-[10px] font-mono uppercase tracking-wider text-ink-subtle cursor-pointer select-none hover:text-ink transition-colors w-[28%]">
+                  <span class="inline-flex items-center gap-1">Empreendimento <i :class="sortIcon('name')"></i></span>
+                </th>
+                <th class="px-4 py-2.5 text-left text-[10px] font-mono uppercase tracking-wider text-ink-subtle w-[18%]">
+                  Empresa
+                </th>
+                <th @click="handleSort('city')"
+                  class="px-4 py-2.5 text-left text-[10px] font-mono uppercase tracking-wider text-ink-subtle cursor-pointer select-none hover:text-ink transition-colors w-[14%]">
+                  <span class="inline-flex items-center gap-1">Cidade <i :class="sortIcon('city')"></i></span>
+                </th>
+                <th @click="handleSort('cv_id')"
+                  class="px-4 py-2.5 text-left text-[10px] font-mono uppercase tracking-wider text-ink-subtle cursor-pointer select-none hover:text-ink transition-colors w-[8%]">
+                  <span class="inline-flex items-center gap-1">CV <i :class="sortIcon('cv_id')"></i></span>
+                </th>
+                <th @click="handleSort('erp_cost_center_id')"
+                  class="px-4 py-2.5 text-left text-[10px] font-mono uppercase tracking-wider text-ink-subtle cursor-pointer select-none hover:text-ink transition-colors w-[10%]">
+                  <span class="inline-flex items-center gap-1">CC Sienge <i :class="sortIcon('erp_cost_center_id')"></i></span>
+                </th>
+                <th @click="handleSort('pair_status')"
+                  class="px-4 py-2.5 text-left text-[10px] font-mono uppercase tracking-wider text-ink-subtle cursor-pointer select-none hover:text-ink transition-colors w-[10%]">
+                  <span class="inline-flex items-center gap-1">Status <i :class="sortIcon('pair_status')"></i></span>
+                </th>
                 <th class="px-4 py-2.5 w-44"></th>
               </tr>
             </thead>
             <tbody class="divide-y divide-line">
+              <!-- h-[3.25rem] + truncate: altura de linha CONSTANTE, com ou sem
+                   o selo Inativo (que antes caía abaixo do nome e esticava). -->
               <tr v-for="row in items" :key="row.id"
-                class="hover:bg-surface-sunken/40 transition-colors"
-                :class="{ 'opacity-50': !row.active }">
-                <td class="px-4 py-3 max-w-xs">
-                  <div class="truncate text-ink font-medium" :title="row.name">{{ row.name || '—' }}</div>
-                  <Badge v-if="!row.active" variant="danger" size="sm" class="mt-1">Inativo</Badge>
+                class="h-[3.25rem] hover:bg-surface-sunken/40 transition-colors"
+                :class="[
+                  !row.active ? 'opacity-60' : '',
+                  selectedIds.has(row.id) ? 'bg-accent-soft/40' : '',
+                ]">
+                <td class="px-3">
+                  <input type="checkbox" class="accent-accent"
+                    :checked="selectedIds.has(row.id)"
+                    @change="toggleOne(row.id)" />
                 </td>
-                <td class="px-4 py-3 text-xs text-ink-muted max-w-[180px] truncate" :title="row.company?.name">
-                  {{ row.company?.name || '—' }}
+                <td class="px-4 max-w-0">
+                  <div class="flex items-center gap-2 min-w-0">
+                    <span class="truncate text-ink font-medium" :title="row.name">{{ row.name || '—' }}</span>
+                    <Badge v-if="!row.active" variant="danger" size="sm" class="shrink-0">Inativo</Badge>
+                  </div>
                 </td>
-                <td class="px-4 py-3 text-xs text-ink">
+                <td class="px-4 max-w-0">
+                  <span class="block truncate text-xs text-ink-muted" :title="row.company?.name">
+                    {{ row.company?.name || '—' }}
+                  </span>
+                </td>
+                <td class="px-4 text-xs text-ink whitespace-nowrap">
                   {{ row.city || '—' }}<span v-if="row.uf" class="text-ink-subtle">/{{ row.uf }}</span>
                 </td>
-                <td class="px-4 py-3 text-ink-muted text-xs font-mono">{{ row.cv_id ?? '—' }}</td>
-                <td class="px-4 py-3 text-ink-muted text-xs font-mono">{{ row.erp_cost_center_id ?? '—' }}</td>
-                <td class="px-4 py-3">
+                <td class="px-4 text-ink-muted text-xs font-mono whitespace-nowrap">{{ row.cv_id ?? '—' }}</td>
+                <td class="px-4 text-ink-muted text-xs font-mono whitespace-nowrap">{{ row.erp_cost_center_id ?? '—' }}</td>
+                <td class="px-4 whitespace-nowrap">
                   <Badge :variant="statusMeta[row.pair_status]?.variant || 'neutral'" size="sm">
                     <i class="fas mr-1 text-[9px]" :class="statusMeta[row.pair_status]?.icon"></i>
                     {{ statusMeta[row.pair_status]?.label || row.pair_status }}
                   </Badge>
                 </td>
-                <td class="px-4 py-3 text-right whitespace-nowrap">
+                <td class="px-4 text-right whitespace-nowrap">
                   <div class="flex items-center justify-end gap-1">
                     <Button v-if="row.pair_status !== 'paired'" size="sm" variant="secondary"
                       icon="fas fa-link" @click="openPair(row)">Parear</Button>
-                    <Button size="sm" variant="ghost" icon="fas fa-building" @click="openCompany(row)">Empresa</Button>
+                    <Button size="sm" variant="ghost" icon="fas fa-building"
+                      v-tippy="'Vincular empresa'" @click="openCompany(row)" />
                     <Button size="sm" variant="ghost"
                       :icon="row.active ? 'fas fa-ban' : 'fas fa-rotate-left'"
-                      :class="row.active ? 'text-red-500' : ''"
+                      :class="row.active ? 'text-red-500' : 'text-emerald-600'"
+                      v-tippy="row.active ? 'Inativar' : 'Reativar'"
                       @click="toggleActive(row)" />
                   </div>
                 </td>
@@ -315,13 +563,19 @@ onMounted(() => {
         </div>
       </Surface>
 
-      <!-- Pagination -->
+      <!-- Paginação -->
       <div class="flex items-center justify-between flex-wrap gap-2">
-        <p class="text-xs text-ink-muted">
-          Total: <span class="font-mono text-ink">{{ total }}</span>
-          · Página <span class="font-mono text-ink">{{ page }}</span>
-          de <span class="font-mono text-ink">{{ totalPages }}</span>
-        </p>
+        <div class="flex items-center gap-3 flex-wrap">
+          <p class="text-xs text-ink-muted">
+            Total: <span class="font-mono text-ink">{{ total }}</span>
+            · Página <span class="font-mono text-ink">{{ page }}</span>
+            de <span class="font-mono text-ink">{{ totalPages }}</span>
+          </p>
+          <div class="w-36">
+            <Select :model-value="pageSize" :options="pageSizeOptions" size="sm"
+              @update:modelValue="changePageSize" />
+          </div>
+        </div>
         <div class="flex items-center gap-2">
           <Button variant="secondary" size="sm" :disabled="page <= 1" icon="fas fa-chevron-left"
             @click="goTo(page - 1)">Anterior</Button>
@@ -330,6 +584,33 @@ onMounted(() => {
         </div>
       </div>
     </PageContainer>
+
+    <!-- Modal: empresa em lote -->
+    <Modal :open="bulkCompanyModal" size="md" @close="bulkCompanyModal = false">
+      <template #header>
+        <div class="flex items-center gap-3">
+          <div class="h-9 w-9 rounded-lg bg-accent-soft text-accent border border-accent/20 grid place-items-center shrink-0">
+            <i class="fas fa-building text-sm"></i>
+          </div>
+          <div class="min-w-0">
+            <h3 class="text-base font-semibold text-ink">Vincular empresa em lote</h3>
+            <p class="text-xs text-ink-muted mt-0.5">
+              Aplica a <span class="font-mono">{{ selectedCount }}</span> empreendimento(s) selecionado(s).
+            </p>
+          </div>
+        </div>
+      </template>
+
+      <Select v-model="bulkCompanyValue" :options="companyPickOptions" label="Empresa (Sienge)" />
+      <p class="text-[11px] text-ink-muted mt-2">
+        Escolher "(sem empresa)" desvincula a empresa dos selecionados.
+      </p>
+
+      <template #footer>
+        <Button variant="ghost" @click="bulkCompanyModal = false">Cancelar</Button>
+        <Button icon="fas fa-floppy-disk" @click="confirmBulkCompany">Aplicar</Button>
+      </template>
+    </Modal>
 
     <!-- Modal Parear -->
     <Modal :open="!!pairModalRow" size="lg" @close="pairModalRow = null">
@@ -373,7 +654,7 @@ onMounted(() => {
       </template>
     </Modal>
 
-    <!-- Modal Empresa -->
+    <!-- Modal Empresa (individual) -->
     <Modal :open="!!companyModalRow" size="md" @close="companyModalRow = null">
       <template #header>
         <div class="flex items-center gap-3">
@@ -387,7 +668,7 @@ onMounted(() => {
         </div>
       </template>
 
-      <Select v-model="companyModalValue" :options="companyOptions" label="Empresa (Sienge)" />
+      <Select v-model="companyModalValue" :options="companyPickOptions" label="Empresa (Sienge)" />
 
       <template #footer>
         <Button variant="ghost" @click="companyModalRow = null">Cancelar</Button>
@@ -448,3 +729,8 @@ onMounted(() => {
     </Modal>
   </div>
 </template>
+
+<style scoped>
+.slide-down-enter-active, .slide-down-leave-active { transition: all 0.18s ease; }
+.slide-down-enter-from, .slide-down-leave-to { opacity: 0; transform: translateY(-6px); }
+</style>
