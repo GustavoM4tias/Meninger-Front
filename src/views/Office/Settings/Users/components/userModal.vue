@@ -10,6 +10,7 @@ import Modal from '@/components/UI/Modal.vue';
 import Input from '@/components/UI/Input.vue';
 import Button from '@/components/UI/Button.vue';
 import UiSelect from '@/components/UI/Select.vue';
+import MultiSelector from '@/components/UI/MultiSelector.vue';
 import Switch from '@/components/UI/Switch.vue';
 
 const authStore = useAuthStore();
@@ -22,7 +23,7 @@ const emit = defineEmits(['close', 'reload']);
 const isEdit = computed(() => !!props.user);
 
 const baseUser = {
-  id: undefined, username: '', email: '', phone: '', position: '', city: '',
+  id: undefined, username: '', email: '', phone: '', position: '', city: '', city_id: null,
   birth_date: '', status: true, role: 'user',
   manager_id: null, face_enabled: false, show_in_organogram: false,
   daily_alert_limit: 5,
@@ -35,8 +36,36 @@ const passwordConfirm = ref('');
 const positionsOptions = ref([]);
 const positionsRaw = ref([]);   // cargos com o departamento (para a ativação)
 const positionDescMap = ref({});
-const citiesOptions = ref([]);
+const citiesRaw = ref([]);   // catálogo completo (IBGE) — busca no seletor
 const permissionProfiles = ref([]);
+
+// Rótulo "Cidade - UF" (único) ↔ registro do catálogo.
+const cityLabel = (c) => (c.uf ? `${c.name} - ${c.uf}` : c.name);
+const cityOptions = computed(() =>
+  citiesRaw.value.map(cityLabel).sort((a, b) => a.localeCompare(b, 'pt-BR'))
+);
+const cityByLabel = computed(() => {
+  const m = new Map();
+  for (const c of citiesRaw.value) m.set(cityLabel(c), c);
+  return m;
+});
+
+// MultiSelector trabalha com array; aqui é seleção única (single).
+const citySelection = computed({
+  get: () => {
+    const u = editableUser.value;
+    const found = u.city_id
+      ? citiesRaw.value.find(c => Number(c.id) === Number(u.city_id))
+      : citiesRaw.value.find(c => c.name === u.city);
+    return found ? [cityLabel(found)] : [];
+  },
+  set: (arr) => {
+    const label = Array.isArray(arr) ? arr[arr.length - 1] : null;
+    const rec = label ? cityByLabel.value.get(label) : null;
+    editableUser.value.city = rec?.name || '';
+    editableUser.value.city_id = rec?.id ?? null;
+  },
+});
 
 // Cadastro de primeiro acesso: 'pending' = formulário enviado, aguardando o
 // admin; 'incomplete' = usuário ainda não concluiu o formulário (não ativável).
@@ -86,9 +115,9 @@ onMounted(async () => {
     if (resCity.status === 'fulfilled') {
       const data = await resCity.value.json();
       const list = Array.isArray(data) ? data : (data?.data || []);
-      citiesOptions.value = list.filter(c => c?.active)
-        .map(c => ({ label: c.uf ? `${c.name} - ${c.uf}` : c.name, value: c.name }))
-        .sort((a, b) => a.label.localeCompare(b.label));
+      // Catálogo completo (municípios do IBGE): o seletor precisa de BUSCA, e o
+      // valor trafega por ID — há municípios homônimos em UFs diferentes.
+      citiesRaw.value = list.filter(c => c?.active);
     }
 
     // Perfis de alçada (para exibir as alçadas padrão do departamento na
@@ -239,7 +268,7 @@ async function confirmActivate() {
     const u = editableUser.value;
     await authStore.updateUser({
       id: u.id, username: u.username, email: u.email, phone: u.phone || null,
-      position: u.position, manager_id: u.manager_id, city: u.city,
+      position: u.position, manager_id: u.manager_id, city: u.city, city_id: u.city_id ?? null,
       birth_date: u.birth_date, status: u.status, role: u.role,
       show_in_organogram: u.show_in_organogram ?? false,
       daily_alert_limit: Math.max(0, Number(u.daily_alert_limit) || 5),
@@ -269,7 +298,7 @@ async function saveUser() {
     if (isEdit.value) {
       await authStore.updateUser({
         id: u.id, username: u.username, email: u.email, phone: u.phone || null,
-        position: u.position, manager_id: u.manager_id, city: u.city,
+        position: u.position, manager_id: u.manager_id, city: u.city, city_id: u.city_id ?? null,
         birth_date: u.birth_date, status: u.status, role: u.role,
         show_in_organogram: u.show_in_organogram ?? false,
         daily_alert_limit: Math.max(0, Number(u.daily_alert_limit) || 5),
@@ -286,7 +315,8 @@ async function saveUser() {
       }
       await authStore.createUser({
         username: u.username, email: u.email, password: password.value,
-        position: u.position, city: u.city, birth_date: u.birth_date,
+        position: u.position, city: u.city, city_id: u.city_id ?? null,
+        birth_date: u.birth_date,
         phone: u.phone || null, manager_id: u.manager_id, status: u.status,
       });
       toast.success('Usuário criado com sucesso!');
@@ -389,8 +419,13 @@ async function saveUser() {
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <UiSelect v-model="editableUser.position" :options="positionsOptions"
             label="Cargo" placeholder="Selecione o cargo" />
-          <UiSelect v-model="editableUser.city" :options="citiesOptions"
-            label="Cidade" placeholder="Selecione a cidade" />
+          <div>
+            <label class="block text-xs font-medium text-ink-muted mb-1.5">Cidade</label>
+            <MultiSelector :model-value="citySelection"
+              @update:modelValue="citySelection = $event"
+              :options="cityOptions" placeholder="Busque a cidade…"
+              :single="true" :overlay="true" :page-size="120" />
+          </div>
           <div v-if="positionDescription"
             class="sm:col-span-2 rounded-lg border border-accent/20 bg-accent-soft/40 px-3 py-2.5 flex items-start gap-2">
             <i class="fas fa-circle-info text-accent text-xs mt-0.5 shrink-0"></i>

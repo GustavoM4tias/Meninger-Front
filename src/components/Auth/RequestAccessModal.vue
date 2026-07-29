@@ -2,25 +2,44 @@
 // "Solicite acesso" da tela de login: mesmo formulário do primeiro acesso
 // Microsoft, mas SEM conta Microsoft. Cai direto na fila de aprovação do
 // gestor; a senha de acesso chega por e-mail quando o cadastro for liberado.
-import { ref, watch } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { getSignupOptions, requestSignup } from '@/utils/Auth/apiAuth';
 
 import Modal from '@/components/UI/Modal.vue';
 import Input from '@/components/UI/Input.vue';
 import Select from '@/components/UI/Select.vue';
+import MultiSelector from '@/components/UI/MultiSelector.vue';
 import Button from '@/components/UI/Button.vue';
 
 const props = defineProps({ open: { type: Boolean, default: false } });
 const emit = defineEmits(['update:open']);
 
-const emptyForm = () => ({ username: '', email: '', birth_date: '', phone: '', department_id: '', city: '' });
+const emptyForm = () => ({ username: '', email: '', birth_date: '', phone: '', department_id: '', city_id: '' });
 const form = ref(emptyForm());
 
 const departmentsOptions = ref([]);
-const citiesOptions = ref([]);
 const loading = ref(false);
 const error = ref('');
 const sent = ref(false);
+
+// Catálogo completo de municípios (IBGE) → seletor com busca, valor por ID
+// (existem municípios homônimos em UFs diferentes).
+const citiesRaw = ref([]);
+const cityLabel = (c) => (c.uf ? `${c.name} - ${c.uf}` : c.name);
+const cityOptions = computed(() =>
+  citiesRaw.value.map(cityLabel).sort((a, b) => a.localeCompare(b, 'pt-BR'))
+);
+const citySelection = computed({
+  get: () => {
+    const found = citiesRaw.value.find(c => Number(c.id) === Number(form.value.city_id));
+    return found ? [cityLabel(found)] : [];
+  },
+  set: (arr) => {
+    const label = Array.isArray(arr) ? arr[arr.length - 1] : null;
+    const rec = label ? citiesRaw.value.find(c => cityLabel(c) === label) : null;
+    form.value.city_id = rec?.id ?? '';
+  },
+});
 
 watch(() => props.open, async (isOpen) => {
   if (!isOpen) return;
@@ -32,9 +51,7 @@ watch(() => props.open, async (isOpen) => {
     departmentsOptions.value = (Array.isArray(data.departments) ? data.departments : [])
       .map(d => ({ label: d.name, value: String(d.id) }))
       .sort((a, b) => a.label.localeCompare(b.label));
-    citiesOptions.value = (Array.isArray(data.cities) ? data.cities : [])
-      .map(c => ({ label: c.uf ? `${c.name} - ${c.uf}` : c.name, value: c.name }))
-      .sort((a, b) => a.label.localeCompare(b.label));
+    citiesRaw.value = Array.isArray(data.cities) ? data.cities : [];
   } catch (e) {
     console.error('[RequestAccess] Erro ao carregar opções:', e);
     error.value = 'Não foi possível carregar as opções de cadastro. Feche e tente novamente.';
@@ -44,7 +61,7 @@ watch(() => props.open, async (isOpen) => {
 async function submit() {
   error.value = '';
   const f = form.value;
-  if (!f.username?.trim() || !f.email?.trim() || !f.birth_date || !f.department_id || !f.city) {
+  if (!f.username?.trim() || !f.email?.trim() || !f.birth_date || !f.department_id || !f.city_id) {
     error.value = 'Preencha todos os campos obrigatórios.';
     return;
   }
@@ -56,7 +73,7 @@ async function submit() {
       birth_date: f.birth_date,
       phone: f.phone || null,
       department_id: Number(f.department_id),
-      city: f.city,
+      city_id: Number(f.city_id),
     });
     sent.value = true;
   } catch (e) {
@@ -111,8 +128,15 @@ function close() { emit('update:open', false); }
       <Select v-model="form.department_id" :options="departmentsOptions"
         label="Departamento" placeholder="Selecione seu departamento" required />
 
-      <Select v-model="form.city" :options="citiesOptions"
-        label="Cidade" placeholder="Selecione sua cidade" required />
+      <div>
+        <label class="block text-xs font-medium text-ink-muted mb-1.5">
+          Cidade <span class="text-red-500">*</span>
+        </label>
+        <MultiSelector :model-value="citySelection"
+          @update:modelValue="citySelection = $event"
+          :options="cityOptions" placeholder="Busque sua cidade…"
+          :single="true" :page-size="120" />
+      </div>
 
       <p class="text-xs text-ink-muted flex items-start gap-1.5">
         <i class="fas fa-circle-info text-accent mt-0.5 shrink-0"></i>

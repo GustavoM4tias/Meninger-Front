@@ -42,7 +42,9 @@ export const useMuralMetaStore = defineStore('muralMeta', () => {
             const [pos, deps, cts] = await Promise.all([
                 adminFetch('/admin/positions').catch(() => []),
                 adminFetch('/admin/departments').catch(() => []),
-                adminFetch('/admin/user-cities').catch(() => []),
+                // inUse: só cidades onde temos gente/empreendimento — o catálogo
+                // completo (municípios do IBGE) não serve para audiência.
+                adminFetch('/admin/user-cities?inUse=true').catch(() => []),
             ]);
             positions.value = asArray(pos).map((p) => ({ code: p.code, name: p.name })).filter((p) => p.code);
             departments.value = asArray(deps).map((d) => ({ id: d.id, name: d.name }));

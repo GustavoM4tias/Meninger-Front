@@ -252,19 +252,6 @@ async function runConfirmedSync() {
   }
 }
 
-async function runConsolidate() {
-  try {
-    carregamento.iniciarCarregamento();
-    const r = await store.consolidate();
-    await Promise.all([buscar(false), store.fetchCompanies()]);
-    toast.success(`Consolidado: ${r.enterprises ?? 0} empreendimento(s).`);
-  } catch (e) {
-    toast.error(e.message);
-  } finally {
-    carregamento.finalizarCarregamento();
-  }
-}
-
 // ── Pareamento manual ───────────────────────────────────────────────────────
 const pairModalRow = ref(null);
 const pairSearch = ref('');
@@ -353,7 +340,7 @@ onMounted(() => {
           <PageHelp
             title="Como usar a Sincronização de empresas"
             :steps="[
-              { title: 'Sincronizar', text: 'Use Sync CV para trazer os empreendimentos do CRM e Sync Sienge para trazer empresas e centros de custo do ERP. O sistema também roda isso sozinho toda madrugada.' },
+              { title: 'Sincronizar (normalmente não precisa)', text: 'O sistema já roda os dois syncs sozinho toda madrugada. Use os botões só quando quiser atualizar na hora: Sync CV traz os empreendimentos do CRM, Sync Sienge traz empresas e centros de custo do ERP.' },
               { title: 'Conferir pareamento', text: 'Cada linha mostra o status: Pareado (CV e Sienge casados), Só CV ou Só Sienge. O ideal é tudo Pareado.' },
               { title: 'Parear manualmente', text: 'Se o mesmo empreendimento aparece em duas linhas (uma Só CV e outra Só Sienge), clique em Parear e escolha a outra metade.' },
               { title: 'Trabalhar em lote', text: 'Marque as caixas das linhas (ou a do cabeçalho para a página toda) e use a barra que aparece para vincular empresa, inativar ou reativar de uma vez.' },
@@ -361,17 +348,17 @@ onMounted(() => {
             ]"
             :tips="[
               'Este cadastro é a base das liberações de acesso por empreendimento na tela de Alçadas.',
-              'Empreendimento inativo deixa de aparecer nas liberações, mas o histórico não é apagado.',
+              'Inativar é uma marcação SUA: o sync nunca a desfaz. O empreendimento continua no registro (e volta a aparecer se você reativar), mas sai das liberações de acesso e dos seletores.',
+              'A lista traz todo centro de custo do Sienge no formato CIDADE/UF - NOME, então é normal ter milhares de linhas. Use os filtros e inative em lote o que não é empreendimento de verdade para enxugar a tela de Alçadas.',
             ]" />
-          <Button variant="secondary" @click="openConfirm('crm')">
+          <Button variant="secondary" @click="openConfirm('crm')"
+            v-tippy="'Traz só os empreendimentos do CV (CRM)'">
             <img src="/CVLogo.png" alt="CV" class="h-3.5 w-3.5" />
             Sync CV
           </Button>
-          <Button @click="openConfirm('erp')" icon="fas fa-arrows-rotate">
+          <Button @click="openConfirm('erp')" icon="fas fa-arrows-rotate"
+            v-tippy="'Traz empresas e centros de custo do Sienge (ERP)'">
             Sync Sienge
-          </Button>
-          <Button variant="ghost" icon="fas fa-wand-magic-sparkles" @click="runConsolidate">
-            Consolidar
           </Button>
         </template>
       </PageHeader>

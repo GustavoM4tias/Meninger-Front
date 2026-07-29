@@ -76,13 +76,6 @@ export const useOrgSyncStore = defineStore('orgSync', () => {
         return data;
     }
 
-    async function consolidate() {
-        const res = await fetch(`${API_URL}/admin/org/consolidate`, { method: 'POST', headers: authHeaders() });
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(data.error || `Falha na consolidação (${res.status})`);
-        return data;
-    }
-
     async function pair(surviveId, absorbId) {
         const res = await fetch(`${API_URL}/admin/org/enterprises/${surviveId}/pair`, {
             method: 'POST', headers: authHeaders(),
@@ -116,6 +109,6 @@ export const useOrgSyncStore = defineStore('orgSync', () => {
 
     return {
         items, total, companies, page, pageSize, loading, error, filtros, sort,
-        fetchList, fetchCompanies, runSync, consolidate, pair, updateEnterprise, bulkUpdate,
+        fetchList, fetchCompanies, runSync, pair, updateEnterprise, bulkUpdate,
     };
 });
