@@ -1,0 +1,424 @@
+<script setup>
+// Fechamento de vendas (consolidação mensal do Faturamento).
+//
+// O admin confere o dashboard e congela o mês AQUI: as linhas/totais enviados
+// são calculados pelo MESMO motor do dashboard (contractsStore), então o
+// snapshot é exatamente o que a tela mostra — sem reimplementação de regra.
+// O backend fotografa os insumos (contratos+regras) e a vigilância diária
+// aponta qualquer mudança posterior como divergência explicada.
+import { onMounted, ref, computed } from 'vue';
+import dayjs from 'dayjs';
+import API_URL from '@/config/apiUrl';
+import { useContractsStore } from '@/stores/Comercial/Contracts/contractsStore';
+
+import Favorite from '@/components/config/Favorite.vue';
+import PageContainer from '@/components/UI/PageContainer.vue';
+import PageHeader from '@/components/UI/PageHeader.vue';
+import PageHelp from '@/components/UI/PageHelp.vue';
+import Surface from '@/components/UI/Surface.vue';
+import Badge from '@/components/UI/Badge.vue';
+import Button from '@/components/UI/Button.vue';
+import Spinner from '@/components/UI/Spinner.vue';
+import EmptyState from '@/components/UI/EmptyState.vue';
+
+const contractsStore = useContractsStore();
+
+const isAdmin = computed(() => {
+  try { return localStorage.getItem('role') === 'admin'; } catch { return false; }
+});
+
+const loading = ref(false);
+const closings = ref([]);           // [{ period, status, version, totals, open_divergences, ... }]
+const expanded = ref(null);         // period expandido
+const detail = ref(null);           // fechamento carregado (com divergências)
+const detailLoading = ref(false);
+const savingPeriod = ref(null);
+const checkingNow = ref(false);
+const error = ref(null);
+
+const authHeaders = () => ({
+  Authorization: `Bearer ${localStorage.getItem('token')}`,
+  'Content-Type': 'application/json',
+});
+
+const formatCurrency = (v) =>
+  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(v) || 0);
+const formatDate = (v) => (v ? dayjs(v).format('DD/MM/YYYY') : '—');
+const formatDateTime = (v) => (v ? dayjs(v).format('DD/MM/YYYY HH:mm') : '—');
+const monthLabel = (period) => dayjs(`${period}-01`).format('MMMM [de] YYYY');
+
+// Últimos 18 meses (mês corrente primeiro), casados com os fechamentos do banco.
+const months = computed(() => {
+  const byPeriod = new Map(closings.value.map((c) => [c.period, c]));
+  const out = [];
+  for (let i = 0; i < 18; i++) {
+    const period = dayjs().subtract(i, 'month').format('YYYY-MM');
+    out.push({ period, closing: byPeriod.get(period) || null, isCurrent: i === 0 });
+  }
+  return out;
+});
+
+async function loadClosings() {
+  loading.value = true;
+  error.value = null;
+  try {
+    const res = await fetch(`${API_URL}/sales-closings`, { headers: authHeaders() });
+    if (!res.ok) throw new Error(`Erro ${res.status}`);
+    const data = await res.json();
+    closings.value = Array.isArray(data.results) ? data.results : [];
+  } catch (e) {
+    error.value = e.message;
+  } finally {
+    loading.value = false;
+  }
+}
+
+async function toggleExpand(period) {
+  if (expanded.value === period) { expanded.value = null; detail.value = null; return; }
+  expanded.value = period;
+  detail.value = null;
+  detailLoading.value = true;
+  try {
+    const res = await fetch(`${API_URL}/sales-closings/${period}`, { headers: authHeaders() });
+    detail.value = res.ok ? await res.json() : null;
+  } catch { detail.value = null; }
+  finally { detailLoading.value = false; }
+}
+
+// ── Consolidar: calcula com o motor do dashboard e congela no backend ───────
+function buildLinesFromStore() {
+  const sales = (contractsStore.uniqueSales || [])
+    .filter((s) => (s.contracts || []).some((c) => !c._projection));
+  return sales.map((s) => {
+    const first = (s.contracts || []).find((c) => !c._projection) || {};
+    return {
+      contract_ids: (s.contracts || []).filter((c) => !c._projection).map((c) => c.contract_id),
+      customer_id: s.customer_id ?? first.customer_id ?? null,
+      customer_name: s.customer_name ?? first.customer_name ?? null,
+      unit_name: s.unit_name ?? first.unit_name ?? null,
+      enterprise_id: first.enterprise_id ?? null,
+      enterprise_name: first.enterprise_name ?? null,
+      company_id: first.company_id ?? null,
+      company_name: first.company_name ?? null,
+      date: s.financial_institution_date ?? first.financial_institution_date ?? null,
+      value_net: Number(s.total_value_net) || 0,
+      value_gross: Number(s.total_value_gross) || 0,
+      distratada: contractsStore.saleIsDistrato(s),
+    };
+  });
+}
+
+function aggregateLines(lines, idKey, nameKey) {
+  const map = new Map();
+  for (const l of lines) {
+    const key = `${l[idKey] ?? 'null'}`;
+    const row = map.get(key) || { id: l[idKey] ?? null, name: l[nameKey] ?? '—', count: 0, vgv_net: 0, vgv_gross: 0 };
+    row.count += 1;
+    row.vgv_net += l.value_net;
+    row.vgv_gross += l.value_gross;
+    map.set(key, row);
+  }
+  return [...map.values()].sort((a, b) => b.vgv_net - a.vgv_net);
+}
+
+async function handleConsolidate(period, isRedo) {
+  const label = monthLabel(period);
+  const msg = isRedo
+    ? `Reconsolidar ${label}? A versão atual fica no histórico e as divergências abertas são resolvidas pelo novo snapshot.`
+    : `Consolidar ${label}? Os números do dashboard neste momento serão congelados como oficiais.`;
+  if (!window.confirm(msg)) return;
+
+  savingPeriod.value = period;
+  error.value = null;
+  try {
+    // Mesmo motor do dashboard: período inteiro, sem filtro de empresa, sem projeções.
+    contractsStore.setSelectedGroups([]);
+    contractsStore.setFilters({
+      startDate: `${period}-01`,
+      endDate: dayjs(`${period}-01`).endOf('month').format('YYYY-MM-DD'),
+      situation: 'Emitido',
+      companyIds: [],
+      enterpriseName: [],
+    });
+    await contractsStore.fetchContracts({ force: true });
+
+    const lines = buildLinesFromStore();
+    if (!lines.length) throw new Error('Nenhuma venda encontrada no mês — nada para consolidar.');
+
+    const totals = {
+      count: lines.length,
+      vgv_net: lines.reduce((a, l) => a + l.value_net, 0),
+      vgv_gross: lines.reduce((a, l) => a + l.value_gross, 0),
+      distratadas: lines.filter((l) => l.distratada).length,
+      by_enterprise: aggregateLines(lines, 'enterprise_id', 'enterprise_name'),
+      by_company: aggregateLines(lines, 'company_id', 'company_name'),
+    };
+
+    const res = await fetch(`${API_URL}/sales-closings/${period}/consolidate`, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ lines, totals }),
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body.error || `Erro ${res.status}`);
+    }
+    await loadClosings();
+    if (expanded.value === period) { expanded.value = null; await toggleExpand(period); }
+  } catch (e) {
+    error.value = e.message;
+    window.alert(e.message || 'Erro ao consolidar.');
+  } finally {
+    savingPeriod.value = null;
+    // Não deixa o filtro do fechamento vazar para o dashboard.
+    contractsStore.clearFilters();
+  }
+}
+
+async function handleCheckNow() {
+  checkingNow.value = true;
+  try {
+    const res = await fetch(`${API_URL}/sales-closings/check-divergences/run`, {
+      method: 'POST', headers: authHeaders(),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || `Erro ${res.status}`);
+    window.alert(`Vigilância executada: ${data.checked} mês(es) conferido(s), ${data.newDivergences} divergência(s) nova(s).`);
+    await loadClosings();
+    if (expanded.value) { const p = expanded.value; expanded.value = null; await toggleExpand(p); }
+  } catch (e) {
+    window.alert(e.message || 'Erro ao verificar divergências.');
+  } finally {
+    checkingNow.value = false;
+  }
+}
+
+async function handleReview(div) {
+  if (!window.confirm('Marcar esta divergência como revisada? Ela sai da lista de pendências (o consolidado não muda).')) return;
+  try {
+    const res = await fetch(`${API_URL}/sales-closings/divergences/${div.id}/review`, {
+      method: 'POST', headers: authHeaders(),
+    });
+    if (!res.ok) throw new Error(`Erro ${res.status}`);
+    if (detail.value) {
+      detail.value.divergences = detail.value.divergences.map((d) =>
+        d.id === div.id ? { ...d, status: 'reviewed' } : d);
+    }
+    await loadClosings();
+  } catch (e) {
+    window.alert(e.message || 'Erro ao revisar.');
+  }
+}
+
+const KIND_LABEL = {
+  contract_changed: 'Campo alterado',
+  contract_added: 'Contrato entrou no mês',
+  contract_removed: 'Contrato saiu do mês',
+  rules_changed: 'Regras alteradas',
+};
+const FIELD_LABEL = {
+  situation: 'Situação',
+  financial_institution_date: 'Data da inst. financeira',
+  cancellation_date: 'Data de cancelamento',
+  enterprise_id: 'Empreendimento (id)',
+  enterprise_name: 'Empreendimento',
+  company_id: 'Empresa (id)',
+  land_value: 'Valor do terreno',
+  conditions_hash: 'Condições de pagamento',
+  customer_id: 'Cliente (id)',
+  customer_name: 'Cliente',
+  unit_name: 'Unidade',
+  enterprise_value_rules: 'Composição de VGV',
+  stage_commission_rules: 'Comissão',
+  tr_satellite_enterprises: 'Satélite de TR',
+  hidden_dashboard_enterprises: 'Empreendimentos ocultos',
+  enterprise_erp_links: 'Vínculo CV ↔ Sienge',
+};
+
+const openDivergences = computed(() =>
+  (detail.value?.divergences || []).filter((d) => d.status === 'open'));
+const reviewedDivergences = computed(() =>
+  (detail.value?.divergences || []).filter((d) => d.status !== 'open'));
+
+onMounted(loadClosings);
+</script>
+
+<template>
+  <div class="min-h-[calc(100vh-3.5rem)]">
+    <PageContainer size="lg">
+
+      <PageHeader
+        subtitle="Congele o resultado oficial de cada mês e acompanhe qualquer mudança posterior."
+        icon="fas fa-file-shield">
+        <template #title>
+          <span>Fechamento de vendas</span>
+          <Favorite :router="'/comercial/fechamento'" :section="'Fechamento'" />
+        </template>
+        <template #actions>
+          <Button v-if="isAdmin" variant="outline" size="sm"
+            :icon="checkingNow ? 'fas fa-circle-notch fa-spin' : 'fas fa-magnifying-glass-chart'"
+            :disabled="checkingNow" @click="handleCheckNow">
+            {{ checkingNow ? 'Verificando...' : 'Verificar divergências agora' }}
+          </Button>
+          <PageHelp
+            storage-key="fechamento-vendas"
+            title="Como usar o Fechamento de vendas"
+            intro="Aqui você consolida (congela) o resultado de vendas de cada mês. O número consolidado vira a fonte oficial — inclusive para a Eme — e não muda sozinho."
+            :steps="[
+              'Confira o mês no Dashboard de vendas. Quando estiver satisfeito, volte aqui.',
+              { title: 'Consolidar', text: 'Clique em Consolidar no mês desejado. Os números do dashboard naquele momento são congelados como oficiais.' },
+              { title: 'Acompanhar', text: 'Todo dia o sistema confere se algo mudou nos meses consolidados (contrato cancelado, data alterada, regra editada). Mudança vira divergência listada aqui e notificada aos admins.' },
+              { title: 'Decidir', text: 'Divergência não altera o consolidado. Você revisa e decide: marcar como revisada (mantém o número) ou reconsolidar (gera nova versão, a anterior fica no histórico).' },
+            ]"
+            :tips="[
+              'A Eme responde perguntas de vendas com o número consolidado; em mês aberto ela avisa que o dado é parcial.',
+              'Reconsolidar não apaga nada: cada versão anterior fica no histórico do mês.',
+            ]"
+          />
+        </template>
+      </PageHeader>
+
+      <div v-if="error"
+        class="mb-4 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2.5 text-xs text-red-700 dark:text-red-300 flex items-center gap-2">
+        <i class="fas fa-circle-exclamation"></i>{{ error }}
+      </div>
+
+      <div v-if="loading" class="py-16 flex flex-col items-center gap-3 text-ink-muted">
+        <Spinner size="lg" />
+        <p class="text-sm">Carregando fechamentos...</p>
+      </div>
+
+      <div v-else class="space-y-2">
+        <Surface v-for="m in months" :key="m.period" variant="raised" padding="none" class="overflow-hidden">
+
+          <!-- Linha do mês -->
+          <div class="px-3 sm:px-4 py-3 flex items-center gap-3 flex-wrap cursor-pointer hover:bg-surface-hover transition-colors"
+            @click="m.closing ? toggleExpand(m.period) : null">
+            <div class="min-w-0 flex-1">
+              <p class="text-sm font-semibold text-ink capitalize flex items-center gap-2 flex-wrap">
+                {{ monthLabel(m.period) }}
+                <Badge v-if="m.isCurrent" variant="neutral" size="sm">mês corrente</Badge>
+                <Badge v-if="m.closing" variant="success" size="sm">
+                  <i class="fas fa-lock text-[9px]"></i>Consolidado v{{ m.closing.version }}
+                </Badge>
+                <Badge v-else variant="warning" size="sm">
+                  <i class="fas fa-lock-open text-[9px]"></i>Aberto
+                </Badge>
+                <Badge v-if="m.closing?.open_divergences" variant="danger" size="sm"
+                  v-tippy="'Mudanças detectadas nos dados de origem depois do fechamento'">
+                  <i class="fas fa-triangle-exclamation text-[9px]"></i>
+                  {{ m.closing.open_divergences }} divergência(s)
+                </Badge>
+              </p>
+              <p v-if="m.closing" class="text-[11px] text-ink-muted font-mono mt-0.5">
+                {{ m.closing.totals?.count ?? '—' }} venda(s) ·
+                {{ formatCurrency(m.closing.totals?.vgv_net) }} ·
+                fechado em {{ formatDateTime(m.closing.consolidated_at) }}
+                <span v-if="m.closing.consolidated_by_name">por {{ m.closing.consolidated_by_name }}</span>
+              </p>
+              <p v-else class="text-[11px] text-ink-subtle mt-0.5">
+                Sem fechamento — a Eme trata este mês como parcial.
+              </p>
+            </div>
+
+            <div class="flex items-center gap-1.5 shrink-0" @click.stop>
+              <Button v-if="isAdmin" size="sm"
+                :variant="m.closing ? 'outline' : 'primary'"
+                :icon="savingPeriod === m.period ? 'fas fa-circle-notch fa-spin' : (m.closing ? 'fas fa-rotate' : 'fas fa-lock')"
+                :disabled="savingPeriod !== null"
+                @click="handleConsolidate(m.period, !!m.closing)">
+                {{ savingPeriod === m.period ? 'Consolidando...' : (m.closing ? 'Reconsolidar' : 'Consolidar') }}
+              </Button>
+              <i v-if="m.closing" class="fas fa-chevron-down text-xs text-ink-subtle transition-transform ml-1"
+                :class="{ 'rotate-180': expanded === m.period }" @click="toggleExpand(m.period)"></i>
+            </div>
+          </div>
+
+          <!-- Detalhe do fechamento -->
+          <div v-if="expanded === m.period" class="border-t border-line bg-surface-sunken/40">
+            <div v-if="detailLoading" class="p-4 flex items-center gap-2 text-xs text-ink-muted">
+              <Spinner size="sm" /> Carregando detalhe...
+            </div>
+
+            <div v-else-if="detail" class="p-3 sm:p-4 space-y-4">
+
+              <!-- Totais por empreendimento -->
+              <div>
+                <h4 class="text-xs font-semibold text-ink mb-2">
+                  <i class="fas fa-building text-[10px] mr-1 text-ink-subtle"></i>Por empreendimento (congelado)
+                </h4>
+                <div class="rounded-lg border border-line bg-surface-raised divide-y divide-line max-h-64 overflow-y-auto">
+                  <div v-for="e in (detail.totals?.by_enterprise || [])" :key="`${e.id}`"
+                    class="px-3 py-2 flex items-center justify-between gap-2 text-xs">
+                    <span class="min-w-0 truncate text-ink">
+                      <span class="font-mono text-ink-subtle">{{ e.id }}</span> - {{ e.name }}
+                    </span>
+                    <span class="shrink-0 font-mono tabular-nums text-ink-muted">
+                      {{ e.count }}v · <span class="text-emerald-600 dark:text-emerald-400 font-semibold">{{ formatCurrency(e.vgv_net) }}</span>
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Divergências -->
+              <div>
+                <h4 class="text-xs font-semibold text-ink mb-2 flex items-center gap-2">
+                  <i class="fas fa-triangle-exclamation text-[10px] text-amber-500"></i>
+                  Divergências detectadas depois do fechamento
+                  <Badge v-if="openDivergences.length" variant="danger" size="sm">{{ openDivergences.length }} aberta(s)</Badge>
+                </h4>
+
+                <EmptyState v-if="!openDivergences.length && !reviewedDivergences.length"
+                  size="sm" icon="fas fa-shield-check"
+                  title="Nenhuma divergência"
+                  description="Os dados de origem continuam idênticos ao momento do fechamento." />
+
+                <ul v-else class="rounded-lg border border-line bg-surface-raised divide-y divide-line">
+                  <li v-for="d in [...openDivergences, ...reviewedDivergences]" :key="d.id"
+                    class="px-3 py-2.5 flex items-start justify-between gap-2"
+                    :class="d.status === 'open' ? 'bg-red-500/5' : 'opacity-60'">
+                    <div class="min-w-0 text-xs">
+                      <p class="font-medium text-ink">
+                        {{ KIND_LABEL[d.kind] || d.kind }}
+                        <span v-if="d.contract_id" class="font-mono text-ink-subtle">· contrato {{ d.contract_id }}</span>
+                        <span v-if="d.field" class="text-ink-muted">· {{ FIELD_LABEL[d.field] || d.field }}</span>
+                      </p>
+                      <p v-if="d.old_value != null || d.new_value != null" class="font-mono text-[11px] text-ink-muted mt-0.5">
+                        {{ d.old_value ?? '—' }} <i class="fas fa-arrow-right text-[8px] mx-1"></i> {{ d.new_value ?? '—' }}
+                      </p>
+                      <p v-if="d.details?.customer_name || d.details?.unit_name" class="text-[11px] text-ink-subtle mt-0.5 truncate">
+                        {{ d.details?.customer_name }} <span v-if="d.details?.unit_name">· {{ d.details.unit_name }}</span>
+                        <span v-if="d.details?.enterprise_name">· {{ d.details.enterprise_name }}</span>
+                      </p>
+                      <p v-if="d.details?.why" class="text-[11px] text-ink-subtle mt-0.5">{{ d.details.why }}</p>
+                      <p class="text-[10px] text-ink-subtle font-mono mt-0.5">detectada em {{ formatDateTime(d.detected_at) }}</p>
+                    </div>
+                    <Button v-if="isAdmin && d.status === 'open'" variant="ghost" size="sm" icon="fas fa-check"
+                      class="shrink-0" v-tippy="'Marcar como revisada (não altera o consolidado)'"
+                      @click="handleReview(d)" />
+                    <Badge v-else-if="d.status !== 'open'" variant="neutral" size="sm" class="shrink-0">revisada</Badge>
+                  </li>
+                </ul>
+              </div>
+
+              <!-- Histórico de versões -->
+              <div v-if="(detail.history || []).length">
+                <h4 class="text-xs font-semibold text-ink mb-2">
+                  <i class="fas fa-clock-rotate-left text-[10px] mr-1 text-ink-subtle"></i>Versões anteriores
+                </h4>
+                <ul class="rounded-lg border border-line bg-surface-raised divide-y divide-line">
+                  <li v-for="h in [...detail.history].reverse()" :key="h.version"
+                    class="px-3 py-2 text-[11px] text-ink-muted font-mono">
+                    v{{ h.version }} · {{ h.totals?.count ?? '—' }} venda(s) · {{ formatCurrency(h.totals?.vgv_net) }}
+                    · fechado em {{ formatDateTime(h.consolidated_at) }}
+                    <span v-if="h.consolidated_by_name">por {{ h.consolidated_by_name }}</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </Surface>
+      </div>
+    </PageContainer>
+  </div>
+</template>
