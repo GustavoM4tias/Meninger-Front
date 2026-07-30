@@ -224,6 +224,12 @@ export default [
                         meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Dashboard de faturamento e contratos' },
                     },
                     {
+                        path: 'fechamento',
+                        name: 'Fechamento de vendas',
+                        component: () => import('@/views/Office/Comercial/Fechamento/Index.vue'),
+                        meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Consolidação mensal (fechamento oficial) das vendas e vigilância de divergências' },
+                    },
+                    {
                         path: 'sales-projection',
                         name: 'Vendas X Projeção',
                         component: () => import('@/views/Office/Comercial/Sales-Projection/Index.vue'),

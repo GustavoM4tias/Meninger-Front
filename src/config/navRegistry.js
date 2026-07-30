@@ -103,6 +103,7 @@ export const navRegistry = [
                     { route: '/comercial/precadastros', section: 'Pré-Cadastros', name: 'Pré-Cadastros', icon: 'fas fa-id-card-clip' },
                     { route: '/comercial/reservas-report', section: 'Reservas', name: 'Reservas', icon: 'fas fa-bookmark' },
                     { route: '/comercial/faturamento', section: 'Faturamento', name: 'Faturamento', icon: 'fas fa-file-invoice-dollar' },
+                    { route: '/comercial/fechamento', section: 'Fechamento', name: 'Fechamento de vendas', icon: 'fas fa-file-shield' },
                 ],
             },
             {
