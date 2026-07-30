@@ -53,16 +53,51 @@ const authHeaders = () => ({
 const formatCurrency = (v) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(v) || 0);
 const formatDateTime = (v) => (v ? dayjs(v).format('DD/MM/YYYY HH:mm') : '—');
-const monthLabel = (period) => dayjs(`${period}-01`).format('MMMM [de] YYYY');
+
+// Intl e não dayjs: o projeto não carrega o locale pt-br do dayjs, então
+// `format('MMMM')` saía em inglês ("January de 2026").
+const mesFmt = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' });
+const monthLabel = (period) => {
+  const [y, m] = period.split('-').map(Number);
+  const s = mesFmt.format(new Date(y, m - 1, 1));
+  return s.charAt(0).toUpperCase() + s.slice(1);
+};
+
+// ── Período exibido ────────────────────────────────────────────────────────
+// Antes a lista era fixa em 18 meses para trás, o que fazia aparecer um
+// "fevereiro de 2025" sem explicação. Agora o admin escolhe o intervalo, e o
+// padrão é o ano corrente inteiro. Só mês/ano: o fechamento é mensal, não
+// existe recorte por dia.
+const anoAtual = new Date().getFullYear();
+const filtroDe = ref(`${anoAtual}-01`);
+const filtroAte = ref(`${anoAtual}-12`);
+
+const periodoInvalido = computed(() => filtroDe.value > filtroAte.value);
+
+function resetPeriodo() {
+  filtroDe.value = `${anoAtual}-01`;
+  filtroAte.value = `${anoAtual}-12`;
+}
 
 const months = computed(() => {
+  if (periodoInvalido.value) return [];
   const byPeriod = new Map(closings.value.map((c) => [c.period, c]));
+  const atual = dayjs().format('YYYY-MM');
   const out = [];
-  for (let i = 0; i < 18; i++) {
-    const period = dayjs().subtract(i, 'month').format('YYYY-MM');
-    out.push({ period, closing: byPeriod.get(period) || null, isCurrent: i === 0 });
+  let cursor = dayjs(`${filtroAte.value}-01`);
+  const limite = dayjs(`${filtroDe.value}-01`);
+  // do mais recente para o mais antigo, teto de 60 meses por segurança
+  for (let i = 0; i < 60 && !cursor.isBefore(limite, 'month'); i++) {
+    const period = cursor.format('YYYY-MM');
+    out.push({ period, closing: byPeriod.get(period) || null, isCurrent: period === atual });
+    cursor = cursor.subtract(1, 'month');
   }
   return out;
+});
+
+const resumoPeriodo = computed(() => {
+  const consolidados = months.value.filter((m) => m.closing).length;
+  return { total: months.value.length, consolidados, abertos: months.value.length - consolidados };
 });
 
 async function loadClosings() {
@@ -128,13 +163,15 @@ function aggregateLines(lines, idKey, nameKey) {
   return [...map.values()].sort((a, b) => b.vgv_net - a.vgv_net);
 }
 
-async function handleConsolidate(period, isRedo) {
-  const label = monthLabel(period);
-  const msg = isRedo
-    ? `Reconsolidar ${label}? A versão atual fica no histórico e as divergências abertas são resolvidas pelo novo snapshot.`
-    : `Consolidar ${label}? Os números do dashboard (mês inteiro, sem filtros) serão congelados como oficiais.`;
-  if (!window.confirm(msg)) return;
+// ── Confirmação em dois passos ─────────────────────────────────────────────
+// Calcula primeiro e só então pergunta, mostrando o que vai ser gravado (e,
+// na reconsolidação, o que será substituído). Substituir número oficial no
+// escuro, por um window.confirm genérico, era pedir erro.
+const pendente = ref(null);      // { period, lines, totals, isRedo, atual }
+const confirmOpen = ref(false);
+const gravando = ref(false);
 
+async function handleConsolidate(period, isRedo) {
   savingPeriod.value = period;
   error.value = null;
 
@@ -189,6 +226,29 @@ async function handleConsolidate(period, isRedo) {
       );
     }
 
+    // Nada é gravado aqui: mostramos o resultado e esperamos a confirmação.
+    pendente.value = {
+      period, lines, totals, isRedo,
+      atual: closings.value.find((c) => c.period === period) || null,
+    };
+    confirmOpen.value = true;
+  } catch (e) {
+    error.value = e.message;
+  } finally {
+    savingPeriod.value = null;
+    // Devolve o dashboard como o usuário deixou.
+    contractsStore.setFilters(prevFilters);
+    contractsStore.setSelectedGroups(prevGroups);
+    await contractsStore.fetchContracts({ force: true });
+  }
+}
+
+async function confirmarConsolidacao() {
+  if (!pendente.value || gravando.value) return;
+  const { period, lines, totals } = pendente.value;
+  gravando.value = true;
+  error.value = null;
+  try {
     const res = await fetch(`${API_URL}/sales-closings/${period}/consolidate`, {
       method: 'POST',
       headers: authHeaders(),
@@ -198,19 +258,32 @@ async function handleConsolidate(period, isRedo) {
       const body = await res.json().catch(() => ({}));
       throw new Error(body.error || `Erro ${res.status}`);
     }
+    confirmOpen.value = false;
+    pendente.value = null;
     await loadClosings();
     if (expanded.value === period) { expanded.value = null; await toggleExpand(period); }
   } catch (e) {
     error.value = e.message;
-    window.alert(e.message || 'Erro ao consolidar.');
   } finally {
-    savingPeriod.value = null;
-    // Devolve o dashboard como o usuário deixou.
-    contractsStore.setFilters(prevFilters);
-    contractsStore.setSelectedGroups(prevGroups);
-    await contractsStore.fetchContracts({ force: true });
+    gravando.value = false;
   }
 }
+
+function cancelarConsolidacao() {
+  confirmOpen.value = false;
+  pendente.value = null;
+}
+
+// Diferença entre o que está congelado e o que será gravado (só na reconsolidação)
+const delta = computed(() => {
+  const p = pendente.value;
+  if (!p?.atual?.totals) return null;
+  const a = p.atual.totals, n = p.totals;
+  return {
+    count: (n.count || 0) - (a.count || 0),
+    vgv: (n.vgv_net || 0) - (a.vgv_net || 0),
+  };
+});
 
 async function handleCheckNow() {
   checkingNow.value = true;
@@ -279,6 +352,24 @@ const STATUS_LABEL = {
   self_resolved: 'normalizou sozinha',
 };
 
+// Histórico completo: versão vigente no topo + anteriores, com autor e valores.
+// (`history` guarda só as substituídas; a atual mora nas colunas do fechamento.)
+const versoes = computed(() => {
+  const d = detail.value;
+  if (!d) return [];
+  const atual = {
+    version: d.version,
+    consolidated_at: d.consolidated_at,
+    consolidated_by_name: d.consolidated_by_name,
+    totals: d.totals,
+    vigente: true,
+  };
+  const antigas = [...(d.history || [])]
+    .map((h) => ({ ...h, vigente: false }))
+    .sort((a, b) => (b.version || 0) - (a.version || 0));
+  return [atual, ...antigas];
+});
+
 const openDivergences = computed(() =>
   (detail.value?.divergences || []).filter((d) => d.status === 'open'));
 const reviewedDivergences = computed(() =>
@@ -316,10 +407,42 @@ const closeModal = () => emit('close');
         <i class="fas fa-circle-exclamation"></i>{{ error }}
       </div>
 
+      <!-- Período exibido (mês/ano; o fechamento é mensal) -->
+      <div class="rounded-xl border border-line bg-surface-sunken px-3 py-2.5 flex items-end gap-3 flex-wrap">
+        <div>
+          <label class="block text-[11px] font-medium text-ink-muted mb-1">
+            <i class="far fa-calendar text-[10px] mr-1 text-ink-subtle"></i>De
+          </label>
+          <input v-model="filtroDe" type="month"
+            class="rounded-lg border border-line bg-surface-raised px-2 py-1.5 text-xs text-ink focus:outline-none focus:ring-2 focus:ring-accent/40" />
+        </div>
+        <div>
+          <label class="block text-[11px] font-medium text-ink-muted mb-1">Até</label>
+          <input v-model="filtroAte" type="month"
+            class="rounded-lg border border-line bg-surface-raised px-2 py-1.5 text-xs text-ink focus:outline-none focus:ring-2 focus:ring-accent/40" />
+        </div>
+        <Button variant="ghost" size="sm" icon="fas fa-rotate-left" @click="resetPeriodo">
+          Ano atual
+        </Button>
+        <p v-if="periodoInvalido" class="text-[11px] text-red-500 ml-auto">
+          O mês inicial está depois do final.
+        </p>
+        <p v-else class="text-[11px] text-ink-subtle ml-auto font-mono">
+          {{ resumoPeriodo.total }} mês(es) ·
+          <span class="text-emerald-600 dark:text-emerald-400">{{ resumoPeriodo.consolidados }} consolidado(s)</span> ·
+          {{ resumoPeriodo.abertos }} aberto(s)
+        </p>
+      </div>
+
       <div v-if="loading" class="py-10 flex flex-col items-center gap-3 text-ink-muted">
         <Spinner size="lg" />
         <p class="text-sm">Carregando fechamentos...</p>
       </div>
+
+      <EmptyState v-else-if="!months.length"
+        size="sm" icon="far fa-calendar"
+        title="Nenhum mês no período"
+        description="Ajuste o intervalo acima para ver os meses." />
 
       <div v-else class="space-y-2 max-h-[55vh] overflow-y-auto pr-1">
         <Surface v-for="m in months" :key="m.period" variant="raised" padding="none" class="overflow-hidden">
@@ -360,7 +483,7 @@ const closeModal = () => emit('close');
                 :icon="savingPeriod === m.period ? 'fas fa-circle-notch fa-spin' : (m.closing ? 'fas fa-rotate' : 'fas fa-lock')"
                 :disabled="savingPeriod !== null"
                 @click="handleConsolidate(m.period, !!m.closing)">
-                {{ savingPeriod === m.period ? 'Consolidando...' : (m.closing ? 'Reconsolidar' : 'Consolidar') }}
+                {{ savingPeriod === m.period ? 'Calculando...' : (m.closing ? 'Reconsolidar' : 'Consolidar') }}
               </Button>
               <i v-if="m.closing" class="fas fa-chevron-down text-xs text-ink-subtle transition-transform ml-1"
                 :class="{ 'rotate-180': expanded === m.period }" @click="toggleExpand(m.period)"></i>
@@ -436,17 +559,33 @@ const closeModal = () => emit('close');
                 </ul>
               </div>
 
-              <!-- Histórico de versões -->
-              <div v-if="(detail.history || []).length">
-                <h4 class="text-xs font-semibold text-ink mb-2">
-                  <i class="fas fa-clock-rotate-left text-[10px] mr-1 text-ink-subtle"></i>Versões anteriores
+              <!-- Histórico de versões: quem consolidou, quando e com que números -->
+              <div>
+                <h4 class="text-xs font-semibold text-ink mb-2 flex items-center gap-2">
+                  <i class="fas fa-clock-rotate-left text-[10px] text-ink-subtle"></i>
+                  Histórico de versões
+                  <Badge variant="neutral" size="sm">{{ versoes.length }}</Badge>
                 </h4>
                 <ul class="rounded-lg border border-line bg-surface-raised divide-y divide-line">
-                  <li v-for="h in [...detail.history].reverse()" :key="h.version"
-                    class="px-3 py-2 text-[11px] text-ink-muted font-mono">
-                    v{{ h.version }} · {{ h.totals?.count ?? '—' }} venda(s) · {{ formatCurrency(h.totals?.vgv_net) }}
-                    · fechado em {{ formatDateTime(h.consolidated_at) }}
-                    <span v-if="h.consolidated_by_name">por {{ h.consolidated_by_name }}</span>
+                  <li v-for="v in versoes" :key="v.version"
+                    class="px-3 py-2.5 flex items-start justify-between gap-2"
+                    :class="v.vigente ? 'bg-emerald-500/5' : ''">
+                    <div class="min-w-0">
+                      <p class="text-xs font-medium text-ink flex items-center gap-1.5 flex-wrap">
+                        <span class="font-mono">v{{ v.version }}</span>
+                        <Badge v-if="v.vigente" variant="success" size="sm">vigente</Badge>
+                        <span v-else class="text-ink-subtle">substituída</span>
+                      </p>
+                      <p class="text-[11px] text-ink-muted font-mono mt-0.5">
+                        {{ v.totals?.count ?? '—' }} venda(s) ·
+                        <span class="text-emerald-600 dark:text-emerald-400 font-semibold">{{ formatCurrency(v.totals?.vgv_net) }}</span>
+                        <span v-if="v.totals?.vgv_gross"> · VGV+DC {{ formatCurrency(v.totals.vgv_gross) }}</span>
+                      </p>
+                    </div>
+                    <div class="text-right shrink-0">
+                      <p class="text-[11px] text-ink">{{ v.consolidated_by_name || 'autor não registrado' }}</p>
+                      <p class="text-[10px] text-ink-subtle font-mono">{{ formatDateTime(v.consolidated_at) }}</p>
+                    </div>
                   </li>
                 </ul>
               </div>
@@ -467,6 +606,81 @@ const closeModal = () => emit('close');
         {{ checkingNow ? 'Verificando...' : 'Verificar divergências agora' }}
       </Button>
       <Button variant="ghost" @click="closeModal">Fechar</Button>
+    </template>
+  </Modal>
+
+  <!-- Confirmação: mostra o que será gravado antes de substituir o oficial -->
+  <Modal :open="confirmOpen" size="md" :z-index="10000"
+    :title="pendente?.isRedo ? 'Substituir a consolidação?' : 'Consolidar o mês?'"
+    :subtitle="pendente ? monthLabel(pendente.period) : ''"
+    @close="cancelarConsolidacao">
+    <div v-if="pendente" class="space-y-3">
+
+      <div class="rounded-xl px-3 py-2.5 text-xs flex items-start gap-2"
+        :class="pendente.isRedo
+          ? 'border border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300'
+          : 'border border-accent/30 bg-accent-soft text-ink-muted'">
+        <i class="fas fa-triangle-exclamation mt-0.5 shrink-0"></i>
+        <span v-if="pendente.isRedo">
+          Os números oficiais de <strong>{{ monthLabel(pendente.period) }}</strong> serão
+          <strong>substituídos</strong> pelos valores abaixo. A versão atual (v{{ pendente.atual?.version }})
+          vai para o histórico e as divergências abertas são encerradas pelo novo snapshot.
+        </span>
+        <span v-else>
+          Os valores abaixo serão <strong class="text-ink">congelados como oficiais</strong> e passam a ser
+          a resposta da Eme para este mês.
+        </span>
+      </div>
+
+      <!-- Comparativo -->
+      <div class="rounded-lg border border-line overflow-hidden">
+        <div v-if="pendente.isRedo && pendente.atual"
+          class="px-3 py-2 bg-surface-sunken flex items-center justify-between gap-2 text-xs">
+          <span class="text-ink-muted">Congelado hoje (v{{ pendente.atual.version }})</span>
+          <span class="font-mono tabular-nums text-ink-muted">
+            {{ pendente.atual.totals?.count ?? '—' }} venda(s) · {{ formatCurrency(pendente.atual.totals?.vgv_net) }}
+          </span>
+        </div>
+        <div class="px-3 py-2 bg-surface-raised flex items-center justify-between gap-2 text-xs">
+          <span class="text-ink font-medium">
+            {{ pendente.isRedo ? `Vai gravar (v${(pendente.atual?.version || 0) + 1})` : 'Vai gravar (v1)' }}
+          </span>
+          <span class="font-mono tabular-nums text-emerald-600 dark:text-emerald-400 font-semibold">
+            {{ pendente.totals.count }} venda(s) · {{ formatCurrency(pendente.totals.vgv_net) }}
+          </span>
+        </div>
+        <div v-if="delta && (delta.count !== 0 || Math.abs(delta.vgv) > 0.01)"
+          class="px-3 py-2 bg-surface-sunken border-t border-line flex items-center justify-between gap-2 text-xs">
+          <span class="text-ink-muted">Diferença</span>
+          <span class="font-mono tabular-nums font-semibold"
+            :class="delta.vgv >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500'">
+            {{ delta.count >= 0 ? '+' : '' }}{{ delta.count }} venda(s) ·
+            {{ delta.vgv >= 0 ? '+' : '' }}{{ formatCurrency(delta.vgv) }}
+          </span>
+        </div>
+        <div v-else-if="delta" class="px-3 py-2 bg-surface-sunken border-t border-line text-xs text-ink-subtle">
+          Sem diferença nos totais — só o snapshot dos dados de origem é renovado.
+        </div>
+      </div>
+
+      <p class="text-[11px] text-ink-subtle">
+        VGV+DC: {{ formatCurrency(pendente.totals.vgv_gross) }}
+        <span v-if="pendente.totals.distratadas"> · {{ pendente.totals.distratadas }} venda(s) distratada(s) depois (contam no período)</span>
+      </p>
+
+      <div v-if="error"
+        class="rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-700 dark:text-red-300">
+        {{ error }}
+      </div>
+    </div>
+
+    <template #footer>
+      <Button variant="ghost" :disabled="gravando" @click="cancelarConsolidacao">Cancelar</Button>
+      <Button :icon="gravando ? 'fas fa-circle-notch fa-spin' : (pendente?.isRedo ? 'fas fa-rotate' : 'fas fa-lock')"
+        :class="pendente?.isRedo ? '!bg-amber-500 hover:!bg-amber-600' : ''"
+        :disabled="gravando" @click="confirmarConsolidacao">
+        {{ gravando ? 'Gravando...' : (pendente?.isRedo ? 'Substituir' : 'Consolidar') }}
+      </Button>
     </template>
   </Modal>
 </template>
