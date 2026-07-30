@@ -276,6 +276,7 @@ const STATUS_LABEL = {
   reviewed: 'revisada',
   reconsolidated: 'reconsolidado',
   false_positive: 'falso positivo',
+  self_resolved: 'normalizou sozinha',
 };
 
 const openDivergences = computed(() =>
