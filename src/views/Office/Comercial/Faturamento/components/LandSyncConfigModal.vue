@@ -319,25 +319,89 @@ function onHiddenSelectionUpdate(value) {
   selectedHiddenLabels.value = out;
 }
 
-async function handleHiddenAdd() {
-  const ids = idsFromLabels(selectedHiddenLabels.value);
-  if (!ids.length) return;
-  for (const eid of ids) {
-    await hiddenStore.addItem({
-      enterprise_id: eid,
-      enterprise_name: enterpriseNameById.value.get(eid) || null,
-    });
+// Lista de ocultos agrupada por empresa (resolvida pela lista de
+// empreendimentos); sem empresa identificada cai no grupo "Outros".
+const hiddenGroups = computed(() => {
+  const compByEnt = new Map();
+  for (const e of contractsStore.enterprises || []) {
+    const eid = Number(e.id);
+    if (!Number.isFinite(eid) || compByEnt.has(eid)) continue;
+    if (e.company_id == null && !e.company_name) continue;
+    compByEnt.set(eid, { company_id: e.company_id ?? null, company_name: e.company_name ?? null });
   }
-  selectedHiddenLabels.value = [];
+
+  const groups = new Map();
+  for (const item of hiddenStore.items) {
+    const comp = compByEnt.get(Number(item.enterprise_id)) || null;
+    const key = comp?.company_id != null
+      ? `C:${comp.company_id}`
+      : (comp?.company_name ? `N:${comp.company_name}` : 'OUTROS');
+    if (!groups.has(key)) {
+      groups.set(key, {
+        key,
+        company_id: comp?.company_id ?? null,
+        company_name: comp?.company_name ?? null,
+        items: [],
+      });
+    }
+    groups.get(key).items.push(item);
+  }
+
+  const arr = [...groups.values()];
+  for (const g of arr) g.items.sort((a, b) => Number(a.enterprise_id) - Number(b.enterprise_id));
+  arr.sort((a, b) => (a.company_id ?? Infinity) - (b.company_id ?? Infinity));
+  return arr;
+});
+
+const hiddenSaving = ref(false);
+const hiddenRemoving = ref(false);
+
+async function refreshAfterHiddenChange() {
   contractsStore.clearContractsCache();
   await contractsStore.fetchContracts({ force: true });
 }
 
+async function handleHiddenAdd() {
+  const ids = idsFromLabels(selectedHiddenLabels.value);
+  if (!ids.length || hiddenSaving.value) return;
+  hiddenSaving.value = true;
+  try {
+    await hiddenStore.addItems(ids.map((eid) => ({
+      enterprise_id: eid,
+      enterprise_name: enterpriseNameById.value.get(eid) || null,
+    })));
+    selectedHiddenLabels.value = [];
+    await refreshAfterHiddenChange();
+  } finally {
+    hiddenSaving.value = false;
+  }
+}
+
 async function handleHiddenRemove(id) {
+  if (hiddenRemoving.value) return;
   if (!window.confirm('Restaurar visibilidade deste empreendimento?')) return;
-  await hiddenStore.removeItem(id);
-  contractsStore.clearContractsCache();
-  await contractsStore.fetchContracts({ force: true });
+  hiddenRemoving.value = true;
+  try {
+    await hiddenStore.removeItem(id);
+    await refreshAfterHiddenChange();
+  } finally {
+    hiddenRemoving.value = false;
+  }
+}
+
+async function handleHiddenRemoveGroup(group) {
+  if (hiddenRemoving.value || !group?.items?.length) return;
+  const label = group.company_name
+    ? `da empresa ${group.company_id != null ? group.company_id + ' - ' : ''}${group.company_name}`
+    : 'deste grupo';
+  if (!window.confirm(`Restaurar os ${group.items.length} empreendimento(s) ${label}?`)) return;
+  hiddenRemoving.value = true;
+  try {
+    await hiddenStore.removeItems(group.items.map((i) => i.id));
+    await refreshAfterHiddenChange();
+  } finally {
+    hiddenRemoving.value = false;
+  }
 }
 
 // ── Comissão por etapa ─────────────────────────────────────────────
@@ -851,23 +915,42 @@ const closeModal = () => emit('close');
                   size="sm" icon="fas fa-eye"
                   title="Nenhum oculto"
                   description="Todos estão visíveis no dashboard." />
-                <ul v-else class="divide-y divide-line">
-                  <li v-for="item in hiddenStore.items" :key="item.id"
-                    class="px-3 py-2.5 flex items-start justify-between gap-2 hover:bg-surface-hover transition-colors">
-                    <div class="min-w-0">
-                      <p class="text-xs font-medium text-ink truncate">{{ item.enterprise_name || 'Sem nome' }}</p>
-                      <p class="text-[10px] text-ink-subtle font-mono mt-0.5">
-                        ID ERP: {{ item.enterprise_id }}
+                <div v-else>
+                  <div v-for="group in hiddenGroups" :key="group.key">
+                    <!-- Cabeçalho do grupo: empresa + restaurar todos -->
+                    <div
+                      class="sticky top-0 z-10 px-3 py-1.5 bg-surface-raised border-y border-line first:border-t-0 flex items-center justify-between gap-2">
+                      <p class="text-[10px] font-mono uppercase tracking-wider text-ink-subtle truncate">
+                        <span v-if="group.company_id != null" class="text-ink font-semibold">{{ group.company_id }}</span>
+                        <span v-if="group.company_id != null"> - </span>
+                        <span :class="group.company_name ? 'text-ink' : ''">{{ group.company_name || 'Sem empresa identificada' }}</span>
+                        <span class="ml-1">({{ group.items.length }})</span>
                       </p>
+                      <button type="button"
+                        class="shrink-0 text-[10px] font-medium text-emerald-600 dark:text-emerald-400 hover:underline disabled:opacity-50"
+                        :disabled="hiddenRemoving"
+                        v-tippy="'Restaurar todos os empreendimentos deste grupo'"
+                        @click="handleHiddenRemoveGroup(group)">
+                        <i class="fas fa-eye text-[9px] mr-0.5"></i>Restaurar todos
+                      </button>
                     </div>
-                    <Button variant="ghost" size="sm" icon="fas fa-eye"
-                      class="!text-emerald-600 hover:!bg-emerald-500/10"
-                      v-tippy="'Restaurar visibilidade'"
-                      @click="handleHiddenRemove(item.id)">
-                      <span class="hidden sm:inline">Restaurar</span>
-                    </Button>
-                  </li>
-                </ul>
+
+                    <ul class="divide-y divide-line">
+                      <li v-for="item in group.items" :key="item.id"
+                        class="px-3 py-2 flex items-center justify-between gap-2 hover:bg-surface-hover transition-colors">
+                        <p class="min-w-0 text-xs text-ink truncate">
+                          <span class="font-mono font-semibold">{{ item.enterprise_id }}</span>
+                          <span class="text-ink-muted"> - {{ item.enterprise_name || 'Sem nome' }}</span>
+                        </p>
+                        <Button variant="ghost" size="sm" icon="fas fa-eye"
+                          class="!text-emerald-600 hover:!bg-emerald-500/10 shrink-0"
+                          :disabled="hiddenRemoving"
+                          v-tippy="'Restaurar visibilidade'"
+                          @click="handleHiddenRemove(item.id)" />
+                      </li>
+                    </ul>
+                  </div>
+                </div>
               </div>
             </Surface>
 
@@ -892,12 +975,17 @@ const closeModal = () => emit('close');
                   :overlay="true" :page-size="150" :select-all="false" />
               </div>
 
-              <div class="flex justify-end pt-1">
-                <Button size="sm" icon="fas fa-eye-slash"
-                  class="!bg-amber-500 hover:!bg-amber-600"
-                  :disabled="!selectedHiddenLabels.length"
+              <div class="flex items-center justify-between gap-2 pt-1 flex-wrap">
+                <p v-if="selectedHiddenLabels.length" class="text-[10px] text-ink-subtle">
+                  <span class="font-mono text-ink">{{ selectedHiddenLabels.length }}</span>
+                  empreendimento(s) na seleção
+                </p>
+                <Button size="sm"
+                  :icon="hiddenSaving ? 'fas fa-circle-notch fa-spin' : 'fas fa-eye-slash'"
+                  class="!bg-amber-500 hover:!bg-amber-600 ml-auto"
+                  :disabled="!selectedHiddenLabels.length || hiddenSaving"
                   @click="handleHiddenAdd">
-                  Ocultar selecionados
+                  {{ hiddenSaving ? 'Ocultando...' : 'Ocultar selecionados' }}
                 </Button>
               </div>
             </Surface>

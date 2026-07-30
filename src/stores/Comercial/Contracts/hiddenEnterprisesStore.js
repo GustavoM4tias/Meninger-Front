@@ -34,8 +34,12 @@ export const useHiddenEnterprisesStore = defineStore('hiddenEnterprises', {
             }
         },
 
-        async addItem({ enterprise_id, enterprise_name }) {
+        // Lote numa request só — ocultar uma empresa expande em dezenas de CCs
+        // e uma request por CC deixava a operação lenta.
+        async addItems(items) {
             this.error = null
+            const list = (items || []).filter(i => i?.enterprise_id != null)
+            if (!list.length) return
             try {
                 const res = await fetch(`${API_URL}/admin/hidden-enterprises`, {
                     method: 'POST',
@@ -43,12 +47,14 @@ export const useHiddenEnterprisesStore = defineStore('hiddenEnterprises', {
                         Authorization: `Bearer ${localStorage.getItem('token')}`,
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ enterprise_id, enterprise_name })
+                    body: JSON.stringify({ items: list })
                 })
                 if (!res.ok) throw new Error(`Erro ${res.status}`)
-                const item = await res.json()
-                if (!this.items.find(i => i.enterprise_id === item.enterprise_id)) {
-                    this.items.push(item)
+                const data = await res.json()
+                for (const item of (data.results || [])) {
+                    if (!this.items.find(i => i.enterprise_id === item.enterprise_id)) {
+                        this.items.push(item)
+                    }
                 }
             } catch (e) {
                 this.error = e.message
@@ -56,22 +62,34 @@ export const useHiddenEnterprisesStore = defineStore('hiddenEnterprises', {
             }
         },
 
-        async removeItem(id) {
+        async addItem({ enterprise_id, enterprise_name }) {
+            return this.addItems([{ enterprise_id, enterprise_name }])
+        },
+
+        async removeItems(ids) {
             this.error = null
+            const list = (ids || []).map(Number).filter(Number.isFinite)
+            if (!list.length) return
             try {
-                const res = await fetch(`${API_URL}/admin/hidden-enterprises/${id}`, {
-                    method: 'DELETE',
+                const res = await fetch(`${API_URL}/admin/hidden-enterprises/restore`, {
+                    method: 'POST',
                     headers: {
                         Authorization: `Bearer ${localStorage.getItem('token')}`,
                         'Content-Type': 'application/json'
-                    }
+                    },
+                    body: JSON.stringify({ ids: list })
                 })
                 if (!res.ok) throw new Error(`Erro ${res.status}`)
-                this.items = this.items.filter(i => i.id !== id)
+                const removed = new Set(list)
+                this.items = this.items.filter(i => !removed.has(Number(i.id)))
             } catch (e) {
                 this.error = e.message
                 throw e
             }
+        },
+
+        async removeItem(id) {
+            return this.removeItems([id])
         }
     }
 })
