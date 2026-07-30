@@ -82,7 +82,11 @@ function syncFiltersFromUrl() {
   if (q.endDate) next.endDate = String(q.endDate);
   if (q.situation) next.situation = String(q.situation);
   localFilters.value = next;
-  emit('filter-changed');
+  // Aplicar no store ANTES de disparar o fetch: quem copiava localFilters →
+  // store era um watcher (roda depois do emit), então o fetch saía com o
+  // filtro antigo — a tela mostrava o período da URL, mas os dados eram do
+  // mês atual.
+  applyFilters();
 }
 
 function syncUrlFromFilters() {
