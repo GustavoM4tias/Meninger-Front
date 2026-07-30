@@ -28,7 +28,7 @@ const isAdmin = computed(() => {
 });
 
 // ── Valores ───────────────────────────────
-// Mesmos getters do Faturamento: distrato descontado, projeção somada à parte.
+// Mesmos getters do Faturamento: distrato conta (selo informativo), projeção somada à parte.
 const distratoCount = (row) => contractsStore.distratoCountForRow(row);
 const distratoValue = (row) => contractsStore.distratoValueForRow(row);
 const baseValue = (row) => contractsStore.realizedValueForRow(row);
@@ -158,8 +158,8 @@ function effectiveAchievementPct(row) {
   if (mode === 'units') {
     const projected = row.projectedUnits || 0;
     if (projected <= 0) return null;
-    const effectiveCount = (row.count || 0) > 0 ? (row.count || 0) : (row.proj_count || 0);
-    const realized = Math.max(0, effectiveCount - distratoCount(row));
+    // Distratos contam normalmente (regra de ouro: na época foi venda).
+    const realized = (row.count || 0) > 0 ? (row.count || 0) : (row.proj_count || 0);
     return parseFloat((realized / projected * 100).toFixed(1));
   }
   return row.achievementPct ?? null;
@@ -375,9 +375,9 @@ const sortOptions = computed(() => [
               <span v-if="!row.onlyProjectionRow && row.proj_count" class="text-emerald-500 font-semibold">
                 +{{ row.proj_count }}
               </span>
-              <span v-if="!row.onlyProjectionRow && distratoCount(row) > 0" class="text-red-500 font-semibold"
-                v-tippy="'Distratos (não contabilizados)'">
-                −{{ distratoCount(row) }}
+              <span v-if="!row.onlyProjectionRow && distratoCount(row) > 0" class="text-amber-500 font-semibold"
+                v-tippy="'Distratada(s) depois da venda — contabilizadas no período'">
+                <i class="fas fa-file-circle-xmark text-[10px]"></i>{{ distratoCount(row) }}
               </span>
             </span>
           </div>
@@ -479,9 +479,9 @@ const sortOptions = computed(() => [
                   +{{ row.proj_count }}
                 </span>
                 <span v-if="!row.onlyProjectionRow && distratoCount(row) > 0"
-                  class="absolute -bottom-3 -right-2 text-[10px] font-bold text-red-500 font-mono"
-                  v-tippy="'Distratos (não contabilizados)'">
-                  −{{ distratoCount(row) }}
+                  class="absolute -bottom-3 -right-2 text-[10px] font-bold text-amber-500 font-mono"
+                  v-tippy="'Distratada(s) depois da venda — contabilizadas no período'">
+                  <i class="fas fa-file-circle-xmark text-[9px]"></i>{{ distratoCount(row) }}
                 </span>
               </div>
             </td>
@@ -496,9 +496,9 @@ const sortOptions = computed(() => [
                 +{{ formatCurrency(appendedValue(row)) }}
               </div>
               <div v-if="!row.onlyProjectionRow && distratoValue(row) > 0"
-                class="text-[11px] text-red-500 font-mono tabular-nums"
-                v-tippy="'Distratos (não contabilizados)'">
-                −{{ formatCurrency(distratoValue(row)) }}
+                class="text-[11px] text-amber-500 font-mono tabular-nums"
+                v-tippy="'Valor de vendas distratadas — incluído no total'">
+                <i class="fas fa-file-circle-xmark text-[9px]"></i> {{ formatCurrency(distratoValue(row)) }}
               </div>
             </td>
 

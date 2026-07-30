@@ -72,26 +72,15 @@ function contractTotals(contract) {
 }
 
 // ─── Distrato detection ──────────────────────────────────────────────────────
-// Vendas onde o repasse no CV foi marcado como "distrato" — mesmo que o contrato
-// no Sienge ainda esteja com situation='Emitido'. São excluídas dos totais para
-// alinhar com a regra de negócio aplicada na tabela.
-function repasseStatusOfSale(sale) {
-    const first = sale?.contracts?.[0] || {}
-    const r = first?.repasse?.[0]
-    if (r) {
-        const sr = (r.status_repasse ?? r.statusRepasse ?? '').toString().trim()
-        if (sr) return sr
-    }
-    const res = first?.reserva
-    if (res) {
-        const srr = (res.status_repasse ?? res.statusRepasse ?? '').toString().trim()
-        if (srr) return srr
-    }
-    return null
-}
-
+// Regra de ouro (2026-07-30): venda com data da instituição financeira CONTA,
+// mesmo distratada depois — na época foi venda. O distrato vem do SIENGE
+// (situation='Cancelado'), não mais do status de repasse do CV, e é apenas um
+// SELO VISUAL: nada é subtraído dos totais. Relatório próprio de distratos
+// virá depois.
 function saleIsDistrato(sale) {
-    return String(repasseStatusOfSale(sale) ?? '').trim().toLowerCase() === 'distrato'
+    const real = (sale?.contracts || []).filter((c) => !c._projection)
+    if (!real.length) return false
+    return real.every((c) => String(c.situation ?? '').trim().toLowerCase() === 'cancelado')
 }
 
 // Regra de composição de VGV do contrato, vinda do banco.
@@ -284,15 +273,14 @@ export const useContractsStore = defineStore('contracts', {
             (s.valueMode === 'net' ? obj?.total_value_net : obj?.total_value_gross) ?? 0,
 
         // ── Totals ─────────────────────────────────────────────────────────
-        // Distratos (vendas com repasse status_repasse='distrato') são excluídos
-        // dos totais para manter paridade com a tabela do dashboard, que já
-        // subtrai distratos linha a linha.
+        // Distratos NÃO são mais excluídos nem subtraídos: venda com data da
+        // instituição financeira conta mesmo cancelada depois (na época foi
+        // venda). O distrato é selo visual — ver saleIsDistrato.
         saleIsDistrato: () => (sale) => saleIsDistrato(sale),
-        nonDistratoSales() { return this.uniqueSales.filter((s) => !saleIsDistrato(s)) },
 
         // Conta quantas vendas distratadas pertencem à row (empreendimento ou
-        // empresa) do dashboard. Usado por todas as tabelas do Faturamento e
-        // do Sales-Projection para subtrair distratos sem duplicar lógica.
+        // empresa) do dashboard. INFORMATIVO apenas: as tabelas mostram o selo,
+        // mas o valor continua contabilizado nos totais.
         // Devolve { count, net, gross } para que quem precisa dos dois modos
         // (cartões de métrica) não dependa do valueMode corrente.
         distratoMetaForRow() {
@@ -333,30 +321,22 @@ export const useContractsStore = defineStore('contracts', {
         // ── Realizado por linha (fonte única das duas telas) ───────────────
         // Faturamento e Vendas × Projeção precisam responder o MESMO número
         // para o mesmo empreendimento. Toda a regra mora aqui:
-        //   • distratos são subtraídos (em quantidade e em valor);
+        //   • distratos CONTAM normalmente (selo visual apenas);
         //   • linha só de projeção usa o valor da própria projeção;
         //   • projeção vinculada a vendas reais entra somada à parte.
         realizedCountForRow() {
             return (row) => {
                 if (!row) return 0
-                if (row.onlyProjectionRow) return Number(row.count) || 0
-                return Math.max(0, (Number(row.count) || 0) - this.distratoCountForRow(row))
+                return Number(row.count) || 0
             }
         },
         // Realizado nos dois modos de uma vez: { net, gross }.
         realizedValuesForRow() {
             return (row) => {
                 if (!row) return { net: 0, gross: 0 }
-                if (row.onlyProjectionRow) {
-                    return {
-                        net: Number(row.total_value_net) || 0,
-                        gross: Number(row.total_value_gross) || 0
-                    }
-                }
-                const d = this.distratoMetaForRow(row)
                 return {
-                    net: (Number(row.total_value_net) || 0) - d.net,
-                    gross: (Number(row.total_value_gross) || 0) - d.gross
+                    net: Number(row.total_value_net) || 0,
+                    gross: Number(row.total_value_gross) || 0
                 }
             }
         },
@@ -411,12 +391,12 @@ export const useContractsStore = defineStore('contracts', {
         // Resolve-se na engrenagem → Vínculo CV ↔ Sienge.
         isUnlinkedProjectionRow: () => (row) =>
             !!row?.onlyProjectionRow && (row.enterprise_id == null || row.enterprise_id === ''),
-        totalSales() { return this.nonDistratoSales.length },
+        totalSales() { return this.uniqueSales.length },
         totalValueNet() {
-            return this.nonDistratoSales.reduce((s, x) => s + (Number(x.total_value_net) || 0), 0)
+            return this.uniqueSales.reduce((s, x) => s + (Number(x.total_value_net) || 0), 0)
         },
         totalValueGross() {
-            return this.nonDistratoSales.reduce((s, x) => s + (Number(x.total_value_gross) || 0), 0)
+            return this.uniqueSales.reduce((s, x) => s + (Number(x.total_value_gross) || 0), 0)
         },
         projectionContractsCount: (s) => s.contracts.filter((c) => c._projection).length,
         projectionItemsCount() {
@@ -910,9 +890,9 @@ export const useContractsStore = defineStore('contracts', {
         },
 
         metrics() {
-            // Distratos excluídos para alinhar com a tabela do dashboard
-            // (que subtrai distratos linha a linha via distratoCount/distratoValue).
-            const unique = this.nonDistratoSales
+            // Distratos incluídos: venda com data da instituição financeira
+            // conta mesmo cancelada depois (selo visual na listagem).
+            const unique = this.uniqueSales
             const totalSales = unique.length
             const totalValueNet = unique.reduce((s, x) => s + (Number(x.total_value_net) || 0), 0)
             const totalValueGross = unique.reduce((s, x) => s + (Number(x.total_value_gross) || 0), 0)
@@ -1025,6 +1005,7 @@ export const useContractsStore = defineStore('contracts', {
                 enterprise_id: toNumber(c.enterprise_id ?? c.enterpriseId),
                 enterprise_name: c.enterprise_name ?? c.enterpriseName ?? '',
                 financial_institution_date: c.financial_institution_date ?? c.financialInstitutionDate ?? null,
+                situation: c.situation ?? null,
                 land_value: toNumber(c.land_value ?? c.landValue),
                 unit_name: c.unit_name ?? c.unitName ?? '',
                 unit_id: c.unit_id ?? c.unitId ?? '',
