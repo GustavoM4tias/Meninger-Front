@@ -54,21 +54,22 @@ const tabOptions = [
 ];
 
 // ── Opções de empreendimento (padrão em TODAS as abas) ─────────────────────
-// Rótulo "Nome (id)": preciso mesmo com nomes duplicados entre CCs — a
-// seleção antiga por nome puro adicionava TODOS os ids com o mesmo nome.
+// Rótulo "id - Nome": o id vem na frente para permitir busca/seleção direta
+// pelo código; preciso mesmo com nomes duplicados entre CCs — a seleção
+// antiga por nome puro adicionava TODOS os ids com o mesmo nome.
 const enterpriseIdOptions = computed(() =>
   (contractsStore.enterprises || [])
     .filter(e => e?.id != null && e?.name)
-    .map(e => `${e.name} (${e.id})`)
+    .map(e => `${e.id} - ${e.name}`)
 );
 
 const idFromLabel = (label) => {
-  const m = String(label || '').match(/\((\d+)\)\s*$/);
+  const m = String(label || '').match(/^(\d+)\s*-/);
   return m ? Number(m[1]) : null;
 };
 const labelForId = (id) => {
   const ent = (contractsStore.enterprises || []).find(e => Number(e.id) === Number(id));
-  return ent ? `${ent.name} (${ent.id})` : null;
+  return ent ? `${ent.id} - ${ent.name}` : null;
 };
 const idsFromLabels = (labels) =>
   [...new Set((labels || []).map(idFromLabel).filter(n => Number.isFinite(n) && n > 0))];
@@ -273,12 +274,50 @@ async function handleRunSync() {
 // ── Ocultar empreendimentos ────────────────────────────────────────
 const selectedHiddenLabels = ref([]);
 
+// Opções em dois níveis: empresa ("Empresa id - Nome") e centro de custo
+// ("id - Nome"). Selecionar uma empresa expande NA HORA para todos os CCs
+// dela ainda visíveis — o ocultar continua sendo por empreendimento.
+const COMPANY_LABEL_RE = /^Empresa (\d+) - /;
+
+const hiddenCompanyOptions = computed(() => {
+  const hiddenIds = hiddenStore.hiddenIds;
+  const byCompany = new Map();
+  for (const e of contractsStore.enterprises || []) {
+    if (e?.id == null || !e?.name || hiddenIds.has(Number(e.id))) continue;
+    if (e?.company_id == null || !e?.company_name) continue;
+    if (!byCompany.has(Number(e.company_id))) byCompany.set(Number(e.company_id), e.company_name);
+  }
+  return [...byCompany.entries()]
+    .sort((a, b) => a[0] - b[0])
+    .map(([cid, cname]) => `Empresa ${cid} - ${cname}`);
+});
+
 const hiddenSelectableOptions = computed(() => {
   const hiddenIds = hiddenStore.hiddenIds;
-  return (contractsStore.enterprises || [])
+  const ccs = (contractsStore.enterprises || [])
     .filter(e => e?.id != null && e?.name && !hiddenIds.has(Number(e.id)))
-    .map(e => `${e.name} (${e.id})`);
+    .map(e => `${e.id} - ${e.name}`);
+  return [...hiddenCompanyOptions.value, ...ccs];
 });
+
+function onHiddenSelectionUpdate(value) {
+  const labels = Array.isArray(value) ? value : [];
+  const hiddenIds = hiddenStore.hiddenIds;
+  const seen = new Set();
+  const out = [];
+  const push = (l) => { if (!seen.has(l)) { seen.add(l); out.push(l); } };
+  for (const label of labels) {
+    const m = String(label).match(COMPANY_LABEL_RE);
+    if (!m) { push(label); continue; }
+    const cid = Number(m[1]);
+    for (const e of contractsStore.enterprises || []) {
+      if (Number(e?.company_id) !== cid) continue;
+      if (e?.id == null || !e?.name || hiddenIds.has(Number(e.id))) continue;
+      push(`${e.id} - ${e.name}`);
+    }
+  }
+  selectedHiddenLabels.value = out;
+}
 
 async function handleHiddenAdd() {
   const ids = idsFromLabels(selectedHiddenLabels.value);
@@ -836,17 +875,20 @@ const closeModal = () => emit('close');
             <Surface variant="raised" padding="md" class="space-y-3">
               <div>
                 <h3 class="text-sm font-semibold text-ink">Ocultar empreendimento</h3>
-                <p class="text-[11px] text-ink-muted">Selecione empreendimentos para remover da listagem e dos cálculos.</p>
+                <p class="text-[11px] text-ink-muted">
+                  Selecione empreendimentos ou uma empresa inteira — a empresa vira
+                  automaticamente todos os centros de custo dela.
+                </p>
               </div>
 
               <div>
                 <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
                   <i class="fas fa-eye-slash text-[10px] mr-1 text-ink-subtle"></i>
-                  Empreendimento(s)
+                  Empresa ou empreendimento(s)
                 </label>
                 <MultiSelector :model-value="selectedHiddenLabels"
-                  @update:modelValue="selectedHiddenLabels = Array.isArray($event) ? $event : []"
-                  :options="hiddenSelectableOptions" placeholder="Selecione para ocultar"
+                  @update:modelValue="onHiddenSelectionUpdate($event)"
+                  :options="hiddenSelectableOptions" placeholder="Busque por id, nome ou empresa"
                   :overlay="true" :page-size="150" :select-all="false" />
               </div>
 
