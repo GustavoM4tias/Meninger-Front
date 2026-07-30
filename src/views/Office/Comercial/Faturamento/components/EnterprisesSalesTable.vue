@@ -78,6 +78,51 @@ const combinedCount = (row) => contractsStore.combinedCountForRow(row);
 const ticketMedio = (row) => contractsStore.ticketForRow(row);
 const isUnlinked = (row) => contractsStore.isUnlinkedProjectionRow(row);
 
+/* ===================== TITLE (hover no nome) =====================
+ * Identificação rápida para ocultar na engrenagem: o title nativo mostra
+ * o código da empresa, o(s) centro(s) de custo e os nomes da linha.
+ */
+const enterpriseNamesById = computed(() => {
+  const map = new Map();
+  for (const c of contractsStore.contracts || []) {
+    const eid = Number(c.enterprise_id);
+    if (Number.isFinite(eid) && eid > 0 && c.enterprise_name && !map.has(eid)) {
+      map.set(eid, c.enterprise_name);
+    }
+  }
+  for (const e of contractsStore.enterprises || []) {
+    const eid = Number(e.id);
+    if (Number.isFinite(eid) && eid > 0 && e.name && !map.has(eid)) map.set(eid, e.name);
+  }
+  return map;
+});
+
+const rowTitle = (row) => {
+  const lines = [];
+  if (contractsStore.groupBy === 'company') {
+    lines.push(`Empresa ${row.company_id ?? 's/ código'} - ${row.name}`);
+    const ids = Array.isArray(row.enterpriseIds) ? row.enterpriseIds : [];
+    if (ids.length) {
+      lines.push('Centros de custo:');
+      for (const eid of [...ids].sort((a, b) => a - b)) {
+        lines.push(`${eid} - ${enterpriseNamesById.value.get(Number(eid)) || 'sem nome'}`);
+      }
+    }
+  } else {
+    const eid = row.enterprise_id ?? row.id ?? null;
+    lines.push(`CC ${eid ?? 's/ código'} - ${row.name}`);
+    const comp = eid != null
+      ? (contractsStore.enterpriseToCompanyMap.get(Number(eid))
+        ?? contractsStore._enterpriseCompanyMap.get(Number(eid))
+        ?? null)
+      : null;
+    if (comp && (comp.company_id != null || comp.company_name)) {
+      lines.push(`Empresa ${comp.company_id ?? 's/ código'} - ${comp.company_name || 'sem nome'}`);
+    }
+  }
+  return lines.join('\n');
+};
+
 /* ===================== SORT (pelo cabeçalho) ===================== */
 const sortValueOf = (row, key) => {
   switch (key) {
@@ -483,7 +528,7 @@ const onViewChange = (mode) => {
 
         <div class="min-w-0 flex-1">
           <div class="flex items-start justify-between gap-2">
-            <p class="text-sm font-medium text-ink truncate flex items-center gap-1.5">
+            <p class="text-sm font-medium text-ink truncate flex items-center gap-1.5" :title="rowTitle(enterprise)">
               {{ enterprise.name }}
               <span v-if="!enterprise.onlyProjectionRow && enterprise.proj_count > 0" v-tippy="'Projeção vinculada'"
                 class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
@@ -572,7 +617,7 @@ const onViewChange = (mode) => {
             <td class="px-4 py-3">
               <div class="flex items-center gap-2.5 min-w-0">
                 <div :style="{ backgroundColor: getColor(idx) }" class="w-2.5 h-2.5 rounded-full shrink-0"></div>
-                <span class="text-sm font-medium text-ink truncate max-w-[28rem]">
+                <span class="text-sm font-medium text-ink truncate max-w-[28rem]" :title="rowTitle(enterprise)">
                   {{ enterprise.name }}
                 </span>
                 <span v-if="!enterprise.onlyProjectionRow && enterprise.proj_count > 0" v-tippy="'Projeção vinculada'"
