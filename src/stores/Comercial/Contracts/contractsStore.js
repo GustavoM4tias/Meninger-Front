@@ -1347,6 +1347,13 @@ export const useContractsStore = defineStore('contracts', {
             this.error = null
             const isDetail = String(view).toLowerCase() === 'detail'
 
+            // Guarda de corrida: no mount, o fetch default (mês atual) e o fetch
+            // com filtros da URL disparam quase juntos; se o mais antigo terminar
+            // por último ele sobrescrevia os dados do mais novo. Só a chamada
+            // mais recente pode escrever em this.contracts.
+            this._fetchSeq = (this._fetchSeq || 0) + 1
+            const fetchSeq = this._fetchSeq
+
             let cachedBeforeRequest = []
             let requestedIds = null
 
@@ -1368,6 +1375,7 @@ export const useContractsStore = defineStore('contracts', {
                     const projs = this.selectedGroupIds.length > 0
                         ? (await Promise.all(this.selectedGroupIds.map((id) => this._fetchProjectionsForGroup(id, projFetchOpts).catch(() => [])))).flat()
                         : []
+                    if (fetchSeq !== this._fetchSeq) return
                     this.contracts = [...cached, ...projs]
                     this.total = this.contracts.length
                     return
@@ -1384,6 +1392,7 @@ export const useContractsStore = defineStore('contracts', {
                     const projs = this.selectedGroupIds.length > 0
                         ? (await Promise.all(this.selectedGroupIds.map((id) => this._fetchProjectionsForGroup(id, projFetchOpts).catch(() => [])))).flat()
                         : []
+                    if (fetchSeq !== this._fetchSeq) return
                     this.contracts = [...allCached, ...projs]
                     this.total = this.contracts.length
                     return
@@ -1450,6 +1459,7 @@ export const useContractsStore = defineStore('contracts', {
                     : []
 
                 // Show real contracts immediately (improves perceived performance)
+                if (fetchSeq !== this._fetchSeq) return
                 this.contracts = normalized
 
                 // Build permanent enterprise->company map
@@ -1483,9 +1493,10 @@ export const useContractsStore = defineStore('contracts', {
                 }
                 merged = [...dedup.values()]
 
+                this._setCachedContracts(cacheKey, { contracts: merged, total: merged.length })
+                if (fetchSeq !== this._fetchSeq) return
                 this.contracts = merged
                 this.total = merged.length
-                this._setCachedContracts(cacheKey, { contracts: merged, total: merged.length })
                 if (view === 'dashboard') this._lastDashboardKey = cacheKey
 
                 log('fetchContracts done:', {
