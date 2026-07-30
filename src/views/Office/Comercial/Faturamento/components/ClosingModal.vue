@@ -261,7 +261,7 @@ const FIELD_LABEL = {
   enterprise_name: 'Empreendimento',
   company_id: 'Empresa (id)',
   land_value: 'Valor do terreno',
-  conditions_hash: 'Condições de pagamento',
+  conditions_fingerprint: 'Condições de pagamento (valores)',
   customer_id: 'Cliente (id)',
   customer_name: 'Cliente',
   unit_name: 'Unidade',
@@ -270,6 +270,12 @@ const FIELD_LABEL = {
   tr_satellite_enterprises: 'Satélite de TR',
   hidden_dashboard_enterprises: 'Empreendimentos ocultos',
   enterprise_erp_links: 'Vínculo CV ↔ Sienge',
+};
+
+const STATUS_LABEL = {
+  reviewed: 'revisada',
+  reconsolidated: 'reconsolidado',
+  false_positive: 'falso positivo',
 };
 
 const openDivergences = computed(() =>
@@ -422,7 +428,9 @@ const closeModal = () => emit('close');
                     <Button v-if="isAdmin && d.status === 'open'" variant="ghost" size="sm" icon="fas fa-check"
                       class="shrink-0" v-tippy="'Marcar como revisada (não altera o consolidado)'"
                       @click="handleReview(d)" />
-                    <Badge v-else-if="d.status !== 'open'" variant="neutral" size="sm" class="shrink-0">revisada</Badge>
+                    <Badge v-else-if="d.status !== 'open'" variant="neutral" size="sm" class="shrink-0">
+                      {{ STATUS_LABEL[d.status] || d.status }}
+                    </Badge>
                   </li>
                 </ul>
               </div>
