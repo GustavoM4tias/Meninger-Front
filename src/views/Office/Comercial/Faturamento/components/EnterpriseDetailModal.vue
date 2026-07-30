@@ -503,7 +503,16 @@ const saleIsProjection = (sale) =>
 
 // Venda distratada (contrato cancelado no Sienge depois da venda). Continua
 // contabilizada — o selo é só informativo; regra mora no contractsStore.
+// Compra e distrato no mesmo mês nem chegam aqui (excluídos no SQL).
 const saleIsDistrato = (sale) => contractsStore.saleIsDistrato(sale);
+
+const distratoTooltipOf = (sale) => {
+  const cancelDate = (sale?.contracts || [])
+    .map((c) => c?.cancellation_date)
+    .find(Boolean);
+  const when = cancelDate ? ` em ${formatDate(cancelDate)}` : ' depois da venda';
+  return `Contrato cancelado no Sienge${when} — contabilizada no período, pois na época foi venda`;
+};
 
 /* ===================== detalhe/condições ===================== */
 const displayedConditions = (contract) => {
@@ -997,7 +1006,7 @@ const closeModal = () => emit('close');
                       </div>
                       <div class="flex items-center gap-2 shrink-0">
                         <Badge v-if="saleIsDistrato(sale)" variant="warning" size="sm"
-                          v-tippy="'Contrato cancelado no Sienge depois da venda — contabilizada no período, pois na época foi venda'">
+                          v-tippy="distratoTooltipOf(sale)">
                           <i class="fas fa-file-circle-xmark text-[9px]"></i>Distratada
                         </Badge>
                         <Badge v-if="saleIsProjection(sale)" variant="success" size="sm">

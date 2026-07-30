@@ -1006,6 +1006,7 @@ export const useContractsStore = defineStore('contracts', {
                 enterprise_name: c.enterprise_name ?? c.enterpriseName ?? '',
                 financial_institution_date: c.financial_institution_date ?? c.financialInstitutionDate ?? null,
                 situation: c.situation ?? null,
+                cancellation_date: c.cancellation_date ?? c.cancellationDate ?? null,
                 land_value: toNumber(c.land_value ?? c.landValue),
                 unit_name: c.unit_name ?? c.unitName ?? '',
                 unit_id: c.unit_id ?? c.unitId ?? '',
