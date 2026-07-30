@@ -1,36 +1,45 @@
 <script setup>
-// Fechamento de vendas (consolidação mensal do Faturamento).
+// Consolidação (fechamento mensal) do Faturamento — modal ADMIN dentro do
+// próprio dashboard.
 //
-// O admin confere o dashboard e congela o mês AQUI: as linhas/totais enviados
-// são calculados pelo MESMO motor do dashboard (contractsStore), então o
-// snapshot é exatamente o que a tela mostra — sem reimplementação de regra.
-// O backend fotografa os insumos (contratos+regras) e a vigilância diária
-// aponta qualquer mudança posterior como divergência explicada.
-import { onMounted, ref, computed } from 'vue';
+// Os números congelados são calculados pelo MESMO motor da tela
+// (contractsStore) com TODAS as regras carregadas (composição de VGV,
+// comissão, satélite de TR, ocultos) — por isso o modal garante o fetchAll
+// das regras antes de calcular e, ao terminar, restaura os filtros que o
+// usuário tinha no dashboard.
+import { ref, computed, watch } from 'vue';
 import dayjs from 'dayjs';
 import API_URL from '@/config/apiUrl';
 import { useContractsStore } from '@/stores/Comercial/Contracts/contractsStore';
+import { useHiddenEnterprisesStore } from '@/stores/Comercial/Contracts/hiddenEnterprisesStore';
+import { useStageCommissionRulesStore } from '@/stores/Comercial/Contracts/stageCommissionRulesStore';
+import { useEnterpriseValueRulesStore } from '@/stores/Comercial/Contracts/enterpriseValueRulesStore';
+import { useTrSatelliteStore } from '@/stores/Comercial/Contracts/trSatelliteStore';
 
-import Favorite from '@/components/config/Favorite.vue';
-import PageContainer from '@/components/UI/PageContainer.vue';
-import PageHeader from '@/components/UI/PageHeader.vue';
-import PageHelp from '@/components/UI/PageHelp.vue';
+import Modal from '@/components/UI/Modal.vue';
 import Surface from '@/components/UI/Surface.vue';
 import Badge from '@/components/UI/Badge.vue';
 import Button from '@/components/UI/Button.vue';
 import Spinner from '@/components/UI/Spinner.vue';
 import EmptyState from '@/components/UI/EmptyState.vue';
 
+const props = defineProps({ open: { type: Boolean, default: false } });
+const emit = defineEmits(['close']);
+
 const contractsStore = useContractsStore();
+const hiddenStore = useHiddenEnterprisesStore();
+const commissionRulesStore = useStageCommissionRulesStore();
+const valueRulesStore = useEnterpriseValueRulesStore();
+const trSatStore = useTrSatelliteStore();
 
 const isAdmin = computed(() => {
   try { return localStorage.getItem('role') === 'admin'; } catch { return false; }
 });
 
 const loading = ref(false);
-const closings = ref([]);           // [{ period, status, version, totals, open_divergences, ... }]
-const expanded = ref(null);         // period expandido
-const detail = ref(null);           // fechamento carregado (com divergências)
+const closings = ref([]);
+const expanded = ref(null);
+const detail = ref(null);
 const detailLoading = ref(false);
 const savingPeriod = ref(null);
 const checkingNow = ref(false);
@@ -43,11 +52,9 @@ const authHeaders = () => ({
 
 const formatCurrency = (v) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(v) || 0);
-const formatDate = (v) => (v ? dayjs(v).format('DD/MM/YYYY') : '—');
 const formatDateTime = (v) => (v ? dayjs(v).format('DD/MM/YYYY HH:mm') : '—');
 const monthLabel = (period) => dayjs(`${period}-01`).format('MMMM [de] YYYY');
 
-// Últimos 18 meses (mês corrente primeiro), casados com os fechamentos do banco.
 const months = computed(() => {
   const byPeriod = new Map(closings.value.map((c) => [c.period, c]));
   const out = [];
@@ -85,7 +92,7 @@ async function toggleExpand(period) {
   finally { detailLoading.value = false; }
 }
 
-// ── Consolidar: calcula com o motor do dashboard e congela no backend ───────
+// ── Consolidar: mesmo motor do dashboard, regras garantidas ─────────────────
 function buildLinesFromStore() {
   const sales = (contractsStore.uniqueSales || [])
     .filter((s) => (s.contracts || []).some((c) => !c._projection));
@@ -125,13 +132,27 @@ async function handleConsolidate(period, isRedo) {
   const label = monthLabel(period);
   const msg = isRedo
     ? `Reconsolidar ${label}? A versão atual fica no histórico e as divergências abertas são resolvidas pelo novo snapshot.`
-    : `Consolidar ${label}? Os números do dashboard neste momento serão congelados como oficiais.`;
+    : `Consolidar ${label}? Os números do dashboard (mês inteiro, sem filtros) serão congelados como oficiais.`;
   if (!window.confirm(msg)) return;
 
   savingPeriod.value = period;
   error.value = null;
+
+  // Guarda o estado do dashboard para devolver exatamente como estava.
+  const prevFilters = { ...contractsStore.filters };
+  const prevGroups = [...contractsStore.selectedGroupIds];
+
   try {
-    // Mesmo motor do dashboard: período inteiro, sem filtro de empresa, sem projeções.
+    // As regras de dinheiro moram em stores próprias — sem elas o cálculo sai
+    // errado (comissão/composição não aplicadas). fetchAll é cacheado.
+    await Promise.all([
+      valueRulesStore.fetchAll(),
+      commissionRulesStore.fetchAll(),
+      trSatStore.fetchAll(),
+      hiddenStore.fetchAll(),
+    ]);
+
+    // Mês inteiro, sem filtro de empresa, sem projeções.
     contractsStore.setSelectedGroups([]);
     contractsStore.setFilters({
       startDate: `${period}-01`,
@@ -154,6 +175,20 @@ async function handleConsolidate(period, isRedo) {
       by_company: aggregateLines(lines, 'company_id', 'company_name'),
     };
 
+    // Trava de sanidade: o que vamos congelar TEM de ser idêntico ao que os
+    // cartões do dashboard mostram. Já aconteceu de o cálculo rodar sem as
+    // regras de comissão carregadas e gravar um VGV menor (R$ 71.722,28 a
+    // menos em jan/2026, justo o uplift do Verona). Divergiu? Não grava.
+    const ref = contractsStore.metrics;
+    const drift = Math.abs((Number(ref.totalValueNet) || 0) - totals.vgv_net);
+    if (ref.totalSales !== totals.count || drift > 0.01) {
+      throw new Error(
+        `Conferência falhou: o dashboard calcula ${ref.totalSales} venda(s) / ` +
+        `${formatCurrency(ref.totalValueNet)} e o fechamento montou ${totals.count} / ` +
+        `${formatCurrency(totals.vgv_net)}. Nada foi consolidado. Recarregue a tela e tente de novo.`
+      );
+    }
+
     const res = await fetch(`${API_URL}/sales-closings/${period}/consolidate`, {
       method: 'POST',
       headers: authHeaders(),
@@ -170,8 +205,10 @@ async function handleConsolidate(period, isRedo) {
     window.alert(e.message || 'Erro ao consolidar.');
   } finally {
     savingPeriod.value = null;
-    // Não deixa o filtro do fechamento vazar para o dashboard.
-    contractsStore.clearFilters();
+    // Devolve o dashboard como o usuário deixou.
+    contractsStore.setFilters(prevFilters);
+    contractsStore.setSelectedGroups(prevGroups);
+    await contractsStore.fetchContracts({ force: true });
   }
 }
 
@@ -240,55 +277,44 @@ const openDivergences = computed(() =>
 const reviewedDivergences = computed(() =>
   (detail.value?.divergences || []).filter((d) => d.status !== 'open'));
 
-onMounted(loadClosings);
+watch(() => props.open, async (isOpen) => {
+  if (!isOpen) return;
+  expanded.value = null;
+  detail.value = null;
+  await loadClosings();
+});
+
+const closeModal = () => emit('close');
 </script>
 
 <template>
-  <div class="min-h-[calc(100vh-3.5rem)]">
-    <PageContainer size="lg">
+  <Modal :open="open" size="xl" title="Consolidação de vendas"
+    subtitle="Congele o resultado oficial de cada mês; mudanças posteriores viram divergências listadas aqui"
+    @close="closeModal">
 
-      <PageHeader
-        subtitle="Congele o resultado oficial de cada mês e acompanhe qualquer mudança posterior."
-        icon="fas fa-file-shield">
-        <template #title>
-          <span>Fechamento de vendas</span>
-          <Favorite :router="'/comercial/fechamento'" :section="'Fechamento'" />
-        </template>
-        <template #actions>
-          <Button v-if="isAdmin" variant="outline" size="sm"
-            :icon="checkingNow ? 'fas fa-circle-notch fa-spin' : 'fas fa-magnifying-glass-chart'"
-            :disabled="checkingNow" @click="handleCheckNow">
-            {{ checkingNow ? 'Verificando...' : 'Verificar divergências agora' }}
-          </Button>
-          <PageHelp
-            storage-key="fechamento-vendas"
-            title="Como usar o Fechamento de vendas"
-            intro="Aqui você consolida (congela) o resultado de vendas de cada mês. O número consolidado vira a fonte oficial — inclusive para a Eme — e não muda sozinho."
-            :steps="[
-              'Confira o mês no Dashboard de vendas. Quando estiver satisfeito, volte aqui.',
-              { title: 'Consolidar', text: 'Clique em Consolidar no mês desejado. Os números do dashboard naquele momento são congelados como oficiais.' },
-              { title: 'Acompanhar', text: 'Todo dia o sistema confere se algo mudou nos meses consolidados (contrato cancelado, data alterada, regra editada). Mudança vira divergência listada aqui e notificada aos admins.' },
-              { title: 'Decidir', text: 'Divergência não altera o consolidado. Você revisa e decide: marcar como revisada (mantém o número) ou reconsolidar (gera nova versão, a anterior fica no histórico).' },
-            ]"
-            :tips="[
-              'A Eme responde perguntas de vendas com o número consolidado; em mês aberto ela avisa que o dado é parcial.',
-              'Reconsolidar não apaga nada: cada versão anterior fica no histórico do mês.',
-            ]"
-          />
-        </template>
-      </PageHeader>
+    <div class="space-y-3">
+
+      <div class="rounded-xl border border-accent/30 bg-accent-soft p-3 text-xs text-ink-muted flex items-start gap-2">
+        <i class="fas fa-circle-info text-accent mt-0.5 shrink-0"></i>
+        <span>
+          Consolidar congela os números do dashboard (mês inteiro, sem filtros) como
+          <strong class="text-ink">fonte oficial</strong> — é o que a Eme responde. Todo dia o sistema
+          confere os meses fechados: qualquer mudança nos dados de origem vira divergência aqui
+          e notifica os admins, <strong class="text-ink">sem alterar o consolidado</strong>.
+        </span>
+      </div>
 
       <div v-if="error"
-        class="mb-4 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2.5 text-xs text-red-700 dark:text-red-300 flex items-center gap-2">
+        class="rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2.5 text-xs text-red-700 dark:text-red-300 flex items-center gap-2">
         <i class="fas fa-circle-exclamation"></i>{{ error }}
       </div>
 
-      <div v-if="loading" class="py-16 flex flex-col items-center gap-3 text-ink-muted">
+      <div v-if="loading" class="py-10 flex flex-col items-center gap-3 text-ink-muted">
         <Spinner size="lg" />
         <p class="text-sm">Carregando fechamentos...</p>
       </div>
 
-      <div v-else class="space-y-2">
+      <div v-else class="space-y-2 max-h-[55vh] overflow-y-auto pr-1">
         <Surface v-for="m in months" :key="m.period" variant="raised" padding="none" class="overflow-hidden">
 
           <!-- Linha do mês -->
@@ -347,7 +373,7 @@ onMounted(loadClosings);
                 <h4 class="text-xs font-semibold text-ink mb-2">
                   <i class="fas fa-building text-[10px] mr-1 text-ink-subtle"></i>Por empreendimento (congelado)
                 </h4>
-                <div class="rounded-lg border border-line bg-surface-raised divide-y divide-line max-h-64 overflow-y-auto">
+                <div class="rounded-lg border border-line bg-surface-raised divide-y divide-line max-h-56 overflow-y-auto">
                   <div v-for="e in (detail.totals?.by_enterprise || [])" :key="`${e.id}`"
                     class="px-3 py-2 flex items-center justify-between gap-2 text-xs">
                     <span class="min-w-0 truncate text-ink">
@@ -419,6 +445,19 @@ onMounted(loadClosings);
           </div>
         </Surface>
       </div>
-    </PageContainer>
-  </div>
+    </div>
+
+    <template #footer>
+      <p class="text-[10px] text-ink-subtle leading-tight mr-auto hidden sm:block">
+        A vigilância roda todo dia após o sync de contratos.<br>
+        Reconsolidar versiona a anterior e resolve as divergências abertas.
+      </p>
+      <Button v-if="isAdmin" variant="outline" size="sm"
+        :icon="checkingNow ? 'fas fa-circle-notch fa-spin' : 'fas fa-magnifying-glass-chart'"
+        :disabled="checkingNow" @click="handleCheckNow">
+        {{ checkingNow ? 'Verificando...' : 'Verificar divergências agora' }}
+      </Button>
+      <Button variant="ghost" @click="closeModal">Fechar</Button>
+    </template>
+  </Modal>
 </template>

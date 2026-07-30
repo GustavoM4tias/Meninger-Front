@@ -10,7 +10,7 @@ import SegmentedControl from '@/components/UI/SegmentedControl.vue';
 import Badge from '@/components/UI/Badge.vue';
 
 const props = defineProps({ data: { type: Array, required: true } });
-const emit = defineEmits(['open-land-sync', 'selection-metrics']);
+const emit = defineEmits(['open-land-sync', 'open-closing', 'selection-metrics']);
 
 const contractsStore = useContractsStore();
 // Ordenação pelo CABEÇALHO da tabela (padrão do sistema) — o dropdown de
@@ -492,6 +492,8 @@ const onViewChange = (mode) => {
         <SegmentedControl v-model="groupByProxy" :options="groupByOptions" size="sm" />
         <IconButton v-if="isAdmin" icon="fas fa-cog" size="sm" label="Configurar regras" class="md:max-w-20"
           @click="emit('open-land-sync')" />
+        <IconButton v-if="isAdmin" icon="fas fa-file-shield" size="sm" label="Consolidação (fechamento mensal)"
+          class="md:max-w-20" @click="emit('open-closing')" />
         <IconButton icon="fas fa-download" size="md" label="Exportar dados" @click="open = true" />
         <div class="ml-auto flex items-center gap-2 flex-wrap">
           <SegmentedControl :model-value="lastView" :options="viewOptions" size="sm" @select="onViewChange" />
