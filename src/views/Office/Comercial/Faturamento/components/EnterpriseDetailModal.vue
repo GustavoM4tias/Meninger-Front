@@ -501,6 +501,10 @@ const toggleDetails = (sale) => {
 const saleIsProjection = (sale) =>
   (sale.contracts || []).every((c) => c._projection);
 
+// Venda distratada (contrato cancelado no Sienge depois da venda). Continua
+// contabilizada — o selo é só informativo; regra mora no contractsStore.
+const saleIsDistrato = (sale) => contractsStore.saleIsDistrato(sale);
+
 /* ===================== detalhe/condições ===================== */
 const displayedConditions = (contract) => {
   const landOnly = contractsStore.isLandOnlyForContract(contract);
@@ -992,6 +996,10 @@ const closeModal = () => emit('close');
                         </p>
                       </div>
                       <div class="flex items-center gap-2 shrink-0">
+                        <Badge v-if="saleIsDistrato(sale)" variant="warning" size="sm"
+                          v-tippy="'Contrato cancelado no Sienge depois da venda — contabilizada no período, pois na época foi venda'">
+                          <i class="fas fa-file-circle-xmark text-[9px]"></i>Distratada
+                        </Badge>
                         <Badge v-if="saleIsProjection(sale)" variant="success" size="sm">
                           <i class="fas fa-chart-line text-[9px]"></i>Projeção
                         </Badge>

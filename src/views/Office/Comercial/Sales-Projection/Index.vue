@@ -210,7 +210,7 @@ const combinedData = computed(() => {
       const restricted = (proj && cid != null) ? projOnlyAggByCompany.get(cid) : null;
       const effectiveRow = restricted ? { ...row, ...restricted } : row;
 
-      // Mesma conta do Faturamento (desconta distrato, soma projeção vinculada).
+      // Mesma conta do Faturamento (distrato conta, soma projeção vinculada).
       const realizedVgv = contractsStore.combinedValueForRow(effectiveRow);
       const projectedVgv = proj?.projected_vgv ?? 0;
       const projectedUnits = proj?.projected_units ?? 0;
@@ -260,7 +260,7 @@ const combinedData = computed(() => {
       if (eidStr) seen.add(eidStr);
 
       const proj = getProj(row);
-      // Mesma conta do Faturamento (desconta distrato, soma projeção vinculada).
+      // Mesma conta do Faturamento (distrato conta, soma projeção vinculada).
       const effectiveRealized = contractsStore.combinedValueForRow(row);
       const projectedVgv = proj?.summary?.projected_vgv ?? 0;
       const projectedUnits = proj?.summary?.projected_units ?? 0;
@@ -330,7 +330,7 @@ const fullSummaryMetrics = computed(() => {
   // 1) Numerador — soma realizado (em unidades OU vgv) de TODOS os
   //    empreendimentos com vendas, no mode efetivo de cada um.
   //    Os getters combined*ForRow são os MESMOS que o Faturamento usa: já
-  //    descontam distrato e somam a projeção de workflow vinculada.
+  //    contam distrato normalmente e somam a projeção de workflow vinculada.
   for (const entRow of contractsStore.salesByEnterprise) {
     const eid = entRow.enterprise_id != null ? Number(entRow.enterprise_id) : null;
     if (goalStore.modeForEnterprise(eid) === 'units') {

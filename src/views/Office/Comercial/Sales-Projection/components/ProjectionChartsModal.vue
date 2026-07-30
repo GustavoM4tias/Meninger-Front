@@ -948,7 +948,8 @@ const openDetail = (row) => {
             <div class="text-sm text-ink-muted leading-relaxed">
               <strong class="text-ink">Como interpretar este relatório:</strong> os dados mostram quanto cada empreendimento
               <strong class="text-ink">realizou</strong> versus o <strong class="text-ink">planejado</strong> para o período.
-              O cálculo considera vendas reais (Sienge), pipeline em workflow (CRM) e descontos de distratos.
+              O cálculo considera vendas reais (Sienge) e pipeline em workflow (CRM). Vendas distratadas
+              depois continuam contando no período (na época foram venda) e recebem um selo âmbar.
             </div>
           </div>
 
@@ -965,17 +966,16 @@ const openDetail = (row) => {
               </div>
               <div class="rounded-lg border border-line bg-surface-sunken p-3 font-mono text-xs text-ink leading-relaxed">
                 <div>Realizado =</div>
-                <div class="ml-3">+ Vendas autorizadas (Sienge)</div>
+                <div class="ml-3">+ Vendas com data da inst. financeira (Sienge)</div>
                 <div class="ml-3">+ Pipeline workflow (CRM)</div>
-                <div class="ml-3">− Distratos</div>
               </div>
               <ul class="text-xs text-ink-muted space-y-1.5">
                 <li class="flex items-start gap-2"><i class="fas fa-circle-check text-emerald-500 mt-0.5 text-[10px]"></i>
-                  <span>Vendas autorizadas vêm dos contratos emitidos no Sienge filtrados pelo período.</span></li>
+                  <span>Vendas vêm dos contratos do Sienge com data da instituição financeira no período.</span></li>
                 <li class="flex items-start gap-2"><i class="fas fa-circle-check text-emerald-500 mt-0.5 text-[10px]"></i>
                   <span>Workflow é o pipeline de reservas/repasses em fluxos selecionados nos filtros.</span></li>
-                <li class="flex items-start gap-2"><i class="fas fa-circle-xmark text-red-500 mt-0.5 text-[10px]"></i>
-                  <span>Distratos (status "distrato" no repasse) são descontados do total.</span></li>
+                <li class="flex items-start gap-2"><i class="fas fa-circle-check text-amber-500 mt-0.5 text-[10px]"></i>
+                  <span>Vendas distratadas depois continuam contando — recebem apenas o selo âmbar.</span></li>
               </ul>
             </Surface>
 
@@ -1072,18 +1072,18 @@ const openDetail = (row) => {
           <!-- Distratos -->
           <Surface variant="raised" padding="md" class="space-y-3">
             <div class="flex items-center gap-2">
-              <i class="fas fa-rotate-left text-red-500 text-sm"></i>
+              <i class="fas fa-file-circle-xmark text-amber-500 text-sm"></i>
               <h3 class="text-sm font-semibold text-ink">Distratos</h3>
             </div>
             <p class="text-xs text-ink-muted leading-relaxed">
-              Vendas que foram canceladas (distrato) <strong class="text-ink">não contam como venda</strong>.
-              Aparecem como <span class="font-mono text-red-500 font-semibold">−N</span> na coluna de vendas e
-              <span class="font-mono text-red-500 font-semibold">−R$</span> na coluna de valor, em vermelho,
-              para deixar visível o impacto no resultado.
+              Venda com data da instituição financeira <strong class="text-ink">continua contando</strong> mesmo
+              que o contrato tenha sido cancelado (distrato) depois — na época foi venda. O marcador
+              <span class="font-mono text-amber-500 font-semibold">âmbar</span> na coluna de vendas e de valor
+              indica quantas vendas da linha foram distratadas, apenas para informação.
             </p>
             <p class="text-xs text-ink-muted leading-relaxed">
-              <i class="fas fa-circle-info text-red-500 text-[10px] mr-1"></i>
-              A coluna "Realizado" já é o valor <strong class="text-ink">líquido</strong> (após subtrair distratos).
+              <i class="fas fa-circle-info text-amber-500 text-[10px] mr-1"></i>
+              Um relatório dedicado de distratos, com as datas e valores corretos, virá em breve.
             </p>
           </Surface>
         </div>

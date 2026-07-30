@@ -542,8 +542,9 @@ const onViewChange = (mode) => {
               <span v-if="!enterprise.onlyProjectionRow && enterprise.proj_count"
                 class="text-emerald-500 font-semibold">+{{ enterprise.proj_count }}</span>
               <span v-if="!enterprise.onlyProjectionRow && distratoCount(enterprise) > 0"
-                class="text-red-500 font-semibold" v-tippy="'Distratos (não contabilizados)'">−{{
-                  distratoCount(enterprise) }}</span>
+                class="text-amber-500 font-semibold"
+                v-tippy="'Distratada(s) depois da venda — contabilizadas no período'">
+                <i class="fas fa-file-circle-xmark text-[10px]"></i>{{ distratoCount(enterprise) }}</span>
             </span>
           </div>
 
@@ -644,9 +645,9 @@ const onViewChange = (mode) => {
                 </span>
 
                 <span v-if="!enterprise.onlyProjectionRow && distratoCount(enterprise) > 0"
-                  class="absolute -bottom-3 -right-2 text-[10px] font-bold text-red-500 font-mono"
-                  v-tippy="'Distratos (não contabilizados)'">
-                  −{{ distratoCount(enterprise) }}
+                  class="absolute -bottom-3 -right-2 text-[10px] font-bold text-amber-500 font-mono"
+                  v-tippy="'Distratada(s) depois da venda — contabilizadas no período'">
+                  <i class="fas fa-file-circle-xmark text-[9px]"></i>{{ distratoCount(enterprise) }}
                 </span>
               </div>
             </td>
@@ -661,8 +662,9 @@ const onViewChange = (mode) => {
                 +{{ formatCurrency(appendedValue(enterprise)) }}
               </div>
               <div v-if="!enterprise.onlyProjectionRow && distratoValue(enterprise) > 0"
-                class="text-[11px] text-red-500 font-mono tabular-nums" v-tippy="'Distratos (não contabilizados)'">
-                −{{ formatCurrency(distratoValue(enterprise)) }}
+                class="text-[11px] text-amber-500 font-mono tabular-nums"
+                v-tippy="'Valor de vendas distratadas — incluído no total'">
+                <i class="fas fa-file-circle-xmark text-[9px]"></i> {{ formatCurrency(distratoValue(enterprise)) }}
               </div>
             </td>
 

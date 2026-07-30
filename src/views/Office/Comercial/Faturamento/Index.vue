@@ -84,7 +84,7 @@ onMounted(loadData);
             ]"
             :tips="[
               'O número verde com + são projeções de reservas/repasses ainda não contratados, somadas à parte.',
-              'O número vermelho com − são distratos, que já saíram do total.',
+              'O marcador âmbar são vendas distratadas depois — elas continuam contando no período, porque na época foram venda.',
               'Exportar gera uma planilha com exatamente o que está na tela.',
             ]"
           />
