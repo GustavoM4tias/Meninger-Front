@@ -17,6 +17,7 @@ import DashboardFilters from './components/DashboardFilters.vue';
 import MetricsCards from './components/MetricsCards.vue';
 import EnterprisesSalesTable from './components/EnterprisesSalesTable.vue';
 import LandSyncConfigModal from './components/LandSyncConfigModal.vue';
+import ClosingModal from './components/ClosingModal.vue';
 
 const contractsStore = useContractsStore();
 const hiddenStore = useHiddenEnterprisesStore();
@@ -24,6 +25,7 @@ const stageCommissionRulesStore = useStageCommissionRulesStore();
 const valueRulesStore = useEnterpriseValueRulesStore();
 const trSatelliteStore = useTrSatelliteStore();
 const isLandSyncModalOpen = ref(false);
+const isClosingModalOpen = ref(false);
 const selectionMetrics = ref(null);
 const loading = ref(false);
 
@@ -120,11 +122,15 @@ onMounted(loadData);
         <EnterprisesSalesTable
           :data="contractsStore.salesDashboard"
           @selection-metrics="selectionMetrics = $event"
-          @open-land-sync="isLandSyncModalOpen = true" />
+          @open-land-sync="isLandSyncModalOpen = true"
+          @open-closing="isClosingModalOpen = true" />
       </div>
     </PageContainer>
 
     <!-- Modal terreno externo -->
     <LandSyncConfigModal :open="isLandSyncModalOpen" @close="isLandSyncModalOpen = false" />
+
+    <!-- Modal de consolidação (fechamento mensal) — admin -->
+    <ClosingModal :open="isClosingModalOpen" @close="isClosingModalOpen = false" />
   </div>
 </template>
