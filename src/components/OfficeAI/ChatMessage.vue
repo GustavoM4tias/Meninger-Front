@@ -42,6 +42,28 @@ const isUser = computed(() => props.message.role === 'user');
 const isError = computed(() => props.message.response_type === 'error');
 const warning = computed(() => props.message.metadata?.warning || null);
 
+// Aparência do aviso do validador:
+//  corrected  → a Eme reescreveu a resposta com os dados reais (informativo)
+//  unreliable → a divergência persistiu: a resposta NÃO deve ser usada (alerta)
+//  notice     → avisos legados (resposta cortada, filtro do modelo)
+const warningStyle = computed(() => ({
+  corrected: {
+    box: 'bg-sky-500/10 border-sky-500/25 text-sky-700 dark:text-sky-300',
+    icon: 'fas fa-wand-magic-sparkles text-sky-500',
+    title: 'Resposta corrigida automaticamente',
+  },
+  unreliable: {
+    box: 'bg-red-500/10 border-red-500/30 text-red-700 dark:text-red-300',
+    icon: 'fas fa-circle-exclamation text-red-500',
+    title: 'Resposta não confiável',
+  },
+  notice: {
+    box: 'bg-amber-500/10 border-amber-500/20 text-amber-700 dark:text-amber-300',
+    icon: 'fas fa-triangle-exclamation text-amber-500',
+    title: null,
+  },
+}[warning.value?.kind || 'notice']));
+
 // Detecta o módulo da action olhando em vários lugares (context.source, source
 // top-level e tipo) — robusto a variações entre tools.
 const actionSource = computed(() => {
@@ -108,14 +130,17 @@ const stepsOpen = ref(false);
           Resposta interrompida antes do fim.
         </p>
 
-        <!-- Warning anti-alucinação: número/nome não verificado no texto -->
+        <!-- Validador: resposta corrigida / não confiável / aviso do modelo -->
         <div v-if="warning"
-          class="flex items-start gap-2 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-700 dark:text-amber-300">
-          <i class="fas fa-triangle-exclamation mt-0.5 text-amber-500"></i>
+          class="flex items-start gap-2 px-3 py-2 rounded-xl border text-xs"
+          :class="warningStyle.box">
+          <i class="mt-0.5 shrink-0" :class="warningStyle.icon"></i>
           <div class="min-w-0">
-            <p>{{ warning.message }}</p>
-            <p v-if="warning.details?.length" class="text-[10px] opacity-80 mt-0.5 break-words">
-              Valor(es) suspeito(s): {{ warning.details.map(d => d.value).join(', ') }}
+            <p v-if="warningStyle.title" class="font-semibold">{{ warningStyle.title }}</p>
+            <p :class="warningStyle.title ? 'mt-0.5' : ''">{{ warning.message }}</p>
+            <p v-if="warning.kind === 'unreliable' && warning.details?.length"
+              class="text-[10px] opacity-80 mt-1 break-words">
+              Não use estes valores do texto: {{ warning.details.map(d => d.value).join(', ') }}
             </p>
           </div>
         </div>
