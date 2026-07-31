@@ -239,12 +239,27 @@ export const useOfficeAIStore = defineStore('officeAI', () => {
         break
 
       case 'warning':
-        // Validador anti-alucinação detectou número/nome suspeito — anexa flag
-        // ao último/próximo assistant message (será exibido como tag amarela)
+        // Validador anti-alucinação. `kind`: 'corrected' (a Eme reescreveu a
+        // resposta com os dados reais) | 'unreliable' (divergência persistiu —
+        // a resposta não é confiável) | undefined (avisos legados: MAX_TOKENS,
+        // filtro do modelo). O ChatMessage escolhe a aparência por kind.
         pendingWarning.value = {
+          kind: evt.kind || 'notice',
+          corrected: !!evt.corrected,
           message: evt.message || 'Possível inconsistência na resposta.',
           details: evt.details || [],
         }
+        break
+
+      case 'status':
+        // Etapa interna do agente sem tool associada (ex.: conferindo números).
+        // `verbatim` = o label já é a frase completa (não vira "Consultando X").
+        agentSteps.value.push({
+          name: evt.stage || 'status',
+          label: evt.message || 'Processando…',
+          status: 'running',
+          verbatim: true,
+        })
         break
 
       case 'tool_start':

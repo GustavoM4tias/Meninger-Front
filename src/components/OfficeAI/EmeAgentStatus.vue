@@ -27,7 +27,8 @@ const runningStep = computed(() => aiStore.agentSteps.find(s => s.status === 'ru
 const finishedSteps = computed(() => aiStore.agentSteps.filter(s => s.status !== 'running'))
 
 const currentLabel = computed(() => {
-  if (runningStep.value) return `Consultando ${runningStep.value.label}…`
+  const s = runningStep.value
+  if (s) return s.verbatim ? s.label : `Consultando ${s.label}…`
   if (aiStore.streamingText) return 'Escrevendo a resposta…'
   if (finishedSteps.value.length) return 'Analisando os dados…'
   return 'Pensando…'
