@@ -280,6 +280,12 @@ export default [
                     // Tela unificada: o antigo relatório virou aba da tela de Imobiliárias.
                     { path: 'imobiliarias-report', redirect: '/comercial/imobiliarias' },
                     {
+                        path: 'correspondentes',
+                        name: 'Correspondentes',
+                        component: () => import('@/views/Office/Comercial/Correspondentes/Index.vue'),
+                        meta: { requiresAuth: true, searchable: true, content: 'Empresas correspondentes e suas equipes no CV — cadastro em lote por colagem e conferência do resultado' },
+                    },
+                    {
                         path: 'mcmv',
                         name: 'MCMV — Limites por Cidade',
                         component: () => import('@/views/Office/Comercial/Mcmv/Index.vue'),
