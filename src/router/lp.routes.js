@@ -19,6 +19,14 @@ export default [
         meta: { requiresAuth: false },
     },
     {
+        // Auto-cadastro da equipe de uma correspondente - link gerado na tela
+        // Comercial > Correspondentes do Office (reutilizável, com prazo opcional).
+        path: '/correspondente/:token',
+        name: 'LpCorrespondente',
+        component: () => import('@/views/Lp/Correspondente.vue'),
+        meta: { requiresAuth: false },
+    },
+    {
         path: '/:slug',
         name: 'LpPage',
         component: () => import('@/views/Lp/Page.vue'),

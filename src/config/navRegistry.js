@@ -123,6 +123,7 @@ export const navRegistry = [
                     // Tela única com abas internas (Geral/Lançamentos/Em Obras/…) → um só item.
                     { route: '/comercial/buildings', name: 'Empreendimentos', icon: 'fas fa-building' },
                     { route: '/comercial/imobiliarias', section: 'Imobiliárias', name: 'Imobiliárias', icon: 'fas fa-house-flag' },
+                    { route: '/comercial/correspondentes', section: 'Correspondentes', name: 'Correspondentes', icon: 'fas fa-people-group' },
                 ],
             },
             {
