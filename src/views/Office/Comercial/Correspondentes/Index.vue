@@ -79,8 +79,8 @@ onMounted(() => {
                     intro="A aba Equipes lista as empresas correspondentes e quem trabalha em cada uma. A aba Cadastros mostra tudo que foi cadastrado por aqui e se deu certo de verdade."
                     :steps="[
                         { title: 'Cadastre a empresa', text: 'Clique em Nova empresa e preencha. A região vai sozinha pela UF. Como o CV não devolve o código da empresa nova, a tela já sugere o próximo número da sequência: confirme no botão Vincular e as pessoas ficam liberadas.' },
-                        { title: 'Cole a equipe', text: 'Clique em Cadastrar pessoas, escolha a empresa e cole o texto do WhatsApp com nome, e-mail, CPF e nascimento. A tela separa pessoa por pessoa e mostra o que entendeu antes de enviar.' },
-                        { title: 'Revise a prévia', text: 'Confira os avisos: CPF inválido, e-mail faltando ou pessoa já cadastrada. Dá para corrigir na hora e desmarcar quem não deve entrar.' },
+                        { title: 'Cadastre a equipe', text: 'Clique em Cadastrar pessoas, escolha a empresa e preencha uma pessoa por vez (nome, e-mail, CPF e nascimento). Cada Adicionar joga a pessoa na lista de baixo; nada vai ao CV antes de você clicar em Cadastrar.' },
+                        { title: 'Revise a lista', text: 'Confira os avisos: CPF inválido, e-mail faltando ou pessoa já cadastrada. Dá para corrigir na hora, desmarcar ou tirar da lista. Se a equipe inteira veio de uma vez, a aba Colar lista lê o texto e enche a mesma lista.' },
                         { title: 'Acompanhe', text: 'Depois de enviar, a tela confere no CV quem realmente entrou. Quem falhar aparece na aba Cadastros com o motivo e um botão de reenviar.' },
                     ]"
                     :tips="[
