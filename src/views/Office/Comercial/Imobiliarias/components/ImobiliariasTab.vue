@@ -9,6 +9,7 @@ import { useRealEstateStore } from '@/stores/Comercial/RealEstate/realEstateStor
 import { whatsappUrl, mailtoUrl } from '@/utils/contactLinks';
 
 import Badge from '@/components/UI/Badge.vue';
+import Button from '@/components/UI/Button.vue';
 import Input from '@/components/UI/Input.vue';
 import Select from '@/components/UI/Select.vue';
 import Spinner from '@/components/UI/Spinner.vue';
@@ -43,6 +44,39 @@ const VINCULO_OPTIONS = [
     { value: '', label: 'Com e sem empreendimento' },
 ];
 
+// Ordenação é adição pura: os filtros e seus padrões seguem os mesmos.
+const ordem = ref('nome');
+const ORDEM_OPTIONS = [
+    { value: 'nome', label: 'Nome (A-Z)' },
+    { value: 'empreendimentos', label: 'Mais empreendimentos' },
+    { value: 'recentes', label: 'Cadastro mais recente' },
+];
+
+// ── Casca padrão de filtros (recolhível, igual ao resto do Office) ───────────
+const isExpanded = ref(typeof window !== 'undefined' && window.innerWidth >= 1024);
+
+const activeFiltersCount = computed(() => {
+    let n = 0;
+    if (q.value.trim()) n++;
+    if (situacao.value !== 'S') n++;
+    if (vinculo.value !== 'com') n++;
+    if (cidade.value) n++;
+    if (empreendimento.value) n++;
+    if (ordem.value !== 'nome') n++;
+    return n;
+});
+
+// Limpar devolve aos PADRÕES da tela (ativas + com empreendimento), não a
+// "tudo vazio" - senão a lista mudaria de significado no clique.
+function limparFiltros() {
+    q.value = '';
+    situacao.value = 'S';
+    vinculo.value = 'com';
+    cidade.value = '';
+    empreendimento.value = '';
+    ordem.value = 'nome';
+}
+
 const norm = (s) => String(s || '').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
 
 const all = computed(() => store.report?.imobiliarias || []);
@@ -61,7 +95,7 @@ const empreendimentoOptions = computed(() => {
         ...[...set].sort((a, b) => a.localeCompare(b)).map(e => ({ value: e, label: e }))];
 });
 
-const rows = computed(() => all.value.filter(i => {
+const filtradas = computed(() => all.value.filter(i => {
     if (situacao.value && i.ativo !== situacao.value) return false;
     const nVinculos = (i.empreendimentos || []).length;
     if (vinculo.value === 'com' && !nVinculos) return false;
@@ -79,6 +113,19 @@ const rows = computed(() => all.value.filter(i => {
     }
     return true;
 }));
+
+const rows = computed(() => {
+    const lista = [...filtradas.value];
+    if (ordem.value === 'empreendimentos') {
+        return lista.sort((a, b) =>
+            (b.empreendimentos?.length || 0) - (a.empreendimentos?.length || 0)
+            || String(a.nome).localeCompare(String(b.nome)));
+    }
+    if (ordem.value === 'recentes') {
+        return lista.sort((a, b) => String(b.data_cad || '').localeCompare(String(a.data_cad || '')));
+    }
+    return lista.sort((a, b) => String(a.nome).localeCompare(String(b.nome)));
+});
 
 // ── Detalhe / gerente (por ID contra a store: refetch atualiza o modal) ──────
 const selectedId = ref(null);
@@ -112,14 +159,39 @@ onMounted(() => { if (!all.value.length) store.fetchReport(); });
 
 <template>
     <div>
-        <!-- Filtros -->
-        <div class="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-4">
-            <Input v-model="q" placeholder="Buscar nome, CNPJ, gerente..." icon-left="fas fa-magnifying-glass" class="col-span-2 lg:col-span-1" />
-            <Select v-model="situacao" :options="SITUACAO_OPTIONS" />
-            <Select v-model="vinculo" :options="VINCULO_OPTIONS" />
-            <Select v-model="cidade" :options="cidadeOptions" placeholder="Todas as cidades" />
-            <Select v-model="empreendimento" :options="empreendimentoOptions" placeholder="Todos os empreendimentos" />
-        </div>
+        <!-- Filtros (padrão do sistema: seção recolhível + toolbar) -->
+        <section class="rounded-xl border border-line bg-surface-raised shadow-soft surface-gradient mb-4">
+            <div class="filters-toolbar">
+                <button class="filters-toolbar-trigger" @click="isExpanded = !isExpanded">
+                    <i class="fas fa-filter text-xs text-ink-muted"></i>
+                    <span>Filtros</span>
+                    <Badge v-if="activeFiltersCount" variant="accent" size="sm">
+                        {{ activeFiltersCount }} ativo{{ activeFiltersCount > 1 ? 's' : '' }}
+                    </Badge>
+                    <i class="fas fa-chevron-down text-[10px] text-ink-subtle transition-transform duration-200"
+                        :class="{ 'rotate-180': isExpanded }"></i>
+                </button>
+
+                <div class="ml-auto flex items-center gap-1.5">
+                    <Button variant="ghost" size="sm" icon="fas fa-eraser" @click="limparFiltros">
+                        <span class="hidden sm:inline">Limpar</span>
+                    </Button>
+                </div>
+            </div>
+
+            <div v-show="isExpanded" class="p-3 sm:p-4 animate-fade-in">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    <Input v-model="q" label="Buscar" placeholder="Nome, CNPJ, gerente ou e-mail"
+                        icon-left="fas fa-magnifying-glass" />
+                    <Select v-model="situacao" :options="SITUACAO_OPTIONS" label="Situação" />
+                    <Select v-model="vinculo" :options="VINCULO_OPTIONS" label="Vínculo" />
+                    <Select v-model="cidade" :options="cidadeOptions" label="Cidade" placeholder="Todas as cidades" />
+                    <Select v-model="empreendimento" :options="empreendimentoOptions" label="Empreendimento"
+                        placeholder="Todos os empreendimentos" />
+                    <Select v-model="ordem" :options="ORDEM_OPTIONS" label="Ordenar por" />
+                </div>
+            </div>
+        </section>
 
         <!-- Resumo -->
         <div class="flex flex-wrap items-center gap-2 mb-4 text-xs text-ink-muted">
