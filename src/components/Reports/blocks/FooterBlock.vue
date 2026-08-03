@@ -54,7 +54,7 @@ const periodo = computed(() => {
         <span class="font-medium text-ink-muted">Período:</span> {{ periodo }}
         <span
           v-if="isLive"
-          class="ml-1.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-accent-soft text-accent font-medium"
+          class="rp-live-badge ml-1.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-accent-soft text-accent font-medium"
         >
           <span aria-hidden="true" class="w-1.5 h-1.5 rounded-full bg-accent"></span>ao vivo
         </span>

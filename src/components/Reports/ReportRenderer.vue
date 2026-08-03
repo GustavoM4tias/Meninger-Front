@@ -69,7 +69,7 @@ defineExpose({ scrollToBlock })
       <span class="text-[10px] uppercase tracking-[0.18em] text-ink-subtle">Menin Office</span>
       <span
         v-if="meta?.dataMode === 'live'"
-        class="ml-auto inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent-soft text-accent text-[10px] font-semibold"
+        class="rp-live-badge ml-auto inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent-soft text-accent text-[10px] font-semibold"
       >
         <span aria-hidden="true" class="w-1.5 h-1.5 rounded-full bg-accent"></span>ao vivo
       </span>
