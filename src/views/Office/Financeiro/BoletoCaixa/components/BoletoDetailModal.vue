@@ -201,7 +201,16 @@ const enrichedTimeline = computed(() => {
       _virtual: true,
     });
   }
-  return events;
+  // Mais recente primeiro: numa reserva com várias tentativas a lista fica
+  // longa, e o que interessa (o que acabou de acontecer) ficava lá no fim,
+  // exigindo rolar tudo. O item virtual de situação agendada é sempre o mais
+  // futuro, então naturalmente encabeça a lista.
+  return events.sort((a, b) => {
+    const ta = new Date(a.created_at).getTime() || 0;
+    const tb = new Date(b.created_at).getTime() || 0;
+    if (tb !== ta) return tb - ta;
+    return (Number(b.id) || 0) - (Number(a.id) || 0); // desempate estável
+  });
 });
 
 // ── Tentativas (boletos) da reserva — histórico consolidado ─────────────────
