@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import EditEventModal from './EditEventModal.vue';
+import PlannedItemsSection from './PlannedItemsSection.vue';
 import { deleteEvent } from '@/utils/Event/apiEvents';
 import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 
@@ -155,6 +156,9 @@ const creatorAvatar = computed(() => {
           <p class="text-[10px] font-mono uppercase tracking-wider text-ink-subtle mb-1.5">Descrição</p>
           <p class="text-sm text-ink leading-relaxed whitespace-pre-line">{{ event.description }}</p>
         </section>
+
+        <!-- Só aparece quando o evento veio do Plano de Eventos (Comercial). -->
+        <PlannedItemsSection :event-id="event.id" />
 
         <section v-if="event.address && (event.address.street || event.address.zip_code)">
           <p class="text-[10px] font-mono uppercase tracking-wider text-ink-subtle mb-1.5">Endereço</p>

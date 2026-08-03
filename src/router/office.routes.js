@@ -272,6 +272,24 @@ export default [
                         meta: { requiresAuth: true, searchable: false, content: 'Detalhe da Ficha Comercial' },
                     },
                     {
+                        path: 'plano-eventos',
+                        name: 'Plano de Eventos',
+                        component: () => import('@/views/Office/Comercial/EventPlan/Index.vue'),
+                        meta: { requiresAuth: true, searchable: true, content: 'Plano de Eventos — proposta mensal de eventos comerciais por empreendimento' },
+                    },
+                    {
+                        path: 'plano-eventos/settings',
+                        name: 'Plano de Eventos Configurações',
+                        component: () => import('@/views/Office/Comercial/EventPlan/Settings.vue'),
+                        meta: { requiresAuth: true, requiresAdmin: true, searchable: false, content: 'Configurações do Plano de Eventos' },
+                    },
+                    {
+                        path: 'plano-eventos/:id',
+                        name: 'Plano de Eventos Detalhe',
+                        component: () => import('@/views/Office/Comercial/EventPlan/Detail.vue'),
+                        meta: { requiresAuth: true, searchable: false, content: 'Detalhe do plano de eventos do mês' },
+                    },
+                    {
                         path: 'imobiliarias',
                         name: 'Imobiliárias',
                         component: () => import('@/views/Office/Comercial/Imobiliarias/Index.vue'),
