@@ -178,7 +178,6 @@ onMounted(() => {
                     <div class="min-w-0 flex-1">
                         <p class="text-sm text-ink truncate">
                             {{ r.nome }}
-                            <i v-if="r.gerente" class="fas fa-user-tie ml-1 text-[10px] text-accent" v-tippy="'Gerente'"></i>
                             <i v-if="r.origem === 'link'" class="fas fa-link ml-1 text-[10px] text-ink-subtle"
                                 v-tippy="'Cadastrado pela própria correspondente, via link'"></i>
                         </p>

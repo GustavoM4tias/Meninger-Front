@@ -3,7 +3,7 @@
 // princípio do detalhe de Imobiliárias. Tudo que a tela sabe da empresa cabe
 // aqui, para não obrigar ninguém a abrir o CV só para conferir um contato.
 
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { whatsappUrl, mailtoUrl } from '@/utils/contactLinks';
 import { cvUsuariosUrl, cvEmpresasUrl } from '@/utils/cvLinks';
 
@@ -27,13 +27,15 @@ const fmtCpf = (c) => {
 const fmtData = (d) => (d ? new Date(`${String(d).slice(0, 10)}T12:00:00`).toLocaleDateString('pt-BR') : null);
 const fmtDataHora = (d) => (d ? new Date(d).toLocaleDateString('pt-BR') : '-');
 
-const ativos = computed(() => (e.value?.usuarios || []).filter(u => u.ativo_login).length);
+const porNome = (a, b) => String(a.nome).localeCompare(String(b.nome));
 
-// Ordena: gerentes primeiro, depois por nome.
-const equipe = computed(() => [...(e.value?.usuarios || [])].sort((a, b) => {
-    if (a.gerente !== b.gerente) return a.gerente ? -1 : 1;
-    return String(a.nome).localeCompare(String(b.nome));
-}));
+// Quem tem login ativo é o que interessa no dia a dia. Inativo vai para o fim,
+// recolhido, e só aparece quando existe.
+const equipe = computed(() => (e.value?.usuarios || []).filter(u => u.ativo_login).sort(porNome));
+const inativos = computed(() => (e.value?.usuarios || []).filter(u => !u.ativo_login).sort(porNome));
+
+const verInativos = ref(false);
+watch(() => e.value?.cv_idempresa, () => { verInativos.value = false; });
 
 const dados = computed(() => {
     if (!e.value) return [];
@@ -69,18 +71,14 @@ const dados = computed(() => {
             </div>
 
             <!-- Números -->
-            <div class="grid grid-cols-3 gap-2 mb-4">
+            <div class="grid grid-cols-2 gap-2 mb-4">
+                <div class="rounded-xl border border-line bg-surface-sunken/50 px-3 py-2.5 text-center">
+                    <p class="text-lg font-semibold text-ink leading-none">{{ equipe.length }}</p>
+                    <p class="text-[11px] text-ink-muted mt-1">com acesso ativo</p>
+                </div>
                 <div class="rounded-xl border border-line bg-surface-sunken/50 px-3 py-2.5 text-center">
                     <p class="text-lg font-semibold text-ink leading-none">{{ e.total_usuarios }}</p>
-                    <p class="text-[11px] text-ink-muted mt-1">pessoas</p>
-                </div>
-                <div class="rounded-xl border border-line bg-surface-sunken/50 px-3 py-2.5 text-center">
-                    <p class="text-lg font-semibold text-ink leading-none">{{ e.total_gerentes }}</p>
-                    <p class="text-[11px] text-ink-muted mt-1">gerentes</p>
-                </div>
-                <div class="rounded-xl border border-line bg-surface-sunken/50 px-3 py-2.5 text-center">
-                    <p class="text-lg font-semibold text-ink leading-none">{{ ativos }}</p>
-                    <p class="text-[11px] text-ink-muted mt-1">logins ativos</p>
+                    <p class="text-[11px] text-ink-muted mt-1">cadastradas no total</p>
                 </div>
             </div>
 
@@ -130,18 +128,17 @@ const dados = computed(() => {
                     @click="emit('cadastrar', e)">Cadastrar pessoas</Button>
             </div>
 
-            <p v-if="!equipe.length" class="text-sm text-ink-muted py-6 text-center">Nenhuma pessoa nesta empresa.</p>
+            <p v-if="!equipe.length && !inativos.length" class="text-sm text-ink-muted py-6 text-center">
+                Nenhuma pessoa nesta empresa.
+            </p>
+            <p v-else-if="!equipe.length" class="text-sm text-ink-muted py-4 text-center">
+                Ninguém com acesso ativo nesta empresa.
+            </p>
 
-            <div v-else class="rounded-xl border border-line divide-y divide-line-subtle max-h-[42vh] overflow-y-auto">
+            <div v-if="equipe.length" class="rounded-xl border border-line divide-y divide-line-subtle max-h-[42vh] overflow-y-auto">
                 <div v-for="u in equipe" :key="u.idusuario" class="px-3 py-2.5 flex items-center gap-3">
-                    <span class="h-2 w-2 shrink-0 rounded-full" :class="u.ativo_login ? 'bg-emerald-500' : 'bg-slate-400'"
-                        v-tippy="u.ativo_login ? 'Login ativo' : 'Login inativo'"></span>
-
                     <div class="min-w-0 flex-1">
-                        <p class="text-sm text-ink truncate">
-                            {{ u.nome }}
-                            <i v-if="u.gerente" class="fas fa-user-tie ml-1 text-[10px] text-accent" v-tippy="'Gerente'"></i>
-                        </p>
+                        <p class="text-sm text-ink truncate">{{ u.nome }}</p>
                         <p class="text-xs text-ink-muted truncate">
                             {{ fmtCpf(u.documento) }}
                             <template v-if="fmtData(u.data_nasc)"> · nasc. {{ fmtData(u.data_nasc) }}</template>
@@ -162,6 +159,28 @@ const dados = computed(() => {
                         </a>
                         <a :href="cvUsuariosUrl(u.nome)" target="_blank" rel="noopener" v-tippy="`Abrir no CV (#${u.idusuario})`"
                             class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-line text-ink-muted hover:text-accent hover:border-accent/60">
+                            <i class="fas fa-arrow-up-right-from-square text-xs"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Inativos: no fim, recolhidos, e só quando existem -->
+            <div v-if="inativos.length" class="mt-3">
+                <button type="button" class="text-xs text-ink-muted hover:text-ink inline-flex items-center gap-1.5"
+                    @click="verInativos = !verInativos">
+                    <i class="fas text-[10px]" :class="verInativos ? 'fa-chevron-down' : 'fa-chevron-right'"></i>
+                    {{ inativos.length }} sem acesso ativo
+                </button>
+
+                <div v-if="verInativos" class="mt-2 rounded-xl border border-line-subtle divide-y divide-line-subtle">
+                    <div v-for="u in inativos" :key="u.idusuario" class="px-3 py-2 flex items-center gap-3">
+                        <div class="min-w-0 flex-1">
+                            <p class="text-sm text-ink-muted truncate">{{ u.nome }}</p>
+                            <p class="text-xs text-ink-subtle truncate">{{ fmtCpf(u.documento) }}</p>
+                        </div>
+                        <a :href="cvUsuariosUrl(u.nome)" target="_blank" rel="noopener" v-tippy="`Abrir no CV (#${u.idusuario})`"
+                            class="shrink-0 inline-flex h-8 w-8 items-center justify-center rounded-lg border border-line text-ink-muted hover:text-accent hover:border-accent/60">
                             <i class="fas fa-arrow-up-right-from-square text-xs"></i>
                         </a>
                     </div>

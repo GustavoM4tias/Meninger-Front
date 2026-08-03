@@ -15,7 +15,6 @@ import Button from '@/components/UI/Button.vue';
 import Input from '@/components/UI/Input.vue';
 import Select from '@/components/UI/Select.vue';
 import Badge from '@/components/UI/Badge.vue';
-import Switch from '@/components/UI/Switch.vue';
 
 const props = defineProps({ open: { type: Boolean, default: false } });
 const emit = defineEmits(['close']);
@@ -80,7 +79,6 @@ async function analisar() {
         // não enviar o que a tela sabe que vai dar problema.
         pessoas.value = data.pessoas.map(p => ({
             ...p,
-            gerente: true,
             incluir: !p.ja_cadastrado && p.cpf_valido && !p.duplicado_no_texto,
         }));
         ignorados.value = data.ignorados;
@@ -99,7 +97,7 @@ async function enviar() {
             email: p.email,
             documento: String(p.documento).replace(/\D/g, ''),
             data_nasc: p.data_nasc || null,
-            gerente: p.gerente,
+            gerente: true, // correspondente sempre entra como gerente no CV
         }));
         const data = await store.createUsers(Number(empresaId.value), payload);
         resultado.value = data?.registros || [];
@@ -171,7 +169,7 @@ const STATUS_INFO = {
                     :class="p.incluir ? 'border-line bg-surface-raised' : 'border-line-subtle bg-surface-sunken/40 opacity-70'">
 
                     <div class="flex items-start gap-3">
-                        <input type="checkbox" v-model="p.incluir" class="mt-2 h-4 w-4 rounded border-line accent-current text-accent" />
+                        <input type="checkbox" v-model="p.incluir" class="mt-2 h-4 w-4 rounded border-line accent-accent" />
 
                         <div class="min-w-0 flex-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
                             <Input v-model="p.nome" size="sm" label="Nome" placeholder="Nome completo" />
@@ -179,10 +177,6 @@ const STATUS_INFO = {
                             <Input v-model="p.documento" size="sm" label="CPF"
                                 :error="p.documento && !p.cpf_valido ? 'CPF inválido' : ''" />
                             <Input v-model="p.data_nasc" size="sm" type="date" label="Nascimento" />
-                        </div>
-
-                        <div class="shrink-0 pt-6">
-                            <Switch v-model="p.gerente" v-tippy="'Cadastrar como gerente'" />
                         </div>
                     </div>
 
