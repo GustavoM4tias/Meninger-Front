@@ -32,8 +32,12 @@ const fmtDate = (d) => (d ? new Date(d).toLocaleDateString('pt-BR') : null)
     <!-- Topo neutro -->
     <header class="border-b border-line bg-surface-raised">
       <div class="mx-auto max-w-3xl px-4 py-3 flex items-center gap-2.5">
-        <span class="w-6 h-6 rounded-md bg-accent text-white flex items-center justify-center text-[11px] font-bold">M</span>
-        <span class="text-sm font-semibold text-ink">Menin</span>
+        <a
+          href="https://www.menin.com.br/" target="_blank" rel="noopener noreferrer"
+          class="flex-shrink-0 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        >
+          <img src="/Mlogotext.png" alt="Menin" class="h-7 w-auto dark:invert" />
+        </a>
         <span v-if="data?.publishedAt" class="ml-auto text-[11px] text-ink-subtle">Publicado em {{ fmtDate(data.publishedAt) }}</span>
       </div>
     </header>
@@ -56,7 +60,7 @@ const fmtDate = (d) => (d ? new Date(d).toLocaleDateString('pt-BR') : null)
         v-else
         :spec="data.spec"
         :theme="data.theme || 'classic'"
-        :meta="{ generatedAt: data.publishedAt, refreshedAt: data.refreshedAt }"
+        :meta="{ generatedAt: data.publishedAt, refreshedAt: data.refreshedAt, periodStart: data.periodStart, periodEnd: data.periodEnd, dataMode: data.dataMode }"
       />
     </main>
 

@@ -91,7 +91,7 @@ const fmtDate = (d) => (d ? new Date(d).toLocaleDateString('pt-BR') : null)
         <ReportRenderer
           :spec="data.spec"
           :theme="data.theme || 'classic'"
-          :meta="{ generatedAt: data.publishedAt, refreshedAt: data.refreshedAt }"
+          :meta="{ generatedAt: data.publishedAt, refreshedAt: data.refreshedAt, periodStart: data.periodStart, periodEnd: data.periodEnd, dataMode: data.dataMode }"
         />
       </div>
     </div>

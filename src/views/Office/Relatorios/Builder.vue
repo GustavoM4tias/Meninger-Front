@@ -197,7 +197,7 @@ watch(() => store.highlightId, (id) => {
             ref="rendererRef"
             :spec="store.spec"
             :theme="store.theme"
-            :meta="{ generatedAt: store.report?.publishedAt || store.report?.updatedAt, refreshedAt: store.report?.refreshedAt }"
+            :meta="{ generatedAt: store.report?.publishedAt || store.report?.updatedAt, refreshedAt: store.report?.refreshedAt, periodStart: store.report?.periodStart, periodEnd: store.report?.periodEnd, dataMode: store.report?.dataMode }"
             editable
             :selected-ids="store.selectedIds"
             :highlight-id="store.highlightId"
