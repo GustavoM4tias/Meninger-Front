@@ -326,21 +326,6 @@ onMounted(async () => {
                             <i class="fas fa-triangle-exclamation mr-1"></i>
                             Sem gestor responsável na ficha comercial deste empreendimento.
                         </p>
-
-                        <!-- Outros meses do mesmo empreendimento -->
-                        <div v-if="grupo.planos.length > 1" class="mt-3 border-t border-line pt-2">
-                            <p class="mb-1 text-xs text-ink-subtle">Outros meses</p>
-                            <div class="flex flex-wrap gap-1.5">
-                                <button
-                                    v-for="outro in grupo.planos.filter(p => p.id !== grupo.plano.id).slice(0, 6)"
-                                    :key="outro.id"
-                                    class="rounded-md border border-line px-1.5 py-0.5 text-xs text-ink-muted transition hover:border-accent hover:text-accent"
-                                    @click.stop="abrir(outro.id)"
-                                >
-                                    {{ String(outro.reference_month).slice(5, 7) }}/{{ String(outro.reference_month).slice(2, 4) }}
-                                </button>
-                            </div>
-                        </div>
                     </Surface>
                 </div>
             </template>
