@@ -6,20 +6,9 @@ import { BarChart, PieChart, LineChart } from 'echarts/charts'
 import { GridComponent, TooltipComponent, LegendComponent, MarkLineComponent } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
 import { formatValue } from '../format.js'
+import { themePalette } from '../themes.js'
 
 echarts.use([BarChart, PieChart, LineChart, GridComponent, TooltipComponent, LegendComponent, MarkLineComponent, CanvasRenderer])
-
-// A primeira cor vem do tema do relatório (ver themes.js); as demais compõem
-// a paleta de apoio, para séries múltiplas continuarem distinguíveis.
-const SUPPORT = ['#22d3ee', '#34d399', '#f59e0b', '#f43f5e', '#a78bfa', '#fb923c', '#38bdf8', '#4ade80', '#e879f9']
-const THEME_PRIMARY = {
-  classic: '#2563eb',
-  modern: '#7c3aed',
-  executive: '#475569',
-  vibrant: '#ea580c',
-  nature: '#059669',
-  minimal: '#334155',
-}
 
 const props = defineProps({
   blockType: { type: String, default: 'chart-bar' }, // chart-bar | chart-line | chart-donut
@@ -39,12 +28,11 @@ const props = defineProps({
 
 // Tema injetado pelo ReportRenderer (fallback: clássico, se usado solto)
 const reportTheme = inject('reportTheme', computed(() => 'classic'))
-const PALETTE = computed(() => [
-  THEME_PRIMARY[reportTheme.value] || THEME_PRIMARY.classic,
-  ...SUPPORT,
-])
 
 const isDark = ref(typeof document !== 'undefined' && document.documentElement.classList.contains('dark'))
+
+// Paleta do tema, trocando para as variantes claras no dark mode.
+const PALETTE = computed(() => themePalette(reportTheme.value, isDark.value))
 let observer
 onMounted(() => {
   observer = new MutationObserver(() => {
