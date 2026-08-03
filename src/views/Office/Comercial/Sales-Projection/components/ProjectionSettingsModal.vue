@@ -34,11 +34,15 @@ const effectiveModeFor = (enterpriseId) => goalStore.modeForEnterprise(enterpris
 const hasOverride = (enterpriseId) =>
   goalStore.enterpriseOverrides[String(enterpriseId)] !== undefined;
 
-// Bridge para SegmentedControl global
+// Bridge para SegmentedControl global. A regra é GLOBAL (vale para todos), por
+// isso só o admin grava - o servidor recusa o resto.
 const globalModeProxy = computed({
   get: () => goalStore.globalMode,
-  set: (v) => goalStore.setGlobalMode(v),
+  set: (v) => { goalStore.setGlobalMode(v).catch(() => {}); },
 });
+
+const globalModeLabel = computed(() =>
+  goalStore.globalMode === 'units' ? 'Unidades' : 'VGV');
 
 const globalModeOptions = [
   { value: 'units', label: 'Unidades', icon: 'fas fa-key' },
@@ -50,11 +54,11 @@ const overrideCount = computed(() =>
 );
 
 function setEnterpriseMode(entId, mode) {
-  goalStore.setEnterpriseMode(entId, mode);
+  goalStore.setEnterpriseMode(entId, mode).catch(() => {});
 }
 
 function clearOverride(entId) {
-  goalStore.setEnterpriseMode(entId, null);
+  goalStore.setEnterpriseMode(entId, null).catch(() => {});
 }
 </script>
 
@@ -68,20 +72,40 @@ function clearOverride(entId) {
 
       <!-- Modo padrão global -->
       <Surface variant="raised" padding="md" class="space-y-3">
-        <div class="flex items-center gap-2">
-          <i class="fas fa-sliders text-accent text-sm"></i>
-          <h3 class="text-xs uppercase tracking-wider font-mono text-ink-muted">
-            Modo padrão (todos os empreendimentos)
-          </h3>
+        <div class="flex items-center justify-between gap-2 flex-wrap">
+          <div class="flex items-center gap-2 min-w-0">
+            <i class="fas fa-sliders text-accent text-sm"></i>
+            <h3 class="text-xs uppercase tracking-wider font-mono text-ink-muted">
+              Modo padrão (todos os empreendimentos)
+            </h3>
+          </div>
+          <Badge variant="neutral" size="sm">
+            <i class="fas fa-globe text-[10px] mr-1"></i>Regra global
+          </Badge>
         </div>
 
-        <SegmentedControl v-model="globalModeProxy" :options="globalModeOptions" size="md" />
+        <SegmentedControl v-if="isAdmin" v-model="globalModeProxy" :options="globalModeOptions" size="md" />
+
+        <!-- Não-admin enxerga a regra vigente, sem poder mudar. -->
+        <div v-else
+          class="inline-flex items-center gap-2 rounded-lg border border-line bg-surface-sunken px-3 h-8 text-sm text-ink">
+          <i class="fas text-accent text-xs"
+            :class="goalStore.globalMode === 'units' ? 'fa-key' : 'fa-money-bill-wave'"></i>
+          {{ globalModeLabel }}
+        </div>
+
+        <p v-if="goalStore.error" class="text-xs text-red-600 dark:text-red-400">
+          <i class="fas fa-circle-exclamation text-[10px] mr-1"></i>{{ goalStore.error }}
+        </p>
 
         <p class="text-xs text-ink-subtle leading-relaxed">
           <i class="fas fa-circle-info text-[10px] mr-1"></i>
           {{ goalStore.globalMode === 'units'
             ? 'Padrão: % atingida = vendas realizadas ÷ unidades projetadas.'
             : 'Padrão: % atingida = VGV realizado ÷ VGV projetado.' }}
+          {{ isAdmin
+            ? ' Vale para todos os usuários da tela.'
+            : ' Definido pelo administrador e igual para todos.' }}
         </p>
       </Surface>
 

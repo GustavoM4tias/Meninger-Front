@@ -439,9 +439,11 @@ async function handleFilterChange(filters) {
 
 onMounted(async () => {
   contractsStore.groupBy = 'enterprise';
-  goalStore.load();
 
   await Promise.all([
+    // Modo de meta é regra global do admin: precisa estar carregado antes do
+    // primeiro cálculo de % atingida.
+    goalStore.load(),
     contractsStore.fetchCompanies(),
     contractsStore.fetchEnterprises(),
     contractsStore.fetchWorkflowGroups(),
