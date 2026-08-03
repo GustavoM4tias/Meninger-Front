@@ -25,6 +25,19 @@ const showAddBlock = ref(false)
 const addAfterId = ref(null)
 const publishing = ref(false)
 const publishedFlash = ref(false)
+const atualizando = ref(false)
+
+// Atualiza os dados do relatório ao vivo: o backend reexecuta as consultas
+// registradas com a janela até hoje e a Eme reescreve os números no chat.
+async function atualizarDados() {
+  if (atualizando.value) return
+  atualizando.value = true
+  try {
+    await store.refreshLive()
+  } finally {
+    atualizando.value = false
+  }
+}
 const currentAccess = ref([])
 
 const selCount = computed(() => store.selectedIds.length)
@@ -127,6 +140,17 @@ watch(() => store.highlightId, (id) => {
       </Badge>
 
       <div class="ml-auto flex items-center gap-1.5 flex-shrink-0">
+        <!-- Só em relatório ao vivo: em modo fixo os números são um retrato
+             congelado de propósito, e atualizar descaracterizaria o documento. -->
+        <Button
+          v-if="store.report?.dataMode === 'live'"
+          variant="secondary" size="sm" icon="fas fa-rotate"
+          :loading="atualizando" :disabled="store.isStreaming"
+          title="Reexecuta as consultas do relatório com os dados até hoje"
+          @click="atualizarDados"
+        >
+          <span class="hidden lg:inline">Atualizar dados</span>
+        </Button>
         <Button variant="secondary" size="sm" icon="fas fa-share-nodes" @click="showShare = true">
           <span class="hidden lg:inline">Compartilhar</span>
         </Button>

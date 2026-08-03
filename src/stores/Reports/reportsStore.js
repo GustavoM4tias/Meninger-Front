@@ -236,6 +236,39 @@ export const useReportsStore = defineStore('reports', () => {
     })
   }
 
+  // Consome um endpoint SSE do builder e despacha os eventos. Compartilhado
+  // pelo chat e pelo refresh do modo ao vivo, que falam o mesmo protocolo.
+  async function consumeStream(url, body, erroPadrao) {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${localStorage.getItem('token')}`,
+      },
+      body: JSON.stringify(body),
+    })
+    if (!response.ok || !response.body) {
+      const err = await response.json().catch(() => ({}))
+      throw new Error(err.error || erroPadrao)
+    }
+    const reader = response.body.getReader()
+    const decoder = new TextDecoder()
+    let buffer = ''
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      buffer += decoder.decode(value, { stream: true })
+      const lines = buffer.split('\n')
+      buffer = lines.pop() || ''
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue
+        let evt
+        try { evt = JSON.parse(line.slice(6)) } catch { continue }
+        handleEvent(evt)
+      }
+    }
+  }
+
   async function sendMessage(text) {
     if (!report.value || isStreaming.value || !text.trim()) return
     const reportId = report.value.id
@@ -247,40 +280,42 @@ export const useReportsStore = defineStore('reports', () => {
     toolProgress.value = []
 
     try {
-      const response = await fetch(`${API_URL}/reports/${reportId}/chat`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-        body: JSON.stringify({ message: text, selected_block_ids: selected }),
-      })
-      if (!response.ok || !response.body) {
-        const err = await response.json().catch(() => ({}))
-        throw new Error(err.error || 'Falha ao falar com a Eme.')
-      }
-
-      const reader = response.body.getReader()
-      const decoder = new TextDecoder()
-      let buffer = ''
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-        buffer += decoder.decode(value, { stream: true })
-        const lines = buffer.split('\n')
-        buffer = lines.pop() || ''
-        for (const line of lines) {
-          if (!line.startsWith('data: ')) continue
-          let evt
-          try { evt = JSON.parse(line.slice(6)) } catch { continue }
-          handleEvent(evt)
-        }
-      }
+      await consumeStream(
+        `${API_URL}/reports/${reportId}/chat`,
+        { message: text, selected_block_ids: selected },
+        'Falha ao falar com a Eme.',
+      )
     } catch (err) {
       messages.value.push({ id: `err-${Date.now()}`, role: 'model', content: `⚠️ ${err.message}` })
     } finally {
       isStreaming.value = false
       selectedIds.value = []
+    }
+  }
+
+  // Atualiza os dados de um relatório AO VIVO: o backend reexecuta as consultas
+  // registradas com a janela até hoje e a Eme reescreve os números.
+  async function refreshLive() {
+    if (!report.value || isStreaming.value) return { ok: false }
+    if (report.value.dataMode !== 'live') {
+      return { ok: false, error: 'Relatório com dados congelados (modo fixo).' }
+    }
+    isStreaming.value = true
+    streamingText.value = ''
+    toolProgress.value = []
+    messages.value.push({
+      id: `local-${Date.now()}`, role: 'user',
+      content: '🔄 Atualizar os dados do relatório (modo ao vivo).',
+    })
+    try {
+      await consumeStream(`${API_URL}/reports/${report.value.id}/refresh`, {}, 'Falha ao atualizar os dados.')
+      await fetchReport(report.value.id)
+      return { ok: true }
+    } catch (err) {
+      messages.value.push({ id: `err-${Date.now()}`, role: 'model', content: `⚠️ ${err.message}` })
+      return { ok: false, error: err.message }
+    } finally {
+      isStreaming.value = false
     }
   }
 
@@ -393,7 +428,7 @@ export const useReportsStore = defineStore('reports', () => {
     saveSpec, removeBlocks, moveBlock, setTheme,
     canUndo, canRedo, undoLabel, redoLabel, undo, redo,
     memories, fetchMemories, addMemory, updateMemory, deleteMemory,
-    publish, shareInternal, shareOptions,
+    publish, shareInternal, shareOptions, refreshLive,
     publicCheck, enablePublic, revokePublic, rotatePublicToken, renewPublic, publicLog, publicUrl,
   }
 })
