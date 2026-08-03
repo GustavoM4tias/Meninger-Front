@@ -183,6 +183,11 @@
               <p class="text-sm text-ink font-mono">{{ form.max_dias_vencimento ?? '—' }} dias</p>
               <p class="text-[10px] text-ink-subtle mt-0.5">Override por empreendimento configurável na regra de comissão.</p>
             </div>
+            <div>
+              <p class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1">Teto de valor por boleto</p>
+              <p class="text-sm text-ink font-mono">{{ valorMaximoLabel }}</p>
+              <p class="text-[10px] text-ink-subtle mt-0.5">Série acima do teto não é registrada no banco, fica como erro para conferência.</p>
+            </div>
           </div>
 
           <!-- ── MODO EDIÇÃO ───────────────────────────────────────────────── -->
@@ -267,6 +272,12 @@
               label="Máx. dias vencimento (geral)"
               placeholder="Ex: 10"
               hint="Vencimentos acima deste limite são rejeitados. Override por empreendimento na regra de comissão." />
+            <Input
+              v-model.number="form.valor_maximo"
+              type="number"
+              label="Teto de valor por boleto (R$)"
+              placeholder="Ex: 300000"
+              hint="Valor acima do teto não vira boleto no banco: fica como erro para conferência da condição no CV. Vazio = sem teto." />
           </div>
         </Surface>
 
@@ -828,7 +839,15 @@ const form = ref({
   tolerancia_dias_uteis: 1,
   delay_situacao_sucesso_min: 2,
   max_dias_vencimento: 10,
+  valor_maximo: 300000,
   active: false,
+});
+
+// Teto de valor em formato legível. Vazio/nulo = sem teto configurado.
+const valorMaximoLabel = computed(() => {
+  const v = Number(form.value.valor_maximo);
+  if (!Number.isFinite(v) || v <= 0) return 'sem teto';
+  return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 });
 
 // ── Modo edição do card "Configurações do CV" ─────────────────────────────────
@@ -848,6 +867,7 @@ function snapshotCvFields() {
     tolerancia_dias_uteis: form.value.tolerancia_dias_uteis,
     delay_situacao_sucesso_min: form.value.delay_situacao_sucesso_min,
     max_dias_vencimento: form.value.max_dias_vencimento,
+    valor_maximo: form.value.valor_maximo,
   };
 }
 
@@ -1160,6 +1180,7 @@ onMounted(async () => {
       form.value.tolerancia_dias_uteis = store.settings.tolerancia_dias_uteis ?? 1;
       form.value.delay_situacao_sucesso_min = store.settings.delay_situacao_sucesso_min ?? 2;
       form.value.max_dias_vencimento = store.settings.max_dias_vencimento ?? 10;
+      form.value.valor_maximo = store.settings.valor_maximo != null ? Number(store.settings.valor_maximo) : null;
       form.value.active = store.settings.active ?? false;
     }
     await store.fetchComissionRules();
