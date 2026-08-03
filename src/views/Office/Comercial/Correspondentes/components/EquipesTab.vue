@@ -1,8 +1,11 @@
 <script setup>
 // Empresas correspondentes com suas equipes. A lista vem do espelho local de
 // usuários (o GET de usuários do CV funciona) cruzado com o cadastro local de
-// empresas. O nome das empresas que nunca passaram pelo Office é deduzido dos
-// pré-cadastros, já que o GET de empresas do CV está fora do ar.
+// empresas, cujo nome é resolvido pelos pré-cadastros - o GET de empresas do
+// CV está fora do ar.
+//
+// Ordem padrão: quem tem mais gente primeiro. É o que responde "quais
+// correspondentes realmente operam com a gente".
 
 import { computed, onMounted, ref } from 'vue';
 import { useToast } from 'vue-toastification';
@@ -26,20 +29,36 @@ const emit = defineEmits(['cadastrar', 'registrar']);
 const store = useCorrespondentStore();
 const toast = useToast();
 
+// ── Filtros ─────────────────────────────────────────────────────────────────
 const q = ref(props.initialQuery);
-const papel = ref('');
-const situacao = ref('');
+const ordem = ref('pessoas');
+const minPessoas = ref('');
 
-const PAPEL_OPTIONS = [
-    { value: '', label: 'Gerentes e demais' },
-    { value: 'gerente', label: 'Só gerentes' },
-    { value: 'comum', label: 'Só não gerentes' },
+const ORDEM_OPTIONS = [
+    { value: 'pessoas', label: 'Mais pessoas primeiro' },
+    { value: 'pessoas_asc', label: 'Menos pessoas primeiro' },
+    { value: 'nome', label: 'Nome (A-Z)' },
 ];
-const SITUACAO_OPTIONS = [
-    { value: '', label: 'Todas as situações' },
-    { value: 'ativo', label: 'Login ativo' },
-    { value: 'inativo', label: 'Login inativo' },
+const MIN_OPTIONS = [
+    { value: '', label: 'Qualquer quantidade' },
+    { value: '1', label: 'Com pelo menos 1 pessoa' },
+    { value: '3', label: 'Com 3 ou mais' },
+    { value: '10', label: 'Com 10 ou mais' },
 ];
+
+const isExpanded = ref(typeof window !== 'undefined' && window.innerWidth >= 1024);
+const activeFiltersCount = computed(() => {
+    let n = 0;
+    if (q.value.trim()) n++;
+    if (minPessoas.value) n++;
+    if (ordem.value !== 'pessoas') n++;
+    return n;
+});
+function limpar() {
+    q.value = '';
+    ordem.value = 'pessoas';
+    minPessoas.value = '';
+}
 
 const norm = (s) => String(s || '').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
 const soDigitos = (s) => String(s || '').replace(/\D/g, '');
@@ -50,26 +69,29 @@ const chaveDe = (e) => `${e.id || 'x'}:${e.cv_idempresa || 0}`;
 const linhas = computed(() => {
     const termo = norm(q.value);
     const digitos = soDigitos(q.value);
+    const minimo = Number(minPessoas.value) || 0;
 
-    return store.empresas
+    const lista = store.empresas
         .map((e) => {
             let usuarios = e.usuarios || [];
-            if (papel.value) usuarios = usuarios.filter(u => (papel.value === 'gerente' ? u.gerente : !u.gerente));
-            if (situacao.value) usuarios = usuarios.filter(u => (situacao.value === 'ativo' ? u.ativo_login : !u.ativo_login));
             if (termo && !norm(e.nome).includes(termo)) {
                 usuarios = usuarios.filter(u =>
                     norm(u.nome).includes(termo)
                     || norm(u.email).includes(termo)
                     || (digitos.length >= 3 && soDigitos(u.documento).includes(digitos)));
             }
-            return { ...e, usuarios, total_usuarios: usuarios.length, total_gerentes: usuarios.filter(u => u.gerente).length };
+            const ativos = usuarios.filter(u => u.ativo_login).length;
+            return { ...e, usuarios, total_usuarios: usuarios.length, total_ativos: ativos };
         })
         .filter((e) => {
-            const semFiltro = !q.value && !papel.value && !situacao.value;
-            if (semFiltro) return true;
-            if (e.usuarios.length) return true;
-            return !!termo && norm(e.nome).includes(termo);
+            if (e.total_usuarios < minimo) return false;
+            if (!termo) return true;
+            return e.usuarios.length > 0 || norm(e.nome).includes(termo);
         });
+
+    if (ordem.value === 'nome') return lista.sort((a, b) => a.nome.localeCompare(b.nome));
+    const dir = ordem.value === 'pessoas_asc' ? 1 : -1;
+    return lista.sort((a, b) => (a.total_usuarios - b.total_usuarios) * dir || a.nome.localeCompare(b.nome));
 });
 
 const totais = computed(() => ({
@@ -112,13 +134,35 @@ onMounted(() => { if (!store.empresas.length) store.fetchOverview(); });
 
 <template>
     <div>
-        <!-- Filtros -->
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
-            <Input v-model="q" placeholder="Buscar pessoa, empresa, CPF ou e-mail..."
-                icon-left="fas fa-magnifying-glass" class="col-span-2" />
-            <Select v-model="papel" :options="PAPEL_OPTIONS" />
-            <Select v-model="situacao" :options="SITUACAO_OPTIONS" />
-        </div>
+        <!-- Filtros (padrão do sistema: seção recolhível + toolbar) -->
+        <section class="rounded-xl border border-line bg-surface-raised shadow-soft surface-gradient mb-4">
+            <div class="filters-toolbar">
+                <button class="filters-toolbar-trigger" @click="isExpanded = !isExpanded">
+                    <i class="fas fa-filter text-xs text-ink-muted"></i>
+                    <span>Filtros</span>
+                    <Badge v-if="activeFiltersCount" variant="accent" size="sm">
+                        {{ activeFiltersCount }} ativo{{ activeFiltersCount > 1 ? 's' : '' }}
+                    </Badge>
+                    <i class="fas fa-chevron-down text-[10px] text-ink-subtle transition-transform duration-200"
+                        :class="{ 'rotate-180': isExpanded }"></i>
+                </button>
+
+                <div class="ml-auto flex items-center gap-1.5">
+                    <Button variant="ghost" size="sm" icon="fas fa-eraser" @click="limpar">
+                        <span class="hidden sm:inline">Limpar</span>
+                    </Button>
+                </div>
+            </div>
+
+            <div v-show="isExpanded" class="p-3 sm:p-4 animate-fade-in">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    <Input v-model="q" label="Buscar" placeholder="Empresa, pessoa, CPF ou e-mail"
+                        icon-left="fas fa-magnifying-glass" />
+                    <Select v-model="ordem" :options="ORDEM_OPTIONS" label="Ordenar por" />
+                    <Select v-model="minPessoas" :options="MIN_OPTIONS" label="Tamanho da equipe" />
+                </div>
+            </div>
+        </section>
 
         <div class="flex flex-wrap items-center gap-2 mb-4 text-xs text-ink-muted">
             <Badge variant="accent" outlined>{{ totais.empresas }} empresas</Badge>
@@ -152,22 +196,20 @@ onMounted(() => { if (!store.empresas.length) store.fetchOverview(); });
                         <p class="font-medium text-ink truncate leading-tight">
                             {{ e.nome }}
                             <span v-if="e.cv_idempresa" class="text-ink-subtle font-normal text-xs">#{{ e.cv_idempresa }}</span>
-                            <i v-if="e.nome_inferido" class="fas fa-wand-magic-sparkles ml-1 text-[10px] text-ink-subtle"
-                                v-tippy="'Nome deduzido dos pré-cadastros'"></i>
                         </p>
                         <p class="text-xs text-ink-muted truncate">
                             <template v-if="e.cidade">
                                 <i class="fas fa-location-dot mr-1"></i>{{ e.cidade }}<template v-if="e.estado">/{{ e.estado }}</template>
                             </template>
-                            <template v-else>{{ e.total_usuarios }} pessoa(s) · sem cadastro no Office</template>
+                            <template v-else-if="e.nome_inferido">Cadastro não completado no Office</template>
+                            <template v-else>Sem cidade informada</template>
                         </p>
                     </div>
 
                     <div class="shrink-0 flex items-center gap-1.5">
                         <Badge v-if="e.origem === 'pendente'" variant="warning" size="sm">Falta código</Badge>
-                        <Badge v-if="e.total_usuarios" variant="neutral" size="sm">{{ e.total_usuarios }}</Badge>
-                        <Badge v-if="e.total_gerentes" variant="accent" size="sm" v-tippy="`${e.total_gerentes} gerente(s)`">
-                            <i class="fas fa-user-tie"></i>
+                        <Badge variant="neutral" size="sm" v-tippy="`${e.total_ativos} ativo(s) de ${e.total_usuarios}`">
+                            {{ e.total_ativos }}<span class="text-ink-subtle">/{{ e.total_usuarios }}</span>
                         </Badge>
                         <i class="fas fa-chevron-right text-ink-subtle text-xs ml-1"></i>
                     </div>
