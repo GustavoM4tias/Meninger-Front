@@ -13,6 +13,11 @@ export const useCorrespondentStore = defineStore('correspondents', () => {
     const registros = ref([]);
     const totalUsuarios = ref(0);
 
+    // Próximo código provável da empresa no CV (o CV numera em sequência e não
+    // devolve o id no cadastro). Serve para a tela oferecer o vínculo em vez de
+    // mandar o operador procurar o número na listagem do CV.
+    const codigoSugerido = ref(null);
+
     const loading = ref(false);
     const syncing = ref(false);
     const saving = ref(false);
@@ -26,6 +31,7 @@ export const useCorrespondentStore = defineStore('correspondents', () => {
             const data = await requestWithAuth('/correspondents/overview');
             empresas.value = data?.empresas || [];
             totalUsuarios.value = data?.total_usuarios || 0;
+            codigoSugerido.value = data?.codigo_sugerido ?? null;
         } finally {
             loading.value = false;
         }
@@ -42,6 +48,7 @@ export const useCorrespondentStore = defineStore('correspondents', () => {
             const data = await requestWithAuth('/correspondents/sync', { method: 'POST' });
             empresas.value = data?.empresas || [];
             totalUsuarios.value = data?.total_usuarios || 0;
+            codigoSugerido.value = data?.codigo_sugerido ?? null;
         } finally {
             syncing.value = false;
         }
@@ -65,6 +72,22 @@ export const useCorrespondentStore = defineStore('correspondents', () => {
             });
             await fetchOverview();
             return data;
+        } finally {
+            saving.value = false;
+        }
+    }
+
+    /**
+     * Reenvia ao CV uma empresa que ficou pendente (o CV responde igual quando
+     * grava e quando recusa, então cadastro que não chegou lá precisa de outra
+     * tentativa). Devolve o envio, com o código provável.
+     */
+    async function resendCompany(id) {
+        saving.value = true;
+        try {
+            const data = await requestWithAuth(`/correspondents/companies/${id}/resend`, { method: 'POST' });
+            await fetchOverview();
+            return data?.envio || {};
         } finally {
             saving.value = false;
         }
@@ -143,11 +166,11 @@ export const useCorrespondentStore = defineStore('correspondents', () => {
     }
 
     return {
-        empresas, registros, convites, totalUsuarios,
+        empresas, registros, convites, totalUsuarios, codigoSugerido,
         loading, syncing, saving,
         empresasVinculadas, pendentes,
         fetchOverview, fetchRegistrations, fetchInvites, sync, preview,
-        createCompany, linkCompany, updateCompany, createUsers, retry,
+        createCompany, resendCompany, linkCompany, updateCompany, createUsers, retry,
         createInvite, revokeInvite,
     };
 });
