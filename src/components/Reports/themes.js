@@ -139,3 +139,30 @@ export function themePalette(themeKey, dark = false) {
   const palette = dark ? theme.seriesDark : theme.series
   return palette?.length ? palette : REPORT_THEMES.classic.series
 }
+
+// ── Cores SEMÂNTICAS de gráfico ──────────────────────────────────────────────
+// Independentes do tema, de propósito: "bom/atenção/ruim" tem que significar a
+// mesma coisa em qualquer relatório. Servem para o caso em que a cor carrega
+// intenção, não identidade — ex.: pago antes do vencimento (verde) x depois
+// (vermelho). A paleta do tema continua valendo quando a cor só distingue
+// séries entre si.
+const CHART_TONES = {
+  success: ['#059669', '#34d399'],
+  warning: ['#d97706', '#fbbf24'],
+  danger:  ['#dc2626', '#f87171'],
+  info:    ['#0284c7', '#38bdf8'],
+  neutral: ['#64748b', '#94a3b8'],
+}
+
+export const CHART_TONE_KEYS = Object.keys(CHART_TONES)
+
+/**
+ * Resolve a cor de uma série. `tone` semântico vence; 'accent' e ausência
+ * caem na paleta do tema (pela posição da série).
+ */
+export function seriesColor({ tone, index = 0, themeKey = 'classic', dark = false }) {
+  const pair = CHART_TONES[tone]
+  if (pair) return dark ? pair[1] : pair[0]
+  const palette = themePalette(themeKey, dark)
+  return palette[index % palette.length]
+}

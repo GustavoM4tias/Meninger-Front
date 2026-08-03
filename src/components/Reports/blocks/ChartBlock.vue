@@ -6,7 +6,7 @@ import { BarChart, PieChart, LineChart } from 'echarts/charts'
 import { GridComponent, TooltipComponent, LegendComponent, MarkLineComponent } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
 import { formatValue } from '../format.js'
-import { themePalette } from '../themes.js'
+import { themePalette, seriesColor } from '../themes.js'
 
 echarts.use([BarChart, PieChart, LineChart, GridComponent, TooltipComponent, LegendComponent, MarkLineComponent, CanvasRenderer])
 
@@ -33,6 +33,19 @@ const isDark = ref(typeof document !== 'undefined' && document.documentElement.c
 
 // Paleta do tema, trocando para as variantes claras no dark mode.
 const PALETTE = computed(() => themePalette(reportTheme.value, isDark.value))
+
+// Cor de cada série: `tone` semântico ('success'/'danger'/...) tem prioridade
+// sobre a paleta do tema. É o que permite a cor carregar INTENÇÃO — verde para
+// quem pagou antes do vencimento, vermelho para quem pagou depois — em vez de
+// só diferenciar séries entre si.
+const seriesColors = computed(() =>
+  allSeries.value.map((s, i) => seriesColor({
+    tone: s.tone,
+    index: i,
+    themeKey: reportTheme.value,
+    dark: isDark.value,
+  }))
+)
 let observer
 onMounted(() => {
   observer = new MutationObserver(() => {
@@ -100,10 +113,26 @@ const option = computed(() => {
     axisTick: { show: false },
   }
 
+  // Em barra empilhada por faixa (uma série por categoria, zeros no resto), o
+  // tooltip padrão listava TODAS as séries — inclusive as zeradas. Aqui só
+  // entram as que têm valor naquele ponto.
+  const axisTooltip = {
+    trigger: 'axis',
+    ...tooltip,
+    formatter: (params) => {
+      const arr = Array.isArray(params) ? params : [params]
+      const vivos = arr.filter((p) => Number(p.value) > 0)
+      const linhas = (vivos.length ? vivos : arr)
+        .map((p) => `${p.marker} ${p.seriesName}: <b>${fmt(p.value)}</b>`)
+        .join('<br/>')
+      return `${arr[0]?.axisValueLabel ?? ''}<br/>${linhas}`
+    },
+  }
+
   return {
     backgroundColor: 'transparent',
     color: PALETTE.value,
-    tooltip: { trigger: 'axis', ...tooltip },
+    tooltip: axisTooltip,
     legend: allSeries.value.length > 1
       ? { top: 0, right: 0, textStyle: { color: labelClr, fontSize: 11 }, itemWidth: 10, itemHeight: 10 }
       : undefined,
@@ -121,7 +150,10 @@ const option = computed(() => {
         : undefined,
       data: s.data,
       barMaxWidth: 42,
-      itemStyle: isLine ? undefined : { borderRadius: props.horizontal ? [0, 5, 5, 0] : [5, 5, 0, 0], color: PALETTE.value[si % PALETTE.value.length] },
+      itemStyle: isLine
+        ? { color: seriesColors.value[si] }
+        : { borderRadius: props.horizontal ? [0, 5, 5, 0] : [5, 5, 0, 0], color: seriesColors.value[si] },
+      lineStyle: isLine ? { color: seriesColors.value[si] } : undefined,
       label: allSeries.value.length === 1 && (s.data?.length ?? 0) <= 12 && !isLine
         ? { show: true, position: props.horizontal ? 'right' : 'top', color: labelClr, fontSize: 10, formatter: (p) => fmt(p.value) }
         : undefined,
