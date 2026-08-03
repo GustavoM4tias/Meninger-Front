@@ -64,7 +64,7 @@ defineExpose({ scrollToBlock })
         href="https://www.menin.com.br/" target="_blank" rel="noopener noreferrer"
         class="flex-shrink-0 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
       >
-        <img src="/Mlogotext.png" alt="Menin" class="h-7 w-auto dark:invert" />
+        <img src="/Mlogotext.png" alt="Menin" class="h-7 w-auto dark:invert-0 invert" />
       </a>
       <span class="text-[10px] uppercase tracking-[0.18em] text-ink-subtle">Menin Office</span>
       <span
