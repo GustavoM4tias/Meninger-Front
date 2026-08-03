@@ -53,7 +53,9 @@ const ORDEM_OPTIONS = [
 ];
 
 // ── Casca padrão de filtros (recolhível, igual ao resto do Office) ───────────
-const isExpanded = ref(typeof window !== 'undefined' && window.innerWidth >= 1024);
+// Fechado por padrão em qualquer tela: a lista é o que interessa ao abrir, e
+// o badge de filtros ativos já avisa quando algo está restringindo o resultado.
+const isExpanded = ref(false);
 
 const activeFiltersCount = computed(() => {
     let n = 0;
