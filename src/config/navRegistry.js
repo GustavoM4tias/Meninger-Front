@@ -116,6 +116,16 @@ export const navRegistry = [
                 ],
             },
             {
+                key: 'events',
+                name: 'Eventos',
+                icon: 'fas fa-calendar-check',
+                pages: [
+                    // Uma tela só para os três papéis (gestor propõe, Comercial
+                    // valida, Marketing aceita) — o papel vem do backend.
+                    { route: '/comercial/plano-eventos', section: 'Plano de Eventos', name: 'Plano de Eventos', icon: 'fas fa-calendar-check' },
+                ],
+            },
+            {
                 key: 'registers',
                 name: 'Cadastros',
                 icon: 'fas fa-address-book',
