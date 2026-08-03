@@ -64,18 +64,16 @@ const periodo = computed(() => {
       <p v-if="note">{{ note }}</p>
     </div>
 
-    <!-- Assinatura da casa -->
-    <div class="mt-4 pt-3.5 border-t border-line flex flex-wrap items-center gap-x-3 gap-y-2">
-      <a
-        href="https://www.menin.com.br/" target="_blank" rel="noopener noreferrer"
-        class="flex-shrink-0 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-      >
-        <img
-          src="/Mlogotext.png" alt="Menin"
-          class="h-6 w-auto opacity-80 hover:opacity-100 transition-opacity dark:invert"
-        />
-      </a>
-      <span>Relatório gerado pela Eme · Menin Office</span>
+    <!-- Assinatura textual. A MARCA fica no timbre do documento (ReportRenderer),
+         que é sempre renderizado — aqui repetir a logo só duplicaria. -->
+    <div class="mt-4 pt-3.5 border-t border-line flex flex-wrap items-center gap-x-3 gap-y-1">
+      <span>
+        Relatório gerado pela Eme ·
+        <a
+          href="https://www.menin.com.br/" target="_blank" rel="noopener noreferrer"
+          class="font-medium text-accent hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded"
+        >Menin Office</a>
+      </span>
       <span v-if="generated" class="sm:ml-auto">{{ generated }}</span>
     </div>
   </footer>

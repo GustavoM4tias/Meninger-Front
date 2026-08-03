@@ -56,6 +56,25 @@ defineExpose({ scrollToBlock })
     class="report-doc mx-auto max-w-3xl pb-10"
     :style="containerStyle"
   >
+    <!-- Timbre da casa: parte do DOCUMENTO, não um bloco do spec. Fica fora da
+         lista editável de propósito — a marca não pode depender de a Eme se
+         lembrar de incluir um rodapé, nem ser removida por engano. -->
+    <div class="flex items-center gap-3 pb-3 mb-1 border-b border-line">
+      <a
+        href="https://www.menin.com.br/" target="_blank" rel="noopener noreferrer"
+        class="flex-shrink-0 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+      >
+        <img src="/Mlogotext.png" alt="Menin" class="h-7 w-auto dark:invert" />
+      </a>
+      <span class="text-[10px] uppercase tracking-[0.18em] text-ink-subtle">Menin Office</span>
+      <span
+        v-if="meta?.dataMode === 'live'"
+        class="ml-auto inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent-soft text-accent text-[10px] font-semibold"
+      >
+        <span aria-hidden="true" class="w-1.5 h-1.5 rounded-full bg-accent"></span>ao vivo
+      </span>
+    </div>
+
     <div
       v-for="(block, i) in spec.blocks || []"
       :key="block.id"
