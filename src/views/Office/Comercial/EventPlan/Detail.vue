@@ -231,13 +231,14 @@ onMounted(async () => {
     await store.loadPermissions();
     await store.loadPlan(route.params.id);
     if (!store.current) return;
-    // Categorias e a janela de prioridade vêm das settings (admin). Sem acesso,
-    // a tela segue com os defaults — não é informação crítica.
+    // Categorias do item e janela de prioridade: endpoint próprio da tela, não
+    // as settings (que são admin-only). Antes o gestor abria o item com o
+    // select de Categoria vazio, porque o 403 morria neste catch.
     try {
-        const { settings } = await api.settings();
-        categories.value = settings?.item_categories || [];
-        priorityWindowDays.value = settings?.priority_window_days || 10;
-    } catch { /* usuário não-admin: segue com os defaults */ }
+        const options = await api.formOptions();
+        categories.value = options?.item_categories || [];
+        priorityWindowDays.value = options?.priority_window_days || 10;
+    } catch { /* sem opções: o formulário segue, só sem a lista de categorias */ }
 });
 </script>
 

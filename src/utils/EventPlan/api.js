@@ -37,6 +37,9 @@ export default {
     consolidated: (month) => req(`/consolidated?reference_month=${encodeURIComponent(month)}`),
     // Itens previstos de um evento da agenda (consumido pela tela de Eventos)
     byAgendaEvent: (eventId) => req(`/by-event/${eventId}`),
+    // Categorias de item e janela de prioridade para montar o formulário do
+    // gestor (as settings completas são admin-only).
+    formOptions: () => req('/form-options'),
     get: (id) => req(`/${id}`),
     create: (payload) => req('/', { method: 'POST', ...body(payload) }),
 
