@@ -78,13 +78,14 @@ onMounted(() => {
                     title="Como usar a tela de Correspondentes"
                     intro="A aba Equipes lista as empresas correspondentes e quem trabalha em cada uma. A aba Cadastros mostra tudo que foi cadastrado por aqui e se deu certo de verdade."
                     :steps="[
-                        { title: 'Cadastre a empresa', text: 'Clique em Nova empresa e preencha. Depois o CV pede uma conferência: abra a listagem por aqui mesmo, copie o código da empresa e informe no campo Código no CV. Sem esse código não dá para cadastrar pessoas.' },
+                        { title: 'Cadastre a empresa', text: 'Clique em Nova empresa e preencha. A região vai sozinha pela UF. Como o CV não devolve o código da empresa nova, a tela já sugere o próximo número da sequência: confirme no botão Vincular e as pessoas ficam liberadas.' },
                         { title: 'Cole a equipe', text: 'Clique em Cadastrar pessoas, escolha a empresa e cole o texto do WhatsApp com nome, e-mail, CPF e nascimento. A tela separa pessoa por pessoa e mostra o que entendeu antes de enviar.' },
                         { title: 'Revise a prévia', text: 'Confira os avisos: CPF inválido, e-mail faltando ou pessoa já cadastrada. Dá para corrigir na hora e desmarcar quem não deve entrar.' },
                         { title: 'Acompanhe', text: 'Depois de enviar, a tela confere no CV quem realmente entrou. Quem falhar aparece na aba Cadastros com o motivo e um botão de reenviar.' },
                     ]"
                     :tips="[
                         'Todo mundo é cadastrado como gerente por padrão - desmarque na prévia quem não for.',
+                        'O código sugerido só erra se alguém criar uma empresa direto no CV no mesmo intervalo. Se isso acontecer, a tela recusa o número que já tem gente e você informa o certo.',
                         'O CV não deixa editar nem excluir por integração: para corrigir alguém já cadastrado, exclua na tela do CV (tem atalho no detalhe) e cadastre de novo por aqui.',
                         'Reenviar é seguro: se a pessoa já existe, o CV recusa pelo CPF e nada é duplicado.',
                         'A senha de acesso é definida pelo próprio CV, não por esta tela.',

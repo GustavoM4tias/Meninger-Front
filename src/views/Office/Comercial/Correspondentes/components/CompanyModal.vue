@@ -31,8 +31,22 @@ const UFS = ['AC', 'AL', 'AM', 'AP', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MG', '
     'PA', 'PB', 'PE', 'PI', 'PR', 'RJ', 'RN', 'RO', 'RR', 'RS', 'SC', 'SE', 'SP', 'TO'];
 const UF_OPTIONS = UFS.map(u => ({ value: u, label: u }));
 
+// Região é sigla no CV e era digitada à mão aqui - foi assim que um "IA" chegou
+// ao CV e derrubou o cadastro em silêncio (HTTP 200 com erro genérico, nada
+// gravado). Agora sai da UF; o mesmo mapa vale no servidor (REGIOES no
+// correspondentService), que é quem valida de verdade.
+const REGIOES = [
+    { sigla: 'N', nome: 'Norte', ufs: ['AC', 'AM', 'AP', 'PA', 'RO', 'RR', 'TO'] },
+    { sigla: 'NE', nome: 'Nordeste', ufs: ['AL', 'BA', 'CE', 'MA', 'PB', 'PE', 'PI', 'RN', 'SE'] },
+    { sigla: 'CO', nome: 'Centro-Oeste', ufs: ['DF', 'GO', 'MS', 'MT'] },
+    { sigla: 'SD', nome: 'Sudeste', ufs: ['ES', 'MG', 'RJ', 'SP'] },
+    { sigla: 'S', nome: 'Sul', ufs: ['PR', 'RS', 'SC'] },
+];
+const regiaoDaUf = (uf) => REGIOES.find(r => r.ufs.includes(String(uf || '').toUpperCase()))?.sigla || null;
+const nomeDaRegiao = (sigla) => REGIOES.find(r => r.sigla === sigla)?.nome || null;
+
 const vazio = () => ({
-    nome: '', regiao: 'SD', estado: 'SP', cidade: '', endereco: '',
+    nome: '', estado: 'SP', cidade: '', endereco: '',
     telefone: '', email: '', dias_agendamento: 5, observacao: '',
 });
 
@@ -45,6 +59,8 @@ watch(() => props.open, (aberto) => {
     if (!aberto) return;
     form.value = vazio();
     enviado.value = null;
+    criada.value = null;
+    codigo.value = '';
 
     const p = props.prefill;
     jaExiste.value = !!p;
@@ -58,17 +74,26 @@ watch(() => props.open, (aberto) => {
     }
 });
 
+const regiao = computed(() => regiaoDaUf(form.value.estado));
+
 const podeSalvar = computed(() => {
     const f = form.value;
     if (!f.nome.trim()) return false;
     if (jaExiste.value) return !!cvIdempresa.value;
-    return !!(f.regiao.trim() && f.estado && f.cidade.trim() && f.endereco.trim());
+    return !!(regiao.value && f.estado && f.cidade.trim() && f.endereco.trim());
 });
+
+// Empresa criada aqui, esperando o código. Guardada para o passo seguinte, que
+// acontece no mesmo modal: confirmar o código provável sem sair da tela.
+const criada = ref(null);
+const codigo = ref('');
+const vinculando = ref(false);
 
 async function salvar() {
     try {
         const data = await store.createCompany({
             ...form.value,
+            regiao: regiao.value,
             somente_local: jaExiste.value,
             cv_idempresa: jaExiste.value ? Number(cvIdempresa.value) : null,
         });
@@ -78,31 +103,55 @@ async function salvar() {
             return;
         }
         enviado.value = data?.envio || {};
+        criada.value = data?.empresa || null;
+        codigo.value = enviado.value?.codigo_sugerido ? String(enviado.value.codigo_sugerido) : '';
         toast.success('Empresa enviada ao CV. Falta confirmar o código.');
     } catch (err) {
         toast.error(err?.message || 'Erro ao cadastrar a empresa.');
+    }
+}
+
+async function vincular() {
+    if (!codigo.value) return toast.error('Informe o código da empresa no CV.');
+    vinculando.value = true;
+    try {
+        await store.linkCompany(criada.value.id, Number(codigo.value));
+        toast.success('Empresa vinculada. Já dá para cadastrar as pessoas dela.');
+        emit('close');
+    } catch (err) {
+        toast.error(err?.message || 'Não foi possível vincular.');
+    } finally {
+        vinculando.value = false;
     }
 }
 </script>
 
 <template>
     <Modal :open="open" size="lg"
-        :title="enviado ? 'Confirme o código no CV' : 'Nova empresa correspondente'"
+        :title="enviado ? 'Confirme o código da empresa' : 'Nova empresa correspondente'"
         @close="emit('close')">
 
-        <!-- Depois do POST: o CV não devolve o id -->
+        <!-- Depois do POST: o CV não devolve o id, então confirmamos o provável -->
         <template v-if="enviado">
-            <div class="rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-ink mb-4">
-                <p class="font-medium mb-1"><i class="fas fa-circle-info mr-1.5 text-amber-500"></i>Falta um passo manual</p>
+            <div class="rounded-lg border border-line bg-surface-sunken/60 p-4 text-sm text-ink mb-4">
+                <p class="font-medium mb-1">
+                    <i class="fas fa-paper-plane mr-1.5 text-accent"></i>
+                    {{ form.nome }} enviada ao CV
+                </p>
                 <p class="text-ink-muted">
-                    O CV grava a empresa mas não devolve o código dela, e a listagem por integração está fora do ar.
-                    Abra a lista no CV, confirme que <strong class="text-ink">{{ form.nome }}</strong> aparece
-                    e anote o código - depois informe na aba Equipes, no aviso "Falta código".
+                    O CV cadastra a empresa mas não devolve o código dela. Como ele numera em sequência,
+                    o próximo código é <strong class="text-ink">{{ enviado.codigo_sugerido }}</strong> -
+                    a última empresa conhecida é a {{ enviado.codigo_base }}. Confirme para liberar o
+                    cadastro de pessoas.
                 </p>
             </div>
+
+            <Input v-model="codigo" type="number" label="Código da empresa no CV"
+                hint="Deixe o sugerido se ninguém tiver criado outra empresa direto no CV agora." />
+
             <a :href="cvEmpresasUrl(form.nome)" target="_blank" rel="noopener"
-                class="inline-flex items-center gap-1.5 text-sm text-accent hover:underline">
-                <i class="fas fa-arrow-up-right-from-square"></i> Abrir listagem filtrada no CV
+                class="inline-flex items-center gap-1.5 text-xs text-ink-muted hover:text-accent mt-3">
+                <i class="fas fa-arrow-up-right-from-square"></i> Conferir na listagem do CV
             </a>
         </template>
 
@@ -121,9 +170,8 @@ async function salvar() {
                 </template>
 
                 <template v-else>
-                    <Input v-model="form.regiao" label="Região (sigla)" required
-                        hint="A API exige a sigla, não o nome. SD = Sudeste (confirmado). Confira em Empreendimentos > Regiões no CV." />
-                    <Select v-model="form.estado" :options="UF_OPTIONS" label="UF" required />
+                    <Select v-model="form.estado" :options="UF_OPTIONS" label="UF" required
+                        :hint="regiao ? `Região ${nomeDaRegiao(regiao)} (${regiao}), enviada automaticamente ao CV.` : ''" />
                     <Input v-model="form.cidade" label="Cidade" placeholder="Ex.: Votuporanga" required
                         hint="Precisa pertencer à UF escolhida." />
                     <Input v-model="form.dias_agendamento" type="number" label="Dias de agendamento" required
@@ -139,7 +187,11 @@ async function salvar() {
 
         <template #footer>
             <template v-if="enviado">
-                <Button variant="primary" @click="emit('close')">Fechar</Button>
+                <Button variant="ghost" @click="emit('close')">Depois</Button>
+                <Button variant="primary" icon="fas fa-link" :disabled="!codigo" :loading="vinculando"
+                    @click="vincular">
+                    Vincular código
+                </Button>
             </template>
             <template v-else>
                 <Button variant="ghost" @click="emit('close')">Cancelar</Button>

@@ -114,7 +114,27 @@ const salvandoVinculo = ref(false);
 
 function abrirVinculo(empresa) {
     vinculando.value = empresa;
-    codigoCv.value = '';
+    codigoCv.value = store.codigoSugerido ? String(store.codigoSugerido) : '';
+}
+
+/**
+ * Vincula direto o código provável, sem abrir o modal.
+ * O servidor recusa se o número já for de outra empresa (ele confere o espelho
+ * de usuários), então o caminho rápido não vira cadastro no lugar errado.
+ */
+async function vincularSugerido(empresa) {
+    // Guardado antes: o vínculo recarrega o panorama e a sugestão anda para o
+    // próximo número.
+    const codigo = store.codigoSugerido;
+    salvandoVinculo.value = true;
+    try {
+        await store.linkCompany(empresa.id, codigo);
+        toast.success(`Empresa vinculada ao código ${codigo}.`);
+    } catch (err) {
+        toast.error(err?.message || 'Não foi possível vincular.');
+    } finally {
+        salvandoVinculo.value = false;
+    }
 }
 
 async function salvarVinculo() {
@@ -128,6 +148,20 @@ async function salvarVinculo() {
         toast.error(err?.message || 'Não foi possível vincular.');
     } finally {
         salvandoVinculo.value = false;
+    }
+}
+
+/**
+ * Manda de novo ao CV uma empresa que ficou pendente. Serve para o caso em que
+ * o cadastro foi recusado em silêncio (o CV responde igual gravando ou não) -
+ * quem já tem código não chega aqui, o servidor recusa para não duplicar.
+ */
+async function reenviar(empresa) {
+    try {
+        await store.resendCompany(empresa.id);
+        toast.success('Empresa reenviada ao CV. Confirme o código para liberar as pessoas.');
+    } catch (err) {
+        toast.error(err?.message || 'Não foi possível reenviar.');
     }
 }
 
@@ -221,18 +255,35 @@ onMounted(() => { if (!store.empresas.length) store.fetchOverview(); });
                     <div class="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-ink">
                         <p class="mb-2">
                             <i class="fas fa-triangle-exclamation mr-1 text-amber-500"></i>
-                            O CV não devolve o código da empresa no cadastro. Copie o código na listagem do CV e informe aqui
-                            para liberar o cadastro de pessoas.
+                            O CV não devolve o código no cadastro.
+                            <template v-if="store.codigoSugerido">
+                                Como ele numera em sequência, o próximo é o
+                                <strong>{{ store.codigoSugerido }}</strong> - confirme para liberar o cadastro de pessoas.
+                            </template>
+                            <template v-else>
+                                Informe o código para liberar o cadastro de pessoas.
+                            </template>
                         </p>
                         <div class="flex flex-wrap gap-2">
-                            <a :href="cvEmpresasUrl(e.nome)" target="_blank" rel="noopener"
-                                class="inline-flex items-center gap-1.5 rounded-lg border border-line px-2.5 py-1.5 hover:text-accent hover:border-accent/60">
-                                <i class="fas fa-arrow-up-right-from-square"></i> Ver no CV
-                            </a>
-                            <button type="button" class="inline-flex items-center gap-1.5 rounded-lg bg-accent text-white px-2.5 py-1.5"
-                                @click.stop="abrirVinculo(e)">
-                                <i class="fas fa-link"></i> Informar código
+                            <button v-if="store.codigoSugerido" type="button"
+                                class="inline-flex items-center gap-1.5 rounded-lg bg-accent text-white px-2.5 py-1.5 min-h-[40px]"
+                                :disabled="salvandoVinculo" @click.stop="vincularSugerido(e)">
+                                <i class="fas fa-check"></i> Vincular #{{ store.codigoSugerido }}
                             </button>
+                            <button type="button"
+                                class="inline-flex items-center gap-1.5 rounded-lg border border-line px-2.5 py-1.5 min-h-[40px] hover:text-accent hover:border-accent/60"
+                                @click.stop="abrirVinculo(e)">
+                                <i class="fas fa-link"></i> Informar outro
+                            </button>
+                            <button type="button"
+                                class="inline-flex items-center gap-1.5 rounded-lg border border-line px-2.5 py-1.5 min-h-[40px] hover:text-accent hover:border-accent/60"
+                                :disabled="store.saving" @click.stop="reenviar(e)">
+                                <i class="fas fa-rotate-right"></i> Reenviar ao CV
+                            </button>
+                            <a :href="cvEmpresasUrl(e.nome)" target="_blank" rel="noopener"
+                                class="inline-flex items-center gap-1.5 rounded-lg border border-line px-2.5 py-1.5 min-h-[40px] hover:text-accent hover:border-accent/60">
+                                <i class="fas fa-arrow-up-right-from-square"></i> Conferir no CV
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -251,8 +302,14 @@ onMounted(() => { if (!store.empresas.length) store.fetchOverview(); });
         <Modal :open="!!vinculando" size="sm" title="Código da empresa no CV"
             :subtitle="vinculando?.nome" @close="vinculando = null">
             <p class="text-sm text-ink-muted mb-3">
-                Abra a listagem de empresas no CV, localize <strong class="text-ink">{{ vinculando?.nome }}</strong>
-                e copie o número da coluna de código.
+                <template v-if="store.codigoSugerido">
+                    O CV numera as empresas em sequência, então <strong class="text-ink">{{ store.codigoSugerido }}</strong>
+                    é o código provável de <strong class="text-ink">{{ vinculando?.nome }}</strong>. Troque só se souber outro.
+                </template>
+                <template v-else>
+                    Abra a listagem de empresas no CV, localize <strong class="text-ink">{{ vinculando?.nome }}</strong>
+                    e copie o número da coluna de código.
+                </template>
             </p>
             <a v-if="vinculando" :href="cvEmpresasUrl(vinculando.nome)" target="_blank" rel="noopener"
                 class="inline-flex items-center gap-1.5 text-sm text-accent hover:underline mb-4">
