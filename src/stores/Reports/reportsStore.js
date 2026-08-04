@@ -171,9 +171,26 @@ export const useReportsStore = defineStore('reports', () => {
       messages.value = data.messages || []
       selectedIds.value = []
       resetHistory(data.report?.spec)
+      // A Eme ainda está gerando no servidor (a run sobrevive a F5/troca de
+      // tela): reconecta no stream e volta a assistir do ponto zero (replay).
+      if (data.activeRun) attachToStream(data.report.id)
     } finally {
       loadingReport.value = false
     }
+  }
+
+  // Reinscreve no stream de uma geração em andamento. O backend reenvia todos
+  // os eventos já emitidos (texto, tools, specs) e segue ao vivo até o done.
+  function attachToStream(reportId) {
+    if (isStreaming.value) return
+    isStreaming.value = true
+    streamingText.value = ''
+    toolProgress.value = []
+    consumeStream(`${API_URL}/reports/${reportId}/chat/stream`, null, 'Falha ao acompanhar a geração.')
+      .catch((err) => {
+        messages.value.push({ id: `err-${Date.now()}`, role: 'model', content: `⚠️ ${err.message}` })
+      })
+      .finally(() => { isStreaming.value = false })
   }
 
   // ── Edição direta do spec (sem passar pela Eme) ────────────────────────────
@@ -237,16 +254,18 @@ export const useReportsStore = defineStore('reports', () => {
   }
 
   // Consome um endpoint SSE do builder e despacha os eventos. Compartilhado
-  // pelo chat e pelo refresh do modo ao vivo, que falam o mesmo protocolo.
+  // pelo chat, pelo refresh do modo ao vivo e pela reinscrição pós-reload
+  // (body null = GET sem corpo), que falam o mesmo protocolo.
   async function consumeStream(url, body, erroPadrao) {
     const response = await fetch(url, {
-      method: 'POST',
+      method: body === null ? 'GET' : 'POST',
       headers: {
-        'Content-Type': 'application/json',
+        ...(body === null ? {} : { 'Content-Type': 'application/json' }),
         Authorization: `Bearer ${localStorage.getItem('token')}`,
       },
-      body: JSON.stringify(body),
+      ...(body === null ? {} : { body: JSON.stringify(body) }),
     })
+    if (response.status === 204) return // nada rodando (a run terminou antes)
     if (!response.ok || !response.body) {
       const err = await response.json().catch(() => ({}))
       throw new Error(err.error || erroPadrao)
@@ -349,12 +368,18 @@ export const useReportsStore = defineStore('reports', () => {
         }
         highlightId.value = evt.changedIds?.[evt.changedIds.length - 1] || null
         break
-      case 'done':
+      case 'done': {
         if (streamingText.value) {
-          messages.value.push({ id: evt.msgId || `m-${Date.now()}`, role: 'model', content: streamingText.value })
+          // Guarda contra duplicata: num replay pós-reload a mensagem final
+          // pode já ter vindo do banco no fetchReport.
+          const msgId = evt.msgId || `m-${Date.now()}`
+          if (!messages.value.some((m) => m.id === msgId)) {
+            messages.value.push({ id: msgId, role: 'model', content: streamingText.value })
+          }
           streamingText.value = ''
         }
         break
+      }
       case 'memory_saved':
         // A Eme guardou uma preferência: reflete na aba Memória sem recarregar
         fetchMemories().catch(() => {})
