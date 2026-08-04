@@ -1,15 +1,16 @@
 <script setup>
 // Configuração do Plano de Eventos (admin).
 //
-// Sem esta tela o módulo não anda: as etapas nascem sem perfil, e perfil vazio
-// significa que ninguém decide. É aqui que se define quem valida no Comercial e
-// quem aceita no Marketing.
+// Sem esta tela o módulo não anda: é aqui que se define QUANTAS etapas de
+// autorização existem, como se chamam e quem decide em cada uma. Não há etapa
+// fixa no código — a fila é montada do zero aqui.
 //
 // Lembrando a regra de alçada: o perfil habilita DECIDIR, mas o alcance vem do
 // grant de empreendimento de cada pessoa (tela de Alçadas). Estar no perfil não
 // dá acesso a empreendimento nenhum por si só.
 
 import { computed, onMounted, ref } from 'vue';
+import { useRouter } from 'vue-router';
 import { useToast } from 'vue-toastification';
 import api from '@/utils/EventPlan/api.js';
 
@@ -24,8 +25,10 @@ import Switch from '@/components/UI/Switch.vue';
 import MultiSelector from '@/components/UI/MultiSelector.vue';
 import Spinner from '@/components/UI/Spinner.vue';
 import Badge from '@/components/UI/Badge.vue';
+import IconButton from '@/components/UI/IconButton.vue';
 
 const toast = useToast();
+const router = useRouter();
 
 const loading = ref(true);
 const saving = ref(false);
@@ -52,6 +55,50 @@ function setStageProfiles(stage, names) {
     stage.profile_ids = (names || [])
         .map(n => profiles.value.find(p => p.name === n)?.id)
         .filter(Boolean);
+}
+
+// ── Etapas: quantas são e quem decide, tudo montado aqui ─────────────────────
+
+const novaEtapa = ref('');
+
+/**
+ * A chave identifica a etapa para sempre: as decisões gravadas apontam para ela,
+ * então é gerada uma vez e nunca muda, mesmo que o nome seja reescrito depois.
+ */
+function gerarChave(nome) {
+    const base = String(nome).normalize('NFD').replace(/[̀-ͯ]/g, '')
+        .toUpperCase().replace(/[^A-Z0-9]+/g, '_').replace(/^_|_$/g, '').slice(0, 40) || 'ETAPA';
+    let chave = base;
+    let n = 2;
+    while (settings.value.stages.some(st => st.key === chave)) chave = `${base}_${n++}`;
+    return chave;
+}
+
+function reordenar() {
+    settings.value.stages.forEach((st, i) => { st.order = i + 1; });
+}
+
+function adicionarEtapa() {
+    const nome = novaEtapa.value.trim();
+    if (!nome) return;
+    settings.value.stages.push({ key: gerarChave(nome), name: nome, order: 0, profile_ids: [] });
+    reordenar();
+    novaEtapa.value = '';
+}
+
+function removerEtapa(index) {
+    const st = settings.value.stages[index];
+    if (!confirm(`Remover a etapa "${st.name}"? Planos em andamento nela ficam sem etapa correspondente.`)) return;
+    settings.value.stages.splice(index, 1);
+    reordenar();
+}
+
+function moverEtapa(index, delta) {
+    const destino = index + delta;
+    if (destino < 0 || destino >= settings.value.stages.length) return;
+    const [st] = settings.value.stages.splice(index, 1);
+    settings.value.stages.splice(destino, 0, st);
+    reordenar();
 }
 
 async function load() {
@@ -140,10 +187,13 @@ onMounted(load);
     <PageContainer>
         <PageHeader
             title="Plano de Eventos — Configurações"
-            subtitle="Etapas de aprovação, perfis de alçada, ciclo mensal e categorias de item"
+            subtitle="Quantas autorizações existem, quem decide cada uma, ciclo mensal e categorias de item"
             icon="fas fa-sliders"
         >
             <template #actions>
+                <Button variant="ghost" icon="fas fa-arrow-left" @click="router.push('/comercial/plano-eventos')">
+                    Voltar
+                </Button>
                 <Button variant="primary" icon="fas fa-save" :loading="saving" @click="salvar">Salvar</Button>
             </template>
         </PageHeader>
@@ -196,20 +246,37 @@ onMounted(load);
             <!-- Etapas -->
             <SettingsCard
                 default-open
-                title="Etapas de aprovação"
-                description="A ordem em que o plano caminha. Deixar uma etapa sem perfil trava o fluxo: ninguém consegue decidir nela."
+                title="Etapas de autorização"
+                description="A fila por onde o plano passa depois de enviado. Crie quantas precisar, na ordem que quiser, e escolha quem decide em cada uma."
             >
                 <div class="space-y-3">
-                    <Surface v-for="stage in settings.stages" :key="stage.key" variant="flat">
+                    <p v-if="!settings.stages.length"
+                        class="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-sm text-amber-700 dark:text-amber-400">
+                        <i class="fas fa-triangle-exclamation mr-1"></i>
+                        Nenhuma etapa criada. Do jeito que está, o plano enviado pelo gestor é aprovado na hora e os
+                        eventos vão direto para a agenda, sem passar por ninguém.
+                    </p>
+
+                    <Surface v-for="(stage, index) in settings.stages" :key="stage.key" variant="flat">
                         <div class="flex flex-wrap items-center justify-between gap-2">
-                            <div>
-                                <strong class="text-ink">{{ stage.order }}. {{ stage.name }}</strong>
-                                <span class="ml-2 text-xs text-ink-subtle">{{ stage.key }}</span>
+                            <div class="flex min-w-0 flex-1 items-center gap-2">
+                                <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent text-xs font-semibold text-white">
+                                    {{ index + 1 }}
+                                </span>
+                                <Input v-model="stage.name" size="sm" class="min-w-0 flex-1"
+                                    placeholder="Nome da etapa (ex.: Validação Comercial)" />
                             </div>
-                            <Badge v-if="!(stage.profile_ids || []).length" variant="danger" size="sm">
-                                Sem perfil — etapa travada
-                            </Badge>
+                            <div class="flex shrink-0 items-center gap-1">
+                                <IconButton size="sm" icon="fas fa-arrow-up" :disabled="index === 0"
+                                    v-tippy="'Subir na fila'" @click="moverEtapa(index, -1)" />
+                                <IconButton size="sm" icon="fas fa-arrow-down"
+                                    :disabled="index === settings.stages.length - 1"
+                                    v-tippy="'Descer na fila'" @click="moverEtapa(index, 1)" />
+                                <IconButton size="sm" icon="fas fa-trash" v-tippy="'Remover etapa'"
+                                    @click="removerEtapa(index)" />
+                            </div>
                         </div>
+
                         <div class="mt-2">
                             <MultiSelector
                                 :options="profileOptions.map(o => o.label)"
@@ -218,8 +285,22 @@ onMounted(load);
                                 overlay
                                 @change="(names) => setStageProfiles(stage, names)"
                             />
+                            <p v-if="!(stage.profile_ids || []).length" class="mt-1.5 text-xs text-amber-600 dark:text-amber-400">
+                                <i class="fas fa-triangle-exclamation mr-1"></i>
+                                Sem perfil, ninguém consegue decidir e o plano trava aqui.
+                            </p>
                         </div>
                     </Surface>
+
+                    <div class="flex gap-2">
+                        <Input v-model="novaEtapa" placeholder="Nome da nova etapa"
+                            @keyup.enter="adicionarEtapa" />
+                        <Button variant="secondary" icon="fas fa-plus" @click="adicionarEtapa">Adicionar</Button>
+                    </div>
+                    <p class="text-xs text-ink-subtle">
+                        Lembre de Salvar depois de mexer na fila. O evento só entra na agenda depois de passar por
+                        todas as etapas.
+                    </p>
                 </div>
             </SettingsCard>
 

@@ -47,8 +47,7 @@ const plan = computed(() => store.current);
 
 const STATUS_VARIANT = {
     draft: 'neutral',
-    pending_comercial: 'warning',
-    pending_marketing: 'info',
+    in_review: 'warning',
     returned: 'danger',
     approved: 'success',
     closed: 'neutral',
@@ -87,29 +86,40 @@ const canClose = computed(() =>
 );
 
 /**
- * Acompanhamento: onde o plano está no fluxo, em quatro paradas. Cada uma fica
- * concluída, atual ou pendente — é a leitura de 2 segundos que o gestor precisa
- * ao abrir a tela.
+ * Acompanhamento: onde o plano está no fluxo. As paradas são a MONTAGEM mais as
+ * etapas de autorização configuradas — se o admin criar três etapas, aparecem
+ * três aqui. É a leitura de 2 segundos que o gestor precisa ao abrir a tela.
  */
 const etapas = computed(() => {
-    const s = plan.value?.status;
-    const ordem = ['draft', 'pending_comercial', 'pending_marketing', 'approved', 'closed'];
-    // Devolvido volta o ponteiro para o início, mas mantém a trilha visível.
-    const atual = s === 'returned' ? 0 : Math.max(0, ordem.indexOf(s));
+    const p = plan.value;
+    if (!p) return [];
+    const stages = p.stages || [];
+    const decididas = p.stage_decisions || {};
 
-    const marcos = [
-        { chave: 'draft', titulo: 'Montagem', quem: 'Gestor', indice: 0 },
-        { chave: 'pending_comercial', titulo: 'Comercial', quem: 'Validação', indice: 1 },
-        { chave: 'pending_marketing', titulo: 'Marketing', quem: 'Aceite', indice: 2 },
-        { chave: 'approved', titulo: 'Aprovado', quem: 'Na agenda', indice: 3 },
-    ];
+    const montagem = {
+        chave: '__draft__',
+        titulo: 'Montagem',
+        quem: 'Gestor',
+        estado: p.status === 'draft' || p.status === 'returned' ? 'atual' : 'feito',
+    };
 
-    return marcos.map(m => ({
-        ...m,
-        estado: s === 'closed' ? 'feito'
-            : m.indice < atual ? 'feito'
-                : m.indice === atual ? 'atual' : 'pendente',
+    const autorizacoes = stages.map(st => ({
+        chave: st.key,
+        titulo: st.name,
+        quem: 'Autorização',
+        estado: decididas[st.key] ? 'feito'
+            : (p.status === 'in_review' && p.current_stage_key === st.key) ? 'atual'
+                : 'pendente',
     }));
+
+    const fim = {
+        chave: '__done__',
+        titulo: p.status === 'closed' ? 'Mês fechado' : 'Aprovado',
+        quem: p.status === 'closed' ? 'Congelado' : 'Na agenda',
+        estado: ['approved', 'closed'].includes(p.status) ? 'feito' : 'pendente',
+    };
+
+    return [montagem, ...autorizacoes, fim];
 });
 
 const ESTADO_CLASSE = {
@@ -188,9 +198,9 @@ async function confirmarDecisoes() {
     try {
         const result = await store.submitDecisions();
         toast.success(
-            result.status === 'pending_marketing'
-                ? 'Validado. O plano seguiu para o Marketing.'
-                : 'Decisões registradas.'
+            result.next_stage
+                ? `Decidido. O plano seguiu para ${result.next_stage.name}.`
+                : 'Decisões registradas. O plano está aprovado.'
         );
     } catch (e) {
         // 422 traz as pendências item a item para o gestor corrigir na hora.
@@ -349,7 +359,7 @@ onMounted(async () => {
             </Surface>
 
             <!-- Eventos -->
-            <div class="space-y-3" :class="mode === 'decide' ? 'pb-28' : ''">
+            <div class="space-y-3">
                 <EmptyState
                     v-if="!plan.events?.length"
                     icon="far fa-calendar"
@@ -376,6 +386,10 @@ onMounted(async () => {
 
             <PlanTimeline class="mt-4" :activities="plan.activities" />
 
+            <!-- Respiro do rodapé fixo: sem isto a barra de decisão cobre o
+                 histórico, que é o último bloco da página. -->
+            <div v-if="mode === 'decide'" class="h-28" aria-hidden="true"></div>
+
             <!-- Barra de decisão: contador ao vivo enquanto ele marca -->
             <div
                 v-if="mode === 'decide'"
@@ -389,7 +403,7 @@ onMounted(async () => {
                             de {{ money(store.proposedTotal) }}
                         </p>
                         <p class="text-xs text-ink-subtle">
-                            {{ decidedCount }} de {{ plan.events?.length || 0 }} evento(s) marcados
+                            {{ store.activeStageName }} · {{ decidedCount }} de {{ plan.events?.length || 0 }} evento(s) marcados
                         </p>
                     </div>
                     <div class="flex gap-2">
