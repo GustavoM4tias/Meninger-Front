@@ -105,3 +105,25 @@ export const getFeedback = async ({ page = 1, per_page = 30, rating } = {}) => {
   if (!response.ok) throw new Error('Erro ao carregar feedbacks.')
   return response.json()
 }
+
+// Incidentes do validador anti-alucinação (Brain Studio > Validação, admin)
+export const getValidationIncidents = async ({ page = 1, per_page = 30, outcome, reviewed } = {}) => {
+  const params = new URLSearchParams({ page, per_page })
+  if (outcome) params.set('outcome', outcome)
+  if (reviewed !== undefined && reviewed !== '') params.set('reviewed', reviewed)
+  const response = await fetch(`${BASE}/incidents?${params}`, {
+    headers: { ...authHeader(), 'Content-Type': 'application/json' },
+  })
+  if (!response.ok) throw new Error('Erro ao carregar incidentes de validação.')
+  return response.json()
+}
+
+export const setIncidentReviewed = async (incidentId, reviewed) => {
+  const response = await fetch(`${BASE}/incidents/${incidentId}`, {
+    method: 'PATCH',
+    headers: { ...authHeader(), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ reviewed }),
+  })
+  if (!response.ok) throw new Error('Erro ao atualizar incidente.')
+  return response.json()
+}

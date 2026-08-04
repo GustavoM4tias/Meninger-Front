@@ -1,7 +1,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted, watch } from 'vue'
 import * as api from '@/utils/OfficeAI/apiOfficeBrain'
-import { getFeedback } from '@/utils/OfficeAI/apiOfficeChat'
+import { getFeedback, getValidationIncidents, setIncidentReviewed } from '@/utils/OfficeAI/apiOfficeChat'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import 'dayjs/locale/pt-br'
@@ -52,6 +52,14 @@ const sbox = reactive({ role: 'admin', city: '', message: '', prompt: '', answer
 const fb = reactive({ loading: false, items: [], stats: { up: 0, down: 0, total: 0 }, total: 0, page: 1, filter: '', loaded: false })
 const detail = reactive({ open: false, item: null })
 
+// Validação (incidentes do validador anti-alucinação)
+const inc = reactive({
+  loading: false, items: [], total: 0, page: 1,
+  stats: { corrected: 0, blocked: 0, warned: 0, pending: 0, total: 0 },
+  outcome: '', reviewed: 'false', loaded: false,
+})
+const incDetail = reactive({ open: false, item: null })
+
 const tabOptions = computed(() => [
   { value: 'identity', label: 'Identidade', icon: 'fas fa-id-badge' },
   { value: 'blocks', label: 'Políticas', icon: 'fas fa-scroll', count: blocks.value.length },
@@ -59,6 +67,7 @@ const tabOptions = computed(() => [
   { value: 'behavior', label: 'Comportamento', icon: 'fas fa-sliders-h' },
   { value: 'reports', label: 'Relatórios', icon: 'fas fa-table', count: reports.value.length },
   { value: 'insights', label: 'Insights', icon: 'fas fa-comments' },
+  { value: 'validation', label: 'Validação', icon: 'fas fa-shield-halved', count: inc.stats.pending || undefined },
   { value: 'versions', label: 'Versões', icon: 'fas fa-code-branch', count: versions.value.length },
   { value: 'sandbox', label: 'Sandbox', icon: 'fas fa-flask' },
 ])
@@ -264,7 +273,59 @@ const formatLatency = (ms) => ms == null ? '—' : (ms < 1000 ? `${ms} ms` : `${
 const poolLabel = (p) => p === 'smart' ? 'Smart (Pro)' : p === 'fast' ? 'Fast (Flash)' : (p || '—')
 const poolVariant = (p) => p === 'smart' ? 'accent' : p === 'fast' ? 'info' : 'neutral'
 
-watch(tab, (t) => { if (t === 'insights' && !fb.loaded) loadFeedback() })
+// ── Validação (incidentes do validador anti-alucinação) ──
+async function loadIncidents() {
+  inc.loading = true
+  try {
+    const data = await getValidationIncidents({
+      page: inc.page, per_page: 30,
+      outcome: inc.outcome || undefined,
+      reviewed: inc.reviewed,
+    })
+    inc.items = data.incidents; inc.stats = data.stats; inc.total = data.total; inc.loaded = true
+  } catch (e) { notify(e.message || 'Erro ao carregar incidentes.', 'err') } finally { inc.loading = false }
+}
+function setIncOutcome(v) { inc.outcome = v; inc.page = 1; loadIncidents() }
+function setIncReviewedFilter(v) { inc.reviewed = v; inc.page = 1; loadIncidents() }
+function incGo(p) { if (p < 1 || p > incPages.value) return; inc.page = p; loadIncidents() }
+function openIncDetail(item) { incDetail.item = item; incDetail.open = true }
+async function toggleIncReviewed(item) {
+  try {
+    const r = await setIncidentReviewed(item.id, !item.reviewed)
+    item.reviewed = r.reviewed
+    inc.stats.pending += r.reviewed ? -1 : 1
+    notify(r.reviewed ? 'Incidente marcado como revisado.' : 'Incidente reaberto.')
+  } catch (e) { notify(e.message, 'err') }
+}
+const incPages = computed(() => Math.ceil(inc.total / 30) || 1)
+const incOutcomeOptions = computed(() => [
+  { value: '', label: 'Todos', count: inc.stats.total },
+  { value: 'corrected', label: 'Corrigidas', count: inc.stats.corrected },
+  { value: 'blocked', label: 'Bloqueadas', count: inc.stats.blocked },
+  { value: 'warned', label: 'Com aviso', count: inc.stats.warned },
+])
+const incReviewedOptions = [
+  { value: 'false', label: 'A revisar' },
+  { value: 'true', label: 'Revisados' },
+  { value: '', label: 'Todos' },
+]
+const outcomeLabel = (o) => ({ corrected: 'Corrigida', blocked: 'Bloqueada', warned: 'Com aviso' }[o] || o)
+const outcomeVariant = (o) => ({ corrected: 'info', blocked: 'warning', warned: 'danger' }[o] || 'neutral')
+const outcomeIcon = (o) => ({
+  corrected: 'fas fa-wand-magic-sparkles',
+  blocked: 'fas fa-shield-halved',
+  warned: 'fas fa-circle-exclamation',
+}[o] || 'fas fa-question')
+const outcomeHint = (o) => ({
+  corrected: 'A Eme reescreveu sozinha e a resposta final passou na validação.',
+  blocked: 'A divergência persistiu: o texto foi substituído pelos dados reais do banco.',
+  warned: 'Sem dados autoritativos para reescrever - entregue com o alerta vermelho.',
+}[o] || '')
+
+watch(tab, (t) => {
+  if (t === 'insights' && !fb.loaded) loadFeedback()
+  if (t === 'validation' && !inc.loaded) loadIncidents()
+})
 onMounted(load)
 </script>
 
@@ -470,6 +531,69 @@ onMounted(load)
         </div>
       </section>
 
+      <!-- VALIDAÇÃO -->
+      <section v-show="tab === 'validation'">
+        <p class="text-xs text-ink-muted mb-4">
+          Cada vez que o validador anti-alucinação pega a Eme citando valores que não constam nos dados consultados,
+          o episódio é registrado aqui - com o texto original, o texto entregue e o desfecho. Use esta tela para
+          entender os padrões de erro e ajustar políticas/glossário.
+        </p>
+
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+          <Surface variant="raised" padding="sm"><p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono">Total</p><p class="text-2xl font-semibold text-ink mt-1 tabular-nums">{{ inc.stats.total }}</p></Surface>
+          <Surface variant="raised" padding="sm"><p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono">Corrigidas</p><p class="text-2xl font-semibold text-sky-500 mt-1 tabular-nums flex items-center gap-1.5"><i class="fas fa-wand-magic-sparkles text-base"></i>{{ inc.stats.corrected }}</p></Surface>
+          <Surface variant="raised" padding="sm"><p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono">Bloqueadas</p><p class="text-2xl font-semibold text-amber-500 mt-1 tabular-nums flex items-center gap-1.5"><i class="fas fa-shield-halved text-base"></i>{{ inc.stats.blocked }}</p></Surface>
+          <Surface variant="raised" padding="sm"><p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono">Com aviso</p><p class="text-2xl font-semibold text-red-500 mt-1 tabular-nums flex items-center gap-1.5"><i class="fas fa-circle-exclamation text-base"></i>{{ inc.stats.warned }}</p></Surface>
+        </div>
+
+        <div class="flex items-center justify-between flex-wrap gap-2 mb-4">
+          <div class="flex items-center gap-2 flex-wrap">
+            <SegmentedControl :model-value="inc.outcome" :options="incOutcomeOptions" size="sm" @change="setIncOutcome" />
+            <SegmentedControl :model-value="inc.reviewed" :options="incReviewedOptions" size="sm" @change="setIncReviewedFilter" />
+          </div>
+          <span class="text-xs text-ink-subtle font-mono">{{ inc.total }} resultado{{ inc.total !== 1 ? 's' : '' }}</span>
+        </div>
+
+        <div v-if="inc.loading && !inc.items.length" class="py-16 text-center text-ink-subtle"><i class="fas fa-spinner animate-spin text-2xl mb-3 block"></i>Carregando incidentes…</div>
+        <EmptyState v-else-if="!inc.items.length" size="md" icon="fas fa-shield-halved"
+          title="Nenhum incidente" description="Nada por aqui - as respostas da Eme estão passando na validação." />
+
+        <div v-else class="space-y-2">
+          <article v-for="item in inc.items" :key="item.id" @click="openIncDetail(item)"
+            class="group flex items-start gap-3 p-3 sm:p-4 rounded-xl bg-surface-raised border border-line surface-gradient hover:border-accent/30 hover:shadow-elevated hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
+            :class="item.reviewed ? 'opacity-60' : ''">
+            <div class="h-9 w-9 rounded-lg grid place-items-center shrink-0 border"
+              :class="{
+                corrected: 'bg-sky-500/15 text-sky-600 border-sky-500/20',
+                blocked: 'bg-amber-500/15 text-amber-600 border-amber-500/20',
+                warned: 'bg-red-500/15 text-red-600 border-red-500/20',
+              }[item.outcome]">
+              <i :class="outcomeIcon(item.outcome)" class="text-sm"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 flex-wrap">
+                <Badge :variant="outcomeVariant(item.outcome)" size="sm">{{ outcomeLabel(item.outcome) }}</Badge>
+                <span class="text-sm font-medium text-ink">{{ item.user?.username || 'Usuário' }}</span>
+                <span v-if="item.attempts" class="text-xs text-ink-subtle font-mono">{{ item.attempts }} tentativa{{ item.attempts > 1 ? 's' : '' }}</span>
+                <Badge v-if="item.reviewed" variant="neutral" size="sm">Revisado</Badge>
+                <span class="text-xs text-ink-subtle ml-auto font-mono">{{ fromNow(item.created_at) }}</span>
+              </div>
+              <p class="text-xs text-ink-muted line-clamp-2 leading-relaxed mt-1">{{ truncate(item.context?.user_question) }}</p>
+              <p v-if="item.suspicious?.length" class="text-xs text-ink-subtle font-mono mt-1 truncate">
+                Suspeitos: {{ item.suspicious.map(s => s.value).join(', ') }}
+              </p>
+            </div>
+            <i class="fas fa-chevron-right text-ink-subtle text-xs mt-1 group-hover:text-accent transition-colors"></i>
+          </article>
+        </div>
+
+        <div v-if="incPages > 1" class="flex items-center justify-center gap-2 mt-5">
+          <Button size="sm" variant="ghost" icon="fas fa-chevron-left" :disabled="inc.page <= 1" @click="incGo(inc.page - 1)">Anterior</Button>
+          <span class="text-xs text-ink-muted font-mono px-3">{{ inc.page }} / {{ incPages }}</span>
+          <Button size="sm" variant="ghost" icon-right="fas fa-chevron-right" :disabled="inc.page >= incPages" @click="incGo(inc.page + 1)">Próxima</Button>
+        </div>
+      </section>
+
       <!-- VERSÕES -->
       <section v-show="tab === 'versions'">
         <Surface variant="raised" padding="sm" class="mb-4">
@@ -569,6 +693,75 @@ onMounted(load)
         <div class="flex items-center justify-between text-xs text-ink-subtle pt-2 border-t border-line font-mono">
           <span>Tipo: <span class="text-ink">{{ detail.item.message?.response_type || 'text' }}</span></span>
           <span>{{ fmt(detail.item.created_at) }}</span>
+        </div>
+      </div>
+    </Modal>
+
+    <!-- Modal detalhe do incidente de validação -->
+    <Modal :open="incDetail.open" size="lg" @close="incDetail.open = false">
+      <template #header>
+        <div v-if="incDetail.item" class="flex items-center gap-3">
+          <div class="h-9 w-9 rounded-lg grid place-items-center shrink-0 border"
+            :class="{
+              corrected: 'bg-sky-500/15 text-sky-600 border-sky-500/20',
+              blocked: 'bg-amber-500/15 text-amber-600 border-amber-500/20',
+              warned: 'bg-red-500/15 text-red-600 border-red-500/20',
+            }[incDetail.item.outcome]">
+            <i :class="outcomeIcon(incDetail.item.outcome)" class="text-sm"></i>
+          </div>
+          <div class="min-w-0">
+            <h3 class="text-base font-semibold text-ink truncate">{{ outcomeLabel(incDetail.item.outcome) }}</h3>
+            <p class="text-xs text-ink-muted truncate">{{ outcomeHint(incDetail.item.outcome) }}</p>
+          </div>
+        </div>
+      </template>
+      <div v-if="incDetail.item" class="space-y-4">
+        <section class="flex items-center gap-2 flex-wrap text-xs text-ink-muted">
+          <span class="font-medium text-ink">{{ incDetail.item.user?.username || 'Usuário' }}</span>
+          <span v-if="incDetail.item.user?.email" class="font-mono">{{ incDetail.item.user.email }}</span>
+          <span v-if="incDetail.item.attempts" class="font-mono ml-auto">{{ incDetail.item.attempts }} tentativa{{ incDetail.item.attempts > 1 ? 's' : '' }} de correção</span>
+        </section>
+        <section v-if="incDetail.item.context?.user_question">
+          <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono mb-1.5">Pergunta do usuário</p>
+          <div class="rounded-lg border border-line bg-surface-sunken p-3 text-sm text-ink leading-relaxed whitespace-pre-wrap">{{ incDetail.item.context.user_question }}</div>
+        </section>
+        <section v-if="incDetail.item.suspicious?.length">
+          <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono mb-1.5">Valores/nomes acusados pelo validador</p>
+          <div class="flex items-center gap-1.5 flex-wrap">
+            <Badge v-for="(s, i) in incDetail.item.suspicious" :key="i" variant="danger" size="sm">
+              <code class="font-mono">{{ s.value }}</code>
+              <span class="opacity-70 ml-1">{{ { number: 'número', unknown_label: 'nome', wrong_ranking: 'ranking' }[s.kind] || s.kind }}</span>
+            </Badge>
+          </div>
+        </section>
+        <section v-if="incDetail.item.original_text">
+          <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono mb-1.5">Texto original (com problema)</p>
+          <div class="rounded-lg border border-red-500/25 bg-red-500/5 p-3 text-sm text-ink leading-relaxed max-h-48 overflow-y-auto whitespace-pre-wrap">{{ incDetail.item.original_text }}</div>
+        </section>
+        <section v-if="incDetail.item.final_text">
+          <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono mb-1.5">Texto entregue ao usuário</p>
+          <div class="rounded-lg border border-emerald-500/25 bg-emerald-500/5 p-3 text-sm text-ink leading-relaxed max-h-48 overflow-y-auto whitespace-pre-wrap">{{ incDetail.item.final_text }}</div>
+        </section>
+        <section v-if="incDetail.item.context" class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          <div class="rounded-lg bg-surface-sunken border border-line px-3 py-2"><p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono">Modelo</p><p class="text-xs text-ink font-mono truncate mt-0.5">{{ incDetail.item.context.model || '—' }}</p></div>
+          <div class="rounded-lg bg-surface-sunken border border-line px-3 py-2"><p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono">Pool</p><Badge :variant="poolVariant(incDetail.item.context.pool)" size="sm" class="mt-0.5">{{ poolLabel(incDetail.item.context.pool) }}</Badge></div>
+          <div class="rounded-lg bg-surface-sunken border border-line px-3 py-2"><p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono">Latência</p><p class="text-xs text-ink font-mono mt-0.5">{{ formatLatency(incDetail.item.context.latency_ms) }}</p></div>
+        </section>
+        <section v-if="incDetail.item.context?.tool_calls?.length">
+          <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono mb-2">Ferramentas chamadas ({{ incDetail.item.context.tool_calls.length }})</p>
+          <div class="flex items-center gap-1.5 flex-wrap">
+            <Badge v-for="(tc, idx) in incDetail.item.context.tool_calls" :key="idx" :variant="tc.error ? 'danger' : 'accent'" size="sm">
+              <code class="font-mono">{{ tc.name }}</code>
+            </Badge>
+          </div>
+        </section>
+        <div class="flex items-center justify-between gap-3 pt-2 border-t border-line">
+          <span class="text-xs text-ink-subtle font-mono">{{ fmt(incDetail.item.created_at) }}</span>
+          <Button size="sm" :variant="incDetail.item.reviewed ? 'ghost' : 'primary'"
+            :icon="incDetail.item.reviewed ? 'fas fa-rotate-left' : 'fas fa-check'"
+            @click="toggleIncReviewed(incDetail.item)">
+            {{ incDetail.item.reviewed ? 'Reabrir' : 'Marcar como revisado' }}
+          </Button>
         </div>
       </div>
     </Modal>

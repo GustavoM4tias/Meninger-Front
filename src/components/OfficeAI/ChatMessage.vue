@@ -44,13 +44,19 @@ const warning = computed(() => props.message.metadata?.warning || null);
 
 // Aparência do aviso do validador:
 //  corrected  → a Eme reescreveu a resposta com os dados reais (informativo)
-//  unreliable → a divergência persistiu: a resposta NÃO deve ser usada (alerta)
+//  blocked    → o texto não passou na validação e foi SUBSTITUÍDO pelos dados do banco
+//  unreliable → divergência sem dado autoritativo: a resposta NÃO deve ser usada (alerta)
 //  notice     → avisos legados (resposta cortada, filtro do modelo)
 const warningStyle = computed(() => ({
   corrected: {
     box: 'bg-sky-500/10 border-sky-500/25 text-sky-700 dark:text-sky-300',
     icon: 'fas fa-wand-magic-sparkles text-sky-500',
     title: 'Resposta corrigida automaticamente',
+  },
+  blocked: {
+    box: 'bg-amber-500/10 border-amber-500/25 text-amber-700 dark:text-amber-300',
+    icon: 'fas fa-shield-halved text-amber-500',
+    title: 'Resposta substituída pelos dados reais',
   },
   unreliable: {
     box: 'bg-red-500/10 border-red-500/30 text-red-700 dark:text-red-300',
