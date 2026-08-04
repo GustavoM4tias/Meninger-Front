@@ -76,6 +76,7 @@ onMounted(() => {
                     ]"
                     :tips="[
                         'Se um cadastro der erro na integração com o CV, abra o detalhe e clique em Reprocessar.',
+                        'Num link de vários cadastros dá para editar o período: abra o detalhe e clique no lápis ao lado das datas - estender o encerramento reabre um link já encerrado.',
                         'O ícone de link/computador ao lado do nome indica imobiliárias cadastradas por aqui (via link ou pela tela).',
                         'A validade do CRECI em branco assume 31/12 do ano que vem.',
                     ]"
