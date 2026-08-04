@@ -8,6 +8,8 @@ import { useRoute, useRouter } from 'vue-router'
 import Button from '@/components/UI/Button.vue'
 import Badge from '@/components/UI/Badge.vue'
 import ReportRenderer from '@/components/Reports/ReportRenderer.vue'
+import ReportFilterBar from '@/components/Reports/ReportFilterBar.vue'
+import { useReportLiveData } from '@/components/Reports/useReportLiveData.js'
 import ShareModal from '@/components/Reports/eme/ShareModal.vue'
 import PublicLinkModal from '@/components/Reports/eme/PublicLinkModal.vue'
 import { useReportsStore } from '@/stores/Reports/reportsStore.js'
@@ -19,6 +21,10 @@ const router = useRouter()
 const store = useReportsStore()
 
 const data = ref(null)
+
+// Relatório interativo: filtros do leitor + props recalculadas no servidor
+const specRef = computed(() => data.value?.spec || null)
+const live = useReportLiveData(() => route.params.id, specRef)
 const loading = ref(true)
 const error = ref('')
 const reportEl = ref(null)
@@ -35,6 +41,8 @@ const currentAccess = ref([]) // preenchido junto com o relatório, para o Share
 onMounted(async () => {
   try {
     data.value = await requestWithAuth(`/reports/${route.params.id}/view`)
+    // Relatório com datasets: consulta os dados frescos já na abertura
+    live.start()
     // Os modais de compartilhamento leem o relatório do store; carrega só para
     // quem tem permissão de editar, que é quem enxerga esses botões.
     if (data.value?.canEdit) {
@@ -82,7 +90,7 @@ const fmtDate = (d) => (d ? new Date(d).toLocaleDateString('pt-BR') : null)
          alinhado com o conteúdo. Antes a barra usava px-3/sm:px-5 e o conteúdo
          px-4/sm:px-8, então nada batia. -->
     <div class="sticky top-0 z-30 border-b border-line bg-surface-raised/80 backdrop-blur">
-      <div class="flex items-center gap-3 px-4 sm:px-8 py-3">
+      <div class="flex items-center gap-3 px-4 sm:px-8 pb-2 pt-3.5">
         <button
           class="w-9 h-9 -ml-1.5 rounded-lg text-ink-subtle hover:bg-surface-sunken hover:text-ink transition flex items-center justify-center flex-shrink-0"
           aria-label="Voltar para a lista" @click="router.push('/relatorios')"
@@ -166,13 +174,33 @@ const fmtDate = (d) => (d ? new Date(d).toLocaleDateString('pt-BR') : null)
         {{ error }}
       </p>
       <div class="px-4 sm:px-8 py-6 bg-surface">
+        <!-- Filtros do leitor (relatório interativo). Fora do reportEl de
+             propósito: export/PNG/PDF levam só o documento. -->
+        <div v-if="live.isInteractive.value && live.filters.value.length" class="mx-auto max-w-3xl mb-4">
+          <ReportFilterBar
+            v-model="live.values.value"
+            :filters="live.filters.value"
+            :options="live.options.value"
+            :loading="live.loading.value"
+            :refreshed-at="live.refreshedAt.value"
+            :has-active="live.hasActiveFilters.value"
+            @clear="live.clearFilters()"
+          />
+          <p v-if="live.error.value" class="mt-2 text-xs text-rose-600 dark:text-rose-400">
+            {{ live.error.value }}
+          </p>
+        </div>
+
         <div ref="reportEl">
           <ReportRenderer
             :spec="data.spec"
             :theme="data.theme || 'classic'"
+            :live-props="live.liveProps.value"
+            :live-errors="live.blockErrors.value"
+            :live-loading="live.loading.value"
             :meta="{
               generatedAt: data.publishedAt,
-              refreshedAt: data.refreshedAt,
+              refreshedAt: live.refreshedAt.value || data.refreshedAt,
               periodStart: data.periodStart,
               periodEnd: data.periodEnd,
               dataMode: data.dataMode,
