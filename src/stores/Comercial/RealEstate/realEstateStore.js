@@ -48,6 +48,15 @@ export const useRealEstateStore = defineStore('realEstate', () => {
         return data.registration;
     }
 
+    async function updateInvite(id, { starts_at, ends_at }) {
+        const data = await requestWithAuth(`/realestate/invites/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ starts_at, ends_at }),
+        });
+        await fetchRegistrations();
+        return data.registration;
+    }
+
     async function revokeInvite(id) {
         await requestWithAuth(`/realestate/invites/${id}/revoke`, { method: 'POST' });
         await fetchRegistrations();
@@ -118,6 +127,7 @@ export const useRealEstateStore = defineStore('realEstate', () => {
         fetchReport,
         syncImobiliarias,
         createInvite,
+        updateInvite,
         revokeInvite,
         createRegistration,
         retryRegistration,

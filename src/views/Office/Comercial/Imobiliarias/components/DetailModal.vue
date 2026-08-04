@@ -1,17 +1,24 @@
 <script setup>
 // Detalhe de um cadastro/convite: dados preenchidos, empreendimentos,
-// andamento das etapas no CV e ações (copiar link, reprocessar).
+// andamento das etapas no CV e ações (copiar link, reprocessar, editar
+// o período de um link multi-uso).
 
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
+import { useToast } from 'vue-toastification';
+import { useRealEstateStore } from '@/stores/Comercial/RealEstate/realEstateStore';
 import Modal from '@/components/UI/Modal.vue';
 import Button from '@/components/UI/Button.vue';
 import Badge from '@/components/UI/Badge.vue';
+import Input from '@/components/UI/Input.vue';
 
 const props = defineProps({
     registration: { type: Object, default: null },
     retrying: { type: Boolean, default: false },
 });
 const emit = defineEmits(['close', 'retry', 'copy']);
+
+const store = useRealEstateStore();
+const toast = useToast();
 
 const r = computed(() => props.registration);
 
@@ -58,6 +65,42 @@ const WINDOW = {
 };
 const windowBadge = computed(() => WINDOW[r.value?.window_state] || WINDOW.open);
 const SUB_STATUS = { completed: 'Concluída', error: 'Pendente' };
+
+// ── Edição do período do link multi-uso ──────────────────────────────────────
+const canEditWindow = computed(() => !!r.value?.multi_use && r.value?.status !== 'revoked');
+const editingWindow = ref(false);
+const wStarts = ref('');
+const wEnds = ref('');
+const savingWindow = ref(false);
+const windowError = ref('');
+
+watch(() => r.value?.id, () => { editingWindow.value = false; windowError.value = ''; });
+
+function startEditWindow() {
+    wStarts.value = r.value?.starts_at || '';
+    wEnds.value = r.value?.ends_at || '';
+    windowError.value = '';
+    editingWindow.value = true;
+}
+
+async function saveWindow() {
+    windowError.value = '';
+    if (!wEnds.value) { windowError.value = 'Informe a data de encerramento.'; return; }
+    if (wStarts.value && wEnds.value < wStarts.value) {
+        windowError.value = 'A data de encerramento deve ser igual ou posterior ao início.';
+        return;
+    }
+    savingWindow.value = true;
+    try {
+        await store.updateInvite(r.value.id, { starts_at: wStarts.value, ends_at: wEnds.value });
+        toast.success('Período do link atualizado!');
+        editingWindow.value = false;
+    } catch (err) {
+        windowError.value = err?.message || 'Erro ao atualizar o período.';
+    } finally {
+        savingWindow.value = false;
+    }
+}
 </script>
 
 <template>
@@ -85,12 +128,32 @@ const SUB_STATUS = { completed: 'Concluída', error: 'Pendente' };
 
             <!-- Convite com link ativo (uso único aguardando OU multi-uso não revogado) -->
             <div v-if="r.token && (r.status === 'invite' || (r.multi_use && r.status !== 'revoked'))" class="space-y-2">
-                <div class="flex items-center justify-between">
+                <div class="flex items-center justify-between gap-2">
                     <h4 class="text-xs font-semibold uppercase tracking-wide text-ink-muted">Link público</h4>
-                    <span v-if="r.multi_use && r.ends_at" class="text-xs text-ink-subtle">
-                        <i class="fas fa-clock mr-1"></i>{{ fmtDay(r.starts_at) }} até {{ fmtDay(r.ends_at) }}
-                    </span>
+                    <div v-if="r.multi_use" class="flex items-center gap-1.5">
+                        <span v-if="r.ends_at" class="text-xs text-ink-subtle">
+                            <i class="fas fa-clock mr-1"></i>{{ fmtDay(r.starts_at) }} até {{ fmtDay(r.ends_at) }}
+                        </span>
+                        <Button v-if="canEditWindow && !editingWindow" variant="ghost" size="sm" icon="fas fa-pen"
+                            @click="startEditWindow" v-tippy="'Editar período'" />
+                    </div>
                 </div>
+
+                <!-- Edição do período (permite estender e reabrir um link encerrado) -->
+                <div v-if="editingWindow" class="rounded-lg border border-line p-3 space-y-3">
+                    <div class="grid grid-cols-2 gap-3">
+                        <Input v-model="wStarts" type="date" label="Início" />
+                        <Input v-model="wEnds" type="date" label="Encerramento" required />
+                    </div>
+                    <p v-if="windowError" class="text-sm text-red-500">{{ windowError }}</p>
+                    <div class="flex justify-end gap-2">
+                        <Button variant="ghost" size="sm" @click="editingWindow = false">Cancelar</Button>
+                        <Button variant="primary" size="sm" icon="fas fa-check" :loading="savingWindow" @click="saveWindow">
+                            Salvar período
+                        </Button>
+                    </div>
+                </div>
+
                 <div class="flex items-center gap-2 rounded-lg border border-line bg-surface-sunken p-2">
                     <code
                         class="flex-1 text-xs text-ink-muted break-all">https://lp.menin.com.br/imobiliaria/{{ r.token }}</code>
