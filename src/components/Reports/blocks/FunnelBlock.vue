@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, inject } from 'vue'
 import { formatValue } from '../format.js'
 
 const props = defineProps({
@@ -9,7 +9,16 @@ const props = defineProps({
   stages: { type: Array, default: () => [] },
   format: { type: String, default: 'number' },
   caption: { type: String, default: '' },
+  // Relatório interativo: clicar numa etapa lista os registros dela
+  blockId: { type: String, default: null },
+  clickable: { type: Boolean, default: false },
 })
+
+const reportDrill = inject('reportDrill', null)
+function abrirEtapa(label) {
+  if (!props.clickable || !reportDrill) return
+  reportDrill({ kind: 'category', blockId: props.blockId, label: String(label) })
+}
 
 const max = computed(() => Math.max(...props.stages.map((s) => Number(s.value) || 0), 1))
 
@@ -45,7 +54,13 @@ const rows = computed(() =>
           <div class="flex-1 min-w-0">
             <div
               class="h-9 rounded-lg bg-accent flex items-center px-3 transition-all duration-700"
+              :class="clickable ? 'cursor-pointer hover:ring-2 hover:ring-accent/40' : ''"
               :style="{ width: r.widthPct + '%', opacity: 1 - i * 0.55 / Math.max(rows.length - 1, 1) + '' }"
+              :role="clickable ? 'button' : undefined"
+              :tabindex="clickable ? 0 : undefined"
+              :title="clickable ? 'Ver os registros desta etapa' : undefined"
+              @click="abrirEtapa(r.label)"
+              @keydown.enter="abrirEtapa(r.label)"
             >
               <span class="text-xs font-medium text-white truncate drop-shadow-sm">{{ r.label }}</span>
             </div>

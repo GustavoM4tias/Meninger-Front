@@ -13,7 +13,16 @@ const props = defineProps({
   format: { type: String, default: 'number' },
   showShare: { type: Boolean, default: true }, // % sobre o total
   caption: { type: String, default: '' },
+  // Relatório interativo: clicar numa posição lista os registros dela
+  blockId: { type: String, default: null },
+  clickable: { type: Boolean, default: false },
 })
+
+const reportDrill = inject('reportDrill', null)
+function abrirItem(label) {
+  if (!props.clickable || !reportDrill) return
+  reportDrill({ kind: 'category', blockId: props.blockId, label: String(label) })
+}
 
 // Cada posição recebe uma cor da paleta do tema. Antes todas as barras usavam
 // o mesmo acento variando só a opacidade, o que deixava o ranking praticamente
@@ -54,7 +63,15 @@ const rows = computed(() =>
     </figcaption>
 
     <ol class="space-y-2.5">
-      <li v-for="r in rows" :key="r.label">
+      <li
+        v-for="r in rows" :key="r.label"
+        :class="clickable ? 'cursor-pointer rounded-lg -mx-2 px-2 py-1 -my-1 hover:bg-surface-sunken/60 transition-colors' : ''"
+        :role="clickable ? 'button' : undefined"
+        :tabindex="clickable ? 0 : undefined"
+        :title="clickable ? 'Ver os registros deste item' : undefined"
+        @click="abrirItem(r.label)"
+        @keydown.enter="abrirItem(r.label)"
+      >
         <div class="flex items-baseline gap-2 mb-1">
           <span
             class="w-5 h-5 rounded-md text-[10px] font-semibold flex items-center justify-center flex-shrink-0 tabular-nums"

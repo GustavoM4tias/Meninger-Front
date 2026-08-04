@@ -225,21 +225,6 @@ watch(() => store.highlightId, (id) => {
             </button>
           </div>
 
-          <!-- Filtros do relatório interativo: aqui o admin testa o que o
-               leitor vai poder consultar -->
-          <div v-if="live.isInteractive.value && live.filters.value.length" class="mx-auto max-w-3xl mb-4">
-            <ReportFilterBar
-              v-model="live.values.value"
-              :filters="live.filters.value"
-              :options="live.options.value"
-              :loading="live.loading.value"
-              :refreshed-at="live.refreshedAt.value"
-              :has-active="live.hasActiveFilters.value"
-              @clear="live.clearFilters()"
-            />
-            <p v-if="live.error.value" class="mt-2 text-xs text-rose-600 dark:text-rose-400">{{ live.error.value }}</p>
-          </div>
-
           <ReportRenderer
             ref="rendererRef"
             :spec="store.spec"
@@ -255,7 +240,23 @@ watch(() => store.highlightId, (id) => {
             @remove="store.removeBlocks([$event])"
             @move="(id, dir) => store.moveBlock(id, dir)"
             @add-after="openAddBlock"
-          />
+          >
+            <!-- Filtros do relatório interativo, na MESMA posição que o leitor
+                 verá (abaixo do cabeçalho da marca): aqui o admin testa o que
+                 o leitor vai poder consultar -->
+            <template v-if="live.isInteractive.value && live.filters.value.length" #filters>
+              <ReportFilterBar
+                v-model="live.values.value"
+                :filters="live.filters.value"
+                :options="live.options.value"
+                :loading="live.loading.value"
+                :refreshed-at="live.refreshedAt.value"
+                :has-active="live.hasActiveFilters.value"
+                @clear="live.clearFilters()"
+              />
+              <p v-if="live.error.value" class="mt-2 text-xs text-rose-600 dark:text-rose-400">{{ live.error.value }}</p>
+            </template>
+          </ReportRenderer>
         </template>
       </div>
     </div>

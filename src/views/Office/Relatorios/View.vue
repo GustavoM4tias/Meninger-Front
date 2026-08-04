@@ -9,12 +9,15 @@ import Button from '@/components/UI/Button.vue'
 import Badge from '@/components/UI/Badge.vue'
 import ReportRenderer from '@/components/Reports/ReportRenderer.vue'
 import ReportFilterBar from '@/components/Reports/ReportFilterBar.vue'
+import DrillModal from '@/components/Reports/DrillModal.vue'
+import RowDetailModal from '@/components/Reports/RowDetailModal.vue'
 import { useReportLiveData } from '@/components/Reports/useReportLiveData.js'
 import ShareModal from '@/components/Reports/eme/ShareModal.vue'
 import PublicLinkModal from '@/components/Reports/eme/PublicLinkModal.vue'
 import { useReportsStore } from '@/stores/Reports/reportsStore.js'
 import { requestWithAuth } from '@/utils/Auth/requestWithAuth.js'
 import { exportPng, exportPdf, exportHtml } from '@/components/Reports/exportReport.js'
+import { exportSheetsXlsx, tablesFromSpec } from '@/components/Reports/exportExcel.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -37,6 +40,78 @@ const showPublic = ref(false)
 
 const podeEditar = computed(() => !!data.value?.canEdit)
 const currentAccess = ref([]) // preenchido junto com o relatório, para o ShareModal
+
+// ── Interatividade do leitor: drill-down, detalhe de linha e foco ────────────
+
+// Detalhe de um registro (linha de tabela ou linha do drill)
+const rowDetail = ref(null) // { title, row, columns, sobreDrill }
+// Drill-down: lista dos registros por trás de um item clicado
+const drill = ref({ open: false, loading: false, error: '', label: '', blockId: null, data: null })
+// Pilha de "foco": cada filtro aplicado via drill guarda os valores anteriores
+// para o botão Voltar restaurar exatamente o estado de antes
+const focoStack = ref([])
+
+function onDrill(payload) {
+  if (payload.kind === 'row') {
+    rowDetail.value = {
+      title: payload.title || 'Registro',
+      row: payload.row,
+      columns: payload.columns || [],
+      sobreDrill: false,
+    }
+    return
+  }
+  abrirDrill(payload)
+}
+
+async function abrirDrill(payload) {
+  drill.value = { open: true, loading: true, error: '', label: payload.label, blockId: payload.blockId, data: null }
+  try {
+    const res = await requestWithAuth(`/reports/${route.params.id}/data/drill`, {
+      method: 'POST',
+      body: JSON.stringify({
+        block_id: payload.blockId,
+        label: payload.label,
+        filters: live.values.value,
+      }),
+    })
+    drill.value = { open: true, loading: false, error: '', label: res.label, blockId: payload.blockId, data: res }
+  } catch (e) {
+    drill.value = { open: true, loading: false, error: e?.message || 'Não foi possível abrir os registros.', label: payload.label, blockId: payload.blockId, data: null }
+  }
+}
+
+// O item clicado pode virar filtro do relatório? Só quando o spec declara um
+// filtro cujo argumento (ou chave) casa com o campo agrupado do gráfico.
+const drillFilter = computed(() => {
+  const groupBy = drill.value.data?.groupBy
+  if (!groupBy) return null
+  return (data.value?.spec?.filters || []).find(
+    (f) => f.type !== 'date-range' && (f.arg === groupBy || f.key === groupBy)
+  ) || null
+})
+
+function aplicarFocoDoDrill() {
+  const filtro = drillFilter.value
+  if (!filtro) return
+  focoStack.value.push({ label: drill.value.label, values: { ...live.values.value } })
+  live.values.value = { ...live.values.value, [filtro.key]: drill.value.label }
+  drill.value = { ...drill.value, open: false }
+}
+
+function voltarFoco() {
+  const anterior = focoStack.value.pop()
+  if (anterior) live.values.value = anterior.values
+}
+
+function abrirLinhaDoDrill({ row, columns }) {
+  rowDetail.value = { title: drill.value.label || 'Registro', row, columns, sobreDrill: true }
+}
+
+// Rótulos dos filtros para a aba "Sobre" do Excel
+const filterLabels = computed(() =>
+  Object.fromEntries((data.value?.spec?.filters || []).map((f) => [f.key, f.label]))
+)
 
 onMounted(async () => {
   try {
@@ -71,13 +146,41 @@ async function exportar(tipo) {
     const titulo = data.value?.title || 'relatorio'
     if (tipo === 'png') await exportPng(reportEl.value, titulo)
     else if (tipo === 'pdf') await exportPdf(reportEl.value, titulo)
+    else if (tipo === 'xlsx') await exportarExcel(titulo)
     else await exportHtml(reportEl.value, titulo)
   } catch (err) {
     console.error('[Relatorios] export', tipo, err)
-    error.value = `Não foi possível gerar o ${tipo.toUpperCase()}. Tente novamente.`
-    setTimeout(() => { if (error.value.startsWith('Não foi possível')) error.value = '' }, 5000)
+    error.value = err?.friendly || `Não foi possível gerar o ${tipo.toUpperCase()}. Tente novamente.`
+    setTimeout(() => { if (error.value.startsWith('Não foi possível') || error.value.startsWith('Este relatório')) error.value = '' }, 5000)
   } finally {
     exportando.value = ''
+  }
+}
+
+// Excel: relatório interativo exporta as linhas cruas das consultas (com os
+// filtros e as alçadas de quem exporta, direto do servidor); relatório sem
+// consultas exporta as tabelas visíveis do documento.
+async function exportarExcel(titulo) {
+  if (live.isInteractive.value) {
+    const res = await requestWithAuth(`/reports/${route.params.id}/data/export`, {
+      method: 'POST',
+      body: JSON.stringify({ filters: live.values.value }),
+    })
+    await exportSheetsXlsx({
+      sheets: res.sheets,
+      title: titulo,
+      filtros: res.values,
+      filterLabels: filterLabels.value,
+      refreshedAt: res.refreshedAt,
+    })
+  } else {
+    const sheets = tablesFromSpec(data.value?.spec, live.liveProps.value)
+    if (!sheets.length) {
+      const err = new Error('sem tabelas')
+      err.friendly = 'Este relatório não tem tabelas de dados para exportar em Excel.'
+      throw err
+    }
+    await exportSheetsXlsx({ sheets, title: titulo, filtros: {}, filterLabels: {} })
   }
 }
 
@@ -132,6 +235,7 @@ const fmtDate = (d) => (d ? new Date(d).toLocaleDateString('pt-BR') : null)
                   { id: 'html', icon: 'fa-code', label: 'HTML', hint: 'Página completa' },
                   { id: 'png', icon: 'fa-image', label: 'PNG', hint: 'Imagem única' },
                   { id: 'pdf', icon: 'fa-file-pdf', label: 'PDF', hint: 'A4, sem cortar blocos' },
+                  { id: 'xlsx', icon: 'fa-file-excel', label: 'Excel', hint: 'Dados em planilha' },
                 ]" :key="opt.id"
                 type="button"
                 class="w-full flex items-center gap-2.5 px-3 py-2.5 text-left hover:bg-surface-sunken transition"
@@ -174,23 +278,6 @@ const fmtDate = (d) => (d ? new Date(d).toLocaleDateString('pt-BR') : null)
         {{ error }}
       </p>
       <div class="px-4 sm:px-8 py-6 bg-surface">
-        <!-- Filtros do leitor (relatório interativo). Fora do reportEl de
-             propósito: export/PNG/PDF levam só o documento. -->
-        <div v-if="live.isInteractive.value && live.filters.value.length" class="mx-auto max-w-3xl mb-4">
-          <ReportFilterBar
-            v-model="live.values.value"
-            :filters="live.filters.value"
-            :options="live.options.value"
-            :loading="live.loading.value"
-            :refreshed-at="live.refreshedAt.value"
-            :has-active="live.hasActiveFilters.value"
-            @clear="live.clearFilters()"
-          />
-          <p v-if="live.error.value" class="mt-2 text-xs text-rose-600 dark:text-rose-400">
-            {{ live.error.value }}
-          </p>
-        </div>
-
         <div ref="reportEl">
           <ReportRenderer
             :spec="data.spec"
@@ -198,6 +285,7 @@ const fmtDate = (d) => (d ? new Date(d).toLocaleDateString('pt-BR') : null)
             :live-props="live.liveProps.value"
             :live-errors="live.blockErrors.value"
             :live-loading="live.loading.value"
+            interactive
             :meta="{
               generatedAt: data.publishedAt,
               refreshedAt: live.refreshedAt.value || data.refreshedAt,
@@ -205,12 +293,71 @@ const fmtDate = (d) => (d ? new Date(d).toLocaleDateString('pt-BR') : null)
               periodEnd: data.periodEnd,
               dataMode: data.dataMode,
             }"
-          />
+            @drill="onDrill"
+          >
+            <!-- Filtros do leitor: dentro do documento (sempre abaixo do
+                 cabeçalho da marca), marcados no renderer para o export
+                 (PNG/PDF/HTML) sair sem os controles. -->
+            <template v-if="live.isInteractive.value && live.filters.value.length" #filters>
+              <ReportFilterBar
+                v-model="live.values.value"
+                :filters="live.filters.value"
+                :options="live.options.value"
+                :loading="live.loading.value"
+                :refreshed-at="live.refreshedAt.value"
+                :has-active="live.hasActiveFilters.value"
+                @clear="live.clearFilters(); focoStack = []"
+              />
+              <!-- Foco aplicado via drill-down: um clique volta ao estado anterior -->
+              <div v-if="focoStack.length" class="mt-2 flex items-center gap-2 flex-wrap">
+                <span
+                  class="inline-flex items-center gap-1.5 rounded-full bg-accent-soft text-accent px-3 py-1.5 text-xs font-medium"
+                >
+                  <i class="fas fa-filter text-[10px]" />
+                  Focado em: {{ focoStack[focoStack.length - 1].label }}
+                </span>
+                <button
+                  type="button"
+                  class="inline-flex items-center gap-1.5 rounded-full border border-line px-3 py-1.5 text-xs text-ink-muted hover:text-ink hover:bg-surface-sunken transition min-h-[32px]"
+                  @click="voltarFoco"
+                >
+                  <i class="fas fa-arrow-rotate-left text-[10px]" />Voltar
+                </button>
+              </div>
+              <p v-if="live.error.value" class="mt-2 text-xs text-rose-600 dark:text-rose-400">
+                {{ live.error.value }}
+              </p>
+            </template>
+          </ReportRenderer>
         </div>
       </div>
     </template>
 
     <ShareModal v-if="podeEditar" :open="showShare" :current-access="currentAccess" @close="showShare = false" />
     <PublicLinkModal v-if="podeEditar" :open="showPublic" @close="showPublic = false" />
+
+    <!-- Drill-down: registros por trás do item clicado -->
+    <DrillModal
+      :open="drill.open"
+      :loading="drill.loading"
+      :error="drill.error"
+      :label="drill.label"
+      :data="drill.data"
+      :can-filter="!!drillFilter"
+      :report-title="data?.title || 'relatorio'"
+      @close="drill = { ...drill, open: false }"
+      @apply-filter="aplicarFocoDoDrill"
+      @open-row="abrirLinhaDoDrill"
+    />
+
+    <!-- Detalhe de um registro (linha de tabela ou linha do drill) -->
+    <RowDetailModal
+      :open="!!rowDetail"
+      :title="rowDetail?.title || 'Registro'"
+      :row="rowDetail?.row || null"
+      :columns="rowDetail?.columns || []"
+      :z-index="rowDetail?.sobreDrill ? 10000 : 9999"
+      @close="rowDetail = null"
+    />
   </div>
 </template>
