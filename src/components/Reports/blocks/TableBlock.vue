@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, inject } from 'vue'
 import { formatValue } from '../format.js'
 
 const props = defineProps({
@@ -9,7 +9,22 @@ const props = defineProps({
   rows: { type: Array, default: () => [] }, // [{ [key]: value }]
   totals: { type: Object, default: null }, // { [key]: value } - linha de totais
   caption: { type: String, default: '' },
+  // Relatório interativo: clicar numa linha abre o detalhe do registro
+  blockId: { type: String, default: null },
+  clickable: { type: Boolean, default: false },
 })
+
+const reportDrill = inject('reportDrill', null)
+function abrirLinha(row) {
+  if (!props.clickable || !reportDrill) return
+  reportDrill({
+    kind: 'row',
+    blockId: props.blockId,
+    row,
+    columns: props.columns,
+    title: props.title || 'Registro',
+  })
+}
 
 const alignClass = (c) => c.align === 'right' ? 'text-right' : c.align === 'center' ? 'text-center' : 'text-left'
 const numericDefault = computed(() =>
@@ -37,7 +52,13 @@ const numericDefault = computed(() =>
           </tr>
         </thead>
         <tbody class="divide-y divide-line/70">
-          <tr v-for="(r, ri) in rows" :key="ri" class="hover:bg-surface-sunken/40 transition-colors">
+          <tr
+            v-for="(r, ri) in rows" :key="ri"
+            class="hover:bg-surface-sunken/40 transition-colors"
+            :class="clickable ? 'cursor-pointer' : ''"
+            :title="clickable ? 'Ver detalhes do registro' : undefined"
+            @click="abrirLinha(r)"
+          >
             <td
               v-for="(c, ci) in columns" :key="c.key"
               class="px-4 py-2.5 text-ink-muted tabular-nums"

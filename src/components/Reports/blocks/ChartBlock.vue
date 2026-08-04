@@ -24,7 +24,18 @@ const props = defineProps({
   goal: { type: Number, default: null }, // linha de meta (bar/line)
   height: { type: Number, default: 260 },
   caption: { type: String, default: '' },
+  // Relatório interativo (injetados pelo ReportRenderer): clicar num item
+  // abre a lista dos registros por trás dele
+  blockId: { type: String, default: null },
+  clickable: { type: Boolean, default: false },
 })
+
+// Canal de drill do renderer (null fora do modo interativo)
+const reportDrill = inject('reportDrill', null)
+function onChartClick(params) {
+  if (!props.clickable || !reportDrill || !params?.name) return
+  reportDrill({ kind: 'category', blockId: props.blockId, label: String(params.name) })
+}
 
 // Tema injetado pelo ReportRenderer (fallback: clássico, se usado solto)
 const reportTheme = inject('reportTheme', computed(() => 'classic'))
@@ -176,7 +187,10 @@ const option = computed(() => {
       <p class="text-sm font-medium text-ink">{{ title }}</p>
       <p v-if="subtitle" class="text-xs text-ink-subtle mt-0.5">{{ subtitle }}</p>
     </figcaption>
-    <VChart :option="option" autoresize class="w-full px-2" :style="{ height: height + 'px' }" />
+    <VChart :option="option" autoresize class="w-full px-2" :style="{ height: height + 'px' }" @click="onChartClick" />
     <p v-if="caption" class="px-4 pb-3 text-xs text-ink-subtle">{{ caption }}</p>
+    <p v-if="clickable" class="px-4 pb-3 -mt-1 text-[10px] text-ink-subtle flex items-center gap-1">
+      <i class="fas fa-hand-pointer" aria-hidden="true" />Toque num item para ver os registros
+    </p>
   </figure>
 </template>

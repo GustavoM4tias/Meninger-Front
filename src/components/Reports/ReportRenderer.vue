@@ -24,15 +24,25 @@ const props = defineProps({
   liveErrors: { type: Object, default: () => ({}) },
   // true enquanto uma troca de filtro está reconsultando (esmaece blocos ligados)
   liveLoading: { type: Boolean, default: false },
+  // Relatório interativo para o LEITOR: blocos de dados viram clicáveis
+  // (linha de tabela → detalhe; item de gráfico/ranking → lista dos registros).
+  // Desligado no builder (clique lá é seleção de bloco) e no export/público.
+  interactive: { type: Boolean, default: false },
 })
 
-const emit = defineEmits(['toggle', 'remove', 'move', 'add-after'])
+const emit = defineEmits(['toggle', 'remove', 'move', 'add-after', 'drill'])
 const root = ref(null)
 
 // Gráficos leem o tema para casar a paleta com o acento escolhido
 provide('reportTheme', computed(() => props.theme))
 // Rodapé lê as datas oficiais do relatório
 provide('reportMeta', computed(() => props.meta || {}))
+// Canal de clique dos blocos de dados (só existe no modo interativo; os blocos
+// tratam null como "não clicável")
+provide('reportDrill', props.interactive ? (payload) => emit('drill', payload) : null)
+
+// Tipos que sabem abrir drill/detalhe quando o relatório é interativo
+const CLICKABLE = new Set(['chart-bar', 'chart-line', 'chart-donut', 'chart-funnel', 'ranking', 'table'])
 
 const isDark = typeof document !== 'undefined' && document.documentElement.classList.contains('dark')
 const containerStyle = computed(() => ({
@@ -44,7 +54,17 @@ const gap = computed(() => themeVars(props.theme)['--rp-gap'] || '1.25rem')
 
 function extraProps(block) {
   // Blocos de gráfico compartilham o ChartBlock e precisam saber o próprio tipo
-  return block.type.startsWith('chart-') ? { blockType: block.type } : {}
+  const extra = block.type.startsWith('chart-') ? { blockType: block.type } : {}
+  if (props.interactive && CLICKABLE.has(block.type)) {
+    // Tabela abre o detalhe da linha com o que já tem em tela; gráficos e
+    // ranking precisam de bind (consulta vinculada) para buscar os registros.
+    const clickable = block.type === 'table' || !!block.bind?.dataset
+    if (clickable) {
+      extra.blockId = block.id
+      extra.clickable = true
+    }
+  }
+  return extra
 }
 
 // Props efetivas: as do spec, sobrepostas pelas recalculadas ao vivo (filtros)
@@ -86,6 +106,13 @@ defineExpose({ scrollToBlock })
       >
         <span aria-hidden="true" class="w-1.5 h-1.5 rounded-full bg-accent"></span>ao vivo
       </span>
+    </div>
+
+    <!-- Filtros do leitor: SEMPRE logo abaixo do cabeçalho da marca. Fica no
+         documento para acompanhar o layout, mas marcado para o export remover
+         (PNG/PDF/HTML levam só o conteúdo). -->
+    <div v-if="$slots.filters" data-export-exclude class="pt-3 pb-1">
+      <slot name="filters" />
     </div>
 
     <div

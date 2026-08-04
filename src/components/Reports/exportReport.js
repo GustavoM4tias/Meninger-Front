@@ -103,11 +103,17 @@ async function comCloneParaExport(el, fn) {
 
   const clone = el.cloneNode(true);
 
+  // 0) controles de leitura (barra de filtros etc.) não saem no arquivo.
+  //    Removidos do clone ANTES dos pareamentos por índice; as queries no
+  //    original também os ignoram para os índices continuarem casando 1:1.
+  clone.querySelectorAll('[data-export-exclude]').forEach((n) => n.remove());
+  const foraDoExport = (n) => n.closest('[data-export-exclude]');
+
   // 1) imagens → data URI, com o filtro CSS já rasterizado.
   //    Feito ANTES da troca dos canvas: nesse momento o clone ainda é cópia
   //    exata do original, então os índices casam 1:1. Depois da troca o clone
   //    ganha <img> novas e o pareamento por índice quebraria.
-  const imgsOrig = [...el.querySelectorAll('img')];
+  const imgsOrig = [...el.querySelectorAll('img')].filter((n) => !foraDoExport(n));
   const imgsClone = [...clone.querySelectorAll('img')];
   await Promise.all(imgsClone.map(async (alvo, i) => {
     const orig = imgsOrig[i];
@@ -123,7 +129,7 @@ async function comCloneParaExport(el, fn) {
   }));
 
   // 2) canvas (gráficos) → img com o desenho embutido
-  const canvasesOrig = [...el.querySelectorAll('canvas')];
+  const canvasesOrig = [...el.querySelectorAll('canvas')].filter((n) => !foraDoExport(n));
   const canvasesClone = [...clone.querySelectorAll('canvas')];
   canvasesOrig.forEach((orig, i) => {
     const alvo = canvasesClone[i];
