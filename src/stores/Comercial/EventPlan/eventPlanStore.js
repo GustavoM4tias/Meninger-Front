@@ -1,16 +1,18 @@
 // stores/Comercial/EventPlan/eventPlanStore.js
 //
 // Estado do Plano de Eventos. A tela é uma só: o que muda é o papel do usuário
-// (gestor propõe, Comercial valida, Marketing aceita), e o papel vem do backend
-// em /permissions — nunca de localStorage.
+// (o gestor propõe, as etapas de autorização decidem), e o papel vem do backend
+// em /permissions — nunca de localStorage. Quantas etapas existem e como se
+// chamam é configuração, então nada aqui cita etapa por nome.
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import api from '@/utils/EventPlan/api.js';
 
+// As etapas de autorização são configuráveis, então o status não cita etapa
+// nenhuma. O nome da etapa da vez sai da configuração (plan.stages).
 export const PLAN_STATUS_LABEL = {
     draft: 'Rascunho',
-    pending_comercial: 'Aguardando Comercial',
-    pending_marketing: 'Aguardando Marketing',
+    in_review: 'Aguardando autorização',
     returned: 'Devolvido para ajuste',
     approved: 'Aprovado',
     closed: 'Mês fechado',
@@ -42,20 +44,28 @@ export const useEventPlanStore = defineStore('eventPlan', () => {
 
     const currentEvents = computed(() => current.value?.events || []);
 
-    /** Etapa que este plano está aguardando, se for uma que o usuário decide. */
-    const activeStage = computed(() => {
-        const status = current.value?.status;
-        if (status === 'pending_comercial') return 'COMERCIAL';
-        if (status === 'pending_marketing') return 'MARKETING';
-        return null;
-    });
+    /** Fila de etapas configurada, vinda com o plano. */
+    const stages = computed(() => current.value?.stages || []);
+
+    /** Chave da etapa que este plano está aguardando agora. */
+    const activeStage = computed(() =>
+        (current.value?.status === 'in_review' ? current.value?.current_stage_key : null) || null
+    );
+
+    /** Nome legível da etapa da vez, para os rótulos da tela. */
+    const activeStageName = computed(() =>
+        stages.value.find(s => s.key === activeStage.value)?.name || 'autorização'
+    );
 
     const canDecideNow = computed(() => {
         const stage = activeStage.value;
         return Boolean(stage && permissions.value.decidableStages?.includes(stage));
     });
 
-    const statusField = computed(() => (activeStage.value === 'MARKETING' ? 'marketing_status' : 'comercial_status'));
+    /** Status da linha na etapa da vez (chave ausente = ainda não decidida). */
+    function stageStatusOf(row) {
+        return row?.stage_status?.[activeStage.value] || 'PENDING';
+    }
 
     /**
      * Fila prioritária primeiro (evento que acontece antes do prazo de aprovação
@@ -81,13 +91,13 @@ export const useEventPlanStore = defineStore('eventPlan', () => {
         let total = 0;
         for (const ev of currentEvents.value) {
             const draft = draftDecisions.value[ev.id];
-            const decision = draft?.decision ?? ev[statusField.value];
+            const decision = draft?.decision ?? stageStatusOf(ev);
             if (decision === 'REJECTED' || decision === 'RETURNED') continue;
             if (decision === 'PENDING' && !draft) continue;
 
             for (const item of (ev.items || [])) {
                 const itemDraft = draft?.items?.[item.id];
-                const itemDecision = itemDraft?.decision ?? item[statusField.value];
+                const itemDecision = itemDraft?.decision ?? stageStatusOf(item);
                 if (itemDecision === 'REJECTED' || itemDecision === 'RETURNED') continue;
                 if (itemDecision === 'PENDING' && !itemDraft) continue;
 
@@ -286,7 +296,7 @@ export const useEventPlanStore = defineStore('eventPlan', () => {
 
     return {
         plans, current, consolidated, permissions, loading, saving, error, draftDecisions,
-        currentEvents, eventsForReview, activeStage, canDecideNow, statusField,
+        currentEvents, eventsForReview, stages, activeStage, activeStageName, canDecideNow, stageStatusOf,
         liveApprovedTotal, proposedTotal,
         loadPermissions, loadPlans, loadConsolidated, loadPlan, refresh, createPlan,
         saveEvent, removeEvent, saveItem, removeItem, submitPlan,

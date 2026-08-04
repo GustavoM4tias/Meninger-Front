@@ -38,15 +38,24 @@ const newOpen = ref(false);
 const enterprises = ref([]);
 const form = ref({ idempreendimento: '', reference_month: '' });
 
-// ── Filtros (padrão da Ficha Comercial: busca + mês + status) ────────────────
+// ── Filtros: barra recolhível, o padrão dos relatórios do Office ────────────
 const search = ref('');
 const filterMonth = ref('');
 const filterStatus = ref('');
+const filtrosAbertos = ref(false);
+
+const filtrosAtivos = computed(() =>
+    [search.value.trim(), filterStatus.value].filter(Boolean).length
+);
+
+function limparFiltros() {
+    search.value = '';
+    filterStatus.value = '';
+}
 
 const STATUS_VARIANT = {
     draft: 'neutral',
-    pending_comercial: 'warning',
-    pending_marketing: 'info',
+    in_review: 'warning',
     returned: 'danger',
     approved: 'success',
     closed: 'neutral',
@@ -134,12 +143,10 @@ const gruposFiltrados = computed(() => {
 
 // ── Aba "aguardando você" ───────────────────────────────────────────────────
 
+// Plano parado numa etapa que ESTE usuário decide, seja qual for o nome dela.
 const awaitingMe = computed(() => {
-    const stages = store.permissions.decidableStages || [];
-    return store.plans.filter(p =>
-        (p.status === 'pending_comercial' && stages.includes('COMERCIAL'))
-        || (p.status === 'pending_marketing' && stages.includes('MARKETING'))
-    );
+    const minhas = store.permissions.decidableStages || [];
+    return store.plans.filter(p => p.status === 'in_review' && minhas.includes(p.current_stage_key));
 });
 
 const tabOptions = computed(() => {
@@ -238,14 +245,37 @@ onMounted(async () => {
         <ConsolidatedTab v-if="tab === 'consolidado'" />
 
         <template v-else>
-            <!-- Filtros: mesmo recorte da Ficha Comercial -->
-            <Surface v-if="tab === 'meus'" class="mb-4" padding="sm">
-                <div class="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_13rem_13rem]">
+            <!-- Filtros no padrão recolhível dos relatórios: o mês fica sempre
+                 visível (é o recorte principal) e o resto abre sob demanda. -->
+            <section v-if="tab === 'meus'" class="mb-4 rounded-xl border border-line bg-surface-raised shadow-soft surface-gradient">
+                <div class="filters-toolbar">
+                    <button class="filters-toolbar-trigger" @click="filtrosAbertos = !filtrosAbertos">
+                        <i class="fas fa-filter text-xs text-ink-muted"></i>
+                        <span>Filtros</span>
+                        <Badge v-if="filtrosAtivos" variant="accent" size="sm">
+                            {{ filtrosAtivos }} ativo{{ filtrosAtivos > 1 ? 's' : '' }}
+                        </Badge>
+                        <i class="fas fa-chevron-down text-[10px] text-ink-subtle transition-transform duration-200"
+                            :class="{ 'rotate-180': filtrosAbertos }"></i>
+                    </button>
+
+                    <div class="ml-auto flex items-center gap-2">
+                        <div class="w-40 sm:w-52">
+                            <Select v-model="filterMonth" :options="monthOptions" placeholder="Mês" size="sm" />
+                        </div>
+                        <Button v-if="filtrosAtivos" variant="ghost" size="sm" icon="fas fa-eraser" @click="limparFiltros">
+                            <span class="hidden sm:inline">Limpar</span>
+                        </Button>
+                    </div>
+                </div>
+
+                <div v-show="filtrosAbertos"
+                    class="grid grid-cols-1 gap-3 p-3 sm:grid-cols-2 sm:p-4 animate-fade-in"
+                    style="overflow:visible">
                     <Input v-model="search" placeholder="Buscar empreendimento..." icon-left="fas fa-magnifying-glass" />
-                    <Select v-model="filterMonth" :options="monthOptions" placeholder="Mês de referência" />
                     <Select v-model="filterStatus" :options="statusOptions" />
                 </div>
-            </Surface>
+            </section>
 
             <div v-if="store.loading" class="flex justify-center py-16"><Spinner /></div>
 

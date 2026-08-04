@@ -47,19 +47,22 @@ const DECISION_LABEL = {
 const draft = computed(() => store.draftDecisions[props.event.id] || null);
 
 // O que está valendo agora: o rascunho do aprovador vence o que veio do banco.
-const currentDecision = computed(() => draft.value?.decision ?? props.event[store.statusField]);
+const currentDecision = computed(() => draft.value?.decision ?? store.stageStatusOf(props.event));
 
 const eventRejected = computed(() => currentDecision.value === 'REJECTED');
 
 const APPROVED = ['APPROVED', 'APPROVED_WITH_NOTES'];
 
-// Passou nas duas etapas: já dá para levar a verba às Aprovações.
-const fullyApproved = computed(() =>
-    APPROVED.includes(props.event.comercial_status) && APPROVED.includes(props.event.marketing_status)
-);
+// Passou por TODAS as etapas configuradas: já dá para levar a verba às
+// Aprovações. Sem etapa nenhuma, enviar já aprova.
+const fullyApproved = computed(() => {
+    const stages = store.stages || [];
+    if (!stages.length) return true;
+    return stages.every(s => APPROVED.includes(props.event.stage_status?.[s.key]));
+});
 
 function itemDecision(item) {
-    return draft.value?.items?.[item.id]?.decision ?? item[store.statusField];
+    return draft.value?.items?.[item.id]?.decision ?? store.stageStatusOf(item);
 }
 
 function itemComment(item) {
