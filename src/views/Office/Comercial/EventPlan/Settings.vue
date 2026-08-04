@@ -173,10 +173,14 @@ onMounted(load);
                             </div>
                         </div>
                         <div class="mt-2">
+                            <!-- overlay: o SettingsCard tem overflow-hidden (por
+                                 causa da animação de recolher), então sem
+                                 teleporte o painel do seletor fica cortado. -->
                             <MultiSelector
                                 :options="userOptions"
                                 :model-value="idsToNames(profile.user_ids)"
                                 placeholder="Escolha os membros..."
+                                overlay
                                 @change="(names) => (profile.user_ids = namesToIds(names))"
                             />
                         </div>
@@ -211,6 +215,7 @@ onMounted(load);
                                 :options="profileOptions.map(o => o.label)"
                                 :model-value="stageProfileNames(stage)"
                                 placeholder="Perfis que decidem nesta etapa..."
+                                overlay
                                 @change="(names) => setStageProfiles(stage, names)"
                             />
                         </div>
