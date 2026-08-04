@@ -240,9 +240,11 @@ export const useOfficeAIStore = defineStore('officeAI', () => {
 
       case 'warning':
         // Validador anti-alucinação. `kind`: 'corrected' (a Eme reescreveu a
-        // resposta com os dados reais) | 'unreliable' (divergência persistiu —
-        // a resposta não é confiável) | undefined (avisos legados: MAX_TOKENS,
-        // filtro do modelo). O ChatMessage escolhe a aparência por kind.
+        // resposta com os dados reais) | 'blocked' (divergência persistiu e o
+        // texto foi SUBSTITUÍDO pelos dados do banco) | 'unreliable'
+        // (divergência sem dado autoritativo — entregue com alerta) |
+        // undefined (avisos legados: MAX_TOKENS, filtro do modelo).
+        // O ChatMessage escolhe a aparência por kind.
         pendingWarning.value = {
           kind: evt.kind || 'notice',
           corrected: !!evt.corrected,
@@ -302,6 +304,9 @@ export const useOfficeAIStore = defineStore('officeAI', () => {
           const meta = {}
           if (finalAction)          meta.action  = finalAction
           if (pendingWarning.value) meta.warning = pendingWarning.value
+          // Passos de status (ex.: "conferindo números") não têm evento próprio
+          // de conclusão — o done encerra o turno, então tudo vira concluído.
+          agentSteps.value.forEach(s => { if (s.status === 'running') s.status = 'done' })
           if (agentSteps.value.length) meta.steps = agentSteps.value.map(s => ({ ...s }))
           if (streamStartedAt.value)   meta.elapsed_ms = Date.now() - streamStartedAt.value
           pushAssistantMessage(
