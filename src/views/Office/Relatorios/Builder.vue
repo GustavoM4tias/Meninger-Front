@@ -7,6 +7,8 @@ import { useRoute, useRouter } from 'vue-router'
 import Button from '@/components/UI/Button.vue'
 import Badge from '@/components/UI/Badge.vue'
 import ReportRenderer from '@/components/Reports/ReportRenderer.vue'
+import ReportFilterBar from '@/components/Reports/ReportFilterBar.vue'
+import { useReportLiveData } from '@/components/Reports/useReportLiveData.js'
 import EmeReportPanel from '@/components/Reports/eme/EmeReportPanel.vue'
 import AddBlockModal from '@/components/Reports/eme/AddBlockModal.vue'
 import PublicLinkModal from '@/components/Reports/eme/PublicLinkModal.vue'
@@ -19,6 +21,12 @@ const store = useReportsStore()
 
 const rendererRef = ref(null)
 const mobileTab = ref('chat') // chat | preview (só no mobile)
+
+// Relatório interativo: no builder o admin TESTA os filtros que os leitores
+// terão. A consulta roda no rascunho, com as alçadas do próprio admin.
+const specRef = computed(() => store.spec)
+const live = useReportLiveData(() => route.params.id, specRef)
+watch(() => live.isInteractive.value, (on) => { if (on) live.start() })
 const showShare = ref(false)
 const showPublic = ref(false)
 const showAddBlock = ref(false)
@@ -105,22 +113,22 @@ watch(() => store.highlightId, (id) => {
   <!-- Altura travada na viewport: só a coluna do relatório rola -->
   <div class="h-[calc(100vh-3.5rem)] flex flex-col overflow-hidden">
     <!-- Barra do builder -->
-    <div class="flex items-center gap-2 px-3 sm:px-5 py-2.5 border-b border-line bg-surface-raised flex-shrink-0">
+    <div class="flex items-center gap-2 px-3 sm:px-5 pb-2.5 pt-3.5 border-b border-line bg-surface-raised flex-shrink-0">
       <button class="w-8 h-8 rounded-lg text-ink-subtle hover:bg-surface-sunken transition flex-shrink-0" aria-label="Sair do relatório" @click="router.push('/relatorios')">
         <i class="fas fa-arrow-left" />
       </button>
 
       <!-- Desfazer / refazer -->
-      <div class="flex items-center rounded-lg bg-surface-sunken p-0.5 flex-shrink-0">
+      <div class="flex items-center rounded-lg p-0.5 gap-2 flex-shrink-0">
         <button
-          class="w-7 h-7 rounded-md text-ink-muted hover:text-ink hover:bg-surface-raised disabled:opacity-30 disabled:hover:bg-transparent transition"
+          class="w-7 h-7 bg-surface-sunken cursor-pointer rounded-md text-ink-muted hover:text-ink hover:bg-surface-raised disabled:opacity-30 disabled:hover:bg-transparent transition"
           :disabled="!store.canUndo"
           :title="store.canUndo ? `Desfazer: ${store.undoLabel} (Ctrl+Z)` : 'Nada a desfazer'"
           aria-label="Desfazer"
           @click="store.undo()"
         ><i class="fas fa-rotate-left text-xs" /></button>
         <button
-          class="w-7 h-7 rounded-md text-ink-muted hover:text-ink hover:bg-surface-raised disabled:opacity-30 disabled:hover:bg-transparent transition"
+          class="w-7 h-7 bg-surface-sunken cursor-pointer rounded-md text-ink-muted hover:text-ink hover:bg-surface-raised disabled:opacity-30 disabled:hover:bg-transparent transition"
           :disabled="!store.canRedo"
           :title="store.canRedo ? `Refazer: ${store.redoLabel} (Ctrl+Shift+Z)` : 'Nada a refazer'"
           aria-label="Refazer"
@@ -217,10 +225,28 @@ watch(() => store.highlightId, (id) => {
             </button>
           </div>
 
+          <!-- Filtros do relatório interativo: aqui o admin testa o que o
+               leitor vai poder consultar -->
+          <div v-if="live.isInteractive.value && live.filters.value.length" class="mx-auto max-w-3xl mb-4">
+            <ReportFilterBar
+              v-model="live.values.value"
+              :filters="live.filters.value"
+              :options="live.options.value"
+              :loading="live.loading.value"
+              :refreshed-at="live.refreshedAt.value"
+              :has-active="live.hasActiveFilters.value"
+              @clear="live.clearFilters()"
+            />
+            <p v-if="live.error.value" class="mt-2 text-xs text-rose-600 dark:text-rose-400">{{ live.error.value }}</p>
+          </div>
+
           <ReportRenderer
             ref="rendererRef"
             :spec="store.spec"
             :theme="store.theme"
+            :live-props="live.liveProps.value"
+            :live-errors="live.blockErrors.value"
+            :live-loading="live.loading.value"
             :meta="{ generatedAt: store.report?.publishedAt || store.report?.updatedAt, refreshedAt: store.report?.refreshedAt, periodStart: store.report?.periodStart, periodEnd: store.report?.periodEnd, dataMode: store.report?.dataMode }"
             editable
             :selected-ids="store.selectedIds"

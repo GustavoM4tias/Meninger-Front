@@ -110,6 +110,7 @@ async function onTransferred() {
               'Toque em Novo relatório e diga à Eme o que quer ver (empreendimento, período e temas).',
               'Acompanhe a Eme buscando os dados e montando o relatório ao vivo.',
               'Peça ajustes pelo chat até ficar do seu jeito - dá para editar bloco por bloco.',
+              'Quer um painel consultável? Peça filtros à Eme (por imobiliária, corretor, cliente, período...) e quem abrir o relatório poderá filtrar os dados na hora.',
               'Toque em Publicar para congelar a versão oficial.',
               'Compartilhe: privado, interno (usuários/cargos) ou link público com vencimento.',
             ]"
@@ -117,6 +118,7 @@ async function onTransferred() {
               'Relatório excluído vai para a lixeira e pode ser restaurado por 30 dias.',
               'Se compartilharem algo que você não quer acompanhar, use Remover da minha lista.',
               'O link público expira automaticamente e pode ser revogado a qualquer momento.',
+              'Nos relatórios com filtros, cada pessoa só enxerga os dados dos empreendimentos que as alçadas dela permitem; o link público mostra sempre o retrato congelado, sem filtros.',
             ]"
           />
           <Button v-if="store.isAdmin" variant="secondary" icon="far fa-trash-can" @click="abrirLixeira">

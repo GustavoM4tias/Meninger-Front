@@ -17,6 +17,13 @@ const props = defineProps({
   highlightId: { type: String, default: null }, // bloco recém-alterado pela Eme
   // Datas do próprio relatório — o rodapé usa estas, nunca o que a IA escrever
   meta: { type: Object, default: () => ({}) },
+  // Relatório interativo: props recalculadas pelo servidor conforme os filtros
+  // do leitor (blockId -> props). Sobrepõem as props gravadas no spec.
+  liveProps: { type: Object, default: () => ({}) },
+  // blockId -> mensagem quando o dado ao vivo falhou (sem acesso, sem registro)
+  liveErrors: { type: Object, default: () => ({}) },
+  // true enquanto uma troca de filtro está reconsultando (esmaece blocos ligados)
+  liveLoading: { type: Boolean, default: false },
 })
 
 const emit = defineEmits(['toggle', 'remove', 'move', 'add-after'])
@@ -38,6 +45,12 @@ const gap = computed(() => themeVars(props.theme)['--rp-gap'] || '1.25rem')
 function extraProps(block) {
   // Blocos de gráfico compartilham o ChartBlock e precisam saber o próprio tipo
   return block.type.startsWith('chart-') ? { blockType: block.type } : {}
+}
+
+// Props efetivas: as do spec, sobrepostas pelas recalculadas ao vivo (filtros)
+function effectiveProps(block) {
+  const live = props.liveProps?.[block.id]
+  return live ? { ...(block.props || {}), ...live } : (block.props || {})
 }
 
 function scrollToBlock(id) {
@@ -128,13 +141,23 @@ defineExpose({ scrollToBlock })
         </div>
       </div>
 
-      <component
-        :is="blockComponent(block.type)"
-        v-if="blockComponent(block.type)"
-        v-bind="{ ...(block.props || {}), ...extraProps(block) }"
-      />
-      <div v-else class="rounded-lg border border-dashed border-line px-4 py-3 text-xs text-ink-subtle">
-        Bloco desconhecido: {{ block.type }}
+      <div
+        :class="liveLoading && block.bind ? 'opacity-50 transition-opacity duration-300' : 'transition-opacity duration-300'"
+      >
+        <component
+          :is="blockComponent(block.type)"
+          v-if="blockComponent(block.type)"
+          v-bind="{ ...effectiveProps(block), ...extraProps(block) }"
+        />
+        <div v-else class="rounded-lg border border-dashed border-line px-4 py-3 text-xs text-ink-subtle">
+          Bloco desconhecido: {{ block.type }}
+        </div>
+        <p
+          v-if="liveErrors[block.id]"
+          class="mt-1.5 text-[11px] italic text-ink-subtle flex items-center gap-1.5"
+        >
+          <i class="fas fa-circle-info" />{{ liveErrors[block.id] }}
+        </p>
       </div>
     </div>
 
