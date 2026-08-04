@@ -38,7 +38,7 @@ const ignorados = ref([]);
 const analisando = ref(false);
 const resultado = ref(null);
 
-const novaPessoa = () => ({ nome: '', email: '', documento: '', data_nasc: '', gerente: true });
+const novaPessoa = () => ({ nome: '', email: '', documento: '', celular: '', data_nasc: '', gerente: true });
 const nova = ref(novaPessoa());
 
 const empresaOptions = computed(() =>
@@ -132,6 +132,7 @@ async function analisar() {
                 nome: p.nome || '',
                 email: p.email || '',
                 documento: p.documento || '',
+                celular: p.celular || '', // o parser não lê telefone; fica para preencher na lista
                 data_nasc: p.data_nasc || '',
                 gerente: true,
                 incluir: !p.ja_cadastrado && p.cpf_valido && !p.duplicado_no_texto,
@@ -156,6 +157,7 @@ async function enviar() {
             nome: p.nome.trim(),
             email: p.email.trim(),
             documento: soDigitosCpf(p.documento),
+            celular: p.celular?.trim() || null,
             data_nasc: p.data_nasc || null,
             gerente: p.gerente !== false,
         }));
@@ -223,8 +225,10 @@ const STATUS_INFO = {
                     <Input v-model="nova.documento" label="CPF" placeholder="000.000.000-00" required
                         :error="nova.documento && !cpfValido(nova.documento) ? 'CPF inválido' : ''"
                         @keyup.enter="adicionar" />
+                    <Input v-model="nova.celular" label="Celular" placeholder="(17) 99999-9999"
+                        hint="Opcional. Vira o atalho de WhatsApp na ficha." @keyup.enter="adicionar" />
                     <Input v-model="nova.data_nasc" type="date" label="Nascimento" hint="Opcional." />
-                    <div class="flex items-end pb-1">
+                    <div class="flex items-end pb-1 sm:col-span-2">
                         <Switch v-model="nova.gerente" label="Gerente"
                             description="Padrão do correspondente no CV." />
                     </div>
@@ -283,6 +287,7 @@ const STATUS_INFO = {
                             <Input v-model="p.email" size="sm" label="E-mail" placeholder="email@empresa.com" />
                             <Input v-model="p.documento" size="sm" label="CPF"
                                 :error="p.documento && !cpfValido(p.documento) ? 'CPF inválido' : ''" />
+                            <Input v-model="p.celular" size="sm" label="Celular" placeholder="(17) 99999-9999" />
                             <Input v-model="p.data_nasc" size="sm" type="date" label="Nascimento" />
                         </div>
 
