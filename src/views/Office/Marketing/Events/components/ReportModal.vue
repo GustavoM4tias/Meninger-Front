@@ -6,6 +6,7 @@ import API_URL from '@/config/apiUrl';
 
 import Modal from '@/components/UI/Modal.vue';
 import Input from '@/components/UI/Input.vue';
+import MultiSelector from '@/components/UI/MultiSelector.vue';
 import Button from '@/components/UI/Button.vue';
 import IconButton from '@/components/UI/IconButton.vue';
 import Spinner from '@/components/UI/Spinner.vue';
@@ -26,6 +27,62 @@ const exportError = ref('');
 // E-mail
 const showEmailModal = ref(false);
 const emailTo = ref('');
+
+// ── Destinatários: pessoas, cargos e departamentos do próprio cadastro ───────
+// Digitar endereço a endereço é onde se esquece alguém. O catálogo vem do
+// backend (só gente interna e ativa); o campo de e-mail avulso continua ali
+// para quem está fora do sistema.
+const recipientCatalog = ref({ users: [], positions: [], departments: [] });
+const pickedUsers = ref([]);        // nomes exibidos no seletor
+const pickedPositions = ref([]);
+const pickedDepartments = ref([]);
+
+const userOptions = computed(() =>
+  (recipientCatalog.value.users || []).map(u => `${u.username} (${u.email})`)
+);
+const departmentOptions = computed(() =>
+  (recipientCatalog.value.departments || []).map(d => d.name)
+);
+
+const userIdsFromPick = computed(() =>
+  pickedUsers.value
+    .map(label => (recipientCatalog.value.users || []).find(u => `${u.username} (${u.email})` === label)?.id)
+    .filter(Boolean)
+);
+const departmentIdsFromPick = computed(() =>
+  pickedDepartments.value
+    .map(name => (recipientCatalog.value.departments || []).find(d => d.name === name)?.id)
+    .filter(Boolean)
+);
+
+// Quantas pessoas o envio vai atingir, sem repetir quem aparece em mais de um
+// criterio — o mesmo calculo que o servidor refaz na hora de enviar.
+const recipientCount = computed(() => {
+  const emails = new Set();
+  const users = recipientCatalog.value.users || [];
+  for (const id of userIdsFromPick.value) {
+    const u = users.find(x => x.id === id);
+    if (u?.email) emails.add(u.email.toLowerCase());
+  }
+  for (const p of pickedPositions.value) {
+    users.filter(u => u.position === p && u.email).forEach(u => emails.add(u.email.toLowerCase()));
+  }
+  for (const name of pickedDepartments.value) {
+    users.filter(u => u.department === name && u.email).forEach(u => emails.add(u.email.toLowerCase()));
+  }
+  emailTo.value.split(',').map(e => e.trim()).filter(Boolean)
+    .forEach(e => emails.add(e.toLowerCase()));
+  return emails.size;
+});
+
+async function loadRecipients() {
+  try {
+    recipientCatalog.value = await requestWithAuth('/events/report/recipients');
+  } catch {
+    // Sem catálogo a tela ainda funciona pelo campo de e-mail avulso.
+    recipientCatalog.value = { users: [], positions: [], departments: [] };
+  }
+}
 const emailSubject = ref('');
 const emailMessage = ref('');
 const emailError = ref('');
@@ -55,12 +112,12 @@ const getStartOfWeek = (date = new Date()) => {
   const cur = new Date(date);
   const day = cur.getDay();
   const diff = day === 0 ? -6 : 1 - day;
-  cur.setDate(cur.getDate() + diff); cur.setHours(0,0,0,0);
+  cur.setDate(cur.getDate() + diff); cur.setHours(0, 0, 0, 0);
   return cur;
 };
 const getEndOfWeek = (date = new Date()) => {
   const start = getStartOfWeek(date);
-  const end = new Date(start); end.setDate(start.getDate() + 6); end.setHours(23,59,59,999);
+  const end = new Date(start); end.setDate(start.getDate() + 6); end.setHours(23, 59, 59, 999);
   return end;
 };
 const normalizeDate = (value, endOfDay = false) => {
@@ -142,15 +199,15 @@ const hydrateExportImages = async () => {
 // ── Format helpers ───────────────────────────────────
 const formatEventDate = (s) => {
   const d = new Date(s);
-  return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`;
+  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
 };
 const formatTime = (s) => {
   const d = new Date(s);
   const h = d.getHours(); const m = d.getMinutes();
-  return m === 0 ? `${h}h` : `${h}h${String(m).padStart(2,'0')}`;
+  return m === 0 ? `${h}h` : `${h}h${String(m).padStart(2, '0')}`;
 };
 const formatDateShort = (s) => new Date(s).toLocaleDateString('pt-BR',
-  { day:'2-digit', month:'2-digit', year:'numeric' });
+  { day: '2-digit', month: '2-digit', year: 'numeric' });
 const isPast = (s) => new Date(s) < new Date();
 
 // ── Filtering / selection ────────────────────────────
@@ -243,7 +300,7 @@ async function exportJPG() {
   try {
     const canvas = await captureReport(2.2);
     const link = document.createElement('a');
-    link.download = `Cronograma_Eventos_${new Date().toLocaleDateString('pt-BR').replace(/\//g,'-')}.jpg`;
+    link.download = `Cronograma_Eventos_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.jpg`;
     link.href = canvas.toDataURL('image/jpeg', 0.94);
     link.click();
   } catch (err) {
@@ -254,6 +311,10 @@ async function exportJPG() {
 
 function openEmailModal() {
   emailTo.value = '';
+  pickedUsers.value = [];
+  pickedPositions.value = [];
+  pickedDepartments.value = [];
+  if (!recipientCatalog.value.users.length) loadRecipients();
   emailSubject.value = `${reportTitle.value || 'Cronograma de Eventos'} — Menin`;
   emailMessage.value = '';
   emailError.value = '';
@@ -262,7 +323,7 @@ function openEmailModal() {
 }
 
 async function sendEmail() {
-  if (!emailTo.value.trim()) return;
+  if (!recipientCount.value) return;
   sending.value = true; emailError.value = ''; emailSuccess.value = false;
   try {
     const canvas = await captureReport(1);
@@ -271,6 +332,9 @@ async function sendEmail() {
       method: 'POST',
       body: JSON.stringify({
         to: emailTo.value.split(',').map(e => e.trim()).filter(Boolean),
+        userIds: userIdsFromPick.value,
+        positions: pickedPositions.value,
+        departmentIds: departmentIdsFromPick.value,
         subject: emailSubject.value || `${reportTitle.value || 'Cronograma de Eventos'} — Menin`,
         message: emailMessage.value,
         imageBase64,
@@ -300,7 +364,8 @@ endDate.value = toInputDate(getEndOfWeek());
   <Modal :open="true" size="full" @close="$emit('close')">
     <template #header>
       <div class="flex items-center gap-3">
-        <div class="h-9 w-9 rounded-lg bg-accent-soft text-accent border border-accent/20 grid place-items-center shrink-0">
+        <div
+          class="h-9 w-9 rounded-lg bg-accent-soft text-accent border border-accent/20 grid place-items-center shrink-0">
           <i class="fas fa-file-export text-sm"></i>
         </div>
         <div>
@@ -315,10 +380,10 @@ endDate.value = toInputDate(getEndOfWeek());
 
     <div class="-m-5 grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-0 min-h-[60vh]">
       <!-- ── Sidebar ── -->
-      <aside class="bg-surface-sunken border-b lg:border-b-0 lg:border-r border-line p-5 space-y-4 overflow-y-auto max-h-[80vh]">
+      <aside
+        class="bg-surface-sunken border-b lg:border-b-0 lg:border-r border-line p-5 space-y-4 overflow-y-auto max-h-[80vh]">
         <Surface variant="raised" padding="sm">
-          <Input v-model="reportTitle" label="Título do relatório"
-            placeholder="Cronograma de Eventos" />
+          <Input v-model="reportTitle" label="Título do relatório" placeholder="Cronograma de Eventos" />
         </Surface>
 
         <Surface variant="raised" padding="sm">
@@ -351,18 +416,14 @@ endDate.value = toInputDate(getEndOfWeek());
           </div>
 
           <div class="space-y-1.5 max-h-[40vh] overflow-y-auto pr-1">
-            <label v-for="event in filteredEvents" :key="event.id"
-              class="flex items-start gap-2.5 p-2 rounded-lg cursor-pointer transition-colors
+            <label v-for="event in filteredEvents" :key="event.id" class="flex items-start gap-2.5 p-2 rounded-lg cursor-pointer transition-colors
                      hover:bg-accent-soft/40 border border-transparent hover:border-accent/20">
-              <input type="checkbox" :checked="selectedIds.has(event.id)"
-                @change="toggleEvent(event.id)"
+              <input type="checkbox" :checked="selectedIds.has(event.id)" @change="toggleEvent(event.id)"
                 class="w-4 h-4 mt-1 cursor-pointer shrink-0" />
 
               <div class="w-10 h-10 rounded-md overflow-hidden bg-surface-sunken border border-line shrink-0">
-                <img :src="getResolvedPreviewImage(event)"
-                  :alt="event.enterprise_name || event.title"
-                  class="w-full h-full object-cover"
-                  @error="onPreviewImageError(event)"
+                <img :src="getResolvedPreviewImage(event)" :alt="event.enterprise_name || event.title"
+                  class="w-full h-full object-cover" @error="onPreviewImageError(event)"
                   @load="onPreviewImageLoad(event)" />
               </div>
 
@@ -379,8 +440,7 @@ endDate.value = toInputDate(getEndOfWeek());
               </div>
             </label>
 
-            <div v-if="!filteredEvents.length"
-              class="text-center text-sm text-ink-subtle py-8 px-2">
+            <div v-if="!filteredEvents.length" class="text-center text-sm text-ink-subtle py-8 px-2">
               <i class="far fa-calendar-xmark text-2xl mb-2 block"></i>
               Nenhum evento no período.
             </div>
@@ -391,28 +451,28 @@ endDate.value = toInputDate(getEndOfWeek());
       <!-- ── Main: ações + preview ── -->
       <main class="bg-surface-sunken p-5 overflow-y-auto max-h-[80vh]">
         <div class="flex flex-wrap items-center gap-2 mb-5">
-          <Button :disabled="exporting || !selectedEvents.length" :loading="exporting"
-            icon="fas fa-file-pdf" variant="danger" @click="exportPDF">
+          <Button :disabled="exporting || !selectedEvents.length" :loading="exporting" icon="fas fa-file-pdf"
+            variant="danger" @click="exportPDF">
             Exportar PDF
           </Button>
-          <Button :disabled="exporting || !selectedEvents.length" :loading="exporting"
-            icon="fas fa-image" @click="exportJPG">
+          <Button :disabled="exporting || !selectedEvents.length" :loading="exporting" icon="fas fa-image"
+            @click="exportJPG">
             Exportar JPG
           </Button>
-          <Button :disabled="exporting || !selectedEvents.length"
-            icon="fas fa-envelope" variant="secondary" @click="openEmailModal">
+          <Button :disabled="exporting || !selectedEvents.length" icon="fas fa-envelope" variant="secondary"
+            @click="openEmailModal">
             Enviar por e-mail
           </Button>
 
-          <div class="ml-auto flex items-center gap-2 text-xs text-ink-muted bg-surface-raised border border-line rounded-lg px-3 py-2">
+          <div
+            class="ml-auto flex items-center gap-2 text-xs text-ink-muted bg-surface-raised border border-line rounded-lg px-3 py-2">
             <i class="fas fa-layer-group text-accent text-[10px]"></i>
             <span class="font-mono">{{ selectedEvents.length }}</span>
             <span>evento(s)</span>
           </div>
         </div>
 
-        <p v-if="exportError"
-          class="mb-3 text-xs text-red-500 flex items-center gap-1.5">
+        <p v-if="exportError" class="mb-3 text-xs text-red-500 flex items-center gap-1.5">
           <i class="fas fa-circle-exclamation"></i>{{ exportError }}
         </p>
 
@@ -472,8 +532,7 @@ endDate.value = toInputDate(getEndOfWeek());
                     <div style="font-size:32px; font-weight:900; color:#fbbb22; line-height:1; text-align:center;">
                       {{ formatEventDate(event.event_date) }}
                     </div>
-                    <img :src="getResolvedExportImage(event)"
-                      :alt="event.enterprise_name || event.title"
+                    <img :src="getResolvedExportImage(event)" :alt="event.enterprise_name || event.title"
                       style="width:72px; height:72px; object-fit:cover; display:block;" />
                   </div>
 
@@ -487,14 +546,16 @@ endDate.value = toInputDate(getEndOfWeek());
                       ">{{ event.title }}</h2>
 
                     <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:10px; align-items:center;">
-                      <span style="color:rgba(255,255,255,0.86); font-size:20px; font-weight:400; padding:7px 10px; line-height:1;">
+                      <span
+                        style="color:rgba(255,255,255,0.86); font-size:20px; font-weight:400; padding:7px 10px; line-height:1;">
                         <i class="fas fa-clock" style="margin-right:6px;"></i>{{ formatTime(event.event_date) }}
                       </span>
                       |
                       <span v-if="event.address?.city"
                         style="color:rgba(255,255,255,0.76); font-size:20px; font-weight:400; padding:7px 10px; line-height:1;">
                         <i class="fas fa-location-dot" style="margin-right:6px;"></i>
-                        {{ event.address.city }}/{{ event.address.state }}
+                        {{ event.address.city }}/{{ event.address.state }}<template v-if="event.address?.neighborhood">
+                          | {{ event.address.neighborhood }}</template>
                       </span>
                     </div>
 
@@ -535,7 +596,8 @@ endDate.value = toInputDate(getEndOfWeek());
     <Modal :open="showEmailModal" size="md" @close="showEmailModal = false">
       <template #header>
         <div class="flex items-center gap-3">
-          <div class="h-9 w-9 rounded-lg bg-accent-soft text-accent border border-accent/20 grid place-items-center shrink-0">
+          <div
+            class="h-9 w-9 rounded-lg bg-accent-soft text-accent border border-accent/20 grid place-items-center shrink-0">
             <i class="fas fa-paper-plane text-sm"></i>
           </div>
           <div>
@@ -546,18 +608,40 @@ endDate.value = toInputDate(getEndOfWeek());
       </template>
 
       <div class="space-y-4">
-        <Input v-model="emailTo" label="Destinatário(s)" required
-          placeholder="email@exemplo.com, outro@exemplo.com"
-          iconLeft="fas fa-envelope"
-          hint="Separe múltiplos e-mails com vírgula" />
+        <div>
+          <label class="block text-xs font-medium text-ink-muted mb-1.5">Pessoas</label>
+          <MultiSelector v-model="pickedUsers" :options="userOptions" overlay
+            placeholder="Escolha quem recebe..." :page-size="200" />
+        </div>
+
+        <div class="grid gap-3 sm:grid-cols-2">
+          <div>
+            <label class="block text-xs font-medium text-ink-muted mb-1.5">Departamentos</label>
+            <MultiSelector v-model="pickedDepartments" :options="departmentOptions" overlay
+              placeholder="Departamento inteiro..." />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-ink-muted mb-1.5">Cargos</label>
+            <MultiSelector v-model="pickedPositions" :options="recipientCatalog.positions" overlay
+              placeholder="Todos de um cargo..." />
+          </div>
+        </div>
+
+        <Input v-model="emailTo" label="E-mail avulso" placeholder="email@exemplo.com, outro@exemplo.com"
+          iconLeft="fas fa-envelope" hint="Para quem está fora do sistema. Separe por vírgula." />
+
+        <p class="text-xs" :class="recipientCount ? 'text-ink-muted' : 'text-amber-600 dark:text-amber-400'">
+          <i class="fas" :class="recipientCount ? 'fa-users' : 'fa-triangle-exclamation'"></i>
+          {{ recipientCount
+            ? `${recipientCount} destinatário(s). Quem aparece em mais de um critério recebe uma vez só.`
+            : 'Escolha ao menos um destinatário.' }}
+        </p>
 
         <Input v-model="emailSubject" label="Assunto" />
 
         <div>
           <label class="block text-xs font-medium text-ink-muted mb-1.5">Mensagem (opcional)</label>
-          <textarea v-model="emailMessage" rows="4"
-            placeholder="Segue em anexo o cronograma de eventos..."
-            class="w-full px-3.5 py-2 text-sm bg-surface-raised text-ink border border-line rounded-lg
+          <textarea v-model="emailMessage" rows="4" placeholder="Segue em anexo o cronograma de eventos..." class="w-full px-3.5 py-2 text-sm bg-surface-raised text-ink border border-line rounded-lg
                    placeholder:text-ink-subtle outline-none resize-none transition-all shadow-inner-soft
                    focus:border-accent-ring focus:ring-2 focus:ring-accent-ring/20" />
         </div>
@@ -575,7 +659,7 @@ endDate.value = toInputDate(getEndOfWeek());
 
       <template #footer>
         <Button variant="ghost" @click="showEmailModal = false" :disabled="sending">Cancelar</Button>
-        <Button :loading="sending" :disabled="!emailTo.trim()" icon="fas fa-paper-plane" @click="sendEmail">
+        <Button :loading="sending" :disabled="!recipientCount" icon="fas fa-paper-plane" @click="sendEmail">
           {{ sending ? 'Enviando...' : 'Enviar' }}
         </Button>
       </template>
