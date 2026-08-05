@@ -5,7 +5,7 @@
 // decidido, e ele precisa saber disso antes de enviar, não depois.
 
 import { computed, ref, watch } from 'vue';
-import { PRIORITY_LABEL } from '@/stores/Comercial/EventPlan/eventPlanStore';
+import { PRIORITY_LABEL } from '@/stores/Marketing/EventPlan/eventPlanStore';
 
 import Modal from '@/components/UI/Modal.vue';
 import Input from '@/components/UI/Input.vue';

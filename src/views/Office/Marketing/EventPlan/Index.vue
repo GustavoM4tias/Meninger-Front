@@ -12,7 +12,7 @@
 import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useToast } from 'vue-toastification';
-import { useEventPlanStore, PLAN_STATUS_LABEL } from '@/stores/Comercial/EventPlan/eventPlanStore';
+import { useEventPlanStore, PLAN_STATUS_LABEL } from '@/stores/Marketing/EventPlan/eventPlanStore';
 import { getSelectableEnterprises } from '@/utils/Event/apiEvents';
 
 import PageContainer from '@/components/UI/PageContainer.vue';
@@ -163,7 +163,7 @@ const enterpriseOptions = computed(() =>
 );
 
 function abrir(planId) {
-    router.push(`/comercial/plano-eventos/${planId}`);
+    router.push(`/marketing/plano-eventos/${planId}`);
 }
 
 async function criarPlano() {
@@ -177,12 +177,12 @@ async function criarPlano() {
             reference_month: form.value.reference_month,
         });
         newOpen.value = false;
-        router.push(`/comercial/plano-eventos/${plan.id}`);
+        router.push(`/marketing/plano-eventos/${plan.id}`);
     } catch (e) {
         if (e?.status === 409 && e?.payload?.id) {
             newOpen.value = false;
             toast.info('Este empreendimento já tem plano neste mês. Abrindo o plano existente.');
-            router.push(`/comercial/plano-eventos/${e.payload.id}`);
+            router.push(`/marketing/plano-eventos/${e.payload.id}`);
             return;
         }
         toast.error(e?.message || 'Não foi possível criar o plano.');
@@ -232,7 +232,7 @@ onMounted(async () => {
                     variant="ghost"
                     icon="fas fa-sliders"
                     v-tippy="'Configurações do módulo'"
-                    @click="router.push('/comercial/plano-eventos/settings')"
+                    @click="router.push('/marketing/plano-eventos/settings')"
                 />
                 <Button variant="primary" icon="fas fa-plus" @click="newOpen = true">Novo plano</Button>
             </template>

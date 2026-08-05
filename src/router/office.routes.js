@@ -151,6 +151,26 @@ export default [
                 name: 'marketing',
                 meta: { requiresAuth: true },
                 children: [
+                    // Plano de Eventos — proposta mensal do gestor comercial que,
+                    // aprovada, vira evento na agenda logo acima.
+                    {
+                        path: 'plano-eventos',
+                        name: 'Plano de Eventos',
+                        component: () => import('@/views/Office/Marketing/EventPlan/Index.vue'),
+                        meta: { requiresAuth: true, searchable: true, content: 'Plano de Eventos — proposta mensal de eventos por empreendimento, com itens, custo e autorização' },
+                    },
+                    {
+                        path: 'plano-eventos/settings',
+                        name: 'Plano de Eventos Configurações',
+                        component: () => import('@/views/Office/Marketing/EventPlan/Settings.vue'),
+                        meta: { requiresAuth: true, requiresAdmin: true, searchable: false, content: 'Configurações do Plano de Eventos' },
+                    },
+                    {
+                        path: 'plano-eventos/:id',
+                        name: 'Plano de Eventos Detalhe',
+                        component: () => import('@/views/Office/Marketing/EventPlan/Detail.vue'),
+                        meta: { requiresAuth: true, searchable: false, content: 'Detalhe do plano de eventos do mês' },
+                    },
                     // Stand de Vendas (modelos/categorias + stands reais com custo do Sienge)
                     {
                         path: 'stand-vendas',
@@ -270,24 +290,6 @@ export default [
                         name: 'Ficha Comercial Detalhe',
                         component: () => import('@/views/Office/Comercial/Conditions/Detail.vue'),
                         meta: { requiresAuth: true, searchable: false, content: 'Detalhe da Ficha Comercial' },
-                    },
-                    {
-                        path: 'plano-eventos',
-                        name: 'Plano de Eventos',
-                        component: () => import('@/views/Office/Comercial/EventPlan/Index.vue'),
-                        meta: { requiresAuth: true, searchable: true, content: 'Plano de Eventos — proposta mensal de eventos comerciais por empreendimento' },
-                    },
-                    {
-                        path: 'plano-eventos/settings',
-                        name: 'Plano de Eventos Configurações',
-                        component: () => import('@/views/Office/Comercial/EventPlan/Settings.vue'),
-                        meta: { requiresAuth: true, requiresAdmin: true, searchable: false, content: 'Configurações do Plano de Eventos' },
-                    },
-                    {
-                        path: 'plano-eventos/:id',
-                        name: 'Plano de Eventos Detalhe',
-                        component: () => import('@/views/Office/Comercial/EventPlan/Detail.vue'),
-                        meta: { requiresAuth: true, searchable: false, content: 'Detalhe do plano de eventos do mês' },
                     },
                     {
                         path: 'imobiliarias',

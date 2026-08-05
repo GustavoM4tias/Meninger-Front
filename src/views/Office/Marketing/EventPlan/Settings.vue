@@ -191,7 +191,7 @@ onMounted(load);
             icon="fas fa-sliders"
         >
             <template #actions>
-                <Button variant="ghost" icon="fas fa-arrow-left" @click="router.push('/comercial/plano-eventos')">
+                <Button variant="ghost" icon="fas fa-arrow-left" @click="router.push('/marketing/plano-eventos')">
                     Voltar
                 </Button>
                 <Button variant="primary" icon="fas fa-save" :loading="saving" @click="salvar">Salvar</Button>

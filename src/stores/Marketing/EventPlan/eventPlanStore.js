@@ -1,4 +1,4 @@
-// stores/Comercial/EventPlan/eventPlanStore.js
+// stores/Marketing/EventPlan/eventPlanStore.js
 //
 // Estado do Plano de Eventos. A tela é uma só: o que muda é o papel do usuário
 // (o gestor propõe, as etapas de autorização decidem), e o papel vem do backend
