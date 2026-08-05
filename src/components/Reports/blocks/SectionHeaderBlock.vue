@@ -1,9 +1,14 @@
 <script setup>
-defineProps({
+import { computed } from 'vue'
+import { inlineMd } from '../mdInline.js'
+
+const props = defineProps({
   num: { type: [String, Number], default: '' },
   title: { type: String, default: '' },
   description: { type: String, default: '' },
 })
+
+const descHtml = computed(() => inlineMd(props.description))
 </script>
 
 <template>
@@ -15,7 +20,7 @@ defineProps({
     >{{ num }}</span>
     <div class="min-w-0">
       <h2 class="font-display text-xl sm:text-2xl text-ink leading-snug text-balance">{{ title }}</h2>
-      <p v-if="description" class="mt-1.5 text-sm text-ink-muted max-w-2xl">{{ description }}</p>
+      <p v-if="descHtml" class="mt-1.5 text-sm text-ink-muted max-w-2xl" v-html="descHtml" />
     </div>
   </div>
 </template>

@@ -7,6 +7,8 @@ import { GridComponent, TooltipComponent, LegendComponent, MarkLineComponent } f
 import { CanvasRenderer } from 'echarts/renderers'
 import { formatValue } from '../format.js'
 import { themePalette, seriesColor } from '../themes.js'
+import { inlineMd } from '../mdInline.js'
+import BlockEmpty from './BlockEmpty.vue'
 
 echarts.use([BarChart, PieChart, LineChart, GridComponent, TooltipComponent, LegendComponent, MarkLineComponent, CanvasRenderer])
 
@@ -71,6 +73,14 @@ const allSeries = computed(() =>
   props.series.length ? props.series : [{ name: props.title || 'Total', data: props.data }]
 )
 const fmt = (v) => formatValue(v, props.format)
+
+const captionHtml = computed(() => inlineMd(props.caption))
+// Grafico sem categoria ou sem nenhum ponto renderizava uma moldura com area
+// cinza no meio do relatorio - o classico 'componente vazio'.
+const semDados = computed(() => {
+  if (!props.labels.length) return true
+  return !allSeries.value.some((s) => (s?.data || []).some((v) => v !== null && v !== undefined && v !== ''))
+})
 
 const option = computed(() => {
   const dark = isDark.value
@@ -182,13 +192,19 @@ const option = computed(() => {
 </script>
 
 <template>
-  <figure class="rounded-xl border border-line bg-surface-raised shadow-soft overflow-hidden">
+  <BlockEmpty
+    v-if="semDados"
+    :label="title || 'Gráfico'"
+    hint="A consulta não retornou séries para este recorte."
+    icon="fas fa-chart-column"
+  />
+  <figure v-else class="rounded-xl border border-line bg-surface-raised shadow-soft overflow-hidden">
     <figcaption v-if="title || subtitle" class="px-4 pt-3.5 pb-1">
       <p class="text-sm font-medium text-ink">{{ title }}</p>
       <p v-if="subtitle" class="text-xs text-ink-subtle mt-0.5">{{ subtitle }}</p>
     </figcaption>
     <VChart :option="option" autoresize class="w-full px-2" :style="{ height: height + 'px' }" @click="onChartClick" />
-    <p v-if="caption" class="px-4 pb-3 text-xs text-ink-subtle">{{ caption }}</p>
+    <p v-if="captionHtml" class="px-4 pb-3 text-xs text-ink-subtle" v-html="captionHtml" />
     <p v-if="clickable" class="px-4 pb-3 -mt-1 text-[10px] text-ink-subtle flex items-center gap-1">
       <i class="fas fa-hand-pointer" aria-hidden="true" />Toque num item para ver os registros
     </p>

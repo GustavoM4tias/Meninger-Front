@@ -1,6 +1,7 @@
 <script setup>
 import { computed } from 'vue'
 import DOMPurify from 'dompurify'
+import BlockEmpty from './BlockEmpty.vue'
 
 const props = defineProps({
   html: { type: String, default: '' },
@@ -17,7 +18,8 @@ const safe = computed(() =>
 </script>
 
 <template>
-  <div class="report-custom-html" v-html="safe" />
+  <BlockEmpty v-if="!safe.trim()" label="Bloco personalizado" hint="Sem conteúdo gerado." icon="fas fa-code" />
+  <div v-else class="report-custom-html" v-html="safe" />
 </template>
 
 <style scoped>

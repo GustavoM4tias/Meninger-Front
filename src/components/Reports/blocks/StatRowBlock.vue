@@ -1,6 +1,7 @@
 <script setup>
 import { computed } from 'vue'
 import { formatValue, tone } from '../format.js'
+import BlockEmpty from './BlockEmpty.vue'
 
 const props = defineProps({
   // stats: [{ label, value, format?, tone?, delta?, deltaTone?, hint? }]
@@ -27,7 +28,8 @@ const cols = computed(() => {
 </script>
 
 <template>
-  <div class="grid gap-3" :class="cols">
+  <BlockEmpty v-if="!stats.length" label="Indicadores" hint="Nenhum valor retornado para este recorte." icon="fas fa-gauge-simple" />
+  <div v-else class="grid gap-3" :class="cols">
     <div
       v-for="(s, i) in stats" :key="i"
       class="relative rounded-xl border border-line bg-surface-raised shadow-soft px-4 py-3.5 overflow-hidden"

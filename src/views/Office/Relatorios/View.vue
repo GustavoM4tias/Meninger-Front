@@ -27,7 +27,9 @@ const data = ref(null)
 
 // Relatório interativo: filtros do leitor + props recalculadas no servidor
 const specRef = computed(() => data.value?.spec || null)
-const live = useReportLiveData(() => route.params.id, specRef)
+// O período do documento preenche os filtros de data (nunca em branco)
+const periodRef = computed(() => ({ start: data.value?.periodStart, end: data.value?.periodEnd }))
+const live = useReportLiveData(() => route.params.id, specRef, periodRef)
 const loading = ref(true)
 const error = ref('')
 const reportEl = ref(null)
@@ -323,6 +325,17 @@ const fmtDate = (d) => (d ? new Date(d).toLocaleDateString('pt-BR') : null)
                 >
                   <i class="fas fa-arrow-rotate-left text-[10px]" />Voltar
                 </button>
+              </div>
+              <!-- Consulta que falhou: o leitor precisa saber que aquele
+                   pedaço está com o número da última publicação, não em branco -->
+              <div
+                v-if="live.datasetErrors.value.length"
+                class="mt-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-400"
+              >
+                <i class="fas fa-triangle-exclamation mr-1.5" />
+                <span v-for="(d, i) in live.datasetErrors.value" :key="d.id">
+                  <template v-if="i">; </template>{{ d.label }}: {{ d.error }}
+                </span>
               </div>
               <p v-if="live.error.value" class="mt-2 text-xs text-rose-600 dark:text-rose-400">
                 {{ live.error.value }}

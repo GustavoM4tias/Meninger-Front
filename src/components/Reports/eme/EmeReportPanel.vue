@@ -7,6 +7,8 @@ import { useReportsStore } from '@/stores/Reports/reportsStore.js'
 import { specOutline, BLOCK_LABELS } from '../blocks/registry.js'
 import { REPORT_THEMES } from '../themes.js'
 import EmeChatThread from './EmeChatThread.vue'
+import ReportPlanCard from './ReportPlanCard.vue'
+import ReportAskCard from './ReportAskCard.vue'
 
 const emit = defineEmits(['goto-block'])
 
@@ -94,8 +96,8 @@ const placeholder = computed(() => {
       <div v-if="emptyThread" class="px-4 pt-4 space-y-3 flex-shrink-0">
         <p class="text-sm text-ink-muted">
           Me conte o que esse relatório precisa mostrar - empreendimento, período e temas
-          (leads, pré-cadastro, reservas...). Eu busco os dados reais e monto tudo, e você
-          vai me pedindo ajustes até ficar do seu jeito.
+          (leads, pré-cadastro, reservas...). Eu quebro o pedido em frentes, pergunto o que
+          faltar e vou montando seção por seção, com os números reais do sistema.
         </p>
         <div class="flex flex-wrap gap-1.5">
           <button
@@ -105,6 +107,8 @@ const placeholder = computed(() => {
           >{{ c.label }}</button>
         </div>
       </div>
+
+      <ReportPlanCard v-if="store.plan" :plan="store.plan" class="flex-shrink-0" />
 
       <EmeChatThread
         :messages="store.messages"
@@ -120,6 +124,15 @@ const placeholder = computed(() => {
           @click="send(c.text)"
         >{{ c.label }}</button>
       </div>
+
+      <!-- Pergunta da Eme: responder com um clique -->
+      <ReportAskCard
+        v-if="store.pendingAsk && !store.isStreaming"
+        :ask="store.pendingAsk"
+        :disabled="store.isStreaming"
+        class="flex-shrink-0"
+        @answer="send($event)"
+      />
 
       <!-- Contexto: blocos selecionados -->
       <div v-if="selCount" class="mx-3 mb-1.5 flex items-center gap-2 rounded-lg bg-accent-soft px-3 py-1.5 text-xs text-accent flex-shrink-0">

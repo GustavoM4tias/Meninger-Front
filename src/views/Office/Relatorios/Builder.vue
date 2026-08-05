@@ -25,7 +25,8 @@ const mobileTab = ref('chat') // chat | preview (só no mobile)
 // Relatório interativo: no builder o admin TESTA os filtros que os leitores
 // terão. A consulta roda no rascunho, com as alçadas do próprio admin.
 const specRef = computed(() => store.spec)
-const live = useReportLiveData(() => route.params.id, specRef)
+const periodRef = computed(() => ({ start: store.report?.periodStart, end: store.report?.periodEnd }))
+const live = useReportLiveData(() => route.params.id, specRef, periodRef)
 watch(() => live.isInteractive.value, (on) => { if (on) live.start() })
 const showShare = ref(false)
 const showPublic = ref(false)
@@ -252,8 +253,20 @@ watch(() => store.highlightId, (id) => {
                 :loading="live.loading.value"
                 :refreshed-at="live.refreshedAt.value"
                 :has-active="live.hasActiveFilters.value"
+                default-open
                 @clear="live.clearFilters()"
               />
+              <!-- Consulta que falhou: o leitor precisa saber que aquele
+                   pedaço está com o número da última publicação, não em branco -->
+              <div
+                v-if="live.datasetErrors.value.length"
+                class="mt-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-400"
+              >
+                <i class="fas fa-triangle-exclamation mr-1.5" />
+                <span v-for="(d, i) in live.datasetErrors.value" :key="d.id">
+                  <template v-if="i">; </template>{{ d.label }}: {{ d.error }}
+                </span>
+              </div>
               <p v-if="live.error.value" class="mt-2 text-xs text-rose-600 dark:text-rose-400">{{ live.error.value }}</p>
             </template>
           </ReportRenderer>

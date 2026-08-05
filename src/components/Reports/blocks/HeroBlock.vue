@@ -1,11 +1,16 @@
 <script setup>
-defineProps({
+import { computed } from 'vue'
+import { inlineMd } from '../mdInline.js'
+
+const props = defineProps({
   eyebrow: { type: String, default: '' },
   title: { type: String, default: '' },
   subtitle: { type: String, default: '' },
   tags: { type: Array, default: () => [] },
   meta: { type: Array, default: () => [] }, // [{ label, value }]
 })
+
+const subtitleHtml = computed(() => inlineMd(props.subtitle))
 </script>
 
 <template>
@@ -14,8 +19,8 @@ defineProps({
          depender de fundo tingido. -->
     <span aria-hidden="true" class="block w-12 h-1 rounded-full bg-accent mb-4"></span>
     <p v-if="eyebrow" class="text-[11px] font-semibold uppercase tracking-[0.2em] text-accent mb-3">{{ eyebrow }}</p>
-    <h1 class="font-display text-3xl sm:text-4xl lg:text-[2.75rem] leading-tight text-ink text-balance">{{ title }}</h1>
-    <p v-if="subtitle" class="mt-3 text-base sm:text-lg text-ink-muted max-w-3xl">{{ subtitle }}</p>
+    <h1 class="font-display text-3xl sm:text-4xl lg:text-[2.75rem] leading-tight text-ink text-balance">{{ title || 'Relatório sem título' }}</h1>
+    <p v-if="subtitleHtml" class="mt-3 text-base sm:text-lg text-ink-muted max-w-3xl" v-html="subtitleHtml" />
     <div v-if="tags.length" class="mt-4 flex flex-wrap gap-1.5">
       <span
         v-for="(t, i) in tags" :key="i"

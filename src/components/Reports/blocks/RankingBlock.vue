@@ -4,6 +4,8 @@
 import { computed, inject, ref, onMounted, onBeforeUnmount } from 'vue'
 import { formatValue } from '../format.js'
 import { themePalette } from '../themes.js'
+import { inlineMd } from '../mdInline.js'
+import BlockEmpty from './BlockEmpty.vue'
 
 const props = defineProps({
   title: { type: String, default: '' },
@@ -39,6 +41,8 @@ onMounted(() => {
 onBeforeUnmount(() => observer?.disconnect())
 const palette = computed(() => themePalette(reportTheme.value, isDark.value))
 
+const captionHtml = computed(() => inlineMd(props.caption))
+const vazio = computed(() => !props.items.length)
 const total = computed(() => props.items.reduce((s, i) => s + (Number(i.value) || 0), 0))
 const max = computed(() => Math.max(...props.items.map((i) => Number(i.value) || 0), 1))
 
@@ -56,7 +60,8 @@ const rows = computed(() =>
 </script>
 
 <template>
-  <figure class="rounded-xl border border-line bg-surface-raised shadow-soft px-4 py-4 sm:px-5">
+  <BlockEmpty v-if="vazio" :label="title || 'Ranking'" hint="Nenhum item para classificar neste recorte." icon="fas fa-ranking-star" />
+  <figure v-else class="rounded-xl border border-line bg-surface-raised shadow-soft px-4 py-4 sm:px-5">
     <figcaption v-if="title || subtitle" class="mb-3">
       <p v-if="title" class="text-sm font-medium text-ink">{{ title }}</p>
       <p v-if="subtitle" class="text-xs text-ink-subtle mt-0.5">{{ subtitle }}</p>
@@ -92,6 +97,6 @@ const rows = computed(() =>
       </li>
     </ol>
 
-    <p v-if="caption" class="mt-3 text-xs text-ink-subtle">{{ caption }}</p>
+    <p v-if="captionHtml" class="mt-3 text-xs text-ink-subtle" v-html="captionHtml" />
   </figure>
 </template>

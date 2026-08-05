@@ -3,6 +3,7 @@
 // origem de leads por região). Usa o embed do OpenStreetMap (sem chave de API);
 // se não houver coordenadas, mostra só a lista de pontos.
 import { computed } from 'vue'
+import { inlineMd } from '../mdInline.js'
 
 const props = defineProps({
   title: { type: String, default: '' },
@@ -14,6 +15,8 @@ const props = defineProps({
   height: { type: Number, default: 320 },
   caption: { type: String, default: '' },
 })
+
+const captionHtml = computed(() => inlineMd(props.caption))
 
 const center = computed(() => {
   if (props.lat != null && props.lon != null) return { lat: props.lat, lon: props.lon }
@@ -64,6 +67,6 @@ const embedUrl = computed(() => {
       </li>
     </ul>
 
-    <p v-if="caption" class="px-4 py-2.5 text-xs text-ink-subtle border-t border-line/70">{{ caption }}</p>
+    <p v-if="captionHtml" class="px-4 py-2.5 text-xs text-ink-subtle border-t border-line/70" v-html="captionHtml" />
   </figure>
 </template>

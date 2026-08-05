@@ -1,5 +1,7 @@
 <script setup>
 import { tone } from '../format.js'
+import { inlineMd } from '../mdInline.js'
+import BlockEmpty from './BlockEmpty.vue'
 
 defineProps({
   // groups: [{ title, tone ('success'|'warning'|'danger'|...), items: [string | { title, text }] }]
@@ -7,11 +9,12 @@ defineProps({
 })
 
 const itemTitle = (it) => (typeof it === 'string' ? null : it.title)
-const itemText = (it) => (typeof it === 'string' ? it : it.text)
+const itemText = (it) => inlineMd(typeof it === 'string' ? it : it?.text)
 </script>
 
 <template>
-  <div class="grid gap-3 sm:grid-cols-2">
+  <BlockEmpty v-if="!groups.length" label="Destaques" hint="Nenhum ponto registrado." icon="fas fa-list-check" />
+  <div v-else class="grid gap-3 sm:grid-cols-2">
     <div
       v-for="(g, gi) in groups" :key="gi"
       class="rounded-xl border border-line bg-surface-raised shadow-soft px-4 py-4"
@@ -25,7 +28,7 @@ const itemText = (it) => (typeof it === 'string' ? it : it.text)
           <span class="mt-[7px] w-1 h-1 rounded-full bg-ink-subtle flex-shrink-0" />
           <div class="min-w-0">
             <p v-if="itemTitle(it)" class="font-medium text-ink">{{ itemTitle(it) }}</p>
-            <p class="text-ink-muted">{{ itemText(it) }}</p>
+            <p class="text-ink-muted" v-html="itemText(it)" />
           </div>
         </li>
       </ul>

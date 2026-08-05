@@ -108,7 +108,8 @@ async function onTransferred() {
             intro="Aqui você cria relatórios profissionais conversando com a Eme: ela busca os dados reais (leads, pré-cadastros, reservas...) e monta o relatório visual para você."
             :steps="[
               'Toque em Novo relatório e diga à Eme o que quer ver (empreendimento, período e temas).',
-              'Acompanhe a Eme buscando os dados e montando o relatório ao vivo.',
+              'A Eme monta um plano de frentes e pergunta o que faltar - responda no chat (dá para clicar na opção) e ela segue.',
+              'Acompanhe as frentes sendo concluídas: cada seção aparece no relatório assim que os dados dela chegam.',
               'Peça ajustes pelo chat até ficar do seu jeito - dá para editar bloco por bloco.',
               'Quer um painel consultável? Peça filtros à Eme (por imobiliária, corretor, cliente, período...) e quem abrir o relatório poderá filtrar os dados na hora.',
               'Toque em Publicar para congelar a versão oficial.',
@@ -119,6 +120,7 @@ async function onTransferred() {
               'Se compartilharem algo que você não quer acompanhar, use Remover da minha lista.',
               'O link público expira automaticamente e pode ser revogado a qualquer momento.',
               'Nos relatórios com filtros, cada pessoa só enxerga os dados dos empreendimentos que as alçadas dela permitem; o link público mostra sempre o retrato congelado, sem filtros.',
+              'A barra de filtros abre e fecha como nas outras telas, e já nasce com o período do relatório preenchido.',
             ]"
           />
           <Button v-if="store.isAdmin" variant="secondary" icon="far fa-trash-can" @click="abrirLixeira">

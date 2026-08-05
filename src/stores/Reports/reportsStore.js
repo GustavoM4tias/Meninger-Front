@@ -88,6 +88,12 @@ export const useReportsStore = defineStore('reports', () => {
   const toolProgress = ref([])
   const highlightId = ref(null)
 
+  // Plano de frentes e pergunta pendente da Eme (persistidos no relatorio, em
+  // dataSnapshot): a geracao deixou de ser um monolito opaco - o usuario ve as
+  // frentes sendo resolvidas e responde o que a Eme precisar saber.
+  const plan = ref(null)          // { fronts: [{ id, title, status, note }] }
+  const pendingAsk = ref(null)    // { question, options: [], context }
+
   // Seleção MÚLTIPLA de blocos: ids marcados no relatório para editar/remover
   const selectedIds = ref([])
 
@@ -169,6 +175,8 @@ export const useReportsStore = defineStore('reports', () => {
       const data = await requestWithAuth(`/reports/${id}`)
       report.value = data.report
       messages.value = data.messages || []
+      plan.value = data.report?.dataSnapshot?.plan || null
+      pendingAsk.value = data.report?.dataSnapshot?.pendingAsk || null
       selectedIds.value = []
       resetHistory(data.report?.spec)
       // A Eme ainda está gerando no servidor (a run sobrevive a F5/troca de
@@ -294,6 +302,7 @@ export const useReportsStore = defineStore('reports', () => {
     const selected = [...selectedIds.value]
 
     messages.value.push({ id: `local-${Date.now()}`, role: 'user', content: text })
+    pendingAsk.value = null
     isStreaming.value = true
     streamingText.value = ''
     toolProgress.value = []
@@ -380,6 +389,12 @@ export const useReportsStore = defineStore('reports', () => {
         }
         break
       }
+      case 'plan':
+        plan.value = evt.plan || null
+        break
+      case 'ask':
+        pendingAsk.value = evt.ask || null
+        break
       case 'memory_saved':
         // A Eme guardou uma preferência: reflete na aba Memória sem recarregar
         fetchMemories().catch(() => {})
@@ -447,7 +462,7 @@ export const useReportsStore = defineStore('reports', () => {
     trash, deletionImpact, deleteReport, fetchTrash, restoreReport, purgeReport,
     dismissShared, undoDismissShared, orphans, fetchOrphans,
     report, messages, loadingReport, fetchReport,
-    isStreaming, streamingText, toolProgress, highlightId,
+    isStreaming, streamingText, toolProgress, highlightId, plan, pendingAsk,
     selectedIds, selectedBlocks, toggleBlock, clearSelection, selectOnly,
     spec, blockCount, theme, sendMessage,
     saveSpec, removeBlocks, moveBlock, setTheme,

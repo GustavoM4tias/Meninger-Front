@@ -1,6 +1,8 @@
 <script setup>
 import { computed, inject } from 'vue'
 import { formatValue } from '../format.js'
+import { inlineMd } from '../mdInline.js'
+import BlockEmpty from './BlockEmpty.vue'
 
 const props = defineProps({
   title: { type: String, default: '' },
@@ -9,10 +11,15 @@ const props = defineProps({
   rows: { type: Array, default: () => [] }, // [{ [key]: value }]
   totals: { type: Object, default: null }, // { [key]: value } - linha de totais
   caption: { type: String, default: '' },
+  // Nota do servidor quando a tabela mostra uma página de um universo maior
+  footnote: { type: String, default: '' },
   // Relatório interativo: clicar numa linha abre o detalhe do registro
   blockId: { type: String, default: null },
   clickable: { type: Boolean, default: false },
 })
+
+const captionHtml = computed(() => inlineMd(props.caption))
+const vazia = computed(() => !props.rows.length || !props.columns.length)
 
 const reportDrill = inject('reportDrill', null)
 function abrirLinha(row) {
@@ -33,7 +40,13 @@ const numericDefault = computed(() =>
 </script>
 
 <template>
-  <figure class="rounded-xl border border-line bg-surface-raised shadow-soft overflow-hidden">
+  <BlockEmpty
+    v-if="vazia"
+    :label="title || 'Tabela'"
+    hint="Nenhum registro para este recorte."
+    icon="fas fa-table"
+  />
+  <figure v-else class="rounded-xl border border-line bg-surface-raised shadow-soft overflow-hidden">
     <figcaption v-if="title" class="px-4 pt-3.5 pb-2 flex items-center gap-2">
       <span aria-hidden="true" class="w-1 h-4 rounded-full bg-accent flex-shrink-0"></span>
       <span class="text-sm font-semibold text-ink">{{ title }}</span>
@@ -77,6 +90,11 @@ const numericDefault = computed(() =>
         </tfoot>
       </table>
     </div>
-    <p v-if="caption" class="px-4 py-2.5 text-xs text-ink-subtle border-t border-line/70">{{ caption }}</p>
+    <div v-if="captionHtml || footnote" class="px-4 py-2.5 text-xs text-ink-subtle border-t border-line/70 space-y-1">
+      <p v-if="captionHtml" v-html="captionHtml" />
+      <p v-if="footnote" class="flex items-center gap-1.5 text-ink-subtle">
+        <i class="fas fa-circle-info text-[10px]" />{{ footnote }}
+      </p>
+    </div>
   </figure>
 </template>

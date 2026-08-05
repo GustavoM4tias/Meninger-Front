@@ -1,6 +1,8 @@
 <script setup>
 import { computed, inject } from 'vue'
 import { formatValue } from '../format.js'
+import { inlineMd } from '../mdInline.js'
+import BlockEmpty from './BlockEmpty.vue'
 
 const props = defineProps({
   title: { type: String, default: '' },
@@ -20,6 +22,8 @@ function abrirEtapa(label) {
   reportDrill({ kind: 'category', blockId: props.blockId, label: String(label) })
 }
 
+const captionHtml = computed(() => inlineMd(props.caption))
+const vazio = computed(() => !props.stages.length)
 const max = computed(() => Math.max(...props.stages.map((s) => Number(s.value) || 0), 1))
 
 const rows = computed(() =>
@@ -37,7 +41,8 @@ const rows = computed(() =>
 </script>
 
 <template>
-  <figure class="rounded-xl border border-line bg-surface-raised shadow-soft px-4 py-4 sm:px-5">
+  <BlockEmpty v-if="vazio" :label="title || 'Funil'" hint="Nenhuma etapa com registros." icon="fas fa-filter" />
+  <figure v-else class="rounded-xl border border-line bg-surface-raised shadow-soft px-4 py-4 sm:px-5">
     <figcaption v-if="title || subtitle" class="mb-3">
       <p class="text-sm font-medium text-ink">{{ title }}</p>
       <p v-if="subtitle" class="text-xs text-ink-subtle mt-0.5">{{ subtitle }}</p>
@@ -72,6 +77,6 @@ const rows = computed(() =>
         </div>
       </li>
     </ol>
-    <p v-if="caption" class="mt-3 text-xs text-ink-subtle">{{ caption }}</p>
+    <p v-if="captionHtml" class="mt-3 text-xs text-ink-subtle" v-html="captionHtml" />
   </figure>
 </template>

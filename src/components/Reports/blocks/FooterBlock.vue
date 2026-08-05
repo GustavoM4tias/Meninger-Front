@@ -4,8 +4,9 @@
 // O período também sai daqui: em relatório LIVE o fim é aberto, então mostra
 // "até hoje" em vez de uma data final que a IA tenha escrito à mão.
 import { computed, inject } from 'vue'
+import { inlineMd } from '../mdInline.js'
 
-defineProps({
+const props = defineProps({
   sources: { type: Array, default: () => [] }, // ['Leads (Office)', 'Reservas (CV)']
   note: { type: String, default: '' },
 })
@@ -33,6 +34,7 @@ const shortDate = (value) => {
   return Number.isNaN(d.getTime()) ? '' : d.toLocaleDateString('pt-BR')
 }
 
+const noteHtml = computed(() => inlineMd(props.note))
 const generated = computed(() => pretty(reportMeta.value?.generatedAt))
 const refreshed = computed(() => pretty(reportMeta.value?.refreshedAt, true))
 const isLive = computed(() => reportMeta.value?.dataMode === 'live')
@@ -61,7 +63,7 @@ const periodo = computed(() => {
       </p>
       <p v-if="sources.length"><span class="font-medium text-ink-muted">Fontes:</span> {{ sources.join(' · ') }}</p>
       <p v-if="refreshed"><span class="font-medium text-ink-muted">Dados atualizados em:</span> {{ refreshed }}</p>
-      <p v-if="note">{{ note }}</p>
+      <p v-if="noteHtml" v-html="noteHtml" />
     </div>
 
     <!-- Assinatura textual. A MARCA fica no timbre do documento (ReportRenderer),
