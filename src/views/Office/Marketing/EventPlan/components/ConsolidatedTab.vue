@@ -8,7 +8,7 @@
 
 import { computed, onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import { useEventPlanStore } from '@/stores/Comercial/EventPlan/eventPlanStore';
+import { useEventPlanStore } from '@/stores/Marketing/EventPlan/eventPlanStore';
 
 import Surface from '@/components/UI/Surface.vue';
 import Badge from '@/components/UI/Badge.vue';
@@ -110,7 +110,7 @@ onMounted(load);
                                 v-for="item in day.items"
                                 :key="item.planned_event_id"
                                 class="mb-1 flex cursor-pointer flex-wrap items-center justify-between gap-2 rounded-lg border border-line p-2 transition hover:border-accent"
-                                @click="router.push(`/comercial/plano-eventos/${item.plan_id}`)"
+                                @click="router.push(`/marketing/plano-eventos/${item.plan_id}`)"
                             >
                                 <div class="min-w-0">
                                     <p class="truncate text-sm font-medium text-ink">{{ item.title }}</p>

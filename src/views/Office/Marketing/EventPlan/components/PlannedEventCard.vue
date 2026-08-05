@@ -5,7 +5,7 @@
 //    por item, e corta valor. Nada é enviado até ele confirmar o lote.
 
 import { computed } from 'vue';
-import { useEventPlanStore, PRIORITY_LABEL } from '@/stores/Comercial/EventPlan/eventPlanStore';
+import { useEventPlanStore, PRIORITY_LABEL } from '@/stores/Marketing/EventPlan/eventPlanStore';
 
 import Surface from '@/components/UI/Surface.vue';
 import Badge from '@/components/UI/Badge.vue';

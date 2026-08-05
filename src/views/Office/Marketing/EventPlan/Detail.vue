@@ -7,7 +7,7 @@
 import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useToast } from 'vue-toastification';
-import { useEventPlanStore, PLAN_STATUS_LABEL } from '@/stores/Comercial/EventPlan/eventPlanStore';
+import { useEventPlanStore, PLAN_STATUS_LABEL } from '@/stores/Marketing/EventPlan/eventPlanStore';
 import api from '@/utils/EventPlan/api.js';
 
 import PageContainer from '@/components/UI/PageContainer.vue';
@@ -271,7 +271,7 @@ onMounted(async () => {
                 eyebrow="Plano de Eventos"
             >
                 <template #actions>
-                    <Button variant="ghost" icon="fas fa-arrow-left" @click="router.push('/comercial/plano-eventos')">
+                    <Button variant="ghost" icon="fas fa-arrow-left" @click="router.push('/marketing/plano-eventos')">
                         Voltar
                     </Button>
                     <Button

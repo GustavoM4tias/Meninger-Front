@@ -67,9 +67,23 @@ export const navRegistry = [
         group: 'OPERAÇÃO',
         // A subcategoria "Captação" (Captação de Leads, Vínculos CV, Formulários,
         // Config. Captação) foi consolidada na Central Meta (/meta) em 2026-07-23.
+        subcategories: [
+            {
+                key: 'events',
+                name: 'Eventos',
+                icon: 'fas fa-calendar-days',
+                pages: [
+                    // A agenda e o planejamento que a alimenta ficam juntos: o
+                    // plano aprovado vira evento na agenda automaticamente.
+                    // Tela única com abas internas (Geral/Próximos/Finalizados).
+                    { route: '/marketing/events', name: 'Eventos', icon: 'fas fa-calendar-days' },
+                    // Uma tela só para os papéis (o gestor propõe, as etapas de
+                    // autorização decidem) — o papel vem do backend.
+                    { route: '/marketing/plano-eventos', section: 'Plano de Eventos', name: 'Plano de Eventos', icon: 'fas fa-calendar-check' },
+                ],
+            },
+        ],
         pages: [
-            // Tela única com abas internas (Geral/Próximos/Finalizados) → um só item.
-            { route: '/marketing/events', name: 'Eventos', icon: 'fas fa-calendar-days' },
             { route: '/marketing/leads', section: 'Leads', name: 'Leads', icon: 'fas fa-user-plus' },
             { route: '/marketing/stand-vendas', name: 'Stand de Vendas', icon: 'fas fa-store' },
             // Viabilidade (ex "Gastos por Departamento" do Financeiro, 2026-07-28).
@@ -113,16 +127,6 @@ export const navRegistry = [
                     { route: '/comercial/conditions', section: 'Fichas Comerciais', name: 'Fichas Comerciais', icon: 'fas fa-file-contract' },
                     { route: '/comercial/mcmv', section: 'MCMV', name: 'Minha Casa Minha Vida', icon: 'fas fa-house-circle-check' },
                     { route: '/comercial/workflow/groups', section: 'Grupos Workflow', name: 'Grupos Workflow', icon: 'fas fa-chart-diagram' },
-                ],
-            },
-            {
-                key: 'events',
-                name: 'Eventos',
-                icon: 'fas fa-calendar-check',
-                pages: [
-                    // Uma tela só para os três papéis (gestor propõe, Comercial
-                    // valida, Marketing aceita) — o papel vem do backend.
-                    { route: '/comercial/plano-eventos', section: 'Plano de Eventos', name: 'Plano de Eventos', icon: 'fas fa-calendar-check' },
                 ],
             },
             {
