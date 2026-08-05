@@ -3,6 +3,8 @@
 // Usado para temperatura de vendas, saúde do funil, atingimento de meta.
 import { computed } from 'vue'
 import { formatValue } from '../format.js'
+import { inlineMd, preenchido } from '../mdInline.js'
+import BlockEmpty from './BlockEmpty.vue'
 
 const props = defineProps({
   title: { type: String, default: '' },
@@ -15,6 +17,10 @@ const props = defineProps({
   caption: { type: String, default: '' },
   variant: { type: String, default: 'gauge' }, // gauge (arco) | thermometer (barra)
 })
+
+const captionHtml = computed(() => inlineMd(props.caption))
+// Sem valor ou com faixa degenerada (min == max) o arco sai sem sentido.
+const invalido = computed(() => !preenchido(props.value) || props.max === props.min)
 
 const ZONE_COLORS = {
   info: '#38bdf8',
@@ -80,7 +86,8 @@ const needle = computed(() => {
 </script>
 
 <template>
-  <figure class="rounded-xl border border-line bg-surface-raised shadow-soft px-4 py-4 sm:px-5">
+  <BlockEmpty v-if="invalido" :label="title || 'Indicador'" hint="Sem valor medido para este recorte." icon="fas fa-gauge-high" />
+  <figure v-else class="rounded-xl border border-line bg-surface-raised shadow-soft px-4 py-4 sm:px-5">
     <figcaption v-if="title" class="text-sm font-medium text-ink mb-2">{{ title }}</figcaption>
 
     <!-- Arco -->
@@ -126,6 +133,6 @@ const needle = computed(() => {
       </div>
     </div>
 
-    <p v-if="caption" class="mt-3 text-xs text-ink-subtle text-center">{{ caption }}</p>
+    <p v-if="captionHtml" class="mt-3 text-xs text-ink-subtle text-center" v-html="captionHtml" />
   </figure>
 </template>

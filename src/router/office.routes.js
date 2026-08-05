@@ -568,6 +568,23 @@ export default [
                 meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Documentação do sistema' },
             },
 
+            // Sobre o Office — apresentação do sistema para a diretoria.
+            // Conteúdo em config/aboutOffice.js. SOMENTE ADMIN (expõe economia,
+            // custo de ferramenta e potencial financeiro da companhia), e fora da
+            // busca para não exibir o título a quem não pode abrir.
+            {
+                path: 'sobre',
+                name: 'Mapa do Sistema',
+                component: () => import('@/views/Office/Sobre/Mapa.vue'),
+                meta: { requiresAuth: true, requiresAdmin: true, allowedRole: 'admin', searchable: false, content: 'Mapa do sistema: módulos, integrações, ganhos e roadmap do Menin Office' },
+            },
+            {
+                path: 'sobre/relatorio',
+                name: 'Visão Executiva',
+                component: () => import('@/views/Office/Sobre/Relatorio.vue'),
+                meta: { requiresAuth: true, requiresAdmin: true, allowedRole: 'admin', searchable: false, content: 'Visão executiva do Menin Office: o que o sistema entrega, ganhos verificados e o que vem a seguir' },
+            },
+
         ],
     },
 ];

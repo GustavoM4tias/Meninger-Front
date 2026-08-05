@@ -18,5 +18,5 @@ const html = computed(() => {
 </script>
 
 <template>
-  <div class="md-body text-[15px] sm:text-base" v-html="html" />
+  <div v-if="html.trim()" class="md-body text-[15px] sm:text-base" v-html="html" />
 </template>

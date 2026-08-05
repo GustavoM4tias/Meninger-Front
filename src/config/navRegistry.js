@@ -326,6 +326,25 @@ export const navRegistry = [
         ],
     },
 
+    // ── Sobre o Office ─────────────────────────────────────────────────────────
+    // Apresentação do próprio sistema: o Mapa do Sistema (visual) e a Visão
+    // Executiva (texto), ambos lendo de config/aboutOffice.js.
+    // adminOnly:true nos dois: o conteúdo expõe economia, custo de ferramenta e
+    // potencial financeiro da companhia — material de diretoria, não delegável.
+    // A categoria fica com permissionManaged:false para não aparecer vazia na
+    // tela de Alçadas (nenhum item dela é gerenciável por alçada).
+    {
+        key: 'sobre',
+        label: 'Sobre o Office',
+        icon: 'fas fa-circle-info',
+        group: 'SISTEMA',
+        permissionManaged: false,
+        pages: [
+            { route: '/sobre', name: 'Mapa do Sistema', icon: 'fas fa-diagram-project', adminOnly: true },
+            { route: '/sobre/relatorio', name: 'Visão Executiva', icon: 'fas fa-file-lines', adminOnly: true },
+        ],
+    },
+
 ];
 
 // ─── Rota ativa ───────────────────────────────────────────────────────────────
