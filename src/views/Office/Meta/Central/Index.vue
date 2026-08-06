@@ -85,6 +85,7 @@ const subtitle = computed(() => SUBTITLES[tab.value] || '');
             :steps="[
               { title: 'Captação', text: 'A inbox dos leads recebidos (anúncios Meta e formulários do site). Acompanhe o status de cada lead até chegar ao CV.' },
               { title: 'Campanhas', text: 'Desempenho das campanhas Meta por período: investimento, leads e custo por lead. Clique numa campanha para detalhar.' },
+              { title: 'De onde vem o número de leads', text: 'Leads e CAC contam a NOSSA base: pessoa com nome, telefone e e-mail, a mesma que aparece na Captação e vai pro CV. Spam fica de fora.' },
               { title: 'Vínculos CV', text: 'Mostra se todo lead está chegando ao CRM. Campanha sem vínculo represa leads - clique em Vincular para resolver.' },
               { title: 'Formulários', text: 'Crie formulários de captação com página própria (LP) para eventos, outdoors e campanhas.' },
               { title: 'Credenciais e Configurações', text: 'Credenciais: conexões com a Meta (App e tokens). Configurações: regras da captação (modo sombra, alertas).' },
@@ -92,6 +93,7 @@ const subtitle = computed(() => SUBTITLES[tab.value] || '');
             :tips="[
               'Os links antigos (menu, notificações, favoritos) continuam funcionando - eles abrem a aba certa aqui.',
               'O WhatsApp segue em tela própria; só o App da Meta é compartilhado (aba Credenciais).',
+              'O número da Meta costuma ser maior porque ela conta também conversão de pixel, que vem só como total, sem nome nem telefone. Por isso a tela não usa esse número.',
             ]" />
         </template>
       </PageHeader>

@@ -93,7 +93,7 @@ function goalLabel(g) { return GOAL_LABELS[g] || g || '—'; }
             <td class="px-3 py-2.5 text-xs text-ink-muted">{{ goalLabel(a.optimization_goal) }}</td>
 
             <td class="px-3 py-2.5 text-right whitespace-nowrap font-semibold text-ink">{{ fmtMoney(a.spend) }}</td>
-            <td class="px-3 py-2.5 text-right whitespace-nowrap font-semibold text-ink">{{ fmtInt(a.meta_leads_total) }}</td>
+            <td class="px-3 py-2.5 text-right whitespace-nowrap font-semibold text-ink">{{ fmtInt(a.office_leads) }}</td>
             <td class="px-3 py-2.5 text-right whitespace-nowrap">
               <span v-if="a.cac != null" class="font-medium text-ink">{{ fmtMoney(a.cac) }}</span>
               <span v-else class="text-ink-subtle italic text-xs">—</span>

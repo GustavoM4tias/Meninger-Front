@@ -121,13 +121,13 @@ function objectiveLabel(o) {
         </div>
         <div class="rounded bg-surface-sunken/40 p-2">
           <div class="text-[9px] uppercase tracking-wider text-ink-subtle">Leads</div>
-          <div class="text-sm font-semibold text-emerald-600 dark:text-emerald-300 leading-tight">{{ fmtInt(c.meta_leads_total || 0) }}</div>
-          <div class="text-[9px] text-ink-subtle leading-tight">via Meta</div>
+          <div class="text-sm font-semibold text-emerald-600 dark:text-emerald-300 leading-tight">{{ fmtInt(c.office_leads || 0) }}</div>
+          <div class="text-[9px] text-ink-subtle leading-tight">nossa base</div>
         </div>
         <div class="rounded bg-surface-sunken/40 p-2">
           <div class="text-[9px] uppercase tracking-wider text-ink-subtle">CAC</div>
           <div class="text-sm font-semibold text-ink leading-tight">{{ c.cac != null ? fmtMoney(c.cac, c.currency || currency) : '—' }}</div>
-          <div class="text-[9px] text-ink-subtle leading-tight">via Meta</div>
+          <div class="text-[9px] text-ink-subtle leading-tight">nossa base</div>
         </div>
       </div>
     </button>

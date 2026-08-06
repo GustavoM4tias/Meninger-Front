@@ -46,22 +46,23 @@ const kpis = computed(() => {
             delta: delta(t.spend, p.spend), invert: false,
         },
         {
-            key: 'leads', label: 'Leads', icon: 'fab fa-meta',
+            key: 'leads', label: 'Leads', icon: 'fas fa-user-check',
             accent: 'text-violet-500 bg-violet-500/10',
-            value: intFmt.format(t.meta_leads_total || 0),
-            delta: delta(t.meta_leads_total, p.meta_leads_total), invert: false,
-            // Desdobramento form × pixel: só de formulário Meta chega pelo
-            // webhook — leads de pixel convertem no site/LP e explicam a
-            // diferença vs a tela de Captação.
-            sub: (Number(t.meta_leads_form) || 0) + (Number(t.meta_leads_pixel) || 0) > 0
-                ? `${intFmt.format(t.meta_leads_form || 0)} form · ${intFmt.format(t.meta_leads_pixel || 0)} pixel`
+            value: intFmt.format(t.office_leads || 0),
+            delta: delta(t.office_leads, p.office_leads), invert: false,
+            // Leads da NOSSA base (inbound_leads), não a contagem da Meta: só
+            // aqui existe pessoa com nome/telefone/e-mail pra conferir no CV.
+            sub: Number(t.office_leads_delivered) > 0
+                ? `${intFmt.format(t.office_leads_delivered)} no CV`
                 : null,
+            hint: 'Leads da nossa base no período (com nome, telefone e e-mail). Spam fora.',
         },
         {
             key: 'cac', label: 'CAC', icon: 'fas fa-coins',
             accent: 'text-amber-500 bg-amber-500/10',
             value: t.cac != null ? moneyFmt.value.format(t.cac) : '—',
             delta: delta(t.cac, p.cac), invert: true,     // menor = melhor
+            hint: 'Investido ÷ leads da nossa base no período.',
         },
         {
             key: 'ctr', label: 'CTR', icon: 'fas fa-arrow-pointer',
@@ -127,9 +128,9 @@ function deltaView(item) {
           :class="{ 'opacity-40': loading }">
           {{ item.value }}
         </span>
-        <span class="text-[11px] text-ink-muted">{{ item.label }}</span>
+        <span class="text-[11px] text-ink-muted" :title="item.hint || null">{{ item.label }}</span>
         <span v-if="item.sub" class="text-[10px] text-ink-muted/80 tabular-nums leading-none"
-          title="Leads de formulário Meta (chegam na Captação) × leads de pixel (convertem no site/LP)">
+          title="Leads da nossa base já entregues ao CV">
           {{ item.sub }}
         </span>
       </div>

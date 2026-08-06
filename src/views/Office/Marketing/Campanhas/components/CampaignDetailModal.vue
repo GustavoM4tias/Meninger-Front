@@ -133,13 +133,15 @@ const statusBadge = computed(() => {
 const kpis = computed(() => {
     const c = campaign.value;
     if (!c) return null;
-    const leadsMeta = Number(c.meta_leads_total) || 0;
+    // Leads da NOSSA base (inbound_leads sem spam) — a contagem da Meta inclui
+    // pixel, que é agregado e sem identificação.
+    const leads = Number(c.office_leads ?? c.lead_stats?.valid) || 0;
     const spend = Number(c.spend) || 0;
-    const cac = c.cac != null ? Number(c.cac) : (leadsMeta > 0 ? spend / leadsMeta : null);
-    const conversionRate = c.clicks > 0 ? (leadsMeta / c.clicks) * 100 : null;
+    const cac = c.cac != null ? Number(c.cac) : (leads > 0 ? spend / leads : null);
+    const conversionRate = c.clicks > 0 ? (leads / c.clicks) * 100 : null;
     return {
         spend,
-        leadsMeta,
+        leads,
         cac,
         ctr: c.ctr,
         cpc: c.cpc,
@@ -153,12 +155,12 @@ const kpis = computed(() => {
 
 // Para o gráfico — escalas independentes pra spend (R$) e leads (count).
 const dailyMaxSpend = computed(() => Math.max(1, ...daily.value.map(d => Number(d.spend) || 0)));
-const dailyMaxLeads = computed(() => Math.max(1, ...daily.value.map(d => Number(d.meta_leads) || 0)));
+const dailyMaxLeads = computed(() => Math.max(1, ...daily.value.map(d => Number(d.office_leads) || 0)));
 const dailyTotals = computed(() => {
-    const acc = { spend: 0, metaLeads: 0, clicks: 0, impressions: 0 };
+    const acc = { spend: 0, leads: 0, clicks: 0, impressions: 0 };
     for (const d of daily.value) {
-        acc.spend       += Number(d.spend)       || 0;
-        acc.metaLeads   += Number(d.meta_leads)  || 0;
+        acc.spend       += Number(d.spend)        || 0;
+        acc.leads       += Number(d.office_leads) || 0;
         acc.clicks      += Number(d.clicks)      || 0;
         acc.impressions += Number(d.impressions) || 0;
     }
@@ -391,7 +393,7 @@ const adsTotals = computed(() => {
     for (const a of filteredAds.value) {
         acc.count += 1;
         acc.spend += Number(a.spend) || 0;
-        acc.leads += Number(a.meta_leads_total) || 0;
+        acc.leads += Number(a.office_leads) || 0;
         acc.impressions += Number(a.impressions) || 0;
         acc.clicks += Number(a.clicks) || 0;
         if (a.lead_form_id) acc.withForm += 1;
@@ -420,7 +422,7 @@ const adsetsWithAds = computed(() => {
         // continua disponível como "totalDoAdSet".
         const filteredTotals = adsList.reduce((acc, a) => ({
             spend: acc.spend + (Number(a.spend) || 0),
-            leads: acc.leads + (Number(a.meta_leads_total) || 0),
+            leads: acc.leads + (Number(a.office_leads) || 0),
             impressions: acc.impressions + (Number(a.impressions) || 0),
             clicks: acc.clicks + (Number(a.clicks) || 0),
         }), { spend: 0, leads: 0, impressions: 0, clicks: 0 });
@@ -442,7 +444,7 @@ const adsetsWithAds = computed(() => {
     if (orphans.length) {
         const t = orphans.reduce((acc, a) => ({
             spend: acc.spend + (Number(a.spend) || 0),
-            leads: acc.leads + (Number(a.meta_leads_total) || 0),
+            leads: acc.leads + (Number(a.office_leads) || 0),
             impressions: acc.impressions + (Number(a.impressions) || 0),
             clicks: acc.clicks + (Number(a.clicks) || 0),
         }), { spend: 0, leads: 0, impressions: 0, clicks: 0 });
@@ -549,8 +551,8 @@ function onFormEditorSaved() {
           <div class="text-lg font-semibold text-ink">{{ fmtMoney(kpis.spend, campaign?.currency) }}</div>
         </div>
         <div class="text-center">
-          <div class="text-[10px] uppercase tracking-wider text-ink-subtle">Leads (Meta)</div>
-          <div class="text-lg font-semibold text-ink">{{ fmtInt(kpis.leadsMeta) }}</div>
+          <div class="text-[10px] uppercase tracking-wider text-ink-subtle">Leads (base)</div>
+          <div class="text-lg font-semibold text-ink">{{ fmtInt(kpis.leads) }}</div>
         </div>
         <div class="text-center">
           <div class="text-[10px] uppercase tracking-wider text-ink-subtle" title="Custo por lead">CAC</div>
@@ -691,8 +693,8 @@ function onFormEditorSaved() {
           <!-- ── KPIs de performance ──────────────────────────────────── -->
           <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
             <div class="rounded-lg border border-line/60 bg-surface-sunken/30 p-3">
-              <div class="text-[10px] uppercase tracking-wider text-ink-subtle">Leads (Meta)</div>
-              <div class="text-lg font-semibold text-ink">{{ fmtInt(kpis.leadsMeta) }}</div>
+              <div class="text-[10px] uppercase tracking-wider text-ink-subtle">Leads (base)</div>
+              <div class="text-lg font-semibold text-ink">{{ fmtInt(kpis.leads) }}</div>
             </div>
             <div class="rounded-lg border border-line/60 bg-surface-sunken/30 p-3">
               <div class="text-[10px] uppercase tracking-wider text-ink-subtle">CAC</div>
@@ -741,9 +743,9 @@ function onFormEditorSaved() {
                 <span class="text-xs text-ink-muted w-24">Leads</span>
                 <div class="flex-1 h-5 rounded bg-surface relative overflow-hidden">
                   <div class="h-full bg-emerald-500/30"
-                    :style="{ width: kpis.impressions > 0 ? Math.max(2, (kpis.leadsMeta / kpis.impressions) * 100) + '%' : '0%' }"></div>
+                    :style="{ width: kpis.impressions > 0 ? Math.max(2, (kpis.leads / kpis.impressions) * 100) + '%' : '0%' }"></div>
                   <span class="absolute inset-0 flex items-center px-2 text-[11px] font-mono text-ink">
-                    {{ fmtInt(kpis.leadsMeta) }}
+                    {{ fmtInt(kpis.leads) }}
                     <span v-if="kpis.conversionRate != null" class="text-ink-subtle ml-2">({{ fmtPct(kpis.conversionRate) }} dos cliques)</span>
                   </span>
                 </div>
@@ -933,7 +935,7 @@ function onFormEditorSaved() {
               <div class="text-sm font-semibold text-blue-600 dark:text-blue-300">{{ fmtMoney(adsTotals.spend, campaign?.currency) }}</div>
             </div>
             <div class="rounded-lg border border-line/60 bg-surface-sunken/30 px-3 py-2">
-              <div class="text-[10px] uppercase tracking-wider text-ink-subtle">Leads (Meta)</div>
+              <div class="text-[10px] uppercase tracking-wider text-ink-subtle">Leads (base)</div>
               <div class="text-sm font-semibold text-emerald-600 dark:text-emerald-300">{{ fmtInt(adsTotals.leads) }}</div>
             </div>
             <div class="rounded-lg border border-line/60 bg-surface-sunken/30 px-3 py-2">
@@ -1084,7 +1086,7 @@ function onFormEditorSaved() {
                         </div>
                         <div>
                           <div class="text-[9px] uppercase tracking-wider text-ink-subtle">Leads</div>
-                          <div class="text-xs font-semibold text-emerald-600 dark:text-emerald-300">{{ fmtInt(ad.meta_leads_total) }}</div>
+                          <div class="text-xs font-semibold text-emerald-600 dark:text-emerald-300">{{ fmtInt(ad.office_leads) }}</div>
                         </div>
                         <div>
                           <div class="text-[9px] uppercase tracking-wider text-ink-subtle">CTR</div>
@@ -1170,7 +1172,7 @@ function onFormEditorSaved() {
 
         <!-- ── Dia-a-dia ─────────────────────────────────────────────────── -->
         <section v-if="!loading && activeSection === 'daily'" class="space-y-3">
-          <div class="text-[11px] text-ink-subtle">Período: {{ scopeLabel }} - gasto da Meta (azul) e leads da Meta (verde).</div>
+          <div class="text-[11px] text-ink-subtle">Período: {{ scopeLabel }} - gasto da Meta (azul) e leads da nossa base (verde).</div>
 
           <!-- Totais agregados -->
           <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -1179,8 +1181,8 @@ function onFormEditorSaved() {
               <div class="text-sm font-semibold text-blue-600 dark:text-blue-300">{{ fmtMoney(dailyTotals.spend, campaign?.currency) }}</div>
             </div>
             <div class="rounded-lg border border-line/60 bg-surface-sunken/30 px-3 py-2">
-              <div class="text-[10px] uppercase tracking-wider text-ink-subtle">Leads Meta 30d</div>
-              <div class="text-sm font-semibold text-emerald-600 dark:text-emerald-300">{{ fmtInt(dailyTotals.metaLeads) }}</div>
+              <div class="text-[10px] uppercase tracking-wider text-ink-subtle">Leads na base</div>
+              <div class="text-sm font-semibold text-emerald-600 dark:text-emerald-300">{{ fmtInt(dailyTotals.leads) }}</div>
             </div>
             <div class="rounded-lg border border-line/60 bg-surface-sunken/30 px-3 py-2">
               <div class="text-[10px] uppercase tracking-wider text-ink-subtle">Impr. / Cliques</div>
@@ -1204,7 +1206,7 @@ function onFormEditorSaved() {
                     <th class="px-2 py-1.5 text-right font-mono uppercase text-[10px] text-ink-subtle">Gasto</th>
                     <th class="px-2 py-1.5 text-right font-mono uppercase text-[10px] text-ink-subtle">Impr.</th>
                     <th class="px-2 py-1.5 text-right font-mono uppercase text-[10px] text-ink-subtle">Cliques</th>
-                    <th class="px-2 py-1.5 text-right font-mono uppercase text-[10px] text-ink-subtle">Meta L.</th>
+                    <th class="px-2 py-1.5 text-right font-mono uppercase text-[10px] text-ink-subtle">Leads</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-line/40">
@@ -1213,7 +1215,7 @@ function onFormEditorSaved() {
                     <td class="px-2 py-1 text-right text-blue-600 dark:text-blue-300 font-mono">{{ fmtMoney(d.spend, campaign?.currency) }}</td>
                     <td class="px-2 py-1 text-right text-ink-muted">{{ fmtInt(d.impressions) }}</td>
                     <td class="px-2 py-1 text-right text-ink-muted">{{ fmtInt(d.clicks) }}</td>
-                    <td class="px-2 py-1 text-right text-emerald-600 dark:text-emerald-300">{{ fmtInt(d.meta_leads) }}</td>
+                    <td class="px-2 py-1 text-right text-emerald-600 dark:text-emerald-300">{{ fmtInt(d.office_leads) }}</td>
                   </tr>
                 </tbody>
               </table>

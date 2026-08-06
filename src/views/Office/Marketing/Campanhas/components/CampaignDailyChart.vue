@@ -1,5 +1,5 @@
 <script setup>
-// "Desempenho diário" — investimento (barras) × leads Meta (linha), no padrão
+// "Desempenho diário" - investimento (barras) × leads da nossa base (linha), no padrão
 // visual dos gráficos do sistema (LeadsTrendCard): card surface-raised com
 // kicker + total no header, eixos tema-aware (claro/escuro), splitLine dashed.
 
@@ -13,7 +13,7 @@ import { CanvasRenderer } from 'echarts/renderers';
 echarts.use([BarChart, LineChart, TooltipComponent, GridComponent, CanvasRenderer]);
 
 const props = defineProps({
-    daily: { type: Array, default: () => [] },           // [{ day, spend, meta_leads, ... }]
+    daily: { type: Array, default: () => [] },           // [{ day, spend, office_leads, ... }]
     currency: { type: String, default: 'BRL' },
 });
 
@@ -27,7 +27,7 @@ const moneyFmt = computed(() => new Intl.NumberFormat('pt-BR', {
 const intFmt = new Intl.NumberFormat('pt-BR');
 
 const totalSpend = computed(() => props.daily.reduce((a, d) => a + (Number(d.spend) || 0), 0));
-const totalLeads = computed(() => props.daily.reduce((a, d) => a + (Number(d.meta_leads) || 0), 0));
+const totalLeads = computed(() => props.daily.reduce((a, d) => a + (Number(d.office_leads) || 0), 0));
 const dias = computed(() => props.daily.length);
 
 // Interpreta 'YYYY-MM-DD' como data LOCAL. `new Date('2026-07-01')` seria
@@ -94,10 +94,10 @@ const option = computed(() => ({
             barMaxWidth: 18,
         },
         {
-            name: 'Leads Meta',
+            name: 'Leads',
             type: 'line',
             yAxisIndex: 1,
-            data: props.daily.map(d => Number(d.meta_leads) || 0),
+            data: props.daily.map(d => Number(d.office_leads) || 0),
             smooth: 0.4,
             showSymbol: false,
             lineStyle: { color: '#10b981', width: 2.5 },
@@ -123,7 +123,7 @@ const option = computed(() => ({
           <span>
             <span class="inline-block w-2.5 h-[3px] rounded-full bg-emerald-500 mr-1.5 align-middle"></span>
             <span class="text-lg font-bold text-ink tabular-nums">{{ intFmt.format(totalLeads) }}</span>
-            <span class="text-xs text-ink-muted ml-1">leads Meta</span>
+            <span class="text-xs text-ink-muted ml-1">leads na base</span>
           </span>
         </p>
       </div>
