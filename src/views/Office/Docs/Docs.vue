@@ -30,6 +30,85 @@
            três telas do Sobre abrirem com a mesma leitura -->
       <HighlightCards :items="highlights" class="mb-6" />
 
+      <!-- Plano de desenvolvimento. Fica FORA da grade do histórico de propósito:
+           os filtros da lateral valem para o que já foi publicado, não para o que
+           ainda vem. Cartão de altura fixa, com o texto longo indo pro modal. -->
+      <section class="mb-8">
+        <header class="flex items-center gap-3 mb-4 pb-2 border-b border-line">
+          <span class="grid place-items-center h-9 w-9 rounded-xl bg-accent-soft text-accent
+                       border border-accent/20 shrink-0">
+            <i class="fas fa-road"></i>
+          </span>
+          <div class="min-w-0">
+            <h2 class="text-base sm:text-xl font-semibold text-ink tracking-tight">
+              Atualizações futuras
+            </h2>
+            <p class="hidden sm:block text-[11px] text-ink-subtle leading-snug">
+              Sem data: a variável é o tempo dedicado, não a tecnologia
+            </p>
+          </div>
+          <Badge variant="accent" size="sm" class="ml-auto shrink-0">
+            {{ roadmap.length }} frentes
+          </Badge>
+        </header>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+          <Surface v-for="milestone in visibleRoadmap" :key="milestone.version"
+            variant="raised" padding="none"
+            class="h-full flex flex-col hover:border-accent/30 hover:shadow-elevated">
+
+            <div class="p-4 flex flex-col gap-2 grow">
+              <div class="flex items-center gap-2">
+                <span class="font-mono text-[11px] text-ink-subtle">{{ milestone.version }}</span>
+                <span v-if="milestone.date" class="ml-auto text-[11px] text-ink-subtle font-mono">
+                  {{ formatDate(milestone.date) }}
+                </span>
+                <Badge v-else variant="warning" size="sm" class="ml-auto shrink-0">Em programação</Badge>
+              </div>
+
+              <h3 class="text-sm font-semibold text-ink leading-snug">{{ milestone.title }}</h3>
+
+              <!-- min-h de 3 linhas: sem isso o valor de economia dança de altura
+                   entre um cartão e outro da mesma linha. -->
+              <p class="text-[13px] text-ink-muted leading-relaxed line-clamp-3 sm:min-h-[4.875em]">
+                {{ milestone.summary }}
+              </p>
+
+              <p v-if="milestone.impact"
+                 class="text-sm font-semibold text-accent tabular-nums tracking-tight">
+                {{ milestone.impact }}
+                <span class="text-[11px] font-normal text-ink-subtle">de economia estimada</span>
+              </p>
+            </div>
+
+            <!-- Rodapé ancorado embaixo: com mt-auto os cartões terminam alinhados
+                 mesmo com resumos de tamanhos diferentes. -->
+            <div class="mt-auto px-4 pb-3 pt-2 border-t border-line flex items-center gap-2 flex-wrap">
+              <span v-for="feature in milestone.features" :key="feature"
+                class="text-[10px] px-2 py-0.5 rounded-full bg-surface-sunken text-ink-muted border border-line">
+                {{ feature }}
+              </span>
+              <button type="button" @click="selectedMilestone = milestone"
+                class="ml-auto shrink-0 text-accent hover:underline text-xs font-medium
+                       inline-flex items-center gap-1 min-h-[32px]">
+                Detalhes
+                <i class="fas fa-arrow-right text-[9px]"></i>
+              </button>
+            </div>
+          </Surface>
+        </div>
+
+        <button v-if="roadmap.length > ROADMAP_PREVIEW" type="button"
+                @click="showAllRoadmap = !showAllRoadmap"
+                class="w-full mt-3 min-h-[40px] rounded-lg border border-line bg-surface-raised
+                       text-sm text-ink-muted hover:text-ink hover:border-line-strong
+                       transition-all duration-150 ease-out-expo">
+          {{ showAllRoadmap
+            ? 'Mostrar menos'
+            : `Ver as outras ${roadmap.length - ROADMAP_PREVIEW} frentes` }}
+        </button>
+      </section>
+
       <div class="grid grid-cols-1 lg:grid-cols-[220px_minmax(0,1fr)] gap-6">
 
         <!-- Filtros. No celular os três seletores ficam lado a lado: empilhados,
@@ -59,44 +138,7 @@
         </aside>
 
         <!-- Conteúdo Principal -->
-        <main class="min-w-0 space-y-8">
-
-          <!-- Roadmap -->
-          <section>
-            <header class="flex items-center gap-3 mb-4 pb-2 border-b border-line">
-              <span class="grid place-items-center h-9 w-9 rounded-xl bg-accent-soft text-accent
-                           border border-accent/20 shrink-0">
-                <i class="fas fa-road"></i>
-              </span>
-              <h2 class="text-base sm:text-xl font-semibold text-ink tracking-tight">
-                Atualizações futuras
-              </h2>
-              <Badge variant="accent" size="sm" class="ml-auto shrink-0">{{ roadmap.length }} planejadas</Badge>
-            </header>
-            <div class="overflow-x-auto -mx-1 px-1">
-              <div class="flex gap-3 pb-2 min-w-min">
-                <Surface v-for="milestone in roadmap" :key="milestone.version"
-                  variant="raised"
-                  padding="md"
-                  class="min-w-[260px] max-w-[260px] shrink-0 hover:border-accent/30 hover:shadow-elevated">
-                  <div class="flex items-center justify-between mb-2 gap-2">
-                    <span class="font-semibold text-ink font-mono text-sm">{{ milestone.version }}</span>
-                    <span v-if="milestone?.date" class="text-[11px] text-ink-subtle font-mono">
-                      {{ formatDate(milestone.date) }}
-                    </span>
-                    <Badge v-else variant="warning" size="sm">Em programação</Badge>
-                  </div>
-                  <p class="text-sm text-ink-muted mb-3 leading-relaxed">{{ milestone.description }}</p>
-                  <div class="flex flex-wrap gap-1">
-                    <span v-for="feature in milestone.features" :key="feature"
-                      class="text-[10px] px-2 py-0.5 rounded-full bg-surface-sunken text-ink-muted border border-line">
-                      {{ feature }}
-                    </span>
-                  </div>
-                </Surface>
-              </div>
-            </div>
-          </section>
+        <main class="min-w-0">
 
           <!-- Lista de Releases -->
           <section>
@@ -249,6 +291,41 @@
       </div>
     </PageContainer>
 
+    <!-- Detalhe de uma frente do plano -->
+    <Modal :open="!!selectedMilestone"
+      size="md"
+      :title="selectedMilestone?.title || ''"
+      :subtitle="selectedMilestone ? `${selectedMilestone.version} · sem data definida` : ''"
+      @close="selectedMilestone = null">
+
+      <div v-if="selectedMilestone" class="space-y-4">
+        <p class="text-sm text-ink font-medium leading-relaxed">{{ selectedMilestone.summary }}</p>
+
+        <div v-if="selectedMilestone.impact"
+             class="rounded-xl border border-accent/20 bg-accent-soft/40 p-4">
+          <p class="text-xl font-semibold text-accent tracking-tight tabular-nums">
+            {{ selectedMilestone.impact }}
+          </p>
+          <p class="text-xs text-ink-muted mt-0.5">
+            Economia estimada, comparada ao custo da ferramenta usada hoje
+          </p>
+        </div>
+
+        <p class="text-sm text-ink-muted leading-relaxed">{{ selectedMilestone.description }}</p>
+
+        <div class="flex flex-wrap gap-1.5 pt-1">
+          <span v-for="feature in selectedMilestone.features" :key="feature"
+            class="text-[10px] px-2 py-0.5 rounded-full bg-surface-sunken text-ink-muted border border-line">
+            {{ feature }}
+          </span>
+        </div>
+      </div>
+
+      <template #footer>
+        <Button variant="ghost" @click="selectedMilestone = null">Fechar</Button>
+      </template>
+    </Modal>
+
     <!-- Modal de Detalhes -->
     <Modal :open="!!selectedRelease"
       size="xl"
@@ -361,8 +438,14 @@ import HighlightCards from '@/components/Sobre/HighlightCards.vue';
 // ── State ─────────────────────────────────────────────────────────────────────
 const searchQuery = ref('');
 const selectedRelease = ref(null);
+const selectedMilestone = ref(null);
 const currentPage = ref(1);
 const itemsPerPage = 6;
+
+// Plano completo tem 11 frentes: mostrar todas de cara empurraria o histórico
+// pra fora da tela. Duas linhas no desktop e o resto sob demanda.
+const ROADMAP_PREVIEW = 6;
+const showAllRoadmap = ref(false);
 
 const filters = ref({
   type: 'all',
@@ -405,67 +488,100 @@ const roadmap = [
   {
     version: 'v4.0.0',
     date: null,
-    description: 'Atendimento de leads por IA (Eme Atende): recebe o lead, informa pela ficha comercial autorizada, qualifica e devolve ao CRM. Já construído, falta ativar em modo de teste. Menos de R$ 0,40 por lead contra os R$ 4,00 do mercado, cerca de R$ 86 mil por ano de economia.',
+    title: 'Atendimento de leads por IA',
+    summary: 'A Eme recebe o lead, informa pela ficha comercial autorizada, qualifica e devolve ao CRM.',
+    impact: '~R$ 86 mil/ano',
+    description: 'Já construído: falta ativar em modo de teste. A conversa roda no WhatsApp corporativo que o sistema já opera, então a mensagem de abertura custa centavos, as respostas dentro da janela de 24 horas são gratuitas e o processamento de IA custa frações de centavo. A estimativa conservadora fica abaixo de R$ 0,40 por lead atendido, contra os cerca de R$ 4,00 cobrados por ferramentas de mercado. Em 2.000 leads por mês, é a diferença entre R$ 9,6 mil e R$ 96 mil por ano. Além do custo, resposta em minutos é o que mais segura lead vivo.',
     features: ['IA', 'WhatsApp', 'Leads'],
   },
   {
     version: 'v4.1.0',
     date: null,
-    description: 'Régua de cobrança completa e VAN de pagamento pelo Sienge: a automação do boleto do ato estendida a todas as parcelas anteriores à assinatura com a Caixa, com registro e baixa direto pela VAN. Substitui a CUB, que só em maio custou R$ 13.293,36 apenas para enviar boletos.',
+    title: 'Régua de cobrança e VAN pelo Sienge',
+    summary: 'A automação do boleto do ato estendida a todas as parcelas anteriores à assinatura com a Caixa.',
+    impact: '~R$ 150 mil/ano',
+    description: 'Hoje esse período depende de esforço manual ou de custo percentual sobre os valores pagos. A evolução é registrar e dar baixa no boleto direto pela VAN, dentro do ERP, do mesmo jeito que a ferramenta CUB faz, mas pagando apenas pelo disparo da mensagem em vez de um percentual sobre o valor. Só em maio de 2026 a CUB custou R$ 13.293,36 apenas para enviar boletos; o mesmo volume pela VAN sairia por pouco mais de R$ 800.',
     features: ['Cobrança', 'Sienge', 'Boleto'],
   },
   {
     version: 'v4.2.0',
     date: null,
-    description: 'WhatsApp corporativo na cobrança e no relacionamento do Contas a Receber, com histórico dentro do Office. Substitui o Blip, cerca de R$ 96 mil por ano.',
+    title: 'WhatsApp na cobrança e no relacionamento',
+    summary: 'Estender ao Contas a Receber o canal que já envia boleto com PDF e aprovação com botão.',
+    impact: '~R$ 96 mil/ano',
+    description: 'O WhatsApp corporativo já opera dentro do Office, com histórico e alçada. Levá-lo para a cobrança e o relacionamento do Contas a Receber substitui o BlipDesk, que custa cerca de R$ 8 mil por mês entre Contas a Receber e Assistência Técnica, e traz a conversa para dentro do sistema em vez de deixá-la em uma ferramenta à parte.',
     features: ['WhatsApp', 'Contas a Receber'],
   },
   {
     version: 'v4.3.0',
     date: null,
-    description: 'Inadimplência conduzida pela área comercial e gestão de distratos de ponta a ponta: solicitação, aprovação por alçada, motivo e condições de devolução, alimentando o indicador que o Faturamento já exibe. O motor de cálculo já existe e está validado.',
+    title: 'Inadimplência e distratos',
+    summary: 'Inadimplência conduzida pela área comercial e o distrato virando processo com dono e prazo.',
+    impact: null,
+    description: 'O motor de cálculo da inadimplência já existe, validado e corrigido: falta a tela e a régua de tratativa, conduzidas pela gestão comercial em vez de relatório passivo. No distrato, o cancelamento automático já devolve a unidade ao estoque; a evolução é o fluxo completo dentro do Office, com solicitação, aprovação por alçada, registro do motivo e das condições de devolução, alimentando o indicador que o Faturamento já exibe. O distrato deixa de ser um evento espalhado entre CRM, ERP e conversas.',
     features: ['Comercial', 'Carteira'],
   },
   {
     version: 'v4.4.0',
     date: null,
-    description: 'Planejamento financeiro: fluxo de caixa no Contas a Receber, com previsão de entrada por período, empreendimento e empresa, e previsibilidade de gastos no Contas a Pagar, aplicando à empresa inteira a lógica de teto, realizado e projetado que hoje só o marketing usa.',
+    title: 'Fluxo de caixa e previsibilidade de gastos',
+    summary: 'Previsão de entrada por período, empreendimento e empresa, e teto de gasto para a empresa inteira.',
+    impact: null,
+    description: 'No Contas a Receber, a previsão de entrada sai dos títulos que o sistema já lê, sem cadastro novo. No Contas a Pagar, a lógica de teto, realizado e projetado que hoje só o marketing usa na Viabilidade passa a valer para a empresa inteira.',
     features: ['Financeiro', 'Projeção'],
   },
   {
     version: 'v4.5.0',
     date: null,
-    description: 'Insumos e solicitações de compra dentro do Office: pedido, aprovação e acompanhamento sobre o módulo de Aprovações e a esteira de cadastro de fornecedor já prontos.',
+    title: 'Insumos e solicitações de compra',
+    summary: 'Pedido, aprovação e acompanhamento de compra dentro do Office.',
+    impact: null,
+    description: 'Construído sobre o módulo de Aprovações e a esteira de cadastro de fornecedor que já estão prontos e em uso, o que torna a frente incremental em vez de um módulo novo do zero.',
     features: ['Compras', 'Aprovações'],
   },
   {
     version: 'v4.6.0',
     date: null,
-    description: 'Venda assistida: validado o atendimento por IA, conduzir as etapas iniciais da venda de forma automatizada, sempre dentro das condições autorizadas na ficha comercial do mês.',
+    title: 'Venda assistida',
+    summary: 'Conduzir as etapas iniciais da venda de forma automatizada, dentro das condições autorizadas.',
+    impact: null,
+    description: 'Passo seguinte ao atendimento por IA: validado o atendimento, a automação conduz o início da venda sempre dentro das condições autorizadas na ficha comercial do mês, que é a mesma fonte que hoje já limita o que a Eme pode informar ao lead.',
     features: ['IA', 'Comercial'],
   },
   {
     version: 'v4.7.0',
     date: null,
-    description: 'Obra e pós-venda: integração com o sistema da engenharia, com o avanço publicado automaticamente no site, e assistência técnica com chamado, manual do imóvel, chaves e assinaturas filtrados pelo Office.',
+    title: 'Obra e pós-venda',
+    summary: 'Evolução de obra publicada automaticamente no site e assistência técnica filtrada pelo Office.',
+    impact: null,
+    description: 'Na obra, integração com o sistema da engenharia para que o avanço chegue ao site sem repasse manual. No pós-venda, chamado, manual do imóvel, chaves, assinaturas e acompanhamento passando pelo Office, com automação nos pontos repetitivos.',
     features: ['Obra', 'Pós-venda'],
   },
   {
     version: 'v4.8.0',
     date: null,
-    description: 'Google Ads na captação, no mesmo modelo já rodando na Meta, fechando o funil de mídia. Inclui o percentual de manutenção do stand controlado automaticamente na viabilidade, com alerta de gasto.',
+    title: 'Google Ads e controle do stand',
+    summary: 'Google Ads no mesmo modelo já rodando na Meta, fechando o funil de mídia.',
+    impact: null,
+    description: 'A captação, o vínculo com empreendimento e o custo por lead já funcionam para a Meta; replicar para o Google Ads fecha o funil de mídia em uma leitura só. Junto vem o percentual de manutenção do stand controlado automaticamente dentro da viabilidade, com alerta de gasto.',
     features: ['Marketing', 'Mídia'],
   },
   {
     version: 'v4.9.0',
     date: null,
-    description: 'Academy aberto a corretores, imobiliárias e correspondentes, com certificação da rede de vendas.',
+    title: 'Academy para a rede de vendas',
+    summary: 'Abrir o Academy a corretores, imobiliárias e correspondentes, com certificação.',
+    impact: null,
+    description: 'A base de conhecimento, as trilhas e o controle de audiência já existem para o público interno. Abrir para a rede externa transforma o material que já foi produzido em qualificação e certificação de quem vende.',
     features: ['Academy', 'Certificação'],
   },
   {
     version: 'v5.0.0',
     date: null,
-    description: 'App mobile nativo para iOS e Android com notificação push.',
+    title: 'App mobile nativo',
+    summary: 'Aplicativo para iOS e Android com notificação push.',
+    impact: null,
+    description: 'As telas já são desenhadas para o celular e a notificação já sai por três canais. O aplicativo nativo entra para resolver o que a web não entrega: push direto no aparelho e acesso sem passar pelo navegador.',
     features: ['Mobile', 'Notificações'],
   },
 ];
@@ -1515,6 +1631,10 @@ const totalBugsFixed = computed(() =>
 
 const totalFeatures = computed(() =>
   releases.reduce((total, release) => total + (release.features?.length || 0), 0),
+);
+
+const visibleRoadmap = computed(() =>
+  showAllRoadmap.value ? roadmap : roadmap.slice(0, ROADMAP_PREVIEW),
 );
 
 const firstReleaseLabel = computed(() => {
