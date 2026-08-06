@@ -67,6 +67,17 @@ window.addEventListener('vite:preloadError', (event) => {
   reloadForFreshBuild();
 });
 
+// ─── Barreira de acesso → sempre o login ─────────────────────────────────────
+// Não existe mais tela de erro: qualquer bloqueio (cargo, role, admin, alçada)
+// termina no login. Encerrar a sessão local é o que faz o login realmente
+// aparecer (o componente manda usuário autenticado direto pra Home) e garante um
+// /permissions/me novo no próximo acesso — que é o caminho de volta quando o
+// bloqueio veio de sessão vencida ou da API fora do ar, e não de falta de alçada.
+function backToLogin(next, authStore) {
+  try { authStore.clearUser(); } catch { /* ignora */ }
+  return next(isAcademyHost() ? { name: 'AcademyLogin' } : { name: 'login', query: { motivo: 'acesso' } });
+}
+
 // ✅ Guard unificado: autenticação + role + admin + permissões de alçada
 router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore();
@@ -92,11 +103,11 @@ router.beforeEach(async (to, from, next) => {
   const allowedRole     = to.meta?.allowedRole;
 
   if (allowedPosition && !authStore.hasPosition(allowedPosition)) {
-    return next({ path: '/error', query: { message: 'Você não tem permissão para acessar esta página!' } });
+    return backToLogin(next, authStore);
   }
 
   if (allowedRole && !authStore.hasRole(allowedRole)) {
-    return next({ path: '/error', query: { message: 'Você não tem permissão para acessar esta página!' } });
+    return backToLogin(next, authStore);
   }
 
   // 3. Check de alçada — só para rotas gerenciadas e usuários autenticados.
@@ -112,7 +123,7 @@ router.beforeEach(async (to, from, next) => {
     const needsAdmin = to.matched.some(r => r.meta?.requiresAdmin || r.meta?.adminOnly)
       || permStore.isRouteAdminOnly(to.path);
     if (needsAdmin && !permStore.isAdmin) {
-      return next({ path: '/error', query: { message: 'Você não tem permissão para acessar esta página.' } });
+      return backToLogin(next, authStore);
     }
 
     // 3b. Apenas verifica rotas que estão no registro gerenciado (ignora rotas internas, params, etc.)
@@ -121,7 +132,7 @@ router.beforeEach(async (to, from, next) => {
     );
 
     if (isManagedRoute && !permStore.hasAccess(to.path)) {
-      return next({ path: '/error', query: { message: 'Você não tem permissão para acessar esta página.' } });
+      return backToLogin(next, authStore);
     }
   }
 

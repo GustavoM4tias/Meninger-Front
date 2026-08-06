@@ -17,12 +17,6 @@ export default [
         meta: { requiresAuth: false },
     },
     {
-        path: '/error',
-        name: 'Error',
-        component: () => import('@/views/Office/Config/ErrorPage.vue'),
-        meta: { requiresAuth: false },
-    },
-    {
         // Link PÚBLICO de relatório da Eme (sem login) — token CSPRNG com
         // vencimento validado no backend; 404 genérico para token inválido.
         path: '/r/:token',
@@ -591,4 +585,8 @@ export default [
 
         ],
     },
+
+    // URL que não existe (link velho, /error de antes, erro de digitação) volta
+    // pra Home em vez de deixar tela em branco. Sem sessão, o guard leva pro login.
+    { path: '/:pathMatch(.*)*', redirect: '/' },
 ];
