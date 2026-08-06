@@ -566,10 +566,6 @@ endDate.value = toInputDate(getEndOfWeek());
                         text-transform:uppercase; line-height:1;
                       ">REALIZADO</span>
 
-                    <p v-if="event.enterprise_name" style="
-                        color:rgba(255,255,255,0.55); font-size:11px; margin:0 0 10px 0;
-                        text-transform:uppercase; letter-spacing:1px; font-weight:700;
-                      ">{{ event.enterprise_name }}</p>
                   </div>
                 </div>
               </div>
