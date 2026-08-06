@@ -83,7 +83,9 @@ function buildGraph(rootNode) {
       id: node.key,
       position,
       data: {
-        ...node.data, level: node._level, hasChildren: !!(node.children?.length),
+        ...node.data, level: node._level,
+        childCount: node.children?.length || 0,
+        hasChildren: !!(node.children?.length),
         editing: props.editMode, adjusted: oid != null && hasOverride(oid),
       },
       type: node.type === 'company' ? 'company' : 'person',
@@ -161,7 +163,31 @@ const decoratedEdges = computed(() =>
 );
 
 // ── Vue Flow controls ──────────────────────────────
-const { fitView, zoomIn, zoomOut } = useVueFlow();
+const { fitView, zoomIn, zoomOut, getNodes, getEdges } = useVueFlow();
+
+// Fotografia do diagrama para o export: posição e TAMANHO REAL de cada card
+// (medidos pelo Vue Flow depois de renderizar), sem zoom/pan da tela. Quem
+// desenha o arquivo é o organogramExport.js.
+function getExportGraph() {
+  const nodes = getNodes.value
+    .filter(n => n.dimensions?.width && n.dimensions?.height)
+    .map(n => ({
+      id: n.id,
+      type: n.type,
+      x: n.position.x,
+      y: n.position.y,
+      w: n.dimensions.width,
+      h: n.dimensions.height,
+      data: n.data,
+    }));
+  const ids = new Set(nodes.map(n => n.id));
+  const edgeList = getEdges.value
+    .filter(e => ids.has(e.source) && ids.has(e.target))
+    .map(e => ({ source: e.source, target: e.target }));
+  return { nodes, edges: edgeList };
+}
+
+defineExpose({ getExportGraph });
 
 function onNodeClick({ node }) {
   if (node.type === 'company') return;
@@ -205,11 +231,6 @@ function avatarBgForLevel(level) {
     'bg-emerald-500/10',
   ];
   return colors[Math.min(level, colors.length - 1)];
-}
-
-// Conta descendentes diretos
-function directCount(node) {
-  return node?.children?.length ?? 0;
 }
 
 // Re-fit ao trocar de árvore. Limpa o cache de arrasto: mudanças estruturais
@@ -268,7 +289,7 @@ watch(() => props.rootNode, () => {
                 class="absolute -bottom-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full
                        bg-accent text-white text-[10px] font-bold border-2 border-surface-raised
                        grid place-items-center font-mono">
-                {{ directCount({ children: data.hasChildren ? [1] : [] }) || 0 }}
+                {{ data.childCount }}
               </span>
             </div>
 
