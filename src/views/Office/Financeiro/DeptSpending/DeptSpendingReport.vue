@@ -269,7 +269,9 @@ const router = useRouter();
 const store = useDeptSpendingStore();
 const auth = useAuthStore();
 
-const companyId = computed(() => route.params.companyId);
+// Chave do relatório: enterprise_key do empreendimento (CC). Id de empresa Sienge
+// ainda é aceito pelo backend (links antigos) e devolve a SPE inteira somada.
+const reportKey = computed(() => route.params.key);
 const refMonth = ref(store.selectedMonth || dayjs().format('YYYY-MM'));
 const regenLoading = ref(false);
 
@@ -470,13 +472,13 @@ const helpTips = [
 async function load() {
     store.setMonth(refMonth.value);
     router.replace({ query: { ...route.query, mes: refMonth.value } });
-    await store.fetchReport(companyId.value, refMonth.value);
+    await store.fetchReport(reportKey.value, refMonth.value);
 }
 function goBack() { router.push('/marketing/viabilidade'); }
 async function regenerate() {
     regenLoading.value = true;
     try {
-        await store.regenerateInsights(companyId.value, refMonth.value);
+        await store.regenerateInsights(reportKey.value, refMonth.value);
     } catch (e) {
         store.reportError = e?.message || 'Erro ao regenerar a leitura.';
     } finally {

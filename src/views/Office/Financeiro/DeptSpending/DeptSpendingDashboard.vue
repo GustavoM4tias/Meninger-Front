@@ -137,7 +137,7 @@
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-line">
-                            <tr v-for="item in sortedItems" :key="item.companyId ?? item.erpId"
+                            <tr v-for="item in sortedItems" :key="item.enterpriseKey ?? item.erpId ?? item.companyId"
                                 class="hover:bg-surface-hover/40 transition-colors align-top">
                                 <!-- EMPREENDIMENTO -->
                                 <td class="px-5 py-3">
@@ -228,13 +228,13 @@
                                         <Button v-if="isAdmin" size="sm"
                                             :variant="item.released ? 'ghost' : 'primary'"
                                             :icon="item.released ? 'fas fa-rotate-left' : 'fas fa-circle-check'"
-                                            :loading="adminStore.releasingId === item.companyId"
-                                            :disabled="item.companyId == null"
+                                            :loading="adminStore.releasingId === stageKey(item)"
+                                            :disabled="stageKey(item) == null"
                                             @click="quickToggleRelease(item)">
                                             {{ item.released ? 'Rascunho' : 'Liberar' }}
                                         </Button>
                                         <Button variant="secondary" size="sm" icon="fas fa-file-invoice-dollar"
-                                            :disabled="item.companyId == null" @click="openReport(item)">
+                                            :disabled="reportKey(item) == null" @click="openReport(item)">
                                             Relatório
                                         </Button>
                                     </div>
@@ -565,18 +565,26 @@ function statusInfo(item) {
 }
 
 /* ---------- ações ---------- */
+// A linha é um EMPREENDIMENTO (etapa da projeção): a chave é o enterprise_key (CC).
+function stageKey(item) { return item?.enterpriseKey ?? item?.erpId ?? null; }
+// Relatório só faz sentido com centro de custo (é de onde vem o gasto do Sienge).
+function reportKey(item) {
+    return (item?.header?.costCenterIds || []).length ? stageKey(item) : null;
+}
 function openEnterpriseSettings(item) { entSettingsTarget.value = item; entSettingsOpen.value = true; }
 function openDetail(item) { detailItem.value = item; }
 function closeDetail() { detailItem.value = null; }
 function openReport(item) {
-    if (item.companyId == null) return;
-    router.push(`/marketing/viabilidade/${item.companyId}`);
+    const key = reportKey(item);
+    if (key == null) return;
+    router.push(`/marketing/viabilidade/${key}`);
 }
 
 async function quickToggleRelease(item) {
-    if (item.companyId == null) return;
+    const key = stageKey(item);
+    if (key == null) return;
     try {
-        await adminStore.setEnterpriseRelease(item.companyId, !item.released, null);
+        await adminStore.setEnterpriseRelease(key, !item.released, null, item.companyId ?? null);
         await applyFilters(); // preserva o filtro atual (URL + server-side)
     } catch (e) {
         store.error = e?.message || 'Erro ao liberar empreendimento.';
