@@ -12,11 +12,15 @@
             title="Como usar as Atualizações"
             intro="Esta é a linha do tempo do Office: cada entrega publicada, com o que mudou e em qual área."
             :steps="[
+              { title: 'Atualizações futuras', text: 'A primeira faixa é o plano de desenvolvimento: as frentes que vêm a seguir, sem data porque a variável é o tempo dedicado, não a tecnologia. É o mesmo conteúdo do O que vem a seguir da Visão Executiva.' },
               { title: 'Filtrar', text: 'Use a busca e os filtros de tipo, categoria e período para achar uma entrega específica.' },
               { title: 'Abrir uma versão', text: 'Clique em uma atualização para ver os itens de melhoria e correção daquela publicação.' },
               { title: 'Ver o conjunto', text: 'Mapa do Sistema mostra o que existe hoje e a Visão Executiva explica o resultado de cada frente.' },
             ]"
-            :tips="['O que aparece aqui é o registro do que foi ao ar, na ordem em que foi publicado.']" />
+            :tips="[
+              'O que aparece no histórico é o registro do que foi ao ar, na ordem em que foi publicado.',
+              'Versão marcada com Breaking change mudou algum número ou comportamento que já estava em uso: vale ler antes de comparar com um relatório antigo.',
+            ]" />
         </template>
       </PageHeader>
 
@@ -392,29 +396,345 @@ const periodOptions = [
 ];
 
 // ── Roadmap ───────────────────────────────────────────────────────────────────
+// ── Atualizações futuras ──────────────────────────────────────────────────────
+// É o "O que vem a seguir" da Visão Executiva em formato de entrega. Sem data:
+// a variável não é a tecnologia, é o tempo dedicado. Cada frente se apoia em
+// infraestrutura que o Office já opera, então nenhuma começa do zero.
+// Ao concluir uma frente, mover o item daqui para `releases` com a data real.
 const roadmap = [
   {
-    version: 'v2.9.5',
+    version: 'v4.0.0',
     date: null,
-    description: 'Relatórios sem código na Eme: construtor declarativo sobre fontes seguras e consultas SQL guardadas (somente leitura).',
-    features: ['IA', 'Relatórios', 'BI'],
+    description: 'Atendimento de leads por IA (Eme Atende): recebe o lead, informa pela ficha comercial autorizada, qualifica e devolve ao CRM. Já construído, falta ativar em modo de teste. Menos de R$ 0,40 por lead contra os R$ 4,00 do mercado, cerca de R$ 86 mil por ano de economia.',
+    features: ['IA', 'WhatsApp', 'Leads'],
   },
   {
-    version: 'v3.0.0',
+    version: 'v4.1.0',
     date: null,
-    description: 'Captação de marketing: roteamento automático por campanha, sincronização de custos e dashboards de CPL/ROI (Meta e Google Ads).',
-    features: ['Marketing', 'Meta', 'ROI'],
+    description: 'Régua de cobrança completa e VAN de pagamento pelo Sienge: a automação do boleto do ato estendida a todas as parcelas anteriores à assinatura com a Caixa, com registro e baixa direto pela VAN. Substitui a CUB, que só em maio custou R$ 13.293,36 apenas para enviar boletos.',
+    features: ['Cobrança', 'Sienge', 'Boleto'],
   },
   {
-    version: 'v3.1.0',
+    version: 'v4.2.0',
     date: null,
-    description: 'App mobile nativo para iOS e Android com push notifications.',
+    description: 'WhatsApp corporativo na cobrança e no relacionamento do Contas a Receber, com histórico dentro do Office. Substitui o Blip, cerca de R$ 96 mil por ano.',
+    features: ['WhatsApp', 'Contas a Receber'],
+  },
+  {
+    version: 'v4.3.0',
+    date: null,
+    description: 'Inadimplência conduzida pela área comercial e gestão de distratos de ponta a ponta: solicitação, aprovação por alçada, motivo e condições de devolução, alimentando o indicador que o Faturamento já exibe. O motor de cálculo já existe e está validado.',
+    features: ['Comercial', 'Carteira'],
+  },
+  {
+    version: 'v4.4.0',
+    date: null,
+    description: 'Planejamento financeiro: fluxo de caixa no Contas a Receber, com previsão de entrada por período, empreendimento e empresa, e previsibilidade de gastos no Contas a Pagar, aplicando à empresa inteira a lógica de teto, realizado e projetado que hoje só o marketing usa.',
+    features: ['Financeiro', 'Projeção'],
+  },
+  {
+    version: 'v4.5.0',
+    date: null,
+    description: 'Insumos e solicitações de compra dentro do Office: pedido, aprovação e acompanhamento sobre o módulo de Aprovações e a esteira de cadastro de fornecedor já prontos.',
+    features: ['Compras', 'Aprovações'],
+  },
+  {
+    version: 'v4.6.0',
+    date: null,
+    description: 'Venda assistida: validado o atendimento por IA, conduzir as etapas iniciais da venda de forma automatizada, sempre dentro das condições autorizadas na ficha comercial do mês.',
+    features: ['IA', 'Comercial'],
+  },
+  {
+    version: 'v4.7.0',
+    date: null,
+    description: 'Obra e pós-venda: integração com o sistema da engenharia, com o avanço publicado automaticamente no site, e assistência técnica com chamado, manual do imóvel, chaves e assinaturas filtrados pelo Office.',
+    features: ['Obra', 'Pós-venda'],
+  },
+  {
+    version: 'v4.8.0',
+    date: null,
+    description: 'Google Ads na captação, no mesmo modelo já rodando na Meta, fechando o funil de mídia. Inclui o percentual de manutenção do stand controlado automaticamente na viabilidade, com alerta de gasto.',
+    features: ['Marketing', 'Mídia'],
+  },
+  {
+    version: 'v4.9.0',
+    date: null,
+    description: 'Academy aberto a corretores, imobiliárias e correspondentes, com certificação da rede de vendas.',
+    features: ['Academy', 'Certificação'],
+  },
+  {
+    version: 'v5.0.0',
+    date: null,
+    description: 'App mobile nativo para iOS e Android com notificação push.',
     features: ['Mobile', 'Notificações'],
   },
 ];
 
 // ── Releases ──────────────────────────────────────────────────────────────────
+// Ordem decrescente: a entrega mais recente primeiro.
 const releases = [
+  {
+    version: 'v3.11.0',
+    date: new Date('2026-08-06T00:00:00'),
+    description: 'Sobre o Office, ajustes contábeis no Faturamento e o número de leads da Central Meta passando a contar a nossa base.',
+    type: 'minor',
+    categories: ['frontend', 'backend'],
+    features: [
+      { id: 1, title: 'Sobre o Office', description: 'Três telas para conhecer o sistema por dentro sem percorrer tela por tela: Mapa do Sistema (mapa mental navegável), Visão Executiva (o documento de apresentação, com exportação em PDF) e Atualizações (esta linha do tempo). Os números de topo são lidos ao vivo do uso real.' },
+      { id: 2, title: 'Ajustes contábeis do Faturamento', description: 'Máscara sobre o contrato para corrigir data da instituição financeira e série, sem tocar no dado original do Sienge. Vale no dashboard, no fechamento e nas respostas da Eme, com selo na listagem e registro da divergência quando o mês já está consolidado.' },
+      { id: 3, title: 'Leads da Central Meta pela nossa base', description: 'O card de Leads e o CAC passam a contar os leads captados pelo Office, com nome, telefone e e-mail conferíveis no CV, em vez da contagem da Meta.' },
+    ],
+    improvements: [
+      { id: 1, category: 'Data do lead', description: 'O lead passa a ser contado no dia em que nasceu na Meta, não no dia em que entrou no Office. Sem isso, a importação histórica jogava tudo na data do import e distorcia o custo por lead do mês.' },
+    ],
+    fixes: [],
+    breakingChanges: [
+      {
+        id: 1,
+        component: 'Custo por lead (CAC) da Central Meta',
+        description: 'O CAC subiu porque o denominador mudou. A Meta contava também a conversão de pixel, que ela entrega apenas como número total, sem nome, telefone ou e-mail e sem como conferir no CV. Em julho a Meta contava 3.134 leads (1.618 de formulário e 1.516 de pixel) contra 1.602 na nossa base, e o CAC saiu de R$ 3,60 para R$ 7,04.',
+        migrationGuide: 'Não é piora de resultado: é o indicador passando a contar só quem existe. A contagem da Meta continua gravada e o comparativo Meta contra Office contra CV segue no detalhe dos formulários.',
+      },
+    ],
+    knownIssues: [],
+  },
+  {
+    version: 'v3.10.0',
+    date: new Date('2026-08-04T00:00:00'),
+    description: 'Eme com validação anti-alucinação e relatórios que viram ferramenta de leitura, com filtro e drill-down.',
+    type: 'minor',
+    categories: ['backend', 'frontend', 'api'],
+    features: [
+      { id: 1, title: 'Validação anti-alucinação da Eme', description: 'Toda resposta passa por um laço de autocorreção. O que não bate com os dados reais é bloqueado e substituído por um resumo montado dos números consultados, com aviso honesto de que houve correção. Os incidentes ficam registrados e têm aba própria no Cérebro da Eme.' },
+      { id: 2, title: 'Relatórios interativos', description: 'O relatório deixa de ser figura: filtros logo abaixo da logo, clique na linha para abrir o detalhe, foco com botão de voltar e exportação em Excel. As alçadas de quem lê valem na consulta, não só na tela.' },
+      { id: 3, title: 'Geração que sobrevive ao F5', description: 'A montagem do relatório virou execução persistente: recarregar a página reconecta ao andamento em vez de recomeçar.' },
+      { id: 4, title: 'Etapas de autorização no Plano de Eventos', description: 'As etapas de aprovação passam a ser definidas no próprio painel.' },
+    ],
+    improvements: [
+      { id: 1, category: 'Imobiliárias', description: 'Período do link multi-uso agora é editável pelo detalhe do convite.' },
+      { id: 2, category: 'Correspondentes', description: 'Celular no cadastro de pessoa, enviado junto ao CV.' },
+    ],
+    fixes: [], breakingChanges: [], knownIssues: [],
+  },
+  {
+    version: 'v3.9.0',
+    date: new Date('2026-08-03T00:00:00'),
+    description: 'Plano de Eventos, correspondentes com cadastro em lote e os relatórios da Eme ganhando identidade visual e exportação.',
+    type: 'minor',
+    categories: ['frontend', 'backend', 'api'],
+    features: [
+      { id: 1, title: 'Plano de Eventos', description: 'O gestor propõe os eventos do mês com itens e custo, o Comercial valida, o Marketing aceita e o mês fecha congelado. A decisão é por linha e permite corte de valor, que é o que as Aprovações não fazem. Inclui agenda automática e consolidado de compras.' },
+      { id: 2, title: 'Cadastro de correspondentes por formulário', description: 'Além da importação por colagem, o cadastro de pessoas uma a uma.' },
+      { id: 3, title: 'Relatórios com identidade e exportação', description: 'Quatro temas de cor, cor com intenção nos gráficos, logo padronizada e exportação em HTML, PNG e PDF, com a tela publicada completa.' },
+      { id: 4, title: 'Teto de valor do boleto', description: 'Limite configurável por boleto, com padrão de R$ 300 mil.' },
+    ],
+    improvements: [
+      { id: 1, category: 'Vendas × Projeção', description: 'O modo de meta virou regra global definida pelo admin, em vez de ajuste por usuário.' },
+      { id: 2, category: 'Relatórios ao vivo', description: 'Botão de atualizar dados e período correto no modo ao vivo.' },
+    ],
+    fixes: [
+      { id: 1, description: 'Relatórios voltaram a enxergar as ferramentas do registro da Eme; antes o refinamento sem nova consulta podia inventar número.' },
+    ],
+    breakingChanges: [], knownIssues: [],
+  },
+  {
+    version: 'v3.8.0',
+    date: new Date('2026-08-01T00:00:00'),
+    description: 'Módulo de correspondentes do CV, com importação em lote e link público de cadastro.',
+    type: 'minor',
+    categories: ['frontend', 'backend', 'api'],
+    features: [
+      { id: 1, title: 'Correspondentes', description: 'Equipes e cadastros em uma tela só, com importação por colagem direta de mensagem de WhatsApp e validação de CPF. O código da empresa vem sugerido e o status é sempre reconferido por leitura no CV.' },
+    ],
+    improvements: [
+      { id: 1, category: 'Validador da Eme', description: 'Regras do prompt ampliadas e data de referência injetada na verificação.' },
+    ],
+    fixes: [], breakingChanges: [], knownIssues: [],
+  },
+  {
+    version: 'v3.7.0',
+    date: new Date('2026-07-30T00:00:00'),
+    description: 'Fechamento mensal de vendas, distrato que deixa de subtrair do faturamento e terreno lido direto do Sienge.',
+    type: 'minor',
+    categories: ['backend', 'frontend'],
+    features: [
+      { id: 1, title: 'Fechamento de vendas', description: 'Consolidação mensal que congela o mês pelo mesmo motor do dashboard, com confirmação mostrando os valores, histórico de versões e vigilância diária que explica qualquer mudança depois do fechamento. A Eme responde pelo consolidado e avisa quando o mês está parcial.' },
+      { id: 2, title: 'Terreno ao vivo do Sienge', description: 'O valor do terreno passa a ser lido da observação do título pela API do Sienge, encerrando a dependência de um banco de terceiro.' },
+      { id: 3, title: 'Ocultos em lote no Faturamento', description: 'Ocultar e restaurar empreendimentos em lote, com seleção por empresa e a regra valendo para todos na consulta.' },
+    ],
+    improvements: [
+      { id: 1, category: 'Sincronização de contratos', description: 'Além do delta de hora em hora, uma sincronização completa diária para pegar alterações retroativas.' },
+      { id: 2, category: 'Cancelamento de reserva', description: 'Baixa automática do boleto do ato quando a reserva é cancelada.' },
+    ],
+    fixes: [],
+    breakingChanges: [
+      {
+        id: 1,
+        component: 'Distrato no Faturamento',
+        description: 'O distrato deixou de subtrair dos totais. A venda com data da instituição financeira conta mesmo se depois foi cancelada, e o cancelamento vira selo visual com a data no tooltip. Compra e distrato no mesmo mês se anulam.',
+        migrationGuide: 'O VGV do período muda em relação ao que era exibido antes. A regra passou a ser a data da instituição financeira, não o status atual da reserva no CRM.',
+      },
+    ],
+    knownIssues: [],
+  },
+  {
+    version: 'v3.6.0',
+    date: new Date('2026-07-29T00:00:00'),
+    description: 'Novo modelo de acessos: liberação por empreendimento, perfil vivo por departamento e validador de integridade.',
+    type: 'minor',
+    categories: ['security', 'backend', 'frontend'],
+    features: [
+      { id: 1, title: 'Acesso por empreendimento', description: 'A liberação passa a ser por empreendimento, com atalhos por empresa e por cidade, sobre um registro unificado que concilia CV e Sienge. O escopo é aplicado no servidor, não só na tela.' },
+      { id: 2, title: 'Perfil vivo por departamento', description: 'Cada departamento tem um perfil padrão: editar o perfil propaga para quem o usa. A primeira edição do admin congela o perfil, e há um botão para restaurar o padrão.' },
+      { id: 3, title: 'Tela de Integridade', description: 'Validador que confere se toda rota tem autenticação, se tela de admin está travada nos três níveis e se as alçadas batem. Roda sozinho pouco depois do boot.' },
+    ],
+    improvements: [
+      { id: 1, category: 'Cadastro de Categorias', description: 'Aba de Categorias e a categorização manual de custos foram removidas: o departamento passa a vir sempre do Sienge.' },
+    ],
+    fixes: [],
+    breakingChanges: [
+      {
+        id: 1,
+        component: 'Acesso por cidade',
+        description: 'O modo de acesso por cidade foi removido de vez, junto com a tabela que o sustentava. Quem enxergava dado por ser de uma cidade deixa de enxergar até receber a liberação por empreendimento.',
+        migrationGuide: 'Revisar as liberações em Configurações › Alçadas. O comportamento é fail-closed de propósito: sem liberação, o resultado vem vazio em vez de vir demais.',
+      },
+    ],
+    knownIssues: [],
+  },
+  {
+    version: 'v3.5.0',
+    date: new Date('2026-07-28T00:00:00'),
+    description: 'Contas a Receber com consulta do número CEF, Aprovações como ferramenta de toda a empresa e aprovação de cadastro no primeiro acesso.',
+    type: 'minor',
+    categories: ['frontend', 'backend', 'api'],
+    features: [
+      { id: 1, title: 'Contas a Receber', description: 'Consulta sob demanda do número da instituição financeira dos contratos, com alçada por cidade e filtro recolhível.' },
+      { id: 2, title: 'Aprovações para toda a empresa', description: 'O módulo deixa de ser exclusivo do Marketing e vira ferramenta geral, com modelos de mensagem neutros no WhatsApp.' },
+      { id: 3, title: 'Aprovação de cadastro no primeiro acesso', description: 'Quem entra pela Microsoft nasce pendente e escolhe departamento, cargo e cidade. O admin recebe a notificação com link direto e, ao aprovar, as alçadas padrão do departamento são aplicadas junto com o e-mail de senha provisória.' },
+      { id: 4, title: 'Viabilidade no Marketing', description: 'A tela voltou a se chamar Viabilidade e mudou de lugar, com as alçadas migradas automaticamente.' },
+    ],
+    improvements: [
+      { id: 1, category: 'Boleto Caixa', description: 'Coluna com a etapa do CV (reserva e repasse), com link e filtros.' },
+      { id: 2, category: 'Cancelamento de reservas', description: 'Lista agrupada por reserva, unindo as ocorrências e mostrando a etapa do CV.' },
+    ],
+    fixes: [], breakingChanges: [], knownIssues: [],
+  },
+  {
+    version: 'v3.4.0',
+    date: new Date('2026-07-27T00:00:00'),
+    description: 'Faturamento com fonte única de realizado, Stand de Vendas e a Central Microsoft reunindo agenda, tarefas e reuniões.',
+    type: 'minor',
+    categories: ['frontend', 'backend'],
+    features: [
+      { id: 1, title: 'Stand de Vendas', description: 'Modelos com valor médio, metragem em faixa e estrutura física, mais os stands reais com custo lido ao vivo do Sienge. Definir o stand congela a construção e o que vem depois entra como manutenção.' },
+      { id: 2, title: 'Central Microsoft', description: 'Agenda, tarefas e reuniões em um hub único, com regras finas de recorrência (ocorrência ou série), erros legíveis e visão de dia no celular.' },
+      { id: 3, title: 'Vínculo CV × Sienge na Projeção', description: 'Central de vínculo por fase, com raio-X mostrando o centro de custo de cada origem. Acaba o palpite por nome.' },
+    ],
+    improvements: [
+      { id: 1, category: 'Faturamento', description: 'Realizado com fonte única e regras de VGV e comissão guardadas no banco e editáveis em tela.' },
+      { id: 2, category: 'Início', description: 'Sugestões da Eme ampliadas e rotativas na tela inicial.' },
+    ],
+    fixes: [], breakingChanges: [], knownIssues: [],
+  },
+  {
+    version: 'v3.3.0',
+    date: new Date('2026-07-23T00:00:00'),
+    description: 'Central Meta reunindo captação, campanhas e vínculos, e cancelamento de reserva conversando com o Sienge.',
+    type: 'minor',
+    categories: ['frontend', 'backend', 'api'],
+    features: [
+      { id: 1, title: 'Central Meta', description: 'Um hub com seis abas no lugar de telas espalhadas: captação, campanhas, vínculos com o CV, formulários, credenciais e configurações. Os links antigos continuam funcionando e abrem a aba certa.' },
+      { id: 2, title: 'Cancelamento de reservas CV × Sienge', description: 'O cancelamento no CV valida tudo, exclui o contrato autorizado sem emissão no Sienge e libera a unidade. Bloqueio ou erro move a reserva para pendência em vez de deixar o cancelamento pela metade.' },
+    ],
+    improvements: [
+      { id: 1, category: 'Eme', description: 'Histórico corrigido, limite de contexto e navegação global entre telas.' },
+    ],
+    fixes: [], breakingChanges: [], knownIssues: [],
+  },
+  {
+    version: 'v3.2.0',
+    date: new Date('2026-07-22T00:00:00'),
+    description: 'Relatórios da Eme: descrever em conversa, ver o resultado montando e compartilhar por link.',
+    type: 'minor',
+    categories: ['backend', 'frontend', 'api'],
+    features: [
+      { id: 1, title: 'Construtor de relatório por conversa', description: 'O relatório é descrito em linguagem comum e montado em blocos, com prévia enquanto é gerado. Pode ficar congelado no número do dia ou ao vivo, atualizando a cada abertura.' },
+      { id: 2, title: 'Compartilhamento por link', description: 'Link público para o relatório congelado, sem exigir acesso ao sistema.' },
+    ],
+    improvements: [], fixes: [], breakingChanges: [], knownIssues: [],
+  },
+  {
+    version: 'v3.1.0',
+    date: new Date('2026-07-20T00:00:00'),
+    description: 'Cadastro de imobiliárias com link público e o Editor de Projeção reescrito.',
+    type: 'minor',
+    categories: ['frontend', 'backend', 'api'],
+    features: [
+      { id: 1, title: 'Cadastro de imobiliárias', description: 'Tela no Comercial e link público para a imobiliária se cadastrar sozinha, com preenchimento automático pelo cartão CNPJ e reenvio automático quando o CV falha.' },
+      { id: 2, title: 'Editor de Projeção reescrito', description: 'Salvamento unificado em uma única transação, exclusão de verdade, ticket por empreendimento e rascunho explícito. O monólito virou três telas menores.' },
+    ],
+    improvements: [
+      { id: 1, category: 'Exportação', description: 'Opção de PDF na exportação universal e memória das preferências por relatório.' },
+    ],
+    fixes: [], breakingChanges: [], knownIssues: [],
+  },
+  {
+    version: 'v3.0.1',
+    date: new Date('2026-07-10T00:00:00'),
+    description: 'Navegação redesenhada, instruções em toda tela e Boleto Caixa com reemissão e baixa manual.',
+    type: 'patch',
+    categories: ['frontend', 'backend'],
+    features: [
+      { id: 1, title: 'Nova navegação', description: 'Barra lateral com seções, categorias e subcategorias, menu flutuante quando recolhida, rota ativa destacada e abertura automática do ramo onde você está.' },
+      { id: 2, title: 'Como usar em toda tela', description: 'Botão de ajuda no cabeçalho de cada tela, com passos e dicas escritos para quem não acompanhou a construção.' },
+      { id: 3, title: 'Boleto Caixa: reemissão e baixa manual', description: 'Reemissão pelo modal, marcação de boleto pendente como baixado, histórico consolidado por reserva com contagem de tentativas e confirmação antes de reenviar ao cliente.' },
+    ],
+    improvements: [
+      { id: 1, category: 'Academy', description: 'Exportação do artigo em PDF com texto nativo.' },
+    ],
+    fixes: [], breakingChanges: [], knownIssues: [],
+  },
+  {
+    version: 'v3.0.0',
+    date: new Date('2026-06-26T00:00:00'),
+    description: 'Captação de leads própria: o Office assume o lugar do RD Station e passa a ser a origem do lead.',
+    type: 'major',
+    categories: ['backend', 'frontend', 'api'],
+    features: [
+      { id: 1, title: 'Captação própria de leads', description: 'O lead do anúncio chega por webhook da Meta, é validado, filtrado contra spam, vinculado ao empreendimento pela campanha e entregue ao CV. Inbox com o estado de cada lead até a entrega, e envio do histórico com prévia antes de disparar.' },
+      { id: 2, title: 'Central de credenciais da Meta', description: 'App, tokens e webhook em um lugar só, compartilhados com o WhatsApp. Nasceu de um problema real: o segredo do App dessincronizado derrubou a entrada de leads por dez dias sem ninguém perceber.' },
+      { id: 3, title: 'Alerta anti-silêncio', description: 'O sistema passa a avisar quando para de receber lead, em vez de esperar alguém notar a falta.' },
+    ],
+    improvements: [], fixes: [],
+    breakingChanges: [
+      {
+        id: 1,
+        component: 'RD Station',
+        description: 'O RD Station deixou de ser a origem dos leads e a assinatura foi cortada, cerca de R$ 33 mil por ano. O modo sombra foi desligado e o Office virou o caminho principal até o CV.',
+        migrationGuide: 'Leads anteriores ao corte seguem no histórico do CV. Campanha sem vínculo represa o lead em vez de mandá-lo no chute: a aba Vínculos CV mostra quais precisam de atenção.',
+      },
+    ],
+    knownIssues: [],
+  },
+  {
+    version: 'v2.9.4',
+    date: new Date('2026-06-23T00:00:00'),
+    description: 'Custos e títulos lidos ao vivo do Sienge, base do Checklist, alertas compartilháveis e Academy com os procedimentos da casa.',
+    type: 'minor',
+    categories: ['backend', 'frontend'],
+    features: [
+      { id: 1, title: 'Títulos e custos ao vivo', description: 'Custos, Viabilidade e visibilidade de departamentos passam a ler direto da cópia do Sienge, encerrando a sincronização automática que mantinha uma segunda verdade. A personalização feita aqui é preservada; o departamento vem sempre do ERP.' },
+      { id: 2, title: 'Alertas compartilhados', description: 'Compartilhar um alerta com outra pessoa, que aceita ou recusa; ao aceitar recebe a própria cópia. Painel de administração e aviso por WhatsApp.' },
+      { id: 3, title: 'Academy: procedimentos', description: 'Os POPs antigos em PDF viraram artigos na base de conhecimento, incluindo os vídeo-tutoriais do CV e os procedimentos do Sienge.' },
+      { id: 4, title: 'Mural de avisos', description: 'Comunicados internos em módulo próprio, com notificação nos três canais.' },
+    ],
+    improvements: [
+      { id: 1, category: 'Visibilidade de departamentos', description: 'Passou das configurações de Custos para as Alçadas, em cascata do global para o cargo e para o usuário, valendo o mais específico.' },
+      { id: 2, category: 'BI', description: 'O acesso somente leitura do BI ganhou permissão de criar visões na cópia do Sienge, preservadas automaticamente entre restaurações.' },
+    ],
+    fixes: [], breakingChanges: [], knownIssues: [],
+  },
   {
     version: 'v2.9.3',
     date: new Date('2026-06-15T00:00:00'),
@@ -1209,6 +1529,12 @@ const highlights = computed(() => [
   { v: String(releases.length), l: 'Atualizações publicadas', s: `Desde ${firstReleaseLabel.value}` },
   { v: String(totalFeatures.value), l: 'Novas funcionalidades', s: 'Entregas que criaram algo que não existia' },
   { v: String(totalBugsFixed.value), l: 'Correções', s: 'Problemas resolvidos e publicados' },
+  {
+    v: String(roadmap.length),
+    l: 'Frentes em desenvolvimento',
+    s: 'O que vem a seguir, tudo apoiado no que o sistema já opera',
+    info: 'São as frentes do plano de desenvolvimento da Visão Executiva. Nenhuma começa do zero: todas se apoiam em integração, alçada ou automação que o Office já roda hoje.',
+  },
 ]);
 
 const hasFilters = computed(() =>
