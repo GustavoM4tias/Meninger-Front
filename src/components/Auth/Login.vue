@@ -1,5 +1,6 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount, nextTick, computed } from 'vue';
+import { useRoute } from 'vue-router';
 import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 import { useMicrosoftStore } from '@/stores/Microsoft/microsoftStore';
 
@@ -16,6 +17,7 @@ import { academyUrl, officeUrl } from '@/utils/appContext';
 
 const authStore = useAuthStore();
 const microsoftStore = useMicrosoftStore();
+const route = useRoute();
 
 // ─── State ──────────────────────────────────────────
 // Email e tipo de login persistidos (UX: usuário não digita de novo se fechar)
@@ -23,6 +25,9 @@ const email = usePersistedRef('login:email', '');
 const loginType = usePersistedRef('login:type', '/');
 const password = ref('');
 const errorMessage = ref('');
+// Aviso de quem foi devolvido pro login pelo guard (?motivo=acesso): sessão
+// vencida, alçada faltando ou API fora do ar dão nisso.
+const notice = ref('');
 const loginLoading = ref(false);
 const showPassword = ref(false);
 const faceModalOpen = ref(false);
@@ -80,6 +85,9 @@ function register() { requestAccessOpen.value = true; }
 onMounted(() => {
   if (authStore.isAuthenticated()) { redirectAfterLogin(); return; }
   authStore.clearUser();
+  if (route.query.motivo === 'acesso') {
+    notice.value = 'Não conseguimos confirmar seu acesso a essa tela. Entre de novo para continuar.';
+  }
 });
 
 onBeforeUnmount(() => { faceModalOpen.value = false; });
@@ -100,6 +108,12 @@ onBeforeUnmount(() => { faceModalOpen.value = false; });
     </div>
 
     <div class="hairline"></div>
+
+    <!-- Aviso de retorno ao login (sessão/alçada não confirmada) -->
+    <div v-if="notice"
+      class="rounded-lg border border-line bg-surface-sunken px-3 py-2.5 text-xs text-ink-muted flex items-start gap-2">
+      <i class="fas fa-circle-info mt-0.5 text-accent"></i><span>{{ notice }}</span>
+    </div>
 
     <!-- Email -->
     <Input
