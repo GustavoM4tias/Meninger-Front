@@ -11,6 +11,7 @@ import PageHeader from '@/components/UI/PageHeader.vue';
 import PageHelp from '@/components/UI/PageHelp.vue';
 import Button from '@/components/UI/Button.vue';
 import HighlightCards from '@/components/Sobre/HighlightCards.vue';
+import SobreNav from '@/components/Sobre/SobreNav.vue';
 import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 import { useAboutMetrics } from '@/composables/useAboutMetrics';
 import { officeReport } from '@/config/aboutOffice';
@@ -74,10 +75,6 @@ onBeforeUnmount(() => observer?.disconnect());
                   :loading="exporting" @click="exportPdf">
             Exportar PDF
           </Button>
-          <Button variant="secondary" icon="fas fa-diagram-project"
-                  @click="$router.push('/sobre')">
-            Mapa do sistema
-          </Button>
           <PageHelp
             storage-key="sobre-relatorio"
             title="Como usar a Visão Executiva"
@@ -90,6 +87,8 @@ onBeforeUnmount(() => observer?.disconnect());
             :tips="['Os valores são do acumulado até 4 de agosto de 2026 e saem das telas do próprio Office, não de estimativa.']" />
         </template>
       </PageHeader>
+
+      <SobreNav />
 
       <!-- Números de topo: ao vivo quando o backend responde -->
       <HighlightCards :items="highlights" :updated-label="updatedLabel" :is-live="isLive" class="mb-6" />

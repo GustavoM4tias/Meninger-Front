@@ -14,6 +14,7 @@ import SegmentedControl from '@/components/UI/SegmentedControl.vue';
 import MindMap from '@/components/Sobre/MindMap.vue';
 import MindMapOutline from '@/components/Sobre/MindMapOutline.vue';
 import HighlightCards from '@/components/Sobre/HighlightCards.vue';
+import SobreNav from '@/components/Sobre/SobreNav.vue';
 import { useAboutMetrics } from '@/composables/useAboutMetrics';
 import { officeMap } from '@/config/aboutOffice';
 
@@ -62,6 +63,8 @@ function collapseAll() {
     else openIds.value = new Set();
 }
 
+const legend = computed(() => officeMap.c.map(b => ({ t: b.t, acc: b.acc })));
+
 const totalItems = computed(() => {
     const count = (nodes) => nodes.reduce((total, n) => total + 1 + count(n.c || []), 0);
     return count(officeMap.c);
@@ -76,17 +79,13 @@ onMounted(() => {
 
 <template>
   <div class="min-h-[calc(100vh-3.5rem)]">
-    <PageContainer size="full">
+    <PageContainer size="lg">
       <PageHeader
         title="Mapa do Sistema"
         subtitle="O Menin Office inteiro em uma tela: módulos, integrações, ganhos e o que vem a seguir."
         eyebrow="Sobre o Office"
         icon="fas fa-diagram-project">
         <template #actions>
-          <Button variant="secondary" icon="fas fa-file-lines"
-                  @click="$router.push('/sobre/relatorio')">
-            Visão executiva
-          </Button>
           <PageHelp
             storage-key="sobre-mapa"
             title="Como usar o Mapa do Sistema"
@@ -104,8 +103,18 @@ onMounted(() => {
         </template>
       </PageHeader>
 
+      <SobreNav />
+
       <!-- Números de topo: ao vivo quando o backend responde -->
       <HighlightCards :items="highlights" :updated-label="updatedLabel" :is-live="isLive" class="mb-5" />
+
+      <!-- Legenda: diz o que cada cor representa antes de abrir qualquer ramo -->
+      <div class="flex flex-wrap items-center gap-x-4 gap-y-1.5 mb-3">
+        <span v-for="branch in legend" :key="branch.t" class="inline-flex items-center gap-1.5">
+          <span class="h-2.5 w-2.5 rounded-sm shrink-0" :style="{ background: branch.acc }"></span>
+          <span class="text-[11px] text-ink-muted">{{ branch.t }}</span>
+        </span>
+      </div>
 
       <!-- Controles -->
       <div class="flex flex-wrap items-center gap-2 mb-3">

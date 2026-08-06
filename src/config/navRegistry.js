@@ -346,6 +346,10 @@ export const navRegistry = [
         pages: [
             { route: '/sobre', name: 'Mapa do Sistema', icon: 'fas fa-diagram-project', adminOnly: true },
             { route: '/sobre/relatorio', name: 'Visão Executiva', icon: 'fas fa-file-lines', adminOnly: true },
+            // Changelog do sistema (/docs). A tela já existia sem entrada no menu;
+            // é o complemento natural: o mapa mostra o que existe, a visão
+            // executiva explica o porquê e as atualizações mostram a evolução.
+            { route: '/docs', name: 'Atualizações', icon: 'fas fa-code-branch', adminOnly: true },
         ],
     },
 
