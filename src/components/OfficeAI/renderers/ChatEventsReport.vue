@@ -206,9 +206,6 @@ function downloadImage() {
               margin-bottom:8px;">
               REALIZADO
             </span>
-            <p v-if="row.enterprise_name" style="color:rgba(255,255,255,0.55);font-size:11px;margin:6px 0 0;text-transform:uppercase;letter-spacing:1px;font-weight:700;">
-              {{ row.enterprise_name }}
-            </p>
           </div>
         </div>
       </div>
