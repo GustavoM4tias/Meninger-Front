@@ -14,6 +14,9 @@ export const useSiengeBackupStore = defineStore('siengeBackup', {
     state: () => ({
         items: [],
         loading: false,
+        // Vira true depois da 1ª resposta. A tela só desenha status/KPIs/histórico
+        // depois disso, pra não piscar valores vazios antes do dado chegar.
+        loaded: false,
         error: null,
         triggering: false,
     }),
@@ -43,6 +46,7 @@ export const useSiengeBackupStore = defineStore('siengeBackup', {
                 this.error = err.message
             } finally {
                 this.loading = false
+                this.loaded = true
                 if (withSpinner) carregamento.finalizarCarregamento()
             }
         },
