@@ -23,6 +23,7 @@ const GAP_Y = 12;        // respiro vertical entre irmãos
 const BRANCH_GAP = 26;   // respiro maior entre os ramos da raiz
 const MIN_SCALE = 0.25;
 const MAX_SCALE = 2;
+const FIT_SCALE_MAX = 1.4;   // teto do enquadramento automático (o zoom manual vai até MAX_SCALE)
 
 // ─── Achatamento da árvore ────────────────────────────────────────────────────
 // Cada nó ganha um id estável pelo caminho, para servir de chave do v-for e do
@@ -74,11 +75,13 @@ function toggle(item) {
 
 function expandAll() {
     openIds.value = new Set(allNodes.value.filter(n => n.node.c?.length).map(n => n.id));
+    remeasureAndFit();
 }
 
 function collapseAll() {
     // Mantém só a raiz aberta: os 5 ramos ficam visíveis, o resto recolhe.
     openIds.value = new Set(['r']);
+    remeasureAndFit();
 }
 
 function applyInitialOpen() {
@@ -169,18 +172,25 @@ const dragging = ref(false);
 const pointers = new Map();
 let panStart = null, pinchStart = null, movedBy = 0;
 
+/**
+ * Enquadra a árvore no viewport. Diferente do "caber", aqui o mapa também CRESCE
+ * quando sobra espaço (até FIT_SCALE_MAX): recolhido são poucos cartões, e a 1:1
+ * eles ficavam perdidos no meio de um canvas de 62vh.
+ */
 function fit(padding = 32) {
     const vp = viewport.value;
     if (!vp || !box.value.w) return;
-    const k = Math.min(
-        1,
+    const raw = Math.min(
         (vp.clientWidth - padding * 2) / box.value.w,
         (vp.clientHeight - padding * 2) / box.value.h,
     );
+    const k = Math.min(FIT_SCALE_MAX, Math.max(MIN_SCALE, raw));
+    // Centraliza; quando a árvore é maior que o viewport a conta fica negativa e
+    // o padding assume, ancorando na raiz em vez de cortar o começo do mapa.
     view.value = {
-        k: Math.max(k, MIN_SCALE),
-        x: Math.max(padding, (vp.clientWidth - box.value.w * Math.max(k, MIN_SCALE)) / 2),
-        y: Math.max(padding, (vp.clientHeight - box.value.h * Math.max(k, MIN_SCALE)) / 2),
+        k,
+        x: Math.max(padding, (vp.clientWidth - box.value.w * k) / 2),
+        y: Math.max(padding, (vp.clientHeight - box.value.h * k) / 2),
     };
 }
 
@@ -260,6 +270,19 @@ function onNodeClick(item) {
 }
 
 watch(visibleNodes, () => nextTick(measure), { flush: 'post' });
+
+/**
+ * Mudança em massa (abrir/recolher tudo) reenquadra: recolher devolve a árvore
+ * ao centro em vez de deixá-la onde o último pan parou. Abrir/fechar um ramo
+ * sozinho NÃO passa por aqui de propósito - puxar a câmera a cada clique tira a
+ * referência de onde a pessoa estava lendo.
+ */
+async function remeasureAndFit() {
+    await nextTick();
+    measure();
+    await nextTick();
+    fit();
+}
 
 let ro = null;
 onMounted(async () => {
@@ -364,6 +387,12 @@ defineExpose({ expandAll, collapseAll, fit, zoomBy });
   border-left: 3px solid var(--acc);
   border-radius: 10px;
   padding: 7px 12px;
+  /* width: max-content é obrigatório, não estético. O cartão é absoluto dentro de
+     um wrapper que nasce com width: 0 (box.w só existe depois do measure). Sem
+     largura própria, o shrink-to-fit resolve contra esse zero e cada cartão sai
+     estreito e alto - e só se acertava quando o measure rodava de novo, no
+     expandir/recolher. Com max-content a medida é a mesma na primeira pintura. */
+  width: max-content;
   max-width: 260px;
   box-shadow: 0 1px 2px 0 rgb(15 23 42 / 0.06), 0 1px 3px 0 rgb(15 23 42 / 0.04);
   transition: box-shadow 150ms cubic-bezier(0.16, 1, 0.3, 1),
