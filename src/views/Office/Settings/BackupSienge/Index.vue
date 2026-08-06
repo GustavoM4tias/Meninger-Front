@@ -16,7 +16,7 @@ import RunningPipeline from './components/RunningPipeline.vue'
 import {
     formatBytes, formatDate, formatDuration, formatTime,
     stageLabel, statusIcon, statusLabel, statusVariant,
-    triggerLabel,
+    triggerKind, triggerLabel,
 } from './format'
 
 const store = useSiengeBackupStore()
@@ -38,9 +38,22 @@ function currentMonthRange() {
     }
 }
 
-const filters = reactive(currentMonthRange())
-// Período efetivamente carregado (o polling repete essa mesma consulta).
-const applied = reactive(currentMonthRange())
+/** Estado inicial: mês corrente e nenhum refinamento. */
+function defaultFilters() {
+    return {
+        ...currentMonthRange(),
+        status: [],
+        importStatus: [],
+        stage: [],
+        trigger: [],
+        q: '',
+    }
+}
+
+// `filters` é o rascunho editado na barra; `applied` é o que está valendo na
+// tela (período consultado no servidor + refinamentos aplicados na lista).
+const filters = reactive(defaultFilters())
+const applied = reactive(defaultFilters())
 
 /** Converte a data do input no instante local correspondente (início/fim do dia). */
 function boundary(day, end) {
@@ -80,8 +93,7 @@ async function fetchRange({ withSpinner = false } = {}) {
 
 const filtering = ref(false)
 async function applyFilters() {
-    applied.dateFrom = filters.dateFrom
-    applied.dateTo = filters.dateTo
+    Object.assign(applied, JSON.parse(JSON.stringify(filters)))
     filtering.value = true
     try {
         await fetchRange({ withSpinner: true })
@@ -92,9 +104,103 @@ async function applyFilters() {
 }
 
 async function resetFilters() {
-    Object.assign(filters, currentMonthRange())
+    Object.assign(filters, defaultFilters())
     await applyFilters()
 }
+
+// Quantos refinamentos (fora o período) estão valendo.
+const activeFiltersCount = computed(() => {
+    let n = 0
+    if (applied.status.length) n++
+    if (applied.importStatus.length) n++
+    if (applied.stage.length) n++
+    if (applied.trigger.length) n++
+    if (applied.q) n++
+    return n
+})
+
+/** Opções dos filtros derivadas do histórico carregado (só o que existe no dado). */
+function facetFrom(values, labelFn) {
+    const uniq = [...new Set(values.filter(v => v !== null && v !== undefined && v !== ''))]
+    return uniq.map(v => ({ value: v, label: labelFn(v) }))
+        .sort((a, b) => a.label.localeCompare(b.label, 'pt-BR'))
+}
+
+const facets = computed(() => ({
+    status: facetFrom(store.items.map(i => i.status), statusLabel),
+    importStatus: facetFrom(store.items.map(i => i.import_status), statusLabel),
+    stage: facetFrom(store.items.map(i => i.stage), stageLabel),
+    trigger: facetFrom(store.items.map(i => triggerKind(i.triggered_by)), triggerLabel),
+}))
+
+/** Refinamentos aplicados sobre o período carregado. */
+const filteredItems = computed(() => {
+    const q = applied.q.trim().toLowerCase()
+    return store.items.filter((row) => {
+        if (applied.status.length && !applied.status.includes(row.status)) return false
+        if (applied.importStatus.length && !applied.importStatus.includes(row.import_status)) return false
+        if (applied.stage.length && !applied.stage.includes(row.stage)) return false
+        if (applied.trigger.length && !applied.trigger.includes(triggerKind(row.triggered_by))) return false
+        if (q) {
+            const haystack = [
+                row.id, row.file_name, row.error_message, row.import_error_message,
+                row.triggered_by, row.stage,
+            ].filter(Boolean).join(' ').toLowerCase()
+            if (!haystack.includes(q)) return false
+        }
+        return true
+    })
+})
+
+// ─── Ordenação da tabela ────────────────────────────────────────────────────
+const SORT_VALUES = {
+    id: r => Number(r.id) || 0,
+    started_at: r => (r.started_at ? new Date(r.started_at).getTime() : 0),
+    triggered_by: r => triggerLabel(r.triggered_by),
+    stage: r => stageLabel(r.stage),
+    status: r => statusLabel(r.status),
+    import_status: r => statusLabel(r.import_status),
+    duration_ms: r => Number(r.duration_ms) || 0,
+    file_size_bytes: r => Number(r.file_size_bytes) || 0,
+}
+
+const sort = reactive({ key: 'started_at', dir: 'desc' })
+
+function setSort(key) {
+    if (!SORT_VALUES[key]) return
+    if (sort.key === key) sort.dir = sort.dir === 'asc' ? 'desc' : 'asc'
+    else { sort.key = key; sort.dir = key === 'started_at' || key === 'id' ? 'desc' : 'asc' }
+}
+
+function sortIcon(key) {
+    if (sort.key !== key) return 'fas fa-sort text-ink-subtle/50'
+    return sort.dir === 'asc' ? 'fas fa-sort-up text-accent' : 'fas fa-sort-down text-accent'
+}
+
+const HIST_COLUMNS = [
+    { key: 'id', label: '#' },
+    { key: 'started_at', label: 'Início' },
+    { key: 'triggered_by', label: 'Disparo' },
+    { key: 'stage', label: 'Etapa' },
+    { key: 'status', label: 'Status' },
+    { key: 'import_status', label: 'Restore' },
+    { key: 'duration_ms', label: 'Duração', align: 'right' },
+    { key: 'file_size_bytes', label: 'Tamanho', align: 'right' },
+    { key: null, label: 'Erro' },
+]
+
+const sortedItems = computed(() => {
+    const get = SORT_VALUES[sort.key] || SORT_VALUES.started_at
+    const factor = sort.dir === 'asc' ? 1 : -1
+    return [...filteredItems.value].sort((a, b) => {
+        const va = get(a)
+        const vb = get(b)
+        if (typeof va === 'string' || typeof vb === 'string') {
+            return String(va).localeCompare(String(vb), 'pt-BR') * factor
+        }
+        return (va - vb) * factor
+    })
+})
 
 // KPIs: contagem por status no período carregado.
 const kpiChips = computed(() => {
@@ -195,7 +301,8 @@ onBeforeUnmount(stopPolling)
                         :steps="[
                             { title: 'Confira o status do dia', text: 'O cartão no topo mostra se há backup rodando agora ou os dados do último backup concluído com sucesso (horário, duração e tamanho).' },
                             { title: 'Acompanhe as etapas', text: 'Durante a execução, use Ver etapas para ver em que ponto do pipeline o backup está, com progresso do download e das cinco fases do restore.' },
-                            { title: 'Consulte outro período', text: 'O histórico abre no mês atual. Para ver outro intervalo, ajuste as datas e clique em Filtrar - a consulta traz todas as execuções do período.' },
+                            { title: 'Consulte outro período', text: 'O histórico abre no mês atual. Abra Filtros, ajuste as datas e clique em Filtrar - a consulta traz todas as execuções do período, sem limite de quantidade.' },
+                            { title: 'Refine e ordene', text: 'Nos mesmos filtros dá para restringir por status, restore, tipo de disparo, etapa ou texto livre. Na tabela, clique no título de uma coluna para ordenar por ela e de novo para inverter.' },
                             { title: 'Rode manualmente', text: 'Rodar backup agora dispara o pipeline completo fora do horário do cron. Leva de 20 a 50 minutos.' },
                             { title: 'Destrave um backup travado', text: 'Se um backup ficou marcado como em execução mas o processo morreu (deploy, queda do servidor), use Forçar cancelar para liberar e disparar de novo.' },
                         ]" :tips="[
@@ -265,6 +372,9 @@ onBeforeUnmount(stopPolling)
                         <div>
                             <h2 class="text-base sm:text-lg font-semibold text-ink">Histórico</h2>
                             <p class="text-xs text-ink-muted mt-0.5">
+                                <span v-if="filteredItems.length !== store.items.length">
+                                    {{ filteredItems.length }} de
+                                </span>
                                 {{ store.items.length }} execução(ões) em {{ appliedLabel }}
                             </p>
                         </div>
@@ -280,33 +390,39 @@ onBeforeUnmount(stopPolling)
                         </div>
                     </div>
 
-                    <BackupFilters :filters="filters" :loading="filtering" :applied-label="appliedLabel"
+                    <BackupFilters :filters="filters" :facets="facets" :loading="filtering"
+                        :applied-label="appliedLabel" :active-count="activeFiltersCount"
                         @apply="applyFilters" @reset="resetFilters" />
 
                     <Surface padding="none" class="overflow-hidden">
-                        <EmptyState v-if="!store.items.length" size="sm" icon="fas fa-filter-circle-xmark"
-                            title="Nenhuma execução no período"
-                            description="Ajuste as datas e clique em Filtrar para consultar outro período." />
+                        <EmptyState v-if="!sortedItems.length" size="sm" icon="fas fa-filter-circle-xmark"
+                            :title="store.items.length ? 'Nenhuma execução com esses filtros' : 'Nenhuma execução no período'"
+                            :description="store.items.length ? 'Ajuste ou limpe os filtros da barra acima.' : 'Ajuste as datas e clique em Filtrar para consultar outro período.'" />
 
                         <template v-else>
-                            <!-- Desktop: tabela -->
+                            <!-- Desktop: tabela (clique no cabeçalho ordena) -->
                             <div class="hidden md:block overflow-x-auto">
                                 <table class="w-full text-sm">
                                     <thead>
                                         <tr class="text-left text-[11px] uppercase tracking-wider text-ink-subtle border-b border-line">
-                                            <th class="px-4 py-3 font-medium">#</th>
-                                            <th class="px-4 py-3 font-medium">Início</th>
-                                            <th class="px-4 py-3 font-medium">Disparo</th>
-                                            <th class="px-4 py-3 font-medium">Etapa</th>
-                                            <th class="px-4 py-3 font-medium">Status</th>
-                                            <th class="px-4 py-3 font-medium">Restore</th>
-                                            <th class="px-4 py-3 font-medium text-right">Duração</th>
-                                            <th class="px-4 py-3 font-medium text-right">Tamanho</th>
-                                            <th class="px-4 py-3 font-medium">Erro</th>
+                                            <th v-for="col in HIST_COLUMNS" :key="col.label" class="px-4 py-3 font-medium"
+                                                :class="[
+                                                    col.align === 'right' ? 'text-right' : 'text-left',
+                                                    col.key ? 'select-none cursor-pointer hover:text-ink transition-colors' : '',
+                                                ]"
+                                                :aria-sort="col.key && sort.key === col.key
+                                                    ? (sort.dir === 'asc' ? 'ascending' : 'descending') : 'none'"
+                                                @click="col.key && setSort(col.key)">
+                                                <span class="inline-flex items-center gap-1.5"
+                                                    :class="col.align === 'right' ? 'flex-row-reverse' : ''">
+                                                    {{ col.label }}
+                                                    <i v-if="col.key" class="text-[9px]" :class="sortIcon(col.key)"></i>
+                                                </span>
+                                            </th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <tr v-for="row in store.items" :key="row.id"
+                                        <tr v-for="row in sortedItems" :key="row.id"
                                             class="border-b border-line last:border-0 hover:bg-surface-sunken/60 transition-colors">
                                             <td class="px-4 py-3 align-top font-mono text-xs text-ink-subtle">{{ row.id }}</td>
                                             <td class="px-4 py-3 align-top whitespace-nowrap">
@@ -353,7 +469,7 @@ onBeforeUnmount(stopPolling)
 
                             <!-- Mobile: cards -->
                             <ul class="md:hidden divide-y divide-line">
-                                <li v-for="row in store.items" :key="row.id" class="p-3.5 space-y-2">
+                                <li v-for="row in sortedItems" :key="row.id" class="p-3.5 space-y-2">
                                     <div class="flex items-start justify-between gap-2">
                                         <div class="min-w-0">
                                             <p class="text-sm font-medium text-ink">{{ formatDate(row.started_at) }}</p>
