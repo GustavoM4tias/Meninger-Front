@@ -80,17 +80,14 @@ export function useReportLiveData(reportId, specRef, periodRef = null) {
     }
   }
 
-  // Troca de filtro reconsulta com debounce (digitação em campo text não pode
-  // virar uma consulta por tecla).
-  let debounceTimer = null
+  // `values` só muda em evento discreto (botão "Filtrar" da barra ou "Limpar"),
+  // então a consulta sai na hora - o debounce existia para não disparar uma
+  // consulta por tecla digitada, o que a aplicação explícita já resolve.
   watch(values, () => {
-    clearTimeout(debounceTimer)
-    debounceTimer = setTimeout(() => {
-      // O próprio seedDefaults mexe em `values` e dispararia uma segunda
-      // consulta idêntica logo após a inicial.
-      if (JSON.stringify(values.value) === ultimaChave) return
-      fetchData()
-    }, 450)
+    // O próprio seedDefaults mexe em `values` e dispararia uma segunda
+    // consulta idêntica logo após a inicial.
+    if (JSON.stringify(values.value) === ultimaChave) return
+    fetchData()
   }, { deep: true })
 
   function start() {

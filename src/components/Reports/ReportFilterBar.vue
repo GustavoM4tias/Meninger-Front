@@ -5,7 +5,13 @@
 // padrão, e o campo de período nascia em branco.
 //
 // Mobile-first: campos empilham em 1 coluna, alvos >= 40px.
-import { computed, ref } from 'vue'
+//
+// Aplicação EXPLÍCITA: o leitor mexe num rascunho local e só o botão "Filtrar"
+// manda para o servidor. Antes cada campo disparava a consulta sozinho, então
+// escolher um período de dois campos gerava duas consultas (uma delas com a
+// janela pela metade) e, quando o número não mudava, não havia nada para clicar
+// e conferir se o filtro tinha valido.
+import { computed, ref, watch } from 'vue'
 import { fieldBase } from '@/components/UI/_classes.js'
 import Badge from '@/components/UI/Badge.vue'
 import Button from '@/components/UI/Button.vue'
@@ -27,15 +33,31 @@ const emit = defineEmits(['update:modelValue', 'clear'])
 const fieldCls = `${fieldBase} rounded-lg px-3 text-sm h-10 w-full`
 const aberto = ref(props.defaultOpen)
 
+const clone = (v) => JSON.parse(JSON.stringify(v ?? {}))
+
+// Rascunho local: o que está nos campos, ainda não consultado.
+const rascunho = ref(clone(props.modelValue))
+watch(() => props.modelValue, (v) => { rascunho.value = clone(v) }, { deep: true })
+
+// Há edição de campo ainda não aplicada?
+const pendente = computed(
+  () => JSON.stringify(rascunho.value) !== JSON.stringify(props.modelValue ?? {})
+)
+
 function setValue(key, value) {
-  emit('update:modelValue', { ...props.modelValue, [key]: value })
+  rascunho.value = { ...rascunho.value, [key]: value }
 }
 
 function setRange(key, part, value) {
-  const current = props.modelValue[key] && typeof props.modelValue[key] === 'object'
-    ? { ...props.modelValue[key] } : {}
+  const current = rascunho.value[key] && typeof rascunho.value[key] === 'object'
+    ? { ...rascunho.value[key] } : {}
   current[part] = value || undefined
-  emit('update:modelValue', { ...props.modelValue, [key]: current })
+  rascunho.value = { ...rascunho.value, [key]: current }
+}
+
+function aplicar() {
+  if (!pendente.value) return
+  emit('update:modelValue', clone(rascunho.value))
 }
 
 function optionsFor(filter) {
@@ -103,6 +125,14 @@ const refreshedLabel = computed(() => {
       <span v-else-if="refreshedLabel" class="text-[11px] text-ink-subtle hidden sm:inline">{{ refreshedLabel }}</span>
 
       <div class="ml-auto flex items-center gap-1.5">
+        <!-- Atalho para aplicar sem precisar reabrir a barra -->
+        <Button
+          v-if="pendente && !aberto"
+          variant="primary" size="sm" icon="fas fa-filter" :loading="loading"
+          @click="aplicar"
+        >
+          Filtrar
+        </Button>
         <Button v-if="hasActive" variant="ghost" size="sm" icon="fas fa-eraser" @click="emit('clear')">
           <span class="hidden sm:inline">Limpar</span>
         </Button>
@@ -121,50 +151,68 @@ const refreshedLabel = computed(() => {
     </div>
 
     <!-- Campos -->
-    <div
-      v-show="aberto"
-      class="p-3 sm:p-4 border-t border-line grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 animate-fade-in"
-    >
-      <div v-for="f in filters" :key="f.key" :class="f.type === 'date-range' ? 'sm:col-span-2' : ''">
-        <label class="block text-[11px] font-medium text-ink-muted mb-1.5">{{ f.label }}</label>
+    <div v-show="aberto" class="p-3 sm:p-4 border-t border-line animate-fade-in">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div v-for="f in filters" :key="f.key" :class="f.type === 'date-range' ? 'sm:col-span-2' : ''">
+          <label class="block text-[11px] font-medium text-ink-muted mb-1.5">{{ f.label }}</label>
 
-        <!-- select: "Todos" limpa o filtro -->
-        <div v-if="f.type === 'select'" class="relative">
-          <select
-            :class="fieldCls"
-            class="pr-9 appearance-none cursor-pointer"
-            :value="modelValue[f.key] || ''"
-            @change="setValue(f.key, $event.target.value)"
-          >
-            <option value="">{{ f.placeholder || 'Todos' }}</option>
-            <option v-for="opt in optionsFor(f)" :key="opt" :value="opt">{{ opt }}</option>
-          </select>
-          <i class="fas fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-ink-subtle pointer-events-none" />
-        </div>
+          <!-- select: "Todos" limpa o filtro -->
+          <div v-if="f.type === 'select'" class="relative">
+            <select
+              :class="fieldCls"
+              class="pr-9 appearance-none cursor-pointer"
+              :value="rascunho[f.key] || ''"
+              @change="setValue(f.key, $event.target.value)"
+            >
+              <option value="">{{ f.placeholder || 'Todos' }}</option>
+              <option v-for="opt in optionsFor(f)" :key="opt" :value="opt">{{ opt }}</option>
+            </select>
+            <i class="fas fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-ink-subtle pointer-events-none" />
+          </div>
 
-        <!-- período: de / até (nasce preenchido com o período do relatório) -->
-        <div v-else-if="f.type === 'date-range'" class="flex items-center gap-2">
+          <!-- período: de / até (nasce preenchido com o período do relatório) -->
+          <div v-else-if="f.type === 'date-range'" class="flex items-center gap-2">
+            <input
+              type="date" :class="fieldCls" aria-label="Data inicial"
+              :value="rascunho[f.key]?.from || ''"
+              @change="setRange(f.key, 'from', $event.target.value)"
+              @keyup.enter="aplicar"
+            />
+            <span class="text-xs text-ink-subtle flex-shrink-0">até</span>
+            <input
+              type="date" :class="fieldCls" aria-label="Data final"
+              :value="rascunho[f.key]?.to || ''"
+              @change="setRange(f.key, 'to', $event.target.value)"
+              @keyup.enter="aplicar"
+            />
+          </div>
+
+          <!-- texto livre (nome do cliente, corretor...) -->
           <input
-            type="date" :class="fieldCls" aria-label="Data inicial"
-            :value="modelValue[f.key]?.from || ''"
-            @change="setRange(f.key, 'from', $event.target.value)"
-          />
-          <span class="text-xs text-ink-subtle flex-shrink-0">até</span>
-          <input
-            type="date" :class="fieldCls" aria-label="Data final"
-            :value="modelValue[f.key]?.to || ''"
-            @change="setRange(f.key, 'to', $event.target.value)"
+            v-else
+            type="text" :class="fieldCls"
+            :placeholder="f.placeholder || 'Digite e clique em Filtrar'"
+            :value="rascunho[f.key] || ''"
+            @input="setValue(f.key, $event.target.value)"
+            @keyup.enter="aplicar"
           />
         </div>
+      </div>
 
-        <!-- texto livre (nome do cliente, corretor...) -->
-        <input
-          v-else
-          type="text" :class="fieldCls"
-          :placeholder="f.placeholder || 'Digite para filtrar'"
-          :value="modelValue[f.key] || ''"
-          @input="setValue(f.key, $event.target.value)"
-        />
+      <!-- Aplicar: nada vai para o servidor sem passar por aqui -->
+      <div class="mt-3 pt-3 border-t border-line flex flex-wrap items-center gap-2">
+        <Button
+          variant="primary" icon="fas fa-filter"
+          :disabled="!pendente" :loading="loading"
+          class="w-full sm:w-auto"
+          @click="aplicar"
+        >
+          Filtrar
+        </Button>
+        <span v-if="pendente" class="text-[11px] text-amber-600 dark:text-amber-400">
+          Alterações ainda não aplicadas.
+        </span>
+        <span v-else-if="refreshedLabel" class="text-[11px] text-ink-subtle">{{ refreshedLabel }}</span>
       </div>
     </div>
   </section>
