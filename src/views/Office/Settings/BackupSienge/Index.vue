@@ -16,7 +16,7 @@ import RunningPipeline from './components/RunningPipeline.vue'
 import {
     formatBytes, formatDate, formatDuration, formatTime,
     stageLabel, statusIcon, statusLabel, statusVariant,
-    triggerKind, triggerLabel,
+    triggerLabel,
 } from './format'
 
 const store = useSiengeBackupStore()
@@ -24,81 +24,79 @@ const toast = useToast()
 
 const isRunning = computed(() => !!store.runningBackup)
 
-// ─── Filtros (client-side sobre o histórico carregado) ──────────────────────
-const limit = ref(30)
-const filters = reactive({
-    status: [],
-    importStatus: [],
-    stage: [],
-    trigger: [],
-    dateFrom: '',
-    dateTo: '',
-    q: '',
-})
-
-function clearFilters() {
-    filters.status = []
-    filters.importStatus = []
-    filters.stage = []
-    filters.trigger = []
-    filters.dateFrom = ''
-    filters.dateTo = ''
-    filters.q = ''
+// ─── Filtro de período (consulta no servidor, sem limite de quantidade) ─────
+// Padrão: mês corrente do usuário. Só consulta ao clicar em Filtrar.
+function isoDay(d) {
+    const pad = (n) => String(n).padStart(2, '0')
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+}
+function currentMonthRange() {
+    const now = new Date()
+    return {
+        dateFrom: isoDay(new Date(now.getFullYear(), now.getMonth(), 1)),
+        dateTo: isoDay(new Date(now.getFullYear(), now.getMonth() + 1, 0)),
+    }
 }
 
-const activeFiltersCount = computed(() => {
-    let n = 0
-    if (filters.status.length) n++
-    if (filters.importStatus.length) n++
-    if (filters.stage.length) n++
-    if (filters.trigger.length) n++
-    if (filters.dateFrom) n++
-    if (filters.dateTo) n++
-    if (filters.q) n++
-    return n
-})
+const filters = reactive(currentMonthRange())
+// Período efetivamente carregado (o polling repete essa mesma consulta).
+const applied = reactive(currentMonthRange())
 
-/** Opções dos filtros derivadas do histórico carregado (só o que existe no dado). */
-function facetFrom(values, labelFn) {
-    const uniq = [...new Set(values.filter(v => v !== null && v !== undefined && v !== ''))]
-    return uniq.map(v => ({ value: v, label: labelFn(v) }))
-        .sort((a, b) => a.label.localeCompare(b.label, 'pt-BR'))
+/** Converte a data do input no instante local correspondente (início/fim do dia). */
+function boundary(day, end) {
+    if (!day) return null
+    const [y, m, d] = day.split('-').map(Number)
+    return new Date(y, m - 1, d, end ? 23 : 0, end ? 59 : 0, end ? 59 : 0, end ? 999 : 0).toISOString()
 }
 
-const facets = computed(() => ({
-    status: facetFrom(store.items.map(i => i.status), statusLabel),
-    importStatus: facetFrom(store.items.map(i => i.import_status), statusLabel),
-    stage: facetFrom(store.items.map(i => i.stage), stageLabel),
-    trigger: facetFrom(store.items.map(i => triggerKind(i.triggered_by)), triggerLabel),
-}))
+const appliedLabel = computed(() => {
+    if (!applied.dateFrom && !applied.dateTo) return 'Tudo'
+    const fmt = (day) => day ? day.split('-').reverse().join('/') : ''
+    const cur = currentMonthRange()
+    if (applied.dateFrom === cur.dateFrom && applied.dateTo === cur.dateTo) {
+        return new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
+    }
+    if (!applied.dateTo) return `a partir de ${fmt(applied.dateFrom)}`
+    if (!applied.dateFrom) return `até ${fmt(applied.dateTo)}`
+    return `${fmt(applied.dateFrom)} a ${fmt(applied.dateTo)}`
+})
 
-const filteredItems = computed(() => {
-    const from = filters.dateFrom ? new Date(`${filters.dateFrom}T00:00:00`).getTime() : null
-    const to = filters.dateTo ? new Date(`${filters.dateTo}T23:59:59.999`).getTime() : null
-    const q = filters.q.trim().toLowerCase()
+// O cartão de status só faz sentido quando o período carregado alcança hoje -
+// em consultas de meses passados ele mostraria um "último backup" antigo.
+const periodIncludesToday = computed(() => {
+    const today = isoDay(new Date())
+    if (applied.dateFrom && applied.dateFrom > today) return false
+    if (applied.dateTo && applied.dateTo < today) return false
+    return true
+})
 
-    return store.items.filter((row) => {
-        if (filters.status.length && !filters.status.includes(row.status)) return false
-        if (filters.importStatus.length && !filters.importStatus.includes(row.import_status)) return false
-        if (filters.stage.length && !filters.stage.includes(row.stage)) return false
-        if (filters.trigger.length && !filters.trigger.includes(triggerKind(row.triggered_by))) return false
-
-        const started = row.started_at ? new Date(row.started_at).getTime() : null
-        if (from && (!started || started < from)) return false
-        if (to && (!started || started > to)) return false
-
-        if (q) {
-            const haystack = [
-                row.id, row.file_name, row.error_message, row.import_error_message,
-                row.triggered_by, row.stage,
-            ].filter(Boolean).join(' ').toLowerCase()
-            if (!haystack.includes(q)) return false
-        }
-        return true
+async function fetchRange({ withSpinner = false } = {}) {
+    await store.fetchBackups({
+        from: boundary(applied.dateFrom, false),
+        to: boundary(applied.dateTo, true),
+        withSpinner,
     })
-})
+}
 
-// KPIs: contagem por status no conjunto carregado; clicar liga/desliga o filtro.
+const filtering = ref(false)
+async function applyFilters() {
+    applied.dateFrom = filters.dateFrom
+    applied.dateTo = filters.dateTo
+    filtering.value = true
+    try {
+        await fetchRange({ withSpinner: true })
+        startPolling()
+    } finally {
+        filtering.value = false
+    }
+}
+
+async function resetFilters() {
+    Object.assign(filters, currentMonthRange())
+    await applyFilters()
+}
+
+// KPIs: contagem por status no período carregado.
 const kpiChips = computed(() => {
     const count = (s) => store.items.filter(i => i.status === s).length
     return [
@@ -109,25 +107,12 @@ const kpiChips = computed(() => {
     ].filter(c => c.total > 0)
 })
 
-function toggleStatusFilter(value) {
-    const i = filters.status.indexOf(value)
-    if (i >= 0) filters.status.splice(i, 1)
-    else filters.status.push(value)
-}
-
-async function onLimitChange(v) {
-    limit.value = v
-    await store.fetchBackups({ limit: v, withSpinner: true })
-}
-
 // ─── Polling ────────────────────────────────────────────────────────────────
 let pollTimer = null
 
 function startPolling() {
     stopPolling()
-    pollTimer = setInterval(() => {
-        store.fetchBackups({ limit: limit.value, withSpinner: false })
-    }, isRunning.value ? 5000 : 30000)
+    pollTimer = setInterval(() => { fetchRange() }, isRunning.value ? 5000 : 30000)
 }
 
 function stopPolling() {
@@ -140,7 +125,7 @@ const refreshing = ref(false)
 async function refresh() {
     refreshing.value = true
     try {
-        await store.fetchBackups({ limit: limit.value, withSpinner: true })
+        await fetchRange({ withSpinner: true })
         startPolling()
     } finally {
         refreshing.value = false
@@ -160,7 +145,7 @@ async function onTriggerFullBackup() {
     try {
         await store.triggerFullBackup()
         toast.success('Backup iniciado. Acompanhe o status abaixo.')
-        await store.fetchBackups({ limit: limit.value })
+        await fetchRange()
         startPolling()
     } catch (err) {
         toast.error(err.message || 'Falha ao disparar backup')
@@ -181,7 +166,7 @@ async function onCancelRunning() {
     try {
         await store.cancelBackup(running.id)
         toast.success('Backup marcado como falho. Pode disparar de novo.')
-        await store.fetchBackups({ limit: limit.value })
+        await fetchRange()
     } catch (err) {
         toast.error(err.message || 'Falha ao cancelar')
     } finally {
@@ -192,7 +177,7 @@ async function onCancelRunning() {
 onMounted(async () => {
     // Carregamento inicial usa o overlay global (logo animada). Só depois de
     // `store.loaded` a tela desenha status/KPIs/histórico, pra não piscar vazio.
-    await store.fetchBackups({ limit: limit.value, withSpinner: true })
+    await fetchRange({ withSpinner: true })
     startPolling()
 })
 onBeforeUnmount(stopPolling)
@@ -210,7 +195,7 @@ onBeforeUnmount(stopPolling)
                         :steps="[
                             { title: 'Confira o status do dia', text: 'O cartão no topo mostra se há backup rodando agora ou os dados do último backup concluído com sucesso (horário, duração e tamanho).' },
                             { title: 'Acompanhe as etapas', text: 'Durante a execução, use Ver etapas para ver em que ponto do pipeline o backup está, com progresso do download e das cinco fases do restore.' },
-                            { title: 'Filtre o histórico', text: 'Use os filtros para achar execuções por status, tipo de disparo, etapa, período ou texto do erro. A quantidade define quantas execuções são carregadas.' },
+                            { title: 'Consulte outro período', text: 'O histórico abre no mês atual. Para ver outro intervalo, ajuste as datas e clique em Filtrar - a consulta traz todas as execuções do período.' },
                             { title: 'Rode manualmente', text: 'Rodar backup agora dispara o pipeline completo fora do horário do cron. Leva de 20 a 50 minutos.' },
                             { title: 'Destrave um backup travado', text: 'Se um backup ficou marcado como em execução mas o processo morreu (deploy, queda do servidor), use Forçar cancelar para liberar e disparar de novo.' },
                         ]" :tips="[
@@ -245,10 +230,10 @@ onBeforeUnmount(stopPolling)
             <!-- Só desenha depois da 1ª resposta (evita piscar valores vazios) -->
             <div v-if="store.loaded" class="space-y-4">
 
-                <!-- Status atual -->
+                <!-- Status atual (some quando a consulta é de um período passado) -->
                 <RunningPipeline v-if="isRunning" :log="store.runningBackup" />
 
-                <Surface v-else-if="store.latestSuccess" padding="none"
+                <Surface v-else-if="periodIncludesToday && store.latestSuccess" padding="none"
                     class="border-emerald-500/30 bg-emerald-500/[0.06]">
                     <div class="p-4 flex items-center gap-3 sm:gap-4">
                         <div class="text-emerald-600 dark:text-emerald-400 text-xl sm:text-2xl shrink-0">
@@ -269,8 +254,8 @@ onBeforeUnmount(stopPolling)
                     </div>
                 </Surface>
 
-                <Surface v-else padding="none">
-                    <EmptyState size="sm" icon="fas fa-database" title="Nenhum backup registrado ainda"
+                <Surface v-else-if="periodIncludesToday" padding="none">
+                    <EmptyState size="sm" icon="fas fa-database" title="Nenhum backup concluído neste período"
                         description="Dispare manualmente em Rodar backup agora ou aguarde o cron das 5h." />
                 </Surface>
 
@@ -280,32 +265,28 @@ onBeforeUnmount(stopPolling)
                         <div>
                             <h2 class="text-base sm:text-lg font-semibold text-ink">Histórico</h2>
                             <p class="text-xs text-ink-muted mt-0.5">
-                                {{ filteredItems.length }} de {{ store.items.length }} execução(ões) carregada(s)
+                                {{ store.items.length }} execução(ões) em {{ appliedLabel }}
                             </p>
                         </div>
                     </div>
 
-                    <!-- KPIs (clicáveis: ligam/desligam o filtro de status) -->
+                    <!-- KPIs do período carregado -->
                     <div v-if="kpiChips.length" class="flex flex-wrap gap-2">
-                        <button v-for="c in kpiChips" :key="c.value" type="button"
-                            class="inline-flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-medium transition-colors min-h-10"
-                            :class="filters.status.includes(c.value)
-                                ? 'border-accent/50 bg-accent-soft text-accent'
-                                : 'border-line bg-surface-raised text-ink-muted hover:bg-surface-sunken'"
-                            @click="toggleStatusFilter(c.value)">
+                        <div v-for="c in kpiChips" :key="c.value"
+                            class="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-line bg-surface-raised text-xs font-medium text-ink-muted min-h-10">
                             <i :class="c.icon"></i>
                             {{ c.label }}
-                            <span class="font-mono tabular-nums">{{ c.total }}</span>
-                        </button>
+                            <span class="font-mono tabular-nums text-ink">{{ c.total }}</span>
+                        </div>
                     </div>
 
-                    <BackupFilters :filters="filters" :facets="facets" :limit="limit"
-                        :active-count="activeFiltersCount" @clear="clearFilters" @update:limit="onLimitChange" />
+                    <BackupFilters :filters="filters" :loading="filtering" :applied-label="appliedLabel"
+                        @apply="applyFilters" @reset="resetFilters" />
 
                     <Surface padding="none" class="overflow-hidden">
-                        <EmptyState v-if="!filteredItems.length" size="sm" icon="fas fa-filter-circle-xmark"
-                            :title="store.items.length ? 'Nenhuma execução com esses filtros' : 'Sem registros'"
-                            :description="store.items.length ? 'Ajuste ou limpe os filtros para ver o histórico.' : 'As execuções aparecem aqui assim que o primeiro backup rodar.'" />
+                        <EmptyState v-if="!store.items.length" size="sm" icon="fas fa-filter-circle-xmark"
+                            title="Nenhuma execução no período"
+                            description="Ajuste as datas e clique em Filtrar para consultar outro período." />
 
                         <template v-else>
                             <!-- Desktop: tabela -->
@@ -325,7 +306,7 @@ onBeforeUnmount(stopPolling)
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <tr v-for="row in filteredItems" :key="row.id"
+                                        <tr v-for="row in store.items" :key="row.id"
                                             class="border-b border-line last:border-0 hover:bg-surface-sunken/60 transition-colors">
                                             <td class="px-4 py-3 align-top font-mono text-xs text-ink-subtle">{{ row.id }}</td>
                                             <td class="px-4 py-3 align-top whitespace-nowrap">
@@ -372,7 +353,7 @@ onBeforeUnmount(stopPolling)
 
                             <!-- Mobile: cards -->
                             <ul class="md:hidden divide-y divide-line">
-                                <li v-for="row in filteredItems" :key="row.id" class="p-3.5 space-y-2">
+                                <li v-for="row in store.items" :key="row.id" class="p-3.5 space-y-2">
                                     <div class="flex items-start justify-between gap-2">
                                         <div class="min-w-0">
                                             <p class="text-sm font-medium text-ink">{{ formatDate(row.started_at) }}</p>
