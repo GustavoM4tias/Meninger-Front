@@ -137,14 +137,15 @@ export const useDeptSpendingStore = defineStore('marketingDeptSpending', () => {
         }
     }
 
-    /* Relatório Gerencial de Investimento de 1 empreendimento (empresa Sienge). */
-    async function fetchReport(companyId, month) {
+    /* Relatório Gerencial de Investimento de 1 empreendimento (etapa/CC).
+       `key` = enterprise_key; um id de empresa Sienge ainda é aceito (links antigos). */
+    async function fetchReport(key, month) {
         reportError.value = null;
         reportLoading.value = true;
         try {
             const params = new URLSearchParams();
             if (month) params.set('month', month);
-            const url = `${API_URL}/dept-spending/report/${encodeURIComponent(companyId)}?${params.toString()}`;
+            const url = `${API_URL}/dept-spending/report/${encodeURIComponent(key)}?${params.toString()}`;
             report.value = await requestWithAuth(url);
         } catch (e) {
             console.error('[DeptSpendingStore] fetchReport: erro', e);
@@ -157,11 +158,11 @@ export const useDeptSpendingStore = defineStore('marketingDeptSpending', () => {
     }
 
     /* Regenerar a "Leitura para decisão" (admin). */
-    async function regenerateInsights(companyId, month) {
+    async function regenerateInsights(key, month) {
         const params = new URLSearchParams();
         if (month) params.set('month', month);
         const insights = await requestWithAuth(
-            `${API_URL}/dept-spending/admin/report/${encodeURIComponent(companyId)}/insights/regenerate?${params.toString()}`,
+            `${API_URL}/dept-spending/admin/report/${encodeURIComponent(key)}/insights/regenerate?${params.toString()}`,
             { method: 'POST' }
         );
         if (report.value) report.value = { ...report.value, insights };

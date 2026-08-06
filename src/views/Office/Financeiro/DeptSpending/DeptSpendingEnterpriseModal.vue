@@ -1,18 +1,18 @@
 <template>
     <Modal :open="open" size="lg" :title="companyName"
-        :subtitle="companyId != null ? `Empresa ${companyId} · configuração e liberação` : 'Sem empresa Sienge vinculada'"
+        :subtitle="subtitle"
         @close="$emit('close')">
         <div class="space-y-6">
             <p v-if="companyId == null"
                 class="text-sm text-amber-700 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 px-3 py-2 rounded-lg">
                 <i class="fas fa-triangle-exclamation mr-1"></i>
-                Esta linha não tem empresa Sienge vinculada (sem <code>idCompany</code>), então não dá para salvar
-                configuração nem liberar para a diretoria.
+                Esta linha não tem empresa Sienge vinculada (sem <code>idCompany</code>), então não dá para salvar a
+                configuração de departamentos da empresa.
             </p>
 
             <!-- Liberação (rascunho → liberado) -->
             <div class="rounded-xl border p-4"
-                :class="[companyId == null ? 'opacity-50 pointer-events-none' : '', isReleased ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-amber-500/30 bg-amber-500/5']">
+                :class="[enterpriseKey == null ? 'opacity-50 pointer-events-none' : '', isReleased ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-amber-500/30 bg-amber-500/5']">
                 <div class="flex items-start justify-between gap-3">
                     <div>
                         <h4 class="text-sm font-semibold text-ink flex items-center gap-2 mb-1">
@@ -21,7 +21,8 @@
                         </h4>
                         <p class="text-xs text-ink-muted">
                             Ajuste os números até ficarem 100%. Ao liberar, este empreendimento passa a aparecer para a
-                            diretoria. Você pode voltar para rascunho a qualquer momento.
+                            diretoria. Vale só para esta etapa: as outras da mesma empresa seguem como estão. Você pode
+                            voltar para rascunho a qualquer momento.
                         </p>
                     </div>
                     <button type="button" role="switch" :aria-checked="isReleased" @click.prevent="isReleased = !isReleased"
@@ -39,14 +40,14 @@
             </div>
 
             <!-- Status / categoria -->
-            <div :class="companyId == null ? 'opacity-50 pointer-events-none' : ''">
+            <div :class="enterpriseKey == null ? 'opacity-50 pointer-events-none' : ''">
                 <h4 class="text-sm font-semibold text-ink flex items-center gap-2 mb-1">
                     <i class="fas fa-tag text-accent"></i>
                     Status do empreendimento
                 </h4>
                 <p class="text-xs text-ink-muted mb-2">
                     Por padrão é <strong>automático</strong> (calculado pela projeção e pelo gasto). Force aqui se
-                    quiser fixar a categoria deste empreendimento.
+                    quiser fixar a categoria desta etapa.
                 </p>
                 <select v-model="statusOverride"
                     class="h-9 px-2 text-sm border border-line rounded-lg bg-surface text-ink focus:outline-none focus:ring-2 focus:ring-accent-ring/30">
@@ -66,7 +67,7 @@
                 </h4>
                 <p class="text-xs text-ink-muted mb-3">
                     Por padrão segue a regra global. Aqui você força um departamento a ser acompanhado (ou não)
-                    <strong>apenas nesta empresa</strong>.
+                    <strong>apenas nesta empresa</strong> - vale para todas as etapas dela.
                 </p>
 
                 <EmptyState v-if="!known.length" size="sm" icon="fas fa-inbox" title="Sem departamentos"
@@ -97,7 +98,8 @@
                 </h4>
                 <p class="text-xs text-ink-muted mb-3">
                     Para o relatório de investimento: quais departamentos compõem o gasto da <strong>loja física</strong>
-                    desta empresa. O teto da loja vem do <strong>Custo Loja</strong> cadastrado na projeção.
+                    desta empresa (vale para todas as etapas dela). O teto da loja vem do <strong>Custo Loja</strong>
+                    cadastrado na projeção de cada etapa.
                     Um departamento marcado aqui sai do bucket de marketing (não conta duas vezes).
                 </p>
                 <div v-if="known.length" class="space-y-1.5 max-h-48 overflow-y-auto pr-1">
@@ -123,7 +125,8 @@
 
         <template #footer>
             <Button variant="secondary" @click="$emit('close')">Cancelar</Button>
-            <Button variant="primary" :loading="saving" :disabled="companyId == null" @click="save">Salvar</Button>
+            <Button variant="primary" :loading="saving" :disabled="companyId == null && enterpriseKey == null"
+                @click="save">Salvar</Button>
         </template>
     </Modal>
 </template>
@@ -154,9 +157,20 @@ const saving = ref(false);
 const err = ref(null);
 
 const companyId = computed(() => props.company?.companyId ?? props.company?.header?.companyId ?? null);
+// Chave do EMPREENDIMENTO (etapa da projeção = CC): liberação e status vivem aqui.
+const enterpriseKey = computed(
+    () => props.company?.enterpriseKey ?? props.company?.header?.enterpriseKey ?? props.company?.erpId ?? null
+);
 const companyName = computed(
     () => props.company?.enterpriseName || props.company?.header?.companyName || 'Empresa'
 );
+const subtitle = computed(() => {
+    if (companyId.value == null && enterpriseKey.value == null) return 'Sem vínculo Sienge';
+    const partes = [];
+    if (companyId.value != null) partes.push(`Empresa ${companyId.value}`);
+    if (enterpriseKey.value != null) partes.push(`CC ${enterpriseKey.value}`);
+    return `${partes.join(' · ')} · configuração e liberação`;
+});
 const known = computed(() => adminStore.known || []);
 
 watch(() => props.open, async (v) => {
@@ -168,11 +182,16 @@ watch(() => props.open, async (v) => {
     const cur = (adminStore.enterpriseSettings || []).find(
         (e) => String(e.company_id) === String(companyId.value)
     );
-    statusOverride.value = cur?.status_override || '';
-    isReleased.value = !!cur?.is_released;
-    releaseNotes.value = cur?.release_notes || '';
-    releasedInfo.value = cur?.released_at
-        ? `Liberado por ${cur.released_by || '—'} em ${dayjs(cur.released_at).format('DD/MM/YYYY HH:mm')}`
+    // Etapa: sem linha própria, herda o que estiver na empresa (compat).
+    const stage = (adminStore.stageSettings || []).find(
+        (e) => String(e.enterprise_key) === String(enterpriseKey.value)
+    );
+    const gov = stage || cur;
+    statusOverride.value = gov?.status_override || '';
+    isReleased.value = !!gov?.is_released;
+    releaseNotes.value = gov?.release_notes || '';
+    releasedInfo.value = gov?.released_at
+        ? `Liberado por ${gov.released_by || '—'} em ${dayjs(gov.released_at).format('DD/MM/YYYY HH:mm')}`
         : '';
 
     const ov = cur?.marketing_dept_overrides || {};
@@ -190,25 +209,35 @@ watch(() => props.open, async (v) => {
 });
 
 async function save() {
-    if (companyId.value == null) {
-        err.value = 'Empresa sem company_id (sem vínculo Sienge).';
+    if (companyId.value == null && enterpriseKey.value == null) {
+        err.value = 'Linha sem vínculo Sienge (sem empresa e sem centro de custo).';
         return;
     }
     saving.value = true;
     err.value = null;
     try {
-        const overrides = {};
-        for (const [d, st] of Object.entries(overrideState.value)) {
-            if (st === 'marketing') overrides[d] = true;
-            else if (st === 'not') overrides[d] = false;
+        // Departamentos e bucket Loja são da EMPRESA; status e liberação, da ETAPA.
+        if (companyId.value != null) {
+            const overrides = {};
+            for (const [d, st] of Object.entries(overrideState.value)) {
+                if (st === 'marketing') overrides[d] = true;
+                else if (st === 'not') overrides[d] = false;
+            }
+            await adminStore.setEnterpriseSettings(companyId.value, {
+                marketing_dept_overrides: overrides,
+                loja_departments: Object.entries(lojaState.value).filter(([, v]) => v).map(([d]) => d),
+            });
         }
-        await adminStore.setEnterpriseSettings(companyId.value, {
-            marketing_dept_overrides: overrides,
-            status_override: statusOverride.value || null,
-            loja_departments: Object.entries(lojaState.value).filter(([, v]) => v).map(([d]) => d),
-        });
-        // liberação é um endpoint separado (trilha released_by/at)
-        await adminStore.setEnterpriseRelease(companyId.value, isReleased.value, releaseNotes.value || null);
+        if (enterpriseKey.value != null) {
+            await adminStore.setStageSettings(enterpriseKey.value, {
+                status_override: statusOverride.value || null,
+                company_id: companyId.value,
+            });
+            // liberação é um endpoint separado (trilha released_by/at)
+            await adminStore.setEnterpriseRelease(
+                enterpriseKey.value, isReleased.value, releaseNotes.value || null, companyId.value
+            );
+        }
         emit('saved');
         emit('close');
     } catch (e) {

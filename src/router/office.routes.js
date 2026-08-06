@@ -187,7 +187,9 @@ export default [
                         meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Viabilidade - orçamento de marketing por empreendimento (VGV × %), gasto real e saldo' },
                     },
                     {
-                        path: 'viabilidade/:companyId',
+                        // :key = enterprise_key do empreendimento (CC). Um id de
+                        // empresa Sienge ainda funciona (links antigos) e abre a SPE somada.
+                        path: 'viabilidade/:key',
                         name: 'Relatório de Investimento',
                         component: () => import('@/views/Office/Financeiro/DeptSpending/DeptSpendingReport.vue'),
                         meta: { requiresAuth: true, allowedPosition: '', searchable: false, content: 'Relatório gerencial de investimento por empreendimento' },
@@ -346,7 +348,7 @@ export default [
                     // Viabilidade mudou para o Marketing (2026-07-28). Redirects
                     // preservam links antigos (notificações, favoritos, atalhos).
                     { path: 'gastos-departamento', redirect: to => ({ path: '/marketing/viabilidade', query: to.query }) },
-                    { path: 'gastos-departamento/:companyId', redirect: to => ({ path: `/marketing/viabilidade/${to.params.companyId}`, query: to.query }) },
+                    { path: 'gastos-departamento/:key', redirect: to => ({ path: `/marketing/viabilidade/${to.params.key}`, query: to.query }) },
                     {
                         path: 'consulta-cef',
                         name: 'Consulta de nº CEF',

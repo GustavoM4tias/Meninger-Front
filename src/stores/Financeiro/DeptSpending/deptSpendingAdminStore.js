@@ -2,8 +2,9 @@
 //
 // Config admin da tela "Gastos por Departamento" (admin-only no backend):
 //  - quais departamentos do Custos têm o gasto acompanhado (global)
-//  - configuração por empreendimento (bloqueadas + overrides + status)
-//  - LIBERAÇÃO por empreendimento (rascunho → liberado)
+//  - configuração por EMPRESA Sienge (bloqueadas + overrides de depto + loja)
+//  - status manual e LIBERAÇÃO por EMPREENDIMENTO (etapa/CC): a linha da tela é
+//    uma etapa, então liberar uma não mexe nas irmãs da mesma SPE
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import API_URL from '@/config/apiUrl';
@@ -17,10 +18,11 @@ export const useDeptSpendingAdminStore = defineStore('marketingDeptSpendingAdmin
 
     const known = ref([]);              // ['Marketing','Comercial',...]
     const configured = ref([]);         // [{ department_name, is_marketing }]
-    const enterpriseSettings = ref([]); // [{ company_id, ..., is_released }]
+    const enterpriseSettings = ref([]); // [{ company_id, ... }] — config da empresa
+    const stageSettings = ref([]);      // [{ enterprise_key, status_override, is_released, ... }]
     const error = ref(null);
     const savingName = ref(null);       // depto em gravação (spinner por linha)
-    const releasingId = ref(null);      // company_id em liberação (spinner por linha)
+    const releasingId = ref(null);      // enterprise_key em liberação (spinner por linha)
 
     const isLoading = computed(() => carregamento.carregando);
 
@@ -65,6 +67,24 @@ export const useDeptSpendingAdminStore = defineStore('marketingDeptSpendingAdmin
     async function fetchEnterpriseSettings() {
         const res = await requestWithAuth(`${API_URL}/dept-spending/admin/enterprise-settings`);
         enterpriseSettings.value = res?.results || [];
+        stageSettings.value = res?.stages || [];
+    }
+
+    function upsertStage(res) {
+        if (!res?.enterprise_key) return;
+        const idx = stageSettings.value.findIndex((e) => String(e.enterprise_key) === String(res.enterprise_key));
+        if (idx >= 0) stageSettings.value[idx] = res;
+        else stageSettings.value = [...stageSettings.value, res];
+    }
+
+    // Status manual do EMPREENDIMENTO (etapa).
+    async function setStageSettings(enterpriseKey, payload) {
+        const res = await requestWithAuth(
+            `${API_URL}/dept-spending/admin/stage-settings/${encodeURIComponent(enterpriseKey)}`,
+            { method: 'PUT', body: JSON.stringify(payload) }
+        );
+        upsertStage(res);
+        return res;
     }
 
     async function setEnterpriseSettings(companyId, payload) {
@@ -78,17 +98,15 @@ export const useDeptSpendingAdminStore = defineStore('marketingDeptSpendingAdmin
         return res;
     }
 
-    // Liberação (rascunho → liberado) por empreendimento.
-    async function setEnterpriseRelease(companyId, isReleased, notes) {
-        releasingId.value = companyId;
+    // Liberação (rascunho → liberado) por EMPREENDIMENTO (etapa/CC).
+    async function setEnterpriseRelease(enterpriseKey, isReleased, notes, companyId = null) {
+        releasingId.value = enterpriseKey;
         try {
             const res = await requestWithAuth(
-                `${API_URL}/dept-spending/admin/release/${encodeURIComponent(companyId)}`,
-                { method: 'PUT', body: JSON.stringify({ is_released: !!isReleased, notes }) }
+                `${API_URL}/dept-spending/admin/release/${encodeURIComponent(enterpriseKey)}`,
+                { method: 'PUT', body: JSON.stringify({ is_released: !!isReleased, notes, company_id: companyId }) }
             );
-            const idx = enterpriseSettings.value.findIndex((e) => String(e.company_id) === String(companyId));
-            if (idx >= 0) enterpriseSettings.value[idx] = res;
-            else if (res) enterpriseSettings.value = [...enterpriseSettings.value, res];
+            upsertStage(res);
             return res;
         } finally {
             releasingId.value = null;
@@ -96,9 +114,9 @@ export const useDeptSpendingAdminStore = defineStore('marketingDeptSpendingAdmin
     }
 
     return {
-        known, configured, enterpriseSettings, error, savingName, releasingId,
+        known, configured, enterpriseSettings, stageSettings, error, savingName, releasingId,
         isLoading, marketingCount, isMarketing,
         fetchMarketingDepartments, setMarketingDepartment,
-        fetchEnterpriseSettings, setEnterpriseSettings, setEnterpriseRelease,
+        fetchEnterpriseSettings, setEnterpriseSettings, setStageSettings, setEnterpriseRelease,
     };
 });
