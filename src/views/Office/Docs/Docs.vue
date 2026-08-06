@@ -1,91 +1,80 @@
 <template>
   <div class="min-h-[calc(100vh-3.5rem)]">
-    <PageContainer size="full">
+    <PageContainer size="lg">
       <PageHeader
-        subtitle="Acompanhe atualizações, melhorias e correções do sistema"
-        icon="fas fa-book-open">
-        <template #title>Documentação</template>
+        subtitle="Acompanhe as entregas, melhorias e correções publicadas no sistema."
+        eyebrow="Sobre o Office"
+        icon="fas fa-code-branch">
+        <template #title>Atualizações</template>
+        <template #actions>
+          <PageHelp
+            storage-key="sobre-docs"
+            title="Como usar as Atualizações"
+            intro="Esta é a linha do tempo do Office: cada entrega publicada, com o que mudou e em qual área."
+            :steps="[
+              { title: 'Filtrar', text: 'Use a busca e os filtros de tipo, categoria e período para achar uma entrega específica.' },
+              { title: 'Abrir uma versão', text: 'Clique em uma atualização para ver os itens de melhoria e correção daquela publicação.' },
+              { title: 'Ver o conjunto', text: 'Mapa do Sistema mostra o que existe hoje e a Visão Executiva explica o resultado de cada frente.' },
+            ]"
+            :tips="['O que aparece aqui é o registro do que foi ao ar, na ordem em que foi publicado.']" />
+        </template>
       </PageHeader>
 
-      <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      <SobreNav />
 
-        <!-- Sidebar de Filtros -->
-        <aside class="lg:col-span-1 space-y-4">
-          <Surface variant="raised" padding="md" class="surface-gradient lg:sticky lg:top-4 space-y-5">
+      <!-- Números de topo: mesmo componente do Mapa e da Visão Executiva, para as
+           três telas do Sobre abrirem com a mesma leitura -->
+      <HighlightCards :items="highlights" class="mb-6" />
 
-            <!-- Busca -->
-            <div>
-              <label class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1.5 block">
-                Buscar
-              </label>
-              <Input
-                v-model="searchQuery"
-                placeholder="Buscar atualizações..."
-                icon-left="fas fa-magnifying-glass" />
-            </div>
+      <div class="grid grid-cols-1 lg:grid-cols-[220px_minmax(0,1fr)] gap-6">
 
-            <!-- Tipo de Release -->
-            <Select
-              v-model="filters.type"
-              label="Tipo de Release"
-              :options="typeOptions" />
+        <!-- Filtros. No celular os três seletores ficam lado a lado: empilhados,
+             viravam uma parede de controles antes do primeiro item da lista. -->
+        <aside class="lg:sticky lg:top-4 lg:self-start space-y-3">
+          <p class="hidden lg:block text-[11px] font-mono uppercase tracking-wider text-ink-subtle">
+            Filtrar
+          </p>
 
-            <!-- Categoria -->
-            <Select
-              v-model="filters.category"
-              label="Categoria"
-              :options="categoryOptions" />
+          <Input
+            v-model="searchQuery"
+            placeholder="Buscar atualizações..."
+            icon-left="fas fa-magnifying-glass" />
 
-            <!-- Período -->
-            <Select
-              v-model="filters.period"
-              label="Período"
-              :options="periodOptions" />
+          <div class="grid grid-cols-3 gap-2 lg:grid-cols-1 lg:gap-3">
+            <Select v-model="filters.type"     label="Tipo"      :options="typeOptions" />
+            <Select v-model="filters.category" label="Categoria" :options="categoryOptions" />
+            <Select v-model="filters.period"   label="Período"   :options="periodOptions" />
+          </div>
 
-            <!-- Estatísticas -->
-            <div class="border-t border-line pt-4">
-              <div class="flex items-center gap-2 mb-3">
-                <i class="fas fa-chart-simple text-accent text-sm"></i>
-                <h4 class="text-xs uppercase tracking-wider font-mono text-ink-muted">
-                  Estatísticas
-                </h4>
-              </div>
-              <div class="space-y-2.5">
-                <div class="flex justify-between text-sm">
-                  <span class="text-ink-muted">Total atualizações</span>
-                  <span class="font-mono tabular-nums font-medium text-ink">{{ releases.length }}</span>
-                </div>
-                <div class="flex justify-between text-sm">
-                  <span class="text-ink-muted">Bugs corrigidos</span>
-                  <span class="font-mono tabular-nums font-medium text-amber-500">{{ totalBugsFixed }}</span>
-                </div>
-                <div class="flex justify-between text-sm">
-                  <span class="text-ink-muted">Novas funcionalidades</span>
-                  <span class="font-mono tabular-nums font-medium text-emerald-500">{{ totalFeatures }}</span>
-                </div>
-              </div>
-            </div>
-          </Surface>
+          <button v-if="hasFilters" type="button" @click="clearFilters"
+                  class="w-full min-h-[40px] rounded-lg border border-line bg-surface-raised
+                         text-sm text-ink-muted hover:text-ink hover:border-line-strong
+                         transition-all duration-150 ease-out-expo">
+            Limpar filtros
+          </button>
         </aside>
 
         <!-- Conteúdo Principal -->
-        <main class="lg:col-span-3 space-y-6">
+        <main class="min-w-0 space-y-8">
 
           <!-- Roadmap -->
           <section>
-            <div class="flex items-center justify-between mb-3">
-              <h3 class="text-base font-semibold text-ink flex items-center gap-2">
-                <i class="fas fa-road text-accent text-sm"></i>
-                Atualizações Futuras
-              </h3>
-              <Badge variant="accent" size="sm">{{ roadmap.length }} planejadas</Badge>
-            </div>
+            <header class="flex items-center gap-3 mb-4 pb-2 border-b border-line">
+              <span class="grid place-items-center h-9 w-9 rounded-xl bg-accent-soft text-accent
+                           border border-accent/20 shrink-0">
+                <i class="fas fa-road"></i>
+              </span>
+              <h2 class="text-base sm:text-xl font-semibold text-ink tracking-tight">
+                Atualizações futuras
+              </h2>
+              <Badge variant="accent" size="sm" class="ml-auto shrink-0">{{ roadmap.length }} planejadas</Badge>
+            </header>
             <div class="overflow-x-auto -mx-1 px-1">
               <div class="flex gap-3 pb-2 min-w-min">
                 <Surface v-for="milestone in roadmap" :key="milestone.version"
                   variant="raised"
                   padding="md"
-                  class="min-w-[280px] max-w-[280px] flex-shrink-0 hover:shadow-md transition-shadow surface-gradient">
+                  class="min-w-[260px] max-w-[260px] shrink-0 hover:border-accent/30 hover:shadow-elevated">
                   <div class="flex items-center justify-between mb-2 gap-2">
                     <span class="font-semibold text-ink font-mono text-sm">{{ milestone.version }}</span>
                     <span v-if="milestone?.date" class="text-[11px] text-ink-subtle font-mono">
@@ -107,25 +96,25 @@
 
           <!-- Lista de Releases -->
           <section>
-            <div class="flex items-center justify-between mb-4">
-              <h3 class="text-base font-semibold text-ink flex items-center gap-2">
-                <i class="fas fa-clock-rotate-left text-accent text-sm"></i>
-                Histórico de atualizações
-              </h3>
-              <span class="text-xs text-ink-muted">
-                <span class="font-mono tabular-nums">{{ filteredReleases.length }}</span>
-                de
-                <span class="font-mono tabular-nums">{{ releases.length }}</span>
-                atualizações
+            <header class="flex items-center gap-3 mb-4 pb-2 border-b border-line">
+              <span class="grid place-items-center h-9 w-9 rounded-xl bg-accent-soft text-accent
+                           border border-accent/20 shrink-0">
+                <i class="fas fa-clock-rotate-left"></i>
               </span>
-            </div>
+              <h2 class="text-base sm:text-xl font-semibold text-ink tracking-tight">
+                Histórico
+              </h2>
+              <span class="ml-auto shrink-0 text-[11px] text-ink-subtle font-mono tabular-nums">
+                {{ filteredReleases.length }} de {{ releases.length }}
+              </span>
+            </header>
 
             <!-- Cards de Release -->
             <div class="space-y-4">
               <Surface v-for="release in paginatedReleases" :key="release.version"
                 variant="raised"
                 padding="none"
-                class="overflow-hidden hover:shadow-md transition-shadow surface-gradient">
+                class="overflow-hidden hover:border-accent/30 hover:shadow-elevated">
 
                 <!-- Header do Release -->
                 <div class="px-5 sm:px-6 py-3.5 border-b border-line bg-surface-sunken/40 flex items-center justify-between flex-wrap gap-2">
@@ -241,12 +230,13 @@
 
             <!-- Paginação -->
             <div v-if="totalPages > 1" class="flex justify-center mt-6 gap-1.5 flex-wrap">
-              <button v-for="page in totalPages" :key="page"
+              <button v-for="page in totalPages" :key="page" type="button"
                 @click="currentPage = page"
-                class="h-9 min-w-9 px-3 text-sm font-medium rounded-lg transition-colors"
+                class="h-10 min-w-10 px-3 text-sm rounded-lg border tabular-nums
+                       transition-all duration-150 ease-out-expo"
                 :class="currentPage === page
-                  ? 'bg-accent text-white'
-                  : 'bg-surface-raised text-ink-muted border border-line hover:bg-surface-hover'">
+                  ? 'bg-accent-soft text-accent border-accent/30 font-medium'
+                  : 'bg-surface-raised text-ink-muted border-line hover:text-ink hover:border-line-strong'">
                 {{ page }}
               </button>
             </div>
@@ -360,6 +350,9 @@ import Badge from '@/components/UI/Badge.vue';
 import Input from '@/components/UI/Input.vue';
 import Select from '@/components/UI/Select.vue';
 import EmptyState from '@/components/UI/EmptyState.vue';
+import PageHelp from '@/components/UI/PageHelp.vue';
+import SobreNav from '@/components/Sobre/SobreNav.vue';
+import HighlightCards from '@/components/Sobre/HighlightCards.vue';
 
 // ── State ─────────────────────────────────────────────────────────────────────
 const searchQuery = ref('');
@@ -1203,6 +1196,32 @@ const totalBugsFixed = computed(() =>
 const totalFeatures = computed(() =>
   releases.reduce((total, release) => total + (release.features?.length || 0), 0),
 );
+
+const firstReleaseLabel = computed(() => {
+  const dates = releases.map(r => r.date).filter(Boolean).map(d => new Date(d));
+  if (!dates.length) return 'o início';
+  const oldest = new Date(Math.min(...dates));
+  return new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' }).format(oldest);
+});
+
+// Faixa de topo no mesmo formato do Mapa e da Visão Executiva.
+const highlights = computed(() => [
+  { v: String(releases.length), l: 'Atualizações publicadas', s: `Desde ${firstReleaseLabel.value}` },
+  { v: String(totalFeatures.value), l: 'Novas funcionalidades', s: 'Entregas que criaram algo que não existia' },
+  { v: String(totalBugsFixed.value), l: 'Correções', s: 'Problemas resolvidos e publicados' },
+]);
+
+const hasFilters = computed(() =>
+  !!searchQuery.value.trim()
+  || filters.value.type !== 'all'
+  || filters.value.category !== 'all'
+  || filters.value.period !== 'all',
+);
+
+function clearFilters() {
+  searchQuery.value = '';
+  filters.value = { type: 'all', category: 'all', period: 'all' };
+}
 
 // ── Watchers ──────────────────────────────────────────────────────────────────
 watch(filters, () => { currentPage.value = 1; }, { deep: true });
