@@ -26,7 +26,7 @@ const SORTS = [
 const sorted = computed(() => {
     const arr = [...props.ads];
     if (sortBy.value === 'spend') arr.sort((a, b) => (Number(b.spend) || 0) - (Number(a.spend) || 0));
-    else if (sortBy.value === 'leads') arr.sort((a, b) => (Number(b.meta_leads_total) || 0) - (Number(a.meta_leads_total) || 0));
+    else if (sortBy.value === 'leads') arr.sort((a, b) => (Number(b.office_leads) || 0) - (Number(a.office_leads) || 0));
     else if (sortBy.value === 'cac') arr.sort((a, b) => (Number(a.cac) || Infinity) - (Number(b.cac) || Infinity));
     else if (sortBy.value === 'ctr') arr.sort((a, b) => (Number(b.ctr) || 0) - (Number(a.ctr) || 0));
     return arr;
@@ -135,7 +135,7 @@ function openLightbox(ad) {
           </div>
           <div class="text-right">
             <div class="text-[9px] uppercase tracking-wider font-mono text-ink-subtle">Leads</div>
-            <div class="text-xs font-semibold text-ink tabular-nums">{{ fmtInt(ad.meta_leads_total) }}</div>
+            <div class="text-xs font-semibold text-ink tabular-nums">{{ fmtInt(ad.office_leads) }}</div>
           </div>
           <div>
             <div class="text-[9px] uppercase tracking-wider font-mono text-ink-subtle">CAC</div>

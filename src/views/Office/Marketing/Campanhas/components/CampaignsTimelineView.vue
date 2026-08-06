@@ -176,12 +176,12 @@ const sorted = computed(() => {
         <!-- Barra Gantt (trimada à janela) -->
         <div :class="['absolute top-2 bottom-2 rounded border flex items-center overflow-hidden', barColor(c)]"
           :style="{ left: rangeOnWindow(c).left + '%', width: rangeOnWindow(c).width + '%' }"
-          :title="`${c.name}\n${fmtShortDate(c.start_time)} → ${c.stop_time ? fmtShortDate(c.stop_time) : 'em andamento'}\nGasto: ${fmtMoney(c.spend)} · Leads: ${c.meta_leads_total || 0}`">
+          :title="`${c.name}\n${fmtShortDate(c.start_time)} → ${c.stop_time ? fmtShortDate(c.stop_time) : 'em andamento'}\nGasto: ${fmtMoney(c.spend)} · Leads: ${c.office_leads || 0}`">
           <!-- Indicador clip à esquerda (começou antes da janela) -->
           <span v-if="rangeOnWindow(c).leftClipped" class="text-white/80 text-[9px] px-0.5">‹‹</span>
           <span class="flex-1 text-[10px] text-white font-medium truncate flex items-center gap-1 px-1">
             <span v-if="c.spend" class="opacity-90 font-mono shrink-0">{{ fmtMoney(c.spend) }}</span>
-            <span v-if="c.meta_leads_total" class="opacity-80 shrink-0">· {{ c.meta_leads_total }}L</span>
+            <span v-if="c.office_leads" class="opacity-80 shrink-0">· {{ c.office_leads }}L</span>
           </span>
           <!-- Indicador clip à direita (continua após a janela) -->
           <span v-if="rangeOnWindow(c).rightClipped" class="text-white/80 text-[9px] px-0.5">››</span>

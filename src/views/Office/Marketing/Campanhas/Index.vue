@@ -266,7 +266,7 @@ const campaignRows = computed(() => {
             rows.push({
                 ...c,
                 spend: 0, impressions: 0, clicks: 0,
-                meta_leads_total: 0, meta_leads_form: 0, meta_leads_pixel: 0,
+                office_leads: 0, office_leads_delivered: 0,
                 cac: null, ctr: null, cpm: null, cpc: null,
                 no_delivery: true,
             });
@@ -290,7 +290,7 @@ const filtered = computed(() => {
     if (sortBy === 'spend') {
         arr.sort((a, b) => (Number(b.spend) || 0) - (Number(a.spend) || 0));
     } else if (sortBy === 'leads') {
-        arr.sort((a, b) => (Number(b.meta_leads_total) || 0) - (Number(a.meta_leads_total) || 0));
+        arr.sort((a, b) => (Number(b.office_leads) || 0) - (Number(a.office_leads) || 0));
     } else if (sortBy === 'cac') {
         arr.sort((a, b) => (Number(a.cac) || Infinity) - (Number(b.cac) || Infinity));
     } else if (sortBy === 'start') {
@@ -319,7 +319,7 @@ const accountRows = computed(() => {
             currency: r.currency || cache.currency || 'BRL',
         };
         cur.spend += Number(r.spend) || 0;
-        cur.leads += Number(r.meta_leads_total) || 0;
+        cur.leads += Number(r.office_leads) || 0;
         cur.campaigns += 1;
         const st = String(r.effective_status || r.status || cache.effective_status || cache.status || '').toUpperCase();
         if (st.includes('ACTIVE')) cur.active += 1;
@@ -849,19 +849,19 @@ const levelTabs = computed(() => [
                   </td>
 
                   <td class="px-3 py-2.5 text-right whitespace-nowrap">
-                    <div class="text-sm font-semibold text-ink leading-tight" title="Leads contados pela Meta no período">
-                      {{ fmtInt(c.meta_leads_total || 0) }}
-                      <i class="fab fa-meta text-[9px] text-ink-subtle ml-0.5"></i>
+                    <div class="text-sm font-semibold text-ink leading-tight"
+                      title="Leads da nossa base no período (com nome, telefone e e-mail). Spam fora.">
+                      {{ fmtInt(c.office_leads || 0) }}
                     </div>
-                    <div v-if="(c.meta_leads_form || 0) + (c.meta_leads_pixel || 0) > 0"
+                    <div v-if="(c.office_leads_delivered || 0) > 0"
                       class="text-[10px] text-ink-subtle tabular-nums"
-                      title="Formulário Meta (chega na Captação) × pixel (converte no site/LP — não passa pelo webhook)">
-                      {{ fmtInt(c.meta_leads_form || 0) }} form · {{ fmtInt(c.meta_leads_pixel || 0) }} pixel
+                      title="Leads já entregues ao CV">
+                      {{ fmtInt(c.office_leads_delivered) }} no CV
                     </div>
                   </td>
 
                   <td class="px-3 py-2.5 text-right whitespace-nowrap text-sm">
-                    <span v-if="c.cac != null" class="font-medium text-ink" title="CAC = investido ÷ leads no período">
+                    <span v-if="c.cac != null" class="font-medium text-ink" title="CAC = investido ÷ leads da nossa base no período">
                       {{ fmtMoney(c.cac, c.currency) }}
                     </span>
                     <span v-else class="text-ink-subtle italic text-xs">—</span>
