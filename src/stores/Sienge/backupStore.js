@@ -30,13 +30,21 @@ export const useSiengeBackupStore = defineStore('siengeBackup', {
     actions: {
         setError(message) { this.error = message },
 
-        async fetchBackups({ limit = 30, withSpinner = false } = {}) {
+        /**
+         * Busca as execuções de um período (padrão da tela: mês corrente).
+         * `from`/`to` são instantes ISO no fuso do usuário; sem eles o backend
+         * cai no limite padrão de 30 registros.
+         */
+        async fetchBackups({ from = null, to = null, withSpinner = false } = {}) {
             const carregamento = useCarregamentoStore()
             this.error = null
             this.loading = true
             try {
                 if (withSpinner) carregamento.iniciarCarregamento()
-                const res = await fetch(`${API_URL}/sienge/backups?limit=${limit}`, {
+                const qs = new URLSearchParams()
+                if (from) qs.set('from', from)
+                if (to) qs.set('to', to)
+                const res = await fetch(`${API_URL}/sienge/backups?${qs.toString()}`, {
                     headers: authHeaders(),
                 })
                 if (!res.ok) throw new Error('Erro ao buscar logs de backup')
