@@ -1,5 +1,6 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, nextTick } from 'vue';
+import { useToast } from 'vue-toastification';
 import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 import API_URL from '@/config/apiUrl';
 
@@ -14,7 +15,9 @@ import Modal from '@/components/UI/Modal.vue';
 import Favorite from '@/components/config/Favorite.vue';
 
 import OrganogramFlow from './components/OrganogramFlow.vue';
+import { exportOrganogram } from './organogramExport';
 
+const toast = useToast();
 const store = useAuthStore();
 const rootData = ref(null);
 const allUsersMap = ref({});
@@ -273,6 +276,55 @@ const filteredRoot = computed(() => {
 const visibleChildren = computed(() => filteredRoot.value?.children || []);
 const hasResults = computed(() => visibleChildren.value.length > 0);
 
+// ── Exportar (PNG / JPG / PDF) ─────────────────────
+// O arquivo é REDESENHADO em vetor a partir dos nós do diagrama (ver
+// organogramExport.js), não é print da tela: sai a árvore inteira, em alta
+// resolução, sem zoom/pan, sem os controles e com assinatura no rodapé.
+const flowRef = ref(null);
+const exportOpen = ref(false);
+const exportingFormat = ref('');
+
+const exportOptions = [
+  { id: 'png', label: 'PNG', icon: 'fas fa-file-image', hint: 'Melhor para colar em slide, e-mail ou documento.' },
+  { id: 'jpg', label: 'JPG', icon: 'fas fa-image', hint: 'Mesma imagem, arquivo mais leve.' },
+  { id: 'pdf', label: 'PDF', icon: 'fas fa-file-pdf', hint: 'Uma página só, no tamanho do organograma.' },
+];
+
+async function runExport(format) {
+  if (exportingFormat.value) return;
+  const flow = flowRef.value;
+  if (!flow?.getExportGraph) {
+    toast.error('Organograma ainda não está pronto para exportar.');
+    return;
+  }
+  exportingFormat.value = format;
+  try {
+    await nextTick();
+    const { nodes, edges } = flow.getExportGraph();
+    if (!nodes.length) throw new Error('Nada para exportar.');
+
+    await exportOrganogram({
+      nodes,
+      edges,
+      format,
+      meta: {
+        title: 'Organograma',
+        subtitle: `Menin Engenharia - ${nodes.filter(n => n.type !== 'company').length} pessoa(s)`,
+        user: store.user?.username || localStorage.getItem('username') || 'Usuário',
+        system: 'Menin Office',
+        note: search.value ? `Filtro aplicado na busca: "${search.value}"` : '',
+      },
+    });
+    exportOpen.value = false;
+    toast.success(`Organograma exportado em ${format.toUpperCase()}.`);
+  } catch (e) {
+    console.error('Erro ao exportar organograma:', e);
+    toast.error(e?.message || 'Não foi possível exportar o organograma.');
+  } finally {
+    exportingFormat.value = '';
+  }
+}
+
 // ── Selection ──────────────────────────────────────
 function selectPerson(personData) {
   const full = allUsersMap.value[personData.id];
@@ -325,6 +377,10 @@ onMounted(async () => {
             <i class="fas fa-users text-[9px]"></i>
             {{ totalVisible }} pessoa(s)
           </Badge>
+          <Button size="sm" variant="secondary" icon="fas fa-file-export"
+            :disabled="!hasResults" @click.stop="exportOpen = true">
+            <span class="hidden sm:inline">Exportar</span>
+          </Button>
           <Button v-if="isAdmin" size="sm"
             :variant="editMode ? 'primary' : 'secondary'"
             :icon="editMode ? 'fas fa-check' : 'fas fa-pen-ruler'"
@@ -358,6 +414,7 @@ onMounted(async () => {
 
         <!-- Diagrama -->
         <OrganogramFlow v-else-if="filteredRoot"
+          ref="flowRef"
           :root-node="filteredRoot"
           :selected-id="selectedPerson?.id"
           :edit-mode="editMode"
@@ -376,6 +433,33 @@ onMounted(async () => {
 
       </Surface>
     </div>
+
+    <!-- Modal de exportação -->
+    <Modal :open="exportOpen" size="sm" title="Exportar organograma"
+      subtitle="Imagem em alta resolução, só do organograma"
+      @close="exportOpen = false">
+      <div class="space-y-3">
+        <button v-for="opt in exportOptions" :key="opt.id"
+          class="org-export-opt" :disabled="!!exportingFormat"
+          @click.stop="runExport(opt.id)">
+          <span class="org-export-icon">
+            <i :class="exportingFormat === opt.id ? 'fas fa-circle-notch fa-spin' : opt.icon"></i>
+          </span>
+          <span class="min-w-0 flex-1 text-left">
+            <span class="block text-sm font-medium text-ink">{{ opt.label }}</span>
+            <span class="block text-[11px] text-ink-subtle leading-snug">{{ opt.hint }}</span>
+          </span>
+          <i class="fas fa-download text-[11px] text-ink-subtle"></i>
+        </button>
+
+        <ul class="text-[11px] text-ink-subtle leading-relaxed space-y-1 pt-1 border-t border-line/60">
+          <li><i class="fas fa-check text-accent mr-1.5"></i>Sai a árvore inteira, sem depender do zoom ou do tamanho da tela.</li>
+          <li><i class="fas fa-check text-accent mr-1.5"></i>Fundo claro e resolução 3x - dá para ampliar sem borrar.</li>
+          <li><i class="fas fa-check text-accent mr-1.5"></i>Rodapé com quem gerou, data/hora e o sistema.</li>
+          <li v-if="search"><i class="fas fa-filter text-amber-500 mr-1.5"></i>A busca atual está filtrando o organograma e vai junto no arquivo.</li>
+        </ul>
+      </div>
+    </Modal>
 
     <!-- Modal de informações / edição da pessoa (centralizado, padrão do sistema) -->
     <Modal :open="!!selectedPerson" size="sm" @close="closePerson">
@@ -482,6 +566,32 @@ onMounted(async () => {
 </template>
 
 <style scoped>
+/* ── Opções de exportação ── */
+.org-export-opt {
+  width: 100%;
+  display: flex; align-items: center; gap: 0.75rem;
+  padding: 0.625rem 0.75rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgb(var(--line));
+  background: rgb(var(--surface-sunken));
+  transition: all 0.15s ease;
+}
+.org-export-opt:hover:not(:disabled) {
+  border-color: rgb(var(--accent) / 0.5);
+  box-shadow: 0 0 0 3px rgb(var(--accent) / 0.08);
+}
+.org-export-opt:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.org-export-icon {
+  height: 34px; width: 34px;
+  display: grid; place-items: center;
+  border-radius: 0.625rem;
+  background: rgb(var(--accent) / 0.1);
+  color: rgb(var(--accent));
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
 /* ── Controles do modo edição (painel) ── */
 .org-edit-select {
   margin-top: 0.25rem;
