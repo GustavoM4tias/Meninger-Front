@@ -87,6 +87,7 @@ onMounted(loadData);
             :tips="[
               'O número verde com + são projeções de reservas/repasses ainda não contratados, somadas à parte.',
               'O marcador âmbar são vendas distratadas depois — elas continuam contando no período, porque na época foram venda.',
+              'O marcador azul \'Ajustada\' são vendas com ajuste contábil: alguém corrigiu a data da instituição financeira ou uma série. O valor mostrado já é o corrigido; passe o mouse no selo para ver o que mudou e por quê.',
               'Exportar gera uma planilha com exatamente o que está na tela.',
             ]"
           />

@@ -20,7 +20,15 @@ import { useStageCommissionRulesStore } from '@/stores/Comercial/Contracts/stage
 import { useEnterpriseValueRulesStore } from '@/stores/Comercial/Contracts/enterpriseValueRulesStore';
 import { useEnterpriseErpLinksStore } from '@/stores/Comercial/Contracts/enterpriseErpLinksStore';
 import { useTrSatelliteStore } from '@/stores/Comercial/Contracts/trSatelliteStore';
+import {
+  useContractAdjustmentsStore,
+  ADJ_TYPE_LABEL,
+  ADJ_TYPE_ICON,
+  ADJ_STATUS_LABEL,
+  ADJ_STATUS_VARIANT
+} from '@/stores/Comercial/Contracts/contractAdjustmentsStore';
 
+import ContractAdjustmentModal from './ContractAdjustmentModal.vue';
 import Modal from '@/components/UI/Modal.vue';
 import Surface from '@/components/UI/Surface.vue';
 import Button from '@/components/UI/Button.vue';
@@ -42,6 +50,7 @@ const commissionRulesStore = useStageCommissionRulesStore();
 const valueRulesStore = useEnterpriseValueRulesStore();
 const erpLinksStore = useEnterpriseErpLinksStore();
 const trSatStore = useTrSatelliteStore();
+const adjustmentsStore = useContractAdjustmentsStore();
 
 const activeTab = ref('links');
 const tabOptions = [
@@ -51,6 +60,7 @@ const tabOptions = [
   { value: 'value',      label: 'Composição de VGV',   icon: 'fas fa-scale-balanced' },
   { value: 'commission', label: 'Comissão',            icon: 'fas fa-percent' },
   { value: 'trsat',      label: 'Satélite de TR',      icon: 'fas fa-link' },
+  { value: 'adjust',     label: 'Ajustes contábeis',   icon: 'fas fa-wand-magic-sparkles' },
 ];
 
 // ── Opções de empreendimento (padrão em TODAS as abas) ─────────────────────
@@ -562,8 +572,90 @@ watch(() => props.open, async (isOpen) => {
     erpLinksStore.fetchAll(),
     erpLinksStore.fetchPending(),
     trSatStore.fetchAll(),
+    adjustmentsStore.fetchAll(),
   ]);
 });
+
+// ── Ajustes contábeis ───────────────────────────────────────────────────────
+// Máscara sobre o dado do contrato. Aqui é a mesa de auditoria: lista tudo que
+// está mascarado hoje, permite editar/remover e mostra os ajustes ÓRFÃOS (a
+// série sumiu do contrato num sync e a correção parou de valer).
+const adjustModalOpen = ref(false);
+const editingAdjustment = ref(null);
+const adjustFeedback = ref('');
+
+const openNewAdjustment = () => {
+  editingAdjustment.value = null;
+  adjustFeedback.value = '';
+  adjustModalOpen.value = true;
+};
+
+const openEditAdjustment = (item) => {
+  editingAdjustment.value = item;
+  adjustFeedback.value = '';
+  adjustModalOpen.value = true;
+};
+
+const handleAdjustmentSaved = async ({ divergences }) => {
+  await adjustmentsStore.fetchAll();
+  // O ajuste pode ter movido a venda de mês: o dashboard precisa reler.
+  await contractsStore.refreshAfterAdjustment();
+  adjustFeedback.value = divergences > 0
+    ? `Ajuste salvo. Mexeu em mês consolidado: ${divergences} divergência(s) registrada(s).`
+    : 'Ajuste salvo.';
+};
+
+const handleAdjustmentCheck = async () => {
+  adjustFeedback.value = '';
+  const r = await adjustmentsStore.runCheck();
+  adjustFeedback.value = `${r.checked} ajuste(s) conferido(s): ${r.needsReview} a revisar, `
+    + `${r.autoResolved} resolvido(s) sozinho(s).`;
+};
+
+const handleAdjustmentReview = async (item) => {
+  await adjustmentsStore.reviewItem(item.id);
+  adjustFeedback.value = 'Ajuste mantido. A origem atual virou a nova referência.';
+};
+
+const handleAdjustmentRemove = async (item) => {
+  const ok = window.confirm(
+    `Remover o ajuste "${ADJ_TYPE_LABEL[item.type] || item.type}" do contrato #${item.contract_id}?\n\n`
+    + 'O dado volta a ser o que veio do Sienge.'
+  );
+  if (!ok) return;
+  await adjustmentsStore.removeItem(item.id);
+  await contractsStore.refreshAfterAdjustment();
+  adjustFeedback.value = adjustmentsStore.lastDivergences > 0
+    ? `Ajuste removido. ${adjustmentsStore.lastDivergences} divergência(s) registrada(s) em mês consolidado.`
+    : 'Ajuste removido.';
+};
+
+const formatAdjDate = (d) => {
+  if (!d) return '—';
+  const s = String(d).slice(0, 10);
+  const [y, m, day] = s.split('-');
+  return y && m && day ? `${day}/${m}/${y}` : s;
+};
+
+const formatAdjMoney = (v) =>
+  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(v) || 0);
+
+// Resumo em uma linha do que o ajuste faz, para a lista não exigir abrir o item.
+const adjustmentSummary = (item) => {
+  const p = item.payload || {};
+  if (item.type === 'FI_DATE') {
+    return `${formatAdjDate(item.original?.financial_institution_date)} → ${formatAdjDate(p.financial_institution_date)}`;
+  }
+  if (item.type === 'SERIE_ADD') {
+    return `${p.condition_type_id || '—'} · ${formatAdjMoney(p.total_value)}`;
+  }
+  const de = item.original?.total_value;
+  const para = p.total_value;
+  if (para != null && de != null) {
+    return `${item.target_code || '—'} · ${formatAdjMoney(de)} → ${formatAdjMoney(para)}`;
+  }
+  return `${item.target_code || '—'} · campos alterados`;
+};
 
 const closeModal = () => emit('close');
 </script>
@@ -1371,6 +1463,125 @@ const closeModal = () => emit('close');
             </Surface>
           </div>
         </div>
+
+        <!-- ═══════════════ TAB: AJUSTES CONTÁBEIS ═══════════════ -->
+        <div v-if="activeTab === 'adjust'" class="p-4 sm:p-5 space-y-4">
+
+          <div v-if="adjustmentsStore.error"
+            class="rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2.5 text-xs text-red-700 dark:text-red-300 flex items-center gap-2">
+            <i class="fas fa-circle-exclamation"></i>{{ adjustmentsStore.error }}
+          </div>
+
+          <div v-if="adjustFeedback"
+            class="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-2.5 text-xs text-emerald-700 dark:text-emerald-300 flex items-center gap-2">
+            <i class="fas fa-circle-check"></i>{{ adjustFeedback }}
+          </div>
+
+          <div class="rounded-xl border border-line bg-surface-sunken px-3 py-2.5 text-[11px] text-ink-muted">
+            Corrige, só para o relatório, o dado que veio errado do Sienge: data da instituição
+            financeira, série adicionada à mão ou série editada. Nada é gravado no Sienge - a
+            correção é uma máscara aplicada na leitura, e toda venda ajustada mostra o selo
+            <span class="text-sky-600 dark:text-sky-400 font-medium">Ajustada</span> na listagem.
+            Ajuste em mês já consolidado registra divergência na hora.
+            <br>
+            A máscara sobrevive ao sync e ao backup: fica em tabela própria e só sai se um admin
+            remover. Todo dia às 03:40 o sistema confere se o contrato mudou no Sienge depois da
+            correção - se mudou, vira <strong>Conferir</strong> e você é notificado; se o Sienge
+            passou a trazer exatamente o valor ajustado, o ajuste se resolve sozinho, sem aviso.
+          </div>
+
+          <div v-if="adjustmentsStore.needsReview.length"
+            class="rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2.5 text-[11px] text-amber-700 dark:text-amber-300">
+            <i class="fas fa-triangle-exclamation mr-1"></i>
+            {{ adjustmentsStore.needsReview.length }} ajuste(s) para conferir: o dado mudou no
+            Sienge depois da correção. A correção continua valendo no relatório - decida manter
+            ("Já conferi"), editar ou remover.
+          </div>
+
+          <Surface variant="raised" padding="md" class="space-y-3">
+            <div class="flex items-center justify-between gap-2 flex-wrap">
+              <div class="min-w-0">
+                <h3 class="text-sm font-semibold text-ink">Ajustes ativos</h3>
+                <p class="text-[11px] text-ink-muted">
+                  Valem para todos os usuários do dashboard, do fechamento e da Eme.
+                </p>
+              </div>
+              <div class="flex items-center gap-2">
+                <Badge variant="accent" size="sm">
+                  <span class="font-mono tabular-nums">{{ adjustmentsStore.items.length }}</span>
+                </Badge>
+                <Button variant="outline" size="sm"
+                  :icon="adjustmentsStore.saving ? 'fas fa-circle-notch fa-spin' : 'fas fa-rotate-right'"
+                  :disabled="adjustmentsStore.saving" @click="handleAdjustmentCheck">
+                  Conferir agora
+                </Button>
+                <Button size="sm" icon="fas fa-plus" @click="openNewAdjustment">Novo ajuste</Button>
+              </div>
+            </div>
+
+            <div class="rounded-lg border border-line bg-surface-sunken max-h-80 overflow-y-auto">
+              <div v-if="adjustmentsStore.loading" class="py-8 flex justify-center"><Spinner size="sm" /></div>
+
+              <EmptyState v-else-if="!adjustmentsStore.items.length"
+                size="sm" icon="fas fa-wand-magic-sparkles"
+                title="Nenhum ajuste"
+                description="Todos os contratos estão exatamente como vieram do Sienge." />
+
+              <ul v-else class="divide-y divide-line">
+                <li v-for="item in adjustmentsStore.items" :key="item.id"
+                  class="px-3 py-2.5 flex items-start justify-between gap-2 hover:bg-surface-hover transition-colors">
+                  <div class="min-w-0">
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                      <i :class="ADJ_TYPE_ICON[item.type]" class="text-[10px] text-sky-500"></i>
+                      <span class="text-xs font-medium text-ink">{{ ADJ_TYPE_LABEL[item.type] || item.type }}</span>
+                      <Badge :variant="ADJ_STATUS_VARIANT[item.status] || 'neutral'" size="sm"
+                        v-tippy="item.status === 'auto_resolved'
+                          ? 'O Sienge passou a trazer esse valor; a máscara saiu de cena sozinha.'
+                          : (item.status === 'needs_review'
+                            ? 'A origem mudou. A máscara continua valendo até você decidir.'
+                            : 'Origem igual à do momento do ajuste.')">
+                        {{ ADJ_STATUS_LABEL[item.status] || item.status }}
+                      </Badge>
+                    </div>
+                    <p class="text-[11px] text-ink font-mono mt-0.5">{{ adjustmentSummary(item) }}</p>
+                    <p class="text-[10px] text-ink-subtle font-mono mt-0.5 truncate">
+                      #{{ item.contract_id }} · {{ item.customer_name || '—' }} ·
+                      {{ item.unit_name || '—' }} · {{ item.enterprise_name || '—' }}
+                    </p>
+                    <p class="text-[10px] text-ink-muted mt-0.5 truncate">
+                      {{ item.reason }}
+                      <span class="text-ink-subtle">— {{ item.created_by_name || 'sem autor' }}</span>
+                    </p>
+                    <p v-if="item.status_message"
+                      class="text-[10px] mt-0.5"
+                      :class="item.status === 'needs_review'
+                        ? 'text-amber-600 dark:text-amber-400'
+                        : 'text-ink-subtle'">
+                      {{ item.status_message }}
+                    </p>
+                    <p v-if="item.reviewed_by_name" class="text-[10px] text-ink-subtle mt-0.5">
+                      Conferido por {{ item.reviewed_by_name }}
+                    </p>
+                  </div>
+                  <div class="flex items-center gap-0.5 shrink-0">
+                    <Button v-if="item.status === 'needs_review'" variant="ghost" size="sm"
+                      icon="fas fa-check" class="!text-emerald-600 hover:!bg-emerald-500/10"
+                      v-tippy="'Manter o ajuste como está e adotar a origem atual como referência'"
+                      @click="handleAdjustmentReview(item)">
+                      <span class="hidden sm:inline">Já conferi</span>
+                    </Button>
+                    <Button variant="ghost" size="sm" icon="fas fa-pen" @click="openEditAdjustment(item)">
+                      <span class="hidden sm:inline">Editar</span>
+                    </Button>
+                    <Button variant="ghost" size="sm" icon="fas fa-trash"
+                      class="!text-red-500 hover:!bg-red-500/10"
+                      @click="handleAdjustmentRemove(item)" />
+                  </div>
+                </li>
+              </ul>
+            </div>
+          </Surface>
+        </div>
       </div>
     </div>
 
@@ -1395,6 +1606,10 @@ const closeModal = () => emit('close');
         Match por <code class="font-mono">customer_id + unit_name</code>.<br>
         Satélites sem partner correspondente são descartados do relatório.
       </p>
+      <p v-else-if="activeTab === 'adjust'" class="text-[10px] text-ink-subtle leading-tight mr-auto hidden sm:block">
+        O Sienge não é alterado: a correção é aplicada na leitura, para todo mundo.<br>
+        Conferência automática às 03:40, depois do sync de contratos.
+      </p>
       <p v-else class="text-[10px] text-ink-subtle leading-tight mr-auto hidden sm:block">
         Alterações são aplicadas imediatamente no dashboard.<br>
         Os ocultos continuam sendo consultados internamente.
@@ -1410,4 +1625,11 @@ const closeModal = () => emit('close');
       </Button>
     </template>
   </Modal>
+
+  <!-- Formulário do ajuste contábil (o mesmo usado no detalhe da venda) -->
+  <ContractAdjustmentModal
+    :open="adjustModalOpen"
+    :editing="editingAdjustment"
+    @close="adjustModalOpen = false"
+    @saved="handleAdjustmentSaved" />
 </template>

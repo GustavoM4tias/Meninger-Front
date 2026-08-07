@@ -83,6 +83,26 @@ function saleIsDistrato(sale) {
     return real.every((c) => String(c.situation ?? '').trim().toLowerCase() === 'cancelado')
 }
 
+// ─── Ajuste contábil ─────────────────────────────────────────────────────────
+// Máscara aplicada NO BACKEND sobre o dado do contrato (data da instituição
+// financeira, série adicionada, série editada). Aqui o front só LÊ o resumo que
+// veio junto com o contrato para pintar o selo — mesma ideia do distrato: o
+// número já chega corrigido, o selo é a explicação visual.
+function saleAdjustments(sale) {
+    const out = []
+    for (const c of sale?.contracts || []) {
+        if (c?._projection) continue
+        for (const a of Array.isArray(c.adjustments) ? c.adjustments : []) {
+            out.push({ ...a, contract_id: c.contract_id })
+        }
+    }
+    return out
+}
+
+function saleIsAdjusted(sale) {
+    return saleAdjustments(sale).length > 0
+}
+
 // Regra de composição de VGV do contrato, vinda do banco.
 // Retorna { gross, net } com um de: 'FULL' | 'LAND_VALUE_ONLY' | 'TR_ONLY'.
 // Projeções nunca têm override (o valor já vem pronto do CV).
@@ -311,6 +331,35 @@ export const useContractsStore = defineStore('contracts', {
             }
         },
         distratoCountForRow() { return (row) => this.distratoMetaForRow(row).count },
+
+        // ── Ajuste contábil (selo, igual ao distrato) ──────────────────────
+        saleIsAdjusted: () => (sale) => saleIsAdjusted(sale),
+        saleAdjustments: () => (sale) => saleAdjustments(sale),
+
+        // Quantas vendas da linha (empreendimento ou empresa) têm ajuste ativo.
+        // INFORMATIVO: o valor exibido JÁ vem ajustado do backend, o selo só
+        // conta quantas vendas passaram por correção contábil.
+        adjustmentCountForRow() {
+            return (row) => {
+                if (!row || row.onlyProjectionRow) return 0
+                const rowEntId = row.enterprise_id != null ? Number(row.enterprise_id) : null
+                const rowCompanyId = row.company_id != null ? Number(row.company_id) : null
+                let count = 0
+                for (const s of this.uniqueSales) {
+                    if (!saleIsAdjusted(s)) continue
+                    const contracts = Array.isArray(s?.contracts) ? s.contracts : []
+                    if (!contracts.length) continue
+                    let belongs = false
+                    if (rowEntId != null) {
+                        belongs = contracts.some((c) => Number(c.enterprise_id) === rowEntId)
+                    } else if (rowCompanyId != null) {
+                        belongs = contracts.some((c) => Number(c.company_id) === rowCompanyId)
+                    }
+                    if (belongs) count += 1
+                }
+                return count
+            }
+        },
         distratoValueForRow() {
             return (row) => {
                 const m = this.distratoMetaForRow(row)
@@ -978,7 +1027,14 @@ export const useContractsStore = defineStore('contracts', {
                 indexer_name: pc.indexer_name ?? pc.indexerName ?? null,
                 bearer_name: pc.bearer_name ?? pc.bearerName ?? null,
                 interest_type: pc.interest_type ?? pc.interestType ?? null,
-                installments_number: toNumber(pc.installments_number ?? pc.installmentsNumber)
+                installments_number: toNumber(pc.installments_number ?? pc.installmentsNumber),
+                // Marcas da máscara de ajuste contábil, postas pelo backend.
+                // Sem repassá-las aqui a série adicionada/editada chegaria na
+                // tela indistinguível de uma que veio do Sienge.
+                _adjusted: pc._adjusted ?? null,
+                _adjustment_id: pc._adjustment_id ?? null,
+                _adjustment_reason: pc._adjustment_reason ?? null,
+                _adjustment_before: pc._adjustment_before ?? null
             }
         },
 
@@ -1004,7 +1060,11 @@ export const useContractsStore = defineStore('contracts', {
                 company_name: c.company_name ?? c.companyName ?? null,
                 enterprise_id: toNumber(c.enterprise_id ?? c.enterpriseId),
                 enterprise_name: c.enterprise_name ?? c.enterpriseName ?? '',
+                // Já vem MASCARADA do backend quando há ajuste contábil de data;
+                // a original fica ao lado só para o "de X para Y" do selo.
                 financial_institution_date: c.financial_institution_date ?? c.financialInstitutionDate ?? null,
+                original_financial_institution_date: c.original_financial_institution_date ?? null,
+                adjustments: Array.isArray(c.adjustments) ? c.adjustments : [],
                 situation: c.situation ?? null,
                 cancellation_date: c.cancellation_date ?? c.cancellationDate ?? null,
                 land_value: toNumber(c.land_value ?? c.landValue),
@@ -1271,6 +1331,15 @@ export const useContractsStore = defineStore('contracts', {
         clearContractsCache() {
             this._contractsCache.clear()
             this._lastDashboardKey = null
+        },
+
+        // Um ajuste contábil reescreve data e séries do contrato no servidor.
+        // Sem zerar os dois caches a tela continuaria mostrando o dado antigo
+        // (e o dashboard nem perceberia que a venda mudou de mês).
+        async refreshAfterAdjustment({ view = 'dashboard', enterpriseId = null, enterpriseIds = null } = {}) {
+            this.clearContractsCache()
+            this.clearDetailCache()
+            await this.fetchContracts({ view, enterpriseId, enterpriseIds, force: true })
         },
 
         restoreDashboardFromCache() {
