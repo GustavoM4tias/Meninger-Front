@@ -41,8 +41,13 @@ provide('reportMeta', computed(() => props.meta || {}))
 // tratam null como "não clicável")
 provide('reportDrill', props.interactive ? (payload) => emit('drill', payload) : null)
 
-// Tipos que sabem abrir drill/detalhe quando o relatório é interativo
-const CLICKABLE = new Set(['chart-bar', 'chart-line', 'chart-donut', 'chart-funnel', 'ranking', 'table'])
+// Tipos que sabem abrir drill/detalhe quando o relatório é interativo.
+// KPI/número grande entram aqui porque são o dado que o leitor mais quer abrir
+// — antes eram os únicos números do relatório sem nada por trás do clique.
+const CLICKABLE = new Set([
+  'chart-bar', 'chart-line', 'chart-donut', 'chart-funnel',
+  'ranking', 'table', 'stat-row', 'big-number',
+])
 
 const isDark = typeof document !== 'undefined' && document.documentElement.classList.contains('dark')
 const containerStyle = computed(() => ({

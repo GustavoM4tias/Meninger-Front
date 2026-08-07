@@ -1,8 +1,15 @@
 <script setup>
-import { computed, inject } from 'vue'
+// Tabelas de listagem chegam com até 100 linhas e viravam uma parede de rolagem
+// no meio do relatório. Só as primeiras aparecem; o resto continua NO DOM,
+// escondido por classe, para o "Mostrar todas" ser instantâneo e — sobretudo —
+// para a exportação (PNG/PDF/HTML) continuar levando a tabela inteira: o
+// exportReport remove a classe no clone.
+import { computed, inject, ref } from 'vue'
 import { formatValue } from '../format.js'
 import { inlineMd } from '../mdInline.js'
 import BlockEmpty from './BlockEmpty.vue'
+
+const LINHAS_VISIVEIS = 12
 
 const props = defineProps({
   title: { type: String, default: '' },
@@ -32,6 +39,10 @@ function abrirLinha(row) {
     title: props.title || 'Registro',
   })
 }
+
+const expandido = ref(false)
+const excedente = computed(() => Math.max(0, props.rows.length - LINHAS_VISIVEIS))
+const oculta = (i) => !expandido.value && i >= LINHAS_VISIVEIS
 
 const alignClass = (c) => c.align === 'right' ? 'text-right' : c.align === 'center' ? 'text-center' : 'text-left'
 const numericDefault = computed(() =>
@@ -68,7 +79,7 @@ const numericDefault = computed(() =>
           <tr
             v-for="(r, ri) in rows" :key="ri"
             class="hover:bg-surface-sunken/40 transition-colors"
-            :class="clickable ? 'cursor-pointer' : ''"
+            :class="[clickable ? 'cursor-pointer' : '', oculta(ri) ? 'rp-row-collapsed' : '']"
             :title="clickable ? 'Ver detalhes do registro' : undefined"
             @click="abrirLinha(r)"
           >
@@ -90,6 +101,19 @@ const numericDefault = computed(() =>
         </tfoot>
       </table>
     </div>
+    <!-- Expandir/recolher: fica fora do arquivo exportado (a exportação já sai
+         com todas as linhas). -->
+    <div v-if="excedente" data-export-exclude class="px-4 py-2 border-t border-line/70">
+      <button
+        type="button"
+        class="w-full sm:w-auto min-h-10 px-3 rounded-lg text-xs font-medium text-accent hover:bg-surface-sunken/60 transition-colors inline-flex items-center justify-center gap-1.5"
+        @click="expandido = !expandido"
+      >
+        <i class="fas text-[10px]" :class="expandido ? 'fa-chevron-up' : 'fa-chevron-down'" />
+        {{ expandido ? `Mostrar apenas ${LINHAS_VISIVEIS}` : `Mostrar todas as ${rows.length} linhas` }}
+      </button>
+    </div>
+
     <div v-if="captionHtml || footnote" class="px-4 py-2.5 text-xs text-ink-subtle border-t border-line/70 space-y-1">
       <p v-if="captionHtml" v-html="captionHtml" />
       <p v-if="footnote" class="flex items-center gap-1.5 text-ink-subtle">
@@ -98,3 +122,9 @@ const numericDefault = computed(() =>
     </div>
   </figure>
 </template>
+
+<!-- Não escopado de propósito: o clone da exportação precisa da mesma regra
+     enquanto remove a classe linha a linha. -->
+<style>
+.rp-row-collapsed { display: none; }
+</style>

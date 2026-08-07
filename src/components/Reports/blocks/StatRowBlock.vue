@@ -1,12 +1,23 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, inject } from 'vue'
 import { formatValue, tone } from '../format.js'
 import BlockEmpty from './BlockEmpty.vue'
 
 const props = defineProps({
   // stats: [{ label, value, format?, tone?, delta?, deltaTone?, hint? }]
   stats: { type: Array, default: () => [] },
+  // Relatório interativo: clicar no card abre os registros da consulta que
+  // gerou o indicador. Sem categoria para filtrar, então o drill devolve o
+  // universo do dataset (o modal deixa isso explícito).
+  blockId: { type: String, default: null },
+  clickable: { type: Boolean, default: false },
 })
+
+const reportDrill = inject('reportDrill', null)
+function abrir() {
+  if (!props.clickable || !reportDrill) return
+  reportDrill({ kind: 'category', blockId: props.blockId, label: '' })
+}
 
 // O `tone` do stat vinha sendo ignorado: a Eme marcava um KPI como success e
 // outro como danger e os cards saíam idênticos, sem cor nenhuma. Agora o tom
@@ -33,6 +44,13 @@ const cols = computed(() => {
     <div
       v-for="(s, i) in stats" :key="i"
       class="relative rounded-xl border border-line bg-surface-raised shadow-soft px-4 py-3.5 overflow-hidden"
+      :class="clickable ? 'cursor-pointer transition-colors hover:border-accent/50 hover:bg-surface-sunken/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40' : ''"
+      :role="clickable ? 'button' : undefined"
+      :tabindex="clickable ? 0 : undefined"
+      :title="clickable ? 'Ver os registros por trás deste indicador' : undefined"
+      @click="abrir"
+      @keydown.enter.prevent="abrir"
+      @keydown.space.prevent="abrir"
     >
       <!-- Filete do tom no topo: sinaliza o estado sem tingir o card inteiro -->
       <span
@@ -62,6 +80,10 @@ const cols = computed(() => {
         <span v-if="s.delta" :class="tone(s.deltaTone || 'neutral').text" class="font-medium tabular-nums">{{ s.delta }}</span>
         <span v-if="s.hint" class="text-ink-subtle truncate">{{ s.hint }}</span>
       </p>
+
+      <span v-if="clickable" aria-hidden="true" class="absolute right-2.5 bottom-2 text-[10px] text-ink-subtle">
+        <i class="fas fa-up-right-from-square" />
+      </span>
     </div>
   </div>
 </template>

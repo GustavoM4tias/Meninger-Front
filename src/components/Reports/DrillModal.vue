@@ -72,8 +72,14 @@ function fechar() {
           {{ data.total }} registro{{ data.total === 1 ? '' : 's' }}
         </Badge>
       </div>
-      <p v-if="data?.datasetLabel" class="text-xs text-ink-muted mt-0.5 truncate">
-        {{ data.datasetLabel }}
+      <!-- Sem categoria (KPI, número grande) a lista é o universo da consulta,
+           não o recorte de um item: dizer isso evita ler as linhas como se
+           fossem só as do indicador clicado. -->
+      <p v-if="data" class="text-xs text-ink-muted mt-0.5 truncate">
+        <template v-if="data.scope === 'dataset'">
+          Todos os registros da consulta que gerou este indicador, no recorte atual dos filtros
+        </template>
+        <template v-else>{{ data.datasetLabel }}</template>
       </p>
     </template>
 
