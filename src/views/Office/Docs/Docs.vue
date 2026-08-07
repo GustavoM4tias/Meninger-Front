@@ -44,7 +44,7 @@
               Atualizações futuras
             </h2>
             <p class="hidden sm:block text-[11px] text-ink-subtle leading-snug">
-              Sem data: a variável é o tempo dedicado, não a tecnologia
+              Próximas inovações em andamento
             </p>
           </div>
           <Badge variant="accent" size="sm" class="ml-auto shrink-0">
@@ -444,7 +444,7 @@ const itemsPerPage = 6;
 
 // Plano completo tem 11 frentes: mostrar todas de cara empurraria o histórico
 // pra fora da tela. Duas linhas no desktop e o resto sob demanda.
-const ROADMAP_PREVIEW = 6;
+const ROADMAP_PREVIEW = 3;
 const showAllRoadmap = ref(false);
 
 const filters = ref({
@@ -489,7 +489,7 @@ const roadmap = [
     version: 'v4.0.0',
     date: null,
     title: 'Atendimento de leads por IA',
-    summary: 'A Eme recebe o lead, informa pela ficha comercial autorizada, qualifica e devolve ao CRM.',
+    summary: 'A Eme recebe o lead, informa, qualifica e devolve para finalização por corretores parceiros da Menin no CRM.',
     impact: '~R$ 86 mil/ano',
     description: 'Já construído: falta ativar em modo de teste. A conversa roda no WhatsApp corporativo que o sistema já opera, então a mensagem de abertura custa centavos, as respostas dentro da janela de 24 horas são gratuitas e o processamento de IA custa frações de centavo. A estimativa conservadora fica abaixo de R$ 0,40 por lead atendido, contra os cerca de R$ 4,00 cobrados por ferramentas de mercado. Em 2.000 leads por mês, é a diferença entre R$ 9,6 mil e R$ 96 mil por ano. Além do custo, resposta em minutos é o que mais segura lead vivo.',
     features: ['IA', 'WhatsApp', 'Leads'],
@@ -542,8 +542,8 @@ const roadmap = [
   {
     version: 'v4.6.0',
     date: null,
-    title: 'Venda assistida',
-    summary: 'Conduzir as etapas iniciais da venda de forma automatizada, dentro das condições autorizadas.',
+    title: 'Venda assistida por IA',
+    summary: 'Conduzir as etapas iniciais da venda de forma automatizada utilizando a IA de atendimento, dentro das condições autorizadas.',
     impact: null,
     description: 'Passo seguinte ao atendimento por IA: validado o atendimento, a automação conduz o início da venda sempre dentro das condições autorizadas na ficha comercial do mês, que é a mesma fonte que hoje já limita o que a Eme pode informar ao lead.',
     features: ['IA', 'Comercial'],
