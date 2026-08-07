@@ -17,7 +17,7 @@ import { useAboutMetrics } from '@/composables/useAboutMetrics';
 import { officeReport } from '@/config/aboutOffice';
 
 const auth = useAuthStore();
-const { highlights, updatedLabel, isLive, load: loadMetrics } = useAboutMetrics();
+const { highlights, updatedLabel, isLive, reportSections, load: loadMetrics } = useAboutMetrics();
 const activeId = ref(officeReport[0].id);
 const exporting = ref(false);
 let observer = null;
@@ -33,7 +33,7 @@ async function exportPdf() {
     try {
         const { exportExecutiveReportToPdf } = await import('@/utils/Sobre/executiveReportPdf');
         await exportExecutiveReportToPdf({
-            sections: officeReport,
+            sections: reportSections.value,
             highlights: highlights.value,
             user: auth.user,
             updatedLabel: updatedLabel.value,
@@ -99,7 +99,7 @@ onBeforeUnmount(() => observer?.disconnect());
         <aside class="lg:sticky lg:top-4 lg:self-start">
           <p class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-2">Neste documento</p>
           <nav class="flex lg:flex-col gap-1.5 overflow-x-auto lg:overflow-visible no-scrollbar -mx-1 px-1">
-            <button v-for="(section, i) in officeReport" :key="section.id" type="button"
+            <button v-for="(section, i) in reportSections" :key="section.id" type="button"
                     @click="goTo(section.id)"
                     class="flex items-center gap-2 rounded-lg px-3 py-2 min-h-[40px] text-left text-sm
                            whitespace-nowrap lg:whitespace-normal shrink-0 lg:shrink
@@ -115,7 +115,7 @@ onBeforeUnmount(() => observer?.disconnect());
 
         <!-- Conteúdo -->
         <div class="min-w-0 space-y-10">
-          <section v-for="(section, si) in officeReport" :key="section.id" :id="section.id"
+          <section v-for="(section, si) in reportSections" :key="section.id" :id="section.id"
                    class="scroll-mt-20">
             <header class="flex items-center gap-3 mb-4 pb-2 border-b border-line">
               <span class="grid place-items-center h-9 w-9 rounded-xl bg-accent-soft text-accent
