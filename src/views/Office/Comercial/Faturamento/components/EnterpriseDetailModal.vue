@@ -13,6 +13,7 @@ import Input from '@/components/UI/Input.vue';
 import Select from '@/components/UI/Select.vue';
 import SegmentedControl from '@/components/UI/SegmentedControl.vue';
 import EmptyState from '@/components/UI/EmptyState.vue';
+import ContractAdjustmentModal from './ContractAdjustmentModal.vue';
 
 import VChart from 'vue-echarts';
 import * as echarts from 'echarts/core';
@@ -514,6 +515,74 @@ const distratoTooltipOf = (sale) => {
   return `Contrato cancelado no Sienge${when} — contabilizada no período, pois na época foi venda`;
 };
 
+/* ===================== ajuste contábil ===================== */
+// Máscara sobre o dado do contrato, aplicada no servidor. Aqui o selo funciona
+// como o de distrato: informa que o número exibido passou por correção. Criar e
+// remover ajuste é só para admin.
+const isAdmin = computed(() => {
+  try { return localStorage.getItem('role') === 'admin'; } catch { return false; }
+});
+
+const saleIsAdjusted = (sale) => contractsStore.saleIsAdjusted(sale);
+
+const ADJ_LABEL = {
+  FI_DATE: 'data da inst. financeira',
+  SERIE_ADD: 'série adicionada',
+  SERIE_EDIT: 'série editada',
+};
+
+const adjustmentTooltipOf = (sale) => {
+  const list = contractsStore.saleAdjustments(sale);
+  if (!list.length) return '';
+  const linhas = list.map((a) => {
+    const alvo = ADJ_LABEL[a.type] || a.type;
+    if (a.type === 'FI_DATE') {
+      const de = a.original?.financial_institution_date;
+      const para = a.payload?.financial_institution_date;
+      return `${alvo}: ${de ? formatDate(de) : '—'} → ${para ? formatDate(para) : '—'}`;
+    }
+    const cod = a.payload?.condition_type_id || a.target_code || '—';
+    return `${alvo} ${cod}`;
+  });
+  return `Ajuste contábil — ${linhas.join(' · ')}`;
+};
+
+const adjustmentModalOpen = ref(false);
+const adjustmentTarget = ref({ contractId: null, initialType: '', initialTargetIndex: null });
+
+const openAdjustment = (contract, { type = '', conditionIndex = null } = {}) => {
+  adjustmentTarget.value = {
+    contractId: contract?.contract_id ?? null,
+    initialType: type,
+    initialTargetIndex: conditionIndex,
+  };
+  adjustmentModalOpen.value = true;
+};
+
+// displayedConditions devolve payment_conditions NA MESMA ORDEM e só acrescenta
+// itens no fim (comissão fora de contrato) ou substitui a lista inteira por um
+// TR sintético. Ou seja: para condição real, o índice da tela é o índice do
+// contrato — e é ele que o ajuste grava. Casar por código+valor, como uma versão
+// anterior fazia, escolheria a linha errada quando o contrato tem duas séries
+// iguais.
+const canAdjustCondition = (contract, condition) =>
+  isAdmin.value
+  && !contract?._projection
+  && !condition?.synthetic
+  && !condition?._isCommission
+  // Série já adicionada por ajuste: editar aqui empilharia um ajuste sobre o
+  // outro. O lugar de corrigi-la é a engrenagem → Ajustes contábeis.
+  && condition?._adjusted !== 'added';
+
+const onAdjustmentSaved = async () => {
+  // O ajuste pode ter movido a venda de mês: recarrega do servidor em vez de
+  // remendar o objeto em memória.
+  await contractsStore.refreshAfterAdjustment({
+    view: 'detail',
+    enterpriseId: props.enterprise?.enterprise_id ?? props.enterprise?.id ?? null,
+  });
+};
+
 /* ===================== detalhe/condições ===================== */
 const displayedConditions = (contract) => {
   const landOnly = contractsStore.isLandOnlyForContract(contract);
@@ -1009,6 +1078,10 @@ const closeModal = () => emit('close');
                           v-tippy="distratoTooltipOf(sale)">
                           <i class="fas fa-file-circle-xmark text-[9px]"></i>Distratada
                         </Badge>
+                        <Badge v-if="saleIsAdjusted(sale)" variant="info" size="sm"
+                          v-tippy="adjustmentTooltipOf(sale)">
+                          <i class="fas fa-wand-magic-sparkles text-[9px]"></i>Ajustada
+                        </Badge>
                         <Badge v-if="saleIsProjection(sale)" variant="success" size="sm">
                           <i class="fas fa-chart-line text-[9px]"></i>Projeção
                         </Badge>
@@ -1070,9 +1143,33 @@ const closeModal = () => emit('close');
                         {{ contract._projection ? 'Reserva' : 'Contrato' }}
                         <span class="text-ink font-semibold">#{{ contract.contract_id }}</span>
                       </span>
-                      <span class="text-xs text-ink-subtle font-mono">
-                        Participação: <span class="text-ink">{{ contract.participation_percentage || 100 }}%</span>
-                      </span>
+                      <div class="flex items-center gap-2">
+                        <span class="text-xs text-ink-subtle font-mono">
+                          Participação: <span class="text-ink">{{ contract.participation_percentage || 100 }}%</span>
+                        </span>
+                        <!-- Ajuste contábil: admin corrige o dado sem tocar no Sienge -->
+                        <template v-if="isAdmin && !contract._projection">
+                          <button type="button" v-tippy="'Corrigir a data da instituição financeira deste contrato'"
+                            class="text-[11px] text-ink-subtle hover:text-accent transition-colors"
+                            @click.stop="openAdjustment(contract, { type: 'FI_DATE' })">
+                            <i class="far fa-calendar-check text-[10px]"></i> Ajustar data
+                          </button>
+                          <button type="button" v-tippy="'Adicionar uma série que não veio do Sienge'"
+                            class="text-[11px] text-ink-subtle hover:text-accent transition-colors"
+                            @click.stop="openAdjustment(contract, { type: 'SERIE_ADD' })">
+                            <i class="fas fa-circle-plus text-[10px]"></i> Add série
+                          </button>
+                        </template>
+                      </div>
+                    </div>
+
+                    <!-- Data ajustada: mostra de onde veio, senão o número muda sem explicação -->
+                    <div v-if="contract.original_financial_institution_date
+                      && contract.original_financial_institution_date !== contract.financial_institution_date"
+                      class="mb-3 text-[11px] text-sky-700 dark:text-sky-400 font-mono">
+                      <i class="fas fa-wand-magic-sparkles text-[9px]"></i>
+                      Data ajustada: {{ formatDate(contract.original_financial_institution_date) }}
+                      → {{ formatDate(contract.financial_institution_date) }}
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2.5"
@@ -1085,20 +1182,40 @@ const closeModal = () => emit('close');
                             ? 'border-l-4 border-l-red-500 border-y border-r border-line'
                             : 'border-l-4 border-l-emerald-500 border-y border-r border-line',
                           condition._isCommission ? '!border-l-orange-500' : '',
+                          condition._adjusted ? '!border-l-sky-500' : '',
                           condition._dimmed ? 'opacity-30' : '',
                         ]">
                         <div class="text-xs font-medium text-ink mb-0.5 flex items-center gap-1.5 flex-wrap">
                           <span class="truncate">{{ condition.condition_type_name || 'Não informado' }}</span>
                           <Badge v-if="condition.synthetic" variant="warning" size="sm">Observação</Badge>
+                          <Badge v-if="condition._adjusted === 'added'" variant="info" size="sm"
+                            v-tippy="`Série adicionada manualmente — ${condition._adjustment_reason || 'sem motivo registrado'}`">
+                            Adicionada
+                          </Badge>
+                          <Badge v-else-if="condition._adjusted === 'edited'" variant="info" size="sm"
+                            v-tippy="`Série editada — ${condition._adjustment_reason || 'sem motivo registrado'}`">
+                            Editada
+                          </Badge>
                           <button v-if="condition.synthetic" class="text-ink-subtle hover:text-ink transition-colors"
                             v-tippy="'Atualização D-1 às 07h'">
                             <i class="fas fa-circle-info text-[10px]"></i>
+                          </button>
+                          <button v-if="canAdjustCondition(contract, condition)"
+                            class="ml-auto text-ink-subtle hover:text-accent transition-colors"
+                            v-tippy="'Ajustar esta série (contábil)'"
+                            @click.stop="openAdjustment(contract, { type: 'SERIE_EDIT', conditionIndex: idx })">
+                            <i class="fas fa-pen text-[10px]"></i>
                           </button>
                         </div>
                         <div class="text-base font-semibold tabular-nums"
                           :class="isDiscount(condition) ? 'text-red-500' : 'text-emerald-600 dark:text-emerald-400'">
                           {{ formatCurrency(condition.total_value) }}
                           <span v-if="isDiscount(condition)" class="text-[10px] ml-1 text-ink-subtle font-normal">(desconto)</span>
+                        </div>
+                        <div v-if="condition._adjustment_before
+                          && Number(condition._adjustment_before.total_value) !== Number(condition.total_value)"
+                          class="text-[10px] text-ink-subtle tabular-nums line-through">
+                          {{ formatCurrency(condition._adjustment_before.total_value) }}
                         </div>
                         <div class="flex items-center gap-2 mt-0.5 text-[10px] font-mono text-ink-subtle">
                           <span>Cód: {{ condition.condition_type_id || '—' }}</span>
@@ -1144,6 +1261,15 @@ const closeModal = () => emit('close');
       <Button variant="ghost" @click="closeModal">Fechar</Button>
     </template>
   </Modal>
+
+  <!-- Ajuste contábil (admin) — sobreposto ao detalhe -->
+  <ContractAdjustmentModal
+    :open="adjustmentModalOpen"
+    :contract-id="adjustmentTarget.contractId"
+    :initial-type="adjustmentTarget.initialType"
+    :initial-target-index="adjustmentTarget.initialTargetIndex"
+    @close="adjustmentModalOpen = false"
+    @saved="onAdjustmentSaved" />
 </template>
 
 <style scoped>

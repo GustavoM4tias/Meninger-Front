@@ -70,6 +70,9 @@ const formatCurrency = (v) =>
  */
 const distratoCount = (row) => contractsStore.distratoCountForRow(row);
 const distratoValue = (row) => contractsStore.distratoValueForRow(row);
+// Vendas com ajuste contábil (máscara sobre o dado do Sienge). Selo informativo,
+// como o de distrato: o valor exibido já vem corrigido do servidor.
+const adjustedCount = (row) => contractsStore.adjustmentCountForRow(row);
 const baseValue = (row) => contractsStore.realizedValueForRow(row);
 const appendedValue = (row) => contractsStore.projectedValueForRow(row);
 const totalCombined = (row) => contractsStore.combinedValueForRow(row);
@@ -547,6 +550,10 @@ const onViewChange = (mode) => {
                 class="text-amber-500 font-semibold"
                 v-tippy="'Distratada(s) depois da venda — contabilizadas no período'">
                 <i class="fas fa-file-circle-xmark text-[10px]"></i>{{ distratoCount(enterprise) }}</span>
+              <span v-if="!enterprise.onlyProjectionRow && adjustedCount(enterprise) > 0"
+                class="text-sky-500 font-semibold"
+                v-tippy="'Venda(s) com ajuste contábil — o valor exibido já vem corrigido'">
+                <i class="fas fa-wand-magic-sparkles text-[10px]"></i>{{ adjustedCount(enterprise) }}</span>
             </span>
           </div>
 
@@ -631,6 +638,11 @@ const onViewChange = (mode) => {
                 </Badge>
                 <Badge v-else-if="enterprise.onlyProjectionRow" variant="success" size="sm">
                   <i class="fas fa-chart-line text-[9px]"></i>Projeção
+                </Badge>
+                <Badge v-if="!enterprise.onlyProjectionRow && adjustedCount(enterprise) > 0"
+                  variant="info" size="sm"
+                  v-tippy="'Venda(s) com ajuste contábil — o valor exibido já vem corrigido. Detalhe na linha da venda.'">
+                  <i class="fas fa-wand-magic-sparkles text-[9px]"></i>{{ adjustedCount(enterprise) }} ajustada(s)
                 </Badge>
               </div>
             </td>

@@ -343,6 +343,7 @@ const FIELD_LABEL = {
   tr_satellite_enterprises: 'Satélite de TR',
   hidden_dashboard_enterprises: 'Empreendimentos ocultos',
   enterprise_erp_links: 'Vínculo CV ↔ Sienge',
+  contract_adjustments: 'Ajustes contábeis',
 };
 
 const STATUS_LABEL = {
