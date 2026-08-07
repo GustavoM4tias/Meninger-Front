@@ -109,6 +109,11 @@ async function comCloneParaExport(el, fn) {
   clone.querySelectorAll('[data-export-exclude]').forEach((n) => n.remove());
   const foraDoExport = (n) => n.closest('[data-export-exclude]');
 
+  // 0b) tabela longa exibe só as primeiras linhas na tela; no arquivo sai
+  //     INTEIRA — quem exporta quer o dado completo, não a prévia. As linhas
+  //     já estão no DOM, basta soltar a classe que as esconde.
+  clone.querySelectorAll('.rp-row-collapsed').forEach((n) => n.classList.remove('rp-row-collapsed'));
+
   // 1) imagens → data URI, com o filtro CSS já rasterizado.
   //    Feito ANTES da troca dos canvas: nesse momento o clone ainda é cópia
   //    exata do original, então os índices casam 1:1. Depois da troca o clone
