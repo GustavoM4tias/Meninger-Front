@@ -18,6 +18,7 @@ import { useReportsStore } from '@/stores/Reports/reportsStore.js'
 import { requestWithAuth } from '@/utils/Auth/requestWithAuth.js'
 import { exportPng, exportPdf, exportHtml } from '@/components/Reports/exportReport.js'
 import { exportSheetsXlsx, tablesFromSpec } from '@/components/Reports/exportExcel.js'
+import ExportDataModal from '@/components/Reports/ExportDataModal.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -140,9 +141,71 @@ function fecharMenuFora(e) {
   if (menuAberto.value && menuEl.value && !menuEl.value.contains(e.target)) menuAberto.value = false
 }
 
+// Excel com escolha do que entra: relatório interativo com mais de uma consulta
+// abre o modal (uma aba por etapa do funil raramente é toda desejada). Com uma
+// consulta só, ou sem consultas, o modal não teria o que perguntar.
+const exportModal = ref(false)
+
+// Rótulo da FONTE (não do bloco): é assim que o leitor pensa o dado, e é o
+// mesmo vocabulário do rodapé do relatório.
+const FONTE_LABEL = {
+  query_leads: 'CRM de Leads',
+  query_precadastros: 'Pré-cadastros (CV)',
+  query_reservas: 'Reservas (CV)',
+  query_repasses: 'Repasses (CV)',
+  query_repasses_contratos: 'Fila do validador de contratos',
+  query_enterprises: 'Empreendimentos',
+  query_custos: 'Custos financeiros',
+  query_boletos: 'Boletos Caixa',
+  query_condition_sheets: 'Fichas comerciais',
+  query_projections: 'Projeção de vendas',
+  get_consolidated_sales: 'Vendas (Faturamento)',
+  query_checklists: 'Checklists',
+  query_event_plans: 'Plano de eventos',
+  query_people: 'Pessoas',
+  query_events: 'Eventos',
+  imobiliarias_search: 'Imobiliárias parceiras',
+}
+
+// A exportação reconsulta em modo lista, sem group_by: datasets da mesma fonte
+// com o mesmo recorte devolvem as MESMAS linhas. Ofertar os 7 datasets deste
+// painel daria 7 abas com 3 pares repetidos — aqui vira uma opção por fonte,
+// exatamente como o servidor deduplica na hora de montar as abas.
+const datasetsExportaveis = computed(() => {
+  const porFonte = new Map()
+  for (const d of (data.value?.spec?.datasets || [])) {
+    const semForma = { ...(d.base_args || {}) }
+    for (const k of ['group_by', 'metric', 'format', 'limit']) delete semForma[k]
+    const chave = `${d.tool}|${Object.keys(semForma).sort().map((k) => `${k}=${semForma[k]}`).join('&')}`
+    if (porFonte.has(chave)) continue
+    porFonte.set(chave, {
+      id: d.id,
+      label: FONTE_LABEL[d.tool] || d.label || d.id,
+      hint: d.label && d.label !== FONTE_LABEL[d.tool] ? d.label : '',
+    })
+  }
+  return [...porFonte.values()]
+})
+const resumoFiltrosExport = computed(() => {
+  const partes = (data.value?.spec?.filters || []).map((f) => {
+    const v = live.values.value?.[f.key]
+    if (v == null || v === '') return null
+    if (f.type === 'date-range') {
+      if (!v.from && !v.to) return null
+      return `${f.label}: ${[fmtDate(v.from), fmtDate(v.to)].filter(Boolean).join(' a ')}`
+    }
+    return `${f.label}: ${v}`
+  }).filter(Boolean)
+  return partes.length ? partes.join(' · ') : ''
+})
+
 async function exportar(tipo) {
   if (!reportEl.value || exportando.value) return
   menuAberto.value = false
+  if (tipo === 'xlsx' && live.isInteractive.value && datasetsExportaveis.value.length > 1) {
+    exportModal.value = true
+    return
+  }
   exportando.value = tipo
   try {
     const titulo = data.value?.title || 'relatorio'
@@ -162,11 +225,31 @@ async function exportar(tipo) {
 // Excel: relatório interativo exporta as linhas cruas das consultas (com os
 // filtros e as alçadas de quem exporta, direto do servidor); relatório sem
 // consultas exporta as tabelas visíveis do documento.
-async function exportarExcel(titulo) {
+// Confirmação do modal: exporta só as consultas marcadas.
+async function exportarSelecao(ids) {
+  if (exportando.value) return
+  exportando.value = 'xlsx'
+  try {
+    await exportarExcel(data.value?.title || 'relatorio', ids)
+    exportModal.value = false
+  } catch (err) {
+    console.error('[Relatorios] export xlsx', err)
+    exportModal.value = false
+    error.value = err?.friendly || 'Não foi possível gerar o Excel. Tente novamente.'
+    setTimeout(() => { if (error.value.startsWith('Não foi possível') || error.value.startsWith('Este relatório')) error.value = '' }, 5000)
+  } finally {
+    exportando.value = ''
+  }
+}
+
+async function exportarExcel(titulo, datasetIds = null) {
   if (live.isInteractive.value) {
     const res = await requestWithAuth(`/reports/${route.params.id}/data/export`, {
       method: 'POST',
-      body: JSON.stringify({ filters: live.values.value }),
+      body: JSON.stringify({
+        filters: live.values.value,
+        ...(datasetIds?.length ? { datasets: datasetIds } : {}),
+      }),
     })
     await exportSheetsXlsx({
       sheets: res.sheets,
@@ -237,7 +320,7 @@ const fmtDate = (d) => (d ? new Date(d).toLocaleDateString('pt-BR') : null)
                   { id: 'html', icon: 'fa-code', label: 'HTML', hint: 'Página completa' },
                   { id: 'png', icon: 'fa-image', label: 'PNG', hint: 'Imagem única' },
                   { id: 'pdf', icon: 'fa-file-pdf', label: 'PDF', hint: 'A4, sem cortar blocos' },
-                  { id: 'xlsx', icon: 'fa-file-excel', label: 'Excel', hint: 'Dados em planilha' },
+                  { id: 'xlsx', icon: 'fa-file-excel', label: 'Excel', hint: 'Escolher quais dados' },
                 ]" :key="opt.id"
                 type="button"
                 class="w-full flex items-center gap-2.5 px-3 py-2.5 text-left hover:bg-surface-sunken transition"
@@ -371,6 +454,16 @@ const fmtDate = (d) => (d ? new Date(d).toLocaleDateString('pt-BR') : null)
       :columns="rowDetail?.columns || []"
       :z-index="rowDetail?.sobreDrill ? 10000 : 9999"
       @close="rowDetail = null"
+    />
+
+    <!-- Exportação geral: escolhe quais fontes entram na planilha -->
+    <ExportDataModal
+      :open="exportModal"
+      :datasets="datasetsExportaveis"
+      :loading="exportando === 'xlsx'"
+      :resumo-filtros="resumoFiltrosExport"
+      @close="exportModal = false"
+      @confirm="exportarSelecao"
     />
   </div>
 </template>
