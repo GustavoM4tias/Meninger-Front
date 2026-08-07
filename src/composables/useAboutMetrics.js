@@ -207,13 +207,60 @@ export function useAboutMetrics() {
         ];
     }
 
-    /** O relatório inteiro, com a seção de ganhos atualizada quando há dados. */
+    /**
+     * A grade de números da seção de abertura. Os dois primeiros são taxa anual
+     * e projeção do roadmap, então só o texto de apoio muda; os quatro seguintes
+     * são medição e vêm inteiros do banco.
+     */
+    function buildResumoKpis(m) {
+        const c = m.counts || {};
+        const horas = Math.round(m.work?.totalHours || 0);
+        const rd = (m.subscriptions?.items || []).find(s => s.key === 'rd_station');
+        const mesesRd = rd ? Math.max(1, Math.round(rd.days / 30)) : null;
+
+        return [
+            {
+                v: '+R$ 33 mil/ano', l: 'Economia já realizada',
+                s: mesesRd
+                    ? `Substituição completa do RD Station, no ar há ${mesesRd} ${mesesRd === 1 ? 'mês' : 'meses'}`
+                    : 'Substituição completa do RD Station',
+            },
+            { v: '+R$ 330 mil/ano', l: 'Economia mapeada', s: 'Blip, CUB e atendimento de leads por IA' },
+            {
+                v: brlFull(c.valorPago), l: 'Arrecadado pelo boleto do ato',
+                s: `Emissão, baixa e controle 100% internos, em ${int(c.boletosEmitidos)} boletos`,
+            },
+            {
+                v: int(c.contratosValidados), l: 'Contratos validados por IA',
+                s: `${int(c.contratosReprovados)} erros impedidos de subir para assinatura`,
+            },
+            {
+                v: int(c.unidadesLiberadas), l: 'Unidades liberadas',
+                s: `Com segurança e agilidade, em ${int(c.cancelamentosCasos)} casos tratados`,
+            },
+            {
+                v: `${int(horas)} horas`, l: 'De trabalho manual',
+                s: 'Economizadas com automações, e contando',
+            },
+        ];
+    }
+
+    /** O relatório inteiro, com os números medidos atualizados quando há dados. */
     const reportSections = computed(() => {
         const m = metrics.value;
         if (!m) return officeReport;
-        return officeReport.map(section =>
-            section.id === 'ganhos' ? { ...section, blocks: buildGanhosBlocks(m) } : section
-        );
+        return officeReport.map(section => {
+            if (section.id === 'ganhos') return { ...section, blocks: buildGanhosBlocks(m) };
+            if (section.id === 'resumo') {
+                return {
+                    ...section,
+                    blocks: section.blocks.map(b =>
+                        b.type === 'kpis' ? { ...b, items: buildResumoKpis(m) } : b
+                    ),
+                };
+            }
+            return section;
+        });
     });
 
     return { metrics, loading, error, load, highlights, updatedLabel, isLive, reportSections };
