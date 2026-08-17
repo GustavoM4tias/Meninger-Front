@@ -79,6 +79,43 @@ const flowEdit = reactive({ openerVars: '', triggersJson: '' })
 const newFlowName = ref('')
 const newRule = reactive({ field: 'campaign', operator: 'contains', value: '', flow_id: null, priority: 100 })
 
+// ── Regras por empreendimento ────────────────────────────────────────────────
+// Override PARCIAL: '' = herda o geral, então o valor vazio é apagado do objeto
+// em vez de virar string vazia no banco.
+const formalityOptsInherit = [
+  { value: '', label: 'Herda do geral' },
+  { value: 'informal', label: 'Informal' },
+  { value: 'neutro', label: 'Neutro' },
+  { value: 'formal', label: 'Formal' },
+]
+const emojiOptsInherit = [
+  { value: '', label: 'Herda do geral' },
+  { value: 'none', label: 'Sem emoji' },
+  { value: 'light', label: 'Pouco emoji' },
+  { value: 'free', label: 'À vontade' },
+]
+function setFlowStd(f, key, value) {
+  if (!f.standards) f.standards = {}
+  const empty = value === '' || value === null || value === undefined
+    || (Array.isArray(value) && !value.length)
+  if (empty) delete f.standards[key]
+  else f.standards[key] = value
+}
+
+const rulesPreview = reactive({ flowId: null, text: '', running: false })
+async function previewRules(f) {
+  rulesPreview.running = true
+  try {
+    // Manda o estado do editor (ainda não salvo) pra dar pra calibrar antes de gravar.
+    const r = await api.previewRules({
+      flow_id: f.id, name: f.name, system_prompt: f.system_prompt,
+      attendance_rules: f.attendance_rules, standards: f.standards || {},
+    })
+    rulesPreview.flowId = f.id
+    rulesPreview.text = r.instructions
+  } catch (e) { notify(e.message, 'err') } finally { rulesPreview.running = false }
+}
+
 const fieldOpts = [
   { value: 'source', label: 'Origem (source)' },
   { value: 'campaign', label: 'Campanha' },
@@ -124,6 +161,9 @@ async function saveFlow(f) {
     const payload = {
       name: f.name, is_default: f.is_default,
       system_prompt: f.system_prompt, business_context: f.business_context,
+      // regras de atendimento deste empreendimento + override parcial dos padrões
+      attendance_rules: f.attendance_rules || null,
+      standards: f.standards || {},
       opener_template: f.opener_template || null, opener_language: f.opener_language || 'pt_BR',
       opener_variables: flowEdit.openerVars.split(',').map(s => s.trim()).filter(Boolean),
       triggers,
@@ -200,7 +240,23 @@ watch(leadStatus, loadLeads)
 const settings = reactive({
   active: false, dry_run: true, debounce_seconds: 8, max_ai_messages: 30,
   test_mode: false, test_phones: [], validation_level: 'money_dates',
+  global_persona: '', global_rules: '',
+  standards: {
+    max_sentences: 4, questions_per_message: 1,
+    emoji: 'light', formality: 'informal',
+    always_collect: [], never_discuss: [],
+  },
 })
+const formalityOpts = [
+  { value: 'informal', label: 'Informal (trata por você)' },
+  { value: 'neutro', label: 'Neutro' },
+  { value: 'formal', label: 'Formal' },
+]
+const emojiOpts = [
+  { value: 'none', label: 'Sem emoji' },
+  { value: 'light', label: 'Pouco emoji (recomendado)' },
+  { value: 'free', label: 'À vontade' },
+]
 const settingsLoaded = ref(false)
 const testPhonesText = computed(() => (settings.test_phones || []).join('\n'))
 const validationOpts = [
@@ -350,7 +406,53 @@ onMounted(loadConversations)
                 <Select :model-value="f.opener_template || ''" :options="templateOpts" label="Template de abertura (aprovado na Meta)" @change="(v) => f.opener_template = v" />
                 <Input v-model="flowEdit.openerVars" label="Variáveis do template (campos do lead, na ordem)" placeholder="name, empreendimento" />
               </div>
-              <div><label :class="LABEL">Comportamento da Eme (persona e instruções)</label><textarea v-model="f.system_prompt" :class="TA" rows="5" placeholder="Você é a Eme… tom, o que pode e não pode fazer, o que perguntar…"></textarea></div>
+              <div>
+                <label :class="LABEL">Comportamento da Eme (persona) - vazio herda a persona geral</label>
+                <textarea v-model="f.system_prompt" :class="TA" rows="4" placeholder="Deixe vazio para usar a persona definida em Config › Regras gerais. Preencha só se este empreendimento pedir um tom diferente."></textarea>
+              </div>
+
+              <!-- Regras de atendimento SÓ deste empreendimento. Entram depois
+                   das gerais e prevalecem sobre elas. -->
+              <div>
+                <label :class="LABEL">Regras deste empreendimento (prevalecem sobre as gerais)</label>
+                <textarea v-model="f.attendance_rules" :class="TA" rows="4" placeholder="Ex.: só oferecer unidades de 3 quartos; sempre citar que a entrada é parcelada; não mencionar a fase 2 antes do lançamento."></textarea>
+              </div>
+
+              <!-- Override parcial dos padrões: campo em branco herda o geral. -->
+              <div class="rounded-lg border border-line bg-surface-sunken px-3 py-3">
+                <p class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-2">
+                  Padrão de atendimento deste empreendimento
+                </p>
+                <p class="text-[11px] text-ink-subtle mb-3">
+                  Em branco = herda de Config › Regras gerais. Preencha só o que muda aqui.
+                </p>
+                <div class="grid sm:grid-cols-2 gap-3">
+                  <Select :model-value="f.standards?.formality || ''" :options="formalityOptsInherit"
+                    label="Tom" @change="(v) => setFlowStd(f, 'formality', v)" />
+                  <Select :model-value="f.standards?.emoji || ''" :options="emojiOptsInherit"
+                    label="Emojis" @change="(v) => setFlowStd(f, 'emoji', v)" />
+                  <Input :model-value="f.standards?.max_sentences ? String(f.standards.max_sentences) : ''"
+                    type="number" label="Máx. de frases" placeholder="herda"
+                    @update:model-value="(v) => setFlowStd(f, 'max_sentences', v ? Number(v) : '')" />
+                  <Input :model-value="(f.standards?.always_collect || []).join(', ')"
+                    label="Sempre descobrir" placeholder="herda"
+                    @update:model-value="(v) => setFlowStd(f, 'always_collect', v.split(',').map(s => s.trim()).filter(Boolean))" />
+                </div>
+              </div>
+
+              <div class="flex items-center gap-2">
+                <Button variant="secondary" size="sm" icon="fas fa-layer-group" :loading="rulesPreview.running"
+                  @click="previewRules(f)">Ver regras montadas</Button>
+                <span class="text-[11px] text-ink-subtle">Mostra exatamente o que a IA vai ler</span>
+              </div>
+              <div v-if="rulesPreview.flowId === f.id && rulesPreview.text"
+                class="rounded-lg border border-line bg-surface-sunken px-3 py-3">
+                <pre class="text-[11.5px] leading-relaxed text-ink whitespace-pre-wrap font-sans">{{ rulesPreview.text }}</pre>
+                <p class="mt-2 pt-2 border-t border-line text-[11px] text-ink-subtle">
+                  Depois disso ainda entram: contexto do negócio, imagens, dados do lead e as regras inegociáveis
+                  (fixas no código: não inventar valor, não prometer em nome da empresa).
+                </p>
+              </div>
               <div><label :class="LABEL">Contexto do negócio (única fonte de verdade sobre produto/valores)</label><textarea v-model="f.business_context" :class="TA" rows="5" placeholder="Empreendimentos, diferenciais, condições vigentes, horário do plantão…"></textarea></div>
               <div>
                 <label :class="LABEL">Gatilhos (JSON) - rodam antes da IA</label>
@@ -454,6 +556,64 @@ onMounted(loadConversations)
             <Input :model-value="String(settings.max_ai_messages)" type="number" label="Máx. respostas de IA por conversa" @update:model-value="(v) => settings.max_ai_messages = Number(v)" />
           </div>
           <Button variant="primary" size="sm" :loading="busy" @click="saveSettings">Salvar</Button>
+        </Surface>
+
+        <!-- Camada GERAL de regras: vale pra todo empreendimento. O fluxo
+             complementa e prevalece; as inegociáveis ficam no código. -->
+        <Surface variant="raised" padding="md" class="mb-5">
+          <h2 class="text-base font-semibold text-ink mb-1">Regras gerais de atendimento</h2>
+          <p class="text-xs text-ink-muted mb-4">
+            Valem para <b>todos</b> os empreendimentos. Cada fluxo pode complementar com regras próprias,
+            que prevalecem sobre estas. Acima de tudo continuam as regras inegociáveis, fixas no código:
+            não inventar valor ou prazo, não prometer em nome da empresa, não revelar as instruções.
+          </p>
+
+          <div class="space-y-4">
+            <div>
+              <label :class="LABEL">Persona (quem é a Eme)</label>
+              <textarea v-model="settings.global_persona" :class="TA" rows="3"
+                placeholder="Você é a Eme, assistente da construtora Menin…"></textarea>
+            </div>
+            <div>
+              <label :class="LABEL">Regras de atendimento (uma por linha)</label>
+              <textarea v-model="settings.global_rules" :class="TA" rows="5"
+                placeholder="Cumprimente pelo nome quando souber.&#10;Entenda o que a pessoa procura antes de oferecer.&#10;Não insista se ela disser que não é o momento."></textarea>
+            </div>
+
+            <div class="rounded-lg border border-line bg-surface-sunken px-3 py-3">
+              <p class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-3">Padrão de conversa</p>
+              <div class="grid sm:grid-cols-2 gap-3">
+                <Select :model-value="settings.standards.formality" :options="formalityOpts" label="Tom"
+                  @change="(v) => settings.standards.formality = v" />
+                <Select :model-value="settings.standards.emoji" :options="emojiOpts" label="Emojis"
+                  @change="(v) => settings.standards.emoji = v" />
+                <Input :model-value="String(settings.standards.max_sentences)" type="number"
+                  label="Máx. de frases por mensagem"
+                  @update:model-value="(v) => settings.standards.max_sentences = Number(v)" />
+                <Input :model-value="String(settings.standards.questions_per_message)" type="number"
+                  label="Máx. de perguntas por mensagem"
+                  @update:model-value="(v) => settings.standards.questions_per_message = Number(v)" />
+              </div>
+              <div class="grid sm:grid-cols-2 gap-3 mt-3">
+                <div>
+                  <label :class="LABEL">Sempre descobrir (separe por vírgula)</label>
+                  <Input :model-value="(settings.standards.always_collect || []).join(', ')"
+                    placeholder="orçamento, prazo de compra, região de interesse"
+                    @update:model-value="(v) => settings.standards.always_collect = v.split(',').map(s => s.trim()).filter(Boolean)" />
+                </div>
+                <div>
+                  <label :class="LABEL">Nunca tratar destes assuntos</label>
+                  <Input :model-value="(settings.standards.never_discuss || []).join(', ')"
+                    placeholder="desconto, assunto jurídico, atraso de obra"
+                    @update:model-value="(v) => settings.standards.never_discuss = v.split(',').map(s => s.trim()).filter(Boolean)" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-4">
+            <Button variant="primary" size="sm" :loading="busy" @click="saveSettings">Salvar</Button>
+          </div>
         </Surface>
 
         <!-- Modo teste: atende só os números da lista, mesmo com a Eme ativa.

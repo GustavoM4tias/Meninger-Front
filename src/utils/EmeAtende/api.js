@@ -55,5 +55,8 @@ export const listConversations = (state) => req(`/conversations${state ? `?state
 export const getConversation = (id) => req(`/conversations/${id}`)
 export const setConversationState = (id, state) => req(`/conversations/${id}/state`, { method: 'PUT', body: JSON.stringify({ state }) })
 
+// Regras montadas em camadas (aceita o estado não salvo do editor)
+export const previewRules = (data) => req('/rules-preview', { method: 'POST', body: JSON.stringify(data) })
+
 // Sandbox
 export const testAi = (data) => req('/test/ai', { method: 'POST', body: JSON.stringify(data) })
