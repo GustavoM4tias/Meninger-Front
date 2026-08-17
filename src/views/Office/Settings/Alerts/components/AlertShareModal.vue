@@ -149,8 +149,8 @@ const channelDefs = [
         </div>
         <p v-if="form.channels.whatsapp" class="mt-2 text-[11px] text-ink-subtle flex items-start gap-1.5">
           <i class="fas fa-circle-info mt-0.5"></i>
-          O WhatsApp só é enviado se o destinatário tiver opt-in ativo e o template estiver aprovado;
-          caso contrário, o convite continua valendo pelo sino e e-mail.
+          O WhatsApp só é enviado se o destinatário tiver telefone no perfil e o template estiver
+          aprovado; caso contrário, o convite continua valendo pelo sino e e-mail.
         </p>
       </section>
     </div>

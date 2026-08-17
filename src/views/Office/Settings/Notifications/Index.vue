@@ -2,6 +2,7 @@
 import { onMounted, computed } from 'vue';
 import { useNotificationStore } from '@/stores/Config/notificationStore';
 import { useWhatsappStore } from '@/stores/Whatsapp/whatsappStore';
+import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 import PageContainer from '@/components/UI/PageContainer.vue';
 import PageHeader from '@/components/UI/PageHeader.vue';
 import Switch from '@/components/UI/Switch.vue';
@@ -10,11 +11,12 @@ import { RouterLink } from 'vue-router';
 
 const store = useNotificationStore();
 const wpp = useWhatsappStore();
+const auth = useAuthStore();
 
 onMounted(() => {
   store.fetchPreferences();
-  wpp.fetchOpt();
   wpp.fetchSystemInfo();
+  if (!auth.user) auth.fetchUserInfo();
 });
 
 const grouped = computed(() => {
@@ -27,9 +29,12 @@ const grouped = computed(() => {
   return Array.from(map.entries()).map(([group, items]) => ({ group, items }));
 });
 
-// switches WA só ficam habilitados se o sistema está pronto E o user fez opt-in
+// Não existe opt-in: estar no Office já autoriza o canal (igual e-mail e sino).
+// O switch de WhatsApp só depende do sistema estar configurado E do usuário ter
+// telefone no perfil — é por ele que a mensagem sai.
 const systemReady   = computed(() => !!wpp.systemInfo?.ready);
-const whatsappReady = computed(() => systemReady.value && !!wpp.opt?.consented && !!wpp.opt?.phone);
+const hasPhone      = computed(() => !!String(auth.user?.phone || '').trim());
+const whatsappReady = computed(() => systemReady.value && hasPhone.value);
 
 const onToggle = (pref, key, value) => {
   pref[key] = value;
@@ -55,11 +60,21 @@ const onToggle = (pref, key, value) => {
         O administrador ainda não configurou o WhatsApp do sistema. O canal por WhatsApp ficará disponível assim que isso for feito.
       </div>
     </div>
-    <div v-else-if="!whatsappReady"
+    <div v-else-if="!hasPhone"
       class="mb-6 rounded-xl border border-amber-500/20 bg-amber-500/10 px-4 py-3 flex items-start gap-3">
       <i class="fa-brands fa-whatsapp text-amber-600 dark:text-amber-400 text-lg mt-0.5"></i>
       <div class="text-xs text-ink">
-        Para receber notificações por WhatsApp, informe seu telefone e aceite o termo na sua
+        Você ainda não tem telefone no perfil, então nada sai por WhatsApp. Cadastre o número na sua
+        <RouterLink to="/settings/Account" class="text-accent hover:underline">conta</RouterLink>
+        para receber por lá.
+      </div>
+    </div>
+    <div v-else-if="wpp.systemInfo?.display_phone"
+      class="mb-6 rounded-xl border border-line bg-surface-raised px-4 py-3 flex items-start gap-3">
+      <i class="fa-brands fa-whatsapp text-emerald-500 text-lg mt-0.5"></i>
+      <div class="text-xs text-ink-muted">
+        As mensagens chegam de <strong class="text-ink">{{ wpp.systemInfo.display_phone }}</strong>
+        no telefone do seu perfil. Para trocar o número, edite na sua
         <RouterLink to="/settings/Account" class="text-accent hover:underline">conta</RouterLink>.
       </div>
     </div>
