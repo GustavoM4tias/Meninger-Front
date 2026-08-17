@@ -526,6 +526,58 @@
           </div>
         </Surface>
 
+        <!-- Card: Horário de funcionamento (janela de emissão) -->
+        <Surface variant="raised" padding="md" class="space-y-4 surface-gradient">
+          <div class="flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="h-9 w-9 rounded-xl grid place-items-center shrink-0"
+                :class="form.janela_ativa
+                  ? 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20'
+                  : 'bg-surface-sunken text-ink-subtle border border-line'">
+                <i class="fas fa-clock"></i>
+              </div>
+              <div class="min-w-0">
+                <h2 class="font-semibold text-ink text-sm">Horário de funcionamento</h2>
+                <p class="text-xs text-ink-muted">
+                  {{ form.janela_ativa
+                    ? `Emite das ${janelaLabel} (horário de Brasília)`
+                    : 'Emite a qualquer hora, inclusive de madrugada' }}
+                </p>
+              </div>
+            </div>
+            <button @click="form.janela_ativa = !form.janela_ativa"
+              class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none shrink-0"
+              :class="form.janela_ativa ? 'bg-sky-500' : 'bg-surface-sunken border border-line'">
+              <span class="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform"
+                :class="form.janela_ativa ? 'translate-x-6' : 'translate-x-1'"></span>
+            </button>
+          </div>
+
+          <div v-if="form.janela_ativa" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Input
+              v-model.number="form.janela_inicio_hora"
+              type="number" min="0" max="23"
+              label="Abre às (hora cheia)"
+              placeholder="Ex: 8"
+              hint="Antes deste horário a emissão fica agendada." />
+            <Input
+              v-model.number="form.janela_fim_hora"
+              type="number" min="1" max="24"
+              label="Fecha às (hora cheia)"
+              placeholder="Ex: 20"
+              hint="A partir deste horário a emissão fica agendada para o dia seguinte." />
+          </div>
+          <p v-if="form.janela_ativa" class="text-xs text-ink-muted flex items-start gap-1.5">
+            <i class="fas fa-circle-info mt-0.5 text-sky-500"></i>
+            <span>
+              Acionamento recebido fora do horário não vira erro: o registro fica como
+              <span class="font-semibold text-ink">Agendado</span> e o boleto é emitido sozinho na abertura seguinte.
+              Uma mensagem avisa o gestor na timeline da reserva, e a etapa no CV não é alterada.
+              Tentar de novo ou gerar pela tela continua funcionando a qualquer hora.
+            </span>
+          </p>
+        </Surface>
+
         <!-- Botão salvar -->
         <div class="flex flex-wrap items-center justify-end gap-3">
           <p v-if="store.settingsError" class="text-xs text-red-500 flex items-center gap-1.5">
@@ -677,6 +729,12 @@
                       <i :class="statusIcon(item.status)" class="mr-1"></i>
                       {{ statusLabel(item.status) }}
                     </Badge>
+                    <!-- Agendado pela janela: mostra QUANDO vai sair, senão o
+                         "Agendado" sozinho não diz nada ao gestor. -->
+                    <p v-if="item.status === 'queued' && item.emissao_agendada_para"
+                      class="text-[10px] text-ink-subtle mt-1 whitespace-nowrap">
+                      {{ formatDateTime(item.emissao_agendada_para) }}
+                    </p>
                   </td>
                   <td class="px-4 py-3 text-center">
                     <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold"
@@ -840,6 +898,9 @@ const form = ref({
   delay_situacao_sucesso_min: 2,
   max_dias_vencimento: 10,
   valor_maximo: 300000,
+  janela_ativa: true,
+  janela_inicio_hora: 8,
+  janela_fim_hora: 20,
   active: false,
 });
 
@@ -848,6 +909,12 @@ const valorMaximoLabel = computed(() => {
   const v = Number(form.value.valor_maximo);
   if (!Number.isFinite(v) || v <= 0) return 'sem teto';
   return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+});
+
+// "08:00 às 20:00" — janela de funcionamento da emissão automática.
+const janelaLabel = computed(() => {
+  const hh = (h) => `${String(h ?? 0).padStart(2, '0')}:00`;
+  return `${hh(form.value.janela_inicio_hora)} às ${hh(form.value.janela_fim_hora)}`;
 });
 
 // ── Modo edição do card "Configurações do CV" ─────────────────────────────────
@@ -1020,6 +1087,7 @@ function statusVariant(status) {
     success:    'success',
     error:      'danger',
     skipped:    'neutral',
+    queued:     'warning',
   }[status] || 'neutral';
 }
 
@@ -1029,6 +1097,7 @@ function statusIcon(status) {
     success:    'fas fa-check',
     error:      'fas fa-times',
     skipped:    'fas fa-forward',
+    queued:     'fas fa-clock',
   }[status] || 'fas fa-question';
 }
 
@@ -1038,6 +1107,7 @@ function statusLabel(status) {
     success: 'Sucesso',
     error: 'Erro',
     skipped: 'Ignorado',
+    queued: 'Agendado',
   }[status] || status;
 }
 
@@ -1181,6 +1251,9 @@ onMounted(async () => {
       form.value.delay_situacao_sucesso_min = store.settings.delay_situacao_sucesso_min ?? 2;
       form.value.max_dias_vencimento = store.settings.max_dias_vencimento ?? 10;
       form.value.valor_maximo = store.settings.valor_maximo != null ? Number(store.settings.valor_maximo) : null;
+      form.value.janela_ativa = store.settings.janela_ativa ?? true;
+      form.value.janela_inicio_hora = store.settings.janela_inicio_hora ?? 8;
+      form.value.janela_fim_hora = store.settings.janela_fim_hora ?? 20;
       form.value.active = store.settings.active ?? false;
     }
     await store.fetchComissionRules();

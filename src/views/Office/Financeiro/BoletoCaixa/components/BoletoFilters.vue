@@ -33,7 +33,7 @@ const DEFAULT_DATE_TO   = toIsoDateLocal(today);
 // Estado local (espelho do store.historyFilter pra controlar v-model). Ao
 // aplicar (botão Filtrar ou input com debounce), copia pro store + emite.
 const local = ref({
-  status: ['success', 'error', 'processing'], // default sem "Sem série"
+  status: ['success', 'error', 'processing', 'queued'], // default sem "Sem série"
   paymentStatus: [],
   empreendimento: [],
   idreserva: '',
@@ -56,6 +56,7 @@ const STATUS_OPTIONS = [
   { value: 'success',    label: 'Sucesso' },
   { value: 'error',      label: 'Erro' },
   { value: 'processing', label: 'Processando' },
+  { value: 'queued',     label: 'Agendado' },
   { value: 'skipped',    label: 'Ignorado' },
 ];
 const PAYMENT_OPTIONS = [
@@ -150,7 +151,7 @@ function clearFilters() {
   // Limpa tudo mas mantém o range padrão de 30 dias — evita "ah, sumiu tudo"
   // quando o usuário clica Limpar e nada aparece porque base é gigante.
   local.value = {
-    status: ['success', 'error', 'processing'], paymentStatus: [], empreendimento: [],
+    status: ['success', 'error', 'processing', 'queued'], paymentStatus: [], empreendimento: [],
     idreserva: '', dateFrom: DEFAULT_DATE_FROM, dateTo: DEFAULT_DATE_TO,
     dateField: 'created_at', q: '', cvSituacao: [], cvRepasse: [],
   };
