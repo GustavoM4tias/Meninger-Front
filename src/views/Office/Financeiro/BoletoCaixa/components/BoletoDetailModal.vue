@@ -276,10 +276,10 @@ function truncate(s, n) {
 
 // ── Status badges ───────────────────────────────────────────────────────────
 function statusLabel(s) {
-  return ({ processing: 'Processando', success: 'Sucesso', error: 'Erro' })[s] || s;
+  return ({ processing: 'Processando', success: 'Sucesso', error: 'Erro', skipped: 'Ignorado', queued: 'Agendado' })[s] || s;
 }
 function statusVariant(s) {
-  return ({ processing: 'info', success: 'success', error: 'danger' })[s] || 'neutral';
+  return ({ processing: 'info', success: 'success', error: 'danger', skipped: 'neutral', queued: 'warning' })[s] || 'neutral';
 }
 function paymentLabel(s) {
   return ({ pending: 'Pendente', paid: 'Pago', cancelled: 'Baixado', error: 'Erro' })[s] || s;
@@ -314,6 +314,8 @@ const EVENT_TITLES = {
   cv_situation_scheduled:   'Situação CV agendada',
   ignored_duplicate:        'Gatilho ignorado (duplicado)',
   replace_initiated:        'Substituição iniciada (baixa + reemissão)',
+  emission_deferred:        'Fora do horário - emissão agendada',
+  emission_window_released: 'Horário aberto - emissão retomada',
   situacao_pendente:        'Situação pendente (aguardando lote)',
   payment_check:            'Verificação Ecobrança',
   payment_check_error:      'Erro na verificação',
@@ -344,6 +346,8 @@ const EVENT_ICONS = {
   cv_situation_scheduled: 'fas fa-hourglass-half',
   ignored_duplicate:'fas fa-arrow-right-arrow-left',
   replace_initiated:'fas fa-rotate',
+  emission_deferred:'fas fa-clock',
+  emission_window_released:'fas fa-door-open',
   situacao_pendente:'fas fa-hourglass-half',
   payment_check:    'fas fa-magnifying-glass-dollar',
   payment_check_error: 'fas fa-circle-exclamation',
