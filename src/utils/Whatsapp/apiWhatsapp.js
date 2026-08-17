@@ -59,9 +59,11 @@ export const getTemplate = (id) =>
 export const createTemplate = (payload) => fetch(`${API_URL}/whatsapp/templates`, {
     method: 'POST', headers: headers(), body: JSON.stringify(payload),
 }).then(handle);
-export const deleteTemplate = (name) => fetch(`${API_URL}/whatsapp/templates/${encodeURIComponent(name)}`, {
-    method: 'DELETE', headers: headers(),
-}).then(handle);
+// force=true derruba a trava de "template em uso por fluxo crítico" (409).
+export const deleteTemplate = (name, { force = false } = {}) =>
+    fetch(`${API_URL}/whatsapp/templates/${encodeURIComponent(name)}${force ? '?force=true' : ''}`, {
+        method: 'DELETE', headers: headers(),
+    }).then(handle);
 
 // ── Mensagens / log (admin) ──────────────────────────────────────────────
 export const listMessages = (params = {}) =>
@@ -72,11 +74,7 @@ export const fetchStats = (days = 30) =>
 // ── Info pública do sistema (usuário autenticado) ────────────────────────
 export const getSystemInfo = () => fetch(`${API_URL}/whatsapp/info`, { headers: headers() }).then(handle);
 
-// ── Opt-in / opt-out (usuário) ───────────────────────────────────────────
-export const getOptStatus = () => fetch(`${API_URL}/whatsapp/opt`, { headers: headers() }).then(handle);
-export const optIn = (payload) => fetch(`${API_URL}/whatsapp/opt-in`, {
-    method: 'POST', headers: headers(), body: JSON.stringify(payload),
-}).then(handle);
-export const optOut = () => fetch(`${API_URL}/whatsapp/opt-out`, {
-    method: 'POST', headers: headers(),
-}).then(handle);
+// ── Cobertura do canal (admin) ───────────────────────────────────────────
+// Não há opt-in: quem está no Office recebe. O que importa é quem está sem
+// telefone no perfil e por isso fica de fora.
+export const getCoverage = () => fetch(`${API_URL}/whatsapp/coverage`, { headers: headers() }).then(handle);

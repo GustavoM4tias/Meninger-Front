@@ -6,6 +6,7 @@ import Input from '@/components/UI/Input.vue';
 import Switch from '@/components/UI/Switch.vue';
 import Button from '@/components/UI/Button.vue';
 import SetupWizard from './SetupWizard.vue';
+import CoverageCard from './CoverageCard.vue';
 
 const webhookUrl = computed(() => `${API_URL || ''}/whatsapp/webhook`);
 
@@ -167,7 +168,10 @@ const onTestSend = async () => {
 
   <SetupWizard v-if="mode === 'wizard'" @done="mode = 'advanced'" />
 
-  <div v-else class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  <template v-else>
+  <CoverageCard />
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
     <!-- ── Form principal ──────────────────────────────── -->
     <section class="lg:col-span-2 rounded-xl border border-line bg-surface-raised p-5 shadow-soft space-y-5">
       <header>
@@ -277,4 +281,5 @@ const onTestSend = async () => {
       </section>
     </aside>
   </div>
+  </template>
 </template>

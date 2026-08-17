@@ -9,7 +9,10 @@ export const useWhatsappStore = defineStore('whatsappStore', {
         savingConfig: false,
         healthRunning: false,
 
-        templates: [],
+        templates: [],       // lista crua sincronizada da Meta
+        catalog: [],         // templates do código + destino/funcionalidade/status
+        missingTemplates: [],// declarados no código e sem APPROVED na Meta
+        orphanTemplates: [], // existem na Meta e nenhum fluxo usa
         loadingTemplates: false,
         syncing: false,
 
@@ -23,9 +26,9 @@ export const useWhatsappStore = defineStore('whatsappStore', {
         // info pública do número do sistema (visível pra qualquer user)
         systemInfo: null, // { display_phone, display_name, active, ready }
 
-        // opt do usuário logado
-        opt: null, // { phone, consented, consent_at, revoked_at }
-        loadingOpt: false,
+        // cobertura do canal (admin): quem está sem telefone no perfil
+        coverage: null, // { total, withPhone, withoutPhone, coverage, missing[] }
+        loadingCoverage: false,
     }),
     getters: {
         isActive: (state) => !!state.config?.active && !state.config?.dry_run,
@@ -75,9 +78,15 @@ export const useWhatsappStore = defineStore('whatsappStore', {
             try {
                 const r = await api.listTemplates(params);
                 this.templates = Array.isArray(r?.items) ? r.items : [];
+                this.catalog = Array.isArray(r?.catalog) ? r.catalog : [];
+                this.missingTemplates = Array.isArray(r?.missing) ? r.missing : [];
+                this.orphanTemplates = Array.isArray(r?.orphans) ? r.orphans : [];
             } catch (e) {
                 console.error('[whatsappStore] fetchTemplates', e);
                 this.templates = [];
+                this.catalog = [];
+                this.missingTemplates = [];
+                this.orphanTemplates = [];
             } finally { this.loadingTemplates = false; }
         },
         async syncTemplates() {
@@ -95,8 +104,8 @@ export const useWhatsappStore = defineStore('whatsappStore', {
             return r;
         },
 
-        async deleteTemplate(name) {
-            const r = await api.deleteTemplate(name);
+        async deleteTemplate(name, opts = {}) {
+            const r = await api.deleteTemplate(name, opts);
             await this.fetchTemplates();
             return r;
         },
@@ -134,23 +143,15 @@ export const useWhatsappStore = defineStore('whatsappStore', {
             }
         },
 
-        // ── Opt do usuário ───────────────────────────────────────────
-        async fetchOpt() {
-            this.loadingOpt = true;
+        // ── Cobertura do canal (admin) ───────────────────────────────
+        async fetchCoverage() {
+            this.loadingCoverage = true;
             try {
-                this.opt = await api.getOptStatus();
+                this.coverage = await api.getCoverage();
             } catch (e) {
-                console.error('[whatsappStore] fetchOpt', e);
-                this.opt = null;
-            } finally { this.loadingOpt = false; }
-        },
-        async optIn({ phone, accept }) {
-            await api.optIn({ phone, accept });
-            await this.fetchOpt();
-        },
-        async optOut() {
-            await api.optOut();
-            await this.fetchOpt();
+                console.error('[whatsappStore] fetchCoverage', e);
+                this.coverage = null;
+            } finally { this.loadingCoverage = false; }
         },
     },
 });

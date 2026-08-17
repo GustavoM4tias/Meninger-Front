@@ -1038,7 +1038,7 @@ const releases = [
     categories: ['backend', 'api', 'frontend'],
     features: [
       { id: 1, title: 'Central de Notificações', description: 'Ponto único de disparo de avisos com persistência, sino com contador, caixa de entrada completa e preferências por tipo e canal.' },
-      { id: 2, title: 'WhatsApp Business (Cloud API)', description: 'Terceiro canal de notificação via WhatsApp, com número único do sistema, opt-in do usuário (LGPD), templates aprovados na Meta e webhook de status e recebimento.' },
+      { id: 2, title: 'WhatsApp Business (Cloud API)', description: 'Terceiro canal de notificação via WhatsApp, com número único do sistema, envio para o telefone do perfil (sem opt-in), templates aprovados na Meta e webhook de status e recebimento.' },
       { id: 3, title: 'Preferências por Usuário', description: 'Tela de preferências com switches in-app / e-mail / WhatsApp por tipo de notificação.' },
     ],
     improvements: [

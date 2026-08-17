@@ -174,7 +174,8 @@ async function updateUser() {
           label="E-mail" placeholder="seu@email.com" required iconLeft="fas fa-envelope" />
 
         <Input v-model="editableUser.phone" :disabled="isDisabled" type="tel"
-          label="Telefone (com DDD)" placeholder="(11) 99999-9999" iconLeft="fas fa-phone" />
+          label="Telefone (com DDD)" placeholder="(11) 99999-9999" iconLeft="fas fa-phone"
+          hint="É por este número que você recebe os avisos do Office no WhatsApp." />
 
         <Input v-model="editableUser.birth_date" :disabled="isDisabled" type="date"
           label="Data de nascimento" required />
