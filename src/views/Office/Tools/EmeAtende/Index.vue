@@ -197,12 +197,21 @@ async function openLead(l) {
 watch(leadStatus, loadLeads)
 
 // ── Config ───────────────────────────────────────────────────────────────────
-const settings = reactive({ active: false, dry_run: true, debounce_seconds: 8, max_ai_messages: 30 })
+const settings = reactive({
+  active: false, dry_run: true, debounce_seconds: 8, max_ai_messages: 30,
+  test_mode: false, test_phones: [], validation_level: 'money_dates',
+})
 const settingsLoaded = ref(false)
+const testPhonesText = computed(() => (settings.test_phones || []).join('\n'))
+const validationOpts = [
+  { value: 'money_dates', label: 'Valores e prazos (recomendado)' },
+  { value: 'strict', label: 'Rígido - qualquer número fora do contexto' },
+  { value: 'off', label: 'Desligada - só as regras do prompt' },
+]
 const apiKeys = ref([])
 const newKeyName = ref('')
 const createdKey = ref(null)
-const sandbox = reactive({ flow_id: null, message: '', reply: '', tools: [], running: false })
+const sandbox = reactive({ flow_id: null, message: '', reply: '', tools: [], running: false, validation: null })
 
 async function loadConfig() {
   try {
@@ -239,11 +248,12 @@ function copyKey() {
 }
 async function runSandbox() {
   if (!sandbox.message.trim()) return
-  sandbox.running = true; sandbox.reply = ''; sandbox.tools = []
+  sandbox.running = true; sandbox.reply = ''; sandbox.tools = []; sandbox.validation = null
   try {
     const r = await api.testAi({ flow_id: sandbox.flow_id, message: sandbox.message })
     sandbox.reply = r.reply || '(sem texto - só ação de tool)'
     sandbox.tools = r.tool_calls || []
+    sandbox.validation = r.validation || null
   } catch (e) { notify(e.message, 'err') } finally { sandbox.running = false }
 }
 
@@ -424,7 +434,7 @@ onMounted(loadConversations)
       <div v-show="tab === 'config'">
         <Surface variant="raised" padding="md" class="mb-5">
           <h2 class="text-base font-semibold text-ink mb-1">Canal e operação</h2>
-          <p class="text-xs text-ink-muted mb-4">O canal é o número WhatsApp do Office. <b>Ativar</b> faz mensagens de números externos irem pro atendimento da Eme (users internos seguem no fluxo normal). <b>Modo sombra</b> registra tudo sem enviar nada.</p>
+          <p class="text-xs text-ink-muted mb-4">O canal é o número WhatsApp do Office. <b>Ativar</b> manda pro atendimento da Eme apenas quem <b>já é lead</b> dela; usuários internos seguem no fluxo normal e qualquer outro externo continua recebendo a auto-resposta de canal só de saída. <b>Modo sombra</b> registra tudo sem enviar nada.</p>
           <div class="grid sm:grid-cols-2 gap-4 mb-4">
             <div class="flex items-center gap-3 rounded-lg border border-line bg-surface-sunken px-3 py-3">
               <Switch :model-value="settings.active" @change="(v) => settings.active = v" />
@@ -444,6 +454,55 @@ onMounted(loadConversations)
             <Input :model-value="String(settings.max_ai_messages)" type="number" label="Máx. respostas de IA por conversa" @update:model-value="(v) => settings.max_ai_messages = Number(v)" />
           </div>
           <Button variant="primary" size="sm" :loading="busy" @click="saveSettings">Salvar</Button>
+        </Surface>
+
+        <!-- Modo teste: atende só os números da lista, mesmo com a Eme ativa.
+             É o jeito de testar com número fake sem risco de pegar cliente. -->
+        <Surface variant="raised" padding="md" class="mb-5">
+          <h2 class="text-base font-semibold text-ink mb-1">Modo teste (número fake)</h2>
+          <p class="text-xs text-ink-muted mb-4">
+            Ligado, a Eme atende <b>somente</b> os números listados aqui, mesmo que existam leads de verdade
+            cadastrados. Todo o resto segue no comportamento atual. É assim que se testa em produção sem
+            risco de atender cliente.
+          </p>
+          <div class="flex items-center gap-3 rounded-lg border border-line bg-surface-sunken px-3 py-3 mb-4">
+            <Switch :model-value="settings.test_mode" @change="(v) => settings.test_mode = v" />
+            <div>
+              <p class="text-sm font-semibold text-ink">Só números de teste</p>
+              <p class="text-[11px] text-ink-subtle">Nenhum lead real é atendido enquanto isso estiver ligado</p>
+            </div>
+          </div>
+          <label class="block text-xs font-medium text-ink-muted mb-1.5">Números liberados (um por linha, com DDD)</label>
+          <textarea
+            :value="testPhonesText"
+            @input="(e) => settings.test_phones = e.target.value.split(/[\n,;]+/).map(s => s.trim()).filter(Boolean)"
+            rows="3" placeholder="34999998888"
+            class="w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink
+                   font-mono placeholder:text-ink-subtle focus:outline-none focus:ring-2 focus:ring-accent/20"></textarea>
+          <p v-if="settings.test_mode && !settings.test_phones?.length"
+            class="mt-2 text-[11px] text-amber-600 dark:text-amber-400">
+            Modo teste ligado sem nenhum número: a Eme não vai atender ninguém.
+          </p>
+          <div class="mt-4">
+            <Button variant="primary" size="sm" :loading="busy" @click="saveSettings">Salvar</Button>
+          </div>
+        </Surface>
+
+        <Surface variant="raised" padding="md" class="mb-5">
+          <h2 class="text-base font-semibold text-ink mb-1">Trava anti-invenção</h2>
+          <p class="text-xs text-ink-muted mb-4">
+            Antes de enviar, a resposta da IA é conferida contra o contexto do fluxo. Valor que não estiver lá
+            faz a Eme reescrever a mensagem; se insistir, ela troca por "vou confirmar e retorno" em vez de
+            inventar preço ou prazo pro lead.
+          </p>
+          <Select
+            :model-value="settings.validation_level"
+            :options="validationOpts"
+            label="Rigor da conferência"
+            @update:model-value="(v) => settings.validation_level = v" />
+          <div class="mt-4">
+            <Button variant="primary" size="sm" :loading="busy" @click="saveSettings">Salvar</Button>
+          </div>
         </Surface>
 
         <Surface variant="raised" padding="md" class="mb-5">
@@ -484,6 +543,23 @@ onMounted(loadConversations)
             <p class="text-sm text-ink whitespace-pre-wrap">{{ sandbox.reply }}</p>
             <div v-if="sandbox.tools.length" class="mt-2 flex gap-2 flex-wrap">
               <Badge v-for="(t, i) in sandbox.tools" :key="i" variant="warning" size="sm">{{ t.name }}</Badge>
+            </div>
+
+            <!-- Conferência anti-invenção: no sandbox só reporta, pra você ver
+                 o que a trava pegaria antes de ligar o atendimento. -->
+            <div v-if="sandbox.validation && sandbox.validation.level !== 'off'"
+              class="mt-3 pt-3 border-t border-line">
+              <p v-if="sandbox.validation.ok" class="text-[11px] text-emerald-600 dark:text-emerald-400">
+                <i class="fas fa-check mr-1"></i> Nenhum valor sem respaldo no contexto.
+              </p>
+              <template v-else>
+                <p class="text-[11px] text-red-600 dark:text-red-400 mb-1">
+                  <i class="fas fa-triangle-exclamation mr-1"></i>
+                  Valores sem respaldo no contexto:
+                  <span class="font-mono">{{ sandbox.validation.suspicious.join(' · ') }}</span>
+                </p>
+                <p class="text-[11px] text-ink-subtle">{{ sandbox.validation.note }}</p>
+              </template>
             </div>
           </div>
         </Surface>
