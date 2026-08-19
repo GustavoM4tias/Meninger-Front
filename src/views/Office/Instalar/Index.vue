@@ -148,10 +148,15 @@ async function ativarNotificacoes() {
             toast.warning('No iPhone, adicione à Tela de Início primeiro.');
         } else if (r.reason === 'permissao-negada') {
             toast.error('Permissão negada. Libere as notificações nos ajustes do navegador.');
+        } else if (r.reason === 'sem-service-worker') {
+            toast.error('O app ainda está carregando. Recarregue a página e tente de novo.');
         } else {
             toast.error('Não consegui ativar as notificações neste aparelho.');
         }
     } catch (err) {
+        // err.message aqui vem do servidor (ver utils/Pwa/push.js): dizer o
+        // motivo real evita o usuário ficar tentando de novo sem saber o que
+        // aconteceu.
         toast.error(err?.message || 'Falha ao ativar as notificações.');
     } finally {
         busy.value = false;
