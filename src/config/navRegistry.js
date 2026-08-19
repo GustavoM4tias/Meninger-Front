@@ -343,6 +343,10 @@ export const navRegistry = [
                     // Preferências do próprio usuário — permissionManaged:false → visíveis a todos.
                     { route: '/settings/notifications', section: 'Notificações', name: 'Notificações', icon: 'fas fa-bell', permissionManaged: false },
                     { route: '/settings/alerts', section: 'Alertas', name: 'Alertas', icon: 'fas fa-tower-broadcast', permissionManaged: false },
+                    // Instalar o Office como app (Dock do Mac, Tela de Início do
+                    // iPhone, Android) e ligar as notificações do aparelho.
+                    // permissionManaged:false — todo mundo precisa conseguir instalar.
+                    { route: '/instalar', name: 'Instalar o app', icon: 'fas fa-mobile-screen-button', permissionManaged: false },
                     { route: '/report', name: 'Reportar Problema', icon: 'fas fa-bug', permissionManaged: false },
                 ],
             },
