@@ -53,9 +53,18 @@ function urlBase64ToUint8Array(base64String) {
 
 async function fetchVapidKey() {
     const res = await fetch(`${API_URL}/push/vapid-key`, { headers: authHeaders() });
-    if (!res.ok) throw new Error('não foi possível obter a chave VAPID');
+
+    if (!res.ok) {
+        // Mostra o motivo que o servidor deu. A mensagem genérica escondia se
+        // era sessão expirada (401), push sem chave (503) ou erro real (500),
+        // e as três pedem ações completamente diferentes.
+        const detalhe = await res.json().then(d => d?.message).catch(() => null);
+        if (res.status === 401) throw new Error('Sua sessão expirou. Entre de novo e tente outra vez.');
+        throw new Error(detalhe || `Não foi possível obter a chave de push (erro ${res.status}).`);
+    }
+
     const { publicKey } = await res.json();
-    if (!publicKey) throw new Error('backend sem VAPID_PUBLIC_KEY configurada');
+    if (!publicKey) throw new Error('O servidor respondeu sem a chave de push.');
     return publicKey;
 }
 
