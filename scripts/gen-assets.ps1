@@ -21,6 +21,9 @@ Add-Type -AssemblyName System.Drawing
 $root   = Split-Path -Parent $PSScriptRoot
 $public = Join-Path $root "public"
 $src    = [System.Drawing.Image]::FromFile((Join-Path $public "Mlogo.png"))
+# Logo completo (marca + palavra "menin"): e ele que vai nos cards de
+# compartilhamento. O Mlogo.png sozinho fica generico demais num card.
+$logo   = [System.Drawing.Image]::FromFile((Join-Path $public "Mlogotext.png"))
 $bgHex  = "#020617"
 $bg     = [System.Drawing.ColorTranslator]::FromHtml($bgHex)
 
@@ -70,48 +73,50 @@ function New-Icon {
 function New-OgCard {
     param([string]$Label, [string]$Out)
 
+    # ATENCAO AO ENQUADRAMENTO: o WhatsApp costuma cortar o preview num QUADRADO
+    # CENTRAL. Card com conteudo alinhado a esquerda perde tudo no corte. Por
+    # isso a composicao e centralizada e cabe na faixa central de 630x630.
     $W = 1200; $H = 630
+    # A faixa central de 630x630 (x de 285 a 915) e a area segura: tudo que
+    # importa fica dentro dela.
+    $cx = $W / 2                     # centro horizontal
+
     $bmp = New-Object System.Drawing.Bitmap($W, $H, [System.Drawing.Imaging.PixelFormat]::Format24bppRgb)
     $g = [System.Drawing.Graphics]::FromImage($bmp)
     $g.SmoothingMode='AntiAlias'; $g.InterpolationMode='HighQualityBicubic'
     $g.PixelOffsetMode='HighQuality'; $g.TextRenderingHint='ClearTypeGridFit'
     $g.Clear($bg)
 
-    # M gigante, quase apagado, no canto direito
-    $wm = New-Object System.Drawing.Imaging.ImageAttributes
-    $cm = New-Object System.Drawing.Imaging.ColorMatrix
-    $cm.Matrix33 = 0.05
-    $wm.SetColorMatrix($cm)
-    $wmH = 720; $wmW = [int]($src.Width / $src.Height * $wmH)
-    $rect = New-Object System.Drawing.Rectangle(820, -60, $wmW, $wmH)
-    $g.DrawImage($src, $rect, 0, 0, $src.Width, $src.Height, 'Pixel', $wm)
-
-    $white = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::White)
-    $muted = New-Object System.Drawing.SolidBrush([System.Drawing.ColorTranslator]::FromHtml("#94a3b8"))
+    $white  = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::White)
+    $muted  = New-Object System.Drawing.SolidBrush([System.Drawing.ColorTranslator]::FromHtml("#94a3b8"))
     $accent = New-Object System.Drawing.SolidBrush([System.Drawing.ColorTranslator]::FromHtml("#2563eb"))
-    $fSite = New-Object System.Drawing.Font("Segoe UI", 30, [System.Drawing.FontStyle]::Regular, [System.Drawing.GraphicsUnit]::Pixel)
-    $sub = "Sistema de gestão da Menin Engenharia"
+
+    $fmt = New-Object System.Drawing.StringFormat
+    $fmt.Alignment = [System.Drawing.StringAlignment]::Center
 
     if ($Label) {
-        # Card de categoria: logo pequeno no topo, nome da categoria embaixo.
-        $logoH = 62; $logoW = [int]($src.Width / $src.Height * $logoH)
-        $g.DrawImage($src, 90, 96, $logoW, $logoH)
-        $fKick = New-Object System.Drawing.Font("Segoe UI Semibold", 22, [System.Drawing.FontStyle]::Regular, [System.Drawing.GraphicsUnit]::Pixel)
-        $g.DrawString("MENIN OFFICE", $fKick, $muted, 90 + $logoW + 24, 114)
-        $fCat = New-Object System.Drawing.Font("Segoe UI Semibold", 62, [System.Drawing.FontStyle]::Regular, [System.Drawing.GraphicsUnit]::Pixel)
-        $g.DrawString($Label, $fCat, $white, 88, 300)
-        $g.DrawString($sub, $fSite, $muted, 90, 392)
-        $g.FillRectangle($accent, 90, 480, 96, 6)
+        # Card de categoria: logo menor no topo, nome da categoria em destaque.
+        $lw = 300; $lh = [int]($logo.Height / $logo.Width * $lw)
+        $g.DrawImage($logo, [int]($cx - $lw / 2), 168, $lw, $lh)
+
+        $fCat = New-Object System.Drawing.Font("Segoe UI Semibold", 66, [System.Drawing.FontStyle]::Regular, [System.Drawing.GraphicsUnit]::Pixel)
+        $g.DrawString($Label, $fCat, $white, $cx, 288, $fmt)
+
+        $fSub = New-Object System.Drawing.Font("Segoe UI", 28, [System.Drawing.FontStyle]::Regular, [System.Drawing.GraphicsUnit]::Pixel)
+        $g.DrawString("Menin Office", $fSub, $muted, $cx, 384, $fmt)
     } else {
-        # Card padrao do sistema.
-        $logoH = 150; $logoW = [int]($src.Width / $src.Height * $logoH)
-        $g.DrawImage($src, 90, 175, $logoW, $logoH)
-        $fTitle = New-Object System.Drawing.Font("Segoe UI Semibold", 52, [System.Drawing.FontStyle]::Regular, [System.Drawing.GraphicsUnit]::Pixel)
-        $g.DrawString("Menin Office", $fTitle, $white, 88, 372)
-        $fSub2 = New-Object System.Drawing.Font("Segoe UI", 28, [System.Drawing.FontStyle]::Regular, [System.Drawing.GraphicsUnit]::Pixel)
-        $g.DrawString($sub, $fSub2, $muted, 90, 448)
-        $g.FillRectangle($accent, 90, 520, 96, 6)
+        # Card padrao: o logo e o protagonista.
+        $lw = 460; $lh = [int]($logo.Height / $logo.Width * $lw)
+        $g.DrawImage($logo, [int]($cx - $lw / 2), 190, $lw, $lh)
+
+        $fTitle = New-Object System.Drawing.Font("Segoe UI Semibold", 66, [System.Drawing.FontStyle]::Regular, [System.Drawing.GraphicsUnit]::Pixel)
+        $g.DrawString("Office", $fTitle, $white, $cx, 330, $fmt)
+
+        $fSub = New-Object System.Drawing.Font("Segoe UI", 28, [System.Drawing.FontStyle]::Regular, [System.Drawing.GraphicsUnit]::Pixel)
+        $g.DrawString("Sistema de gestão da Menin Engenharia", $fSub, $muted, $cx, 426, $fmt)
     }
+
+    $g.FillRectangle($accent, [int]($cx - 48), 486, 96, 6)
 
     $bmp.Save((Join-Path $public $Out), [System.Drawing.Imaging.ImageFormat]::Png)
     $g.Dispose(); $bmp.Dispose()
@@ -141,5 +146,5 @@ if (Test-Path $catFile) {
     Write-Warning "scripts/categorias.txt nao encontrado. Rode 'npm run og:routes' antes."
 }
 
-$src.Dispose()
+$src.Dispose(); $logo.Dispose()
 Write-Output "Pronto."

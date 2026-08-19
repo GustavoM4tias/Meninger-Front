@@ -330,6 +330,12 @@ export const OG_ROUTES = {
     "group": "SISTEMA",
     "subcategory": "Comunicação"
   },
+  "/instalar": {
+    "name": "Instalar o app",
+    "category": "Administração",
+    "group": "SISTEMA",
+    "subcategory": "Comunicação"
+  },
   "/report": {
     "name": "Reportar Problema",
     "category": "Administração",
