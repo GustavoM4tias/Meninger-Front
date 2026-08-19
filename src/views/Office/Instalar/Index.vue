@@ -16,7 +16,7 @@ import PageHeader from '@/components/UI/PageHeader.vue';
 import PageHelp from '@/components/UI/PageHelp.vue';
 import Button from '@/components/UI/Button.vue';
 
-import { detectPlatform, onInstallAvailability, promptInstall } from '@/utils/Pwa/install';
+import { detectPlatform, onInstallAvailability, promptInstall, instalarEAtivar } from '@/utils/Pwa/install';
 import { isPushSupported, pushPermission, enablePush, disablePush } from '@/utils/Pwa/push';
 
 const toast = useToast();
@@ -137,6 +137,53 @@ async function instalar() {
     }
 }
 
+/**
+ * Botão principal: instala e liga as notificações de uma vez.
+ * A ordem dos passos vive em utils/Pwa/install.js e importa — ver o comentário lá.
+ */
+async function instalarTudo() {
+    busy.value = true;
+    try {
+        const r = await instalarEAtivar();
+
+        if (r.instalado && r.pushOk) toast.success('Tudo pronto: app instalado e notificações ligadas.');
+        else if (r.pushOk) toast.success('Notificações ligadas neste aparelho.');
+        else if (r.instalado) toast.info('App instalado. Falta autorizar as notificações.');
+
+        if (!r.pushOk) {
+            if (r.motivo === 'ios-precisa-instalar') toast.warning('No iPhone, adicione à Tela de Início primeiro.');
+            else if (r.motivo === 'permissao-negada') toast.error('Permissão negada. Libere as notificações nos ajustes do navegador.');
+            else if (!r.instalado && !r.podeInstalar) toast.info('Siga o passo a passo abaixo para este aparelho.');
+        }
+
+        await carregarAparelhos();
+    } catch (err) {
+        toast.error(err?.message || 'Falha ao concluir a instalação.');
+    } finally {
+        busy.value = false;
+        refresh();
+    }
+}
+
+async function removerAparelho(d) {
+    try {
+        const res = await fetch(`${API_URL}/push/devices/${d.id}`, { method: 'DELETE', headers: authHeaders() });
+        if (!res.ok) { toast.error('Não consegui remover o aparelho.'); return; }
+        toast.success('Aparelho removido.');
+        // Se o removido for ESTE aparelho, a inscrição local também tem que
+        // cair, senão a tela diz "autorizadas" e o backend não tem para onde
+        // mandar. disablePush cuida dos dois lados.
+        if (d.endpoint && d.endpoint === localStorage.getItem('push_endpoint')) {
+            await disablePush();
+        }
+        await carregarAparelhos();
+    } catch {
+        toast.error('Não consegui remover o aparelho.');
+    } finally {
+        refresh();
+    }
+}
+
 async function ativarNotificacoes() {
     busy.value = true;
     try {
@@ -250,8 +297,15 @@ onBeforeUnmount(() => { stopWatching?.(); });
                             {{ platform.browser }}</span>
                     </p>
 
-                    <div v-if="!platform.installed && canPrompt" class="mt-3">
-                        <Button icon="fas fa-download" :loading="busy" @click="instalar">Instalar o app</Button>
+                    <div v-if="!platform.installed || permission !== 'granted'" class="mt-3">
+                        <Button icon="fas fa-wand-magic-sparkles" :loading="busy" @click="instalarTudo">
+                            {{ canPrompt && !platform.installed
+                                ? 'Instalar e ativar notificações'
+                                : 'Ativar notificações' }}
+                        </Button>
+                        <p class="text-xs text-ink-subtle mt-2">
+                            Um clique só: instala o app e já pede a autorização de notificação.
+                        </p>
                     </div>
                 </div>
             </div>
@@ -311,12 +365,22 @@ onBeforeUnmount(() => { stopWatching?.(); });
 
         <!-- Aparelhos inscritos -->
         <section v-if="devices.length" class="rounded-xl border border-line bg-surface-raised p-5">
-            <h2 class="text-base font-semibold text-ink mb-3">Aparelhos recebendo notificações</h2>
+            <h2 class="text-base font-semibold text-ink mb-1">Aparelhos recebendo notificações</h2>
+            <p class="text-xs text-ink-subtle mb-3">
+                Aparelho onde o app foi desinstalado só some sozinho no próximo envio.
+                Use o × para tirar da lista agora.
+            </p>
             <ul class="divide-y divide-line-subtle">
                 <li v-for="d in devices" :key="d.id" class="py-2.5 flex items-center gap-3 text-sm">
                     <i class="fas fa-mobile-screen text-ink-subtle w-4 text-center"></i>
                     <span class="text-ink flex-1 min-w-0 truncate">{{ nomeAparelho(d.user_agent) }}</span>
                     <span class="text-ink-subtle text-xs shrink-0">desde {{ dataCurta(d.created_at) }}</span>
+                    <button type="button"
+                        class="shrink-0 w-7 h-7 rounded-lg grid place-items-center text-ink-subtle
+                               hover:text-red-500 hover:bg-surface-sunken transition-colors focus-ring"
+                        title="Remover este aparelho" @click="removerAparelho(d)">
+                        <i class="fas fa-xmark"></i>
+                    </button>
                 </li>
             </ul>
         </section>

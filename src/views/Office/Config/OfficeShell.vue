@@ -7,6 +7,7 @@ import Nav from '@/components/Navigation/Nav.vue';
 import Carregamento from '@/components/Loading/Carregamento.vue';
 import InPersonRecordingBar from '@/components/InPersonRecordingBar.vue';
 import MuralFloatingCard from '@/components/Mural/MuralFloatingCard.vue';
+import PwaInstallPrompt from '@/components/Pwa/InstallPrompt.vue';
 
 const authStore = useAuthStore();
 
@@ -40,6 +41,10 @@ const isAuthenticated = computed(() => authStore.isAuthenticated());
  
         <InPersonRecordingBar />
         <MuralFloatingCard />
+        <!-- Convite para instalar o app. Só aparece para quem ainda não instalou
+             NESTE aparelho, uma vez por sessão, e some de vez se a pessoa
+             marcar o checkbox. Fica só no ramo autenticado. -->
+        <PwaInstallPrompt />
         <Carregamento />
     </div>
 </template>
