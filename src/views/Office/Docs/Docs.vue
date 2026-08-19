@@ -590,6 +590,32 @@ const roadmap = [
 // Ordem decrescente: a entrega mais recente primeiro.
 const releases = [
   {
+    version: 'v3.12.0',
+    date: new Date('2026-08-19T00:00:00'),
+    description: 'O Office vira aplicativo instalável no celular e no computador, com notificação que chega no aparelho, e cada link do sistema passa a ser compartilhado com identidade própria.',
+    type: 'minor',
+    categories: ['frontend', 'backend', 'mobile'],
+    features: [
+      { id: 1, title: 'Office como aplicativo', description: 'O sistema pode ser instalado no iPhone, no Android, no Windows e no Mac, com ícone e nome próprios, abrindo em janela limpa sem a barra do navegador. Não passa por loja, não ocupa espaço e não precisa ser atualizado: o aplicativo é o próprio sistema, então toda melhoria publicada já chega instalada. Custo zero, sem Apple Store e sem Google Play.' },
+      { id: 2, title: 'Notificação no aparelho', description: 'As notificações que hoje acendem o sino passam a chegar também como aviso do celular ou do computador, na tela bloqueada e na central de avisos, mesmo com o Office fechado. Clicar abre direto a tela do assunto. Valem as mesmas preferências do sino: desligar um tipo em Notificações desliga nos dois lugares. O Bolão é a exceção proposital, fica só no sino para não interromper a empresa a cada gol.' },
+      { id: 3, title: 'Tela Instalar o app', description: 'Em Sobre o Office, uma tela que reconhece o aparelho e mostra o caminho certo de instalação, com um botão único que instala e já pede a autorização de notificação. Lista os aparelhos que recebem avisos, identifica qual é o atual e permite tirar da lista aquele que não usa mais. Ao abrir o sistema, quem ainda não instalou recebe um convite, que volta a cada sessão até instalar ou pedir para não ver mais.' },
+      { id: 4, title: 'Compartilhamento com identidade', description: 'Link do Office colado no WhatsApp, no Teams ou no LinkedIn passa a exibir logo, nome da tela e da área, em vez do cartão em branco de antes. O texto sai do próprio mapa de navegação do sistema, então tela nova ganha identidade sozinha, sem manutenção. Por segurança o cartão mostra apenas nome de tela, nunca dado de negócio, já que a prévia é lida sem login.' },
+    ],
+    improvements: [
+      { id: 1, category: 'Abertura do sistema', description: 'O tema claro ou escuro passa a ser aplicado antes da tela desenhar, eliminando o piscar de tela branca em quem usa o modo escuro, e a abertura mostra a marca enquanto carrega em vez de tela vazia.' },
+      { id: 2, category: 'Ícone do sistema', description: 'O ícone da aba do navegador era o logo branco sobre fundo transparente e ficava invisível em aba clara. Agora tem fundo próprio e aparece em qualquer tema.' },
+      { id: 3, category: 'Aviso de erro nas notificações', description: 'Falha ao ativar as notificações passa a dizer o motivo real (sessão expirada, permissão bloqueada, indisponibilidade do servidor) em vez de uma mensagem única que não indicava o que fazer.' },
+    ],
+    fixes: [
+      { id: 1, description: 'Aparelho onde o aplicativo foi desinstalado continuava listado como apto a receber avisos sem forma de removê-lo.' },
+      { id: 2, description: 'Reinstalar o aplicativo criava uma segunda inscrição e as duas apareciam idênticas na lista, sem como saber qual valia.' },
+    ],
+    breakingChanges: [],
+    knownIssues: [
+      { id: 1, description: 'No iPhone, a notificação só funciona depois que o Office é adicionado à Tela de Início e aberto pelo ícone. Aberto no Safari comum, o recurso não existe.', workaround: 'É regra da Apple, não limitação do sistema: a Apple não permite que um site instale a si mesmo nem envie aviso fora do aplicativo adicionado. Por isso a tela Instalar o app pede primeiro a instalação e só depois, ao ser aberta pelo ícone, oferece as notificações.' },
+    ],
+  },
+  {
     version: 'v3.11.0',
     date: new Date('2026-08-06T00:00:00'),
     description: 'Sobre o Office, ajustes contábeis no Faturamento e o número de leads da Central Meta passando a contar a nossa base.',
