@@ -173,6 +173,27 @@ export const useLeadsStore = defineStore('leads', () => {
         }
     }
 
+    // ---------- Um lead pelo id (deep link ?idlead=) ----------
+    // Busca isolada, sem passar pelos filtros da tela: o link vem de fora (selo
+    // "Lead" na listagem do Faturamento) e o lead quase sempre é anterior ao mês
+    // corrente, que é o período padrão daqui. O servidor ignora a janela de
+    // datas quando recebe idlead.
+    async function fetchLeadById(idlead) {
+        const id = parseInt(idlead, 10);
+        if (!Number.isFinite(id)) return null;
+        try {
+            const resp = await fetch(`${API_URL}/cv/leads?idlead=${id}`, {
+                method: 'GET', headers: authHeaders(),
+            });
+            const data = await resp.json();
+            if (!resp.ok) throw new Error(data?.error || 'Erro ao carregar o lead');
+            return (Array.isArray(data.results) ? data.results : [])[0] || null;
+        } catch (e) {
+            error.value = e.message;
+            return null;
+        }
+    }
+
     // ---------- Leads recentes (INDEPENDENTES do filtro do dashboard) ----------
     // O painel "Leads recentes" deve mostrar os últimos leads captados DE VERDADE,
     // não os mais recentes dentro do período/filtros escolhidos no dashboard.
@@ -321,6 +342,6 @@ export const useLeadsStore = defineStore('leads', () => {
         // getters
         kpiPorSituacao, kpiSituacoes, situationsList, leadsByEnterprise,
         // actions
-        fetchLeads, fetchRecentLeads, fetchFilas, applyDefaultSituacoes, applyDefaultOrigens,
+        fetchLeads, fetchLeadById, fetchRecentLeads, fetchFilas, applyDefaultSituacoes, applyDefaultOrigens,
     }
 })

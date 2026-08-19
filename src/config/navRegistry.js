@@ -1,3 +1,4 @@
+import { RELATORIOS } from '@/views/Office/Comercial/Relatorios/relatorios';
 /**
  * navRegistry.js
  * ─────────────────────────────────────────────────────────────────────────────
@@ -103,7 +104,9 @@ export const navRegistry = [
                 name: 'Projeção & Metas',
                 icon: 'fas fa-bullseye',
                 pages: [
-                    { route: '/comercial/sales-projection', section: 'Vendas x Projeção', name: 'Vendas X Projeção', icon: 'fas fa-arrow-trend-up' },
+                    // Vendas × Projeção virou guia do Relatório Comercial
+                    // (Vendas > Relatório Comercial). O editor de Projeção
+                    // continua aqui, porque é cadastro, não leitura.
                     { route: '/comercial/projections', section: 'Projeção', name: 'Projeção', icon: 'fas fa-chart-line' },
                 ],
             },
@@ -116,8 +119,24 @@ export const navRegistry = [
                     // a tela liberada; sem isso não-admin ficava 403 sem ter onde liberar).
                     { route: '/comercial/precadastros', section: 'Pré-Cadastros', name: 'Pré-Cadastros', icon: 'fas fa-id-card-clip' },
                     { route: '/comercial/reservas-report', section: 'Reservas', name: 'Reservas', icon: 'fas fa-bookmark' },
-                    { route: '/comercial/faturamento', section: 'Faturamento', name: 'Faturamento', icon: 'fas fa-file-invoice-dollar' },
                 ],
+            },
+            {
+                key: 'reports',
+                name: 'Relatórios',
+                icon: 'fas fa-chart-column',
+                // Um item POR relatório, gerado do catálogo (relatorios.js).
+                // Faturamento e Vendas × Projeção viraram dois deles em
+                // 2026-08-17; as rotas antigas seguem vivas como redirect.
+                // Item separado = alçada separada na tela de Alçadas, que é o
+                // ponto: dá para liberar Leads ao Comercial sem abrir o
+                // Faturamento junto.
+                pages: RELATORIOS.map((r) => ({
+                    route: r.route,
+                    section: r.pageTitle,
+                    name: r.label,
+                    icon: r.icon,
+                })),
             },
             {
                 key: 'conditions',

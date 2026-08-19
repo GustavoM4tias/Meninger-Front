@@ -1,5 +1,31 @@
 // src/router/office.routes.js
 import { academyAppRoutes } from './academy.routes.js';
+import { RELATORIOS } from '@/views/Office/Comercial/Relatorios/relatorios';
+import { usePermissionStore } from '@/stores/Settings/Permissions/permissionStore';
+
+// Uma rota por relatório comercial, geradas do catálogo — assim relatório novo
+// entra no router, no menu e na barra de guias de uma vez só. O componente vem
+// do próprio catálogo (`load`), que é o mesmo usado no pré-carregamento.
+// Faturamento e Vendas × Projeção são as telas originais em modo `embedded`.
+const relatorioRoutes = RELATORIOS.map((r) => ({
+    path: r.key,
+    name: r.pageTitle,
+    component: r.load,
+    ...(r.embedded ? { props: { embedded: true } } : {}),
+    meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: r.content },
+}));
+
+// /comercial/relatorios sem relatório na URL cai no primeiro que a alçada
+// permite — quem só tem Leads não bate num Faturamento bloqueado.
+function primeiroRelatorioPermitido() {
+    try {
+        // Só roda na navegação, quando o Pinia já está ativo.
+        const perm = usePermissionStore();
+        const achou = RELATORIOS.find((r) => perm.hasAccess(r.route));
+        if (achou) return achou.route;
+    } catch { /* store indisponível: cai no padrão e o guard decide */ }
+    return RELATORIOS[0].route;
+}
 
 export default [
     // públicas
@@ -233,18 +259,27 @@ export default [
                         component: () => import('@/views/Office/Comercial/Reservas/Index.vue'),
                         meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Relatório de Reservas — funil pós pré-cadastro até a venda concretizada' },
                     },
+                    // Relatórios comerciais: uma ROTA POR RELATÓRIO, sob a casca
+                    // comum (cabeçalho + guias). Rota própria é o que permite
+                    // conceder cada relatório separadamente na tela de Alçadas —
+                    // o backend casa alçada por igualdade exata de rota.
                     {
-                        path: 'faturamento',
-                        name: 'Faturamento',
-                        component: () => import('@/views/Office/Comercial/Faturamento/Index.vue'),
-                        meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Dashboard de faturamento e contratos' },
+                        path: 'relatorios',
+                        component: () => import('@/views/Office/Comercial/Relatorios/Shell.vue'),
+                        meta: { requiresAuth: true },
+                        children: [
+                            // Sem relatório na URL: manda para o primeiro que a
+                            // alçada do usuário permite.
+                            { path: '', redirect: () => ({ path: primeiroRelatorioPermitido() }) },
+                            ...relatorioRoutes,
+                        ],
                     },
-                    {
-                        path: 'sales-projection',
-                        name: 'Vendas X Projeção',
-                        component: () => import('@/views/Office/Comercial/Sales-Projection/Index.vue'),
-                        meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Dashboard de Vendas X Projeção de Vendas' },
-                    },
+                    // Consolidadas nos Relatórios Comerciais em 2026-08-17. As
+                    // rotas antigas seguem vivas como redirect: favoritos salvos
+                    // (6) e os links das notificações de ajuste contábil e de
+                    // fechamento apontam para elas.
+                    { path: 'faturamento', redirect: to => ({ path: '/comercial/relatorios/faturamento', query: to.query }) },
+                    { path: 'sales-projection', redirect: to => ({ path: '/comercial/relatorios/projecao', query: to.query }) },
                     {
                         path: 'cancelamento-reservas',
                         name: 'Cancelamentos CV × Sienge',
