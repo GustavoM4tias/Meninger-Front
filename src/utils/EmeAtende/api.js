@@ -60,3 +60,8 @@ export const previewRules = (data) => req('/rules-preview', { method: 'POST', bo
 
 // Sandbox
 export const testAi = (data) => req('/test/ai', { method: 'POST', body: JSON.stringify(data) })
+
+// Empreendimentos do site institucional (fonte de contexto do fluxo).
+// A lista é lida ao vivo do site; o conteúdo do fluxo vem do snapshot diário.
+export const listSiteEnterprises = () => req('/site/enterprises')
+export const syncSite = (flow_id = null) => req('/site/sync', { method: 'POST', body: JSON.stringify({ flow_id }) })
