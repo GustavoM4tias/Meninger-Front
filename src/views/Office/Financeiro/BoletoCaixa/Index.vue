@@ -558,13 +558,13 @@
               v-model.number="form.janela_inicio_hora"
               type="number" min="0" max="23"
               label="Abre às (hora cheia)"
-              placeholder="Ex: 8"
+              placeholder="Ex: 6"
               hint="Antes deste horário a emissão fica agendada." />
             <Input
               v-model.number="form.janela_fim_hora"
               type="number" min="1" max="24"
               label="Fecha às (hora cheia)"
-              placeholder="Ex: 20"
+              placeholder="Ex: 23"
               hint="A partir deste horário a emissão fica agendada para o dia seguinte." />
           </div>
           <p v-if="form.janela_ativa" class="text-xs text-ink-muted flex items-start gap-1.5">
@@ -899,8 +899,8 @@ const form = ref({
   max_dias_vencimento: 10,
   valor_maximo: 300000,
   janela_ativa: true,
-  janela_inicio_hora: 8,
-  janela_fim_hora: 20,
+  janela_inicio_hora: 6,
+  janela_fim_hora: 23,
   active: false,
 });
 
@@ -911,7 +911,7 @@ const valorMaximoLabel = computed(() => {
   return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 });
 
-// "08:00 às 20:00" — janela de funcionamento da emissão automática.
+// "06:00 às 23:00" — janela de funcionamento da emissão automática.
 const janelaLabel = computed(() => {
   const hh = (h) => `${String(h ?? 0).padStart(2, '0')}:00`;
   return `${hh(form.value.janela_inicio_hora)} às ${hh(form.value.janela_fim_hora)}`;
@@ -1252,8 +1252,8 @@ onMounted(async () => {
       form.value.max_dias_vencimento = store.settings.max_dias_vencimento ?? 10;
       form.value.valor_maximo = store.settings.valor_maximo != null ? Number(store.settings.valor_maximo) : null;
       form.value.janela_ativa = store.settings.janela_ativa ?? true;
-      form.value.janela_inicio_hora = store.settings.janela_inicio_hora ?? 8;
-      form.value.janela_fim_hora = store.settings.janela_fim_hora ?? 20;
+      form.value.janela_inicio_hora = store.settings.janela_inicio_hora ?? 6;
+      form.value.janela_fim_hora = store.settings.janela_fim_hora ?? 23;
       form.value.active = store.settings.active ?? false;
     }
     await store.fetchComissionRules();
