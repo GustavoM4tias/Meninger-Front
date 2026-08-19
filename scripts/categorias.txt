@@ -1,0 +1,9 @@
+marketing|Marketing
+comercial|Comercial
+financeiro|Financeiro
+ferramentas|Ferramentas
+academy|Academy
+microsoft|Microsoft
+meta|Meta
+administracao|Administração
+sobre-o-office|Sobre o Office

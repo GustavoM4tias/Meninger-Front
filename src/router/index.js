@@ -10,6 +10,7 @@ import officeRoutes from './office.routes.js';
 // de maintenanceRoutes na linha de seleção de rotas abaixo.
 import maintenanceRoutes from './maintenance.routes.js';
 import lpRoutes from './lp.routes.js';
+import { attachPwaRoutes } from './pwa.routes.js';
 
 // Decide se a aplicação roda como Academy ou Office.
 // Produção: pelo subdomínio (academy.menin.com.br → Academy; demais → Office).
@@ -35,7 +36,7 @@ function isLpHost() {
 
 const router = createRouter({
   history: createWebHistory(),
-  routes: isLpHost() ? lpRoutes : (isAcademyHost() ? maintenanceRoutes : officeRoutes),
+  routes: isLpHost() ? lpRoutes : (isAcademyHost() ? maintenanceRoutes : attachPwaRoutes(officeRoutes)),
 });
 
 // ─── Auto-recuperação de build obsoleto ──────────────────────────────────────

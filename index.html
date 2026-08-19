@@ -22,13 +22,13 @@
   <meta name="application-name" content="Office">
 
   <!-- Compartilhamento: WhatsApp, Teams, Slack, LinkedIn -->
-  <meta name="description" content="Sistema de gestão da Menin Empreendimentos">
+  <meta name="description" content="Sistema de gestão da Menin Engenharia">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Menin Office">
   <meta property="og:locale" content="pt_BR">
   <meta property="og:url" content="https://office.menin.com.br/">
   <meta property="og:title" content="Menin Office">
-  <meta property="og:description" content="Sistema de gestão da Menin Empreendimentos">
+  <meta property="og:description" content="Sistema de gestão da Menin Engenharia">
   <meta property="og:image" content="https://office.menin.com.br/og-image.png">
   <meta property="og:image:secure_url" content="https://office.menin.com.br/og-image.png">
   <meta property="og:image:type" content="image/png">
@@ -37,15 +37,58 @@
   <meta property="og:image:alt" content="Menin Office">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Menin Office">
-  <meta name="twitter:description" content="Sistema de gestão da Menin Empreendimentos">
+  <meta name="twitter:description" content="Sistema de gestão da Menin Engenharia">
   <meta name="twitter:image" content="https://office.menin.com.br/og-image.png">
 
+
+  <!-- Tema aplicado antes do render: evita o flash de tema errado e deixa o
+       splash na cor certa enquanto o bundle carrega (mesma regra do main.js). -->
+  <script>
+    (function () {
+      try {
+        var saved = localStorage.getItem('theme');
+        var dark  = saved ? saved === 'dark'
+                          : window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (dark) document.documentElement.classList.add('dark');
+      } catch (e) {}
+    })();
+  </script>
+  <style>
+    /* Splash de abertura. O Vue substitui o conteudo de #app ao montar, entao
+       isso some sozinho. Serve principalmente pro app instalado no iPhone, que
+       antes ficava numa tela preta vazia ate o bundle carregar. */
+    #app-splash {
+      position: fixed; inset: 0; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 1.5rem;
+      background: #ffffff;
+    }
+    html.dark #app-splash { background: #020617; }
+    #app-splash img { width: 84px; height: auto; filter: invert(1); animation: splash-pulse 1.6s ease-in-out infinite; }
+    html.dark #app-splash img { filter: none; }
+    #app-splash span { width: 120px; height: 3px; border-radius: 999px; background: rgba(37,99,235,.25); overflow: hidden; }
+    #app-splash span::after {
+      content: ''; display: block; width: 40%; height: 100%; border-radius: 999px;
+      background: #2563eb; animation: splash-slide 1.2s ease-in-out infinite;
+    }
+    @keyframes splash-pulse { 0%,100% { opacity: 1 } 50% { opacity: .45 } }
+    @keyframes splash-slide { 0% { transform: translateX(-100%) } 100% { transform: translateX(350%) } }
+    @media (prefers-reduced-motion: reduce) {
+      #app-splash img, #app-splash span::after { animation: none }
+    }
+  </style>
 </head>
 
 <body>
-  <div id="app" class="bg-surface text-ink"></div>
+  <div id="app" class="bg-surface text-ink">
+    <div id="app-splash">
+      <img src="/Mlogo.png" alt="Menin" width="84" height="72">
+      <span></span>
+    </div>
+  </div>
 
   <script type="module" src="/src/main.js"></script>
+  <!-- PWA: service worker + push. Entry proprio, ver src/pwa-boot.js -->
+  <script type="module" src="/src/pwa-boot.js"></script>
   <!-- FontAwesome CDN -->
   <script src="https://kit.fontawesome.com/e22310c47c.js" crossorigin="anonymous"></script>
   <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
