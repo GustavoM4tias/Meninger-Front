@@ -21,8 +21,14 @@ import { next } from '@vercel/edge';
 import { OG_ROUTES } from './src/config/ogRoutes.generated.js';
 
 export const config = {
-    // Fora: assets do build, arquivos com extensão (imagens, manifest, sw.js).
-    matcher: ['/((?!assets/|.*\.[a-zA-Z0-9]+$).*)'],
+    // Fora do middleware: os assets com hash do build.
+    //
+    // O matcher fica NA FORMA SIMPLES de propósito. Fora do Next.js a Vercel
+    // compila isso com path-to-regexp, e âncora ($) dentro do lookahead não
+    // compila — o matcher passa a nunca casar e o middleware nunca roda, sem
+    // nenhum erro no build. Imagem e demais arquivos com extensão são barrados
+    // no código, logo na entrada.
+    matcher: ['/((?!assets/).*)'],
 };
 
 const ORIGIN = 'https://office.menin.com.br';
@@ -154,16 +160,23 @@ function page(url, meta) {
 </html>`;
 }
 
+// Marca que o middleware rodou. Sem isso não dá para distinguir "middleware
+// executou e decidiu passar" de "middleware nem foi chamado" — foi exatamente
+// essa dúvida que custou um deploy quando o matcher não compilava.
+function passar() {
+    return next({ headers: { 'x-office-mw': '1' } });
+}
+
 export default function middleware(request) {
     try {
-        if (!isCrawler(request.headers.get('user-agent'))) return next();
+        if (!isCrawler(request.headers.get('user-agent'))) return passar();
 
         const url = new URL(request.url);
 
         // Cinto e suspensório: o matcher já exclui caminho com extensão, mas se
         // ele mudar e /og-image.png cair aqui, o crawler receberia HTML no lugar
         // do PNG e o preview ficaria sem imagem. Deixa passar.
-        if (/\.[a-zA-Z0-9]+$/.test(url.pathname)) return next();
+        if (/\.[a-zA-Z0-9]+$/.test(url.pathname)) return passar();
 
         const meta = buildMeta(url.pathname);
 
@@ -175,6 +188,7 @@ export default function middleware(request) {
                 // o problema de cache eterno que o WhatsApp já cria sozinho.
                 'Cache-Control': 'public, max-age=300, s-maxage=300',
                 'X-Robots-Tag': 'noindex',
+                'x-office-mw': 'preview',
             },
         });
     } catch {
