@@ -248,9 +248,40 @@ function nomeAparelho(ua) {
     return 'Aparelho';
 }
 
+/** Este é o aparelho em que a pessoa está agora? */
+function ehEsteAparelho(d) {
+    const meu = localStorage.getItem('push_endpoint');
+    return !!meu && d.endpoint === meu;
+}
+
+/**
+ * Texto de estado da inscrição. Serve para distinguir duas linhas iguais —
+ * dois "iPhone" na lista, um vivo e um de app já desinstalado, ficavam
+ * indistinguíveis quando as duas só mostravam a data de cadastro.
+ */
+function estadoAparelho(d) {
+    if (ehEsteAparelho(d)) return 'este aparelho';
+    if (d.last_success_at) return `último aviso em ${dataCurta(d.last_success_at)}`;
+    return 'ainda sem aviso recebido';
+}
+
 function dataCurta(v) {
     if (!v) return '';
     try { return new Date(v).toLocaleDateString('pt-BR'); } catch { return ''; }
+}
+
+/**
+ * Data COM HORA. Dois aparelhos do mesmo tipo cadastrados no mesmo dia (o
+ * caso comum de reinstalar: a inscrição antiga fica e nasce uma nova) ficavam
+ * indistinguíveis mostrando só a data. A hora resolve: a mais antiga é a morta.
+ */
+function dataHora(v) {
+    if (!v) return '';
+    try {
+        return new Date(v).toLocaleString('pt-BR', {
+            day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit',
+        });
+    } catch { return ''; }
 }
 
 onMounted(() => {
@@ -367,14 +398,25 @@ onBeforeUnmount(() => { stopWatching?.(); });
         <section v-if="devices.length" class="rounded-xl border border-line bg-surface-raised p-5">
             <h2 class="text-base font-semibold text-ink mb-1">Aparelhos recebendo notificações</h2>
             <p class="text-xs text-ink-subtle mb-3">
-                Aparelho onde o app foi desinstalado só some sozinho no próximo envio.
-                Use o × para tirar da lista agora.
+                Reinstalar o app cria uma inscrição nova, e a antiga só some sozinha no
+                próximo envio. Vendo dois aparelhos iguais, o mais antigo pela hora é o
+                que não vale mais: tire no ×.
             </p>
             <ul class="divide-y divide-line-subtle">
                 <li v-for="d in devices" :key="d.id" class="py-2.5 flex items-center gap-3 text-sm">
-                    <i class="fas fa-mobile-screen text-ink-subtle w-4 text-center"></i>
-                    <span class="text-ink flex-1 min-w-0 truncate">{{ nomeAparelho(d.user_agent) }}</span>
-                    <span class="text-ink-subtle text-xs shrink-0">desde {{ dataCurta(d.created_at) }}</span>
+                    <i class="fas fa-mobile-screen w-4 text-center"
+                        :class="ehEsteAparelho(d) ? 'text-emerald-500' : 'text-ink-subtle'"></i>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2 min-w-0">
+                            <span class="text-ink truncate">{{ nomeAparelho(d.user_agent) }}</span>
+                            <span v-if="ehEsteAparelho(d)"
+                                class="shrink-0 text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded
+                                       bg-accent-soft text-accent font-semibold">atual</span>
+                        </div>
+                        <p class="text-xs text-ink-subtle mt-0.5">
+                            desde {{ dataHora(d.created_at) }} · {{ estadoAparelho(d) }}
+                        </p>
+                    </div>
                     <button type="button"
                         class="shrink-0 w-7 h-7 rounded-lg grid place-items-center text-ink-subtle
                                hover:text-red-500 hover:bg-surface-sunken transition-colors focus-ring"
