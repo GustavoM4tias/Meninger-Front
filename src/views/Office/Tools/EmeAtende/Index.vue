@@ -76,6 +76,9 @@ const rules = ref([])
 const templates = ref([])
 const flowOpen = ref(null)
 const flowEdit = reactive({ openerVars: '', triggersJson: '' })
+// Empreendimentos publicados no site - fonte do contexto do fluxo.
+const siteEnterprises = ref([])
+const siteState = reactive({ loading: false, error: '', syncing: 0 })
 const newFlowName = ref('')
 const newRule = reactive({ field: 'campaign', operator: 'contains', value: '', flow_id: null, priority: 100 })
 
@@ -144,8 +147,33 @@ async function loadFlows() {
     if (!templates.value.length) {
       try { templates.value = await api.listTemplates('APPROVED') } catch { /* canal sem sync ainda */ }
     }
+    if (!siteEnterprises.value.length) loadSiteEnterprises()
   } catch (e) { notify(e.message, 'err') } finally { flowsLoading.value = false }
 }
+// Lista do site: erro aqui não trava a tela, mas aparece no editor - fluxo
+// sem Select é sintoma de site fora do ar ou formato mudado, não de bug local.
+async function loadSiteEnterprises() {
+  siteState.loading = true; siteState.error = ''
+  try { siteEnterprises.value = await api.listSiteEnterprises() }
+  catch (e) { siteState.error = e.message }
+  finally { siteState.loading = false }
+}
+const siteOpts = computed(() => [
+  { value: '', label: '(sem vínculo - contexto só pelo texto abaixo)' },
+  ...siteEnterprises.value.map(e => ({ value: e.slug, label: `${e.nome} - ${e.cidade || ""}` })),
+])
+// Atualiza AGORA o conteúdo vindo do site (o automático roda 1x/dia).
+async function syncFlowSite(f) {
+  siteState.syncing = f.id
+  try {
+    await api.syncSite(f.id)
+    const atualizados = await api.listFlows()
+    Object.assign(f, atualizados.find(x => x.id === f.id) || {})
+    notify(f.site_sync_error ? `Site respondeu, mas: ${f.site_sync_error}` : 'Conteúdo do site atualizado.',
+           f.site_sync_error ? 'err' : 'ok')
+  } catch (e) { notify(e.message, 'err') } finally { siteState.syncing = 0 }
+}
+
 function openFlow(f) {
   if (flowOpen.value === f.id) { flowOpen.value = null; return }
   flowOpen.value = f.id
@@ -164,6 +192,8 @@ async function saveFlow(f) {
       // regras de atendimento deste empreendimento + override parcial dos padrões
       attendance_rules: f.attendance_rules || null,
       standards: f.standards || {},
+      // vínculo com o site: o back re-sincroniza sozinho quando isto muda
+      site_slug: f.site_slug || null,
       opener_template: f.opener_template || null, opener_language: f.opener_language || 'pt_BR',
       opener_variables: flowEdit.openerVars.split(',').map(s => s.trim()).filter(Boolean),
       triggers,
@@ -241,6 +271,7 @@ const settings = reactive({
   active: false, dry_run: true, debounce_seconds: 8, max_ai_messages: 30,
   test_mode: false, test_phones: [], validation_level: 'money_dates',
   global_persona: '', global_rules: '',
+  site_url: '',
   standards: {
     max_sentences: 4, questions_per_message: 1,
     emoji: 'light', formality: 'informal',
@@ -406,6 +437,38 @@ onMounted(loadConversations)
                 <Select :model-value="f.opener_template || ''" :options="templateOpts" label="Template de abertura (aprovado na Meta)" @change="(v) => f.opener_template = v" />
                 <Input v-model="flowEdit.openerVars" label="Variáveis do template (campos do lead, na ordem)" placeholder="name, empreendimento" />
               </div>
+              <!-- Empreendimento do SITE: fonte do contexto. O conteúdo não é lido
+                   ao vivo na conversa - um sync diário grava o snapshot no fluxo. -->
+              <div class="rounded-lg border border-line bg-surface-sunken px-3 py-3 space-y-3">
+                <Select :model-value="f.site_slug || ''" :options="siteOpts"
+                  label="Empreendimento no site (fonte do contexto)"
+                  @change="(v) => f.site_slug = v || null" />
+
+                <p v-if="siteState.loading" class="text-[11px] text-ink-subtle">Lendo o site…</p>
+                <p v-else-if="siteState.error" class="text-[11px] text-red-600 dark:text-red-400">
+                  Não consegui ler o site: {{ siteState.error }}
+                </p>
+
+                <div v-if="f.site_slug" class="flex flex-wrap items-center gap-2">
+                  <Badge v-if="f.site_snapshot" variant="neutral" size="sm">
+                    {{ f.site_snapshot.images?.length || 0 }} imagem(ns)
+                  </Badge>
+                  <Badge v-if="f.site_snapshot?.book" variant="neutral" size="sm">book em PDF</Badge>
+                  <span class="text-[11px] text-ink-subtle">
+                    {{ f.site_synced_at ? `Atualizado do site em ${fmt(f.site_synced_at)}` : 'Ainda não sincronizado' }}
+                  </span>
+                  <Button variant="secondary" size="sm" icon="fas fa-rotate"
+                    :loading="siteState.syncing === f.id" @click="syncFlowSite(f)">Atualizar agora</Button>
+                </div>
+
+                <p v-if="f.site_sync_error" class="text-[11px] text-amber-600 dark:text-amber-400">
+                  Último sync falhou: {{ f.site_sync_error }}. A Eme segue com o conteúdo anterior.
+                </p>
+                <p v-if="f.site_slug" class="text-[11px] text-ink-subtle">
+                  O conteúdo é atualizado sozinho todo dia às 4h40. Preço e condição não vêm do site,
+                  então a Eme não vai afirmar valor nenhum - fica com o consultor.
+                </p>
+              </div>
               <div>
                 <label :class="LABEL">Comportamento da Eme (persona) - vazio herda a persona geral</label>
                 <textarea v-model="f.system_prompt" :class="TA" rows="4" placeholder="Deixe vazio para usar a persona definida em Config › Regras gerais. Preencha só se este empreendimento pedir um tom diferente."></textarea>
@@ -554,6 +617,13 @@ onMounted(loadConversations)
             </div>
             <Input :model-value="String(settings.debounce_seconds)" type="number" label="Debounce (s) - junta mensagens picadas" @update:model-value="(v) => settings.debounce_seconds = Number(v)" />
             <Input :model-value="String(settings.max_ai_messages)" type="number" label="Máx. respostas de IA por conversa" @update:model-value="(v) => settings.max_ai_messages = Number(v)" />
+            <div class="sm:col-span-2">
+              <Input v-model="settings.site_url" label="URL do site institucional (fonte do conteúdo dos empreendimentos)"
+                placeholder="https://menin.dominiz.com.br" />
+              <p class="mt-1 text-[11px] text-ink-subtle">
+                Vazio usa o padrão do código. Trocar aqui é o que vale quando o site mudar de domínio.
+              </p>
+            </div>
           </div>
           <Button variant="primary" size="sm" :loading="busy" @click="saveSettings">Salvar</Button>
         </Surface>
