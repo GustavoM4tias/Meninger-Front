@@ -146,23 +146,48 @@ const toggleSubDropdown = (cat, subKey) => {
 };
 
 // ─── Sidebar collapse ────────────────────────────────
-// Padrão: recolhida. Desktop abre como rail de ícones; mobile fica fechada
-// (overlay escondido). Só expande/abre ao clicar no botão de menu (barras).
-const isCollapsed = ref(true);
+// Desktop (sm+): padrão recolhida como rail de ícones; o botão de barras
+// alterna rail ↔ expandida. O rail depende de hover/flyout, então no mobile
+// ele não existe: lá a sidebar é um overlay que SEMPRE abre expandida.
+// `isCollapsed` é derivado — nunca escrito direto — pra que o estado do
+// mobile não possa dessincronizar do estado do desktop.
+const SM_QUERY = '(max-width: 639.98px)';   // abaixo do breakpoint `sm` do Tailwind
+const mediaMobile = typeof window !== 'undefined' ? window.matchMedia(SM_QUERY) : null;
+
+const isMobile         = ref(!!mediaMobile?.matches);
+const collapsedDesktop = ref(true);
+const isCollapsed      = computed(() => (isMobile.value ? false : collapsedDesktop.value));
+const isMobileOpen     = ref(false);
+
 // No mobile (<sm) o wrapper reserva 0px (sidebar abre como overlay).
 // No desktop (sm+) reserva a largura real pra empurrar o conteúdo.
 const sidebarWidthClass = computed(() =>
-  isCollapsed.value ? 'w-0 sm:w-14' : 'w-0 sm:w-72'
+  collapsedDesktop.value ? 'w-0 sm:w-14' : 'w-0 sm:w-72'
 );
-const isMobileOpen = ref(false);
 
-const collapseSidebar = () => {
-  isCollapsed.value = true;
+const closeAllDropdowns = () => {
   Object.keys(dropdowns.value).forEach(k => (dropdowns.value[k] = false));
   Object.keys(subDropdowns.value).forEach(k => (subDropdowns.value[k] = false));
 };
-const expandSidebar = () => { isCollapsed.value = false; };
-const toggleSidebar = () => { isCollapsed.value ? expandSidebar() : collapseSidebar(); };
+
+const collapseSidebar = () => { collapsedDesktop.value = true; closeAllDropdowns(); };
+const expandSidebar   = () => { collapsedDesktop.value = false; };
+const toggleSidebar   = () => { collapsedDesktop.value ? expandSidebar() : collapseSidebar(); };
+
+// Botão de barras — uma responsabilidade por breakpoint:
+// mobile abre/fecha o overlay (sempre expandido), desktop alterna o rail.
+const onMenuClick = () => {
+  if (isMobile.value) { isMobileOpen.value = !isMobileOpen.value; return; }
+  toggleSidebar();
+};
+
+// Trocou de breakpoint: nunca deixar o overlay do mobile preso no desktop.
+const onBreakpointChange = (e) => {
+  isMobile.value = e.matches;
+  if (!e.matches) isMobileOpen.value = false;
+};
+mediaMobile?.addEventListener('change', onBreakpointChange);
+onBeforeUnmount(() => mediaMobile?.removeEventListener('change', onBreakpointChange));
 
 // Recolhido: cliques em categorias/itens NÃO expandem a sidebar — só o botão de
 // barras (toggleSidebar) faz isso. Recolhido, a navegação acontece pelo flyout.
@@ -286,6 +311,9 @@ onMounted(async () => {
 });
 
 const closeMobile = () => { isMobileOpen.value = false; };
+
+// Qualquer troca de rota fecha o overlay do mobile (busca, flyout, link direto).
+watch(() => route.fullPath, closeMobile);
 </script>
 
 <template>
@@ -295,8 +323,10 @@ const closeMobile = () => { isMobileOpen.value = false; };
     <nav class="fixed top-0 z-50 w-full bg-surface/80 backdrop-blur-xl border-b border-line">
       <div class="px-3 py-2 lg:px-5 lg:pl-3 flex items-center justify-between gap-3">
         <div class="flex items-center gap-3">
-          <IconButton @click.prevent="toggleSidebar" icon="fas fa-bars" size="md" label="Abrir menu" class=""
-            @click="isMobileOpen = !isMobileOpen" />
+          <IconButton
+            icon="fas fa-bars" size="md"
+            :label="isMobileOpen ? 'Fechar menu' : 'Abrir menu'"
+            @click="onMenuClick" />
 
           <a href="/" 
              class="flex items-center select-none cursor-pointer">
