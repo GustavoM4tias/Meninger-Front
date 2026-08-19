@@ -65,3 +65,4 @@ export const testAi = (data) => req('/test/ai', { method: 'POST', body: JSON.str
 // A lista é lida ao vivo do site; o conteúdo do fluxo vem do snapshot diário.
 export const listSiteEnterprises = () => req('/site/enterprises')
 export const syncSite = (flow_id = null) => req('/site/sync', { method: 'POST', body: JSON.stringify({ flow_id }) })
+export const listSiteSyncs = (limit = 30) => req(`/site/syncs?limit=${limit}`)

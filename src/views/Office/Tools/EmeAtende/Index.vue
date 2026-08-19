@@ -78,6 +78,9 @@ const flowOpen = ref(null)
 const flowEdit = reactive({ openerVars: '', triggersJson: '' })
 // Empreendimentos publicados no site - fonte do contexto do fluxo.
 const siteEnterprises = ref([])
+// Histórico das leituras do site (o conteúdo muda sozinho de madrugada).
+const siteSyncs = ref([])
+const siteSyncsOpen = ref(false)
 const siteState = reactive({ loading: false, error: '', syncing: 0 })
 const newFlowName = ref('')
 const newRule = reactive({ field: 'campaign', operator: 'contains', value: '', flow_id: null, priority: 100 })
@@ -152,6 +155,23 @@ async function loadFlows() {
 }
 // Lista do site: erro aqui não trava a tela, mas aparece no editor - fluxo
 // sem Select é sintoma de site fora do ar ou formato mudado, não de bug local.
+// Carrega sob demanda: o histórico não interessa até alguém abrir.
+function toggleSiteSyncs() {
+  siteSyncsOpen.value = !siteSyncsOpen.value
+  if (siteSyncsOpen.value && !siteSyncs.value.length) loadSiteSyncs()
+}
+async function loadSiteSyncs() {
+  try { siteSyncs.value = await api.listSiteSyncs(20) }
+  catch (e) { notify(e.message, 'err') }
+}
+// Rótulo curto do que mudou numa rodada - a lista completa fica no detalhe.
+function resumoMudanca(c) {
+  if (c.first) return 'primeira carga'
+  const campos = (c.fields || []).join(", ")
+  const img = c.images ? ` (imagens ${c.images[0]}→${c.images[1]})` : ''
+  return `${campos || 'sem alteração'}${img}`
+}
+
 async function loadSiteEnterprises() {
   siteState.loading = true; siteState.error = ''
   try { siteEnterprises.value = await api.listSiteEnterprises() }
@@ -171,6 +191,7 @@ async function syncFlowSite(f) {
     Object.assign(f, atualizados.find(x => x.id === f.id) || {})
     notify(f.site_sync_error ? `Site respondeu, mas: ${f.site_sync_error}` : 'Conteúdo do site atualizado.',
            f.site_sync_error ? 'err' : 'ok')
+    loadSiteSyncs()
   } catch (e) { notify(e.message, 'err') } finally { siteState.syncing = 0 }
 }
 
@@ -554,9 +575,44 @@ onMounted(loadConversations)
             <Button variant="primary" size="sm" icon="fas fa-plus" :loading="busy" :disabled="!newRule.value" @click="addRule">Adicionar</Button>
           </div>
         </Surface>
+        <!-- Histórico do site: o conteúdo que a Eme fala muda sozinho de
+             madrugada, então tem que dar pra ver quando mudou e o que mudou. -->
+        <Surface variant="raised" padding="md" class="mt-5">
+          <button type="button" class="w-full flex items-center gap-2 text-left"
+            @click="toggleSiteSyncs()">
+            <i class="fas fa-clock-rotate-left text-ink-subtle text-xs"></i>
+            <h2 class="text-base font-semibold text-ink">Atualizações do site</h2>
+            <span class="text-[11px] text-ink-subtle">todo dia às 4h40</span>
+            <i class="fas ml-auto text-ink-subtle text-xs"
+              :class="siteSyncsOpen ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+          </button>
+
+          <div v-if="siteSyncsOpen" class="mt-4 space-y-2">
+            <div v-for="r in siteSyncs" :key="r.id"
+              class="rounded-lg border border-line bg-surface-sunken px-3 py-2.5 text-xs">
+              <div class="flex flex-wrap items-center gap-2">
+                <Badge :variant="r.ok ? 'success' : 'danger'" size="sm">{{ r.ok ? 'ok' : 'falhou' }}</Badge>
+                <span class="text-ink font-medium">{{ fmt(r.created_at) }}</span>
+                <span class="text-ink-subtle">{{ r.trigger }}</span>
+                <span class="text-ink-muted">{{ r.synced }}/{{ r.total_flows }} fluxo(s)</span>
+                <span v-if="r.duration_ms" class="text-ink-subtle">{{ (r.duration_ms / 1000).toFixed(1) }}s</span>
+              </div>
+              <p v-if="r.error" class="mt-1 text-red-600 dark:text-red-400">{{ r.error }}</p>
+              <p v-for="c in (r.changes || [])" :key="c.flow_id" class="mt-1 text-ink">
+                <strong>{{ c.name }}</strong>: {{ resumoMudanca(c) }}
+              </p>
+              <p v-if="(r.missing || []).length" class="mt-1 text-amber-600 dark:text-amber-400">
+                Sem correspondência no site: {{ (r.missing || []).join(', ') }}
+              </p>
+              <p v-if="r.ok && !(r.changes || []).length && !(r.missing || []).length"
+                class="mt-1 text-ink-subtle">Nada mudou no site.</p>
+            </div>
+            <EmptyState v-if="!siteSyncs.length" size="sm" icon="fas fa-clock-rotate-left"
+              title="Sem histórico" description="Aparece aqui depois da primeira leitura do site." />
+          </div>
+        </Surface>
       </div>
 
-      <!-- LEADS -->
       <div v-show="tab === 'leads'">
         <div class="mb-4 flex items-center gap-3 flex-wrap">
           <div class="flex-1 min-w-[200px]"><Input v-model="leadSearch" size="sm" placeholder="Buscar por nome ou telefone…" @keyup.enter="loadLeads" /></div>
