@@ -15,6 +15,7 @@ import PageContainer from '@/components/UI/PageContainer.vue';
 import PageHeader from '@/components/UI/PageHeader.vue';
 import PageHelp from '@/components/UI/PageHelp.vue';
 import Button from '@/components/UI/Button.vue';
+import IosInstallGuide from '@/components/Pwa/IosInstallGuide.vue';
 
 import { detectPlatform, onInstallAvailability, promptInstall, instalarEAtivar } from '@/utils/Pwa/install';
 import { isPushSupported, pushPermission, enablePush, disablePush } from '@/utils/Pwa/push';
@@ -30,6 +31,13 @@ const testing = ref(false);
 let stopWatching = null;
 
 const pushSupported = computed(() => isPushSupported());
+
+// iPad tem a barra do Safari EM CIMA; iPhone, embaixo. A seta do guia precisa
+// apontar para o lado certo. iPad moderno se declara como Mac com toque.
+const ehTablet = computed(() => {
+    const ua = navigator.userAgent || '';
+    return /ipad/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+});
 
 // No iPhone o push não existe fora do app instalado — é regra da Apple, não
 // falta de permissão. A tela precisa dizer isso, senão o usuário fica tentando
@@ -348,7 +356,11 @@ onBeforeUnmount(() => { stopWatching?.(); });
             <p v-if="passos.aviso" class="text-sm text-amber-600 dark:text-amber-400 mb-3 flex items-start gap-2">
                 <i class="fas fa-triangle-exclamation mt-0.5"></i><span>{{ passos.aviso }}</span>
             </p>
-            <ol class="space-y-2.5 mt-3">
+            <!-- iOS ganha guia visual: a Apple não deixa instalar por botão, então
+                 o que resta é acabar com a dúvida de ONDE tocar, que é onde trava. -->
+            <IosInstallGuide v-if="platform.os === 'ios'" :tablet="ehTablet" class="mt-3" />
+
+            <ol v-else class="space-y-2.5 mt-3">
                 <li v-for="(item, i) in passos.itens" :key="i" class="flex gap-3 text-sm text-ink-muted">
                     <span
                         class="shrink-0 w-6 h-6 rounded-full bg-accent-soft text-accent grid place-items-center text-xs font-semibold">
