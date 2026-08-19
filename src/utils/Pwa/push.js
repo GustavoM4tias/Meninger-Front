@@ -80,6 +80,23 @@ export async function enablePush() {
     const permission = await Notification.requestPermission();
     if (permission !== 'granted') return { ok: false, reason: 'permissao-negada' };
 
+    return subscribeCurrentDevice();
+}
+
+/**
+ * Inscreve o aparelho, assumindo que a permissão JÁ foi concedida.
+ *
+ * Separado do enablePush porque o instalador único precisa pedir a permissão
+ * ANTES de abrir o diálogo de instalação: esperar o usuário decidir sobre a
+ * instalação consome o gesto, e aí o navegador recusa o pedido de permissão.
+ * Esta parte não precisa de gesto nenhum.
+ */
+export async function subscribeCurrentDevice() {
+    if (!isPushSupported()) {
+        return { ok: false, reason: isIOS() ? 'ios-precisa-instalar' : 'nao-suportado' };
+    }
+    if (pushPermission() !== 'granted') return { ok: false, reason: 'permissao-negada' };
+
     const reg = getRegistration() || await navigator.serviceWorker.ready;
     if (!reg) return { ok: false, reason: 'sem-service-worker' };
 

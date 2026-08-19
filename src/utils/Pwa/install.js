@@ -10,6 +10,7 @@
 // é instrução visual mesmo, o usuário precisa usar o menu Compartilhar.
 
 import { isStandalone } from './serviceWorker';
+import { isPushSupported, pushPermission, subscribeCurrentDevice } from './push';
 
 let deferredPrompt = null;
 const listeners = new Set();
@@ -97,4 +98,49 @@ export function detectPlatform() {
         installed: isStandalone(),
         canPrompt: canPromptInstall(),
     };
+}
+
+/**
+ * Instalar e ligar as notificações num passo só.
+ *
+ * A ORDEM AQUI NÃO É ARBITRÁRIA. A permissão de notificação exige gesto do
+ * usuário ainda "vivo"; se esperarmos o diálogo de instalação (que só resolve
+ * quando a pessoa decide), o gesto já expirou e o navegador recusa o pedido
+ * calado. Por isso: permissão primeiro, instalação depois, inscrição por
+ * último — a inscrição não precisa de gesto.
+ *
+ * No iPhone não existe API de instalação (a Apple não expõe), então lá só
+ * roda a parte de notificação, e mesmo assim só quando o app já foi adicionado
+ * à Tela de Início.
+ *
+ * Retorna { instalado, pushOk, motivo, podeInstalar }.
+ */
+export async function instalarEAtivar() {
+    const out = { instalado: isStandalone(), pushOk: false, motivo: null, podeInstalar: canPromptInstall() };
+
+    // 1) Permissão (gesto fresco)
+    let permissao = pushPermission();
+    if (isPushSupported() && permissao === 'default') {
+        try { permissao = await Notification.requestPermission(); }
+        catch { permissao = pushPermission(); }
+    }
+
+    // 2) Instalação
+    if (!out.instalado && canPromptInstall()) {
+        const r = await promptInstall();
+        out.instalado = r.ok;
+    }
+
+    // 3) Inscrição do aparelho
+    if (permissao === 'granted') {
+        const r = await subscribeCurrentDevice();
+        out.pushOk = r.ok;
+        out.motivo = r.reason || null;
+    } else if (!isPushSupported()) {
+        out.motivo = 'ios-precisa-instalar';
+    } else {
+        out.motivo = permissao === 'denied' ? 'permissao-negada' : 'permissao-adiada';
+    }
+
+    return out;
 }
