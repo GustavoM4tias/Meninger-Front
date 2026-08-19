@@ -41,27 +41,48 @@ app.use(PrimeVue, { theme: { preset: Aura } });
 // Tooltip padrão do app. Tema 'menin' (segue os tokens claro/escuro) e — importante —
 // NÃO cria tooltip quando o conteúdo está vazio (senão renderiza uma bolha vazia).
 // Placement via argumento: v-tippy:right="texto". zIndex acima do Modal (z-[9999]).
-const tippyOpts = (binding) => ({
-  content: binding.value,
-  allowHTML: true,
-  theme: 'menin',
-  placement: binding.arg || 'top',
-  animation: 'shift-away',
-  delay: [150, 0],
-  arrow: true,
-  zIndex: 100000,
-});
+// v-tippy aceita duas formas:
+//   v-tippy="'texto'"                          → balão simples (o caso comum)
+//   v-tippy="{ content, theme, maxWidth }"     → cartão (ex.: tema 'menin-card')
+// O objeto existe para o tooltip que carrega um cartão inteiro e precisa de
+// mais largura e de um tema sem padding.
+const tippyConfig = (binding) => {
+  const v = binding.value;
+  return (v && typeof v === 'object' && !Array.isArray(v)) ? v : { content: v };
+};
+
+const tippyOpts = (binding) => {
+  // `resto` carrega o que a chamada quiser sobrescrever (maxWidth, interactive,
+  // delay...). Na forma string ele vem vazio e o balão sai igual sempre foi.
+  const { content, theme = 'menin', ...resto } = tippyConfig(binding);
+  return {
+    content,
+    allowHTML: true,
+    theme,
+    placement: binding.arg || 'top',
+    animation: 'shift-away',
+    delay: [150, 0],
+    arrow: true,
+    zIndex: 100000,
+    ...resto,
+  };
+};
 
 app.directive('tippy', {
   mounted(el, binding) {
-    if (binding.value) tippy(el, tippyOpts(binding));
+    if (tippyConfig(binding).content) tippy(el, tippyOpts(binding));
   },
   updated(el, binding) {
+    const { content, theme = 'menin', ...resto } = tippyConfig(binding);
     if (el._tippy) {
-      if (!binding.value) { el._tippy.destroy(); return; }
-      el._tippy.setContent(binding.value);
-      el._tippy.setProps({ placement: binding.arg || 'top' });
-    } else if (binding.value) {
+      if (!content) { el._tippy.destroy(); return; }
+      el._tippy.setContent(content);
+      el._tippy.setProps({
+        placement: binding.arg || 'top',
+        theme,
+        ...resto,
+      });
+    } else if (content) {
       tippy(el, tippyOpts(binding));
     }
   },

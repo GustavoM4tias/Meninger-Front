@@ -456,7 +456,8 @@ html.dark .kb-reading .markdown img { border-color: rgb(30 41 59); }
    Segue os tokens semânticos, então acompanha claro/escuro sozinho.
    Aplicado globalmente pelo diretivo v-tippy (main.js).
    ─────────────────────────────────────────────── */
-.tippy-box[data-theme~='menin'] {
+.tippy-box[data-theme~='menin'],
+.tippy-box[data-theme~='menin-card'] {
   background-color: rgb(var(--surface-overlay));
   color: rgb(var(--ink));
   border: 1px solid rgb(var(--line));
@@ -471,9 +472,25 @@ html.dark .kb-reading .markdown img { border-color: rgb(30 41 59); }
   padding: 0.3rem 0.6rem;
 }
 
+/* Variante 'menin-card': tooltip que carrega um cartão inteiro (banner, seções)
+   em vez de uma frase. Sem padding e com overflow cortado para o banner
+   encostar na borda, igual ao cabeçalho do modal de lead. */
+.tippy-box[data-theme~='menin-card'] {
+  border-radius: 0.75rem;
+  overflow: hidden;
+  line-height: normal;
+}
+
+.tippy-box[data-theme~='menin-card'] .tippy-content { padding: 0; }
+
 /* Seta na cor da superfície (casa com o corpo do balão) */
-.tippy-box[data-theme~='menin'] .tippy-arrow { color: rgb(var(--surface-overlay)); }
-.tippy-box[data-theme~='menin'][data-placement^='top']    > .tippy-arrow::before { border-top-color: rgb(var(--surface-overlay)); }
-.tippy-box[data-theme~='menin'][data-placement^='bottom'] > .tippy-arrow::before { border-bottom-color: rgb(var(--surface-overlay)); }
-.tippy-box[data-theme~='menin'][data-placement^='left']   > .tippy-arrow::before { border-left-color: rgb(var(--surface-overlay)); }
-.tippy-box[data-theme~='menin'][data-placement^='right']  > .tippy-arrow::before { border-right-color: rgb(var(--surface-overlay)); }
+.tippy-box[data-theme~='menin'] .tippy-arrow,
+.tippy-box[data-theme~='menin-card'] .tippy-arrow { color: rgb(var(--surface-overlay)); }
+.tippy-box[data-theme~='menin'][data-placement^='top']    > .tippy-arrow::before,
+.tippy-box[data-theme~='menin-card'][data-placement^='top']    > .tippy-arrow::before { border-top-color: rgb(var(--surface-overlay)); }
+.tippy-box[data-theme~='menin'][data-placement^='bottom'] > .tippy-arrow::before,
+.tippy-box[data-theme~='menin-card'][data-placement^='bottom'] > .tippy-arrow::before { border-bottom-color: rgb(var(--surface-overlay)); }
+.tippy-box[data-theme~='menin'][data-placement^='left']   > .tippy-arrow::before,
+.tippy-box[data-theme~='menin-card'][data-placement^='left']   > .tippy-arrow::before { border-left-color: rgb(var(--surface-overlay)); }
+.tippy-box[data-theme~='menin'][data-placement^='right']  > .tippy-arrow::before,
+.tippy-box[data-theme~='menin-card'][data-placement^='right']  > .tippy-arrow::before { border-right-color: rgb(var(--surface-overlay)); }
