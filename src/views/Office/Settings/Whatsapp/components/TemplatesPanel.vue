@@ -61,6 +61,16 @@ const STATUS_CLS = {
 };
 const statusCls = (s) => STATUS_CLS[s] || 'bg-surface-sunken text-ink-muted border-line';
 
+// Categoria vem da Meta, não do que pedimos: ela reclassifica na aprovação.
+// MARKETING ganha destaque porque é o que custa (~9x a conversa) e o que pesa na
+// qualidade do número - aqui o número é COMPARTILHADO com boleto e alerta.
+const CATEGORY_CLS = {
+  MARKETING:      'bg-violet-500/10 text-violet-600 dark:text-violet-400 border-violet-500/20',
+  UTILITY:        'bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20',
+  AUTHENTICATION: 'bg-surface-sunken text-ink-muted border-line',
+};
+const categoryCls = (c) => CATEGORY_CLS[c] || 'bg-surface-sunken text-ink-subtle border-line';
+
 const onDelete = async (t) => {
   if (!confirm(`Excluir o template "${t.name}"? Isso remove na Meta também.`)) return;
   try {
@@ -142,9 +152,18 @@ const onDelete = async (t) => {
                     </p>
                     <p class="text-xs text-ink-muted line-clamp-2 mt-0.5">{{ t.purpose }}</p>
                   </div>
-                  <span :class="['shrink-0 text-[11px] px-2 py-0.5 rounded-md border', statusCls(t.status)]">
-                    {{ t.status }}
-                  </span>
+                  <div class="shrink-0 flex flex-col items-end gap-1">
+                    <span :class="['text-[11px] px-2 py-0.5 rounded-md border', statusCls(t.status)]">
+                      {{ t.status }}
+                    </span>
+                    <span :class="['text-[11px] px-2 py-0.5 rounded-md border', categoryCls(t.category)]"
+                      v-tippy="t.categoryReclassified
+                        ? `Enviado como ${t.categoryIntended}; a Meta reclassificou para ${t.category}.`
+                        : 'Categoria definida pela Meta na aprovação.'">
+                      {{ t.category || 'sem categoria' }}
+                      <i v-if="t.categoryReclassified" class="fas fa-arrow-right-arrow-left ml-0.5 text-[9px]"></i>
+                    </span>
+                  </div>
                 </div>
               </button>
 
@@ -153,6 +172,13 @@ const onDelete = async (t) => {
                   class="rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-ink">
                   A Meta espera {{ t.variablesCount }} variável(is) e o código manda {{ t.variables.length }}.
                   O envio falha com VARIABLES_MISMATCH.
+                </div>
+
+                <div v-if="t.categoryReclassified"
+                  class="rounded-lg border border-violet-500/20 bg-violet-500/10 px-3 py-2 text-ink">
+                  Enviado como <strong>{{ t.categoryIntended }}</strong> e reclassificado pela Meta para
+                  <strong>{{ t.category }}</strong> na aprovação. Quem decide é a copy, não o pedido.
+                  Marketing custa mais por conversa e pesa mais na qualidade do número.
                 </div>
 
                 <div>
@@ -180,8 +206,8 @@ const onDelete = async (t) => {
                 <div v-if="t.note" class="text-ink-muted">{{ t.note }}</div>
 
                 <div class="flex flex-wrap gap-2 pt-1">
-                  <span class="px-2 py-0.5 rounded-md border border-line bg-surface-sunken text-ink-muted">
-                    {{ t.category }}
+                  <span :class="['px-2 py-0.5 rounded-md border', categoryCls(t.category)]">
+                    {{ t.category || 'sem categoria na Meta' }}
                   </span>
                   <span class="px-2 py-0.5 rounded-md border border-line bg-surface-sunken text-ink-muted">
                     {{ t.managedBy === 'automacao' ? 'trocável em Automações' : 'fixo no código' }}
@@ -222,6 +248,7 @@ const onDelete = async (t) => {
               <p v-if="t.bodyText" class="text-xs text-ink-muted line-clamp-1">{{ t.bodyText }}</p>
             </div>
             <span class="text-xs text-ink-subtle hidden sm:block">{{ t.language }}</span>
+            <span v-if="t.category" :class="['text-[11px] px-2 py-0.5 rounded-md border hidden sm:block', categoryCls(t.category)]">{{ t.category }}</span>
             <span :class="['text-[11px] px-2 py-0.5 rounded-md border', statusCls(t.status)]">{{ t.status }}</span>
             <button type="button" @click="onDelete(t)"
               class="h-8 w-8 grid place-items-center rounded-md text-ink-subtle
