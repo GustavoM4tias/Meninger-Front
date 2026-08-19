@@ -1,7 +1,6 @@
 <script setup>
 import { ref, computed, watch, onUnmounted } from 'vue';
 import { useBoletoStore } from '@/stores/Financeiro/BoletoCaixa/boletoStore';
-import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 
 import Button from '@/components/UI/Button.vue';
 import Badge from '@/components/UI/Badge.vue';
@@ -14,8 +13,6 @@ const props = defineProps({
 const emit = defineEmits(['close', 'changed']);
 
 const store = useBoletoStore();
-const auth = useAuthStore();
-const isAdmin = computed(() => auth.hasRole('admin'));
 
 // `live` é a versão SEMPRE atual do item: cruza o prop (referência inicial)
 // com `store.history` (re-buscado após ações). Assim o modal não precisa
@@ -896,13 +893,13 @@ async function copyLink() {
           Histórico interno #{{ live?.id }}
         </p>
         <div class="flex items-center gap-2 flex-wrap">
-          <Button v-if="isAdmin && live?.boleto_supabase_url"
+          <Button v-if="live?.boleto_supabase_url"
             variant="ghost" size="sm" icon="fas fa-paper-plane"
             :disabled="actionState.resending"
             @click="openResendConfirm">
             Reenviar ao cliente
           </Button>
-          <Button v-if="isAdmin && (live?.status === 'error' || (live?.status === 'success' && ['pending', 'cancelled'].includes(live?.payment_status)))"
+          <Button v-if="live?.status === 'error' || (live?.status === 'success' && ['pending', 'cancelled'].includes(live?.payment_status))"
             variant="ghost" size="sm" icon="fas fa-rotate-right"
             :loading="actionState.retrying" :disabled="actionState.retrying"
             @click="handleRetry">
@@ -910,14 +907,14 @@ async function copyLink() {
                 ? 'Reprocessar'
                 : (live?.payment_status === 'pending' ? 'Reemitir (condição atual)' : 'Gerar novo boleto') }}
           </Button>
-          <Button v-if="isAdmin && live?.status === 'success' && live?.payment_status === 'pending'"
+          <Button v-if="live?.status === 'success' && live?.payment_status === 'pending'"
             variant="ghost" size="sm" icon="fas fa-ban"
             :loading="actionState.marking" :disabled="actionState.marking"
             title="Use quando a baixa automática falhou e você já baixou o título no Ecobrança"
             @click="handleMarkCancelled">
             Marcar como baixado
           </Button>
-          <Button v-if="isAdmin && live?.status === 'success' && live?.payment_status === 'pending'"
+          <Button v-if="live?.status === 'success' && live?.payment_status === 'pending'"
             variant="primary" size="sm" icon="fas fa-magnifying-glass-dollar"
             :loading="actionState.checking" :disabled="actionState.checking"
             @click="handleCheckPayment">
