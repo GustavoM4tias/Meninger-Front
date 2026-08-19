@@ -80,6 +80,10 @@ const flowEdit = reactive({ openerVars: '', triggersJson: '' })
 const siteEnterprises = ref([])
 // Histórico das leituras do site (o conteúdo muda sozinho de madrugada).
 const siteSyncs = ref([])
+// Configuração de COMO o site é lido - editável pra não depender de deploy
+// quando o site mudar de versão ou de plataforma.
+const siteSource = ref(null)
+const sourceTest = reactive({ running: false, error: '', total: 0, campos: [], contexto: '', slugs: [], slug: '' })
 const siteSyncsOpen = ref(false)
 const siteState = reactive({ loading: false, error: '', syncing: 0 })
 const newFlowName = ref('')
@@ -153,8 +157,47 @@ async function loadFlows() {
     if (!siteEnterprises.value.length) loadSiteEnterprises()
   } catch (e) { notify(e.message, 'err') } finally { flowsLoading.value = false }
 }
-// Lista do site: erro aqui não trava a tela, mas aparece no editor - fluxo
-// sem Select é sintoma de site fora do ar ou formato mudado, não de bug local.
+// Configuração efetiva da leitura (banco mesclado com o padrão do código).
+async function loadSiteSource() {
+  try {
+    const r = await api.getSiteSource()
+    siteSource.value = r.source
+    if (!settings.site_url) settings.site_url = r.site_url
+  } catch (e) { notify(e.message, 'err') }
+}
+// Testa a configuração ATUAL DA TELA (nem precisa salvar) contra o site real.
+// É o que permite mexer no de-para sem chutar: você vê o contexto resultante.
+async function testSiteSource() {
+  sourceTest.running = true; sourceTest.error = ''
+  try {
+    const r = await api.previewSiteSource({
+      site_url: settings.site_url, source: siteSource.value, slug: sourceTest.slug || undefined,
+    })
+    sourceTest.total = r.total
+    sourceTest.campos = r.campos_do_site || []
+    sourceTest.slugs = r.slugs || []
+    sourceTest.contexto = r.contexto || ''
+    if (!sourceTest.slug && r.exemplo?.slug) sourceTest.slug = r.exemplo.slug
+  } catch (e) { sourceTest.error = e.message; sourceTest.contexto = '' }
+  finally { sourceTest.running = false }
+}
+// Opções do de-para: os campos que a própria plataforma declara. Só existem
+// depois de um teste - por isso o botão vem antes do mapeamento na tela.
+const campoOpts = computed(() => [
+  { value: '', label: '(não usar)' },
+  ...sourceTest.campos.map(c => ({ value: c.key, label: `${c.label} (${c.key})` })),
+])
+const CAMPOS_CONTEXTO = [
+  ['nome', 'Nome do empreendimento'], ['cidade', 'Cidade'], ['status', 'Situação'],
+  ['perfil', 'Perfil'], ['descricao', 'Chamada'], ['sobre', 'Texto sobre'],
+  ['area', 'Área privativa'], ['quartos', 'Dormitórios'], ['vagas', 'Vagas'],
+  ['terreno', 'Terreno'], ['obra', 'Andamento da obra'], ['endereco', 'Endereço'],
+  ['book', 'Book em PDF'],
+]
+const LISTAS_CONTEXTO = [
+  ['diferenciais', 'Diferenciais'], ['comodidades', 'Comodidades'], ['pontos', 'Pontos de interesse'],
+]
+
 // Carrega sob demanda: o histórico não interessa até alguém abrir.
 function toggleSiteSyncs() {
   siteSyncsOpen.value = !siteSyncsOpen.value
@@ -172,6 +215,8 @@ function resumoMudanca(c) {
   return `${campos || 'sem alteração'}${img}`
 }
 
+// Lista do site: erro aqui não trava a tela, mas aparece no editor - fluxo
+// sem Select é sintoma de site fora do ar ou formato mudado, não de bug local.
 async function loadSiteEnterprises() {
   siteState.loading = true; siteState.error = ''
   try { siteEnterprises.value = await api.listSiteEnterprises() }
@@ -325,9 +370,20 @@ async function loadConfig() {
   try {
     const [s, k] = await Promise.all([api.getSettings(), api.listApiKeys()])
     Object.assign(settings, s); apiKeys.value = k; settingsLoaded.value = true
+    loadSiteSource()
     if (!flows.value.length) await loadFlows()
     if (!sandbox.flow_id && flows.value.length) sandbox.flow_id = flows.value.find(f => f.is_default)?.id || flows.value[0].id
   } catch (e) { notify(e.message, 'err') }
+}
+// Grava a fonte junto com a URL: as duas respondem "de onde vem e como é lido",
+// separar em dois botões só criaria estado meio salvo.
+async function saveSourceConfig() {
+  busy.value = true
+  try {
+    const r = await api.updateSettings({ site_url: settings.site_url, site_source: siteSource.value })
+    Object.assign(settings, r)
+    notify('Fonte do site salva. Vale no próximo sync - use "Atualizar agora" no fluxo pra valer já.')
+  } catch (e) { notify(e.message, 'err') } finally { busy.value = false }
 }
 async function saveSettings() {
   busy.value = true
@@ -673,13 +729,6 @@ onMounted(loadConversations)
             </div>
             <Input :model-value="String(settings.debounce_seconds)" type="number" label="Debounce (s) - junta mensagens picadas" @update:model-value="(v) => settings.debounce_seconds = Number(v)" />
             <Input :model-value="String(settings.max_ai_messages)" type="number" label="Máx. respostas de IA por conversa" @update:model-value="(v) => settings.max_ai_messages = Number(v)" />
-            <div class="sm:col-span-2">
-              <Input v-model="settings.site_url" label="URL do site institucional (fonte do conteúdo dos empreendimentos)"
-                placeholder="https://menin.dominiz.com.br" />
-              <p class="mt-1 text-[11px] text-ink-subtle">
-                Vazio usa o padrão do código. Trocar aqui é o que vale quando o site mudar de domínio.
-              </p>
-            </div>
           </div>
           <Button variant="primary" size="sm" :loading="busy" @click="saveSettings">Salvar</Button>
         </Surface>
@@ -740,6 +789,94 @@ onMounted(loadConversations)
           <div class="mt-4">
             <Button variant="primary" size="sm" :loading="busy" @click="saveSettings">Salvar</Button>
           </div>
+        </Surface>
+
+        <!-- Fonte do site: COMO as informações dos empreendimentos são lidas.
+             Fica na tela porque muda quando o site muda de versão/plataforma,
+             e isso não pode depender de deploy. -->
+        <Surface v-if="siteSource" variant="raised" padding="md" class="mb-5">
+          <h2 class="text-base font-semibold text-ink mb-1">Fonte do site</h2>
+          <p class="text-xs text-ink-muted mb-4">
+            De onde vêm as informações dos empreendimentos e como elas são lidas. O conteúdo é
+            copiado uma vez por dia para dentro de cada fluxo - a conversa nunca depende do site
+            estar no ar. Mexeu aqui? use <b>Testar leitura</b> antes de salvar.
+          </p>
+
+          <div class="grid sm:grid-cols-2 gap-4 mb-4">
+            <div class="sm:col-span-2">
+              <Input v-model="settings.site_url" label="Endereço do site" placeholder="https://menin.dominiz.com.br" />
+            </div>
+            <Input v-model="siteSource.variavel_global" label="Variável com os dados (na página)" />
+            <Input v-model="siteSource.colecao" label="Coleção dos empreendimentos" />
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2 mb-4">
+            <Button variant="secondary" size="sm" icon="fas fa-vial" :loading="sourceTest.running"
+              @click="testSiteSource">Testar leitura</Button>
+            <span v-if="sourceTest.total" class="text-[11px] text-ink-muted">
+              {{ sourceTest.total }} empreendimento(s) lido(s), {{ sourceTest.campos.length }} campo(s) disponível(is)
+            </span>
+            <span v-if="sourceTest.error" class="text-[11px] text-red-600 dark:text-red-400">{{ sourceTest.error }}</span>
+          </div>
+
+          <template v-if="sourceTest.campos.length">
+            <p :class="LABEL">De-para: o que a Eme usa ← campo do site</p>
+            <div class="grid sm:grid-cols-2 gap-3 mb-4">
+              <Select v-for="[chave, rotulo] in CAMPOS_CONTEXTO" :key="chave"
+                :model-value="siteSource.campos[chave] || ''" :options="campoOpts" :label="rotulo"
+                @change="(v) => siteSource.campos[chave] = v" />
+              <Select v-for="[chave, rotulo] in LISTAS_CONTEXTO" :key="chave"
+                :model-value="siteSource.listas[chave] || ''" :options="campoOpts" :label="rotulo"
+                @change="(v) => siteSource.listas[chave] = v" />
+            </div>
+
+            <p :class="LABEL">Imagens que a Eme pode enviar</p>
+            <div class="space-y-2 mb-4">
+              <div v-for="(g, i) in siteSource.imagens" :key="i" class="grid sm:grid-cols-3 gap-2">
+                <Select :model-value="g.campo || ''" :options="campoOpts" label="Campo do site"
+                  @change="(v) => g.campo = v" />
+                <Input v-model="g.prefixo_rotulo" label="Nome quando não tiver legenda" />
+                <Input v-model="g.rotulo_prefixado" label="Prefixo no rótulo (opcional)" />
+              </div>
+            </div>
+          </template>
+          <p v-else class="text-[11px] text-ink-subtle mb-4">
+            Clique em <b>Testar leitura</b> para carregar os campos que o site publica - o de-para
+            aparece com eles, em vez de você digitar nome de campo no escuro.
+          </p>
+
+          <p :class="LABEL">Blocos do contexto (na ordem em que a Eme lê)</p>
+          <div class="space-y-2 mb-4">
+            <div v-for="b in siteSource.blocos" :key="b.chave"
+              class="flex items-center gap-3 rounded-lg border border-line bg-surface-sunken px-3 py-2">
+              <Switch :model-value="b.ativo" size="sm" @change="(v) => b.ativo = v" />
+              <code class="font-mono text-[11px] text-ink-subtle w-24 shrink-0">{{ b.chave }}</code>
+              <input v-model="b.titulo" :disabled="!b.ativo"
+                class="flex-1 min-w-0 rounded-md border border-line bg-surface px-2 py-1 text-xs text-ink
+                       disabled:opacity-40 focus:outline-none focus:ring-2 focus:ring-accent/20" />
+            </div>
+          </div>
+
+          <label :class="LABEL">Observação final do contexto</label>
+          <textarea v-model="siteSource.observacao_final" :class="TA" rows="3"></textarea>
+          <p class="mt-1 mb-4 text-[11px] text-ink-subtle">
+            É a frase que segura a Eme longe de preço. Esvaziar tira uma camada - a trava
+            anti-invenção continua, mas ela passa a ser a única.
+          </p>
+
+          <div v-if="sourceTest.contexto" class="mb-4">
+            <div class="flex flex-wrap items-center gap-2 mb-1.5">
+              <p :class="LABEL + ' mb-0'">Resultado: o que a Eme leria</p>
+              <Select v-if="sourceTest.slugs.length" :model-value="sourceTest.slug"
+                :options="sourceTest.slugs.map(x => ({ value: x.slug, label: x.nome }))"
+                @change="(v) => { sourceTest.slug = v; testSiteSource() }" />
+            </div>
+            <div class="rounded-lg border border-line bg-surface-sunken px-3 py-3">
+              <pre class="text-[11.5px] leading-relaxed text-ink whitespace-pre-wrap font-sans">{{ sourceTest.contexto }}</pre>
+            </div>
+          </div>
+
+          <Button variant="primary" size="sm" :loading="busy" @click="saveSourceConfig">Salvar</Button>
         </Surface>
 
         <!-- Modo teste: atende só os números da lista, mesmo com a Eme ativa.

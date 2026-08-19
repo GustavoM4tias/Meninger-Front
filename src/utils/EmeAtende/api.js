@@ -66,3 +66,7 @@ export const testAi = (data) => req('/test/ai', { method: 'POST', body: JSON.str
 export const listSiteEnterprises = () => req('/site/enterprises')
 export const syncSite = (flow_id = null) => req('/site/sync', { method: 'POST', body: JSON.stringify({ flow_id }) })
 export const listSiteSyncs = (limit = 30) => req(`/site/syncs?limit=${limit}`)
+
+// Como o site é lido (variável global, coleção, de-para de campos, blocos).
+export const getSiteSource = () => req('/site/source')
+export const previewSiteSource = (data) => req('/site/preview', { method: 'POST', body: JSON.stringify(data) })
