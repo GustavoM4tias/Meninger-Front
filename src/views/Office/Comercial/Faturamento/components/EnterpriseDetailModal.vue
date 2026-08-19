@@ -20,6 +20,7 @@ import * as echarts from 'echarts/core';
 import { PieChart, BarChart } from 'echarts/charts';
 import { TooltipComponent, LegendComponent, GridComponent, DataZoomComponent, TitleComponent, ToolboxComponent } from 'echarts/components';
 import { CanvasRenderer } from 'echarts/renderers';
+import { leadOf, reservaCorretorOf, reservaImobiliariaOf } from '@/utils/Comercial/saleAttribution';
 
 echarts.use([PieChart, BarChart, TooltipComponent, LegendComponent, GridComponent, DataZoomComponent, TitleComponent, ToolboxComponent, CanvasRenderer]);
 
@@ -513,6 +514,170 @@ const distratoTooltipOf = (sale) => {
     .find(Boolean);
   const when = cancelDate ? ` em ${formatDate(cancelDate)}` : ' depois da venda';
   return `Contrato cancelado no Sienge${when} — contabilizada no período, pois na época foi venda`;
+};
+
+/* ===================== lead de captação ===================== */
+// leadOf / reservaCorretorOf / reservaImobiliariaOf vêm de utils/Comercial/
+// saleAttribution.js — os mesmos acessores que o Relatório Comercial usa, para
+// o selo daqui e o ranking de lá nunca discordarem.
+const escapeHtml = (v) =>
+  String(v ?? '').replace(/[&<>"]/g, (ch) => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]
+  ));
+
+// O cartão do hover segue o LeadDetailModal da tela de Leads: mesmo banner
+// colorido por situação, mesmo cartão de contato sobreposto e as mesmas seções
+// com rótulo em versalete. Vai como HTML porque o tippy renderiza string — as
+// classes são literais, então o Tailwind as mantém no bundle.
+const LEAD_BANNER_GRADIENT = {
+  'Vendido': 'from-emerald-700 via-emerald-600 to-teal-600',
+  'Venda Realizada': 'from-emerald-700 via-emerald-600 to-teal-600',
+  'Cancelado': 'from-slate-700 via-slate-600 to-slate-700',
+  'Descartado': 'from-slate-700 via-slate-600 to-slate-700',
+  'Em Negociação': 'from-amber-700 via-orange-600 to-amber-600',
+  'Reservado': 'from-amber-700 via-orange-600 to-amber-600',
+  'Com Reserva': 'from-amber-700 via-orange-600 to-amber-600',
+  'Em Análise de Crédito': 'from-purple-700 via-violet-600 to-purple-600',
+};
+
+// Bloco "rótulo em cima, valor embaixo" — o mesmo par usado nas seções do modal.
+const leadField = (label, value, icon = '') => `
+  <div class="min-w-0">
+    <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono mb-0.5">
+      ${icon}${escapeHtml(label)}
+    </p>
+    <p class="text-sm text-ink truncate">${escapeHtml(value || '—')}</p>
+  </div>`;
+
+const leadSection = (icon, titulo, inner) => `
+  <section>
+    <div class="flex items-center gap-1.5 mb-2">
+      <i class="${icon} text-xs text-accent"></i>
+      <h4 class="text-[10px] font-mono uppercase tracking-wider text-ink-subtle">${escapeHtml(titulo)}</h4>
+    </div>
+    ${inner}
+  </section>`;
+
+const leadTooltipOf = (sale) => {
+  const lead = leadOf(sale);
+  if (!lead) return '';
+
+  const gradiente = LEAD_BANNER_GRADIENT[lead.situacao_nome] || 'from-blue-700 via-blue-600 to-indigo-600';
+  const campanha = lead.campanha || lead.utm_campaign;
+
+  const banner = `
+    <div class="relative bg-gradient-to-br ${gradiente} text-white px-4 pt-4 pb-10 overflow-hidden">
+      <div class="pointer-events-none absolute inset-0 opacity-30"
+        style="background-image: radial-gradient(circle, rgba(255,255,255,.2) 1px, transparent 1px); background-size: 18px 18px;"></div>
+      <div class="pointer-events-none absolute -top-16 -right-16 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
+      <div class="relative">
+        <div class="flex items-center gap-2 flex-wrap mb-1.5">
+          <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-medium bg-white/20 backdrop-blur border border-white/20 text-white">
+            <span class="h-1.5 w-1.5 rounded-full bg-white"></span>${escapeHtml(lead.situacao_nome || 'Lead')}
+          </span>
+          <span class="text-[11px] text-white/70 font-mono">#${escapeHtml(lead.idlead)}</span>
+        </div>
+        <h2 class="text-lg font-semibold leading-tight tracking-tight break-words">${escapeHtml(lead.nome || 'Lead')}</h2>
+        <p class="text-xs text-white/70 mt-1 font-mono">
+          Captado em ${escapeHtml(lead.data_cad ? formatDate(lead.data_cad) : '—')}
+        </p>
+      </div>
+    </div>`;
+
+  const contato = `
+    <div class="px-4 -mt-7 mb-3 relative z-10">
+      <div class="rounded-xl bg-surface-raised border border-line shadow-elevated p-3 surface-gradient">
+        <div class="grid grid-cols-2 gap-3">
+          ${leadField('E-mail', lead.email, '<i class="far fa-envelope text-accent text-[9px] mr-1"></i>')}
+          ${leadField('Telefone', lead.telefone, '<i class="fab fa-whatsapp text-emerald-500 text-[9px] mr-1"></i>')}
+        </div>
+      </div>
+    </div>`;
+
+  const captacao = leadSection('fas fa-bullhorn', 'Captação', `
+    <div class="grid grid-cols-2 gap-3">
+      ${leadField('Mídia', lead.midia_principal)}
+      ${leadField('Origem', lead.origem)}
+    </div>`);
+
+  // Só existe para o lead que a Central Meta captou. Sem esse bloco o cartão
+  // não finge que sabe a campanha de uma venda antiga.
+  const campanhaBloco = campanha
+    ? leadSection('fas fa-rectangle-ad', 'Anúncio', `
+      <div class="space-y-2">
+        ${leadField('Campanha', campanha)}
+        ${lead.anuncio ? leadField('Criativo', lead.anuncio) : ''}
+      </div>`)
+    : '';
+
+  // Quem atendeu o lead nem sempre é quem fechou a venda: o lead pode ter sido
+  // captado por uma imobiliária e a reserva sair por outro corretor. As duas
+  // colunas ficam lado a lado justamente para essa comparação.
+  const bloco = (rotulo, corretor, imob) => `
+    <div class="rounded-lg bg-surface-sunken border border-line p-2 min-w-0">
+      <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono mb-1.5">${escapeHtml(rotulo)}</p>
+      <div class="flex items-center gap-1.5 min-w-0">
+        <i class="fas fa-user-tie text-ink-subtle text-[10px] shrink-0"></i>
+        <p class="text-xs font-medium text-ink truncate">${escapeHtml(corretor || '—')}</p>
+      </div>
+      <div class="flex items-center gap-1.5 min-w-0 mt-1">
+        <i class="fas fa-building text-ink-subtle text-[10px] shrink-0"></i>
+        <p class="text-xs text-ink-muted truncate">${escapeHtml(imob || '—')}</p>
+      </div>
+    </div>`;
+
+  const corretorVenda = reservaCorretorOf(sale);
+  const imobVenda = reservaImobiliariaOf(sale);
+  const temAlgum = lead.corretor?.nome || lead.imobiliaria?.nome || corretorVenda || imobVenda;
+
+  const responsaveis = temAlgum
+    ? leadSection('fas fa-users', 'Responsáveis', `
+      <div class="grid grid-cols-2 gap-2">
+        ${bloco('No lead', lead.corretor?.nome, lead.imobiliaria?.nome)}
+        ${bloco('Na venda', corretorVenda, imobVenda)}
+      </div>`)
+    : '';
+
+  // O cartão inteiro é o link: com o tippy interativo o mouse entra nele, então
+  // clicar em qualquer parte tem que levar ao lead (não só o selo).
+  return `
+    <a href="${escapeHtml(leadLinkOf(sale))}" target="_blank" rel="noopener"
+       class="block text-left no-underline cursor-pointer">
+      ${banner}
+      ${contato}
+      <div class="px-4 pb-3 space-y-4">
+        ${captacao}
+        ${campanhaBloco}
+        ${responsaveis}
+      </div>
+      <div class="px-4 py-2 border-t border-line bg-surface text-[11px] text-ink-subtle flex items-center gap-1.5">
+        <i class="fas fa-arrow-up-right-from-square text-[9px]"></i>Clique para abrir na tela de Leads
+      </div>
+    </a>`;
+};
+
+// O cartão precisa de mais largura que o balão de texto e de um tema sem
+// padding, senão o banner não encosta na borda. `interactive` mantém o cartão
+// vivo quando o mouse entra nele (dá para ler com calma e clicar); a borda
+// generosa e o atraso no fechamento cobrem o vão entre o selo e o cartão.
+const leadTippyOf = (sale) => ({
+  content: leadTooltipOf(sale),
+  theme: 'menin-card',
+  maxWidth: 360,
+  interactive: true,
+  interactiveBorder: 12,
+  delay: [120, 180],
+  // Com `interactive` o tippy passa a pendurar o balão no elemento PAI, e a
+  // linha da venda tem overflow-hidden — o cartão sairia cortado. Voltar para
+  // o body é o que o próprio tippy recomenda quando há clipping.
+  appendTo: () => document.body,
+});
+
+// Deep link para /marketing/leads com o lead já aberto. O filtro por idlead
+// ignora a janela de datas no servidor, então lead antigo abre igual.
+const leadLinkOf = (sale) => {
+  const lead = leadOf(sale);
+  return lead ? `/marketing/leads?idlead=${encodeURIComponent(lead.idlead)}` : '#';
 };
 
 /* ===================== ajuste contábil ===================== */
@@ -1074,6 +1239,17 @@ const closeModal = () => emit('close');
                         </p>
                       </div>
                       <div class="flex items-center gap-2 shrink-0">
+                        <a v-if="leadOf(sale)" :href="leadLinkOf(sale)" target="_blank" rel="noopener"
+                          @click.stop v-tippy="leadTippyOf(sale)"
+                          class="shrink-0 inline-flex items-center gap-1.5 rounded-full border border-accent/25
+                                 bg-accent-soft pl-1.5 pr-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide
+                                 text-accent transition-all duration-200 ease-out-expo
+                                 hover:border-accent/60 hover:ring-2 hover:ring-accent-ring/25">
+                          <span class="grid place-items-center h-3.5 w-3.5 rounded-full bg-accent/15">
+                            <i class="fas fa-bullhorn text-[7px]"></i>
+                          </span>
+                          Lead
+                        </a>
                         <Badge v-if="saleIsDistrato(sale)" variant="warning" size="sm"
                           v-tippy="distratoTooltipOf(sale)">
                           <i class="fas fa-file-circle-xmark text-[9px]"></i>Distratada

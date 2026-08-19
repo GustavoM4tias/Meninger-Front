@@ -19,6 +19,10 @@ import EnterprisesSalesTable from './components/EnterprisesSalesTable.vue';
 import LandSyncConfigModal from './components/LandSyncConfigModal.vue';
 import ClosingModal from './components/ClosingModal.vue';
 
+// `embedded` = renderizada como guia do Relatório Comercial: esconde só o
+// cabeçalho próprio. Nenhuma regra de cálculo muda.
+defineProps({ embedded: { type: Boolean, default: false } });
+
 const contractsStore = useContractsStore();
 const hiddenStore = useHiddenEnterprisesStore();
 const stageCommissionRulesStore = useStageCommissionRulesStore();
@@ -64,8 +68,10 @@ onMounted(loadData);
   <div class="min-h-[calc(100vh-3.5rem)] relative">
     <PageContainer size="full">
 
-      <!-- Header -->
+      <!-- Header — sai quando a tela roda dentro do Relatório Comercial, que
+           já tem o seu próprio cabeçalho e a barra de guias. -->
       <PageHeader
+        v-if="!embedded"
         subtitle="Acompanhe o desempenho dos empreendimentos."
         icon="fas fa-sack-dollar">
         <template #title>
@@ -88,6 +94,7 @@ onMounted(loadData);
               'O número verde com + são projeções de reservas/repasses ainda não contratados, somadas à parte.',
               'O marcador âmbar são vendas distratadas depois — elas continuam contando no período, porque na época foram venda.',
               'O marcador azul \'Ajustada\' são vendas com ajuste contábil: alguém corrigiu a data da instituição financeira ou uma série. O valor mostrado já é o corrigido; passe o mouse no selo para ver o que mudou e por quê.',
+              'O selo \'Lead\' no detalhe marca o cliente que entrou por captação nossa, ou seja, o lead NÃO foi cadastrado nos painéis de gestor, corretor ou imobiliária. Passe o mouse para ver origem, mídia e campanha; clique para abrir o lead na tela de Leads.',
               'Exportar gera uma planilha com exatamente o que está na tela.',
             ]"
           />

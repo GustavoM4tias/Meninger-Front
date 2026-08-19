@@ -66,7 +66,9 @@ const STRING_FIELDS = ['nome', 'email', 'telefone', 'data_inicio', 'data_fim', '
 
 function syncFiltersFromUrl() {
   const q = route.query;
-  if (!Object.keys(q).length) return;
+  // ?idlead= sozinho é deep link de UM lead, não recorte de dashboard: deixa os
+  // filtros padrão em pé (senão a tela abriria sem o corte de origem/situação).
+  if (!Object.keys(q).filter((k) => k !== 'idlead').length) return;
   const next = { ...filtros.value };
   for (const key of ARRAY_FIELDS) {
     next[key] = q[key]
@@ -179,6 +181,16 @@ function abrirLeadDetalhe(lead) {
   leadDetalheVisivel.value = true;
 }
 
+// Deep link ?idlead=123 — chega do selo "Lead" na listagem do Faturamento /
+// Vendas x Projeção. Abre o detalhe direto, sem depender do período do
+// dashboard (o lead costuma ser bem anterior ao mês corrente).
+async function abrirLeadDaUrl() {
+  const id = route.query.idlead;
+  if (!id) return;
+  const lead = await store.fetchLeadById(id);
+  if (lead) abrirLeadDetalhe(lead);
+}
+
 const modalVisivel = ref(false);
 const modalLeads = ref([]);
 const modalMode = ref('list');
@@ -238,6 +250,7 @@ onMounted(async () => {
   window.addEventListener('focus', refreshRecent);
   document.addEventListener('visibilitychange', onVisibility);
   if (route.query.excluir_painel === '1') store.applyDefaultOrigens();
+  await abrirLeadDaUrl();
 });
 
 onUnmounted(() => {

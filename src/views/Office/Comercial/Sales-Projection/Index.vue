@@ -25,6 +25,10 @@ import ProjectionChartsModal from './components/ProjectionChartsModal.vue';
 import EnterpriseDetailModal from '@/views/Office/Comercial/Faturamento/components/EnterpriseDetailModal.vue';
 import LandSyncConfigModal from '@/views/Office/Comercial/Faturamento/components/LandSyncConfigModal.vue';
 
+// `embedded` = renderizada como guia do Relatório Comercial: esconde só o
+// cabeçalho próprio. Nenhuma regra de cálculo muda.
+defineProps({ embedded: { type: Boolean, default: false } });
+
 const contractsStore = useContractsStore();
 const projStore = useSalesProjectionReportStore();
 const goalStore = useProjectionGoalModeStore();
@@ -456,9 +460,19 @@ onMounted(async () => {
     hiddenStore.fetchAll(),
   ]);
 
-  const startDate = dayjs().startOf('month').format('YYYY-MM-DD');
-  const endDate = dayjs().endOf('month').format('YYYY-MM-DD');
-  contractsStore.setFilters({ startDate, endDate, situation: 'Emitido', enterpriseName: [], companyIds: [] });
+  // Abrir no mês corrente é o padrão da tela, mas só quando ainda NÃO existe
+  // recorte escolhido. Como este relatório agora convive com os outros sob a
+  // mesma casca, sobrescrever sempre apagava o período que o usuário tinha
+  // acabado de definir na outra guia (ou o que veio na URL).
+  if (!contractsStore.filters.startDate && !contractsStore.filters.endDate) {
+    contractsStore.setFilters({
+      startDate: dayjs().startOf('month').format('YYYY-MM-DD'),
+      endDate: dayjs().endOf('month').format('YYYY-MM-DD'),
+      situation: 'Emitido',
+      enterpriseName: [],
+      companyIds: [],
+    });
+  }
   await loadData();
 });
 </script>
@@ -469,6 +483,7 @@ onMounted(async () => {
 
       <!-- Header -->
       <PageHeader
+        v-if="!embedded"
         subtitle="Compare as metas projetadas com as vendas realizadas, empreendimento a empreendimento."
         icon="fas fa-bullseye">
         <template #title>

@@ -10,7 +10,11 @@ import Button from '@/components/UI/Button.vue';
 import Badge from '@/components/UI/Badge.vue';
 import SegmentedControl from '@/components/UI/SegmentedControl.vue';
 
-const emit = defineEmits(['filter-changed']);
+// 'ready' avisa que os filtros já leram a URL e escreveram no store. Telas que
+// carregam dados sozinhas (as guias analíticas do Relatório Comercial) esperam
+// por ele em vez de buscar no próprio onMounted — senão a primeira consulta sai
+// com o período padrão e só depois é refeita com o da URL.
+const emit = defineEmits(['filter-changed', 'ready']);
 const contractsStore = useContractsStore();
 const route = useRoute();
 const router = useRouter();
@@ -25,6 +29,7 @@ const localFilters = ref({
   endDate: DEFAULT_END,
   situation: '',
   selectedCompanyNames: [],
+  selectedCities: [],
   groupIds: [],
 });
 
@@ -53,6 +58,10 @@ const companyIdByName = computed(() => {
   return m;
 });
 
+// Cidades — a lista vem do servidor já limitada ao escopo do usuário, então o
+// seletor nunca oferece cidade que a pessoa não poderia consultar.
+const citiesOptions = computed(() => contractsStore.cities || []);
+
 // Grupos workflow
 const groupLabelOf = (g) =>
   `${g.tipo === 'reservas' ? 'Reserva' : 'Repasse'} • ${g.nome}`;
@@ -70,12 +79,14 @@ const groupIdByLabel = computed(() => {
 });
 
 // ── URL sync ─────────────────────────────────────────
-function syncFiltersFromUrl() {
+function syncFiltersFromUrl({ silent = false } = {}) {
   const q = route.query;
   if (!Object.keys(q).length) return;
   const next = { ...localFilters.value };
   if (q.companyNames) next.selectedCompanyNames = String(q.companyNames).split(',').map(s => s.trim()).filter(Boolean);
   else next.selectedCompanyNames = [];
+  if (q.cities) next.selectedCities = String(q.cities).split(',').map(s => s.trim()).filter(Boolean);
+  else next.selectedCities = [];
   if (q.groupIds) next.groupIds = String(q.groupIds).split(',').map(s => s.trim()).filter(Boolean);
   else next.groupIds = [];
   if (q.startDate) next.startDate = String(q.startDate);
@@ -86,7 +97,7 @@ function syncFiltersFromUrl() {
   // store era um watcher (roda depois do emit), então o fetch saía com o
   // filtro antigo — a tela mostrava o período da URL, mas os dados eram do
   // mês atual.
-  applyFilters();
+  applyFilters({ silent });
 }
 
 function syncUrlFromFilters() {
@@ -95,12 +106,13 @@ function syncUrlFromFilters() {
   if (localFilters.value.endDate) q.endDate = localFilters.value.endDate;
   if (localFilters.value.situation) q.situation = localFilters.value.situation;
   if (localFilters.value.selectedCompanyNames?.length) q.companyNames = localFilters.value.selectedCompanyNames.join(',');
+  if (localFilters.value.selectedCities?.length) q.cities = localFilters.value.selectedCities.join(',');
   if (localFilters.value.groupIds?.length) q.groupIds = localFilters.value.groupIds.join(',');
   router.replace({ query: q });
 }
 
 // ── Apply / Watch ────────────────────────────────────
-const applyFilters = () => {
+const applyFilters = ({ silent = false } = {}) => {
   const companyIds = (localFilters.value.selectedCompanyNames || [])
     .map(name => companyIdByName.value.get(name))
     .filter(id => Number.isFinite(id));
@@ -110,6 +122,7 @@ const applyFilters = () => {
     endDate: localFilters.value.endDate,
     situation: localFilters.value.situation,
     companyIds,
+    cities: [...(localFilters.value.selectedCities || [])],
   });
 
   const groupIds = (localFilters.value.groupIds || [])
@@ -118,7 +131,7 @@ const applyFilters = () => {
 
   contractsStore.setSelectedGroups(groupIds);
   syncUrlFromFilters();
-  emit('filter-changed');
+  if (!silent) emit('filter-changed');
 };
 
 const isActive = v => Array.isArray(v) ? v.length > 0 : (v !== '' && v != null);
@@ -129,6 +142,7 @@ const hasActiveFilters = computed(() =>
 const activeFiltersCount = computed(() => {
   let n = 0;
   if (localFilters.value.selectedCompanyNames?.length) n++;
+  if (localFilters.value.selectedCities?.length) n++;
   if (localFilters.value.groupIds?.length) n++;
   if (localFilters.value.situation) n++;
   // Datas só contam quando diferentes do default do mês atual
@@ -147,6 +161,7 @@ watch(localFilters, () => {
     endDate: localFilters.value.endDate,
     situation: localFilters.value.situation,
     companyIds,
+    cities: [...(localFilters.value.selectedCities || [])],
   });
   const groupIds = (localFilters.value.groupIds || [])
     .map(lbl => groupIdByLabel.value.get(lbl))
@@ -157,7 +172,7 @@ watch(localFilters, () => {
 const clearFilters = () => {
   localFilters.value = {
     startDate: '', endDate: '', situation: '',
-    selectedCompanyNames: [], groupIds: [],
+    selectedCompanyNames: [], selectedCities: [], groupIds: [],
   };
   contractsStore.clearFilters();
   router.replace({ query: {} });
@@ -169,11 +184,29 @@ const isExpanded = ref(typeof window !== 'undefined' && window.innerWidth >= 102
 function toggle() { isExpanded.value = !isExpanded.value; }
 
 onMounted(async () => {
-  await Promise.all([
-    contractsStore.fetchCompanies(),
-    contractsStore.fetchWorkflowGroups(),
-  ]);
-  syncFiltersFromUrl();
+  // As listas do seletor (empresas, cidades, grupos) NÃO podem atrasar a busca
+  // dos dados: esperar pelas três antes de liberar o 'ready' serializava o que
+  // era paralelo e a tela demorava visivelmente mais para pintar.
+  //
+  // Só aguardamos o que a URL realmente precisa para virar filtro: nome de
+  // empresa e rótulo de grupo viram id por lookup nessas listas. Cidade é
+  // string pura e período é literal, então não dependem de nada.
+  const q = route.query;
+  const espera = [];
+  if (q.companyNames) espera.push(contractsStore.fetchCompanies());
+  if (q.groupIds) espera.push(contractsStore.fetchWorkflowGroups());
+  if (espera.length) await Promise.all(espera);
+
+  // Silencioso: escreve o filtro da URL no store SEM disparar busca. Quem
+  // consome carrega ao receber o 'ready' — assim a primeira (e única) consulta
+  // já sai com o recorte certo.
+  syncFiltersFromUrl({ silent: true });
+  emit('ready');
+
+  // O resto abastece o seletor em segundo plano, já com os dados a caminho.
+  contractsStore.fetchCompanies();
+  contractsStore.fetchCities();
+  contractsStore.fetchWorkflowGroups();
 });
 </script>
 
@@ -226,6 +259,15 @@ onMounted(async () => {
         <MultiSelector :model-value="localFilters.selectedCompanyNames"
           @update:modelValue="v => localFilters.selectedCompanyNames = Array.isArray(v) ? v : []"
           :options="companiesOptions" placeholder="Empresas" :page-size="150" :select-all="true" />
+      </div>
+
+      <div>
+        <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+          <i class="fas fa-location-dot text-[10px] mr-1 text-ink-subtle"></i>Cidade(s)
+        </label>
+        <MultiSelector :model-value="localFilters.selectedCities"
+          @update:modelValue="v => localFilters.selectedCities = Array.isArray(v) ? v : []"
+          :options="citiesOptions" placeholder="Cidades" :page-size="150" :select-all="true" />
       </div>
 
       <div>

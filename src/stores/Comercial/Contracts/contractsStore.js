@@ -14,6 +14,21 @@ const DEBUG = (() => {
     try { return localStorage.getItem('debug:contracts') === '1' } catch { return false }
 })()
 const log = (...a) => { if (DEBUG) console.log('[contractsStore]', ...a) }
+
+// ─── Trava das regras de valor ──────────────────────────────────────────────
+// O VGV depende de quatro configurações (regras por empreendimento, comissão de
+// etapa, TR-satélite e empreendimentos ocultos). Se o contrato for calculado
+// antes de qualquer uma delas chegar, o número sai MENOR e ninguém percebe.
+//
+// Cada tela carregava essas regras na mão, e bastava um caminho novo (trocar de
+// guia no Relatório Comercial, por exemplo) para escapar da ordem certa. Agora a
+// garantia é única: `ensureRules()` é awaitada dentro do próprio fetchContracts,
+// então NENHUM caminho calcula contrato sem regra carregada.
+//
+// A promessa fica em módulo (não no state) para várias telas simultâneas
+// dividirem a MESMA carga em vez de dispararem uma cada. Em caso de erro ela é
+// descartada, para a próxima tentativa realmente tentar de novo.
+let _rulesPromise = null
 const logProj = (...a) => { if (DEBUG) console.log('[contractsStore][PROJ]', ...a) }
 
 // ─── Business-rule constants ─────────────────────────────────────────────────
@@ -247,17 +262,24 @@ export const useContractsStore = defineStore('contracts', {
         contracts: [],
         enterprises: [],
         companies: [],
+        // Cidades disponíveis no filtro (vêm escopadas do servidor).
+        cities: [],
         groupBy: 'company', // 'enterprise' | 'company'
         total: 0,
         error: null,
         valueMode: 'net',   // 'net' | 'gross'
+        // Regras de valor já carregadas? Ver ensureRules().
+        rulesReady: false,
 
         filters: {
             startDate: '',
             endDate: '',
             situation: 'Emitido',
             enterpriseName: [],
-            companyIds: []
+            companyIds: [],
+            // Cidades do empreendimento. Filtro ADITIVO: o servidor aplica em
+            // AND com o escopo de acesso, nunca amplia.
+            cities: []
         },
 
         workflowGroups: [],
@@ -973,6 +995,37 @@ export const useContractsStore = defineStore('contracts', {
     // =========================================================================
     actions: {
 
+        /**
+         * Garante que as regras de valor estejam carregadas antes de qualquer
+         * cálculo de VGV. Idempotente e compartilhada: chamar de várias telas ao
+         * mesmo tempo dispara UMA carga só.
+         *
+         * `force` refaz a carga (usado quando o admin edita uma regra).
+         * Erro aqui é propagado de propósito: melhor a tela mostrar falha do que
+         * exibir um VGV silenciosamente menor.
+         */
+        async ensureRules({ force = false } = {}) {
+            if (force) _rulesPromise = null
+            if (_rulesPromise) return _rulesPromise
+
+            _rulesPromise = Promise.all([
+                useEnterpriseValueRulesStore().fetchAll(),
+                useStageCommissionRulesStore().fetchAll(),
+                useTrSatelliteStore().fetchAll(),
+                useHiddenEnterprisesStore().fetchAll(),
+            ]).then(() => { this.rulesReady = true })
+                .catch((err) => {
+                    // Descarta a promessa falha para não travar a tela num erro
+                    // antigo — a próxima chamada tenta de novo.
+                    _rulesPromise = null
+                    this.rulesReady = false
+                    throw err
+                })
+
+            return _rulesPromise
+        },
+
+
         // ── Value mode ─────────────────────────────────────────────────────
         setValueMode(mode) {
             this.valueMode = mode === 'gross' ? 'gross' : 'net'
@@ -1078,6 +1131,10 @@ export const useContractsStore = defineStore('contracts', {
                 links: Array.isArray(c.links) ? c.links : [],
                 repasse: Array.isArray(c.repasse) ? c.repasse : [],
                 reserva: isPlainObject(c.reserva) ? c.reserva : null,
+                // Lead que originou a venda. Só vem na visão de DETALHE e só
+                // quando a origem está fora dos painéis internos (= captação
+                // nossa). É o que acende o selo "Lead" na listagem de clientes.
+                lead_captacao: isPlainObject(c.lead_captacao) ? c.lead_captacao : null,
                 _projection: !!c._projection,
                 _projection_tipo: c._projection_tipo || null,
                 _projection_group_id: c._projection_group_id || null
@@ -1314,7 +1371,10 @@ export const useContractsStore = defineStore('contracts', {
                 ? [...new Set(enterpriseIds.map(Number).filter(Number.isFinite))].sort((a, b) => a - b).join(',')
                 : ''
             const groups = [...new Set(this.selectedGroupIds)].sort((a, b) => a - b).join(',')
-            return `v=${view};s=${f.startDate};e=${f.endDate};sit=${f.situation};names=${names};cids=${cids};id=${enterpriseId ?? ''};ids=${ids};g=${groups}`
+            // Cidade entra na chave: sem isso, trocar de cidade serviria o
+            // resultado em cache do recorte anterior.
+            const cities = Array.isArray(f.cities) ? [...f.cities].sort().join('|') : ''
+            return `v=${view};s=${f.startDate};e=${f.endDate};sit=${f.situation};names=${names};cids=${cids};cit=${cities};id=${enterpriseId ?? ''};ids=${ids};g=${groups}`
         },
 
         _getCachedContracts(key) {
@@ -1357,7 +1417,8 @@ export const useContractsStore = defineStore('contracts', {
             const names = Array.isArray(f.enterpriseName) ? [...f.enterpriseName].sort().join('|') : ''
             const cids = Array.isArray(f.companyIds) ? [...f.companyIds].map(Number).filter(Number.isFinite).sort((a, b) => a - b).join(',') : ''
             const groups = [...new Set(this.selectedGroupIds)].sort((a, b) => a - b).join(',')
-            return `s=${f.startDate};e=${f.endDate};sit=${f.situation};names=${names};cids=${cids};g=${groups}`
+            const cities = Array.isArray(f.cities) ? [...f.cities].sort().join('|') : ''
+            return `s=${f.startDate};e=${f.endDate};sit=${f.situation};names=${names};cids=${cids};cit=${cities};g=${groups}`
         },
 
         _getDetailBucket(ctxKey) {
@@ -1397,6 +1458,12 @@ export const useContractsStore = defineStore('contracts', {
             const carregamentoStore = useCarregamentoStore()
             this.error = null
             const isDetail = String(view).toLowerCase() === 'detail'
+
+            // TRAVA: nenhum contrato é calculado sem as regras de valor. Como é
+            // memoizada, sai de graça quando já estão carregadas — e cobre os
+            // caminhos que não passam pelo loadData de uma tela, como a troca de
+            // guia no Relatório Comercial.
+            await this.ensureRules()
 
             // Guarda de corrida: no mount, o fetch default (mês atual) e o fetch
             // com filtros da URL disparam quase juntos; se o mais antigo terminar
@@ -1478,6 +1545,9 @@ export const useContractsStore = defineStore('contracts', {
                     params.append('companyIds', this.filters.companyIds.join(','))
                 } else if (Array.isArray(this.filters.enterpriseName) && this.filters.enterpriseName.length > 0) {
                     params.append('enterpriseName', this.filters.enterpriseName.join(','))
+                }
+                if (Array.isArray(this.filters.cities) && this.filters.cities.length > 0) {
+                    params.append('cities', this.filters.cities.join(','))
                 }
                 params.append('view', view)
                 if (enterpriseId != null) params.append('enterpriseId', String(enterpriseId))
@@ -1611,6 +1681,27 @@ export const useContractsStore = defineStore('contracts', {
                 const data = await res.json()
                 this.companies = data.results || []
                 return this.companies
+            } catch (error) {
+                this.error = error.message
+                return []
+            }
+        },
+
+        // Cidades para o filtro — já escopadas no servidor (só as dos
+        // empreendimentos que o usuário enxerga).
+        async fetchCities() {
+            if (this.cities.length > 0) return this.cities
+            try {
+                const res = await fetch(`${API_URL}/sienge/contracts/cities`, {
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem('token')}`,
+                        'Content-Type': 'application/json'
+                    }
+                })
+                if (!res.ok) throw new Error(`Erro ao buscar cidades: ${res.status}`)
+                const data = await res.json()
+                this.cities = data.results || []
+                return this.cities
             } catch (error) {
                 this.error = error.message
                 return []
