@@ -59,6 +59,13 @@ const cvLink = computed(() => {
   return `https://menin.cvcrm.com.br/gestor/comercial/reservas/${props.reserva.idreserva}/administrar`;
 });
 
+/* O repasse tem tela propria no CV e precisa do idrepasse, que o relatorio
+   passou a devolver junto com a reserva. Sem repasse, sem link. */
+const cvRepasseLink = computed(() => {
+  if (!props.reserva?.idrepasse) return null;
+  return `https://menin.cvcrm.com.br/gestor/financeiro/repasses/${props.reserva.idrepasse}/administrar`;
+});
+
 /* Situacao do CRM. Vem de `etapaDe` porque o bloco `situacao` do CV nao tem a
    chave `nome`. NAO confundir com `reserva.etapa`, que e a fase do
    empreendimento (etapa/bloco/unidade). */
@@ -118,13 +125,20 @@ const bannerGradient = computed(() => {
           </button>
         </div>
 
-        <div v-if="cvLink" class="relative mt-4">
-          <a :href="cvLink" target="_blank" rel="noopener"
+        <div v-if="cvLink || cvRepasseLink" class="relative mt-4 flex flex-wrap gap-2">
+          <a v-if="cvLink" :href="cvLink" target="_blank" rel="noopener"
             class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg
                    bg-white/15 hover:bg-white/30 backdrop-blur border border-white/20
                    text-white text-xs font-medium transition-all hover:-translate-y-0.5">
             <i class="fas fa-arrow-up-right-from-square text-micro"></i>
-            Abrir no CV CRM
+            Abrir a reserva no CV
+          </a>
+          <a v-if="cvRepasseLink" :href="cvRepasseLink" target="_blank" rel="noopener"
+            class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg
+                   bg-white/15 hover:bg-white/30 backdrop-blur border border-white/20
+                   text-white text-xs font-medium transition-all hover:-translate-y-0.5">
+            <i class="fas fa-money-bill-transfer text-micro"></i>
+            Abrir o repasse no CV
           </a>
         </div>
       </div>
@@ -160,7 +174,14 @@ const bannerGradient = computed(() => {
                 </div>
                 <div class="rounded-lg p-2.5 border border-line bg-surface-sunken">
                   <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono">Status repasse</p>
-                  <p class="text-sm text-ink mt-0.5">{{ reserva?.status_repasse || '-' }}</p>
+                  <a v-if="cvRepasseLink" :href="cvRepasseLink" target="_blank" rel="noopener"
+                    v-tippy="'Abrir o repasse no CV CRM'"
+                    class="inline-flex items-center gap-1.5 mt-0.5 text-sm text-accent
+                           hover:text-accent-hover transition-colors duration-120 focus-ring rounded">
+                    {{ reserva?.status_repasse || 'Ver repasse' }}
+                    <i class="fas fa-arrow-up-right-from-square text-micro opacity-70"></i>
+                  </a>
+                  <p v-else class="text-sm text-ink mt-0.5">{{ reserva?.status_repasse || '-' }}</p>
                 </div>
                 <div class="rounded-lg p-2.5 border border-line bg-surface-sunken"
                   v-tippy="'Etapa do CRM marcada como Vendida - não significa venda concretizada'">
