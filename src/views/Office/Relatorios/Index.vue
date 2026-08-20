@@ -119,7 +119,8 @@ async function onTransferred() {
               'Relatório excluído vai para a lixeira e pode ser restaurado por 30 dias.',
               'Se compartilharem algo que você não quer acompanhar, use Remover da minha lista.',
               'O link público expira automaticamente e pode ser revogado a qualquer momento.',
-              'Nos relatórios com filtros, cada pessoa só enxerga os dados dos empreendimentos que as alçadas dela permitem; o link público mostra sempre o retrato congelado, sem filtros.',
+              'Nos relatórios com filtros, cada pessoa só enxerga os dados dos empreendimentos que as alçadas dela permitem.',
+              'No link público valem os mesmos filtros, o mesmo detalhe em modal e a mesma exportação em Excel - só que rodando com as alçadas de quem gerou o link. Revise o conteúdo antes de compartilhar.',
               'A barra de filtros abre e fecha como nas outras telas, e já nasce com o período do relatório preenchido.',
             ]"
           />
