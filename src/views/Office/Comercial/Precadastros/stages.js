@@ -1,26 +1,31 @@
 // Etapas do CV agrupadas em "buckets" semânticos do funil de pré-cadastro.
 // O `match` é uma função que recebe o nome cru da situação e devolve true.
 // O primeiro bucket que casar vence — ordem importa.
+//
+// CORES: seguem os tokens de dado do design system (ver _design/DESIGN-LANGUAGE.md).
+// Aprovados e Reprovados usam as cores RESERVADAS de estado (data-pos / data-neg),
+// porque são estado mesmo. As etapas intermediárias usam slots da série
+// categórica, cuja ordem é fixa e validada para daltonismo nos dois temas.
 
 export const STAGE_GROUPS = [
     {
         key: 'em_analise',
         label: 'Em Análise',
         icon: 'fas fa-magnifying-glass-chart',
-        color: 'purple',
-        bg: '!bg-purple-300/30 !border-purple-400/30',
-        text: 'text-purple-600 dark:text-purple-300',
-        bar: 'bg-purple-500',
+        color: 'series-4',
+        bg: '!bg-series-4/15 !border-series-4/30',
+        text: 'text-series-4',
+        bar: 'bg-series-4-soft',
         match: (s) => /análise|analise|aguardando|montagem|pasta/i.test(s) && !/incompleta/i.test(s),
     },
     {
         key: 'documentacao',
         label: 'Documentação',
         icon: 'fas fa-folder-open',
-        color: 'amber',
-        bg: '!bg-amber-300/30 !border-amber-400/30',
-        text: 'text-amber-600 dark:text-amber-300',
-        bar: 'bg-amber-500',
+        color: 'series-2',
+        bg: '!bg-series-2/15 !border-series-2/30',
+        text: 'text-series-2',
+        bar: 'bg-series-2-soft',
         match: (s) => /documenta|pasta\s*incompleta/i.test(s),
     },
     {
@@ -29,20 +34,23 @@ export const STAGE_GROUPS = [
         key: 'aprovado',
         label: 'Aprovados',
         icon: 'fas fa-check-double',
-        color: 'emerald',
-        bg: '!bg-emerald-300/30 !border-emerald-400/30',
-        text: 'text-emerald-600 dark:text-emerald-300',
-        bar: 'bg-emerald-500',
+        color: 'data-pos',
+        bg: '!bg-data-pos/15 !border-data-pos/30',
+        text: 'text-data-pos',
+        bar: 'bg-data-pos/70',
         match: (s) => /aprovad/i.test(s),
     },
     {
         key: 'reserva',
         label: 'Em Reserva',
         icon: 'fas fa-bookmark',
-        color: 'yellow',
-        bg: '!bg-yellow-300/30 !border-yellow-400/30',
-        text: 'text-yellow-600 dark:text-yellow-300',
-        bar: 'bg-yellow-500',
+        // Era amarelo. Virou turquesa: amarelo colidia com Documentação (âmbar)
+        // e some no tema claro. Turquesa fica ao lado do verde de Aprovado, que
+        // é onde a etapa está no funil, e passa nos testes de daltonismo.
+        color: 'series-3',
+        bg: '!bg-series-3/15 !border-series-3/30',
+        text: 'text-series-3',
+        bar: 'bg-series-3-soft',
         match: (s) => /reserva/i.test(s),
     },
     {
@@ -52,20 +60,20 @@ export const STAGE_GROUPS = [
         key: 'reprovado',
         label: 'Reprovados / Cancelados',
         icon: 'fas fa-circle-xmark',
-        color: 'red',
-        bg: '!bg-red-300/30 !border-red-400/30',
-        text: 'text-red-600 dark:text-red-300',
-        bar: 'bg-red-500',
+        color: 'data-neg',
+        bg: '!bg-data-neg/15 !border-data-neg/30',
+        text: 'text-data-neg',
+        bar: 'bg-data-neg/70',
         match: (s) => /reprovad|negad|cancelad|distrat|inviáv|inviav|inelegív|inelegiv|restriç|restric/i.test(s),
     },
     {
         key: 'outros',
         label: 'Outros',
         icon: 'fas fa-circle',
-        color: 'slate',
-        bg: '!bg-slate-300/30 !border-slate-400/30',
-        text: 'text-slate-600 dark:text-slate-300',
-        bar: 'bg-slate-500',
+        color: 'data-neutral',
+        bg: '!bg-data-neutral/15 !border-data-neutral/30',
+        text: 'text-data-neutral',
+        bar: 'bg-data-neutral/60',
         match: () => true, // catch-all
     },
 ];
@@ -104,26 +112,45 @@ export function iconForStage(s) {
     return 'fas fa-circle-dot';
 }
 
-// Classe (bg/border) por etapa específica. Faz pattern-match em vez de map estático.
+// Classe (bg/border) por etapa específica.
+//
+// Antes eram 12 tons soltos (laranja, violeta, cinza, roxo...) sem relação com o
+// bucket da etapa: "Restrição Acima" era laranja enquanto "Reprovado" era
+// vermelho, mesmo os dois sendo reprovação. Agora a etapa herda a cor do
+// próprio bucket, em DUAS intensidades:
+//
+//   forte  = estado terminal (o resultado saiu: aprovado, reprovado, reserva)
+//   suave  = etapa em andamento (ainda vai mudar)
+//
+// Assim a cor passa a significar uma coisa só, e o gráfico, a tabela e o chip da
+// etapa contam a mesma história.
+const STRONG = {
+    em_analise: '!bg-series-4/25 !border-series-4/40',
+    documentacao: '!bg-series-2/25 !border-series-2/40',
+    aprovado: '!bg-data-pos/25 !border-data-pos/40',
+    reserva: '!bg-series-3/25 !border-series-3/40',
+    reprovado: '!bg-data-neg/25 !border-data-neg/40',
+    outros: '!bg-data-neutral/25 !border-data-neutral/40',
+};
+const SOFT = {
+    em_analise: '!bg-series-4/12 !border-series-4/25',
+    documentacao: '!bg-series-2/12 !border-series-2/25',
+    aprovado: '!bg-data-pos/12 !border-data-pos/25',
+    reserva: '!bg-series-3/12 !border-series-3/25',
+    reprovado: '!bg-data-neg/12 !border-data-neg/25',
+    outros: '!bg-data-neutral/12 !border-data-neutral/25',
+};
+
+/** Uma etapa é terminal quando o resultado da análise já saiu. */
+function isTerminal(k) {
+    return /^aprovad|reprovad|negad|inelegív|inviáv|cancelad|distrat|reserva|restri/i.test(k)
+        && !/aguardando|análise|analise/i.test(k);
+}
+
 export function clsForStage(s) {
     const k = String(s || '').trim();
-    if (/^aprovad/i.test(k)) {
-        if (/restri/i.test(k))      return '!bg-emerald-200/30 !border-emerald-300/30';
-        if (/condicionad/i.test(k)) return '!bg-emerald-200/30 !border-emerald-300/30';
-        return '!bg-emerald-400/30 !border-emerald-500/30';
-    }
-    if (/reprovad|negad|inelegív|inviáv/i.test(k))   return '!bg-red-400/30 !border-red-500/30';
-    if (/restri.*(acima|alto)/i.test(k))             return '!bg-orange-400/30 !border-orange-500/30';
-    if (/restri/i.test(k))                            return '!bg-orange-300/30 !border-orange-400/30';
-    if (/cancelad|distrat/i.test(k))                  return '!bg-gray-300/30 !border-gray-400/30';
-    if (/reserva/i.test(k))                           return '!bg-yellow-300/30 !border-yellow-400/30';
-    if (/aguardando/i.test(k))                        return '!bg-violet-300/30 !border-violet-400/30';
-    if (/análise|analise/i.test(k))                   return '!bg-purple-300/30 !border-purple-400/30';
-    if (/montagem/i.test(k))                          return '!bg-purple-200/30 !border-purple-300/30';
-    if (/pasta\s*incompleta/i.test(k))                return '!bg-amber-200/30 !border-amber-300/30';
-    if (/pasta\s*completa/i.test(k))                  return '!bg-emerald-200/30 !border-emerald-300/30';
-    if (/documenta/i.test(k))                         return '!bg-amber-300/30 !border-amber-400/30';
-    return bucketOf(k).bg;
+    const bucket = bucketOf(k).key;
+    return (isTerminal(k) ? STRONG : SOFT)[bucket] || SOFT.outros;
 }
 
 // Ordem sugerida de etapas no funil (caso queira ordenar visualmente).
