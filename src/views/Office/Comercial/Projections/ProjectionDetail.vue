@@ -6,10 +6,10 @@
  * (banner "restaurar/descartar"), nunca aplicado às escondidas.
  */
 import { onMounted, ref, computed, watch, nextTick, onBeforeUnmount } from 'vue';
+import { useCan } from '@/composables/useCan';
 import { useRoute, onBeforeRouteLeave } from 'vue-router';
 import { useToast } from 'vue-toastification';
 import { useProjectionsStore } from '@/stores/Comercial/Projections/projectionsStore';
-import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 
 import PageContainer from '@/components/UI/PageContainer.vue';
 import Button from '@/components/UI/Button.vue';
@@ -33,11 +33,11 @@ import {
 
 const route = useRoute();
 const store = useProjectionsStore();
-const auth = useAuthStore();
 const toast = useToast();
 
 const id = Number(route.params.id);
-const isAdmin = computed(() => auth?.user?.role === 'admin');
+// Acao da tela (lib/screenCapabilities.js no back). Ver composables/useCan.js.
+const can = useCan('/comercial/projections');
 
 /* ── Período ───────────────────────────────────────────────────────────────── */
 const currentYear = new Date().getFullYear();
@@ -55,7 +55,7 @@ const rangeValid = computed(() => monthKeys.value.length > 0);
 /* ── Projeção / permissões ─────────────────────────────────────────────────── */
 const projection = computed(() => store.detail?.projection || null);
 const locked = computed(() => !!projection.value?.is_locked);
-const editable = computed(() => isAdmin.value && !locked.value);
+const editable = computed(() => can('edit') && !locked.value);
 
 /* ── Linhas ────────────────────────────────────────────────────────────────── */
 const rows = ref([]);
@@ -394,7 +394,7 @@ async function doSave() {
 const editingName = ref(false);
 const tempName = ref('');
 function startEditName() {
-  if (!isAdmin.value) return;
+  if (!can('edit')) return;
   tempName.value = projection.value?.name || '';
   editingName.value = true;
   nextTick(() => document.getElementById('proj-name-input')?.focus());
@@ -456,7 +456,7 @@ onBeforeRouteLeave(() => {
 
 onMounted(async () => {
   window.addEventListener('beforeunload', beforeUnload);
-  if (isAdmin.value) await store.fetchEnterprisePicker();
+  if (can('edit')) await store.fetchEnterprisePicker();
   await refresh();
 });
 onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload));
@@ -477,7 +477,7 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload));
 
             <template v-if="!editingName">
               <h1 class="text-xl font-semibold text-ink truncate flex items-center gap-2"
-                :class="isAdmin ? 'cursor-text hover:underline decoration-dotted underline-offset-4' : ''"
+                :class="can('edit') ? 'cursor-text hover:underline decoration-dotted underline-offset-4' : ''"
                 @click="startEditName">
                 <i class="fas fa-bullseye text-accent"></i>
                 {{ projection?.name || '—' }}
@@ -526,7 +526,7 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload));
           <ProjectionHistory :id="id" />
           <Button variant="secondary" size="sm" icon="fas fa-file-export" @click="exportOpen = true">Exportar</Button>
 
-          <template v-if="isAdmin">
+          <template v-if="can('edit')">
             <Button variant="secondary" size="sm" :icon="locked ? 'fas fa-lock-open' : 'fas fa-lock'" @click="toggleLock">
               {{ locked ? 'Desbloquear' : 'Bloquear' }}
             </Button>
@@ -540,7 +540,7 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload));
       </div>
 
       <!-- Ativa toggle (admin) -->
-      <div v-if="isAdmin" class="mt-3 pt-3 border-t border-line-subtle flex items-center gap-3">
+      <div v-if="can('edit')" class="mt-3 pt-3 border-t border-line-subtle flex items-center gap-3">
         <Switch :model-value="!!projection?.is_active" size="sm" @update:model-value="toggleActive"
           label="Projeção ativa" description="Só uma projeção fica ativa (é a usada no Vendas × Projeção)." />
       </div>
@@ -623,7 +623,7 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload));
       :sort-key="sortKey" :sort-dir="sortDir"
       @edit="openEdit" @remove="removeRow" @changed="dirty = true" @sort="setSort" />
 
-    <p v-if="!editable && isAdmin && locked" class="mt-3 text-xs text-ink-subtle">
+    <p v-if="!editable && can('edit') && locked" class="mt-3 text-xs text-ink-subtle">
       <i class="fas fa-lock mr-1"></i> Projeção bloqueada - desbloqueie no topo para editar.
     </p>
 

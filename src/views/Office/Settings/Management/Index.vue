@@ -2,7 +2,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useToast } from 'vue-toastification';
-import { useAuthStore } from '@/stores/Settings/Auth/authStore';
+import { usePermissionStore } from '@/stores/Settings/Permissions/permissionStore';
 import { useAdminMetaStore } from '@/stores/Settings/Admin/metaStore';
 
 import PageContainer from '@/components/UI/PageContainer.vue';
@@ -20,7 +20,7 @@ import SegmentedControl from '@/components/UI/SegmentedControl.vue';
 import Favorite from '@/components/config/Favorite.vue';
 
 const router = useRouter();
-const authStore = useAuthStore();
+const perm = usePermissionStore();
 const store = useAdminMetaStore();
 
 const toast = (() => {
@@ -164,7 +164,11 @@ async function deactivateItem(item) {
 }
 
 onMounted(async () => {
-  if (!authStore.hasRole('admin')) {
+  // Tela 100% de administração do sistema: não entra no padrão de capacidades
+  // (não há ação delegável dentro dela). Este if é só o cinto sobre a
+  // suspensória do guard de rota, agora lendo a fonte autoritativa: as
+  // permissões confirmadas pelo servidor.
+  if (!perm.isAdmin) {
     router.push('/');
     return;
   }

@@ -164,7 +164,10 @@ export const navRegistry = [
                 name: 'Cancelamentos',
                 icon: 'fas fa-handshake-slash',
                 pages: [
-                    { route: '/comercial/cancelamento-reservas', section: 'Cancelamentos', name: 'Cancelamentos', icon: 'fas fa-eraser', adminOnly: true },
+                    // Delegável desde 2026-08-19: histórico e reprocessamento vão
+                    // por alçada; a aba Configurações (e o processamento manual
+                    // avulso, que mora nela) continua só para admin.
+                    { route: '/comercial/cancelamento-reservas', section: 'Cancelamentos', name: 'Cancelamentos', icon: 'fas fa-eraser' },
                 ],
             },
         ],
@@ -192,7 +195,10 @@ export const navRegistry = [
                 icon: 'fas fa-file-invoice-dollar',
                 pages: [
                     { route: '/financeiro/consulta-cef', name: 'Consulta de nº CEF', icon: 'fas fa-hashtag' },
-                    { route: '/financeiro/boleto-caixa', name: 'Boleto Caixa', icon: 'fas fa-barcode', adminOnly: true },
+                    // Delegável desde 2026-08-19: histórico, filtros e
+                    // reprocessamento vão por alçada; a aba Configurações
+                    // continua só para admin (dentro da própria tela).
+                    { route: '/financeiro/boleto-caixa', name: 'Boleto Caixa', icon: 'fas fa-barcode' },
                 ],
             },
             {
@@ -223,8 +229,6 @@ export const navRegistry = [
             { route: '/relatorios', name: 'Relatórios', icon: 'fas fa-wand-magic-sparkles', permissionManaged: false },
 
             { route: '/validator', section: 'Validador', name: 'Validador', icon: 'fas fa-check-double' },
-            // Config das Aprovações fica só dentro da tela (botão "Configurações"), não no menu.
-            { route: '/aprovacoes', name: 'Aprovações', icon: 'fas fa-stamp' },
         ],
     },
     // ── Academy (Conhecimento & Trilhas) ───────────────────────────────────────
@@ -339,7 +343,10 @@ export const navRegistry = [
                     // Mural do usuário: broadcast interno — visível a todos (o gate é
                     // a audiência de cada comunicado, não alçada de tela).
                     { route: '/mural', name: 'Mural de Avisos', icon: 'fas fa-thumbtack', permissionManaged: false },
-                    { route: '/mural/admin', section: 'Mural de Avisos', name: 'Gestão do Mural', icon: 'fas fa-thumbtack', adminOnly: true },
+                    // Delegável desde 2026-08-20: redigir, definir público e
+                    // publicar vão por alçada; EXCLUIR comunicado segue admin
+                    // (some com a trilha de leitura) — ver screenCapabilities.
+                    { route: '/mural/admin', section: 'Mural de Avisos', name: 'Gestão do Mural', icon: 'fas fa-thumbtack' },
                     // Preferências do próprio usuário — permissionManaged:false → visíveis a todos.
                     { route: '/settings/notifications', section: 'Notificações', name: 'Notificações', icon: 'fas fa-bell', permissionManaged: false },
                     { route: '/settings/alerts', section: 'Alertas', name: 'Alertas', icon: 'fas fa-tower-broadcast', permissionManaged: false },
@@ -371,7 +378,9 @@ export const navRegistry = [
             // Changelog do sistema (/docs). A tela já existia sem entrada no menu;
             // é o complemento natural: o mapa mostra o que existe, a visão
             // executiva explica o porquê e as atualizações mostram a evolução.
-            { route: '/docs', name: 'Atualizações', icon: 'fas fa-code-branch', adminOnly: true },
+            // Changelog: não há o que limitar, então é livre para todos (a
+            // categoria já é permissionManaged:false).
+            { route: '/docs', name: 'Atualizações', icon: 'fas fa-code-branch' },
         ],
     },
 

@@ -1,8 +1,8 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { useCan } from '@/composables/useCan';
 import { RouterLink } from 'vue-router';
 import { useMcmvStore } from '@/stores/Comercial/Mcmv/mcmvStore';
-import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 
 import Favorite from '@/components/config/Favorite.vue';
 import PageContainer from '@/components/UI/PageContainer.vue';
@@ -14,8 +14,8 @@ import Badge from '@/components/UI/Badge.vue';
 import EmptyState from '@/components/UI/EmptyState.vue';
 
 const store = useMcmvStore();
-const auth = useAuthStore();
-const isAdmin = computed(() => auth?.user?.role === 'admin');
+// Acao da tela (lib/screenCapabilities.js no back). Ver composables/useCan.js.
+const can = useCan('/comercial/mcmv');
 
 const query = ref('');
 const ufFilter = ref('');
@@ -93,7 +93,7 @@ function recorteClass(r) {
             · vigência <span class="font-mono">{{ fmtVigencia(store.info.co_periodo) }}</span>
           </span>
         </template>
-        <template v-if="isAdmin" #actions>
+        <template v-if="can('configure')" #actions>
           <RouterLink to="/comercial/mcmv/settings">
             <Button variant="ghost" size="sm" icon="fas fa-cog">
               <span class="hidden sm:inline">Configurações</span>

@@ -1,5 +1,6 @@
 <script setup>
 import { ref, watchEffect, onMounted, computed } from 'vue';
+import { usePermissionStore } from '@/stores/Settings/Permissions/permissionStore';
 import { useToast } from 'vue-toastification';
 import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 import { adminResetUserPassword, activateUser, rejectUser } from '@/utils/Auth/apiAuth';
@@ -15,7 +16,10 @@ import Switch from '@/components/UI/Switch.vue';
 
 const authStore = useAuthStore();
 const toast = useToast();
-const isAdmin = computed(() => authStore.user?.role === 'admin');
+// Fonte autoritativa: permissoes confirmadas pelo servidor
+// (/permissions/me), nao o authStore. Aqui nao cabe capacidade: tela admin por codigo.
+const perm = usePermissionStore();
+const isAdmin = computed(() => perm.isAdmin);
 
 const props = defineProps({ user: { type: Object, default: null } });
 const emit = defineEmits(['close', 'reload']);

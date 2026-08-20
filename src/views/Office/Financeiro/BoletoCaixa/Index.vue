@@ -34,7 +34,7 @@
       </div>
 
       <!-- ── TAB: Configurações ───────────────────────────────────────────────── -->
-      <div v-if="activeTab === 'settings' && isAdmin" class="space-y-5">
+      <div v-if="activeTab === 'settings' && can('configure')" class="space-y-5">
 
         <!-- Card: Credenciais Ecobrança -->
         <Surface variant="raised" padding="md" class="space-y-4 surface-gradient">
@@ -812,7 +812,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useBoletoStore } from '@/stores/Financeiro/BoletoCaixa/boletoStore';
-import { useAuthStore } from '@/stores/Settings/Auth/authStore';
+import { useCan } from '@/composables/useCan';
 import API_URL from '@/config/apiUrl';
 
 import PageContainer from '@/components/UI/PageContainer.vue';
@@ -830,19 +830,20 @@ import BoletoFilters from './components/BoletoFilters.vue';
 import BoletoDetailModal from './components/BoletoDetailModal.vue';
 
 const store = useBoletoStore();
-const auth = useAuthStore();
-const isAdmin = computed(() => auth.hasRole('admin'));
+// Ações desta tela (lib/screenCapabilities.js no back): view/operate seguem a
+// alçada, configure é admin. Ver composables/useCan.js.
+const can = useCan('/financeiro/boleto-caixa');
 
 // ── Tabs ──────────────────────────────────────────────────────────────────────
-// Sempre abre no Histórico. A aba "Configurações" só aparece (e só é acessível)
-// para admins — o backend também exige admin em todas as rotas de config.
+// Sempre abre no Histórico. A aba "Configurações" só aparece para quem tem a
+// ação `configure` — o backend cobra a mesma regra nas rotas de config.
 const activeTab = ref('history');
 
 const tabOptions = computed(() => {
   const base = [
     { value: 'history', label: 'Histórico', icon: 'fas fa-clock-rotate-left' },
   ];
-  if (isAdmin.value) {
+  if (can('configure')) {
     base.push({ value: 'settings', label: 'Configurações', icon: 'fas fa-gear' });
   }
   return base;
@@ -1235,7 +1236,7 @@ async function handleSyncTemplate() {
 
 // ── Mount ─────────────────────────────────────────────────────────────────────
 onMounted(async () => {
-  if (isAdmin.value) {
+  if (can('configure')) {
     await store.fetchSettings();
     if (store.settings) {
       form.value.eco_usuario = store.settings.eco_usuario || '';

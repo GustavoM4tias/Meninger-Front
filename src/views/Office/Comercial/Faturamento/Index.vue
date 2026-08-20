@@ -33,10 +33,6 @@ const isClosingModalOpen = ref(false);
 const selectionMetrics = ref(null);
 const loading = ref(false);
 
-const isAdmin = computed(() => {
-  try { return localStorage.getItem('role') === 'admin'; } catch { return false; }
-});
-
 const metricsToShow = computed(() => selectionMetrics.value || contractsStore.metrics);
 
 const loadData = async () => {

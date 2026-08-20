@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed, watch } from 'vue';
+import { usePermissionStore } from '@/stores/Settings/Permissions/permissionStore';
 import { useToast } from 'vue-toastification';
 import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 import { updateMeInfo } from '@/utils/Auth/apiAuth';
@@ -14,7 +15,10 @@ import FacialAuth from './FacialAuth.vue';
 const toast = useToast();
 const authStore = useAuthStore();
 
-const isAdmin = computed(() => authStore.user?.role === 'admin');
+// Fonte autoritativa: permissoes confirmadas pelo servidor
+// (/permissions/me), nao o authStore. Aqui nao cabe capacidade: tela pessoal com campo extra de admin.
+const perm = usePermissionStore();
+const isAdmin = computed(() => perm.isAdmin);
 
 // ─── Form state ──────────────────────────────────────
 const editableUser = ref({

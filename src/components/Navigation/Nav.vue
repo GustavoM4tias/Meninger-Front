@@ -30,7 +30,9 @@ const microsoftStore  = useMicrosoftStore();
 const permissionStore = usePermissionStore();
 
 // ─── Permissões ──────────────────────────────────────
-const isAdmin = computed(() => authStore?.user?.role === 'admin');
+// Fonte autoritativa: permissoes confirmadas pelo servidor
+// (/permissions/me), nao o authStore. Aqui nao cabe capacidade: menu monta a partir das permissoes confirmadas pelo servidor.
+const isAdmin = computed(() => permissionStore.isAdmin);
 
 // Link para o app Academy — resolve produção vs local automaticamente.
 const academyHref = computed(() => academyUrl('/panel'));
@@ -424,7 +426,7 @@ watch(() => route.fullPath, closeMobile);
         <ul class="shrink-0 space-y-0.5 pt-2 pb-3 border-t border-line">
           <div class="block md:hidden mb-2"><Search /></div>
 
-          <li v-if="authStore?.user?.role === 'admin'">
+          <li v-if="isAdmin">
             <SidebarItem to="/support" icon="fas fa-headset" label="Suporte"
               :collapsed="isCollapsed" @click="closeMobile()" />
           </li>

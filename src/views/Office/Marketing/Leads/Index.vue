@@ -1,5 +1,6 @@
 <script setup>
 import { onMounted, onUnmounted, ref, toRef, computed } from 'vue';
+import { useCan } from '@/composables/useCan';
 import { useRoute, useRouter } from 'vue-router';
 import { useLeadsStore } from '@/stores/Marketing/Lead/leadsStore';
 import { useAuthStore } from '@/stores/Settings/Auth/authStore';
@@ -122,7 +123,8 @@ const autorExport = computed(() => ({
 }));
 
 // Trilha de exportações — exclusiva do admin.
-const isAdmin = computed(() => authStore.user?.role === 'admin');
+// Acao da tela (lib/screenCapabilities.js no back). Ver composables/useCan.js.
+const can = useCan('/marketing/leads');
 const logAberto = ref(false);
 
 function pedirExport(kind) {
@@ -301,7 +303,7 @@ onUnmounted(() => {
               </button>
 
               <!-- Trilha de exportações: admin apenas -->
-              <template v-if="isAdmin">
+              <template v-if="can('audit')">
                 <div class="my-1 border-t border-line"></div>
                 <button type="button" data-dropdown-item @click="logAberto = true"
                   class="w-full flex items-start gap-3 px-3 py-2.5 text-left hover:bg-surface-sunken transition-colors group">
@@ -417,6 +419,6 @@ onUnmounted(() => {
     <ExportDisclaimerModal :open="disclaimer.open" :formato="disclaimer.kind" :autor="autorExport"
       @confirmar="confirmarExport" @cancelar="cancelarExport" />
 
-    <ExportLogModal v-if="isAdmin" :open="logAberto" @fechar="logAberto = false" />
+    <ExportLogModal v-if="can('audit')" :open="logAberto" @fechar="logAberto = false" />
   </div>
 </template>

@@ -20,7 +20,7 @@ const props = defineProps({
 
 const emit = defineEmits([
     'edit-event', 'remove-event', 'add-item', 'edit-item', 'remove-item',
-    'required-conflict', 'generate-approval',
+    'required-conflict',
 ]);
 
 const store = useEventPlanStore();
@@ -289,15 +289,11 @@ const dateLabel = computed(() => {
             </div>
         </div>
 
-        <!-- Evento já aprovado: atalhos para a agenda e para a verba -->
+        <!-- Evento já aprovado: atalho para a agenda -->
         <div v-if="fullyApproved" class="mt-3 flex flex-wrap items-center gap-2 border-t border-line pt-3">
             <Badge v-if="event.event_id" variant="success" size="sm">
                 <i class="fas fa-calendar-check"></i> Programado na agenda
             </Badge>
-            <Button size="sm" variant="outline" icon="fas fa-file-invoice-dollar"
-                @click="emit('generate-approval', event)">
-                Gerar ficha de aprovação
-            </Button>
         </div>
     </Surface>
 </template>

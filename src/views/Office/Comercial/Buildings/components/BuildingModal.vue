@@ -1,7 +1,7 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue';
+import { useCan } from '@/composables/useCan';
 import { useBuildingStore } from '@/stores/Comercial/Building/buildingStore';
-import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 import { syncPriceTables } from '@/utils/Building/apiBuilding';
 
 import Modal from '@/components/UI/Modal.vue';
@@ -113,8 +113,8 @@ const cvLink = computed(() =>
 );
 
 // ── Sync de tabelas de preço (CV → Office) — somente admin ──
-const authStore = useAuthStore();
-const isAdmin = computed(() => authStore?.user?.role === 'admin');
+// Acao da tela (lib/screenCapabilities.js no back). Ver composables/useCan.js.
+const can = useCan('/comercial/buildings');
 const syncingTables = ref(false);
 const syncResult = ref(null); // { ok, synced } | { ok: false, error }
 
@@ -503,7 +503,7 @@ onMounted(fetchWeather);
     </div>
 
     <template #footer>
-      <button v-if="isAdmin" @click="syncTables" :disabled="syncingTables"
+      <button v-if="can('sync')" @click="syncTables" :disabled="syncingTables"
         v-tippy="'Puxa do CV as tabelas de preço deste empreendimento (usadas nas fichas comerciais)'"
         class="mr-auto inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-line bg-surface-raised hover:bg-surface-hover text-sm font-medium transition-colors shadow-soft disabled:opacity-50"
         :class="syncResult && !syncResult.ok ? 'text-rose-600 dark:text-rose-400 border-rose-300 dark:border-rose-800' : 'text-ink'">

@@ -692,7 +692,6 @@
             :correspondents="store.correspondents"
             :office-users="store.officeUsers"
             :enterprise-stages="detail.stages ?? []"
-            :is-admin="isAdmin"
             :is-approver="canAuthorize"
             :can-edit="canEdit"
             :can-authorize="canAuthorize"
@@ -817,7 +816,7 @@
 import { ref, reactive, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue';
 import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router';
 import { useConditionsStore } from '@/stores/Comercial/Conditions/conditionsStore';
-import { useAuthStore } from '@/stores/Settings/Auth/authStore';
+import { useCan } from '@/composables/useCan';
 import ModuleSection from './components/ModuleSection.vue';
 import SummaryExport from './components/SummaryExport.vue';
 import SignaturePanel from './components/SignaturePanel.vue';
@@ -825,9 +824,11 @@ import SignaturePanel from './components/SignaturePanel.vue';
 const route = useRoute();
 const router = useRouter();
 const store = useConditionsStore();
-const auth = useAuthStore();
 
-const isAdmin = computed(() => auth.hasRole('admin'));
+// `configure` (admin) vem das capacidades da tela — lib/screenCapabilities.js.
+// Editar/autorizar ficha continua sendo regra de negócio do módulo (canEdit /
+// canAuthorize, do GET /conditions/permissions).
+const can = useCan('/comercial/conditions');
 
 // Permissões vindas do backend (admin sempre true; demais conforme listas das configurações).
 const canEdit = computed(() => !!store.permissions?.canEdit);
@@ -937,7 +938,7 @@ const ALL_TABS = [
 ];
 
 const visibleTabs = computed(() =>
-    ALL_TABS.filter(t => !t.adminOnly || isAdmin.value)
+    ALL_TABS.filter(t => !t.adminOnly || can('configure'))
 );
 
 const detail = computed(() => store.detail);

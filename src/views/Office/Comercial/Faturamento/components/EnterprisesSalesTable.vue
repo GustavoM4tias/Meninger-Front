@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed, watchEffect } from 'vue';
+import { useCan } from '@/composables/useCan';
 import { useContractsStore } from '@/stores/Comercial/Contracts/contractsStore';
 import EnterpriseDetailModal from './EnterpriseDetailModal.vue';
 import Export from '@/components/config/Export.vue';
@@ -28,9 +29,10 @@ const modalEnterprise = ref({ name: '' });
 
 const valueModeLabel = computed(() => contractsStore.valueModeLabel);
 
-const isAdmin = computed(() => {
-  try { return localStorage.getItem('role') === 'admin'; } catch { return false; }
-});
+// Ações desta tela (lib/screenCapabilities.js no back): view segue a alçada,
+// configure é admin. Lia `localStorage.getItem('role')` — qualquer um se dava
+// admin no navegador. Ver composables/useCan.js.
+const can = useCan('/comercial/relatorios/faturamento');
 
 const groupByOptions = [
   { value: 'enterprise', label: 'Empreendimento', icon: 'fas fa-building' },
@@ -493,9 +495,9 @@ const onViewChange = (mode) => {
       <!-- Toolbar de toggles -->
       <div class="flex items-center gap-2 flex-wrap">
         <SegmentedControl v-model="groupByProxy" :options="groupByOptions" size="sm" />
-        <IconButton v-if="isAdmin" icon="fas fa-cog" size="sm" label="Configurar regras" class="md:max-w-20"
+        <IconButton v-if="can('configure')" icon="fas fa-cog" size="sm" label="Configurar regras" class="md:max-w-20"
           @click="emit('open-land-sync')" />
-        <IconButton v-if="isAdmin" icon="fas fa-file-shield" size="sm" label="Consolidação (fechamento mensal)"
+        <IconButton v-if="can('configure')" icon="fas fa-file-shield" size="sm" label="Consolidação (fechamento mensal)"
           class="md:max-w-20" @click="emit('open-closing')" />
         <IconButton icon="fas fa-download" size="md" label="Exportar dados" @click="open = true" />
         <div class="ml-auto flex items-center gap-2 flex-wrap">

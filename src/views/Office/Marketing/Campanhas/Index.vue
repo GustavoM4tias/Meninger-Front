@@ -15,10 +15,10 @@
 // conta também recorta KPIs/gráfico (vai ao servidor).
 
 import { onMounted, ref, computed, watch } from 'vue';
+import { usePermissionStore } from '@/stores/Settings/Permissions/permissionStore';
 import dayjs from 'dayjs';
 import { useCampaignsStore } from '@/stores/Marketing/Campaigns/campaignsStore';
 import { useMetaFormsStore } from '@/stores/Marketing/Capture/metaFormsStore';
-import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 import Surface from '@/components/UI/Surface.vue';
 import Button from '@/components/UI/Button.vue';
 import IconButton from '@/components/UI/IconButton.vue';
@@ -36,8 +36,10 @@ import AdSetsTable from './components/AdSetsTable.vue';
 import AdsGalleryView from './components/AdsGalleryView.vue';
 
 const store = useCampaignsStore();
-const authStore = useAuthStore();
-const isAdmin = computed(() => authStore?.user?.role === 'admin');
+// Fonte autoritativa: permissoes confirmadas pelo servidor
+// (/permissions/me), nao o authStore. Aqui nao cabe capacidade: painel da Central Meta, que e admin por codigo.
+const perm = usePermissionStore();
+const isAdmin = computed(() => perm.isAdmin);
 
 // ── Régua de tempo: período mestre (default: este mês) ─────────────────────
 const periodo = ref({

@@ -2,7 +2,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRouter, RouterLink } from 'vue-router';
 import { useConditionsStore } from '@/stores/Comercial/Conditions/conditionsStore';
-import { useAuthStore } from '@/stores/Settings/Auth/authStore';
+import { useCan } from '@/composables/useCan';
 import { requestWithAuth } from '@/utils/Auth/requestWithAuth';
 import API_URL from '@/config/apiUrl';
 
@@ -18,11 +18,13 @@ import Spinner from '@/components/UI/Spinner.vue';
 import EmptyState from '@/components/UI/EmptyState.vue';
 
 const store = useConditionsStore();
-const auth = useAuthStore();
 const router = useRouter();
 
-const isAdmin = computed(() => auth.hasRole('admin'));
-const canEdit = computed(() => isAdmin.value || !!store.permissions?.canEdit);
+// `configure` (admin) vem das capacidades da tela — lib/screenCapabilities.js.
+// Já EDITAR/AUTORIZAR ficha é regra de negócio do módulo e continua vindo do
+// GET /conditions/permissions, calculado pelo backend.
+const can = useCan('/comercial/conditions');
+const canEdit = computed(() => !!store.permissions?.isAdmin || !!store.permissions?.canEdit);
 const canManage = computed(() => canEdit.value || !!store.permissions?.canAuthorize);
 
 const loading = ref(true);
@@ -274,8 +276,8 @@ onMounted(async () => {
           <span>Fichas comerciais</span>
           <Favorite :router="'/comercial/conditions'" :section="'Fichas Comerciais'" />
         </template>
-        <template v-if="isAdmin || canEdit" #actions>
-          <RouterLink v-if="isAdmin" to="/comercial/conditions/settings">
+        <template v-if="can('configure') || canEdit" #actions>
+          <RouterLink v-if="can('configure')" to="/comercial/conditions/settings">
             <Button variant="ghost" size="sm" icon="fas fa-cog">
               <span class="hidden sm:inline">Configurações</span>
             </Button>

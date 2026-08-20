@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
+import { usePermissionStore } from '@/stores/Settings/Permissions/permissionStore';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 import { useMicrosoftStore } from '@/stores/Microsoft/microsoftStore';
@@ -40,7 +41,10 @@ const editableUser = ref(null);
 const showUserModal = ref(false);
 const togglingOrgId = ref(null);
 
-const isAdmin = computed(() => userStore.user?.role === 'admin');
+// Fonte autoritativa: permissoes confirmadas pelo servidor
+// (/permissions/me), nao o authStore. Aqui nao cabe capacidade: tela admin por codigo.
+const perm = usePermissionStore();
+const isAdmin = computed(() => perm.isAdmin);
 const isMicrosoftConnected = computed(() => microsoftStore.connected);
 
 // ─── Tabs ────────────────────────────────────────────

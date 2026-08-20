@@ -8,7 +8,7 @@ import UserAvatarStack from '@/components/UI/UserAvatarStack.vue';
 import UserInfoModal from '@/components/UI/UserInfoModal.vue';
 import Modal from '@/components/UI/Modal.vue';
 
-const props = defineProps({ filter: { type: Object, default: () => ({}) }, isAdmin: { type: Boolean, default: false } });
+const props = defineProps({ filter: { type: Object, default: () => ({}) }, canManage: { type: Boolean, default: false } });
 const store = useChecklistStore();
 const emit = defineEmits(['open-task']);
 onMounted(() => { if (!store.users.length) store.loadUsers(); });
@@ -98,7 +98,7 @@ function categoriesInChecklist() {
 
 // ── Arrastar-e-soltar: reordenar dentro da categoria e mover entre categorias ──
 // Reordenar só faz sentido sem filtro ativo (a lista visível = lista real).
-const canDrag = computed(() => props.isAdmin && !filterActive.value);
+const canDrag = computed(() => props.canManage && !filterActive.value);
 const dragId = ref(null);       // tarefa sendo arrastada
 const dragOverId = ref(null);   // linha sob o cursor (indicador visual)
 const moveConfirm = ref(null);  // { src, targetId, sectionId, toCat, fromCat }
@@ -179,7 +179,7 @@ const bulkCtrl = 'text-xs rounded-lg border border-line bg-surface-raised text-i
         <div v-for="sec in visibleSections" :key="sec.id" class="surface-card overflow-hidden animate-fade-in">
             <!-- Cabeçalho da seção -->
             <div class="flex items-center gap-2.5 px-4 py-3 border-b border-line bg-surface-sunken/40">
-                <input v-if="isAdmin" type="checkbox" :checked="allSelected(sec.id)" @change="toggleSection(sec.id, $event)" title="Selecionar seção"
+                <input v-if="canManage" type="checkbox" :checked="allSelected(sec.id)" @change="toggleSection(sec.id, $event)" title="Selecionar seção"
                     class="h-4 w-4 cursor-pointer rounded" />
                 <span class="w-2.5 h-2.5 rounded-full shrink-0" :style="{ background: sec.color || '#64748b' }"></span>
                 <h3 class="font-semibold text-ink">{{ sec.name }}</h3>
@@ -188,7 +188,7 @@ const bulkCtrl = 'text-xs rounded-lg border border-line bg-surface-raised text-i
             </div>
 
             <!-- Barra de edição em lote -->
-            <div v-if="isAdmin && selectedInSection(sec.id).length" class="flex items-center gap-x-3 gap-y-2 flex-wrap px-4 py-3 bg-accent-soft/40 border-b border-accent/20 animate-slide-down">
+            <div v-if="canManage && selectedInSection(sec.id).length" class="flex items-center gap-x-3 gap-y-2 flex-wrap px-4 py-3 bg-accent-soft/40 border-b border-accent/20 animate-slide-down">
                 <span class="text-xs font-semibold text-accent inline-flex items-center gap-1.5 shrink-0"><i class="fas fa-check-double"></i> {{ selectedInSection(sec.id).length }} selecionada(s)</span>
                 <span class="h-5 w-px bg-accent/20 shrink-0"></span>
                 <select @change="bulkStatus(sec.id, $event)" :class="bulkCtrl" title="Mudar status das selecionadas"><option value="">Mudar status</option><option v-for="s in statuses" :key="s.id" :value="s.id">{{ s.label }}</option></select>
@@ -245,7 +245,7 @@ const bulkCtrl = 'text-xs rounded-lg border border-line bg-surface-raised text-i
                                 @mouseenter="onHover(t, $event)" @mouseleave="onLeave">
                                 <td class="px-2 py-1.5 text-center align-middle whitespace-nowrap">
                                     <i v-if="canDrag" class="fas fa-grip-vertical text-[11px] text-ink-subtle/40 group-hover:text-ink-subtle mr-1" title="Arraste para reordenar ou mover de categoria"></i>
-                                    <input v-if="isAdmin" type="checkbox" :checked="store.isSelected(t.id)" @change="store.toggleSelect(t.id)" class="h-4 w-4 cursor-pointer rounded align-middle" />
+                                    <input v-if="canManage" type="checkbox" :checked="store.isSelected(t.id)" @change="store.toggleSelect(t.id)" class="h-4 w-4 cursor-pointer rounded align-middle" />
                                 </td>
                                 <td class="px-3 py-1.5 align-middle">
                                     <button @click="emit('open-task', t.id)" class="text-left text-ink font-medium hover:text-accent transition-colors w-80 truncate">{{ t.title }}</button>
@@ -273,14 +273,14 @@ const bulkCtrl = 'text-xs rounded-lg border border-line bg-surface-raised text-i
                                     </div>
                                 </td>
                                 <td class="px-2 py-1.5 align-middle">
-                                    <input type="date" :value="t.due_date || ''" :disabled="!isAdmin" @change="store.patchTask(t.id, { due_date: $event.target.value || null })"
+                                    <input type="date" :value="t.due_date || ''" :disabled="!canManage" @change="store.patchTask(t.id, { due_date: $event.target.value || null })"
                                         class="text-center -me-6" :class="[cellInput, t.due_date && t.due_date < today && t.state_class !== 'DONE' ? '!text-red-500 font-semibold' : 'text-ink-muted']" />
                                 </td>
                                 <td class="px-2 py-1.5 text-right align-middle">
                                     <button @click="emit('open-task', t.id)" title="Abrir" class="text-ink-subtle hover:text-accent opacity-0 group-hover:opacity-100 transition-opacity focus-ring rounded"><i class="fas fa-up-right-and-down-left-from-center text-xs"></i></button>
                                 </td>
                             </tr>
-                            <tr v-if="cat && isAdmin" class="border-t border-line-subtle/40">
+                            <tr v-if="cat && canManage" class="border-t border-line-subtle/40">
                                 <td></td>
                                 <td colspan="6" class="px-3 py-1.5">
                                     <input v-model="newCatTask[sec.id + '|' + cat]" @keyup.enter="addCatTask(sec.id, cat)" :placeholder="'+ tarefa em ' + cat"
@@ -295,7 +295,7 @@ const bulkCtrl = 'text-xs rounded-lg border border-line bg-surface-raised text-i
                         </tr>
 
                         <!-- Nova tarefa (admin) -->
-                        <tr v-if="isAdmin" class="border-t border-line">
+                        <tr v-if="canManage" class="border-t border-line">
                             <td></td>
                             <td colspan="6" class="px-3 py-2.5">
                                 <div class="flex items-center gap-2">
@@ -317,7 +317,7 @@ const bulkCtrl = 'text-xs rounded-lg border border-line bg-surface-raised text-i
             Nenhuma tarefa corresponde aos filtros.
         </div>
 
-        <div v-if="isAdmin" class="flex items-center gap-2">
+        <div v-if="canManage" class="flex items-center gap-2">
             <input v-model="newSection" @keyup.enter="addSection" placeholder="+ Nova seção"
                 class="text-sm rounded-lg border border-line bg-surface-raised text-ink px-3 py-2 focus-ring" />
             <button @click="addSection" class="text-sm text-accent hover:underline font-medium">adicionar seção</button>

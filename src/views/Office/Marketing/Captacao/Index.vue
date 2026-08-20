@@ -13,9 +13,9 @@
 //   8. LeadDetailModal
 
 import { onMounted, ref, computed, watch } from 'vue';
+import { usePermissionStore } from '@/stores/Settings/Permissions/permissionStore';
 import { useRoute, useRouter } from 'vue-router';
 import { useCaptureStore } from '@/stores/Marketing/Capture/captureStore';
-import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 
 import Button from '@/components/UI/Button.vue';
 import SegmentedControl from '@/components/UI/SegmentedControl.vue';
@@ -30,11 +30,13 @@ import LeadsTimelineView from './components/LeadsTimelineView.vue';
 import LeadDetailModal from './components/LeadDetailModal.vue';
 
 const store = useCaptureStore();
-const authStore = useAuthStore();
 const route = useRoute();
 const router = useRouter();
 
-const isAdmin = computed(() => authStore?.user?.role === 'admin');
+// Fonte autoritativa: permissoes confirmadas pelo servidor
+// (/permissions/me), nao o authStore. Aqui nao cabe capacidade: painel da Central Meta, que e admin por codigo.
+const perm = usePermissionStore();
+const isAdmin = computed(() => perm.isAdmin);
 
 const detailOpen = ref(false);
 

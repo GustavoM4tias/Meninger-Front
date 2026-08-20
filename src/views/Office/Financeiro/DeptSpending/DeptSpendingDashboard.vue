@@ -13,7 +13,7 @@
                         title="Como usar - Viabilidade"
                         intro="Escolha um mês de referência. A tela mostra o gasto acumulado até ele (para trás) e o que resta a comercializar dali em diante (projeção futura ou estoque)."
                         :steps="helpSteps" :tips="helpTips" />
-                    <Button v-if="isAdmin" variant="ghost" size="sm" icon="fas fa-sliders-h"
+                    <Button v-if="can('configure')" variant="ghost" size="sm" icon="fas fa-sliders-h"
                         @click="settingsOpen = true">
                         Departamentos
                     </Button>
@@ -21,7 +21,7 @@
             </PageHeader>
 
             <!-- Aviso de rascunho (admin) -->
-            <div v-if="isAdmin"
+            <div v-if="can('configure')"
                 class="mb-4 flex items-start gap-2 rounded-xl border border-amber-500/30 bg-amber-500/5 px-4 py-2.5 text-xs text-amber-700 dark:text-amber-400">
                 <i class="fas fa-pen-ruler mt-0.5"></i>
                 <span>
@@ -68,7 +68,7 @@
                             :options="companyOptions" placeholder="Todos" :page-size="200" :select-all="true" />
                     </div>
 
-                    <div v-if="isAdmin">
+                    <div v-if="can('configure')">
                         <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
                             <i class="fas fa-circle-check text-[10px] mr-1 text-ink-subtle"></i>Liberação
                         </label>
@@ -148,7 +148,7 @@
                                         <div class="min-w-0">
                                             <div class="text-sm font-semibold text-ink flex items-center gap-2">
                                                 {{ item.enterpriseName || '—' }}
-                                                <button v-if="isAdmin" @click="openEnterpriseSettings(item)"
+                                                <button v-if="can('configure')" @click="openEnterpriseSettings(item)"
                                                     class="text-ink-subtle hover:text-accent transition-colors"
                                                     title="Configurar / liberar empreendimento">
                                                     <i class="fas fa-gear text-[11px]"></i>
@@ -159,7 +159,7 @@
                                                 <span v-if="item.header?.costCenterIds?.length">· CC {{ item.header.costCenterIds.join(', ') }}</span>
                                             </div>
                                             <div class="flex items-center gap-1.5 mt-1.5 flex-wrap">
-                                                <Badge v-if="isAdmin" :variant="item.released ? 'success' : 'warning'" size="sm">
+                                                <Badge v-if="can('configure')" :variant="item.released ? 'success' : 'warning'" size="sm">
                                                     <i class="fas" :class="item.released ? 'fa-circle-check' : 'fa-pen-ruler'"></i>
                                                     {{ item.released ? 'Liberado' : 'Rascunho' }}
                                                 </Badge>
@@ -225,7 +225,7 @@
                                 <!-- AÇÕES -->
                                 <td class="px-5 py-3 text-right whitespace-nowrap">
                                     <div class="flex items-center justify-end gap-2">
-                                        <Button v-if="isAdmin" size="sm"
+                                        <Button v-if="can('configure')" size="sm"
                                             :variant="item.released ? 'ghost' : 'primary'"
                                             :icon="item.released ? 'fas fa-rotate-left' : 'fas fa-circle-check'"
                                             :loading="adminStore.releasingId === stageKey(item)"
@@ -244,8 +244,8 @@
                             <tr v-if="!sortedItems.length && !store.isLoading">
                                 <td colspan="7" class="px-6 py-12">
                                     <EmptyState icon="fas fa-inbox"
-                                        :title="isAdmin ? 'Nenhum empreendimento no mês' : 'Nenhum empreendimento liberado'"
-                                        :description="isAdmin ? 'Ajuste o mês de referência/filtros. Marque os departamentos em Departamentos, senão o gasto aparece zerado.' : 'A diretoria vê apenas empreendimentos liberados.'" />
+                                        :title="can('configure') ? 'Nenhum empreendimento no mês' : 'Nenhum empreendimento liberado'"
+                                        :description="can('configure') ? 'Ajuste o mês de referência/filtros. Marque os departamentos em Departamentos, senão o gasto aparece zerado.' : 'A diretoria vê apenas empreendimentos liberados.'" />
                                 </td>
                             </tr>
                             <tr v-if="store.isLoading">
@@ -270,7 +270,7 @@
             @close="closeDetail">
             <div v-if="detailItem" class="space-y-5">
                 <div class="flex items-center gap-2 flex-wrap">
-                    <Badge v-if="isAdmin" :variant="detailItem.released ? 'success' : 'warning'">
+                    <Badge v-if="can('configure')" :variant="detailItem.released ? 'success' : 'warning'">
                         <i class="fas" :class="detailItem.released ? 'fa-circle-check' : 'fa-pen-ruler'"></i>
                         {{ detailItem.released ? 'Liberado' : 'Rascunho' }}
                     </Badge>
@@ -378,11 +378,11 @@
 
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue';
+import { useCan } from '@/composables/useCan';
 import { useRouter, useRoute } from 'vue-router';
 import dayjs from 'dayjs';
 import { useDeptSpendingStore } from '@/stores/Financeiro/DeptSpending/deptSpendingStore';
 import { useDeptSpendingAdminStore } from '@/stores/Financeiro/DeptSpending/deptSpendingAdminStore';
-import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 import { useTableSort } from '@/composables/useTableSort';
 
 import PageContainer from '@/components/UI/PageContainer.vue';
@@ -404,8 +404,8 @@ const router = useRouter();
 const route = useRoute();
 const store = useDeptSpendingStore();
 const adminStore = useDeptSpendingAdminStore();
-const auth = useAuthStore();
-const isAdmin = computed(() => auth?.user?.role === 'admin');
+// Acao da tela (lib/screenCapabilities.js no back). Ver composables/useCan.js.
+const can = useCan('/marketing/viabilidade');
 
 const refMonth = ref(store.selectedMonth || dayjs().format('YYYY-MM'));
 const filtersExpanded = ref(typeof window !== 'undefined' && window.innerWidth >= 1024);
@@ -482,7 +482,7 @@ const activeItems = computed(() => {
         const set = new Set(selectedCompanies.value);
         list = list.filter((i) => set.has(i.enterpriseName));
     }
-    if (isAdmin.value && releaseFilter.value !== 'all') {
+    if (can('configure') && releaseFilter.value !== 'all') {
         const want = releaseFilter.value === 'released';
         list = list.filter((i) => !!i.released === want);
     }
@@ -493,7 +493,7 @@ const activeFiltersCount = computed(() => {
     let n = 0;
     if (refMonth.value !== dayjs().format('YYYY-MM')) n++;
     if (selectedCompanies.value.length) n++;
-    if (isAdmin.value && releaseFilter.value !== 'all') n++;
+    if (can('configure') && releaseFilter.value !== 'all') n++;
     return n;
 });
 

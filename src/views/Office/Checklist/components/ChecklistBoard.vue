@@ -5,7 +5,7 @@ import { useChecklistStore } from '@/stores/Checklist/checklistStore.js';
 import TaskPreview from './TaskPreview.vue';
 
 const store = useChecklistStore();
-defineProps({ isAdmin: { type: Boolean, default: false } });
+defineProps({ canManage: { type: Boolean, default: false } });
 const emit = defineEmits(['open-task']);
 
 const today = dayjs().format('YYYY-MM-DD');

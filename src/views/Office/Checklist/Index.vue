@@ -16,16 +16,17 @@ import Badge from '@/components/UI/Badge.vue';
 import PageContainer from '@/components/UI/PageContainer.vue';
 import PageHeader from '@/components/UI/PageHeader.vue';
 import PageHelp from '@/components/UI/PageHelp.vue';
-import { useAuthStore } from '@/stores/Settings/Auth/authStore';
+import { useCan } from '@/composables/useCan';
 
 const store = useChecklistStore();
 const route = useRoute();
 const router = useRouter();
 const toast = useToast();
 
-const auth = useAuthStore();
-const isAdmin = computed(() => auth.user?.role === 'admin' || (typeof auth.hasRole === 'function' && auth.hasRole('admin')));
-const showApprovals = computed(() => !!store.approvalMe?.isApprover || isAdmin.value);
+// Ações desta tela (lib/screenCapabilities.js no back): view segue a alçada,
+// manage é admin. Ver composables/useCan.js.
+const can = useCan('/checklists');
+const showApprovals = computed(() => !!store.approvalMe?.isApprover || can('manage'));
 const TABS = computed(() => ['Painel', 'Checklists', 'Minhas Tarefas', ...(showApprovals.value ? ['Aprovações'] : [])]);
 const pendingApprovals = computed(() => store.pendingApprovals || []);
 function goAdmin() { router.push('/checklists/cobranca'); }
@@ -215,7 +216,7 @@ async function submitNew() {
                         'No Painel, filtrar por checklist ou responsável recalcula os indicadores.',
                     ]" />
 
-                <label v-if="isAdmin"
+                <label v-if="can('manage')"
                     class="inline-flex items-center gap-2 h-9 px-3 rounded-lg text-sm font-medium cursor-pointer shrink-0
                            bg-surface-raised border border-line text-ink-muted
                            hover:bg-surface-sunken hover:text-ink hover:border-line-strong
@@ -225,11 +226,11 @@ async function submitNew() {
                     <input type="file" accept=".xlsx,.xls,.csv" class="hidden" @change="onImport"
                         :disabled="importing" />
                 </label>
-                <Button v-if="isAdmin" icon="fas fa-plus" @click="openModal">
+                <Button v-if="can('manage')" icon="fas fa-plus" @click="openModal">
                     <span class="hidden sm:inline">Novo checklist</span>
                     <span class="sm:hidden">Novo</span>
                 </Button>
-                <IconButton v-if="isAdmin" icon="fas fa-gear" variant="secondary"
+                <IconButton v-if="can('manage')" icon="fas fa-gear" variant="secondary"
                     label="Administração (cobrança, status, perfis de autorização)" @click="goAdmin" />
             </template>
         </PageHeader>

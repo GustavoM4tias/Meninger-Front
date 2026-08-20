@@ -16,13 +16,14 @@ import MultiSelector from '@/components/UI/MultiSelector.vue';
 import SegmentedControl from '@/components/UI/SegmentedControl.vue';
 import Modal from '@/components/UI/Modal.vue';
 import Button from '@/components/UI/Button.vue';
-import { useAuthStore } from '@/stores/Settings/Auth/authStore';
+import { useCan } from '@/composables/useCan';
 
 const store = useChecklistStore();
 const route = useRoute();
 const router = useRouter();
-const auth = useAuthStore();
-const isAdmin = computed(() => auth.user?.role === 'admin' || (typeof auth.hasRole === 'function' && auth.hasRole('admin')));
+// Ações desta tela (lib/screenCapabilities.js no back): view segue a alçada,
+// manage é admin. Ver composables/useCan.js.
+const can = useCan('/checklists');
 
 const viewMode = ref('table');
 const openTaskId = ref(null);
@@ -107,7 +108,7 @@ const VIEW_MODES = [
                         </div>
                     </div>
                     <div class="flex flex-col items-end gap-2">
-                        <div v-if="isAdmin" class="flex items-center gap-2">
+                        <div v-if="can('manage')" class="flex items-center gap-2">
                             <button @click="showSettings = true" class="inline-flex items-center gap-2 text-xs border border-line rounded-lg px-3 py-1.5 text-ink-muted hover:bg-surface-sunken focus-ring">
                                 <i class="fas fa-gear"></i> Configurar
                             </button>
@@ -154,8 +155,8 @@ const VIEW_MODES = [
             </div>
 
             <transition name="view-fade" mode="out-in">
-                <ChecklistTable v-if="viewMode === 'table'" key="table" :filter="filter" :is-admin="isAdmin" @open-task="openTask" />
-                <ChecklistBoard v-else key="board" :is-admin="isAdmin" @open-task="openTask" />
+                <ChecklistTable v-if="viewMode === 'table'" key="table" :filter="filter" :can-manage="can('manage')" @open-task="openTask" />
+                <ChecklistBoard v-else key="board" :can-manage="can('manage')" @open-task="openTask" />
             </transition>
 
             <TaskDrawer v-if="openTaskId" :task-id="openTaskId" @close="closeTask" @changed="() => {}" />

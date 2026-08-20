@@ -24,7 +24,6 @@ import PlannedEventCard from './components/PlannedEventCard.vue';
 import EventFormModal from './components/EventFormModal.vue';
 import ItemFormModal from './components/ItemFormModal.vue';
 import RequiredItemChoiceModal from './components/RequiredItemChoiceModal.vue';
-import ApprovalRequestModal from './components/ApprovalRequestModal.vue';
 import PlanTimeline from './components/PlanTimeline.vue';
 
 const store = useEventPlanStore();
@@ -35,7 +34,6 @@ const toast = useToast();
 const eventModal = ref({ open: false, event: null });
 const itemModal = ref({ open: false, event: null, item: null });
 const conflict = ref({ open: false, event: null, item: null });
-const approvalModal = ref({ open: false, event: null });
 const returnModal = ref({ open: false, comment: '' });
 const closeModal = ref({ open: false, note: '', confirmation: '' });
 const categories = ref([]);
@@ -380,7 +378,6 @@ onMounted(async () => {
                     @edit-item="itemModal = { open: true, event: $event.event, item: $event.item }"
                     @remove-item="removerItem"
                     @required-conflict="abrirConflito"
-                    @generate-approval="approvalModal = { open: true, event: $event }"
                 />
             </div>
 
@@ -443,13 +440,6 @@ onMounted(async () => {
             :saving="store.saving"
             @close="itemModal = { open: false, event: null, item: null }"
             @save="salvarItem"
-        />
-
-        <ApprovalRequestModal
-            :open="approvalModal.open"
-            :event="approvalModal.event"
-            :enterprise-name="plan?.enterprise_name"
-            @close="approvalModal = { open: false, event: null }"
         />
 
         <RequiredItemChoiceModal

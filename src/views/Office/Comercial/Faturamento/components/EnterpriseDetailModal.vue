@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue';
+import { useCan } from '@/composables/useCan';
 import { useContractsStore } from '@/stores/Comercial/Contracts/contractsStore';
 import ChartActions from '@/components/config/ChartActions.vue';
 import Export from '@/components/config/Export.vue';
@@ -684,9 +685,10 @@ const leadLinkOf = (sale) => {
 // Máscara sobre o dado do contrato, aplicada no servidor. Aqui o selo funciona
 // como o de distrato: informa que o número exibido passou por correção. Criar e
 // remover ajuste é só para admin.
-const isAdmin = computed(() => {
-  try { return localStorage.getItem('role') === 'admin'; } catch { return false; }
-});
+// Ações desta tela (lib/screenCapabilities.js no back): view segue a alçada,
+// configure é admin. Lia `localStorage.getItem('role')` — qualquer um se dava
+// admin no navegador. Ver composables/useCan.js.
+const can = useCan('/comercial/relatorios/faturamento');
 
 const saleIsAdjusted = (sale) => contractsStore.saleIsAdjusted(sale);
 
@@ -731,7 +733,7 @@ const openAdjustment = (contract, { type = '', conditionIndex = null } = {}) => 
 // anterior fazia, escolheria a linha errada quando o contrato tem duas séries
 // iguais.
 const canAdjustCondition = (contract, condition) =>
-  isAdmin.value
+  can('configure')
   && !contract?._projection
   && !condition?.synthetic
   && !condition?._isCommission
@@ -1324,7 +1326,7 @@ const closeModal = () => emit('close');
                           Participação: <span class="text-ink">{{ contract.participation_percentage || 100 }}%</span>
                         </span>
                         <!-- Ajuste contábil: admin corrige o dado sem tocar no Sienge -->
-                        <template v-if="isAdmin && !contract._projection">
+                        <template v-if="can('configure') && !contract._projection">
                           <button type="button" v-tippy="'Corrigir a data da instituição financeira deste contrato'"
                             class="text-[11px] text-ink-subtle hover:text-accent transition-colors"
                             @click.stop="openAdjustment(contract, { type: 'FI_DATE' })">
