@@ -1,8 +1,28 @@
 <script setup>
+/**
+ * Tabela de resposta da Eme.
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Usa o `DataTable` do sistema, o mesmo do relatório. A Eme respondia com uma
+ * tabela desenhada à parte: ordenação própria, paginação de 10, paleta de
+ * status própria e cor fixa que quebrava no tema claro. Quem perguntava aqui e
+ * abria o relatório via dois desenhos do mesmo dado.
+ *
+ * Do `DataTable` vem de graça: ordenação por coluna, prioridade por coluna
+ * (na bolha estreita e no celular a linha vira card sem perder campo), célula
+ * truncada para a linha não variar de altura, e vazio tratado.
+ *
+ * Copiar e exportar para Excel continuam como estavam - é o que se faz com uma
+ * resposta que veio certa.
+ */
 import { ref, computed } from 'vue'
 import dayjs from 'dayjs'
 import ExcelJS from 'exceljs/dist/exceljs.min.js'
 import saveAs from 'file-saver'
+
+import Panel from '@/components/UI/Panel.vue'
+import DataTable from '@/components/UI/DataTable.vue'
+import Badge from '@/components/UI/Badge.vue'
+import { useIncrementalList } from '@/composables/useIncrementalList'
 
 const props = defineProps({
   title:    { type: String, default: '' },
@@ -12,69 +32,61 @@ const props = defineProps({
   total:    { type: Number, default: 0 },
 })
 
-// ── Sort ──────────────────────────────────────────────────────────────────────
-const sortKey = ref(null)
-const sortAsc = ref(true)
+const isNumeric = (col) => col.type === 'number' || col.type === 'currency'
 
-function toggleSort(col) {
-  if (sortKey.value === col.key) {
-    sortAsc.value = !sortAsc.value
-  } else {
-    sortKey.value = col.key
-    sortAsc.value = true
-  }
+/* Colunas de STATUS ganham selo. A checagem é por nome de campo porque o
+   backend não marca o tipo - mesma lista de sempre. */
+const ehStatus = (col) => ['situacao', 'situacao_nome', 'status', 'etapa']
+  .some((k) => String(col.key).includes(k))
+
+/* Selo pelos tokens de estado, não por paleta própria: verde é aprovado no
+   sistema inteiro, aqui também. */
+const STATUS_VARIANT = {
+  ativo: 'success', concluido: 'success', vendido: 'info', reservado: 'warning',
+  pendente: 'warning', distratado: 'warning', cancelado: 'danger', inativo: 'neutral',
 }
+const statusVariant = (v) => STATUS_VARIANT[String(v || '').toLowerCase()] || 'neutral'
 
-const sortedRows = computed(() => {
-  if (!sortKey.value) return props.rows
-  return [...props.rows].sort((a, b) => {
-    const va = a[sortKey.value] ?? ''
-    const vb = b[sortKey.value] ?? ''
-    const cmp = String(va).localeCompare(String(vb), 'pt-BR', { numeric: true })
-    return sortAsc.value ? cmp : -cmp
-  })
-})
-
-// ── Pagination ────────────────────────────────────────────────────────────────
-const PAGE_SIZE = 10
-const page = ref(1)
-
-const pages = computed(() => Math.ceil(sortedRows.value.length / PAGE_SIZE) || 1)
-const pagedRows = computed(() => {
-  const s = (page.value - 1) * PAGE_SIZE
-  return sortedRows.value.slice(s, s + PAGE_SIZE)
-})
-
-// ── Cell formatting ───────────────────────────────────────────────────────────
 function formatCell(value, col) {
-  if (value == null || value === '') return null
-  if (col.type === 'date')     return dayjs(value).format('DD/MM/YYYY')
-  if (col.type === 'number')   return Number(value).toLocaleString('pt-BR') 
+  if (value == null || value === '') return '-'
+  if (col.type === 'date') return dayjs(value).format('DD/MM/YYYY')
+  if (col.type === 'number') return Number(value).toLocaleString('pt-BR')
   return value
 }
 
-function isNumeric(col) {
-  return col.type === 'number' || col.type === 'currency'
-}
+/* PRIORIDADE por posição: as duas primeiras colunas identificam a linha e
+   ficam sempre visíveis; as três seguintes entram no corpo do card; o resto
+   fica a um toque, em "Ver detalhes". O backend não manda prioridade, e a
+   ordem em que ele monta as colunas já reflete a importância. */
+const colunas = computed(() => props.columns.map((c, i) => ({
+  key: c.key,
+  label: c.label,
+  priority: i < 2 ? 1 : i < 5 ? 2 : 3,
+  numeric: isNumeric(c),
+  sortable: true,
+  value: (row) => row[c.key],
+  format: (v) => formatCell(v, c),
+})))
 
-// Status → badge color
-const STATUS_MAP = {
-  ativo:      'bg-green-500/15 text-green-400 ring-1 ring-green-500/20',
-  vendido:    'bg-blue-500/15 text-blue-400 ring-1 ring-blue-500/20',
-  cancelado:  'bg-red-500/15 text-red-400 ring-1 ring-red-500/20',
-  distratado: 'bg-orange-500/15 text-orange-400 ring-1 ring-orange-500/20',
-  reservado:  'bg-amber-500/15 text-amber-400 ring-1 ring-amber-500/20',
-  inativo:    'bg-slate-500/15 text-slate-400 ring-1 ring-slate-500/20',
-  pendente:   'bg-yellow-500/15 text-yellow-400 ring-1 ring-yellow-500/20',
-  concluido:  'bg-teal-500/15 text-teal-400 ring-1 ring-teal-500/20',
-}
+/* Ordenação aqui (a tabela recebe a lista já fatiada pelo scroll). */
+const ordem = ref({ by: '', dir: 'asc' })
 
-function statusClass(col, value) {
-  if (!value || !['situacao', 'situacao_nome', 'status', 'etapa'].some(k => col.key.includes(k))) return null
-  return STATUS_MAP[String(value).toLowerCase()] || 'bg-slate-500/15 text-slate-400'
-}
+const ordenadas = computed(() => {
+  const { by, dir } = ordem.value
+  if (!by) return props.rows
+  const col = props.columns.find((c) => c.key === by)
+  const mul = dir === 'asc' ? 1 : -1
+  return [...props.rows].sort((a, b) => {
+    const va = a[by] ?? '', vb = b[by] ?? ''
+    if (col && isNumeric(col)) return ((Number(va) || 0) - (Number(vb) || 0)) * mul
+    return String(va).localeCompare(String(vb), 'pt-BR', { numeric: true }) * mul
+  })
+})
 
-// ── Export ────────────────────────────────────────────────────────────────────
+/* Passo menor que o do relatório: resposta de chat costuma ser curta, e 50
+   linhas de uma vez dentro de uma bolha é mais rolagem do que resposta. */
+const inc = useIncrementalList(ordenadas, { step: 25 })
+
 const copied = ref(false)
 
 async function exportExcel() {
@@ -142,143 +154,46 @@ async function copyTable() {
 </script>
 
 <template>
-  <div class="rounded-2xl overflow-hidden border border-gray-200 dark:border-white/5 bg-white dark:bg-slate-900 mt-2 shadow-sm dark:shadow-lg">
+  <Panel :padded="false" class="mt-2 overflow-hidden">
+    <template #title>{{ title || 'Resultados' }}</template>
+    <template #subtitle>
+      {{ total }} registro{{ total !== 1 ? 's' : '' }}<span v-if="subtitle"> · {{ subtitle }}</span>
+    </template>
 
-    <!-- Header -->
-    <div class="px-4 py-3 bg-gray-50 dark:bg-slate-800/60 flex items-center justify-between gap-2 border-b border-gray-200 dark:border-white/5">
-      <div class="flex items-center gap-2 min-w-0">
-        <span class="w-1.5 h-5 rounded-full bg-indigo-500 flex-shrink-0" />
-        <div class="min-w-0">
-          <div class="flex items-baseline gap-2">
-            <span class="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">{{ title || 'Resultados' }}</span>
-            <span class="text-xs text-indigo-600 dark:text-indigo-400 font-semibold tabular-nums whitespace-nowrap">
-              {{ total }} registro{{ total !== 1 ? 's' : '' }}
-            </span>
-          </div>
-          <p v-if="subtitle" class="text-[11px] text-gray-500 dark:text-slate-500 truncate mt-0.5">{{ subtitle }}</p>
-        </div>
-      </div>
+    <template #actions>
+      <button type="button" @click="copyTable" v-tippy="'Copiar como texto'"
+        class="h-8 px-2.5 inline-flex items-center gap-1.5 rounded-lg text-xs
+               text-ink-muted hover:text-ink hover:bg-surface-sunken
+               transition-colors duration-120 focus-ring">
+        <i :class="copied ? 'fas fa-check text-data-pos' : 'far fa-copy'" />
+        <span class="hidden sm:inline">{{ copied ? 'Copiado' : 'Copiar' }}</span>
+      </button>
+      <button type="button" @click="exportExcel" v-tippy="'Baixar em Excel'"
+        class="h-8 px-2.5 inline-flex items-center gap-1.5 rounded-lg text-xs font-medium
+               bg-data-pos/10 text-data-pos hover:bg-data-pos/20
+               transition-colors duration-120 focus-ring">
+        <i class="fas fa-file-excel" />
+        <span class="hidden sm:inline">Excel</span>
+      </button>
+    </template>
 
-      <div class="flex items-center gap-1.5 flex-shrink-0">
-        <button
-          @click="copyTable"
-          class="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-gray-100 dark:bg-slate-700/60 hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 text-xs transition"
-        >
-          <i :class="copied ? 'fas fa-check text-green-500' : 'far fa-copy'" />
-          <span>{{ copied ? 'Copiado' : 'Copiar' }}</span>
-        </button>
-        <button
-          @click="exportExcel"
-          class="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-600/20 hover:bg-emerald-100 dark:hover:bg-emerald-600/30 text-emerald-600 dark:text-emerald-400 text-xs transition"
-        >
-          <i class="fas fa-file-excel" />
-          <span>Excel</span>
-        </button>
-      </div>
-    </div>
+    <div class="p-3">
+      <DataTable :columns="colunas" :rows="inc.visiveis.value" row-key="__i"
+        manual-sort density="compact"
+        v-model:sort-by="ordem.by" v-model:sort-dir="ordem.dir"
+        more-label="Ver mais campos"
+        empty-title="Sem resultados"
+        empty-text="A consulta não retornou nenhuma linha.">
+        <template v-for="col in columns.filter(ehStatus)" :key="col.key" #[`cell-${col.key}`]="{ value }">
+          <Badge :variant="statusVariant(value)" size="sm">{{ value || '-' }}</Badge>
+        </template>
+      </DataTable>
 
-    <!-- Table -->
-    <div class="overflow-x-auto">
-      <table class="w-full text-xs">
-        <!-- Head -->
-        <thead>
-          <tr class="bg-gray-50 dark:bg-slate-800/40">
-            <th
-              v-for="col in columns"
-              :key="col.key"
-              class="px-3 py-2.5 font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap cursor-pointer select-none group hover:text-gray-800 dark:hover:text-slate-200 transition"
-              :class="isNumeric(col) ? 'text-right' : 'text-left'"
-              @click="toggleSort(col)"
-            >
-              <span class="inline-flex items-center gap-1">
-                {{ col.label }}
-                <span class="opacity-0 group-hover:opacity-60 transition text-[10px]">
-                  <i v-if="sortKey === col.key" :class="sortAsc ? 'fas fa-sort-up' : 'fas fa-sort-down'" class="opacity-100 text-indigo-500" />
-                  <i v-else class="fas fa-sort" />
-                </span>
-              </span>
-            </th>
-          </tr>
-        </thead>
-
-        <!-- Body -->
-        <tbody>
-          <tr
-            v-for="(row, i) in pagedRows"
-            :key="i"
-            class="border-t border-gray-100 dark:border-white/5 transition-colors duration-150 hover:bg-indigo-50 dark:hover:bg-indigo-500/5 group"
-            :class="i % 2 === 0 ? 'bg-white dark:bg-transparent' : 'bg-gray-50/50 dark:bg-white/[0.015]'"
-            style="animation: rowIn 0.2s ease both"
-            :style="{ animationDelay: (i * 30) + 'ms' }"
-          >
-            <td
-              v-for="col in columns"
-              :key="col.key"
-              class="px-3 py-2.5 text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-gray-100 transition-colors"
-              :class="isNumeric(col) ? 'text-right tabular-nums font-medium' : ''"
-            >
-              <!-- Status badge -->
-              <span
-                v-if="statusClass(col, row[col.key])"
-                class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium w-24"
-                :class="statusClass(col, row[col.key])" :title="row[col.key]"
-              >
-                <p class="truncate">{{ row[col.key] }}</p>
-              </span>
-              <!-- Normal value -->
-              <span class="truncate" v-else-if="formatCell(row[col.key], col) !== null">
-                {{ formatCell(row[col.key], col) }}
-              </span>
-              <span v-else class="text-gray-300 dark:text-slate-600">—</span>
-            </td>
-          </tr>
-
-          <!-- Empty -->
-          <tr v-if="!rows.length">
-            <td :colspan="columns.length" class="px-3 py-10 text-center">
-              <div class="flex flex-col items-center gap-2 text-gray-400 dark:text-slate-600">
-                <i class="fas fa-inbox text-2xl" />
-                <span>Nenhum resultado encontrado.</span>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Pagination -->
-    <div
-      v-if="pages > 1"
-      class="flex items-center justify-between px-4 py-2.5 border-t border-gray-100 dark:border-white/5 bg-gray-50 dark:bg-slate-800/30"
-    >
-      <span class="text-xs text-gray-400 dark:text-slate-500">
-        {{ (page - 1) * 10 + 1 }}–{{ Math.min(page * 10, sortedRows.length) }}
-        de {{ sortedRows.length }}
-      </span>
-      <div class="flex items-center gap-1">
-        <button
-          @click="page--"
-          :disabled="page <= 1"
-          class="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-slate-700 hover:text-gray-600 dark:hover:text-slate-200 disabled:opacity-25 disabled:cursor-not-allowed transition"
-        >
-          <i class="fas fa-chevron-left text-[10px]" />
-        </button>
-        <span class="text-xs text-gray-400 dark:text-slate-400 px-1">{{ page }} / {{ pages }}</span>
-        <button
-          @click="page++"
-          :disabled="page >= pages"
-          class="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-slate-700 hover:text-gray-600 dark:hover:text-slate-200 disabled:opacity-25 disabled:cursor-not-allowed transition"
-        >
-          <i class="fas fa-chevron-right text-[10px]" />
-        </button>
+      <!-- Gatilho: mais 25 linhas quando chega perto do fim -->
+      <div v-if="!inc.acabou.value" :ref="el => inc.observar(el)"
+        class="pt-3 text-center text-micro text-ink-subtle">
+        carregando mais {{ Math.min(inc.step, inc.restantes.value) }} de {{ inc.restantes.value }} restantes
       </div>
     </div>
-  </div>
+  </Panel>
 </template>
-
-<style scoped>
-@keyframes rowIn {
-  from { opacity: 0; transform: translateY(4px); }
-  to   { opacity: 1; transform: translateY(0);   }
-}
-</style>

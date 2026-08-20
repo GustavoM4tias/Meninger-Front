@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
+import { ref, computed, watch, onMounted, onBeforeUnmount, watchEffect } from 'vue';
 import { RouterLink, useRoute } from 'vue-router';
 
 import { useAuthStore } from '@/stores/Settings/Auth/authStore';
@@ -167,6 +167,55 @@ const sidebarWidthClass = computed(() =>
   collapsedDesktop.value ? 'w-0 sm:w-14' : 'w-0 sm:w-72'
 );
 
+// ─── Medidas da nav, publicadas para o resto do app ──────────────────────
+// Camadas teleportadas para o <body> (modal, flyout, drawer) não conseguem ler
+// o estado local daqui. Em vez de subir isso para uma store só por causa
+// disso, a nav PUBLICA suas medidas como CSS vars no <html>: quem precisar
+// posiciona com `left: var(--nav-sidebar-w)` e acompanha a animação de
+// recolher/expandir de graça, sem saber nada da nav.
+//
+//   --nav-sidebar-w   largura reservada pela sidebar (0 no mobile: lá é overlay)
+//   --nav-topbar-h    altura da barra de cima (64px no mobile, 48px no desktop)
+const larguraSidebar = computed(() => {
+  if (isMobile.value) return '0px';
+  return collapsedDesktop.value ? '3.5rem' : '18rem';   // w-14 / w-72
+});
+/* Altura MEDIDA, não chutada: a barra tem borda e conteúdo de altura variável,
+   então 3rem no papel vira 3rem + alguns pixels na tela - e o modal encostava
+   por cima da nav por essa diferença. O ResizeObserver mantém a var certa
+   mesmo se o conteúdo da barra mudar de altura. */
+const topbarEl = ref(null);
+const alturaTopbarMedida = ref(0);
+let obsTopbar = null;
+
+watchEffect(() => {
+  if (typeof document === 'undefined') return;
+  const raiz = document.documentElement;
+  raiz.style.setProperty('--nav-sidebar-w', larguraSidebar.value);
+  /* Enquanto a medida não chega (primeiro paint), o valor de projeto serve de
+     ponte para não haver um salto visível. */
+  const h = alturaTopbarMedida.value || (isMobile.value ? 64 : 48);
+  raiz.style.setProperty('--nav-topbar-h', `${h}px`);
+});
+
+onMounted(() => {
+  if (typeof ResizeObserver === 'undefined' || !topbarEl.value) return;
+  obsTopbar = new ResizeObserver(([e]) => {
+    alturaTopbarMedida.value = Math.round(e.target.getBoundingClientRect().height);
+  });
+  obsTopbar.observe(topbarEl.value);
+});
+onBeforeUnmount(() => obsTopbar?.disconnect());
+
+/* Fora do Office (login, link público) não existe nav: zera as medidas para
+   quem consome não ficar com um recuo fantasma. */
+onBeforeUnmount(() => {
+  if (typeof document === 'undefined') return;
+  const raiz = document.documentElement;
+  raiz.style.setProperty('--nav-sidebar-w', '0px');
+  raiz.style.setProperty('--nav-topbar-h', '0px');
+});
+
 const closeAllDropdowns = () => {
   Object.keys(dropdowns.value).forEach(k => (dropdowns.value[k] = false));
   Object.keys(subDropdowns.value).forEach(k => (subDropdowns.value[k] = false));
@@ -322,7 +371,7 @@ watch(() => route.fullPath, closeMobile);
   <div :class="['transition-[width] duration-200 ease-out-expo', sidebarWidthClass]">
 
     <!-- ─── Top Bar ─── -->
-    <nav class="fixed top-0 z-50 w-full bg-surface/80 backdrop-blur-xl border-b border-line">
+    <nav ref="topbarEl" class="fixed top-0 z-50 w-full bg-surface/80 backdrop-blur-xl border-b border-line">
       <div class="px-3 py-2 lg:px-5 lg:pl-3 flex items-center justify-between gap-3">
         <div class="flex items-center gap-3">
           <IconButton

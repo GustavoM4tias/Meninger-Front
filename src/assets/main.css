@@ -33,6 +33,52 @@
     --accent-hover: 29 78 216;         /* blue-700 */
     --accent-soft: 219 234 254;        /* blue-100 */
     --accent-ring: 59 130 246;         /* blue-500 */
+
+    /* ── Cores de DADO ────────────────────────────────────────────────────
+       Série categórica de 8 slots em ORDEM FIXA (a cor segue a entidade, não
+       a posição). Validada: banda de luminância, piso de croma, separação
+       para protanopia/deuteranopia (ΔE 12.5) e contraste >= 3:1 contra a
+       superfície do gráfico. Nunca cicle: a 9ª série vira "Outros". */
+    --series-1: 37 99 235;             /* azul       #2563EB */
+    --series-2: 217 119 6;             /* âmbar      #D97706 */
+    --series-3: 13 148 136;            /* turquesa   #0D9488 */
+    --series-4: 124 58 237;            /* violeta    #7C3AED */
+    --series-5: 219 39 119;            /* rosa       #DB2777 */
+    --series-6: 154 52 18;             /* terracota  #9A3412 */
+    --series-7: 8 145 178;             /* ciano      #0891B2 */
+    --series-8: 77 124 15;             /* oliva      #4D7C0F */
+
+    /* PREENCHIMENTO de área grande (barra, faixa do funil, fatia larga).
+       A mesma cor que é certa num traço de 2px fica pesada cobrindo 30% da
+       largura da tela - foi o que deixou o tema claro "forte demais". Então a
+       MARCA usa `--series-N` (forte, com contraste para ser vista pequena) e a
+       ÁREA usa `--series-N-soft`, um tom acima na mesma matiz.
+       O contraste baixo aqui é proposital e não é problema: a checagem de 3:1
+       vale para marca pequena; uma barra de 16px a 1,6:1 se vê de longe. O que
+       importa numa barra empilhada é a separação ENTRE as faixas, e essa
+       continua valendo (pior par vizinho com ΔE 10,3 para daltonismo). */
+    --series-1-soft: 96 165 250;       /* #60A5FA */
+    --series-2-soft: 251 191 36;       /* #FBBF24 */
+    --series-3-soft: 45 212 191;       /* #2DD4BF */
+    --series-4-soft: 167 139 250;      /* #A78BFA */
+    --series-5-soft: 244 114 182;      /* #F472B6 */
+    --series-6-soft: 251 146 60;       /* #FB923C */
+    --series-7-soft: 34 211 238;       /* #22D3EE */
+    --series-8-soft: 163 230 53;       /* #A3E635 */
+
+    /* Estado do dado. RESERVADAS: nunca viram "série 4". */
+    --data-pos: 4 120 87;              /* emerald-700 */
+    --data-pos-soft: 209 250 229;
+    --data-neg: 185 28 28;             /* red-700 */
+    --data-neg-soft: 254 226 226;
+    --data-warn: 180 83 9;             /* amber-700 */
+    --data-warn-soft: 254 243 199;
+    --data-neutral: 148 163 184;       /* slate-400 */
+
+    /* Fundo do modal. Token próprio porque `ink` inverte entre os temas: usar
+       `bg-ink/60` daria um véu BRANCO no escuro. Aqui é sempre escuro. */
+    --scrim: 15 23 42;                 /* slate-900 */
+
     /* Controles nativos (checkbox, date, scrollbar) seguem o tema do app, não o do SO. */
     color-scheme: light;
   }
@@ -40,7 +86,12 @@
   .dark {
     --surface: 2 6 23;                 /* slate-950 */
     --surface-raised: 15 23 42;        /* slate-900 */
-    --surface-sunken: 2 6 23;          /* slate-950 */
+    /* `sunken` era IDÊNTICO a `surface` (2 6 23), então tudo que dependia de
+       bg-surface-sunken para se destacar sumia no escuro: hover de item de
+       menu, fundo de input, barra de filtros. No escuro não dá para descer
+       abaixo do quase-preto, então o degrau "afundado" sobe um passo: fica
+       visível sobre o fundo (2 6 23) E sobre o card (15 23 42). */
+    --surface-sunken: 20 30 52;
     --surface-overlay: 15 23 42;
 
     --ink: 241 245 249;                /* slate-100 */
@@ -48,14 +99,50 @@
     --ink-subtle: 100 116 139;         /* slate-500 */
     --ink-inverted: 15 23 42;
 
-    --line: 30 41 59;                  /* slate-800 */
-    --line-strong: 51 65 85;           /* slate-700 */
-    --line-subtle: 30 41 59;
+    /* slate-800 puro sobre quase-preto deixava a borda do card invisível. */
+    --line: 39 51 74;
+    --line-strong: 58 72 100;
+    --line-subtle: 28 38 58;
 
     --accent: 59 130 246;              /* blue-500 */
     --accent-hover: 96 165 250;        /* blue-400 */
     --accent-soft: 30 58 138;          /* blue-900 */
     --accent-ring: 96 165 250;
+
+    /* Série categórica no escuro: MESMA ordem de matiz do claro (a cor segue a
+       entidade), em passos próprios validados contra a superfície escura.
+       Não é inversão automática do claro. */
+    --series-1: 74 141 247;            /* azul       #4A8DF7 */
+    --series-2: 191 132 32;            /* âmbar      #BF8420 */
+    --series-3: 18 168 149;            /* turquesa   #12A895 */
+    --series-4: 139 92 246;            /* violeta    #8B5CF6 */
+    --series-5: 225 77 151;            /* rosa       #E14D97 */
+    --series-6: 206 90 42;             /* terracota  #CE5A2A */
+    --series-7: 13 163 201;            /* ciano      #0DA3C9 */
+    --series-8: 113 166 43;            /* oliva      #71A62B */
+
+    /* No escuro o caminho é o contrário: a área usa um tom ABAIXO da marca.
+       Cor cheia sobre quase-preto brilha e cansa; o passo mais fundo assenta.
+       São exatamente os tons fortes do tema claro, que já foram validados. */
+    --series-1-soft: 37 99 235;
+    --series-2-soft: 180 83 9;
+    --series-3-soft: 13 148 136;
+    --series-4-soft: 109 40 217;
+    --series-5-soft: 190 24 93;
+    --series-6-soft: 154 52 18;
+    --series-7-soft: 14 116 144;
+    --series-8-soft: 77 124 15;
+
+    --data-pos: 52 211 153;            /* emerald-400 */
+    --data-pos-soft: 6 46 37;
+    --data-neg: 248 113 113;           /* red-400 */
+    --data-neg-soft: 58 20 20;
+    --data-warn: 251 191 36;           /* amber-400 */
+    --data-warn-soft: 58 42 12;
+    --data-neutral: 100 116 139;       /* slate-500 */
+
+    --scrim: 2 6 23;                   /* slate-950 */
+
     color-scheme: dark;
   }
 
@@ -121,6 +208,92 @@
   /* divider sutil */
   .hairline {
     @apply border-t border-line-subtle;
+  }
+
+  /* ── Escada de elevação ────────────────────────────────────────────────
+     Quatro degraus, nesta ordem. O que dá presença à tela é a DIFERENÇA entre
+     eles, não sombra forte em tudo. Não invente um quinto.
+
+       chão     bg-surface            fundo da página
+       painel   .panel                bloco de conteúdo (o degrau padrão)
+       foco     .panel-focus          bloco clicável ou em destaque
+       flutuante shadow-overlay       modal, dropdown, flyout
+  */
+  .panel {
+    @apply bg-surface-raised border border-line rounded-xl shadow-soft;
+  }
+  /* Cabeçalho de painel: título à esquerda, ação no canto, altura fixa para a
+     linha não pular quando a ação aparece ou some. */
+  .panel-head {
+    @apply flex items-center justify-between gap-2 px-4 border-b border-line
+           bg-surface-sunken/40 rounded-t-xl;
+    min-height: 3rem;
+  }
+  .panel-focus {
+    @apply panel cursor-pointer transition-all duration-200 ease-out-expo
+           hover:border-accent/40 hover:-translate-y-px hover:shadow-elevated
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ring/30;
+  }
+
+  /* ── Movimento ─────────────────────────────────────────────────────────
+     Três durações e uma curva. Movimento aqui é CONFIRMAÇÃO de que o dado
+     chegou, não enfeite: a lista entra escalonada, o número conta até o valor,
+     o traço se desenha. Nada em laço infinito, exceto sinal de "ao vivo".
+
+     Tudo desliga sozinho sob `prefers-reduced-motion` (regra global no fim
+     deste arquivo).
+
+       120ms  resposta de controle (hover, foco, toque)
+       200ms  mudança de estado
+       420ms  entrada de conteúdo
+  */
+
+  /* Entrada escalonada para QUALQUER item de lista (linha de tabela, card,
+     item de menu). Defina --i com o índice; o atraso satura em 12 itens para
+     a lista longa não demorar uma eternidade para aparecer. */
+  .stagger-in {
+    animation: staggerIn 0.42s cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation-delay: calc(min(var(--i, 0), 12) * 32ms);
+  }
+  @keyframes staggerIn {
+    0%   { opacity: 0; transform: translateY(8px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Bloco de gráfico entrando: sobe e ganha nitidez enquanto as séries
+     animam por dentro. */
+  .chart-enter {
+    animation: chartEnter 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  @keyframes chartEnter {
+    0%   { opacity: 0; transform: translateY(10px) scale(0.99); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  /* Número contando: enquanto o count-up roda, o valor fica levemente mais
+     claro, então "assenta" na cor final. */
+  .metric-counting {
+    color: rgb(var(--accent));
+    transition: color 260ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /* Sinal de dado AO VIVO. É o único laço infinito permitido, e só onde o
+     dado realmente atualiza sozinho. */
+  .live-dot {
+    @apply inline-block h-1.5 w-1.5 rounded-full bg-data-pos animate-dot-pulse;
+  }
+
+  /* ── Métrica ───────────────────────────────────────────────────────────
+     O número é o elemento mais forte da tela. Sempre tabular, para a coluna
+     não dançar quando o valor muda. Use com text-metric / -sm / -lg / -xl. */
+  .metric {
+    font-variant-numeric: tabular-nums;
+    @apply font-semibold text-ink;
+  }
+  /* Rótulo de métrica e de coluna: mono, caixa alta, discreto. Nunca abaixo
+     de 11px (`text-micro` é o piso do sistema). */
+  .metric-label {
+    @apply text-micro font-mono uppercase tracking-wider text-ink-subtle;
   }
 
   /* ── Barra de filtros ──────────────────────────────────────────────
@@ -494,3 +667,21 @@ html.dark .kb-reading .markdown img { border-color: rgb(30 41 59); }
 .tippy-box[data-theme~='menin-card'][data-placement^='left']   > .tippy-arrow::before { border-left-color: rgb(var(--surface-overlay)); }
 .tippy-box[data-theme~='menin'][data-placement^='right']  > .tippy-arrow::before,
 .tippy-box[data-theme~='menin-card'][data-placement^='right']  > .tippy-arrow::before { border-right-color: rgb(var(--surface-overlay)); }
+
+/* ───────────────────────────────────────────────
+   Movimento reduzido (acessibilidade do SO)
+   Quem liga "reduzir movimento" no celular ou no Windows normalmente tem
+   enjoo ou sensibilidade vestibular. Aqui o movimento é decorativo: some
+   inteiro, o conteúdo continua igual. `!important` porque as animações vêm
+   de classes utilitárias que ganhariam na especificidade.
+   ─────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
