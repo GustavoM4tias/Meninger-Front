@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
+import { etapaDe } from '@/views/Office/Comercial/Reservas/stages.js';
 import API_URL from '@/config/apiUrl';
 import { useCarregamentoStore } from '@/stores/Config/carregamento';
 
@@ -72,7 +73,7 @@ export const useReservasStore = defineStore('reservas', () => {
 
         for (const r of (list || [])) {
             if (r?.empreendimento) empSet.add(String(r.empreendimento).trim());
-            const sit = r?.situacao?.nome?.trim();             if (sit) sitSet.add(sit);
+            const sit = etapaDe(r).trim();                     if (sit) sitSet.add(sit);
             if (r?.status_repasse) repSet.add(String(r.status_repasse).trim());
             const imo = r?.imobiliaria?.nome?.trim();          if (imo) imoSet.add(imo);
             const cor = r?.corretor?.nome?.trim();             if (cor) corSet.add(cor);
@@ -130,9 +131,14 @@ export const useReservasStore = defineStore('reservas', () => {
     // ============= Helpers =============
     // Uma reserva tem DESFECHO quando virou etapa Vendida ou foi cancelada /
     // distratada. Enquanto isso ela esta em curso (ativa).
-    const isVendida    = (r) => r?.vendida === 'S' || /vendid/i.test(r?.situacao?.nome || '');
-    const isCancelada  = (r) => /cancelad|distrato/i.test(r?.situacao?.nome || '') || /cancelad|distrato/i.test(r?.status_repasse || '');
+    // A etapa vem de `etapaDe`, nunca de `situacao.nome` - essa chave nao existe
+    // no bloco do CV e fazia os dois regex abaixo falharem calados.
+    const isVendida    = (r) => r?.vendida === 'S' || /vendid/i.test(etapaDe(r));
+    const isCancelada  = (r) => /cancelad|distrato/i.test(etapaDe(r)) || /cancelad|distrato/i.test(r?.status_repasse || '');
     const isAtiva      = (r) => !isVendida(r) && !isCancelada(r);
+    // PENDENTE: conta qualquer status_repasse nao nulo, e "Em espera" significa
+    // repasse NAO iniciado. Mantido de proposito ate o Gustavo decidir se sai
+    // da conta - mexer aqui muda o KPI "Em repasse" da tela.
     const isEmRepasse  = (r) => !!r?.status_repasse && !isCancelada(r);
 
     return {

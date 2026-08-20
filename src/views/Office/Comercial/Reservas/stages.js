@@ -1,5 +1,5 @@
-// Buckets do funil de Reservas. Combina situacao_nome + status_repasse + flags
-// (vendida, distrato, cancelado). A ordem importa - o primeiro match vence.
+// Buckets do funil de Reservas. Combina a etapa do CRM (via `etapaDe`),
+// o status_repasse e a flag `vendida`. A ordem importa - o primeiro match vence.
 //
 // O `match(p)` recebe o objeto reserva inteiro (não apenas string) porque
 // reservas precisam combinar múltiplos campos (vendida=S, status_repasse, etc).
@@ -9,8 +9,26 @@
 // porque são desfecho mesmo. As etapas do meio do funil usam slots da série
 // categórica, cuja ordem é fixa e validada para daltonismo nos dois temas.
 
+/**
+ * A ETAPA da reserva, de um lugar só.
+ *
+ * O bloco `situacao` que vem do CV é `{ grupo, idgrupo, situacao, idsituacao }`
+ * - **não existe a chave `nome`**. Medido em 2026-08-20: das 7.925 reservas,
+ * 7.925 têm `situacao.situacao` e ZERO têm `situacao.nome`. `status_reserva`
+ * guarda o mesmo texto denormalizado e também cobre 100% das linhas, então
+ * entra como rede.
+ *
+ * Ler `situacao.nome` não dava "sem etapa": dava `undefined`, o que apagava a
+ * coluna inteira e fazia todo regex de etapa (vendida, cancelada) falhar
+ * calado. Qualquer código que precise da etapa passa por aqui.
+ */
+export function etapaDe(reserva) {
+    if (typeof reserva === 'string') return reserva
+    return reserva?.situacao?.situacao || reserva?.status_reserva || ''
+}
+
 const norm = (v) => String(v || '').toLowerCase()
-const sit = (p) => norm(p?.situacao?.nome || p?.status_reserva)
+const sit = (p) => norm(etapaDe(p))
 const rep = (p) => norm(p?.status_repasse)
 
 export const STAGE_GROUPS = [
@@ -84,11 +102,11 @@ export const STAGE_GROUPS = [
     },
 ]
 
-export function bucketOf(reservaOuSituacao) {
-    // Aceita o objeto reserva inteiro (preferido) ou apenas a string da situacao
-    const p = (typeof reservaOuSituacao === 'string')
-        ? { situacao: { nome: reservaOuSituacao } }
-        : (reservaOuSituacao || {})
+export function bucketOf(reservaOuEtapa) {
+    // Aceita o objeto reserva inteiro (preferido) ou apenas o texto da etapa
+    const p = (typeof reservaOuEtapa === 'string')
+        ? { status_reserva: reservaOuEtapa }
+        : (reservaOuEtapa || {})
     for (const g of STAGE_GROUPS) if (g.match(p)) return g
     return STAGE_GROUPS[STAGE_GROUPS.length - 1]
 }
