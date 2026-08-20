@@ -302,16 +302,21 @@ const ordem = ref({ by: 'data_reserva', dir: 'desc' });
 
 const unidadeDe = (r) => [r.bloco, r.unidade].filter(Boolean).join(' / ') || '-';
 
+/* As duas etapas andam juntas: a da reserva e a do repasse sao o mesmo assunto
+   lido em dois sistemas, e separa-las obrigava a varrer a linha de ponta a
+   ponta para responder "em que pe esta". No estreito a Etapa fica no titulo do
+   card (prioridade 1) e o Repasse abre o corpo (prioridade 2), que e a posicao
+   imediatamente ao lado. */
 const COLUNAS = [
   { key: 'titular', label: 'Cliente', priority: 1, sortable: true,
     value: (r) => r.titular?.nome || '-' },
   { key: 'situacao', label: 'Etapa', priority: 1, sortable: true, width: '13rem',
     value: (r) => etapaDe(r) || '-' },
+  { key: 'status_repasse', label: 'Repasse', priority: 2, sortable: true, width: '11rem',
+    value: (r) => r.status_repasse || '-' },
   { key: 'empreendimento', label: 'Empreendimento', priority: 2, sortable: true },
   { key: 'unidade', label: 'Bloco / Unidade', priority: 2, sortable: true, width: '9rem',
     value: unidadeDe },
-  { key: 'status_repasse', label: 'Repasse', priority: 2, sortable: true, width: '11rem',
-    value: (r) => r.status_repasse || '-' },
   { key: 'dias_em_reserva', label: 'Dias', priority: 2, numeric: true, sortable: true, width: '4.5rem' },
   { key: 'data_reserva', label: 'Reserva', priority: 3, sortable: true, width: '7rem' },
 ];
@@ -346,9 +351,26 @@ const stageVariant = (r) => {
   return 'neutral';
 };
 
+/* Links do CV. A reserva abre pelo idreserva; o repasse tem tela propria e
+   precisa do idrepasse, que o relatorio passou a devolver junto. Sem repasse
+   nao ha link - o selo fica sem href em vez de apontar para lugar nenhum. */
 const cvLink = (r) => (r?.idreserva
   ? `https://menin.cvcrm.com.br/gestor/comercial/reservas/${r.idreserva}/administrar`
   : null);
+
+const cvRepasseLink = (r) => (r?.idrepasse
+  ? `https://menin.cvcrm.com.br/gestor/financeiro/repasses/${r.idrepasse}/administrar`
+  : null);
+
+/* O selo do repasse e mais discreto que o da etapa de proposito: a etapa e o
+   assunto da linha, o repasse e o complemento. So os desfechos ganham cor. */
+const repasseVariant = (v) => {
+  const k = String(v || '');
+  if (/cancelad|distrato/i.test(k)) return 'danger';
+  if (/finalizad|conclu|quitad/i.test(k)) return 'success';
+  if (/espera/i.test(k)) return 'neutral';
+  return 'info';
+};
 
 function abrirDetalhe(r) { detailItem.value = r; detailVisible.value = true; }
 
@@ -394,6 +416,8 @@ onMounted(async () => {
           :tips="[
             'Vendida aqui é a ETAPA do CRM, não venda concretizada: a venda real é a do Faturamento. Por isso o cartão se chama Etapa Vendida (CRM).',
             'Tempo até finalizar conta só as reservas com desfecho - virou etapa Vendida ou foi cancelada. As que estão em curso não entram na média.',
+            'A etapa e o repasse são links: clicar abre aquele registro no CV CRM, cada um na sua tela - a reserva em Comercial, o repasse em Financeiro.',
+            'Repasse vazio quer dizer que a reserva ainda não gerou repasse no CV, não que o dado faltou.',
             'A cor da etapa é a mesma em toda a tela: âmbar é reservada ou em análise, violeta é em contrato, ciano é em repasse, verde é vendida e vermelho é cancelada ou distrato.',
             'A tabela carrega de 50 em 50 conforme você rola, então não há página para caçar.',
             'Os filtros ficam gravados no endereço da página: dá para salvar o link ou mandar para alguém já filtrado.',
@@ -506,9 +530,32 @@ onMounted(async () => {
         </template>
 
         <template #cell-situacao="{ row }">
-          <Badge :variant="stageVariant(row)" size="sm" class="max-w-full">
-            <span class="truncate">{{ etapaDe(row) || '-' }}</span>
-          </Badge>
+          <component :is="cvLink(row) ? 'a' : 'span'"
+            :href="cvLink(row) || undefined" :target="cvLink(row) ? '_blank' : undefined"
+            :rel="cvLink(row) ? 'noopener' : undefined"
+            v-tippy="cvLink(row) ? 'Abrir a reserva no CV CRM' : undefined"
+            class="inline-flex items-center max-w-full py-1 rounded-md focus-ring"
+            @click.stop>
+            <Badge :variant="stageVariant(row)" size="sm" class="max-w-full">
+              <span class="truncate">{{ etapaDe(row) || '-' }}</span>
+              <i v-if="cvLink(row)" class="fas fa-arrow-up-right-from-square text-micro opacity-50"></i>
+            </Badge>
+          </component>
+        </template>
+
+        <template #cell-status_repasse="{ row }">
+          <component v-if="row.status_repasse" :is="cvRepasseLink(row) ? 'a' : 'span'"
+            :href="cvRepasseLink(row) || undefined" :target="cvRepasseLink(row) ? '_blank' : undefined"
+            :rel="cvRepasseLink(row) ? 'noopener' : undefined"
+            v-tippy="cvRepasseLink(row) ? 'Abrir o repasse no CV CRM' : undefined"
+            class="inline-flex items-center max-w-full py-1 rounded-md focus-ring"
+            @click.stop>
+            <Badge :variant="repasseVariant(row.status_repasse)" size="sm" class="max-w-full">
+              <span class="truncate">{{ row.status_repasse }}</span>
+              <i v-if="cvRepasseLink(row)" class="fas fa-arrow-up-right-from-square text-micro opacity-50"></i>
+            </Badge>
+          </component>
+          <span v-else class="text-ink-subtle">-</span>
         </template>
 
         <template #cell-unidade="{ row }">
