@@ -34,6 +34,12 @@ function notify(text, type = 'ok') {
 const fmt = (d) => d ? new Date(d).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '-'
 const stateVariant = (s) => ({ bot: 'info', closed: 'neutral' }[s] || 'neutral')
 const stateLabel = (s) => ({ bot: 'Eme (IA)', closed: 'Encerrada' }[s] || s)
+const TEMP_VARIANT = { quente: 'danger', morno: 'warning', frio: 'info', gelado: 'neutral' }
+const TEMP_ICON = { quente: 'fa-fire', morno: 'fa-temperature-half', frio: 'fa-snowflake', gelado: 'fa-icicles' }
+const CHANCE_LABEL = { alta: 'Chance alta', media: 'Chance média', baixa: 'Chance baixa', muito_baixa: 'Chance mínima', nula: 'Sem chance' }
+const ESTAGIO_LABEL = { novo: 'Novo', contatado: 'Contatado', engajado: 'Engajado', qualificado: 'Qualificado', visita: 'Quer visitar', repassado: 'Repassado', perdido: 'Perdido', opt_out: 'Opt-out' }
+const motivoLabel = (v) => leadVocab.value?.motivos_perda?.find(m => m.valor === v)?.rotulo || v
+const motivoInfo = (v) => leadVocab.value?.motivos_perda?.find(m => m.valor === v) || null
 const leadVariant = (s) => ({ received: 'neutral', opened: 'info', engaged: 'accent', qualified: 'success', closed: 'neutral', opted_out: 'danger' }[s] || 'neutral')
 
 // ── Conversas ────────────────────────────────────────────────────────────────
@@ -82,6 +88,12 @@ const siteEnterprises = ref([])
 const siteSyncs = ref([])
 // Configuração de COMO o site é lido - editável pra não depender de deploy
 // quando o site mudar de versão ou de plataforma.
+// Gestão de lead: temperatura, estágio e motivo de perda vêm do back
+// (emeAtendeLeadScoring), não daqui - a régua é do servidor.
+const leadVocab = ref(null)
+const leadPanorama = ref(null)
+const leadTemp = ref('')
+const leadRecontatar = ref(false)
 const siteSource = ref(null)
 const sourceTest = reactive({ running: false, error: '', total: 0, campos: [], contexto: '', slugs: [], slug: '' })
 const siteSyncsOpen = ref(false)
@@ -317,10 +329,23 @@ const leadStatusOpts = [
   { value: 'opted_out', label: 'Opt-out' },
 ]
 
+async function loadLeadMeta() {
+  try {
+    const [v, p] = await Promise.all([api.getLeadVocabulario(), api.getLeadPanorama()])
+    leadVocab.value = v; leadPanorama.value = p
+  } catch (e) { notify(e.message, 'err') }
+}
+const tempOpts = computed(() => [
+  { value: '', label: 'Qualquer temperatura' },
+  ...(leadVocab.value?.temperaturas || []).map(t => ({ value: t, label: t[0].toUpperCase() + t.slice(1) })),
+])
 async function loadLeads() {
   leadsLoading.value = true
   try {
-    const d = await api.listLeads({ q: leadSearch.value, status: leadStatus.value, limit: 100 })
+    const d = await api.listLeads({
+      q: leadSearch.value, status: leadStatus.value, temperatura: leadTemp.value,
+      recontatar: leadRecontatar.value ? 'true' : '', limit: 100,
+    })
     leads.value = d.leads || []; leadsTotal.value = d.total || 0
   } catch (e) { notify(e.message, 'err') } finally { leadsLoading.value = false }
 }
@@ -424,7 +449,7 @@ async function runSandbox() {
 watch(tab, (t) => {
   if (t === 'conversations' && !conversations.value.length) loadConversations()
   if (t === 'flows' && !flows.value.length) loadFlows()
-  if (t === 'leads' && !leads.value.length) loadLeads()
+  if (t === 'leads' && !leads.value.length) { loadLeads(); loadLeadMeta() }
   if (t === 'config' && !settingsLoaded.value) loadConfig()
 })
 onMounted(loadConversations)
@@ -670,6 +695,23 @@ onMounted(loadConversations)
       </div>
 
       <div v-show="tab === 'leads'">
+        <!-- Panorama: sem isso a aba é uma lista sem prioridade. -->
+        <div v-if="leadPanorama" class="mb-4 flex flex-wrap items-center gap-2">
+          <button v-for="t in (leadVocab?.temperaturas || [])" :key="t" type="button"
+            class="px-2.5 py-1 rounded-lg border text-xs transition-colors"
+            :class="leadTemp === t ? 'border-accent bg-accent/10 text-ink' : 'border-line bg-surface-raised text-ink-muted hover:bg-surface-sunken'"
+            @click="leadTemp = leadTemp === t ? '' : t; loadLeads()">
+            <i class="fas mr-1" :class="TEMP_ICON[t]"></i>{{ t }}
+            <span class="ml-1 text-ink-subtle">{{ (leadPanorama.temperatura.find(x => x.chave === t) || {}).total || 0 }}</span>
+          </button>
+          <button type="button" class="px-2.5 py-1 rounded-lg border text-xs transition-colors"
+            :class="leadRecontatar ? 'border-accent bg-accent/10 text-ink' : 'border-line bg-surface-raised text-ink-muted hover:bg-surface-sunken'"
+            @click="leadRecontatar = !leadRecontatar; loadLeads()">
+            <i class="fas fa-rotate-left mr-1"></i>hora de retomar
+            <span class="ml-1 text-ink-subtle">{{ leadPanorama.a_recontatar }}</span>
+          </button>
+        </div>
+
         <div class="mb-4 flex items-center gap-3 flex-wrap">
           <div class="flex-1 min-w-[200px]"><Input v-model="leadSearch" size="sm" placeholder="Buscar por nome ou telefone…" @keyup.enter="loadLeads" /></div>
           <div class="w-48"><Select :model-value="leadStatus" :options="leadStatusOpts" @change="(v) => leadStatus = v" /></div>
@@ -681,8 +723,13 @@ onMounted(loadConversations)
         <div v-else class="space-y-2.5">
           <Surface v-for="l in leads" :key="l.id" variant="raised" padding="sm">
             <div class="flex items-center gap-3 flex-wrap cursor-pointer" @click="openLead(l)">
-              <Badge :variant="leadVariant(l.status)" size="sm">{{ leadStatusOpts.find(o => o.value === l.status)?.label || l.status }}</Badge>
+              <Badge v-if="l.temperatura" :variant="TEMP_VARIANT[l.temperatura] || 'neutral'" size="sm">
+                <i class="fas mr-1" :class="TEMP_ICON[l.temperatura]"></i>{{ l.temperatura }}
+              </Badge>
+              <span v-if="l.score != null" class="text-[11px] font-mono text-ink-subtle"
+                v-tippy="'Pontuação do lead, calculada pelo que ele declarou e pelo que fez na conversa'">{{ l.score }}</span>
               <span class="text-sm font-semibold text-ink">{{ l.name || 'Sem nome' }}</span>
+              <Badge size="sm" variant="neutral">{{ ESTAGIO_LABEL[l.estagio] || l.estagio }}</Badge>
               <code class="text-xs font-mono text-ink-muted">{{ l.phone }}</code>
               <span v-if="l.empreendimento" class="text-xs text-ink-muted">{{ l.empreendimento }}</span>
               <span class="ml-auto text-xs text-ink-subtle">{{ l.source }} · {{ fmt(l.created_at || l.createdAt) }}</span>
@@ -690,6 +737,21 @@ onMounted(loadConversations)
             <div v-if="leadOpen === l.id" class="mt-4">
               <div v-if="!leadDetail" class="py-6 text-center text-ink-subtle"><i class="fas fa-spinner animate-spin"></i></div>
               <template v-else>
+                <div v-if="leadDetail.motivo_perda"
+                  class="mb-3 rounded-lg border border-line bg-surface-sunken px-3 py-2 text-xs">
+                  <p class="text-ink"><strong>Perdido:</strong> {{ motivoLabel(leadDetail.motivo_perda) }}</p>
+                  <p class="text-ink-muted mt-0.5">
+                    Chance de reconversão {{ leadDetail.reconversao }}.
+                    {{ leadDetail.recontatar_em ? `Vale procurar de novo a partir de ${fmt(leadDetail.recontatar_em)}.` : 'Não deve ser recontatado.' }}
+                  </p>
+                </div>
+                <div v-if="leadDetail.qualificacao && Object.keys(leadDetail.qualificacao).length"
+                  class="mb-3 flex flex-wrap gap-1.5">
+                  <span v-for="(v, k) in leadDetail.qualificacao" :key="k"
+                    class="text-[11px] px-2 py-0.5 rounded-md border border-line bg-surface-sunken text-ink-muted">
+                    {{ k.replace(/_/g, ' ') }}: <strong class="text-ink">{{ v }}</strong>
+                  </span>
+                </div>
                 <p v-if="leadDetail.qualified_summary" class="mb-3 text-sm text-ink rounded-lg border border-emerald-500/30 bg-emerald-500/5 px-3 py-2">
                   <i class="fas fa-star text-emerald-500 mr-1.5"></i>{{ leadDetail.qualified_summary }}
                 </p>

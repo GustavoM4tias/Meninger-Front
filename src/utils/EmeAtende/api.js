@@ -70,3 +70,7 @@ export const listSiteSyncs = (limit = 30) => req(`/site/syncs?limit=${limit}`)
 // Como o site é lido (variável global, coleção, de-para de campos, blocos).
 export const getSiteSource = () => req('/site/source')
 export const previewSiteSource = (data) => req('/site/preview', { method: 'POST', body: JSON.stringify(data) })
+
+// Gestão de lead: vocabulário (rótulos e motivos) e panorama do funil.
+export const getLeadVocabulario = () => req('/leads/vocabulario')
+export const getLeadPanorama = () => req('/leads/panorama')
