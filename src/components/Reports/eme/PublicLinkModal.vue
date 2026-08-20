@@ -154,6 +154,11 @@ const fmtDateTime = (d) => (d ? new Date(d).toLocaleString('pt-BR') : '-')
             Quem abrir o link vai poder filtrar, abrir a lista de registros por trás de cada número e
             exportar em Excel. As consultas rodam com as SUAS alçadas de acesso.
           </p>
+          <p class="mt-1.5 text-xs text-ink-muted">
+            <i class="fas fa-user-shield mr-1 text-emerald-500" />
+            Na lista pública sai apenas ID no CV, nome, situação e o link do registro no CV
+            (que exige login). CPF, e-mail, telefone e valores ficam de fora.
+          </p>
         </div>
 
         <!-- Scan de PII -->
