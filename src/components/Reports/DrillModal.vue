@@ -127,7 +127,19 @@ function fechar() {
                   v-for="(c, ci) in columns" :key="c.key"
                   class="px-3.5 py-2.5 tabular-nums"
                   :class="ci === 0 ? 'font-medium text-ink' : 'text-ink-muted'"
-                >{{ celula(r[c.key]) }}</td>
+                >
+                  <!-- Coluna de link (ex.: abrir o registro no CV): abre em
+                       outra aba sem disparar o detalhe da linha. -->
+                  <a
+                    v-if="c.type === 'link' && r[c.key]"
+                    :href="r[c.key]" target="_blank" rel="noopener noreferrer"
+                    class="inline-flex items-center gap-1.5 text-accent hover:opacity-80 whitespace-nowrap"
+                    @click.stop
+                  >
+                    <i class="fas fa-arrow-up-right-from-square text-[10px]" />{{ c.linkLabel || 'Abrir' }}
+                  </a>
+                  <template v-else>{{ celula(r[c.key]) }}</template>
+                </td>
               </tr>
               <tr v-if="!rows.length">
                 <td :colspan="columns.length" class="px-4 py-8 text-center text-xs text-ink-subtle">

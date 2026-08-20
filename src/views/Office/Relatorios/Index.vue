@@ -120,7 +120,7 @@ async function onTransferred() {
               'Se compartilharem algo que você não quer acompanhar, use Remover da minha lista.',
               'O link público expira automaticamente e pode ser revogado a qualquer momento.',
               'Nos relatórios com filtros, cada pessoa só enxerga os dados dos empreendimentos que as alçadas dela permitem.',
-              'No link público valem os mesmos filtros, o mesmo detalhe em modal e a mesma exportação em Excel - só que rodando com as alçadas de quem gerou o link. Revise o conteúdo antes de compartilhar.',
+              'No link público valem os mesmos filtros, o mesmo detalhe em modal e a mesma exportação em Excel - rodando com as alçadas de quem gerou o link. Lá a lista de registros sai só com ID no CV, nome, situação e o link do registro; CPF, e-mail e valores não aparecem.',
               'A barra de filtros abre e fecha como nas outras telas, e já nasce com o período do relatório preenchido.',
             ]"
           />

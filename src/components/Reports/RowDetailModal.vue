@@ -35,7 +35,9 @@ const campos = computed(() => {
     else if (col?.format) valor = formatValue(bruto, col.format)
     else if (/^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2})?/.test(String(bruto))) valor = formatValue(bruto, 'date')
     else valor = String(bruto)
-    return { key: k, label: col?.label || k, valor }
+    // Coluna declarada como link (ex.: abrir o registro no CV) vira âncora
+    const href = col?.type === 'link' && typeof bruto === 'string' && /^https?:\/\//i.test(bruto) ? bruto : null
+    return { key: k, label: col?.label || k, valor, href, hrefLabel: col?.linkLabel || 'Abrir' }
   })
 })
 </script>
@@ -50,7 +52,16 @@ const campos = computed(() => {
         <dt class="text-[11px] font-semibold uppercase tracking-wider text-ink-subtle truncate" :title="campo.label">
           {{ campo.label }}
         </dt>
-        <dd class="text-sm text-ink break-words">{{ campo.valor }}</dd>
+        <dd class="text-sm text-ink break-words">
+          <a
+            v-if="campo.href"
+            :href="campo.href" target="_blank" rel="noopener noreferrer"
+            class="inline-flex items-center gap-1.5 text-accent hover:opacity-80"
+          >
+            <i class="fas fa-arrow-up-right-from-square text-[10px]" />{{ campo.hrefLabel }}
+          </a>
+          <template v-else>{{ campo.valor }}</template>
+        </dd>
       </div>
     </dl>
     <p v-if="!campos.length" class="py-8 text-center text-xs text-ink-subtle">Sem dados para exibir.</p>
