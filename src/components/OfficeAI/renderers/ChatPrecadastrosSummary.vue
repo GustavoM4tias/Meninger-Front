@@ -1,116 +1,125 @@
 <script setup>
-import { computed } from 'vue'
+/**
+ * Resposta da Eme sobre pré-cadastros.
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Fala a MESMA linguagem da tela de Pré-Cadastros: o mesmo funil, as mesmas
+ * cores por fase, a mesma escala de número. Quem pergunta para a Eme e depois
+ * abre o relatório tem que reconhecer a resposta - antes eram dois desenhos
+ * diferentes do mesmo dado (aqui, seis cards índigo/roxo/âmbar/esmeralda; lá,
+ * o funil).
+ *
+ * Antes: três grades de cards empilhadas (6 contagens + 3 taxas + 2 tempos =
+ * onze caixas) numa bolha de chat de 600px, com paleta própria e cor fixa que
+ * quebrava no tema claro.
+ *
+ * Agora: o número, o funil e as taxas em linha. Um bloco só.
+ */
+import { computed } from 'vue';
+import Panel from '@/components/UI/Panel.vue';
+import FunnelStrip from '@/components/UI/FunnelStrip.vue';
+import MetricInline from '@/components/UI/MetricInline.vue';
+import { useCountUp } from '@/composables/useCountUp';
+import { STAGE_GROUPS } from '@/views/Office/Comercial/Precadastros/stages.js';
 
 const props = defineProps({
   action: { type: Object, required: true },
-})
+});
 
-const a = computed(() => props.action || {})
+const a = computed(() => props.action || {});
+const total = computed(() => Number(a.value.total ?? 0));
+const { display: totalContado, counting } = useCountUp(total, { duration: 900 });
 
-const kpis = computed(() => [
-  { label: 'Total de Pastas', value: a.value.total ?? 0,           color: 'indigo',  icon: 'fas fa-folder-open' },
-  { label: 'Em Análise',      value: a.value.em_analise ?? 0,      color: 'purple',  icon: 'fas fa-magnifying-glass-chart' },
-  { label: 'Documentação',    value: a.value.documentacao ?? 0,    color: 'amber',   icon: 'fas fa-file-circle-exclamation' },
-  { label: 'Aprovados',       value: a.value.aprovados ?? 0,       color: 'emerald', icon: 'fas fa-check-double', sub: `${a.value.aprovado_sem_reserva ?? 0} sem reserva + ${a.value.reserva ?? 0} em reserva` },
-  { label: 'Em Reserva',      value: a.value.reserva ?? 0,         color: 'yellow',  icon: 'fas fa-bookmark' },
-  { label: 'Reprovados',      value: a.value.reprovado ?? 0,       color: 'rose',    icon: 'fas fa-circle-xmark' },
-])
+const nf = new Intl.NumberFormat('pt-BR');
+const fmtPct = (v) => `${Number(v).toFixed(1)}%`;
+const fmtDias = (v) => `${Number(v).toFixed(1)}d`;
 
-const rates = computed(() => [
-  { label: '% Aprovação',     value: a.value.taxa_aprovacao,    suffix: '%', color: 'emerald', tooltip: '(Aprovados + Reservas) ÷ Total' },
-  { label: '% Conv. Reserva', value: a.value.taxa_conv_reserva, suffix: '%', color: 'yellow',  tooltip: 'Reservas ÷ Total' },
-  { label: '% Reprovação',    value: a.value.taxa_reprovacao,   suffix: '%', color: 'rose',    tooltip: 'Reprovados ÷ Total' },
-])
+/* O título vem pronto do backend ("Pré-cadastros - 01/08/2026 a 31/08/2026").
+   Aqui ele é quebrado em nome e período, para o período virar subtítulo em vez
+   de esticar o cabeçalho. */
+const partesTitulo = computed(() => {
+  const t = String(a.value.title || 'Pré-cadastros');
+  const sep = t.indexOf(' - ');
+  return sep === -1
+    ? { nome: t, periodo: '' }
+    : { nome: t.slice(0, sep), periodo: t.slice(sep + 3) };
+});
 
-const tempos = computed(() => [
-  { label: 'Tempo médio em análise', value: a.value.tempo_medio_em_analise, color: 'purple', tooltip: 'Média de dias de todas as pastas (em curso e finalizadas)' },
-  { label: 'Tempo médio até finalizar', value: a.value.tempo_medio_finalizar, color: 'sky', tooltip: 'Média de dias apenas das pastas finalizadas (velocidade da CCA)' },
-])
+/* As fases, na ordem do funil e com a cor do bucket - a mesma de stages.js,
+   que é a mesma da tela e a mesma dos gráficos. */
+const grupo = (k) => STAGE_GROUPS.find((g) => g.key === k) || STAGE_GROUPS[STAGE_GROUPS.length - 1];
 
-const colorMap = {
-  indigo:  'bg-indigo-500/10  text-indigo-400  ring-indigo-500/20',
-  purple:  'bg-purple-500/10  text-purple-400  ring-purple-500/20',
-  amber:   'bg-amber-500/10   text-amber-400   ring-amber-500/20',
-  emerald: 'bg-emerald-500/10 text-emerald-400 ring-emerald-500/20',
-  yellow:  'bg-yellow-500/10  text-yellow-400  ring-yellow-500/20',
-  rose:    'bg-rose-500/10    text-rose-400    ring-rose-500/20',
-  sky:     'bg-sky-500/10     text-sky-400     ring-sky-500/20',
-}
+const etapas = computed(() => [
+  { ...grupo('em_analise'), count: Number(a.value.em_analise ?? 0) },
+  { ...grupo('documentacao'), count: Number(a.value.documentacao ?? 0) },
+  { ...grupo('aprovado'), count: Number(a.value.aprovado_sem_reserva ?? 0) },
+  { ...grupo('reserva'), count: Number(a.value.reserva ?? 0) },
+  { ...grupo('reprovado'), count: Number(a.value.reprovado ?? 0) },
+  { ...grupo('outros'), count: Number(a.value.outros ?? 0) },
+].filter((e) => e.count > 0 || e.key !== 'outros'));
 
-function fmtNum(v) {
-  if (v == null) return '—'
-  return new Intl.NumberFormat('pt-BR').format(v)
-}
+const metricas = computed(() => {
+  const m = [
+    {
+      key: 'aprov', label: 'Aprovação', icon: 'fas fa-check-double', tone: 'pos',
+      raw: Number(a.value.taxa_aprovacao ?? 0), format: fmtPct, decimals: 1,
+      hint: `${nf.format(a.value.aprovados ?? 0)} pastas`,
+      tooltip: 'Aprovados mais em reserva, dividido pelo total',
+    },
+    {
+      key: 'reserva', label: 'Conversão em reserva', icon: 'fas fa-bookmark',
+      raw: Number(a.value.taxa_conv_reserva ?? 0), format: fmtPct, decimals: 1,
+      hint: `${nf.format(a.value.reserva ?? 0)} viraram reserva`,
+    },
+    {
+      key: 'reprov', label: 'Reprovação', icon: 'fas fa-circle-xmark', tone: 'neg',
+      raw: Number(a.value.taxa_reprovacao ?? 0), format: fmtPct, decimals: 1,
+      hint: `${nf.format(a.value.reprovado ?? 0)} reprovadas`,
+    },
+  ];
+  /* Tempo só entra quando existe: "0,0 dias" mente sobre um período sem
+     nenhuma pasta finalizada. */
+  if (a.value.tempo_medio_finalizar != null) {
+    m.push({
+      key: 'tempo', label: 'Tempo até finalizar', icon: 'fas fa-stopwatch',
+      raw: Number(a.value.tempo_medio_finalizar), format: fmtDias, decimals: 1,
+      hint: a.value.tempo_medio_em_analise != null
+        ? `em curso: ${fmtDias(a.value.tempo_medio_em_analise)}`
+        : '',
+      tooltip: 'Média de dias das pastas que já tiveram desfecho',
+    });
+  }
+  return m;
+});
 
-function fmtRate(v) {
-  if (v == null || isNaN(v)) return '—'
-  return `${Number(v).toFixed(1).replace('.', ',')}`
-}
+const vazio = computed(() => total.value === 0);
 </script>
 
 <template>
-  <div class="space-y-3 mt-1">
-    <!-- Título -->
-    <div class="flex items-center gap-2">
-      <i class="fas fa-folder-open text-xs text-gray-400 dark:text-slate-500" />
-      <span class="text-xs font-medium text-gray-700 dark:text-gray-300">{{ a.title }}</span>
-    </div>
+  <Panel :padded="false" class="mt-1 overflow-hidden">
+    <template #title>{{ partesTitulo.nome }}</template>
+    <template v-if="partesTitulo.periodo" #subtitle>{{ partesTitulo.periodo }}</template>
 
-    <!-- Grid de contagens (6 cards) -->
-    <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
-      <div
-        v-for="k in kpis"
-        :key="k.label"
-        class="bg-slate-50 dark:bg-slate-800/60 ring-1 ring-inset rounded-xl p-3"
-        :class="colorMap[k.color]"
-      >
-        <div class="flex items-center gap-2 text-[10px] uppercase tracking-wide font-medium opacity-80">
-          <i :class="k.icon" />
-          {{ k.label }}
-        </div>
-        <p class="text-xl font-bold tabular-nums mt-1">{{ fmtNum(k.value) }}</p>
-        <p v-if="k.sub" class="text-[10px] opacity-70 mt-0.5">{{ k.sub }}</p>
-      </div>
-    </div>
-
-    <!-- Taxas -->
-    <div v-if="a.total > 0" class="grid grid-cols-3 gap-2">
-      <div
-        v-for="r in rates"
-        :key="r.label"
-        class="bg-slate-50 dark:bg-slate-800/60 ring-1 ring-inset rounded-xl p-3"
-        :class="colorMap[r.color]"
-        :title="r.tooltip"
-      >
-        <p class="text-[10px] uppercase tracking-wide font-medium opacity-80">{{ r.label }}</p>
-        <p class="text-xl font-bold tabular-nums mt-1">
-          {{ fmtRate(r.value) }}<span class="text-sm font-normal opacity-70">{{ r.suffix }}</span>
-        </p>
-      </div>
-    </div>
-
-    <!-- Tempos médios -->
-    <div v-if="a.total > 0" class="grid grid-cols-2 gap-2">
-      <div
-        v-for="t in tempos"
-        :key="t.label"
-        class="bg-slate-50 dark:bg-slate-800/60 ring-1 ring-inset rounded-xl p-3"
-        :class="colorMap[t.color]"
-        :title="t.tooltip"
-      >
-        <p class="text-[10px] uppercase tracking-wide font-medium opacity-80">{{ t.label }}</p>
-        <p class="text-base font-semibold tabular-nums mt-1">
-          {{ t.value != null ? `${fmtRate(t.value)} dias` : '—' }}
-        </p>
-      </div>
-    </div>
-
-    <!-- Caso vazio -->
-    <div
-      v-if="a.total === 0"
-      class="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-4 text-xs text-gray-500 dark:text-slate-400 text-center"
-    >
+    <div v-if="vazio" class="p-4 text-xs text-ink-muted text-center">
       Nenhum pré-cadastro encontrado no período com esses filtros.
     </div>
-  </div>
+
+    <template v-else>
+      <div class="p-4 pb-3 space-y-4">
+        <div class="min-w-0">
+          <p class="metric-label">Pastas no período</p>
+          <p class="metric text-metric leading-none mt-1 transition-colors duration-420"
+            :class="counting ? 'metric-counting' : ''">
+            {{ nf.format(totalContado) }}
+          </p>
+        </div>
+
+        <!-- Não é clicável aqui: a bolha de chat responde, quem age é o bloco
+             de ações logo abaixo (ChatPrecadastrosActions), que leva para o
+             relatório já filtrado. -->
+        <FunnelStrip :stages="etapas" :total="total" :clickable="false" unit="pastas" />
+      </div>
+
+      <MetricInline :items="metricas" />
+    </template>
+  </Panel>
 </template>

@@ -103,30 +103,29 @@ const financialCards = computed(() => [
         :class="bannerGradient">
         <div class="pointer-events-none absolute inset-0 opacity-30"
           style="background-image:radial-gradient(circle, rgba(255,255,255,0.2) 1px, transparent 1px); background-size: 18px 18px;"></div>
-        <div class="pointer-events-none absolute -top-16 -right-16 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
 
         <div class="relative flex items-start justify-between gap-3">
           <div class="flex-1 min-w-0">
             <div class="flex items-center gap-2 flex-wrap mb-2">
-              <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-medium
+              <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-micro font-medium
                            bg-white/20 backdrop-blur border border-white/20 text-white">
-                <i :class="iconForStage(precadastro?.situacao_nome)" class="text-[10px]"></i>
+                <i :class="iconForStage(precadastro?.situacao_nome)" class="text-micro"></i>
                 {{ precadastro?.situacao_nome || 'Sem situação' }}
               </span>
-              <span class="text-[11px] text-white/70 font-mono">#{{ precadastro?.idprecadastro }}</span>
+              <span class="text-micro text-white/70 font-mono">#{{ precadastro?.idprecadastro }}</span>
             </div>
             <h2 class="text-xl sm:text-2xl font-semibold leading-tight tracking-tight break-words">
-              {{ precadastro?.nome_cliente || precadastro?.cliente?.nome || '—' }}
+              {{ precadastro?.nome_cliente || precadastro?.cliente?.nome || '-' }}
             </h2>
             <p class="text-xs text-white/70 mt-1 font-mono">
-              {{ precadastro?.documento || '—' }} · Cadastrado em {{ fmt(precadastro?.data_cad) }}
+              {{ precadastro?.documento || '-' }} · Cadastrado em {{ fmt(precadastro?.data_cad) }}
             </p>
           </div>
 
           <button @click="emit('fechar')" aria-label="Fechar"
-            class="h-9 w-9 grid place-items-center rounded-lg
-                   bg-white/15 hover:bg-white/25 backdrop-blur
-                   text-white transition-colors shrink-0">
+            class="h-10 w-10 grid place-items-center rounded-lg
+                   bg-white/15 hover:bg-white/25
+                   text-white transition-colors duration-120 shrink-0">
             <i class="fas fa-xmark"></i>
           </button>
         </div>
@@ -136,7 +135,7 @@ const financialCards = computed(() => [
             class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg
                    bg-white/15 hover:bg-white/30 backdrop-blur border border-white/20
                    text-white text-xs font-medium transition-all hover:-translate-y-0.5">
-            <i class="fas fa-arrow-up-right-from-square text-[10px]"></i>
+            <i class="fas fa-arrow-up-right-from-square text-micro"></i>
             Abrir no CV CRM
           </a>
         </div>
@@ -161,12 +160,12 @@ const financialCards = computed(() => [
             <section>
               <div class="flex items-center gap-1.5 mb-2">
                 <i class="fas fa-coins text-xs text-accent"></i>
-                <h4 class="text-[10px] font-mono uppercase tracking-wider text-ink-subtle">Financeiro</h4>
+                <h4 class="text-micro font-mono uppercase tracking-wider text-ink-subtle">Financeiro</h4>
               </div>
               <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                 <div v-for="c in financialCards" :key="c.label"
                   class="rounded-lg p-2.5 border border-line bg-surface-sunken">
-                  <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono">{{ c.label }}</p>
+                  <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono">{{ c.label }}</p>
                   <p class="text-sm font-semibold tabular-nums" :class="c.accent">{{ c.value }}</p>
                 </div>
               </div>
@@ -176,7 +175,7 @@ const financialCards = computed(() => [
             <section>
               <div class="flex items-center gap-1.5 mb-2">
                 <i class="fas fa-circle-info text-xs text-accent"></i>
-                <h4 class="text-[10px] font-mono uppercase tracking-wider text-ink-subtle">Detalhes</h4>
+                <h4 class="text-micro font-mono uppercase tracking-wider text-ink-subtle">Detalhes</h4>
               </div>
               <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
                 <div v-for="item in [
@@ -191,8 +190,8 @@ const financialCards = computed(() => [
                   { label: 'Aprovado por',     value: precadastro?.usuario_aprovou?.nome },
                 ]" :key="item.label"
                   class="rounded-lg p-2.5 border border-line bg-surface-sunken">
-                  <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono">{{ item.label }}</p>
-                  <p class="text-sm text-ink truncate">{{ item.value || '—' }}</p>
+                  <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono">{{ item.label }}</p>
+                  <p class="text-sm text-ink truncate">{{ item.value || '-' }}</p>
                 </div>
               </div>
             </section>
@@ -201,7 +200,7 @@ const financialCards = computed(() => [
             <section>
               <div class="flex items-center gap-1.5 mb-2">
                 <i class="far fa-calendar text-xs text-accent"></i>
-                <h4 class="text-[10px] font-mono uppercase tracking-wider text-ink-subtle">Datas e prazos</h4>
+                <h4 class="text-micro font-mono uppercase tracking-wider text-ink-subtle">Datas e prazos</h4>
               </div>
               <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
                 <div v-for="item in [
@@ -211,11 +210,11 @@ const financialCards = computed(() => [
                   { label: 'Vencimento aprovação', value: precadastro?.vencimento_aprovacao },
                 ]" :key="item.label"
                   class="rounded-lg p-2.5 border border-line bg-surface-sunken">
-                  <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono">{{ item.label }}</p>
-                  <p class="text-sm text-ink font-mono">{{ item.value || '—' }}</p>
+                  <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono">{{ item.label }}</p>
+                  <p class="text-sm text-ink font-mono">{{ item.value || '-' }}</p>
                 </div>
                 <div class="rounded-lg p-2.5 border border-accent/30 bg-accent-soft">
-                  <p class="text-[10px] uppercase tracking-wider text-accent font-mono">Dias em análise</p>
+                  <p class="text-micro uppercase tracking-wider text-accent font-mono">Dias em análise</p>
                   <p class="text-sm font-bold text-accent tabular-nums">
                     {{ Number(precadastro?.dias_em_analise || 0).toFixed(1) }}d
                   </p>
@@ -234,9 +233,9 @@ const financialCards = computed(() => [
           <ol v-else class="relative border-l-2 border-line ml-3 space-y-4">
             <li v-for="(s, i) in historico" :key="i" class="ml-4">
               <div class="absolute -left-[7px] mt-1.5 w-3 h-3 bg-accent rounded-full ring-4 ring-surface-raised"></div>
-              <div class="text-[11px] font-mono text-ink-subtle">{{ fmt(s.captured_at) }}</div>
+              <div class="text-micro font-mono text-ink-subtle">{{ fmt(s.captured_at) }}</div>
               <div class="mt-1 flex items-center gap-2 flex-wrap">
-                <Badge variant="accent" size="sm">{{ s.situacao_nome || '—' }}</Badge>
+                <Badge variant="accent" size="sm">{{ s.situacao_nome || '-' }}</Badge>
                 <span class="text-xs text-emerald-500 font-semibold tabular-nums">{{ fmtMoney(s.valor_aprovado) }}</span>
               </div>
             </li>
@@ -249,13 +248,13 @@ const financialCards = computed(() => [
             icon="fas fa-arrow-right-arrow-left" title="Sem leads associados"
             description="Este pré-cadastro não possui leads vinculados." />
 
-          <div v-else class="rounded-xl border border-line overflow-hidden">
-            <table class="w-full text-sm">
+          <div v-else class="rounded-xl border border-line overflow-x-auto">
+            <table class="w-full text-sm min-w-[22rem]">
               <thead class="bg-surface-sunken/40 border-b border-line">
                 <tr>
-                  <th class="px-3 py-2 text-left text-[10px] font-mono uppercase tracking-wider text-ink-subtle">ID Lead</th>
-                  <th class="px-3 py-2 text-left text-[10px] font-mono uppercase tracking-wider text-ink-subtle">Situação</th>
-                  <th class="px-3 py-2 text-left text-[10px] font-mono uppercase tracking-wider text-ink-subtle">Cadastro</th>
+                  <th class="px-3 py-2 text-left text-micro font-mono uppercase tracking-wider text-ink-subtle">ID Lead</th>
+                  <th class="px-3 py-2 text-left text-micro font-mono uppercase tracking-wider text-ink-subtle">Situação</th>
+                  <th class="px-3 py-2 text-left text-micro font-mono uppercase tracking-wider text-ink-subtle">Cadastro</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-line">

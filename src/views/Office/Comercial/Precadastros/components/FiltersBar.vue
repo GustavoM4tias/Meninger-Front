@@ -76,7 +76,10 @@ const activeFiltersCount = computed(() => {
 const hasActiveFilters = computed(() => activeFiltersCount.value > 0);
 
 // ── Expandir/recolher ────────────────────────────────
-const isExpanded = ref(typeof window !== 'undefined' && window.innerWidth >= 1024);
+// FECHADA por padrão, em qualquer largura. Relatório serve para ler o
+// resultado; o filtro é meio, não assunto. Com a barra aberta, os números
+// nasciam abaixo da dobra. O selo "N ativos" já avisa que há filtro aplicado.
+const isExpanded = ref(false);
 function toggle() { isExpanded.value = !isExpanded.value; }
 
 // ── Apply / Clear ────────────────────────────────────
@@ -136,7 +139,7 @@ onMounted(() => {
         <Badge v-if="hasActiveFilters" variant="accent" size="sm">
           {{ activeFiltersCount }} ativo{{ activeFiltersCount > 1 ? 's' : '' }}
         </Badge>
-        <i class="fas fa-chevron-down text-[10px] text-ink-subtle transition-transform duration-200"
+        <i class="fas fa-chevron-down text-micro text-ink-subtle transition-transform duration-200"
           :class="{ 'rotate-180': isExpanded }"></i>
       </button>
 
@@ -165,32 +168,32 @@ onMounted(() => {
       <!-- Linha 2: Empreendimento, Etapa, Empresa Corresp., Correspondente -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <div>
-          <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
-            <i class="fas fa-building text-[10px] mr-1 text-ink-subtle"></i>Empreendimento(s)
+          <label class="block text-micro font-medium text-ink-muted mb-1.5">
+            <i class="fas fa-building text-micro mr-1 text-ink-subtle"></i>Empreendimento(s)
           </label>
           <MultiSelector :model-value="localEnterprises"
             @update:modelValue="v => localEnterprises = Array.isArray(v) ? v : []"
             :options="enterprisesOptions" placeholder="Selecione..." :page-size="200" :select-all="true" />
         </div>
         <div>
-          <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
-            <i class="fas fa-list-check text-[10px] mr-1 text-ink-subtle"></i>Etapa
+          <label class="block text-micro font-medium text-ink-muted mb-1.5">
+            <i class="fas fa-list-check text-micro mr-1 text-ink-subtle"></i>Etapa
           </label>
           <MultiSelector :model-value="localStages"
             @update:modelValue="v => localStages = Array.isArray(v) ? v : []"
             :options="situacoesOptions" placeholder="Selecione..." :page-size="150" :select-all="true" />
         </div>
         <div>
-          <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
-            <i class="fas fa-city text-[10px] mr-1 text-ink-subtle"></i>Empresa correspondente
+          <label class="block text-micro font-medium text-ink-muted mb-1.5">
+            <i class="fas fa-city text-micro mr-1 text-ink-subtle"></i>Empresa correspondente
           </label>
           <MultiSelector :model-value="localBanks"
             @update:modelValue="v => localBanks = Array.isArray(v) ? v : []"
             :options="empresasCorrespondentesOptions" placeholder="Selecione..." :page-size="150" :select-all="true" />
         </div>
         <div>
-          <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
-            <i class="fas fa-user-tag text-[10px] mr-1 text-ink-subtle"></i>Correspondente (usuário)
+          <label class="block text-micro font-medium text-ink-muted mb-1.5">
+            <i class="fas fa-user-tag text-micro mr-1 text-ink-subtle"></i>Correspondente (usuário)
           </label>
           <MultiSelector :model-value="localCorresps"
             @update:modelValue="v => localCorresps = Array.isArray(v) ? v : []"
@@ -201,24 +204,24 @@ onMounted(() => {
       <!-- Linha 3: Imobiliária, Corretor, Origem, Toggles -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <div>
-          <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
-            <i class="fas fa-store text-[10px] mr-1 text-ink-subtle"></i>Imobiliária
+          <label class="block text-micro font-medium text-ink-muted mb-1.5">
+            <i class="fas fa-store text-micro mr-1 text-ink-subtle"></i>Imobiliária
           </label>
           <MultiSelector :model-value="localImobs"
             @update:modelValue="v => localImobs = Array.isArray(v) ? v : []"
             :options="imobiliariasOptions" placeholder="Selecione..." :page-size="150" :select-all="true" />
         </div>
         <div>
-          <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
-            <i class="fas fa-user-tie text-[10px] mr-1 text-ink-subtle"></i>Corretor
+          <label class="block text-micro font-medium text-ink-muted mb-1.5">
+            <i class="fas fa-user-tie text-micro mr-1 text-ink-subtle"></i>Corretor
           </label>
           <MultiSelector :model-value="localCorretores"
             @update:modelValue="v => localCorretores = Array.isArray(v) ? v : []"
             :options="corretoresOptions" placeholder="Selecione..." :page-size="150" :select-all="true" />
         </div>
         <div>
-          <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
-            <i class="fas fa-compass text-[10px] mr-1 text-ink-subtle"></i>Origem do lead
+          <label class="block text-micro font-medium text-ink-muted mb-1.5">
+            <i class="fas fa-compass text-micro mr-1 text-ink-subtle"></i>Origem do lead
           </label>
           <MultiSelector :model-value="localLeadOrigens"
             @update:modelValue="v => localLeadOrigens = Array.isArray(v) ? v : []"
