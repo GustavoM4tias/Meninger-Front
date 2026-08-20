@@ -335,7 +335,7 @@ watch(leadStatus, loadLeads)
 // ── Config ───────────────────────────────────────────────────────────────────
 const settings = reactive({
   active: false, dry_run: true, debounce_seconds: 8, max_ai_messages: 30,
-  test_mode: false, test_phones: [], validation_level: 'money_dates',
+  test_mode: false, test_phones: [], validation_level: 'money_dates', typing_simulado: true,
   global_persona: '', global_rules: '',
   site_url: '',
   standards: {
@@ -729,6 +729,13 @@ onMounted(loadConversations)
             </div>
             <Input :model-value="String(settings.debounce_seconds)" type="number" label="Debounce (s) - junta mensagens picadas" @update:model-value="(v) => settings.debounce_seconds = Number(v)" />
             <Input :model-value="String(settings.max_ai_messages)" type="number" label="Máx. respostas de IA por conversa" @update:model-value="(v) => settings.max_ai_messages = Number(v)" />
+            <div class="sm:col-span-2 flex items-center gap-3 rounded-lg border border-line bg-surface-sunken px-3 py-3">
+              <Switch :model-value="settings.typing_simulado" @change="(v) => settings.typing_simulado = v" />
+              <div>
+                <p class="text-sm font-semibold text-ink">Mostrar "digitando…"</p>
+                <p class="text-[11px] text-ink-subtle">Espera proporcional ao tamanho da resposta (1,2s a 7s). Resposta instantânea entrega que é robô.</p>
+              </div>
+            </div>
           </div>
           <Button variant="primary" size="sm" :loading="busy" @click="saveSettings">Salvar</Button>
         </Surface>
