@@ -9,7 +9,7 @@ import Spinner from '@/components/UI/Spinner.vue';
 import EmptyState from '@/components/UI/EmptyState.vue';
 import SegmentedControl from '@/components/UI/SegmentedControl.vue';
 
-import { iconForStage } from '../stages.js';
+import { iconForStage, etapaDe } from '../stages.js';
 
 const props = defineProps({
   reserva: { type: Object, default: null },
@@ -59,14 +59,18 @@ const cvLink = computed(() => {
   return `https://menin.cvcrm.com.br/gestor/comercial/reservas/${props.reserva.idreserva}/administrar`;
 });
 
-const isVendida = computed(() => props.reserva?.vendida === 'S');
-const isCancelada = computed(() => /cancelad|distrato/i.test(props.reserva?.situacao?.nome || '') || /cancelad|distrato/i.test(props.reserva?.status_repasse || ''));
+/* Situacao do CRM. Vem de `etapaDe` porque o bloco `situacao` do CV nao tem a
+   chave `nome`. NAO confundir com `reserva.etapa`, que e a fase do
+   empreendimento (etapa/bloco/unidade). */
+const etapaCrm = computed(() => etapaDe(props.reserva));
+const isVendida = computed(() => props.reserva?.vendida === 'S' || /vendid/i.test(etapaCrm.value));
+const isCancelada = computed(() => /cancelad|distrato/i.test(etapaCrm.value) || /cancelad|distrato/i.test(props.reserva?.status_repasse || ''));
 
 const bannerGradient = computed(() => {
   if (isVendida.value)   return 'from-emerald-700 via-emerald-600 to-teal-600';
   if (isCancelada.value) return 'from-red-700 via-red-600 to-rose-600';
   if (props.reserva?.status_repasse) return 'from-sky-700 via-sky-600 to-cyan-600';
-  if (/contrato/i.test(props.reserva?.situacao?.nome || '')) return 'from-violet-700 via-violet-600 to-purple-600';
+  if (/contrato/i.test(etapaCrm.value)) return 'from-violet-700 via-violet-600 to-purple-600';
   return 'from-amber-700 via-orange-600 to-amber-600';
 });
 </script>
@@ -88,8 +92,8 @@ const bannerGradient = computed(() => {
             <div class="flex items-center gap-2 flex-wrap mb-2">
               <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-micro font-medium
                            bg-white/20 backdrop-blur border border-white/20 text-white">
-                <i :class="iconForStage(reserva?.situacao?.nome)" class="text-micro"></i>
-                {{ reserva?.situacao?.nome || 'Sem situação' }}
+                <i :class="iconForStage(etapaCrm)" class="text-micro"></i>
+                {{ etapaCrm || 'Sem situação' }}
               </span>
               <span v-if="isVendida"
                 class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-micro font-semibold
@@ -150,8 +154,8 @@ const bannerGradient = computed(() => {
                 <div class="rounded-lg p-2.5 border border-line bg-surface-sunken">
                   <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono">Situação</p>
                   <Badge size="sm" :variant="isVendida ? 'success' : isCancelada ? 'danger' : 'accent'" class="mt-1">
-                    <i :class="iconForStage(reserva?.situacao?.nome)" class="text-micro"></i>
-                    {{ reserva?.situacao?.nome || '-' }}
+                    <i :class="iconForStage(etapaCrm)" class="text-micro"></i>
+                    {{ etapaCrm || '-' }}
                   </Badge>
                 </div>
                 <div class="rounded-lg p-2.5 border border-line bg-surface-sunken">

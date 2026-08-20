@@ -42,7 +42,7 @@ import DataTable from '@/components/UI/DataTable.vue';
 import Spinner from '@/components/UI/Spinner.vue';
 
 import ReservaDetailModal from './components/ReservaDetailModal.vue';
-import { iconForStage, bucketOf } from './stages.js';
+import { iconForStage, bucketOf, etapaDe } from './stages.js';
 import { useIncrementalList } from '@/composables/useIncrementalList';
 
 const store = useReservasStore();
@@ -306,7 +306,7 @@ const COLUNAS = [
   { key: 'titular', label: 'Cliente', priority: 1, sortable: true,
     value: (r) => r.titular?.nome || '-' },
   { key: 'situacao', label: 'Etapa', priority: 1, sortable: true, width: '13rem',
-    value: (r) => r.situacao?.nome || '-' },
+    value: (r) => etapaDe(r) || '-' },
   { key: 'empreendimento', label: 'Empreendimento', priority: 2, sortable: true },
   { key: 'unidade', label: 'Bloco / Unidade', priority: 2, sortable: true, width: '9rem',
     value: unidadeDe },
@@ -498,7 +498,7 @@ onMounted(async () => {
         <template #cell-titular="{ row }">
           <span class="flex items-baseline gap-2 min-w-0">
             <span :class="[bucketOf(row).text, 'shrink-0']">
-              <i :class="iconForStage(row.situacao?.nome)" style="font-size:11px"></i>
+              <i :class="iconForStage(etapaDe(row))" style="font-size:11px"></i>
             </span>
             <span class="font-medium text-ink truncate">{{ row.titular?.nome || '-' }}</span>
             <span class="text-micro font-mono text-ink-subtle tabular-nums shrink-0">#{{ row.idreserva }}</span>
@@ -507,7 +507,7 @@ onMounted(async () => {
 
         <template #cell-situacao="{ row }">
           <Badge :variant="stageVariant(row)" size="sm" class="max-w-full">
-            <span class="truncate">{{ row.situacao?.nome || '-' }}</span>
+            <span class="truncate">{{ etapaDe(row) || '-' }}</span>
           </Badge>
         </template>
 
@@ -548,7 +548,7 @@ onMounted(async () => {
       :preselect="[
         'idreserva', 'documento', 'titular.nome',
         'empreendimento', 'etapa', 'bloco', 'unidade',
-        'situacao.nome', 'status_repasse', 'tipovenda',
+        'status_reserva', 'status_repasse', 'tipovenda',
         'vendida', 'data_reserva', 'data_contrato', 'data_venda',
         'imobiliaria.nome', 'corretor.nome', 'empresa_correspondente.nome',
         'dias_em_reserva', 'idprecadastro'
