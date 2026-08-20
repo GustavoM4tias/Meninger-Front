@@ -4,7 +4,7 @@ Gerado por `_design/mapscreens.mjs` em 2026-08-20. Para atualizar os números de
 mexer nas telas, rode de novo e o checklist se refaz.
 
 - **65** telas pontuadas (+ 6 especiais fora do score)
-- **Score médio: 76/100**
+- **Score médio: 77/100**
 - Score = esqueleto (50) + tokens (25) + tipografia (15) + tabela mobile (10) + gráfico com tema (10)
 
 ## Como marcar
@@ -59,14 +59,9 @@ Score abaixo de 55. Fora do esqueleto ou com dívida grande de cor. Cada uma é 
 - [ ] **Planner** `/planner` · ` 52`
       <sub>views/Office/Microsoft/Planner/Index.vue · 883L (+1 comp.) · sem container, sem header, 42 cor fixa, 10 texto micro</sub>
 
-## Onda 2 - Alinhamento  `7 telas`
+## Onda 2 - Alinhamento  `6 telas`
 
 Score 55 a 74. Estrutura existe, falta token, help ou plano mobile.
-
-### Painel · parte do MÓVEL <sub>(mais usada por diretoria e lideranças)</sub>
-
-- [ ] **Reservas** `/reservas-report` · ` 59`
-      <sub>views/Office/Comercial/Reservas/Index.vue · 1848L (+5 comp.) · sem help, 7 cor fixa, 55 texto micro, 1 gráfico, 2 tabela</sub>
 
 ### Detalhe · parte do MÓVEL <sub>(mais usada por diretoria e lideranças)</sub>
 
@@ -165,7 +160,7 @@ Score 75 a 94. Perto do padrão; falta gráfico com tema, help ou detalhe de tab
 - [ ] **Eventos** `/events` · ` 94`
       <sub>views/Office/Marketing/Events/Index.vue · 2329L (+9 comp.) · 4 cor fixa, 27 texto micro</sub>
 
-## Onda 4 - Manutenção  `18 telas`
+## Onda 4 - Manutenção  `19 telas`
 
 Score 95+. Já são referência. Só revalidar depois que os primitivos novos existirem.
 
@@ -177,6 +172,8 @@ Score 95+. Já são referência. Só revalidar depois que os primitivos novos ex
       <sub>views/Office/Comercial/CancelamentoReservas/Index.vue · 1175L (+1 comp.) · 27 texto micro, 1 tabela</sub>
 - [ ] **Pré-Cadastros** `/precadastros` · ` 98`
       <sub>views/Office/Comercial/Precadastros/Index.vue · 992L (+2 comp.) · 5 cor fixa, 1 tabela</sub>
+- [ ] **Reservas** `/reservas-report` · ` 98`
+      <sub>views/Office/Comercial/Reservas/Index.vue · 910L (+1 comp.) · 6 cor fixa, 1 tabela</sub>
 - [ ] **Relatorios** `/relatorios` · ` 98`
       <sub>views/Office/Comercial/Relatorios/Shell.vue · 698L (+9 comp.) · 11 texto micro, 1 tabela</sub>
 - [ ] **Consulta de nº CEF** `/consulta-cef` · ` 98`
@@ -229,7 +226,7 @@ Não seguem o esqueleto de página por natureza (login, shell, home da Eme, inst
 - [ ] **Config** `/` · `--`
       <sub>views/Office/Config/OfficeShell.vue · 158L (+2 comp.) · sem container, sem header, sem help, 1 gráfico</sub>
 - [ ] **Home**  · `--`
-      <sub>views/Office/Home.vue · 57514L (+201 comp.) · sem container, sem header, sem help, 764 cor fixa, 915 texto micro, 8 gráfico, 24 tabela sem mobile</sub>
+      <sub>views/Office/Home.vue · 56190L (+197 comp.) · sem container, sem header, sem help, 763 cor fixa, 860 texto micro, 7 gráfico, 23 tabela sem mobile</sub>
 - [ ] **layouts** `/academy` · `--`
       <sub>views/Academy/layouts/AcademyOfficeArea.vue · 483L (+3 comp.) · sem container, sem header, sem help, 129 cor fixa</sub>
 

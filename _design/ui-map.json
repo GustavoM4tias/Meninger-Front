@@ -1070,85 +1070,6 @@
     },
     {
       "routes": [
-        "reservas-report"
-      ],
-      "name": "Reservas",
-      "file": "views/Office/Comercial/Reservas/Index.vue",
-      "group": "",
-      "cat": "",
-      "sub": "",
-      "lines": 175,
-      "pageContainer": true,
-      "pageHeader": true,
-      "pageHelp": false,
-      "hardcoded": 0,
-      "tinyText": 0,
-      "badShadow": 0,
-      "handModal": 0,
-      "table": false,
-      "tableMobile": true,
-      "chart": false,
-      "spinner": true,
-      "skeleton": false,
-      "breakpoints": 0,
-      "divClick": 0,
-      "kids": [
-        {
-          "file": "views/Office/Comercial/Reservas/components/FiltersBar.vue",
-          "lines": 271,
-          "hardcoded": 0,
-          "tinyText": 9,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Comercial/Reservas/components/ReservaDetailModal.vue",
-          "lines": 350,
-          "hardcoded": 7,
-          "tinyText": 22,
-          "chart": false,
-          "table": true,
-          "tableMobile": true
-        },
-        {
-          "file": "views/Office/Comercial/Reservas/components/ReservaModal.vue",
-          "lines": 624,
-          "hardcoded": 0,
-          "tinyText": 11,
-          "chart": true,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Comercial/Reservas/components/ReservasTable.vue",
-          "lines": 248,
-          "hardcoded": 0,
-          "tinyText": 8,
-          "chart": false,
-          "table": true,
-          "tableMobile": true
-        },
-        {
-          "file": "views/Office/Comercial/Reservas/components/SummaryCards.vue",
-          "lines": 180,
-          "hardcoded": 0,
-          "tinyText": 5,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        }
-      ],
-      "totalLines": 1848,
-      "totalHardcoded": 7,
-      "totalTiny": 55,
-      "totalCharts": 1,
-      "totalTables": 2,
-      "archetype": "Painel",
-      "score": 59
-    },
-    {
-      "routes": [
         "mcmv/settings"
       ],
       "name": "MCMV Configurações",
@@ -3329,6 +3250,49 @@
     },
     {
       "routes": [
+        "reservas-report"
+      ],
+      "name": "Reservas",
+      "file": "views/Office/Comercial/Reservas/Index.vue",
+      "group": "",
+      "cat": "",
+      "sub": "",
+      "lines": 561,
+      "pageContainer": true,
+      "pageHeader": true,
+      "pageHelp": true,
+      "hardcoded": 0,
+      "tinyText": 0,
+      "badShadow": 0,
+      "handModal": 0,
+      "table": false,
+      "tableMobile": true,
+      "chart": false,
+      "spinner": true,
+      "skeleton": true,
+      "breakpoints": 13,
+      "divClick": 0,
+      "kids": [
+        {
+          "file": "views/Office/Comercial/Reservas/components/ReservaDetailModal.vue",
+          "lines": 349,
+          "hardcoded": 6,
+          "tinyText": 0,
+          "chart": false,
+          "table": true,
+          "tableMobile": true
+        }
+      ],
+      "totalLines": 910,
+      "totalHardcoded": 6,
+      "totalTiny": 0,
+      "totalCharts": 0,
+      "totalTables": 1,
+      "archetype": "Operação",
+      "score": 98
+    },
+    {
+      "routes": [
         "relatorios"
       ],
       "name": "",
@@ -4874,49 +4838,13 @@
           "tableMobile": false
         },
         {
-          "file": "views/Office/Comercial/Reservas/components/FiltersBar.vue",
-          "lines": 271,
-          "hardcoded": 0,
-          "tinyText": 9,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
           "file": "views/Office/Comercial/Reservas/components/ReservaDetailModal.vue",
-          "lines": 350,
-          "hardcoded": 7,
-          "tinyText": 22,
+          "lines": 349,
+          "hardcoded": 6,
+          "tinyText": 0,
           "chart": false,
           "table": true,
           "tableMobile": true
-        },
-        {
-          "file": "views/Office/Comercial/Reservas/components/ReservaModal.vue",
-          "lines": 624,
-          "hardcoded": 0,
-          "tinyText": 11,
-          "chart": true,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Comercial/Reservas/components/ReservasTable.vue",
-          "lines": 248,
-          "hardcoded": 0,
-          "tinyText": 8,
-          "chart": false,
-          "table": true,
-          "tableMobile": true
-        },
-        {
-          "file": "views/Office/Comercial/Reservas/components/SummaryCards.vue",
-          "lines": 180,
-          "hardcoded": 0,
-          "tinyText": 5,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
         },
         {
           "file": "views/Office/Comercial/Sales-Projection/components/ComparisonChart.vue",
@@ -6107,11 +6035,11 @@
           "tableMobile": false
         }
       ],
-      "totalLines": 57514,
-      "totalHardcoded": 764,
-      "totalTiny": 915,
-      "totalCharts": 8,
-      "totalTables": 24,
+      "totalLines": 56190,
+      "totalHardcoded": 763,
+      "totalTiny": 860,
+      "totalCharts": 7,
+      "totalTables": 23,
       "archetype": "Especial",
       "score": null
     },
