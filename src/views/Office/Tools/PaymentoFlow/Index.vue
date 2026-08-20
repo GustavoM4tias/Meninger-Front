@@ -4,7 +4,7 @@ import {
     usePaymentFlowStore,
     PIPELINE_STAGE_LABELS,
 } from '@/stores/Tools/PaymentFlow/paymentFlowStore';
-import { useAuthStore } from '@/stores/Settings/Auth/authStore';
+import { useCan } from '@/composables/useCan';
 import CreateLaunchModal from './components/CreateLaunchModal.vue';
 import LaunchPipelineCard from './components/LaunchPipelineCard.vue';
 import SiengeCredentialsModal from './components/SiengeCredentialsModal.vue';
@@ -17,8 +17,10 @@ import Input from '@/components/UI/Input.vue';
 import Button from '@/components/UI/Button.vue';
 
 const store = usePaymentFlowStore();
-const authStore = useAuthStore();
-const isAdmin = computed(() => authStore.hasRole('admin'));
+// `configure` (admin) vem das capacidades da tela — lib/screenCapabilities.js.
+// Aqui ela também controla a visão de AUTORIA do lançamento (quem criou), que
+// é supervisão, não operação. Ver composables/useCan.js.
+const can = useCan('/financeiro/paymentflow');
 
 // ── Gate de credenciais Sienge ─────────────────────────────────────────────────
 const showCredentialsModal = ref(false);
@@ -383,7 +385,7 @@ async function onBoletoUpdated() {
                         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1fr_auto_auto_auto_auto] gap-3 items-end">
                             <Input v-model="searchInput"
                                 label="Buscar pagamentos"
-                                :placeholder="isAdmin ? 'Fornecedor, empresa, documento, criador…' : 'Fornecedor, empresa, documento…'"
+                                :placeholder="can('configure') ? 'Fornecedor, empresa, documento, criador…' : 'Fornecedor, empresa, documento…'"
                                 iconLeft="fas fa-magnifying-glass"
                                 @keydown.enter="applySearch" />
 
@@ -473,7 +475,7 @@ async function onBoletoUpdated() {
                                                 : '' }}
                                         </div>
                                         <!-- Badge do criador (apenas admin) -->
-                                        <div v-if="isAdmin && launch.createdByName"
+                                        <div v-if="can('configure') && launch.createdByName"
                                             class="mt-0.5 inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400">
                                             <i class="fas fa-user text-xs opacity-60"></i>
                                             {{ launch.createdByName }}

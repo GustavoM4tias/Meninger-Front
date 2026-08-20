@@ -8,6 +8,7 @@
 // das regras antes de calcular e, ao terminar, restaura os filtros que o
 // usuário tinha no dashboard.
 import { ref, computed, watch } from 'vue';
+import { useCan } from '@/composables/useCan';
 import dayjs from 'dayjs';
 import API_URL from '@/config/apiUrl';
 import { useContractsStore } from '@/stores/Comercial/Contracts/contractsStore';
@@ -32,9 +33,10 @@ const commissionRulesStore = useStageCommissionRulesStore();
 const valueRulesStore = useEnterpriseValueRulesStore();
 const trSatStore = useTrSatelliteStore();
 
-const isAdmin = computed(() => {
-  try { return localStorage.getItem('role') === 'admin'; } catch { return false; }
-});
+// Ações desta tela (lib/screenCapabilities.js no back): view segue a alçada,
+// configure é admin. Lia `localStorage.getItem('role')` — qualquer um se dava
+// admin no navegador. Ver composables/useCan.js.
+const can = useCan('/comercial/relatorios/faturamento');
 
 const loading = ref(false);
 const closings = ref([]);
@@ -479,7 +481,7 @@ const closeModal = () => emit('close');
             </div>
 
             <div class="flex items-center gap-1.5 shrink-0" @click.stop>
-              <Button v-if="isAdmin" size="sm"
+              <Button v-if="can('configure')" size="sm"
                 :variant="m.closing ? 'outline' : 'primary'"
                 :icon="savingPeriod === m.period ? 'fas fa-circle-notch fa-spin' : (m.closing ? 'fas fa-rotate' : 'fas fa-lock')"
                 :disabled="savingPeriod !== null"
@@ -550,7 +552,7 @@ const closeModal = () => emit('close');
                       <p v-if="d.details?.why" class="text-[11px] text-ink-subtle mt-0.5">{{ d.details.why }}</p>
                       <p class="text-[10px] text-ink-subtle font-mono mt-0.5">detectada em {{ formatDateTime(d.detected_at) }}</p>
                     </div>
-                    <Button v-if="isAdmin && d.status === 'open'" variant="ghost" size="sm" icon="fas fa-check"
+                    <Button v-if="can('configure') && d.status === 'open'" variant="ghost" size="sm" icon="fas fa-check"
                       class="shrink-0" v-tippy="'Marcar como revisada (não altera o consolidado)'"
                       @click="handleReview(d)" />
                     <Badge v-else-if="d.status !== 'open'" variant="neutral" size="sm" class="shrink-0">
@@ -601,7 +603,7 @@ const closeModal = () => emit('close');
         A vigilância roda todo dia após o sync de contratos.<br>
         Reconsolidar versiona a anterior e resolve as divergências abertas.
       </p>
-      <Button v-if="isAdmin" variant="outline" size="sm"
+      <Button v-if="can('configure')" variant="outline" size="sm"
         :icon="checkingNow ? 'fas fa-circle-notch fa-spin' : 'fas fa-magnifying-glass-chart'"
         :disabled="checkingNow" @click="handleCheckNow">
         {{ checkingNow ? 'Verificando...' : 'Verificar divergências agora' }}

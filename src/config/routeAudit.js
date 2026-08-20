@@ -10,7 +10,8 @@
 //   admin       — meta requiresAdmin/adminOnly/allowedRole:'admin', adminOnly no
 //                 navRegistry OU travada como somente-admin na tela de Alçadas
 //                 (route_policies, passadas em adminOnlyRoutes)
-//   gerenciada  — coberta pelas Alçadas (allManagedRoutes, com herança de prefixo)
+//   gerenciada  — coberta pelas Alçadas (allManagedRoutes, com herança de prefixo,
+//                 ou meta.permissionRoute apontando para a tela de origem)
 //   livre       — sempre liberada por decisão (permissionManaged:false,
 //                 pessoais/broadcast) ou allowlist intencional abaixo
 //   PONTA SOLTA — autenticada mas sem classificação nenhuma → corrigir!
@@ -24,9 +25,7 @@ const INTENTIONAL_FREE = {
     '/': 'Home do sistema',
     '/settings/account': 'Conta do próprio usuário',
     '/report': 'Reportar problema (suporte do próprio usuário)',
-    '/docs': 'Documentação interna do sistema (link direto)',
     '/notifications': 'Histórico de notificações do próprio usuário (aberto pelo sino)',
-    '/microsoft/inperson/recording': 'Fluxo interno de gravação da Central Microsoft',
 };
 
 const norm = (p) => String(p || '').toLowerCase();
@@ -84,6 +83,9 @@ export function runRouteAudit({ adminOnlyRoutes = [] } = {}) {
         else if (r.meta.requiresAdmin || r.meta.adminOnly || r.meta.allowedRole === 'admin'
             || matchesPrefix(p, adminRoutes)) cls = 'admin';
         else if (matchesPrefix(p, freeRoutes) || matchesPrefix(p, intentional)) cls = 'livre';
+        // Sub-tela que herda a alçada de outra (meta.permissionRoute) conta como
+        // gerenciada: o guard cobra a tela de origem.
+        else if (r.meta.permissionRoute) cls = 'gerenciada';
         else if (matchesPrefix(p, managed)) cls = 'gerenciada';
         else cls = 'ponta_solta';
         rows.push({

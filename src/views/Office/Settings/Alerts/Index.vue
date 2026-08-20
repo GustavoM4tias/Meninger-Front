@@ -1,8 +1,8 @@
 <script setup>
 import { onMounted, ref, computed } from 'vue';
+import { usePermissionStore } from '@/stores/Settings/Permissions/permissionStore';
 import { useRouter } from 'vue-router';
 import { useAlertStore } from '@/stores/Alerts/alertStore';
-import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 import { useToast } from 'vue-toastification';
 
 import PageContainer from '@/components/UI/PageContainer.vue';
@@ -16,7 +16,6 @@ import AlertLogsModal from './components/AlertLogsModal.vue';
 import AlertShareModal from './components/AlertShareModal.vue';
 
 const store = useAlertStore();
-const auth = useAuthStore();
 const toast = useToast();
 const router = useRouter();
 
@@ -25,7 +24,10 @@ const viewLogs = ref(null); // rule cujo histórico está aberto
 const sharing  = ref(null); // rule sendo compartilhada
 const respondingId = ref(null); // share sendo aceito/recusado
 
-const isAdmin = computed(() => auth.user?.role === 'admin');
+// Fonte autoritativa: permissoes confirmadas pelo servidor
+// (/permissions/me), nao o authStore. Aqui nao cabe capacidade: tela livre com extras de admin.
+const perm = usePermissionStore();
+const isAdmin = computed(() => perm.isAdmin);
 
 onMounted(() => {
   store.fetch();

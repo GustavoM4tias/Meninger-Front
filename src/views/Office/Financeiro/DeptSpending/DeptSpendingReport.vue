@@ -38,7 +38,7 @@
                         <div class="min-w-0 flex-1">
                             <div class="flex items-center gap-2 flex-wrap mb-1.5">
                                 <Badge variant="neutral" size="sm"><i class="fas fa-user-shield"></i> Confidencial · Diretoria</Badge>
-                                <Badge v-if="isAdmin" :variant="r.viability.released ? 'success' : 'warning'" size="sm">
+                                <Badge v-if="can('configure')" :variant="r.viability.released ? 'success' : 'warning'" size="sm">
                                     <i class="fas" :class="r.viability.released ? 'fa-circle-check' : 'fa-pen-ruler'"></i>
                                     {{ r.viability.released ? 'Liberado' : 'Rascunho' }}
                                 </Badge>
@@ -217,7 +217,7 @@
                                     <span v-if="r.insights?.generatedAt"> · gerada {{ r.insights.source === 'ai' ? 'por IA' : 'automaticamente' }} em {{ fmtDateTime(r.insights.generatedAt) }}</span>
                                 </p>
                             </div>
-                            <Button v-if="isAdmin" variant="ghost" size="sm" icon="fas fa-rotate"
+                            <Button v-if="can('configure')" variant="ghost" size="sm" icon="fas fa-rotate"
                                 :loading="regenLoading" @click="regenerate">
                                 Regenerar
                             </Button>
@@ -243,6 +243,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
+import { useCan } from '@/composables/useCan';
 import { useRoute, useRouter } from 'vue-router';
 import dayjs from 'dayjs';
 import VChart from 'vue-echarts';
@@ -251,7 +252,6 @@ import { BarChart, PieChart } from 'echarts/charts';
 import { GridComponent, TooltipComponent, LegendComponent } from 'echarts/components';
 import { CanvasRenderer } from 'echarts/renderers';
 import { useDeptSpendingStore } from '@/stores/Financeiro/DeptSpending/deptSpendingStore';
-import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 
 import PageContainer from '@/components/UI/PageContainer.vue';
 import PageHeader from '@/components/UI/PageHeader.vue';
@@ -267,7 +267,6 @@ echarts.use([BarChart, PieChart, GridComponent, TooltipComponent, LegendComponen
 const route = useRoute();
 const router = useRouter();
 const store = useDeptSpendingStore();
-const auth = useAuthStore();
 
 // Chave do relatório: enterprise_key do empreendimento (CC). Id de empresa Sienge
 // ainda é aceito pelo backend (links antigos) e devolve a SPE inteira somada.
@@ -276,7 +275,8 @@ const refMonth = ref(store.selectedMonth || dayjs().format('YYYY-MM'));
 const regenLoading = ref(false);
 
 const r = computed(() => store.report);
-const isAdmin = computed(() => r.value?.isAdmin ?? auth?.user?.role === 'admin');
+// Acao da tela (lib/screenCapabilities.js no back). Ver composables/useCan.js.
+const can = useCan('/marketing/viabilidade');
 const mkt = computed(() => r.value?.kpis?.buckets?.marketing || {});
 const loja = computed(() => r.value?.kpis?.buckets?.loja || {});
 const total = computed(() => r.value?.kpis?.buckets?.total || {});

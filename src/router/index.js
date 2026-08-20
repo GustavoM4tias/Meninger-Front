@@ -127,7 +127,15 @@ router.beforeEach(async (to, from, next) => {
       return backToLogin(next, authStore);
     }
 
-    // 3b. Apenas verifica rotas que estão no registro gerenciado (ignora rotas internas, params, etc.)
+    // 3b. Sub-tela sem item próprio no menu declara de QUEM herda a alçada
+    //     (meta.permissionRoute). Sem isso ela ficaria fora do registro
+    //     gerenciado e qualquer logado entraria pela URL.
+    const inherited = to.matched.map(r => r.meta?.permissionRoute).filter(Boolean).pop();
+    if (inherited && !permStore.hasAccess(inherited)) {
+      return backToLogin(next, authStore);
+    }
+
+    // 3c. Apenas verifica rotas que estão no registro gerenciado (ignora rotas internas, params, etc.)
     const isManagedRoute = allManagedRoutes.some(managed =>
       to.path === managed || to.path.startsWith(managed + '/')
     );

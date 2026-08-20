@@ -1,5 +1,5 @@
 // utils/Marketing/salesStandApi.js
-// Cliente do módulo Stand de Vendas (mesmo padrão do approvalsApi).
+// Cliente do módulo Stand de Vendas.
 import API_URL from '@/config/apiUrl';
 
 function authHeaders() {

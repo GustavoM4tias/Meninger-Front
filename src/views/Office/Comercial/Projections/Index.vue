@@ -4,10 +4,10 @@
  * Criar do zero ou clonar. Mobile-first.
  */
 import { ref, computed, onMounted, watch } from 'vue';
+import { useCan } from '@/composables/useCan';
 import { RouterLink } from 'vue-router';
 import { useToast } from 'vue-toastification';
 import { useProjectionsStore } from '@/stores/Comercial/Projections/projectionsStore';
-import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 
 import Favorite from '@/components/config/Favorite.vue';
 import PageContainer from '@/components/UI/PageContainer.vue';
@@ -23,10 +23,10 @@ import EmptyState from '@/components/UI/EmptyState.vue';
 import { formatDate } from './projectionUtils';
 
 const store = useProjectionsStore();
-const auth = useAuthStore();
 const toast = useToast();
 
-const isAdmin = computed(() => auth?.user?.role === 'admin');
+// Acao da tela (lib/screenCapabilities.js no back). Ver composables/useCan.js.
+const can = useCan('/comercial/projections');
 
 const currentYear = new Date().getFullYear();
 const startMonth = ref(`${currentYear}-01`);
@@ -146,7 +146,7 @@ async function confirmDelete() {
             { title: 'Ative a correta', text: 'Use \'Tornar ativa\' para definir qual projeção o dashboard vai comparar.' },
           ]"
           :tips="['Para excluir, a projeção não pode estar bloqueada.', 'Ativar uma projeção desativa automaticamente a anterior.']" />
-        <Button v-if="isAdmin" icon="fas fa-plus" size="sm" @click="modalOpen = true">Nova projeção</Button>
+        <Button v-if="can('edit')" icon="fas fa-plus" size="sm" @click="modalOpen = true">Nova projeção</Button>
       </template>
     </PageHeader>
 
@@ -166,7 +166,7 @@ async function confirmDelete() {
     <EmptyState v-if="!filtered.length" size="lg" icon="fas fa-bullseye"
       title="Nenhuma projeção encontrada"
       :description="search ? 'Ajuste a busca para ver resultados.' : 'Crie sua primeira projeção para começar.'">
-      <template v-if="isAdmin && !search" #actions>
+      <template v-if="can('edit') && !search" #actions>
         <Button icon="fas fa-plus" @click="modalOpen = true">Nova projeção</Button>
       </template>
     </EmptyState>
@@ -199,7 +199,7 @@ async function confirmDelete() {
         </RouterLink>
 
         <!-- Ações (admin) -->
-        <div v-if="isAdmin" class="flex items-center gap-2 mt-3 pt-3 border-t border-line-subtle">
+        <div v-if="can('edit')" class="flex items-center gap-2 mt-3 pt-3 border-t border-line-subtle">
           <RouterLink :to="`/comercial/projections/${p.id}`"
             class="text-xs font-medium text-accent hover:text-accent-hover flex items-center gap-1.5">
             <i class="fas fa-pen"></i> Editar

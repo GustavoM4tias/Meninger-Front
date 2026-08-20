@@ -913,7 +913,6 @@ const props = defineProps({
     correspondents:   { type: Array,   default: () => [] },
     officeUsers:      { type: Array,   default: () => [] },
     enterpriseStages: { type: Array,   default: () => [] },
-    isAdmin:          { type: Boolean, default: false },
     isApprover:       { type: Boolean, default: false },
     canEdit:          { type: Boolean, default: false },
     canAuthorize:     { type: Boolean, default: false },

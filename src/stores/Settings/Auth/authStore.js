@@ -120,6 +120,9 @@ export const useAuthStore = defineStore('user', {
         localStorage.removeItem('user');
       }
 
+      // LEGADO, não é fonte de verdade: nada no app decide permissão por aqui
+      // desde 2026-08-20 (dava para se promover a admin editando o navegador).
+      // Permissão vem do permissionStore/capabilities, confirmadas pelo servidor.
       localStorage.setItem('role', this.user?.role || '');
       localStorage.setItem('position', this.user?.position || '');
       localStorage.setItem('auth_provider', this.user?.auth_provider || '');

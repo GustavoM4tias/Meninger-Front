@@ -1,8 +1,8 @@
 <script setup>
 import { onMounted, ref, computed } from 'vue';
+import { usePermissionStore } from '@/stores/Settings/Permissions/permissionStore';
 import { useRoute, useRouter, RouterLink } from 'vue-router';
 import { useSupportStore } from '@/stores/Support/supportStore';
-import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 import { useToast } from 'vue-toastification';
 
 import PageContainer from '@/components/UI/PageContainer.vue';
@@ -46,11 +46,14 @@ const route   = useRoute();
 const router  = useRouter();
 const toast   = useToast();
 const support = useSupportStore();
-const auth    = useAuthStore();
 
 const ticket   = computed(() => support.current);
 const messages = computed(() => ticket.value?.messages ?? []);
-const isAdmin  = computed(() => auth.user?.role === 'admin');
+// Fonte autoritativa: permissoes confirmadas pelo servidor
+// (/permissions/me), nao o authStore. Aqui nao cabe capacidade: tela admin
+// por codigo (/support exige admin no meta da rota).
+const perm = usePermissionStore();
+const isAdmin = computed(() => perm.isAdmin);
 
 const currentTheme = computed(() => themeFor(ticket.value?.status || 'pending'));
 

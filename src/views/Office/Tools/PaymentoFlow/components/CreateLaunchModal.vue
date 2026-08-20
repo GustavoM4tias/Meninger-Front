@@ -1,7 +1,7 @@
 <script setup>
 import { ref, watch, computed, onMounted } from 'vue';
 import { usePaymentFlowStore } from '@/stores/Tools/PaymentFlow/paymentFlowStore';
-import { useAuthStore } from '@/stores/Settings/Auth/authStore';
+import { useCan } from '@/composables/useCan';
 import MultiSelector from '@/components/UI/MultiSelector.vue';
 import Modal from '@/components/UI/Modal.vue';
 import Button from '@/components/UI/Button.vue';
@@ -10,8 +10,9 @@ import API_URL from '@/config/apiUrl';
 
 const emit = defineEmits(['close', 'created']);
 const store = usePaymentFlowStore();
-const authStore = useAuthStore();
-const isAdmin = computed(() => authStore.hasRole('admin'));
+// Cadastrar tipo de lançamento é a ação `configure` da tela
+// (lib/screenCapabilities.js no back) — ver composables/useCan.js.
+const can = useCan('/financeiro/paymentflow');
 
 // ── Adicionar novo tipo (admin) ───────────────────────────────────────────────
 const showAddType = ref(false);
@@ -828,7 +829,7 @@ onMounted(async () => {
                             <option value="">Selecione o tipo...</option>
                             <option v-for="t in store.launchTypes" :key="t.id" :value="t.name">{{ t.name }}</option>
                         </select>
-                        <button v-if="isAdmin" type="button"
+                        <button v-if="can('configure')" type="button"
                             class="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-lg border-2 border-dashed border-line text-gray-400 dark:text-slate-500 hover:border-blue-400 hover:text-blue-500 transition"
                             title="Adicionar novo tipo (admin)" @click="showAddType = !showAddType">
                             <i class="fas fa-plus text-sm"></i>
@@ -855,7 +856,7 @@ onMounted(async () => {
                     </div>
 
                     <!-- Formulário inline para admin adicionar novo tipo -->
-                    <div v-if="showAddType && isAdmin"
+                    <div v-if="showAddType && can('configure')"
                         class="mt-3 p-3 rounded-xl border border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/20 space-y-2">
                         <div class="text-xs font-semibold text-blue-700 dark:text-blue-300 flex items-center gap-1.5">
                             <i class="fas fa-plus-circle"></i> Novo Tipo de Lançamento

@@ -174,12 +174,6 @@ export const OG_ROUTES = {
     "group": "OPERAÇÃO",
     "subcategory": null
   },
-  "/aprovacoes": {
-    "name": "Aprovações",
-    "category": "Ferramentas",
-    "group": "OPERAÇÃO",
-    "subcategory": null
-  },
   "/academy/panel": {
     "name": "Painel",
     "category": "Academy",

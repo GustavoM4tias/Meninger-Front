@@ -238,7 +238,7 @@
       </div>
 
       <!-- ── TAB: Configurações ──────────────────────────────────────────────── -->
-      <div v-if="activeTab === 'settings'" class="space-y-5">
+      <div v-if="activeTab === 'settings' && can('configure')" class="space-y-5">
 
         <!-- Card: Ativação -->
         <Surface variant="raised" padding="md" class="space-y-4 surface-gradient">
@@ -642,6 +642,7 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
 import { useReservaCancelStore } from '@/stores/Comercial/ReservaCancel/reservaCancelStore';
+import { useCan } from '@/composables/useCan';
 import API_URL from '@/config/apiUrl';
 
 import PageContainer from '@/components/UI/PageContainer.vue';
@@ -659,13 +660,20 @@ import Spinner from '@/components/UI/Spinner.vue';
 import ReservaCancelFilters from './components/ReservaCancelFilters.vue';
 
 const store = useReservaCancelStore();
+// Ações desta tela (lib/screenCapabilities.js no back): view/operate seguem a
+// alçada, configure é admin. Ver composables/useCan.js.
+const can = useCan('/comercial/cancelamento-reservas');
 
 // ── Tabs ──────────────────────────────────────────────────────────────────────
+// A tela virou alçada do Comercial em 2026-08-19: histórico e reprocessamento
+// para quem tem a tela; a aba Configurações (que também guarda o processamento
+// manual avulso e a simulação) exige a ação `configure`.
 const activeTab = ref('history');
-const tabOptions = [
-  { value: 'history', label: 'Histórico', icon: 'fas fa-clock-rotate-left' },
-  { value: 'settings', label: 'Configurações', icon: 'fas fa-gear' },
-];
+const tabOptions = computed(() => {
+  const base = [{ value: 'history', label: 'Histórico', icon: 'fas fa-clock-rotate-left' }];
+  if (can('configure')) base.push({ value: 'settings', label: 'Configurações', icon: 'fas fa-gear' });
+  return base;
+});
 
 // ── Status ────────────────────────────────────────────────────────────────────
 const STATUS_META = {
@@ -985,7 +993,7 @@ function formatCurrency(v) {
 }
 
 onMounted(() => {
-  store.fetchSettings();
+  if (can('configure')) store.fetchSettings();
   store.fetchHistory();
   store.fetchStats();
   store.fetchFacets();

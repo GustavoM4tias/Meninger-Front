@@ -13,6 +13,11 @@ export const usePermissionStore = defineStore('permissions', () => {
     // (route_policies no backend). O servidor já remove essas rotas das alçadas
     // efetivas; a lista vem para o menu esconder e o guard barrar com clareza.
     const adminOnlyRoutes = ref([]);
+    // Capacidades (ações dentro da tela) calculadas pelo SERVIDOR
+    // (lib/screenCapabilities.js no back): { '/rota': ['view','configure'] }.
+    // Nunca é recalculada aqui nem lida do cache — ação de admin não pode
+    // depender de localStorage. Enquanto não chega, can() nega (fail-closed).
+    const capabilities = ref({});
     const isAdmin = ref(false);
     const loaded = ref(false);
 
@@ -23,6 +28,7 @@ export const usePermissionStore = defineStore('permissions', () => {
             isAdmin.value  = data.isAdmin  ?? false;
             allowedRoutes.value = data.routes ?? [];
             adminOnlyRoutes.value = data.adminOnlyRoutes ?? [];
+            capabilities.value = data.capabilities ?? {};
             loaded.value = true;
             // Cache local só das ROTAS (evita flicker do menu no reload).
             // isAdmin nunca vai para o cache: admin só vale confirmado pelo servidor.
@@ -64,25 +70,37 @@ export const usePermissionStore = defineStore('permissions', () => {
     function hasAccess(routePath) {
         if (isAdmin.value) return true;
 
-        // Normaliza para remover trailing slash
-        const path = routePath.replace(/\/$/, '') || '/';
+        // Normaliza para remover trailing slash. A comparação é sem caixa: o
+        // backend (permissionAccessService) já trata as rotas em minúsculas, e
+        // uma alçada gravada com caixa diferente escondia a tela só no front.
+        const path = (routePath.replace(/\/$/, '') || '/').toLowerCase();
 
         // Travada pelo admin: nem a allowlist local libera (o servidor também nega).
         if (isRouteAdminOnly(path)) return false;
 
-        if (ALWAYS_ALLOWED.includes(path)) return true;
+        if (ALWAYS_ALLOWED.some(r => r.toLowerCase() === path)) return true;
 
         // Verifica match exato ou prefixo (para sub-rotas como /comercial/projections/123)
-        return allowedRoutes.value.some(allowed =>
-            path === allowed ||
-            path.startsWith(allowed + '/')
-        );
+        return allowedRoutes.value.some(route => {
+            const allowed = String(route || '').toLowerCase();
+            return path === allowed || path.startsWith(allowed + '/');
+        });
+    }
+
+    // ── Ações dentro da tela ─────────────────────────────────────
+    // can('/mural/admin', 'remove') → true/false. A regra (alçada x admin) mora
+    // no backend; aqui é só consulta. Ação não recebida = negada.
+    function can(routePath, action) {
+        const path = String(routePath || '').toLowerCase().replace(/\/$/, '');
+        const acoes = capabilities.value[path] || capabilities.value[routePath] || [];
+        return acoes.includes(action);
     }
 
     // ── Limpa ao fazer logout ────────────────────────────────────────────────
     function clearPermissions() {
         allowedRoutes.value = [];
         adminOnlyRoutes.value = [];
+        capabilities.value = {};
         isAdmin.value = false;
         loaded.value = false;
         localStorage.removeItem('_perm');
@@ -105,6 +123,8 @@ export const usePermissionStore = defineStore('permissions', () => {
     return {
         allowedRoutes,
         adminOnlyRoutes,
+        capabilities,
+        can,
         isAdmin,
         loaded,
         fetchMyPermissions,

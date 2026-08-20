@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed, watch, watchEffect } from 'vue';
+import { useCan } from '@/composables/useCan';
 import { useContractsStore } from '@/stores/Comercial/Contracts/contractsStore';
 import { useProjectionGoalModeStore } from '@/stores/Comercial/Projections/projectionGoalModeStore';
 import Export from '@/components/config/Export.vue';
@@ -23,9 +24,10 @@ const goalStore = useProjectionGoalModeStore();
 const sortBy = ref('vgv-desc');
 const open = ref(false);
 const valueModeLabel = computed(() => contractsStore.valueModeLabel);
-const isAdmin = computed(() => {
-  try { return localStorage.getItem('role') === 'admin'; } catch { return false; }
-});
+// Ações desta tela (lib/screenCapabilities.js no back): view segue a alçada,
+// configure (regra de meta) é admin. Lia `localStorage.getItem('role')` —
+// qualquer um se dava admin no navegador. Ver composables/useCan.js.
+const can = useCan('/comercial/relatorios/projecao');
 
 // ── Valores ───────────────────────────────
 // Mesmos getters do Faturamento: distrato conta (selo informativo), projeção somada à parte.
@@ -322,10 +324,10 @@ const sortOptions = computed(() => [
             @click="emit('open-charts')">
             <span class="hidden sm:inline">Análise</span>
           </Button>
-          <IconButton v-if="isAdmin" icon="fas fa-cog" size="sm"
+          <IconButton v-if="can('configure')" icon="fas fa-cog" size="sm"
             label="Configurar regras (ocultar empreend., comissão, LAND_VALUE_ONLY...)"
             @click="emit('open-rules')" />
-          <IconButton v-if="isAdmin" icon="fas fa-sliders" size="sm"
+          <IconButton v-if="can('configure')" icon="fas fa-sliders" size="sm"
             label="Configurações de meta (unidades vs VGV)"
             @click="emit('open-settings')" />
           <IconButton icon="fas fa-download" size="sm" label="Exportar dados"

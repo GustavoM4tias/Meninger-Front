@@ -1,9 +1,14 @@
 <script setup>
-// Gestão do Mural de Avisos (admin). Lista comunicados, cria/edita, publica,
-// acompanha aderência, arquiva e exclui.
+// Gestão do Mural de Avisos. Lista comunicados, cria/edita, publica, acompanha
+// aderência, arquiva e exclui.
+//
+// Delegável por alçada desde 2026-08-20: quem tem a tela redige e publica;
+// EXCLUIR é admin (some com a trilha de leitura). A regra mora no backend
+// (lib/screenCapabilities.js) e chega pronta — ver composables/useCan.js.
 
 import { ref, onMounted } from 'vue';
 import { useMuralAdminStore } from '@/stores/Mural/muralAdminStore';
+import { useCan } from '@/composables/useCan';
 import PageContainer from '@/components/UI/PageContainer.vue';
 import PageHeader from '@/components/UI/PageHeader.vue';
 import Button from '@/components/UI/Button.vue';
@@ -14,6 +19,7 @@ import AdherencePanel from './components/AdherencePanel.vue';
 import { kindMeta, formatDate } from '@/utils/Mural/muralFormat';
 
 const store = useMuralAdminStore();
+const can = useCan('/mural/admin');
 
 const editOpen = ref(false);
 const editing = ref(null);
@@ -85,7 +91,7 @@ function onFilter(s) { statusFilter.value = s; store.fetchList(s || undefined); 
         subtitle="Mural de avisos - criar, publicar e acompanhar a ciência."
         icon="fas fa-bullhorn">
         <template #actions>
-          <Button variant="primary" size="sm" icon="fas fa-plus" @click="openCreate">Novo comunicado</Button>
+          <Button v-if="can('manage')" variant="primary" size="sm" icon="fas fa-plus" @click="openCreate">Novo comunicado</Button>
         </template>
       </PageHeader>
 
@@ -114,7 +120,7 @@ function onFilter(s) { statusFilter.value = s; store.fetchList(s || undefined); 
         title="Nenhum comunicado"
         description="Crie o primeiro comunicado do mural.">
         <template #actions>
-          <Button variant="primary" size="sm" icon="fas fa-plus" @click="openCreate">Novo comunicado</Button>
+          <Button v-if="can('manage')" variant="primary" size="sm" icon="fas fa-plus" @click="openCreate">Novo comunicado</Button>
         </template>
       </EmptyState>
 
@@ -144,12 +150,12 @@ function onFilter(s) { statusFilter.value = s; store.fetchList(s || undefined); 
           </div>
 
           <div class="flex items-center gap-1 shrink-0">
-            <Button v-if="c.status !== 'PUBLISHED'" variant="ghost" size="sm" icon="fas fa-pen" title="Editar" @click="openEdit(c)" />
-            <Button v-if="c.status === 'DRAFT'" variant="primary" size="sm" icon="fas fa-paper-plane" @click="publish(c)">Publicar</Button>
+            <Button v-if="can('manage') && c.status !== 'PUBLISHED'" variant="ghost" size="sm" icon="fas fa-pen" title="Editar" @click="openEdit(c)" />
+            <Button v-if="can('manage') && c.status === 'DRAFT'" variant="primary" size="sm" icon="fas fa-paper-plane" @click="publish(c)">Publicar</Button>
             <Button v-if="c.status === 'PUBLISHED'" variant="secondary" size="sm" icon="fas fa-chart-pie" @click="openAdherence(c)">Aderência</Button>
-            <Button v-if="c.status === 'PUBLISHED'" variant="ghost" size="sm" icon="fas fa-box-archive" title="Arquivar" @click="archive(c)" />
-            <Button v-if="c.status === 'ARCHIVED'" variant="ghost" size="sm" icon="fas fa-rotate-left" title="Reativar" @click="reactivate(c)" />
-            <Button variant="ghost" size="sm" icon="fas fa-trash" title="Excluir" @click="remove(c)" />
+            <Button v-if="can('manage') && c.status === 'PUBLISHED'" variant="ghost" size="sm" icon="fas fa-box-archive" title="Arquivar" @click="archive(c)" />
+            <Button v-if="can('manage') && c.status === 'ARCHIVED'" variant="ghost" size="sm" icon="fas fa-rotate-left" title="Reativar" @click="reactivate(c)" />
+            <Button v-if="can('remove')" variant="ghost" size="sm" icon="fas fa-trash" title="Excluir" @click="remove(c)" />
           </div>
         </div>
       </div>

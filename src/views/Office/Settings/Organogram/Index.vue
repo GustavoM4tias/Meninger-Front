@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed, onMounted, nextTick } from 'vue';
+import { useCan } from '@/composables/useCan';
 import { useToast } from 'vue-toastification';
 import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 import API_URL from '@/config/apiUrl';
@@ -35,9 +36,11 @@ const editMode = ref(false);
 const reparentTarget = ref('');   // valor do select "posicionar no grupo de" do painel
 const savingEdit = ref(false);
 
-const isAdmin = computed(() =>
-  store.user?.role === 'admin' || localStorage.getItem('role') === 'admin'
-);
+// "Editar layout" é a ação `edit` da tela (lib/screenCapabilities.js no back).
+// ATENÇÃO: isto lia `localStorage.getItem('role') === 'admin'` — qualquer um
+// podia se dar admin no navegador e destravar a edição. As capacidades vêm
+// calculadas do servidor e nunca passam por cache. Ver composables/useCan.js.
+const can = useCan('/settings/organograma');
 
 function authHeaders() {
   return {
@@ -381,7 +384,7 @@ onMounted(async () => {
             :disabled="!hasResults" @click.stop="exportOpen = true">
             <span class="hidden sm:inline">Exportar</span>
           </Button>
-          <Button v-if="isAdmin" size="sm"
+          <Button v-if="can('edit')" size="sm"
             :variant="editMode ? 'primary' : 'secondary'"
             :icon="editMode ? 'fas fa-check' : 'fas fa-pen-ruler'"
             @click.stop="toggleEditMode">

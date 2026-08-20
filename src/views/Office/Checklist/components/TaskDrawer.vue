@@ -17,6 +17,7 @@ import AttachmentPicker from '@/views/Office/Comercial/Conditions/components/Att
 import ImageAnnotator from './ImageAnnotator.vue';
 import { useMicrosoftStore } from '@/stores/Microsoft/microsoftStore';
 import { useAuthStore } from '@/stores/Settings/Auth/authStore';
+import { useCan } from '@/composables/useCan';
 
 const props = defineProps({ taskId: { type: Number, required: true } });
 const emit = defineEmits(['close', 'changed']);
@@ -358,8 +359,10 @@ async function decide(profileId, decision) {
 // Marcação de imagem (proofing)
 const annotateAtt = ref(null);
 
-// Permissão: usuário normal edita só etapa, anotações, subtarefas, anexos e comentários.
-const isAdmin = computed(() => auth.user?.role === 'admin' || (typeof auth.hasRole === 'function' && auth.hasRole('admin')));
+// Permissão: usuário normal edita só etapa, anotações, subtarefas, anexos e
+// comentários. Montar a tarefa (título, responsável, prazo…) é a ação `manage`
+// (lib/screenCapabilities.js no back) — ver composables/useCan.js.
+const can = useCan('/checklists');
 
 // Voltar para ajuste (cancela o pedido de autorização) — executor/dono/admin, com aviso.
 const iAmAssignee = computed(() => {
@@ -367,7 +370,7 @@ const iAmAssignee = computed(() => {
     const ids = (t.assignee_user_ids?.length ? t.assignee_user_ids : (t.assignee_user_id ? [t.assignee_user_id] : [])).map(Number);
     return ids.includes(Number(myId.value));
 });
-const canCancelApproval = computed(() => locked.value && (isAdmin.value || iAmAssignee.value));
+const canCancelApproval = computed(() => locked.value && (can('manage') || iAmAssignee.value));
 function askCancelApproval() {
     confirmState.value = {
         title: 'Voltar para ajuste',
@@ -420,7 +423,7 @@ const fieldCls = `${fieldBase} px-3 py-2 text-sm rounded-lg`;
                     
                 <!-- Título + badges -->
                 <div class="mt-2">
-                    <input v-model="draft.title" placeholder="Título da tarefa" :disabled="locked || !isAdmin"
+                    <input v-model="draft.title" placeholder="Título da tarefa" :disabled="locked || !can('manage')"
                         class="w-full text-lg font-semibold bg-transparent text-ink focus:outline-none border-b border-transparent focus:border-accent-ring transition-colors disabled:opacity-70" />
                     <div class="flex items-center gap-1.5 mt-1">
                         <Badge v-if="currentStatus" variant="accent" size="sm" dot>{{ currentStatus.label }}</Badge>
@@ -492,7 +495,7 @@ const fieldCls = `${fieldBase} px-3 py-2 text-sm rounded-lg`;
                 </fieldset>
 
                 <!-- Detalhes da tarefa (somente admin; desabilitado em aprovação) -->
-                <fieldset v-if="isAdmin" :disabled="locked" class="grid grid-cols-2 gap-x-3 gap-y-4 min-w-0 disabled:opacity-70">
+                <fieldset v-if="can('manage')" :disabled="locked" class="grid grid-cols-2 gap-x-3 gap-y-4 min-w-0 disabled:opacity-70">
                     <div>
                         <label :class="labelBase">Prioridade</label>
                         <select v-model="draft.priority" :class="fieldCls">

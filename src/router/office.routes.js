@@ -75,7 +75,9 @@ export default [
                 path: 'mural/admin',
                 name: 'Gestão de Comunicados',
                 component: () => import('@/views/Office/Mural/Admin.vue'),
-                meta: { requiresAuth: true, requiresAdmin: true, allowedRole: 'admin', searchable: false, content: 'Gestão do mural de avisos e comunicados' },
+                // Sem requiresAdmin: a tela é delegável por alçada e as ações
+                // de dentro seguem lib/screenCapabilities.js (excluir = admin).
+                meta: { requiresAuth: true, searchable: true, content: 'Gestão do mural de avisos e comunicados: redigir, definir público-alvo, publicar e acompanhar a leitura' },
             },
 
             // Relatórios da Eme — relatórios customizados gerados por IA.
@@ -96,33 +98,6 @@ export default [
                 name: 'Visualizar Relatório',
                 component: () => import('@/views/Office/Relatorios/View.vue'),
                 meta: { requiresAuth: true, searchable: false, content: 'Visualização de relatório' },
-            },
-
-            // Aprovações — ferramenta geral de tickets de aprovação para a
-            // diretoria (ex "Aprovações de Marketing"; movida de /marketing/aprovacoes).
-            {
-                path: 'aprovacoes',
-                name: 'Aprovações',
-                component: () => import('@/views/Office/Marketing/Approvals/Index.vue'),
-                meta: { requiresAuth: true, searchable: true, content: 'Solicitações de aprovação para a diretoria: verbas, eventos, mídias e serviços' },
-            },
-            {
-                path: 'aprovacoes/nova',
-                name: 'Nova Aprovação',
-                component: () => import('@/views/Office/Marketing/Approvals/New.vue'),
-                meta: { requiresAuth: true, searchable: false },
-            },
-            {
-                path: 'aprovacoes/config',
-                name: 'Config. Aprovações',
-                component: () => import('@/views/Office/Marketing/Approvals/Settings.vue'),
-                meta: { requiresAuth: true, requiresAdmin: true, allowedRole: 'admin', searchable: false },
-            },
-            {
-                path: 'aprovacoes/:id(\\d+)',
-                name: 'Detalhe Aprovação',
-                component: () => import('@/views/Office/Marketing/Approvals/Detail.vue'),
-                meta: { requiresAuth: true, searchable: false },
             },
 
             // Checklist (gestão de lançamentos e demandas) — substitui o Planner.
@@ -214,12 +189,6 @@ export default [
                         component: () => import('@/views/Office/Financeiro/DeptSpending/DeptSpendingReport.vue'),
                         meta: { requiresAuth: true, allowedPosition: '', searchable: false, content: 'Relatório gerencial de investimento por empreendimento' },
                     },
-                    // Aprovações virou ferramenta geral (2026-07-28) e mudou para
-                    // /aprovacoes. Redirects preservam links de notificação/WhatsApp.
-                    { path: 'aprovacoes', redirect: to => ({ path: '/aprovacoes', query: to.query }) },
-                    { path: 'aprovacoes/nova', redirect: to => ({ path: '/aprovacoes/nova', query: to.query }) },
-                    { path: 'aprovacoes/config', redirect: to => ({ path: '/aprovacoes/config', query: to.query }) },
-                    { path: 'aprovacoes/:id(\\d+)', redirect: to => ({ path: `/aprovacoes/${to.params.id}`, query: to.query }) },
                     {
                         path: 'events',
                         name: 'Eventos',
@@ -284,7 +253,7 @@ export default [
                         path: 'cancelamento-reservas',
                         name: 'Cancelamentos CV × Sienge',
                         component: () => import('@/views/Office/Comercial/CancelamentoReservas/Index.vue'),
-                        meta: { requiresAuth: true, requiresAdmin: true, allowedRole: 'admin', searchable: false, content: 'Automação de exclusão no Sienge de contratos de reservas canceladas no CV' },
+                        meta: { requiresAuth: true, searchable: false, content: 'Automação de exclusão no Sienge de contratos de reservas canceladas no CV' },
                     },
                     {
                         path: 'buildings',
@@ -388,7 +357,9 @@ export default [
                         path: 'boleto-caixa',
                         name: 'Boleto Caixa',
                         component: () => import('@/views/Office/Financeiro/BoletoCaixa/Index.vue'),
-                        meta: { requiresAuth: true, requiresAdmin: true, searchable: false, content: 'Configuração e histórico de emissão de boletos via Caixa Econômica Federal' },
+                        // Sem requiresAdmin: a tela é delegável por alçada e a
+                        // aba Configurações se esconde sozinha para não-admin.
+                        meta: { requiresAuth: true, searchable: true, content: 'Histórico de emissão de boletos via Caixa Econômica Federal: filtros, reprocessamento, reenvio ao cliente e conferência de pagamento' },
                     },
                     {
                         path: 'paymentflow',
@@ -435,7 +406,10 @@ export default [
                         path: 'inperson/recording',
                         name: 'InPersonRecording',
                         component: () => import('@/views/Office/Microsoft/Transcripts/InPerson/Recording.vue'),
-                        meta: { requiresAuth: true, searchable: false },
+                        // Sub-tela do fluxo de reuniões: não tem item de menu
+                        // próprio, então herda a alçada da Central Microsoft
+                        // (permissionRoute é lido pelo guard e pela auditoria).
+                        meta: { requiresAuth: true, permissionRoute: '/microsoft/teams', searchable: false },
                     },
                 ],
             },
@@ -598,6 +572,10 @@ export default [
                 path: 'docs',
                 name: 'Documentação',
                 component: () => import('@/views/Office/Docs/Docs.vue'),
+                // Changelog do sistema: livre para todos os logados, por
+                // decisão (2026-08-20). A categoria "Sobre o Office" é
+                // permissionManaged:false, então não passa por alçada — e agora
+                // o registry e a rota concordam nisso.
                 meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Documentação do sistema' },
             },
 

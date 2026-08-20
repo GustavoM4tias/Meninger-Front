@@ -595,7 +595,6 @@
 import { ref, computed, onMounted } from 'vue';
 import { useExpensesStore } from '@/stores/Financeiro/Expenses/expensesStore';
 import { useContractsStore } from '@/stores/Comercial/Contracts/contractsStore';
-import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 import { useCostCenterNamesStore } from '@/stores/Financeiro/costCenterNamesStore';
 import { useToast } from 'vue-toastification';
 
@@ -615,9 +614,7 @@ import Export from '@/components/config/Export.vue';
 
 const store = useExpensesStore();
 const contractsStore = useContractsStore();
-const auth = useAuthStore();
 const ccNames = useCostCenterNamesStore();
-const isAdmin = computed(() => auth?.user?.role === 'admin');
 
 const toast = (() => {
   try { return useToast(); }

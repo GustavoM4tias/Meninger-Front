@@ -1,5 +1,6 @@
 <script setup>
 import { computed } from 'vue';
+import { useCan } from '@/composables/useCan';
 import { useContractsStore } from '@/stores/Comercial/Contracts/contractsStore';
 import { useProjectionGoalModeStore } from '@/stores/Comercial/Projections/projectionGoalModeStore';
 
@@ -19,9 +20,10 @@ const emit = defineEmits(['close']);
 const contractsStore = useContractsStore();
 const goalStore = useProjectionGoalModeStore();
 
-const isAdmin = computed(() => {
-  try { return localStorage.getItem('role') === 'admin'; } catch { return false; }
-});
+// Ações desta tela (lib/screenCapabilities.js no back): view segue a alçada,
+// configure (regra de meta) é admin. Lia `localStorage.getItem('role')` —
+// qualquer um se dava admin no navegador. Ver composables/useCan.js.
+const can = useCan('/comercial/relatorios/projecao');
 
 const enterprises = computed(() => contractsStore.enterprises || []);
 
@@ -84,7 +86,7 @@ function clearOverride(entId) {
           </Badge>
         </div>
 
-        <SegmentedControl v-if="isAdmin" v-model="globalModeProxy" :options="globalModeOptions" size="md" />
+        <SegmentedControl v-if="can('configure')" v-model="globalModeProxy" :options="globalModeOptions" size="md" />
 
         <!-- Não-admin enxerga a regra vigente, sem poder mudar. -->
         <div v-else
@@ -103,14 +105,14 @@ function clearOverride(entId) {
           {{ goalStore.globalMode === 'units'
             ? 'Padrão: % atingida = vendas realizadas ÷ unidades projetadas.'
             : 'Padrão: % atingida = VGV realizado ÷ VGV projetado.' }}
-          {{ isAdmin
+          {{ can('configure')
             ? ' Vale para todos os usuários da tela.'
             : ' Definido pelo administrador e igual para todos.' }}
         </p>
       </Surface>
 
       <!-- Exceções (admin only) -->
-      <Surface v-if="isAdmin" variant="raised" padding="md" class="space-y-3">
+      <Surface v-if="can('configure')" variant="raised" padding="md" class="space-y-3">
         <div class="flex items-center justify-between gap-2 flex-wrap">
           <div class="flex items-center gap-2 min-w-0">
             <i class="fas fa-list-ul text-accent text-sm"></i>
