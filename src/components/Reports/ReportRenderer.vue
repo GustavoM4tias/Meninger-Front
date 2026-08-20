@@ -26,7 +26,8 @@ const props = defineProps({
   liveLoading: { type: Boolean, default: false },
   // Relatório interativo para o LEITOR: blocos de dados viram clicáveis
   // (linha de tabela → detalhe; item de gráfico/ranking → lista dos registros).
-  // Desligado no builder (clique lá é seleção de bloco) e no export/público.
+  // Desligado no builder (clique lá é seleção de bloco). No link público vem
+  // ligado quando o servidor autoriza a consulta ao vivo (payload.interactive).
   interactive: { type: Boolean, default: false },
 })
 

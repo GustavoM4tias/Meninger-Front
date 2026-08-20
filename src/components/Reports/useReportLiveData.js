@@ -2,8 +2,8 @@
 // este composable consulta POST /reports/:id/data e devolve as props
 // recalculadas por bloco (liveProps) + erros/opções de filtro.
 //
-// Usado pelo View e pelo preview do Builder. O link público NÃO usa isto —
-// visitante recebe o retrato congelado da publicação.
+// Usado pelo View, pelo preview do Builder e pela página do link público — que
+// passa `options.request` para falar com a rota por token, sem JWT.
 import { ref, computed, watch } from 'vue'
 import { requestWithAuth } from '@/utils/Auth/requestWithAuth.js'
 
@@ -11,7 +11,10 @@ import { requestWithAuth } from '@/utils/Auth/requestWithAuth.js'
 // preenchimento padrão para filtros de data que o spec não trouxe com default:
 // campo de período em branco fazia o leitor achar que estava vendo "tudo", e a
 // primeira consulta ia sem janela nenhuma.
-export function useReportLiveData(reportId, specRef, periodRef = null) {
+//
+// `options.request(subPath, body)` troca o transporte da consulta (o público
+// não tem token JWT); o padrão é a rota interna autenticada.
+export function useReportLiveData(reportId, specRef, periodRef = null, options_ = {}) {
   const values = ref({})          // filterKey -> valor escolhido pelo leitor
   const baseValues = ref({})      // recorte padrão (período do relatório + defaults do spec)
   const liveProps = ref({})       // blockId -> props recalculadas
@@ -23,7 +26,24 @@ export function useReportLiveData(reportId, specRef, periodRef = null) {
   const error = ref('')
 
   const filters = computed(() => specRef.value?.filters || [])
-  const isInteractive = computed(() => (specRef.value?.datasets || []).length > 0)
+  // `enabled` aceita valor ou função (o link público só sabe se pode consultar
+  // depois que o payload chega do servidor).
+  const habilitado = () => {
+    const e = typeof options_.enabled === 'function' ? options_.enabled() : options_.enabled
+    return e !== false
+  }
+  const isInteractive = computed(
+    () => (specRef.value?.datasets || []).length > 0 && habilitado()
+  )
+
+  // Transporte da consulta: interno (JWT) por padrão, por token no link público.
+  const request = options_.request || ((subPath, body) => {
+    const id = typeof reportId === 'function' ? reportId() : reportId
+    return requestWithAuth(`/reports/${id}${subPath}`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    })
+  })
 
   const hoje = () => new Date().toISOString().slice(0, 10)
   const soData = (v) => (v ? String(v).slice(0, 10) : null)
@@ -61,11 +81,7 @@ export function useReportLiveData(reportId, specRef, periodRef = null) {
     loading.value = true
     error.value = ''
     try {
-      const id = typeof reportId === 'function' ? reportId() : reportId
-      const res = await requestWithAuth(`/reports/${id}/data`, {
-        method: 'POST',
-        body: JSON.stringify({ filters: values.value }),
-      })
+      const res = await request('/data', { filters: values.value })
       if (seq !== requestSeq) return // resposta velha: descarta
       liveProps.value = res.props || {}
       blockErrors.value = res.blockErrors || {}

@@ -147,6 +147,15 @@ const fmtDateTime = (d) => (d ? new Date(d).toLocaleString('pt-BR') : '-')
           <p v-if="check.summary.dataSources?.length"><span class="text-ink-subtle">Fontes de dados:</span> <span class="text-ink">{{ check.summary.dataSources.join(', ') }}</span></p>
         </div>
 
+        <!-- Relatório interativo: o visitante não recebe só o retrato -->
+        <div v-if="check?.summary?.interactive" class="rounded-xl border border-line bg-surface-raised px-4 py-3 text-sm">
+          <p class="font-medium text-ink"><i class="fas fa-sliders mr-1.5 text-ink-subtle" />Relatório interativo</p>
+          <p class="mt-1 text-xs text-ink-muted">
+            Quem abrir o link vai poder filtrar, abrir a lista de registros por trás de cada número e
+            exportar em Excel. As consultas rodam com as SUAS alçadas de acesso.
+          </p>
+        </div>
+
         <!-- Scan de PII -->
         <div v-if="hasPii" class="rounded-xl border border-rose-500/40 bg-rose-500/10 px-4 py-3 text-sm">
           <p class="font-semibold text-rose-600 dark:text-rose-400"><i class="fas fa-user-shield mr-1.5" />Dado pessoal detectado</p>
