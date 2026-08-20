@@ -12,7 +12,6 @@
     "og:routes": "node scripts/gen-og-routes.mjs"
   },
   "dependencies": {
-    "@panzoom/panzoom": "^4.6.0",
     "@primeuix/themes": "^1.1.1",
     "@splidejs/splide": "^4.1.4",
     "@splidejs/vue-splide": "^0.6.12",
@@ -22,7 +21,6 @@
     "@vladmandic/face-api": "^1.7.15",
     "@vue-flow/core": "^1.42.2",
     "axios": "^1.10.0",
-    "chart.js": "^3.9.1",
     "d3": "^7.9.0",
     "dayjs": "^1.11.13",
     "dompurify": "^3.3.1",
@@ -40,12 +38,10 @@
     "markdown-it-link-attributes": "^4.0.1",
     "marked": "^16.4.2",
     "pinia": "^2.2.4",
-    "preline": "^3.2.3",
     "primevue": "^4.3.4",
     "qrcode": "^1.5.4",
     "tippy.js": "^6.3.7",
     "vue": "^3.5.12",
-    "vue-chart-3": "^3.1.8",
     "vue-echarts": "^7.0.3",
     "vue-router": "^4.4.5",
     "vue-tippy": "^6.6.0",
