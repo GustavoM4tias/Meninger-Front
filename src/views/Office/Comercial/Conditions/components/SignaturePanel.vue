@@ -9,7 +9,7 @@
     <template v-else>
       <!-- Integração não configurada -->
       <div v-if="!state.configured" class="panel-info">
-        <i class="fas fa-plug-circle-xmark text-amber-500"></i>
+        <i class="fas fa-plug-circle-xmark text-data-warn"></i>
         <div>
           <p class="font-semibold text-ink text-sm">Integração DocuSign não configurada</p>
           <p class="text-xs text-ink-muted mt-0.5">Um administrador precisa configurar as credenciais em <RouterLink to="/settings/docusign" class="text-accent underline">Configurações → DocuSign</RouterLink>.</p>
@@ -18,7 +18,7 @@
 
       <!-- Config de assinantes ausente/desativada -->
       <div v-else-if="!state.config?.enabled || !(state.config?.signers?.length)" class="panel-info">
-        <i class="fas fa-users-slash text-amber-500"></i>
+        <i class="fas fa-users-slash text-data-warn"></i>
         <div>
           <p class="font-semibold text-ink text-sm">Assinantes não configurados</p>
           <p class="text-xs text-ink-muted mt-0.5">Ative a assinatura e defina quem assina em <RouterLink to="/comercial/conditions/settings" class="text-accent underline">Fichas → Configurações</RouterLink>.</p>
@@ -37,14 +37,14 @@
       <!-- Pronta para enviar (nunca enviada) -->
       <div v-else-if="!current">
         <div class="bg-surface-raised rounded-2xl border border-line shadow-sm p-6">
-          <p class="text-sm font-bold text-ink mb-1"><i class="fas fa-file-signature text-violet-500 mr-1.5"></i> Enviar para assinatura</p>
+          <p class="text-sm font-bold text-ink mb-1"><i class="fas fa-file-signature text-accent mr-1.5"></i> Enviar para assinatura</p>
           <p class="text-xs text-ink-muted mb-4">
             O documento do Resumo será enviado via DocuSign para
             <strong>{{ (state.config?.signers ?? []).map(s => s.name).join(', ') }}</strong>
             ({{ state.config?.routing === 'parallel' ? 'todos assinam juntos' : 'assinam em sequência' }} ·
             {{ state.config?.placement === 'livre' ? 'posicionamento livre' : 'assinatura ao final' }}{{ state.config?.require_initials ? ' + rubrica' : '' }}).
           </p>
-          <button v-if="canAuthorize" @click="send" :disabled="sending" class="flex items-center gap-2 px-4 py-2.5 bg-violet-600 text-white text-sm font-semibold rounded-xl hover:bg-violet-700 disabled:opacity-50 transition">
+          <button v-if="canAuthorize" @click="send" :disabled="sending" class="flex items-center gap-2 px-4 py-2.5 bg-accent text-white text-sm font-semibold rounded-xl hover:bg-accent disabled:opacity-50 transition">
             <i :class="sending ? 'fa-spinner fa-spin' : 'fa-paper-plane'" class="fas text-xs"></i>
             {{ sending ? 'Enviando...' : 'Enviar para assinatura' }}
           </button>
@@ -55,13 +55,13 @@
       <!-- Envelope em andamento / concluído -->
       <template v-else>
         <div class="bg-surface-raised rounded-2xl border border-line shadow-sm overflow-hidden">
-          <div class="px-5 py-3.5 border-b border-line bg-gray-50/60 dark:bg-gray-800/40 flex items-center justify-between gap-3 flex-wrap">
+          <div class="px-5 py-3.5 border-b border-line bg-surface-sunken flex items-center justify-between gap-3 flex-wrap">
             <p class="text-xs font-semibold text-ink-muted uppercase tracking-wide">
-              <i class="fas fa-file-signature text-violet-500 mr-1.5"></i> Processo de assinatura
+              <i class="fas fa-file-signature text-accent mr-1.5"></i> Processo de assinatura
             </p>
             <div class="flex items-center gap-2">
               <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-surface-sunken text-ink" :title="`${signedCount} de ${totalSigners} assinaram`">
-                {{ signedCount }}/{{ totalSigners }} <i class="fas fa-signature text-[10px]"></i>
+                {{ signedCount }}/{{ totalSigners }} <i class="fas fa-signature text-micro"></i>
               </span>
               <span :class="statusChip(current.status)" class="px-2.5 py-1 rounded-full text-xs font-semibold">{{ statusLabel(current.status) }}</span>
               <button @click="openDocument('original')" :disabled="docLoading === 'original'" class="px-3 py-1.5 text-xs font-semibold text-ink bg-surface-sunken border border-line rounded-lg hover:bg-surface-sunken/70 disabled:opacity-50 transition" title="Visualizar/baixar o documento original enviado">
@@ -71,11 +71,11 @@
                 <i :class="refreshing ? 'fa-spinner fa-spin' : 'fa-arrows-rotate'" class="fas"></i>
               </button>
               <button v-if="canAuthorize && ['sent','delivered'].includes(current.status)" @click="resend()" :disabled="!!resending"
-                class="px-3 py-1.5 text-xs font-semibold text-violet-700 dark:text-violet-300 bg-violet-50 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-800 rounded-lg hover:bg-violet-100 dark:hover:bg-violet-900/40 disabled:opacity-50 transition"
+                class="px-3 py-1.5 text-xs font-semibold text-accent bg-accent/20 border border-accent/25 rounded-lg hover:bg-accent/10  disabled:opacity-50 transition"
                 title="Reenviar o convite para todos que ainda podem assinar">
                 <i :class="resending === 'all' ? 'fa-spinner fa-spin' : 'fa-paper-plane'" class="fas mr-1"></i> Reenviar
               </button>
-              <button v-if="canAuthorize && ['sent','delivered'].includes(current.status)" @click="voidEnvelope" class="px-3 py-1.5 text-xs font-semibold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg hover:bg-red-100 transition">
+              <button v-if="canAuthorize && ['sent','delivered'].includes(current.status)" @click="voidEnvelope" class="px-3 py-1.5 text-xs font-semibold text-data-neg bg-data-neg/20 border border-data-neg/25 rounded-lg hover:bg-data-neg/10 transition">
                 <i class="fas fa-ban mr-1"></i> Anular
               </button>
             </div>
@@ -83,9 +83,9 @@
 
           <div class="p-5 space-y-4">
             <p class="text-xs text-ink-subtle">
-              <i class="fas fa-paper-plane text-[10px] mr-1"></i>1º envio: <strong class="text-ink-muted">{{ formatDate(current.sent_at) }}</strong>
-              <template v-if="current.completed_at"> · <i class="fas fa-check text-[10px]"></i> concluído: <strong class="text-ink-muted">{{ formatDate(current.completed_at) }}</strong></template>
-              <template v-else-if="!['voided','declined','error'].includes(current.status) && pendingNames.length"> · faltam: <strong class="text-amber-600 dark:text-amber-400">{{ pendingNames.join(', ') }}</strong></template>
+              <i class="fas fa-paper-plane text-micro mr-1"></i>1º envio: <strong class="text-ink-muted">{{ formatDate(current.sent_at) }}</strong>
+              <template v-if="current.completed_at"> · <i class="fas fa-check text-micro"></i> concluído: <strong class="text-ink-muted">{{ formatDate(current.completed_at) }}</strong></template>
+              <template v-else-if="!['voided','declined','error'].includes(current.status) && pendingNames.length"> · faltam: <strong class="text-data-warn">{{ pendingNames.join(', ') }}</strong></template>
             </p>
 
             <!-- Assinantes -->
@@ -93,25 +93,25 @@
               <div v-for="(sg, i) in (current.signers ?? [])" :key="i" class="flex items-center justify-between gap-3 px-3.5 py-2.5 bg-surface-sunken/40 border border-line rounded-xl flex-wrap">
                 <div class="min-w-0">
                   <p class="text-sm font-semibold text-ink truncate">
-                    <i v-if="sg.status === 'completed'" class="fas fa-circle-check text-green-500 mr-1"></i>{{ sg.name }}
+                    <i v-if="sg.status === 'completed'" class="fas fa-circle-check text-data-pos mr-1"></i>{{ sg.name }}
                   </p>
                   <p class="text-xs text-ink-subtle truncate">{{ sg.email }}</p>
-                  <p class="text-[11px] text-ink-subtle mt-1 flex items-center gap-3 flex-wrap">
-                    <span><i class="fas fa-paper-plane text-[9px] mr-1"></i>Enviado: {{ formatDate(sg.last_sent_at || current.sent_at) }}</span>
-                    <span v-if="sg.delivered_at" :class="isStaleDelivery(sg) ? 'text-amber-600 dark:text-amber-400' : ''">
-                      <i class="fas fa-envelope-open text-[9px] mr-1"></i>Recebeu: {{ formatDate(sg.delivered_at) }}{{ isStaleDelivery(sg) ? ' (antes do reenvio)' : '' }}
+                  <p class="text-micro text-ink-subtle mt-1 flex items-center gap-3 flex-wrap">
+                    <span><i class="fas fa-paper-plane text-micro mr-1"></i>Enviado: {{ formatDate(sg.last_sent_at || current.sent_at) }}</span>
+                    <span v-if="sg.delivered_at" :class="isStaleDelivery(sg) ? 'text-data-warn' : ''">
+                      <i class="fas fa-envelope-open text-micro mr-1"></i>Recebeu: {{ formatDate(sg.delivered_at) }}{{ isStaleDelivery(sg) ? ' (antes do reenvio)' : '' }}
                     </span>
-                    <span v-else class="text-ink-subtle"><i class="fas fa-envelope text-[9px] mr-1"></i>Ainda não abriu</span>
-                    <span v-if="sg.signed_at" class="text-green-600 dark:text-green-400 font-semibold">
-                      <i class="fas fa-signature text-[9px] mr-1"></i>Assinou: {{ formatDate(sg.signed_at) }}
+                    <span v-else class="text-ink-subtle"><i class="fas fa-envelope text-micro mr-1"></i>Ainda não abriu</span>
+                    <span v-if="sg.signed_at" class="text-data-pos font-semibold">
+                      <i class="fas fa-signature text-micro mr-1"></i>Assinou: {{ formatDate(sg.signed_at) }}
                     </span>
                   </p>
                 </div>
                 <div class="flex items-center gap-2 flex-shrink-0">
-                  <span :class="signerChip(sg.status)" class="px-2 py-0.5 rounded-full text-[10px] font-semibold">{{ signerLabel(sg.status) }}</span>
+                  <span :class="signerChip(sg.status)" class="px-2 py-0.5 rounded-full text-micro font-semibold">{{ signerLabel(sg.status) }}</span>
                   <button v-if="canAuthorize && ['sent','delivered'].includes(current.status) && !['completed','declined'].includes(sg.status)"
                     @click="resend([sg.email])" :disabled="!!resending"
-                    class="w-7 h-7 flex items-center justify-center rounded-md text-violet-600 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/20 disabled:opacity-40 transition"
+                    class="w-7 h-7 flex items-center justify-center rounded-md text-accent hover:bg-accent/10  disabled:opacity-40 transition"
                     :title="`Reenviar convite para ${sg.email}`">
                     <i :class="resending === sg.email ? 'fa-spinner fa-spin' : 'fa-paper-plane'" class="fas text-xs"></i>
                   </button>
@@ -122,8 +122,8 @@
             <!-- Histórico do processo -->
             <div v-if="eventsList.length" class="border-t border-line pt-3">
               <button @click="showEvents = !showEvents" class="w-full flex items-center justify-between text-left">
-                <p class="text-[11px] font-bold text-ink-subtle uppercase tracking-wider"><i class="fas fa-timeline mr-1.5"></i> Histórico do processo ({{ eventsList.length }})</p>
-                <i :class="showEvents ? 'fa-chevron-up' : 'fa-chevron-down'" class="fas text-[10px] text-ink-subtle"></i>
+                <p class="text-micro font-bold text-ink-subtle uppercase tracking-wider"><i class="fas fa-timeline mr-1.5"></i> Histórico do processo ({{ eventsList.length }})</p>
+                <i :class="showEvents ? 'fa-chevron-up' : 'fa-chevron-down'" class="fas text-micro text-ink-subtle"></i>
               </button>
               <div v-if="showEvents" class="mt-3 space-y-2">
                 <div v-for="(ev, i) in eventsList" :key="i" class="flex items-start gap-2.5 text-xs">
@@ -145,23 +145,23 @@
             {{ current.status === 'voided' ? 'Envio anulado' : 'Envio recusado/falhou' }} — o histórico e o motivo continuam registrados acima e na linha do tempo da ficha.
           </p>
           <button v-if="canAuthorize && detail.status === 'approved'" @click="send" :disabled="sending"
-            class="flex items-center gap-2 px-4 py-2 bg-violet-600 text-white text-xs font-semibold rounded-xl hover:bg-violet-700 disabled:opacity-50 transition">
+            class="flex items-center gap-2 px-4 py-2 bg-accent text-white text-xs font-semibold rounded-xl hover:bg-accent disabled:opacity-50 transition">
             <i :class="sending ? 'fa-spinner fa-spin' : 'fa-paper-plane'" class="fas text-xs"></i>
             {{ sending ? 'Enviando...' : 'Enviar novamente' }}
           </button>
         </div>
 
         <!-- Documento assinado (anexo) -->
-        <div v-if="current.status === 'completed' && current.signed_doc_url" class="bg-surface-raised rounded-2xl border border-green-200 dark:border-green-800 shadow-sm overflow-hidden">
-          <div class="px-5 py-3.5 border-b border-green-200 dark:border-green-800 bg-green-50/60 dark:bg-green-900/20 flex items-center justify-between gap-3 flex-wrap">
-            <p class="text-xs font-semibold text-green-700 dark:text-green-400 uppercase tracking-wide">
+        <div v-if="current.status === 'completed' && current.signed_doc_url" class="bg-surface-raised rounded-2xl border border-data-pos/25 shadow-sm overflow-hidden">
+          <div class="px-5 py-3.5 border-b border-data-pos/25 bg-data-pos/10  flex items-center justify-between gap-3 flex-wrap">
+            <p class="text-xs font-semibold text-data-pos uppercase tracking-wide">
               <i class="fas fa-file-circle-check mr-1.5"></i> Documento assinado
             </p>
-            <a :href="current.signed_doc_url" target="_blank" rel="noopener" class="flex items-center gap-2 px-3.5 py-2 bg-green-600 text-white text-xs font-semibold rounded-lg hover:bg-green-700 transition">
+            <a :href="current.signed_doc_url" target="_blank" rel="noopener" class="flex items-center gap-2 px-3.5 py-2 bg-data-pos text-white text-xs font-semibold rounded-lg hover:bg-data-pos/85 transition">
               <i class="fas fa-download text-xs"></i> Baixar PDF assinado
             </a>
           </div>
-          <iframe :src="current.signed_doc_url" class="w-full bg-white" style="height: 560px; border: 0;" title="PDF assinado"></iframe>
+          <iframe :src="current.signed_doc_url" class="w-full bg-surface-raised" style="height: 560px; border: 0;" title="PDF assinado"></iframe>
         </div>
 
         <!-- Concluído + ficha reautorizada: nova rodada de assinatura -->
@@ -171,7 +171,7 @@
             Ficha alterada e reautorizada depois desta assinatura? Envie uma nova rodada — o documento assinado acima fica preservado nos envelopes anteriores.
           </p>
           <button @click="send" :disabled="sending"
-            class="flex items-center gap-2 px-4 py-2 bg-violet-600 text-white text-xs font-semibold rounded-xl hover:bg-violet-700 disabled:opacity-50 transition">
+            class="flex items-center gap-2 px-4 py-2 bg-accent text-white text-xs font-semibold rounded-xl hover:bg-accent disabled:opacity-50 transition">
             <i :class="sending ? 'fa-spinner fa-spin' : 'fa-paper-plane'" class="fas text-xs"></i>
             {{ sending ? 'Enviando...' : 'Enviar nova assinatura' }}
           </button>
@@ -179,8 +179,8 @@
 
         <!-- Envelopes anteriores (rodadas antigas ficam guardadas) -->
         <div v-if="previousEnvelopes.length" class="bg-surface-raised rounded-2xl border border-line shadow-sm overflow-hidden">
-          <div class="px-5 py-3 border-b border-line bg-gray-50/60 dark:bg-gray-800/40">
-            <p class="text-[11px] font-bold text-ink-subtle uppercase tracking-wider"><i class="fas fa-clock-rotate-left mr-1.5"></i> Envelopes anteriores ({{ previousEnvelopes.length }})</p>
+          <div class="px-5 py-3 border-b border-line bg-surface-sunken">
+            <p class="text-micro font-bold text-ink-subtle uppercase tracking-wider"><i class="fas fa-clock-rotate-left mr-1.5"></i> Envelopes anteriores ({{ previousEnvelopes.length }})</p>
           </div>
           <div class="divide-y divide-line">
             <div v-for="env in previousEnvelopes" :key="env.id" class="px-5 py-2.5 flex items-center justify-between gap-3 text-xs flex-wrap">
@@ -188,8 +188,8 @@
                 Enviado {{ formatDate(env.sent_at) }}<template v-if="env.completed_at"> · concluído {{ formatDate(env.completed_at) }}</template>
               </span>
               <span class="flex items-center gap-2">
-                <span :class="statusChip(env.status)" class="px-2 py-0.5 rounded-full text-[10px] font-semibold">{{ statusLabel(env.status) }}</span>
-                <a v-if="env.signed_doc_url" :href="env.signed_doc_url" target="_blank" rel="noopener" class="text-green-600 dark:text-green-400 font-semibold hover:underline">
+                <span :class="statusChip(env.status)" class="px-2 py-0.5 rounded-full text-micro font-semibold">{{ statusLabel(env.status) }}</span>
+                <a v-if="env.signed_doc_url" :href="env.signed_doc_url" target="_blank" rel="noopener" class="text-data-pos font-semibold hover:underline">
                   <i class="fas fa-download mr-1"></i>PDF assinado
                 </a>
               </span>
@@ -198,10 +198,10 @@
         </div>
       </template>
 
-      <div v-if="info" class="px-3.5 py-2.5 rounded-lg text-xs bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400">
+      <div v-if="info" class="px-3.5 py-2.5 rounded-lg text-xs bg-data-pos/20 border border-data-pos/25 text-data-pos">
         {{ info }}
       </div>
-      <div v-if="error" class="px-3.5 py-2.5 rounded-lg text-xs bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400">
+      <div v-if="error" class="px-3.5 py-2.5 rounded-lg text-xs bg-data-neg/20 border border-data-neg/25 text-data-neg">
         {{ error }}
       </div>
     </template>
@@ -368,22 +368,22 @@ async function voidEnvelope() {
 }
 
 const STATUS = {
-    sent:      { label: 'Enviado',   chip: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
-    delivered: { label: 'Visualizado', chip: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400' },
-    completed: { label: 'Assinado',  chip: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },
-    declined:  { label: 'Recusado',  chip: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
-    voided:    { label: 'Anulado',   chip: 'bg-gray-200 text-gray-700 dark:bg-gray-800 dark:text-gray-300' },
-    error:     { label: 'Erro',      chip: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
+    sent:      { label: 'Enviado',   chip: 'bg-accent/10 text-accent  ' },
+    delivered: { label: 'Visualizado', chip: 'bg-accent/10 text-accent  ' },
+    completed: { label: 'Assinado',  chip: 'bg-data-pos/10 text-data-pos  ' },
+    declined:  { label: 'Recusado',  chip: 'bg-data-neg/10 text-data-neg  ' },
+    voided:    { label: 'Anulado',   chip: 'bg-surface-sunken text-ink bg-surface-sunken text-ink-subtle' },
+    error:     { label: 'Erro',      chip: 'bg-data-neg/10 text-data-neg  ' },
 };
 function statusLabel(s) { return STATUS[s]?.label ?? s; }
-function statusChip(s)  { return STATUS[s]?.chip ?? 'bg-gray-100 text-gray-600'; }
+function statusChip(s)  { return STATUS[s]?.chip ?? 'bg-surface-sunken text-ink-muted'; }
 function signerLabel(s) {
     return ({ created: 'Aguardando', sent: 'Enviado', delivered: 'Visualizou', completed: 'Assinou', declined: 'Recusou' })[s] ?? (s || '-');
 }
 function signerChip(s) {
-    if (s === 'completed') return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400';
-    if (s === 'declined')  return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400';
-    if (s === 'delivered') return 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400';
+    if (s === 'completed') return 'bg-data-pos/10 text-data-pos  ';
+    if (s === 'declined')  return 'bg-data-neg/10 text-data-neg  ';
+    if (s === 'delivered') return 'bg-accent/10 text-accent  ';
     return 'bg-surface-sunken text-ink-muted';
 }
 

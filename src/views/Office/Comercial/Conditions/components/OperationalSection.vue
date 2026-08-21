@@ -4,8 +4,8 @@
     <!-- ── Responsáveis ──────────────────────────────────────────────────── -->
     <div
       class="bg-surface-raised rounded-2xl border border-line shadow-sm overflow-hidden">
-      <div class="px-5 py-3.5 border-b border-line bg-gray-50/60 dark:bg-gray-800/40">
-        <p class="lbl-section"><i class="fas fa-user-tie text-blue-500"></i> Responsáveis</p>
+      <div class="px-5 py-3.5 border-b border-line bg-surface-sunken">
+        <p class="lbl-section"><i class="fas fa-user-tie text-accent"></i> Responsáveis</p>
       </div>
       <div class="p-5 space-y-5">
 
@@ -17,14 +17,14 @@
             <div class="flex items-center gap-1 p-1 bg-surface-sunken rounded-lg">
               <button type="button" @click="setManagerMode('sistema')" :disabled="readonly" :class="['px-3 py-1 text-xs font-semibold rounded-md transition',
                 managerMode === 'sistema'
-                  ? 'bg-white dark:bg-gray-700 text-ink shadow-sm'
-                  : 'text-ink-muted hover:text-gray-700 dark:hover:text-gray-200']">
+                  ? 'bg-surface-sunken text-ink shadow-sm'
+                  : 'text-ink-muted hover:text-ink dark:hover:text-ink']">
                 <i class="fas fa-users text-xs mr-1"></i>Sistema
               </button>
               <button type="button" @click="setManagerMode('manual')" :disabled="readonly" :class="['px-3 py-1 text-xs font-semibold rounded-md transition',
                 managerMode === 'manual'
-                  ? 'bg-white dark:bg-gray-700 text-ink shadow-sm'
-                  : 'text-ink-muted hover:text-gray-700 dark:hover:text-gray-200']">
+                  ? 'bg-surface-sunken text-ink shadow-sm'
+                  : 'text-ink-muted hover:text-ink dark:hover:text-ink']">
                 <i class="fas fa-pen text-xs mr-1"></i>Manual
               </button>
             </div>
@@ -67,8 +67,8 @@
     <!-- ── Registro do Contrato ───────────────────────────────────────────── -->
     <div
       class="bg-surface-raised rounded-2xl border border-line shadow-sm overflow-hidden">
-      <div class="px-5 py-3.5 border-b border-line bg-gray-50/60 dark:bg-gray-800/40">
-        <p class="lbl-section"><i class="fas fa-file-signature text-blue-500"></i> Registro do Contrato</p>
+      <div class="px-5 py-3.5 border-b border-line bg-surface-sunken">
+        <p class="lbl-section"><i class="fas fa-file-signature text-accent"></i> Registro do Contrato</p>
       </div>
       <div class="p-5 space-y-4">
 
@@ -80,14 +80,14 @@
               class="flex items-center gap-2 px-4 py-2.5 rounded-md border cursor-pointer transition-all text-sm font-medium select-none"
               :class="form.contract_registration_by === opt.value
                 ? 'border-accent bg-accent-soft text-accent shadow-sm'
-                : 'border-line text-ink-muted bg-surface-raised/60 hover:border-gray-300 dark:hover:border-gray-600'"
+                : 'border-line text-ink-muted bg-surface-raised/60 hover:border-line dark:hover:border-line'"
               :style="readonly ? 'pointer-events:none;opacity:.75' : ''">
               <input type="radio" :value="opt.value" :checked="form.contract_registration_by === opt.value"
                 @change="set('contract_registration_by', opt.value)" class="sr-only" :disabled="readonly" />
               <span class="w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all"
-                :class="form.contract_registration_by === opt.value ? 'border-accent bg-blue-500' : 'border-line'">
+                :class="form.contract_registration_by === opt.value ? 'border-accent bg-accent' : 'border-line'">
                 <span v-if="form.contract_registration_by === opt.value"
-                  class="w-1.5 h-1.5 rounded-full bg-white"></span>
+                  class="w-1.5 h-1.5 rounded-full bg-surface-raised"></span>
               </span>
               {{ opt.label }}
             </label>
@@ -99,14 +99,14 @@
           <div class="flex items-center gap-1 p-1 bg-surface-sunken rounded-lg w-fit">
             <button type="button" @click="setMeniMode('sistema')" :disabled="readonly" :class="['px-3 py-1.5 text-xs font-semibold rounded-md transition',
               meniMode === 'sistema'
-                ? 'bg-white dark:bg-gray-700 text-ink shadow-sm'
-                : 'text-ink-muted hover:text-gray-700 dark:hover:text-gray-200']">
+                ? 'bg-surface-sunken text-ink shadow-sm'
+                : 'text-ink-muted hover:text-ink dark:hover:text-ink']">
               <i class="fas fa-users text-xs mr-1"></i>Usuário do sistema
             </button>
             <button type="button" @click="setMeniMode('manual')" :disabled="readonly" :class="['px-3 py-1.5 text-xs font-semibold rounded-md transition',
               meniMode === 'manual'
-                ? 'bg-white dark:bg-gray-700 text-ink shadow-sm'
-                : 'text-ink-muted hover:text-gray-700 dark:hover:text-gray-200']">
+                ? 'bg-surface-sunken text-ink shadow-sm'
+                : 'text-ink-muted hover:text-ink dark:hover:text-ink']">
               <i class="fas fa-pen text-xs mr-1"></i>Informar manualmente
             </button>
           </div>
@@ -166,8 +166,8 @@
     <!-- ── CCA / Correspondente Bancário ─────────────────────────────────── -->
     <div
       class="bg-surface-raised rounded-2xl border border-line shadow-sm overflow-hidden">
-      <div class="px-5 py-3.5 border-b border-line bg-gray-50/60 dark:bg-gray-800/40">
-        <p class="lbl-section"><i class="fas fa-building-columns text-blue-500"></i> CCA / Correspondente Bancário</p>
+      <div class="px-5 py-3.5 border-b border-line bg-surface-sunken">
+        <p class="lbl-section"><i class="fas fa-building-columns text-accent"></i> CCA / Correspondente Bancário</p>
       </div>
       <div class="p-5 space-y-4">
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -189,17 +189,17 @@
         </div>
 
         <div
-          class="flex items-center justify-between p-3.5 rounded-md border border-line bg-gray-50/50 dark:bg-gray-800/30">
+          class="flex items-center justify-between p-3.5 rounded-md border border-line bg-surface-sunken">
           <div>
             <p class="text-sm font-medium text-ink">CCA tem custo</p>
             <p class="text-xs text-ink-subtle mt-0.5">Ative se há custo de CCA neste produto (escolha o pagador abaixo)</p>
           </div>
           <button type="button" @click="set('cca_charges_company', !form.cca_charges_company)"
-            :class="form.cca_charges_company ? 'bg-blue-600' : 'bg-surface-sunken'"
+            :class="form.cca_charges_company ? 'bg-accent' : 'bg-surface-sunken'"
             class="relative inline-flex h-6 w-11 flex-shrink-0 rounded-full transition-colors duration-200 ml-4"
             :disabled="readonly">
             <span :class="form.cca_charges_company ? 'translate-x-5' : 'translate-x-1'"
-              class="pointer-events-none inline-block h-4 w-4 mt-1 rounded-full bg-white shadow-md transition-transform duration-200" />
+              class="pointer-events-none inline-block h-4 w-4 mt-1 rounded-full bg-surface-raised shadow-md transition-transform duration-200" />
           </button>
         </div>
 
@@ -221,13 +221,13 @@
                 class="flex items-center gap-2 px-3.5 py-2 rounded-md border cursor-pointer transition-all text-sm font-medium select-none"
                 :class="(form.cca_paid_by || 'menin') === opt.value
                   ? 'border-accent bg-accent-soft text-accent shadow-sm'
-                  : 'border-line text-ink-muted bg-surface-raised/60 hover:border-gray-300 dark:hover:border-gray-600'"
+                  : 'border-line text-ink-muted bg-surface-raised/60 hover:border-line dark:hover:border-line'"
                 :style="readonly ? 'pointer-events:none;opacity:.75' : ''">
                 <input type="radio" :value="opt.value" :checked="(form.cca_paid_by || 'menin') === opt.value"
                   @change="set('cca_paid_by', opt.value)" class="sr-only" :disabled="readonly" />
                 <span class="w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all"
-                  :class="(form.cca_paid_by || 'menin') === opt.value ? 'border-accent bg-blue-500' : 'border-line'">
-                  <span v-if="(form.cca_paid_by || 'menin') === opt.value" class="w-1 h-1 rounded-full bg-white"></span>
+                  :class="(form.cca_paid_by || 'menin') === opt.value ? 'border-accent bg-accent' : 'border-line'">
+                  <span v-if="(form.cca_paid_by || 'menin') === opt.value" class="w-1 h-1 rounded-full bg-surface-raised"></span>
                 </span>
                 <i :class="opt.icon" class="text-xs opacity-70"></i>
                 {{ opt.label }}
@@ -241,25 +241,25 @@
     <!-- ── Verificação / Assinatura Digital ─────────────────────────────── -->
     <div
       class="bg-surface-raised rounded-2xl border border-line shadow-sm overflow-hidden">
-      <div class="px-5 py-3.5 border-b border-line bg-gray-50/60 dark:bg-gray-800/40">
-        <p class="lbl-section"><i class="fas fa-shield-check text-blue-500"></i> Verificação / Assinatura Digital</p>
+      <div class="px-5 py-3.5 border-b border-line bg-surface-sunken">
+        <p class="lbl-section"><i class="fas fa-shield-check text-accent"></i> Verificação / Assinatura Digital</p>
       </div>
       <div class="p-5 space-y-4">
 
         <!-- Toggle: tem certificação? -->
         <div
-          class="flex items-center justify-between p-3.5 rounded-md border border-line bg-gray-50/50 dark:bg-gray-800/30">
+          class="flex items-center justify-between p-3.5 rounded-md border border-line bg-surface-sunken">
           <div>
             <p class="text-sm font-semibold text-ink">Certificação digital ativa</p>
             <p class="text-xs text-ink-subtle mt-0.5">Exige verificação de identidade digital no
               processo</p>
           </div>
           <button type="button" @click="set('has_digital_cert', !form.has_digital_cert)"
-            :class="form.has_digital_cert ? 'bg-blue-600' : 'bg-surface-sunken'"
+            :class="form.has_digital_cert ? 'bg-accent' : 'bg-surface-sunken'"
             class="relative inline-flex h-6 w-11 flex-shrink-0 rounded-full transition-colors duration-200 ml-4"
             :disabled="readonly">
             <span :class="form.has_digital_cert ? 'translate-x-5' : 'translate-x-1'"
-              class="pointer-events-none inline-block h-4 w-4 mt-1 rounded-full bg-white shadow-md transition-transform duration-200" />
+              class="pointer-events-none inline-block h-4 w-4 mt-1 rounded-full bg-surface-raised shadow-md transition-transform duration-200" />
           </button>
         </div>
 
@@ -274,14 +274,14 @@
                 class="flex items-center gap-2 px-4 py-2.5 rounded-md border cursor-pointer transition-all text-sm font-medium select-none"
                 :class="certProvider === opt.value
                   ? 'border-accent bg-accent-soft text-accent shadow-sm'
-                  : 'border-line text-ink-muted bg-surface-raised/60 hover:border-gray-300 dark:hover:border-gray-600'"
+                  : 'border-line text-ink-muted bg-surface-raised/60 hover:border-line dark:hover:border-line'"
                 :style="readonly ? 'pointer-events:none;opacity:.75' : ''">
                 <input type="radio" :value="opt.value" :checked="certProvider === opt.value"
                   @change="setCertProvider(opt.value)" class="sr-only" :disabled="readonly" />
                 <span
                   class="w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all"
-                  :class="certProvider === opt.value ? 'border-accent bg-blue-500' : 'border-line'">
-                  <span v-if="certProvider === opt.value" class="w-1.5 h-1.5 rounded-full bg-white"></span>
+                  :class="certProvider === opt.value ? 'border-accent bg-accent' : 'border-line'">
+                  <span v-if="certProvider === opt.value" class="w-1.5 h-1.5 rounded-full bg-surface-raised"></span>
                 </span>
                 <i :class="opt.icon" class="text-xs opacity-70"></i>
                 {{ opt.label }}
@@ -305,16 +305,16 @@
 
           <!-- Toggle: tem custo? + valor (sempre pago pela Menin) -->
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
-            <div class="flex items-center justify-between gap-4 p-3.5 rounded-md border border-line bg-gray-50/50 dark:bg-gray-800/30">
+            <div class="flex items-center justify-between gap-4 p-3.5 rounded-md border border-line bg-surface-sunken">
               <div class="min-w-0">
                 <p class="text-sm font-semibold text-ink">Tem custo?</p>
                 <p class="text-xs text-ink-subtle mt-0.5">Marque se há custo e escolha o pagador (entra no resumo).</p>
               </div>
               <button type="button" @click="set('digital_cert_has_cost', !form.digital_cert_has_cost)"
-                :class="form.digital_cert_has_cost ? 'bg-blue-600' : 'bg-surface-sunken'"
+                :class="form.digital_cert_has_cost ? 'bg-accent' : 'bg-surface-sunken'"
                 class="relative inline-flex h-6 w-11 flex-shrink-0 rounded-full transition-colors duration-200" :disabled="readonly">
                 <span :class="form.digital_cert_has_cost ? 'translate-x-5' : 'translate-x-1'"
-                  class="pointer-events-none inline-block h-4 w-4 mt-1 rounded-full bg-white shadow-md transition-transform duration-200" />
+                  class="pointer-events-none inline-block h-4 w-4 mt-1 rounded-full bg-surface-raised shadow-md transition-transform duration-200" />
               </button>
             </div>
             <div v-if="form.digital_cert_has_cost">
@@ -333,13 +333,13 @@
                     class="flex items-center gap-2 px-3.5 py-2 rounded-md border cursor-pointer transition-all text-sm font-medium select-none"
                     :class="(form.digital_cert_paid_by || 'menin') === opt.value
                       ? 'border-accent bg-accent-soft text-accent shadow-sm'
-                      : 'border-line text-ink-muted bg-surface-raised/60 hover:border-gray-300 dark:hover:border-gray-600'"
+                      : 'border-line text-ink-muted bg-surface-raised/60 hover:border-line dark:hover:border-line'"
                     :style="readonly ? 'pointer-events:none;opacity:.75' : ''">
                     <input type="radio" :value="opt.value" :checked="(form.digital_cert_paid_by || 'menin') === opt.value"
                       @change="set('digital_cert_paid_by', opt.value)" class="sr-only" :disabled="readonly" />
                     <span class="w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all"
-                      :class="(form.digital_cert_paid_by || 'menin') === opt.value ? 'border-accent bg-blue-500' : 'border-line'">
-                      <span v-if="(form.digital_cert_paid_by || 'menin') === opt.value" class="w-1 h-1 rounded-full bg-white"></span>
+                      :class="(form.digital_cert_paid_by || 'menin') === opt.value ? 'border-accent bg-accent' : 'border-line'">
+                      <span v-if="(form.digital_cert_paid_by || 'menin') === opt.value" class="w-1 h-1 rounded-full bg-surface-raised"></span>
                     </span>
                     <i :class="opt.icon" class="text-xs opacity-70"></i>
                     {{ opt.label }}
@@ -355,8 +355,8 @@
 
     <!-- ── Arquivos do Empreendimento ──────────────────────────────────── -->
     <div class="bg-surface-raised rounded-2xl border border-line shadow-sm overflow-hidden">
-      <div class="px-5 py-3.5 border-b border-line bg-gray-50/60 dark:bg-gray-800/40">
-        <p class="lbl-section"><i class="fas fa-folder-open text-blue-500"></i> Arquivos do Empreendimento</p>
+      <div class="px-5 py-3.5 border-b border-line bg-surface-sunken">
+        <p class="lbl-section"><i class="fas fa-folder-open text-accent"></i> Arquivos do Empreendimento</p>
       </div>
       <div class="p-5">
         <label class="lbl">Link para a Pasta / Arquivos</label>
@@ -379,8 +379,8 @@
     <!-- ── Observações ────────────────────────────────────────────────────── -->
     <div
       class="bg-surface-raised rounded-2xl border border-line shadow-sm overflow-hidden">
-      <div class="px-5 py-3.5 border-b border-line bg-gray-50/60 dark:bg-gray-800/40">
-        <p class="lbl-section"><i class="fas fa-note-sticky text-blue-500"></i> Observações</p>
+      <div class="px-5 py-3.5 border-b border-line bg-surface-sunken">
+        <p class="lbl-section"><i class="fas fa-note-sticky text-accent"></i> Observações</p>
       </div>
       <div class="p-5">
         <textarea :value="form.notes" @input="set('notes', $event.target.value)" rows="3" class="inp resize-none"
@@ -512,11 +512,11 @@ function parseBR(str) {
 }
 
 .inp {
-  @apply w-full px-3.5 py-2.5 text-sm text-ink bg-surface-raised/60 border border-line rounded-md shadow-sm placeholder:text-gray-400 dark:placeholder:text-gray-500 outline-none focus:border-blue-400 dark:focus:border-accent focus:ring-2 focus:ring-blue-500/15 transition-all duration-150 disabled:opacity-60 disabled:cursor-default;
+  @apply w-full px-3.5 py-2.5 text-sm text-ink bg-surface-raised/60 border border-line rounded-md shadow-sm placeholder:text-ink-subtle dark:placeholder:text-ink-muted outline-none focus:border-accent dark:focus:border-accent focus:ring-accent/15 transition-all duration-150 disabled:opacity-60 disabled:cursor-default;
 }
 
 .inp-pfx {
-  @apply w-full pl-9 pr-3.5 py-2.5 text-sm text-ink bg-surface-raised/60 border border-line rounded-md shadow-sm placeholder:text-gray-400 dark:placeholder:text-gray-500 outline-none focus:border-blue-400 dark:focus:border-accent focus:ring-2 focus:ring-blue-500/15 transition-all duration-150 disabled:opacity-60 disabled:cursor-default;
+  @apply w-full pl-9 pr-3.5 py-2.5 text-sm text-ink bg-surface-raised/60 border border-line rounded-md shadow-sm placeholder:text-ink-subtle dark:placeholder:text-ink-muted outline-none focus:border-accent dark:focus:border-accent focus:ring-accent/15 transition-all duration-150 disabled:opacity-60 disabled:cursor-default;
 }
 
 .pfx {

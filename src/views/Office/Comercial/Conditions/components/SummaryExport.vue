@@ -1,136 +1,39 @@
 <template>
   <div class="summary-root">
 
-    <!-- ── Modal: Visualizar documento (aprovadores) ──────────────────────────── -->
-    <transition name="fade">
-      <div
-        v-if="showDocModal"
-        class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
-        @click.self="closeDocModal"
-      >
-        <!-- Painel de altura fixa: só o documento (iframe) rola — um scroll só -->
-        <div class="bg-surface-raised rounded-2xl shadow-2xl w-full max-w-4xl h-[92vh] flex flex-col overflow-hidden">
-          <!-- Header fixo da modal -->
-          <div class="flex items-center justify-between px-6 py-4 border-b border-line shrink-0">
-            <div class="flex items-center gap-2">
-              <i class="fas fa-file-contract text-blue-500"></i>
-              <span class="text-sm font-bold text-ink">
-                Ficha Comercial — {{ detail?.enterprise?.nome ?? detail?.display_name ?? '' }}
-                <span class="ml-2 text-xs font-normal text-gray-400 dark:text-slate-500">{{ currentMonthLabel }}</span>
-              </span>
-            </div>
-            <div class="flex items-center gap-2">
-              <button @click="printModule"
-                class="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 text-white text-xs font-semibold rounded-lg hover:bg-red-700 transition">
-                <i class="fas fa-file-pdf text-xs"></i> Exportar PDF
-              </button>
-              <button @click="closeDocModal"
-                class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition">
-                <i class="fas fa-times text-sm"></i>
-              </button>
-            </div>
-          </div>
-          <!-- Documento renderizado — o MESMO HTML da impressão/PDF/assinatura -->
-          <div class="flex-1 min-h-0 p-3 sm:p-4">
-            <iframe v-if="docModalHtml" :srcdoc="docModalHtml"
-              class="w-full h-full bg-white rounded-xl border border-line"
-              title="Documento da ficha"></iframe>
-            <div v-else class="h-full flex flex-col items-center justify-center gap-3 text-ink-muted">
-              <i class="fas fa-spinner fa-spin text-lg"></i>
-              <p class="text-sm">Gerando documento...</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </transition>
-
-    <!-- ── Controles (não imprime) — escondido no novo layout (ações vão p/ a lateral) ── -->
-    <div v-if="!hideChrome" class="no-print bg-surface-raised rounded-2xl border border-line shadow-sm overflow-hidden mb-5">
-
-      <!-- Barra superior: mês + ações -->
-      <div class="flex items-center justify-between gap-3 px-5 py-4 bg-gradient-to-r from-slate-50 to-blue-50/40 dark:from-gray-800/60 dark:to-blue-950/20 border-b border-line flex-wrap">
-        <div v-if="!hideChrome" class="flex items-center gap-2">
-          <button @click="navigatePrev" :disabled="!prevItem"
-            :class="['w-7 h-7 flex items-center justify-center rounded-lg transition text-xs',
-              prevItem ? 'text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-white hover:bg-white dark:hover:bg-gray-700 shadow-sm border border-line'
-                       : 'text-ink-subtle cursor-not-allowed']">
-            <i class="fas fa-chevron-left"></i>
-          </button>
-          <div class="flex items-center gap-2">
-            <span class="text-xs text-gray-500 dark:text-slate-400 font-medium">Ref:</span>
-            <span class="text-sm font-bold text-gray-800 dark:text-white">{{ currentMonthLabel }}</span>
-            <!-- Status badge -->
-            <span v-if="wasRejected && detail?.status === 'draft'"
-              class="px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
-              Reprovada
-            </span>
-            <span v-else :class="statusChipClass(detail?.status)" class="px-2 py-0.5 rounded-full text-xs font-semibold">
-              {{ STATUS_LABELS[detail?.status] ?? detail?.status }}
+    <!-- ── Visualizar o documento ────────────────────────────────────────────
+         É o MESMO HTML que vai para a impressão, o PDF e a assinatura: o que
+         se vê aqui é o que sai no papel. Tamanho `screen` porque documento se
+         lê inteiro, não espremido num cartão. -->
+    <Modal :open="showDocModal" size="screen" :padded="false" :scrollable="false" hide-close @close="closeDocModal">
+      <template #header>
+        <div class="flex items-center justify-between gap-3 w-full min-w-0">
+          <div class="flex items-center gap-2 min-w-0">
+            <i class="fas fa-file-contract text-accent shrink-0"></i>
+            <span class="text-sm font-bold text-ink truncate">
+              Ficha Comercial — {{ detail?.enterprise?.nome ?? detail?.display_name ?? '' }}
+              <span class="ml-2 text-xs font-normal text-ink-subtle">{{ currentMonthLabel }}</span>
             </span>
           </div>
-          <button @click="navigateNext" :disabled="!nextItem"
-            :class="['w-7 h-7 flex items-center justify-center rounded-lg transition text-xs',
-              nextItem ? 'text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-white hover:bg-white dark:hover:bg-gray-700 shadow-sm border border-line'
-                       : 'text-ink-subtle cursor-not-allowed']">
-            <i class="fas fa-chevron-right"></i>
-          </button>
-          <span v-if="history.length > 1" class="text-xs text-ink-subtle">{{ currentHistoryPos }}/{{ history.length }}</span>
+          <div class="flex items-center gap-2 shrink-0">
+            <Button size="sm" icon="fas fa-file-pdf" :loading="imprimindo" @click="printModule">
+              <span class="hidden sm:inline">Exportar PDF</span>
+            </Button>
+            <IconButton icon="fas fa-times" size="sm" title="Fechar" @click="closeDocModal" />
+          </div>
         </div>
+      </template>
 
-        <div class="flex items-center gap-2 flex-wrap">
-          <!-- Ver documento (só aprovadores, quando em autorização) -->
-          <button v-if="isApprover && detail?.status === 'pending_approval'" @click="showDocModal = true"
-            class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white text-xs font-semibold rounded-lg hover:bg-accent-hover transition">
-            <i class="fas fa-file-contract text-xs"></i> Ver Documento
-          </button>
-
-          <button @click="printModule"
-            class="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 text-white text-xs font-semibold rounded-lg hover:bg-red-700 transition">
-            <i class="fas fa-file-pdf text-xs"></i> Exportar PDF
-          </button>
-
-          <!-- Ações de workflow (conforme permissão) — no novo layout vêm do header do Detail -->
-          <template v-if="!hideChrome">
-            <button v-if="canEdit && detail?.status === 'draft'" @click="$emit('submit-for-approval')" :disabled="actionLoading"
-              class="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white text-xs font-semibold rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition">
-              <i class="fas fa-paper-plane text-xs"></i> Enviar para Autorização
-            </button>
-            <button v-if="canAuthorize && detail?.status === 'pending_approval'" @click="$emit('authorize')" :disabled="actionLoading"
-              class="flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white text-xs font-semibold rounded-lg hover:bg-green-700 disabled:opacity-50 transition">
-              <i class="fas fa-circle-check text-xs"></i> Autorizar
-            </button>
-            <button v-if="(canEdit || canAuthorize) && detail?.status === 'pending_approval'" @click="$emit('cancel-approval')"
-              class="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-xs font-semibold rounded-lg border border-red-200 dark:border-red-800 hover:bg-red-100 transition">
-              <i class="fas fa-ban text-xs"></i> Cancelar Autorização
-            </button>
-            <div v-if="!canEdit && !canAuthorize && detail?.status === 'pending_approval'"
-              class="flex items-center gap-1.5 px-3 py-1.5 bg-accent-soft text-accent text-xs font-semibold rounded-lg border border-accent/30">
-              <i class="fas fa-clock text-xs"></i> Aguardando autorização
-            </div>
-            <button v-if="canAuthorize && detail?.status === 'approved'" @click="$emit('unlock')"
-              class="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500 text-white text-xs font-semibold rounded-lg hover:bg-amber-600 transition">
-              <i class="fas fa-lock-open text-xs"></i> Desbloquear
-            </button>
-          </template>
+      <div class="h-full p-3 sm:p-4 bg-surface-sunken">
+        <iframe v-if="docModalHtml" :srcdoc="docModalHtml"
+          class="folha w-full h-full rounded-xl border border-line shadow-soft"
+          title="Documento da ficha"></iframe>
+        <div v-else class="h-full flex flex-col items-center justify-center gap-3 text-ink-muted">
+          <i class="fas fa-spinner fa-spin text-lg"></i>
+          <p class="text-sm">Montando o documento...</p>
         </div>
       </div>
-
-      <!-- Pills de módulo (no novo layout, a seleção vem do índice flutuante) -->
-      <div v-if="localModules.length && !hideChrome" class="flex overflow-x-auto scrollbar-hide">
-        <button v-for="(mod, i) in localModules" :key="mod.id ?? i" @click="activeIdx = i"
-          :class="['flex flex-col items-center gap-1 px-8 py-2.5 transition border-r border-line flex-shrink-0 relative text-xs font-semibold',
-            activeIdx === i ? 'bg-blue-600 text-white' : 'bg-surface-raised text-ink-muted hover:bg-accent-soft hover:text-blue-600']">
-          <span class="truncate max-w-[120px]">{{ mod.module_name || `Módulo ${i+1}` }}</span>
-          <span class="flex items-center gap-0.5 ml-1 flex-shrink-0">
-            <span v-for="(filled, k) in moduleCompleteness(mod)" :key="k"
-              :class="['w-1.5 h-1.5 rounded-full', activeIdx===i ? (filled?'bg-white':'bg-white/30') : (filled?'bg-blue-400':'bg-surface-sunken')]">
-            </span>
-          </span>
-          <span v-if="activeIdx === i" class="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-400 rounded-t"></span>
-        </button>
-        <div class="flex-1 bg-surface-raised"></div>
-      </div>
-    </div>
+    </Modal>
 
     <!-- ── Área de conteúdo (tela + impressão) ──────────────────────────────── -->
     <div class="print-area">
@@ -144,17 +47,17 @@
               <p class="doc-eyebrow">Ficha Comercial</p>
               <h1 class="doc-title">{{ detail?.enterprise?.nome ?? detail?.display_name ?? '(Ficha sem nome)' }}</h1>
               <div class="flex items-center gap-2 flex-wrap mt-1.5">
-                <span class="doc-meta-chip"><i class="fas fa-map-marker-alt text-[10px]"></i> {{ detail?.enterprise?.cidade ?? '—' }}</span>
-                <span class="doc-meta-chip"><i class="fas fa-calendar text-[10px]"></i> {{ currentMonthLabel }}</span>
+                <span class="doc-meta-chip"><i class="fas fa-map-marker-alt text-micro"></i> {{ detail?.enterprise?.cidade ?? '—' }}</span>
+                <span class="doc-meta-chip"><i class="fas fa-calendar text-micro"></i> {{ currentMonthLabel }}</span>
                 <!-- No print: mostra módulo ativo; em tela com 1 módulo tb -->
                 <span v-if="!isPrinting && activeModule" class="doc-meta-chip">
-                  <i class="fas fa-layer-group text-[10px]"></i> {{ activeModule.module_name }}
+                  <i class="fas fa-layer-group text-micro"></i> {{ activeModule.module_name }}
                 </span>
                 <span v-if="!isPrinting && stageNameForModule(activeModule)" class="doc-meta-chip">
-                  <i class="fas fa-building text-[10px]"></i> {{ stageNameForModule(activeModule) }}
+                  <i class="fas fa-building text-micro"></i> {{ stageNameForModule(activeModule) }}
                 </span>
                 <span v-if="wasRejected && detail?.status === 'draft'"
-                  class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-800">
+                  class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-data-neg/10 text-data-neg">
                   Reprovada
                 </span>
                 <span v-else :class="['px-2.5 py-0.5 rounded-full text-xs font-bold', statusBadgePrint(detail?.status)]">
@@ -172,12 +75,12 @@
 
       <!-- Banner de reprovação -->
       <div v-if="wasRejected && detail?.status === 'draft'"
-        class="no-print mb-4 flex items-start gap-3 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl text-red-700 dark:text-red-400">
+        class="no-print mb-4 flex items-start gap-3 p-4 bg-data-neg/20 border border-data-neg/25 rounded-xl text-data-neg">
         <i class="fas fa-ban text-lg flex-shrink-0 mt-0.5"></i>
         <div>
           <p class="text-sm font-bold">Autorização reprovada</p>
           <p v-if="rejectionNote" class="text-xs mt-0.5">{{ rejectionNote }}</p>
-          <p class="text-xs mt-1 text-red-500 dark:text-red-500">Corrija as informações necessárias e envie novamente para autorização.</p>
+          <p class="text-xs mt-1 text-data-neg">Corrija as informações necessárias e envie novamente para autorização.</p>
         </div>
       </div>
 
@@ -205,7 +108,7 @@
                 {{ mod.total_units ?? '—' }}
               </span> 
               <span v-if="mod.unit_snapshot?.capturedAt" class="kpi-sub flex items-center gap-1 mt-0.5 justify-center">
-                <i class="fas fa-snowflake text-blue-400 text-[9px]"></i>
+                <i class="fas fa-snowflake text-accent text-micro"></i>
                 Foto em {{ formatSnapshotDate(mod.unit_snapshot.capturedAt) }}
               </span>
             </div>
@@ -248,7 +151,7 @@
           <!-- ── Produto ──────────────────────────────────────────────────── -->
           <div class="info-card mb-4">
             <div class="info-card-header">
-              <i class="fas fa-building text-blue-500"></i>
+              <i class="fas fa-building text-accent"></i>
               Produto — {{ mod.module_name || '—' }}
             </div>
             <div class="info-card-body">
@@ -275,14 +178,14 @@
                   <span class="field-label">Comissão</span>
                   <span class="field-value" :class="mod.commission_pct == null ? 'field-empty' : ''">
                     {{ mod.commission_pct != null ? `${parseFloat(mod.commission_pct).toFixed(1)}%` : 'Não informado' }}
-                    <span v-if="mod.commission_pct != null" class="text-xs text-gray-400 dark:text-slate-500 ml-1">({{ mod.commission_source === 'cv' ? 'via CV' : 'manual' }})</span>
+                    <span v-if="mod.commission_pct != null" class="text-xs text-ink-subtle ml-1">({{ mod.commission_source === 'cv' ? 'via CV' : 'manual' }})</span>
                   </span>
                 </div>
                 <div class="field-item">
                   <span class="field-label">Prazo de Entrega</span>
                   <span class="field-value" :class="mod.delivery_deadline_months == null ? 'field-empty' : ''">
                     {{ mod.delivery_deadline_months != null ? `${mod.delivery_deadline_months} meses` : 'Não informado' }}
-                    <span v-if="mod.delivery_deadline_note" class="block text-xs text-gray-400 dark:text-slate-500 mt-0.5">{{ mod.delivery_deadline_note }}</span>
+                    <span v-if="mod.delivery_deadline_note" class="block text-xs text-ink-subtle mt-0.5">{{ mod.delivery_deadline_note }}</span>
                   </span>
                 </div>
               </div>
@@ -291,7 +194,7 @@
                 <p>{{ mod.min_demand_note }}</p>
               </div>
               <div v-if="mod.commission_note" class="note-block mt-2">
-                <span class="note-label"><i class="fas fa-percent text-[10px] mr-1"></i>Obs. Comissão</span>
+                <span class="note-label"><i class="fas fa-percent text-micro mr-1"></i>Obs. Comissão</span>
                 <p>{{ mod.commission_note }}</p>
               </div>
             </div>
@@ -300,7 +203,7 @@
           <!-- ── Operacional — sempre visível ───────────────────────────── -->
           <div class="info-card mb-4">
             <div class="info-card-header">
-              <i class="fas fa-gears text-blue-500"></i>
+              <i class="fas fa-gears text-accent"></i>
               Operacional
             </div>
 
@@ -342,7 +245,7 @@
                     <span class="field-label block mb-1">CCA</span>
                     <span class="field-value block leading-snug break-words" :class="!mod.cca_company_name ? 'field-empty' : ''">
                       {{ mod.cca_company_name || 'Nome não informado' }}
-                      <span class="block mt-1 text-xs font-medium" :class="mod.cca_charges_company ? 'text-accent' : 'text-gray-400 dark:text-slate-500'">
+                      <span class="block mt-1 text-xs font-medium" :class="mod.cca_charges_company ? 'text-accent' : 'text-ink-subtle'">
                         <i :class="mod.cca_charges_company ? 'fa-square-check' : 'fa-square'" class="far mr-1"></i>
                         Pago pela Menin: <strong>{{ mod.cca_charges_company ? 'Sim' : 'Não' }}</strong>
                         <span v-if="mod.cca_charges_company && mod.cca_cost != null" class="ml-1 text-ink-muted">— {{ formatCurrency(mod.cca_cost) }}</span>
@@ -365,7 +268,7 @@
 
                         <span
                           v-if="modCorrespondent(mod).email"
-                          class="block mt-0.5 text-xs font-normal text-gray-400 dark:text-slate-500"
+                          class="block mt-0.5 text-xs font-normal text-ink-subtle"
                         >
                           {{ modCorrespondent(mod).email }}
                         </span>
@@ -392,7 +295,7 @@
 
                         <span
                           v-if="mod.digital_cert_contact"
-                          class="block mt-0.5 text-xs font-normal text-gray-400 dark:text-slate-500"
+                          class="block mt-0.5 text-xs font-normal text-ink-subtle"
                         >
                           {{ mod.digital_cert_contact }}
                         </span>
@@ -400,11 +303,11 @@
                           v-if="mod.digital_cert_has_cost && mod.digital_cert_cost != null"
                           class="block mt-1 text-xs font-medium text-accent"
                         >
-                          <i class="fas fa-building text-[9px] mr-1"></i>{{ formatCurrency(mod.digital_cert_cost) }} (Menin)
+                          <i class="fas fa-building text-micro mr-1"></i>{{ formatCurrency(mod.digital_cert_cost) }} (Menin)
                         </span>
                         <span
                           v-else-if="mod.has_digital_cert"
-                          class="block mt-1 text-[10px] text-gray-400 dark:text-slate-500"
+                          class="block mt-1 text-micro text-ink-subtle"
                         >
                           Sem custo
                         </span>
@@ -418,14 +321,14 @@
                 </div>
 
                 <!-- Arquivos do Empreendimento (QR Code) -->
-                <div v-if="mod.enterprise_files_url" class="mt-4 flex items-center gap-3 p-3 bg-blue-50/50 dark:bg-blue-950/20 border border-accent/20 rounded-xl">
+                <div v-if="mod.enterprise_files_url" class="mt-4 flex items-center gap-3 p-3 bg-accent/10  border border-accent/20 rounded-xl">
                   <AppraisalQrCode :url="mod.enterprise_files_url" :size="80" />
                   <div class="flex-1 min-w-0">
                     <p class="text-xs font-bold text-accent mb-1">
-                      <i class="fas fa-folder-open text-[10px] mr-1"></i>Arquivos do Empreendimento
+                      <i class="fas fa-folder-open text-micro mr-1"></i>Arquivos do Empreendimento
                     </p>
-                    <p class="text-[10px] text-ink-muted">Aponte a câmera no QR Code para acessar a pasta de arquivos.</p>
-                    <a :href="mod.enterprise_files_url" target="_blank" rel="noopener" class="text-[10px] text-blue-500 hover:underline truncate block mt-1">{{ mod.enterprise_files_url }}</a>
+                    <p class="text-micro text-ink-muted">Aponte a câmera no QR Code para acessar a pasta de arquivos.</p>
+                    <a :href="mod.enterprise_files_url" target="_blank" rel="noopener" class="text-micro text-accent hover:underline truncate block mt-1">{{ mod.enterprise_files_url }}</a>
                   </div>
                 </div>
               </div>
@@ -440,7 +343,7 @@
             <!-- Negociação — sempre visível -->
             <div class="info-card mb-4">
               <div class="info-card-header">
-                <i class="fas fa-handshake text-blue-500"></i>
+                <i class="fas fa-handshake text-accent"></i>
                 Condições de Negociação
               </div>
               <div class="info-card-body">
@@ -513,7 +416,7 @@
           <!-- ── Avaliação MCMV ──────────────────────────────────────────── -->
           <div class="info-card mb-4">
             <div class="info-card-header">
-              <i class="fas fa-house-chimney text-blue-500"></i>
+              <i class="fas fa-house-chimney text-accent"></i>
               Avaliação MCMV
             </div>
             <div class="info-card-body space-y-3">
@@ -527,7 +430,7 @@
                         <span v-if="f.appraisal_value != null" class="text-xs text-ink-muted">
                           Avaliação: <strong>{{ formatCurrency(f.appraisal_value) }}</strong>
                         </span>
-                        <span v-if="f.appraisal_ceiling != null" class="text-xs text-gray-500 dark:text-slate-400">
+                        <span v-if="f.appraisal_ceiling != null" class="text-xs text-ink-muted">
                           Teto: <strong>{{ formatCurrency(f.appraisal_ceiling) }}</strong>
                         </span>
                         <span v-if="f.avg_ticket != null" class="text-xs text-accent">
@@ -550,12 +453,12 @@
               </div>
 
               <!-- QR Code do laudo de avaliação -->
-              <div v-if="mod.appraisal_file_url" class="mt-3 flex items-center gap-3 p-3 bg-blue-50/50 dark:bg-blue-950/20 border border-accent/20 rounded-xl">
+              <div v-if="mod.appraisal_file_url" class="mt-3 flex items-center gap-3 p-3 bg-accent/10  border border-accent/20 rounded-xl">
                 <AppraisalQrCode :url="mod.appraisal_file_url" :size="120" />
                 <div class="flex-1 min-w-0">
                   <p class="text-xs font-bold text-accent mb-1">Avaliação CEF</p>
-                  <p class="text-[10px] text-ink-muted">Aponte a câmera no QR Code para acessar o laudo de avaliação.</p>
-                  <a :href="mod.appraisal_file_url" target="_blank" rel="noopener" class="text-[10px] text-blue-500 hover:underline truncate block mt-1">{{ mod.appraisal_file_url }}</a>
+                  <p class="text-micro text-ink-muted">Aponte a câmera no QR Code para acessar o laudo de avaliação.</p>
+                  <a :href="mod.appraisal_file_url" target="_blank" rel="noopener" class="text-micro text-accent hover:underline truncate block mt-1">{{ mod.appraisal_file_url }}</a>
                 </div>
               </div>
             </div>
@@ -564,7 +467,7 @@
           <!-- ── Documentação ──────────────────────────────────────────── -->
           <div v-if="hasDocsInfo(mod)" class="info-card mb-4">
             <div class="info-card-header">
-              <i class="fas fa-file-contract text-blue-500"></i>
+              <i class="fas fa-file-contract text-accent"></i>
               Documentação
             </div>
             <div class="info-card-body space-y-4">
@@ -574,18 +477,18 @@
                   <span class="field-label">Pacote CEF</span>
                   <span class="field-value">
                     {{ mod.cef_package_avg_value != null ? formatCurrency(mod.cef_package_avg_value) : 'Valor não informado' }}
-                    <span v-if="mod.cef_package_paid_by" class="block text-xs text-gray-400 dark:text-slate-500 mt-0.5">Pago por: <strong class="text-ink-muted">{{ mod.cef_package_paid_by === 'menin' ? 'Menin' : 'Cliente' }}</strong></span>
+                    <span v-if="mod.cef_package_paid_by" class="block text-xs text-ink-subtle mt-0.5">Pago por: <strong class="text-ink-muted">{{ mod.cef_package_paid_by === 'menin' ? 'Menin' : 'Cliente' }}</strong></span>
                   </span>
                 </div>
                 <div class="field-item">
                   <span class="field-label">ITBI</span>
                   <span class="field-value">
                     <template v-if="mod.itbi_exempt">
-                      <span class="text-emerald-600 dark:text-emerald-400 font-semibold">Isento</span>
+                      <span class="text-data-pos font-semibold">Isento</span>
                     </template>
                     <template v-else-if="mod.itbi_avg_value != null">
                       {{ formatCurrency(mod.itbi_avg_value) }}
-                      <span class="block text-xs text-gray-400 dark:text-slate-500 mt-0.5">Pago por: <strong class="text-ink-muted">Cliente</strong></span>
+                      <span class="block text-xs text-ink-subtle mt-0.5">Pago por: <strong class="text-ink-muted">Cliente</strong></span>
                     </template>
                     <template v-else>
                       <span class="field-empty">Não informado</span>
@@ -600,31 +503,31 @@
                   <span class="field-label">Cartório — Registro</span>
                   <span class="field-value">
                     {{ formatCurrency(mod.cartorio_registration_value) }}
-                    <span v-if="mod.cartorio_paid_by" class="block text-xs text-gray-400 dark:text-slate-500 mt-0.5">Pago por: <strong class="text-ink-muted">{{ mod.cartorio_paid_by === 'menin' ? 'Menin' : 'Cliente' }}</strong></span>
+                    <span v-if="mod.cartorio_paid_by" class="block text-xs text-ink-subtle mt-0.5">Pago por: <strong class="text-ink-muted">{{ mod.cartorio_paid_by === 'menin' ? 'Menin' : 'Cliente' }}</strong></span>
                   </span>
                 </div>
               </div>
 
               <!-- QR Code do documento de isenção do ITBI -->
-              <div v-if="mod.itbi_exempt && mod.itbi_exemption_doc_url" class="flex items-center gap-3 p-3 bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/40 rounded-xl">
+              <div v-if="mod.itbi_exempt && mod.itbi_exemption_doc_url" class="flex items-center gap-3 p-3 bg-data-pos/10  border border-data-pos/25  rounded-xl">
                 <AppraisalQrCode :url="mod.itbi_exemption_doc_url" :size="120" />
                 <div class="flex-1 min-w-0">
-                  <p class="text-xs font-bold text-emerald-600 dark:text-emerald-400 mb-1">Comprovante de Isenção do ITBI</p>
-                  <p class="text-[10px] text-ink-muted">Aponte a câmera no QR Code para acessar o documento.</p>
-                  <a :href="mod.itbi_exemption_doc_url" target="_blank" rel="noopener" class="text-[10px] text-emerald-500 hover:underline truncate block mt-1">{{ mod.itbi_exemption_doc_url }}</a>
+                  <p class="text-xs font-bold text-data-pos mb-1">Comprovante de Isenção do ITBI</p>
+                  <p class="text-micro text-ink-muted">Aponte a câmera no QR Code para acessar o documento.</p>
+                  <a :href="mod.itbi_exemption_doc_url" target="_blank" rel="noopener" class="text-micro text-data-pos hover:underline truncate block mt-1">{{ mod.itbi_exemption_doc_url }}</a>
                 </div>
               </div>
 
               <!-- Resumo de Custos por Pagador -->
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div class="bg-surface-raised/60 rounded-xl p-3 border border-line">
-                  <p class="text-[10px] font-bold text-ink-muted uppercase tracking-wider mb-2">Pago pela Menin</p>
+                  <p class="text-micro font-bold text-ink-muted uppercase tracking-wider mb-2">Pago pela Menin</p>
                   <ul class="space-y-1 text-xs">
                     <li v-for="item in modCostSummary(mod).menin" :key="`m-${item.label}`" class="flex justify-between">
                       <span class="text-ink-muted">{{ item.label }}</span>
                       <strong class="text-ink">{{ formatCurrency(item.value) }}</strong>
                     </li>
-                    <li v-if="!modCostSummary(mod).menin.length" class="text-gray-400 dark:text-slate-500 italic">—</li>
+                    <li v-if="!modCostSummary(mod).menin.length" class="text-ink-subtle italic">—</li>
                   </ul>
                   <div class="mt-2 pt-2 border-t border-line flex justify-between text-xs">
                     <span class="font-semibold text-ink">Total</span>
@@ -632,13 +535,13 @@
                   </div>
                 </div>
                 <div class="bg-surface-raised/60 rounded-xl p-3 border border-line">
-                  <p class="text-[10px] font-bold text-ink-muted uppercase tracking-wider mb-2">Pago pelo Cliente</p>
+                  <p class="text-micro font-bold text-ink-muted uppercase tracking-wider mb-2">Pago pelo Cliente</p>
                   <ul class="space-y-1 text-xs">
                     <li v-for="item in modCostSummary(mod).client" :key="`c-${item.label}`" class="flex justify-between">
                       <span class="text-ink-muted">{{ item.label }}</span>
                       <strong class="text-ink">{{ formatCurrency(item.value) }}</strong>
                     </li>
-                    <li v-if="!modCostSummary(mod).client.length" class="text-gray-400 dark:text-slate-500 italic">—</li>
+                    <li v-if="!modCostSummary(mod).client.length" class="text-ink-subtle italic">—</li>
                   </ul>
                   <div class="mt-2 pt-2 border-t border-line flex justify-between text-xs">
                     <span class="font-semibold text-ink">Total</span>
@@ -652,7 +555,7 @@
             <!-- Tabelas de Preço — sempre visível -->
             <div class="info-card mb-4">
               <div class="info-card-header">
-                <i class="fas fa-tag text-blue-500"></i>
+                <i class="fas fa-tag text-accent"></i>
                 Tabelas de Preço
               </div>
               <div v-if="modSelectedPriceTables(mod).length"> 
@@ -661,16 +564,16 @@
                     
                     <div class="flex items-center justify-between w-full gap-2">
                       <div class="flex items-center gap-2 min-w-0">
-                        <i class="fas fa-table text-blue-400 text-xs flex-shrink-0"></i>
+                        <i class="fas fa-table text-accent text-xs flex-shrink-0"></i>
                         <span class="text-sm text-ink font-bold truncate">{{ t.nome }}</span>
                       </div>
                       <div class="flex items-center gap-2 flex-shrink-0">
                         <span v-if="t.vigente" class="badge-green">vigente</span>
-                        <span class="text-xs text-gray-400 dark:text-slate-500">{{ formatDate(t.data_vigencia_de) }} → {{ formatDate(t.data_vigencia_ate) }}</span>
+                        <span class="text-xs text-ink-subtle">{{ formatDate(t.data_vigencia_de) }} → {{ formatDate(t.data_vigencia_ate) }}</span>
                       </div>
                     </div>
 
-                    <div v-if="t.unit_count > 0" class="flex items-center gap-4 text-xs text-ink-muted flex-wrap border-b border-gray-200/50 dark:border-gray-700/50 pb-3 w-full">
+                    <div v-if="t.unit_count > 0" class="flex items-center gap-4 text-xs text-ink-muted flex-wrap border-b border-line/50 pb-3 w-full">
                       <span><i class="fas fa-home mr-1"></i><strong>{{ t.unit_count }}</strong> unidades</span>
                       <span><i class="fas fa-tag mr-1"></i>De <strong>{{ formatCurrencyShort(t.price_min) }}</strong> até <strong>{{ formatCurrencyShort(t.price_max) }}</strong></span>
                       <span><i class="fas fa-chart-line mr-1"></i>Média <strong>{{ formatCurrencyShort(t.price_avg) }}</strong></span>
@@ -680,28 +583,28 @@
                     </div>
 
                     <div v-if="t.unidades?.length" class="w-full">
-                      <p class="text-[10px] font-bold text-blue-500 uppercase tracking-wider mb-2">Fluxo Médio (Ref: {{ t.unidades[0].unidade }})</p>
+                      <p class="text-micro font-bold text-accent uppercase tracking-wider mb-2">Fluxo Médio (Ref: {{ t.unidades[0].unidade }})</p>
                       <div class="flex flex-wrap gap-2 w-full">
                         <div v-for="serie in t.unidades[0].series" :key="serie.nome" 
                           class="bg-surface-raised/60 p-2 rounded-lg border border-line flex flex-col justify-between flex-grow flex-shrink-0 basis-[calc(25%-0.5rem)] min-w-[120px] max-w-full">
                           
-                          <p class="text-[9px] text-gray-400 dark:text-slate-500 uppercase font-bold whitespace-normal leading-tight mb-1">
+                          <p class="text-micro text-ink-subtle uppercase font-bold whitespace-normal leading-tight mb-1">
                             {{ serie.nome }}
                           </p>
                           
                           <div>
                             <p class="text-sm font-black text-ink">{{ formatCurrencyShort(serie.valor) }}</p>
-                            <p class="text-[10px] text-gray-500 dark:text-slate-400">
+                            <p class="text-micro text-ink-muted">
                               {{ serie.qtd_parcelas }}x 
-                              <span v-if="serie.data_vencimento" class="text-[9px]">({{ serie.data_vencimento.split('/')[2] }})</span>
+                              <span v-if="serie.data_vencimento" class="text-micro">({{ serie.data_vencimento.split('/')[2] }})</span>
                             </p>
                           </div>
                         </div>
                       </div>
                     </div>
 
-                    <div v-if="t.forma" class="bg-blue-50/50 dark:bg-blue-900/10 p-2 rounded-lg w-full">
-                      <p class="text-[10px] text-accent font-medium italic">
+                    <div v-if="t.forma" class="bg-accent/10  p-2 rounded-lg w-full">
+                      <p class="text-micro text-accent font-medium italic">
                         <i class="fas fa-info-circle mr-1"></i>{{ t.forma }}
                       </p>
                     </div>
@@ -711,15 +614,15 @@
 
               <!-- Tabelas manuais -->
               <div v-if="(mod.manual_price_tables ?? []).length" class="p-4 space-y-3" :class="modSelectedPriceTables(mod).length ? 'pt-0' : ''">
-                <p class="text-[10px] font-bold text-orange-400 uppercase tracking-wider">Tabelas Manuais</p>
+                <p class="text-micro font-bold text-data-warn uppercase tracking-wider">Tabelas Manuais</p>
                 <div v-for="(mt, mi) in mod.manual_price_tables" :key="mi"
                   class="price-table-row flex-col items-start gap-2 p-4 bg-surface-sunken/40 rounded-xl border border-line">
                   <div class="flex items-center justify-between w-full gap-2">
                     <div class="flex items-center gap-2 min-w-0">
-                      <i class="fas fa-file-invoice-dollar text-orange-400 text-xs flex-shrink-0"></i>
+                      <i class="fas fa-file-invoice-dollar text-data-warn text-xs flex-shrink-0"></i>
                       <span class="text-sm text-ink font-bold truncate">{{ mt.name || '(sem nome)' }}</span>
                     </div>
-                    <span v-if="mt.validity_from || mt.validity_to" class="text-xs text-gray-400 dark:text-slate-500 flex-shrink-0">
+                    <span v-if="mt.validity_from || mt.validity_to" class="text-xs text-ink-subtle flex-shrink-0">
                       {{ formatDate(mt.validity_from) }} → {{ formatDate(mt.validity_to) }}
                     </span>
                   </div>
@@ -756,7 +659,7 @@
           <!-- ── Campanhas ───────────────────────────────────────────────── -->
           <div class="info-card mb-4">
             <div class="info-card-header">
-              <i class="fas fa-bullhorn text-blue-500"></i>
+              <i class="fas fa-bullhorn text-accent"></i>
               Campanhas
             </div>
             <div class="info-card-body">
@@ -766,7 +669,7 @@
                   <p v-if="camp.description" class="text-xs text-ink-muted mt-0.5">{{ camp.description }}</p>
                   <div class="flex items-center gap-3 mt-2 flex-wrap">
                     <span v-if="camp.value" class="campaign-value">{{ formatCurrency(camp.value) }}</span>
-                    <span v-if="camp.start_date" class="text-xs text-gray-400 dark:text-slate-500">
+                    <span v-if="camp.start_date" class="text-xs text-ink-subtle">
                       {{ formatDate(camp.start_date) }}{{ camp.end_date ? ` → ${formatDate(camp.end_date)}` : '' }}
                     </span>
                   </div>
@@ -783,45 +686,45 @@
           <!-- ── Unidades (snapshot) ─────────────────────────────────────── -->
           <div v-if="snapshotBlocos(mod).length" class="info-card mb-4">
             <div class="info-card-header">
-              <i class="fas fa-home text-blue-500"></i>
+              <i class="fas fa-home text-accent"></i>
               Unidades
-              <span class="ml-auto flex items-center gap-1.5 text-[10px] font-normal text-gray-400 dark:text-slate-500 normal-case tracking-normal">
-                <i class="fas fa-snowflake text-blue-400 text-[9px]"></i>
+              <span class="ml-auto flex items-center gap-1.5 text-micro font-normal text-ink-subtle normal-case tracking-normal">
+                <i class="fas fa-snowflake text-accent text-micro"></i>
                 Congelado em {{ formatSnapshotDate(mod.unit_snapshot.capturedAt) }}
               </span>
             </div>
             <div class="info-card-body">
               <div class="flex flex-wrap gap-3 mb-4 text-xs">
                 <span class="flex items-center gap-1.5">
-                  <span class="w-2.5 h-2.5 rounded-full bg-green-400 inline-block"></span>
+                  <span class="w-2.5 h-2.5 rounded-full bg-data-pos inline-block"></span>
                   <strong>{{ snapshotStats(mod).disp }}</strong> Disponíveis
                 </span>
                 <span class="flex items-center gap-1.5">
-                  <span class="w-2.5 h-2.5 rounded-full bg-yellow-400 inline-block"></span>
+                  <span class="w-2.5 h-2.5 rounded-full bg-data-warn inline-block"></span>
                   <strong>{{ snapshotStats(mod).res }}</strong> Reservadas
                 </span>
                 <span class="flex items-center gap-1.5">
-                  <span class="w-2.5 h-2.5 rounded-full bg-red-400 inline-block"></span>
+                  <span class="w-2.5 h-2.5 rounded-full bg-data-neg inline-block"></span>
                   <strong>{{ snapshotStats(mod).vend }}</strong> Vendidas
                 </span>
                 <span v-if="snapshotStats(mod).bloq > 0" class="flex items-center gap-1.5">
-                  <span class="w-2.5 h-2.5 rounded-full bg-gray-400 inline-block"></span>
+                  <span class="w-2.5 h-2.5 rounded-full bg-data-neutral inline-block"></span>
                   <strong>{{ snapshotStats(mod).bloq }}</strong> Bloqueadas
                 </span>
-                <span class="text-gray-400 dark:text-slate-500">· Total: {{ snapshotStats(mod).total }}</span>
+                <span class="text-ink-subtle">· Total: {{ snapshotStats(mod).total }}</span>
               </div>
               <div class="space-y-4">
                 <div v-for="bloco in snapshotBlocos(mod)" :key="bloco.idbloco">
-                  <p class="text-[10px] font-bold text-ink-muted uppercase tracking-wider mb-1.5">
+                  <p class="text-micro font-bold text-ink-muted uppercase tracking-wider mb-1.5">
                     {{ bloco.nome }}
                     <span class="font-normal normal-case">· {{ (bloco.unidades ?? []).length }} unid.</span>
                   </p>
                   <div class="unit-row">
                     <div v-for="u in (bloco.unidades ?? [])" :key="u.idunidade"
-                      :class="['rounded px-1.5 py-1 text-center border text-[10px] leading-tight', unitStatusClass(u)]">
+                      :class="['rounded px-1.5 py-1 text-center border text-micro leading-tight', unitStatusClass(u)]">
                       <p class="font-semibold text-ink truncate">{{ u.nome }}</p>
                       <p v-if="u.valor_total != null" class="text-accent font-bold">{{ formatCurrencyShort(u.valor_total) }}</p>
-                      <p v-if="u.area_privativa" class="text-gray-400 dark:text-slate-500">{{ Number(u.area_privativa).toFixed(2) }}m²</p>
+                      <p v-if="u.area_privativa" class="text-ink-subtle">{{ Number(u.area_privativa).toFixed(2) }}m²</p>
                     </div>
                   </div>
                 </div>
@@ -836,44 +739,44 @@
 
       <!-- ── Resumo Total de Custos da FICHA — APENAS NA TELA (oculto no PDF) ──── -->
       <div v-if="!isPrinting && localModules.length && fichaCosts.totalMenin + fichaCosts.totalClient > 0"
-        class="no-print bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/20 rounded-2xl border-2 border-accent/40 overflow-hidden mb-4 mt-2">
-        <div class="px-5 py-3 bg-blue-100/60 dark:bg-blue-900/30 border-b border-accent/30">
+        class="no-print bg-gradient-to-br from-accent/25 to-accent/25   rounded-2xl border-2 border-accent/40 overflow-hidden mb-4 mt-2">
+        <div class="px-5 py-3 bg-accent/10  border-b border-accent/30">
           <p class="text-sm font-bold text-accent flex items-center gap-2">
             <i class="fas fa-coins"></i> Resumo Total de Custos da Ficha
-            <span v-if="localModules.length > 1" class="text-[10px] font-medium text-blue-500 dark:text-blue-400">
+            <span v-if="localModules.length > 1" class="text-micro font-medium text-accent">
               (somando todos os {{ localModules.length }} módulos)
             </span>
           </p>
         </div>
         <div class="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div class="bg-surface-raised/60 rounded-xl p-4 border border-accent/20">
-            <p class="text-[10px] font-bold text-ink-muted uppercase tracking-wider mb-2 flex items-center gap-1.5">
-              <i class="fas fa-building text-blue-500"></i> Pago pela Menin
+            <p class="text-micro font-bold text-ink-muted uppercase tracking-wider mb-2 flex items-center gap-1.5">
+              <i class="fas fa-building text-accent"></i> Pago pela Menin
             </p>
             <ul class="space-y-1 text-xs">
               <li v-for="item in fichaCosts.menin" :key="`fm-${item.label}`" class="flex justify-between">
                 <span class="text-ink-muted">{{ item.label }}</span>
                 <strong class="text-ink">{{ formatCurrency(item.value) }}</strong>
               </li>
-              <li v-if="!fichaCosts.menin.length" class="text-gray-400 dark:text-slate-500 italic">—</li>
+              <li v-if="!fichaCosts.menin.length" class="text-ink-subtle italic">—</li>
             </ul>
-            <div class="mt-3 pt-3 border-t-2 border-accent/30 flex justify-between text-sm">
+            <div class="mt-3 pt-3 border-accent/30 flex justify-between text-sm">
               <span class="font-bold text-ink">Total Menin</span>
               <strong class="text-base text-accent">{{ formatCurrency(fichaCosts.totalMenin) }}</strong>
             </div>
           </div>
           <div class="bg-surface-raised/60 rounded-xl p-4 border border-accent/20">
-            <p class="text-[10px] font-bold text-ink-muted uppercase tracking-wider mb-2 flex items-center gap-1.5">
-              <i class="fas fa-user text-blue-500"></i> Pago pelo Cliente
+            <p class="text-micro font-bold text-ink-muted uppercase tracking-wider mb-2 flex items-center gap-1.5">
+              <i class="fas fa-user text-accent"></i> Pago pelo Cliente
             </p>
             <ul class="space-y-1 text-xs">
               <li v-for="item in fichaCosts.client" :key="`fc-${item.label}`" class="flex justify-between">
                 <span class="text-ink-muted">{{ item.label }}</span>
                 <strong class="text-ink">{{ formatCurrency(item.value) }}</strong>
               </li>
-              <li v-if="!fichaCosts.client.length" class="text-gray-400 dark:text-slate-500 italic">—</li>
+              <li v-if="!fichaCosts.client.length" class="text-ink-subtle italic">—</li>
             </ul>
-            <div class="mt-3 pt-3 border-t-2 border-accent/30 flex justify-between text-sm">
+            <div class="mt-3 pt-3 border-accent/30 flex justify-between text-sm">
               <span class="font-bold text-ink">Total Cliente</span>
               <strong class="text-base text-accent">{{ formatCurrency(fichaCosts.totalClient) }}</strong>
             </div>
@@ -883,7 +786,7 @@
 
       <!-- Rodapé — só impresso -->
       <div class="print-only print-footer">
-        <div class="flex items-center justify-between text-xs text-gray-400 dark:text-slate-500">
+        <div class="flex items-center justify-between text-xs text-ink-subtle">
           <span>Menin Office — Ficha Comercial Confidencial</span>
           <span>Gerado em {{ formatDateFull(new Date()) }}</span>
         </div>
@@ -898,6 +801,9 @@
 </template>
 
 <script setup>
+import Modal from '@/components/UI/Modal.vue';
+import Button from '@/components/UI/Button.vue';
+import IconButton from '@/components/UI/IconButton.vue';
 import { ref, computed, nextTick, watch } from 'vue';
 import QRCode from 'qrcode';
 import AppraisalQrCode from './AppraisalQrCode.vue';
@@ -920,7 +826,6 @@ const props = defineProps({
     wasRejected:      { type: Boolean, default: false },
     rejectionNote:    { type: String,  default: null },
     activeIndex:      { type: Number,  default: 0 },     // módulo ativo (compartilhado com o índice do Detail)
-    hideChrome:       { type: Boolean, default: false }, // esconde o header redundante (mês/ações/pills) no novo layout
 });
 
 const emit = defineEmits(['navigate-month', 'submit-for-approval', 'unlock', 'cancel-approval', 'authorize', 'update:activeIndex']);
@@ -959,27 +864,11 @@ const currentHistoryIdx = computed(() =>
     history.value.findIndex(h => String(h.id) === String(props.detail?.id))
 );
 
-const prevItem = computed(() =>
-    currentHistoryIdx.value < history.value.length - 1
-        ? history.value[currentHistoryIdx.value + 1] : null
-);
-
-const nextItem = computed(() =>
-    currentHistoryIdx.value > 0
-        ? history.value[currentHistoryIdx.value - 1] : null
-);
-
-const currentHistoryPos = computed(() =>
-    history.value.length ? currentHistoryIdx.value + 1 : 1
-);
-
 const currentMonthLabel = computed(() => {
     const h = history.value[currentHistoryIdx.value];
     return h ? formatMonth(h.reference_month) : formatMonth(props.detail?.reference_month);
 });
 
-function navigatePrev() { if (prevItem.value) emit('navigate-month', prevItem.value.id); }
-function navigateNext() { if (nextItem.value) emit('navigate-month', nextItem.value.id); }
 
 // ── Status ────────────────────────────────────────────────────────────────────
 
@@ -990,35 +879,14 @@ const STATUS_LABELS = {
     closed:           'Encerrado',
 };
 
-function statusChipClass(s) {
-    const map = {
-        draft:            'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
-        pending_approval: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
-        approved:         'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-        closed:           'bg-gray-200 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
-    };
-    return map[s] ?? 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400';
-}
 
 function statusBadgePrint(s) {
     const map = {
-        draft:            'bg-amber-100 text-amber-800',
-        pending_approval: 'bg-blue-100 text-blue-800',
-        approved:         'bg-green-100 text-green-800',
+        draft:            'bg-data-warn/10 text-data-warn',
+        pending_approval: 'bg-accent/10 text-accent',
+        approved:         'bg-data-pos/10 text-data-pos',
     };
-    return map[s] ?? 'bg-gray-100 text-gray-700';
-}
-
-// ── Completude ────────────────────────────────────────────────────────────────
-
-function moduleCompleteness(mod) {
-    return {
-        data:        !!(mod.module_name && mod.total_units),
-        prices:      (mod.price_table_ids?.length > 0) || (mod.manual_price_tables?.length > 0),
-        negotiation: !!(mod.max_entry_value || mod.rp_rule || mod.max_installments),
-        campaigns:   (mod.campaigns?.length > 0),
-        operational: !!(mod.manager_user_id || mod.manager_name || mod.correspondent_id || mod.contract_registration_by),
-    };
+    return map[s] ?? 'bg-surface-sunken text-ink';
 }
 
 // ── Helpers de módulo ─────────────────────────────────────────────────────────
@@ -1243,10 +1111,10 @@ function snapshotStats(mod) {
 
 function unitStatusClass(unit) {
     const st = classifySnapshotUnit(unit);
-    if (st.isSold) return 'border-rose-200 bg-rose-50 dark:bg-rose-950/20 dark:border-rose-800';
-    if (st.isReserved) return 'border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-700';
-    if (st.isBlocked) return 'border-gray-200 bg-surface-sunken/30 dark:border-gray-700';
-    return 'border-emerald-200 bg-emerald-50 dark:bg-emerald-950/20 dark:border-emerald-800';
+    if (st.isSold) return 'border-data-neg/25 bg-data-neg/10  ';
+    if (st.isReserved) return 'border-data-warn/25 bg-data-warn/10  ';
+    if (st.isBlocked) return 'border-line bg-surface-sunken/30 border-line';
+    return 'border-data-pos/25 bg-data-pos/10  ';
 }
 
 // ── Faixas MCMV ───────────────────────────────────────────────────────────────
@@ -2637,29 +2505,66 @@ async function buildPrintHtml() {
     return html;
 }
 
+// Imprimir/gerar PDF a partir de um iframe OCULTO na própria página. A versão
+// anterior abria `window.open` e dependia de o navegador permitir popup — o que
+// falhava calado com bloqueador ligado. O popup fica como plano B.
+const imprimindo = ref(false);
+
 async function printModule() {
-    showDocModal.value = false;
-    const html = await buildPrintHtml();
-    if (!html) return;
+    if (imprimindo.value) return;
+    imprimindo.value = true;
+    try {
+        const html = await buildPrintHtml();
+        if (!html) return;
 
-    const printWin = window.open('', '_blank', 'width=900,height=700,scrollbars=yes');
+        const quadro = document.createElement('iframe');
+        quadro.setAttribute('aria-hidden', 'true');
+        quadro.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden';
+        document.body.appendChild(quadro);
 
-    if (!printWin) {
+        const doc = quadro.contentDocument;
+        if (!doc) { document.body.removeChild(quadro); return imprimirEmPopup(html); }
+
+        doc.open();
+        doc.write(html);
+        doc.close();
+
+        // O documento carrega fontes e imagens; imprimir antes disso sai em branco.
+        await new Promise((resolve) => {
+            if (quadro.contentWindow?.document.readyState === 'complete') return resolve();
+            quadro.onload = resolve;
+            setTimeout(resolve, 3000);   // rede lenta não pode travar o botão
+        });
+
+        quadro.contentWindow.focus();
+        quadro.contentWindow.print();
+
+        // Só remove depois do diálogo: retirar antes cancela a impressão.
+        const limpar = () => { if (quadro.parentNode) document.body.removeChild(quadro); };
+        quadro.contentWindow.addEventListener('afterprint', limpar, { once: true });
+        setTimeout(limpar, 60_000);
+    } catch (e) {
+        conditionsStore.notify(e.message || 'Não foi possível montar o documento.', 'error');
+    } finally {
+        imprimindo.value = false;
+    }
+}
+
+/** Plano B: navegador que não deixa imprimir de iframe. */
+function imprimirEmPopup(html) {
+    const janela = window.open('', '_blank', 'width=900,height=700,scrollbars=yes');
+    if (!janela) {
         conditionsStore.notify('Popup bloqueado pelo navegador. Permita popups para este site e tente novamente.', 'error');
         return;
     }
-
-    printWin.document.open();
-    printWin.document.write(html);
-    printWin.document.close();
-
-    printWin.onload = () => {
-        setTimeout(() => {
-            printWin.focus();
-            printWin.print();
-            printWin.addEventListener('afterprint', () => printWin.close());
-        }, 400);
-    };
+    janela.document.open();
+    janela.document.write(html);
+    janela.document.close();
+    janela.onload = () => setTimeout(() => {
+        janela.focus();
+        janela.print();
+        janela.addEventListener('afterprint', () => janela.close());
+    }, 400);
 }
 
 // ── Formatadores ──────────────────────────────────────────────────────────────
@@ -2696,12 +2601,16 @@ function formatDateFull(date) {
 </script>
 
 <style scoped>
+/* A prévia do documento é PAPEL: fundo branco nos dois temas, de propósito.
+   Não trocar por token de superfície — o que se vê aqui é o que sai impresso. */
+.folha { background: #ffffff; }
+
 /* ── Cabeçalho do documento ─────────────────────────────────────────────────── */
 .doc-header {
     @apply bg-surface-raised rounded-2xl border border-line shadow-sm overflow-hidden;
 }
 .doc-header-body { @apply px-6 py-5; }
-.doc-eyebrow { @apply text-xs font-bold text-blue-500 uppercase tracking-widest mb-1; }
+.doc-eyebrow { @apply text-xs font-bold text-accent uppercase tracking-widest mb-1; }
 .doc-title   { @apply text-2xl font-bold text-ink leading-tight; }
 .doc-meta-chip {
     @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium
@@ -2734,7 +2643,7 @@ function formatDateFull(date) {
     @apply flex flex-col items-center justify-center p-4 rounded-2xl text-center
            bg-surface-raised border border-line shadow-sm;
 }
-.kpi-label { @apply text-[10px] font-bold text-ink-subtle uppercase tracking-wider mb-1; }
+.kpi-label { @apply text-micro font-bold text-ink-subtle uppercase tracking-wider mb-1; }
 .kpi-value { @apply text-2xl font-black text-ink leading-none; }
 .kpi-value.kpi-empty { @apply text-ink-subtle; }
 .kpi-sub   { @apply text-xs text-ink-subtle mt-1; }
@@ -2770,7 +2679,7 @@ function formatDateFull(date) {
 }
 .info-card-header {
     @apply flex items-center gap-2 px-5 py-3 text-xs font-bold text-ink-muted
-           uppercase tracking-wider bg-gray-50/70 dark:bg-gray-800/40
+           uppercase tracking-wider bg-surface-sunken
            border-b border-line;
 }
 .info-card-body { @apply p-5; }
@@ -2778,7 +2687,7 @@ function formatDateFull(date) {
 /* ── Grade de campos ─────────────────────────────────────────────────────────── */
 .field-grid { @apply grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-3; }
 .field-item { @apply flex flex-col; }
-.field-label { @apply text-[10px] font-bold text-ink-subtle uppercase tracking-wider mb-0.5; }
+.field-label { @apply text-micro font-bold text-ink-subtle uppercase tracking-wider mb-0.5; }
 .field-value { @apply text-sm font-semibold text-ink; }
 .field-value.accent { @apply text-accent; }
 .field-value.field-empty { @apply text-ink-subtle italic font-normal; }
@@ -2791,13 +2700,13 @@ function formatDateFull(date) {
 /* ── Subsídio ────────────────────────────────────────────────────────────────── */
 .subsidy-badge {
     @apply inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs
-           bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400
-           border border-emerald-200 dark:border-emerald-800;
+           bg-data-pos/20 text-data-pos
+           border border-data-pos/25;
 }
 
 /* ── Sublabel ────────────────────────────────────────────────────────────────── */
 .section-sublabel {
-    @apply text-[10px] font-bold text-ink-subtle uppercase tracking-wider mb-2;
+    @apply text-micro font-bold text-ink-subtle uppercase tracking-wider mb-2;
 }
 
 /* ── Tabela de preço row ─────────────────────────────────────────────────────── */
@@ -2806,32 +2715,32 @@ function formatDateFull(date) {
            bg-surface-sunken/40 border border-line;
 }
 .badge-green {
-    @apply px-2 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-700
-           dark:bg-green-900/30 dark:text-green-400;
+    @apply px-2 py-0.5 rounded-full text-xs font-bold bg-data-pos/10 text-data-pos
+            ;
 }
 .manual-table-card {
-    @apply px-3 py-2.5 rounded-lg border border-orange-100 dark:border-orange-900/30
-           bg-orange-50/60 dark:bg-orange-900/10;
+    @apply px-3 py-2.5 rounded-lg border border-data-warn/25 
+           bg-data-warn/10 ;
 }
 
 /* ── Operacional grid ────────────────────────────────────────────────────────── */
 .op-grid  { @apply grid grid-cols-1 sm:grid-cols-2 gap-4; }
 .op-item  { @apply flex items-start gap-3; }
-.op-icon  { @apply text-blue-400 text-sm mt-0.5 w-4 flex-shrink-0; }
+.op-icon  { @apply text-accent text-sm mt-0.5 w-4 flex-shrink-0; }
 
 /* ── Campanhas ───────────────────────────────────────────────────────────────── */
 .campaign-card {
     @apply p-4 rounded-xl border border-line
-           bg-gray-50/60 dark:bg-gray-800/20;
+           bg-surface-sunken;
 }
 .campaign-value { @apply text-sm font-bold text-accent; }
 
 /* ── Notas ───────────────────────────────────────────────────────────────────── */
 .note-block {
-    @apply p-3 rounded-lg bg-surface-sunken/40 border-l-2 border-line;
+    @apply p-3 rounded-lg bg-surface-sunken/40 border-line;
 }
 .note-block p { @apply text-sm text-ink-muted mt-0.5; }
-.note-label   { @apply block text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider; }
+.note-label   { @apply block text-micro font-bold text-ink-subtle uppercase tracking-wider; }
 
 /* ── Separador de módulo no print ────────────────────────────────────────────── */
 .print-module-sep {
@@ -2840,7 +2749,7 @@ function formatDateFull(date) {
 .print-module-sep::before,
 .print-module-sep::after {
     content: '';
-    @apply flex-1 h-px bg-blue-200 dark:bg-blue-800;
+    @apply flex-1 h-px bg-accent/10 ;
 }
 .print-module-sep span {
     @apply text-xs font-bold text-accent uppercase tracking-widest px-3;
@@ -2982,11 +2891,12 @@ function formatDateFull(date) {
         print-color-adjust: exact;
     }
 
-    /* Unidades */
-    .border-green-200  { border-color: #bbf7d0 !important; background: #f0fdf4 !important; }
-    .border-yellow-200 { border-color: #fef08a !important; background: #fefce8 !important; }
-    .border-red-200    { border-color: #fecaca !important; background: #fef2f2 !important; }
-    .text-blue-600     { color: #2563eb !important; }
+    /* Unidades. A barra precisa de escape: o seletor casa com a classe do
+       template (`border-data-pos/25`), e no papel a cor vira tinta literal. */
+    .border-data-pos\/25  { border-color: #bbf7d0 !important; background: #f0fdf4 !important; }
+    .border-data-warn\/25 { border-color: #fef08a !important; background: #fefce8 !important; }
+    .border-data-neg\/25  { border-color: #fecaca !important; background: #fef2f2 !important; }
+    .text-accent     { color: #2563eb !important; }
 
     .info-card-body .grid-cols-3,
     .info-card-body .grid-cols-4,

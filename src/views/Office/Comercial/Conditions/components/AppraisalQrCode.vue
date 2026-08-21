@@ -1,8 +1,8 @@
 <template>
   <div v-if="dataUrl" class="inline-flex flex-col items-center gap-1">
     <img :src="dataUrl" :alt="`QR para ${url}`" :width="size" :height="size"
-      class="rounded border border-line bg-white p-1" />
-    <span v-if="caption" class="text-[9px] text-ink-subtle text-center max-w-[120px] leading-tight">{{ caption }}</span>
+      class="rounded border border-line bg-surface-raised p-1" />
+    <span v-if="caption" class="text-micro text-ink-subtle text-center max-w-[120px] leading-tight">{{ caption }}</span>
   </div>
 </template>
 

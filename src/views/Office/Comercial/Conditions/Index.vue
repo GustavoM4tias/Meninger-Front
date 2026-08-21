@@ -16,6 +16,10 @@ import Button from '@/components/UI/Button.vue';
 import Badge from '@/components/UI/Badge.vue';
 import Spinner from '@/components/UI/Spinner.vue';
 import EmptyState from '@/components/UI/EmptyState.vue';
+import PageHelp from '@/components/UI/PageHelp.vue';
+import StatRow from '@/components/UI/StatRow.vue';
+import FilterBar from '@/components/UI/FilterBar.vue';
+import Skeleton from '@/components/UI/Skeleton.vue';
 
 const store = useConditionsStore();
 const router = useRouter();
@@ -32,17 +36,6 @@ const search = ref('');
 const filterStatus = ref('');
 const filterMonth = ref(currentMonthYm());
 const showClosed = ref(false);
-
-const statusOptions = computed(() => {
-  const opts = [{ value: '', label: 'Todos os status' }];
-  if (canManage.value) {
-    opts.push({ value: 'draft', label: 'Rascunho' });
-    opts.push({ value: 'pending_approval', label: 'Em autorização' });
-  }
-  opts.push({ value: 'approved', label: 'Autorizado' });
-  opts.push({ value: 'closed', label: 'Encerrado' });
-  return opts;
-});
 
 // ── Criação ──────────────────────────────────────────
 const openCreate = ref(false);
@@ -225,16 +218,71 @@ function openGroup(group) {
 
 // ── Helpers ──────────────────────────────────────────
 const STATUS_MAP = {
-  draft:            { label: 'Rascunho',       variant: 'warning', bar: 'bg-amber-500' },
-  pending_approval: { label: 'Em autorização', variant: 'accent',  bar: 'bg-accent' },
-  approved:         { label: 'Autorizado',     variant: 'success', bar: 'bg-emerald-500' },
-  published:        { label: 'Autorizado',     variant: 'success', bar: 'bg-emerald-500' },
-  closed:           { label: 'Encerrado',      variant: 'neutral', bar: 'bg-slate-500' },
+    draft:            { label: 'Rascunho',       variant: 'warning', bar: 'bg-data-warn',    tone: 'warn' },
+    pending_approval: { label: 'Em autorização', variant: 'accent',  bar: 'bg-accent',       tone: 'accent' },
+    approved:         { label: 'Autorizado',     variant: 'success', bar: 'bg-data-pos',     tone: 'pos' },
+    published:        { label: 'Autorizado',     variant: 'success', bar: 'bg-data-pos',     tone: 'pos' },
+    closed:           { label: 'Encerrado',      variant: 'neutral', bar: 'bg-data-neutral', tone: 'neutral' },
 };
 
 const statusVariant = (s) => STATUS_MAP[s]?.variant ?? 'neutral';
 const statusLabel = (s) => STATUS_MAP[s]?.label ?? s;
-const statusBarClass = (s) => STATUS_MAP[s]?.bar ?? 'bg-slate-400';
+const statusBarClass = (s) => STATUS_MAP[s]?.bar ?? 'bg-data-neutral';
+
+// ── Indicadores: contam as fichas DO MÊS, e cada um é um recorte ─────────────
+// Rascunho e Em autorização só aparecem para quem administra a ficha — para os
+// demais essas situações não existem como assunto.
+const KPI_SITUACOES = ['draft', 'pending_approval', 'approved', 'closed'];
+
+const kpis = computed(() => {
+    const contagem = {};
+    for (const g of monthGroups.value) {
+        const st = g.shown?.status === 'published' ? 'approved' : g.shown?.status;
+        contagem[st] = (contagem[st] ?? 0) + 1;
+    }
+    const cartoes = [{
+        key: '',
+        label: 'Fichas no mês',
+        raw: monthGroups.value.length,
+        hint: `${groups.value.length} série(s) no total`,
+        icon: 'fas fa-file-contract',
+        tone: 'accent',
+    }];
+    for (const st of KPI_SITUACOES) {
+        if (!canManage.value && (st === 'draft' || st === 'pending_approval')) continue;
+        const meta = STATUS_MAP[st];
+        cartoes.push({
+            key: st,
+            label: meta.label,
+            raw: contagem[st] ?? 0,
+            hint: pctDoMes(contagem[st] ?? 0),
+            tone: meta.tone,
+        });
+    }
+    return cartoes;
+});
+
+function pctDoMes(n) {
+    const total = monthGroups.value.length;
+    if (!total) return '—';
+    return `${Math.round((n / total) * 100)}% do mês`;
+}
+
+// Clicar no mesmo cartão solta o recorte; o cartão "Fichas no mês" é o "tudo".
+function alternarStatus(chave) {
+    filterStatus.value = (!chave || filterStatus.value === chave) ? '' : chave;
+}
+
+const filtrosAtivos = computed(() =>
+    (search.value.trim() ? 1 : 0) + (filterMonth.value !== currentMonthYm() ? 1 : 0)
+);
+
+function limparFiltros() {
+    search.value = '';
+    filterMonth.value = availableMonths.value.includes(currentMonthYm())
+        ? currentMonthYm()
+        : (availableMonths.value[0] ?? currentMonthYm());
+}
 
 function formatMonth(dateStr) {
   if (!dateStr) return '—';
@@ -276,7 +324,23 @@ onMounted(async () => {
           <span>Fichas comerciais</span>
           <Favorite :router="'/comercial/conditions'" :section="'Fichas Comerciais'" />
         </template>
-        <template v-if="can('configure') || canEdit" #actions>
+        <template #actions>
+          <PageHelp
+            storage-key="fichas-comerciais"
+            title="Como usar as Fichas Comerciais"
+            intro="Cada cartão é um empreendimento no mês escolhido. A ficha reúne produto, preços, negociação, documentação, campanhas e operacional — e é dela que sai o PDF que vai para assinatura."
+            :steps="[
+              { title: 'Escolha o mês', text: 'A tela abre no mês corrente. Troque em Filtros para ver outra rodada; o histórico de cada série continua dentro da ficha, no seletor de mês do topo.' },
+              { title: 'Leia os indicadores', text: 'Eles contam as fichas do mês por situação. Clicar num deles recorta a lista; clicar de novo solta o recorte.' },
+              { title: 'Abra a ficha', text: 'Clique no cartão. Dentro, as abas separam Módulos (onde se edita), Resumo (o documento e o PDF), Assinatura e Histórico.' },
+              { title: 'Autorize', text: 'Rascunho e Em autorização ainda mudam. Só depois de Autorizada a ficha vale como referência — e editar uma autorizada cancela a autorização.' },
+            ]"
+            :tips="[
+              'Ficha avulsa é produto sem cadastro no CV: leva o ícone de cubo e também evolui sozinha todo mês.',
+              'O número no chip de módulo é a quantidade de unidades daquele módulo.',
+              'Quem define quem edita e quem autoriza é a tela de Configurações, no canto superior.',
+            ]"
+          />
           <RouterLink v-if="can('configure')" to="/comercial/conditions/settings">
             <Button variant="ghost" size="sm" icon="fas fa-cog">
               <span class="hidden sm:inline">Configurações</span>
@@ -288,40 +352,70 @@ onMounted(async () => {
         </template>
       </PageHeader>
 
+      <!-- Indicadores: o recorte por situação mora aqui, não num select à parte. -->
+      <StatRow
+        class="mb-4"
+        :items="kpis"
+        :cols="{ sm: 2, md: 3, lg: 5 }"
+        :loading="loading"
+        selectable
+        :active-key="filterStatus"
+        @select="alternarStatus" />
+
       <!-- Filtros -->
-      <section class="rounded-xl border border-line bg-surface-raised shadow-soft surface-gradient mb-4">
-        <div class="p-3 sm:p-4 grid grid-cols-1 sm:grid-cols-[1fr_12rem_12rem] gap-3">
-          <Input v-model="search" placeholder="Buscar empreendimento..."
-            iconLeft="fas fa-magnifying-glass" />
-          <Select v-model="filterMonth" :options="monthOptions" placeholder="Mês" />
-          <Select v-model="filterStatus" :options="statusOptions" />
-        </div>
-      </section>
+      <!-- `auto-apply`: a tela recorta ao digitar, então não há botão Buscar.
+           Como o primitivo esconde os dois botões juntos, o Limpar volta aqui. -->
+      <FilterBar :active-count="filtrosAtivos" :cols="2" auto-apply>
+        <template #actions>
+          <Button v-if="filtrosAtivos" variant="ghost" size="sm" icon="fas fa-eraser"
+            @click="limparFiltros">
+            <span class="hidden sm:inline">Limpar</span>
+          </Button>
+        </template>
+        <Input v-model="search" label="Buscar" placeholder="Empreendimento ou cidade..."
+          iconLeft="fas fa-magnifying-glass" />
+        <Select v-model="filterMonth" :options="monthOptions" label="Mês de referência" />
+      </FilterBar>
+
+      <!-- Linha de estado: quantas fichas você está vendo, de quantas, e por quê. -->
+      <p v-if="!loading" class="flex items-center gap-2 flex-wrap text-xs text-ink-muted mb-3 mt-4">
+        <span>
+          <strong class="text-ink font-mono tabular-nums">{{ activeGroups.length + closedGroups.length }}</strong>
+          de <span class="font-mono tabular-nums">{{ monthGroups.length }}</span>
+          ficha{{ monthGroups.length === 1 ? '' : 's' }} em
+          <strong class="text-ink">{{ formatMonth(filterMonth) }}</strong>
+        </span>
+        <Badge v-if="filterStatus" variant="accent" size="sm">
+          {{ statusLabel(filterStatus) }}
+          <button class="ml-1.5 opacity-70 hover:opacity-100" @click="filterStatus = ''" title="Limpar recorte">
+            <i class="fas fa-xmark text-micro"></i>
+          </button>
+        </Badge>
+        <Badge v-if="search.trim()" variant="neutral" size="sm">busca: "{{ search.trim() }}"</Badge>
+      </p>
 
       <!-- Erro -->
-      <div v-if="store.error"
-        class="mb-4 rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-700 dark:text-red-300 flex items-center gap-2">
+      <p v-if="store.error" class="mb-4 flex items-center gap-2 rounded-xl border border-data-neg/25 bg-data-neg/10 p-4 text-sm text-data-neg">
         <i class="fas fa-circle-exclamation"></i>{{ store.error }}
-      </div>
+      </p>
 
-      <!-- Loading -->
-      <div v-if="loading" class="py-16 flex flex-col items-center gap-3 text-ink-muted">
-        <Spinner size="lg" />
-        <p class="text-sm">Carregando fichas...</p>
+      <!-- Carregando: mesma grade dos cartões, para a tela não saltar. -->
+      <div v-if="loading" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        <Skeleton v-for="i in 6" :key="i" variant="card" class="h-44" />
       </div>
 
       <!-- Conteúdo -->
       <template v-else-if="activeGroups.length || closedGroups.length">
         <!-- ATIVOS -->
-        <div v-if="activeGroups.length" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        <div v-if="activeGroups.length" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 stagger-in">
           <article v-for="group in activeGroups" :key="group.groupKey"
-            class="group relative rounded-xl border border-line bg-surface-raised shadow-soft surface-gradient overflow-hidden cursor-pointer
+            class="panel group relative overflow-hidden cursor-pointer p-0
                    hover:shadow-elevated hover:border-accent/40 hover:-translate-y-0.5
                    transition-all duration-200 ease-out-expo"
             @click="openGroup(group)">
 
-            <!-- Faixa de status -->
-            <div :class="['h-1', statusBarClass(group.shown.status)]"></div>
+            <!-- Faixa de situação: a cor repete o que o selo já diz por escrito -->
+            <div class="h-1" :class="statusBarClass(group.shown.status)"></div>
 
             <div class="p-5">
               <div class="mb-3 min-w-0">
@@ -339,8 +433,8 @@ onMounted(async () => {
 
               <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
                 <div class="flex items-center gap-2 text-xs text-ink-muted">
-                  <i class="far fa-calendar text-[10px] text-ink-subtle"></i>
-                  <span class="font-semibold font-mono">{{ formatMonth(group.shown.reference_month) }}</span>
+                  <i class="far fa-calendar text-micro text-ink-subtle"></i>
+                  <span class="font-semibold font-mono tabular-nums">{{ formatMonth(group.shown.reference_month) }}</span>
                 </div>
                 <div class="flex items-center gap-2">
                   <Badge :variant="statusVariant(group.shown.status)" size="sm">
@@ -353,15 +447,15 @@ onMounted(async () => {
                 </div>
               </div>
 
-              <!-- Módulos -->
+              <!-- Módulos: o que a ficha cobre, e quantas unidades cada um pesa -->
               <div v-if="group.shown.modules?.length" class="flex flex-wrap gap-1.5">
                 <span v-for="mod in group.shown.modules.slice(0, 4)" :key="mod.id"
-                  class="inline-flex items-center gap-1 px-2 py-0.5 bg-accent-soft text-accent rounded-lg text-[11px] font-medium border border-accent/20">
+                  class="inline-flex items-center gap-1 px-2 py-0.5 bg-accent-soft text-accent rounded-lg text-micro font-medium border border-accent/20">
                   <span class="truncate max-w-[100px]">{{ mod.module_name }}</span>
-                  <span class="opacity-70 font-mono">{{ mod.total_units }}u</span>
+                  <span class="opacity-70 font-mono tabular-nums">{{ mod.total_units }}u</span>
                 </span>
                 <span v-if="group.shown.modules.length > 4"
-                  class="px-2 py-0.5 bg-surface-sunken text-ink-subtle rounded-lg text-[11px] border border-line">
+                  class="px-2 py-0.5 bg-surface-sunken text-ink-subtle rounded-lg text-micro border border-line">
                   +{{ group.shown.modules.length - 4 }}
                 </span>
               </div>
@@ -372,30 +466,30 @@ onMounted(async () => {
           </article>
         </div>
 
-        <!-- Aviso quando só tem encerrados -->
-        <div v-else-if="!loading && closedGroups.length"
+        <!-- Só encerrados no recorte atual -->
+        <p v-else-if="closedGroups.length"
           class="flex items-center gap-3 px-4 py-3 bg-surface-sunken border border-line rounded-xl text-sm text-ink-muted">
           <i class="fas fa-circle-info text-ink-subtle"></i>
-          Nenhum empreendimento ativo no momento.
-        </div>
+          Nenhum empreendimento ativo neste recorte.
+        </p>
 
         <!-- ENCERRADOS -->
         <div v-if="closedGroups.length" class="mt-8">
           <button @click="showClosed = !showClosed"
-            class="flex items-center gap-2 mb-3 px-3 py-2 -ml-3 rounded-lg text-sm font-semibold text-ink-muted hover:text-ink hover:bg-surface-sunken transition-colors">
+            class="flex items-center gap-2 mb-3 px-3 py-2 -ml-3 rounded-lg text-sm font-semibold text-ink-muted hover:text-ink hover:bg-surface-sunken transition duration-120 ease-out-expo">
             <i :class="showClosed ? 'fa-chevron-down' : 'fa-chevron-right'" class="fas text-xs transition-transform"></i>
             <i class="fas fa-flag-checkered text-ink-subtle"></i>
             Encerrados
             <Badge variant="neutral" size="sm">{{ closedGroups.length }}</Badge>
           </button>
 
-          <div v-if="showClosed" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 opacity-75">
+          <div v-if="showClosed" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 opacity-75 stagger-in">
             <article v-for="group in closedGroups" :key="group.groupKey"
-              class="group relative rounded-xl border border-line bg-surface-sunken shadow-soft overflow-hidden cursor-pointer
+              class="panel group relative overflow-hidden cursor-pointer p-0 bg-surface-sunken
                      hover:shadow-elevated hover:border-ink-subtle hover:opacity-100
                      transition-all duration-200 ease-out-expo"
               @click="openGroup(group)">
-              <div class="h-1 bg-slate-500"></div>
+              <div class="h-1 bg-data-neutral"></div>
               <div class="p-5">
                 <div class="mb-3">
                   <p class="font-semibold text-ink-muted text-base leading-tight group-hover:text-ink transition-colors truncate flex items-center gap-2">
@@ -408,12 +502,12 @@ onMounted(async () => {
                 </div>
                 <div class="flex items-center justify-between mb-1 flex-wrap gap-2">
                   <div class="flex items-center gap-2 text-xs text-ink-subtle">
-                    <i class="far fa-calendar text-[10px]"></i>
-                    <span class="font-semibold font-mono">Encerrado em {{ formatMonth(group.shown.reference_month) }}</span>
+                    <i class="far fa-calendar text-micro"></i>
+                    <span class="font-semibold font-mono tabular-nums">Encerrado em {{ formatMonth(group.shown.reference_month) }}</span>
                   </div>
                   <Badge variant="neutral" size="sm">{{ statusLabel('closed') }}</Badge>
                 </div>
-                <p class="text-[11px] text-ink-subtle italic">
+                <p class="text-micro text-ink-subtle italic">
                   {{ group.conditions.length }} ficha{{ group.conditions.length > 1 ? 's' : '' }} no histórico
                 </p>
               </div>
@@ -423,11 +517,11 @@ onMounted(async () => {
         </div>
       </template>
 
-      <!-- Empty -->
-      <EmptyState v-else-if="!loading"
+      <!-- Vazio -->
+      <EmptyState v-else
         size="lg" icon="fas fa-file-contract"
         :title="store.list?.length ? `Nenhuma ficha em ${formatMonth(filterMonth)}` : 'Nenhuma ficha encontrada'"
-        :description="store.list?.length ? 'Troque o mês no filtro para ver outras versões, ou ajuste os filtros/busca.' : 'Crie a primeira ficha para começar.'">
+        :description="store.list?.length ? 'Troque o mês no filtro para ver outras versões, ou solte o recorte de situação.' : 'Crie a primeira ficha para começar.'">
         <template v-if="canEdit && !(store.list?.length)" #actions>
           <Button icon="fas fa-plus" @click="openCreate = true">Nova ficha</Button>
         </template>
@@ -441,7 +535,7 @@ onMounted(async () => {
       <div class="space-y-5">
         <!-- Tipo -->
         <div>
-          <label class="block text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1.5">Tipo de ficha</label>
+          <label class="block text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1.5">Tipo de ficha</label>
           <div class="grid grid-cols-2 gap-2">
             <button type="button" @click="setKind('cv')"
               :class="['flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-md border text-sm font-medium transition-all',
@@ -458,13 +552,13 @@ onMounted(async () => {
               <i class="fas fa-cube text-xs"></i> Avulsa (sem CV)
             </button>
           </div>
-          <p class="text-[11px] text-ink-subtle mt-1.5 leading-relaxed">
+          <p class="text-micro text-ink-subtle mt-1.5 leading-relaxed">
             <template v-if="newForm.kind === 'cv'">
-              <i class="fas fa-circle-info text-[10px] mr-1"></i>
+              <i class="fas fa-circle-info text-micro mr-1"></i>
               Ficha vinculada a empreendimento do CV — herda etapas, unidades e auto-evolui mensalmente.
             </template>
             <template v-else>
-              <i class="fas fa-circle-info text-[10px] mr-1"></i>
+              <i class="fas fa-circle-info text-micro mr-1"></i>
               Ficha avulsa — produto sem cadastro no CV. Também evolui automaticamente todo mês.
             </template>
           </p>
@@ -483,8 +577,8 @@ onMounted(async () => {
             label="Nome da ficha"
             placeholder="Ex: Residencial XYZ"
             iconLeft="fas fa-tag" />
-          <p class="text-[11px] text-ink-subtle mt-1.5">
-            <i class="fas fa-circle-info text-[10px] mr-1"></i>
+          <p class="text-micro text-ink-subtle mt-1.5">
+            <i class="fas fa-circle-info text-micro mr-1"></i>
             Nome livre que identifica este produto no sistema (será também o nome do módulo inicial).
           </p>
         </div>
@@ -495,7 +589,7 @@ onMounted(async () => {
         <!-- Módulos / Etapas -->
         <div v-if="newForm.kind === 'cv' && newForm.idempreendimento">
           <div class="flex items-center justify-between mb-2">
-            <label class="block text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Módulos a incluir</label>
+            <label class="block text-micro font-mono uppercase tracking-wider text-ink-subtle">Módulos a incluir</label>
             <div v-if="enterpriseStages.length && !loadingStages" class="flex items-center gap-2 text-xs">
               <button @click="selectAllStages" class="text-accent hover:underline">Todos</button>
               <span class="text-ink-subtle">·</span>
@@ -542,7 +636,7 @@ onMounted(async () => {
                   @click.prevent="toggleStageExpand(stage.idetapa)"
                   class="w-6 h-6 flex items-center justify-center rounded transition-transform text-ink-subtle hover:text-ink"
                   :class="{ 'rotate-90': expandedStages.has(stage.idetapa) }">
-                  <i class="fas fa-chevron-right text-[10px]"></i>
+                  <i class="fas fa-chevron-right text-micro"></i>
                 </button>
                 <i v-else class="fas fa-layer-group text-xs shrink-0"
                   :class="newForm.selectedStageIds.includes(stage.idetapa) ? 'text-accent/60' : 'text-ink-subtle'"></i>
@@ -582,7 +676,7 @@ onMounted(async () => {
           </div>
 
           <div v-else
-            class="flex items-center gap-2 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-700 dark:text-amber-300">
+            class="flex items-center gap-2 p-3 rounded-xl bg-data-warn/10 border border-data-warn/20 text-xs text-data-warn">
             <i class="fas fa-triangle-exclamation shrink-0"></i>
             <span>
               Nenhuma etapa cadastrada no CV para este empreendimento.
@@ -595,7 +689,7 @@ onMounted(async () => {
             <span class="font-mono">{{ totalSelectedModules }}</span>
             módulo{{ totalSelectedModules > 1 ? 's' : '' }} selecionado{{ totalSelectedModules > 1 ? 's' : '' }}
           </p>
-          <p v-else class="text-xs text-amber-600 dark:text-amber-400 mt-2">
+          <p v-else class="text-xs text-data-warn mt-2">
             <i class="fas fa-circle-exclamation mr-1"></i>
             Selecione ao menos um módulo ou marque "Módulo avulso".
           </p>
@@ -603,7 +697,7 @@ onMounted(async () => {
 
         <!-- Erro -->
         <div v-if="createError"
-          class="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-600 dark:text-red-400 text-sm">
+          class="flex items-center gap-2 p-3 bg-data-neg/10 border border-data-neg/20 rounded-xl text-data-neg text-sm">
           <i class="fas fa-circle-exclamation shrink-0"></i>{{ createError }}
         </div>
       </div>
