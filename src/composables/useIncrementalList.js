@@ -26,7 +26,7 @@ import { ref, computed, watch, onBeforeUnmount, nextTick } from 'vue';
 export const STEP_PADRAO = 50;
 
 export function useIncrementalList(items, options = {}) {
-    const { step = STEP_PADRAO, root = null } = options;
+    const { step = STEP_PADRAO, root = null, onEsgotado = null } = options;
 
     const limite = ref(step);
     const sentinela = ref(null);
@@ -44,8 +44,20 @@ export function useIncrementalList(items, options = {}) {
     }
 
     /* Lista nova (filtro, busca) = volta ao primeiro passo. Continuar em 500
-       itens depois de trocar o filtro é renderizar à toa. */
-    watch(total, () => { limite.value = step; });
+       itens depois de trocar o filtro é renderizar à toa.
+
+       Mas crescer no fim NÃO é lista nova: quando a tela busca a próxima
+       página no servidor e concatena, resetar aqui encolheria a lista embaixo
+       de quem está rolando, com o scroll saltando pra trás. Distinguimos pelo
+       primeiro item: append mantém o mesmo objeto na cabeça, filtro novo traz
+       outro (as linhas vêm de uma resposta nova). */
+    let cabeca = lista.value[0];
+    watch(total, (agora, antes) => {
+        const nova = lista.value[0];
+        const apendou = agora > (antes ?? 0) && nova === cabeca && cabeca !== undefined;
+        cabeca = nova;
+        if (!apendou) limite.value = step;
+    });
 
     /* Depois de crescer, confere se a sentinela AINDA está visível: um passo
        que não encheu a tela nunca dispararia o observer de novo, e a lista
@@ -61,12 +73,20 @@ export function useIncrementalList(items, options = {}) {
         if (caixa.top <= alturaRef) carregarMais();
     });
 
+    /* Memória esgotada com a sentinela ainda à vista: quem tem mais dado é o
+       servidor. Sem isso a lista para no fim da página buscada e o rodapé fica
+       girando pra sempre. */
+    function pedirMais() {
+        if (acabou.value) onEsgotado?.();
+        else carregarMais();
+    }
+
     function observar(el) {
         sentinela.value = el;
         observer?.disconnect();
         if (!el || typeof IntersectionObserver === 'undefined') return;
         observer = new IntersectionObserver((entradas) => {
-            if (entradas.some((e) => e.isIntersecting)) carregarMais();
+            if (entradas.some((e) => e.isIntersecting)) pedirMais();
         }, {
             root: root?.value || null,
             /* Dispara ANTES de chegar no fim: o próximo passo já está montado
@@ -78,7 +98,7 @@ export function useIncrementalList(items, options = {}) {
 
     onBeforeUnmount(() => observer?.disconnect());
 
-    return { visiveis, total, restantes, acabou, limite, carregarMais, observar, step };
+    return { visiveis, total, restantes, acabou, limite, carregarMais, pedirMais, observar, step };
 }
 
 export default useIncrementalList;
