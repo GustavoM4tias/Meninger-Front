@@ -221,6 +221,12 @@ Regras:
   troca, o resultado parcial precisa ser dito **pelo nome**: "12 de 15
   aplicadas. Falharam: Fulano, Beltrano" - nunca um "erro ao salvar" que esconde
   o que passou e o que não passou.
+- **Seleção sobrevive ao filtro, mas nunca em silêncio.** Marcar 15, refinar a
+  busca e seguir com os 15 é o fluxo certo; a barra dizer 15 com a lista
+  mostrando 11 não é. Quando houver selecionado fora do filtro, a barra diz
+  quantos e oferece alinhar ("só as visíveis").
+- **A barra fixa não pode cobrir o fim da lista.** Enquanto ela estiver de pé, a
+  página reserva a altura dela no rodapé.
 - **Lote que substitui estado começa vazio.** Quando as pessoas têm valores
   diferentes entre si (liberação de dados, por exemplo), mostrar a interseção ou
   a união faz parecer que aquilo é o estado delas. Começa em branco e diz, no

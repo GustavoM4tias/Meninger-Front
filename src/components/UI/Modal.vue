@@ -1,5 +1,5 @@
 <script setup>
-import { computed, watch, onMounted, onBeforeUnmount } from 'vue';
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
 
 /**
  * Modal — padrão único do Office.
@@ -136,6 +136,17 @@ const leaveToClass = computed(() => {
   return 'opacity-0 scale-95';
 });
 
+/* O painel ENTRA em 300ms com translate + scale. Durante esse tempo ele se
+   move debaixo do cursor: o `mousedown` cai num alvo e o `mouseup` em outro, e
+   o navegador não gera `click` nenhum. O clique some sem deixar rastro - a
+   pessoa aperta "Cancelar", nada acontece, e ela aperta de novo. Num diálogo
+   que age sobre 15 pessoas, apertar duas vezes é o oposto do que se quer.
+
+   Enquanto a animação corre, a camada inteira fica inerte (nem painel nem
+   backdrop respondem), e volta a responder quando ela termina. O Escape
+   continua valendo o tempo todo: teclado não depende de posição. */
+const pronto = ref(false);
+
 function close() {
   emit('close');
   emit('update:open', false);
@@ -144,6 +155,7 @@ function close() {
 // Como o painel tem @mousedown.stop, qualquer mousedown que chega aqui veio
 // do wrapper OU do backdrop (filho visual). Em ambos os casos: fechar.
 function onBackdrop() {
+  if (!pronto.value) return;
   if (props.closeOnBackdrop) close();
 }
 
@@ -163,7 +175,10 @@ function applyOpen(v) {
 }
 
 onMounted(() => applyOpen(props.open));
-watch(() => props.open, applyOpen);
+watch(() => props.open, (v) => {
+  applyOpen(v);
+  if (!v) pronto.value = false;   // re-arma para a próxima abertura
+});
 
 onBeforeUnmount(() => {
   document.removeEventListener('keydown', onKey);
@@ -183,7 +198,8 @@ onBeforeUnmount(() => {
     >
       <div
         v-if="open"
-        :class="[isScreen ? 'fixed' : 'fixed inset-0', 'flex', wrapperClass]"
+        :class="[isScreen ? 'fixed' : 'fixed inset-0', 'flex', wrapperClass,
+                 pronto ? '' : 'pointer-events-none']"
         :style="{ zIndex: zEfetivo, ...(screenInsetStyle || {}) }"
         @mousedown="onBackdrop"
       >
@@ -197,6 +213,9 @@ onBeforeUnmount(() => {
           leave-active-class="transition-all duration-200 ease-in"
           leave-from-class="opacity-100 scale-100 translate-y-0 translate-x-0"
           :leave-to-class="leaveToClass"
+          @before-enter="pronto = false"
+          @after-enter="pronto = true"
+          @after-appear="pronto = true"
         >
         <div
           :class="[

@@ -320,10 +320,26 @@ function limparSelecao() { selecionados.value = new Set(); }
 const nomesSelecionados = computed(() =>
   [...selecionados.value].map(id => users.value.find(u => u.id === id)?.username).filter(Boolean));
 
+/* Seleção sobrevive ao filtro de propósito - marcar 15, refinar a busca e
+   continuar com os 15 é o fluxo certo. O que não pode é a barra dizer 15 com a
+   lista mostrando 11: o número da ação tem que ser lido junto com o que está na
+   tela, senão a pessoa aplica achando que atinge o que vê. */
+const selecionadosVisiveis = computed(() =>
+  usuariosVisiveis.value.filter(u => selecionados.value.has(u.id)).length);
+const selecionadosOcultos = computed(() => selecionados.value.size - selecionadosVisiveis.value);
+
+function manterSoVisiveis() {
+  const visiveis = new Set(usuariosVisiveis.value.map(u => u.id));
+  selecionados.value = new Set([...selecionados.value].filter(id => visiveis.has(id)));
+}
+
 const resumoLote = computed(() => {
   const nomes = nomesSelecionados.value;
-  if (nomes.length <= 2) return nomes.join(' e ');
-  return `${nomes.slice(0, 2).join(', ')} e mais ${nomes.length - 2}`;
+  const quem = nomes.length <= 2
+    ? nomes.join(' e ')
+    : `${nomes.slice(0, 2).join(', ')} e mais ${nomes.length - 2}`;
+  if (!selecionadosOcultos.value) return quem;
+  return `${quem} · ${selecionadosOcultos.value} fora do filtro atual`;
 });
 
 /* Executa a mesma mudança pessoa a pessoa, com o endpoint que já existe.
@@ -332,6 +348,9 @@ const resumoLote = computed(() => {
    nome - "erro ao salvar" num lote de 15 não ajuda ninguém. */
 const loteBusy = ref(false);
 const loteProgresso = ref({ feitos: 0, total: 0 });
+
+/* Alguma barra fixa no rodapé? (lote ou alteração pendente) */
+const barraVisivel = computed(() => emLote.value || sujo.value || perfilSujo.value);
 
 async function aplicarEmLote(corpo, rotuloOk) {
   loteBusy.value = true;
@@ -753,7 +772,9 @@ onMounted(carregarTudo);
 </script>
 
 <template>
-  <PageContainer size="xl">
+  <!-- A ActionBar é fixa no rodapé e cobriria as últimas linhas do mestre.
+       Enquanto ela estiver de pé, a página reserva a altura dela. -->
+  <PageContainer size="xl" :class="barraVisivel ? 'pb-28' : ''">
 
     <PageHeader title="Gestão de alçadas"
       subtitle="Quem enxerga cada tela, quais dados, e o que pode fazer dentro delas. Administradores têm acesso total por padrão."
@@ -784,6 +805,7 @@ onMounted(carregarTudo);
             'A lista tem dois eixos no topo: EQUIPE ou EXTERNOS (corretor, imobiliária, correspondente, que entram pelo CV) e a chave de incluir os desativados. Ela abre como sempre abriu - equipe, só ativos - e o resto está a um clique.',
             'As pendências contam só quem trabalha aqui: administrador, externo e desativado ficam fora das filas. Externo sem perfil é o estado normal dele, porque perfil aqui é por departamento.',
             'O número do cartão é sempre o número que a lista devolve: o cartão recorta dentro do filtro que estiver valendo, seja qual for.',
+            'A busca varre tudo que a linha carrega: nome, e-mail, cargo, departamento, perfil, organização do externo e o tipo. Procurar por Comercial traz o departamento inteiro; por Gestor, todos os cargos de gestão.',
             'Cada linha da lista mostra um selo só, na ordem: desativado, administrador, externo, a pendência mais grave e, no caso comum, o departamento - que é o que diz se o perfil combina com o cargo. O e-mail saiu para o hover, mas continua valendo na busca.',
             'Selo cinza é herança do perfil; azul é exceção liberada; âmbar é exceção negada. Exceção é o que se revisa depois.',
             'Rota aposentada volta a sair no próximo reinício: religar por exceção não adianta, está listado na aba Telas.',
@@ -865,7 +887,8 @@ onMounted(carregarTudo);
                    fora do alvo. -->
               <Switch v-model="incluirInativos" size="sm" label="Incluir inativos"
                 :description="`${inativos.length} desativado${inativos.length === 1 ? '' : 's'} no sistema`" />
-              <Input v-model="busca" placeholder="Buscar por nome ou e-mail" iconLeft="fas fa-magnifying-glass" />
+              <Input v-model="busca" placeholder="Buscar pessoa, cargo, departamento ou perfil"
+                iconLeft="fas fa-magnifying-glass" />
             </div>
 
             <EmptyState v-if="!usuariosVisiveis.length" size="sm" icon="fas fa-user-slash"
@@ -1171,6 +1194,13 @@ onMounted(carregarTudo);
       <Button size="sm" variant="ghost" icon="fas fa-eraser"
         :disabled="loteBusy" @click="dialogo = 'lote-excecoes'">
         <span class="hidden sm:inline">Limpar exceções</span>
+      </Button>
+      <!-- Saída para a contradição: em vez de só avisar, deixa alinhar a
+           seleção com o que está na tela. -->
+      <Button v-if="selecionadosOcultos" size="sm" variant="ghost" icon="fas fa-filter"
+        :disabled="loteBusy" v-tippy="`Tirar da seleção as ${selecionadosOcultos} que não estão na lista`"
+        @click="manterSoVisiveis">
+        <span class="hidden sm:inline">Só as visíveis</span>
       </Button>
     </ActionBar>
 
