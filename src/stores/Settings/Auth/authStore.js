@@ -200,14 +200,50 @@ export const useAuthStore = defineStore('user', {
       return result.data;
     },
 
+    /**
+     * Carga inicial da sessão (chamada uma vez, no main.js).
+     *
+     * Só limpa a sessão quando o SERVIDOR nega a credencial (401/403). Falha de
+     * rede mantém o token e tenta de novo: o JWT continua válido, e apagar a
+     * sessão porque o backend estava reiniciando desloga de verdade quem só deu
+     * F5 na hora errada - foi o que aconteceu em 2026-08-20, quando o nodemon
+     * reiniciou a API.
+     *
+     * É a mesma intenção que o guard do router já documenta: "falha de rede:
+     * segue sem user, sem deslogar o usuário".
+     */
     async initializeAuth() {
-      if (this.token && !this.user) {
+      if (!this.token || this.user) return;
+
+      const ESPERAS = [0, 1500, 4000]; // imediato, 1,5s e 4s
+
+      for (let tentativa = 0; tentativa < ESPERAS.length; tentativa++) {
+        if (ESPERAS[tentativa]) {
+          await new Promise((r) => setTimeout(r, ESPERAS[tentativa]));
+        }
         try {
           await this.fetchMe();
-        } catch {
-          this.clearUser();
+          return;
+        } catch (err) {
+          const status = err?.status;
+          if (status === 401 || status === 403) {
+            // O servidor respondeu: a credencial não vale mais.
+            this.clearUser();
+            return;
+          }
+          // Sem status = não houve resposta (rede/servidor fora). Insiste.
+          console.warn(
+            `[auth] /auth/user indisponível (tentativa ${tentativa + 1}/${ESPERAS.length}):`,
+            err?.message || err,
+          );
         }
       }
+
+      /* Desistiu de carregar o usuário, mas NÃO desloga: o token segue no lugar.
+         O guard do router chama fetchMe de novo a cada navegação, então a
+         sessão se recupera sozinha quando a API voltar. Enquanto isso, as
+         checagens de cargo/role negam por falta de `user` - fail-closed. */
+      console.warn('[auth] sessão mantida sem dados do usuário; o guard tenta de novo na próxima rota.');
     },
 
     setUserById(userById) {
@@ -228,6 +264,10 @@ export const useAuthStore = defineStore('user', {
       return this.user?.role === role;
     },
 
+    /* Mesma regra do initializeAuth: só o servidor derruba a sessão. Este aqui é
+       chamado de DENTRO do app (Minha Conta, Notificações, callback da
+       Microsoft), então uma oscilação de rede ao abrir uma dessas telas
+       deslogava a pessoa no meio do trabalho. */
     async fetchUserInfo() {
       try {
         await this.fetchMe();
@@ -235,7 +275,7 @@ export const useAuthStore = defineStore('user', {
         try { await usePermissionStore().fetchMyPermissions(); } catch { /* não bloqueia o login */ }
       } catch (error) {
         console.error(error);
-        this.clearUser();
+        if (error?.status === 401 || error?.status === 403) this.clearUser();
         throw error;
       }
     },

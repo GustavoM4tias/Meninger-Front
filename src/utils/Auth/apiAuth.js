@@ -71,6 +71,15 @@ export const resetPassword = async (email, code, password, confirmPassword) => {
   return response.json();
 };
 
+/**
+ * Usuário do token atual.
+ *
+ * O erro carrega `status` de propósito: quem chama precisa distinguir "o
+ * servidor RESPONDEU que a credencial não vale" (401/403) de "não consegui
+ * falar com o servidor" (rede caiu, backend reiniciando). Sem essa diferença,
+ * quem trata o erro trata os dois como sessão inválida - e um restart do
+ * backend deslogava todo mundo que desse F5.
+ */
 export const getUserInfo = async () => {
   const response = await fetch(`${API_URL}/auth/user`, {
     method: 'GET',
@@ -81,8 +90,17 @@ export const getUserInfo = async () => {
   });
 
   if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.message);
+    // O corpo pode não ser JSON (502 de proxy, HTML de erro): não deixar o
+    // parse estourar por cima do status, que é a informação que importa.
+    let message = 'Não foi possível carregar o usuário.';
+    try {
+      const errorData = await response.json();
+      message = errorData?.message || errorData?.error || message;
+    } catch { /* corpo não-JSON: fica a mensagem padrão */ }
+
+    const err = new Error(message);
+    err.status = response.status;
+    throw err;
   }
   return response.json();
 };
