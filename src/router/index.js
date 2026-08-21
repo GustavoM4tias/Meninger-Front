@@ -94,8 +94,12 @@ function backToLogin(next, authStore) {
  */
 function negarSemDeslogar(next, to, motivo) {
   console.warn(`[guard] acesso a "${to.fullPath}" negado sem avaliação (${motivo}); sessão mantida.`);
-  // A home é sempre permitida; mandar a home para a home seria laço.
-  return to.path === '/' ? next() : next({ path: '/', query: { indisponivel: '1' } });
+  /* A home é sempre permitida; mandar a home para a home seria laço.
+     `de` leva a rota pretendida para o aviso poder oferecer "tentar de novo" -
+     sem ela, o aviso saberia dizer que falhou mas não para onde voltar. */
+  return to.path === '/'
+    ? next()
+    : next({ path: '/', query: { indisponivel: '1', de: to.fullPath } });
 }
 
 // ✅ Guard unificado: autenticação + role + admin + permissões de alçada
