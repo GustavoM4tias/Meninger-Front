@@ -225,17 +225,41 @@ function seloDaLinha(u) {
   return null;
 }
 
-/* Segunda linha: o que a tela administra, em uma frase. */
-function resumoDaLinha(u) {
+/* Segunda linha, em DUAS partes de propósito.
+
+   Numa frase só, quem cortava era o fim - e o fim é a contagem de
+   empreendimentos, o dado mais útil dos três ("23 telas · 8 empreendi…").
+   Agora o nome (perfil ou organização) é quem cede espaço, porque ele tem
+   continuação no detalhe e no hover; os números ficam presos, sem reticências
+   possíveis, custe o que custar de largura. */
+const SEM_PREFIXO_PADRAO = /^Padrão\s*-\s*/i;
+
+function nomeDaLinha(u) {
+  if (u.role === 'admin') return '';
+  if (u.tipo === 'externo') return u.organizacao || u.cargo || 'Vindo do CV';
+  if (!u.permission_profile_id) return 'Sem perfil';
+  const perfil = profileById(u.permission_profile_id)?.name || 'Perfil';
+  /* "Padrão - " abre 15 dos 17 perfis: repetir isso em toda linha gasta metade
+     da largura para dizer o que não diferencia ninguém. */
+  return perfil.replace(SEM_PREFIXO_PADRAO, '');
+}
+
+function contagensDaLinha(u) {
+  if (u.role === 'admin') return 'Acesso total';
+  const telas = (u.effectiveRoutes || []).length;
+  const emp = numeroDeGrants(u);
+  return `${telas} tela${telas === 1 ? '' : 's'} · ${emp} emp.`;
+}
+
+/* Texto por extenso para o hover - onde não há limite de largura. */
+function resumoCompleto(u) {
   if (u.role === 'admin') return 'Acesso total a telas e empreendimentos';
   const telas = (u.effectiveRoutes || []).length;
   const emp = numeroDeGrants(u);
-  const partes = [];
-  if (u.tipo === 'externo') partes.push(u.organizacao || u.cargo || 'Vindo do CV');
-  else partes.push(u.permission_profile_id ? (profileById(u.permission_profile_id)?.name || 'Perfil') : 'Sem perfil');
-  partes.push(`${telas} tela${telas === 1 ? '' : 's'}`);
-  partes.push(`${emp} empreendimento${emp === 1 ? '' : 's'}`);
-  return partes.join(' · ');
+  const nome = u.tipo === 'externo'
+    ? (u.organizacao || u.cargo || 'Vindo do CV')
+    : (u.permission_profile_id ? (profileById(u.permission_profile_id)?.name || 'Perfil') : 'Sem perfil');
+  return `${nome} · ${telas} tela${telas === 1 ? '' : 's'} · ${emp} empreendimento${emp === 1 ? '' : 's'}`;
 }
 
 /* ── Mestre: usuários ────────────────────────────────────────────────────── */
@@ -737,13 +761,18 @@ onMounted(carregarTudo);
                   class="w-full text-left flex items-center gap-3 px-3 py-2.5 min-h-[3.25rem]
                          hover:bg-surface-sunken/60 transition-colors duration-120 focus-ring"
                   :class="selectedUser?.id === u.id ? 'bg-accent-soft/60' : ''"
-                  :title="`${u.username} · ${u.email}`"
+                  :title="`${u.username} · ${u.email}\n${resumoCompleto(u)}`"
                   @click="abrirUsuario(u)">
                   <UserAvatar :name="u.username" size="sm" />
                   <span class="min-w-0 flex-1">
                     <span class="block text-sm font-medium text-ink truncate"
                       :class="u.ativo === false ? 'text-ink-muted' : ''">{{ u.username }}</span>
-                    <span class="block text-micro text-ink-subtle truncate">{{ resumoDaLinha(u) }}</span>
+                    <!-- O nome cede; os números não. -->
+                    <span class="flex items-baseline gap-1 text-micro text-ink-subtle min-w-0">
+                      <span v-if="nomeDaLinha(u)" class="truncate">{{ nomeDaLinha(u) }}</span>
+                      <span v-if="nomeDaLinha(u)" class="shrink-0">·</span>
+                      <span class="shrink-0 tabular-nums">{{ contagensDaLinha(u) }}</span>
+                    </span>
                   </span>
                   <Badge v-if="seloDaLinha(u)" :variant="seloDaLinha(u).variante" size="sm"
                     class="shrink-0 max-w-[7.5rem]" v-tippy="seloDaLinha(u).dica">
