@@ -196,6 +196,48 @@ const rotuloPopulacao = computed(() => {
 });
 const filaAtiva = computed(() => FILAS[recorte.value] || null);
 
+/* ── A linha da lista ──────────────────────────────────────────────────────
+   Antes era nome + e-mail: o e-mail ocupava a segunda linha inteira e não
+   distinguia ninguém (25 dos 30 são @menin.com.br). Ele saiu para o hover e o
+   detalhe, e a segunda linha passou a mostrar o ESTADO - que é o assunto da
+   tela. O e-mail continua na busca.
+
+   UM selo por linha, nesta ordem de precedência:
+
+     1. inativo    não entra no sistema; nada abaixo importa enquanto isso
+     2. admin      tem tudo, não há alçada para editar
+     3. externo    o papel dele (Corretor/Imobiliária/Correspondente)
+     4. pendência  a mais grave das três, quando houver
+     5. departamento  o caso comum: é o que diz se o perfil combina com o cargo
+
+   Pendência TROCA o departamento em vez de somar: dois selos na mesma linha
+   competem, e quem varre a lista procurando problema perde o problema. */
+const numeroDeGrants = (u) => (grantsBulk.value.user?.[String(u.id)] || []).length;
+
+function seloDaLinha(u) {
+  if (u.ativo === false) return { texto: 'inativo', variante: 'neutral', dica: 'Desativado: não entra no Office' };
+  if (u.role === 'admin') return { texto: 'admin', variante: 'accent', dica: 'Acesso total por padrão' };
+  if (u.tipo === 'externo') return { texto: rotuloExterno(u), variante: 'info', dica: 'Pessoa de fora, vinda do CV' };
+  if (!(u.effectiveRoutes || []).length) return { texto: 'sem tela', variante: 'danger', dica: 'Não abre nada no Office' };
+  if (!numeroDeGrants(u)) return { texto: 'sem dados', variante: 'danger', dica: 'As telas abrem vazias: nenhum empreendimento liberado' };
+  if (!u.permission_profile_id) return { texto: 'sem perfil', variante: 'warning', dica: 'Rodando no pacote antigo, fora de qualquer perfil' };
+  if (u.departamento) return { texto: u.departamento, variante: 'neutral', dica: u.cargo || 'Departamento' };
+  return null;
+}
+
+/* Segunda linha: o que a tela administra, em uma frase. */
+function resumoDaLinha(u) {
+  if (u.role === 'admin') return 'Acesso total a telas e empreendimentos';
+  const telas = (u.effectiveRoutes || []).length;
+  const emp = numeroDeGrants(u);
+  const partes = [];
+  if (u.tipo === 'externo') partes.push(u.organizacao || u.cargo || 'Vindo do CV');
+  else partes.push(u.permission_profile_id ? (profileById(u.permission_profile_id)?.name || 'Perfil') : 'Sem perfil');
+  partes.push(`${telas} tela${telas === 1 ? '' : 's'}`);
+  partes.push(`${emp} empreendimento${emp === 1 ? '' : 's'}`);
+  return partes.join(' · ');
+}
+
 /* ── Mestre: usuários ────────────────────────────────────────────────────── */
 const busca = ref('');
 const selectedUser = ref(null);
@@ -612,6 +654,7 @@ onMounted(carregarTudo);
             'A lista tem dois eixos no topo: EQUIPE ou EXTERNOS (corretor, imobiliária, correspondente, que entram pelo CV) e a chave de incluir os desativados. Ela abre como sempre abriu - equipe, só ativos - e o resto está a um clique.',
             'As pendências contam só quem trabalha aqui: administrador, externo e desativado ficam fora das filas. Externo sem perfil é o estado normal dele, porque perfil aqui é por departamento.',
             'O número do cartão é sempre o número que a lista devolve: o cartão recorta dentro do filtro que estiver valendo, seja qual for.',
+            'Cada linha da lista mostra um selo só, na ordem: desativado, administrador, externo, a pendência mais grave e, no caso comum, o departamento - que é o que diz se o perfil combina com o cargo. O e-mail saiu para o hover, mas continua valendo na busca.',
             'Selo cinza é herança do perfil; azul é exceção liberada; âmbar é exceção negada. Exceção é o que se revisa depois.',
             'Rota aposentada volta a sair no próximo reinício: religar por exceção não adianta, está listado na aba Telas.',
           ]"
@@ -694,27 +737,18 @@ onMounted(carregarTudo);
                   class="w-full text-left flex items-center gap-3 px-3 py-2.5 min-h-[3.25rem]
                          hover:bg-surface-sunken/60 transition-colors duration-120 focus-ring"
                   :class="selectedUser?.id === u.id ? 'bg-accent-soft/60' : ''"
+                  :title="`${u.username} · ${u.email}`"
                   @click="abrirUsuario(u)">
                   <UserAvatar :name="u.username" size="sm" />
                   <span class="min-w-0 flex-1">
-                    <span class="block text-sm font-medium text-ink truncate">{{ u.username }}</span>
-                    <span class="block text-micro text-ink-subtle truncate">{{ u.email }}</span>
+                    <span class="block text-sm font-medium text-ink truncate"
+                      :class="u.ativo === false ? 'text-ink-muted' : ''">{{ u.username }}</span>
+                    <span class="block text-micro text-ink-subtle truncate">{{ resumoDaLinha(u) }}</span>
                   </span>
-                  <!-- Ordem dos selos: inativo primeiro (quem não entra no
-                       sistema não tem estado de alçada que importe), depois
-                       externo, que é a exceção e não dá para saber olhando.
-                       Equipe ativa fica quieta - é o caso comum. -->
-                  <Badge v-if="u.ativo === false" variant="neutral" size="sm" class="shrink-0">
-                    inativo
+                  <Badge v-if="seloDaLinha(u)" :variant="seloDaLinha(u).variante" size="sm"
+                    class="shrink-0 max-w-[7.5rem]" v-tippy="seloDaLinha(u).dica">
+                    <span class="truncate">{{ seloDaLinha(u).texto }}</span>
                   </Badge>
-                  <Badge v-else-if="u.tipo === 'externo'" variant="info" size="sm" class="shrink-0">
-                    {{ rotuloExterno(u) }}
-                  </Badge>
-                  <Badge v-else-if="u.role === 'admin'" variant="accent" size="sm">admin</Badge>
-                  <Badge v-else-if="!u.permission_profile_id" variant="warning" size="sm">sem perfil</Badge>
-                  <span v-else class="text-micro text-ink-subtle tabular-nums shrink-0">
-                    {{ (u.effectiveRoutes || []).length }}
-                  </span>
                 </button>
               </li>
             </ul>
@@ -770,6 +804,10 @@ onMounted(carregarTudo);
                     class="text-micro"></i>
                   {{ selectedUser.tipo === 'externo' ? rotuloExterno(selectedUser) : 'Equipe' }}
                 </Badge>
+                <span v-if="selectedUser.cargo" class="truncate">
+                  {{ selectedUser.cargo }}<template v-if="selectedUser.departamento"> · {{ selectedUser.departamento }}</template>
+                </span>
+                <span v-if="selectedUser.organizacao" class="truncate">{{ selectedUser.organizacao }}</span>
                 <span class="font-mono">{{ selectedUser.auth_provider }}</span>
               </div>
 
