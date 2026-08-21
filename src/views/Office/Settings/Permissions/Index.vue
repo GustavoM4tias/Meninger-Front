@@ -104,12 +104,20 @@ const alcancePorRota = computed(() => {
 const KIND_LABEL = { BROKER: 'Corretor', REALESTATE: 'Imobiliária', CORRESPONDENT: 'Correspondente' };
 const rotuloExterno = (u) => KIND_LABEL[u.external_kind] || 'Externo';
 
-const tipoFiltro = ref('todos');
+/* ── Os dois eixos de população ────────────────────────────────────────────
+   Tipo (equipe/externo) e situação (ativo/inativo) eram EXCLUSÃO no backend:
+   externo e inativo simplesmente não chegavam na tela. Viraram filtro.
+
+   O padrão reproduz o que a tela sempre mostrou - equipe, só ativos - para
+   ninguém estranhar a lista mudando de tamanho sozinha. O resto está a um
+   clique. */
+const tipoFiltro = ref('equipe');
 const tiposOpcoes = [
-  { value: 'todos', label: 'Todos', icon: 'fas fa-users' },
   { value: 'equipe', label: 'Equipe', icon: 'fas fa-id-badge' },
   { value: 'externo', label: 'Externos', icon: 'fas fa-user-tag' },
+  { value: 'todos', label: 'Todos', icon: 'fas fa-users' },
 ];
+const incluirInativos = ref(false);
 
 /* ── Filas de trabalho (a barra de pendências) ─────────────────────────────
    UM predicado por fila, usado pelo cartão E pela lista. Antes o cartão contava
@@ -119,7 +127,19 @@ const tiposOpcoes = [
    Fila é só da EQUIPE. Externo sem perfil é o estado normal dele - perfil aqui
    é "Padrão - <departamento>", e corretor não tem departamento. Contá-lo como
    pendência encheria a fila de gente que não tem nada de errado. */
-const elegivelFila = (u) => u.role !== 'admin' && u.tipo !== 'externo';
+/* A POPULAÇÃO é quem está na mesa: os dois filtros de eixo, e nada mais.
+   Cartão e lista leem daqui - é o que faz o número do cartão ser o número da
+   lista sob qualquer combinação de filtro. */
+const populacao = computed(() => users.value.filter(u => {
+  if (tipoFiltro.value !== 'todos' && u.tipo !== tipoFiltro.value) return false;
+  if (!incluirInativos.value && u.ativo === false) return false;
+  return true;
+}));
+
+/* Fila é trabalho pendente, então não vale para quem não trabalha aqui:
+   administrador (que tem tudo), externo (perfil é por departamento, e ele não
+   tem um) e inativo (não entra no sistema). */
+const elegivelFila = (u) => u.role !== 'admin' && u.tipo !== 'externo' && u.ativo !== false;
 
 const recorte = ref('');
 const FILAS = {
@@ -133,18 +153,17 @@ const FILAS = {
     teste: (u) => elegivelFila(u) && !(u.effectiveRoutes || []).length },
 };
 
-const naFila = (chave) => users.value.filter(FILAS[chave].teste);
-const equipe = computed(() => users.value.filter(u => u.tipo !== 'externo'));
-const externos = computed(() => users.value.filter(u => u.tipo === 'externo'));
+const naFila = (chave) => populacao.value.filter(FILAS[chave].teste);
+const inativos = computed(() => users.value.filter(u => u.ativo === false));
 
 /* Fila é trabalho, não medida: `value` pronto (sem count-up), sem série e sem
    variação. Clicar recorta o MESTRE; clicar de novo desliga. */
 const pendencias = computed(() => {
   const n = (k) => naFila(k).length;
   return [
-    { key: 'todos', label: 'Pessoas', value: String(users.value.length),
-      hint: `${equipe.value.length} da equipe · ${externos.value.length} externo${externos.value.length === 1 ? '' : 's'}`,
-      icon: 'fas fa-users', tone: 'accent', tooltip: 'Ver todas as pessoas' },
+    { key: 'todos', label: 'Pessoas', value: String(populacao.value.length),
+      hint: rotuloPopulacao.value,
+      icon: 'fas fa-users', tone: 'accent', tooltip: 'Ver todo mundo do filtro atual' },
     { key: 'sem-perfil', label: 'Sem perfil', value: String(n('sem-perfil')),
       hint: 'equipe no pacote antigo', icon: 'fas fa-user-slash',
       tone: n('sem-perfil') ? 'warn' : 'neutral', tooltip: 'Ver quem da equipe está sem perfil' },
@@ -160,17 +179,21 @@ const pendencias = computed(() => {
   ];
 });
 
-/* Fila e tipo são dois cortes da mesma lista e valem UM DE CADA VEZ: as filas já
-   são só da equipe, então "externos + sem perfil" não significaria nada - e
-   combinar os dois quebraria a promessa de que o número do cartão é o número da
-   lista. */
+/* O cartão recorta DENTRO da população vigente, então os filtros de eixo ficam
+   como estão: os dois se compõem sem quebrar a conta. */
 function aoClicarPendencia(item) {
   aba.value = 'users';
-  tipoFiltro.value = 'todos';
   recorte.value = (item.key === 'todos' || recorte.value === item.key) ? '' : item.key;
 }
+
+const rotuloPopulacao = computed(() => {
+  const partes = [];
+  partes.push(tipoFiltro.value === 'externo' ? 'só externos'
+    : tipoFiltro.value === 'equipe' ? 'só a equipe' : 'equipe e externos');
+  if (incluirInativos.value) partes.push('com inativos');
+  return partes.join(' · ');
+});
 const filaAtiva = computed(() => FILAS[recorte.value] || null);
-watch(tipoFiltro, () => { recorte.value = ''; });
 
 /* ── Mestre: usuários ────────────────────────────────────────────────────── */
 const busca = ref('');
@@ -179,9 +202,7 @@ const selectedUser = ref(null);
 const usuariosVisiveis = computed(() => {
   const q = busca.value.trim().toLowerCase();
   return naoAdminsPrimeiro.value.filter(u => {
-    /* O corte é um só: ou a fila do cartão, ou o tipo. */
-    if (filaAtiva.value) { if (!filaAtiva.value.teste(u)) return false; }
-    else if (tipoFiltro.value !== 'todos' && u.tipo !== tipoFiltro.value) return false;
+    if (filaAtiva.value && !filaAtiva.value.teste(u)) return false;
     if (!q) return true;
     return u.username.toLowerCase().includes(q) || u.email.toLowerCase().includes(q);
   });
@@ -189,7 +210,7 @@ const usuariosVisiveis = computed(() => {
 /* Admin no fim: não tem alçada para editar, e ocupar o topo da lista com quem
    não se edita atrapalha quem veio trabalhar. */
 const naoAdminsPrimeiro = computed(() =>
-  [...users.value].sort((a, b) => (a.role === 'admin') - (b.role === 'admin')));
+  [...populacao.value].sort((a, b) => (a.role === 'admin') - (b.role === 'admin')));
 
 /* ── Estado local do usuário aberto (perfil vivo + exceções) ─────────────── */
 const localProfileId = ref('');
@@ -587,9 +608,9 @@ onMounted(carregarTudo);
           :tips="[
             'Travar uma tela na aba Telas tira ela de todos os não-administradores de uma vez, sem depender de perfil - e o aviso diz quantas pessoas perdem o acesso.',
             'A aba Telas também mostra as AÇÕES de cada tela: o que a alçada libera por dentro e o que continua sendo só de administrador.',
-            'A lista tem gente da equipe e gente de fora (corretor, imobiliária, correspondente, que entram pelo CV). O seletor no topo da lista separa os dois, e externo sempre aparece com selo azul - o e-mail não serve para distinguir.',
-            'As pendências contam só a equipe: externo sem perfil é o estado normal dele, porque perfil aqui é por departamento.',
-            'O número do cartão é exatamente o número da lista: clicar num cartão desfaz o filtro de tipo, e trocar o tipo desfaz o cartão.',
+            'A lista tem dois eixos no topo: EQUIPE ou EXTERNOS (corretor, imobiliária, correspondente, que entram pelo CV) e a chave de incluir os desativados. Ela abre como sempre abriu - equipe, só ativos - e o resto está a um clique.',
+            'As pendências contam só quem trabalha aqui: administrador, externo e desativado ficam fora das filas. Externo sem perfil é o estado normal dele, porque perfil aqui é por departamento.',
+            'O número do cartão é sempre o número que a lista devolve: o cartão recorta dentro do filtro que estiver valendo, seja qual for.',
             'Selo cinza é herança do perfil; azul é exceção liberada; âmbar é exceção negada. Exceção é o que se revisa depois.',
             'Rota aposentada volta a sair no próximo reinício: religar por exceção não adianta, está listado na aba Telas.',
           ]"
@@ -649,9 +670,16 @@ onMounted(carregarTudo);
             </template>
 
             <div class="p-3 border-b border-line-subtle space-y-2.5">
-              <!-- Tipo é um corte do mesmo mestre, então mora aqui e não vira
-                   painel de filtro: um controle, três estados. -->
+              <!-- Os dois eixos ficam aqui, no topo do mestre: são o que define
+                   quem está na mesa. Nada de painel de filtro para dois
+                   controles. -->
               <SegmentedControl v-model="tipoFiltro" :options="tiposOpcoes" size="sm" />
+              <div class="flex items-center justify-between gap-2">
+                <Switch v-model="incluirInativos" size="sm" label="Incluir inativos" />
+                <span class="text-micro text-ink-subtle tabular-nums shrink-0">
+                  {{ inativos.length }} desativado{{ inativos.length === 1 ? '' : 's' }}
+                </span>
+              </div>
               <Input v-model="busca" placeholder="Buscar por nome ou e-mail" iconLeft="fas fa-magnifying-glass" />
             </div>
 
@@ -671,10 +699,14 @@ onMounted(carregarTudo);
                     <span class="block text-sm font-medium text-ink truncate">{{ u.username }}</span>
                     <span class="block text-micro text-ink-subtle truncate">{{ u.email }}</span>
                   </span>
-                  <!-- Externo ganha selo porque é a exceção e não dá para
-                       saber olhando; equipe fica quieta, que é o caso comum.
-                       "Sem perfil" não vale para externo: é o normal dele. -->
-                  <Badge v-if="u.tipo === 'externo'" variant="info" size="sm" class="shrink-0">
+                  <!-- Ordem dos selos: inativo primeiro (quem não entra no
+                       sistema não tem estado de alçada que importe), depois
+                       externo, que é a exceção e não dá para saber olhando.
+                       Equipe ativa fica quieta - é o caso comum. -->
+                  <Badge v-if="u.ativo === false" variant="neutral" size="sm" class="shrink-0">
+                    inativo
+                  </Badge>
+                  <Badge v-else-if="u.tipo === 'externo'" variant="info" size="sm" class="shrink-0">
                     {{ rotuloExterno(u) }}
                   </Badge>
                   <Badge v-else-if="u.role === 'admin'" variant="accent" size="sm">admin</Badge>
@@ -738,6 +770,16 @@ onMounted(carregarTudo);
                   {{ selectedUser.tipo === 'externo' ? rotuloExterno(selectedUser) : 'Equipe' }}
                 </Badge>
                 <span class="font-mono">{{ selectedUser.auth_provider }}</span>
+              </div>
+
+              <div v-if="selectedUser.ativo === false"
+                class="mt-3 rounded-lg border border-data-warn/25 bg-data-warn-soft p-3 text-xs text-data-warn
+                       flex items-start gap-2">
+                <i class="fas fa-user-slash mt-0.5 shrink-0"></i>
+                <span>
+                  Usuário desativado: não entra no Office. As alçadas abaixo continuam gravadas e
+                  voltam a valer se ele for reativado - é por isso que ele aparece aqui.
+                </span>
               </div>
 
               <div v-if="selectedUser.role === 'admin'"
