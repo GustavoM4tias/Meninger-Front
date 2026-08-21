@@ -705,7 +705,7 @@
              seguem descrevendo o período filtrado, senão clicar em "Pagos"
              levaria o próprio cartão a 100%). -->
         <StatRow v-if="!carregandoHistorico && store.stats" :items="kpiCards"
-          :cols="{ sm: 2, md: 4, lg: 7 }" size="sm"
+          :cols="{ sm: 2, md: 3, lg: 6 }" size="sm"
           selectable :active-key="recorte" @select="aoClicarKpi" />
 
         <!-- Linha de estado -->
@@ -1069,7 +1069,6 @@ const RECORTES = {
      boleto a consertar, o cliente desistiu. Elas vão pro cartão Canceladas. */
   error: { label: 'com erro', teste: (r) => r.status === 'error' && !r.has_boleto && !r.reserva_morta },
   dead: { label: 'canceladas', teste: (r) => r.status === 'error' && !r.has_boleto && r.reserva_morta },
-  scheduled: { label: 'agendados', teste: (r) => !!r.emissao_agendada_para && r.status !== 'success' },
 };
 
 const recorteAtivo = computed(() => RECORTES[recorte.value] || null);
@@ -1175,9 +1174,6 @@ const kpiCards = computed(() => {
       hint: st.dead?.valor ? formatCurrency(st.dead.valor) : 'reserva encerrada no CV',
       icon: 'fas fa-user-slash', tone: 'neutral',
       tooltip: 'Reserva cancelada no CV com boleto que ficou pelo caminho. Não é erro a resolver' },
-    { key: 'scheduled', label: 'Agendados', value: st.queued?.qty ?? 0,
-      hint: st.queued?.valor ? formatCurrency(st.queued.valor) : 'aguardando a janela de emissão',
-      icon: 'fas fa-hourglass-half', tone: 7, tooltip: 'Clique para ver só os agendados' },
   ];
 });
 
