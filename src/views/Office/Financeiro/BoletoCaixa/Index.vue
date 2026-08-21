@@ -195,6 +195,11 @@
               <p class="text-ink font-mono">{{ form.tolerancia_dias_uteis ?? '—' }}</p>
             </div>
             <div>
+              <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1">Situações de reserva encerrada</p>
+              <p class="text-ink font-mono">{{ form.cv_situacoes_reserva_morta?.length ? form.cv_situacoes_reserva_morta.join(', ') : '—' }}</p>
+              <p class="text-ink-subtle mt-0.5">Boleto parado nessas situações conta em "Canceladas", não em "Com erro".</p>
+            </div>
+            <div>
               <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1">Revalidar baixa (dias)</p>
               <p class="text-ink font-mono">{{ form.revalidacao_baixado_dias ?? '—' }}</p>
               <p class="text-ink-subtle mt-0.5">Boleto baixado segue sendo reconsultado por este prazo. 0 desliga.</p>
@@ -285,6 +290,37 @@
               label="Tolerância (dias úteis)"
               placeholder="Ex: 1"
               hint="Dias úteis após vencimento antes de baixar (já considera sáb/dom/feriados)." />
+            <div class="md:col-span-1">
+              <label class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1.5 block">
+                Situações CV de reserva encerrada
+              </label>
+              <div class="flex gap-2">
+                <Input
+                  v-model.number="novaSituacaoMorta"
+                  type="number"
+                  placeholder="Ex: 4"
+                  @keydown.enter.prevent="addSituacaoMorta" />
+                <Button variant="primary" size="sm" icon="fas fa-plus" @click="addSituacaoMorta">
+                  Adicionar
+                </Button>
+              </div>
+              <div class="flex flex-wrap gap-1 mt-2">
+                <span v-for="id in form.cv_situacoes_reserva_morta" :key="id"
+                  class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-accent-soft text-accent border border-accent/20 text-xs font-medium font-mono">
+                  {{ id }}
+                  <button type="button" @click="removeSituacaoMorta(id)"
+                    class="hover:text-data-neg transition-colors leading-none">
+                    <i class="fas fa-times text-micro"></i>
+                  </button>
+                </span>
+                <span v-if="!form.cv_situacoes_reserva_morta.length" class="text-ink-subtle italic self-center">
+                  Nenhuma situação configurada
+                </span>
+              </div>
+              <p class="text-ink-subtle mt-1.5">
+                Reserva nessas situações está encerrada: o boleto que ficou pelo caminho não é erro a resolver, e sai da fila de trabalho. Hoje 4 = Cancelada, 11 = Vencida.
+              </p>
+            </div>
             <Input
               v-model.number="form.revalidacao_baixado_dias"
               type="number"
@@ -669,7 +705,7 @@
              seguem descrevendo o período filtrado, senão clicar em "Pagos"
              levaria o próprio cartão a 100%). -->
         <StatRow v-if="!carregandoHistorico && store.stats" :items="kpiCards"
-          :cols="{ sm: 2, md: 3, lg: 6 }" size="sm"
+          :cols="{ sm: 2, md: 4, lg: 7 }" size="sm"
           selectable :active-key="recorte" @select="aoClicarKpi" />
 
         <!-- Linha de estado -->
@@ -702,8 +738,8 @@
 
         <!-- Esqueleto na forma exata do que vem: seis cartões e a tabela. -->
         <div v-else-if="carregandoHistorico" class="space-y-4">
-          <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-3">
-            <Skeleton v-for="i in 6" :key="i" variant="stat" />
+          <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2.5 sm:gap-3">
+            <Skeleton v-for="i in 7" :key="i" variant="stat" />
           </div>
           <Skeleton variant="table" :lines="8" />
         </div>
@@ -905,6 +941,7 @@ const form = ref({
   situacao_baixado_id: 29,
   tolerancia_dias_uteis: 1,
   revalidacao_baixado_dias: 5,
+  cv_situacoes_reserva_morta: [4],
   delay_situacao_sucesso_min: 2,
   max_dias_vencimento: 10,
   valor_maximo: 300000,
@@ -943,6 +980,7 @@ function snapshotCvFields() {
     situacao_baixado_id: form.value.situacao_baixado_id,
     tolerancia_dias_uteis: form.value.tolerancia_dias_uteis,
     revalidacao_baixado_dias: form.value.revalidacao_baixado_dias,
+    cv_situacoes_reserva_morta: [...(form.value.cv_situacoes_reserva_morta || [])],
     delay_situacao_sucesso_min: form.value.delay_situacao_sucesso_min,
     max_dias_vencimento: form.value.max_dias_vencimento,
     valor_maximo: form.value.valor_maximo,
@@ -957,6 +995,7 @@ function startEditCv() {
 function cancelEditCv() {
   if (cvSnapshot) Object.assign(form.value, cvSnapshot);
   novaSerieId.value = null;
+  novaSituacaoMorta.value = null;
   editingCv.value = false;
 }
 
@@ -981,6 +1020,19 @@ function addSerieId() {
 
 function removeSerieId(id) {
   form.value.idserie_ra = form.value.idserie_ra.filter(s => s !== id);
+}
+
+const novaSituacaoMorta = ref(null);
+
+function addSituacaoMorta() {
+  const id = Number(novaSituacaoMorta.value);
+  if (!id || form.value.cv_situacoes_reserva_morta.includes(id)) return;
+  form.value.cv_situacoes_reserva_morta = [...form.value.cv_situacoes_reserva_morta, id];
+  novaSituacaoMorta.value = null;
+}
+
+function removeSituacaoMorta(id) {
+  form.value.cv_situacoes_reserva_morta = form.value.cv_situacoes_reserva_morta.filter(s => s !== id);
 }
 
 async function handleSave() {
@@ -1012,8 +1064,11 @@ const RECORTES = {
   cancelled: { label: 'baixados', teste: (r) => r.payment_status === 'cancelled' },
   /* `has_boleto` fora: reserva que já tem boleto emitido e depois teve uma
      retentativa falha (o CV redisparou o webhook) não é trabalho pendente, e
-     inchava o recorte com caso já resolvido. Mesmo critério do cartão. */
-  error: { label: 'com erro', teste: (r) => r.status === 'error' && !r.has_boleto },
+     inchava o recorte com caso já resolvido. Mesmo critério do cartão.
+     `reserva_morta` fora pelo mesmo motivo: reserva cancelada no CV não tem
+     boleto a consertar, o cliente desistiu. Elas vão pro cartão Canceladas. */
+  error: { label: 'com erro', teste: (r) => r.status === 'error' && !r.has_boleto && !r.reserva_morta },
+  dead: { label: 'canceladas', teste: (r) => r.status === 'error' && !r.has_boleto && r.reserva_morta },
   scheduled: { label: 'agendados', teste: (r) => !!r.emissao_agendada_para && r.status !== 'success' },
 };
 
@@ -1116,6 +1171,10 @@ const kpiCards = computed(() => {
       hint: st.errors?.valor != null ? formatCurrency(st.errors.valor) : '',
       icon: 'fas fa-triangle-exclamation', tone: 'neg',
       tooltip: 'Reservas que hoje estão sem boleto por falha. Clique para ver só elas' },
+    { key: 'dead', label: 'Canceladas', value: st.dead?.qty ?? 0,
+      hint: st.dead?.valor ? formatCurrency(st.dead.valor) : 'reserva encerrada no CV',
+      icon: 'fas fa-user-slash', tone: 'neutral',
+      tooltip: 'Reserva cancelada no CV com boleto que ficou pelo caminho. Não é erro a resolver' },
     { key: 'scheduled', label: 'Agendados', value: st.queued?.qty ?? 0,
       hint: st.queued?.valor ? formatCurrency(st.queued.valor) : 'aguardando a janela de emissão',
       icon: 'fas fa-hourglass-half', tone: 7, tooltip: 'Clique para ver só os agendados' },
@@ -1282,6 +1341,7 @@ onMounted(async () => {
       form.value.situacao_baixado_id = store.settings.situacao_baixado_id ?? 29;
       form.value.tolerancia_dias_uteis = store.settings.tolerancia_dias_uteis ?? 1;
       form.value.revalidacao_baixado_dias = store.settings.revalidacao_baixado_dias ?? 5;
+      form.value.cv_situacoes_reserva_morta = [...(store.settings.cv_situacoes_reserva_morta || [4])];
       form.value.delay_situacao_sucesso_min = store.settings.delay_situacao_sucesso_min ?? 2;
       form.value.max_dias_vencimento = store.settings.max_dias_vencimento ?? 10;
       form.value.valor_maximo = store.settings.valor_maximo != null ? Number(store.settings.valor_maximo) : null;
