@@ -40,6 +40,7 @@ import IconButton from '@/components/UI/IconButton.vue';
 import Badge from '@/components/UI/Badge.vue';
 import EmptyState from '@/components/UI/EmptyState.vue';
 import SegmentedControl from '@/components/UI/SegmentedControl.vue';
+import Switch from '@/components/UI/Switch.vue';
 import UserAvatar from '@/components/UI/UserAvatar.vue';
 import Favorite from '@/components/config/Favorite.vue';
 
@@ -674,12 +675,12 @@ onMounted(carregarTudo);
                    quem está na mesa. Nada de painel de filtro para dois
                    controles. -->
               <SegmentedControl v-model="tipoFiltro" :options="tiposOpcoes" size="sm" />
-              <div class="flex items-center justify-between gap-2">
-                <Switch v-model="incluirInativos" size="sm" label="Incluir inativos" />
-                <span class="text-micro text-ink-subtle tabular-nums shrink-0">
-                  {{ inativos.length }} desativado{{ inativos.length === 1 ? '' : 's' }}
-                </span>
-              </div>
+              <!-- Contagem vai como `description` do proprio Switch: o <label>
+                   do primitivo envolve rotulo e descricao, entao clicar em
+                   qualquer parte da linha alterna. Solto ao lado, o texto ficava
+                   fora do alvo. -->
+              <Switch v-model="incluirInativos" size="sm" label="Incluir inativos"
+                :description="`${inativos.length} desativado${inativos.length === 1 ? '' : 's'} no sistema`" />
               <Input v-model="busca" placeholder="Buscar por nome ou e-mail" iconLeft="fas fa-magnifying-glass" />
             </div>
 
