@@ -37,6 +37,9 @@ const props = defineProps({
   subjectType: { type: String, default: 'user' },   // 'user' | 'profile'
   subjectId: { type: [Number, String], default: null },
   subjectName: { type: String, default: '' },
+  /* Lote: quando vem preenchido, o que for salvo SUBSTITUI a liberação de
+     todos estes sujeitos. Fica vazio no uso normal (um sujeito só). */
+  subjectIds: { type: Array, default: () => [] },
 });
 const emit = defineEmits(['close', 'saved']);
 
@@ -51,6 +54,11 @@ const busca = ref('');
 const cidadesSel = ref([]);
 const empresasSel = ref([]);
 const listaEl = ref(null);
+
+/* Uma pessoa selecionada também é lote: o caminho é o mesmo, e tratar 1
+   como caso especial só criaria um segundo comportamento para manter. */
+const emLote = computed(() => props.subjectIds.length > 0);
+const salvos = ref({ feitos: 0, total: 0, falhas: [] });
 
 const dirty = computed(() => {
   if (selected.value.size !== original.value.size) return true;
@@ -138,15 +146,25 @@ function limparFiltro() {
 }
 
 async function load() {
-  if (!props.subjectId) return;
+  if (!props.subjectId && !emLote.value) return;
   loading.value = true;
   error.value = '';
+  salvos.value = { feitos: 0, total: 0, falhas: [] };
   try {
-    const [opts, grants] = await Promise.all([
-      requestWithAuth('/permissions/enterprise-options'),
-      requestWithAuth(`/permissions/grants/${props.subjectType}/${props.subjectId}`),
-    ]);
+    const opts = await requestWithAuth('/permissions/enterprise-options');
     options.value = Array.isArray(opts) ? opts : [];
+
+    if (emLote.value) {
+      /* No lote não existe "seleção atual": as pessoas têm liberações
+         diferentes entre si. Começa vazio e o que for marcado SUBSTITUI a de
+         todas - mostrar a interseção ou a união faria parecer que o que está
+         na tela é o estado delas, e não é. */
+      selected.value = new Set();
+      original.value = new Set();
+      return;
+    }
+
+    const grants = await requestWithAuth(`/permissions/grants/${props.subjectType}/${props.subjectId}`);
     selected.value = new Set((grants?.enterpriseIds || []).map(Number));
     original.value = new Set(selected.value);
   } catch (e) {
@@ -159,11 +177,34 @@ async function load() {
 async function save() {
   saving.value = true;
   error.value = '';
+  const ids = [...selected.value];
   try {
-    await requestWithAuth(`/permissions/grants/${props.subjectType}/${props.subjectId}`, {
-      method: 'PUT',
-      body: JSON.stringify({ enterpriseIds: [...selected.value] }),
-    });
+    if (emLote.value) {
+      /* Uma chamada por pessoa, de propósito: cada liberação vira um registro
+         próprio, auditável, e uma que falhe não leva as outras junto. O que
+         falhou é dito pelo nome, não escondido num "erro ao salvar". */
+      salvos.value = { feitos: 0, total: props.subjectIds.length, falhas: [] };
+      for (const alvo of props.subjectIds) {
+        try {
+          await requestWithAuth(`/permissions/grants/user/${alvo}`, {
+            method: 'PUT', body: JSON.stringify({ enterpriseIds: ids }),
+          });
+          salvos.value = { ...salvos.value, feitos: salvos.value.feitos + 1 };
+        } catch {
+          salvos.value = { ...salvos.value, falhas: [...salvos.value.falhas, alvo] };
+        }
+      }
+      if (salvos.value.falhas.length) {
+        error.value = `${salvos.value.feitos} de ${salvos.value.total} liberações aplicadas. `
+          + `${salvos.value.falhas.length} falharam - tente de novo só para elas.`;
+        emit('saved');
+        return;
+      }
+    } else {
+      await requestWithAuth(`/permissions/grants/${props.subjectType}/${props.subjectId}`, {
+        method: 'PUT', body: JSON.stringify({ enterpriseIds: ids }),
+      });
+    }
     original.value = new Set(selected.value);
     emit('saved');
     emit('close');
@@ -180,10 +221,13 @@ watch(() => [props.open, props.subjectId], ([aberto]) => {
 </script>
 
 <template>
-  <Modal :open="open" size="xl" :title="`Empreendimentos de ${subjectName}`"
-    :subtitle="subjectType === 'profile'
-      ? 'Vale para todo mundo que aponta para este perfil.'
-      : 'Liberação individual desta pessoa.'"
+  <Modal :open="open" size="xl"
+    :title="emLote ? `Empreendimentos de ${subjectIds.length} ${subjectIds.length === 1 ? 'pessoa' : 'pessoas'}` : `Empreendimentos de ${subjectName}`"
+    :subtitle="emLote
+      ? `O que for marcado SUBSTITUI a liberação atual de ${subjectIds.length === 1 ? 'quem está' : `${subjectIds.length} pessoas`} selecionad${subjectIds.length === 1 ? 'a' : 'as'}.`
+      : (subjectType === 'profile'
+        ? 'Vale para todo mundo que aponta para este perfil.'
+        : 'Liberação individual desta pessoa.')"
     @close="emit('close')">
 
     <div class="space-y-3">
@@ -301,8 +345,14 @@ watch(() => [props.open, props.subjectId], ([aberto]) => {
 
     <template #footer>
       <Button variant="ghost" @click="emit('close')">Cancelar</Button>
-      <Button :loading="saving" :disabled="!dirty" icon="fas fa-floppy-disk" @click="save">
-        {{ saving ? 'Salvando...' : 'Salvar liberações' }}
+      <Button :loading="saving" :disabled="emLote ? !selected.size : !dirty"
+        icon="fas fa-floppy-disk" @click="save">
+        <template v-if="saving && emLote">
+          Aplicando {{ salvos.feitos }}/{{ salvos.total }}...
+        </template>
+        <template v-else-if="saving">Salvando...</template>
+        <template v-else-if="emLote">Aplicar a {{ subjectIds.length }} {{ subjectIds.length === 1 ? 'pessoa' : 'pessoas' }}</template>
+        <template v-else>Salvar liberações</template>
       </Button>
     </template>
   </Modal>
