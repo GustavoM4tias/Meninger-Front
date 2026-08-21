@@ -1,87 +1,276 @@
 <script setup>
+/**
+ * Fluxo de Pagamento — lançamentos a caminho do Sienge.
+ *
+ * Cada lançamento percorre um pipeline (fornecedor -> contrato -> aditivo ->
+ * medição -> título). A TELA é a listagem desses lançamentos; o fluxo é de cada
+ * registro, e aparece quando a linha abre.
+ *
+ * Migrada em 2026-08-21 seguindo `_design/RECEITA-DE-TELA.md`. O que saiu:
+ *
+ *   - a barra lateral de "Resumo" (1/4 da largura) com as etapas clicáveis:
+ *     era um StatRow deitado. Virou StatRow de verdade, no topo, e a tela
+ *     ganhou a largura inteira para a lista.
+ *   - o cabeçalho artesanal, a `Surface` de filtros e a paginação
+ *     "Anterior/Próxima".
+ *   - a lista montada com `grid grid-cols-12` na mão, com cabeçalho de coluna
+ *     que não ordenava nada.
+ *   - 251 cores fixas: a tela estava quebrada no tema claro.
+ */
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
-import {
-    usePaymentFlowStore,
-    PIPELINE_STAGE_LABELS,
-} from '@/stores/Tools/PaymentFlow/paymentFlowStore';
+import { useRoute, useRouter } from 'vue-router';
+import { usePaymentFlowStore } from '@/stores/Tools/PaymentFlow/paymentFlowStore';
 import { useCan } from '@/composables/useCan';
+
 import CreateLaunchModal from './components/CreateLaunchModal.vue';
 import LaunchPipelineCard from './components/LaunchPipelineCard.vue';
 import SiengeCredentialsModal from './components/SiengeCredentialsModal.vue';
 import RidRequestModal from './components/RidRequestModal.vue';
 import UpdateBoletoModal from './components/UpdateBoletoModal.vue';
-import Favorite from '@/components/config/Favorite.vue';
 
-import Surface from '@/components/UI/Surface.vue';
+import Favorite from '@/components/config/Favorite.vue';
+import PageContainer from '@/components/UI/PageContainer.vue';
+import PageHeader from '@/components/UI/PageHeader.vue';
+import PageHelp from '@/components/UI/PageHelp.vue';
+import FilterBar from '@/components/UI/FilterBar.vue';
+import StatRow from '@/components/UI/StatRow.vue';
+import DataTable from '@/components/UI/DataTable.vue';
+import Skeleton from '@/components/UI/Skeleton.vue';
+import Spinner from '@/components/UI/Spinner.vue';
+import Modal from '@/components/UI/Modal.vue';
 import Input from '@/components/UI/Input.vue';
+import Select from '@/components/UI/Select.vue';
 import Button from '@/components/UI/Button.vue';
+import Badge from '@/components/UI/Badge.vue';
+import { useIncrementalList } from '@/composables/useIncrementalList';
 
 const store = usePaymentFlowStore();
+const route = useRoute();
+const router = useRouter();
+
 // `configure` (admin) vem das capacidades da tela — lib/screenCapabilities.js.
 // Aqui ela também controla a visão de AUTORIA do lançamento (quem criou), que
 // é supervisão, não operação. Ver composables/useCan.js.
 const can = useCan('/financeiro/paymentflow');
 
-// ── Gate de credenciais Sienge ─────────────────────────────────────────────────
+/* Nasce CARREGANDO. Com `false`, o primeiro quadro é renderizado antes de o
+   `onMounted` rodar: a lista está vazia e a tela pisca "sem registros" antes do
+   esqueleto aparecer. O `finally` do onMounted é quem desliga. */
+const loading = ref(true);
 const showCredentialsModal = ref(false);
 
-onMounted(async () => {
-    store.fetchLaunches();
-    store.fetchSummary();
-    store.fetchLaunchTypes();
-    await store.checkSiengeCredentials();
-    if (store.siengeCredentialsOk === false) showCredentialsModal.value = true;
+/* ── Filtros: rascunho local, aplicados no botão ──────────────────────────
+   Busca e datas ficam num rascunho até "Filtrar", porque cada aplicação é uma
+   ida ao servidor. O recorte por etapa (cartão) e os chips especiais aplicam
+   na hora - são um clique só, e o usuário espera resposta imediata. */
+const draft = ref({ search: '', dateFrom: '', dateTo: '', launchType: '' });
+
+const tipoOptions = computed(() => [
+    { value: '', label: 'Todos os tipos' },
+    ...(store.launchTypes || []).map((t) => ({ value: t, label: t })),
+]);
+
+/** Conta DIMENSÕES preenchidas, não valores. */
+const activeCount = computed(() => {
+    const f = store.filters;
+    let n = 0;
+    if (f.search) n++;
+    if (f.launchType) n++;
+    if (f.status) n++;
+    /* Data só conta quando difere do padrão (mês anterior até o fim deste). */
+    if (store.hasNonDefaultFilters && (f.dateFrom || f.dateTo)) n++;
+    return n;
 });
 
-function onCredentialsSaved() {
-    store.siengeCredentialsOk = true;
-    showCredentialsModal.value = false;
+/* ── Filtros na URL ───────────────────────────────────────────────────────
+   Permite salvar e mandar o link já filtrado. É recurso, não detalhe: está
+   dito no PageHelp. */
+function syncFiltersFromUrl() {
+    const q = route.query;
+    if (!Object.keys(q).length) return;
+    const patch = {};
+    for (const k of ['status', 'launchType', 'search', 'dateFrom', 'dateTo']) {
+        if (q[k]) patch[k] = String(q[k]);
+    }
+    if (String(q.showCancelled) === 'true' && !store.showCancelled) store.toggleShowCancelled();
+    if (String(q.showTituloPago) === 'true' && !store.showTituloPago) store.toggleShowTituloPago();
+    if (Object.keys(patch).length) store.filters = { ...store.filters, ...patch };
 }
 
-// Para todo polling ao sair da página
-onUnmounted(() => {
-    store.stopAllPolling();
-});
-
-// ── Filtros ───────────────────────────────────────────────────────────────────
-const searchInput = ref('');
-const filterStatus = ref('');
-const filterType = ref('');
-
-function applySearch() {
-    store.applyFilters({ search: searchInput.value });
+function syncUrlFromFilters() {
+    const f = store.filters;
+    const q = {};
+    for (const k of ['status', 'launchType', 'search', 'dateFrom', 'dateTo']) {
+        if (f[k]) q[k] = f[k];
+    }
+    if (store.showCancelled) q.showCancelled = 'true';
+    if (store.showTituloPago) q.showTituloPago = 'true';
+    router.replace({ query: q });
 }
 
-function applyStatusFilter(s) {
-    filterStatus.value = filterStatus.value === s ? '' : s;
-    store.applyFilters({ status: filterStatus.value });
+async function buscar() {
+    store.applyFilters({
+        search: draft.value.search,
+        launchType: draft.value.launchType,
+        dateFrom: draft.value.dateFrom,
+        dateTo: draft.value.dateTo,
+    });
+    syncUrlFromFilters();
 }
-function applyTypeFilter(t) {
-    filterType.value = filterType.value === t ? '' : t;
-    store.applyFilters({ launchType: filterType.value });
-}
-function clearAllFilters() {
-    searchInput.value = filterStatus.value = filterType.value = '';
+
+function limparFiltros() {
+    draft.value = { search: '', dateFrom: '', dateTo: '', launchType: '' };
     store.resetFilters();
+    draft.value.dateFrom = store.filters.dateFrom;
+    draft.value.dateTo = store.filters.dateTo;
+    router.replace({ query: {} });
 }
 
-// ── Detail: card de pipeline expandido por linha ──────────────────────────────
-const expandedId = ref(null);
-function toggleExpand(id) {
-    expandedId.value = expandedId.value === id ? null : id;
+/* ── Recorte por etapa (o cartão) ─────────────────────────────────────────
+   Mesmo gesto liga e desliga; "Em andamento" volta ao conjunto inteiro. */
+function aoClicarKpi(item) {
+    const alvo = item.key === 'andamento' ? '' : item.key;
+    store.applyFilters({ status: store.filters.status === alvo ? '' : alvo });
+    syncUrlFromFilters();
 }
 
-// ── Ações de transição ────────────────────────────────────────────────────────
+/* Chips de estado terminal. Além de filtrar, ligam a visibilidade daquele
+   estado - sem isso o filtro devolveria zero, porque o `buildQuery` exclui o
+   que está desligado. É o comportamento que a tela já tinha. */
+function aoClicarEspecial(chave) {
+    if (chave === 'titulo_pago' && !store.showTituloPago) store.toggleShowTituloPago();
+    if (chave === 'cancelado' && !store.showCancelled) store.toggleShowCancelled();
+    if (chave === 'erro' && !store.showErrors) store.toggleShowErrors();
+    store.applyFilters({ status: store.filters.status === chave ? '' : chave });
+    syncUrlFromFilters();
+}
+
+/* ── Etapas: rótulo e cor ─────────────────────────────────────────────────
+   Cor de ENTIDADE, dos tokens de série, na ordem do pipeline. Aprovado e
+   reprovado do fluxo (pago, cancelado, erro) usam as cores RESERVADAS de
+   estado. A mesma cor vale no cartão, no selo da linha e no chip. */
+const ETAPAS = [
+    { key: 'fornecedor', label: 'Fornecedor', icon: 'fas fa-building-user', tone: 1, badge: 'accent' },
+    { key: 'contrato', label: 'Contrato', icon: 'fas fa-file-signature', tone: 4, badge: 'accent' },
+    { key: 'aditivo', label: 'Aditivo', icon: 'fas fa-file-circle-plus', tone: 5, badge: 'accent' },
+    { key: 'medicao', label: 'Medição', icon: 'fas fa-ruler-combined', tone: 7, badge: 'info' },
+    { key: 'titulo', label: 'Título', icon: 'fas fa-file-invoice-dollar', tone: 2, badge: 'warning' },
+];
+
+const ESPECIAIS = [
+    { key: 'titulo_pago', label: 'Título pago', icon: 'fas fa-circle-check', badge: 'success', dot: 'bg-data-pos' },
+    { key: 'cancelado', label: 'Cancelados', icon: 'fas fa-ban', badge: 'neutral', dot: 'bg-data-neutral' },
+    { key: 'erro', label: 'Erros', icon: 'fas fa-triangle-exclamation', badge: 'danger', dot: 'bg-data-neg' },
+];
+
+const STATUS_LABELS = Object.fromEntries(
+    [...ETAPAS, ...ESPECIAIS].map((e) => [e.key, e.label]),
+);
+const statusBadge = (s) => [...ETAPAS, ...ESPECIAIS].find((e) => e.key === s)?.badge || 'neutral';
+
+function formatCurrency(val) {
+    if (val == null) return '-';
+    return Number(val).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
+function formatDate(val) {
+    if (!val) return '-';
+    const [y, m, d] = String(val).slice(0, 10).split('-');
+    return `${d}/${m}/${y}`;
+}
+
+/* ── Cartões ──────────────────────────────────────────────────────────────
+   Descrevem o PERÍODO (vêm do summary do servidor, que não conhece o recorte).
+   O recorte muda a tabela, não os cartões. */
+const totalAtivo = computed(() =>
+    ETAPAS.reduce((acc, e) => acc + (store.summary[e.key]?.totalAmount || 0), 0));
+const contagemAtiva = computed(() =>
+    ETAPAS.reduce((acc, e) => acc + (store.summary[e.key]?.count || 0), 0));
+
+const kpiCards = computed(() => [
+    {
+        key: 'andamento', label: 'Em andamento', raw: contagemAtiva.value,
+        hint: formatCurrency(totalAtivo.value),
+        icon: 'fas fa-money-bill-transfer', tone: 'accent',
+        tooltip: 'Clique para ver todos os lançamentos em andamento',
+    },
+    ...ETAPAS.map((e) => ({
+        key: e.key, label: e.label, raw: store.summary[e.key]?.count || 0,
+        hint: store.summary[e.key]?.totalAmount ? formatCurrency(store.summary[e.key].totalAmount) : '',
+        icon: e.icon, tone: e.tone,
+        tooltip: `Clique para ver só o que está em ${e.label}`,
+    })),
+]);
+
+/* ── Tabela ───────────────────────────────────────────────────────────────
+   Ordenar aqui (`manual-sort`): a tabela recebe a lista já fatiada pelo
+   scroll. Ordem: filtrar (servidor) -> ordenar -> fatiar. */
+const ordem = ref({ by: '', dir: 'asc' });
+
+const COLUNAS = computed(() => [
+    { key: 'launchType', label: 'Tipo', priority: 1, sortable: true, width: '8rem' },
+    { key: 'providerName', label: 'Fornecedor', priority: 1, sortable: true },
+    { key: 'status', label: 'Etapa', priority: 1, sortable: true, width: '9rem' },
+    {
+        key: 'enterpriseName', label: 'Empreendimento', priority: 2, sortable: true,
+        value: (l) => l.enterpriseName || l.companyName || '-',
+    },
+    { key: 'documento', label: 'Documento', priority: 2, truncate: false, width: '9rem' },
+    { key: 'unitPrice', label: 'Valor', priority: 2, numeric: true, sortable: true, width: '9rem' },
+    { key: 'documentDate', label: 'Data', priority: 3, sortable: true, width: '7rem' },
+    ...(can('configure')
+        ? [{ key: 'createdByName', label: 'Criado por', priority: 3, sortable: true }]
+        : []),
+]);
+
+const ordenada = computed(() => {
+    const { by, dir } = ordem.value;
+    const base = store.launches || [];
+    if (!by) return base;
+    const col = COLUNAS.value.find((c) => c.key === by);
+    const mul = dir === 'asc' ? 1 : -1;
+    const valor = (l) => (col?.value ? col.value(l) : l[by]);
+    return [...base].sort((a, b) => {
+        const va = valor(a), vb = valor(b);
+        if (va == null || va === '-') return 1;
+        if (vb == null || vb === '-') return -1;
+        if (typeof va === 'number' && typeof vb === 'number') return (va - vb) * mul;
+        return String(va).localeCompare(String(vb), 'pt-BR', { numeric: true, sensitivity: 'base' }) * mul;
+    });
+});
+
+const inc = useIncrementalList(ordenada, { step: 50 });
+
+/* O servidor pagina. Quando o scroll esgota o que está na memória e ainda há
+   página no servidor, busca a próxima e ACUMULA - senão ordenar por valor
+   ordenaria só o primeiro lote. */
+const faltaNoServidor = computed(() =>
+    Math.max(0, (store.pagination.total || 0) - (store.launches?.length || 0)));
+
+const carregandoMais = ref(false);
+async function puxarMaisDoServidor() {
+    if (carregandoMais.value || !faltaNoServidor.value) return;
+    carregandoMais.value = true;
+    try { await store.carregarMais(); }
+    finally { carregandoMais.value = false; }
+}
+
+watch(() => inc.acabou.value, (acabou) => {
+    if (acabou && faltaNoServidor.value) puxarMaisDoServidor();
+});
+
+/* ── Ações de transição ───────────────────────────────────────────────── */
+const CANCEL = { action: 'cancel', label: 'Cancelar', icon: 'fa-ban' };
+const ACTIONS = {
+    fornecedor: [CANCEL], contrato: [CANCEL], aditivo: [CANCEL],
+    medicao: [CANCEL], titulo: [CANCEL], erro: [CANCEL],
+};
+
 const confirmingAction = ref(null); // { id, action, label }
-const actionReason = ref('');
-
 function askAction(launch, action, label) {
     confirmingAction.value = { id: launch.id, action, label };
-    actionReason.value = '';
 }
 function cancelAction() {
     confirmingAction.value = null;
-    actionReason.value = '';
 }
 async function executeAction() {
     const { id, action } = confirmingAction.value;
@@ -93,681 +282,364 @@ async function executeAction() {
     }
 }
 
-// Ações disponíveis por status
-// Cancelamento disponível em qualquer etapa ativa
-const CANCEL = { action: 'cancel', label: 'Cancelar', icon: 'fa-ban', color: 'slate' };
-const ACTIONS = {
-    fornecedor: [CANCEL],
-    contrato: [CANCEL],
-    aditivo: [CANCEL],
-    medicao: [CANCEL],
-    titulo: [CANCEL],
-    erro: [CANCEL],
-};
+const ETAPAS_TRAVADAS = ['searching_creditor', 'searching_contract', 'creating_contract', 'creating_additive', 'validating_items'];
+const acaoTravada = (launch) =>
+    ETAPAS_TRAVADAS.includes(launch.pipelineStage) || store.pipelineRunningIds.has(launch.id);
 
-// ── Helpers visuais ───────────────────────────────────────────────────────────
-function statusBadgeClass(status) {
-    const map = {
-        fornecedor: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
-        contrato: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300',
-        aditivo: 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300',
-        medicao: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-300',
-        titulo: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300',
-        titulo_pago: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
-        cancelado: 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400',
-        erro: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
-    };
-    return map[status] || map.fornecedor;
-}
-
-const STATUS_LABELS = {
-    fornecedor: 'Fornecedor',
-    contrato: 'Contrato',
-    aditivo: 'Aditivo',
-    medicao: 'Medição',
-    titulo: 'Título',
-    titulo_pago: 'Título Pago',
-    cancelado: 'Cancelado',
-    erro: 'Erro',
-};
-
-function pipelineDotClass(stage) {
-    const c = PIPELINE_STAGE_LABELS[stage]?.color || 'gray';
-    return {
-        gray: 'bg-gray-300',
-        blue: 'bg-blue-400 animate-pulse',
-        green: 'bg-green-400',
-        emerald: 'bg-emerald-400',
-        red: 'bg-red-400',
-        orange: 'bg-orange-400',
-    }[c] || 'bg-gray-300';
-}
-
-function formatCurrency(val) {
-    if (val == null) return '—';
-    return Number(val).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-}
-function formatDate(val) {
-    if (!val) return '—';
-    const [y, m, d] = String(val).slice(0, 10).split('-');
-    return `${d}/${m}/${y}`;
-}
-
-// ── Sidebar summary ───────────────────────────────────────────────────────────
-const summaryItems = [
-    { key: 'fornecedor', label: 'Fornecedor', dot: 'bg-blue-400' },
-    { key: 'contrato', label: 'Contrato', dot: 'bg-indigo-400' },
-    { key: 'aditivo', label: 'Aditivo', dot: 'bg-purple-400' },
-    { key: 'medicao', label: 'Medição', dot: 'bg-cyan-400' },
-    { key: 'titulo', label: 'Título', dot: 'bg-yellow-400' },
-];
-
-// Itens especiais ficam nos toggles (cancelado/erro/titulo_pago)
-const totalActiveAmount = computed(() =>
-    ['fornecedor', 'contrato', 'aditivo', 'medicao', 'titulo'].reduce(
-        (acc, k) => acc + (store.summary[k]?.totalAmount || 0), 0
-    )
-);
-
+/* ── Pipeline ─────────────────────────────────────────────────────────── */
 async function handleContinueExistingContract(launchId) {
     try {
         await store.continueExistingContract(launchId);
         await store.fetchLaunches();
-    } catch (error) {
-        console.error(error);
-    }
+    } catch (error) { console.error(error); }
 }
-
 async function handleAbort(launchId) {
-    try {
-        await store.abortPipeline(launchId);
-    } catch (error) {
-        console.error(error);
-    }
+    try { await store.abortPipeline(launchId); } catch (error) { console.error(error); }
 }
 
-// ── UpdateBoleto modal ─────────────────────────────────────────────────────────
 const showUpdateBoletoModal = ref(false);
 const updateBoletoLaunch = ref(null);
-
 function handleUpdateBoleto(launch) {
     updateBoletoLaunch.value = launch;
     showUpdateBoletoModal.value = true;
 }
+async function onBoletoUpdated() { await store.fetchLaunches(true); }
 
-async function onBoletoUpdated() {
-    await store.fetchLaunches(true);
+function onCredentialsSaved() {
+    store.siengeCredentialsOk = true;
+    showCredentialsModal.value = false;
 }
+
+/* ── Estado ───────────────────────────────────────────────────────────── */
+const recorteAtivo = computed(() => (store.filters.status
+    ? STATUS_LABELS[store.filters.status] || store.filters.status
+    : null));
+
+const periodoLabel = computed(() => {
+    const f = store.filters;
+    return `${formatDate(f.dateFrom)} → ${formatDate(f.dateTo)}`;
+});
+
+onMounted(async () => {
+    syncFiltersFromUrl();
+    draft.value = {
+        search: store.filters.search || '',
+        launchType: store.filters.launchType || '',
+        dateFrom: store.filters.dateFrom || '',
+        dateTo: store.filters.dateTo || '',
+    };
+    loading.value = true;
+    try {
+        await Promise.all([store.fetchLaunches(), store.fetchSummary(), store.fetchLaunchTypes()]);
+    } finally { loading.value = false; }
+    await store.checkSiengeCredentials();
+    if (store.siengeCredentialsOk === false) showCredentialsModal.value = true;
+});
+
+onUnmounted(() => store.stopAllPolling());
 </script>
 
 <template>
-    <div class="h-auto min-h-full overflow-x-hidden relative">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-            <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+    <PageContainer size="full">
 
-                <!-- ── Sidebar ─────────────────────────────────────────────── -->
-                <aside class="lg:col-span-1 order-2 lg:order-1">
-                    <h3 class="text-xl font-bold text-ink mb-4">Resumo</h3>
+        <PageHeader title="Fluxo de Pagamento"
+            subtitle="Lançamentos a caminho do Sienge: em que etapa cada um está e o que falta para pagar."
+            icon="fas fa-money-bill-transfer">
+            <template #title>
+                <span>Fluxo de Pagamento</span>
+                <Favorite :router="'/financeiro/paymentflow'" :section="'Fluxo de Pagamento'" />
+            </template>
+            <template #actions>
+                <Button size="sm" icon="fas fa-plus" @click="store.openCreateModal">
+                    <span class="hidden sm:inline">Lançamento</span>
+                </Button>
+                <PageHelp
+                    storage-key="paymentflow"
+                    title="Como usar o Fluxo de Pagamento"
+                    intro="Cada lançamento é uma nota que precisa virar título no Sienge. A tela lista os lançamentos do período e mostra em que etapa do caminho cada um parou."
+                    :steps="[
+                        { title: 'Crie o lançamento', text: 'O botão Lançamento abre o cadastro. Anexe a nota e o boleto: os dados são lidos do PDF e já vêm preenchidos.' },
+                        { title: 'Escolha o período', text: 'Abra Filtros para mudar as datas, buscar por fornecedor ou documento, ou olhar só um tipo de lançamento.' },
+                        { title: 'Veja onde estão', text: 'Os cartões contam quantos lançamentos há em cada etapa e quanto somam. Clique num deles para deixar na tabela só aquela etapa; clique de novo para desfazer.' },
+                        { title: 'Acompanhe um lançamento', text: 'Clique na linha para abrir o pipeline: cada passo com Sienge aparece com o estado atual e o que deu errado, se deu.' },
+                        { title: 'Aja quando travar', text: 'Dentro da linha aberta ficam as ações: rodar o pipeline de novo, pedir o RID do fornecedor, atualizar o boleto ou cancelar o lançamento.' },
+                    ]"
+                    :tips="[
+                        'A cor da etapa é a mesma no cartão, no selo da linha e no chip: verde é título pago, vermelho é erro e cinza é cancelado.',
+                        'Cancelados e títulos pagos ficam escondidos por padrão. Clicar no chip deles liga a exibição e filtra de uma vez.',
+                        'Quando há pipeline rodando, a tela se atualiza sozinha - o aviso aparece ao lado da contagem.',
+                        'Os filtros ficam gravados no endereço da página: dá para salvar o link ou mandar para alguém já filtrado.',
+                    ]"
+                />
+            </template>
+        </PageHeader>
 
-                    <div
-                        class="bg-surface-raised rounded-xl shadow-sm border border-line p-5 sticky top-8 space-y-4">
+        <div class="mb-4">
+            <FilterBar :active-count="activeCount" :loading="loading" :cols="4"
+                @apply="buscar" @clear="limparFiltros">
+                <Input v-model="draft.search" label="Buscar"
+                    :placeholder="can('configure') ? 'Fornecedor · empresa · documento · criador' : 'Fornecedor · empresa · documento'"
+                    iconLeft="fas fa-magnifying-glass" @keydown.enter="buscar" />
+                <Input v-model="draft.dateFrom" type="date" label="Data início" />
+                <Input v-model="draft.dateTo" type="date" label="Data fim" />
+                <Select v-model="draft.launchType" label="Tipo de lançamento" :options="tipoOptions" />
+            </FilterBar>
+        </div>
 
-                        <!-- Etapas do processo -->
-                        <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
-                            Etapas</div>
+        <div v-if="store.error"
+            class="mb-4 rounded-xl border border-data-neg/25 bg-data-neg/10 p-4 text-sm text-data-neg
+                   flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div class="flex items-start gap-2 min-w-0">
+                <i class="fas fa-circle-exclamation mt-0.5 shrink-0"></i>
+                <span class="min-w-0">{{ store.error }}</span>
+            </div>
+            <Button variant="outline" size="sm" icon="fas fa-rotate-right" class="shrink-0"
+                @click="store.fetchLaunches()">
+                Tentar novamente
+            </Button>
+        </div>
 
-                        <div v-for="item in summaryItems" :key="item.key"
-                            class="flex items-center justify-between p-3 rounded-lg cursor-pointer transition" :class="filterStatus === item.key
-                                ? 'bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700'
-                                : 'hover:bg-gray-50 dark:hover:bg-gray-800'" @click="applyStatusFilter(item.key)">
-                            <div class="flex items-center gap-2">
-                                <span class="inline-block w-2 h-2 rounded-full flex-shrink-0" :class="item.dot"></span>
-                                <span class="text-sm text-ink-muted">{{ item.label }}</span>
+        <div v-else-if="loading" class="space-y-4">
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-3">
+                <Skeleton v-for="i in 6" :key="i" variant="stat" />
+            </div>
+            <Skeleton variant="table" :lines="8" />
+        </div>
+
+        <div v-else class="space-y-4">
+            <!-- Cartões por etapa: clicar recorta a tabela -->
+            <StatRow :items="kpiCards" :cols="{ sm: 2, md: 3, lg: 6 }" size="sm"
+                selectable :active-key="store.filters.status || 'andamento'" @select="aoClicarKpi" />
+
+            <!-- Estados terminais: chips, porque não fazem parte do funil ativo -->
+            <div class="flex flex-wrap items-center gap-1.5">
+                <button v-for="e in ESPECIAIS" :key="e.key" type="button"
+                    :class="['inline-flex items-center gap-2 h-10 px-3 rounded-lg border text-xs font-medium',
+                             'transition-colors duration-120 focus-ring',
+                             store.filters.status === e.key
+                               ? 'border-accent bg-accent-soft text-accent'
+                               : 'border-line text-ink-muted hover:bg-surface-sunken hover:text-ink']"
+                    @click="aoClicarEspecial(e.key)">
+                    <span :class="[e.dot, 'h-2 w-2 rounded-full shrink-0']"></span>
+                    {{ e.label }}
+                    <span class="font-mono tabular-nums text-ink-subtle">
+                        {{ store.summary[e.key]?.count || 0 }}
+                    </span>
+                </button>
+            </div>
+
+            <!-- Linha de estado -->
+            <div class="flex flex-wrap items-center gap-2 text-xs text-ink-muted">
+                <span class="tabular-nums">
+                    <b class="text-ink">{{ store.launches.length }}</b>
+                    de {{ store.pagination.total || store.launches.length }} lançamento{{ (store.pagination.total || 0) === 1 ? '' : 's' }}
+                </span>
+                <span class="font-mono text-ink-subtle tabular-nums">{{ periodoLabel }}</span>
+                <button v-if="recorteAtivo" type="button"
+                    class="inline-flex items-center gap-1.5 h-7 px-2 rounded-md bg-accent-soft text-accent
+                           text-micro font-medium hover:bg-accent/15 transition-colors duration-120 focus-ring"
+                    @click="store.applyFilters({ status: '' }); syncUrlFromFilters()">
+                    só {{ recorteAtivo }}
+                    <i class="fas fa-xmark text-micro"></i>
+                </button>
+                <span v-if="store.liveRefreshId || store.hasActivePipelines"
+                    class="inline-flex items-center gap-1.5 text-micro font-mono text-accent">
+                    <span class="live-dot"></span>
+                    atualizando em tempo real
+                </span>
+            </div>
+
+            <DataTable :columns="COLUNAS" :rows="inc.visiveis.value" row-key="id"
+                manual-sort expandable density="compact"
+                v-model:sort-by="ordem.by" v-model:sort-dir="ordem.dir"
+                more-label="Ver mais campos"
+                empty-title="Nenhum lançamento encontrado"
+                empty-text="Ajuste o período ou os filtros para ver resultados.">
+
+                <template #cell-launchType="{ value }">
+                    <Badge variant="accent" size="sm">{{ value || '-' }}</Badge>
+                </template>
+
+                <template #cell-providerName="{ row }">
+                    <span class="block min-w-0">
+                        <span class="block font-medium text-ink truncate">{{ row.providerName || '-' }}</span>
+                        <span v-if="row.providerCnpj" class="block text-micro font-mono text-ink-subtle truncate">
+                            {{ row.providerCnpj }}
+                        </span>
+                    </span>
+                </template>
+
+                <template #cell-status="{ value }">
+                    <Badge :variant="statusBadge(value)" size="sm">
+                        {{ STATUS_LABELS[value] || value || '-' }}
+                    </Badge>
+                </template>
+
+                <template #cell-documento="{ row }">
+                    <span class="inline-flex items-center gap-2" @click.stop>
+                        <a v-if="row.nfUrl" :href="row.nfUrl" target="_blank" rel="noopener"
+                            v-tippy="'Abrir a nota'"
+                            class="inline-flex items-center gap-1 text-micro text-ink-muted
+                                   hover:text-accent transition-colors duration-120 focus-ring rounded">
+                            <i class="fas fa-file-invoice"></i>{{ row.nfType || 'NF' }}
+                        </a>
+                        <a v-if="row.boletoUrl" :href="row.boletoUrl" target="_blank" rel="noopener"
+                            v-tippy="'Abrir o boleto'"
+                            class="inline-flex items-center gap-1 text-micro text-ink-muted
+                                   hover:text-accent transition-colors duration-120 focus-ring rounded">
+                            <i class="fas fa-barcode"></i>Boleto
+                        </a>
+                        <span v-if="!row.nfUrl && !row.boletoUrl" class="text-ink-subtle">-</span>
+                    </span>
+                </template>
+
+                <template #cell-unitPrice="{ value }">
+                    <span class="metric text-sm">{{ formatCurrency(value) }}</span>
+                </template>
+
+                <template #cell-documentDate="{ value }">{{ formatDate(value) }}</template>
+
+                <!-- A linha abre com o pipeline do registro e as ações dele -->
+                <template #expanded="{ row }">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 py-1">
+                        <LaunchPipelineCard :launch="row"
+                            :polling="!!store.pipelinePolling[row.id]"
+                            :running="store.pipelineRunningIds.has(row.id)"
+                            @run-pipeline="store.runPipeline" @poll="store.pollNow"
+                            @retry-contract="store.runPipeline"
+                            @dismiss-error="store.fetchLaunches(true)"
+                            @open-rid-modal="l => store.openRidModal(l.id)"
+                            @register-boleto="id => store.registerBoleto(id)"
+                            @update-boleto="handleUpdateBoleto" @abort="handleAbort"
+                            @continue-existing-contract="handleContinueExistingContract" />
+
+                        <div class="space-y-3">
+                            <p class="metric-label">Ações</p>
+
+                            <div v-if="ACTIONS[row.status]" class="flex flex-wrap gap-2">
+                                <Button v-for="act in ACTIONS[row.status]" :key="act.action"
+                                    variant="outline" size="sm" :icon="`fas ${act.icon}`"
+                                    :disabled="acaoTravada(row)"
+                                    @click.stop="askAction(row, act.action, act.label)">
+                                    {{ act.label }}
+                                </Button>
                             </div>
-                            <div class="text-right">
-                                <div class="font-bold text-sm text-ink">
-                                    {{ store.summary[item.key]?.count || 0 }}
-                                </div>
-                                <div v-if="store.summary[item.key]?.totalAmount" class="text-xs text-gray-400 dark:text-slate-500">
-                                    {{ formatCurrency(store.summary[item.key]?.totalAmount) }}
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Totalizador -->
-                        <div class="border-t border-line pt-3">
-                            <div class="text-xs text-gray-500 dark:text-slate-400 mb-1">Em andamento</div>
-                            <div class="text-base font-bold text-blue-600 dark:text-blue-400">
-                                {{ formatCurrency(totalActiveAmount) }}
-                            </div>
-                        </div>
-
-                        <!-- Especiais: Título Pago, Cancelados, Erros -->
-                        <div class="border-t border-line pt-3 space-y-2">
-                            <div
-                                class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">
-                                Especiais</div>
-
-                            <!-- Título Pago -->
-                            <div class="flex items-center justify-between p-3 rounded-lg cursor-pointer transition"
-                                :class="filterStatus === 'titulo_pago'
-                                    ? 'bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-700'
-                                    : store.showTituloPago
-                                        ? 'bg-emerald-50/50 dark:bg-emerald-900/10 hover:bg-emerald-50 dark:hover:bg-emerald-900/20'
-                                        : 'hover:bg-gray-50 dark:hover:bg-gray-800 opacity-60'"
-                                @click="applyStatusFilter('titulo_pago'); if (!store.showTituloPago) store.toggleShowTituloPago()">
-                                <div class="flex items-center gap-2">
-                                    <span class="inline-block w-2 h-2 rounded-full bg-emerald-400 flex-shrink-0"></span>
-                                    <span class="text-sm text-ink-muted">Título Pago</span>
-                                </div>
-                                <div class="flex items-center gap-2">
-                                    <span v-if="store.showTituloPago"
-                                        class="font-bold text-sm text-ink">
-                                        {{ store.summary['titulo_pago']?.count || 0 }}
-                                    </span>
-                                    <button class="text-xs px-1.5 py-0.5 rounded border transition" :class="store.showTituloPago
-                                        ? 'border-emerald-400 text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/30'
-                                        : 'border-gray-300 dark:border-gray-600 text-gray-400'"
-                                        @click.stop="store.toggleShowTituloPago(); if (store.showTituloPago && filterStatus === 'titulo_pago') filterStatus = ''">
-                                        {{ store.showTituloPago ? 'Ocultar' : 'Exibir' }}
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- Cancelados -->
-                            <div class="flex items-center justify-between p-3 rounded-lg cursor-pointer transition"
-                                :class="filterStatus === 'cancelado'
-                                    ? 'bg-slate-100 dark:bg-slate-700/50 border border-slate-300 dark:border-slate-600'
-                                    : store.showCancelled
-                                        ? 'bg-slate-50 dark:bg-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-700/40'
-                                        : 'hover:bg-gray-50 dark:hover:bg-gray-800 opacity-60'"
-                                @click="applyStatusFilter('cancelado'); if (!store.showCancelled) store.toggleShowCancelled()">
-                                <div class="flex items-center gap-2">
-                                    <span class="inline-block w-2 h-2 rounded-full bg-slate-400 flex-shrink-0"></span>
-                                    <span class="text-sm text-ink-muted">Cancelados</span>
-                                </div>
-                                <div class="flex items-center gap-2">
-                                    <span v-if="store.showCancelled"
-                                        class="font-bold text-sm text-ink">
-                                        {{ store.summary['cancelado']?.count || 0 }}
-                                    </span>
-                                    <button class="text-xs px-1.5 py-0.5 rounded border transition" :class="store.showCancelled
-                                        ? 'border-slate-400 text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-700'
-                                        : 'border-gray-300 dark:border-gray-600 text-gray-400'"
-                                        @click.stop="store.toggleShowCancelled(); if (store.showCancelled && filterStatus === 'cancelado') filterStatus = ''">
-                                        {{ store.showCancelled ? 'Ocultar' : 'Exibir' }}
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- Erros -->
-                            <div class="flex items-center justify-between p-3 rounded-lg cursor-pointer transition"
-                                :class="filterStatus === 'erro'
-                                    ? 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700'
-                                    : store.showErrors
-                                        ? 'bg-red-50/50 dark:bg-red-900/10 hover:bg-red-50 dark:hover:bg-red-900/20'
-                                        : 'hover:bg-gray-50 dark:hover:bg-gray-800 opacity-60'"
-                                @click="applyStatusFilter('erro'); if (!store.showErrors) store.toggleShowErrors()">
-                                <div class="flex items-center gap-2">
-                                    <span class="inline-block w-2 h-2 rounded-full bg-red-400 flex-shrink-0"></span>
-                                    <span class="text-sm text-ink-muted">Erros</span>
-                                </div>
-                                <div class="flex items-center gap-2">
-                                    <span v-if="store.showErrors"
-                                        class="font-bold text-sm text-ink">
-                                        {{ store.summary['erro']?.count || 0 }}
-                                    </span>
-                                    <button class="text-xs px-1.5 py-0.5 rounded border transition" :class="store.showErrors
-                                        ? 'border-red-400 text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/30'
-                                        : 'border-gray-300 dark:border-gray-600 text-gray-400'"
-                                        @click.stop="store.toggleShowErrors(); if (store.showErrors && filterStatus === 'erro') filterStatus = ''">
-                                        {{ store.showErrors ? 'Ocultar' : 'Exibir' }}
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Filtro por tipo -->
-                        <div class="border-t border-line pt-4">
-                            <div
-                                class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">
-                                Tipo</div>
-                            <div class="flex flex-wrap gap-1.5">
-                                <button v-for="t in store.launchTypes" :key="t.id"
-                                    class="text-xs px-2.5 py-1 rounded-full border transition truncate"
-                                    :class="filterType === t.name
-                                        ? 'bg-blue-600 text-white border-blue-600'
-                                        : 'border-gray-300 dark:border-gray-600 text-ink-muted hover:border-blue-400'" @click="applyTypeFilter(t.name)">
-                                    {{ t.name }}
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Pipeline em andamento -->
-                        <div v-if="Object.keys(store.pipelinePolling).length"
-                            class="border-t border-line pt-4">
-                            <div
-                                class="text-xs font-medium text-blue-600 dark:text-blue-400 flex items-center gap-1.5 mb-1">
-                                <i class="fas fa-sync fa-spin text-xs"></i>
-                                {{ Object.keys(store.pipelinePolling).length }} monitorando
-                            </div>
-                            <button class="text-xs text-gray-400 hover:text-red-500 transition"
-                                @click="store.stopAllPolling()">
-                                Parar todos
-                            </button>
-                        </div>
-                    </div>
-                </aside>
-
-                <!-- ── Main ───────────────────────────────────────────────── -->
-                <main class="lg:col-span-3 order-1 lg:order-2">
-
-                    <!-- Header -->
-                    <div class="flex items-center justify-between mb-2">
-                        <div>
-                            <h1 class="text-xl md:text-2xl font-bold text-ink">Fluxo de pagamento
-                                <Favorite :router="'/tools/paymentflow'" :section="'Fluxo de Pagamento'" />
-                            </h1>
-                            <p class="text-ink-muted text-sm mt-0.5">
-                                Gerenciamento de lançamentos para pagamento
+                            <p v-else class="text-micro text-ink-subtle italic">
+                                Nenhuma ação disponível nesta etapa.
                             </p>
-                        </div>
 
-                        <button
-                            class="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition"
-                            @click="store.openCreateModal">
-                            <i class="fas fa-plus"></i> Lançamento
-                        </button>
-                    </div>
-
-                    <!-- Barra de filtros -->
-                    <Surface variant="raised" padding="md" class="mb-4">
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1fr_auto_auto_auto_auto] gap-3 items-end">
-                            <Input v-model="searchInput"
-                                label="Buscar pagamentos"
-                                :placeholder="can('configure') ? 'Fornecedor, empresa, documento, criador…' : 'Fornecedor, empresa, documento…'"
-                                iconLeft="fas fa-magnifying-glass"
-                                @keydown.enter="applySearch" />
-
-                            <Input type="date" label="Data início"
-                                :model-value="store.filters.dateFrom"
-                                @update:model-value="(v) => store.applyFilters({ dateFrom: v })" />
-
-                            <Input type="date" label="Data fim"
-                                :model-value="store.filters.dateTo"
-                                @update:model-value="(v) => store.applyFilters({ dateTo: v })" />
-
-                            <Button icon="fas fa-filter" @click="applySearch">
-                                <span class="hidden sm:inline">Filtrar</span>
-                            </Button>
-
-                            <Button v-if="filterStatus || filterType || searchInput || store.hasNonDefaultFilters"
-                                variant="ghost" icon="fas fa-eraser" @click="clearAllFilters">
-                                <span class="hidden sm:inline">Limpar</span>
-                            </Button>
-                        </div>
-
-                        <!-- Indicador de live refresh -->
-                        <div v-if="store.liveRefreshId || store.hasActivePipelines"
-                            class="mt-3 flex items-center gap-2 text-xs text-accent font-mono">
-                            <i class="fas fa-sync fa-spin"></i>
-                            Atualizando em tempo real
-                        </div>
-                    </Surface>
-
-                    <!-- Lista de lançamentos -->
-                    <div
-                        class="bg-surface-raised rounded-xl border border-line overflow-hidden">
-
-                        <!-- Empty state -->
-                        <div v-if="!store.hasLaunches" class="text-center py-16 px-6">
-                            <div
-                                class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-                                <i class="fas fa-file-invoice-dollar text-2xl text-gray-400 dark:text-slate-500"></i>
-                            </div>
-                            <h3 class="font-semibold text-ink mb-1">Nenhum lançamento</h3>
-                            <p class="text-sm text-gray-400 dark:text-slate-500">
-                                {{ filterStatus || filterType || searchInput
-                                    ? 'Tente ajustar os filtros.'
-                                    : 'Clique em "Novo Lançamento" para começar.' }}
-                            </p>
-                        </div>
-
-                        <div v-else>
-                            <!-- Cabeçalho (desktop) -->
-                            <div
-                                class="hidden md:grid grid-cols-12 gap-2 px-4 py-2.5 bg-surface-sunken/50 text-xs font-medium text-ink-muted border-b border-line">
-                                <div class="col-span-2">Tipo</div>
-                                <div class="col-span-3">Fornecedor</div>
-                                <div class="col-span-2">Empreendimento</div>
-                                <div class="col-span-1 truncate">Documento</div>
-                                <div class="col-span-2 text-center">Valor</div>
-                                <div class="col-span-1 text-center">Status</div>
-                                <div class="col-span-1"></div>
-                            </div>
-
-                            <!-- Cada lançamento -->
-                            <div v-for="launch in store.launches" :key="launch.id">
-
-                                <!-- Linha principal -->
-                                <div class="grid grid-cols-12 gap-2 px-4 py-3.5 border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/40 transition items-center cursor-pointer"
-                                    :class="expandedId === launch.id ? 'bg-surface-sunken/40' : ''"
-                                    @click="toggleExpand(launch.id)">
-
-                                    <!-- Tipo -->
-                                    <div class="col-span-12 md:col-span-2 flex justify-center">
-                                        <span
-                                            class="text-xs font-medium text-center w- px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300">
-                                            {{ launch.launchType }}
-                                        </span>
-                                    </div>
-
-                                    <!-- Fornecedor -->
-                                    <div class="col-span-12 md:col-span-3">
-                                        <div class="font-medium text-sm text-ink truncate"
-                                            :title="launch.providerName">
-                                            {{ launch.providerName || '—' }}
-                                        </div>
-                                        <div class="text-xs text-gray-400 dark:text-slate-500 font-mono">
-                                            {{ launch.providerCnpj
-                                                ? launch.providerCnpj.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/,
-                                                    '$1.$2.$3/$4-$5')
-                                                : '' }}
-                                        </div>
-                                        <!-- Badge do criador (apenas admin) -->
-                                        <div v-if="can('configure') && launch.createdByName"
-                                            class="mt-0.5 inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400">
-                                            <i class="fas fa-user text-xs opacity-60"></i>
-                                            {{ launch.createdByName }}
-                                        </div>
-                                    </div>
-
-                                    <!-- Empreendimento -->
-                                    <div class="col-span-12 md:col-span-2 text-sm text-ink-muted truncate"
-                                        :title="launch.enterpriseName">
-                                        {{ launch.enterpriseName || launch.companyName || '—' }}
-                                    </div>
-
-                                    <!-- Documento -->
-                                    <div class="col-span-12 md:col-span-1">
-                                        <div
-                                            class="text-xs text-ink-muted flex items-center gap-1 flex-wrap justify-center">
-                                            <a v-if="launch.nfUrl" :href="launch.nfUrl" target="_blank"
-                                                class="inline-flex items-center gap-1 text-red-400 hover:text-red-600 transition"
-                                                @click.stop>
-                                                <i class="fas fa-file-invoice text-xs"></i>
-                                                {{ launch.nfType || 'NF' }}
-                                            </a>
-                                            <a v-if="launch.boletoUrl" :href="launch.boletoUrl" target="_blank"
-                                                class="inline-flex items-center gap-1 text-blue-400 hover:text-blue-600 transition ml-1"
-                                                @click.stop>
-                                                <i class="fas fa-barcode text-xs"></i> Boleto
-                                            </a>
-                                        </div>
-                                        <!-- <div class="text-xs text-gray-400">{{ formatDate(launch.documentDate) }}</div> -->
-                                    </div>
-
-                                    <!-- Valor -->
-                                    <div class="col-span-12 md:col-span-2 text-center">
-                                        <span class="font-semibold text-sm text-ink">
-                                            {{ formatCurrency(launch.unitPrice) }}
-                                        </span>
-                                    </div>
-
-                                    <!-- Status badge + pipeline dot -->
-                                    <div class="col-span-12 md:col-span-1 flex flex-col items-center gap-1">
-                                        <!-- Badge de status macro -->
-                                        <span class="text-xs font-medium px-2 py-0.5 rounded-full truncate"
-                                            :class="statusBadgeClass(launch.status)">
-                                            {{ STATUS_LABELS[launch.status] || launch.status }}
-                                        </span>
-                                        <!-- Dot de pipeline (sub-etapa Sienge) -->
-                                        <div v-if="launch.pipelineStage && launch.pipelineStage !== 'idle'"
-                                            class="flex items-center gap-1 mt-0.5">
-                                            <span class="inline-block w-1.5 h-1.5 rounded-full flex-shrink-0"
-                                                :class="pipelineDotClass(launch.pipelineStage)">
-                                            </span>
-                                            <span class="text-xs text-gray-400 dark:text-slate-500 hidden lg:inline truncate max-w-20">
-                                                {{ PIPELINE_STAGE_LABELS[launch.pipelineStage]?.label }}
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    <!-- Expand chevron -->
-                                    <div class="col-span-12 md:col-span-1 flex justify-end">
-                                        <i class="fas text-gray-400 dark:text-slate-500 text-xs transition-transform duration-200"
-                                            :class="expandedId === launch.id ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
-                                    </div>
+                            <dl class="panel p-3 grid grid-cols-2 gap-x-4 gap-y-2">
+                                <div class="min-w-0">
+                                    <dt class="metric-label">Empreendimento</dt>
+                                    <dd class="text-xs text-ink truncate">
+                                        {{ row.enterpriseName || row.companyName || '-' }}
+                                    </dd>
                                 </div>
-
-                                <!-- Painel expandido -->
-                                <div v-if="expandedId === launch.id"
-                                    class="border-b border-line bg-gray-50/50 dark:bg-gray-800/20 px-4 py-4">
-                                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-
-                                        <!-- Pipeline card -->
-                                        <LaunchPipelineCard :launch="launch"
-                                            :polling="!!store.pipelinePolling[launch.id]"
-                                            :running="store.pipelineRunningIds.has(launch.id)"
-                                            @run-pipeline="store.runPipeline" @poll="store.pollNow"
-                                            @retry-contract="store.runPipeline"
-                                            @dismiss-error="store.fetchLaunches(true)"
-                                            @open-rid-modal="l => store.openRidModal(l.id)"
-                                            @register-boleto="id => store.registerBoleto(id)"
-                                            @update-boleto="handleUpdateBoleto" @abort="handleAbort"
-                                            @continue-existing-contract="handleContinueExistingContract" />
-
-                                        <!-- Ações de status -->
-                                        <div class="space-y-3">
-                                            <div
-                                                class="text-xs font-semibold text-ink-muted uppercase tracking-wider">
-                                                Ações
-                                            </div>
-
-                                            <!-- Botões de transição disponíveis -->
-                                            <div v-if="ACTIONS[launch.status]" class="flex flex-wrap gap-2">
-                                                <button v-for="act in ACTIONS[launch.status]" :key="act.action"
-                                                    class="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border font-medium transition disabled:opacity-40 disabled:cursor-not-allowed"
-                                                    :class="{
-                                                        'border-blue-300 text-blue-600 hover:bg-blue-50 dark:border-blue-700 dark:text-blue-400 dark:hover:bg-blue-900/20': act.color === 'blue',
-                                                        'border-green-300 text-green-600 hover:bg-green-50 dark:border-green-700 dark:text-green-400 dark:hover:bg-green-900/20': act.color === 'green',
-                                                        'border-red-300 text-red-600 hover:bg-red-50 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-900/20': act.color === 'red',
-                                                        'border-emerald-300 text-emerald-600 hover:bg-emerald-50 dark:border-emerald-700 dark:text-emerald-400 dark:hover:bg-emerald-900/20': act.color === 'emerald',
-                                                        'border-gray-300 text-gray-500 hover:bg-gray-100 dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-700': act.color === 'slate',
-                                                    }"
-                                                    :disabled="['searching_creditor', 'searching_contract', 'creating_contract', 'creating_additive', 'validating_items'].includes(launch.pipelineStage) || store.pipelineRunningIds.has(launch.id)"
-                                                    @click="askAction(launch, act.action, act.label)">
-                                                    <i :class="`fas ${act.icon} text-xs`"></i>
-                                                    {{ act.label }}
-                                                </button>
-                                            </div>
-                                            <div v-else class="text-xs text-gray-400 dark:text-slate-500 italic">
-                                                Nenhuma ação disponível para este status.
-                                            </div>
-
-                                            <!-- Info extra do lançamento -->
-                                            <div
-                                                class="rounded-xl border border-line bg-surface-raised p-3 space-y-2 text-xs">
-                                                <div class="flex justify-between">
-                                                    <span class="text-gray-500 dark:text-slate-400">Empreendimento</span>
-                                                    <span
-                                                        class="text-gray-800 dark:text-gray-200 font-medium truncate max-w-40 text-right">
-                                                        {{ launch.enterpriseName || launch.companyName || '—' }}
-                                                    </span>
-                                                </div>
-                                                <div class="flex justify-between">
-                                                    <span class="text-gray-500 dark:text-slate-400">ERP ID</span>
-                                                    <span class="font-mono text-ink-muted">{{
-                                                        launch.enterpriseId || '—' }}</span>
-                                                </div>
-                                                <div class="flex justify-between">
-                                                    <span class="text-gray-500 dark:text-slate-400">Empresa Sienge</span>
-                                                    <span class="font-mono text-ink-muted">{{
-                                                        launch.companyId || '—' }}</span>
-                                                </div>
-                                                <div v-if="launch.boletoDueDate" class="flex justify-between">
-                                                    <span class="text-gray-500 dark:text-slate-400">Vencimento boleto</span>
-                                                    <span class="text-ink">{{
-                                                        formatDate(launch.boletoDueDate) }}</span>
-                                                </div>
-                                                <div v-if="launch.notes"
-                                                    class="pt-1 border-t border-gray-100 dark:border-gray-800 text-gray-500 dark:text-slate-400 italic">
-                                                    {{ launch.notes }}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
+                                <div class="min-w-0">
+                                    <dt class="metric-label">ERP ID</dt>
+                                    <dd class="text-xs text-ink-muted font-mono tabular-nums">{{ row.enterpriseId || '-' }}</dd>
                                 </div>
-
-                            </div>
-                        </div>
-
-                        <!-- Paginação -->
-                        <div v-if="store.pagination.pages > 1"
-                            class="flex items-center justify-between px-4 py-3 border-t border-line">
-                            <span class="text-xs text-gray-500 dark:text-slate-400">
-                                {{ store.pagination.total }} lançamentos · pág. {{ store.pagination.page }}/{{
-                                    store.pagination.pages }}
-                            </span>
-                            <div class="flex gap-1">
-                                <button
-                                    class="px-3 py-1.5 text-xs rounded-lg border border-gray-300 dark:border-gray-600 disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-gray-800 transition"
-                                    :disabled="store.pagination.page <= 1"
-                                    @click="store.setPage(store.pagination.page - 1)">Anterior</button>
-                                <button
-                                    class="px-3 py-1.5 text-xs rounded-lg border border-gray-300 dark:border-gray-600 disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-gray-800 transition"
-                                    :disabled="store.pagination.page >= store.pagination.pages"
-                                    @click="store.setPage(store.pagination.page + 1)">Próxima</button>
-                            </div>
+                                <div class="min-w-0">
+                                    <dt class="metric-label">Empresa Sienge</dt>
+                                    <dd class="text-xs text-ink-muted font-mono tabular-nums">{{ row.companyId || '-' }}</dd>
+                                </div>
+                                <div v-if="row.boletoDueDate" class="min-w-0">
+                                    <dt class="metric-label">Vencimento do boleto</dt>
+                                    <dd class="text-xs text-ink tabular-nums">{{ formatDate(row.boletoDueDate) }}</dd>
+                                </div>
+                                <div v-if="row.notes" class="col-span-full min-w-0 pt-1 border-t border-line-subtle">
+                                    <dt class="metric-label">Observação</dt>
+                                    <dd class="text-xs text-ink-muted">{{ row.notes }}</dd>
+                                </div>
+                            </dl>
                         </div>
                     </div>
+                </template>
+            </DataTable>
 
-                    <!-- Toasts -->
-                    <div v-if="store.success"
-                        class="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 dark:bg-emerald-900/20 dark:border-emerald-700 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-300">
-                        <i class="fas fa-circle-check mr-2"></i>{{ store.success }}
-                    </div>
-                    <div v-if="store.error"
-                        class="mt-4 rounded-xl border border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-700 px-4 py-3 text-sm text-red-700 dark:text-red-300">
-                        <i class="fas fa-triangle-exclamation mr-2"></i>{{ store.error }}
-                    </div>
-                </main>
+            <!-- Gatilho do scroll. Quando o que está na memória acaba e o
+                 servidor ainda tem página, ela é buscada e ACUMULADA. -->
+            <div v-if="!inc.acabou.value || faltaNoServidor" :ref="el => inc.observar(el)"
+                class="py-6 flex items-center justify-center gap-2 text-micro text-ink-subtle">
+                <Spinner size="sm" />
+                <span v-if="!inc.acabou.value">
+                    carregando mais {{ Math.min(inc.step, inc.restantes.value) }} de {{ inc.restantes.value }} restantes
+                </span>
+                <span v-else>buscando mais {{ faltaNoServidor }} no servidor</span>
             </div>
         </div>
 
-        <!-- Gate: credenciais Sienge não configuradas -->
+        <!-- Confirmação de ação destrutiva -->
+        <Modal :open="!!confirmingAction" size="sm"
+            :title="confirmingAction ? `${confirmingAction.label} lançamento` : ''"
+            @close="cancelAction">
+            <p class="text-sm text-ink-muted">
+                Confirma <b class="text-ink">{{ confirmingAction?.label.toLowerCase() }}</b>
+                este lançamento? A ação não pode ser desfeita.
+            </p>
+            <template #footer>
+                <Button variant="ghost" @click="cancelAction">Voltar</Button>
+                <Button variant="danger" icon="fas fa-ban" @click="executeAction">
+                    {{ confirmingAction?.label }}
+                </Button>
+            </template>
+        </Modal>
+
+        <!-- Conflito de duplicidade: era um modal montado na mão, com backdrop
+             e blur próprios. Virou o `Modal` do sistema, para se comportar como
+             qualquer outro (tela cheia no celular, fecha no Esc, camada certa). -->
+        <Modal :open="!!store.conflictLaunch" size="md" title="Lançamento duplicado"
+            subtitle="Já existe um lançamento ativo com o mesmo número de NF e fornecedor."
+            @close="store.conflictLaunch = null">
+            <dl v-if="store.conflictLaunch" class="panel p-3 grid grid-cols-2 gap-x-4 gap-y-2">
+                <div class="min-w-0">
+                    <dt class="metric-label">Lançamento</dt>
+                    <dd class="text-xs font-mono font-semibold text-ink tabular-nums">#{{ store.conflictLaunch.id }}</dd>
+                </div>
+                <div class="min-w-0">
+                    <dt class="metric-label">Etapa</dt>
+                    <dd><Badge :variant="statusBadge(store.conflictLaunch.status)" size="sm">
+                        {{ STATUS_LABELS[store.conflictLaunch.status] || store.conflictLaunch.status }}
+                    </Badge></dd>
+                </div>
+                <div class="min-w-0">
+                    <dt class="metric-label">Tipo</dt>
+                    <dd class="text-xs text-ink truncate">{{ store.conflictLaunch.launchType || '-' }}</dd>
+                </div>
+                <div class="min-w-0">
+                    <dt class="metric-label">NF</dt>
+                    <dd class="text-xs font-mono text-ink truncate">{{ store.conflictLaunch.nfNumber || '-' }}</dd>
+                </div>
+                <div class="min-w-0 col-span-2">
+                    <dt class="metric-label">Fornecedor</dt>
+                    <dd class="text-xs text-ink truncate">{{ store.conflictLaunch.providerName || '-' }}</dd>
+                </div>
+                <div class="min-w-0 col-span-2">
+                    <dt class="metric-label">Criado por</dt>
+                    <dd class="text-xs text-ink-muted truncate">{{ store.conflictLaunch.createdByName || '-' }}</dd>
+                </div>
+            </dl>
+            <template #footer>
+                <Button variant="ghost" @click="store.conflictLaunch = null">
+                    Manter o existente
+                </Button>
+                <Button variant="danger" icon="fas fa-ban" @click="store.cancelConflictAndCreate()">
+                    Cancelar #{{ store.conflictLaunch?.id }} e criar o novo
+                </Button>
+            </template>
+        </Modal>
+
         <SiengeCredentialsModal v-if="showCredentialsModal" @saved="onCredentialsSaved" />
 
-        <!-- Modal de criação -->
         <CreateLaunchModal v-if="store.showCreateModal" @close="store.closeCreateModal"
             @created="store.fetchLaunches()" />
 
-        <!-- Modal RID: solicitar cadastro de fornecedor -->
         <RidRequestModal v-if="store.showRidModal && store.ridModalLaunchId"
             :launch="store.launches.find(l => l.id === store.ridModalLaunchId) || store.currentLaunch || {}"
             @close="store.closeRidModal()" />
 
-        <!-- Modal atualização de boleto -->
         <UpdateBoletoModal v-if="showUpdateBoletoModal && updateBoletoLaunch" :launch="updateBoletoLaunch"
-            @close="showUpdateBoletoModal = false; updateBoletoLaunch = null" @updated="onBoletoUpdated" />
-
-        <!-- Modal de conflito de duplicidade -->
-        <div v-if="store.conflictLaunch"
-            class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
-            @click.self="store.conflictLaunch = null">
-            <div
-                class="w-full max-w-md bg-surface-raised rounded-2xl shadow-2xl border border-orange-200 dark:border-orange-700 p-6 space-y-4">
-                <!-- Cabeçalho -->
-                <div class="flex items-start gap-3">
-                    <div
-                        class="w-10 h-10 rounded-full bg-orange-100 dark:bg-orange-900/40 flex items-center justify-center flex-shrink-0">
-                        <i class="fas fa-triangle-exclamation text-orange-500"></i>
-                    </div>
-                    <div>
-                        <h3 class="font-bold text-ink">Lançamento duplicado</h3>
-                        <p class="text-sm text-ink-muted mt-0.5">
-                            Já existe um lançamento ativo com o mesmo número de NF e fornecedor.
-                        </p>
-                    </div>
-                </div>
-
-                <!-- Detalhes do lançamento existente -->
-                <div
-                    class="rounded-xl bg-surface-sunken border border-line p-4 space-y-2 text-xs">
-                    <div class="flex justify-between">
-                        <span class="text-gray-500 dark:text-slate-400">Lançamento</span>
-                        <span class="font-mono font-semibold text-gray-800 dark:text-gray-200">#{{
-                            store.conflictLaunch.id }}</span>
-                    </div>
-                    <div class="flex justify-between">
-                        <span class="text-gray-500 dark:text-slate-400">Status</span>
-                        <span class="font-semibold"
-                            :class="statusBadgeClass(store.conflictLaunch.status)?.replace('bg-', 'text-').replace(/ bg-\S+/g, '')">
-                            {{ store.conflictLaunch.status }}
-                        </span>
-                    </div>
-                    <div class="flex justify-between">
-                        <span class="text-gray-500 dark:text-slate-400">Tipo</span>
-                        <span class="text-ink">{{ store.conflictLaunch.launchType || '—'
-                            }}</span>
-                    </div>
-                    <div class="flex justify-between">
-                        <span class="text-gray-500 dark:text-slate-400">Fornecedor</span>
-                        <span class="text-ink text-right max-w-48 truncate">{{
-                            store.conflictLaunch.providerName || '—' }}</span>
-                    </div>
-                    <div class="flex justify-between">
-                        <span class="text-gray-500 dark:text-slate-400">NF</span>
-                        <span class="font-mono text-ink">{{ store.conflictLaunch.nfNumber
-                            }}</span>
-                    </div>
-                    <div class="flex justify-between">
-                        <span class="text-gray-500 dark:text-slate-400">Criado por</span>
-                        <span class="text-ink">{{ store.conflictLaunch.createdByName || '—'
-                            }}</span>
-                    </div>
-                </div>
-
-                <p class="text-sm text-ink-muted">
-                    O que deseja fazer?
-                </p>
-
-                <div class="flex flex-col gap-2">
-                    <button
-                        class="w-full px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-semibold transition flex items-center justify-center gap-2"
-                        @click="store.cancelConflictAndCreate()">
-                        <i class="fas fa-ban text-xs"></i>
-                        Cancelar o lançamento #{{ store.conflictLaunch.id }} e criar o novo
-                    </button>
-                    <button
-                        class="w-full px-4 py-2.5 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-ink text-sm font-medium transition"
-                        @click="store.conflictLaunch = null">
-                        Manter o lançamento existente
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Modal de confirmação de ação -->
-        <div v-if="confirmingAction"
-            class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
-            @click.self="cancelAction">
-            <div
-                class="w-full max-w-sm bg-surface-raised rounded-2xl shadow-2xl border border-line p-6 space-y-4">
-                <h3 class="font-bold text-ink">{{ confirmingAction.label }}</h3>
-                <p class="text-sm text-gray-500 dark:text-slate-400">
-                    Confirma a ação <strong>{{ confirmingAction.label }}</strong> para este lançamento?
-                </p>
-                <div class="flex justify-end gap-3">
-                    <button class="text-sm text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-gray-300 transition"
-                        @click="cancelAction">Cancelar</button>
-                    <button class="px-4 py-2 text-sm font-medium rounded-xl text-white transition" :class="confirmingAction.action === 'cancel'
-                        ? 'bg-red-600 hover:bg-red-700'
-                        : 'bg-emerald-600 hover:bg-emerald-700'" @click="executeAction">
-                        Confirmar
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
+            @close="showUpdateBoletoModal = false; updateBoletoLaunch = null"
+            @updated="onBoletoUpdated" />
+    </PageContainer>
 </template>

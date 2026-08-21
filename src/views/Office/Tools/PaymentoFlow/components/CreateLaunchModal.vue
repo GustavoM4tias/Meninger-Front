@@ -579,10 +579,10 @@ async function handleSubmit() {
 // ── Helpers de exibição ──────────────────────────────────────────────────────
 function confidenceClass(c) {
     return c === 'alto'
-        ? 'text-green-600 dark:text-green-400'
+        ? 'text-data-pos'
         : c === 'medio'
-            ? 'text-yellow-600 dark:text-yellow-400'
-            : 'text-red-600 dark:text-red-400';
+            ? 'text-data-warn'
+            : 'text-data-neg';
 }
 
 onMounted(async () => {
@@ -599,7 +599,7 @@ onMounted(async () => {
                 </div>
                 <div>
                     <h2 class="text-base font-semibold text-ink">Novo lançamento</h2>
-                    <p class="text-xs text-ink-muted mt-0.5">Campos preenchidos automaticamente pelo documento</p>
+                    <p class="text-ink-muted mt-0.5">Campos preenchidos automaticamente pelo documento</p>
                 </div>
             </div>
         </template>
@@ -607,7 +607,7 @@ onMounted(async () => {
             <div class="space-y-6">
                 <div>
                     <h3 class="text-sm font-semibold text-ink mb-3 flex items-center gap-2">
-                        <i class="fas fa-paperclip text-gray-400 dark:text-slate-500"></i> Documentos
+                        <i class="fas fa-paperclip text-ink-subtle"></i> Documentos
                     </h3>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -617,23 +617,23 @@ onMounted(async () => {
                             </div>
 
                             <label v-if="!store.nfFile"
-                                class="flex flex-col items-center justify-center h-28 rounded-xl border-2 border-dashed cursor-pointer transition"
+                                class="flex flex-col items-center justify-center h-28 rounded-xl border-dashed cursor-pointer transition"
                                 :class="draggingNf
-                                    ? 'border-blue-500 bg-blue-50/70 dark:bg-blue-900/20'
-                                    : 'border-line bg-surface-sunken hover:border-blue-400 hover:bg-blue-50/50 dark:hover:bg-blue-900/10'"
+                                    ? 'border-accent bg-accent/70 '
+                                    : 'border-line bg-surface-sunken hover:border-accent hover:bg-accent/50 '"
                                 @click="nfInputRef?.click()" @dragover.prevent="draggingNf = true"
                                 @dragleave="draggingNf = false" @drop.prevent="onNfDrop">
-                                <i class="fas fa-file-invoice text-2xl text-gray-300 dark:text-gray-600 mb-1"></i>
-                                <span class="text-xs text-ink-muted">
+                                <i class="fas fa-file-invoice text-ink-muted mb-1"></i>
+                                <span class="text-ink-muted">
                                     {{ draggingNf ? 'Solte o arquivo aqui' : 'Clique ou arraste' }}
                                 </span>
-                                <span class="text-xs text-gray-400 dark:text-slate-500">NFe, NFS, NF, Recibo… (máx. 2 MB)</span>
+                                <span class="text-ink-subtle">NFe, NFS, NF, Recibo… (máx. 2 MB)</span>
                             </label>
 
                             <div v-else-if="store.nfUploading || store.nfExtracting"
-                                class="h-28 rounded-xl border border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/20 flex flex-col items-center justify-center gap-2">
-                                <i class="fas fa-spinner fa-spin text-blue-500"></i>
-                                <div class="text-xs text-blue-600 dark:text-blue-300 text-center">
+                                class="h-28 rounded-xl border border-accent/25 bg-accent/20 flex flex-col items-center justify-center gap-2">
+                                <i class="fas fa-spinner fa-spin text-accent"></i>
+                                <div class="text-center">
                                     <div v-if="store.nfUploading && store.nfExtracting">Enviando e analisando…</div>
                                     <div v-else-if="store.nfUploading">Enviando arquivo…</div>
                                     <div v-else>IA extraindo dados…</div>
@@ -644,25 +644,25 @@ onMounted(async () => {
                                 class="h-28 rounded-xl border border-line bg-surface-sunken p-3 flex flex-col justify-between">
                                 <div class="flex items-start justify-between gap-2">
                                     <div class="flex items-center gap-2 min-w-0">
-                                        <i class="fas fa-file-pdf text-red-400 flex-shrink-0"></i>
+                                        <i class="fas fa-file-pdf text-data-neg flex-shrink-0"></i>
                                         <span class="text-xs font-medium text-ink truncate">
                                             {{ store.nfFile?.name }}
                                         </span>
                                     </div>
 
-                                    <button class="text-gray-400 dark:text-slate-500 hover:text-red-500 flex-shrink-0 transition"
+                                    <button class="text-ink-subtle hover:text-data-neg flex-shrink-0 transition"
                                         @click="clearNfState">
                                         <i class="fas fa-xmark text-xs"></i>
                                     </button>
                                 </div>
 
                                 <div v-if="store.nfPrefill" class="text-xs space-y-0.5">
-                                    <div v-if="store.nfPrefill.nfNumber" class="text-gray-500 dark:text-slate-400">
+                                    <div v-if="store.nfPrefill.nfNumber" class="text-ink-muted">
                                         Nº {{ store.nfPrefill.nfNumber }}
                                     </div>
 
                                     <div v-if="store.nfPrefill.unitPrice"
-                                        class="font-semibold text-gray-700 dark:text-gray-200">
+                                        class="font-semibold text-ink">
                                         {{
                                             Number(store.nfPrefill.unitPrice).toLocaleString('pt-BR', {
                                                 style: 'currency',
@@ -672,24 +672,24 @@ onMounted(async () => {
                                     </div>
 
                                     <div class="flex items-center gap-1">
-                                        <i class="fas fa-robot text-gray-300 dark:text-gray-600 text-xs"></i>
+                                        <i class="fas fa-robot text-xs"></i>
                                         <span :class="confidenceClass(store.nfMeta?.confidence)">
                                             {{ store.nfMeta?.confidence || '?' }}
                                         </span>
                                     </div>
                                 </div>
 
-                                <div v-else-if="store.nfError" class="text-xs text-red-500 truncate">
+                                <div v-else-if="store.nfError" class="text-data-neg truncate">
                                     {{ store.nfError }}
                                 </div>
 
-                                <div v-else class="text-xs text-gray-400 dark:text-slate-500">
-                                    <i class="fas fa-circle-check text-emerald-500 mr-1"></i> Pronto
+                                <div v-else class="text-ink-subtle">
+                                    <i class="fas fa-circle-check text-data-pos mr-1"></i> Pronto
                                 </div>
                             </div>
 
                             <div v-if="store.nfError && store.nfFile && !store.nfUploading"
-                                class="mt-1 text-xs text-red-500 truncate">
+                                class="mt-1 text-data-neg truncate">
                                 {{ store.nfError }}
                             </div>
                         </div>
@@ -700,23 +700,23 @@ onMounted(async () => {
                             </div>
 
                             <label v-if="!store.boletoFile"
-                                class="flex flex-col items-center justify-center h-28 rounded-xl border-2 border-dashed cursor-pointer transition"
+                                class="flex flex-col items-center justify-center h-28 rounded-xl border-dashed cursor-pointer transition"
                                 :class="draggingBoleto
-                                    ? 'border-blue-500 bg-blue-50/70 dark:bg-blue-900/20'
-                                    : 'border-line bg-surface-sunken hover:border-blue-400 hover:bg-blue-50/50 dark:hover:bg-blue-900/10'"
+                                    ? 'border-accent bg-accent/70 '
+                                    : 'border-line bg-surface-sunken hover:border-accent hover:bg-accent/50 '"
                                 @click="boletoInputRef?.click()" @dragover.prevent="draggingBoleto = true"
                                 @dragleave="draggingBoleto = false" @drop.prevent="onBoletoDrop">
-                                <i class="fas fa-barcode text-2xl text-gray-300 dark:text-gray-600 mb-1"></i>
-                                <span class="text-xs text-ink-muted">
+                                <i class="fas fa-barcode text-ink-muted mb-1"></i>
+                                <span class="text-ink-muted">
                                     {{ draggingBoleto ? 'Solte o arquivo aqui' : 'Clique ou arraste' }}
                                 </span>
-                                <span class="text-xs text-gray-400 dark:text-slate-500">Boleto (máx. 2 MB)</span>
+                                <span class="text-ink-subtle">Boleto (máx. 2 MB)</span>
                             </label>
 
                             <div v-else-if="store.boletoUploading || store.boletoExtracting"
-                                class="h-28 rounded-xl border border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/20 flex flex-col items-center justify-center gap-2">
-                                <i class="fas fa-spinner fa-spin text-blue-500"></i>
-                                <div class="text-xs text-blue-600 dark:text-blue-300 text-center">
+                                class="h-28 rounded-xl border border-accent/25 bg-accent/20 flex flex-col items-center justify-center gap-2">
+                                <i class="fas fa-spinner fa-spin text-accent"></i>
+                                <div class="text-center">
                                     <div v-if="store.boletoUploading && store.boletoExtracting">Enviando e analisando…
                                     </div>
                                     <div v-else-if="store.boletoUploading">Enviando arquivo…</div>
@@ -728,25 +728,25 @@ onMounted(async () => {
                                 class="h-28 rounded-xl border border-line bg-surface-sunken p-3 flex flex-col justify-between">
                                 <div class="flex items-start justify-between gap-2">
                                     <div class="flex items-center gap-2 min-w-0">
-                                        <i class="fas fa-file-pdf text-red-400 flex-shrink-0"></i>
+                                        <i class="fas fa-file-pdf text-data-neg flex-shrink-0"></i>
                                         <span class="text-xs font-medium text-ink truncate">
                                             {{ store.boletoFile?.name }}
                                         </span>
                                     </div>
 
-                                    <button class="text-gray-400 dark:text-slate-500 hover:text-red-500 flex-shrink-0 transition"
+                                    <button class="text-ink-subtle hover:text-data-neg flex-shrink-0 transition"
                                         @click="clearBoletoState">
                                         <i class="fas fa-xmark text-xs"></i>
                                     </button>
                                 </div>
 
                                 <div v-if="store.boletoPrefill" class="text-xs space-y-0.5">
-                                    <div v-if="store.boletoPrefill.boletoDueDate" class="text-gray-500 dark:text-slate-400">
+                                    <div v-if="store.boletoPrefill.boletoDueDate" class="text-ink-muted">
                                         Vence {{ store.boletoPrefill.boletoDueDate }}
                                     </div>
 
                                     <div v-if="store.boletoPrefill.boletoAmount"
-                                        class="font-semibold text-gray-700 dark:text-gray-200">
+                                        class="font-semibold text-ink">
                                         {{
                                             Number(store.boletoPrefill.boletoAmount).toLocaleString('pt-BR', {
                                                 style: 'currency',
@@ -756,13 +756,13 @@ onMounted(async () => {
                                     </div>
 
                                     <div v-if="store.boletoPrefill.boletoBarcode"
-                                        class="text-gray-400 dark:text-slate-500 font-mono truncate">
+                                        class="text-ink-subtle font-mono truncate">
                                         {{ store.boletoPrefill.boletoBarcode.slice(0, 20) }}…
                                     </div>
                                 </div>
 
-                                <div v-else class="text-xs text-gray-400 dark:text-slate-500">
-                                    <i class="fas fa-circle-check text-emerald-500 mr-1"></i> Pronto
+                                <div v-else class="text-ink-subtle">
+                                    <i class="fas fa-circle-check text-data-pos mr-1"></i> Pronto
                                 </div>
                             </div>
                         </div>
@@ -771,40 +771,40 @@ onMounted(async () => {
                     <div class="mt-3">
                         <div class="text-xs font-medium text-ink-muted mb-2">
                             Anexos Extras
-                            <span class="text-gray-400 dark:text-slate-500 font-normal">(PDF, imagem — opcional, máx. 2 MB)</span>
+                            <span class="text-ink-subtle font-normal">(PDF, imagem — opcional, máx. 2 MB)</span>
                         </div>
 
-                        <div class="flex flex-wrap gap-2 p-2 rounded-xl border-2 border-dashed transition min-h-[44px]"
+                        <div class="flex flex-wrap gap-2 p-2 rounded-xl border-dashed transition min-h-[44px]"
                             :class="draggingExtra
-                                ? 'border-blue-500 bg-blue-50/70 dark:bg-blue-900/20'
+                                ? 'border-accent bg-accent/70 '
                                 : 'border-line bg-transparent'"
                             @dragover.prevent="draggingExtra = true" @dragleave="draggingExtra = false"
                             @drop.prevent="onExtraDrop">
                             <div v-if="draggingExtra && !store.extraFiles.length"
-                                class="w-full flex items-center justify-center py-1 text-xs text-blue-500">
+                                class="w-full flex items-center justify-center py-1 text-accent">
                                 Solte os arquivos aqui
                             </div>
 
                             <div v-for="entry in store.extraFiles" :key="entry.id"
                                 class="flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs"
                                 :class="entry.error
-                                    ? 'border-red-200 bg-red-50 dark:bg-red-900/20 text-red-600'
+                                    ? 'border-data-neg/25 bg-data-neg/20 text-data-neg'
                                     : entry.uploading
-                                        ? 'border-blue-200 bg-blue-50 dark:bg-blue-900/20 text-blue-600'
-                                        : 'border-gray-200 dark:border-gray-600 bg-surface-sunken text-ink-muted'">
+                                        ? 'border-accent/25 bg-accent/20 text-accent'
+                                        : 'border-line bg-surface-sunken text-ink-muted'">
                                 <i v-if="entry.uploading" class="fas fa-spinner fa-spin"></i>
                                 <i v-else-if="entry.error" class="fas fa-triangle-exclamation"></i>
                                 <i v-else class="fas fa-paperclip"></i>
                                 <span class="max-w-28 truncate">{{ entry.file.name }}</span>
 
                                 <button v-if="!entry.uploading" @click="store.removeExtraFile(entry.id)"
-                                    class="hover:text-red-500 transition ml-0.5">
+                                    class="hover:text-data-neg transition ml-0.5">
                                     <i class="fas fa-xmark"></i>
                                 </button>
                             </div>
 
                             <button
-                                class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border-2 border-dashed border-line text-xs text-gray-500 dark:text-slate-400 hover:border-blue-400 hover:text-blue-500 transition"
+                                class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border-line text-ink-muted hover:border-accent hover:text-accent transition"
                                 @click="extraInputRef?.click()">
                                 <i class="fas fa-plus"></i> Adicionar
                             </button>
@@ -821,7 +821,7 @@ onMounted(async () => {
 
                 <div>
                     <label class="block text-sm font-semibold text-ink mb-2">
-                        Tipo de Lançamento <span class="text-red-500">*</span>
+                        Tipo de Lançamento <span class="text-data-neg">*</span>
                     </label>
 
                     <div class="flex items-center gap-2">
@@ -830,7 +830,7 @@ onMounted(async () => {
                             <option v-for="t in store.launchTypes" :key="t.id" :value="t.name">{{ t.name }}</option>
                         </select>
                         <button v-if="can('configure')" type="button"
-                            class="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-lg border-2 border-dashed border-line text-gray-400 dark:text-slate-500 hover:border-blue-400 hover:text-blue-500 transition"
+                            class="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-lg border-line text-ink-subtle hover:border-accent hover:text-accent transition"
                             title="Adicionar novo tipo (admin)" @click="showAddType = !showAddType">
                             <i class="fas fa-plus text-sm"></i>
                         </button>
@@ -839,17 +839,17 @@ onMounted(async () => {
                     <!-- Tipo de Documento (read-only) -->
                     <div class="flex gap-2">
                         <div v-if="selectedDocumento" class="mt-2 flex items-center gap-2">
-                            <span class="text-xs text-ink-muted">Tipo de documento:</span>
+                            <span class="text-ink-muted">Tipo de documento:</span>
                             <span
-                                class="px-2 py-0.5 rounded-md bg-surface-sunken text-xs font-mono font-semibold text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-600">
+                                class="px-2 py-0.5 rounded-md bg-surface-sunken text-xs font-mono font-semibold text-ink border border-line">
                                 {{ selectedDocumento }}
                             </span>
                         </div>
                         <!-- Tipo de Documento (read-only) -->
                         <div v-if="selectedDepartment" class="mt-2 flex items-center gap-2">
-                            <span class="text-xs text-ink-muted">Departamento:</span>
+                            <span class="text-ink-muted">Departamento:</span>
                             <span
-                                class="px-2 py-0.5 rounded-md bg-surface-sunken text-xs font-mono font-semibold text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-600">
+                                class="px-2 py-0.5 rounded-md bg-surface-sunken text-xs font-mono font-semibold text-ink border border-line">
                                 {{ selectedDepartment }}
                             </span>
                         </div>
@@ -857,8 +857,8 @@ onMounted(async () => {
 
                     <!-- Formulário inline para admin adicionar novo tipo -->
                     <div v-if="showAddType && can('configure')"
-                        class="mt-3 p-3 rounded-xl border border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/20 space-y-2">
-                        <div class="text-xs font-semibold text-blue-700 dark:text-blue-300 flex items-center gap-1.5">
+                        class="mt-3 p-3 rounded-xl border border-accent/25 bg-accent/20 space-y-2">
+                        <div class="text-xs font-semibold text-accent flex items-center gap-1.5">
                             <i class="fas fa-plus-circle"></i> Novo Tipo de Lançamento
                         </div>
                         <div class="grid grid-cols-2 gap-2">
@@ -875,16 +875,16 @@ onMounted(async () => {
                             <input v-model="newTypeForm.departamentoId" type="text"
                                 placeholder="ID departamento Sienge (ex: 24)" class="input-field text-xs font-mono" />
                         </div>
-                        <div v-if="addTypeError" class="text-xs text-red-600">{{ addTypeError }}</div>
+                        <div v-if="addTypeError" class="text-data-neg">{{ addTypeError }}</div>
                         <div class="flex gap-2">
                             <button type="button"
-                                class="px-3 py-1.5 text-xs rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition disabled:opacity-50"
+                                class="px-3 py-1.5 text-xs rounded-lg bg-accent hover:bg-accent-hover text-white font-medium transition disabled:opacity-50"
                                 :disabled="addTypeLoading || !newTypeForm.name?.trim()" @click="handleAddType">
                                 <i v-if="addTypeLoading" class="fas fa-spinner fa-spin mr-1"></i>
                                 Salvar
                             </button>
                             <button type="button"
-                                class="px-3 py-1.5 text-xs rounded-lg border border-line text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+                                class="px-3 py-1.5 text-xs rounded-lg border border-line text-ink-muted hover:bg-surface-sunken transition"
                                 @click="showAddType = false; addTypeError = null">
                                 Cancelar
                             </button>
@@ -902,41 +902,41 @@ onMounted(async () => {
                         :single="true" />
 
                     <div v-if="enterpriseResolved"
-                        class="mt-2 px-3 py-2 rounded-lg border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/30">
-                        <div class="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
+                        class="mt-2 px-3 py-2 rounded-lg border border-data-pos/25 bg-data-pos/10 ">
+                        <div class="text-sm font-semibold text-ink truncate">
                             {{ enterpriseResolved.name }}
                         </div>
 
                         <div class="flex items-center gap-2 mt-1 flex-wrap">
                             <span v-if="enterpriseResolved.companyId"
-                                class="text-[11px] font-mono text-ink-muted">
+                                class="text-micro font-mono text-ink-muted">
                                 Empresa:
                                 <span class="text-ink">{{ enterpriseResolved.companyId }}</span>
                             </span>
 
                             <span v-if="enterpriseResolved.erpId"
-                                class="text-[11px] font-mono text-ink-muted">
+                                class="text-micro font-mono text-ink-muted">
                                 CC:
                                 <span class="text-ink">{{ enterpriseResolved.erpId }}</span>
                             </span>
 
                             <span v-if="enterpriseResolved.city"
-                                class="text-[11px] italic text-gray-400 dark:text-gray-500">
+                                class="text-micro italic text-ink-subtle">
                                 {{ enterpriseResolved.city }}
                             </span>
                         </div>
                     </div>
 
                     <div v-else-if="enterpriseSuggestion"
-                        class="mt-2 px-3 py-2 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30">
-                        <div class="text-xs text-amber-700 dark:text-amber-300">
+                        class="mt-2 px-3 py-2 rounded-lg border border-data-warn/25 bg-data-warn/10 ">
+                        <div class="text-data-warn">
                             <i class="fas fa-robot mr-1"></i>
                             Sugestão da IA: <strong>{{ enterpriseSuggestion.name }}</strong>
                         </div>
                     </div>
 
                     <p v-if="!enterpriseResolved && !enterpriseSuggestion && (store.nfPrefill || store.boletoPrefill)"
-                        class="mt-1.5 text-xs text-yellow-600 dark:text-yellow-400 flex items-center gap-1.5">
+                        class="mt-1.5 text-data-warn flex items-center gap-1.5">
                         <i class="fas fa-triangle-exclamation"></i>
                         Empreendimento não identificado automaticamente — selecione abaixo.
                     </p>
@@ -971,7 +971,7 @@ onMounted(async () => {
                         <div>
                             <label class="field-label">
                                 Emissão NF
-                                <span class="text-gray-400 dark:text-slate-500 font-normal">(doc)</span>
+                                <span class="text-ink-subtle font-normal">(doc)</span>
                             </label>
                             <input v-model="form.nfIssueDate" type="date" class="input-field !pb-[.75rem]" />
                         </div>
@@ -979,16 +979,16 @@ onMounted(async () => {
                         <div>
                             <label class="field-label">
                                 Vencimento
-                                <span class="text-gray-400 dark:text-slate-500 font-normal">(boleto)</span>
+                                <span class="text-ink-subtle font-normal">(boleto)</span>
                             </label>
                             <input v-model="form.boletoDueDate" type="date" class="input-field !pb-[.75rem]" />
                         </div>
                     </div>
 
                     <div
-                        class="rounded-xl border border-blue-100 dark:border-blue-900/40 bg-blue-50/50 dark:bg-blue-900/10 p-3 space-y-2">
-                        <div class="text-xs font-semibold text-blue-700 dark:text-blue-300 flex items-center gap-1.5">
-                            <i class="fas fa-file-contract text-blue-400"></i>
+                        class="rounded-xl border border-accent/25  bg-accent/50  p-3 space-y-2">
+                        <div class="text-xs font-semibold text-accent flex items-center gap-1.5">
+                            <i class="fas fa-file-contract text-accent"></i>
                             Vigência do Contrato Sienge
                         </div>
 
@@ -996,7 +996,7 @@ onMounted(async () => {
                             <div>
                                 <label class="field-label">
                                     Início
-                                    <span class="text-gray-400 dark:text-slate-500 font-normal">(padrão: hoje)</span>
+                                    <span class="text-ink-subtle font-normal">(padrão: hoje)</span>
                                 </label>
                                 <input v-model="form.contractStartDate" type="date" class="input-field" />
                             </div>
@@ -1004,13 +1004,13 @@ onMounted(async () => {
                             <div>
                                 <label class="field-label">
                                     Término
-                                    <span class="text-gray-400 dark:text-slate-500 font-normal">(padrão: 31/12)</span>
+                                    <span class="text-ink-subtle font-normal">(padrão: 31/12)</span>
                                 </label>
                                 <input v-model="form.contractEndDate" type="date" class="input-field" />
                             </div>
                         </div>
 
-                        <p class="text-xs text-blue-600/70 dark:text-blue-400/70">
+                        <p class="text-accent ">
                             Período utilizado na criação automática do contrato no Sienge. Independente das datas do
                             documento.
                         </p>
@@ -1018,7 +1018,7 @@ onMounted(async () => {
                 </div>
 
                 <div v-if="store.boletoFile || form.boletoBarcode"
-                    class="rounded-xl border border-line p-4 space-y-3 bg-gray-50/50 dark:bg-gray-800/30">
+                    class="rounded-xl border border-line p-4 space-y-3 bg-surface-sunken">
                     <div class="text-xs font-semibold text-ink-muted uppercase tracking-wider">
                         Dados do Boleto
                     </div>
@@ -1038,13 +1038,13 @@ onMounted(async () => {
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label class="field-label">Item do Orçamento <span class="text-gray-400 dark:text-slate-500">(auto)</span></label>
+                        <label class="field-label">Item do Orçamento <span class="text-ink-subtle">(auto)</span></label>
                         <input v-model="form.budgetItem" type="text" disabled
                             class="input-field opacity-60 bg-surface-sunken/50" />
                     </div>
 
                     <div>
-                        <label class="field-label">Conta Financeira <span class="text-gray-400 dark:text-slate-500">(auto)</span></label>
+                        <label class="field-label">Conta Financeira <span class="text-ink-subtle">(auto)</span></label>
                         <input v-model="form.financialAccountNumber" type="text" disabled
                             class="input-field opacity-60 font-mono bg-surface-sunken/50" />
                     </div>
@@ -1052,7 +1052,7 @@ onMounted(async () => {
 
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="field-label">Valor do contrato R$ <span class="text-red-500">*</span></label>
+                        <label class="field-label">Valor do contrato R$ <span class="text-data-neg">*</span></label>
                         <div class="relative">
                             <input v-model="form.unitPrice" type="number" step="0.01" min="0" placeholder="0,00"
                                 class="input-field pl-9" />
@@ -1072,17 +1072,17 @@ onMounted(async () => {
                 </div>
 
                 <div v-if="store.boletoUploading || store.boletoExtracting"
-                    class="text-xs text-yellow-600 dark:text-yellow-400 flex items-center gap-2">
+                    class="text-data-warn flex items-center gap-2">
                     <i class="fas fa-spinner fa-spin"></i> Aguardando conclusão do upload do boleto…
                 </div>
 
-                <div v-else-if="!hasBoleto" class="text-xs text-red-500 dark:text-red-400 flex items-center gap-1.5">
+                <div v-else-if="!hasBoleto" class="text-data-neg flex items-center gap-1.5">
                     <i class="fas fa-triangle-exclamation"></i>
                     Boleto é obrigatório. Envie o boleto (e NF, se houver) para salvar.
                 </div>
 
                 <div v-if="submitError"
-                    class="rounded-xl border border-red-200 bg-red-50 dark:bg-red-900/20 px-4 py-3 text-sm text-red-700 dark:text-red-300">
+                    class="rounded-xl border border-data-neg/25 bg-data-neg/20 px-4 py-3 text-data-neg">
                     <i class="fas fa-triangle-exclamation mr-2"></i>{{ submitError }}
                 </div>
             </div>
@@ -1099,7 +1099,7 @@ onMounted(async () => {
 
 <style scoped>
 .input-field {
-    @apply w-full rounded border border-gray-300 dark:border-gray-700 bg-surface-raised/60 px-3 py-2 text-sm text-ink outline-none transition focus:border-blue-500;
+    @apply w-full rounded border border-line bg-surface-raised/60 px-3 py-2 text-ink outline-none transition focus:border-accent;
 }
 
 .field-label {

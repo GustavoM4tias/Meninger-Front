@@ -98,7 +98,10 @@ export const usePaymentFlowStore = defineStore('paymentFlow', () => {
     const launches = ref([]);
     const currentLaunch = ref(null);
     const summary = ref({});
-    const pagination = ref({ total: 0, page: 1, limit: 20, pages: 1 });
+    /* 100 por página, não 20: a tela rola e acumula (ver `carregarMais`), e o
+       cliente ordena o que já carregou. Com 20, ordenar por valor mostraria o
+       maior de vinte, não o maior do período. */
+    const pagination = ref({ total: 0, page: 1, limit: 100, pages: 1 });
     // ── Período padrão: início do mês anterior → fim do mês atual ────────────
     function _prevMonthStart() {
         const d = new Date();
@@ -195,7 +198,7 @@ export const usePaymentFlowStore = defineStore('paymentFlow', () => {
     // ── Helpers ───────────────────────────────────────────────────────────────
     function clearMessages() { error.value = null; success.value = null; }
 
-    function buildQuery() {
+    function buildQuery(tudoQueJaCarregou = false) {
         const p = new URLSearchParams();
         const f = filters.value;
         if (f.status) {
@@ -212,8 +215,17 @@ export const usePaymentFlowStore = defineStore('paymentFlow', () => {
         if (f.search) p.set('search', f.search);
         if (f.dateFrom) p.set('dateFrom', f.dateFrom);
         if (f.dateTo) p.set('dateTo', f.dateTo);
-        p.set('page', String(pagination.value.page));
-        p.set('limit', String(pagination.value.limit));
+        if (tudoQueJaCarregou) {
+            /* Recarregar SEM acumular (live refresh, ação que muda um
+               lançamento) tem que trazer de volta tudo que já estava na tela.
+               Pedindo só a página atual, a lista era substituída pela última
+               página e o que estava acima sumia. */
+            p.set('page', '1');
+            p.set('limit', String(pagination.value.page * pagination.value.limit));
+        } else {
+            p.set('page', String(pagination.value.page));
+            p.set('limit', String(pagination.value.limit));
+        }
         return p.toString();
     }
 
@@ -364,22 +376,39 @@ export const usePaymentFlowStore = defineStore('paymentFlow', () => {
     }
 
     // ── CRUD ──────────────────────────────────────────────────────────────────
-    async function fetchLaunches(silent = false) {
+    /**
+     * @param {boolean} silent  sem tela de carregamento (live refresh)
+     * @param {{append?: boolean}} opts
+     *   `append` ACUMULA a página nova no fim da lista em vez de substituir.
+     *   É o que faz o scroll incremental funcionar: a tela rola, pede a próxima
+     *   página e ela entra embaixo. Sem isso, "carregar mais" trocava a lista
+     *   inteira e o usuário voltava para o começo.
+     */
+    async function fetchLaunches(silent = false, opts = {}) {
         clearMessages();
         try {
             if (!silent) carregamento.iniciarCarregamento();
-            const data = await requestWithAuth(`${API_URL}/sienge/payment-flow?${buildQuery()}`);
-            launches.value = data.data || [];
+            const recarregandoTudo = !opts.append && pagination.value.page > 1;
+            const data = await requestWithAuth(`${API_URL}/sienge/payment-flow?${buildQuery(recarregandoTudo)}`);
+            const novos = data.data || [];
+            if (opts.append) {
+                /* Dedupe por id: live refresh e "carregar mais" podem correr
+                   juntos e trazer a mesma linha duas vezes. */
+                const vistos = new Set(launches.value.map((l) => l.id));
+                launches.value = [...launches.value, ...novos.filter((l) => !vistos.has(l.id))];
+            } else {
+                launches.value = novos;
+            }
             // Se qualquer lançamento tem credenciais inválidas → abre modal de atualização
             if (launches.value.some(l => l.siengeCredentialsInvalid)) {
                 siengeCredentialsOk.value = false;
             }
-            pagination.value = {
-                total: data.total,
-                page: data.page,
-                limit: data.limit,
-                pages: data.pages,
-            };
+            /* Ao recarregar tudo, o servidor devolve page=1/limit inflado.
+               Preserva-se a posição real para o "carregar mais" continuar de
+               onde estava. */
+            pagination.value = recarregandoTudo
+                ? { ...pagination.value, total: data.total, pages: Math.max(1, Math.ceil(data.total / pagination.value.limit)) }
+                : { total: data.total, page: data.page, limit: data.limit, pages: data.pages };
             // Auto live-refresh: modo rápido se há pipelines processando ativamente
             if (hasActivePipelines.value) startLiveRefresh(true);
             else if (pipelineRunningIds.value.size === 0) stopLiveRefresh();
@@ -632,6 +661,14 @@ export const usePaymentFlowStore = defineStore('paymentFlow', () => {
         pagination.value.page = page;
         fetchLaunches();
     }
+
+    /** Próxima página ACUMULANDO. Usada pelo gatilho de scroll da tela. */
+    async function carregarMais() {
+        const pg = pagination.value;
+        if (pg.page >= pg.pages) return;
+        pagination.value.page = pg.page + 1;
+        await fetchLaunches(true, { append: true });
+    }
     function applyFilters(newF) {
         filters.value = { ...filters.value, ...newF };
         pagination.value.page = 1;
@@ -821,7 +858,7 @@ export const usePaymentFlowStore = defineStore('paymentFlow', () => {
         uploadNfFile, uploadBoletoFile, uploadExtraFile,
 
         // Actions: CRUD
-        fetchLaunches, fetchSummary, fetchLaunch,
+        fetchLaunches, carregarMais, fetchSummary, fetchLaunch,
         createLaunch, updateLaunch, cancelConflictAndCreate,
         cancelLaunch, markPaid, advanceStage,
 
