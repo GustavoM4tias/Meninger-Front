@@ -230,3 +230,20 @@ export function seriesColor({ tone, index = 0, themeKey = 'classic', dark = fals
   const palette = themePalette(themeKey, dark)
   return palette[index % palette.length]
 }
+
+/**
+ * A MESMA cor, na versão de ÁREA — para o que PREENCHE (barra, fatia), em
+ * oposição ao que MARCA (linha, ponto, quadradinho da legenda).
+ *
+ * Não precisa de paleta nova: cada tema já traz dois passos da mesma matiz, e
+ * eles se invertem entre os temas. No claro, a área é o passo mais CLARO (o que
+ * o tema chama de `seriesDark`); no escuro, é o mais FUNDO (`series`). Cor cheia
+ * cobrindo um bloco pesa no branco e brilha no preto — nos dois casos, o passo
+ * vizinho assenta.
+ */
+export function seriesFill({ tone, index = 0, themeKey = 'classic', dark = false }) {
+  const pair = CHART_TONES[tone]
+  if (pair) return dark ? pair[0] : pair[1]
+  const palette = themePalette(themeKey, !dark)   // <- de propósito invertido
+  return palette[index % palette.length]
+}

@@ -77,13 +77,19 @@ module.exports = {
         // Estado do dado. RESERVADAS: nunca use como "série 4".
         // Sempre acompanhadas de ícone ou rótulo, nunca cor sozinha.
         data: {
+          // três degraus por estado: MARCA (texto/ícone), -area (barra/fatia),
+          // -soft (tinta atrás de texto). Ver main.css.
           pos: 'rgb(var(--data-pos) / <alpha-value>)',
+          'pos-area': 'rgb(var(--data-pos-area) / <alpha-value>)',
           'pos-soft': 'rgb(var(--data-pos-soft) / <alpha-value>)',
           neg: 'rgb(var(--data-neg) / <alpha-value>)',
+          'neg-area': 'rgb(var(--data-neg-area) / <alpha-value>)',
           'neg-soft': 'rgb(var(--data-neg-soft) / <alpha-value>)',
           warn: 'rgb(var(--data-warn) / <alpha-value>)',
+          'warn-area': 'rgb(var(--data-warn-area) / <alpha-value>)',
           'warn-soft': 'rgb(var(--data-warn-soft) / <alpha-value>)',
           neutral: 'rgb(var(--data-neutral) / <alpha-value>)',
+          'neutral-area': 'rgb(var(--data-neutral-area) / <alpha-value>)',
         },
         // Fundo do modal. Sempre escuro nos dois temas (ver --scrim).
         scrim: 'rgb(var(--scrim) / <alpha-value>)',

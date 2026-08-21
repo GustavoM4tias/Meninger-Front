@@ -259,9 +259,28 @@ cheia sobre quase-preto brilha e cansa). O contraste menor do tom de área é
 proposital: a régua de 3:1 vale para marca pequena, e o que importa numa barra
 empilhada é a separação **entre** as faixas, que continua validada.
 
+**Por que não basta clarear a paleta inteira.** É a saída óbvia e ela não
+funciona: 8 matizes categóricas pálidas sobre branco param de se distinguir.
+Medido — lavar as marcas 5% em direção ao branco já derruba o piso de croma, e
+20% leva o pior par vizinho a ΔE 9,6 (o piso é 15). Por isso são **duas rampas**,
+e não uma rampa mais clara. Quem mexer em qualquer uma revalida com
+`scripts/validate_palette.js` da skill `dataviz`.
+
 **Estado do dado, reservado.** `data-pos`, `data-neg`, `data-warn`,
 `data-neutral`. Nunca viram "série 4". Sempre com ícone ou rótulo junto, nunca
 cor sozinha.
+
+O estado tem **três** degraus, um por trabalho — confundi-los é o que deixa
+barra de status pesada no claro:
+
+| | token | onde |
+|---|---|---|
+| marca | `data-pos` | texto, ícone, traço fino, ponto. Precisa de contraste |
+| área | `data-pos-area` | barra, fatia, faixa de proporção |
+| tinta | `data-pos-soft` | fundo esmaecido **atrás** de texto da cor da marca |
+
+`-soft` é quase branco: serve de fundo para um selo, **não** para preencher
+barra. Em gráfico, `t.barTone('pos', {...})` já escolhe o degrau certo.
 
 Na variação, **a seta diz a direção e a cor diz se é bom** - não são a mesma
 coisa: inadimplência subindo é seta para cima com cor de negativo.
@@ -481,6 +500,15 @@ const option = computed(() => ({
   ],
 }));
 ```
+
+**Gráfico nunca escreve hex.** Todo ECharts do Office passa por
+`useChartTheme`: um observer de tema para o app inteiro, eixo/grade/tooltip
+prontos e as duas rampas. Hex cravado no arquivo não responde ao tema — foi
+assim que painéis renderizavam grade quase preta no claro.
+
+**Série única = cor única.** Pintar cada barra de uma série de um matiz
+diferente diz "são dez medidas" quando é uma medida em dez categorias — e enche
+a tela de cor à toa. A categoria já está no eixo.
 
 **As fábricas de marca são o que padroniza o gráfico.** `t.bar`, `t.line`,
 `t.area` e `t.donut` já trazem espaçamento, arredondamento, realce e movimento
