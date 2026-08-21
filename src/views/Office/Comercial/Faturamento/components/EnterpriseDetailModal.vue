@@ -41,11 +41,14 @@ const contractsStore = useContractsStore();
 const viewMode = ref(['list', 'pie', 'bar'].includes(props.initialMode) ? props.initialMode : 'list');
 
 // Helpers de Tema
-const isDark = computed(() => document.documentElement.classList.contains('dark'));
-const txt = computed(() => (isDark.value ? '#E5E7EB' : '#374151'));
-const sub = computed(() => (isDark.value ? '#9CA3AF' : '#6B7280'));
-const gridLine = computed(() => (isDark.value ? '#374151' : '#E5E7EB'));
-const palette = ['#8B5CF6', '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#06B6D4', '#84CC16', '#F97316', '#EC4899', '#6366F1'];
+const t = useChartTheme();
+const isDark = t.isDark;
+const txt = t.ink;
+const sub = t.inkMuted;
+const gridLine = computed(() => t.token('--line'));
+// Barra e fatia PREENCHEM: rampa de área. (Este arquivo não tem série de
+// linha; se ganhar uma, ela usa `t.palette.value`, o tom de marca.)
+const palette = computed(() => t.fillPalette.value);
 
 const statusLabel = (s) =>
 ({
@@ -874,7 +877,7 @@ const baseTooltip = computed(() => ({
 const chartOption = computed(() => {
   if (viewMode.value === 'pie') {
     return {
-      color: palette,
+      color: palette.value,
       tooltip: {
         ...baseTooltip.value,
         trigger: 'item',
@@ -914,7 +917,7 @@ const chartOption = computed(() => {
   }
 
   return {
-    color: palette,
+    color: palette.value,
     tooltip: {
       trigger: 'axis',
       confine: true,

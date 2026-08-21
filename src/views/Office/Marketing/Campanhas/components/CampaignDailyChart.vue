@@ -4,6 +4,7 @@
 // kicker + total no header, eixos tema-aware (claro/escuro), splitLine dashed.
 
 import { computed } from 'vue';
+import { useChartTheme } from '@/composables/useChartTheme';
 import VChart from 'vue-echarts';
 import * as echarts from 'echarts/core';
 import { BarChart, LineChart } from 'echarts/charts';
@@ -17,9 +18,9 @@ const props = defineProps({
     currency: { type: String, default: 'BRL' },
 });
 
-const isDark = computed(() => document.documentElement.classList.contains('dark'));
-const sub  = computed(() => (isDark.value ? '#94a3b8' : '#64748b'));
-const grid = computed(() => (isDark.value ? '#334155' : '#e2e8f0'));
+const t = useChartTheme();
+const sub  = t.inkMuted;
+const grid = computed(() => t.token('--line'));
 
 const moneyFmt = computed(() => new Intl.NumberFormat('pt-BR', {
     style: 'currency', currency: props.currency || 'BRL', minimumFractionDigits: 2,
@@ -90,7 +91,9 @@ const option = computed(() => ({
             type: 'bar',
             yAxisIndex: 0,
             data: props.daily.map(d => Number(d.spend) || 0),
-            itemStyle: { color: '#3b82f6', borderRadius: [3, 3, 0, 0], opacity: 0.85 },
+            // Barra é área: tom `-soft`. A opacidade saiu — clarear com alfa
+            // sobre fundo claro dá cinza-azulado, não azul mais leve.
+            itemStyle: { color: t.fill(1), borderRadius: [3, 3, 0, 0] },
             barMaxWidth: 18,
         },
         {
@@ -100,8 +103,9 @@ const option = computed(() => ({
             data: props.daily.map(d => Number(d.office_leads) || 0),
             smooth: 0.4,
             showSymbol: false,
-            lineStyle: { color: '#10b981', width: 2.5 },
-            itemStyle: { color: '#10b981' },
+            // Linha é marca: traço de 2,5px precisa do tom forte.
+            lineStyle: { color: t.color(3), width: 2.5 },
+            itemStyle: { color: t.color(3) },
         },
     ],
 }));
@@ -111,7 +115,7 @@ const option = computed(() => ({
   <section class="rounded-xl border border-line bg-surface-raised shadow-soft surface-gradient p-4 flex flex-col">
     <div class="flex items-start justify-between gap-3 mb-2 flex-wrap">
       <div>
-        <h2 class="text-[11px] font-semibold uppercase tracking-wider text-ink-subtle flex items-center gap-2">
+        <h2 class="text-micro font-semibold uppercase tracking-wider text-ink-subtle flex items-center gap-2">
           <i class="fas fa-chart-column text-accent"></i>Desempenho diário
         </h2>
         <p class="mt-1 flex items-baseline gap-3 flex-wrap">
@@ -127,7 +131,7 @@ const option = computed(() => ({
           </span>
         </p>
       </div>
-      <span class="text-[11px] text-ink-subtle font-mono px-2 py-1 rounded-md bg-surface-sunken border border-line shrink-0">
+      <span class="text-micro text-ink-subtle font-mono px-2 py-1 rounded-md bg-surface-sunken border border-line shrink-0">
         {{ dias }} dia{{ dias === 1 ? '' : 's' }}
       </span>
     </div>

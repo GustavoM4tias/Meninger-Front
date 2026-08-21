@@ -242,7 +242,8 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
+import { useChartTheme } from '@/composables/useChartTheme';
+import { ref, computed, onMounted } from 'vue';
 import { useCan } from '@/composables/useCan';
 import { useRoute, useRouter } from 'vue-router';
 import dayjs from 'dayjs';
@@ -283,20 +284,17 @@ const total = computed(() => r.value?.kpis?.buckets?.total || {});
 const ritmo = computed(() => Number(r.value?.governance?.ritmoLinear || 0));
 const distribution = computed(() => r.value?.distribution || {});
 
-/* ---------- tema (padrão ChatChart: observa a classe dark) ---------- */
-const isDark = ref(typeof document !== 'undefined' && document.documentElement.classList.contains('dark'));
-let observer;
+/* ---------- tema ---------- */
+// O tema de gráfico do Office já mantém UM observer de classe `dark` para o app
+// inteiro e entrega eixo, grade e tooltip prontos.
+const t = useChartTheme();
+const isDark = t.isDark;
 onMounted(() => {
-    observer = new MutationObserver(() => {
-        isDark.value = document.documentElement.classList.contains('dark');
-    });
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
     // deep link: /marketing/viabilidade/<id>?mes=YYYY-MM
     const qMes = String(route.query.mes || '');
     if (/^\d{4}-\d{2}$/.test(qMes)) refMonth.value = qMes;
     load();
 });
-onBeforeUnmount(() => observer?.disconnect());
 
 /* ---------- formatadores ---------- */
 const MONTHS_SHORT = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
@@ -382,74 +380,64 @@ function insightTitleClass(t) {
 function insightIcon(t) { return t === 'risco' ? 'fa-triangle-exclamation' : t === 'atencao' ? 'fa-circle-exclamation' : 'fa-circle-check'; }
 
 /* ---------- gráficos ---------- */
-const chartColors = computed(() => ({
-    txt: isDark.value ? '#94a3b8' : '#6b7280',
-    grid: isDark.value ? '#1e293b' : '#f3f4f6',
-    tooltipBg: isDark.value ? '#1e293b' : '#ffffff',
-    tooltipTx: isDark.value ? '#e2e8f0' : '#1f2937',
-    tooltipBd: isDark.value ? '#334155' : '#e5e7eb',
-}));
-const tooltipStyle = computed(() => ({
-    backgroundColor: chartColors.value.tooltipBg,
-    borderColor: chartColors.value.tooltipBd,
-    textStyle: { color: chartColors.value.tooltipTx, fontSize: 12 },
-    valueFormatter: (v) => fmtBRL(v),
-}));
-
 const monthLabels = computed(() => (r.value?.months || []).map((m) => MONTHS_SHORT[Number(m.ym.slice(5, 7)) - 1]));
 
 const mktChartOption = computed(() => {
-    const c = chartColors.value;
     const months = r.value?.months || [];
     return {
-        backgroundColor: 'transparent',
-        tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, ...tooltipStyle.value },
-        legend: { textStyle: { color: c.txt }, top: 0 },
-        grid: { left: 8, right: 8, top: 34, bottom: 4, containLabel: true },
-        xAxis: { type: 'category', data: monthLabels.value, axisLabel: { color: c.txt, fontSize: 10 }, axisLine: { lineStyle: { color: c.grid } } },
-        yAxis: { type: 'value', axisLabel: { color: c.txt, fontSize: 10, formatter: (v) => `${Math.round(v / 1000)}k` }, splitLine: { lineStyle: { color: c.grid } } },
+        ...t.base.value,
+        tooltip: { ...t.tooltip.value, trigger: 'axis', axisPointer: t.axisPointerBand.value, valueFormatter: (v) => fmtBRL(v) },
+        legend: { ...t.legend.value, top: 0 },
+        grid: { ...t.grid.value, top: 34 },
+        xAxis: { type: 'category', data: monthLabels.value, ...t.axisCategory.value },
+        yAxis: { type: 'value', ...t.axisValue.value, axisLabel: { ...t.axisValue.value.axisLabel, formatter: (v) => `${Math.round(v / 1000)}k` } },
+        // Aqui a cor significa ESTADO, não identidade: verde = pago de fato,
+        // âmbar = excedente da loja, azul = ainda a investir. Por isso `barTone`
+        // (tom de área) e não a paleta categórica.
         series: [
-            { name: 'Realizado', type: 'bar', stack: 'mkt', barMaxWidth: 22, data: months.map((m) => Math.round(m.mktRealizado)), itemStyle: { color: '#10b981', borderRadius: [3, 3, 0, 0] } },
+            t.barTone('pos', { name: 'Realizado', stack: 'mkt', barMaxWidth: 22, data: months.map((m) => Math.round(m.mktRealizado)) }),
             ...(months.some((m) => Number(m.mktLojaExcedente || 0) > 0)
-                ? [{ name: 'Excedente da loja', type: 'bar', stack: 'mkt', barMaxWidth: 22, data: months.map((m) => Math.round(m.mktLojaExcedente || 0)), itemStyle: { color: '#f97316', borderRadius: [3, 3, 0, 0] } }]
+                ? [t.barTone('warn', { name: 'Excedente da loja', stack: 'mkt', barMaxWidth: 22, data: months.map((m) => Math.round(m.mktLojaExcedente || 0)) })]
                 : []),
-            { name: 'Projetado', type: 'bar', stack: 'mkt', barMaxWidth: 22, data: months.map((m) => Math.round(m.mktProjetado)), itemStyle: { color: '#38bdf8', borderRadius: [3, 3, 0, 0], opacity: 0.75 } },
+            t.bar(1, { name: 'Projetado', stack: 'mkt', barMaxWidth: 22, data: months.map((m) => Math.round(m.mktProjetado)) }),
         ],
     };
 });
 
 const cashflowChartOption = computed(() => {
-    const c = chartColors.value;
     const months = r.value?.months || [];
     return {
-        backgroundColor: 'transparent',
-        tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, ...tooltipStyle.value },
-        legend: { textStyle: { color: c.txt }, top: 0 },
-        grid: { left: 8, right: 8, top: 34, bottom: 4, containLabel: true },
-        xAxis: { type: 'category', data: monthLabels.value, axisLabel: { color: c.txt, fontSize: 10 }, axisLine: { lineStyle: { color: c.grid } } },
-        yAxis: { type: 'value', axisLabel: { color: c.txt, fontSize: 10, formatter: (v) => `${Math.round(v / 1000)}k` }, splitLine: { lineStyle: { color: c.grid } } },
+        ...t.base.value,
+        tooltip: { ...t.tooltip.value, trigger: 'axis', axisPointer: t.axisPointerBand.value, valueFormatter: (v) => fmtBRL(v) },
+        legend: { ...t.legend.value, top: 0 },
+        grid: { ...t.grid.value, top: 34 },
+        xAxis: { type: 'category', data: monthLabels.value, ...t.axisCategory.value },
+        yAxis: { type: 'value', ...t.axisValue.value, axisLabel: { ...t.axisValue.value.axisLabel, formatter: (v) => `${Math.round(v / 1000)}k` } },
         series: [
-            { name: 'Marketing', type: 'bar', stack: 'fluxo', barMaxWidth: 22, data: months.map((m) => Math.round(m.mktRealizado + m.mktProjetado)), itemStyle: { color: '#10b981' } },
+            t.barTone('pos', { name: 'Marketing', stack: 'fluxo', barMaxWidth: 22, data: months.map((m) => Math.round(m.mktRealizado + m.mktProjetado)) }),
             ...(months.some((m) => Number(m.mktLojaExcedente || 0) > 0)
-                ? [{ name: 'Loja → MKT (excedente)', type: 'bar', stack: 'fluxo', barMaxWidth: 22, data: months.map((m) => Math.round(m.mktLojaExcedente || 0)), itemStyle: { color: '#f97316' } }]
+                ? [t.barTone('warn', { name: 'Loja → MKT (excedente)', stack: 'fluxo', barMaxWidth: 22, data: months.map((m) => Math.round(m.mktLojaExcedente || 0)) })]
                 : []),
-            { name: 'Loja', type: 'bar', stack: 'fluxo', barMaxWidth: 22, data: months.map((m) => Math.round(m.lojaRealizado + m.lojaProjetado)), itemStyle: { color: '#f59e0b', borderRadius: [3, 3, 0, 0] } },
+            t.bar(2, { name: 'Loja', stack: 'fluxo', barMaxWidth: 22, data: months.map((m) => Math.round(m.lojaRealizado + m.lojaProjetado)) }),
         ],
     };
 });
 
 const donutOption = computed(() => {
-    const c = chartColors.value;
     const d = distribution.value;
     return {
-        backgroundColor: 'transparent',
-        tooltip: { trigger: 'item', ...tooltipStyle.value },
+        ...t.base.value,
+        tooltip: { ...t.tooltip.value, trigger: 'item', valueFormatter: (v) => fmtBRL(v) },
         series: [{
-            type: 'pie', radius: ['58%', '80%'], center: ['50%', '50%'],
-            label: { show: true, position: 'center', formatter: `${fmtPct(d.pctRealizado)}\njá investido`, color: c.tooltipTx, fontSize: 14, fontWeight: 600, lineHeight: 20 },
+            ...t.donut({ centerLabel: `${fmtPct(d.pctRealizado)}
+já investido` }),
+            radius: ['58%', '80%'],
+            center: ['50%', '50%'],
+            // Duas fatias com significado fixo: o que saiu (positivo) e o que
+            // ainda não saiu (ausência, não estado). Cor na mão, de propósito.
             data: [
-                { name: 'Realizado', value: Math.round(d.realizadoAno || 0), itemStyle: { color: '#10b981' } },
-                { name: 'A investir', value: Math.round(d.aInvestirAno || 0), itemStyle: { color: isDark.value ? '#334155' : '#e5e7eb' } },
+                { name: 'Realizado', value: Math.round(d.realizadoAno || 0), itemStyle: { color: t.posArea.value } },
+                { name: 'A investir', value: Math.round(d.aInvestirAno || 0), itemStyle: { color: t.token('--line-strong') } },
             ],
         }],
     };

@@ -1,5 +1,6 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { useChartTheme } from '@/composables/useChartTheme';
+import { ref, computed } from 'vue';
 import { useContractsStore } from '@/stores/Comercial/Contracts/contractsStore';
 import { useProjectionGoalModeStore } from '@/stores/Comercial/Projections/projectionGoalModeStore';
 
@@ -40,26 +41,19 @@ const goalStore = useProjectionGoalModeStore();
 
 // ── Tema reativo ─────────────────────────────────────
 const isDark = ref(false);
-let themeObserver = null;
+// O observer de tema vive no `useChartTheme` (um só para o app inteiro).
+// `t.isDark` é readonly: escrever nele aqui não faria nada.
 
-onMounted(() => {
-  isDark.value = document.documentElement.classList.contains('dark');
-  themeObserver = new MutationObserver(() => {
-    isDark.value = document.documentElement.classList.contains('dark');
-  });
-  themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
-});
-onUnmounted(() => themeObserver?.disconnect());
+const txt = t.ink;
+const sub = t.inkMuted;
+const dim = computed(() => t.token('--line'));
+const surface = computed(() => t.token('--surface'));
 
-const txt = computed(() => isDark.value ? '#E2E8F0' : '#0F172A');
-const sub = computed(() => isDark.value ? '#94A3B8' : '#64748B');
-const dim = computed(() => isDark.value ? '#334155' : '#E2E8F0');
-const surface = computed(() => isDark.value ? '#0F172A' : '#FFFFFF');
-
+// Tooltip com as cores do tema: superfície elevada, borda de linha e tinta.
 const TT = computed(() =>
-  isDark.value
-    ? `background:rgba(2,6,23,0.96);border:1px solid rgba(99,102,241,0.25);border-radius:12px;font-size:12px;color:#E2E8F0;box-shadow:0 8px 32px rgba(0,0,0,0.5);padding:10px 14px;`
-    : `background:rgba(255,255,255,0.98);border:1px solid rgba(99,102,241,0.2);border-radius:12px;font-size:12px;color:#0F172A;box-shadow:0 8px 32px rgba(15,23,42,0.12);padding:10px 14px;`
+  `background:${t.token('--surface-raised')};border:1px solid ${t.token('--line')};`
+  + `border-radius:12px;font-size:12px;color:${t.ink.value};`
+  + `box-shadow:0 8px 32px ${t.token('--scrim', 0.18)};padding:10px 14px;`
 );
 
 // ── Tabs ─────────────────────────────────────
@@ -148,14 +142,32 @@ function effectiveAchievementPct(row) {
 }
 
 // ── Status agregado ───────────────────────
-const STATUS_META = {
-  ahead:         { label: 'Acima da meta',    color: '#10B981', icon: 'fas fa-fire' },
-  on_track:      { label: 'Na meta',          color: '#3B82F6', icon: 'fas fa-circle-check' },
-  behind:        { label: 'Em alerta',        color: '#EAB308', icon: 'fas fa-triangle-exclamation' },
-  at_risk:       { label: 'Em risco',         color: '#EF4444', icon: 'fas fa-skull' },
-  no_sales:      { label: 'Sem vendas',       color: '#94A3B8', icon: 'fas fa-ban' },
-  no_projection: { label: 'Sem projeção',     color: '#CBD5E1', icon: 'fas fa-minus' },
+// A escala tem SEIS degraus mas só CINCO significados; o tom é quem manda, e
+// dele saem a cor do gráfico, a classe do texto e a variante do selo. Antes a
+// cor era hex literal e o código comparava string de hex para achar a classe —
+// mudar um tom exigia caçar o mesmo `#10B981` em quatro lugares.
+const TONS = {
+  pos:     { marca: () => t.pos.value,     area: () => t.posArea.value,     classe: 'text-data-pos bg-data-pos/10',   selo: 'success' },
+  accent:  { marca: () => t.token('--accent'), area: () => t.fill(1),       classe: 'text-accent bg-accent/10',       selo: 'accent'  },
+  warn:    { marca: () => t.warn.value,    area: () => t.warnArea.value,    classe: 'text-data-warn bg-data-warn/10', selo: 'warning' },
+  neg:     { marca: () => t.neg.value,     area: () => t.negArea.value,     classe: 'text-data-neg bg-data-neg/10',   selo: 'danger'  },
+  neutral: { marca: () => t.neutral.value, area: () => t.neutralArea.value, classe: 'text-ink-muted bg-surface-sunken', selo: 'neutral' },
 };
+
+const STATUS_META = {
+  ahead:         { label: 'Acima da meta', tom: 'pos',     icon: 'fas fa-fire' },
+  on_track:      { label: 'Na meta',       tom: 'accent',  icon: 'fas fa-circle-check' },
+  behind:        { label: 'Em alerta',     tom: 'warn',    icon: 'fas fa-triangle-exclamation' },
+  at_risk:       { label: 'Em risco',      tom: 'neg',     icon: 'fas fa-skull' },
+  no_sales:      { label: 'Sem vendas',    tom: 'neutral', icon: 'fas fa-ban' },
+  no_projection: { label: 'Sem projeção',  tom: 'neutral', icon: 'fas fa-minus' },
+};
+
+/** Cor de um status. `area` para o que preenche (fatia, barra); senão, marca. */
+function statusCor(chave, area = false) {
+  const tom = TONS[STATUS_META[chave]?.tom ?? 'neutral'];
+  return area ? tom.area() : tom.marca();
+}
 
 const statusCounts = computed(() => {
   const counts = {};
@@ -206,6 +218,11 @@ const statusList = computed(() =>
       key, count,
       enterprises: enterprisesByStatus.value[key] || [],
       ...STATUS_META[key],
+      // duas cores por status: `color` marca (ícone, ponto, texto) e `fill`
+      // preenche (fatia da rosca, barra de proporção).
+      color: statusCor(key),
+      fill: statusCor(key, true),
+      classe: TONS[STATUS_META[key]?.tom ?? 'neutral'].classe,
     }))
     .sort((a, b) => b.count - a.count)
 );
@@ -289,7 +306,7 @@ const statusDonutOption = computed(() => {
   const data = statusList.value.map(s => ({
     name: s.label,
     value: s.count,
-    itemStyle: { color: s.color },
+    itemStyle: { color: s.fill },
     _enterprises: s.enterprises,
     _key: s.key,
   }));
@@ -349,16 +366,18 @@ const statusDonutOption = computed(() => {
 });
 
 // Global Achievement Gauge
-const gaugeColor = computed(() => {
+// O ritmo do realizado contra o tempo decorrido decide o TOM; a cor vem depois.
+const gaugeTom = computed(() => {
   const ach = props.metrics?.achievementPct;
   const elapsed = props.timeElapsedPct ?? 0;
-  if (ach == null) return '#64748B';
+  if (ach == null) return 'neutral';
   const ratio = elapsed > 0 ? ach / elapsed : (ach >= 100 ? 1.2 : 0.5);
-  if (ratio >= 1.1) return '#10B981';
-  if (ratio >= 0.8) return '#3B82F6';
-  if (ratio >= 0.4) return '#EAB308';
-  return '#EF4444';
+  if (ratio >= 1.1) return 'pos';
+  if (ratio >= 0.8) return 'accent';
+  if (ratio >= 0.4) return 'warn';
+  return 'neg';
 });
+const gaugeColor = computed(() => TONS[gaugeTom.value].marca());
 
 const gaugeOption = computed(() => {
   const ach = Number(props.metrics?.achievementPct);
@@ -371,7 +390,7 @@ const gaugeOption = computed(() => {
   // Faixas coloridas no axisLine: até "elapsed" cinza claro (ainda no caminho),
   // depois transição p/ verde a partir de 100%
   const axisLineColor = elapsed > 0
-    ? [[elapsedClamped / 150, dim.value], [1, isDark.value ? '#1E293B' : '#F1F5F9']]
+    ? [[elapsedClamped / 150, dim.value], [1, t.token('--surface-sunken')]]
     : [[1, dim.value]];
 
   return {
@@ -444,12 +463,12 @@ const comparisonChartOption = computed(() => {
   const elapsed = props.timeElapsedPct ?? 0;
 
   const colorFor = (ach) => {
-    if (ach == null) return '#94A3B8';
+    if (ach == null) return t.neutralArea.value;
     const ratio = elapsed > 0 ? ach / elapsed : (ach >= 100 ? 1.2 : 0.5);
-    if (ratio >= 1.1) return '#10B981';
-    if (ratio >= 0.8) return '#3B82F6';
-    if (ratio >= 0.4) return '#EAB308';
-    return '#EF4444';
+    if (ratio >= 1.1) return t.posArea.value;
+    if (ratio >= 0.8) return t.fill(1);
+    if (ratio >= 0.4) return t.warnArea.value;
+    return t.negArea.value;
   };
 
   return {
@@ -468,8 +487,8 @@ const comparisonChartOption = computed(() => {
         const c = colorFor(r._ach);
         return `<b>${escapeHtml(truncate(r.name, 40))}</b><br/>` +
           `<span style="color:${sub.value};font-size:10px">Modo: ${isUnits ? 'Unidades' : 'VGV'}</span><br/>` +
-          `<span style="color:#10B981">●</span> Realizado: <b>${realizedFmt}</b><br/>` +
-          `<span style="color:#3B82F6">●</span> Projetado: <b>${projectedFmt}</b><br/>` +
+          `<span style="color:${t.pos.value}">●</span> Realizado: <b>${realizedFmt}</b><br/>` +
+          `<span style="color:${t.color(1)}">●</span> Projetado: <b>${projectedFmt}</b><br/>` +
           `<span style="color:${c};font-weight:600">${r._ach.toFixed(1)}% atingida</span>`;
       },
     },
@@ -508,7 +527,7 @@ const comparisonChartOption = computed(() => {
           silent: true,
           symbol: 'none',
           data: [
-            { xAxis: 100, lineStyle: { color: '#10B981', type: 'dashed', width: 1, opacity: 0.6 },
+            { xAxis: 100, lineStyle: { color: t.pos.value, type: 'dashed', width: 1, opacity: 0.6 },
               label: { show: true, position: 'end', formatter: 'meta 100%', color: sub.value, fontSize: 9 } },
             ...(elapsed > 0 ? [{
               xAxis: elapsed,
@@ -571,23 +590,8 @@ const overviewKpis = computed(() => [
   },
 ]);
 
-const gaugeAccentClass = computed(() => {
-  const c = gaugeColor.value;
-  if (c === '#10B981') return 'text-emerald-500 bg-emerald-500/10';
-  if (c === '#3B82F6') return 'text-blue-500 bg-blue-500/10';
-  if (c === '#EAB308') return 'text-yellow-500 bg-yellow-500/10';
-  if (c === '#EF4444') return 'text-red-500 bg-red-500/10';
-  return 'text-ink-muted bg-surface-sunken';
-});
-
-const gaugeBadgeVariant = computed(() => {
-  const c = gaugeColor.value;
-  if (c === '#10B981') return 'success';
-  if (c === '#3B82F6') return 'accent';
-  if (c === '#EAB308') return 'warning';
-  if (c === '#EF4444') return 'danger';
-  return 'neutral';
-});
+const gaugeAccentClass = computed(() => TONS[gaugeTom.value].classe);
+const gaugeBadgeVariant = computed(() => TONS[gaugeTom.value].selo);
 
 const pctOf = (n) => {
   const t = statusInsights.value.total;
@@ -743,7 +747,7 @@ const openDetail = (row) => {
                   </div>
                   <div class="flex-1 h-2 rounded-full bg-surface-raised overflow-hidden">
                     <div class="h-full rounded-full transition-all duration-500"
-                      :style="{ width: pctOf(s.count) + '%', backgroundColor: s.color }"></div>
+                      :style="{ width: pctOf(s.count) + '%', backgroundColor: s.fill }"></div>
                   </div>
                   <div class="w-20 text-right shrink-0">
                     <span class="text-sm font-bold text-ink tabular-nums">{{ s.count }}</span>

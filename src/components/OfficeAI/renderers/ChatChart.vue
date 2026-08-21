@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import VChart from 'vue-echarts'
 import * as echarts from 'echarts/core'
 import { BarChart, PieChart, LineChart } from 'echarts/charts'
@@ -8,6 +8,7 @@ import {
   DataZoomComponent, MarkLineComponent,
 } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
+import { useChartTheme } from '@/composables/useChartTheme'
 
 echarts.use([
   BarChart, PieChart, LineChart,
@@ -16,11 +17,6 @@ echarts.use([
   CanvasRenderer,
 ])
 
-const PALETTE = [
-  '#6366f1', '#22d3ee', '#34d399', '#f59e0b',
-  '#f43f5e', '#a78bfa', '#fb923c', '#38bdf8',
-  '#4ade80', '#e879f9',
-]
 
 const props = defineProps({
   chartType:    { type: String, default: 'bar' },
@@ -38,84 +34,46 @@ const chartRef   = ref(null)
 const loading    = ref(props.data.length === 0)
 const copied     = ref(false)
 const activeType = ref(props.chartType)
-const isDark     = ref(document.documentElement.classList.contains('dark'))
+const t = useChartTheme()
+const isDark = t.isDark
 
 const canToggle = computed(() =>
   props.labels.length > 0 && props.labels.length <= 12
 )
 
-// Detecta mudança de tema
-let observer
 onMounted(() => {
   if (loading.value) setTimeout(() => { loading.value = false }, 300)
-  observer = new MutationObserver(() => {
-    isDark.value = document.documentElement.classList.contains('dark')
-  })
-  observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
 })
-onBeforeUnmount(() => observer?.disconnect())
-
-function makeGradient(hex) {
-  return new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-    { offset: 0,   color: hex },
-    { offset: 0.8, color: hex + '55' },
-    { offset: 1,   color: hex + '11' },
-  ])
-}
 
 const option = computed(() => {
-  const colors    = props.labels.map((_, i) => PALETTE[i % PALETTE.length])
-  const dark      = isDark.value
-  const tooltipBg = dark ? '#1e293b' : '#ffffff'
-  const tooltipBd = dark ? '#334155' : '#e5e7eb'
-  const tooltipTx = dark ? '#e2e8f0' : '#1f2937'
-  const labelClr  = dark ? '#94a3b8' : '#6b7280'
-  const axisClr   = dark ? '#64748b' : '#9ca3af'
-  const gridClr   = dark ? '#1e293b' : '#f3f4f6'
-  const axisLineClr = dark ? '#1e293b' : '#e5e7eb'
-
   if (activeType.value === 'pie') {
     return {
-      backgroundColor: 'transparent',
-      animation: true,
-      animationDuration: 700,
-      animationType: 'expansion',
-      color: PALETTE,
+      ...t.base.value,
+      color: t.fillPalette.value,
       tooltip: {
+        ...t.tooltip.value,
         trigger: 'item',
-        backgroundColor: tooltipBg,
-        borderColor: tooltipBd,
-        textStyle: { color: tooltipTx, fontSize: 12 },
         formatter: (p) => `
           <div class="flex items-center gap-2">
             <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${p.color}"></span>
             <b>${p.name}</b>: ${Number(p.value).toLocaleString('pt-BR')}
-            <span style="color:#94a3b8">(${p.percent}%)</span>
+            <span style="opacity:.7">(${p.percent}%)</span>
           </div>`,
       },
       legend: {
-        orient: 'vertical',
-        right: '2%',
-        top: 'center',
-        textStyle: { color: labelClr, fontSize: 11 },
-        itemWidth: 10,
-        itemHeight: 10,
+        ...t.legend.value,
+        orient: 'vertical', right: '2%', top: 'center', left: undefined,
       },
       series: [{
-        type: 'pie',
+        ...t.donut(),
         radius: ['38%', '68%'],
         center: ['40%', '50%'],
         data: props.labels.map((l, i) => ({
           name: l ?? '—',
           value: props.data[i] ?? 0,
-          itemStyle: { color: PALETTE[i % PALETTE.length], borderRadius: 4 },
+          itemStyle: { color: t.fillPalette.value[i % 8] },
         })),
         label: { show: false },
-        emphasis: {
-          scale: true,
-          scaleSize: 6,
-          itemStyle: { shadowBlur: 20, shadowColor: 'rgba(99,102,241,0.4)' },
-        },
       }],
     }
   }
@@ -123,83 +81,60 @@ const option = computed(() => {
   // Bar
   const max = Math.max(...props.data, 0)
   return {
-    backgroundColor: 'transparent',
-    animation: true,
-    animationDuration: 700,
-    animationEasing: 'cubicOut',
-    color: PALETTE,
+    ...t.base.value,
     tooltip: {
+      ...t.tooltip.value,
       trigger: 'axis',
-      backgroundColor: tooltipBg,
-      borderColor: tooltipBd,
-      textStyle: { color: tooltipTx, fontSize: 12 },
+      axisPointer: t.axisPointerBand.value,
       formatter: (params) => {
         const p = params[0]
         const pct = max ? ((p.value / max) * 100).toFixed(0) : 0
         return `<div style="padding:2px 0">
-          <div style="color:${axisClr};font-size:11px;margin-bottom:4px">${p.axisValue}</div>
+          <div style="opacity:.7;font-size:11px;margin-bottom:4px">${p.axisValue}</div>
           <div style="display:flex;align-items:center;gap:6px">
             <span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${p.color}"></span>
-            <b style="font-size:14px;color:${tooltipTx}">${Number(p.value).toLocaleString('pt-BR')}</b>
-            <span style="color:${axisClr};font-size:11px">${pct}% do maior</span>
+            <b style="font-size:14px">${Number(p.value).toLocaleString('pt-BR')}</b>
+            <span style="opacity:.7;font-size:11px">${pct}% do maior</span>
           </div>
         </div>`
       },
     },
-    grid: { left: 4, right: 4, bottom: props.labels.length > 6 ? 36 : 12, top: 16, containLabel: true },
+    grid: { ...t.grid.value, bottom: props.labels.length > 6 ? 36 : 12, top: 16 },
     xAxis: {
       type: 'category',
       data: props.labels,
+      ...t.axisCategory.value,
       axisLabel: {
-        color: axisClr, fontSize: 10,
+        ...t.axisCategory.value.axisLabel,
         rotate: props.labels.length > 7 ? 35 : 0,
-        interval: 0,
-        overflow: 'truncate',
-        width: 80,
+        interval: 0, overflow: 'truncate', width: 80,
       },
-      axisLine: { lineStyle: { color: axisLineClr } },
-      axisTick: { show: false },
     },
-    yAxis: {
-      type: 'value',
-      axisLabel: { color: axisClr, fontSize: 10 },
-      splitLine: { lineStyle: { color: gridClr, type: 'dashed' } },
-      axisLine: { show: false },
-      axisTick: { show: false },
-    },
-    series: [{
-      type: 'bar',
-      data: props.data.map((v, i) => ({
-        value: v,
-        itemStyle: {
-          color: makeGradient(colors[i % colors.length]),
-          borderRadius: [6, 6, 0, 0],
+    yAxis: { type: 'value', ...t.axisValue.value },
+    // UMA série, UMA cor. Antes cada barra saía de um matiz diferente da
+    // paleta: além de encher a tela de cor, isso diz "são dez medidas" quando
+    // é uma medida só, em dez categorias. A categoria já está no eixo X.
+    series: [
+      t.bar(1, {
+        data: props.data,
+        barMaxWidth: 48,
+        barMinWidth: 12,
+        label: {
+          show: props.data.length <= 12,
+          position: 'top',
+          color: t.inkMuted.value,
+          fontSize: 10,
+          formatter: (p) => Number(p.value).toLocaleString('pt-BR'),
         },
-        emphasis: {
-          itemStyle: {
-            color: colors[i % colors.length],
-            shadowBlur: 16,
-            shadowColor: colors[i % colors.length] + '66',
-          },
-        },
-      })),
-      barMaxWidth: 48,
-      barMinWidth: 12,
-      label: {
-        show: props.data.length <= 12,
-        position: 'top',
-        color: labelClr,
-        fontSize: 10,
-        formatter: (p) => Number(p.value).toLocaleString('pt-BR'),
-      },
-    }],
+      }),
+    ],
   }
 })
 
 async function copyImage() {
   const instance = chartRef.value?.chart
   if (!instance) return
-  const bg = isDark.value ? '#0f172a' : '#ffffff'
+  const bg = t.token('--surface')   // o PNG sai com o fundo do tema atual
   const url = instance.getDataURL({ type: 'png', pixelRatio: 2, backgroundColor: bg })
   try {
     const res = await fetch(url)

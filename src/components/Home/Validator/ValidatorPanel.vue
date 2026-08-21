@@ -69,6 +69,7 @@
 </template>
 
 <script setup>
+import { useChartTheme } from '@/composables/useChartTheme';
 import { onMounted, ref, computed } from 'vue'
 import { useAIStore } from '@/stores/Config/aiStore'
 import VChart from 'vue-echarts'
@@ -257,25 +258,26 @@ const delta = computed(() => {
 })
 
 /** === ECharts (cores mantidas) === */
+// Um observer de tema para o app inteiro; eixo, grade e tooltip vêm prontos.
+// Antes este painel tinha paleta ESCURA cravada: no tema claro a grade saía
+// quase preta e o tooltip, um bloco preto.
+const t = useChartTheme();
+
 const chartOption = computed(() => {
     const labels = days.value.map(d => d.label)
     const aprov = days.value.map(d => d.aprovados)
     const reprov = days.value.map(d => d.reprovados)
     const tipByIndex = days.value.map(d => d.topEmp)
 
-    const primaryColor = '#6366F1'
-    const secondaryColor = '#24295F'
 
     return {
         animationDuration: 400,
         grid: { left: 6, right: 8, top: 24, bottom: 8, containLabel: true },
-        legend: { top: 0, textStyle: { color: '#9CA3AF', fontSize: 10 } },
+        legend: { ...t.legend.value, top: 0 },
         tooltip: {
             trigger: 'axis',
             axisPointer: { type: 'shadow' },
-            backgroundColor: '#111827',
-            borderWidth: 0,
-            textStyle: { color: '#f4f4f4' },
+            ...t.tooltip.value,
             formatter: (params) => {
                 const idx = params?.[0]?.dataIndex ?? 0
                 const emp = tipByIndex[idx] || []
@@ -290,19 +292,16 @@ const chartOption = computed(() => {
         xAxis: {
             type: 'category',
             data: labels,
+            ...t.axisCategory.value,
             axisLabel: {
-                color: '#9CA3AF', fontSize: 10, interval: 0,
+                ...t.axisCategory.value.axisLabel,
+                interval: 0,
                 rotate: labels.length > 8 ? 28 : 0, hideOverlap: true, margin: 8
-            },
-            axisLine: { lineStyle: { color: '#212121' } },
-            axisTick: { show: false }
+            }
         },
         yAxis: {
             type: 'value',
-            axisLabel: { color: '#9CA3AF', fontSize: 10 },
-            splitLine: { lineStyle: { color: '#212121' } },
-            axisLine: { show: false },
-            axisTick: { show: false }
+            ...t.axisValue.value
         },
         series: [
             {
