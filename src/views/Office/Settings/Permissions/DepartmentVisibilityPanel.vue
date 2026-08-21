@@ -3,7 +3,7 @@
         <Surface variant="raised" padding="md" class="bg-accent-soft/30 border-accent/20">
             <p class="text-sm text-ink-muted">
                 Controle quais <strong>departamentos</strong> cada nível enxerga na tela de Custos. A regra é em
-                <strong>cascata</strong>: vale o <strong>mais específico</strong> &mdash; usuário &gt; cargo &gt; global.
+                <strong>cascata</strong>: vale o <strong>mais específico</strong> - usuário &gt; cargo &gt; global.
                 Admin sempre vê tudo.
             </p>
         </Surface>
