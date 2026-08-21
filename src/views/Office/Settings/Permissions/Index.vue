@@ -23,6 +23,7 @@ import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { managedRegistry, getDeptManagedPages, getAdminOnlyPages, getAlwaysFreePages } from '@/config/navRegistry';
 import { requestWithAuth } from '@/utils/Auth/requestWithAuth';
+import { mensagemDeErro } from '@/utils/mensagemDeErro';
 
 import PageContainer from '@/components/UI/PageContainer.vue';
 import PageHeader from '@/components/UI/PageHeader.vue';
@@ -389,7 +390,7 @@ async function salvarUsuario() {
     if (atualizado) aplicarUsuario(atualizado);
     feedback.value = { msg: `Alçadas de ${selectedUser.value.username} salvas.`, ok: true };
   } catch (e) {
-    feedback.value = { msg: e.message || 'Erro ao salvar as alçadas.', ok: false };
+    feedback.value = { msg: mensagemDeErro(e, 'Não foi possível salvar as alçadas.'), ok: false };
   } finally {
     salvando.value = false;
     setTimeout(() => { feedback.value = { msg: '', ok: true }; }, 5000);
@@ -472,7 +473,7 @@ async function salvarPerfil() {
     if (atualizado) abrirPerfil(atualizado);
     feedback.value = { msg: 'Perfil salvo. Quem usa ele já está com as telas novas.', ok: true };
   } catch (e) {
-    feedback.value = { msg: e.message || 'Erro ao salvar o perfil.', ok: false };
+    feedback.value = { msg: mensagemDeErro(e, 'Não foi possível salvar o perfil.'), ok: false };
   } finally {
     savingProfile.value = false;
     setTimeout(() => { feedback.value = { msg: '', ok: true }; }, 5000);
@@ -498,7 +499,7 @@ async function criarPerfil() {
     novoPerfil.value = { name: '', description: '', department_id: '' };
     if (criado) abrirPerfil(criado);
   } catch (e) {
-    feedback.value = { msg: e.message || 'Erro ao criar o perfil.', ok: false };
+    feedback.value = { msg: mensagemDeErro(e, 'Não foi possível criar o perfil.'), ok: false };
   } finally {
     savingProfile.value = false;
   }
@@ -526,7 +527,7 @@ async function confirmarTravar(motivo) {
     await Promise.all([carregarPoliticas(), carregarUsuarios()]);
     feedback.value = { msg: `"${alvoTela.value.name}" agora é exclusiva de administradores.`, ok: true };
   } catch (e) {
-    feedback.value = { msg: e.message || 'Erro ao travar a tela.', ok: false };
+    feedback.value = { msg: mensagemDeErro(e, 'Não foi possível travar a tela.'), ok: false };
   } finally {
     dialogoBusy.value = false; lockBusy.value = ''; dialogo.value = ''; alvoTela.value = null;
     setTimeout(() => { feedback.value = { msg: '', ok: true }; }, 5000);
@@ -543,7 +544,7 @@ async function destravar(page) {
     });
     await Promise.all([carregarPoliticas(), carregarUsuarios()]);
   } catch (e) {
-    feedback.value = { msg: e.message || 'Erro ao destravar a tela.', ok: false };
+    feedback.value = { msg: mensagemDeErro(e, 'Não foi possível destravar a tela.'), ok: false };
   } finally { lockBusy.value = ''; }
 }
 
@@ -555,7 +556,7 @@ async function confirmarExcluirPerfil() {
     selectedProfile.value = null;
     await carregarUsuarios();
   } catch (e) {
-    feedback.value = { msg: e.message || 'Erro ao excluir o perfil.', ok: false };
+    feedback.value = { msg: mensagemDeErro(e, 'Não foi possível excluir o perfil.'), ok: false };
   } finally { dialogoBusy.value = false; dialogo.value = ''; }
 }
 
@@ -567,7 +568,7 @@ async function confirmarRestaurarPerfil() {
     const atualizado = profiles.value.find(p => p.id === selectedProfile.value.id);
     if (atualizado) abrirPerfil(atualizado);
   } catch (e) {
-    feedback.value = { msg: e.message || 'Erro ao restaurar o padrão.', ok: false };
+    feedback.value = { msg: mensagemDeErro(e, 'Não foi possível restaurar o padrão.'), ok: false };
   } finally { dialogoBusy.value = false; dialogo.value = ''; }
 }
 
@@ -628,7 +629,7 @@ async function carregarTudo() {
       if (found) aplicarUsuario(found);
     }
   } catch (e) {
-    erro.value = e.message || 'Não foi possível carregar a gestão de alçadas.';
+    erro.value = mensagemDeErro(e, 'Não foi possível carregar a gestão de alçadas.');
   } finally {
     loading.value = false;
   }

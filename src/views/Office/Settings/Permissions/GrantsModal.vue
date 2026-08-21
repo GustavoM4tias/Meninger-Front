@@ -19,6 +19,7 @@
 // agrupada e com o nome oficial do município, resolvido pelo backend.
 import { ref, computed, watch } from 'vue';
 import { requestWithAuth } from '@/utils/Auth/requestWithAuth';
+import { mensagemDeErro } from '@/utils/mensagemDeErro';
 import { useIncrementalList } from '@/composables/useIncrementalList';
 
 import Modal from '@/components/UI/Modal.vue';
@@ -149,7 +150,7 @@ async function load() {
     selected.value = new Set((grants?.enterpriseIds || []).map(Number));
     original.value = new Set(selected.value);
   } catch (e) {
-    error.value = e.message || 'Erro ao carregar liberações.';
+    error.value = mensagemDeErro(e, 'Não foi possível carregar as liberações.');
   } finally {
     loading.value = false;
   }
@@ -167,7 +168,7 @@ async function save() {
     emit('saved');
     emit('close');
   } catch (e) {
-    error.value = e.message || 'Erro ao salvar liberações.';
+    error.value = mensagemDeErro(e, 'Não foi possível salvar as liberações.');
   } finally {
     saving.value = false;
   }

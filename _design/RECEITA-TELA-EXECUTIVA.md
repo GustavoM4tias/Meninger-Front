@@ -220,10 +220,18 @@ Iguais aos da listagem, mais dois que só existem aqui:
 | estado | tratamento |
 |---|---|
 | carga | `Skeleton` - `row` no mestre, `text` no detalhe |
-| erro | bloco com o que houve e "Tentar novamente" |
+| erro | bloco com o que houve e "Tentar novamente", **sempre via `utils/mensagemDeErro.js`** |
 | vazio | `EmptyState` com a ação sugerida |
 | **sem seleção** | `EmptyState` no detalhe: "escolha um usuário à esquerda" |
 | **sujeito sem alçada nenhuma** | não é vazio, é **aviso**: a tela dele abre em branco, e isso precisa estar escrito |
+
+**A frase do erro é do usuário, não do `fetch`.** `Failed to fetch` é o que o
+navegador diz quando não houve resposta - em inglês, sem dizer o que fazer e
+parecendo defeito do sistema. Todo bloco de erro passa por
+`mensagemDeErro(erro, padrao)`: falha de rede vira "Não foi possível falar com o
+servidor. Verifique a conexão e tente de novo.", o detalhe técnico vai para o
+console, e a mensagem que o NOSSO backend escreveu é preservada - ela já vem em
+português e já é específica.
 
 ---
 
