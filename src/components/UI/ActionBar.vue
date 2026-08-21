@@ -23,6 +23,10 @@ defineProps({
   unit: { type: String, default: 'itens' },
   /* resumo do que a seleção significa (ex.: "2 empreendimentos · 1 etapa") */
   summary: { type: String, default: '' },
+  /* Rótulo do botão que zera. A barra também serve de "alterações pendentes"
+     (tela executiva), onde zerar é DESCARTAR, não limpar seleção - e o texto
+     precisa dizer isso. */
+  clearLabel: { type: String, default: 'Limpar seleção' },
 });
 
 const emit = defineEmits(['clear']);
@@ -51,7 +55,7 @@ const emit = defineEmits(['clear']);
 
           <div class="flex items-center gap-1.5 shrink-0">
             <slot />
-            <button type="button" aria-label="Limpar seleção" v-tippy="'Limpar seleção'"
+            <button type="button" :aria-label="clearLabel" v-tippy="clearLabel"
               class="h-10 w-10 grid place-items-center rounded-lg text-ink-subtle
                      hover:text-ink hover:bg-surface-sunken transition-colors duration-120 focus-ring"
               @click="emit('clear')">
