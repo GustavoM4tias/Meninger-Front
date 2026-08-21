@@ -34,11 +34,14 @@ const props = defineProps({
 const emit = defineEmits(['fechar', 'buscar', 'limpar']);
 
 // ── Tema / paletas ───────────────────────────────────
-const isDark = computed(() => document.documentElement.classList.contains('dark'));
-const txt = computed(() => isDark.value ? '#E5E7EB' : '#374151');
-const sub = computed(() => isDark.value ? '#9CA3AF' : '#6B7280');
-const gridLine = computed(() => isDark.value ? '#374151' : '#E5E7EB');
-const palette = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4', '#84CC16', '#F97316', '#EC4899', '#6366F1'];
+const t = useChartTheme();
+const isDark = t.isDark;
+const txt = t.ink;
+const sub = t.inkMuted;
+const gridLine = computed(() => t.token('--line'));
+// Barra e fatia PREENCHEM: rampa de área. (Este arquivo não tem série de
+// linha; se ganhar uma, ela usa `t.palette.value`, o tom de marca.)
+const palette = computed(() => t.fillPalette.value);
 
 // ── State ────────────────────────────────────────────
 const normalizeMode = (m) => (['list', 'funnel', 'stacked', 'pie'].includes(m) ? m : 'list');
@@ -266,7 +269,7 @@ const makeStackedSeries = (xKeys, xExtractor) => {
     name: status, type: 'bar', stack: 'total',
     emphasis: { focus: 'series' },
     data: xKeys.map(x => (map.get(x)?.get(status) || 0)),
-    itemStyle: { color: palette[i % palette.length] },
+    itemStyle: { color: palette.value[i % palette.value.length] },
     label: { show: false },
   }));
 };
@@ -312,7 +315,7 @@ const baseTooltip = computed(() => ({
 const chartOption = computed(() => {
   if (viewMode.value === 'funnel') {
     return {
-      color: palette,
+      color: palette.value,
       tooltip: { ...baseTooltip.value, formatter: p => `${p.name}<br/><b>${p.value}</b> lead(s)` },
       legend: { show: false },
       series: [{
@@ -338,7 +341,7 @@ const chartOption = computed(() => {
       : makeStackedSeries(xKeys, l => dateKey(l.data_cad));
 
     return {
-      color: palette,
+      color: palette.value,
       tooltip: { trigger: 'axis', confine: true, axisPointer: { type: 'shadow' },
         extraCssText: 'max-width:320px; white-space:normal; font-size:12px; line-height:1.2; padding:6px 8px;' },
       legend: { type: 'scroll', textStyle: { color: txt.value, fontSize: 11 } },
@@ -358,7 +361,7 @@ const chartOption = computed(() => {
       : pieLevel.value === 'broker' ? 'Comparação entre Imobiliárias'
         : 'Comparação entre Corretores';
     return {
-      color: palette,
+      color: palette.value,
       title: { left: 'center', text: 'Distribuição de Leads', subtext: subtitle,
         textStyle: { fontSize: 14, color: txt.value }, subtextStyle: { color: sub.value } },
       tooltip: { ...baseTooltip.value, formatter: p => `${p.name}<br/><b>${p.value}</b> lead(s) (${p.percent}%)` },

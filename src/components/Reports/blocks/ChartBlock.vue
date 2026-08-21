@@ -1,14 +1,15 @@
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount, inject } from 'vue'
+import { computed, inject } from 'vue'
 import VChart from 'vue-echarts'
 import * as echarts from 'echarts/core'
 import { BarChart, PieChart, LineChart } from 'echarts/charts'
 import { GridComponent, TooltipComponent, LegendComponent, MarkLineComponent } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
 import { formatValue } from '../format.js'
-import { themePalette, seriesColor } from '../themes.js'
+import { themePalette, seriesColor, seriesFill } from '../themes.js'
 import { inlineMd } from '../mdInline.js'
 import BlockEmpty from './BlockEmpty.vue'
+import { useChartTheme } from '@/composables/useChartTheme'
 
 echarts.use([BarChart, PieChart, LineChart, GridComponent, TooltipComponent, LegendComponent, MarkLineComponent, CanvasRenderer])
 
@@ -42,15 +43,29 @@ function onChartClick(params) {
 // Tema injetado pelo ReportRenderer (fallback: clássico, se usado solto)
 const reportTheme = inject('reportTheme', computed(() => 'classic'))
 
-const isDark = ref(typeof document !== 'undefined' && document.documentElement.classList.contains('dark'))
+const t = useChartTheme()
+const isDark = t.isDark
 
 // Paleta do tema, trocando para as variantes claras no dark mode.
 const PALETTE = computed(() => themePalette(reportTheme.value, isDark.value))
+// A mesma paleta um passo adiante, para o que preenche (ver seriesFill).
+const FILLS = computed(() => themePalette(reportTheme.value, !isDark.value))
 
 // Cor de cada série: `tone` semântico ('success'/'danger'/...) tem prioridade
 // sobre a paleta do tema. É o que permite a cor carregar INTENÇÃO — verde para
 // quem pagou antes do vencimento, vermelho para quem pagou depois — em vez de
 // só diferenciar séries entre si.
+// Cor de PREENCHIMENTO (barra, fatia). Ver `seriesFill` em themes.js: é o
+// passo vizinho da mesma matiz, e é o que tira o peso do tema claro.
+const seriesFills = computed(() =>
+  allSeries.value.map((s, i) => seriesFill({
+    tone: s.tone,
+    index: i,
+    themeKey: reportTheme.value,
+    dark: isDark.value,
+  }))
+)
+
 const seriesColors = computed(() =>
   allSeries.value.map((s, i) => seriesColor({
     tone: s.tone,
@@ -59,15 +74,6 @@ const seriesColors = computed(() =>
     dark: isDark.value,
   }))
 )
-let observer
-onMounted(() => {
-  observer = new MutationObserver(() => {
-    isDark.value = document.documentElement.classList.contains('dark')
-  })
-  observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
-})
-onBeforeUnmount(() => observer?.disconnect())
-
 const kind = computed(() => props.blockType.replace('chart-', ''))
 const allSeries = computed(() =>
   props.series.length ? props.series : [{ name: props.title || 'Total', data: props.data }]
@@ -83,22 +89,16 @@ const semDados = computed(() => {
 })
 
 const option = computed(() => {
-  const dark = isDark.value
-  const tooltip = {
-    backgroundColor: dark ? '#1e293b' : '#ffffff',
-    borderColor: dark ? '#334155' : '#e5e7eb',
-    textStyle: { color: dark ? '#e2e8f0' : '#1f2937', fontSize: 12 },
-    valueFormatter: (v) => fmt(v),
-  }
-  const labelClr = dark ? '#94a3b8' : '#6b7280'
-  const axisClr = dark ? '#64748b' : '#9ca3af'
-  const gridClr = dark ? '#1e293b' : '#f3f4f6'
-  const axisLineClr = dark ? '#1e293b' : '#e5e7eb'
+  // Tooltip, eixo e grade seguem o design system (o tema do relatório manda na
+  // COR DOS DADOS, não no cromo). Antes a grade saía quase preta no claro.
+  const tooltip = { ...t.tooltip.value, valueFormatter: (v) => fmt(v) }
+  const labelClr = t.inkMuted.value
+  const axisClr = t.inkSubtle.value
 
   if (kind.value === 'donut') {
     return {
       backgroundColor: 'transparent',
-      color: PALETTE.value,
+      color: FILLS.value,
       tooltip: { trigger: 'item', ...tooltip },
       legend: {
         orient: 'horizontal', bottom: 0,
@@ -110,7 +110,7 @@ const option = computed(() => {
         center: ['50%', '44%'],
         data: props.labels.map((l, i) => ({
           name: l ?? '-', value: allSeries.value[0]?.data?.[i] ?? 0,
-          itemStyle: { color: PALETTE.value[i % PALETTE.value.length], borderRadius: 4 },
+          itemStyle: { color: FILLS.value[i % FILLS.value.length], borderRadius: 4 },
         })),
         label: { show: false },
         emphasis: { scale: true, scaleSize: 6 },
@@ -122,16 +122,13 @@ const option = computed(() => {
   const catAxis = {
     type: 'category',
     data: props.labels,
-    axisLabel: { color: axisClr, fontSize: 10, interval: 0, overflow: 'truncate', width: 90, rotate: !props.horizontal && props.labels.length > 7 ? 35 : 0 },
-    axisLine: { lineStyle: { color: axisLineClr } },
-    axisTick: { show: false },
+    ...t.axisCategory.value,
+    axisLabel: { ...t.axisCategory.value.axisLabel, interval: 0, overflow: 'truncate', width: 90, rotate: !props.horizontal && props.labels.length > 7 ? 35 : 0 },
   }
   const valAxis = {
     type: 'value',
-    axisLabel: { color: axisClr, fontSize: 10, formatter: (v) => fmt(v) },
-    splitLine: { lineStyle: { color: gridClr, type: 'dashed' } },
-    axisLine: { show: false },
-    axisTick: { show: false },
+    ...t.axisValue.value,
+    axisLabel: { ...t.axisValue.value.axisLabel, formatter: (v) => fmt(v) },
   }
 
   // Em barra empilhada por faixa (uma série por categoria, zeros no resto), o
@@ -171,9 +168,11 @@ const option = computed(() => {
         : undefined,
       data: s.data,
       barMaxWidth: 42,
+      // Linha é marca (traço fino, tom forte); barra é área (tom vizinho).
       itemStyle: isLine
         ? { color: seriesColors.value[si] }
-        : { borderRadius: props.horizontal ? [0, 5, 5, 0] : [5, 5, 0, 0], color: seriesColors.value[si] },
+        : { borderRadius: props.horizontal ? [0, 5, 5, 0] : [5, 5, 0, 0], color: seriesFills.value[si] },
+      emphasis: isLine ? undefined : { focus: 'series', itemStyle: { color: seriesColors.value[si] } },
       lineStyle: isLine ? { color: seriesColors.value[si] } : undefined,
       label: allSeries.value.length === 1 && (s.data?.length ?? 0) <= 12 && !isLine
         ? { show: true, position: props.horizontal ? 'right' : 'top', color: labelClr, fontSize: 10, formatter: (p) => fmt(p.value) }
@@ -181,8 +180,8 @@ const option = computed(() => {
       markLine: si === 0 && props.goal != null
         ? {
             symbol: 'none',
-            lineStyle: { color: '#f59e0b', type: 'dashed' },
-            label: { color: '#f59e0b', fontSize: 10, formatter: () => `Meta ${fmt(props.goal)}` },
+            lineStyle: { color: t.warn.value, type: 'dashed' },
+            label: { color: t.warn.value, fontSize: 10, formatter: () => `Meta ${fmt(props.goal)}` },
             data: [props.horizontal ? { xAxis: props.goal } : { yAxis: props.goal }],
           }
         : undefined,
@@ -205,7 +204,7 @@ const option = computed(() => {
     </figcaption>
     <VChart :option="option" autoresize class="w-full px-2" :style="{ height: height + 'px' }" @click="onChartClick" />
     <p v-if="captionHtml" class="px-4 pb-3 text-xs text-ink-subtle" v-html="captionHtml" />
-    <p v-if="clickable" class="px-4 pb-3 -mt-1 text-[10px] text-ink-subtle flex items-center gap-1">
+    <p v-if="clickable" class="px-4 pb-3 -mt-1 text-micro text-ink-subtle flex items-center gap-1">
       <i class="fas fa-hand-pointer" aria-hidden="true" />Toque num item para ver os registros
     </p>
   </figure>

@@ -78,6 +78,7 @@
 </template>
 
 <script setup>
+import { useChartTheme } from '@/composables/useChartTheme';
 import { onMounted, watch, computed, ref } from 'vue'
 import { useLeadsStore } from '@/stores/Marketing/Lead/leadsStore'
 import VChart from 'vue-echarts'
@@ -545,21 +546,22 @@ const progressPct = computed(() => {
 })
 
 // ================== ECharts (estilo consistente) ==================
+// Um observer de tema para o app inteiro; eixo, grade e tooltip vêm prontos.
+// Antes este painel tinha paleta ESCURA cravada: no tema claro a grade saía
+// quase preta e o tooltip, um bloco preto.
+const t = useChartTheme();
+
 const chartOption = computed(() => {
-    const primaryColor = '#6366F1'
-    const secondaryColor = '#24295F'
 
     return {
         animationDuration: 400,
         grid: { left: 6, right: 8, top: 24, bottom: 8, containLabel: true },
-        legend: { top: 0, textStyle: { color: '#9CA3AF', fontSize: 10 } },
+        legend: { ...t.legend.value, top: 0 },
         // 🔁 CHANGE — apenas o formatter do tooltip
         tooltip: {
             trigger: 'axis',
             axisPointer: { type: 'shadow' },
-            backgroundColor: '#111827',
-            borderWidth: 0,
-            textStyle: { color: '#f4f4f4' },
+            ...t.tooltip.value,
             formatter: (params) => {
                 const idx = params?.[0]?.dataIndex ?? 0
                 const head = `<div style="font-weight:700;margin-bottom:4px">${params?.[0]?.axisValueLabel ?? ''}</div>`
@@ -579,20 +581,15 @@ const chartOption = computed(() => {
         xAxis: {
             type: 'category',
             data: categories.value,
-            axisLabel: { color: '#9CA3AF', fontSize: 10 },
-            axisLine: { lineStyle: { color: '#212121' } },
-            axisTick: { show: false }
+            ...t.axisCategory.value
         },
         yAxis: {
             type: 'value',
-            axisLabel: { color: '#9CA3AF', fontSize: 10 },
-            splitLine: { lineStyle: { color: '#212121' } },
-            axisLine: { show: false },
-            axisTick: { show: false }
+            ...t.axisValue.value
         },
         series: [
-            { name: legend.value.this, type: 'bar', data: leadsThis.value, barMaxWidth: 42, itemStyle: { color: primaryColor, borderRadius: [4, 4, 0, 0] }, emphasis: { focus: 'series' } },
-            { name: legend.value.prev, type: 'bar', data: leadsPrev.value, barMaxWidth: 42, itemStyle: { color: secondaryColor, borderRadius: [4, 4, 0, 0] }, emphasis: { focus: 'series' } }
+            { name: legend.value.this, type: 'bar', data: leadsThis.value, barMaxWidth: 42, itemStyle: { color: t.fill(1), borderRadius: [4, 4, 0, 0] }, emphasis: { focus: 'series' } },
+            { name: legend.value.prev, type: 'bar', data: leadsPrev.value, barMaxWidth: 42, itemStyle: { color: t.fill(2), borderRadius: [4, 4, 0, 0] }, emphasis: { focus: 'series' } }
         ],
         media: [
             { query: { maxWidth: 480 }, option: { grid: { left: 2, right: 2, top: 24, bottom: 6, containLabel: true }, xAxis: { axisLabel: { fontSize: 9, rotate: 30, margin: 3 } }, yAxis: { axisLabel: { fontSize: 9 } }, series: [{ barMaxWidth: 30 }, { barMaxWidth: 30 }] } },
