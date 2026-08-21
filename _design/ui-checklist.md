@@ -170,10 +170,10 @@ Score 95+. Já são referência. Só revalidar depois que os primitivos novos ex
       <sub>views/Office/Checklist/Index.vue · 3017L (+14 comp.) · 3 cor fixa, 18 texto micro, 1 tabela</sub>
 - [ ] **Cancelamentos CV × Sienge** `/cancelamento-reservas` · ` 96`
       <sub>views/Office/Comercial/CancelamentoReservas/Index.vue · 1175L (+1 comp.) · 27 texto micro, 1 tabela</sub>
+- [ ] **Reservas** `/reservas-report` · ` 97`
+      <sub>views/Office/Comercial/Reservas/Index.vue · 982L (+1 comp.) · 8 cor fixa, 1 tabela</sub>
 - [ ] **Pré-Cadastros** `/precadastros` · ` 98`
       <sub>views/Office/Comercial/Precadastros/Index.vue · 992L (+2 comp.) · 5 cor fixa, 1 tabela</sub>
-- [ ] **Reservas** `/reservas-report` · ` 98`
-      <sub>views/Office/Comercial/Reservas/Index.vue · 910L (+1 comp.) · 6 cor fixa, 1 tabela</sub>
 - [ ] **Relatorios** `/relatorios` · ` 98`
       <sub>views/Office/Comercial/Relatorios/Shell.vue · 698L (+9 comp.) · 11 texto micro, 1 tabela</sub>
 - [ ] **Consulta de nº CEF** `/consulta-cef` · ` 98`
@@ -189,12 +189,12 @@ Score 95+. Já são referência. Só revalidar depois que os primitivos novos ex
 
 - [ ] **Sincronização de empresas** `/empresas` · ` 96`
       <sub>views/Office/Settings/OrgSync/Index.vue · 724L · 6 cor fixa, 12 texto micro, 1 tabela</sub>
-- [ ] **Alçadas** `/permissions` · ` 98`
-      <sub>views/Office/Settings/Permissions/Index.vue · 1411L (+2 comp.) · 11 texto micro</sub>
 - [ ] **Backup Sienge** `/backup-sienge` · ` 99`
       <sub>views/Office/Settings/BackupSienge/Index.vue · 1010L (+2 comp.) · 6 texto micro, 1 tabela</sub>
 - [ ] **Integridade** `/integrity` · `100`
       <sub>views/Office/Settings/Integrity/Index.vue · 228L · ok</sub>
+- [ ] **Alçadas** `/permissions` · `100`
+      <sub>views/Office/Settings/Permissions/Index.vue · 2115L (+4 comp.) · ok</sub>
 
 ### Ferramenta · parte do DESKTOP <sub>(mais usada por analistas e administrativo)</sub>
 
@@ -224,9 +224,9 @@ Não seguem o esqueleto de página por natureza (login, shell, home da Eme, inst
 - [ ] **Relatório Público** `/r/:token` · `--`
       <sub>views/Public/ReportPublic.vue · 397L · sem container, sem header, sem help, 2 texto micro</sub>
 - [ ] **Config** `/` · `--`
-      <sub>views/Office/Config/OfficeShell.vue · 158L (+2 comp.) · sem container, sem header, sem help, 1 gráfico</sub>
+      <sub>views/Office/Config/OfficeShell.vue · 212L (+2 comp.) · sem container, sem header, sem help, 1 gráfico</sub>
 - [ ] **Home**  · `--`
-      <sub>views/Office/Home.vue · 56190L (+197 comp.) · sem container, sem header, sem help, 763 cor fixa, 860 texto micro, 7 gráfico, 23 tabela sem mobile</sub>
+      <sub>views/Office/Home.vue · 56610L (+199 comp.) · sem container, sem header, sem help, 765 cor fixa, 858 texto micro, 7 gráfico, 23 tabela sem mobile</sub>
 - [ ] **layouts** `/academy` · `--`
       <sub>views/Academy/layouts/AcademyOfficeArea.vue · 483L (+3 comp.) · sem container, sem header, sem help, 129 cor fixa</sub>
 

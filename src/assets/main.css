@@ -180,6 +180,42 @@
     @apply outline-none ring-0 focus-visible:ring-2 focus-visible:ring-accent-ring/40 focus-visible:ring-offset-1 focus-visible:ring-offset-surface;
   }
 
+  /* Caixa de seleção.
+     ────────────────────────────────────────────────────────────────────────
+     O checkbox nativo pinta o QUADRO com a cor do sistema operacional e só
+     obedece `accent-color` quando está MARCADO. No tema escuro isso vira um
+     bloco branco sólido no meio do painel - foi o que apareceu na seleção em
+     lote das Alçadas.
+
+     Aqui o quadro é desenhado com os tokens do sistema (superfície, linha,
+     acento) e o "v" é um SVG embutido, então ele segue o tema nos dois lados.
+
+     Não existe primitivo `Checkbox` no Office e 53 arquivos usam o input cru:
+     esta classe é o caminho de migração deles, um a um, sem varredura. */
+  .checkbox {
+    @apply appearance-none shrink-0 h-4 w-4 rounded
+           border border-line-strong bg-surface-raised
+           cursor-pointer transition-colors duration-120
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ring/40;
+  }
+  .checkbox:hover {
+    @apply border-accent/60;
+  }
+  .checkbox:checked {
+    @apply bg-accent border-accent;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='3.5,8.5 6.5,11.5 12.5,4.5'/%3E%3C/svg%3E");
+    background-size: 100% 100%;
+    background-position: center;
+    background-repeat: no-repeat;
+  }
+  .checkbox:disabled {
+    @apply opacity-50 cursor-not-allowed;
+  }
+  /* variante miúda, para cabeçalho de lista */
+  .checkbox-sm {
+    @apply h-3.5 w-3.5;
+  }
+
   /* surface card padrão */
   .surface-card {
     @apply bg-surface-raised border border-line rounded-xl shadow-soft;

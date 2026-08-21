@@ -870,7 +870,7 @@ onMounted(carregarTudo);
                 class="inline-flex items-center gap-1.5 h-7 px-2 rounded-md cursor-pointer
                        text-micro text-ink-muted hover:text-ink hover:bg-surface-sunken
                        transition-colors duration-120">
-                <input type="checkbox" class="accent-accent h-3.5 w-3.5"
+                <input type="checkbox" class="checkbox checkbox-sm"
                   :checked="todosSelecionados" @change="alternarTodosVisiveis" />
                 {{ todosSelecionados ? 'Nenhum' : `Todos (${selecionaveis.length})` }}
               </label>
@@ -904,7 +904,7 @@ onMounted(carregarTudo);
                 <label v-if="u.role !== 'admin'"
                   class="pl-3 pr-1 py-2.5 self-stretch flex items-center cursor-pointer"
                   :title="selecionados.has(u.id) ? 'Tirar da seleção' : 'Selecionar para ação em lote'">
-                  <input type="checkbox" class="accent-accent h-4 w-4"
+                  <input type="checkbox" class="checkbox"
                     :checked="selecionados.has(u.id)"
                     @change="alternarSelecao(u)" />
                 </label>

@@ -3198,6 +3198,49 @@
     },
     {
       "routes": [
+        "reservas-report"
+      ],
+      "name": "Reservas",
+      "file": "views/Office/Comercial/Reservas/Index.vue",
+      "group": "",
+      "cat": "",
+      "sub": "",
+      "lines": 608,
+      "pageContainer": true,
+      "pageHeader": true,
+      "pageHelp": true,
+      "hardcoded": 0,
+      "tinyText": 0,
+      "badShadow": 0,
+      "handModal": 0,
+      "table": false,
+      "tableMobile": true,
+      "chart": false,
+      "spinner": true,
+      "skeleton": true,
+      "breakpoints": 13,
+      "divClick": 0,
+      "kids": [
+        {
+          "file": "views/Office/Comercial/Reservas/components/ReservaDetailModal.vue",
+          "lines": 374,
+          "hardcoded": 8,
+          "tinyText": 0,
+          "chart": false,
+          "table": true,
+          "tableMobile": true
+        }
+      ],
+      "totalLines": 982,
+      "totalHardcoded": 8,
+      "totalTiny": 0,
+      "totalCharts": 0,
+      "totalTables": 1,
+      "archetype": "Operação",
+      "score": 97
+    },
+    {
+      "routes": [
         "precadastros"
       ],
       "name": "Pré-Cadastros",
@@ -3242,49 +3285,6 @@
       ],
       "totalLines": 992,
       "totalHardcoded": 5,
-      "totalTiny": 0,
-      "totalCharts": 0,
-      "totalTables": 1,
-      "archetype": "Operação",
-      "score": 98
-    },
-    {
-      "routes": [
-        "reservas-report"
-      ],
-      "name": "Reservas",
-      "file": "views/Office/Comercial/Reservas/Index.vue",
-      "group": "",
-      "cat": "",
-      "sub": "",
-      "lines": 561,
-      "pageContainer": true,
-      "pageHeader": true,
-      "pageHelp": true,
-      "hardcoded": 0,
-      "tinyText": 0,
-      "badShadow": 0,
-      "handModal": 0,
-      "table": false,
-      "tableMobile": true,
-      "chart": false,
-      "spinner": true,
-      "skeleton": true,
-      "breakpoints": 13,
-      "divClick": 0,
-      "kids": [
-        {
-          "file": "views/Office/Comercial/Reservas/components/ReservaDetailModal.vue",
-          "lines": 349,
-          "hardcoded": 6,
-          "tinyText": 0,
-          "chart": false,
-          "table": true,
-          "tableMobile": true
-        }
-      ],
-      "totalLines": 910,
-      "totalHardcoded": 6,
       "totalTiny": 0,
       "totalCharts": 0,
       "totalTables": 1,
@@ -3437,58 +3437,6 @@
       "totalCharts": 0,
       "totalTables": 1,
       "archetype": "Operação",
-      "score": 98
-    },
-    {
-      "routes": [
-        "permissions"
-      ],
-      "name": "Alçadas",
-      "file": "views/Office/Settings/Permissions/Index.vue",
-      "group": "",
-      "cat": "",
-      "sub": "",
-      "lines": 995,
-      "pageContainer": true,
-      "pageHeader": true,
-      "pageHelp": true,
-      "hardcoded": 0,
-      "tinyText": 9,
-      "badShadow": 0,
-      "handModal": 0,
-      "table": false,
-      "tableMobile": true,
-      "chart": false,
-      "spinner": false,
-      "skeleton": false,
-      "breakpoints": 14,
-      "divClick": 0,
-      "kids": [
-        {
-          "file": "views/Office/Settings/Permissions/DepartmentVisibilityPanel.vue",
-          "lines": 168,
-          "hardcoded": 0,
-          "tinyText": 0,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Settings/Permissions/GrantsModal.vue",
-          "lines": 248,
-          "hardcoded": 0,
-          "tinyText": 2,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        }
-      ],
-      "totalLines": 1411,
-      "totalHardcoded": 0,
-      "totalTiny": 11,
-      "totalCharts": 0,
-      "totalTables": 0,
-      "archetype": "Configuração",
       "score": 98
     },
     {
@@ -4054,6 +4002,76 @@
     },
     {
       "routes": [
+        "permissions"
+      ],
+      "name": "Alçadas",
+      "file": "views/Office/Settings/Permissions/Index.vue",
+      "group": "",
+      "cat": "",
+      "sub": "",
+      "lines": 1304,
+      "pageContainer": true,
+      "pageHeader": true,
+      "pageHelp": true,
+      "hardcoded": 0,
+      "tinyText": 0,
+      "badShadow": 0,
+      "handModal": 0,
+      "table": false,
+      "tableMobile": true,
+      "chart": false,
+      "spinner": false,
+      "skeleton": true,
+      "breakpoints": 29,
+      "divClick": 0,
+      "kids": [
+        {
+          "file": "views/Office/Settings/Permissions/DepartmentVisibilityPanel.vue",
+          "lines": 168,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Settings/Permissions/GrantsModal.vue",
+          "lines": 360,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Settings/Permissions/RouteMatrix.vue",
+          "lines": 88,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Settings/Permissions/ScreensTab.vue",
+          "lines": 195,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        }
+      ],
+      "totalLines": 2115,
+      "totalHardcoded": 0,
+      "totalTiny": 0,
+      "totalCharts": 0,
+      "totalTables": 0,
+      "archetype": "Configuração",
+      "score": 100
+    },
+    {
+      "routes": [
         "sobre"
       ],
       "name": "Mapa do Sistema",
@@ -4193,7 +4211,7 @@
       "group": "",
       "cat": "",
       "sub": "",
-      "lines": 51,
+      "lines": 105,
       "pageContainer": false,
       "pageHeader": false,
       "pageHelp": false,
@@ -4206,7 +4224,7 @@
       "chart": false,
       "spinner": false,
       "skeleton": false,
-      "breakpoints": 5,
+      "breakpoints": 10,
       "divClick": 0,
       "kids": [
         {
@@ -4228,7 +4246,7 @@
           "tableMobile": false
         }
       ],
-      "totalLines": 158,
+      "totalLines": 212,
       "totalHardcoded": 0,
       "totalTiny": 0,
       "totalCharts": 1,
@@ -4839,8 +4857,8 @@
         },
         {
           "file": "views/Office/Comercial/Reservas/components/ReservaDetailModal.vue",
-          "lines": 349,
-          "hardcoded": 6,
+          "lines": 374,
+          "hardcoded": 8,
           "tinyText": 0,
           "chart": false,
           "table": true,
@@ -5865,9 +5883,27 @@
         },
         {
           "file": "views/Office/Settings/Permissions/GrantsModal.vue",
-          "lines": 248,
+          "lines": 360,
           "hardcoded": 0,
-          "tinyText": 2,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Settings/Permissions/RouteMatrix.vue",
+          "lines": 88,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Settings/Permissions/ScreensTab.vue",
+          "lines": 195,
+          "hardcoded": 0,
+          "tinyText": 0,
           "chart": false,
           "table": false,
           "tableMobile": false
@@ -6035,9 +6071,9 @@
           "tableMobile": false
         }
       ],
-      "totalLines": 56190,
-      "totalHardcoded": 763,
-      "totalTiny": 860,
+      "totalLines": 56610,
+      "totalHardcoded": 765,
+      "totalTiny": 858,
       "totalCharts": 7,
       "totalTables": 23,
       "archetype": "Especial",
