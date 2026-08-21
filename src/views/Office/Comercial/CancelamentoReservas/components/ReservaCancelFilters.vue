@@ -17,6 +17,7 @@ const store = useReservaCancelStore();
 const STATUS_OPTIONS = [
   { value: 'success',    label: 'Sucesso' },
   { value: 'blocked',    label: 'Pendência' },
+  { value: 'held',       label: 'Retido (rajada)' },
   { value: 'error',      label: 'Erro' },
   { value: 'processing', label: 'Processando' },
   { value: 'skipped',    label: 'Não aplicável' },
