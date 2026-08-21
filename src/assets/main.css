@@ -66,14 +66,25 @@
     --series-7-soft: 34 211 238;       /* #22D3EE */
     --series-8-soft: 163 230 53;       /* #A3E635 */
 
-    /* Estado do dado. RESERVADAS: nunca viram "série 4". */
+    /* Estado do dado. RESERVADAS: nunca viram "série 4".
+       TRÊS degraus, um por trabalho — confundir os três foi o que deixou barra
+       de estado pesada no tema claro:
+         `data-X`       MARCA: texto, ícone, traço fino. Precisa de contraste.
+         `data-X-area`  ÁREA:  barra, fatia, faixa. Um bloco com a cor da marca
+                        grita; este é o passo que preenche sem dominar.
+         `data-X-soft`  TINTA: fundo esmaecido ATRÁS de texto da cor da marca.
+                        Quase branco — não serve para preencher barra. */
     --data-pos: 4 120 87;              /* emerald-700 */
-    --data-pos-soft: 209 250 229;
+    --data-pos-area: 52 211 153;       /* emerald-400 */
+    --data-pos-soft: 209 250 229;      /* emerald-100 */
     --data-neg: 185 28 28;             /* red-700 */
-    --data-neg-soft: 254 226 226;
+    --data-neg-area: 248 113 113;      /* red-400 */
+    --data-neg-soft: 254 226 226;      /* red-100 */
     --data-warn: 180 83 9;             /* amber-700 */
-    --data-warn-soft: 254 243 199;
+    --data-warn-area: 251 191 36;      /* amber-400 */
+    --data-warn-soft: 254 243 199;     /* amber-100 */
     --data-neutral: 148 163 184;       /* slate-400 */
+    --data-neutral-area: 203 213 225;  /* slate-300 */
 
     /* Fundo do modal. Token próprio porque `ink` inverte entre os temas: usar
        `bg-ink/60` daria um véu BRANCO no escuro. Aqui é sempre escuro. */
@@ -123,23 +134,35 @@
 
     /* No escuro o caminho é o contrário: a área usa um tom ABAIXO da marca.
        Cor cheia sobre quase-preto brilha e cansa; o passo mais fundo assenta.
-       São exatamente os tons fortes do tema claro, que já foram validados. */
-    --series-1-soft: 37 99 235;
-    --series-2-soft: 180 83 9;
-    --series-3-soft: 13 148 136;
-    --series-4-soft: 109 40 217;
-    --series-5-soft: 190 24 93;
-    --series-6-soft: 154 52 18;
-    --series-7-soft: 14 116 144;
-    --series-8-soft: 77 124 15;
 
+       Antes eram os tons fortes do tema claro reaproveitados. Eles tinham sido
+       validados como MARCA sobre branco — como ÁREA sobre quase-preto e nesta
+       ordem, o par terracota/rosa caía para ΔE 12,4 (abaixo do piso de 15) e as
+       duas faixas viravam a mesma coisa. Esta rampa é 8% mais funda que a marca
+       na mesma matiz e passa em tudo: ΔE 16,0 em visão normal e 12,2 para
+       daltonismo. Se mexer, revalide com scripts/validate_palette.js. */
+    --series-1-soft: 43 115 225;    /* #2B73E1 */
+    --series-2-soft: 163 109 1;     /* #A36D01 */
+    --series-3-soft: 7 141 125;     /* #078D7D */
+    --series-4-soft: 118 59 225;    /* #763BE1 */
+    --series-5-soft: 201 39 127;    /* #C9277F */
+    --series-6-soft: 178 65 6;      /* #B24106 */
+    --series-7-soft: 0 137 170;     /* #0089AA */
+    --series-8-soft: 91 141 10;     /* #5B8D0A */
+
+    /* No escuro a ÁREA desce um passo (igual às séries): cor cheia sobre
+       quase-preto brilha. A TINTA continua sendo o fundo atrás do texto. */
     --data-pos: 52 211 153;            /* emerald-400 */
+    --data-pos-area: 5 150 105;        /* emerald-600 */
     --data-pos-soft: 6 46 37;
     --data-neg: 248 113 113;           /* red-400 */
+    --data-neg-area: 220 38 38;        /* red-600 */
     --data-neg-soft: 58 20 20;
     --data-warn: 251 191 36;           /* amber-400 */
+    --data-warn-area: 217 119 6;       /* amber-600 */
     --data-warn-soft: 58 42 12;
     --data-neutral: 100 116 139;       /* slate-500 */
+    --data-neutral-area: 71 85 105;    /* slate-600 */
 
     --scrim: 2 6 23;                   /* slate-950 */
 

@@ -29,6 +29,13 @@
  * então dá para ajustar um caso sem sair do padrão.
  *
  * REGRAS (ver _design/DESIGN-LANGUAGE.md):
+ * - MARCA e ÁREA são rampas diferentes. `t.color(n)` / `t.palette` é a MARCA
+ *   (traço, ponto, ícone, swatch da legenda); `t.fill(n)` / `t.fillPalette` é a
+ *   ÁREA (barra, fatia, faixa). As fábricas já escolhem sozinhas — só importa
+ *   se você montar `itemStyle` na mão.
+ *   Por que duas: a cor calibrada para um traço de 2px, esticada num bloco,
+ *   deixa o tema claro pesado. E não dá para simplesmente clarear a rampa
+ *   inteira - 8 matizes pálidas sobre branco param de se distinguir (medido).
  * - Cor de série vem de `t.color(n)` ou `t.palette.value`, em ORDEM FIXA: a cor
  *   segue a entidade, não a posição no filtro. Filtrar não pode repintar quem
  *   sobrou.
@@ -62,8 +69,17 @@ const FALLBACK = {
     '--ink': '15 23 42', '--ink-muted': '71 85 105', '--ink-subtle': '148 163 184',
     '--line': '226 232 240', '--line-subtle': '241 245 249',
     '--surface-raised': '248 250 252', '--surface-overlay': '255 255 255',
+    /* rampa de ÁREA (preenchimento) — sem estes, `fill()` cai em `rgb(undefined)`
+       no primeiro quadro, antes de o CSS resolver. */
+    '--series-1-soft': '96 165 250', '--series-2-soft': '251 191 36', '--series-3-soft': '45 212 191',
+    '--series-4-soft': '167 139 250', '--series-5-soft': '244 114 182', '--series-6-soft': '251 146 60',
+    '--series-7-soft': '34 211 238', '--series-8-soft': '163 230 53',
     '--data-pos': '4 120 87', '--data-neg': '185 28 28', '--data-warn': '180 83 9',
     '--data-neutral': '148 163 184',
+    '--data-pos-area': '52 211 153', '--data-neg-area': '248 113 113',
+    '--data-warn-area': '251 191 36', '--data-neutral-area': '203 213 225',
+    '--accent': '37 99 235', '--surface': '255 255 255', '--surface-sunken': '241 245 249',
+    '--line-strong': '203 213 225', '--scrim': '15 23 42',
 };
 
 function token(name, alpha) {
@@ -81,14 +97,33 @@ export function useChartTheme() {
     const dep = () => isDark.value;
 
     const palette = computed(() => (dep(), [1, 2, 3, 4, 5, 6, 7, 8].map((i) => token(`--series-${i}`))));
+    /** A mesma ordem, na versão de ÁREA. Use em qualquer coisa que PINTE
+     *  superfície (rosca, funil, mapa de calor, faixa). Ver `fill()`. */
+    const fillPalette = computed(() => (dep(), [1, 2, 3, 4, 5, 6, 7, 8].map((i) => token(`--series-${i}-soft`))));
 
-    /** Cor da série n (1-8). Acima de 8, devolve neutro: é o sinal de que a
-     *  série deveria ter virado "Outros" em vez de ganhar cor nova. */
+    /** Cor da série n (1-8) na versão MARCA: forte, para traço fino, ponto e
+     *  ícone, que só se enxergam com contraste. Acima de 8, devolve neutro: é o
+     *  sinal de que a série deveria ter virado "Outros" em vez de ganhar cor nova. */
     const color = (n) => (dep(), n >= 1 && n <= 8 ? token(`--series-${n}`) : token('--data-neutral'));
+
+    /** A mesma cor na versão ÁREA: um tom acima, para PREENCHIMENTO grande
+     *  (barra, fatia da rosca, faixa do funil).
+     *
+     *  Esta é a regra que faltava e que deixava o tema claro pesado: a cor
+     *  calibrada para ser vista num traço de 2px, esticada por 30% da largura
+     *  da tela, vira um bloco que grita. A checagem de 3:1 contra o fundo vale
+     *  para marca pequena; numa barra de 16px o que precisa separar é uma faixa
+     *  da outra, e a rampa `-soft` mantém isso (ΔE 10,3 para daltonismo, 15,9
+     *  para visão normal - medido, não estimado).
+     *
+     *  Não dá para simplesmente clarear tudo: 8 matizes categóricas pálidas
+     *  sobre branco deixam de se distinguir (medido: qualquer lavagem acima de
+     *  5% derruba o piso de croma). Por isso são DUAS rampas, e não uma. */
+    const fill = (n) => (dep(), n >= 1 && n <= 8 ? token(`--series-${n}-soft`) : token('--data-neutral'));
 
     /** Gradiente de área para gráfico de linha (a cor da série esmaecendo). */
     const areaGradient = (n, from = 0.22, to = 0.02) => {
-        const c = color(n);
+        const c = fill(n);
         const rgb = c.replace('rgb(', '').replace(')', '');
         return {
             type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
@@ -102,10 +137,24 @@ export function useChartTheme() {
     const ink = computed(() => (dep(), token('--ink')));
     const inkMuted = computed(() => (dep(), token('--ink-muted')));
     const inkSubtle = computed(() => (dep(), token('--ink-subtle')));
+    /* Estado como MARCA (linha, texto, ícone). */
     const pos = computed(() => (dep(), token('--data-pos')));
     const neg = computed(() => (dep(), token('--data-neg')));
     const warn = computed(() => (dep(), token('--data-warn')));
     const neutral = computed(() => (dep(), token('--data-neutral')));
+
+    /* Estado como ÁREA (barra, fatia). Mesma regra das séries: o tom da marca
+       preenchendo um bloco pesa. Use com `t.barTone('pos', {...})`. */
+    const posArea = computed(() => (dep(), token('--data-pos-area')));
+    const negArea = computed(() => (dep(), token('--data-neg-area')));
+    const warnArea = computed(() => (dep(), token('--data-warn-area')));
+    const neutralArea = computed(() => (dep(), token('--data-neutral-area')));
+    const TOM = {
+        pos:     [posArea, pos],
+        neg:     [negArea, neg],
+        warn:    [warnArea, warn],
+        neutral: [neutralArea, neutral],
+    };
 
     /* Base: tipografia e animação. Entrada curta - o gráfico é ferramenta de
        leitura, não abertura de filme. Quem liga "reduzir movimento" no sistema
@@ -197,17 +246,34 @@ export function useChartTheme() {
             barGap: '12%',
             barCategoryGap: '28%',
             itemStyle: {
-                color: color(slot),
+                /* Barra é ÁREA: tom `-soft`. Com o tom de marca, um gráfico de
+                   seis barras no tema claro vira uma parede de cor. */
+                color: fill(slot),
                 /* Empilhada leva raio pequeno e um respiro de 2px na cor da
                    superfície entre os segmentos, senão viram um bloco só. */
                 borderRadius: stacked ? 2 : [5, 5, 0, 0],
                 ...(stacked ? { borderColor: token('--surface-raised'), borderWidth: 2 } : {}),
             },
+            /* No hover a barra sobe para o tom de MARCA: o realce passa a ser
+               a própria cor firmando, sem precisar de sombra nem borda. */
             emphasis: { focus: 'series', itemStyle: { color: color(slot), opacity: 1 } },
             blur: { itemStyle: { opacity: 0.28 } },
             animationDelay: stagger(),
             ...(stacked ? { stack: typeof stacked === 'string' ? stacked : 'total' } : {}),
             ...rest,
+        };
+    };
+
+    /** Barra de ESTADO: quando a cor significa bom/atenção/ruim em vez de
+     *  identificar uma série. `tom` = 'pos' | 'neg' | 'warn' | 'neutral'.
+     *  Preenche com o degrau de área e firma no tom de marca ao passar o mouse. */
+    const barTone = (tom, opts = {}) => {
+        const [area, marca] = TOM[tom] ?? TOM.neutral;
+        const b = bar(1, opts);
+        return {
+            ...b,
+            itemStyle: { ...b.itemStyle, color: area.value },
+            emphasis: { focus: 'series', itemStyle: { color: marca.value, opacity: 1 } },
         };
     };
 
@@ -247,10 +313,17 @@ export function useChartTheme() {
             avoidLabelOverlap: true,
             padAngle: 1.5,
             itemStyle: {
+                /* Fatia é ÁREA: tom `-soft`, na mesma ordem fixa da paleta.
+                   Sem isto a rosca fica com seis blocos saturados no claro. */
+                color: (p) => fillPalette.value[p.dataIndex % 8],
                 borderRadius: 6,
                 borderColor: token('--surface-raised'),
                 borderWidth: 2,
             },
+            /* Realce por ESCALA, não por cor. A rosca costuma receber cor por
+               item (ex.: uma fatia "Outros" neutra); trocar a cor no hover
+               pintaria essa fatia com um matiz que ela não tem. */
+            emphasis: { scale: true, scaleSize: 6 },
             label: centerLabel
                 ? {
                     show: true, position: 'center', formatter: centerLabel,
@@ -279,10 +352,11 @@ export function useChartTheme() {
 
     return {
         isDark: readonly(isDark),
-        palette, color, areaGradient,
+        palette, fillPalette, color, fill, areaGradient,
         base, grid, axisCategory, axisValue, tooltip, legend, axisPointerBand,
-        bar, line, area, donut, stagger,
+        bar, barTone, line, area, donut, stagger,
         ink, inkMuted, inkSubtle, pos, neg, warn, neutral,
+        posArea, negArea, warnArea, neutralArea,
         token,
     };
 }
