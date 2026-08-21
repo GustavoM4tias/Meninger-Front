@@ -11,16 +11,17 @@
             storage-key="cancelamento-reservas"
             intro="Quando uma reserva é cancelada no CV, esta automação confere o contrato no Sienge e, somente se todas as validações de segurança passarem, exclui o contrato aguardando emissão, disponibiliza a unidade no CV e registra uma mensagem na reserva."
             :steps="[
-              { title: 'Acompanhe o Histórico', text: 'A lista mostra uma linha por RESERVA, com a situação mais recente: Sucesso (executado), Pendência (validação barrou, nada foi alterado - trate manualmente), Não aplicável, Duplicado ou Erro. Quando a reserva passou mais de uma vez pela automação, aparece o total de ocorrências ao lado do número do caso.' },
+              { title: 'Acompanhe o Histórico', text: 'A lista mostra uma linha por RESERVA, com a situação mais recente: Sucesso (executado), Pendência (validação barrou, nada foi alterado - trate manualmente), Retido (rajada), Não aplicável, Duplicado ou Erro. Quando a reserva passou mais de uma vez pela automação, aparece o total de ocorrências ao lado do número do caso.' },
               { title: 'Confira a etapa no CV', text: 'A coluna Etapa CV mostra a etapa atual da reserva e a do repasse, nas cores do workflow do CV. Clique na etapa para abrir a tela correspondente no CV.' },
               { title: 'Abra o detalhe', text: 'Clique em uma linha para ver as validações executadas (contrato, unidade, cliente, ato), a lista de ocorrências da reserva e a linha do tempo consolidada de todas elas.' },
               { title: 'Resolva pendências', text: 'Casos barrados movem a reserva para a etapa Pendência no CV. Resolva a causa e use Reprocessar (ou retorne a reserva para Cancelada no CV) - a automação refaz todas as conferências do zero antes de agir.' },
-              { title: 'Configurações', text: 'Copie o endereço do webhook para o CV, confira os IDs das etapas Pendência/Cancelada, ative a automação e, se precisar, processe uma reserva manualmente pelo ID.' },
+              { title: 'Configurações', text: 'Copie o endereço do webhook para o CV, confira os IDs das etapas Pendência/Cancelada, regule o freio de rajada (teto, janela e espera), ative a automação e, se precisar, processe uma reserva manualmente pelo ID.' },
             ]"
             :tips="[
               'A automação NUNCA exclui contrato emitido, com parcela paga ou com boleto de ato pendente/pago - esses casos viram pendência.',
               'Sucesso mantém a reserva em Cancelada; bloqueio/erro move para Pendência no CV. Assim, Cancelada só contém o que foi realmente cancelado nos dois sistemas.',
               'Com a automação pausada, os webhooks continuam sendo registrados e podem ser reprocessados depois.',
+              'Cancelamento em massa no CV aciona o freio de rajada: NENHUM caso da rajada roda, todos ficam Retido até você conferir a origem e reprocessar o que for legítimo.',
             ]" />
           <div v-if="store.settings" class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border"
             :class="store.settings.active
@@ -262,6 +263,68 @@
           <div v-if="store.settingsError"
             class="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-300">
             {{ store.settingsError }}
+          </div>
+        </Surface>
+
+        <!-- Card: Freio de rajada -->
+        <Surface variant="raised" padding="md" class="space-y-4 surface-gradient">
+          <div class="flex items-center gap-3">
+            <div class="h-9 w-9 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 grid place-items-center">
+              <i class="fas fa-shield-halved"></i>
+            </div>
+            <div>
+              <h2 class="font-semibold text-ink text-sm">Freio de rajada</h2>
+              <p class="text-xs text-ink-muted">
+                Cancelamento em massa no CV quase nunca é operação legítima. Quando o volume passa do teto,
+                <strong>nenhum</strong> caso da rajada é executado - todos ficam "Retido (rajada)" para conferência.
+              </p>
+            </div>
+          </div>
+
+          <Switch
+            :model-value="!!store.settings?.burst_guard_active"
+            label="Segurar cancelamentos em rajada"
+            :description="store.settings?.burst_guard_active
+              ? 'Ligado: passou do teto, nada é alterado no Sienge nem no CV até você conferir e reprocessar.'
+              : 'Desligado: cada cancelamento é processado assim que chega, sem olhar o volume.'"
+            :disabled="store.settingsLoading"
+            @update:model-value="handleToggleRajada" />
+
+          <Switch
+            :model-value="!!store.settings?.baixar_boleto_no_cancelamento"
+            label="Baixar o boleto do ato na hora do cancelamento"
+            :description="store.settings?.baixar_boleto_no_cancelamento
+              ? 'Ligado: o boleto pendente é baixado no Ecobrança junto com o cancelamento. Numa rajada, isso vira baixa em massa.'
+              : 'Desligado: o boleto pendente segue vivo até vencer, e a rotina diária o baixa pelo caminho normal. Até o vencimento o cliente ainda consegue pagar o ato.'"
+            :disabled="store.settingsLoading"
+            @update:model-value="handleToggleBaixaAto" />
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <Input v-model="rajadaForm.burst_max_cancels" type="number"
+              label="Teto de cancelamentos" placeholder="10"
+              hint="Acima disso na janela, a rajada inteira é retida." />
+            <Input v-model="rajadaForm.burst_window_seconds" type="number"
+              label="Janela (segundos)" placeholder="300"
+              hint="Período observado para contar os cancelamentos." />
+            <Input v-model="rajadaForm.burst_settle_seconds" type="number"
+              label="Espera antes de agir (segundos)" placeholder="15"
+              hint="Atrasa cada caso para ele enxergar a rajada inteira." />
+          </div>
+
+          <Surface variant="raised" padding="sm" class="border-amber-500/30 bg-amber-500/10">
+            <div class="flex items-start gap-2 text-xs text-amber-700 dark:text-amber-300">
+              <i class="fas fa-circle-info mt-0.5"></i>
+              <span>
+                A espera é o que garante que <strong>nenhum</strong> cancelamento passe: sem ela, os primeiros
+                webhooks da rajada já teriam sido executados antes do teto estourar. Com ela, cada caso aguarda,
+                enxerga o volume total e só então decide. Reprocessar pela tela sempre ignora o freio.
+              </span>
+            </div>
+          </Surface>
+
+          <div class="flex justify-end">
+            <Button variant="primary" size="sm" icon="fas fa-check" :loading="store.settingsLoading"
+              @click="handleSaveRajada">Salvar freio</Button>
           </div>
         </Surface>
 
@@ -628,7 +691,7 @@
           </span>
           <div class="flex items-center gap-2 ml-auto">
             <Button variant="ghost" @click="closeDetail">Fechar</Button>
-            <Button v-if="detail.item && ['blocked','error','skipped'].includes(detail.item.status)"
+            <Button v-if="detail.item && ['blocked','held','error','skipped'].includes(detail.item.status)"
               variant="primary" icon="fas fa-rotate-right" :loading="retryLoading" @click="handleRetry">
               Reprocessar
             </Button>
@@ -680,6 +743,7 @@ const STATUS_META = {
   processing: { label: 'Processando', variant: 'info', icon: 'fas fa-spinner' },
   success: { label: 'Sucesso', variant: 'success', icon: 'fas fa-circle-check' },
   blocked: { label: 'Pendência', variant: 'warning', icon: 'fas fa-hand' },
+  held: { label: 'Retido (rajada)', variant: 'warning', icon: 'fas fa-shield-halved' },
   skipped: { label: 'Não aplicável', variant: 'neutral', icon: 'fas fa-forward' },
   ignored: { label: 'Duplicado', variant: 'neutral', icon: 'fas fa-clone' },
   error: { label: 'Erro', variant: 'danger', icon: 'fas fa-circle-exclamation' },
@@ -707,6 +771,8 @@ function resumoCaso(item) {
         : 'Sem contrato ativo no Sienge - unidade disponibilizada no CV após o cruzamento de todas as referências.';
     case 'blocked':
       return 'Uma validação de segurança barrou o cancelamento. Nada foi alterado no Sienge e a reserva foi movida para Pendência no CV.';
+    case 'held':
+      return 'O freio de rajada segurou este caso: o CV disparou cancelamentos em massa. Nada foi alterado no Sienge nem no CV. Confira o que originou a rajada e reprocesse aqui o que for legítimo.';
     case 'error':
       return 'Falha técnica durante o processamento. Verifique o motivo abaixo e reprocesse.';
     case 'skipped':
@@ -724,6 +790,7 @@ function heroClass(status) {
   return {
     success: 'border-emerald-500/30 bg-emerald-500/10',
     blocked: 'border-amber-500/30 bg-amber-500/10',
+    held: 'border-amber-500/30 bg-amber-500/10',
     error: 'border-red-500/30 bg-red-500/10',
     processing: 'border-sky-500/30 bg-sky-500/10',
   }[status] || 'border-line bg-surface-sunken';
@@ -732,6 +799,7 @@ function heroIconClass(status) {
   return {
     success: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30',
     blocked: 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30',
+    held: 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30',
     error: 'bg-red-500/15 text-red-600 dark:text-red-400 border-red-500/30',
     processing: 'bg-sky-500/15 text-sky-600 dark:text-sky-400 border-sky-500/30',
   }[status] || 'bg-surface text-ink-muted border-line';
@@ -788,6 +856,9 @@ const EVENT_TYPE_LABELS = {
   cv_message_sent: 'Mensagem',
   cv_situacao: 'Etapa CV',
   blocked: 'Bloqueio',
+  burst_wait: 'Freio de rajada',
+  burst_held: 'Freio de rajada',
+  burst_ok: 'Freio de rajada',
   error: 'Erro',
 };
 const eventTypeLabel = (t) => EVENT_TYPE_LABELS[t] || t;
@@ -935,6 +1006,34 @@ async function handleSaveSituacoes() {
   await store.saveSettings({
     situacao_pendencia_id: Number(situacaoForm.value.situacao_pendencia_id) || null,
     situacao_cancelada_id: Number(situacaoForm.value.situacao_cancelada_id) || null,
+  });
+}
+
+// ── Freio de rajada ───────────────────────────────────────────────────────────
+const rajadaForm = ref({ burst_window_seconds: '', burst_max_cancels: '', burst_settle_seconds: '' });
+
+watch(() => store.settings, (s) => {
+  if (!s) return;
+  rajadaForm.value = {
+    burst_window_seconds: s.burst_window_seconds ?? '',
+    burst_max_cancels: s.burst_max_cancels ?? '',
+    burst_settle_seconds: s.burst_settle_seconds ?? '',
+  };
+}, { immediate: true });
+
+async function handleToggleRajada(value) {
+  await store.saveSettings({ burst_guard_active: value });
+}
+
+async function handleToggleBaixaAto(value) {
+  await store.saveSettings({ baixar_boleto_no_cancelamento: value });
+}
+
+async function handleSaveRajada() {
+  await store.saveSettings({
+    burst_window_seconds: Number(rajadaForm.value.burst_window_seconds),
+    burst_max_cancels: Number(rajadaForm.value.burst_max_cancels),
+    burst_settle_seconds: Number(rajadaForm.value.burst_settle_seconds),
   });
 }
 
