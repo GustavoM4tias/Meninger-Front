@@ -242,12 +242,12 @@ const CLASSIFICACAO_TRIBUTARIA = [
     <Modal :open="true" size="lg" @close="handleClose">
         <template #header>
             <div class="flex items-center gap-3">
-                <div class="h-9 w-9 rounded-lg bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/20 grid place-items-center shrink-0">
+                <div class="h-9 w-9 rounded-lg bg-data-warn/15 text-data-warn border border-data-warn/20 grid place-items-center shrink-0">
                     <i class="fas fa-user-plus text-sm"></i>
                 </div>
                 <div class="min-w-0">
                     <h2 class="text-base font-semibold text-ink truncate">Solicitar cadastro de fornecedor</h2>
-                    <p class="text-xs text-ink-muted mt-0.5">
+                    <p class="text-ink-muted mt-0.5">
                         Formulário RID — Planilha de Qualificação de Fornecedores
                     </p>
                 </div>
@@ -258,13 +258,13 @@ const CLASSIFICACAO_TRIBUTARIA = [
                 <div class="px-6 pt-5">
                     <div
                         class="rounded-xl bg-surface-sunken border border-line px-4 py-3 flex items-start gap-3">
-                        <i class="fas fa-circle-xmark text-red-500 mt-0.5 flex-shrink-0"></i>
+                        <i class="fas fa-circle-xmark text-data-neg mt-0.5 flex-shrink-0"></i>
                         <div>
-                            <div class="text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-0.5">Fornecedor não
+                            <div class="text-xs font-semibold text-ink-subtle uppercase tracking-wider mb-0.5">Fornecedor não
                                 encontrado no Sienge</div>
                             <div class="text-sm font-semibold text-ink">{{ launch.providerName || '—'
                                 }}</div>
-                            <div class="text-xs font-mono text-gray-500 dark:text-slate-400">{{ launch.providerCnpj || '—' }}</div>
+                            <div class="text-xs font-mono text-ink-muted">{{ launch.providerCnpj || '—' }}</div>
                         </div>
                     </div>
                 </div>
@@ -273,57 +273,57 @@ const CLASSIFICACAO_TRIBUTARIA = [
                 <div class="px-6 pt-4">
                     <button
                         type="button"
-                        class="flex items-center gap-2 text-xs font-semibold text-amber-700 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300 transition"
+                        class="flex items-center gap-2 text-xs font-semibold text-data-warn hover:text-data-warn  transition"
                         @click="showQuestions = !showQuestions">
                         <i class="fas fa-list-check text-sm"></i>
                         Ver perguntas para o fornecedor
-                        <i :class="showQuestions ? 'fas fa-chevron-up' : 'fas fa-chevron-down'" class="text-[10px] ml-0.5"></i>
+                        <i :class="showQuestions ? 'fas fa-chevron-up' : 'fas fa-chevron-down'" class="text-micro ml-0.5"></i>
                     </button>
 
                     <div v-if="showQuestions"
-                        class="mt-2 rounded-xl border border-amber-200 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20 overflow-hidden">
-                        <div class="flex items-center justify-between px-4 py-2.5 border-b border-amber-200 dark:border-amber-700">
-                            <span class="text-xs font-semibold text-amber-700 dark:text-amber-300">
+                        class="mt-2 rounded-xl border border-data-warn/25 bg-data-warn/20 overflow-hidden">
+                        <div class="flex items-center justify-between px-4 py-2.5 border-data-warn/25">
+                            <span class="text-xs font-semibold text-data-warn">
                                 Campos que precisam ser preenchidos pelo fornecedor
                             </span>
                             <button
                                 type="button"
                                 class="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium transition"
                                 :class="copySuccess
-                                    ? 'bg-emerald-500 text-white'
-                                    : 'bg-amber-500 hover:bg-amber-600 text-white'"
+                                    ? 'bg-data-pos text-white'
+                                    : 'bg-data-warn hover:brightness-110 text-white'"
                                 @click="copyQuestions">
-                                <i :class="copySuccess ? 'fas fa-check' : 'fas fa-copy'" class="text-[11px]"></i>
+                                <i :class="copySuccess ? 'fas fa-check' : 'fas fa-copy'" class="text-micro"></i>
                                 {{ copySuccess ? 'Copiado!' : 'Copiar perguntas' }}
                             </button>
                         </div>
-                        <pre class="px-4 py-3 text-[11px] text-amber-900 dark:text-amber-100 whitespace-pre-wrap font-mono leading-relaxed overflow-auto max-h-64">{{ QUESTIONS_TEXT }}</pre>
+                        <pre class="px-4 py-3 text-micro text-data-warn  whitespace-pre-wrap font-mono leading-relaxed overflow-auto max-h-64">{{ QUESTIONS_TEXT }}</pre>
                     </div>
                 </div>
 
                 <!-- Já enviado -->
                 <div v-if="emailAlreadySent" class="px-6 py-5 space-y-4">
                     <div
-                        class="rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 px-4 py-4 space-y-2">
-                        <div class="flex items-center gap-2 text-blue-700 dark:text-blue-300 font-semibold text-sm">
+                        class="rounded-xl bg-accent/20 border border-accent/25 px-4 py-4 space-y-2">
+                        <div class="flex items-center gap-2 text-accent font-semibold text-sm">
                             <i class="fas fa-envelope-circle-check"></i>
                             Solicitação já enviada
                         </div>
-                        <p class="text-xs text-blue-600 dark:text-blue-400">
+                        <p class="text-accent">
                             O formulário RID foi gerado e o email enviado para
                             <strong>fornecedores@menin.com.br</strong> em <strong>{{ sentAtLabel }}</strong>.
                             <template v-if="launch.ridRequestedByEmail">
                                 Uma cópia foi enviada para <strong>{{ launch.ridRequestedByEmail }}</strong>.
                             </template>
                         </p>
-                        <p class="text-xs text-blue-500">
+                        <p class="text-accent">
                             O sistema verificará automaticamente a cada 20 minutos se o fornecedor foi cadastrado.
                             Quando isso ocorrer, a esteira continuará para a etapa de contrato.
                         </p>
                     </div>
                     <div class="flex justify-end">
                         <button @click="handleClose"
-                            class="px-4 py-2 rounded-lg text-sm font-medium text-ink-muted hover:bg-gray-100 dark:hover:bg-gray-800 transition">
+                            class="px-4 py-2 rounded-lg text-sm font-medium text-ink-muted hover:bg-surface-sunken transition">
                             Fechar
                         </button>
                     </div>
@@ -339,15 +339,15 @@ const CLASSIFICACAO_TRIBUTARIA = [
                                 <button
                                     class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition"
                                     :class="step === idx + 1
-                                        ? 'bg-amber-500 text-white shadow'
+                                        ? 'bg-data-warn text-white shadow'
                                         : step > idx + 1
-                                            ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-                                            : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-slate-500'"
+                                            ? 'bg-data-pos/30 text-data-pos'
+                                            : 'bg-surface-sunken text-ink-subtle'"
                                     @click="step > idx + 1 ? (step = idx + 1) : null">
-                                    <i v-if="step > idx + 1" class="fas fa-check text-[10px]"></i>
+                                    <i v-if="step > idx + 1" class="fas fa-check text-micro"></i>
                                     <span>{{ idx + 1 }}. {{ label }}</span>
                                 </button>
-                                <div v-if="idx < 2" class="flex-1 h-px bg-gray-200 dark:bg-gray-700"></div>
+                                <div v-if="idx < 2" class="flex-1 h-px bg-surface-sunken"></div>
                             </template>
                         </div>
                     </div>
@@ -356,7 +356,7 @@ const CLASSIFICACAO_TRIBUTARIA = [
 
                         <!-- ═══════════════════ STEP 1: IDENTIFICAÇÃO ═══════════════════ -->
                         <template v-if="step === 1">
-                            <div class="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider">1. Identificação do
+                            <div class="text-xs font-bold text-ink-muted uppercase tracking-wider">1. Identificação do
                                 Fornecedor</div>
 
                             <div class="grid grid-cols-2 gap-3">
@@ -383,7 +383,7 @@ const CLASSIFICACAO_TRIBUTARIA = [
                                             placeholder="00000-000"
                                             @blur="buscarCep"
                                         />
-                                        <span v-if="fetchingCep" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-amber-500">
+                                        <span v-if="fetchingCep" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-data-warn">
                                             <i class="fas fa-spinner fa-spin text-xs"></i>
                                         </span>
                                     </div>
@@ -447,7 +447,7 @@ const CLASSIFICACAO_TRIBUTARIA = [
 
                         <!-- ═══════════════════ STEP 2: QUALIFICAÇÃO ═══════════════════ -->
                         <template v-else-if="step === 2">
-                            <div class="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider">2. Qualificação para
+                            <div class="text-xs font-bold text-ink-muted uppercase tracking-wider">2. Qualificação para
                                 Fornecimento</div>
 
                             <!-- 2.1 Sistema de qualidade -->
@@ -477,7 +477,7 @@ const CLASSIFICACAO_TRIBUTARIA = [
                                         { key: 'fornecedorControle', label: 'É fornecedor de controle tecnológico?' },
                                     ]" :key="item.key"
                                         class="flex items-center justify-between gap-3 bg-surface-sunken rounded-lg px-3 py-2">
-                                        <span class="text-xs text-ink flex-1">{{ item.label }}</span>
+                                        <span class="text-ink flex-1">{{ item.label }}</span>
                                         <div class="radio-row shrink-0">
                                             <label v-for="op in SIM_NAO_NA" :key="op.value" class="radio-opt">
                                                 <input type="radio" v-model="form[item.key]" :value="op.value" />
@@ -501,25 +501,25 @@ const CLASSIFICACAO_TRIBUTARIA = [
                             <!-- 2.3 Empresas fornecidas -->
                             <div class="form-group">
                                 <label class="field-label mb-1 block">2.3. Empresas para as quais fornece <span
-                                        class="text-red-500">*</span> (ao menos 1)</label>
+                                        class="text-data-neg">*</span> (ao menos 1)</label>
                                 <div class="space-y-2">
                                     <div v-for="(emp, idx) in form.empresas" :key="idx"
                                         class="grid grid-cols-3 gap-2 bg-surface-sunken rounded-lg p-2">
                                         <div>
-                                            <label class="field-label text-[10px]">Razão Social</label>
+                                            <label class="field-label text-micro">Razão Social</label>
                                             <input v-model="emp.razaoSocial" class="field-input text-xs" :placeholder="idx === 0 ? 'Obrigatório' : 'Opcional'" />
                                         </div>
                                         <div>
-                                            <label class="field-label text-[10px]">Telefone</label>
+                                            <label class="field-label text-micro">Telefone</label>
                                             <input v-model="emp.fone" class="field-input text-xs" />
                                         </div>
                                         <div>
-                                            <label class="field-label text-[10px]">Contato</label>
+                                            <label class="field-label text-micro">Contato</label>
                                             <input v-model="emp.contato" class="field-input text-xs" />
                                         </div>
                                     </div>
                                 </div>
-                                <p v-if="!empresaValida" class="text-xs text-red-500 mt-1">
+                                <p v-if="!empresaValida" class="text-data-neg mt-1">
                                     <i class="fas fa-triangle-exclamation mr-1"></i>Informe ao menos 1 empresa
                                 </p>
                             </div>
@@ -593,11 +593,11 @@ const CLASSIFICACAO_TRIBUTARIA = [
 
                         <!-- ═══════════════════ STEP 3: REVISÃO E ENVIO ═══════════════════ -->
                         <template v-else-if="step === 3">
-                            <div class="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Revisar e Enviar</div>
+                            <div class="text-xs font-bold text-ink-muted uppercase tracking-wider">Revisar e Enviar</div>
 
                             <!-- Resumo identificação -->
                             <div class="rounded-xl bg-surface-sunken border border-line p-4 space-y-1 text-xs">
-                                <div class="font-semibold text-gray-700 dark:text-gray-200 mb-2">Identificação do Fornecedor
+                                <div class="font-semibold text-ink mb-2">Identificação do Fornecedor
                                 </div>
                                 <div class="grid grid-cols-2 gap-x-4 gap-y-1 text-ink-muted">
                                     <div><span class="font-medium text-ink">Razão Social:</span> {{ form.razaoSocial }}</div>
@@ -613,24 +613,24 @@ const CLASSIFICACAO_TRIBUTARIA = [
 
                             <!-- Outros Anexos -->
                             <div class="rounded-xl bg-surface-sunken border border-line p-4 space-y-2">
-                                <div class="font-semibold text-xs text-gray-700 dark:text-gray-200 flex items-center gap-2">
-                                    <i class="fas fa-paperclip text-gray-400 dark:text-slate-500"></i>
+                                <div class="font-semibold text-ink flex items-center gap-2">
+                                    <i class="fas fa-paperclip text-ink-subtle"></i>
                                     Outros Anexos
-                                    <span class="text-gray-400 dark:text-slate-500 font-normal">(opcional)</span>
+                                    <span class="text-ink-subtle font-normal">(opcional)</span>
                                 </div>
-                                <p class="text-xs text-ink-muted">
+                                <p class="text-ink-muted">
                                     Documentos adicionais que serão enviados junto com a RID no email.
                                 </p>
 
                                 <!-- Lista de arquivos selecionados -->
                                 <div v-if="outrosAnexos.length" class="space-y-1">
                                     <div v-for="(file, idx) in outrosAnexos" :key="idx"
-                                        class="flex items-center justify-between bg-white dark:bg-gray-700 rounded-lg px-3 py-1.5 text-xs border border-gray-200 dark:border-gray-600">
-                                        <span class="text-gray-700 dark:text-gray-200 truncate">
-                                            <i class="fas fa-file mr-1.5 text-gray-400 dark:text-slate-500"></i>{{ file.name }}
+                                        class="flex items-center justify-between bg-surface-sunken rounded-lg px-3 py-1.5 text-xs border border-line">
+                                        <span class="text-ink truncate">
+                                            <i class="fas fa-file mr-1.5 text-ink-subtle"></i>{{ file.name }}
                                         </span>
                                         <button @click="removerAnexo(idx)"
-                                            class="ml-2 text-red-400 hover:text-red-600 transition flex-shrink-0">
+                                            class="ml-2 text-data-neg hover:text-data-neg transition flex-shrink-0">
                                             <i class="fas fa-xmark"></i>
                                         </button>
                                     </div>
@@ -638,19 +638,19 @@ const CLASSIFICACAO_TRIBUTARIA = [
 
                                 <!-- Botão adicionar -->
                                 <label
-                                    class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 border border-gray-300 dark:border-gray-500 text-gray-600 dark:text-gray-300 text-xs font-medium transition">
-                                    <i class="fas fa-plus text-[10px]"></i>
+                                    class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-sunken hover:bg-surface-raised border border-line text-xs font-medium transition">
+                                    <i class="fas fa-plus text-micro"></i>
                                     Adicionar arquivo
                                     <input type="file" class="hidden" multiple @change="handleOutrosAnexos" />
                                 </label>
                             </div>
 
                             <!-- Aviso do email -->
-                            <div class="rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 px-4 py-3 text-xs text-amber-700 dark:text-amber-400 space-y-1">
+                            <div class="rounded-xl bg-data-warn/20 border border-data-warn/25 px-4 py-3 text-data-warn space-y-1">
                                 <div class="font-semibold flex items-center gap-2">
                                     <i class="fas fa-paper-plane"></i> O que acontece ao enviar:
                                 </div>
-                                <ul class="list-disc list-inside space-y-0.5 text-amber-600 dark:text-amber-500">
+                                <ul class="list-disc list-inside space-y-0.5 text-data-warn">
                                     <li>O sistema gera automaticamente o documento RID preenchido (Word)</li>
                                     <li>Envia por email para <strong>fornecedores@menin.com.br</strong></li>
                                     <li>Você recebe uma cópia no seu email</li>
@@ -663,14 +663,14 @@ const CLASSIFICACAO_TRIBUTARIA = [
 
                             <!-- Erro -->
                             <div v-if="store.ridError"
-                                class="px-3 py-2 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 text-xs text-red-600 dark:text-red-400 flex items-center gap-2">
+                                class="px-3 py-2 rounded-lg bg-data-neg/20 border border-data-neg/25 text-data-neg flex items-center gap-2">
                                 <i class="fas fa-triangle-exclamation"></i>
                                 {{ store.ridError }}
                             </div>
 
                             <!-- Sucesso -->
                             <div v-if="store.ridSuccess"
-                                class="px-3 py-2 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 text-xs text-green-700 dark:text-green-400 flex items-center gap-2">
+                                class="px-3 py-2 rounded-lg bg-data-pos/20 border border-data-pos/25 text-data-pos flex items-center gap-2">
                                 <i class="fas fa-circle-check"></i>
                                 {{ store.ridSuccess }}
                             </div>
@@ -694,8 +694,8 @@ const CLASSIFICACAO_TRIBUTARIA = [
 
                     <!-- Info automação -->
                     <div class="mx-6 mb-5 rounded-xl bg-surface-sunken/50 border border-line px-4 py-3 flex items-start gap-3">
-                        <i class="fas fa-robot text-gray-400 dark:text-slate-500 mt-0.5 flex-shrink-0 text-sm"></i>
-                        <p class="text-xs text-ink-muted">
+                        <i class="fas fa-robot text-ink-subtle mt-0.5 flex-shrink-0 text-sm"></i>
+                        <p class="text-ink-muted">
                             Após o envio, o sistema verificará a cada
                             <strong class="text-ink">20 minutos</strong>
                             se o fornecedor foi cadastrado no Sienge.
@@ -713,7 +713,7 @@ const CLASSIFICACAO_TRIBUTARIA = [
 }
 
 .field-input {
-    @apply w-full rounded-lg border border-line bg-white dark:bg-gray-800 text-ink text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-400 transition;
+    @apply w-full rounded-lg border border-line bg-surface-raised text-sm px-3 py-2 focus:outline-none focus:ring-data-warn transition;
 }
 
 .form-group {
@@ -729,14 +729,16 @@ const CLASSIFICACAO_TRIBUTARIA = [
 }
 
 .radio-opt input[type="radio"] {
-    @apply h-4 w-4 border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500 accent-blue-600 cursor-pointer;
+    @apply h-4 w-4 border-line text-accent focus:ring-accent accent-blue-600 cursor-pointer;
 }
 
 .btn-primary {
-    @apply inline-flex items-center px-4 py-2 rounded-lg bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white text-sm font-semibold shadow transition;
+    /* Era um gradiente ambar->laranja. Virou cor chapada: gradiente em botao
+     nao carrega informacao nenhuma e some no tema claro. */
+    @apply inline-flex items-center px-4 py-2 rounded-lg bg-data-warn hover:brightness-110 text-white text-sm font-semibold shadow-soft transition-all duration-120;
 }
 
 .btn-secondary {
-    @apply inline-flex items-center px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-ink text-sm font-medium transition;
+    @apply inline-flex items-center px-4 py-2 rounded-lg bg-surface-sunken hover:bg-surface-raised border border-line text-ink text-sm font-medium transition-colors duration-120;
 }
 </style>

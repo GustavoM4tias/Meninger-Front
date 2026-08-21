@@ -51,31 +51,31 @@ async function handleSave() {
         </div>
         <div>
           <h2 class="text-base font-semibold text-ink">Configurar credenciais Sienge</h2>
-          <p class="text-xs text-ink-muted mt-0.5">Necessário para criar contratos automaticamente</p>
+          <p class="text-ink-muted mt-0.5">Necessário para criar contratos automaticamente</p>
         </div>
       </div>
     </template>
 
     <div class="space-y-4">
       <!-- Aviso de autorização -->
-      <div class="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 space-y-2">
-        <p class="text-xs font-semibold text-amber-700 dark:text-amber-300 flex items-center gap-1.5">
+      <div class="rounded-lg border border-data-warn/30 bg-data-warn/10 p-3 space-y-2">
+        <p class="text-xs font-semibold text-data-warn flex items-center gap-1.5">
           <i class="fas fa-triangle-exclamation"></i>
           Leia antes de continuar
         </p>
-        <p class="text-xs text-amber-700 dark:text-amber-300 leading-relaxed">
+        <p class="text-data-warn leading-relaxed">
           Ao informar suas credenciais, você autoriza o sistema a acessar o Sienge usando sua conta para
           realizar automaticamente ações como <strong>criar contratos, aditivos, medições e títulos</strong>,
           além de <strong>ler e editar dados</strong> em seu nome.
         </p>
-        <p class="text-xs text-amber-700 dark:text-amber-300 leading-relaxed">
+        <p class="text-data-warn leading-relaxed">
           Em alguns processos, o sistema pode <strong>iniciar uma sessão ativa</strong> com seu usuário,
           o que pode encerrar sessões abertas no navegador. Isso é esperado.
         </p>
       </div>
 
       <!-- Segurança -->
-      <div class="rounded-lg border border-accent/20 bg-accent-soft/40 p-3 text-xs text-accent leading-relaxed">
+      <div class="rounded-lg border border-accent/20 bg-accent-soft/40 p-3 text-accent leading-relaxed">
         <i class="fas fa-shield-halved mr-1.5"></i>
         <strong>Suas credenciais estão protegidas.</strong> Os dados são criptografados com AES-256
         e armazenados exclusivamente na sua conta. Nenhum outro usuário tem acesso.
@@ -102,21 +102,21 @@ async function handleSave() {
         <Input v-model="form.confirmPassword" :type="showPassword ? 'text' : 'password'"
           placeholder="Repita a senha" autocomplete="new-password" />
         <p v-if="form.confirmPassword && form.password !== form.confirmPassword"
-          class="mt-1 text-xs text-red-500 flex items-center gap-1">
+          class="mt-1 text-data-neg flex items-center gap-1">
           <i class="fas fa-circle-exclamation"></i>As senhas não coincidem.
         </p>
       </div>
 
       <div v-if="error"
-        class="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2.5 text-xs text-red-700 dark:text-red-300 flex items-center gap-2">
+        class="rounded-lg border border-data-neg/20 bg-data-neg/10 px-3 py-2.5 text-data-neg flex items-center gap-2">
         <i class="fas fa-circle-exclamation"></i>{{ error }}
       </div>
     </div>
 
     <template #footer>
       <a href="/settings/Account"
-        class="mr-auto text-xs text-ink-muted hover:text-accent transition-colors flex items-center gap-1">
-        <i class="fas fa-arrow-up-right-from-square text-[10px]"></i>
+        class="mr-auto text-ink-muted hover:text-accent transition-colors flex items-center gap-1">
+        <i class="fas fa-arrow-up-right-from-square text-micro"></i>
         Configurar em Minha Conta
       </a>
       <Button :loading="loading" :disabled="!canSubmit"

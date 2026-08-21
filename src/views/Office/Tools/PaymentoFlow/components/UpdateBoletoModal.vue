@@ -131,12 +131,12 @@ async function handleSave() {
   <Modal :open="true" size="md" @close="emit('close')">
     <template #header>
       <div class="flex items-center gap-3">
-        <div class="h-9 w-9 rounded-lg bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/20 grid place-items-center shrink-0">
+        <div class="h-9 w-9 rounded-lg bg-data-warn/15 text-data-warn border border-data-warn/20 grid place-items-center shrink-0">
           <i class="fas fa-file-invoice-dollar text-sm"></i>
         </div>
         <div class="min-w-0">
           <h2 class="text-base font-semibold text-ink truncate">Enviar novo boleto</h2>
-          <p class="text-xs text-ink-muted mt-0.5 truncate">
+          <p class="text-ink-muted mt-0.5 truncate">
             Título <span class="font-mono">#{{ launch.siengeTituloNumber }}</span> — {{ launch.providerName || '—' }}
           </p>
         </div>
@@ -146,28 +146,28 @@ async function handleSave() {
     <div class="space-y-4">
       <!-- Upload zone -->
       <div>
-        <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono mb-2">Arquivo do boleto</p>
+        <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono mb-2">Arquivo do boleto</p>
 
         <label v-if="!selectedFile && !uploading && !extracting"
-          class="flex flex-col items-center justify-center h-32 rounded-xl border-2 border-dashed cursor-pointer transition-colors"
+          class="flex flex-col items-center justify-center h-32 rounded-xl border-dashed cursor-pointer transition-colors"
           :class="dragging
-            ? 'border-amber-500/50 bg-amber-500/10'
-            : 'border-line bg-surface-sunken hover:border-amber-500/40 hover:bg-amber-500/5'"
+            ? 'border-data-warn/50 bg-data-warn/10'
+            : 'border-line bg-surface-sunken hover:border-data-warn/40 hover:bg-data-warn/5'"
           @click="fileInputRef?.click()"
           @dragover.prevent="dragging = true"
           @dragleave="dragging = false"
           @drop.prevent="onDrop">
-          <i class="fas fa-file-arrow-up text-2xl text-ink-subtle mb-2"></i>
+          <i class="fas fa-file-arrow-up text-ink-subtle mb-2"></i>
           <span class="text-xs font-medium text-ink-muted">
             {{ dragging ? 'Solte o arquivo aqui' : 'Clique ou arraste o PDF do boleto' }}
           </span>
-          <span class="text-[10px] text-ink-subtle mt-0.5 font-mono">PDF · máx. 2 MB</span>
+          <span class="text-micro text-ink-subtle mt-0.5 font-mono">PDF · máx. 2 MB</span>
         </label>
 
         <div v-else-if="uploading || extracting"
-          class="h-32 rounded-xl border border-amber-500/30 bg-amber-500/10 flex flex-col items-center justify-center gap-2">
+          class="h-32 rounded-xl border border-data-warn/30 bg-data-warn/10 flex flex-col items-center justify-center gap-2">
           <Spinner size="md" />
-          <p class="text-xs text-amber-700 dark:text-amber-300 font-medium text-center">
+          <p class="text-data-warn font-medium text-center">
             <span v-if="uploading">Enviando arquivo...</span>
             <span v-else>IA extraindo dados do boleto...</span>
           </p>
@@ -176,11 +176,11 @@ async function handleSave() {
         <div v-else
           class="flex items-center justify-between gap-3 px-4 py-3 rounded-xl border border-line bg-surface-sunken">
           <div class="flex items-center gap-2 min-w-0">
-            <i class="fas fa-file-pdf text-red-500 shrink-0"></i>
+            <i class="fas fa-file-pdf text-data-neg shrink-0"></i>
             <span class="text-xs font-medium text-ink truncate">{{ selectedFile?.name }}</span>
           </div>
           <button
-            class="text-ink-subtle hover:text-red-500 transition-colors shrink-0"
+            class="text-ink-subtle hover:text-data-neg transition-colors shrink-0"
             @click="selectedFile = null; uploadResult = null; uploadError = null;">
             <i class="fas fa-xmark text-sm"></i>
           </button>
@@ -188,15 +188,15 @@ async function handleSave() {
 
         <input ref="fileInputRef" type="file" accept="application/pdf" class="hidden" @change="onFileSelected" />
 
-        <p v-if="uploadError" class="mt-1.5 text-xs text-red-500 flex items-center gap-1">
+        <p v-if="uploadError" class="mt-1.5 text-data-neg flex items-center gap-1">
           <i class="fas fa-circle-exclamation"></i>{{ uploadError }}
         </p>
       </div>
 
       <!-- Form -->
       <div v-if="uploadResult" class="space-y-3">
-        <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono flex items-center gap-2">
-          <i class="fas fa-robot text-accent text-xs"></i>
+        <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono flex items-center gap-2">
+          <i class="fas fa-robot text-xs"></i>
           Dados extraídos — revise antes de confirmar
         </p>
 
@@ -212,7 +212,7 @@ async function handleSave() {
       </div>
 
       <div v-if="saveError"
-        class="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2.5 text-xs text-red-700 dark:text-red-300 flex items-center gap-2">
+        class="rounded-lg border border-data-neg/20 bg-data-neg/10 px-3 py-2.5 text-data-neg flex items-center gap-2">
         <i class="fas fa-circle-exclamation"></i>{{ saveError }}
       </div>
     </div>

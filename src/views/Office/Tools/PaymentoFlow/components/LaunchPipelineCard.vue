@@ -33,8 +33,8 @@ const stage = computed(() => props.launch.pipelineStage || 'idle');
 const stageMeta = computed(() => PIPELINE_STAGE_LABELS[stage.value] || PIPELINE_STAGE_LABELS.idle);
 
 const stageColorMap = {
-  gray: 'text-ink-subtle', blue: 'text-accent', green: 'text-emerald-500',
-  emerald: 'text-emerald-500', red: 'text-red-500', orange: 'text-amber-500',
+  gray: 'text-ink-subtle', blue: 'text-accent', green: 'text-data-pos',
+  emerald: 'text-data-pos', red: 'text-data-neg', orange: 'text-data-warn',
 };
 const stageIconClass = computed(() =>
   `fas ${stageMeta.value.icon} text-sm ${stageColorMap[stageMeta.value.color] || 'text-ink-subtle'}`
@@ -86,18 +86,18 @@ const canUpdateBoleto = computed(() =>
 );
 
 const stepBgFor = (state) => ({
-  error: 'bg-red-500/15 text-red-600 dark:text-red-400',
+  error: 'bg-data-neg/15 text-data-neg',
   loading: 'bg-accent-soft text-accent',
-  done: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400',
-  pending: 'bg-amber-500/15 text-amber-600 dark:text-amber-400',
+  done: 'bg-data-pos/15 text-data-pos',
+  pending: 'bg-data-warn/15 text-data-warn',
   idle: 'bg-surface-sunken text-ink-subtle border border-line',
 }[state] || 'bg-surface-sunken text-ink-subtle border border-line');
 
 const stepTextFor = (state) => ({
-  error: 'text-red-600 dark:text-red-400 font-semibold',
+  error: 'text-data-neg font-semibold',
   loading: 'text-accent font-semibold',
-  done: 'text-emerald-600 dark:text-emerald-400 font-semibold',
-  pending: 'text-amber-600 dark:text-amber-400 font-semibold',
+  done: 'text-data-pos font-semibold',
+  pending: 'text-data-warn font-semibold',
   idle: 'text-ink-subtle',
 }[state] || 'text-ink-subtle');
 
@@ -169,8 +169,8 @@ function authLevelLabel(level) {
 }
 
 const cardBorderClass = computed(() => {
-  if (hasError.value) return 'border-red-500/30';
-  if (isReady.value) return 'border-emerald-500/30';
+  if (hasError.value) return 'border-data-neg/30';
+  if (isReady.value) return 'border-data-pos/30';
   return 'border-line';
 });
 </script>
@@ -180,12 +180,12 @@ const cardBorderClass = computed(() => {
     :class="cardBorderClass">
 
     <!-- Header -->
-    <div class="flex items-center justify-between gap-3 px-4 py-2.5 bg-surface-sunken/40 border-b border-line">
+    <div class="flex items-center justify-between gap-3 px-4 py-2.5 bg-surface-sunken/40 border-line">
       <div class="flex items-center gap-2 min-w-0">
         <i :class="stageIconClass"></i>
         <span class="text-xs font-semibold text-ink truncate">{{ stageMeta.label }}</span>
-        <span v-if="polling" class="text-xs text-accent flex items-center gap-1 font-mono">
-          <i class="fas fa-sync fa-spin text-[10px]"></i>Monitorando
+        <span v-if="polling" class="text-accent flex items-center gap-1 font-mono">
+          <i class="fas fa-sync fa-spin text-micro"></i>Monitorando
         </span>
       </div>
 
@@ -220,43 +220,43 @@ const cardBorderClass = computed(() => {
 
       <!-- ── Credor ── -->
       <div>
-        <p class="text-[10px] font-mono uppercase tracking-wider text-ink-subtle mb-2">Credor</p>
+        <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-2">Credor</p>
         <div class="flex items-start gap-3">
           <div class="mt-0.5 shrink-0">
-            <i v-if="creditorFound" class="fas fa-circle-check text-emerald-500"></i>
-            <i v-else-if="creditorMissing" class="fas fa-circle-xmark text-red-500"></i>
+            <i v-if="creditorFound" class="fas fa-circle-check text-data-pos"></i>
+            <i v-else-if="creditorMissing" class="fas fa-circle-xmark text-data-neg"></i>
             <i v-else class="fas fa-circle text-ink-subtle"></i>
           </div>
           <div class="min-w-0 flex-1">
             <p class="text-sm font-medium text-ink truncate">{{ launch.providerName || '—' }}</p>
-            <p class="text-xs text-ink-subtle font-mono">{{ launch.providerCnpj || '—' }}</p>
+            <p class="text-ink-subtle font-mono">{{ launch.providerCnpj || '—' }}</p>
 
             <p v-if="creditorFound && launch.siengeCreditorName && launch.siengeCreditorName !== launch.providerName"
-              class="mt-1 text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
+              class="mt-1 text-data-warn flex items-center gap-1">
               <i class="fas fa-triangle-exclamation"></i>
               Sienge: <span class="font-medium ml-0.5">{{ launch.siengeCreditorName }}</span>
             </p>
 
             <div v-if="creditorMissing && ridEmailSent"
-              class="mt-2 rounded-lg border border-accent/20 bg-accent-soft/40 px-3 py-2 text-xs text-accent space-y-1">
+              class="mt-2 rounded-lg border border-accent/20 bg-accent-soft/40 px-3 py-2 text-accent space-y-1">
               <p class="flex items-center gap-1.5 font-semibold">
                 <i class="fas fa-envelope-circle-check"></i>Solicitação de cadastro enviada
               </p>
               <p>Email enviado em {{ ridSentAtLabel }}. Verificando automaticamente a cada 20 min.</p>
               <button class="text-accent hover:underline flex items-center gap-1 disabled:opacity-40"
                 :disabled="running" @click="!running && emit('open-rid-modal', launch)">
-                <i class="fas fa-arrow-up-right-from-square text-[10px]"></i>Ver detalhes / reenviar
+                <i class="fas fa-arrow-up-right-from-square text-micro"></i>Ver detalhes / reenviar
               </button>
             </div>
 
             <div v-else-if="creditorMissing"
-              class="mt-2 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-700 dark:text-red-300 space-y-1.5">
+              class="mt-2 rounded-lg border border-data-neg/20 bg-data-neg/10 px-3 py-2 text-data-neg space-y-1.5">
               <p class="flex items-center gap-1">
                 <i class="fas fa-circle-info"></i>Fornecedor não encontrado no Sienge.
               </p>
               <button class="font-semibold hover:underline flex items-center gap-1 disabled:opacity-40"
                 :disabled="running" @click="!running && emit('open-rid-modal', launch)">
-                <i class="fas fa-file-arrow-up text-[10px]"></i>Solicitar cadastro via formulário RID →
+                <i class="fas fa-file-arrow-up text-micro"></i>Solicitar cadastro via formulário RID →
               </button>
             </div>
           </div>
@@ -265,14 +265,14 @@ const cardBorderClass = computed(() => {
 
       <!-- ── Contrato ── -->
       <div>
-        <p class="text-[10px] font-mono uppercase tracking-wider text-ink-subtle mb-2">Contrato</p>
+        <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-2">Contrato</p>
 
-        <div v-if="contractCreating" class="flex items-center gap-2 text-sm text-accent">
+        <div v-if="contractCreating" class="flex items-center gap-2 text-accent">
           <i class="fas fa-spinner fa-spin"></i>Criando contrato no Sienge via automação...
         </div>
 
         <div v-else-if="stage === 'contract_manual_block'"
-          class="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-700 dark:text-amber-300 space-y-2">
+          class="rounded-lg border border-data-warn/30 bg-data-warn/10 p-3 text-data-warn space-y-2">
           <p class="font-semibold flex items-center gap-1.5">
             <i class="fas fa-shield-halved"></i>Contrato existente localizado
           </p>
@@ -285,7 +285,7 @@ const cardBorderClass = computed(() => {
         </div>
 
         <div v-else-if="contractError"
-          class="rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-xs text-red-700 dark:text-red-300 space-y-1">
+          class="rounded-lg border border-data-neg/20 bg-data-neg/10 p-3 text-data-neg space-y-1">
           <p class="font-semibold flex items-center gap-1">
             <i class="fas fa-triangle-exclamation"></i>Falha na criação do contrato
           </p>
@@ -293,35 +293,35 @@ const cardBorderClass = computed(() => {
           <p class="pt-1 italic">Acesse o Sienge e exclua o contrato incompleto antes de tentar novamente.</p>
         </div>
 
-        <div v-else-if="contractMissing" class="text-xs text-ink-muted flex items-center gap-2">
-          <i class="fas fa-file-circle-xmark text-amber-500"></i>
+        <div v-else-if="contractMissing" class="text-ink-muted flex items-center gap-2">
+          <i class="fas fa-file-circle-xmark text-data-warn"></i>
           Nenhum contrato encontrado. Será criado automaticamente.
         </div>
 
         <div v-else-if="contractFound" class="space-y-2">
           <div class="grid grid-cols-2 gap-2">
             <div class="rounded-lg bg-surface-sunken border border-line px-3 py-2">
-              <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono">Documento</p>
+              <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono">Documento</p>
               <p class="text-sm font-mono font-semibold text-ink truncate">
                 {{ launch.siengeDocumentId || '—' }}
               </p>
             </div>
             <div class="rounded-lg bg-surface-sunken border border-line px-3 py-2">
-              <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono">Nº Contrato</p>
+              <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono">Nº Contrato</p>
               <p class="text-sm font-mono font-semibold text-ink truncate">
                 {{ launch.siengeContractNumber || '—' }}
               </p>
             </div>
             <div class="rounded-lg bg-surface-sunken border border-line px-3 py-2 col-span-2 sm:col-span-1">
-              <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono">Vigência</p>
-              <p class="text-xs text-ink font-mono">
+              <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono">Vigência</p>
+              <p class="text-ink font-mono">
                 {{ fmtDate(launch.contractStartDate) }} → {{ fmtDate(launch.contractEndDate) }}
               </p>
             </div>
 
             <!-- Stepper do fluxo -->
             <div class="col-span-2 rounded-lg bg-surface-sunken border border-line px-3 py-2.5">
-              <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono mb-2">Etapa do fluxo</p>
+              <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono mb-2">Etapa do fluxo</p>
               <div class="flex items-center">
                 <!-- Contrato -->
                 <div class="flex flex-col items-center text-center flex-1 min-w-0">
@@ -333,7 +333,7 @@ const cardBorderClass = computed(() => {
                     <i v-else-if="contractFound" class="fas fa-lock text-xs"></i>
                     <span v-else class="text-xs font-bold">1</span>
                   </div>
-                  <span class="text-[11px] leading-tight" :class="stepTextFor(contractState)">Contrato</span>
+                  <span class="text-micro leading-tight" :class="stepTextFor(contractState)">Contrato</span>
                 </div>
                 <div class="flex-1 h-0.5 mx-1 bg-line"></div>
                 <!-- Aditivo -->
@@ -345,7 +345,7 @@ const cardBorderClass = computed(() => {
                     <i v-else-if="additiveCreated" class="fas fa-check text-xs"></i>
                     <span v-else class="text-xs font-bold">2</span>
                   </div>
-                  <span class="text-[11px] leading-tight" :class="stepTextFor(additiveState)">Aditivo</span>
+                  <span class="text-micro leading-tight" :class="stepTextFor(additiveState)">Aditivo</span>
                 </div>
                 <div class="flex-1 h-0.5 mx-1 bg-line"></div>
                 <!-- Medição -->
@@ -357,7 +357,7 @@ const cardBorderClass = computed(() => {
                     <i v-else-if="measurementCreated" class="fas fa-check text-xs"></i>
                     <span v-else class="text-xs font-bold">3</span>
                   </div>
-                  <span class="text-[11px] leading-tight" :class="stepTextFor(measurementState)">Medição</span>
+                  <span class="text-micro leading-tight" :class="stepTextFor(measurementState)">Medição</span>
                 </div>
                 <div class="flex-1 h-0.5 mx-1 bg-line"></div>
                 <!-- Título -->
@@ -370,19 +370,19 @@ const cardBorderClass = computed(() => {
                     <i v-else-if="tituloCreated" class="fas fa-file-invoice-dollar text-xs"></i>
                     <span v-else class="text-xs font-bold">4</span>
                   </div>
-                  <span class="text-[11px] leading-tight" :class="stepTextFor(tituloState)">Título</span>
+                  <span class="text-micro leading-tight" :class="stepTextFor(tituloState)">Título</span>
                 </div>
               </div>
             </div>
           </div>
 
           <!-- Aditivo -->
-          <div v-if="additiveCreating" class="flex items-center gap-2 text-sm text-accent">
+          <div v-if="additiveCreating" class="flex items-center gap-2 text-accent">
             <i class="fas fa-spinner fa-spin"></i>Criando aditivo no Sienge via automação...
           </div>
 
           <div v-else-if="additiveError"
-            class="rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-xs text-red-700 dark:text-red-300 space-y-1">
+            class="rounded-lg border border-data-neg/20 bg-data-neg/10 p-3 text-data-neg space-y-1">
             <p class="font-semibold flex items-center gap-1.5">
               <i class="fas fa-triangle-exclamation"></i>Falha na criação do aditivo
             </p>
@@ -393,12 +393,12 @@ const cardBorderClass = computed(() => {
           <div v-else-if="additiveCreated && !measurementCreated && !measurementCreating && !measurementError"
             class="flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg border"
             :class="isAuthorized
-              ? 'bg-emerald-500/10 border-emerald-500/30'
-              : 'bg-amber-500/10 border-amber-500/30'">
+              ? 'bg-data-pos/10 border-data-pos/30'
+              : 'bg-data-warn/10 border-data-warn/30'">
             <div class="flex items-center gap-2">
-              <i :class="isAuthorized ? 'fas fa-lock-open text-emerald-500' : 'fas fa-lock text-amber-500'"></i>
+              <i :class="isAuthorized ? 'fas fa-lock-open text-data-pos' : 'fas fa-lock text-data-warn'"></i>
               <span class="text-xs font-semibold"
-                :class="isAuthorized ? 'text-emerald-700 dark:text-emerald-300' : 'text-amber-700 dark:text-amber-300'">
+                :class="isAuthorized ? 'text-data-pos' : 'text-data-warn'">
                 {{ isAuthorized
                   ? (isAdditivePath ? 'Aditivo autorizado' : 'Contrato autorizado')
                   : (isAdditivePath ? 'Aditivo em autorização' : 'Contrato em autorização') }}
@@ -411,12 +411,12 @@ const cardBorderClass = computed(() => {
           </div>
 
           <!-- Medição -->
-          <div v-if="measurementCreating" class="flex items-center gap-2 text-sm text-accent">
+          <div v-if="measurementCreating" class="flex items-center gap-2 text-accent">
             <i class="fas fa-spinner fa-spin"></i>Criando medição no Sienge via automação...
           </div>
 
           <div v-else-if="measurementError"
-            class="rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-xs text-red-700 dark:text-red-300 space-y-1">
+            class="rounded-lg border border-data-neg/20 bg-data-neg/10 p-3 text-data-neg space-y-1">
             <p class="font-semibold flex items-center gap-1.5">
               <i class="fas fa-triangle-exclamation"></i>Falha na criação da medição
             </p>
@@ -427,16 +427,16 @@ const cardBorderClass = computed(() => {
           <div v-else-if="measurementCreated && !inTituloStage"
             class="flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg border"
             :class="measurementAuthorized
-              ? 'bg-emerald-500/10 border-emerald-500/30'
-              : 'bg-amber-500/10 border-amber-500/30'">
+              ? 'bg-data-pos/10 border-data-pos/30'
+              : 'bg-data-warn/10 border-data-warn/30'">
             <div class="flex items-center gap-2">
               <i :class="measurementAuthorized
-                ? 'fas fa-ruler-combined text-emerald-500'
-                : 'fas fa-lock text-amber-500'"></i>
+                ? 'fas fa-ruler-combined text-data-pos'
+                : 'fas fa-lock text-data-warn'"></i>
               <span class="text-xs font-semibold"
                 :class="measurementAuthorized
-                  ? 'text-emerald-700 dark:text-emerald-300'
-                  : 'text-amber-700 dark:text-amber-300'">
+                  ? 'text-data-pos'
+                  : 'text-data-warn'">
                 {{ measurementAuthorized ? 'Medição autorizada' : 'Medição em autorização' }}
                 <span v-if="launch.siengeMeasurementNumber" class="font-normal opacity-75 ml-1">
                   #{{ launch.siengeMeasurementNumber }}
@@ -450,21 +450,21 @@ const cardBorderClass = computed(() => {
           </div>
         </div>
 
-        <div v-else class="text-xs text-ink-subtle flex items-center gap-2">
+        <div v-else class="text-ink-subtle flex items-center gap-2">
           <i class="fas fa-circle text-ink-subtle/40"></i>Aguardando processamento
         </div>
       </div>
 
       <!-- ── Título ── -->
       <div v-if="tituloCreating || tituloCreated || tituloError">
-        <p class="text-[10px] font-mono uppercase tracking-wider text-ink-subtle mb-2">Título Sienge</p>
+        <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-2">Título Sienge</p>
 
-        <div v-if="tituloCreating" class="flex items-center gap-2 text-sm text-accent">
+        <div v-if="tituloCreating" class="flex items-center gap-2 text-accent">
           <i class="fas fa-spinner fa-spin"></i>Criando título no Sienge via automação...
         </div>
 
         <div v-else-if="tituloError"
-          class="rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-xs text-red-700 dark:text-red-300 space-y-1">
+          class="rounded-lg border border-data-neg/20 bg-data-neg/10 p-3 text-data-neg space-y-1">
           <p class="font-semibold flex items-center gap-1.5">
             <i class="fas fa-triangle-exclamation"></i>Falha na criação do título
           </p>
@@ -475,21 +475,21 @@ const cardBorderClass = computed(() => {
         <div v-else-if="tituloCreated"
           class="rounded-lg border px-3 py-2.5 space-y-2"
           :class="tituloPago
-            ? 'bg-emerald-500/10 border-emerald-500/30'
+            ? 'bg-data-pos/10 border-data-pos/30'
             : tituloAwaiting
-              ? 'bg-amber-500/10 border-amber-500/30'
-              : 'bg-emerald-500/10 border-emerald-500/30'">
+              ? 'bg-data-warn/10 border-data-warn/30'
+              : 'bg-data-pos/10 border-data-pos/30'">
           <div class="flex items-center justify-between gap-2">
             <div class="flex items-center gap-2 min-w-0">
               <i :class="tituloPago
-                ? 'fas fa-circle-check text-emerald-500'
+                ? 'fas fa-circle-check text-data-pos'
                 : tituloAwaiting
-                  ? 'fas fa-clock text-amber-500'
-                  : 'fas fa-file-invoice-dollar text-emerald-500'"></i>
+                  ? 'fas fa-clock text-data-warn'
+                  : 'fas fa-file-invoice-dollar text-data-pos'"></i>
               <span class="text-xs font-semibold truncate"
                 :class="tituloPago || !tituloAwaiting
-                  ? 'text-emerald-700 dark:text-emerald-300'
-                  : 'text-amber-700 dark:text-amber-300'">
+                  ? 'text-data-pos'
+                  : 'text-data-warn'">
                 {{ tituloPago ? 'Título pago' : tituloAwaiting ? 'Aguardando pagamento' : 'Título criado' }}
               </span>
             </div>
@@ -499,17 +499,17 @@ const cardBorderClass = computed(() => {
             </Badge>
           </div>
 
-          <p v-if="launch.siengeTituloStatus" class="text-[11px] text-ink-subtle font-mono">
+          <p v-if="launch.siengeTituloStatus" class="text-micro text-ink-subtle font-mono">
             Status Sienge: {{ launch.siengeTituloStatus }}
           </p>
 
           <div v-if="boletoRegisterError"
-            class="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-300 space-y-1">
+            class="rounded-lg border border-data-warn/30 bg-data-warn/10 px-3 py-2 text-data-warn space-y-1">
             <p class="font-semibold flex items-center gap-1.5">
               <i class="fas fa-triangle-exclamation"></i>Boleto não registrado
             </p>
             <p class="break-words opacity-80">{{ launch.siengeTituloError }}</p>
-            <p class="text-[11px] opacity-70">
+            <p class="text-micro opacity-70">
               {{ boletoManualRequired
                 ? 'Registre o boleto manualmente no Sienge ou envie um boleto corrigido pelo botão abaixo.'
                 : 'O sistema tentará novamente automaticamente. Use o botão abaixo para enviar um novo boleto.' }}
@@ -535,12 +535,12 @@ const cardBorderClass = computed(() => {
 
       <!-- ── Documentos ── -->
       <div>
-        <p class="text-[10px] font-mono uppercase tracking-wider text-ink-subtle mb-2">Documentos</p>
+        <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-2">Documentos</p>
         <div class="grid grid-cols-2 gap-2 text-xs">
           <!-- NF -->
           <div class="rounded-lg bg-surface-sunken border border-line px-3 py-2 space-y-0.5">
             <p class="flex items-center gap-1 font-medium text-ink">
-              <i class="fas fa-file-invoice text-red-500"></i> Nota Fiscal
+              <i class="fas fa-file-invoice text-data-neg"></i> Nota Fiscal
             </p>
             <div v-if="launch.nfUrl" class="space-y-0.5">
               <p class="text-ink-muted">
@@ -551,7 +551,7 @@ const cardBorderClass = computed(() => {
               </p>
               <a :href="launch.nfUrl" target="_blank"
                 class="text-accent hover:underline flex items-center gap-1 mt-1">
-                <i class="fas fa-arrow-up-right-from-square text-[10px]"></i> Abrir
+                <i class="fas fa-arrow-up-right-from-square text-micro"></i> Abrir
               </a>
             </div>
             <p v-else class="text-ink-subtle italic">Não anexada</p>
@@ -573,7 +573,7 @@ const cardBorderClass = computed(() => {
               </p>
               <a :href="launch.boletoUrl" target="_blank"
                 class="text-accent hover:underline flex items-center gap-1 mt-1">
-                <i class="fas fa-arrow-up-right-from-square text-[10px]"></i> Abrir
+                <i class="fas fa-arrow-up-right-from-square text-micro"></i> Abrir
               </a>
             </div>
             <p v-else class="text-ink-subtle italic">Não anexado</p>
@@ -583,27 +583,27 @@ const cardBorderClass = computed(() => {
 
       <!-- ── Saldo ── -->
       <div v-if="contractFound && balanceOk !== null && balanceOk !== undefined">
-        <p class="text-[10px] font-mono uppercase tracking-wider text-ink-subtle mb-2">Saldo</p>
+        <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-2">Saldo</p>
         <div class="rounded-lg px-3 py-2.5 flex items-center justify-between gap-3 border"
           :class="balanceOk
-            ? 'bg-emerald-500/10 border-emerald-500/30'
-            : 'bg-amber-500/10 border-amber-500/30'">
+            ? 'bg-data-pos/10 border-data-pos/30'
+            : 'bg-data-warn/10 border-data-warn/30'">
           <div>
             <p class="text-xs"
               :class="balanceOk
-                ? 'text-emerald-600 dark:text-emerald-400'
-                : 'text-amber-600 dark:text-amber-400'">
+                ? 'text-data-pos'
+                : 'text-data-warn'">
               {{ balanceOk ? 'Saldo suficiente' : 'Saldo insuficiente' }}
             </p>
             <p class="text-sm font-bold mt-0.5"
               :class="balanceOk
-                ? 'text-emerald-700 dark:text-emerald-300'
-                : 'text-amber-700 dark:text-amber-300'">
+                ? 'text-data-pos'
+                : 'text-data-warn'">
               Disponível: {{ fmt(balance) }}
             </p>
           </div>
           <div class="text-right">
-            <p class="text-xs text-ink-subtle">Valor lançamento</p>
+            <p class="text-ink-subtle">Valor lançamento</p>
             <p class="text-sm font-semibold text-ink">{{ fmt(unitPrice) }}</p>
           </div>
         </div>
