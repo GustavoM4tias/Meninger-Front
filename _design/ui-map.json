@@ -3,209 +3,6 @@
   "screens": [
     {
       "routes": [
-        "conditions/:id"
-      ],
-      "name": "Ficha Comercial Detalhe",
-      "file": "views/Office/Comercial/Conditions/Detail.vue",
-      "group": "",
-      "cat": "",
-      "sub": "",
-      "lines": 1771,
-      "pageContainer": false,
-      "pageHeader": false,
-      "pageHelp": false,
-      "hardcoded": 92,
-      "tinyText": 9,
-      "badShadow": 16,
-      "handModal": 6,
-      "table": false,
-      "tableMobile": true,
-      "chart": false,
-      "spinner": false,
-      "skeleton": false,
-      "breakpoints": 20,
-      "divClick": 6,
-      "kids": [
-        {
-          "file": "views/Office/Comercial/Conditions/components/AppraisalQrCode.vue",
-          "lines": 38,
-          "hardcoded": 1,
-          "tinyText": 1,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Comercial/Conditions/components/AttachmentPicker.vue",
-          "lines": 507,
-          "hardcoded": 23,
-          "tinyText": 1,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Comercial/Conditions/components/CampaignManager.vue",
-          "lines": 523,
-          "hardcoded": 24,
-          "tinyText": 6,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Comercial/Conditions/components/DocsSection.vue",
-          "lines": 249,
-          "hardcoded": 26,
-          "tinyText": 0,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Comercial/Conditions/components/ModuleSection.vue",
-          "lines": 1844,
-          "hardcoded": 73,
-          "tinyText": 20,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Comercial/Conditions/components/NegotiationRules.vue",
-          "lines": 227,
-          "hardcoded": 16,
-          "tinyText": 0,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Comercial/Conditions/components/OperationalSection.vue",
-          "lines": 526,
-          "hardcoded": 53,
-          "tinyText": 0,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Comercial/Conditions/components/PriceDistribution.vue",
-          "lines": 153,
-          "hardcoded": 11,
-          "tinyText": 0,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Comercial/Conditions/components/SignaturePanel.vue",
-          "lines": 403,
-          "hardcoded": 11,
-          "tinyText": 10,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Comercial/Conditions/components/SummaryExport.vue",
-          "lines": 3016,
-          "hardcoded": 91,
-          "tinyText": 34,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        }
-      ],
-      "totalLines": 9257,
-      "totalHardcoded": 421,
-      "totalTiny": 81,
-      "totalCharts": 0,
-      "totalTables": 0,
-      "archetype": "Detalhe",
-      "score": 8
-    },
-    {
-      "routes": [
-        "paymentflow"
-      ],
-      "name": "Fluxo de Pagamento",
-      "file": "views/Office/Tools/PaymentoFlow/Index.vue",
-      "group": "",
-      "cat": "",
-      "sub": "",
-      "lines": 773,
-      "pageContainer": false,
-      "pageHeader": false,
-      "pageHelp": false,
-      "hardcoded": 129,
-      "tinyText": 0,
-      "badShadow": 3,
-      "handModal": 2,
-      "table": false,
-      "tableMobile": true,
-      "chart": false,
-      "spinner": false,
-      "skeleton": false,
-      "breakpoints": 21,
-      "divClick": 7,
-      "kids": [
-        {
-          "file": "views/Office/Tools/PaymentoFlow/components/CreateLaunchModal.vue",
-          "lines": 1108,
-          "hardcoded": 70,
-          "tinyText": 0,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Tools/PaymentoFlow/components/LaunchPipelineCard.vue",
-          "lines": 614,
-          "hardcoded": 0,
-          "tinyText": 14,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Tools/PaymentoFlow/components/RidRequestModal.vue",
-          "lines": 743,
-          "hardcoded": 52,
-          "tinyText": 6,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Tools/PaymentoFlow/components/SiengeCredentialsModal.vue",
-          "lines": 129,
-          "hardcoded": 0,
-          "tinyText": 1,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Tools/PaymentoFlow/components/UpdateBoletoModal.vue",
-          "lines": 229,
-          "hardcoded": 0,
-          "tinyText": 3,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        }
-      ],
-      "totalLines": 3596,
-      "totalHardcoded": 251,
-      "totalTiny": 24,
-      "totalCharts": 0,
-      "totalTables": 0,
-      "archetype": "Ferramenta",
-      "score": 16
-    },
-    {
-      "routes": [
         "workflow/groups"
       ],
       "name": "Grupos de Workflow",
@@ -236,254 +33,6 @@
       "totalTables": 0,
       "archetype": "Ferramenta",
       "score": 20
-    },
-    {
-      "routes": [
-        "conditions/settings"
-      ],
-      "name": "Fichas Comerciais Configurações",
-      "file": "views/Office/Comercial/Conditions/Settings.vue",
-      "group": "",
-      "cat": "",
-      "sub": "",
-      "lines": 351,
-      "pageContainer": true,
-      "pageHeader": false,
-      "pageHelp": false,
-      "hardcoded": 0,
-      "tinyText": 1,
-      "badShadow": 0,
-      "handModal": 0,
-      "table": false,
-      "tableMobile": true,
-      "chart": false,
-      "spinner": true,
-      "skeleton": false,
-      "breakpoints": 2,
-      "divClick": 0,
-      "kids": [
-        {
-          "file": "views/Office/Comercial/Conditions/components/AppraisalQrCode.vue",
-          "lines": 38,
-          "hardcoded": 1,
-          "tinyText": 1,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Comercial/Conditions/components/AttachmentPicker.vue",
-          "lines": 507,
-          "hardcoded": 23,
-          "tinyText": 1,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Comercial/Conditions/components/CampaignManager.vue",
-          "lines": 523,
-          "hardcoded": 24,
-          "tinyText": 6,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Comercial/Conditions/components/DocsSection.vue",
-          "lines": 249,
-          "hardcoded": 26,
-          "tinyText": 0,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Comercial/Conditions/components/ModuleSection.vue",
-          "lines": 1844,
-          "hardcoded": 73,
-          "tinyText": 20,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Comercial/Conditions/components/NegotiationRules.vue",
-          "lines": 227,
-          "hardcoded": 16,
-          "tinyText": 0,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Comercial/Conditions/components/OperationalSection.vue",
-          "lines": 526,
-          "hardcoded": 53,
-          "tinyText": 0,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Comercial/Conditions/components/PriceDistribution.vue",
-          "lines": 153,
-          "hardcoded": 11,
-          "tinyText": 0,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Comercial/Conditions/components/SignaturePanel.vue",
-          "lines": 403,
-          "hardcoded": 11,
-          "tinyText": 10,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Comercial/Conditions/components/SummaryExport.vue",
-          "lines": 3016,
-          "hardcoded": 91,
-          "tinyText": 34,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        }
-      ],
-      "totalLines": 7837,
-      "totalHardcoded": 329,
-      "totalTiny": 73,
-      "totalCharts": 0,
-      "totalTables": 0,
-      "archetype": "Configuração",
-      "score": 29
-    },
-    {
-      "routes": [
-        "conditions"
-      ],
-      "name": "Fichas Comerciais",
-      "file": "views/Office/Comercial/Conditions/Index.vue",
-      "group": "",
-      "cat": "",
-      "sub": "",
-      "lines": 622,
-      "pageContainer": true,
-      "pageHeader": true,
-      "pageHelp": false,
-      "hardcoded": 3,
-      "tinyText": 6,
-      "badShadow": 0,
-      "handModal": 0,
-      "table": false,
-      "tableMobile": true,
-      "chart": false,
-      "spinner": true,
-      "skeleton": false,
-      "breakpoints": 7,
-      "divClick": 0,
-      "kids": [
-        {
-          "file": "views/Office/Comercial/Conditions/components/AppraisalQrCode.vue",
-          "lines": 38,
-          "hardcoded": 1,
-          "tinyText": 1,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Comercial/Conditions/components/AttachmentPicker.vue",
-          "lines": 507,
-          "hardcoded": 23,
-          "tinyText": 1,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Comercial/Conditions/components/CampaignManager.vue",
-          "lines": 523,
-          "hardcoded": 24,
-          "tinyText": 6,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Comercial/Conditions/components/DocsSection.vue",
-          "lines": 249,
-          "hardcoded": 26,
-          "tinyText": 0,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Comercial/Conditions/components/ModuleSection.vue",
-          "lines": 1844,
-          "hardcoded": 73,
-          "tinyText": 20,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Comercial/Conditions/components/NegotiationRules.vue",
-          "lines": 227,
-          "hardcoded": 16,
-          "tinyText": 0,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Comercial/Conditions/components/OperationalSection.vue",
-          "lines": 526,
-          "hardcoded": 53,
-          "tinyText": 0,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Comercial/Conditions/components/PriceDistribution.vue",
-          "lines": 153,
-          "hardcoded": 11,
-          "tinyText": 0,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Comercial/Conditions/components/SignaturePanel.vue",
-          "lines": 403,
-          "hardcoded": 11,
-          "tinyText": 10,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Comercial/Conditions/components/SummaryExport.vue",
-          "lines": 3016,
-          "hardcoded": 91,
-          "tinyText": 34,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        }
-      ],
-      "totalLines": 8108,
-      "totalHardcoded": 332,
-      "totalTiny": 78,
-      "totalCharts": 0,
-      "totalTables": 0,
-      "archetype": "Ferramenta",
-      "score": 43
     },
     {
       "routes": [
@@ -1136,55 +685,127 @@
     },
     {
       "routes": [
-        "boleto-caixa"
+        "conditions/:id"
       ],
-      "name": "Boleto Caixa",
-      "file": "views/Office/Financeiro/BoletoCaixa/Index.vue",
+      "name": "Ficha Comercial Detalhe",
+      "file": "views/Office/Comercial/Conditions/Detail.vue",
       "group": "",
       "cat": "",
       "sub": "",
-      "lines": 1267,
-      "pageContainer": true,
-      "pageHeader": true,
-      "pageHelp": false,
-      "hardcoded": 2,
-      "tinyText": 15,
-      "badShadow": 1,
-      "handModal": 1,
-      "table": true,
+      "lines": 1564,
+      "pageContainer": false,
+      "pageHeader": false,
+      "pageHelp": true,
+      "hardcoded": 0,
+      "tinyText": 0,
+      "badShadow": 3,
+      "handModal": 0,
+      "table": false,
       "tableMobile": true,
       "chart": false,
       "spinner": false,
-      "skeleton": false,
-      "breakpoints": 9,
-      "divClick": 1,
+      "skeleton": true,
+      "breakpoints": 24,
+      "divClick": 0,
       "kids": [
         {
-          "file": "views/Office/Financeiro/BoletoCaixa/components/BoletoDetailModal.vue",
-          "lines": 1029,
+          "file": "views/Office/Comercial/Conditions/components/AppraisalQrCode.vue",
+          "lines": 38,
           "hardcoded": 0,
-          "tinyText": 16,
+          "tinyText": 0,
           "chart": false,
-          "table": true,
-          "tableMobile": true
+          "table": false,
+          "tableMobile": false
         },
         {
-          "file": "views/Office/Financeiro/BoletoCaixa/components/BoletoFilters.vue",
-          "lines": 303,
+          "file": "views/Office/Comercial/Conditions/components/AttachmentPicker.vue",
+          "lines": 487,
           "hardcoded": 0,
-          "tinyText": 7,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Comercial/Conditions/components/CampaignManager.vue",
+          "lines": 511,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Comercial/Conditions/components/DocsSection.vue",
+          "lines": 249,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Comercial/Conditions/components/ModuleSection.vue",
+          "lines": 1489,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Comercial/Conditions/components/NegotiationRules.vue",
+          "lines": 227,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Comercial/Conditions/components/OperationalSection.vue",
+          "lines": 526,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Comercial/Conditions/components/PriceDistribution.vue",
+          "lines": 153,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Comercial/Conditions/components/SignaturePanel.vue",
+          "lines": 403,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Comercial/Conditions/components/SummaryExport.vue",
+          "lines": 2926,
+          "hardcoded": 0,
+          "tinyText": 0,
           "chart": false,
           "table": false,
           "tableMobile": false
         }
       ],
-      "totalLines": 2599,
-      "totalHardcoded": 2,
-      "totalTiny": 38,
+      "totalLines": 8573,
+      "totalHardcoded": 0,
+      "totalTiny": 0,
       "totalCharts": 0,
-      "totalTables": 2,
-      "archetype": "Operação",
-      "score": 69
+      "totalTables": 0,
+      "archetype": "Detalhe",
+      "score": 70
     },
     {
       "routes": [
@@ -1565,9 +1186,9 @@
         },
         {
           "file": "views/Office/Marketing/Leads/components/EnterpriseDonut.vue",
-          "lines": 91,
+          "lines": 99,
           "hardcoded": 0,
-          "tinyText": 1,
+          "tinyText": 0,
           "chart": true,
           "table": false,
           "tableMobile": false
@@ -1619,7 +1240,7 @@
         },
         {
           "file": "views/Office/Marketing/Leads/components/LeadModal.vue",
-          "lines": 617,
+          "lines": 620,
           "hardcoded": 0,
           "tinyText": 8,
           "chart": true,
@@ -1655,7 +1276,7 @@
         },
         {
           "file": "views/Office/Marketing/Leads/components/LeadsTrendCard.vue",
-          "lines": 98,
+          "lines": 96,
           "hardcoded": 0,
           "tinyText": 0,
           "chart": true,
@@ -1690,9 +1311,9 @@
           "tableMobile": false
         }
       ],
-      "totalLines": 2980,
+      "totalLines": 2989,
       "totalHardcoded": 7,
-      "totalTiny": 56,
+      "totalTiny": 55,
       "totalCharts": 3,
       "totalTables": 2,
       "archetype": "Painel",
@@ -2689,7 +2310,7 @@
       "group": "",
       "cat": "",
       "sub": "",
-      "lines": 489,
+      "lines": 477,
       "pageContainer": true,
       "pageHeader": true,
       "pageHelp": true,
@@ -2724,7 +2345,7 @@
           "tableMobile": false
         }
       ],
-      "totalLines": 831,
+      "totalLines": 819,
       "totalHardcoded": 2,
       "totalTiny": 10,
       "totalCharts": 1,
@@ -3129,7 +2750,7 @@
       "group": "",
       "cat": "",
       "sub": "",
-      "lines": 1002,
+      "lines": 1088,
       "pageContainer": true,
       "pageHeader": true,
       "pageHelp": true,
@@ -3142,12 +2763,12 @@
       "chart": false,
       "spinner": true,
       "skeleton": false,
-      "breakpoints": 9,
+      "breakpoints": 10,
       "divClick": 1,
       "kids": [
         {
           "file": "views/Office/Comercial/CancelamentoReservas/components/ReservaCancelFilters.vue",
-          "lines": 173,
+          "lines": 174,
           "hardcoded": 0,
           "tinyText": 5,
           "chart": false,
@@ -3155,7 +2776,7 @@
           "tableMobile": false
         }
       ],
-      "totalLines": 1175,
+      "totalLines": 1262,
       "totalHardcoded": 0,
       "totalTiny": 27,
       "totalCharts": 0,
@@ -3205,7 +2826,7 @@
       "group": "",
       "cat": "",
       "sub": "",
-      "lines": 608,
+      "lines": 611,
       "pageContainer": true,
       "pageHeader": true,
       "pageHelp": true,
@@ -3231,7 +2852,7 @@
           "tableMobile": true
         }
       ],
-      "totalLines": 982,
+      "totalLines": 985,
       "totalHardcoded": 8,
       "totalTiny": 0,
       "totalCharts": 0,
@@ -3248,7 +2869,7 @@
       "group": "",
       "cat": "",
       "sub": "",
-      "lines": 465,
+      "lines": 468,
       "pageContainer": true,
       "pageHeader": true,
       "pageHelp": true,
@@ -3283,7 +2904,7 @@
           "tableMobile": true
         }
       ],
-      "totalLines": 992,
+      "totalLines": 995,
       "totalHardcoded": 5,
       "totalTiny": 0,
       "totalCharts": 0,
@@ -3436,6 +3057,58 @@
       "totalTiny": 13,
       "totalCharts": 0,
       "totalTables": 1,
+      "archetype": "Operação",
+      "score": 98
+    },
+    {
+      "routes": [
+        "boleto-caixa"
+      ],
+      "name": "Boleto Caixa",
+      "file": "views/Office/Financeiro/BoletoCaixa/Index.vue",
+      "group": "",
+      "cat": "",
+      "sub": "",
+      "lines": 1280,
+      "pageContainer": true,
+      "pageHeader": true,
+      "pageHelp": true,
+      "hardcoded": 0,
+      "tinyText": 0,
+      "badShadow": 0,
+      "handModal": 0,
+      "table": true,
+      "tableMobile": true,
+      "chart": false,
+      "spinner": true,
+      "skeleton": true,
+      "breakpoints": 15,
+      "divClick": 0,
+      "kids": [
+        {
+          "file": "views/Office/Financeiro/BoletoCaixa/components/BoletoDetailModal.vue",
+          "lines": 1060,
+          "hardcoded": 6,
+          "tinyText": 0,
+          "chart": false,
+          "table": true,
+          "tableMobile": true
+        },
+        {
+          "file": "views/Office/Financeiro/BoletoCaixa/components/BoletoFilters.vue",
+          "lines": 278,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        }
+      ],
+      "totalLines": 2618,
+      "totalHardcoded": 6,
+      "totalTiny": 0,
+      "totalCharts": 0,
+      "totalTables": 2,
       "archetype": "Operação",
       "score": 98
     },
@@ -3881,6 +3554,130 @@
     },
     {
       "routes": [
+        "conditions"
+      ],
+      "name": "Fichas Comerciais",
+      "file": "views/Office/Comercial/Conditions/Index.vue",
+      "group": "",
+      "cat": "",
+      "sub": "",
+      "lines": 716,
+      "pageContainer": true,
+      "pageHeader": true,
+      "pageHelp": true,
+      "hardcoded": 0,
+      "tinyText": 0,
+      "badShadow": 0,
+      "handModal": 0,
+      "table": false,
+      "tableMobile": true,
+      "chart": false,
+      "spinner": true,
+      "skeleton": true,
+      "breakpoints": 11,
+      "divClick": 0,
+      "kids": [
+        {
+          "file": "views/Office/Comercial/Conditions/components/AppraisalQrCode.vue",
+          "lines": 38,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Comercial/Conditions/components/AttachmentPicker.vue",
+          "lines": 487,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Comercial/Conditions/components/CampaignManager.vue",
+          "lines": 511,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Comercial/Conditions/components/DocsSection.vue",
+          "lines": 249,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Comercial/Conditions/components/ModuleSection.vue",
+          "lines": 1489,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Comercial/Conditions/components/NegotiationRules.vue",
+          "lines": 227,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Comercial/Conditions/components/OperationalSection.vue",
+          "lines": 526,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Comercial/Conditions/components/PriceDistribution.vue",
+          "lines": 153,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Comercial/Conditions/components/SignaturePanel.vue",
+          "lines": 403,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Comercial/Conditions/components/SummaryExport.vue",
+          "lines": 2926,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        }
+      ],
+      "totalLines": 7725,
+      "totalHardcoded": 0,
+      "totalTiny": 0,
+      "totalCharts": 0,
+      "totalTables": 0,
+      "archetype": "Ferramenta",
+      "score": 100
+    },
+    {
+      "routes": [
         "correspondentes"
       ],
       "name": "Correspondentes",
@@ -3962,6 +3759,209 @@
       "totalLines": 1534,
       "totalHardcoded": 0,
       "totalTiny": 3,
+      "totalCharts": 0,
+      "totalTables": 0,
+      "archetype": "Ferramenta",
+      "score": 100
+    },
+    {
+      "routes": [
+        "conditions/settings"
+      ],
+      "name": "Fichas Comerciais Configurações",
+      "file": "views/Office/Comercial/Conditions/Settings.vue",
+      "group": "",
+      "cat": "",
+      "sub": "",
+      "lines": 459,
+      "pageContainer": true,
+      "pageHeader": true,
+      "pageHelp": true,
+      "hardcoded": 0,
+      "tinyText": 0,
+      "badShadow": 0,
+      "handModal": 0,
+      "table": false,
+      "tableMobile": true,
+      "chart": false,
+      "spinner": false,
+      "skeleton": true,
+      "breakpoints": 3,
+      "divClick": 0,
+      "kids": [
+        {
+          "file": "views/Office/Comercial/Conditions/components/AppraisalQrCode.vue",
+          "lines": 38,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Comercial/Conditions/components/AttachmentPicker.vue",
+          "lines": 487,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Comercial/Conditions/components/CampaignManager.vue",
+          "lines": 511,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Comercial/Conditions/components/DocsSection.vue",
+          "lines": 249,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Comercial/Conditions/components/ModuleSection.vue",
+          "lines": 1489,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Comercial/Conditions/components/NegotiationRules.vue",
+          "lines": 227,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Comercial/Conditions/components/OperationalSection.vue",
+          "lines": 526,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Comercial/Conditions/components/PriceDistribution.vue",
+          "lines": 153,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Comercial/Conditions/components/SignaturePanel.vue",
+          "lines": 403,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Comercial/Conditions/components/SummaryExport.vue",
+          "lines": 2926,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        }
+      ],
+      "totalLines": 7468,
+      "totalHardcoded": 0,
+      "totalTiny": 0,
+      "totalCharts": 0,
+      "totalTables": 0,
+      "archetype": "Configuração",
+      "score": 100
+    },
+    {
+      "routes": [
+        "paymentflow"
+      ],
+      "name": "Fluxo de Pagamento",
+      "file": "views/Office/Tools/PaymentoFlow/Index.vue",
+      "group": "",
+      "cat": "",
+      "sub": "",
+      "lines": 646,
+      "pageContainer": true,
+      "pageHeader": true,
+      "pageHelp": true,
+      "hardcoded": 0,
+      "tinyText": 0,
+      "badShadow": 0,
+      "handModal": 0,
+      "table": false,
+      "tableMobile": true,
+      "chart": false,
+      "spinner": true,
+      "skeleton": true,
+      "breakpoints": 10,
+      "divClick": 0,
+      "kids": [
+        {
+          "file": "views/Office/Tools/PaymentoFlow/components/CreateLaunchModal.vue",
+          "lines": 1108,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Tools/PaymentoFlow/components/LaunchPipelineCard.vue",
+          "lines": 614,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Tools/PaymentoFlow/components/RidRequestModal.vue",
+          "lines": 745,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Tools/PaymentoFlow/components/SiengeCredentialsModal.vue",
+          "lines": 129,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Tools/PaymentoFlow/components/UpdateBoletoModal.vue",
+          "lines": 229,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        }
+      ],
+      "totalLines": 3471,
+      "totalHardcoded": 0,
+      "totalTiny": 0,
       "totalCharts": 0,
       "totalTables": 0,
       "archetype": "Ferramenta",
@@ -4443,7 +4443,7 @@
         },
         {
           "file": "views/Office/Comercial/CancelamentoReservas/components/ReservaCancelFilters.vue",
-          "lines": 173,
+          "lines": 174,
           "hardcoded": 0,
           "tinyText": 5,
           "chart": false,
@@ -4453,26 +4453,26 @@
         {
           "file": "views/Office/Comercial/Conditions/components/AppraisalQrCode.vue",
           "lines": 38,
-          "hardcoded": 1,
-          "tinyText": 1,
+          "hardcoded": 0,
+          "tinyText": 0,
           "chart": false,
           "table": false,
           "tableMobile": false
         },
         {
           "file": "views/Office/Comercial/Conditions/components/AttachmentPicker.vue",
-          "lines": 507,
-          "hardcoded": 23,
-          "tinyText": 1,
+          "lines": 487,
+          "hardcoded": 0,
+          "tinyText": 0,
           "chart": false,
           "table": false,
           "tableMobile": false
         },
         {
           "file": "views/Office/Comercial/Conditions/components/CampaignManager.vue",
-          "lines": 523,
-          "hardcoded": 24,
-          "tinyText": 6,
+          "lines": 511,
+          "hardcoded": 0,
+          "tinyText": 0,
           "chart": false,
           "table": false,
           "tableMobile": false
@@ -4480,7 +4480,7 @@
         {
           "file": "views/Office/Comercial/Conditions/components/DocsSection.vue",
           "lines": 249,
-          "hardcoded": 26,
+          "hardcoded": 0,
           "tinyText": 0,
           "chart": false,
           "table": false,
@@ -4488,9 +4488,9 @@
         },
         {
           "file": "views/Office/Comercial/Conditions/components/ModuleSection.vue",
-          "lines": 1844,
-          "hardcoded": 73,
-          "tinyText": 20,
+          "lines": 1489,
+          "hardcoded": 0,
+          "tinyText": 0,
           "chart": false,
           "table": false,
           "tableMobile": false
@@ -4498,7 +4498,7 @@
         {
           "file": "views/Office/Comercial/Conditions/components/NegotiationRules.vue",
           "lines": 227,
-          "hardcoded": 16,
+          "hardcoded": 0,
           "tinyText": 0,
           "chart": false,
           "table": false,
@@ -4507,7 +4507,7 @@
         {
           "file": "views/Office/Comercial/Conditions/components/OperationalSection.vue",
           "lines": 526,
-          "hardcoded": 53,
+          "hardcoded": 0,
           "tinyText": 0,
           "chart": false,
           "table": false,
@@ -4516,7 +4516,7 @@
         {
           "file": "views/Office/Comercial/Conditions/components/PriceDistribution.vue",
           "lines": 153,
-          "hardcoded": 11,
+          "hardcoded": 0,
           "tinyText": 0,
           "chart": false,
           "table": false,
@@ -4525,17 +4525,17 @@
         {
           "file": "views/Office/Comercial/Conditions/components/SignaturePanel.vue",
           "lines": 403,
-          "hardcoded": 11,
-          "tinyText": 10,
+          "hardcoded": 0,
+          "tinyText": 0,
           "chart": false,
           "table": false,
           "tableMobile": false
         },
         {
           "file": "views/Office/Comercial/Conditions/components/SummaryExport.vue",
-          "lines": 3016,
-          "hardcoded": 91,
-          "tinyText": 34,
+          "lines": 2926,
+          "hardcoded": 0,
+          "tinyText": 0,
           "chart": false,
           "table": false,
           "tableMobile": false
@@ -4623,7 +4623,7 @@
         },
         {
           "file": "views/Office/Comercial/Faturamento/components/EnterpriseDetailModal.vue",
-          "lines": 1457,
+          "lines": 1460,
           "hardcoded": 3,
           "tinyText": 30,
           "chart": true,
@@ -4893,7 +4893,7 @@
         },
         {
           "file": "views/Office/Comercial/Sales-Projection/components/ProjectionChartsModal.vue",
-          "lines": 1098,
+          "lines": 1110,
           "hardcoded": 4,
           "tinyText": 18,
           "chart": true,
@@ -4974,18 +4974,18 @@
         },
         {
           "file": "views/Office/Financeiro/BoletoCaixa/components/BoletoDetailModal.vue",
-          "lines": 1029,
-          "hardcoded": 0,
-          "tinyText": 16,
+          "lines": 1060,
+          "hardcoded": 6,
+          "tinyText": 0,
           "chart": false,
           "table": true,
           "tableMobile": true
         },
         {
           "file": "views/Office/Financeiro/BoletoCaixa/components/BoletoFilters.vue",
-          "lines": 303,
+          "lines": 278,
           "hardcoded": 0,
-          "tinyText": 7,
+          "tinyText": 0,
           "chart": false,
           "table": false,
           "tableMobile": false
@@ -5046,7 +5046,7 @@
         },
         {
           "file": "views/Office/Marketing/Campanhas/components/CampaignDailyChart.vue",
-          "lines": 143,
+          "lines": 147,
           "hardcoded": 0,
           "tinyText": 0,
           "chart": true,
@@ -5433,9 +5433,9 @@
         },
         {
           "file": "views/Office/Marketing/Leads/components/EnterpriseDonut.vue",
-          "lines": 91,
+          "lines": 99,
           "hardcoded": 0,
-          "tinyText": 1,
+          "tinyText": 0,
           "chart": true,
           "table": false,
           "tableMobile": false
@@ -5487,7 +5487,7 @@
         },
         {
           "file": "views/Office/Marketing/Leads/components/LeadModal.vue",
-          "lines": 617,
+          "lines": 620,
           "hardcoded": 0,
           "tinyText": 8,
           "chart": true,
@@ -5523,7 +5523,7 @@
         },
         {
           "file": "views/Office/Marketing/Leads/components/LeadsTrendCard.vue",
-          "lines": 98,
+          "lines": 96,
           "hardcoded": 0,
           "tinyText": 0,
           "chart": true,
@@ -6001,7 +6001,7 @@
         {
           "file": "views/Office/Tools/PaymentoFlow/components/CreateLaunchModal.vue",
           "lines": 1108,
-          "hardcoded": 70,
+          "hardcoded": 0,
           "tinyText": 0,
           "chart": false,
           "table": false,
@@ -6011,16 +6011,16 @@
           "file": "views/Office/Tools/PaymentoFlow/components/LaunchPipelineCard.vue",
           "lines": 614,
           "hardcoded": 0,
-          "tinyText": 14,
+          "tinyText": 0,
           "chart": false,
           "table": false,
           "tableMobile": false
         },
         {
           "file": "views/Office/Tools/PaymentoFlow/components/RidRequestModal.vue",
-          "lines": 743,
-          "hardcoded": 52,
-          "tinyText": 6,
+          "lines": 745,
+          "hardcoded": 0,
+          "tinyText": 0,
           "chart": false,
           "table": false,
           "tableMobile": false
@@ -6029,7 +6029,7 @@
           "file": "views/Office/Tools/PaymentoFlow/components/SiengeCredentialsModal.vue",
           "lines": 129,
           "hardcoded": 0,
-          "tinyText": 1,
+          "tinyText": 0,
           "chart": false,
           "table": false,
           "tableMobile": false
@@ -6038,7 +6038,7 @@
           "file": "views/Office/Tools/PaymentoFlow/components/UpdateBoletoModal.vue",
           "lines": 229,
           "hardcoded": 0,
-          "tinyText": 3,
+          "tinyText": 0,
           "chart": false,
           "table": false,
           "tableMobile": false
@@ -6071,9 +6071,9 @@
           "tableMobile": false
         }
       ],
-      "totalLines": 56610,
-      "totalHardcoded": 765,
-      "totalTiny": 858,
+      "totalLines": 56170,
+      "totalHardcoded": 320,
+      "totalTiny": 738,
       "totalCharts": 7,
       "totalTables": 23,
       "archetype": "Especial",
