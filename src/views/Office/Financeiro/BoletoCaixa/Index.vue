@@ -1061,14 +1061,20 @@ const recorte = ref('');
 const RECORTES = {
   paid: { label: 'pagos', teste: (r) => r.payment_status === 'paid' },
   pending: { label: 'pendentes', teste: (r) => (r.payment_status || 'pending') === 'pending' && r.status === 'success' },
-  cancelled: { label: 'baixados', teste: (r) => r.payment_status === 'cancelled' },
+  /* Baixado de reserva CANCELADA não é evasão - o cliente não fugiu do
+     pagamento, a reserva morreu. Vai pro recorte "canceladas". */
+  cancelled: { label: 'baixados', teste: (r) => r.payment_status === 'cancelled' && !r.reserva_morta },
   /* `has_boleto` fora: reserva que já tem boleto emitido e depois teve uma
      retentativa falha (o CV redisparou o webhook) não é trabalho pendente, e
      inchava o recorte com caso já resolvido. Mesmo critério do cartão.
      `reserva_morta` fora pelo mesmo motivo: reserva cancelada no CV não tem
      boleto a consertar, o cliente desistiu. Elas vão pro cartão Canceladas. */
   error: { label: 'com erro', teste: (r) => r.status === 'error' && !r.has_boleto && !r.reserva_morta },
-  dead: { label: 'canceladas', teste: (r) => r.status === 'error' && !r.has_boleto && r.reserva_morta },
+  dead: {
+    label: 'canceladas',
+    teste: (r) => r.reserva_morta
+      && ((r.status === 'error' && !r.has_boleto) || r.payment_status === 'cancelled'),
+  },
 };
 
 const recorteAtivo = computed(() => RECORTES[recorte.value] || null);
@@ -1165,7 +1171,8 @@ const kpiCards = computed(() => {
       icon: 'fas fa-clock', tone: 2, tooltip: 'Clique para ver só os pendentes' },
     { key: 'cancelled', label: 'Baixados', value: st.cancelled.qty,
       hint: `${pct('cancelled')}% evasão · ${formatCurrency(st.cancelled.valor)}`,
-      icon: 'fas fa-ban', tone: 'neutral', tooltip: 'Clique para ver só os baixados' },
+      icon: 'fas fa-ban', tone: 'neutral',
+      tooltip: 'Boleto vencido sem pagamento, com a reserva viva. Esta é a evasão de verdade' },
     { key: 'error', label: 'Com erro', value: st.errors?.qty ?? 0,
       hint: st.errors?.valor != null ? formatCurrency(st.errors.valor) : '',
       icon: 'fas fa-triangle-exclamation', tone: 'neg',
@@ -1173,7 +1180,7 @@ const kpiCards = computed(() => {
     { key: 'dead', label: 'Canceladas', value: st.dead?.qty ?? 0,
       hint: st.dead?.valor ? formatCurrency(st.dead.valor) : 'reserva encerrada no CV',
       icon: 'fas fa-user-slash', tone: 'neutral',
-      tooltip: 'Reserva cancelada no CV com boleto que ficou pelo caminho. Não é erro a resolver' },
+      tooltip: 'Reserva encerrada no CV: o boleto foi baixado ou nem saiu. Não é evasão nem erro a resolver' },
   ];
 });
 
