@@ -515,6 +515,39 @@ caso sem sair do padrão.
 
 ---
 
+## Sessão e acesso
+
+**Negar acesso e encerrar a sessão são coisas diferentes.** Vale para o sistema
+inteiro, não para uma tela.
+
+O guard do router e as stores de autenticação precisam separar dois "não":
+
+```
+não tem direito      o servidor avaliou e negou (401/403, ou alçada confirmada)
+                     → nega e, quando for o caso, desloga
+
+não deu para avaliar o servidor não respondeu (rede, restart, timeout)
+                     → nega o acesso, MAS mantém a sessão
+```
+
+Tratar os dois igual apaga a credencial de quem estava perfeitamente logado. Foi
+o que acontecia até 2026-08-20: qualquer F5 durante um restart da API mandava a
+pessoa para o `/login`, e para ADMIN em qualquer tela - o cache de permissão
+guarda lista de rotas vazia e `isAdmin` nunca volta do cache, de propósito.
+
+Três obrigações:
+
+1. **O erro precisa dizer se houve resposta.** `fetch` que falha por rede e
+   resposta 401 não podem chegar iguais em quem trata: por isso `getUserInfo`
+   anexa `err.status`, e quem não tem `status` é falha de rede.
+2. **Dado de cache não sustenta negativa.** O `permissionStore` marca a `origem`
+   (`servidor` / `cache` / `nenhuma`); só `servidor` autoriza negar de verdade.
+3. **Fail-closed continua valendo.** Não avaliar nunca vira "deixa passar": a
+   porta fica fechada, a pessoa vai para a home, e a sessão se recupera sozinha
+   quando a API responde. O portão de verdade é o backend, não o guard.
+
+---
+
 ## Checklist de aceite
 
 Uma tela só está pronta quando passa nos doze:
