@@ -784,13 +784,16 @@
 
           <!-- Gatilho do scroll: mais 50, e busca no servidor quando a memória
                acaba e ainda há página. -->
-          <div v-if="!inc.acabou.value || faltaNoServidor" :ref="el => inc.observar(el)"
+          <div v-if="!inc.acabou.value || faltaNoServidor" ref="sentinela"
             class="py-6 flex items-center justify-center gap-2 text-micro text-ink-subtle">
-            <Spinner size="sm" />
+            <Spinner v-if="!inc.acabou.value || store.historyLoadingMore" size="sm" />
             <span v-if="!inc.acabou.value">
               carregando mais {{ Math.min(inc.step, inc.restantes.value) }} de {{ inc.restantes.value }} restantes
             </span>
-            <span v-else>buscando mais {{ faltaNoServidor }} no servidor</span>
+            <span v-else-if="store.historyLoadingMore">buscando mais {{ faltaNoServidor }} no servidor</span>
+            <button v-else type="button" class="underline hover:text-ink" @click="store.loadMoreHistory()">
+              carregar mais {{ faltaNoServidor }} registros
+            </button>
           </div>
         </template>
       </div>
@@ -807,7 +810,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useBoletoStore } from '@/stores/Financeiro/BoletoCaixa/boletoStore';
 import { useCan } from '@/composables/useCan';
 import API_URL from '@/config/apiUrl';
@@ -1007,7 +1010,10 @@ const RECORTES = {
   paid: { label: 'pagos', teste: (r) => r.payment_status === 'paid' },
   pending: { label: 'pendentes', teste: (r) => (r.payment_status || 'pending') === 'pending' && r.status === 'success' },
   cancelled: { label: 'baixados', teste: (r) => r.payment_status === 'cancelled' },
-  error: { label: 'com erro', teste: (r) => r.status === 'error' },
+  /* `has_boleto` fora: reserva que já tem boleto emitido e depois teve uma
+     retentativa falha (o CV redisparou o webhook) não é trabalho pendente, e
+     inchava o recorte com caso já resolvido. Mesmo critério do cartão. */
+  error: { label: 'com erro', teste: (r) => r.status === 'error' && !r.has_boleto },
   scheduled: { label: 'agendados', teste: (r) => !!r.emissao_agendada_para && r.status !== 'success' },
 };
 
@@ -1038,10 +1044,23 @@ const ordenada = computed(() => {
   });
 });
 
-const inc = useIncrementalList(ordenada, { step: 50 });
-
 const faltaNoServidor = computed(() =>
   Math.max(0, (store.historyTotal || 0) - (store.history?.length || 0)));
+
+/* `onEsgotado`: a sentinela chegou à vista e não há mais nada em memória, mas o
+   servidor ainda tem página. Sem esse gancho o rodapé anunciava "buscando mais
+   no servidor" e ninguém buscava - a listagem parava na primeira página. */
+const inc = useIncrementalList(ordenada, {
+  step: 50,
+  onEsgotado: () => { if (faltaNoServidor.value) store.loadMoreHistory(); },
+});
+
+/* Ref de template, não `:ref` inline: a arrow function é recriada a cada
+   render, e o Vue então chama observar(null) + observar(el) de novo, desligando
+   e religando o IntersectionObserver a cada atualização do store. O watch aqui
+   dispara só quando o elemento entra ou sai do DOM. */
+const sentinela = ref(null);
+watch(sentinela, (el) => inc.observar(el));
 
 /* Selo do pagamento pelos tokens. O `statusVariant` da emissão já existia mais
    abaixo, com skipped/queued - não duplicar. */
@@ -1095,9 +1114,10 @@ const kpiCards = computed(() => {
       icon: 'fas fa-ban', tone: 'neutral', tooltip: 'Clique para ver só os baixados' },
     { key: 'error', label: 'Com erro', value: st.errors?.qty ?? 0,
       hint: st.errors?.valor != null ? formatCurrency(st.errors.valor) : '',
-      icon: 'fas fa-triangle-exclamation', tone: 'neg', tooltip: 'Clique para ver só os que falharam' },
-    { key: 'scheduled', label: 'Agendados', value: st.scheduled?.qty ?? 0,
-      hint: 'aguardando a janela de emissão',
+      icon: 'fas fa-triangle-exclamation', tone: 'neg',
+      tooltip: 'Reservas que hoje estão sem boleto por falha. Clique para ver só elas' },
+    { key: 'scheduled', label: 'Agendados', value: st.queued?.qty ?? 0,
+      hint: st.queued?.valor ? formatCurrency(st.queued.valor) : 'aguardando a janela de emissão',
       icon: 'fas fa-hourglass-half', tone: 7, tooltip: 'Clique para ver só os agendados' },
   ];
 });

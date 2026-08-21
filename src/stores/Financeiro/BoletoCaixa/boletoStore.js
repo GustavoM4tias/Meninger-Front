@@ -64,8 +64,9 @@ export const useBoletoStore = defineStore('boletoCaixa', () => {
     const history = ref([]);
     const historyTotal = ref(0);
     const historyPage = ref(1);
-    const historyLimit = ref(20);
+    const historyLimit = ref(100);
     const historyLoading = ref(false);
+    const historyLoadingMore = ref(false);
     const historyError = ref(null);
 
     // Filtros expandidos (alinhados com o backend listHistory). Arrays viram CSV
@@ -98,10 +99,10 @@ export const useBoletoStore = defineStore('boletoCaixa', () => {
         fetchHistory();
     }
 
-    function buildHistoryParams() {
+    function buildHistoryParams({ page = historyPage.value, limit = historyLimit.value } = {}) {
         const params = new URLSearchParams({
-            page: historyPage.value,
-            limit: historyLimit.value,
+            page,
+            limit,
             sortBy: sortBy.value,
             sortDir: sortDir.value,
             // 1 linha por reserva (a tentativa mais recente) — o histórico completo
@@ -132,18 +133,58 @@ export const useBoletoStore = defineStore('boletoCaixa', () => {
      */
     async function fetchHistory(opts = {}) {
         const silent = !!opts.silent;
+        // Recarga é sempre do começo. Sem isso, aplicar um filtro depois de ter
+        // rolado buscaria a página 4 do recorte novo e a lista nasceria vazia.
+        if (!opts.keepPage) historyPage.value = 1;
         if (!silent) {
             historyLoading.value = true;
             historyError.value = null;
         }
+        // Recarga silenciosa (o modal atualiza a lista depois de uma ação) não
+        // pode encolher o que já está na tela: se a pessoa rolou até a página 3,
+        // pede as 3 páginas de uma vez em vez de voltar pra primeira.
+        const carregadas = history.value.length;
+        const paginacao = silent && !opts.keepPage && carregadas > historyLimit.value
+            ? { page: 1, limit: carregadas }
+            : undefined;
         try {
-            const data = await requestWithAuth(`/boleto-caixa/history?${buildHistoryParams()}`);
+            const data = await requestWithAuth(`/boleto-caixa/history?${buildHistoryParams(paginacao)}`);
             history.value = data.rows || [];
             historyTotal.value = data.total || 0;
         } catch (err) {
             if (!silent) historyError.value = err.message || 'Erro ao carregar histórico.';
         } finally {
             if (!silent) historyLoading.value = false;
+        }
+    }
+
+    /**
+     * Próxima página, concatenada no fim da lista. É o que a rolagem infinita
+     * da tela chama quando a memória acaba e o servidor ainda tem registro:
+     * antes o rodapé anunciava "buscando mais no servidor" e ninguém buscava,
+     * então a listagem parava na primeira página.
+     *
+     * Concatena por id pra tolerar linha que apareceu entre uma página e outra
+     * (o scheduler grava enquanto a pessoa rola) sem duplicar na tabela.
+     */
+    async function loadMoreHistory() {
+        if (historyLoadingMore.value || historyLoading.value) return;
+        if (history.value.length >= historyTotal.value) return;
+
+        historyLoadingMore.value = true;
+        const proxima = historyPage.value + 1;
+        try {
+            const params = buildHistoryParams({ page: proxima });
+            const data = await requestWithAuth(`/boleto-caixa/history?${params}`);
+            const vistos = new Set(history.value.map(r => r.id));
+            const novas = (data.rows || []).filter(r => !vistos.has(r.id));
+            history.value = [...history.value, ...novas];
+            historyTotal.value = data.total ?? historyTotal.value;
+            historyPage.value = proxima;
+        } catch (err) {
+            historyError.value = err.message || 'Erro ao carregar mais registros.';
+        } finally {
+            historyLoadingMore.value = false;
         }
     }
 
@@ -211,7 +252,7 @@ export const useBoletoStore = defineStore('boletoCaixa', () => {
 
     function setPage(p) {
         historyPage.value = p;
-        fetchHistory();
+        fetchHistory({ keepPage: true });
     }
 
     async function retryHistoryItem(id) {
@@ -447,7 +488,7 @@ export const useBoletoStore = defineStore('boletoCaixa', () => {
         simulateLoading, simulateError, simulateSuccess,
         simulateWebhook,
         // history
-        history, historyTotal, historyPage, historyLimit,
+        history, historyTotal, historyPage, historyLimit, historyLoadingMore, loadMoreHistory,
         historyLoading, historyError, historyFilter,
         sortBy, sortDir, setSort,
         fetchHistory, setPage, totalPages, retryHistoryItem, regenerateHistoryItem, markCancelled, fetchTitularContact, resendHistoryItem,
