@@ -192,6 +192,42 @@ Regras:
 
 ---
 
+## 5b. Ação em lote
+
+Tela executiva mostra fila de trabalho; **fila sem lote é trabalho repetido**.
+Se a barra de pendências diz "15 sem perfil" e resolver as 15 exige abrir uma a
+uma, a tela apontou o problema e devolveu o trabalho inteiro.
+
+Regras:
+
+- **Selecionar e abrir são gestos diferentes** e não disputam o mesmo clique. A
+  caixa de seleção fica FORA do alvo que abre o detalhe. O mestre continua
+  sendo lista de trabalho, não catálogo: trocá-lo por um `MultiSelector`
+  esconderia as pessoas atrás de um campo, e por um `DataTable` empurraria o
+  detalhe para fora - que é onde o trabalho acontece.
+- **Marcar o recorte inteiro em um gesto.** Clicar na fila e marcar os N de uma
+  vez é o caminho curto que justifica a barra de pendências existir.
+- **A `ActionBar` carrega o lote**, com o número e o que ele significa
+  ("15 pessoas selecionadas · Fulano, Beltrano e mais 13"). Quando há seleção,
+  ela tem precedência sobre a alteração pendente do sujeito aberto - quem marcou
+  gente está no meio de outra coisa. A pendência continua guardada e a barra
+  volta a ela quando a seleção é desfeita.
+- **Toda ação em lote passa por `ConfirmDialog` com o NÚMERO na frase.** Lote é
+  onde o estrago é grande; "tem certeza?" sem quantidade não é confirmação.
+- **Sujeito que a API recusa não entra na seleção** (aqui, administrador):
+  deixá-lo marcável é oferecer um erro garantido.
+- **Uma chamada por sujeito, não um endpoint de lote.** Cada alteração vira um
+  registro próprio e auditável, e uma que falhe não leva as outras junto. Em
+  troca, o resultado parcial precisa ser dito **pelo nome**: "12 de 15
+  aplicadas. Falharam: Fulano, Beltrano" - nunca um "erro ao salvar" que esconde
+  o que passou e o que não passou.
+- **Lote que substitui estado começa vazio.** Quando as pessoas têm valores
+  diferentes entre si (liberação de dados, por exemplo), mostrar a interseção ou
+  a união faz parecer que aquilo é o estado delas. Começa em branco e diz, no
+  cabeçalho, que vai SUBSTITUIR.
+
+---
+
 ## 6. Hierarquia visual
 
 O `DESIGN-LANGUAGE.md` manda gastar a força em um lugar só. Na listagem esse
@@ -258,6 +294,8 @@ valendo (três estados, nada de componente órfão), mais estes:
 22. Alteração pendente vive na `ActionBar`; sair com pendência avisa.
 23. Nada de recálculo no cliente do que o servidor já decide.
 24. Nenhum `text-metric` nem cartão com série.
+25. Fila que aponta N pessoas tem ação em lote; o lote diz o número na
+    confirmação e reporta falha parcial pelo nome.
 
 ---
 

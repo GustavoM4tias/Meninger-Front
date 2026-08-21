@@ -267,14 +267,119 @@ function resumoCompleto(u) {
 const busca = ref('');
 const selectedUser = ref(null);
 
+/* A busca varre tudo que a linha mostra, e não só nome e e-mail: quem procura
+   "comercial" quer o departamento, quem digita "gestor" quer o cargo, e quem
+   digita o nome do perfil quer todo mundo que aponta para ele. */
+function casaBusca(u, q) {
+  if (!q) return true;
+  const campos = [
+    u.username, u.email, u.cargo, u.departamento, u.organizacao,
+    u.permission_profile_id ? profileById(u.permission_profile_id)?.name : 'sem perfil',
+    u.tipo === 'externo' ? rotuloExterno(u) : 'equipe',
+  ];
+  return campos.some(c => String(c || '').toLowerCase().includes(q));
+}
+
 const usuariosVisiveis = computed(() => {
   const q = busca.value.trim().toLowerCase();
   return naoAdminsPrimeiro.value.filter(u => {
     if (filaAtiva.value && !filaAtiva.value.teste(u)) return false;
-    if (!q) return true;
-    return u.username.toLowerCase().includes(q) || u.email.toLowerCase().includes(q);
+    return casaBusca(u, q);
   });
 });
+
+/* ── Seleção múltipla e ação em lote ───────────────────────────────────────
+   As filas dizem QUEM precisa de ajuste; sem lote, resolver 15 pessoas é
+   repetir 15 vezes o mesmo trabalho - que é justamente o que a tela deveria
+   eliminar.
+
+   Selecionar e abrir são gestos diferentes e não disputam o mesmo clique: a
+   caixa seleciona, o resto da linha abre o detalhe. Administrador não entra na
+   seleção porque a API recusa editar alçada dele - deixá-lo marcável seria
+   oferecer um erro garantido. */
+const selecionados = ref(new Set());
+const emLote = computed(() => selecionados.value.size > 0);
+const selecionaveis = computed(() => usuariosVisiveis.value.filter(u => u.role !== 'admin'));
+const todosSelecionados = computed(() =>
+  selecionaveis.value.length > 0 && selecionaveis.value.every(u => selecionados.value.has(u.id)));
+
+function alternarSelecao(u) {
+  if (u.role === 'admin') return;
+  const s = new Set(selecionados.value);
+  s.has(u.id) ? s.delete(u.id) : s.add(u.id);
+  selecionados.value = s;
+}
+function alternarTodosVisiveis() {
+  const s = new Set(selecionados.value);
+  if (todosSelecionados.value) selecionaveis.value.forEach(u => s.delete(u.id));
+  else selecionaveis.value.forEach(u => s.add(u.id));
+  selecionados.value = s;
+}
+function limparSelecao() { selecionados.value = new Set(); }
+
+const nomesSelecionados = computed(() =>
+  [...selecionados.value].map(id => users.value.find(u => u.id === id)?.username).filter(Boolean));
+
+const resumoLote = computed(() => {
+  const nomes = nomesSelecionados.value;
+  if (nomes.length <= 2) return nomes.join(' e ');
+  return `${nomes.slice(0, 2).join(', ')} e mais ${nomes.length - 2}`;
+});
+
+/* Executa a mesma mudança pessoa a pessoa, com o endpoint que já existe.
+   Uma chamada por pessoa é de propósito: cada alteração vira um registro
+   próprio e uma que falhe não leva as outras junto. O que falhou é dito pelo
+   nome - "erro ao salvar" num lote de 15 não ajuda ninguém. */
+const loteBusy = ref(false);
+const loteProgresso = ref({ feitos: 0, total: 0 });
+
+async function aplicarEmLote(corpo, rotuloOk) {
+  loteBusy.value = true;
+  const alvos = [...selecionados.value];
+  loteProgresso.value = { feitos: 0, total: alvos.length };
+  const falhas = [];
+
+  for (const id of alvos) {
+    try {
+      await requestWithAuth(`/permissions/${id}`, { method: 'PUT', body: JSON.stringify(corpo) });
+      loteProgresso.value = { ...loteProgresso.value, feitos: loteProgresso.value.feitos + 1 };
+    } catch {
+      falhas.push(users.value.find(u => u.id === id)?.username || `#${id}`);
+    }
+  }
+
+  await Promise.all([carregarUsuarios(), carregarGrants()]);
+  if (selectedUser.value) {
+    const atual = users.value.find(u => u.id === selectedUser.value.id);
+    if (atual) aplicarUsuario(atual);
+  }
+
+  loteBusy.value = false;
+  dialogo.value = '';
+
+  if (falhas.length) {
+    feedback.value = {
+      msg: `${loteProgresso.value.feitos} de ${alvos.length} aplicadas. Falharam: ${falhas.join(', ')}.`,
+      ok: false,
+    };
+  } else {
+    feedback.value = { msg: `${rotuloOk} (${alvos.length} pessoas).`, ok: true };
+    limparSelecao();
+  }
+  setTimeout(() => { feedback.value = { msg: '', ok: true }; }, 8000);
+}
+
+const lotePerfilId = ref('');
+function confirmarLotePerfil() {
+  const nome = lotePerfilId.value ? profileById(lotePerfilId.value)?.name : null;
+  return aplicarEmLote(
+    { profileId: lotePerfilId.value ? Number(lotePerfilId.value) : null },
+    nome ? `Perfil ${nome} aplicado` : 'Perfil removido',
+  );
+}
+function confirmarLoteExcecoes() {
+  return aplicarEmLote({ routesExtra: [], routesRemoved: [] }, 'Exceções limpas');
+}
 /* Admin no fim: não tem alçada para editar, e ocupar o topo da lista com quem
    não se edita atrapalha quem veio trabalhar. */
 const naoAdminsPrimeiro = computed(() =>
@@ -736,6 +841,17 @@ onMounted(carregarTudo);
                 só {{ filaAtiva.label }}
                 <i class="fas fa-xmark text-micro"></i>
               </button>
+              <!-- Marcar o recorte inteiro: é o gesto que fecha a fila. Clicar
+                   em "Sem perfil" e marcar os 15 de uma vez é o caminho curto
+                   que a tela existe para oferecer. -->
+              <label v-if="selecionaveis.length"
+                class="inline-flex items-center gap-1.5 h-7 px-2 rounded-md cursor-pointer
+                       text-micro text-ink-muted hover:text-ink hover:bg-surface-sunken
+                       transition-colors duration-120">
+                <input type="checkbox" class="accent-accent h-3.5 w-3.5"
+                  :checked="todosSelecionados" @change="alternarTodosVisiveis" />
+                {{ todosSelecionados ? 'Nenhum' : `Todos (${selecionaveis.length})` }}
+              </label>
             </template>
 
             <div class="p-3 border-b border-line-subtle space-y-2.5">
@@ -757,9 +873,22 @@ onMounted(carregarTudo);
               description="Nenhuma pessoa está nessa situação agora." />
 
             <ul v-else class="max-h-[32rem] overflow-y-auto divide-y divide-line-subtle">
-              <li v-for="u in usuariosVisiveis" :key="u.id">
+              <li v-for="u in usuariosVisiveis" :key="u.id"
+                class="flex items-center"
+                :class="selecionados.has(u.id) ? 'bg-accent-soft/40' : ''">
+                <!-- A caixa fica FORA do botão: selecionar e abrir são gestos
+                     diferentes e não podem disputar o mesmo clique. -->
+                <label v-if="u.role !== 'admin'"
+                  class="pl-3 pr-1 py-2.5 self-stretch flex items-center cursor-pointer"
+                  :title="selecionados.has(u.id) ? 'Tirar da seleção' : 'Selecionar para ação em lote'">
+                  <input type="checkbox" class="accent-accent h-4 w-4"
+                    :checked="selecionados.has(u.id)"
+                    @change="alternarSelecao(u)" />
+                </label>
+                <span v-else class="pl-3 pr-1 w-8 shrink-0"></span>
+
                 <button type="button"
-                  class="w-full text-left flex items-center gap-3 px-3 py-2.5 min-h-[3.25rem]
+                  class="flex-1 min-w-0 text-left flex items-center gap-3 pr-3 py-2.5 min-h-[3.25rem]
                          hover:bg-surface-sunken/60 transition-colors duration-120 focus-ring"
                   :class="selectedUser?.id === u.id ? 'bg-accent-soft/60' : ''"
                   :title="`${u.username} · ${u.email}\n${resumoCompleto(u)}`"
@@ -1024,7 +1153,28 @@ onMounted(carregarTudo);
     </transition>
 
     <!-- Alterações pendentes: nada é gravado sem passar por aqui -->
-    <ActionBar :count="sujo ? alteracoes : (perfilSujo ? 1 : 0)"
+    <!-- A barra serve dois estados, e a SELEÇÃO tem precedência: quem marcou
+         gente está no meio de uma ação em lote, e é dela que precisa agora.
+         A alteração pendente do sujeito aberto continua guardada e a barra
+         volta a ela assim que a seleção é desfeita. -->
+    <ActionBar v-if="emLote" :count="selecionados.size"
+      :unit="selecionados.size === 1 ? 'pessoa selecionada' : 'pessoas selecionadas'"
+      :summary="resumoLote" clear-label="Limpar seleção" @clear="limparSelecao">
+      <Button size="sm" variant="secondary" icon="fas fa-layer-group"
+        :disabled="loteBusy" @click="lotePerfilId = ''; dialogo = 'lote-perfil'">
+        <span class="hidden sm:inline">Aplicar perfil</span>
+      </Button>
+      <Button size="sm" variant="secondary" icon="fas fa-building"
+        :disabled="loteBusy" @click="grantsModal = { open: true, type: 'user', id: null, name: '' }">
+        <span class="hidden sm:inline">Liberar empreendimentos</span>
+      </Button>
+      <Button size="sm" variant="ghost" icon="fas fa-eraser"
+        :disabled="loteBusy" @click="dialogo = 'lote-excecoes'">
+        <span class="hidden sm:inline">Limpar exceções</span>
+      </Button>
+    </ActionBar>
+
+    <ActionBar v-else :count="sujo ? alteracoes : (perfilSujo ? 1 : 0)"
       :unit="sujo || perfilSujo ? 'alteração pendente' : ''"
       :summary="sujo ? resumoAlteracoes : (perfilSujo ? `perfil ${profileForm.name}` : '')"
       clear-label="Descartar alterações"
@@ -1078,6 +1228,26 @@ onMounted(carregarTudo);
       confirm-label="Descartar e trocar" cancel-label="Continuar editando"
       @confirm="confirmarDescartar" @cancel="dialogo = ''; pendenteTroca = null" />
 
+    <ConfirmDialog :open="dialogo === 'lote-perfil'" tone="accent"
+      :title="`Aplicar perfil a ${selecionados.size} pessoas?`"
+      :consequence="lotePerfilId
+        ? `As ${selecionados.size} passam a apontar para ${profileById(lotePerfilId)?.name}. As telas do perfil valem na hora; as exceções individuais de cada uma continuam por cima.`
+        : `As ${selecionados.size} ficam SEM perfil: sobra só o que cada uma tiver como exceção.`"
+      hint="Vale uma pessoa por vez, então uma falha não impede as outras."
+      :confirm-label="`Aplicar a ${selecionados.size}`" :loading="loteBusy"
+      @confirm="confirmarLotePerfil" @cancel="dialogo = ''"
+      @update:open="v => { if (!v) dialogo = '' }">
+      <Select v-model="lotePerfilId" :options="profileOptions" label="Perfil a aplicar" />
+    </ConfirmDialog>
+
+    <ConfirmDialog :open="dialogo === 'lote-excecoes'" tone="danger"
+      :title="`Limpar as exceções de ${selecionados.size} pessoas?`"
+      :consequence="`Cada uma passa a ter exatamente o que o perfil dela dá - nem mais, nem menos. Quem estiver sem perfil fica sem tela nenhuma.`"
+      hint="O perfil de cada uma não é alterado."
+      :confirm-label="`Limpar de ${selecionados.size}`" :loading="loteBusy"
+      @confirm="confirmarLoteExcecoes" @cancel="dialogo = ''"
+      @update:open="v => { if (!v) dialogo = '' }" />
+
     <!-- Criação rápida: só o nome. As telas se escolhem no detalhe. -->
     <Modal :open="novoPerfilModal" size="md" title="Novo perfil"
       subtitle="Depois de criar, escolha as telas no painel do perfil."
@@ -1097,6 +1267,7 @@ onMounted(carregarTudo);
 
     <GrantsModal :open="grantsModal.open" :subject-type="grantsModal.type"
       :subject-id="grantsModal.id" :subject-name="grantsModal.name"
-      @close="aoFecharGrants" />
+      :subject-ids="grantsModal.id ? [] : [...selecionados]"
+      @close="aoFecharGrants" @saved="limparSelecao" />
   </PageContainer>
 </template>

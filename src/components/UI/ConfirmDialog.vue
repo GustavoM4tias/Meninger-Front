@@ -88,6 +88,13 @@ const TONES = {
         <div v-if="askNote" class="mt-3">
           <Input v-model="note" :label="noteLabel" :placeholder="notePlaceholder" />
         </div>
+
+        <!-- Campo que a decisão precisa (ex.: QUAL perfil aplicar no lote).
+             Variante do primitivo, não componente novo: a confirmação continua
+             sendo a mesma peça, com um campo a mais quando o caso pede. -->
+        <div v-if="$slots.default" class="mt-3">
+          <slot />
+        </div>
       </div>
     </div>
 
