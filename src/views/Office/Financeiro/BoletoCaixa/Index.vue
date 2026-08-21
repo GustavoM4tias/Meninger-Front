@@ -5,23 +5,43 @@
       <PageHeader
         subtitle="Emissão automática de boletos no Ecobrança via webhook do CV"
         icon="fas fa-barcode">
-        <template #title>Boleto Caixa</template>
+        <template #title>
+          <span>Boleto Caixa</span>
+          <Favorite :router="'/financeiro/boleto-caixa'" :section="'Boleto Caixa'" />
+        </template>
         <template #actions>
           <!-- Status indicator -->
           <div v-if="store.settings" class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border"
             :class="store.settings.active
-              ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+              ? 'border-data-pos/30 bg-data-pos/10 text-data-pos'
               : 'border-line bg-surface-sunken text-ink-muted'">
             <span class="relative flex h-2.5 w-2.5">
               <span v-if="store.settings.active"
-                class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                class="animate-ping absolute inline-flex h-full w-full rounded-full bg-data-pos opacity-75"></span>
               <span class="relative inline-flex rounded-full h-2.5 w-2.5"
-                :class="store.settings.active ? 'bg-emerald-500' : 'bg-ink-subtle'"></span>
+                :class="store.settings.active ? 'bg-data-pos' : 'bg-ink-subtle'"></span>
             </span>
             <span class="text-xs font-medium">
               {{ store.settings.active ? 'Automação ativa' : 'Automação pausada' }}
             </span>
           </div>
+          <PageHelp
+            storage-key="boleto-caixa"
+            title="Como usar o Boleto Caixa"
+            intro="Quando uma reserva entra na situação combinada no CV, o sistema emite sozinho o boleto do ato no Ecobrança, anexa na reserva e devolve a situação. Esta tela mostra o que já foi emitido e deixa ajustar como a automação se comporta."
+            :steps="[
+              { title: 'Acompanhe as emissões', text: 'A aba Histórico lista os boletos do período. Os cartões do topo contam quantos foram pagos, quantos ainda esperam e quantos falharam.' },
+              { title: 'Recorte pelo cartão', text: 'Clique em Com erro para deixar na tabela só o que falhou, ou em Pagos para o contrário. Clicar de novo desfaz.' },
+              { title: 'Abra um boleto', text: 'Clique na linha para ver o resumo, a linha do tempo da emissão e o PDF. Dali dá para reprocessar, reenviar ao cliente ou marcar como baixado.' },
+              { title: 'Ajuste a automação', text: 'A aba Configurações guarda as credenciais do Ecobrança, o endereço do webhook, a janela de horário, o percentual de comissão por empreendimento e o envio ao cliente.' },
+            ]"
+            :tips="[
+              'A automação pode ser pausada sem perder nada: os webhooks que chegarem ficam registrados e voltam a ser processados quando ela for religada.',
+              'A comissão embutida multiplica o valor da série antes de emitir. Série de R$ 10.000 com 20% vira um boleto de R$ 2.000.',
+              'Boleto fora da janela de horário não falha: fica agendado, e a tabela mostra a hora em que vai sair.',
+              'O selo com um número ao lado da reserva quer dizer que já houve mais de um boleto para ela.',
+            ]"
+          />
         </template>
       </PageHeader>
 
@@ -37,14 +57,14 @@
       <div v-if="activeTab === 'settings' && can('configure')" class="space-y-5">
 
         <!-- Card: Credenciais Ecobrança -->
-        <Surface variant="raised" padding="md" class="space-y-4 surface-gradient">
+        <Panel class="space-y-4 surface-gradient">
           <div class="flex items-center gap-3">
             <div class="h-9 w-9 rounded-xl bg-accent-soft text-accent border border-accent/20 grid place-items-center">
               <i class="fas fa-lock"></i>
             </div>
             <div>
-              <h2 class="font-semibold text-ink text-sm">Credenciais Ecobrança</h2>
-              <p class="text-xs text-ink-muted">Acesso ao portal da Caixa Econômica Federal</p>
+              <h2 class="font-semibold text-sm">Credenciais Ecobrança</h2>
+              <p class="text-ink-muted">Acesso ao portal da Caixa Econômica Federal</p>
             </div>
           </div>
 
@@ -55,10 +75,10 @@
               placeholder="00000000000"
               maxlength="11" />
             <div>
-              <label class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1.5 block">
+              <label class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1.5 block">
                 Senha
                 <span v-if="store.settings?.eco_senha_set"
-                  class="ml-1.5 text-[10px] normal-case text-emerald-600 dark:text-emerald-400 font-normal">
+                  class="ml-1.5 text-micro normal-case text-data-pos font-normal">
                   (configurada)
                 </span>
               </label>
@@ -70,22 +90,22 @@
                 hint="Deixe em branco para manter a senha atual." />
             </div>
           </div>
-        </Surface>
+        </Panel>
 
         <!-- Card: Webhook -->
-        <Surface variant="raised" padding="md" class="space-y-3 surface-gradient">
+        <Panel class="space-y-3 surface-gradient">
           <div class="flex items-center gap-3">
-            <div class="h-9 w-9 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 grid place-items-center">
+            <div class="h-9 w-9 rounded-xl bg-accent/10 text-accent border border-accent/20 grid place-items-center">
               <i class="fas fa-link"></i>
             </div>
             <div>
-              <h2 class="font-semibold text-ink text-sm">Endereço do Webhook</h2>
-              <p class="text-xs text-ink-muted">Configure este endereço no cadastro do webhook do CV</p>
+              <h2 class="font-semibold text-sm">Endereço do Webhook</h2>
+              <p class="text-ink-muted">Configure este endereço no cadastro do webhook do CV</p>
             </div>
           </div>
 
           <div class="flex items-center gap-2 bg-surface-sunken border border-line rounded-lg px-3 py-2.5">
-            <code class="text-xs sm:text-sm text-accent flex-1 break-all select-all font-mono">
+            <code class="text-xs sm:text-accent flex-1 break-all select-all font-mono">
               {{ webhookUrl }}
             </code>
             <Button variant="primary" size="sm" :icon="copied ? 'fas fa-check' : 'fas fa-copy'"
@@ -94,27 +114,27 @@
             </Button>
           </div>
 
-          <Surface variant="raised" padding="sm" class="border-amber-500/30 bg-amber-500/10">
-            <div class="flex items-start gap-2 text-xs text-amber-700 dark:text-amber-300">
+          <Panel class="border-data-warn/30 bg-data-warn/10">
+            <div class="flex items-start gap-2 text-data-warn">
               <i class="fas fa-circle-info mt-0.5"></i>
               <span>
                 Configure o gatilho <strong>"Quando entrar na situação..."</strong> para a funcionalidade
                 <strong>Reserva</strong> no CV com este endereço.
               </span>
             </div>
-          </Surface>
-        </Surface>
+          </Panel>
+        </Panel>
 
         <!-- Card: Configurações do CV (modo leitura por padrão; botão Editar habilita) -->
-        <Surface variant="raised" padding="md" class="space-y-4 surface-gradient">
+        <Panel class="space-y-4 surface-gradient">
           <div class="flex items-center justify-between gap-3">
             <div class="flex items-center gap-3">
-              <div class="h-9 w-9 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 grid place-items-center">
+              <div class="h-9 w-9 rounded-xl bg-data-pos/10 text-data-pos border border-data-pos/20 grid place-items-center">
                 <i class="fas fa-sliders"></i>
               </div>
               <div>
-                <h2 class="font-semibold text-ink text-sm">Configurações do CV</h2>
-                <p class="text-xs text-ink-muted">Mapeamentos de série, tipo de documento e situações de workflow.</p>
+                <h2 class="font-semibold text-sm">Configurações do CV</h2>
+                <p class="text-ink-muted">Mapeamentos de série, tipo de documento e situações de workflow.</p>
               </div>
             </div>
             <div class="flex items-center gap-2 shrink-0">
@@ -139,54 +159,59 @@
           <!-- ── MODO LEITURA ──────────────────────────────────────────────── -->
           <div v-if="!editingCv" class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <p class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1">IDs de Série CV (Entrada)</p>
+              <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1">IDs de Série CV (Entrada)</p>
               <div class="flex flex-wrap gap-1">
                 <span v-for="id in form.idserie_ra" :key="id"
                   class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent-soft text-accent border border-accent/20 text-xs font-mono">
                   {{ id }}
                 </span>
-                <span v-if="!form.idserie_ra.length" class="text-sm text-ink-subtle italic">
+                <span v-if="!form.idserie_ra.length" class="text-ink-subtle italic">
                   Nenhuma série configurada
                 </span>
               </div>
             </div>
             <div>
-              <p class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1">ID Tipo Documento (Anexo)</p>
-              <p class="text-sm text-ink font-mono">{{ form.cv_idtipo_documento ?? '—' }}</p>
+              <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1">ID Tipo Documento (Anexo)</p>
+              <p class="text-ink font-mono">{{ form.cv_idtipo_documento ?? '—' }}</p>
             </div>
             <div>
-              <p class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1">Situação — Sucesso</p>
-              <p class="text-sm text-ink font-mono">{{ form.situacao_sucesso_id ?? '—' }}</p>
+              <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1">Situação — Sucesso</p>
+              <p class="text-ink font-mono">{{ form.situacao_sucesso_id ?? '—' }}</p>
             </div>
             <div>
-              <p class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1">Situação — Erro</p>
-              <p class="text-sm text-ink font-mono">{{ form.situacao_erro_id ?? '—' }}</p>
+              <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1">Situação — Erro</p>
+              <p class="text-ink font-mono">{{ form.situacao_erro_id ?? '—' }}</p>
             </div>
             <div>
-              <p class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1">Situação — Pago</p>
-              <p class="text-sm text-ink font-mono">{{ form.situacao_pago_id ?? '—' }}</p>
+              <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1">Situação — Pago</p>
+              <p class="text-ink font-mono">{{ form.situacao_pago_id ?? '—' }}</p>
             </div>
             <div>
-              <p class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1">Situação — Baixado</p>
-              <p class="text-sm text-ink font-mono">{{ form.situacao_baixado_id ?? '—' }}</p>
+              <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1">Situação — Baixado</p>
+              <p class="text-ink font-mono">{{ form.situacao_baixado_id ?? '—' }}</p>
             </div>
             <div>
-              <p class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1">Tolerância (dias úteis)</p>
-              <p class="text-sm text-ink font-mono">{{ form.tolerancia_dias_uteis ?? '—' }}</p>
+              <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1">Tolerância (dias úteis)</p>
+              <p class="text-ink font-mono">{{ form.tolerancia_dias_uteis ?? '—' }}</p>
             </div>
             <div>
-              <p class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1">Safety lote Sienge (min)</p>
-              <p class="text-sm text-ink font-mono">{{ form.delay_situacao_sucesso_min ?? '—' }}</p>
+              <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1">Revalidar baixa (dias)</p>
+              <p class="text-ink font-mono">{{ form.revalidacao_baixado_dias ?? '—' }}</p>
+              <p class="text-ink-subtle mt-0.5">Boleto baixado segue sendo reconsultado por este prazo. 0 desliga.</p>
             </div>
             <div>
-              <p class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1">Máx. dias vencimento (geral)</p>
-              <p class="text-sm text-ink font-mono">{{ form.max_dias_vencimento ?? '—' }} dias</p>
-              <p class="text-[10px] text-ink-subtle mt-0.5">Override por empreendimento configurável na regra de comissão.</p>
+              <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1">Safety lote Sienge (min)</p>
+              <p class="text-ink font-mono">{{ form.delay_situacao_sucesso_min ?? '—' }}</p>
             </div>
             <div>
-              <p class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1">Teto de valor por boleto</p>
-              <p class="text-sm text-ink font-mono">{{ valorMaximoLabel }}</p>
-              <p class="text-[10px] text-ink-subtle mt-0.5">Série acima do teto não é registrada no banco, fica como erro para conferência.</p>
+              <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1">Máx. dias vencimento (geral)</p>
+              <p class="text-ink font-mono">{{ form.max_dias_vencimento ?? '—' }} dias</p>
+              <p class="text-ink-subtle mt-0.5">Override por empreendimento configurável na regra de comissão.</p>
+            </div>
+            <div>
+              <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1">Teto de valor por boleto</p>
+              <p class="text-ink font-mono">{{ valorMaximoLabel }}</p>
+              <p class="text-ink-subtle mt-0.5">Série acima do teto não é registrada no banco, fica como erro para conferência.</p>
             </div>
           </div>
 
@@ -194,7 +219,7 @@
           <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <!-- IDs de Série — chip input (múltiplos) -->
             <div class="md:col-span-1">
-              <label class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1.5 block">
+              <label class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1.5 block">
                 IDs de Série CV (Entrada)
               </label>
               <div class="flex gap-2">
@@ -212,15 +237,15 @@
                   class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-accent-soft text-accent border border-accent/20 text-xs font-medium font-mono">
                   {{ id }}
                   <button type="button" @click="removeSerieId(id)"
-                    class="hover:text-red-500 transition-colors leading-none">
-                    <i class="fas fa-times text-[10px]"></i>
+                    class="hover:text-data-neg transition-colors leading-none">
+                    <i class="fas fa-times text-micro"></i>
                   </button>
                 </span>
-                <span v-if="!form.idserie_ra.length" class="text-xs text-ink-subtle italic self-center">
+                <span v-if="!form.idserie_ra.length" class="text-ink-subtle italic self-center">
                   Nenhuma série configurada
                 </span>
               </div>
-              <p class="text-xs text-ink-subtle mt-1.5">
+              <p class="text-ink-subtle mt-1.5">
                 Séries cujas parcelas de entrada disparam emissão de boleto. Regra: somente 1 parcela destas séries por reserva.
               </p>
             </div>
@@ -261,6 +286,12 @@
               placeholder="Ex: 1"
               hint="Dias úteis após vencimento antes de baixar (já considera sáb/dom/feriados)." />
             <Input
+              v-model.number="form.revalidacao_baixado_dias"
+              type="number"
+              label="Revalidar baixa (dias)"
+              placeholder="Ex: 5"
+              hint="O banco já devolveu &quot;baixado por devolução&quot; em boleto que dias depois constava pago. Por este prazo a rodada diária reconsulta o boleto baixado (só leitura) e promove para pago se o pagamento aparecer. 0 desliga." />
+            <Input
               v-model.number="form.delay_situacao_sucesso_min"
               type="number"
               label="Safety lote Sienge (min)"
@@ -279,18 +310,18 @@
               placeholder="Ex: 300000"
               hint="Valor acima do teto não vira boleto no banco: fica como erro para conferência da condição no CV. Vazio = sem teto." />
           </div>
-        </Surface>
+        </Panel>
 
         <!-- Card: Regras de Comissão Embutida por Empreendimento -->
-        <Surface variant="raised" padding="md" class="space-y-4 surface-gradient">
+        <Panel class="space-y-4 surface-gradient">
           <div class="flex items-center justify-between gap-3">
             <div class="flex items-center gap-3">
-              <div class="h-9 w-9 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 grid place-items-center">
+              <div class="h-9 w-9 rounded-xl bg-data-warn/10 text-data-warn border border-data-warn/20 grid place-items-center">
                 <i class="fas fa-percent"></i>
               </div>
               <div>
-                <h2 class="font-semibold text-ink text-sm">Comissão Embutida por Empreendimento</h2>
-                <p class="text-xs text-ink-muted">
+                <h2 class="font-semibold text-sm">Comissão Embutida por Empreendimento</h2>
+                <p class="text-ink-muted">
                   Quando o valor da série já inclui a comissão, defina aqui o % do valor que deve ir para o boleto.
                 </p>
               </div>
@@ -300,34 +331,34 @@
             </Button>
           </div>
 
-          <p v-if="store.rulesError" class="text-xs text-red-500 flex items-center gap-1.5">
+          <p v-if="store.rulesError" class="text-data-neg flex items-center gap-1.5">
             <i class="fas fa-circle-exclamation"></i>{{ store.rulesError }}
           </p>
 
-          <div v-if="store.rulesLoading" class="text-xs text-ink-muted py-2">
+          <div v-if="store.rulesLoading" class="text-ink-muted py-2">
             <i class="fas fa-spinner fa-spin mr-1"></i> Carregando regras...
           </div>
 
-          <div v-else-if="!store.rules.length" class="text-xs text-ink-subtle italic py-2">
+          <div v-else-if="!store.rules.length" class="text-ink-subtle italic py-2">
             Nenhuma regra cadastrada. Todos os empreendimentos usam o valor cheio da série.
           </div>
 
           <div v-else class="overflow-x-auto -mx-3">
             <table class="w-full text-sm">
               <thead>
-                <tr class="bg-surface-sunken/60 border-b border-line">
-                  <th class="text-left px-3 py-2 text-[11px] font-mono uppercase tracking-wider text-ink-subtle">ID Emp.</th>
-                  <th class="text-left px-3 py-2 text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Empreendimento</th>
-                  <th class="text-right px-3 py-2 text-[11px] font-mono uppercase tracking-wider text-ink-subtle">% Boleto</th>
-                  <th class="text-center px-3 py-2 text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Máx dias</th>
-                  <th class="text-left px-3 py-2 text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Observação</th>
-                  <th class="text-center px-3 py-2 text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Ativo</th>
+                <tr class="bg-surface-sunken/60 border-line">
+                  <th class="text-left px-3 py-2 text-micro font-mono uppercase tracking-wider text-ink-subtle">ID Emp.</th>
+                  <th class="text-left px-3 py-2 text-micro font-mono uppercase tracking-wider text-ink-subtle">Empreendimento</th>
+                  <th class="text-right px-3 py-2 text-micro font-mono uppercase tracking-wider text-ink-subtle">% Boleto</th>
+                  <th class="text-center px-3 py-2 text-micro font-mono uppercase tracking-wider text-ink-subtle">Máx dias</th>
+                  <th class="text-left px-3 py-2 text-micro font-mono uppercase tracking-wider text-ink-subtle">Observação</th>
+                  <th class="text-center px-3 py-2 text-micro font-mono uppercase tracking-wider text-ink-subtle">Ativo</th>
                   <th class="px-3 py-2"></th>
                 </tr>
               </thead>
               <tbody>
                 <tr v-for="rule in store.rules" :key="rule.id"
-                  class="border-b border-line/60 hover:bg-surface-hover/40 transition-colors">
+                  class="border-line/60 hover:bg-surface-hover/40 transition-colors">
                   <td class="px-3 py-2 font-mono text-accent">{{ rule.idempreendimento_cv }}</td>
                   <td class="px-3 py-2 text-ink">{{ rule.empreendimento_nome || '—' }}</td>
                   <td class="px-3 py-2 text-right font-mono tabular-nums font-semibold">
@@ -342,7 +373,7 @@
                       padrão
                     </span>
                   </td>
-                  <td class="px-3 py-2 text-xs text-ink-muted">{{ rule.observacao || '—' }}</td>
+                  <td class="px-3 py-2 text-ink-muted">{{ rule.observacao || '—' }}</td>
                   <td class="px-3 py-2 text-center">
                     <Badge :variant="rule.active ? 'success' : 'neutral'" size="sm">
                       {{ rule.active ? 'Sim' : 'Não' }}
@@ -350,11 +381,11 @@
                   </td>
                   <td class="px-3 py-2 text-right whitespace-nowrap">
                     <button @click="openRuleModal(rule)"
-                      class="text-accent hover:text-accent/80 text-xs mr-3">
+                      class="text-accent hover:text-xs mr-3">
                       <i class="fas fa-pen-to-square"></i> Editar
                     </button>
                     <button @click="confirmDeleteRule(rule)"
-                      class="text-red-500 hover:text-red-600 text-xs">
+                      class="text-data-neg hover:text-xs">
                       <i class="fas fa-trash"></i>
                     </button>
                   </td>
@@ -362,21 +393,16 @@
               </tbody>
             </table>
           </div>
-        </Surface>
+        </Panel>
 
-        <!-- Modal: Criar/Editar regra de comissão -->
-        <div v-if="ruleModal.open"
-          class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-          @click.self="closeRuleModal">
-          <div class="bg-surface rounded-xl shadow-xl border border-line w-full max-w-md p-5 space-y-4">
-            <div class="flex items-center justify-between gap-3">
-              <h3 class="font-semibold text-ink">
-                {{ ruleModal.id ? 'Editar regra' : 'Nova regra' }}
-              </h3>
-              <button @click="closeRuleModal" class="text-ink-muted hover:text-ink">
-                <i class="fas fa-times"></i>
-              </button>
-            </div>
+        <!-- Regra de comissão. Era um modal montado na mão (backdrop e caixa
+             próprios); virou o primitivo, que já traz tela cheia no celular,
+             fecha no Esc e fica na camada certa. -->
+        <Modal :open="ruleModal.open" size="md"
+          :title="ruleModal.id ? 'Editar regra' : 'Nova regra de comissão'"
+          subtitle="O valor da série é multiplicado por este percentual antes de virar boleto."
+          @close="closeRuleModal">
+          <div class="space-y-4">
 
             <Select
               v-if="!ruleModal.id"
@@ -388,14 +414,14 @@
               @update:model-value="onSelectEnterprise" />
 
             <div v-else>
-              <label class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1.5 block">
+              <label class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1.5 block">
                 Empreendimento
               </label>
-              <div class="px-3 py-2 rounded-lg border border-line bg-surface-sunken text-sm text-ink">
+              <div class="px-3 py-2 rounded-lg border border-line bg-surface-sunken text-ink">
                 <span class="font-mono text-accent">#{{ ruleModal.form.idempreendimento_cv }}</span>
                 <span class="ml-2">{{ ruleModal.form.empreendimento_nome || '—' }}</span>
               </div>
-              <p class="text-xs text-ink-subtle mt-1">O empreendimento não pode ser alterado em uma regra existente.</p>
+              <p class="text-ink-subtle mt-1">O empreendimento não pode ser alterado em uma regra existente.</p>
             </div>
 
             <Input
@@ -418,63 +444,62 @@
               hint="Override do limite de vencimento só para este empreendimento. Deixe vazio para usar o padrão geral." />
 
             <div>
-              <label class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1.5 block">
+              <label class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1.5 block">
                 Observação
               </label>
               <textarea v-model="ruleModal.form.observacao" rows="2"
-                class="w-full px-3 py-2 rounded-lg border border-line bg-surface-sunken text-sm text-ink focus:outline-none focus:border-accent"
+                class="w-full px-3 py-2 rounded-lg border border-line bg-surface-sunken text-ink focus:outline-none focus:border-accent"
                 placeholder="Anotações internas (opcional)"></textarea>
             </div>
 
-            <label class="flex items-center gap-2 text-sm text-ink cursor-pointer">
+            <label class="flex items-center gap-2 text-ink cursor-pointer">
               <input type="checkbox" v-model="ruleModal.form.active" />
               Regra ativa
             </label>
 
-            <p v-if="ruleModal.error" class="text-xs text-red-500">{{ ruleModal.error }}</p>
+            <p v-if="ruleModal.error" class="text-data-neg">{{ ruleModal.error }}</p>
 
-            <div class="flex items-center justify-end gap-2 pt-2">
-              <Button variant="ghost" size="sm" @click="closeRuleModal">Cancelar</Button>
-              <Button variant="primary" size="sm" icon="fas fa-save"
-                :loading="ruleModal.saving" :disabled="ruleModal.saving"
-                @click="saveRule">
-                Salvar
-              </Button>
-            </div>
           </div>
-        </div>
+          <template #footer>
+            <Button variant="ghost" @click="closeRuleModal">Cancelar</Button>
+            <Button icon="fas fa-save" :loading="ruleModal.saving" :disabled="ruleModal.saving"
+              @click="saveRule">
+              Salvar regra
+            </Button>
+          </template>
+        </Modal>
 
         <!-- Card: Notificações ao Cliente (e-mail + WhatsApp) -->
-        <Surface variant="raised" padding="md" class="space-y-4 surface-gradient">
+        <Panel class="space-y-4 surface-gradient">
           <div class="flex items-center gap-3">
-            <div class="h-9 w-9 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 grid place-items-center">
+            <div class="h-9 w-9 rounded-xl bg-data-pos/10 text-data-pos border border-data-pos/20 grid place-items-center">
               <i class="fas fa-paper-plane"></i>
             </div>
             <div>
-              <h2 class="font-semibold text-ink text-sm">Envio do boleto ao cliente</h2>
-              <p class="text-xs text-ink-muted">Após emissão, enviamos o boleto pro titular por e-mail e WhatsApp.</p>
+              <h2 class="font-semibold text-sm">Envio do boleto ao cliente</h2>
+              <p class="text-ink-muted">Após emissão, enviamos o boleto pro titular por e-mail e WhatsApp.</p>
             </div>
           </div>
 
-          <Surface variant="raised" padding="sm" class="border-emerald-500/30 bg-emerald-500/5">
-            <div class="text-xs text-ink leading-relaxed space-y-1">
+          <Panel class="border-data-pos/30 bg-data-pos/5">
+            <div class="text-ink leading-relaxed space-y-1">
               <p class="flex items-start gap-1.5">
-                <i class="fas fa-envelope text-emerald-600 mt-0.5"></i>
+                <i class="fas fa-envelope text-data-pos mt-0.5"></i>
                 <span><strong>E-mail:</strong> enviado pro e-mail do titular cadastrado no CV. Rodapé deixa claro que é canal só de envio (não aceita respostas).</span>
               </p>
               <p class="flex items-start gap-1.5">
-                <i class="fab fa-whatsapp text-emerald-600 mt-0.5"></i>
-                <span><strong>WhatsApp:</strong> se o cliente nos escreveu nas últimas 24h, o boleto vai como documento <strong>gratuito</strong> (janela de serviço); fora disso, usa o template HSM <code class="font-mono bg-surface-sunken px-1 rounded text-[10px]">{{ store.whatsappTemplate?.name || 'boleto_caixa_ato_v2' }}</code>. Cliente que responder recebe aviso automático informando que é canal só de avisos.</span>
+                <i class="fab fa-whatsapp text-data-pos mt-0.5"></i>
+                <span><strong>WhatsApp:</strong> se o cliente nos escreveu nas últimas 24h, o boleto vai como documento <strong>gratuito</strong> (janela de serviço); fora disso, usa o template HSM <code class="font-mono bg-surface-sunken px-1 rounded text-micro">{{ store.whatsappTemplate?.name || 'boleto_caixa_ato_v2' }}</code>. Cliente que responder recebe aviso automático informando que é canal só de avisos.</span>
               </p>
             </div>
-          </Surface>
+          </Panel>
 
           <!-- Status do template WhatsApp -->
           <div class="flex items-center justify-between gap-3 p-3 rounded-lg border border-line bg-surface-sunken">
             <div class="flex items-center gap-2 text-sm">
               <i v-if="store.whatsappTemplate?.approved_locally"
-                class="fas fa-circle-check text-emerald-500"></i>
-              <i v-else class="fas fa-circle-exclamation text-amber-500"></i>
+                class="fas fa-circle-check text-data-pos"></i>
+              <i v-else class="fas fa-circle-exclamation text-data-warn"></i>
               <span v-if="store.whatsappTemplate?.approved_locally" class="text-ink">
                 Template WhatsApp <strong>aprovado</strong> e pronto pra uso.
               </span>
@@ -482,7 +507,7 @@
                 Template WhatsApp <strong>não aprovado</strong> ainda — envios por WhatsApp vão falhar.
               </span>
               <span v-if="store.whatsappTemplate?.status"
-                class="text-xs text-ink-muted ml-1">({{ store.whatsappTemplate.status }})</span>
+                class="text-ink-muted ml-1">({{ store.whatsappTemplate.status }})</span>
             </div>
             <Button variant="primary" size="sm"
               :icon="store.whatsappTemplateLoading ? 'fas fa-spinner fa-spin' : 'fas fa-rotate'"
@@ -492,53 +517,53 @@
             </Button>
           </div>
 
-          <p v-if="store.whatsappTemplateMsg" class="text-xs text-emerald-600 dark:text-emerald-400 flex items-start gap-1.5">
+          <p v-if="store.whatsappTemplateMsg" class="text-data-pos flex items-start gap-1.5">
             <i class="fas fa-check mt-0.5"></i><span>{{ store.whatsappTemplateMsg }}</span>
           </p>
-          <p v-if="store.whatsappTemplateError" class="text-xs text-red-500 flex items-start gap-1.5">
+          <p v-if="store.whatsappTemplateError" class="text-data-neg flex items-start gap-1.5">
             <i class="fas fa-circle-exclamation mt-0.5"></i><span>{{ store.whatsappTemplateError }}</span>
           </p>
-        </Surface>
+        </Panel>
 
         <!-- Card: Controle de ativação -->
-        <Surface variant="raised" padding="md" class="surface-gradient">
+        <Panel class="surface-gradient">
           <div class="flex items-center justify-between gap-3">
             <div class="flex items-center gap-3 min-w-0">
               <div class="h-9 w-9 rounded-xl grid place-items-center"
                 :class="form.active
-                  ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                  ? 'bg-data-pos/10 text-data-pos border border-data-pos/20'
                   : 'bg-surface-sunken text-ink-subtle border border-line'">
                 <i :class="form.active ? 'fas fa-play' : 'fas fa-pause'"></i>
               </div>
               <div class="min-w-0">
-                <h2 class="font-semibold text-ink text-sm">Automação</h2>
-                <p class="text-xs text-ink-muted">
+                <h2 class="font-semibold text-sm">Automação</h2>
+                <p class="text-ink-muted">
                   {{ form.active ? 'Processando webhooks automaticamente' : 'Webhooks recebidos mas não processados' }}
                 </p>
               </div>
             </div>
             <button @click="form.active = !form.active"
               class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none shrink-0"
-              :class="form.active ? 'bg-emerald-500' : 'bg-surface-sunken border border-line'">
-              <span class="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform"
+              :class="form.active ? 'bg-data-pos' : 'bg-surface-sunken border border-line'">
+              <span class="inline-block h-4 w-4 transform rounded-full bg-surface-raised shadow transition-transform"
                 :class="form.active ? 'translate-x-6' : 'translate-x-1'"></span>
             </button>
           </div>
-        </Surface>
+        </Panel>
 
         <!-- Card: Horário de funcionamento (janela de emissão) -->
-        <Surface variant="raised" padding="md" class="space-y-4 surface-gradient">
+        <Panel class="space-y-4 surface-gradient">
           <div class="flex items-center justify-between gap-3">
             <div class="flex items-center gap-3 min-w-0">
               <div class="h-9 w-9 rounded-xl grid place-items-center shrink-0"
                 :class="form.janela_ativa
-                  ? 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20'
+                  ? 'bg-accent/10 text-accent border border-accent/20'
                   : 'bg-surface-sunken text-ink-subtle border border-line'">
                 <i class="fas fa-clock"></i>
               </div>
               <div class="min-w-0">
-                <h2 class="font-semibold text-ink text-sm">Horário de funcionamento</h2>
-                <p class="text-xs text-ink-muted">
+                <h2 class="font-semibold text-sm">Horário de funcionamento</h2>
+                <p class="text-ink-muted">
                   {{ form.janela_ativa
                     ? `Emite das ${janelaLabel} (horário de Brasília)`
                     : 'Emite a qualquer hora, inclusive de madrugada' }}
@@ -547,8 +572,8 @@
             </div>
             <button @click="form.janela_ativa = !form.janela_ativa"
               class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none shrink-0"
-              :class="form.janela_ativa ? 'bg-sky-500' : 'bg-surface-sunken border border-line'">
-              <span class="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform"
+              :class="form.janela_ativa ? 'bg-accent' : 'bg-surface-sunken border border-line'">
+              <span class="inline-block h-4 w-4 transform rounded-full bg-surface-raised shadow transition-transform"
                 :class="form.janela_ativa ? 'translate-x-6' : 'translate-x-1'"></span>
             </button>
           </div>
@@ -567,8 +592,8 @@
               placeholder="Ex: 23"
               hint="A partir deste horário a emissão fica agendada para o dia seguinte." />
           </div>
-          <p v-if="form.janela_ativa" class="text-xs text-ink-muted flex items-start gap-1.5">
-            <i class="fas fa-circle-info mt-0.5 text-sky-500"></i>
+          <p v-if="form.janela_ativa" class="text-ink-muted flex items-start gap-1.5">
+            <i class="fas fa-circle-info mt-0.5 text-accent"></i>
             <span>
               Acionamento recebido fora do horário não vira erro: o registro fica como
               <span class="font-semibold text-ink">Agendado</span> e o boleto é emitido sozinho na abertura seguinte.
@@ -576,14 +601,14 @@
               Tentar de novo ou gerar pela tela continua funcionando a qualquer hora.
             </span>
           </p>
-        </Surface>
+        </Panel>
 
         <!-- Botão salvar -->
         <div class="flex flex-wrap items-center justify-end gap-3">
-          <p v-if="store.settingsError" class="text-xs text-red-500 flex items-center gap-1.5">
+          <p v-if="store.settingsError" class="text-data-neg flex items-center gap-1.5">
             <i class="fas fa-circle-exclamation"></i>{{ store.settingsError }}
           </p>
-          <p v-if="store.settingsSaved" class="text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+          <p v-if="store.settingsSaved" class="text-data-pos flex items-center gap-1.5">
             <i class="fas fa-check"></i>Configurações salvas!
           </p>
           <Button variant="primary" icon="fas fa-save"
@@ -595,17 +620,17 @@
         </div>
 
         <!-- Card: Simulação de Webhook (dev only) -->
-        <Surface v-if="isDev" variant="raised" padding="md"
-          class="border-2 border-dashed border-amber-500/40 bg-amber-500/5 space-y-4">
+        <Panel v-if="isDev"
+          class="border-data-warn/40 bg-data-warn/5 space-y-4">
           <div class="flex items-center gap-3">
             <Badge variant="warning" size="sm">
               <i class="fas fa-flask mr-1"></i> Dev Only
             </Badge>
-            <h3 class="text-sm font-semibold text-amber-700 dark:text-amber-300">
+            <h3 class="text-sm font-semibold text-data-warn">
               Simular Webhook
             </h3>
           </div>
-          <p class="text-xs text-amber-700 dark:text-amber-400 leading-relaxed">
+          <p class="text-data-warn leading-relaxed">
             Dispara o processamento de boleto manualmente para uma reserva, sem precisar configurar o CV.
             Bloqueado automaticamente em produção.
           </p>
@@ -615,7 +640,7 @@
               v-model="simulateIdreserva"
               type="number"
               placeholder="ID da Reserva (ex: 12345)" />
-            <Button variant="primary" class="!bg-amber-500 hover:!bg-amber-600"
+            <Button variant="primary" class="!bg-data-warn hover:!bg-data-warn"
               :icon="store.simulateLoading ? 'fas fa-spinner fa-spin' : 'fas fa-play'"
               :disabled="store.simulateLoading || !simulateIdreserva"
               @click="handleSimulate">
@@ -623,15 +648,15 @@
             </Button>
           </div>
 
-          <p v-if="store.simulateSuccess" class="text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
+          <p v-if="store.simulateSuccess" class="text-data-pos flex items-center gap-2">
             <i class="fas fa-circle-check"></i>
             Webhook simulado! Acompanhe o progresso na aba Histórico.
           </p>
-          <p v-if="store.simulateError" class="text-xs text-red-600 dark:text-red-400 flex items-center gap-2">
+          <p v-if="store.simulateError" class="text-data-neg flex items-center gap-2">
             <i class="fas fa-circle-xmark"></i>
             {{ store.simulateError }}
           </p>
-        </Surface>
+        </Panel>
       </div>
 
       <!-- ── TAB: Histórico ───────────────────────────────────────────────────── -->
@@ -640,172 +665,144 @@
         <!-- Filtros (componente dedicado, padrão DashboardFilters) -->
         <BoletoFilters @filter-changed="onFiltersChanged" />
 
-        <!-- KPIs (reflete o conjunto filtrado) -->
-        <div v-if="store.stats" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          <Surface v-for="kpi in kpiCards" :key="kpi.label"
-            variant="raised" padding="sm" class="surface-gradient relative overflow-hidden">
-            <div class="flex items-start justify-between gap-2">
-              <div class="min-w-0">
-                <p class="text-[10px] font-mono uppercase tracking-wider text-ink-subtle">{{ kpi.label }}</p>
-                <p class="mt-1 text-xl font-semibold text-ink tabular-nums leading-tight truncate" :title="kpi.value">
-                  {{ kpi.value }}
-                </p>
-                <p v-if="kpi.sub" class="mt-0.5 text-[11px] text-ink-muted truncate" :title="kpi.sub">
-                  {{ kpi.sub }}
-                </p>
-              </div>
-              <div class="h-8 w-8 rounded-lg grid place-items-center border shrink-0" :class="kpi.iconClass">
-                <i :class="kpi.icon" class="text-xs"></i>
-              </div>
-            </div>
-          </Surface>
+        <!-- KPIs do conjunto filtrado. Clicar recorta a TABELA (os cartões
+             seguem descrevendo o período filtrado, senão clicar em "Pagos"
+             levaria o próprio cartão a 100%). -->
+        <StatRow v-if="!carregandoHistorico && store.stats" :items="kpiCards"
+          :cols="{ sm: 2, md: 3, lg: 6 }" size="sm"
+          selectable :active-key="recorte" @select="aoClicarKpi" />
+
+        <!-- Linha de estado -->
+        <div class="flex flex-wrap items-center gap-2 text-xs text-ink-muted">
+          <span class="tabular-nums">
+            <b class="text-ink">{{ listaRecortada.length }}</b>
+            de {{ store.historyTotal || store.history.length }} registro{{ (store.historyTotal || 0) === 1 ? '' : 's' }}
+          </span>
+          <button v-if="recorteAtivo" type="button"
+            class="inline-flex items-center gap-1.5 h-7 px-2 rounded-md bg-accent-soft text-accent
+                   text-micro font-medium hover:bg-accent/15 transition-colors duration-120 focus-ring"
+            @click="recorte = ''">
+            só {{ recorteAtivo.label }}
+            <i class="fas fa-xmark text-micro"></i>
+          </button>
         </div>
 
-        <!-- Loading -->
-        <div v-if="store.historyLoading" class="flex items-center justify-center py-12 text-ink-muted">
-          <i class="fas fa-spinner fa-spin text-2xl mr-3"></i>
-          <span>Carregando histórico...</span>
+        <div v-if="store.historyError"
+          class="rounded-xl border border-data-neg/25 bg-data-neg/10 p-4 text-sm text-data-neg
+                 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div class="flex items-start gap-2 min-w-0">
+            <i class="fas fa-circle-exclamation mt-0.5 shrink-0"></i>
+            <span class="min-w-0">{{ store.historyError }}</span>
+          </div>
+          <Button variant="outline" size="sm" icon="fas fa-rotate-right" class="shrink-0"
+            @click="store.fetchHistory()">
+            Tentar novamente
+          </Button>
         </div>
 
-        <!-- Erro -->
-        <Surface v-else-if="store.historyError" variant="raised" padding="sm"
-          class="border-red-500/30 bg-red-500/10">
-          <div class="text-sm text-red-600 dark:text-red-400 flex items-center gap-2">
-            <i class="fas fa-circle-exclamation"></i>{{ store.historyError }}
+        <!-- Esqueleto na forma exata do que vem: seis cartões e a tabela. -->
+        <div v-else-if="carregandoHistorico" class="space-y-4">
+          <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-3">
+            <Skeleton v-for="i in 6" :key="i" variant="stat" />
           </div>
-        </Surface>
+          <Skeleton variant="table" :lines="8" />
+        </div>
 
-        <!-- Tabela enxuta — detalhes/ações vão pro modal -->
-        <Surface v-else variant="raised" padding="none" class="overflow-hidden surface-gradient">
-          <div class="overflow-x-auto">
-            <table class="w-full text-sm">
-              <thead>
-                <tr class="bg-surface-sunken/60 border-b border-line">
-                  <th v-for="col in historyColumns" :key="col.key"
-                    class="px-4 py-3 text-[11px] font-mono uppercase tracking-wider text-ink-subtle select-none transition-colors"
-                    :class="[
-                      col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : 'text-left',
-                      col.sortable === false ? '' : 'cursor-pointer hover:text-ink',
-                    ]"
-                    @click="col.sortable === false ? null : store.setSort(col.key)">
-                    <span class="inline-flex items-center gap-1.5"
-                      :class="col.align === 'right' ? 'flex-row-reverse' : col.align === 'center' ? 'justify-center' : ''">
-                      {{ col.label }}
-                      <i v-if="col.sortable !== false" class="text-[9px]" :class="sortIcon(col.key)"></i>
-                    </span>
-                  </th>
-                  <th class="text-center px-4 py-3 text-[11px] font-mono uppercase tracking-wider text-ink-subtle"></th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-if="!store.history.length">
-                  <td colspan="9" class="text-center py-12">
-                    <EmptyState icon="fas fa-inbox" title="Sem registros" description="Nenhum registro encontrado com os filtros atuais." />
-                  </td>
-                </tr>
-                <tr v-for="item in store.history" :key="item.id"
-                  class="border-b border-line hover:bg-surface-hover/40 transition-colors cursor-pointer"
-                  @click="openDetail(item)">
-                  <td class="px-4 py-3 font-mono text-accent font-semibold whitespace-nowrap">
-                    #{{ item.idreserva }}
-                    <span v-if="item.attempts_count > 1"
-                      class="ml-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-ink/5 text-ink-muted border border-line align-middle"
-                      :title="`${item.attempts_count} boletos emitidos para esta reserva`">
-                      <i class="fas fa-layer-group text-[9px]"></i> {{ item.attempts_count }}
-                    </span>
-                  </td>
-                  <td class="px-4 py-3">
-                    <div class="text-ink truncate max-w-[260px]">{{ item.titular_nome || '—' }}</div>
-                    <div class="text-ink-subtle text-[11px] truncate max-w-[260px]">{{ item.empreendimento || '—' }}</div>
-                  </td>
-                  <td class="px-4 py-3 text-right font-semibold text-ink whitespace-nowrap font-mono tabular-nums">
-                    {{ item.valor ? formatCurrency(item.valor) : '—' }}
-                  </td>
-                  <td class="px-4 py-3 text-center text-ink-muted whitespace-nowrap font-mono tabular-nums">
-                    {{ item.vencimento ? formatDate(item.vencimento) : '—' }}
-                  </td>
-                  <td class="px-4 py-3 text-center">
-                    <Badge :variant="statusVariant(item.status)" size="sm">
-                      <i :class="statusIcon(item.status)" class="mr-1"></i>
-                      {{ statusLabel(item.status) }}
-                    </Badge>
-                    <!-- Agendado pela janela: mostra QUANDO vai sair, senão o
-                         "Agendado" sozinho não diz nada ao gestor. -->
-                    <p v-if="item.status === 'queued' && item.emissao_agendada_para"
-                      class="text-[10px] text-ink-subtle mt-1 whitespace-nowrap">
-                      {{ formatDateTime(item.emissao_agendada_para) }}
-                    </p>
-                  </td>
-                  <td class="px-4 py-3 text-center">
-                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold"
-                      :class="paymentBadgeClass(item.payment_status || 'pending')">
-                      <i :class="paymentBadgeIcon(item.payment_status || 'pending')"></i>
-                      {{ paymentBadgeLabel(item.payment_status || 'pending') }}
-                    </span>
-                  </td>
-                  <td class="py-3 whitespace-nowrap">
-                    <!-- Etapa da RESERVA + do REPASSE no CV — badge na cor do
-                         workflow, clicável: abre a tela correspondente do CV. -->
-                    <div class="flex flex-row justify-center gap-1">
-                      <a v-if="item.cv_situacao" :href="cvReservaUrl(item)" target="_blank" rel="noopener"
-                        @click.stop
-                        class="inline-flex items-center gap-1 px-2.5 rounded-full text-[10px] font-semibold border border-line bg-surface-sunken text-ink-muted hover:opacity-80 transition-opacity"
-                        :style="cvBadgeStyle(item.cv_situacao_cor_bg, item.cv_situacao_cor_nome)"
-                        :title="`Reserva: ${item.cv_situacao} — abrir no CV`">
-                        <i class="fas fa-flag text-[9px]"></i>{{ item.cv_situacao }}
-                      </a>
-                      <a v-if="item.cv_situacao_repasse" :href="cvRepasseUrl(item)" target="_blank" rel="noopener"
-                        @click.stop
-                        class="inline-flex items-center gap-1 px-2.5 rounded-full text-[10px] font-semibold border border-line bg-surface-sunken text-ink-muted hover:opacity-80 transition-opacity"
-                        :style="cvBadgeStyle(item.cv_repasse_cor_bg, item.cv_repasse_cor_nome)"
-                        :title="`Repasse: ${item.cv_situacao_repasse} — abrir no CV`">
-                        <i class="fas fa-building-columns text-[9px]"></i>{{ item.cv_situacao_repasse }}
-                      </a>
-                      <span v-if="!item.cv_situacao && !item.cv_situacao_repasse" class="text-ink-subtle text-xs">—</span>
-                    </div>
-                  </td>
-                  <td class="px-1 py-3 text-center text-xs text-ink-subtle whitespace-nowrap font-mono tabular-nums">
-                    {{ formatDateTime(item.createdAt) }}
-                  </td>
-                  <td class="px-4 py-3 text-center whitespace-nowrap">
-                    <button @click.stop="openDetail(item)"
-                      class="inline-flex items-center gap-1 px-2.5 py-1 text-xs bg-accent-soft text-accent rounded-lg hover:bg-accent/15 transition-colors">
-                      <i class="fas fa-arrow-up-right-from-square"></i>
-                      Detalhes
-                    </button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+        <template v-else>
+          <DataTable :columns="COLUNAS" :rows="inc.visiveis.value" row-key="id"
+            manual-sort clickable density="compact"
+            v-model:sort-by="ordem.by" v-model:sort-dir="ordem.dir"
+            more-label="Ver mais campos"
+            empty-title="Sem registros"
+            empty-text="Nenhum boleto encontrado com os filtros atuais."
+            @row-click="openDetail">
 
-          <!-- Paginação -->
-          <div v-if="store.totalPages > 1"
-            class="flex items-center justify-between px-4 py-3 border-t border-line gap-3 flex-wrap">
-            <span class="text-xs text-ink-muted">
-              <span class="font-mono tabular-nums">{{ store.historyTotal }}</span> registros
+            <template #cell-idreserva="{ row }">
+              <span class="inline-flex items-center gap-1.5">
+                <span class="font-mono font-semibold text-accent tabular-nums">#{{ row.idreserva }}</span>
+                <!-- Mais de um boleto para a mesma reserva: é o que explica
+                     valor repetido na lista. -->
+                <span v-if="row.attempts_count > 1"
+                  v-tippy="`${row.attempts_count} boletos emitidos para esta reserva`"
+                  class="inline-flex items-center gap-1 px-1.5 rounded-full text-micro font-semibold
+                         bg-surface-sunken text-ink-muted border border-line">
+                  <i class="fas fa-layer-group" style="font-size:9px"></i>{{ row.attempts_count }}
+                </span>
+              </span>
+            </template>
+
+            <template #cell-titular_nome="{ row }">
+              <span class="block min-w-0">
+                <span class="block text-ink truncate">{{ row.titular_nome || '-' }}</span>
+                <span class="block text-micro text-ink-subtle truncate">{{ row.empreendimento || '-' }}</span>
+              </span>
+            </template>
+
+            <template #cell-valor="{ row }">
+              <span class="metric text-sm">{{ row.valor ? formatCurrency(row.valor) : '-' }}</span>
+            </template>
+
+            <template #cell-vencimento="{ row }">
+              {{ row.vencimento ? formatDate(row.vencimento) : '-' }}
+            </template>
+
+            <template #cell-status="{ row }">
+              <span class="inline-flex flex-col items-start gap-0.5">
+                <Badge :variant="statusVariant(row.status)" size="sm">{{ statusLabel(row.status) }}</Badge>
+                <!-- Agendado pela janela de emissão: mostra QUANDO vai sair. -->
+                <span v-if="row.emissao_agendada_para" class="text-micro text-ink-subtle tabular-nums">
+                  {{ formatDateTime(row.emissao_agendada_para) }}
+                </span>
+              </span>
+            </template>
+
+            <template #cell-payment_status="{ row }">
+              <Badge :variant="paymentVariant(row.payment_status || 'pending')" size="sm">
+                {{ paymentBadgeLabel(row.payment_status || 'pending') }}
+              </Badge>
+            </template>
+
+            <template #cell-cv_situacao="{ row }">
+              <span class="inline-flex flex-wrap items-center gap-1">
+                <Badge v-if="row.cv_situacao" variant="neutral" size="sm">
+                  <i class="fas fa-flag" style="font-size:9px"></i>{{ row.cv_situacao }}
+                </Badge>
+                <Badge v-if="row.cv_situacao_repasse" variant="info" size="sm">
+                  <i class="fas fa-building-columns" style="font-size:9px"></i>{{ row.cv_situacao_repasse }}
+                </Badge>
+                <span v-if="!row.cv_situacao && !row.cv_situacao_repasse" class="text-ink-subtle">-</span>
+              </span>
+            </template>
+
+            <template #cell-createdAt="{ row }">{{ formatDateTime(row.createdAt) }}</template>
+
+            <template #actions="{ row }">
+              <IconButton icon="fas fa-up-right-and-down-left-from-center" size="sm"
+                label="Abrir detalhes" @click.stop="openDetail(row)" />
+            </template>
+          </DataTable>
+
+          <!-- Gatilho do scroll: mais 50, e busca no servidor quando a memória
+               acaba e ainda há página. -->
+          <div v-if="!inc.acabou.value || faltaNoServidor" :ref="el => inc.observar(el)"
+            class="py-6 flex items-center justify-center gap-2 text-micro text-ink-subtle">
+            <Spinner size="sm" />
+            <span v-if="!inc.acabou.value">
+              carregando mais {{ Math.min(inc.step, inc.restantes.value) }} de {{ inc.restantes.value }} restantes
             </span>
-            <div class="flex gap-1 flex-wrap">
-              <button v-for="p in store.totalPages" :key="p"
-                @click="store.setPage(p)"
-                class="h-8 min-w-8 px-2.5 rounded-lg text-sm font-medium transition-colors"
-                :class="store.historyPage === p
-                  ? 'bg-accent text-white'
-                  : 'text-ink-muted hover:bg-surface-hover'">
-                {{ p }}
-              </button>
-            </div>
+            <span v-else>buscando mais {{ faltaNoServidor }} no servidor</span>
           </div>
-        </Surface>
+        </template>
       </div>
-    </PageContainer>
 
-    <!-- Modal consolidado de detalhes (Resumo / Timeline / PDF) -->
-    <BoletoDetailModal
-      :open="detailModal.open"
-      :item="detailModal.item"
-      @close="closeDetail"
-      @changed="store.fetchHistory()" />
+      <!-- Modal consolidado de detalhes (Resumo / Timeline / PDF) -->
+      <BoletoDetailModal
+        :open="detailModal.open"
+        :item="detailModal.item"
+        @close="closeDetail"
+        @changed="store.fetchHistory()" />
+
+    </PageContainer>
   </div>
 </template>
 
@@ -817,13 +814,21 @@ import API_URL from '@/config/apiUrl';
 
 import PageContainer from '@/components/UI/PageContainer.vue';
 import PageHeader from '@/components/UI/PageHeader.vue';
-import Surface from '@/components/UI/Surface.vue';
+import Panel from '@/components/UI/Panel.vue';
 import Button from '@/components/UI/Button.vue';
 import Badge from '@/components/UI/Badge.vue';
 import Input from '@/components/UI/Input.vue';
 import Select from '@/components/UI/Select.vue';
 import SegmentedControl from '@/components/UI/SegmentedControl.vue';
-import EmptyState from '@/components/UI/EmptyState.vue';
+import Modal from '@/components/UI/Modal.vue';
+import PageHelp from '@/components/UI/PageHelp.vue';
+import StatRow from '@/components/UI/StatRow.vue';
+import DataTable from '@/components/UI/DataTable.vue';
+import IconButton from '@/components/UI/IconButton.vue';
+import Skeleton from '@/components/UI/Skeleton.vue';
+import Spinner from '@/components/UI/Spinner.vue';
+import Favorite from '@/components/config/Favorite.vue';
+import { useIncrementalList } from '@/composables/useIncrementalList';
 
 // Componentes próprios desta tela
 import BoletoFilters from './components/BoletoFilters.vue';
@@ -896,6 +901,7 @@ const form = ref({
   situacao_pago_id: 28,
   situacao_baixado_id: 29,
   tolerancia_dias_uteis: 1,
+  revalidacao_baixado_dias: 5,
   delay_situacao_sucesso_min: 2,
   max_dias_vencimento: 10,
   valor_maximo: 300000,
@@ -933,6 +939,7 @@ function snapshotCvFields() {
     situacao_pago_id: form.value.situacao_pago_id,
     situacao_baixado_id: form.value.situacao_baixado_id,
     tolerancia_dias_uteis: form.value.tolerancia_dias_uteis,
+    revalidacao_baixado_dias: form.value.revalidacao_baixado_dias,
     delay_situacao_sucesso_min: form.value.delay_situacao_sucesso_min,
     max_dias_vencimento: form.value.max_dias_vencimento,
     valor_maximo: form.value.valor_maximo,
@@ -979,16 +986,66 @@ async function handleSave() {
 }
 
 // ── Colunas ordenáveis do histórico ───────────────────────────────────────────
-const historyColumns = [
-  { key: 'reserva',    label: '#Reserva',                 align: 'left' },
-  { key: 'titular',    label: 'Titular / Empreendimento', align: 'left' },
-  { key: 'valor',      label: 'Valor',                    align: 'right' },
-  { key: 'vencimento', label: 'Vencimento',               align: 'center' },
-  { key: 'status',     label: 'Emissão',                  align: 'center' },
-  { key: 'pagamento',  label: 'Pagamento',                align: 'center' },
-  { key: 'etapa',      label: 'Etapa CV',                 align: 'center', sortable: false },
-  { key: 'data',       label: 'Data',                     align: 'center' },
+/* Prioridade decide a ORDEM de aparição no estreito, nunca o que existe.
+   Ordenação é `manual-sort`: a tabela recebe a lista já fatiada pelo scroll. */
+const COLUNAS = [
+  { key: 'idreserva', label: '#Reserva', priority: 1, sortable: true, width: '8rem' },
+  { key: 'titular_nome', label: 'Titular / Empreendimento', priority: 1, sortable: true },
+  { key: 'status', label: 'Emissão', priority: 1, sortable: true, width: '10rem' },
+  { key: 'valor', label: 'Valor', priority: 2, numeric: true, sortable: true, width: '8rem' },
+  { key: 'payment_status', label: 'Pagamento', priority: 2, sortable: true, width: '8rem' },
+  { key: 'vencimento', label: 'Vencimento', priority: 2, sortable: true, width: '7rem' },
+  { key: 'cv_situacao', label: 'Etapa no CV', priority: 3, truncate: false },
+  { key: 'createdAt', label: 'Emitido em', priority: 3, sortable: true, width: '9rem' },
 ];
+
+/* ── Recorte pelo KPI ─────────────────────────────────────────────────────
+   Recorta a TABELA, não os cartões. Mesmo gesto liga e desliga. */
+const recorte = ref('');
+
+const RECORTES = {
+  paid: { label: 'pagos', teste: (r) => r.payment_status === 'paid' },
+  pending: { label: 'pendentes', teste: (r) => (r.payment_status || 'pending') === 'pending' && r.status === 'success' },
+  cancelled: { label: 'baixados', teste: (r) => r.payment_status === 'cancelled' },
+  error: { label: 'com erro', teste: (r) => r.status === 'error' },
+  scheduled: { label: 'agendados', teste: (r) => !!r.emissao_agendada_para && r.status !== 'success' },
+};
+
+const recorteAtivo = computed(() => RECORTES[recorte.value] || null);
+
+function aoClicarKpi(item) {
+  recorte.value = (item.key === 'emitidos' || recorte.value === item.key) ? '' : item.key;
+}
+
+const listaRecortada = computed(() => (recorteAtivo.value
+  ? (store.history || []).filter(recorteAtivo.value.teste)
+  : (store.history || [])));
+
+/* ── Ordenação + scroll incremental ──────────────────────────────────── */
+const ordem = ref({ by: '', dir: 'asc' });
+
+const ordenada = computed(() => {
+  const { by, dir } = ordem.value;
+  const base = listaRecortada.value;
+  if (!by) return base;
+  const mul = dir === 'asc' ? 1 : -1;
+  return [...base].sort((a, b) => {
+    const va = a[by], vb = b[by];
+    if (va == null || va === '') return 1;
+    if (vb == null || vb === '') return -1;
+    if (typeof va === 'number' && typeof vb === 'number') return (va - vb) * mul;
+    return String(va).localeCompare(String(vb), 'pt-BR', { numeric: true, sensitivity: 'base' }) * mul;
+  });
+});
+
+const inc = useIncrementalList(ordenada, { step: 50 });
+
+const faltaNoServidor = computed(() =>
+  Math.max(0, (store.historyTotal || 0) - (store.history?.length || 0)));
+
+/* Selo do pagamento pelos tokens. O `statusVariant` da emissão já existia mais
+   abaixo, com skipped/queued - não duplicar. */
+const paymentVariant = (s) => ({ paid: 'success', cancelled: 'neutral', pending: 'warning' }[s] || 'neutral');
 
 // ── Etapa CV: links diretos + badge na cor do workflow do CV ─────────────────
 const cvReservaUrl = (item) => `https://menin.cvcrm.com.br/gestor/comercial/reservas/${item.idreserva}/administrar`;
@@ -1000,67 +1057,48 @@ function cvBadgeStyle(bg, txt) {
   return { backgroundColor: bg, color: txt || '#fff', borderColor: 'transparent' };
 }
 
-function sortIcon(key) {
-  if (store.sortBy !== key) return 'fas fa-sort text-ink-subtle/40';
-  return store.sortDir === 'asc'
-    ? 'fas fa-sort-up text-accent'
-    : 'fas fa-sort-down text-accent';
-}
 
 // ── Filtros: ao aplicar, refaz history + stats em paralelo ────────────────────
+/* A primeira carga não é disparada aqui: quem dispara é o BoletoFilters, no
+   `onMounted` dele. Entre montar a tela e esse emit chegar, `historyLoading`
+   ainda é false e a lista está vazia - e a tabela mostrava "Sem registros" por
+   um instante, antes do esqueleto. Este sinalizador cobre essa janela: a tela
+   nasce carregando e só sai disso depois da primeira resposta. */
+const primeiraCarga = ref(true);
+
+const carregandoHistorico = computed(() => primeiraCarga.value || store.historyLoading);
+
 function onFiltersChanged() {
-  store.fetchHistory();
-  store.fetchStats();
+  Promise.allSettled([store.fetchHistory(), store.fetchStats()])
+    .finally(() => { primeiraCarga.value = false; });
 }
 
 // ── KPIs ──────────────────────────────────────────────────────────────────────
+/* Cartões no formato do StatCard. `value` (não `raw`): aqui o número é fila
+   de trabalho, e count-up em "3 com erro" é comemorar o que não deve. */
 const kpiCards = computed(() => {
-  const s = store.stats;
-  if (!s) return [];
-  const pct = (key) => s.percent?.[key] ?? 0;
+  const st = store.stats;
+  if (!st) return [];
+  const pct = (k) => st.percent?.[k] ?? 0;
   return [
-    {
-      label: 'Emitidos',
-      value: s.emitidos.qty,
-      sub: formatCurrency(s.emitidos.valor),
-      icon: 'fas fa-barcode',
-      iconClass: 'bg-accent-soft text-accent border-accent/20',
-    },
-    {
-      label: 'Pagos',
-      value: s.paid.qty,
-      sub: `${pct('paid')}% · ${formatCurrency(s.paid.valor)}`,
-      icon: 'fas fa-circle-check',
-      iconClass: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
-    },
-    {
-      label: 'Pendentes',
-      value: s.pending.qty,
-      sub: `${pct('pending')}% · ${formatCurrency(s.pending.valor)}`,
-      icon: 'fas fa-clock',
-      iconClass: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20',
-    },
-    {
-      label: 'Baixados',
-      value: s.cancelled.qty,
-      sub: `${pct('cancelled')}% evasão · ${formatCurrency(s.cancelled.valor)}`,
-      icon: 'fas fa-ban',
-      iconClass: 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20',
-    },
-    {
-      label: 'Erros emissão',
-      value: s.errors.qty,
-      sub: `${pct('errorEmissao')}% do total`,
-      icon: 'fas fa-circle-exclamation',
-      iconClass: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
-    },
-    {
-      label: 'Valor pago',
-      value: formatCurrency(s.paid.valor),
-      sub: `de ${formatCurrency(s.emitidos.valor)} emitido`,
-      icon: 'fas fa-sack-dollar',
-      iconClass: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
-    },
+    { key: 'emitidos', label: 'Emitidos', value: st.emitidos.qty,
+      hint: formatCurrency(st.emitidos.valor), icon: 'fas fa-barcode', tone: 'accent',
+      tooltip: 'Clique para ver todos os registros' },
+    { key: 'paid', label: 'Pagos', value: st.paid.qty,
+      hint: `${pct('paid')}% · ${formatCurrency(st.paid.valor)}`,
+      icon: 'fas fa-circle-check', tone: 'pos', tooltip: 'Clique para ver só os pagos' },
+    { key: 'pending', label: 'Pendentes', value: st.pending.qty,
+      hint: `${pct('pending')}% · ${formatCurrency(st.pending.valor)}`,
+      icon: 'fas fa-clock', tone: 2, tooltip: 'Clique para ver só os pendentes' },
+    { key: 'cancelled', label: 'Baixados', value: st.cancelled.qty,
+      hint: `${pct('cancelled')}% evasão · ${formatCurrency(st.cancelled.valor)}`,
+      icon: 'fas fa-ban', tone: 'neutral', tooltip: 'Clique para ver só os baixados' },
+    { key: 'error', label: 'Com erro', value: st.errors?.qty ?? 0,
+      hint: st.errors?.valor != null ? formatCurrency(st.errors.valor) : '',
+      icon: 'fas fa-triangle-exclamation', tone: 'neg', tooltip: 'Clique para ver só os que falharam' },
+    { key: 'scheduled', label: 'Agendados', value: st.scheduled?.qty ?? 0,
+      hint: 'aguardando a janela de emissão',
+      icon: 'fas fa-hourglass-half', tone: 7, tooltip: 'Clique para ver só os agendados' },
   ];
 });
 
@@ -1092,16 +1130,6 @@ function statusVariant(status) {
   }[status] || 'neutral';
 }
 
-function statusIcon(status) {
-  return {
-    processing: 'fas fa-spinner fa-spin',
-    success:    'fas fa-check',
-    error:      'fas fa-times',
-    skipped:    'fas fa-forward',
-    queued:     'fas fa-clock',
-  }[status] || 'fas fa-question';
-}
-
 function statusLabel(status) {
   return {
     processing: 'Processando',
@@ -1120,22 +1148,6 @@ function paymentBadgeLabel(s) {
     cancelled: 'Baixado',
     error:     'Erro na verificação',
   })[s] || s;
-}
-function paymentBadgeClass(s) {
-  return ({
-    pending:   'bg-ink/5 text-ink-muted border border-line',
-    paid:      'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30',
-    cancelled: 'bg-red-500/15 text-red-700 dark:text-red-300 border border-red-500/30',
-    error:     'bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30',
-  })[s] || 'bg-surface-sunken border border-line';
-}
-function paymentBadgeIcon(s) {
-  return ({
-    pending:   'fas fa-clock',
-    paid:      'fas fa-circle-check',
-    cancelled: 'fas fa-ban',
-    error:     'fas fa-circle-exclamation',
-  })[s] || 'fas fa-circle';
 }
 
 // ── Regras de Comissão por Empreendimento ─────────────────────────────────────
@@ -1249,6 +1261,7 @@ onMounted(async () => {
       form.value.situacao_pago_id    = store.settings.situacao_pago_id ?? 28;
       form.value.situacao_baixado_id = store.settings.situacao_baixado_id ?? 29;
       form.value.tolerancia_dias_uteis = store.settings.tolerancia_dias_uteis ?? 1;
+      form.value.revalidacao_baixado_dias = store.settings.revalidacao_baixado_dias ?? 5;
       form.value.delay_situacao_sucesso_min = store.settings.delay_situacao_sucesso_min ?? 2;
       form.value.max_dias_vencimento = store.settings.max_dias_vencimento ?? 10;
       form.value.valor_maximo = store.settings.valor_maximo != null ? Number(store.settings.valor_maximo) : null;
