@@ -5,8 +5,7 @@ import { useBoletoStore } from '@/stores/Financeiro/BoletoCaixa/boletoStore';
 
 import MultiSelector from '@/components/UI/MultiSelector.vue';
 import Input from '@/components/UI/Input.vue';
-import Button from '@/components/UI/Button.vue';
-import Badge from '@/components/UI/Badge.vue';
+import FilterBar from '@/components/UI/FilterBar.vue';
 
 // Emits Filtros aplicados → pai dispara fetchHistory.
 const emit = defineEmits(['filter-changed']);
@@ -179,8 +178,6 @@ const activeFiltersCount = computed(() => {
 });
 
 // Expand/colapse (default expandido em >= lg)
-const isExpanded = ref(typeof window !== 'undefined' && window.innerWidth >= 1024);
-function toggle() { isExpanded.value = !isExpanded.value; }
 
 // Enter no campo de busca aplica
 function onEnterApply(e) {
@@ -198,39 +195,18 @@ onMounted(async () => {
 </script>
 
 <template>
-  <section class="rounded-xl border border-line bg-surface-raised shadow-soft surface-gradient">
-    <!-- Toolbar -->
-    <div class="filters-toolbar">
-      <button @click="toggle"
-        class="filters-toolbar-trigger">
-        <i class="fas fa-filter text-xs text-ink-muted"></i>
-        <span>Filtros</span>
-        <Badge v-if="activeFiltersCount" variant="accent" size="sm">
-          {{ activeFiltersCount }} ativo{{ activeFiltersCount > 1 ? 's' : '' }}
-        </Badge>
-        <i class="fas fa-chevron-down text-[10px] text-ink-subtle transition-transform duration-200"
-          :class="{ 'rotate-180': isExpanded }"></i>
-      </button>
+  <!-- Era a casca de filtro copiada à mão (`.filters-toolbar` + colapso +
+       selo de ativos). Virou o primitivo `FilterBar`, que já traz altura fixa
+       (a página não pula quando o selo aparece), começa fechada e emite
+       apply/clear. Os campos continuam os mesmos. -->
+  <FilterBar :active-count="activeFiltersCount" :cols="4"
+    @apply="applyFilters" @clear="clearFilters">
 
-      <div class="ml-auto flex items-center gap-1.5">
-        <Button variant="ghost" size="sm" icon="fas fa-eraser" @click="clearFilters">
-          <span class="hidden sm:inline">Limpar</span>
-        </Button>
-        <Button size="sm" icon="fas fa-magnifying-glass" @click="applyFilters">
-          <span class="hidden sm:inline">Filtrar</span>
-        </Button>
-      </div>
-    </div>
-
-    <!-- Campos -->
-    <div v-show="isExpanded"
-      class="p-3 sm:p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 animate-fade-in"
-      style="overflow:visible">
 
       <!-- Data de referência: emissão ou pagamento -->
       <div>
-        <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
-          <i class="fas fa-calendar-day text-[10px] mr-1 text-ink-subtle"></i>Buscar por data de
+        <label class="block text-micro font-medium text-ink-muted mb-1.5">
+          <i class="fas fa-calendar-day text-micro mr-1 text-ink-subtle"></i>Buscar por data de
         </label>
         <div class="inline-flex rounded-lg border border-line bg-surface-sunken p-0.5 w-full">
           <button v-for="opt in DATE_FIELD_OPTIONS" :key="opt.value" type="button"
@@ -250,24 +226,24 @@ onMounted(async () => {
         :label="local.dateField === 'paid_at' ? 'Pago até' : 'Emitido até'" />
 
       <div>
-        <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
-          <i class="fas fa-bolt text-[10px] mr-1 text-ink-subtle"></i>Status da emissão
+        <label class="block text-micro font-medium text-ink-muted mb-1.5">
+          <i class="fas fa-bolt text-micro mr-1 text-ink-subtle"></i>Status da emissão
         </label>
         <MultiSelector v-model="selectedStatusLabels"
           :options="statusLabels" placeholder="Todos" :select-all="false" />
       </div>
 
       <div>
-        <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
-          <i class="fas fa-coins text-[10px] mr-1 text-ink-subtle"></i>Status de pagamento
+        <label class="block text-micro font-medium text-ink-muted mb-1.5">
+          <i class="fas fa-coins text-micro mr-1 text-ink-subtle"></i>Status de pagamento
         </label>
         <MultiSelector v-model="selectedPaymentLabels"
           :options="paymentLabels" placeholder="Todos" :select-all="false" />
       </div>
 
       <div class="sm:col-span-1">
-        <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
-          <i class="fas fa-city text-[10px] mr-1 text-ink-subtle"></i>Empreendimento(s)
+        <label class="block text-micro font-medium text-ink-muted mb-1.5">
+          <i class="fas fa-city text-micro mr-1 text-ink-subtle"></i>Empreendimento(s)
         </label>
         <MultiSelector :model-value="local.empreendimento"
           @update:modelValue="v => local.empreendimento = Array.isArray(v) ? v : []"
@@ -276,16 +252,16 @@ onMounted(async () => {
       </div>
 
       <div>
-        <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
-          <i class="fas fa-flag text-[10px] mr-1 text-ink-subtle"></i>Etapa CV (reserva)
+        <label class="block text-micro font-medium text-ink-muted mb-1.5">
+          <i class="fas fa-flag text-micro mr-1 text-ink-subtle"></i>Etapa CV (reserva)
         </label>
         <MultiSelector v-model="selectedCvSituacaoLabels"
           :options="cvSituacaoOptions" placeholder="Todas as etapas" :select-all="false" />
       </div>
 
       <div>
-        <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
-          <i class="fas fa-building-columns text-[10px] mr-1 text-ink-subtle"></i>Etapa CV (repasse)
+        <label class="block text-micro font-medium text-ink-muted mb-1.5">
+          <i class="fas fa-building-columns text-micro mr-1 text-ink-subtle"></i>Etapa CV (repasse)
         </label>
         <MultiSelector v-model="selectedCvRepasseLabels"
           :options="cvRepasseOptions" placeholder="Todas as etapas" :select-all="false" />
@@ -297,6 +273,5 @@ onMounted(async () => {
       <Input v-model="local.q" type="text" label="Busca livre"
         placeholder="Titular, nosso número ou nº documento"
         @keyup="onEnterApply" />
-    </div>
-  </section>
+  </FilterBar>
 </template>

@@ -3,6 +3,7 @@ import { ref, computed, watch, onUnmounted } from 'vue';
 import { useBoletoStore } from '@/stores/Financeiro/BoletoCaixa/boletoStore';
 
 import Button from '@/components/UI/Button.vue';
+import Modal from '@/components/UI/Modal.vue';
 import Badge from '@/components/UI/Badge.vue';
 import SegmentedControl from '@/components/UI/SegmentedControl.vue';
 
@@ -244,10 +245,10 @@ function attemptOutcome(a) {
 }
 function outcomeChipClass(variant) {
   return ({
-    success: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30',
-    danger:  'bg-red-500/15 text-red-700 dark:text-red-300 border border-red-500/30',
-    warning: 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30',
-    info:    'bg-blue-500/15 text-blue-700 dark:text-blue-300 border border-blue-500/30',
+    success: 'bg-data-pos/15 text-data-pos border border-data-pos/30',
+    danger:  'bg-data-neg/15 text-data-neg border border-data-neg/30',
+    warning: 'bg-data-warn/15 text-data-warn border border-data-warn/30',
+    info:    'bg-accent/15 text-accent border border-accent/30',
     neutral: 'bg-ink/5 text-ink-muted border border-line',
   })[variant] || 'bg-surface-sunken border border-line';
 }
@@ -275,6 +276,19 @@ function truncate(s, n) {
 function statusLabel(s) {
   return ({ processing: 'Processando', success: 'Sucesso', error: 'Erro', skipped: 'Ignorado', queued: 'Agendado' })[s] || s;
 }
+/* Cor do banner pelo desfecho do boleto. Gradiente montado a partir dos TOKENS
+   de estado - o desenho é o mesmo do detalhe de Pré-Cadastros e Reservas, mas a
+   cor vem do sistema em vez de um `from-emerald-700` escrito à mão. */
+const bannerCor = computed(() => {
+  const st = live.value?.status;
+  const pg = live.value?.payment_status;
+  if (st === 'error') return 'bg-gradient-to-br from-data-neg to-data-neg/70';
+  if (pg === 'paid') return 'bg-gradient-to-br from-data-pos to-data-pos/70';
+  if (pg === 'cancelled') return 'bg-gradient-to-br from-data-neutral to-data-neutral/70';
+  if (st === 'success') return 'bg-gradient-to-br from-accent to-accent/70';
+  return 'bg-gradient-to-br from-data-warn to-data-warn/70';
+});
+
 function statusVariant(s) {
   return ({ processing: 'info', success: 'success', error: 'danger', skipped: 'neutral', queued: 'warning' })[s] || 'neutral';
 }
@@ -284,9 +298,9 @@ function paymentLabel(s) {
 function paymentBadgeClass(s) {
   return ({
     pending:   'bg-ink/5 text-ink-muted border border-line',
-    paid:      'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30',
-    cancelled: 'bg-red-500/15 text-red-700 dark:text-red-300 border border-red-500/30',
-    error:     'bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30',
+    paid:      'bg-data-pos/15 text-data-pos border border-data-pos/30',
+    cancelled: 'bg-data-neg/15 text-data-neg border border-data-neg/30',
+    error:     'bg-data-warn/15 text-data-warn border border-data-warn/30',
   })[s] || 'bg-surface-sunken border border-line';
 }
 function paymentIcon(s) {
@@ -368,10 +382,10 @@ function eventIcon(type, severity) {
 }
 function eventIconBg(severity) {
   return ({
-    success: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400',
-    warning: 'bg-amber-500/15 text-amber-600 dark:text-amber-400',
-    error:   'bg-red-500/15 text-red-600 dark:text-red-400',
-    info:    'bg-blue-500/15 text-blue-600 dark:text-blue-400',
+    success: 'bg-data-pos/15 text-data-pos',
+    warning: 'bg-data-warn/15 text-data-warn',
+    error:   'bg-data-neg/15 text-data-neg',
+    info:    'bg-accent/15 text-accent',
   })[severity] || 'bg-surface-sunken text-ink-muted';
 }
 
@@ -563,67 +577,95 @@ async function copyLink() {
 </script>
 
 <template>
-  <div v-if="open"
-    class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
-    @click.self="close">
-    <div class="bg-surface rounded-xl shadow-2xl border border-line w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
+  <!-- Era um modal montado na mão: backdrop, caixa e altura próprios. Virou o
+       primitivo, que já traz tela cheia no celular, fecha no Esc, prende o
+       scroll do fundo e fica na camada de diálogo. `xl` porque isto é o
+       registro inteiro, com abas. -->
+  <!-- Mesma casca do detalhe de Pré-Cadastros e Reservas: `hide-close` com o
+       cabeçalho do primitivo vazio, e a identidade do registro vira o primeiro
+       bloco do corpo, com o X dentro dele. Assim existe UM botão de fechar, e
+       a rolagem é do corpo, não do modal. -->
+  <Modal :open="open" size="xl" hide-close @close="close">
+    <template #header><div class="hidden"></div></template>
 
-      <!-- ── Header ───────────────────────────────────────────────────────── -->
-      <div class="flex items-start justify-between gap-3 p-5 border-b border-line bg-surface-sunken/30">
-        <div class="min-w-0 flex-1">
-          <div class="flex items-center gap-2 flex-wrap mb-1">
-            <h3 class="font-semibold text-ink text-base">
-              Boleto Caixa · Reserva
-              <span class="font-mono text-accent">#{{ live?.idreserva }}</span>
-            </h3>
-            <!-- Abrir a reserva direto no CV CRM (nova aba) -->
-            <a v-if="cvLink" :href="cvLink" target="_blank" rel="noopener"
-              class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold
-                     bg-accent/10 text-accent border border-accent/30 hover:bg-accent/20 transition-colors">
-              <i class="fas fa-arrow-up-right-from-square text-[10px]"></i>
-              Abrir no CV
-            </a>
-            <Badge v-if="live?.status" :variant="statusVariant(live.status)" size="sm">
-              <i :class="live.status === 'success' ? 'fas fa-check' : live.status === 'error' ? 'fas fa-times' : 'fas fa-spinner fa-spin'" class="mr-1"></i>
-              {{ statusLabel(live.status) }}
-            </Badge>
-            <span v-if="live?.payment_status"
-              class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold"
-              :class="paymentBadgeClass(live.payment_status)">
-              <i :class="paymentIcon(live.payment_status)"></i>
-              {{ paymentLabel(live.payment_status) }}
-            </span>
-            <!-- Situação CV pendente — mostra contagem regressiva alinhada ao lote Sienge -->
-            <span v-if="situacaoPendenteInfo"
-              class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-blue-500/15 text-blue-700 dark:text-blue-300 border border-blue-500/30">
-              <i class="fas fa-hourglass-half"></i>
+    <div class="-m-4 sm:-m-5">
+
+      <!-- Banner de identidade: mesma forma do detalhe de Pré-Cadastros e
+           Reservas (faixa colorida pelo estado, texto branco, título grande e
+           o X dentro dela). A diferença é que aqui a cor vem dos TOKENS de
+           estado, não de um gradiente escrito à mão - o desenho é o mesmo, a
+           fonte da cor é a do sistema. -->
+      <div class="relative text-white px-5 sm:px-6 pt-5 pb-4 overflow-hidden" :class="bannerCor">
+        <div class="pointer-events-none absolute inset-0 opacity-30"
+          style="background-image:radial-gradient(circle, rgba(255,255,255,0.2) 1px, transparent 1px); background-size: 18px 18px;"></div>
+
+        <div class="relative flex items-start justify-between gap-3">
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2 flex-wrap mb-2">
+              <span v-if="live?.status"
+                class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-micro font-medium
+                       bg-white/20 border border-white/20 text-white">
+                <i :class="live.status === 'success' ? 'fas fa-check' : live.status === 'error' ? 'fas fa-xmark' : 'fas fa-spinner fa-spin'"></i>
+                {{ statusLabel(live.status) }}
+              </span>
+              <span v-if="live?.payment_status"
+                class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-micro font-medium
+                       bg-white/20 border border-white/20 text-white">
+                <i :class="paymentIcon(live.payment_status)"></i>
+                {{ paymentLabel(live.payment_status) }}
+              </span>
+              <span class="text-micro text-white/70 font-mono tabular-nums">#{{ live?.idreserva }}</span>
+            </div>
+
+            <h2 class="text-xl sm:text-2xl font-semibold leading-tight tracking-tight break-words">
+              {{ live?.titular_nome || '-' }}
+            </h2>
+            <p class="text-xs text-white/70 mt-1">
+              {{ live?.empreendimento || 'Sem empreendimento' }}
+            </p>
+            <p v-if="live?.nosso_numero" class="text-micro text-white/70 mt-1 font-mono tabular-nums">
+              Nosso nº {{ live.nosso_numero }} · vence {{ formatDate(live?.vencimento) }} ·
+              {{ formatCurrency(live?.valor) }}
+            </p>
+
+            <!-- Situação do CV ainda pendente: conta quanto falta para o lote. -->
+            <p v-if="situacaoPendenteInfo" class="text-micro text-white/80 mt-2">
+              <i class="fas fa-hourglass-half mr-1"></i>
               Situação {{ situacaoPendenteInfo.situacaoId }} em {{ situacaoPendenteInfo.label }}
-            </span>
+            </p>
+
+            <div v-if="cvLink" class="mt-4">
+              <a :href="cvLink" target="_blank" rel="noopener"
+                class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg
+                       bg-white/15 hover:bg-white/30 border border-white/20
+                       text-white text-xs font-medium transition-all hover:-translate-y-0.5">
+                <i class="fas fa-arrow-up-right-from-square text-micro"></i>
+                Abrir a reserva no CV
+              </a>
+            </div>
           </div>
-          <p class="text-xs text-ink-muted">
-            {{ live?.titular_nome || '—' }} · {{ live?.empreendimento || '—' }}
-          </p>
-          <p v-if="live?.nosso_numero" class="text-[11px] text-ink-subtle font-mono mt-0.5">
-            Nosso Nº: {{ live.nosso_numero }} · Venc: {{ formatDate(live?.vencimento) }} · Valor {{ formatCurrency(live?.valor) }}
-          </p>
+
+          <button @click="close" aria-label="Fechar"
+            class="h-10 w-10 grid place-items-center rounded-lg shrink-0
+                   bg-white/15 hover:bg-white/25 text-white
+                   transition-colors duration-120">
+            <i class="fas fa-xmark"></i>
+          </button>
         </div>
-        <button @click="close" class="text-ink-muted hover:text-ink shrink-0 text-lg">
-          <i class="fas fa-times"></i>
-        </button>
       </div>
 
       <!-- ── Tabs ─────────────────────────────────────────────────────────── -->
-      <div class="px-5 py-2 border-b border-line">
+      <div class="px-4 sm:px-5 py-3 border-b border-line bg-surface-sunken/40">
         <SegmentedControl v-model="activeTab" :options="tabOptions" size="sm" />
       </div>
 
       <!-- ── Action feedback inline ───────────────────────────────────────── -->
-      <div v-if="actionMsg" class="px-5 pt-3">
+      <div v-if="actionMsg" class="px-4 sm:px-5 pt-3">
         <div class="rounded-lg px-3 py-2 text-xs flex items-start gap-2"
           :class="{
-            'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20': actionMsg.variant === 'success',
-            'bg-red-500/10 text-red-700 dark:text-red-300 border border-red-500/20':               actionMsg.variant === 'error',
-            'bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20':       actionMsg.variant === 'warning',
+            'bg-data-pos/10 text-data-pos border border-data-pos/20': actionMsg.variant === 'success',
+            'bg-data-neg/10 text-data-neg border border-data-neg/20':               actionMsg.variant === 'error',
+            'bg-data-warn/10 text-data-warn border border-data-warn/20':       actionMsg.variant === 'warning',
           }">
           <i :class="{
             'fas fa-circle-check': actionMsg.variant === 'success',
@@ -635,22 +677,22 @@ async function copyLink() {
       </div>
 
       <!-- ── Body ─────────────────────────────────────────────────────────── -->
-      <div class="flex-1 overflow-y-auto p-5">
+      <div class="p-4 sm:p-5 max-h-[60vh] overflow-y-auto">
 
         <!-- ── TAB: RESUMO ────────────────────────────────────────────────── -->
         <div v-if="activeTab === 'summary'" class="space-y-4">
           <!-- Grid: dados principais -->
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div class="rounded-lg border border-line bg-surface-sunken/40 p-3">
-              <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-semibold mb-1">Valor</p>
+              <p class="text-micro uppercase tracking-wider text-ink-subtle font-semibold mb-1">Valor</p>
               <p class="text-xl font-bold text-ink font-mono tabular-nums">{{ formatCurrency(live?.valor) }}</p>
               <p v-if="live?.valor_original && Number(live.valor_original) !== Number(live.valor)"
-                class="text-[10px] text-ink-subtle mt-1">
+                class="text-ink-subtle mt-1">
                 Original: {{ formatCurrency(live.valor_original) }} · Comissão {{ live.comissao_percentual_aplicada }}%
               </p>
             </div>
             <div class="rounded-lg border border-line bg-surface-sunken/40 p-3">
-              <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-semibold mb-1">Vencimento</p>
+              <p class="text-micro uppercase tracking-wider text-ink-subtle font-semibold mb-1">Vencimento</p>
               <p class="text-xl font-bold text-ink font-mono tabular-nums">{{ formatDate(live?.vencimento) }}</p>
             </div>
           </div>
@@ -659,47 +701,47 @@ async function copyLink() {
           <div class="rounded-lg border border-line overflow-hidden">
             <table class="w-full text-sm">
               <tbody>
-                <tr class="border-b border-line/60">
-                  <td class="px-3 py-2 text-xs text-ink-subtle w-[35%]">Titular</td>
+                <tr class="border-line/60">
+                  <td class="px-3 py-2 text-ink-subtle w-[35%]">Titular</td>
                   <td class="px-3 py-2 text-ink">{{ live?.titular_nome || '—' }}</td>
                 </tr>
-                <tr class="border-b border-line/60">
-                  <td class="px-3 py-2 text-xs text-ink-subtle">Empreendimento</td>
+                <tr class="border-line/60">
+                  <td class="px-3 py-2 text-ink-subtle">Empreendimento</td>
                   <td class="px-3 py-2 text-ink">{{ live?.empreendimento || '—' }}</td>
                 </tr>
-                <tr class="border-b border-line/60">
-                  <td class="px-3 py-2 text-xs text-ink-subtle">Nosso Número</td>
+                <tr class="border-line/60">
+                  <td class="px-3 py-2 text-ink-subtle">Nosso Número</td>
                   <td class="px-3 py-2 text-ink font-mono">{{ live?.nosso_numero || '—' }}</td>
                 </tr>
-                <tr class="border-b border-line/60">
-                  <td class="px-3 py-2 text-xs text-ink-subtle">Nº Documento</td>
+                <tr class="border-line/60">
+                  <td class="px-3 py-2 text-ink-subtle">Nº Documento</td>
                   <td class="px-3 py-2 text-ink font-mono">{{ live?.seu_numero || '—' }}</td>
                 </tr>
-                <tr class="border-b border-line/60">
-                  <td class="px-3 py-2 text-xs text-ink-subtle">CNPJ Empresa</td>
+                <tr class="border-line/60">
+                  <td class="px-3 py-2 text-ink-subtle">CNPJ Empresa</td>
                   <td class="px-3 py-2 text-ink font-mono text-xs">{{ live?.cnpj_empresa || '—' }}</td>
                 </tr>
-                <tr class="border-b border-line/60">
-                  <td class="px-3 py-2 text-xs text-ink-subtle">Emitido em</td>
-                  <td class="px-3 py-2 text-ink-muted text-xs">{{ formatDateTime(live?.createdAt || live?.created_at) }}</td>
+                <tr class="border-line/60">
+                  <td class="px-3 py-2 text-ink-subtle">Emitido em</td>
+                  <td class="px-3 py-2 text-xs">{{ formatDateTime(live?.createdAt || live?.created_at) }}</td>
                 </tr>
-                <tr v-if="live?.last_checked_at" class="border-b border-line/60">
-                  <td class="px-3 py-2 text-xs text-ink-subtle">Última verificação</td>
-                  <td class="px-3 py-2 text-ink-muted text-xs">
+                <tr v-if="live?.last_checked_at" class="border-line/60">
+                  <td class="px-3 py-2 text-ink-subtle">Última verificação</td>
+                  <td class="px-3 py-2 text-xs">
                     {{ formatDateTime(live.last_checked_at) }}
                     <span v-if="live.last_check_situation" class="ml-2 text-ink">· {{ live.last_check_situation }}</span>
                   </td>
                 </tr>
-                <tr v-if="live?.paid_at" class="border-b border-line/60">
-                  <td class="px-3 py-2 text-xs text-ink-subtle">Pago em</td>
-                  <td class="px-3 py-2 text-emerald-600 text-xs font-semibold">{{ formatDateTime(live.paid_at) }}</td>
+                <tr v-if="live?.paid_at" class="border-line/60">
+                  <td class="px-3 py-2 text-ink-subtle">Pago em</td>
+                  <td class="px-3 py-2 text-xs font-semibold">{{ formatDateTime(live.paid_at) }}</td>
                 </tr>
-                <tr v-if="live?.cancelled_at" class="border-b border-line/60">
-                  <td class="px-3 py-2 text-xs text-ink-subtle">Baixado em</td>
-                  <td class="px-3 py-2 text-red-600 text-xs font-semibold">{{ formatDateTime(live.cancelled_at) }}</td>
+                <tr v-if="live?.cancelled_at" class="border-line/60">
+                  <td class="px-3 py-2 text-ink-subtle">Baixado em</td>
+                  <td class="px-3 py-2 text-xs font-semibold">{{ formatDateTime(live.cancelled_at) }}</td>
                 </tr>
                 <tr v-if="live?.idtransacao">
-                  <td class="px-3 py-2 text-xs text-ink-subtle">ID Transação CV</td>
+                  <td class="px-3 py-2 text-ink-subtle">ID Transação CV</td>
                   <td class="px-3 py-2 text-ink-muted font-mono text-xs">{{ live.idtransacao }}</td>
                 </tr>
               </tbody>
@@ -708,21 +750,21 @@ async function copyLink() {
 
           <!-- Erro de emissão (quando aplicável) -->
           <div v-if="live?.status === 'error' && live?.error_message"
-            class="rounded-lg border border-red-500/30 bg-red-500/5 p-3">
-            <p class="text-xs font-semibold text-red-700 dark:text-red-300 mb-1 flex items-center gap-1.5">
+            class="rounded-lg border border-data-neg/30 bg-data-neg/5 p-3">
+            <p class="text-xs font-semibold text-data-neg mb-1 flex items-center gap-1.5">
               <i class="fas fa-circle-exclamation"></i> Erro na emissão
             </p>
-            <p class="text-xs text-red-600 dark:text-red-400 break-words">{{ live.error_message }}</p>
+            <p class="text-data-neg break-words">{{ live.error_message }}</p>
           </div>
 
           <!-- Notificações: checklist -->
           <div>
-            <p class="text-[11px] uppercase tracking-wider text-ink-subtle font-semibold mb-2">
+            <p class="text-micro uppercase tracking-wider text-ink-subtle font-semibold mb-2">
               Status das notificações
             </p>
             <ul class="space-y-1.5 text-sm">
               <li class="flex items-start gap-2">
-                <i :class="live?.cv_documento_anexado ? 'fas fa-circle-check text-emerald-500' : 'fas fa-circle-xmark text-red-500'"></i>
+                <i :class="live?.cv_documento_anexado ? 'fas fa-circle-check text-data-pos' : 'fas fa-circle-xmark text-data-neg'"></i>
                 <span class="text-ink">
                   <strong>Anexo no CV:</strong>
                   {{ live?.cv_documento_anexado ? 'OK' : (warningsList(live).find(w => w.etapa === 'cv_anexo')?.erro || 'não anexado') }}
@@ -731,9 +773,9 @@ async function copyLink() {
               <li class="flex items-start gap-2">
                 <i :class="
                   live?.cv_situacao_alterada
-                    ? 'fas fa-circle-check text-emerald-500'
+                    ? 'fas fa-circle-check text-data-pos'
                     : (situacaoPendenteInfo
-                      ? 'fas fa-hourglass-half text-blue-500'
+                      ? 'fas fa-hourglass-half text-accent'
                       : 'fas fa-circle-minus text-ink-subtle')
                 "></i>
                 <span class="text-ink">
@@ -748,18 +790,18 @@ async function copyLink() {
                 </span>
               </li>
               <li class="flex items-start gap-2">
-                <i :class="live?.cv_mensagem_enviada ? 'fas fa-circle-check text-emerald-500' : 'fas fa-circle-xmark text-red-500'"></i>
+                <i :class="live?.cv_mensagem_enviada ? 'fas fa-circle-check text-data-pos' : 'fas fa-circle-xmark text-data-neg'"></i>
                 <span class="text-ink"><strong>Mensagem no CV:</strong> {{ live?.cv_mensagem_enviada ? 'OK' : 'não enviada' }}</span>
               </li>
               <li class="flex items-start gap-2">
-                <i :class="live?.cliente_email_enviado ? 'fas fa-circle-check text-emerald-500' : 'fas fa-circle-minus text-ink-subtle'"></i>
+                <i :class="live?.cliente_email_enviado ? 'fas fa-circle-check text-data-pos' : 'fas fa-circle-minus text-ink-subtle'"></i>
                 <span class="text-ink">
                   <strong>E-mail cliente:</strong>
                   {{ live?.cliente_email_enviado ? 'enviado' : (warningsList(live).find(w => w.etapa === 'cliente_email')?.erro || 'não enviado') }}
                 </span>
               </li>
               <li class="flex items-start gap-2">
-                <i :class="live?.cliente_whatsapp_enviado ? 'fas fa-circle-check text-emerald-500' : 'fas fa-circle-minus text-ink-subtle'"></i>
+                <i :class="live?.cliente_whatsapp_enviado ? 'fas fa-circle-check text-data-pos' : 'fas fa-circle-minus text-ink-subtle'"></i>
                 <span class="text-ink">
                   <strong>WhatsApp cliente:</strong>
                   {{ live?.cliente_whatsapp_enviado ? 'enviado' : (warningsList(live).find(w => w.etapa === 'cliente_whatsapp')?.erro || 'não enviado') }}
@@ -775,46 +817,46 @@ async function copyLink() {
             <i class="fas fa-spinner fa-spin text-2xl"></i>
             <p class="text-sm mt-2">Carregando eventos…</p>
           </div>
-          <div v-else-if="store.timelineError" class="text-sm text-red-500 py-3">
+          <div v-else-if="store.timelineError" class="text-data-neg py-3">
             <i class="fas fa-circle-exclamation"></i> {{ store.timelineError }}
           </div>
           <div v-else>
             <!-- Tentativas desta reserva — histórico consolidado num só lugar -->
             <div v-if="attempts.length" class="mb-4">
-              <p class="text-[11px] uppercase tracking-wider text-ink-subtle font-semibold mb-2">
+              <p class="text-micro uppercase tracking-wider text-ink-subtle font-semibold mb-2">
                 Tentativas desta reserva ({{ attempts.length }})
               </p>
               <ul class="space-y-2">
                 <li v-for="(a, idx) in attempts" :key="a.id"
                   class="rounded-lg border p-2.5 flex items-center gap-3"
                   :class="a.id === live?.id ? 'border-accent/50 bg-accent/5' : 'border-line bg-surface-sunken/40'">
-                  <div class="shrink-0 h-7 w-7 rounded-full grid place-items-center bg-ink/5 text-ink-muted font-semibold text-[11px]">
+                  <div class="shrink-0 h-7 w-7 rounded-full grid place-items-center bg-ink/5 text-ink-muted font-semibold text-micro">
                     {{ idx + 1 }}
                   </div>
                   <div class="min-w-0 flex-1">
                     <div class="flex items-center gap-1.5 flex-wrap">
-                      <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold"
+                      <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-micro font-semibold"
                         :class="outcomeChipClass(attemptOutcome(a).variant)">
                         <i :class="attemptOutcome(a).icon"></i> {{ attemptOutcome(a).label }}
                       </span>
-                      <span v-if="a.id === live?.id" class="text-[9px] uppercase tracking-wider font-bold text-accent">aberto</span>
-                      <span class="text-[10px] text-ink-subtle font-mono">#{{ a.id }}</span>
+                      <span v-if="a.id === live?.id" class="text-micro uppercase tracking-wider font-bold text-accent">aberto</span>
+                      <span class="text-ink-subtle font-mono">#{{ a.id }}</span>
                     </div>
-                    <p class="text-[11px] text-ink-muted mt-0.5 truncate">
+                    <p class="text-micro text-ink-muted mt-0.5 truncate">
                       {{ formatCurrency(a.valor) }} · venc {{ formatDate(a.vencimento) }}
                       <span v-if="a.nosso_numero" class="font-mono"> · Nº {{ a.nosso_numero }}</span>
                     </p>
                   </div>
                   <div class="shrink-0 text-right">
-                    <p class="text-[10px] text-ink-subtle font-mono">{{ formatDateTime(a.created_at || a.createdAt) }}</p>
+                    <p class="text-ink-subtle font-mono">{{ formatDateTime(a.created_at || a.createdAt) }}</p>
                     <a v-if="a.boleto_supabase_url" :href="a.boleto_supabase_url" target="_blank"
-                      class="text-[10px] text-accent hover:underline inline-flex items-center gap-1 mt-0.5">
+                      class="text-accent hover:underline inline-flex items-center gap-1 mt-0.5">
                       <i class="fas fa-file-pdf"></i> PDF
                     </a>
                   </div>
                 </li>
               </ul>
-              <p class="text-[11px] uppercase tracking-wider text-ink-subtle font-semibold mt-4 pt-3 border-t border-line/60">
+              <p class="text-micro uppercase tracking-wider text-ink-subtle font-semibold mt-4 pt-3 border-line/60">
                 Linha do tempo completa
               </p>
             </div>
@@ -827,31 +869,31 @@ async function copyLink() {
             </div>
             <ul v-else class="space-y-3">
               <li v-for="ev in enrichedTimeline" :key="ev.id"
-                class="flex items-start gap-3 pb-3 border-b border-line/40 last:border-b-0"
-                :class="ev._virtual ? 'bg-blue-500/5 border border-dashed border-blue-500/30 rounded-lg p-3' : ''">
+                class="flex items-start gap-3 pb-3 border-line/40 last:border-b-0"
+                :class="ev._virtual ? 'bg-accent/5 border border-accent/30 rounded-lg p-3' : ''">
                 <div class="h-8 w-8 rounded-full grid place-items-center shrink-0"
-                  :class="ev._virtual ? 'bg-blue-500/15 text-blue-600 dark:text-blue-400' : eventIconBg(ev.severity)">
+                  :class="ev._virtual ? 'bg-accent/15 text-accent' : eventIconBg(ev.severity)">
                   <i :class="eventIcon(ev.type, ev.severity)" class="text-sm"
                     :style="ev._virtual ? 'animation: pulse 2s ease-in-out infinite' : ''"></i>
                 </div>
                 <div class="min-w-0 flex-1">
                   <div class="flex items-center justify-between gap-2 mb-0.5">
                     <p class="text-xs font-semibold"
-                      :class="ev._virtual ? 'text-blue-700 dark:text-blue-300' : 'text-ink'">
+                      :class="ev._virtual ? 'text-accent' : 'text-ink'">
                       {{ eventTitle(ev.type) }}
-                      <span v-if="ev._virtual" class="ml-1 text-[9px] uppercase tracking-wider font-bold">⏳ pendente</span>
+                      <span v-if="ev._virtual" class="ml-1 text-micro uppercase tracking-wider font-bold">⏳ pendente</span>
                     </p>
-                    <span class="text-[10px] text-ink-subtle font-mono whitespace-nowrap">
+                    <span class="text-ink-subtle font-mono whitespace-nowrap">
                       {{ formatDateTime(ev.created_at || ev.createdAt) }}
                     </span>
                   </div>
                   <span v-if="hasMultipleAttempts && eventAttempt(ev)"
-                    class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-semibold mb-1 bg-ink/5 text-ink-muted border border-line">
+                    class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-micro font-semibold mb-1 bg-ink/5 text-ink-muted border border-line">
                     <i class="fas fa-hashtag"></i> Tentativa {{ eventAttempt(ev).ordem }}
                     <span v-if="eventAttempt(ev).id === live?.id" class="text-accent">· aberto</span>
                   </span>
-                  <p v-if="ev.message" class="text-xs text-ink-muted leading-snug">{{ ev.message }}</p>
-                  <details v-if="ev.data" class="text-[10px] text-ink-subtle mt-1">
+                  <p v-if="ev.message" class="text-ink-muted leading-snug">{{ ev.message }}</p>
+                  <details v-if="ev.data" class="text-ink-subtle mt-1">
                     <summary class="cursor-pointer hover:text-ink-muted">dados técnicos</summary>
                     <pre class="bg-surface-sunken border border-line rounded p-2 mt-1 overflow-x-auto">{{ JSON.stringify(ev.data, null, 2) }}</pre>
                   </details>
@@ -887,12 +929,13 @@ async function copyLink() {
         </div>
       </div>
 
-      <!-- ── Footer: Ações ────────────────────────────────────────────────── -->
-      <div class="border-t border-line p-4 bg-surface-sunken/30 flex flex-wrap items-center justify-between gap-2">
-        <p class="text-[11px] text-ink-subtle">
-          Histórico interno #{{ live?.id }}
-        </p>
-        <div class="flex items-center gap-2 flex-wrap">
+    </div>
+
+    <!-- ── Ações do registro ────────────────────────────────────────────── -->
+    <template #footer>
+      <p class="text-ink-subtle mr-auto">
+        Histórico interno #{{ live?.id }}
+      </p>
           <Button v-if="live?.boleto_supabase_url"
             variant="ghost" size="sm" icon="fas fa-paper-plane"
             :disabled="actionState.resending"
@@ -920,61 +963,51 @@ async function copyLink() {
             @click="handleCheckPayment">
             Verificar pagamento
           </Button>
-          <Button variant="ghost" size="sm" @click="close">Fechar</Button>
-        </div>
-      </div>
-    </div>
+      <Button variant="ghost" size="sm" @click="close">Fechar</Button>
+    </template>
+  </Modal>
 
-    <!-- ── Modal de confirmação de reenvio ao cliente ─────────────────────── -->
-    <div v-if="resendConfirm.open"
-      class="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4"
-      @click.self="closeResendConfirm">
-      <div class="bg-surface rounded-xl shadow-2xl border border-line w-full max-w-md overflow-hidden flex flex-col">
-        <div class="flex items-center justify-between gap-3 p-4 border-b border-line">
-          <h4 class="font-semibold text-ink text-sm flex items-center gap-2">
-            <i class="fas fa-paper-plane text-accent"></i> Reenviar boleto ao cliente
-          </h4>
-          <button @click="closeResendConfirm" :disabled="resendConfirm.sending"
-            class="text-ink-muted hover:text-ink disabled:opacity-40">
-            <i class="fas fa-times"></i>
-          </button>
-        </div>
-
-        <div class="p-4 space-y-3">
+  <!-- Confirmação do reenvio. `zIndex` acima do diálogo de baixo: é um modal
+       SOBRE outro, e o padrão do sistema é declarar isso, não empilhar z na
+       mão. -->
+  <Modal :open="resendConfirm.open" size="md" :z-index="10001"
+    title="Reenviar boleto ao cliente"
+    @close="closeResendConfirm">
+        <div class="space-y-3">
           <div v-if="resendConfirm.loading" class="text-center py-6 text-ink-muted">
             <i class="fas fa-spinner fa-spin text-xl"></i>
             <p class="text-xs mt-2">Buscando contato do titular no CV…</p>
           </div>
 
           <div v-else-if="resendConfirm.error"
-            class="rounded-lg bg-red-500/10 border border-red-500/20 px-3 py-2 text-xs text-red-700 dark:text-red-300">
+            class="rounded-lg bg-data-neg/10 border border-data-neg/20 px-3 py-2 text-data-neg">
             <i class="fas fa-circle-exclamation"></i> {{ resendConfirm.error }}
           </div>
 
           <template v-else-if="resendConfirm.contact">
-            <p class="text-xs text-ink-muted">
+            <p class="text-ink-muted">
               Confirme os dados de destino antes de enviar. O boleto será enviado para:
             </p>
 
             <!-- E-mail -->
             <div class="rounded-lg border border-line bg-surface-sunken/40 p-3 flex items-start gap-2.5">
               <i class="fas fa-envelope mt-0.5 w-4 text-center"
-                :class="resendConfirm.contact.email ? 'text-emerald-500' : 'text-ink-subtle'"></i>
+                :class="resendConfirm.contact.email ? 'text-data-pos' : 'text-ink-subtle'"></i>
               <div class="min-w-0 flex-1">
-                <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-semibold">E-mail</p>
-                <p class="text-sm text-ink break-all">{{ resendConfirm.contact.email || 'sem e-mail válido no CV' }}</p>
+                <p class="text-micro uppercase tracking-wider text-ink-subtle font-semibold">E-mail</p>
+                <p class="text-ink break-all">{{ resendConfirm.contact.email || 'sem e-mail válido no CV' }}</p>
               </div>
             </div>
 
             <!-- Telefone -->
             <div class="rounded-lg border border-line bg-surface-sunken/40 p-3 flex items-start gap-2.5">
               <i class="fab fa-whatsapp mt-0.5 w-4 text-center"
-                :class="resendConfirm.contact.phone ? 'text-emerald-500' : 'text-ink-subtle'"></i>
+                :class="resendConfirm.contact.phone ? 'text-data-pos' : 'text-ink-subtle'"></i>
               <div class="min-w-0 flex-1">
-                <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-semibold">WhatsApp</p>
-                <p class="text-sm text-ink">
+                <p class="text-micro uppercase tracking-wider text-ink-subtle font-semibold">WhatsApp</p>
+                <p class="text-ink">
                   {{ resendConfirm.contact.phone ? formatPhoneBr(resendConfirm.contact.phone) : 'sem telefone válido no CV' }}
-                  <span v-if="resendConfirm.contact.phone_source" class="text-[10px] text-ink-subtle">
+                  <span v-if="resendConfirm.contact.phone_source" class="text-ink-subtle">
                     (campo {{ resendConfirm.contact.phone_source }})
                   </span>
                 </p>
@@ -983,46 +1016,44 @@ async function copyLink() {
 
             <!-- Aviso: sem PDF -->
             <div v-if="!resendConfirm.contact.has_pdf"
-              class="rounded-lg bg-amber-500/10 border border-amber-500/20 px-3 py-2 text-xs text-amber-700 dark:text-amber-300">
+              class="rounded-lg bg-data-warn/10 border border-data-warn/20 px-3 py-2 text-data-warn">
               <i class="fas fa-triangle-exclamation"></i> Este registro não tem PDF salvo — o reenvio pode falhar.
             </div>
 
             <!-- Aviso: nenhum canal -->
             <div v-if="!resendConfirm.contact.email && !resendConfirm.contact.phone"
-              class="rounded-lg bg-red-500/10 border border-red-500/20 px-3 py-2 text-xs text-red-700 dark:text-red-300">
+              class="rounded-lg bg-data-neg/10 border border-data-neg/20 px-3 py-2 text-data-neg">
               <i class="fas fa-circle-exclamation"></i> Nenhum canal válido — não há para onde enviar. Corrija o cadastro no CV.
             </div>
 
             <!-- Último envio (reforço anti-duplicidade) -->
             <div v-if="resendConfirm.contact.cliente_envio_em"
-              class="rounded-lg bg-blue-500/5 border border-blue-500/20 px-3 py-2 text-xs text-blue-700 dark:text-blue-300">
+              class="rounded-lg bg-accent/5 border border-accent/20 px-3 py-2 text-accent">
               <i class="fas fa-clock-rotate-left"></i>
               Já foi enviado em <strong>{{ formatDateTime(resendConfirm.contact.cliente_envio_em) }}</strong>
-              <span class="block mt-0.5 text-[11px]">
-                <i :class="resendConfirm.contact.cliente_email_enviado ? 'fas fa-check text-emerald-500' : 'fas fa-xmark text-ink-subtle'"></i> E-mail
+              <span class="block mt-0.5 text-micro">
+                <i :class="resendConfirm.contact.cliente_email_enviado ? 'fas fa-check text-data-pos' : 'fas fa-xmark text-ink-subtle'"></i> E-mail
                 &nbsp;·&nbsp;
-                <i :class="resendConfirm.contact.cliente_whatsapp_enviado ? 'fas fa-check text-emerald-500' : 'fas fa-xmark text-ink-subtle'"></i> WhatsApp
+                <i :class="resendConfirm.contact.cliente_whatsapp_enviado ? 'fas fa-check text-data-pos' : 'fas fa-xmark text-ink-subtle'"></i> WhatsApp
               </span>
             </div>
-            <p v-else class="text-[11px] text-ink-subtle">
+            <p v-else class="text-micro text-ink-subtle">
               <i class="fas fa-circle-info"></i> Nenhum envio anterior registrado para este boleto.
             </p>
           </template>
         </div>
 
-        <div class="border-t border-line p-3 flex items-center justify-end gap-2 bg-surface-sunken/30">
-          <Button variant="ghost" size="sm" :disabled="resendConfirm.sending" @click="closeResendConfirm">
-            Cancelar
-          </Button>
-          <Button variant="primary" size="sm" icon="fas fa-paper-plane"
-            :loading="resendConfirm.sending"
-            :disabled="resendConfirm.sending || resendConfirm.loading || !!resendConfirm.error
-              || !resendConfirm.contact || (!resendConfirm.contact.email && !resendConfirm.contact.phone)"
-            @click="doResend">
-            {{ resendConfirm.sending ? 'Enviando…' : 'Confirmar envio' }}
-          </Button>
-        </div>
-      </div>
-    </div>
-  </div>
+    <template #footer>
+      <Button variant="ghost" :disabled="resendConfirm.sending" @click="closeResendConfirm">
+        Cancelar
+      </Button>
+      <Button icon="fas fa-paper-plane"
+        :loading="resendConfirm.sending"
+        :disabled="resendConfirm.sending || resendConfirm.loading || !!resendConfirm.error
+          || !resendConfirm.contact || (!resendConfirm.contact.email && !resendConfirm.contact.phone)"
+        @click="doResend">
+        {{ resendConfirm.sending ? 'Enviando…' : 'Confirmar envio' }}
+      </Button>
+    </template>
+  </Modal>
 </template>
