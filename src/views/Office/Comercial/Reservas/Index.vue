@@ -111,7 +111,10 @@ const activeCount = computed(() => {
   return n;
 });
 
-const loading = ref(false);
+/* Nasce CARREGANDO. Com `false`, o primeiro quadro é renderizado antes de o
+   `onMounted` rodar: a lista está vazia e a tela pisca "sem registros" antes do
+   esqueleto aparecer. O `finally` do onMounted é quem desliga. */
+const loading = ref(true);
 const exportOpen = ref(false);
 const detailVisible = ref(false);
 const detailItem = ref(null);
