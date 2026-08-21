@@ -1,25 +1,10 @@
 <template>
   <div class="space-y-4">
 
-    <!-- ── Modal: Copiar de outro empreendimento/mês ─────────────────────── -->
-    <transition name="fade">
-      <div
-        v-if="showCopyModal"
-        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-        @click.self="showCopyModal = false"
-      >
-        <div class="bg-white z-50 dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-lg border border-line">
-          <div class="flex items-center justify-between px-6 py-4 border-b border-line">
-            <div class="flex items-center gap-2">
-              <i class="fas fa-copy text-blue-500"></i>
-              <h2 class="text-base font-bold text-ink">Copiar Dados de Módulo</h2>
-            </div>
-            <button @click="showCopyModal = false" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-surface-hover transition">
-              <i class="fas fa-times text-sm"></i>
-            </button>
-          </div>
-
-          <div class="px-6 py-5 space-y-4">
+    <!-- Copiar de outro empreendimento/mês: escolhe a origem e QUAIS seções vêm
+         junto, para não sobrescrever o que já estava certo neste módulo. -->
+    <Modal v-model:open="showCopyModal" size="lg" title="Copiar dados de módulo">
+      <div class="space-y-4">
             <!-- Empreendimento de origem -->
             <div>
               <label class="lbl">Empreendimento de Origem</label>
@@ -62,7 +47,7 @@
                 <div class="flex items-center gap-2">
                   <button type="button" @click="copyFrom.fields = copyFieldOptions.map(o => o.value)" class="text-xs text-accent hover:underline">Todos</button>
                   <span class="text-ink-subtle">·</span>
-                  <button type="button" @click="copyFrom.fields = []" class="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:underline">Nenhum</button>
+                  <button type="button" @click="copyFrom.fields = []" class="text-xs text-ink-subtle hover:text-ink-muted dark:hover:text-ink-subtle hover:underline">Nenhum</button>
                 </div>
               </div>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -73,252 +58,32 @@
                     'flex items-start gap-2.5 cursor-pointer select-none p-3 rounded-lg border transition',
                     copyFrom.fields.includes(opt.value)
                       ? 'border-accent bg-accent-soft'
-                      : 'border-line bg-surface-raised/40 hover:border-gray-300'
+                      : 'border-line bg-surface-raised/40 hover:border-line'
                   ]"
                 >
-                  <input type="checkbox" :value="opt.value" v-model="copyFrom.fields" class="mt-0.5 w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+                  <input type="checkbox" :value="opt.value" v-model="copyFrom.fields" class="mt-0.5 w-4 h-4 rounded border-line text-accent focus:ring-accent" />
                   <div class="min-w-0 flex-1">
                     <p :class="['text-sm font-semibold', copyFrom.fields.includes(opt.value) ? 'text-accent' : 'text-ink']">{{ opt.label }}</p>
-                    <p class="text-[10px] text-ink-subtle mt-0.5 leading-tight">{{ opt.hint }}</p>
+                    <p class="text-micro text-ink-subtle mt-0.5 leading-tight">{{ opt.hint }}</p>
                   </div>
                 </label>
               </div>
             </div>
           </div>
+      <template #footer>
+        <Button variant="ghost" @click="showCopyModal = false">Cancelar</Button>
+        <Button icon="fas fa-arrows-rotate" :loading="copying"
+          :disabled="!copyFrom.moduleId || !copyFrom.fields.length || copying"
+          @click="handleCopyFromEnterprise">Copiar</Button>
+      </template>
+    </Modal>
 
-          <div class="flex justify-end gap-3 px-6 pb-5">
-            <button @click="showCopyModal = false" class="px-4 py-2.5 text-sm font-medium text-ink-muted hover:text-gray-800 dark:hover:text-white transition">
-              Cancelar
-            </button>
-            <button
-              @click="handleCopyFromEnterprise"
-              :disabled="!copyFrom.moduleId || !copyFrom.fields.length || copying"
-              class="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-accent-hover disabled:opacity-50 transition"
-            >
-              <i class="fas fa-arrows-rotate text-xs"></i>
-              {{ copying ? 'Copiando...' : 'Copiar' }}
-            </button>
-          </div>
-        </div>
-      </div>
-    </transition>
-
-    <!-- ── HEADER principal (mês/cópia/pills) — escondido quando o Detail tem a lateral ── -->
-    <div v-if="!hideChrome" class="bg-surface-raised rounded-2xl border border-line shadow-sm">
-
-      <!-- Linha 1: Navegação de mês + status + ações -->
-      <div class="flex items-center justify-between px-5 py-3.5 bg-gradient-to-r from-slate-50 to-blue-50/40 dark:from-gray-800/60 dark:to-blue-950/20 border-b border-line">
-
-        <!-- Navegador de mês (escondido quando o Detail tem o stepper na lateral) -->
-        <div v-if="!hideChrome" class="flex items-center gap-2">
-          <button
-            @click="navigatePrev"
-            :disabled="!prevItem"
-            :class="[
-              'w-7 h-7 flex items-center justify-center rounded-lg transition text-xs',
-              prevItem
-                ? 'text-gray-500 hover:text-gray-800 dark:hover:text-white hover:bg-white dark:hover:bg-gray-700 shadow-sm border border-line'
-                : 'text-ink-subtle cursor-not-allowed'
-            ]"
-            title="Mês anterior"
-          >
-            <i class="fas fa-chevron-left"></i>
-          </button>
-
-          <div class="flex items-center gap-2">
-            <span class="text-xs text-ink-subtle font-medium">Ref:</span>
-            <span class="text-sm font-bold text-gray-800 dark:text-white tracking-wide">{{ currentMonthLabel }}</span>
-            <span
-              :class="statusChipClass(conditionStatus)"
-              class="px-2 py-0.5 rounded-full text-xs font-semibold"
-            >
-              {{ STATUS_LABELS[conditionStatus] ?? conditionStatus }}
-            </span>
-          </div>
-
-          <button
-            @click="navigateNext"
-            :disabled="!nextItem"
-            :class="[
-              'w-7 h-7 flex items-center justify-center rounded-lg transition text-xs',
-              nextItem
-                ? 'text-gray-500 hover:text-gray-800 dark:hover:text-white hover:bg-white dark:hover:bg-gray-700 shadow-sm border border-line'
-                : 'text-ink-subtle cursor-not-allowed'
-            ]"
-            title="Próximo mês"
-          >
-            <i class="fas fa-chevron-right"></i>
-          </button>
-
-          <!-- Indicador de histórico total -->
-          <span v-if="history.length > 1" class="text-xs text-ink-subtle ml-1">
-            {{ currentHistoryPos }}/{{ history.length }}
-          </span>
-        </div>
-
-        <!-- Ações -->
-        <div class="flex items-center gap-2">
-          <!-- Copiar de outro módulo desta ficha -->
-          <template v-if="!readonly && modules.length > 1">
-            <div class="flex items-center gap-1.5">
-              <select
-                v-model="copySourceId"
-                class="text-xs text-ink bg-surface-raised border border-line rounded-lg px-2.5 py-1.5 outline-none focus:ring-2 focus:ring-blue-500/20 max-w-[160px]"
-              >
-                <option value="">Copiar de módulo...</option>
-                <option v-for="m in otherModules" :key="m.id ?? m.module_name" :value="m.id">
-                  {{ m.module_name || `Módulo ${modules.indexOf(m) + 1}` }}
-                </option>
-              </select>
-              <button
-                @click="handleCopyIntra"
-                :disabled="!copySourceId || copying"
-                class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-gray-700 dark:bg-gray-600 text-white rounded-lg hover:bg-gray-800 disabled:opacity-40 transition"
-              >
-                <i class="fas fa-arrows-rotate text-xs"></i>
-                Copiar
-              </button>
-            </div>
-            <div class="w-px h-5 bg-surface-sunken mx-1"></div>
-          </template>
-
-          <!-- Copiar de outro empreendimento / outro mês -->
-          <button
-            v-if="!readonly && enterpriseOptions?.length"
-            @click="openCopyModal"
-            class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
-          >
-            <i class="fas fa-copy text-xs"></i>
-            Outro Mês / Empreendimento
-          </button>
-        </div>
-      </div>
-
-      <!-- Linha 2: Módulos como pills + botão de adicionar (na lateral quando hideChrome) -->
-      <div v-if="!hideChrome" class="relative">
-        <div class="flex items-stretch overflow-x-auto scrollbar-hide border-b border-line">
-          <button
-            v-for="(mod, i) in modules"
-            :key="mod.id ?? i"
-            @click="activeIdx = i"
-            :class="[
-              'group flex flex-col items-center justify-center px-4 py-2.5 text-center transition border-r border-line flex-shrink-0 relative',
-              activeIdx === i
-                ? 'bg-blue-600 text-white'
-                : 'bg-surface-raised text-ink-muted hover:bg-accent-soft hover:text-blue-600 dark:hover:text-blue-400'
-            ]"
-            style="min-width: 110px"
-          >
-            <div class="flex items-center gap-1.5">
-              <i v-if="!mod.idetapa" class="fas fa-cube text-xs opacity-50" title="Módulo avulso (sem etapa CV)"></i>
-              <span class="text-xs font-semibold truncate max-w-[90px]">
-                {{ mod.module_name || (mod.idetapa ? '—' : 'Novo módulo') }}
-              </span>
-            </div>
-            <div class="flex items-center gap-0.5 mt-1" :title="completenessTooltip(mod)">
-              <span
-                v-for="(filled, key) in moduleCompleteness(mod)" :key="key"
-                :class="[
-                  'w-1.5 h-1.5 rounded-full transition',
-                  activeIdx === i
-                    ? (filled ? 'bg-white' : 'bg-white/25')
-                    : (filled ? 'bg-blue-500 dark:bg-blue-400' : 'bg-surface-sunken')
-                ]"
-              ></span>
-            </div>
-            <span v-if="activeIdx === i" class="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-400 rounded-t"></span>
-            <button
-              v-if="!readonly && mod.id"
-              @click.stop="handleDeleteModule(mod)"
-              class="absolute top-1 right-1 w-3.5 h-3.5 flex items-center justify-center rounded text-xs opacity-0 group-hover:opacity-100 transition"
-              :class="activeIdx === i ? 'text-white/60 hover:text-white hover:bg-white/20' : 'text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20'"
-              title="Remover módulo"
-            >
-              <i class="fas fa-times text-[10px]"></i>
-            </button>
-          </button>
-
-          <!-- Botão adicionar módulo -->
-          <button
-            v-if="!readonly"
-            @click="showAddPanel = !showAddPanel"
-            :class="[
-              'flex items-center gap-1 px-3 py-2 border-r border-line flex-shrink-0 text-xs font-medium transition',
-              showAddPanel
-                ? 'bg-accent-soft text-accent'
-                : 'bg-surface-raised text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/10'
-            ]"
-            title="Adicionar módulo"
-          >
-            <i class="fas fa-plus text-[10px]"></i>
-          </button>
-
-          <div class="flex-1 bg-surface-raised"></div>
-        </div>
-
-        <!-- Painel de adição (dropdown inline) -->
-        <transition name="slide-down">
-          <div
-            v-if="showAddPanel && !readonly"
-            class="absolute left-0 top-full z-30 min-w-[240px] bg-surface-raised border border-line rounded-b-xl shadow-xl"
-          >
-            <!-- Etapas do CV disponíveis -->
-            <div v-if="availableStages.length" class="p-2">
-              <p class="text-[10px] font-semibold text-ink-subtle uppercase tracking-wider px-2 mb-1">Etapas do CV</p>
-              <button
-                v-for="stage in availableStages"
-                :key="stage.idetapa"
-                @click="addStageModule(stage)"
-                class="w-full flex items-center gap-2 px-3 py-2 text-xs text-ink hover:bg-accent-soft hover:text-blue-600 dark:hover:text-blue-400 rounded-lg transition text-left"
-              >
-                <i class="fas fa-layer-group text-blue-400 text-[10px] flex-shrink-0"></i>
-                {{ stage.nome }}
-              </button>
-            </div>
-            <div v-else-if="enterpriseStages.length" class="px-4 py-3">
-              <p class="text-xs text-ink-subtle italic">Todas as etapas do CV já estão adicionadas</p>
-            </div>
-            <div v-else class="px-4 py-3">
-              <p class="text-xs text-ink-subtle italic">Nenhuma etapa no CV para este empreendimento</p>
-            </div>
-
-            <div class="border-t border-line p-2">
-              <button
-                @click="addCustomModule"
-                class="w-full flex items-center gap-2 px-3 py-2 text-xs text-ink-muted hover:bg-surface-hover rounded-lg transition text-left"
-              >
-                <i class="fas fa-cube text-gray-400 text-[10px] flex-shrink-0"></i>
-                Módulo avulso (sem etapa CV)
-              </button>
-            </div>
-          </div>
-        </transition>
-      </div>
-
-      <!-- Navegação por seções (âncora) — na lateral quando hideChrome -->
-      <div v-if="!hideChrome" class="flex gap-1.5 overflow-x-auto scrollbar-hide bg-surface-sunken/60 rounded-xl p-1.5 mb-3">
-        <button
-          v-for="st in subTabs"
-          :key="st.id"
-          @click="scrollToSection(st.id)"
-          :class="[
-            'flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold whitespace-nowrap rounded-lg border transition',
-            activeSubTab === st.id
-              ? 'bg-accent-soft border-accent/30 text-accent'
-              : 'border-transparent text-ink-muted hover:text-gray-700 dark:hover:text-gray-200'
-          ]"
-        >
-          <i :class="st.icon" class="text-xs"></i>
-          {{ st.label }}
-        </button>
-      </div>
-    </div>
 
     <!-- ── Conteúdo do módulo ────────────────────────────────────────────── -->
     <div v-if="activeModule" class="bg-surface-raised rounded-2xl border border-line shadow-sm overflow-hidden">
 
       <!-- Copiar dados (botão claro; o modal deixa escolher a origem e quais seções copiar) -->
-      <div v-if="hideChrome && !readonly && enterpriseOptions?.length" class="px-5 pt-4">
+      <div v-if="!readonly && enterpriseOptions?.length" class="px-5 pt-4">
         <button @click="openCopyModal" class="flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-accent bg-accent-soft border border-accent/20 rounded-lg hover:bg-accent-soft/70 transition">
           <i class="fas fa-copy text-xs"></i>
           Copiar dados de outro módulo ou mês
@@ -327,10 +92,10 @@
 
       <!-- ── Seção: Produto ──────────────────────────────────────────────── -->
       <div id="modsec-data" class="p-5 space-y-5 scroll-mt-40 md:scroll-mt-4">
-        <h3 class="flex items-center gap-2 text-sm font-bold text-ink mb-1"><i class="fas fa-box text-blue-500"></i> Produto</h3>
+        <h3 class="flex items-center gap-2 text-sm font-bold text-ink mb-1"><i class="fas fa-box text-accent"></i> Produto</h3>
         <!-- Números do Módulo -->
         <div>
-          <p class="lbl-section mb-3"><i class="fas fa-hashtag text-blue-500"></i> Números do Módulo</p>
+          <p class="lbl-section mb-3"><i class="fas fa-hashtag text-accent"></i> Números do Módulo</p>
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <div class="sm:col-span-2 lg:col-span-1">
               <label class="lbl">Nome do Módulo</label>
@@ -357,8 +122,8 @@
                   </option>
                 </select>
               </div>
-              <div v-else-if="activeModule.idetapa" class="mt-1.5 flex items-center gap-1 text-[11px] text-ink-subtle">
-                <i class="fas fa-layer-group text-blue-400"></i>
+              <div v-else-if="activeModule.idetapa" class="mt-1.5 flex items-center gap-1 text-micro text-ink-subtle">
+                <i class="fas fa-layer-group text-accent"></i>
                 Etapa do CV: <span class="font-medium text-ink-muted">{{ enterpriseStages.find(s => s.idetapa === activeModule.idetapa)?.nome ?? `#${activeModule.idetapa}` }}</span>
               </div>
             </div>
@@ -405,7 +170,7 @@
 
         <!-- Avaliação MCMV -->
         <div>
-          <p class="lbl-section mb-3"><i class="fas fa-house-chimney text-blue-500"></i> Avaliação MCMV</p>
+          <p class="lbl-section mb-3"><i class="fas fa-house-chimney text-accent"></i> Avaliação MCMV</p>
           <div class="space-y-2">
             <!-- Faixas -->
             <div
@@ -435,7 +200,7 @@
               </div>
 
               <!-- Expanded fields -->
-              <div v-if="faixaEnabled(fc.faixa)" class="border-t border-line p-4 grid grid-cols-1 sm:grid-cols-3 gap-4 bg-gray-50/40 dark:bg-gray-800/10">
+              <div v-if="faixaEnabled(fc.faixa)" class="border-t border-line p-4 grid grid-cols-1 sm:grid-cols-3 gap-4 bg-surface-sunken">
                 <div>
                   <label class="lbl">Valor de Avaliação</label>
                   <div class="relative">
@@ -503,7 +268,7 @@
 
         <!-- ── Condições Comerciais ───────────────────────────────────────── -->
         <div>
-          <p class="lbl-section mb-3"><i class="fas fa-percent text-blue-500"></i> Condições Comerciais</p>
+          <p class="lbl-section mb-3"><i class="fas fa-percent text-accent"></i> Condições Comerciais</p>
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label class="lbl">Comissão (%)</label>
@@ -549,9 +314,9 @@
               :disabled="readonly"
             />
           </div>
-          <div v-if="activeModule.unit_snapshot?.data?.length && snapshotM2Stats" class="mt-4 p-3.5 bg-blue-50/50 dark:bg-blue-950/20 border border-accent/20 rounded-xl">
+          <div v-if="activeModule.unit_snapshot?.data?.length && snapshotM2Stats" class="mt-4 p-3.5 bg-accent/10  border border-accent/20 rounded-xl">
             <p class="text-xs font-semibold text-accent mb-2 flex items-center gap-1.5">
-              <i class="fas fa-snowflake text-[9px]"></i>
+              <i class="fas fa-snowflake text-micro"></i>
               Preço/m² congelado em {{ formatSnapshotDate(activeModule.unit_snapshot.capturedAt) }}
             </p>
             <div class="flex flex-wrap gap-4 text-xs text-ink-muted">
@@ -565,15 +330,15 @@
 
       <!-- ── Seção: Preços ───────────────────────────────────────────────── -->
       <div id="modsec-prices" class="p-5 space-y-5 scroll-mt-40 md:scroll-mt-4 border-t border-line">
-        <h3 class="flex items-center gap-2 text-sm font-bold text-ink mb-1"><i class="fas fa-tag text-blue-500"></i> Preços</h3>
+        <h3 class="flex items-center gap-2 text-sm font-bold text-ink mb-1"><i class="fas fa-tag text-accent"></i> Preços</h3>
         <!-- Tabelas do CV -->
         <div>
-          <p class="lbl-section mb-3"><i class="fas fa-table text-blue-500"></i> Tabelas do CV</p>
+          <p class="lbl-section mb-3"><i class="fas fa-table text-accent"></i> Tabelas do CV</p>
           <p class="text-xs text-ink-subtle mb-3">Selecione as tabelas que valem para este módulo.</p>
           <!-- Aviso de tabelas selecionadas mas inativas no CV -->
-          <div v-if="orphanedPriceTableIds.length" class="flex items-start gap-2.5 px-4 py-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-md mb-3">
-            <i class="fas fa-exclamation-triangle text-amber-500 text-sm flex-shrink-0 mt-0.5"></i>
-            <div class="text-xs text-amber-800 dark:text-amber-300">
+          <div v-if="orphanedPriceTableIds.length" class="flex items-start gap-2.5 px-4 py-3 bg-data-warn/20 border border-data-warn/25 rounded-md mb-3">
+            <i class="fas fa-exclamation-triangle text-data-warn text-sm flex-shrink-0 mt-0.5"></i>
+            <div class="text-xs text-data-warn">
               <p class="font-semibold mb-0.5">Tabela(s) selecionada(s) não encontradas no CV</p>
               <p class="opacity-80">
                 As seguintes tabelas estão marcadas neste módulo mas foram desativadas ou removidas no CV:
@@ -596,7 +361,7 @@
               :class="[
                 'rounded-xl border overflow-hidden transition-all',
                 (activeModule.price_table_ids ?? []).includes(t.idtabela)
-                  ? 'border-blue-400 dark:border-blue-600 shadow-sm'
+                  ? 'border-accent  shadow-sm'
                   : 'border-line'
               ]"
             >
@@ -615,7 +380,7 @@
                 <span
                   class="flex-shrink-0 rounded border-2 flex items-center justify-center transition-all"
                   :class="(activeModule.price_table_ids ?? []).includes(t.idtabela)
-                    ? 'border-accent bg-blue-500'
+                    ? 'border-accent bg-accent'
                     : 'border-line bg-surface-raised'"
                   style="width:18px;height:18px;"
                 >
@@ -630,7 +395,7 @@
                     <span class="text-sm font-semibold" :class="(activeModule.price_table_ids ?? []).includes(t.idtabela) ? 'text-accent' : 'text-ink'">
                       {{ t.nome }}
                     </span>
-                    <span v-if="t.vigente" class="px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">vigente</span>
+                    <span v-if="t.vigente" class="px-1.5 py-0.5 rounded-full text-micro font-semibold bg-data-pos/10 text-data-pos">vigente</span>
                   </div>
                   <div class="flex items-center gap-3 mt-0.5 flex-wrap">
                     <span class="text-xs text-ink-subtle">{{ formatDate(t.data_vigencia_de) }} – {{ formatDate(t.data_vigencia_ate) }}</span>
@@ -654,7 +419,7 @@
                 <button
                   v-if="t.unit_count > 0"
                   @click.stop="togglePriceTableExpand(t.idtabela)"
-                  class="flex-shrink-0 w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-blue-500 hover:bg-accent-soft transition"
+                  class="flex-shrink-0 w-7 h-7 flex items-center justify-center rounded-lg text-ink-subtle hover:text-accent hover:bg-accent-soft transition"
                   :title="expandedPriceTables.has(t.idtabela) ? 'Fechar unidades' : 'Ver unidades'"
                 >
                   <i :class="expandedPriceTables.has(t.idtabela) ? 'fas fa-chevron-up' : 'fas fa-chevron-down'" class="text-xs"></i>
@@ -662,9 +427,9 @@
               </div>
 
               <!-- Expanded unit list -->
-              <div v-if="expandedPriceTables.has(t.idtabela) && t.unidades?.length" class="border-t border-line bg-gray-50/50 dark:bg-gray-800/20 p-4 space-y-3">
+              <div v-if="expandedPriceTables.has(t.idtabela) && t.unidades?.length" class="border-t border-line bg-surface-sunken p-4 space-y-3">
                 <div v-for="group in groupByBloco(t.unidades)" :key="group.bloco">
-                  <p class="text-[10px] font-semibold text-ink-subtle uppercase tracking-wider mb-1.5">Bloco {{ group.bloco }}</p>
+                  <p class="text-micro font-semibold text-ink-subtle uppercase tracking-wider mb-1.5">Bloco {{ group.bloco }}</p>
                   <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-1.5">
                     <div
                       v-for="u in group.units"
@@ -675,7 +440,7 @@
                       <span :class="['w-2 h-2 rounded-full flex-shrink-0', unitSituacaoDot(u.situacao)]"></span>
                       <div class="min-w-0">
                         <span class="font-mono font-medium text-ink truncate block leading-tight">{{ u.numerounidade }}</span>
-                        <span v-if="u.valor_total" class="text-[10px] text-accent font-semibold leading-tight">{{ fmtCurrencyShort(u.valor_total) }}</span>
+                        <span v-if="u.valor_total" class="text-micro text-accent font-semibold leading-tight">{{ fmtCurrencyShort(u.valor_total) }}</span>
                       </div>
                     </div>
                   </div>
@@ -692,8 +457,8 @@
         <!-- Tabelas Manuais -->
         <div>
           <div class="flex items-center justify-between mb-3">
-            <p class="lbl-section"><i class="fas fa-file-invoice-dollar text-orange-400"></i> Tabelas Manuais</p>
-            <button v-if="!readonly" @click="addManualTable" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-orange-500 text-white rounded-md hover:bg-orange-600 transition">
+            <p class="lbl-section"><i class="fas fa-file-invoice-dollar text-data-warn"></i> Tabelas Manuais</p>
+            <button v-if="!readonly" @click="addManualTable" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-data-warn text-white rounded-md hover:bg-data-warn/85 transition">
               <i class="fas fa-plus text-xs"></i> Adicionar
             </button>
           </div>
@@ -701,7 +466,7 @@
             <div
               v-for="(mt, mi) in (activeModule.manual_price_tables ?? [])"
               :key="mi"
-              class="border border-line rounded-xl bg-gray-50/40 dark:bg-gray-800/20 overflow-hidden"
+              class="border border-line rounded-xl bg-surface-sunken overflow-hidden"
             >
               <!-- Cabeçalho da tabela manual -->
               <div class="flex items-center justify-between gap-3 px-4 py-3 bg-surface-raised/50 border-b border-line">
@@ -715,7 +480,7 @@
                   <input :value="mt.validity_to" @input="patchManualTable(mi, 'validity_to', $event.target.value)"
                     type="date" class="inp-sm" :disabled="readonly" title="Vigência até" />
                   <button v-if="!readonly" @click="removeManualTable(mi)"
-                    class="w-6 h-6 flex items-center justify-center rounded text-ink-subtle hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition flex-shrink-0">
+                    class="w-6 h-6 flex items-center justify-center rounded text-ink-subtle hover:text-data-neg hover:bg-data-neg/10  transition flex-shrink-0">
                     <i class="fas fa-trash text-xs"></i>
                   </button>
                 </div>
@@ -727,15 +492,15 @@
                   type="text" class="inp text-xs" :disabled="readonly" placeholder="Observação da tabela..." />
 
                 <!-- Quick fill de unidades -->
-                <div class="flex items-center gap-2 flex-wrap p-3 bg-blue-50/60 dark:bg-blue-950/10 border border-accent/20/30 rounded-lg">
-                  <i class="fas fa-bolt text-blue-400 text-xs flex-shrink-0"></i>
+                <div class="flex items-center gap-2 flex-wrap p-3 bg-accent/10  border border-accent/20/30 rounded-lg">
+                  <i class="fas fa-bolt text-accent text-xs flex-shrink-0"></i>
                   <span class="text-xs text-ink-muted font-medium flex-shrink-0">Preenchimento rápido:</span>
 
                   <!-- Gerar unidades (a partir do total_units do módulo) -->
                   <button v-if="!readonly" @click="generateUnits(mi)"
                     :disabled="!activeModule.total_units"
-                    class="flex items-center gap-1 p-3 text-xs font-semibold bg-blue-600 text-white rounded-md hover:bg-accent-hover disabled:opacity-40 transition flex-shrink-0">
-                    <i class="fas fa-list text-[10px]"></i>
+                    class="flex items-center gap-1 p-3 text-xs font-semibold bg-accent text-white rounded-md hover:bg-accent-hover disabled:opacity-40 transition flex-shrink-0">
+                    <i class="fas fa-list text-micro"></i>
                     Gerar {{ activeModule.total_units ?? 0 }} unidades
                   </button>
 
@@ -752,7 +517,7 @@
 
                     <button v-if="!readonly" @click="applyAvgTicket(mi)"
                       :disabled="!mt.avg_ticket || !(mt.units?.length)"
-                      class="flex items-center gap-1 p-3 text-xs font-semibold bg-gray-700 dark:bg-gray-600 text-white rounded-md hover:bg-gray-800 disabled:opacity-40 transition">
+                      class="flex items-center gap-1 p-3 text-xs font-semibold bg-ink-muted text-white rounded-md hover:bg-ink disabled:opacity-40 transition">
                       Aplicar
                     </button>
                   </div>
@@ -773,7 +538,7 @@
                 <!-- Lista de unidades -->
                 <div v-if="mt.units?.length">
                   <div class="max-h-56 overflow-y-auto rounded-lg border border-line">
-                    <div class="grid grid-cols-[auto_1fr_auto] items-center text-[10px] font-semibold text-ink-subtle uppercase tracking-wider px-3 py-1.5 bg-surface-sunken/50 border-b border-line">
+                    <div class="grid grid-cols-[auto_1fr_auto] items-center text-micro font-semibold text-ink-subtle uppercase tracking-wider px-3 py-1.5 bg-surface-sunken/50 border-b border-line">
                       <span class="w-10">Unid.</span>
                       <span>Valor</span>
                       <span></span>
@@ -781,7 +546,7 @@
                     <div
                       v-for="(u, ui) in mt.units"
                       :key="ui"
-                      class="grid grid-cols-[auto_1fr_auto] items-center gap-2 px-3 py-1.5 border-b border-gray-50 dark:border-gray-800/50 last:border-0 hover:bg-gray-50/50 dark:hover:bg-gray-800/20"
+                      class="grid grid-cols-[auto_1fr_auto] items-center gap-2 px-3 py-1.5 border-b border-line/50 last:border-0 hover:bg-surface-sunken"
                     >
                       <span class="w-10 text-xs font-mono text-ink-muted flex-shrink-0">{{ u.label }}</span>
                       <div class="relative">
@@ -792,8 +557,8 @@
                           class="inp-pfx pl-8 w-full" :disabled="readonly" placeholder="—" />
                       </div>
                       <button v-if="!readonly" @click="removeUnit(mi, ui)"
-                        class="w-5 h-5 flex items-center justify-center rounded text-ink-subtle hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition flex-shrink-0">
-                        <i class="fas fa-times text-[9px]"></i>
+                        class="w-5 h-5 flex items-center justify-center rounded text-ink-subtle hover:text-data-neg hover:bg-data-neg/10  transition flex-shrink-0">
+                        <i class="fas fa-times text-micro"></i>
                       </button>
                     </div>
                   </div>
@@ -827,7 +592,7 @@
 
       <!-- ── Seção: Negociação ───────────────────────────────────────────── -->
       <div id="modsec-negotiation" class="p-5 scroll-mt-40 md:scroll-mt-4 border-t border-line">
-        <h3 class="flex items-center gap-2 text-sm font-bold text-ink mb-3"><i class="fas fa-handshake text-blue-500"></i> Negociação</h3>
+        <h3 class="flex items-center gap-2 text-sm font-bold text-ink mb-3"><i class="fas fa-handshake text-accent"></i> Negociação</h3>
         <NegotiationRules
           :form="activeModule"
           :readonly="readonly"
@@ -837,7 +602,7 @@
 
       <!-- ── Seção: Documentação ────────────────────────────────────────── -->
       <div id="modsec-docs" class="p-5 scroll-mt-40 md:scroll-mt-4 border-t border-line">
-        <h3 class="flex items-center gap-2 text-sm font-bold text-ink mb-3"><i class="fas fa-file-contract text-blue-500"></i> Documentação</h3>
+        <h3 class="flex items-center gap-2 text-sm font-bold text-ink mb-3"><i class="fas fa-file-contract text-accent"></i> Documentação</h3>
         <DocsSection
           :form="activeModule"
           :readonly="readonly"
@@ -847,7 +612,7 @@
 
       <!-- ── Seção: Campanhas ───────────────────────────────────────────── -->
       <div id="modsec-campaigns" class="p-5 scroll-mt-40 md:scroll-mt-4 border-t border-line">
-        <h3 class="flex items-center gap-2 text-sm font-bold text-ink mb-3"><i class="fas fa-bullhorn text-blue-500"></i> Campanhas</h3>
+        <h3 class="flex items-center gap-2 text-sm font-bold text-ink mb-3"><i class="fas fa-bullhorn text-accent"></i> Campanhas</h3>
         <CampaignManager
           :campaigns="activeModule.campaigns ?? []"
           :saving="saving"
@@ -861,7 +626,7 @@
 
       <!-- ── Seção: Operacional ─────────────────────────────────────────── -->
       <div id="modsec-operational" class="p-5 scroll-mt-40 md:scroll-mt-4 border-t border-line">
-        <h3 class="flex items-center gap-2 text-sm font-bold text-ink mb-3"><i class="fas fa-gears text-blue-500"></i> Operacional</h3>
+        <h3 class="flex items-center gap-2 text-sm font-bold text-ink mb-3"><i class="fas fa-gears text-accent"></i> Operacional</h3>
         <OperationalSection
           :form="activeModule"
           :correspondents="correspondents"
@@ -873,7 +638,7 @@
 
       <!-- ── Seção: Unidades (só módulos do CV) ──────────────────────────── -->
       <div v-if="activeModule?.idetapa" id="modsec-units" class="p-5 scroll-mt-40 md:scroll-mt-4 border-t border-line">
-        <h3 class="flex items-center gap-2 text-sm font-bold text-ink mb-3"><i class="fas fa-layer-group text-blue-500"></i> Unidades</h3>
+        <h3 class="flex items-center gap-2 text-sm font-bold text-ink mb-3"><i class="fas fa-layer-group text-accent"></i> Unidades</h3>
 
         <!-- Barra de snapshot -->
         <div class="flex items-center justify-between gap-3 mb-4 flex-wrap">
@@ -883,31 +648,31 @@
                 @click="showingSnapshot = !showingSnapshot"
                 :class="['flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border transition',
                   showingSnapshot
-                    ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-700 text-amber-700 dark:text-amber-400'
+                    ? 'bg-data-warn/20 border-data-warn/25 text-data-warn'
                     : 'bg-accent-soft border-accent/30 text-accent']"
               >
-                <i :class="showingSnapshot ? 'fas fa-snowflake' : 'fas fa-circle-dot'" class="text-[10px]"></i>
+                <i :class="showingSnapshot ? 'fas fa-snowflake' : 'fas fa-circle-dot'" class="text-micro"></i>
                 {{ showingSnapshot ? 'Snapshot: ' + formatSnapshotDate(activeModule.unit_snapshot.capturedAt) : 'Ao vivo' }}
               </button>
             </template>
             <template v-else>
               <span class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-accent-soft border border-accent/30 text-accent">
-                <i class="fas fa-circle-dot text-[10px]"></i> Ao vivo
+                <i class="fas fa-circle-dot text-micro"></i> Ao vivo
               </span>
             </template>
           </div>
           <button
             v-if="!readonly && unitsData.length"
             @click="captureUnitSnapshot"
-            class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-gray-700 dark:bg-gray-600 text-white rounded-lg hover:bg-gray-800 transition"
+            class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-ink-muted text-white rounded-lg hover:bg-ink transition"
             title="Congela o estado atual das unidades para referência histórica"
           >
-            <i class="fas fa-snowflake text-[10px]"></i> Capturar estado
+            <i class="fas fa-snowflake text-micro"></i> Capturar estado
           </button>
         </div>
 
         <!-- Carregando -->
-        <div v-if="loadingUnits" class="flex items-center justify-center py-10 text-gray-400 text-sm gap-2">
+        <div v-if="loadingUnits" class="flex items-center justify-center py-10 text-ink-subtle text-sm gap-2">
           <i class="fas fa-spinner fa-spin"></i> Carregando unidades...
         </div>
 
@@ -923,8 +688,8 @@
               :class="[
                 'px-2.5 py-1 text-xs font-semibold rounded-lg border transition',
                 (selectedPriceTableForUnits ?? selectedTablesWithPrices[0]?.idtabela) === t.idtabela
-                  ? 'bg-blue-600 border-blue-600 text-white'
-                  : 'bg-surface-raised border-line text-ink-muted hover:border-blue-300'
+                  ? 'bg-accent border-accent text-white'
+                  : 'bg-surface-raised border-line text-ink-muted hover:border-accent'
               ]"
             >
               {{ t.nome }}
@@ -938,25 +703,25 @@
             <!-- Header do bloco -->
             <div class="flex items-center justify-between mb-2 flex-wrap gap-1">
               <div class="flex items-center gap-2">
-                <i class="fas fa-building text-blue-400 text-xs"></i>
-                <span class="text-sm font-bold text-gray-800 dark:text-white">{{ bloco.nome }}</span>
-                <span class="text-xs text-gray-400">{{ bloco.unidades?.length ?? 0 }} un.</span>
+                <i class="fas fa-building text-accent text-xs"></i>
+                <span class="text-sm font-bold text-ink dark:text-white">{{ bloco.nome }}</span>
+                <span class="text-xs text-ink-subtle">{{ bloco.unidades?.length ?? 0 }} un.</span>
               </div>
-              <div class="flex items-center gap-2 text-xs text-gray-500">
+              <div class="flex items-center gap-2 text-xs text-ink-muted">
                 <span class="flex items-center gap-1">
-                  <span class="w-2 h-2 rounded-full bg-green-400 inline-block"></span>
+                  <span class="w-2 h-2 rounded-full bg-data-pos inline-block"></span>
                   <strong class="text-ink">{{ countByStatus(bloco.unidades, 'available') }}</strong> Disp.
                 </span>
                 <span class="flex items-center gap-1">
-                  <span class="w-2 h-2 rounded-full bg-amber-400 inline-block"></span>
+                  <span class="w-2 h-2 rounded-full bg-data-warn inline-block"></span>
                   <strong class="text-ink">{{ countByStatus(bloco.unidades, 'reserved') }}</strong> Res.
                 </span>
                 <span class="flex items-center gap-1">
-                  <span class="w-2 h-2 rounded-full bg-red-400 inline-block"></span>
+                  <span class="w-2 h-2 rounded-full bg-data-neg inline-block"></span>
                   <strong class="text-ink">{{ countByStatus(bloco.unidades, 'sold') }}</strong> Vend.
                 </span>
                 <span class="flex items-center gap-1">
-                  <span class="w-2 h-2 rounded-full bg-gray-400 inline-block"></span>
+                  <span class="w-2 h-2 rounded-full bg-data-neutral inline-block"></span>
                   <strong class="text-ink">{{ countByStatus(bloco.unidades, 'blocked') }}</strong> Bloq.
                 </span>
               </div>
@@ -968,20 +733,22 @@
                 v-for="unit in bloco.unidades"
                 :key="unit.idunidade"
                 :title="`${unit.nome}${unit.tipologia ? ' · ' + unit.tipologia : ''}${unit.area_privativa ? ' · ' + Number(unit.area_privativa).toFixed(0) + 'm²' : ''}${unitDisplayPrice(unit) != null ? ' · ' + fmtCurrency(unitDisplayPrice(unit)) : ''}`"
-                :class="['rounded-lg px-2 py-1.5 text-center text-[11px] font-medium transition cursor-default border', unitStatusClass(unit)]"
+                :class="['rounded-lg px-2 py-1.5 text-center text-micro font-medium transition cursor-default border', unitStatusClass(unit)]"
               >
                 <span class="truncate block leading-tight">{{ unit.nome }}</span>
-                <span v-if="unitDisplayPrice(unit)" class="text-[9px] font-bold text-accent block leading-tight">{{ fmtCurrencyShort(unitDisplayPrice(unit)) }}</span>
-                <span v-if="unit.area_privativa" class="text-[9px] opacity-60 font-normal">{{ Number(unit.area_privativa).toFixed(0) }}m²</span>
+                <span v-if="unitDisplayPrice(unit)" class="text-micro font-bold text-accent block leading-tight">{{ fmtCurrencyShort(unitDisplayPrice(unit)) }}</span>
+                <span v-if="unit.area_privativa" class="text-micro opacity-60 font-normal">{{ Number(unit.area_privativa).toFixed(0) }}m²</span>
               </div>
             </div>
 
             <!-- Barra de disponibilidade -->
             <div v-if="bloco.unidades?.length" class="mt-2 flex h-1.5 rounded-full overflow-hidden gap-px">
-              <div :style="{ width: pctAvail(bloco.unidades) + '%' }" class="bg-green-400 transition-all"></div>
-              <div :style="{ width: pctReserv(bloco.unidades) + '%' }" class="bg-amber-400 transition-all"></div>
-              <div :style="{ width: pctSold(bloco.unidades) + '%' }" class="bg-red-400 transition-all"></div>
-              <div :style="{ width: pctBlock(bloco.unidades) + '%' }" class="bg-gray-300 dark:bg-gray-600 transition-all"></div>
+              <!-- Faixas largas = AREA: o tom `-area`. Com o tom de marca, tres
+                   blocos saturados lado a lado dominam a linha inteira. -->
+              <div :style="{ width: pctAvail(bloco.unidades) + '%' }" class="bg-data-pos-area transition-all"></div>
+              <div :style="{ width: pctReserv(bloco.unidades) + '%' }" class="bg-data-warn-area transition-all"></div>
+              <div :style="{ width: pctSold(bloco.unidades) + '%' }" class="bg-data-neg-area transition-all"></div>
+              <div :style="{ width: pctBlock(bloco.unidades) + '%' }" class="bg-line-strong transition-all"></div>
             </div>
           </div>
         </div>
@@ -989,7 +756,7 @@
         </template><!-- /v-else-if displayUnits -->
 
         <!-- Vazio -->
-        <div v-else-if="!loadingUnits" class="flex flex-col items-center justify-center py-10 text-gray-400 text-sm">
+        <div v-else-if="!loadingUnits" class="flex flex-col items-center justify-center py-10 text-ink-subtle text-sm">
           <i class="fas fa-layer-group text-2xl mb-2 text-ink-subtle"></i>
           <p>Nenhuma unidade encontrada para esta etapa.</p>
         </div>
@@ -1012,30 +779,25 @@
           @click="addStageModule(stage)"
           class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-accent-soft text-accent border border-accent/30 rounded-lg hover:bg-accent-soft transition"
         >
-          <i class="fas fa-layer-group text-[10px]"></i>
+          <i class="fas fa-layer-group text-micro"></i>
           {{ stage.nome }}
         </button>
         <button
           @click="addCustomModule"
           class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-surface-sunken text-ink-muted border border-line rounded-lg hover:bg-surface-hover transition"
         >
-          <i class="fas fa-cube text-[10px]"></i>
+          <i class="fas fa-cube text-micro"></i>
           Módulo avulso
         </button>
       </div>
     </div>
 
-    <!-- Salvar (escondido quando o Detail tem a lateral: o header do Detail salva) -->
-    <div v-if="!readonly && !hideChrome" class="flex justify-end">
-      <button @click="$emit('save')" :disabled="saving" class="btn-primary">
-        <i :class="saving ? 'fa-spinner fa-spin' : 'fa-floppy-disk'" class="fas text-xs"></i>
-        {{ saving ? 'Salvando...' : 'Salvar Módulos' }}
-      </button>
-    </div>
   </div>
 </template>
 
 <script setup>
+import Modal from '@/components/UI/Modal.vue';
+import Button from '@/components/UI/Button.vue';
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue';
 import { useConditionsStore } from '@/stores/Comercial/Conditions/conditionsStore';
 import AttachmentPicker from './AttachmentPicker.vue';
@@ -1060,7 +822,6 @@ const props = defineProps({
     currentConditionId:         { type: [Number, String], default: null },
     conditionIdempreendimento:  { type: [Number, String], default: null },
     activeIndex:        { type: Number,           default: 0 },     // módulo ativo (controlado pelo Detail)
-    hideChrome:         { type: Boolean,          default: false }, // esconde a nav própria quando o Detail tem a lateral
 });
 
 const emit = defineEmits(['update:modules', 'save', 'save-silent', 'copy', 'copy-from-enterprise', 'navigate-month', 'delete-module', 'update:activeIndex', 'template-propagated']);
@@ -1075,15 +836,7 @@ const activeIdx = computed({
 });
 const activeSubTab = ref('data');
 const copying      = ref(false);
-const copySourceId = ref('');
 const showAddPanel = ref(false);
-
-// Navegação por âncora: destaca a seção e rola até ela (seções sempre visíveis).
-function scrollToSection(id) {
-    activeSubTab.value = id;
-    const el = typeof document !== 'undefined' ? document.getElementById(`modsec-${id}`) : null;
-    el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-}
 
 const STATUS_LABELS = {
     draft:            'Rascunho',
@@ -1096,9 +849,9 @@ const STATUS_LABELS = {
 const FAIXAS_CONFIG = [
     {
         faixa: 1, label: 'Faixa 1',
-        borderActive: 'border-blue-400 dark:border-blue-600 shadow-sm',
+        borderActive: 'border-accent  shadow-sm',
         bgActive: 'bg-accent-soft',
-        checkActive: 'border-accent bg-blue-500',
+        checkActive: 'border-accent bg-accent',
         textActive: 'text-accent',
         placeholders: {
             appraisal_value: 'Ex: R$ 210.000 – R$ 275.000',
@@ -1108,10 +861,10 @@ const FAIXAS_CONFIG = [
     },
     {
         faixa: 2, label: 'Faixa 2',
-        borderActive: 'border-green-400 dark:border-green-600 shadow-sm',
-        bgActive: 'bg-green-50 dark:bg-green-950/30',
-        checkActive: 'border-green-500 bg-green-500',
-        textActive: 'text-green-700 dark:text-green-300',
+        borderActive: 'border-data-pos  shadow-sm',
+        bgActive: 'bg-data-pos/10 ',
+        checkActive: 'border-data-pos bg-data-pos',
+        textActive: 'text-data-pos',
         placeholders: {
             appraisal_value: 'Ex: R$ 210.000 – R$ 275.000',
             appraisal_ceiling: 'Ex: R$ 275.000 (capitais) · R$ 255.000 (cidades médias)',
@@ -1120,10 +873,10 @@ const FAIXAS_CONFIG = [
     },
     {
         faixa: 3, label: 'Faixa 3',
-        borderActive: 'border-amber-400 dark:border-amber-600 shadow-sm',
-        bgActive: 'bg-amber-50 dark:bg-amber-950/30',
-        checkActive: 'border-amber-500 bg-amber-500',
-        textActive: 'text-amber-700 dark:text-amber-300',
+        borderActive: 'border-data-warn  shadow-sm',
+        bgActive: 'bg-data-warn/10 ',
+        checkActive: 'border-data-warn bg-data-warn',
+        textActive: 'text-data-warn',
         placeholders: {
             appraisal_value: 'Ex: R$ 400.000',
             appraisal_ceiling: 'R$ 400.000 (nacional)',
@@ -1132,10 +885,10 @@ const FAIXAS_CONFIG = [
     },
     {
         faixa: 4, label: 'Faixa 4',
-        borderActive: 'border-orange-400 dark:border-orange-600 shadow-sm',
-        bgActive: 'bg-orange-50 dark:bg-orange-950/30',
-        checkActive: 'border-orange-500 bg-orange-500',
-        textActive: 'text-orange-700 dark:text-orange-300',
+        borderActive: 'border-data-warn  shadow-sm',
+        bgActive: 'bg-data-warn/10 ',
+        checkActive: 'border-data-warn bg-data-warn',
+        textActive: 'text-data-warn',
         placeholders: {
             appraisal_value: 'Ex: R$ 600.000',
             appraisal_ceiling: 'R$ 600.000 (nacional)',
@@ -1178,22 +931,6 @@ function patchFaixa(faixa, field, val) {
         patch('appraisal_faixas', current);
     }
 }
-
-const BASE_SUB_TABS = [
-    { id: 'data',        label: 'Dados',         icon: 'fas fa-hashtag' },
-    { id: 'prices',      label: 'Preços',        icon: 'fas fa-tag' },
-    { id: 'negotiation', label: 'Negociação',    icon: 'fas fa-handshake' },
-    { id: 'docs',        label: 'Documentação',  icon: 'fas fa-file-contract' },
-    { id: 'campaigns',   label: 'Campanhas',     icon: 'fas fa-bullhorn' },
-    { id: 'operational', label: 'Operacional',   icon: 'fas fa-gears' },
-    { id: 'units',       label: 'Unidades',      icon: 'fas fa-layer-group' },
-];
-
-const subTabs = computed(() => {
-    // Só mostra a tab de Unidades se o módulo ativo está vinculado a uma etapa do CV
-    if (activeModule.value?.idetapa) return BASE_SUB_TABS;
-    return BASE_SUB_TABS.filter(t => t.id !== 'units');
-});
 
 // ── Unidades do estágio ───────────────────────────────────────────────────────
 const unitsData    = ref([]);
@@ -1395,53 +1132,6 @@ watch(() => props.modules, (mods) => {
     }
 }, { flush: 'sync' });
 
-// ── Navegação de meses ────────────────────────────────────────────────────────
-// history vem ordenado DESC (mais recente = índice 0)
-const currentHistoryIdx = computed(() =>
-    props.history.findIndex(h => String(h.id) === String(props.currentConditionId))
-);
-
-// "Anterior" = mês mais antigo = índice maior no array DESC
-const prevItem = computed(() =>
-    currentHistoryIdx.value < props.history.length - 1
-        ? props.history[currentHistoryIdx.value + 1]
-        : null
-);
-
-// "Próximo" = mês mais recente = índice menor no array DESC
-const nextItem = computed(() =>
-    currentHistoryIdx.value > 0
-        ? props.history[currentHistoryIdx.value - 1]
-        : null
-);
-
-const currentHistoryPos = computed(() => {
-    if (!props.history.length) return 1;
-    // Posição humanizada: 1 = mais recente
-    return currentHistoryIdx.value + 1;
-});
-
-const currentMonthLabel = computed(() => {
-    const h = props.history[currentHistoryIdx.value];
-    return h ? formatMonth(h.reference_month) : formatMonth(null);
-});
-
-function navigatePrev() {
-    if (prevItem.value) emit('navigate-month', prevItem.value.id);
-}
-
-function navigateNext() {
-    if (nextItem.value) emit('navigate-month', nextItem.value.id);
-}
-
-function statusChipClass(s) {
-    const map = {
-        draft:            'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
-        pending_approval: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
-        approved:         'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-    };
-    return map[s] ?? 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400';
-}
 
 // ── Remover módulo ────────────────────────────────────────────────────────────
 
@@ -1505,10 +1195,10 @@ function groupByBloco(unidades) {
 
 function unitSituacaoDot(situacao) {
     const s = (situacao ?? '').toLowerCase();
-    if (s.includes('dispon')) return 'bg-green-500';
-    if (s.includes('reserv')) return 'bg-amber-500';
-    if (s.includes('vend') || s.includes('contrat')) return 'bg-red-500';
-    return 'bg-gray-400';
+    if (s.includes('dispon')) return 'bg-data-pos';
+    if (s.includes('reserv')) return 'bg-data-warn';
+    if (s.includes('vend') || s.includes('contrat')) return 'bg-data-neg';
+    return 'bg-data-neutral';
 }
 
 // Auto-seleciona vigentes — separado por fonte para evitar race com patch de idetapa
@@ -1613,10 +1303,10 @@ function classifyUnit(unit) {
 
 function unitStatusClass(unit) {
     const st = classifyUnit(unit);
-    if (st.isSold)     return 'bg-red-50    dark:bg-red-900/20    border-red-200    dark:border-red-700    text-red-700    dark:text-red-400';
-    if (st.isReserved) return 'bg-amber-50  dark:bg-amber-900/20  border-amber-200  dark:border-amber-700  text-amber-800  dark:text-amber-300';
-    if (st.isBlocked)  return 'bg-gray-100  dark:bg-gray-800      border-gray-200   dark:border-gray-700   text-gray-400';
-    return                    'bg-green-50  dark:bg-green-900/20  border-green-200  dark:border-green-700  text-green-800  dark:text-green-300';
+    if (st.isSold)     return 'bg-data-neg/20    border-data-neg/25    text-data-neg';
+    if (st.isReserved) return 'bg-data-warn/20  border-data-warn/25  text-data-warn';
+    if (st.isBlocked)  return 'bg-surface-sunken      border-line   text-ink-subtle';
+    return                    'bg-data-pos/20  border-data-pos/25  text-data-pos';
 }
 
 function countByStatus(units, kind) {
@@ -1664,52 +1354,7 @@ function unitDisplayPrice(unit) {
     return unitPriceMap.value.get(String(unit.idunidade)) ?? null;
 }
 
-// ── Completude por módulo ─────────────────────────────────────────────────────
 
-const COMPLETENESS_LABELS = {
-    data:        'Dados básicos',
-    prices:      'Preços',
-    negotiation: 'Negociação',
-    campaigns:   'Campanhas',
-    operational: 'Operacional',
-};
-
-function moduleCompleteness(mod) {
-    return {
-        data:        !!(mod.module_name && mod.total_units),
-        prices:      (mod.price_table_ids?.length > 0) || (mod.manual_price_tables?.length > 0),
-        negotiation: !!(mod.max_entry_value || mod.rp_rule || mod.max_installments),
-        campaigns:   (mod.campaigns?.length > 0),
-        operational: !!(mod.manager_user_id || mod.correspondent_id || mod.contract_registration_by),
-    };
-}
-
-function completenessTooltip(mod) {
-    const c = moduleCompleteness(mod);
-    const filled = Object.entries(c).filter(([, v]) => v).map(([k]) => COMPLETENESS_LABELS[k]);
-    const missing = Object.entries(c).filter(([, v]) => !v).map(([k]) => COMPLETENESS_LABELS[k]);
-    const parts = [];
-    if (filled.length) parts.push(`✓ ${filled.join(', ')}`);
-    if (missing.length) parts.push(`○ Pendente: ${missing.join(', ')}`);
-    return parts.join('\n');
-}
-
-// ── Copiar de mesmo módulo da ficha ──────────────────────────────────────────
-
-async function handleCopyIntra() {
-    if (!copySourceId.value) return;
-    const sourceMod = props.modules.find(m => String(m.id) === String(copySourceId.value));
-    const srcName = sourceMod?.module_name || 'módulo de origem';
-    const dstName = activeModule.value?.module_name || 'este módulo';
-    if (!window.confirm(`Copiar todos os dados de "${srcName}" para "${dstName}"?\n\nIsso substituirá todos os campos do módulo destino e não pode ser desfeito.`)) return;
-    copying.value = true;
-    try {
-        emit('copy', { targetId: activeModule.value?.id, sourceId: copySourceId.value });
-        copySourceId.value = '';
-    } finally {
-        copying.value = false;
-    }
-}
 
 // ── Modal: Copiar de outro empreendimento/mês ─────────────────────────────────
 
@@ -1829,12 +1474,12 @@ function formatMonth(dateStr) {
 <style scoped>
 .lbl-section { @apply text-xs font-semibold text-ink-muted uppercase tracking-wide flex items-center gap-2; }
 .lbl     { @apply block text-xs font-semibold text-ink-muted uppercase tracking-wide mb-1.5; }
-.inp     { @apply w-full px-3.5 py-2.5 text-sm text-ink bg-surface-raised/60 border border-line rounded-md shadow-sm placeholder:text-gray-400 dark:placeholder:text-gray-500 outline-none focus:border-blue-400 dark:focus:border-accent focus:ring-2 focus:ring-blue-500/15 transition-all duration-150 disabled:opacity-60 disabled:cursor-default; }
-.inp-pfx { @apply w-full pl-9 pr-3.5 py-2.5 text-sm text-ink bg-surface-raised/60 border border-line rounded-md shadow-sm placeholder:text-gray-400 dark:placeholder:text-gray-500 outline-none focus:border-blue-400 dark:focus:border-accent focus:ring-2 focus:ring-blue-500/15 transition-all duration-150 disabled:opacity-60 disabled:cursor-default; }
-.inp-sm  { @apply px-2.5 py-1.5 text-xs text-ink bg-surface-raised/60 border border-line rounded-md shadow-sm placeholder:text-gray-400 outline-none focus:border-blue-400 dark:focus:border-accent focus:ring-1 focus:ring-blue-500/15 transition-all duration-150 disabled:opacity-60 disabled:cursor-default; }
-.inp-inline { @apply px-2 py-1.5 text-sm text-ink bg-transparent border border-transparent rounded-md placeholder:text-gray-400 outline-none focus:border-blue-400 dark:focus:border-accent focus:bg-white dark:focus:bg-gray-900/60 focus:ring-1 focus:ring-blue-500/15 transition-all duration-150 disabled:opacity-60 disabled:cursor-default; }
+.inp     { @apply w-full px-3.5 py-2.5 text-sm text-ink bg-surface-raised/60 border border-line rounded-md shadow-sm placeholder:text-ink-subtle dark:placeholder:text-ink-muted outline-none focus:border-accent dark:focus:border-accent focus:ring-accent/15 transition-all duration-150 disabled:opacity-60 disabled:cursor-default; }
+.inp-pfx { @apply w-full pl-9 pr-3.5 py-2.5 text-sm text-ink bg-surface-raised/60 border border-line rounded-md shadow-sm placeholder:text-ink-subtle dark:placeholder:text-ink-muted outline-none focus:border-accent dark:focus:border-accent focus:ring-accent/15 transition-all duration-150 disabled:opacity-60 disabled:cursor-default; }
+.inp-sm  { @apply px-2.5 py-1.5 text-xs text-ink bg-surface-raised/60 border border-line rounded-md shadow-sm placeholder:text-ink-subtle outline-none focus:border-accent dark:focus:border-accent focus:ring-accent/15 transition-all duration-150 disabled:opacity-60 disabled:cursor-default; }
+.inp-inline { @apply px-2 py-1.5 text-sm text-ink bg-transparent border border-transparent rounded-md placeholder:text-ink-subtle outline-none focus:border-accent dark:focus:border-accent focus:bg-surface-raised dark:focus:bg-surface focus:ring-accent/15 transition-all duration-150 disabled:opacity-60 disabled:cursor-default; }
 .pfx     { @apply absolute left-3 top-1/2 -translate-y-1/2 text-ink-subtle text-xs pointer-events-none; }
-.btn-primary { @apply flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-accent-hover disabled:opacity-50 transition; }
+.btn-primary { @apply flex items-center gap-2 px-4 py-2.5 bg-accent text-white text-sm font-semibold rounded-xl hover:bg-accent-hover disabled:opacity-50 transition; }
 .fade-enter-active, .fade-leave-active { transition: opacity .2s; }
 .fade-enter-from, .fade-leave-to { opacity: 0; }
 .slide-down-enter-active { transition: all .15s ease-out; }

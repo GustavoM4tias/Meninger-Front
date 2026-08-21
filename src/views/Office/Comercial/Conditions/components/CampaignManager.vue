@@ -3,9 +3,9 @@
 
     <!-- ── Header ───────────────────────────────────────────────────────── -->
     <div class="bg-surface-raised rounded-2xl border border-line shadow-sm overflow-hidden">
-      <div class="px-5 py-3.5 border-b border-line bg-gray-50/60 dark:bg-gray-800/40 flex items-center justify-between gap-4">
+      <div class="px-5 py-3.5 border-b border-line bg-surface-sunken flex items-center justify-between gap-4">
         <div class="flex items-center gap-2">
-          <p class="lbl-section"><i class="fas fa-bullhorn text-blue-500"></i> Campanhas</p>
+          <p class="lbl-section"><i class="fas fa-bullhorn text-accent"></i> Campanhas</p>
           <span class="px-2 py-0.5 rounded-full bg-accent-soft text-accent text-xs font-semibold">
             {{ campaigns.length }}
           </span>
@@ -19,7 +19,7 @@
           </button>
           <button
             @click="addCampaign"
-            class="flex items-center gap-2 px-3.5 py-2 text-xs font-semibold bg-blue-600 text-white rounded-lg hover:bg-accent-hover transition"
+            class="flex items-center gap-2 px-3.5 py-2 text-xs font-semibold bg-accent text-white rounded-lg hover:bg-accent-hover transition"
           >
             <i class="fas fa-plus text-xs"></i> Nova Campanha
           </button>
@@ -28,7 +28,7 @@
 
       <!-- Biblioteca: campanhas reutilizáveis entre empreendimentos -->
       <div v-if="showLibrary && !readonly" class="px-5 py-4 border-b border-line bg-accent-soft/20">
-        <p class="text-[10px] font-bold text-ink-subtle uppercase tracking-wider mb-2">Usar campanha da biblioteca</p>
+        <p class="text-micro font-bold text-ink-subtle uppercase tracking-wider mb-2">Usar campanha da biblioteca</p>
         <div v-if="loadingLibrary" class="text-xs text-ink-subtle py-2"><i class="fas fa-spinner fa-spin mr-1"></i> Carregando...</div>
         <div v-else-if="availableTemplates.length" class="space-y-1.5 max-h-56 overflow-y-auto">
           <button v-for="t in availableTemplates" :key="t.id" @click="addFromTemplate(t)"
@@ -50,7 +50,7 @@
       </div>
 
       <!-- Lista de campanhas -->
-      <div v-if="campaigns.length > 0" class="divide-y divide-gray-100 dark:divide-gray-800">
+      <div v-if="campaigns.length > 0" class="divide-y divide-line">
         <div v-for="(camp, i) in campaigns" :key="camp.id ?? i">
 
           <!-- Cabeçalho da campanha (clicável) -->
@@ -59,7 +59,7 @@
             @click="toggleExpanded(i)"
           >
             <span
-              :class="camp.is_active ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'"
+              :class="camp.is_active ? 'bg-data-pos' : 'bg-ink-subtle'"
               class="w-2 h-2 rounded-full flex-shrink-0"
             ></span>
             <div class="flex-1 min-w-0">
@@ -71,15 +71,15 @@
               </p>
             </div>
             <div class="flex items-center gap-2 flex-shrink-0">
-              <span v-if="camp.template_id" class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300 flex items-center gap-1" title="Campanha vinculada à biblioteca">
-                <i class="fas fa-link text-[9px]"></i> Vinculada
+              <span v-if="camp.template_id" class="px-2 py-0.5 rounded-full text-micro font-semibold bg-series-3/10 text-series-3 bg-series-3/10 text-series-3 flex items-center gap-1" title="Campanha vinculada à biblioteca">
+                <i class="fas fa-link text-micro"></i> Vinculada
               </span>
               <span v-if="camp.value" class="text-xs font-semibold text-accent">
                 {{ formatCurrency(camp.value) }}
               </span>
               <span
                 :class="camp.is_active
-                  ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                  ? 'bg-data-pos/10 text-data-pos'
                   : 'bg-surface-sunken text-ink-muted'"
                 class="px-2 py-0.5 rounded-full text-xs font-semibold"
               >
@@ -87,7 +87,7 @@
               </span>
               <button
                 @click.stop="removeCampaign(i)"
-                class="w-7 h-7 flex items-center justify-center rounded-md text-ink-subtle hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition"
+                class="w-7 h-7 flex items-center justify-center rounded-md text-ink-subtle hover:text-data-neg hover:bg-data-neg/10  transition"
               >
                 <i class="fas fa-trash text-xs"></i>
               </button>
@@ -99,20 +99,20 @@
           </div>
 
           <!-- Corpo da campanha -->
-          <div v-show="expanded.has(i)" class="px-5 pb-5 pt-4 bg-gray-50/40 dark:bg-gray-800/20 border-t border-line">
+          <div v-show="expanded.has(i)" class="px-5 pb-5 pt-4 bg-surface-sunken border-t border-line">
 
             <!-- Vinculada: editar em todos ou desvincular -->
-            <div v-if="camp.template_id && !readonly" class="flex items-center justify-between gap-3 flex-wrap mb-4 px-3.5 py-2.5 bg-teal-50 dark:bg-teal-900/20 border border-teal-200 dark:border-teal-800 rounded-lg">
-              <p class="text-xs text-teal-800 dark:text-teal-300">
+            <div v-if="camp.template_id && !readonly" class="flex items-center justify-between gap-3 flex-wrap mb-4 px-3.5 py-2.5 bg-series-3/10 border border-series-3/25 rounded-lg">
+              <p class="text-xs text-series-3">
                 <i class="fas fa-link mr-1"></i>
                 Campanha <strong>vinculada à biblioteca</strong> — escolha como editar.
               </p>
               <div class="flex items-center gap-2">
-                <button @click="openTemplateEditor(camp)" class="px-3 py-1.5 text-xs font-semibold text-white bg-teal-600 rounded-lg hover:bg-teal-700 transition">
-                  <i class="fas fa-pen text-[10px] mr-1"></i> Editar em todos
+                <button @click="openTemplateEditor(camp)" class="px-3 py-1.5 text-xs font-semibold text-white bg-series-3 rounded-lg hover:bg-series-3/85 transition">
+                  <i class="fas fa-pen text-micro mr-1"></i> Editar em todos
                 </button>
-                <button @click="unlinkCampaign(i)" class="px-3 py-1.5 text-xs font-semibold text-teal-700 dark:text-teal-300 border border-teal-300 dark:border-teal-700 rounded-lg hover:bg-teal-100 dark:hover:bg-teal-900/40 transition">
-                  <i class="fas fa-link-slash text-[10px] mr-1"></i> Editar só aqui
+                <button @click="unlinkCampaign(i)" class="px-3 py-1.5 text-xs font-semibold text-series-3 border border-series-3/25 rounded-lg hover:bg-series-3/10 dark:hover:bg-series-3/10 transition">
+                  <i class="fas fa-link-slash text-micro mr-1"></i> Editar só aqui
                 </button>
               </div>
             </div>
@@ -120,7 +120,7 @@
             <!-- Não vinculada: salvar na biblioteca p/ reusar em outros empreendimentos -->
             <div v-else-if="!camp.template_id && !readonly && camp.title" class="flex justify-end mb-3">
               <button @click="saveAsTemplate(i)" :disabled="savingTemplate" class="px-3 py-1.5 text-xs font-semibold text-accent bg-accent-soft border border-accent/20 rounded-lg hover:bg-accent-soft/70 disabled:opacity-50 transition">
-                <i :class="savingTemplate ? 'fa-spinner fa-spin' : 'fa-book-bookmark'" class="fas text-[10px] mr-1"></i> Salvar como modelo
+                <i :class="savingTemplate ? 'fa-spinner fa-spin' : 'fa-book-bookmark'" class="fas text-micro mr-1"></i> Salvar como modelo
               </button>
             </div>
 
@@ -191,30 +191,30 @@
                   <label
                     class="flex-1 flex items-center gap-2 px-4 py-2.5 rounded-md border cursor-pointer transition-all text-sm font-medium select-none"
                     :class="camp.is_active === true
-                      ? 'border-green-500 bg-green-50 dark:bg-green-950/40 text-green-700 dark:text-green-300 shadow-sm'
-                      : 'border-line text-ink-muted bg-surface-raised/60 hover:border-gray-300 dark:hover:border-gray-600'"
+                      ? 'border-data-pos bg-data-pos/10  text-data-pos shadow-sm'
+                      : 'border-line text-ink-muted bg-surface-raised/60 hover:border-line dark:hover:border-line'"
                   >
                     <input type="radio" :checked="camp.is_active === true" @change="patchCamp(i, 'is_active', true)" class="sr-only" />
                     <span
                       class="w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all"
-                      :class="camp.is_active === true ? 'border-green-500 bg-green-500' : 'border-line'"
+                      :class="camp.is_active === true ? 'border-data-pos bg-data-pos' : 'border-line'"
                     >
-                      <span v-if="camp.is_active === true" class="w-1.5 h-1.5 rounded-full bg-white"></span>
+                      <span v-if="camp.is_active === true" class="w-1.5 h-1.5 rounded-full bg-surface-raised"></span>
                     </span>
                     Ativa
                   </label>
                   <label
                     class="flex-1 flex items-center gap-2 px-4 py-2.5 rounded-md border cursor-pointer transition-all text-sm font-medium select-none"
                     :class="camp.is_active !== true
-                      ? 'border-gray-500 bg-surface-sunken/60 text-ink-muted shadow-sm'
-                      : 'border-line text-ink-muted bg-surface-raised/60 hover:border-gray-300 dark:hover:border-gray-600'"
+                      ? 'border-line bg-surface-sunken/60 text-ink-muted shadow-sm'
+                      : 'border-line text-ink-muted bg-surface-raised/60 hover:border-line dark:hover:border-line'"
                   >
                     <input type="radio" :checked="camp.is_active !== true" @change="patchCamp(i, 'is_active', false)" class="sr-only" />
                     <span
                       class="w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all"
-                      :class="camp.is_active !== true ? 'border-gray-500 bg-gray-500' : 'border-line'"
+                      :class="camp.is_active !== true ? 'border-line bg-ink-muted' : 'border-line'"
                     >
-                      <span v-if="camp.is_active !== true" class="w-1.5 h-1.5 rounded-full bg-white"></span>
+                      <span v-if="camp.is_active !== true" class="w-1.5 h-1.5 rounded-full bg-surface-raised"></span>
                     </span>
                     Inativa
                   </label>
@@ -258,20 +258,11 @@
       <!-- Campanhas salvam junto com o módulo (botão único de Salvar no rodapé do módulo). -->
     </div>
 
-    <!-- Modal: editar modelo em TODOS os empreendimentos vinculados -->
-    <div v-if="tplModal.open" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" @click.self="tplModal.open = false">
-      <div class="bg-surface-raised rounded-2xl shadow-2xl w-full max-w-lg border border-line max-h-[85vh] flex flex-col">
-        <div class="flex items-center justify-between px-6 py-4 border-b border-line">
-          <div class="flex items-center gap-2">
-            <i class="fas fa-pen text-teal-500"></i>
-            <h2 class="text-base font-bold text-ink">Editar campanha em todos</h2>
-          </div>
-          <button @click="tplModal.open = false" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-surface-hover transition">
-            <i class="fas fa-times text-sm"></i>
-          </button>
-        </div>
-        <div class="px-6 py-5 space-y-4 overflow-y-auto">
-          <div class="flex items-start gap-3 p-3.5 bg-teal-50 dark:bg-teal-900/20 border border-teal-200 dark:border-teal-800 rounded-xl text-teal-800 dark:text-teal-300 text-xs">
+    <!-- Editar o MODELO da biblioteca: recai sobre TODAS as fichas vinculadas,
+         por isso o aviso lista quantas mudam agora e quantas ficam como estão. -->
+    <Modal v-model:open="tplModal.open" size="lg" title="Editar campanha em todos">
+      <div class="space-y-4">
+          <div class="flex items-start gap-3 p-3.5 bg-series-3/10 border border-series-3/25 rounded-xl text-series-3 text-xs">
             <i class="fas fa-circle-info flex-shrink-0 mt-0.5"></i>
             <div v-if="tplModal.usage" class="space-y-1">
               <p>Usado em <strong>{{ tplModal.usage.total }}</strong> campanha(s), em <strong>{{ tplModal.usage.rows.length }}</strong> ficha(s). Ao aplicar:</p>
@@ -319,24 +310,21 @@
             <label class="lbl">Regulamento / Regras</label>
             <textarea v-model="tplModal.fields.rules" rows="3" class="inp resize-none" />
           </div>
-        </div>
-        <div class="flex justify-end gap-3 px-6 py-4 border-t border-line">
-          <button @click="tplModal.open = false" class="px-4 py-2.5 text-sm font-medium text-ink-muted hover:text-gray-800 dark:hover:text-white transition">
-            Cancelar
-          </button>
-          <button @click="saveTemplateForAll" :disabled="tplModal.saving || !tplModal.fields.title"
-            class="flex items-center gap-2 px-5 py-2.5 bg-teal-600 text-white text-sm font-semibold rounded-xl hover:bg-teal-700 disabled:opacity-50 transition">
-            <i :class="tplModal.saving ? 'fa-spinner fa-spin' : 'fa-check'" class="fas text-xs"></i>
-            {{ tplModal.saving ? 'Aplicando...' : 'Aplicar' }}
-          </button>
-        </div>
       </div>
-    </div>
+      <template #footer>
+        <Button variant="ghost" @click="tplModal.open = false">Cancelar</Button>
+        <Button icon="fas fa-check" :loading="tplModal.saving"
+          :disabled="tplModal.saving || !tplModal.fields.title"
+          @click="saveTemplateForAll">Aplicar</Button>
+      </template>
+    </Modal>
 
   </div>
 </template>
 
 <script setup>
+import Modal from '@/components/UI/Modal.vue';
+import Button from '@/components/UI/Button.vue';
 import { ref, computed } from 'vue';
 import { useConditionsStore } from '@/stores/Comercial/Conditions/conditionsStore';
 
@@ -515,8 +503,8 @@ async function saveTemplateForAll() {
 <style scoped>
 .lbl-section { @apply text-xs font-semibold text-ink-muted uppercase tracking-wide flex items-center gap-2; }
 .lbl     { @apply block text-xs font-semibold text-ink-muted uppercase tracking-wide mb-1.5; }
-.inp     { @apply w-full px-3.5 py-2.5 text-sm text-ink bg-surface-raised/60 border border-line rounded-md shadow-sm placeholder:text-gray-400 dark:placeholder:text-gray-500 outline-none focus:border-blue-400 dark:focus:border-accent focus:ring-2 focus:ring-blue-500/15 transition-all duration-150; }
-.inp-pfx { @apply w-full pl-9 pr-3.5 py-2.5 text-sm text-ink bg-surface-raised/60 border border-line rounded-md shadow-sm placeholder:text-gray-400 dark:placeholder:text-gray-500 outline-none focus:border-blue-400 dark:focus:border-accent focus:ring-2 focus:ring-blue-500/15 transition-all duration-150; }
+.inp     { @apply w-full px-3.5 py-2.5 text-sm text-ink bg-surface-raised/60 border border-line rounded-md shadow-sm placeholder:text-ink-subtle dark:placeholder:text-ink-muted outline-none focus:border-accent dark:focus:border-accent focus:ring-accent/15 transition-all duration-150; }
+.inp-pfx { @apply w-full pl-9 pr-3.5 py-2.5 text-sm text-ink bg-surface-raised/60 border border-line rounded-md shadow-sm placeholder:text-ink-subtle dark:placeholder:text-ink-muted outline-none focus:border-accent dark:focus:border-accent focus:ring-accent/15 transition-all duration-150; }
 .pfx     { @apply absolute left-3 top-1/2 -translate-y-1/2 text-ink-subtle text-xs pointer-events-none; }
-.btn-primary { @apply flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-accent-hover disabled:opacity-50 transition; }
+.btn-primary { @apply flex items-center gap-2 px-4 py-2.5 bg-accent text-white text-sm font-semibold rounded-xl hover:bg-accent-hover disabled:opacity-50 transition; }
 </style>

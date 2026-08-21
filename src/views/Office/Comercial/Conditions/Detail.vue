@@ -10,7 +10,7 @@
         v-if="store.toast.show"
         :class="[
           'fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-xl shadow-lg text-sm font-medium',
-          store.toast.type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
+          store.toast.type === 'success' ? 'bg-data-pos text-white' : 'bg-data-neg text-white'
         ]"
       >
         <i :class="store.toast.type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'" class="fas"></i>
@@ -18,598 +18,301 @@
       </div>
     </transition>
 
-    <!-- Modal: Desbloquear (approved → draft) -->
-    <transition name="fade">
-      <div
-        v-if="showUnlockModal"
-        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-        @click.self="showUnlockModal = false"
-      >
-        <div class="bg-surface-raised rounded-2xl shadow-2xl w-full max-w-md border border-line">
-          <div class="flex items-center justify-between px-6 py-4 border-b border-line">
-            <div class="flex items-center gap-2">
-              <i :class="isClosed ? 'fa-rotate-left text-emerald-500' : 'fa-pen-to-square text-amber-500'" class="fas"></i>
-              <h2 class="text-base font-bold text-ink">
-                {{ isClosed ? 'Reabrir Empreendimento' : 'Editar Ficha Autorizada' }}
-              </h2>
-            </div>
-            <button @click="showUnlockModal = false" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-surface-hover transition">
-              <i class="fas fa-times text-sm"></i>
-            </button>
-          </div>
-          <div class="px-6 py-5 space-y-4">
-            <div v-if="isClosed" class="flex items-start gap-3 p-3.5 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl text-emerald-800 dark:text-emerald-300 text-sm">
-              <i class="fas fa-info-circle flex-shrink-0 mt-0.5"></i>
-              <p>
-                Reabrir o empreendimento volta esta ficha para <strong>Rascunho</strong>. A geração mensal automática vai retomar a partir do próximo ciclo.
-              </p>
-            </div>
-            <div v-else class="flex items-start gap-3 p-3.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl text-amber-800 dark:text-amber-300 text-sm">
-              <i class="fas fa-exclamation-triangle flex-shrink-0 mt-0.5"></i>
-              <p>
-                Ao confirmar a edição, esta ficha <strong>perde a autorização</strong>.
-                Ela voltará ao status <strong>Rascunho</strong> e precisará ser enviada para autorização novamente.
-              </p>
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-ink-muted uppercase tracking-wide mb-1.5">
-                {{ isClosed ? 'Motivo da reabertura (opcional)' : 'Motivo da edição (opcional)' }}
-              </label>
-              <textarea
-                v-model="unlockNote"
-                rows="3"
-                :placeholder="isClosed ? 'Ex: Empreendimento retomado...' : 'Ex: Correção no valor de comissão...'"
-                class="w-full px-3.5 py-2.5 text-sm text-ink bg-surface-raised/60 border border-line rounded-md shadow-sm placeholder:text-gray-400 dark:placeholder:text-slate-500 outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-500/15 transition resize-none"
-              />
-            </div>
-          </div>
-          <div class="flex justify-end gap-3 px-6 pb-5">
-            <button @click="showUnlockModal = false" class="px-4 py-2.5 text-sm font-medium text-ink-muted hover:text-gray-800 dark:hover:text-white transition">
-              Cancelar
-            </button>
-            <button
-              @click="handleUnlock"
-              :disabled="actionLoading"
-              :class="[
-                'flex items-center gap-2 px-5 py-2.5 text-white text-sm font-semibold rounded-xl disabled:opacity-50 transition',
-                isClosed ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-amber-500 hover:bg-amber-600'
-              ]"
-            >
-              <i :class="isClosed ? 'fa-rotate-left' : 'fa-pen-to-square'" class="fas text-xs"></i>
-              {{ actionLoading ? 'Processando...' : (isClosed ? 'Confirmar reabertura' : 'Confirmar edição') }}
-            </button>
-          </div>
+    <!-- ── Diálogos de workflow ──────────────────────────────────────────────
+         Todos usam o `Modal` do sistema. A regra da receita executiva: o efeito
+         aparece ANTES de salvar, e a confirmação é proporcional ao alcance —
+         por isso só "Encerrar" pede a palavra digitada. -->
+
+    <!-- Desbloquear (approved → draft) ou Reabrir (closed → draft) -->
+    <Modal v-model:open="showUnlockModal" size="sm"
+      :title="isClosed ? 'Reabrir empreendimento' : 'Editar ficha autorizada'">
+      <div class="space-y-4">
+        <p v-if="isClosed" class="cond-note cond-note--pos">
+          <i class="fas fa-circle-info shrink-0 mt-0.5"></i>
+          <span>Reabrir o empreendimento volta esta ficha para <strong>Rascunho</strong>. A geração mensal automática retoma a partir do próximo ciclo.</span>
+        </p>
+        <p v-else class="cond-note cond-note--warn">
+          <i class="fas fa-triangle-exclamation shrink-0 mt-0.5"></i>
+          <span>Ao confirmar a edição, esta ficha <strong>perde a autorização</strong>: volta para <strong>Rascunho</strong> e precisará ser enviada para autorização de novo.</span>
+        </p>
+        <div>
+          <label class="cond-label">{{ isClosed ? 'Motivo da reabertura (opcional)' : 'Motivo da edição (opcional)' }}</label>
+          <textarea v-model="unlockNote" rows="3" class="cond-textarea"
+            :placeholder="isClosed ? 'Ex: Empreendimento retomado...' : 'Ex: Correção no valor de comissão...'" />
         </div>
       </div>
-    </transition>
+      <template #footer>
+        <Button variant="ghost" @click="showUnlockModal = false">Cancelar</Button>
+        <Button :variant="isClosed ? 'primary' : 'secondary'" :loading="actionLoading" :disabled="actionLoading"
+          :icon="isClosed ? 'fas fa-rotate-left' : 'fas fa-pen-to-square'" @click="handleUnlock">
+          {{ isClosed ? 'Confirmar reabertura' : 'Confirmar edição' }}
+        </Button>
+      </template>
+    </Modal>
 
-    <!-- Modal: Cancelar Autorização (pending_approval → draft) -->
-    <transition name="fade">
-      <div
-        v-if="showCancelApprovalModal"
-        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-        @click.self="showCancelApprovalModal = false"
-      >
-        <div class="bg-surface-raised rounded-2xl shadow-2xl w-full max-w-md border border-line">
-          <div class="flex items-center justify-between px-6 py-4 border-b border-line">
-            <div class="flex items-center gap-2">
-              <i class="fas fa-ban text-red-500"></i>
-              <h2 class="text-base font-bold text-ink">Cancelar Autorização</h2>
-            </div>
-            <button @click="showCancelApprovalModal = false" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-surface-hover transition">
-              <i class="fas fa-times text-sm"></i>
-            </button>
-          </div>
-          <div class="px-6 py-5 space-y-4">
-            <div class="flex items-start gap-3 p-3.5 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl text-red-800 dark:text-red-300 text-sm">
-              <i class="fas fa-exclamation-triangle flex-shrink-0 mt-0.5"></i>
-              <p>
-                Isso irá <strong>cancelar a autorização</strong> em andamento.
-                A ficha voltará ao status <strong>Rascunho</strong> e poderá ser editada e reenviada.
-              </p>
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-ink-muted uppercase tracking-wide mb-1.5">Motivo do cancelamento (opcional)</label>
-              <textarea
-                v-model="cancelApprovalNote"
-                rows="3"
-                placeholder="Ex: Necessário ajustar valor de entrada..."
-                class="w-full px-3.5 py-2.5 text-sm text-ink bg-surface-raised/60 border border-line rounded-md shadow-sm placeholder:text-gray-400 dark:placeholder:text-slate-500 outline-none focus:border-red-400 focus:ring-2 focus:ring-red-500/15 transition resize-none"
-              />
-            </div>
-          </div>
-          <div class="flex justify-end gap-3 px-6 pb-5">
-            <button @click="showCancelApprovalModal = false" class="px-4 py-2.5 text-sm font-medium text-ink-muted hover:text-gray-800 dark:hover:text-white transition">
-              Voltar
-            </button>
-            <button
-              @click="handleCancelApproval"
-              :disabled="actionLoading"
-              class="flex items-center gap-2 px-5 py-2.5 bg-red-600 text-white text-sm font-semibold rounded-xl hover:bg-red-700 disabled:opacity-50 transition"
-            >
-              <i class="fas fa-ban text-xs"></i>
-              {{ actionLoading ? 'Cancelando...' : 'Cancelar Autorização' }}
-            </button>
-          </div>
+    <!-- Cancelar autorização (pending_approval → draft) -->
+    <Modal v-model:open="showCancelApprovalModal" size="sm" title="Cancelar autorização">
+      <div class="space-y-4">
+        <p class="cond-note cond-note--neg">
+          <i class="fas fa-triangle-exclamation shrink-0 mt-0.5"></i>
+          <span>Isso <strong>cancela a autorização</strong> em andamento. A ficha volta para <strong>Rascunho</strong> e poderá ser editada e reenviada.</span>
+        </p>
+        <div>
+          <label class="cond-label">Motivo do cancelamento (opcional)</label>
+          <textarea v-model="cancelApprovalNote" rows="3" class="cond-textarea"
+            placeholder="Ex: Necessário ajustar valor de entrada..." />
         </div>
       </div>
-    </transition>
+      <template #footer>
+        <Button variant="ghost" @click="showCancelApprovalModal = false">Voltar</Button>
+        <Button variant="danger" icon="fas fa-ban" :loading="actionLoading" :disabled="actionLoading"
+          @click="handleCancelApproval">Cancelar autorização</Button>
+      </template>
+    </Modal>
 
-    <!-- Modal: Salvar em ficha Autorizada -->
-    <transition name="fade">
-      <div
-        v-if="showSaveApprovedModal"
-        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-        @click.self="showSaveApprovedModal = false"
-      >
-        <div class="bg-surface-raised rounded-2xl shadow-2xl w-full max-w-md border border-line">
-          <div class="flex items-center justify-between px-6 py-4 border-b border-line">
-            <div class="flex items-center gap-2">
-              <i class="fas fa-triangle-exclamation text-amber-500"></i>
-              <h2 class="text-base font-bold text-ink">Atenção — Ficha Autorizada</h2>
-            </div>
-            <button @click="showSaveApprovedModal = false" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-surface-hover transition">
-              <i class="fas fa-times text-sm"></i>
-            </button>
-          </div>
-          <div class="px-6 py-5">
-            <div class="flex items-start gap-3 p-3.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl text-amber-800 dark:text-amber-300 text-sm">
-              <i class="fas fa-exclamation-triangle flex-shrink-0 mt-0.5"></i>
-              <p>
-                Salvar alterações em uma ficha <strong>Autorizada</strong> irá <strong>cancelar a autorização</strong> e reverter ao status <strong>Rascunho</strong>.
-                Será necessário enviar para autorização novamente.
-              </p>
-            </div>
-          </div>
-          <div class="flex justify-end gap-3 px-6 pb-5">
-            <button @click="showSaveApprovedModal = false" class="px-4 py-2.5 text-sm font-medium text-ink-muted hover:text-gray-800 dark:hover:text-white transition">
-              Cancelar
-            </button>
-            <button
-              @click="handleConfirmSaveApproved"
-              :disabled="actionLoading"
-              class="flex items-center gap-2 px-5 py-2.5 bg-amber-500 text-white text-sm font-semibold rounded-xl hover:bg-amber-600 disabled:opacity-50 transition"
-            >
-              <i class="fas fa-floppy-disk text-xs"></i>
-              {{ actionLoading ? 'Salvando...' : 'Desbloquear e Salvar' }}
-            </button>
+    <!-- Salvar em ficha autorizada -->
+    <Modal v-model:open="showSaveApprovedModal" size="sm" title="Atenção — ficha autorizada">
+      <p class="cond-note cond-note--warn">
+        <i class="fas fa-triangle-exclamation shrink-0 mt-0.5"></i>
+        <span>Salvar alterações numa ficha <strong>Autorizada</strong> vai <strong>cancelar a autorização</strong> e reverter para <strong>Rascunho</strong>. Será preciso enviar para autorização de novo.</span>
+      </p>
+      <template #footer>
+        <Button variant="ghost" @click="showSaveApprovedModal = false">Cancelar</Button>
+        <Button variant="secondary" icon="fas fa-floppy-disk" :loading="actionLoading" :disabled="actionLoading"
+          @click="handleConfirmSaveApproved">Desbloquear e salvar</Button>
+      </template>
+    </Modal>
+
+    <!-- Encerrar empreendimento (dupla validação: alcance é a série inteira) -->
+    <Modal :open="showCloseModal" size="md" title="Encerrar empreendimento" @close="closeCloseModal">
+      <div class="space-y-4">
+        <div class="cond-note cond-note--neg">
+          <i class="fas fa-triangle-exclamation shrink-0 mt-0.5"></i>
+          <div>
+            <p class="font-semibold mb-1">Esta ação não pode ser desfeita por usuários comuns.</p>
+            <p>Encerrar o empreendimento significa que ele <strong>não vai mais evoluir</strong>: esta ficha vira histórico imutável e <strong>nenhuma nova ficha mensal será gerada</strong> automaticamente.</p>
           </div>
         </div>
+        <div>
+          <label class="cond-label">Motivo do encerramento (opcional)</label>
+          <textarea v-model="closeNote" rows="2" class="cond-textarea"
+            placeholder="Ex: Empreendimento finalizado, todas as unidades vendidas..." />
+        </div>
+        <div>
+          <label class="cond-label">
+            Para confirmar, digite <strong class="text-data-neg tracking-widest">ENCERRAR</strong>
+          </label>
+          <input v-model="closeConfirmation" type="text" placeholder="ENCERRAR"
+            class="cond-textarea font-mono"
+            :class="closeConfirmation === 'ENCERRAR' ? 'border-data-pos focus:border-data-pos focus:ring-data-pos/20' : ''" />
+        </div>
       </div>
-    </transition>
+      <template #footer>
+        <Button variant="ghost" @click="closeCloseModal">Cancelar</Button>
+        <Button variant="danger" icon="fas fa-flag-checkered" :loading="actionLoading"
+          :disabled="actionLoading || closeConfirmation !== 'ENCERRAR'"
+          @click="handleCloseCondition">Encerrar definitivamente</Button>
+      </template>
+    </Modal>
 
-    <!-- Modal: Encerrar Empreendimento (dupla validação) -->
-    <transition name="fade">
-      <div
-        v-if="showCloseModal"
-        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-        @click.self="closeCloseModal"
-      >
-        <div class="bg-surface-raised rounded-2xl shadow-2xl w-full max-w-md border border-line">
-          <div class="flex items-center justify-between px-6 py-4 border-b border-line">
-            <div class="flex items-center gap-2">
-              <i class="fas fa-flag-checkered text-gray-500 dark:text-slate-400"></i>
-              <h2 class="text-base font-bold text-ink">Encerrar Empreendimento</h2>
-            </div>
-            <button @click="closeCloseModal" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-surface-hover transition">
-              <i class="fas fa-times text-sm"></i>
-            </button>
-          </div>
-          <div class="px-6 py-5 space-y-4">
-            <!-- Etapa 1: aviso -->
-            <div class="flex items-start gap-3 p-3.5 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl text-red-800 dark:text-red-300 text-sm">
-              <i class="fas fa-triangle-exclamation flex-shrink-0 mt-0.5"></i>
-              <div>
-                <p class="font-semibold mb-1">Esta ação não pode ser desfeita por usuários comuns.</p>
-                <p>
-                  Encerrar o empreendimento significa que ele <strong>não vai mais evoluir</strong>:
-                  esta ficha vira histórico imutável e <strong>nenhuma nova ficha mensal será gerada</strong> automaticamente.
-                </p>
+    <!-- Vincular avulsa ao CV (promove a série inteira) -->
+    <Modal v-model:open="showLinkCvModal" size="lg" title="Vincular ao empreendimento do CV">
+      <div class="space-y-4">
+        <p class="cond-note cond-note--info">
+          <i class="fas fa-circle-info shrink-0 mt-0.5"></i>
+          <span>Isto promove <strong>toda a série</strong> desta avulsa ({{ detail?.history?.length || 1 }} ficha(s)) para o empreendimento escolhido. O histórico é preservado e nada é apagado.</span>
+        </p>
+
+        <Select v-model="linkCvEnterpriseId" label="Empreendimento do CV"
+          :options="linkEnterpriseOptions" @change="onLinkEnterpriseChange" />
+
+        <div v-if="linkCvEnterpriseId && localModules.length">
+          <label class="cond-label">
+            Mapear módulos às etapas <span class="normal-case tracking-normal font-normal">(opcional)</span>
+          </label>
+          <div class="space-y-2">
+            <div v-for="mod in localModules" :key="mod.id ?? mod.module_name" class="flex items-center gap-2">
+              <span class="text-sm text-ink flex-1 min-w-0 truncate">{{ mod.module_name || 'Sem nome' }}</span>
+              <i class="fas fa-arrow-right text-xs text-ink-subtle shrink-0"></i>
+              <div class="flex-1 min-w-0">
+                <Select v-model="linkModuleMap[mod.id]" :disabled="!mod.id" :options="linkStageOptions" />
               </div>
             </div>
-
-            <!-- Motivo -->
-            <div>
-              <label class="block text-xs font-semibold text-ink-muted uppercase tracking-wide mb-1.5">
-                Motivo do encerramento (opcional)
-              </label>
-              <textarea
-                v-model="closeNote"
-                rows="2"
-                placeholder="Ex: Empreendimento finalizado, todas as unidades vendidas..."
-                class="w-full px-3.5 py-2.5 text-sm text-ink bg-surface-raised/60 border border-line rounded-md shadow-sm placeholder:text-gray-400 dark:placeholder:text-slate-500 outline-none focus:border-red-400 focus:ring-2 focus:ring-red-500/15 transition resize-none"
-              />
-            </div>
-
-            <!-- Etapa 2: dupla validação por digitação -->
-            <div>
-              <label class="block text-xs font-semibold text-ink-muted uppercase tracking-wide mb-1.5">
-                Para confirmar, digite <strong class="text-red-600 dark:text-red-400 tracking-widest">ENCERRAR</strong>
-              </label>
-              <input
-                v-model="closeConfirmation"
-                type="text"
-                placeholder="ENCERRAR"
-                class="w-full px-3.5 py-2.5 text-sm font-mono text-ink bg-surface-raised/60 border-2 rounded-md shadow-sm placeholder:text-gray-400 dark:placeholder:text-slate-500 outline-none focus:ring-2 transition"
-                :class="closeConfirmation === 'ENCERRAR'
-                  ? 'border-emerald-500 focus:border-emerald-600 focus:ring-emerald-500/20'
-                  : 'border-red-300 dark:border-red-800 focus:border-red-500 focus:ring-red-500/15'"
-              />
-            </div>
-          </div>
-          <div class="flex justify-end gap-3 px-6 pb-5">
-            <button @click="closeCloseModal" class="px-4 py-2.5 text-sm font-medium text-ink-muted hover:text-gray-800 dark:hover:text-white transition">
-              Cancelar
-            </button>
-            <button
-              @click="handleCloseCondition"
-              :disabled="actionLoading || closeConfirmation !== 'ENCERRAR'"
-              class="flex items-center gap-2 px-5 py-2.5 bg-red-600 text-white text-sm font-semibold rounded-xl hover:bg-red-700 disabled:opacity-40 disabled:cursor-not-allowed transition"
-            >
-              <i :class="actionLoading ? 'fa-spinner fa-spin' : 'fa-flag-checkered'" class="fas text-xs"></i>
-              {{ actionLoading ? 'Encerrando...' : 'Encerrar definitivamente' }}
-            </button>
           </div>
         </div>
-      </div>
-    </transition>
 
-    <!-- Modal: Vincular avulsa ao CV -->
-    <transition name="fade">
-      <div
-        v-if="showLinkCvModal"
-        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-        @click.self="showLinkCvModal = false"
-      >
-        <div class="bg-surface-raised rounded-2xl shadow-2xl w-full max-w-lg border border-line max-h-[85vh] flex flex-col">
-          <div class="flex items-center justify-between px-6 py-4 border-b border-line">
-            <div class="flex items-center gap-2">
-              <i class="fas fa-link text-teal-500"></i>
-              <h2 class="text-base font-bold text-ink">Vincular ao empreendimento do CV</h2>
-            </div>
-            <button @click="showLinkCvModal = false" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-surface-hover transition">
-              <i class="fas fa-times text-sm"></i>
-            </button>
-          </div>
-          <div class="px-6 py-5 space-y-4 overflow-y-auto">
-            <div class="flex items-start gap-3 p-3.5 bg-teal-50 dark:bg-teal-900/20 border border-teal-200 dark:border-teal-800 rounded-xl text-teal-800 dark:text-teal-300 text-sm">
-              <i class="fas fa-circle-info flex-shrink-0 mt-0.5"></i>
-              <p>Isto promove <strong>toda a série</strong> desta avulsa ({{ detail.history?.length || 1 }} ficha(s)) para o empreendimento escolhido. O histórico é preservado e nada é apagado.</p>
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-ink-muted uppercase tracking-wide mb-1.5">Empreendimento do CV</label>
-              <select
-                v-model="linkCvEnterpriseId"
-                @change="onLinkEnterpriseChange"
-                class="w-full px-3.5 py-2.5 text-sm text-ink bg-surface-raised/60 border border-line rounded-md shadow-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/15 transition"
-              >
-                <option :value="null">Selecionar empreendimento...</option>
-                <option v-for="e in cvEnterprises" :key="e.idempreendimento" :value="e.idempreendimento">{{ e.nome }}</option>
-              </select>
-            </div>
-            <div v-if="linkCvEnterpriseId && localModules.length">
-              <label class="block text-xs font-semibold text-ink-muted uppercase tracking-wide mb-1.5">Mapear módulos às etapas <span class="normal-case font-normal text-ink-subtle">(opcional)</span></label>
-              <div class="space-y-2">
-                <div v-for="mod in localModules" :key="mod.id ?? mod.module_name" class="flex items-center gap-2">
-                  <span class="text-sm text-ink flex-1 min-w-0 truncate">{{ mod.module_name || 'Sem nome' }}</span>
-                  <i class="fas fa-arrow-right text-xs text-ink-subtle flex-shrink-0"></i>
-                  <select
-                    v-model="linkModuleMap[mod.id]"
-                    :disabled="!mod.id"
-                    class="flex-1 min-w-0 px-3 py-2 text-sm text-ink bg-surface-raised/60 border border-line rounded-md shadow-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/15 transition disabled:opacity-50"
-                  >
-                    <option :value="null">Manter livre</option>
-                    <option v-for="s in linkCvStages" :key="s.idetapa" :value="s.idetapa">{{ s.nome }}</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-            <div v-if="linkError" class="flex items-start gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-400 text-xs">
-              <i class="fas fa-exclamation-triangle flex-shrink-0 mt-0.5"></i>
-              <span>{{ linkError }}</span>
-            </div>
-          </div>
-          <div class="flex justify-end gap-3 px-6 py-4 border-t border-line">
-            <button @click="showLinkCvModal = false" class="px-4 py-2.5 text-sm font-medium text-ink-muted hover:text-gray-800 dark:hover:text-white transition">
-              Cancelar
-            </button>
-            <button
-              @click="handleLinkToCv"
-              :disabled="!linkCvEnterpriseId || linkLoading"
-              class="flex items-center gap-2 px-5 py-2.5 bg-teal-600 text-white text-sm font-semibold rounded-xl hover:bg-teal-700 disabled:opacity-50 transition"
-            >
-              <i :class="linkLoading ? 'fa-spinner fa-spin' : 'fa-link'" class="fas text-xs"></i>
-              {{ linkLoading ? 'Vinculando...' : 'Vincular série' }}
-            </button>
-          </div>
-        </div>
+        <p v-if="linkError" class="cond-note cond-note--neg">
+          <i class="fas fa-triangle-exclamation shrink-0 mt-0.5"></i>
+          <span>{{ linkError }}</span>
+        </p>
       </div>
-    </transition>
+      <template #footer>
+        <Button variant="ghost" @click="showLinkCvModal = false">Cancelar</Button>
+        <Button icon="fas fa-link" :loading="linkLoading" :disabled="!linkCvEnterpriseId || linkLoading"
+          @click="handleLinkToCv">Vincular série</Button>
+      </template>
+    </Modal>
 
-    <!-- Modal: Renomear ficha avulsa -->
-    <transition name="fade">
-      <div
-        v-if="showRenameModal"
-        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-        @click.self="showRenameModal = false"
-      >
-        <div class="bg-surface-raised rounded-2xl shadow-2xl w-full max-w-md border border-line">
-          <div class="flex items-center justify-between px-6 py-4 border-b border-line">
-            <div class="flex items-center gap-2">
-              <i class="fas fa-pen text-accent"></i>
-              <h2 class="text-base font-bold text-ink">Renomear ficha</h2>
-            </div>
-            <button @click="showRenameModal = false" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-surface-hover transition">
-              <i class="fas fa-times text-sm"></i>
-            </button>
-          </div>
-          <div class="px-6 py-5 space-y-4">
-            <div>
-              <label class="block text-xs font-semibold text-ink-muted uppercase tracking-wide mb-1.5">Nome da ficha</label>
-              <input
-                v-model="renameValue"
-                type="text"
-                placeholder="Ex: RESIDENCIAL SANTA STELLA"
-                class="w-full px-3.5 py-2.5 text-sm text-ink bg-surface-raised/60 border border-line rounded-md shadow-sm placeholder:text-gray-400 dark:placeholder:text-slate-500 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/15 transition"
-                @keyup.enter="handleRename"
-              />
-            </div>
-            <label class="flex items-center gap-2.5 px-3 py-2 rounded-lg border border-line cursor-pointer text-sm text-ink-muted">
-              <input type="checkbox" v-model="renameSeries" class="w-4 h-4 accent-blue-600 rounded" />
-              Aplicar a todos os meses desta série ({{ detail?.history?.length ?? 1 }} ficha(s))
-            </label>
-          </div>
-          <div class="flex justify-end gap-3 px-6 pb-5">
-            <button @click="showRenameModal = false" class="px-4 py-2.5 text-sm font-medium text-ink-muted hover:text-gray-800 dark:hover:text-white transition">
-              Cancelar
-            </button>
-            <button
-              @click="handleRename"
-              :disabled="renaming || !renameValue.trim()"
-              class="flex items-center gap-2 px-5 py-2.5 bg-accent text-white text-sm font-semibold rounded-xl hover:bg-accent-hover disabled:opacity-50 transition"
-            >
-              <i :class="renaming ? 'fa-spinner fa-spin' : 'fa-check'" class="fas text-xs"></i>
-              {{ renaming ? 'Salvando...' : 'Renomear' }}
-            </button>
-          </div>
-        </div>
+    <!-- Renomear ficha avulsa (o título É a identidade da série) -->
+    <Modal v-model:open="showRenameModal" size="sm" title="Renomear ficha">
+      <div class="space-y-4">
+        <Input v-model="renameValue" label="Nome da ficha"
+          placeholder="Ex: RESIDENCIAL SANTA STELLA" @keyup.enter="handleRename" />
+        <label class="flex items-center gap-2.5 px-3 py-2 rounded-lg border border-line cursor-pointer text-sm text-ink-muted">
+          <input type="checkbox" v-model="renameSeries" class="w-4 h-4 accent-accent rounded" />
+          Aplicar a todos os meses desta série ({{ detail?.history?.length ?? 1 }} ficha(s))
+        </label>
       </div>
-    </transition>
-
+      <template #footer>
+        <Button variant="ghost" @click="showRenameModal = false">Cancelar</Button>
+        <Button icon="fas fa-check" :loading="renaming" :disabled="renaming || !renameValue.trim()"
+          @click="handleRename">Renomear</Button>
+      </template>
+    </Modal>
     <!-- Erro de carregamento -->
     <div v-if="fetchError && !detail" class="flex flex-col items-center justify-center py-24 text-center px-4">
-      <div class="w-14 h-14 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mb-4">
-        <i class="fas fa-exclamation-triangle text-red-500 text-xl"></i>
+      <div class="w-14 h-14 rounded-full bg-data-neg/10 flex items-center justify-center mb-4">
+        <i class="fas fa-triangle-exclamation text-data-neg text-xl"></i>
       </div>
       <p class="text-base font-semibold text-ink">Erro ao carregar ficha</p>
       <p class="text-sm text-ink-subtle mt-1 max-w-sm">{{ fetchError }}</p>
-      <button @click="retryFetch" class="mt-5 flex items-center gap-2 px-5 py-2.5 bg-accent text-white text-sm font-semibold rounded-xl hover:bg-accent-hover transition">
-        <i class="fas fa-arrows-rotate text-xs"></i>
-        Tentar novamente
-      </button>
+      <Button class="mt-5" icon="fas fa-arrows-rotate" @click="retryFetch">Tentar novamente</Button>
     </div>
 
-    <!-- Carregando -->
-    <div v-else-if="!detail && !fetchError" class="flex items-center justify-center py-24 text-gray-400 dark:text-slate-500">
-      <i class="fas fa-spinner fa-spin text-2xl"></i>
+    <!-- Carregando: o esqueleto tem a forma do que vem (cabeçalho, KPIs, blocos),
+         então a tela não salta quando os dados chegam. -->
+    <div v-else-if="!detail && !fetchError" class="max-w-7xl mx-auto px-4 py-6 space-y-5">
+      <div class="flex items-center gap-3">
+        <Skeleton variant="circle" class="w-8 h-8" />
+        <div class="flex-1 space-y-2">
+          <Skeleton variant="title" class="max-w-xs" />
+          <Skeleton variant="text" class="max-w-[10rem]" />
+        </div>
+      </div>
+      <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
+        <Skeleton v-for="i in 5" :key="i" variant="stat" />
+      </div>
+      <Skeleton variant="card" class="h-40" />
+      <Skeleton variant="card" class="h-64" />
     </div>
 
     <template v-if="detail">
       <!-- ─── Header ─────────────────────────────────────────────────────── -->
-      <div ref="headerEl" class="bg-surface-raised border-b border-gray-200 dark:border-gray-800 sticky top-0 z-20 md:shrink-0">
+      <div ref="headerEl" class="bg-surface-raised border-b border-line sticky top-0 z-20 md:shrink-0">
         <div class="max-w-7xl mx-auto px-4">
           <!-- Top bar -->
-          <div class="flex items-center justify-between pb-4 pt-6 gap-4">
+          <div class="flex items-center justify-between pb-3 pt-4 sm:pt-6 gap-4">
             <div class="flex items-center gap-3 min-w-0">
-              <button @click="$router.back()" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 dark:text-slate-500 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-surface-hover transition flex-shrink-0">
-                <i class="fas fa-arrow-left text-sm"></i>
-              </button>
-              <div class="min-w-72">
+              <IconButton icon="fas fa-arrow-left" variant="ghost" size="sm"
+                title="Voltar" @click="$router.back()" />
+              <div class="min-w-0">
                 <div class="flex items-center gap-2 flex-wrap">
-                  <i v-if="isAvulsa" class="fas fa-cube text-gray-400 dark:text-slate-500 text-sm" title="Ficha avulsa (sem CV)"></i>
-                  <h1 class="text-lg lg:text-xl font-bold text-ink truncate">
-                    {{ headerTitle }}
-                  </h1>
-                  <button
-                    v-if="isAvulsa && canEdit && detail.status === 'draft'"
-                    @click="openRename"
-                    class="w-6 h-6 flex items-center justify-center rounded-md text-ink-subtle hover:text-accent hover:bg-accent-soft transition flex-shrink-0"
-                    title="Renomear ficha"
-                  >
-                    <i class="fas fa-pen text-[10px]"></i>
-                  </button>
-                  <!-- Badge: mostra "Reprovada" se foi rejeitada, senão status normal -->
-                  <span v-if="wasRejected && detail.status === 'draft'"
-                    class="px-2 py-0.5 rounded-full text-xs font-semibold flex-shrink-0 bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
-                    Reprovada
-                  </span>
-                  <span v-else :class="badgeClass(detail.status)" class="px-2 py-0.5 rounded-full text-xs font-semibold flex-shrink-0">
-                    {{ statusLabel(detail.status) }}
-                  </span>
-                  <span v-if="isAvulsa" class="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400 flex-shrink-0">
-                    Avulsa
-                  </span>
+                  <i v-if="isAvulsa" class="fas fa-cube text-ink-subtle text-sm" v-tippy="'Ficha avulsa (sem CV)'"></i>
+                  <h1 class="text-lg lg:text-xl font-bold text-ink truncate">{{ headerTitle }}</h1>
+                  <IconButton v-if="isAvulsa && canEdit && detail.status === 'draft'"
+                    icon="fas fa-pen" variant="ghost" size="sm"
+                    title="Renomear ficha" @click="openRename" />
+                  <Badge :variant="estado.variant" size="sm">{{ estado.rotulo }}</Badge>
+                  <Badge v-if="isAvulsa" variant="neutral" size="sm">Avulsa</Badge>
                 </div>
-                <p class="text-xs text-ink-subtle">
+                <p class="text-xs text-ink-subtle truncate">
                   <template v-if="!isAvulsa">{{ detail.enterprise?.cidade }} <span class="mx-1">·</span></template>
                   Ref: {{ formatMonth(detail.reference_month) }}
                 </p>
               </div>
             </div>
 
-            <div class="flex items-center gap-2 flex-shrink-0 flex-wrap justify-end">
-              <!-- Navegação de mês (setas) -->
+            <div class="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+              <PageHelp
+                storage-key="ficha-comercial-detalhe"
+                title="Como usar a ficha"
+                intro="A ficha é a condição comercial de um empreendimento num mês. Ela se divide em módulos (normalmente uma etapa do CV cada), e cada módulo tem produto, preços, negociação, documentação, campanhas e operacional."
+                :steps="[
+                  { title: 'Escolha o módulo', text: 'Na lateral direita (ou nas pílulas do topo, em telas menores). Os pontinhos ao lado do nome mostram quantas das cinco frentes já estão preenchidas.' },
+                  { title: 'Preencha em Módulos', text: 'O salvamento é automático em vários campos, mas Salvar tudo é o que garante. A linha de estado avisa quando há alteração pendente.' },
+                  { title: 'Confira em Resumo', text: 'É a leitura final: KPIs de unidades e todos os blocos como vão sair no papel. Ver documento abre a prévia; Exportar PDF gera o arquivo com TODOS os módulos.' },
+                  { title: 'Envie para autorização', text: 'Rascunho → Em autorização → Autorizado. Basta um autorizador. Editar uma ficha autorizada cancela a autorização e devolve para rascunho.' },
+                ]"
+                :tips="[
+                  'As setas ao lado do mês navegam pelo histórico da mesma série — cada mês é uma ficha, e as antigas continuam consultáveis.',
+                  'Encerrar o empreendimento congela a ficha como histórico e para a geração mensal. Só um autorizador faz, e a confirmação pede a palavra digitada.',
+                  'A aba Histórico registra quem fez o quê e quando, inclusive as autorizações canceladas.',
+                ]"
+              />
+              <!-- Navegação de mês -->
               <div v-if="detail.history?.length > 1" class="flex items-center gap-0.5 bg-surface-sunken rounded-lg p-0.5">
-                <button
-                  @click="olderItem && navigateToMonth(olderItem.id)"
-                  :disabled="!olderItem"
-                  class="w-7 h-7 flex items-center justify-center rounded-md text-ink-muted hover:bg-surface-hover disabled:opacity-30 disabled:cursor-default transition"
-                  title="Mês anterior"
-                >
-                  <i class="fas fa-chevron-left text-xs"></i>
-                </button>
-                <span class="text-xs font-semibold text-ink px-2 min-w-[58px] text-center">{{ formatMonth(detail.reference_month) }}</span>
-                <button
-                  @click="newerItem && navigateToMonth(newerItem.id)"
-                  :disabled="!newerItem"
-                  class="w-7 h-7 flex items-center justify-center rounded-md text-ink-muted hover:bg-surface-hover disabled:opacity-30 disabled:cursor-default transition"
-                  title="Próximo mês"
-                >
-                  <i class="fas fa-chevron-right text-xs"></i>
-                </button>
+                <IconButton icon="fas fa-chevron-left" variant="ghost" size="sm"
+                  :disabled="!olderItem" title="Mês anterior"
+                  @click="olderItem && navigateToMonth(olderItem.id)" />
+                <span class="text-xs font-semibold text-ink px-2 min-w-[58px] text-center font-mono tabular-nums">
+                  {{ formatMonth(detail.reference_month) }}
+                </span>
+                <IconButton icon="fas fa-chevron-right" variant="ghost" size="sm"
+                  :disabled="!newerItem" title="Próximo mês"
+                  @click="newerItem && navigateToMonth(newerItem.id)" />
               </div>
 
-              <!-- Avulsa → Vincular ao CV (editores) -->
-              <button
-                v-if="isAvulsa && canEdit"
-                @click="openLinkCv"
-                title="Vincular esta série avulsa a um empreendimento do CV"
-                class="flex items-center gap-2 px-3.5 py-2 bg-teal-50 dark:bg-teal-900/20 text-teal-700 dark:text-teal-300 text-xs font-semibold rounded-xl border border-teal-200 dark:border-teal-800 hover:bg-teal-100 dark:hover:bg-teal-900/30 transition"
-              >
-                <i class="fas fa-link text-xs"></i>
+              <!-- Ações por status (cada uma conforme a permissão do usuário) -->
+              <Button v-if="isAvulsa && canEdit" variant="outline" size="sm" icon="fas fa-link"
+                v-tippy="'Vincular esta série avulsa a um empreendimento do CV'" @click="openLinkCv">
                 <span class="hidden sm:inline">Vincular ao CV</span>
-              </button>
+              </Button>
 
-              <!-- Ações por status (conforme permissão do usuário) -->
-              <!-- draft → Enviar para Autorização (editores) -->
-              <button
-                v-if="detail.status === 'draft' && canEdit"
-                @click="handleSubmitForApproval"
+              <Button v-if="detail.status === 'draft' && canEdit"
+                size="sm" icon="fas fa-paper-plane" :loading="actionLoading"
                 :disabled="actionLoading || saving"
-                :title="isDirty ? 'Salva as alterações pendentes e envia para autorização' : 'Envia para autorização'"
-                class="flex items-center gap-2 px-3.5 py-2 bg-indigo-600 text-white text-xs font-semibold rounded-xl hover:bg-indigo-700 disabled:opacity-50 transition"
-              >
-                <i :class="actionLoading ? 'fa-spinner fa-spin' : 'fa-paper-plane'" class="fas text-xs"></i>
-                <span class="hidden sm:inline">{{ isDirty ? 'Salvar e Enviar' : 'Enviar para Autorização' }}</span>
-              </button>
+                v-tippy="isDirty ? 'Salva as alterações pendentes e envia para autorização' : 'Envia para autorização'"
+                @click="handleSubmitForApproval">
+                <span class="hidden sm:inline">{{ isDirty ? 'Salvar e enviar' : 'Enviar para autorização' }}</span>
+              </Button>
 
-              <!-- pending_approval → Autorizar (autorizadores) -->
-              <button
-                v-if="detail.status === 'pending_approval' && canAuthorize"
-                @click="handleAuthorize"
-                :disabled="actionLoading"
-                class="flex items-center gap-2 px-3.5 py-2 bg-green-600 text-white text-xs font-semibold rounded-xl hover:bg-green-700 disabled:opacity-50 transition"
-              >
-                <i :class="actionLoading ? 'fa-spinner fa-spin' : 'fa-circle-check'" class="fas text-xs"></i>
+              <Button v-if="detail.status === 'pending_approval' && canAuthorize"
+                size="sm" icon="fas fa-circle-check" :loading="actionLoading" :disabled="actionLoading"
+                @click="handleAuthorize">
                 <span class="hidden sm:inline">Autorizar</span>
-              </button>
+              </Button>
 
-              <!-- pending_approval → Cancelar Autorização (editores ou autorizadores) -->
-              <button
-                v-if="detail.status === 'pending_approval' && (canEdit || canAuthorize)"
-                @click="showCancelApprovalModal = true"
-                :disabled="actionLoading"
-                class="flex items-center gap-2 px-3.5 py-2 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-xs font-semibold rounded-xl border border-red-200 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-900/30 transition"
-              >
-                <i class="fas fa-ban text-xs"></i>
-                <span class="hidden sm:inline">Cancelar Autorização</span>
-              </button>
+              <Button v-if="detail.status === 'pending_approval' && (canEdit || canAuthorize)"
+                variant="outline" size="sm" icon="fas fa-ban" :disabled="actionLoading"
+                @click="showCancelApprovalModal = true">
+                <span class="hidden sm:inline">Cancelar autorização</span>
+              </Button>
 
-              <!-- approved → Editar (= desbloquear) (autorizadores) -->
-              <button
-                v-if="detail.status === 'approved' && canAuthorize"
-                @click="showUnlockModal = true"
-                class="flex items-center gap-2 px-3.5 py-2 bg-amber-500 text-white text-xs font-semibold rounded-xl hover:bg-amber-600 transition"
-              >
-                <i class="fas fa-pen-to-square text-xs"></i>
+              <Button v-if="detail.status === 'approved' && canAuthorize"
+                variant="secondary" size="sm" icon="fas fa-pen-to-square"
+                @click="showUnlockModal = true">
                 <span class="hidden sm:inline">Editar</span>
-              </button>
+              </Button>
 
-              <!-- closed → Reabrir Empreendimento (autorizadores) -->
-              <button
-                v-if="detail.status === 'closed' && canAuthorize"
-                @click="showUnlockModal = true"
-                class="flex items-center gap-2 px-3.5 py-2 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 text-xs font-semibold rounded-xl border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition"
-              >
-                <i class="fas fa-rotate-left text-xs"></i>
-                <span class="hidden sm:inline">Reabrir Empreendimento</span>
-              </button>
+              <Button v-if="detail.status === 'closed' && canAuthorize"
+                variant="outline" size="sm" icon="fas fa-rotate-left"
+                @click="showUnlockModal = true">
+                <span class="hidden sm:inline">Reabrir empreendimento</span>
+              </Button>
 
-              <!-- Encerrar Ficha (autorizadores, qualquer status exceto closed/pending_approval) -->
-              <button
-                v-if="detail.status !== 'closed' && detail.status !== 'pending_approval' && canAuthorize"
-                @click="showCloseModal = true"
-                :disabled="actionLoading"
-                title="Encerrar empreendimento (finalização definitiva)"
-                class="flex items-center gap-2 px-3.5 py-2 bg-surface-sunken text-ink text-xs font-semibold rounded-xl border border-line hover:bg-surface-sunken/70 transition"
-              >
-                <i class="fas fa-flag-checkered text-xs"></i>
+              <Button v-if="detail.status !== 'closed' && detail.status !== 'pending_approval' && canAuthorize"
+                variant="ghost" size="sm" icon="fas fa-flag-checkered" :disabled="actionLoading"
+                v-tippy="'Encerrar empreendimento (finalização definitiva)'"
+                @click="showCloseModal = true">
                 <span class="hidden sm:inline">Encerrar</span>
-              </button>
+              </Button>
 
-              <!-- Salvar Tudo — quando editável ou approved (admin pode editar) -->
-              <button
-                v-if="canSave"
-                @click="handleSaveAll"
-                :disabled="saving || actionLoading"
-                class="flex items-center gap-2 px-3.5 py-2 bg-accent text-white text-xs font-semibold rounded-xl hover:bg-accent-hover disabled:opacity-50 transition"
-              >
-                <i :class="saving ? 'fa-spinner fa-spin' : 'fa-floppy-disk'" class="fas"></i>
-                <span class="hidden sm:inline">{{ saving ? 'Salvando...' : 'Salvar Tudo' }}</span>
-              </button>
+              <Button v-if="canSave" size="sm" icon="fas fa-floppy-disk"
+                :loading="saving" :disabled="saving || actionLoading" @click="handleSaveAll">
+                <span class="hidden sm:inline">Salvar tudo</span>
+              </Button>
             </div>
           </div>
 
-          <!-- Banner: Reprovada -->
-          <div
-            v-if="wasRejected && detail.status === 'draft'"
-            class="flex items-start gap-2 mb-3 px-3 py-2.5 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-400 text-xs"
-          >
-            <i class="fas fa-ban flex-shrink-0 mt-0.5"></i>
-            <div>
-              <span class="font-semibold">Autorização reprovada.</span>
-              <span v-if="rejectionNote" class="ml-1">{{ rejectionNote }}</span>
-              <span class="ml-1 text-red-500 dark:text-red-500">Corrija as informações e envie novamente.</span>
-            </div>
-          </div>
-
-          <!-- Banner: Autorizada -->
-          <div
-            v-else-if="detail.status === 'approved'"
-            class="flex items-center gap-2 mb-3 px-3 py-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg text-green-700 dark:text-green-400 text-xs"
-          >
-            <i class="fas fa-check-circle"></i>
-            <span>
-              Ficha autorizada.
-              <template v-if="detail.approved_at"> Aprovada em {{ formatDateFull(detail.approved_at) }}.</template>
-              <template v-if="canAuthorize"> Edições nesta ficha irão cancelar a autorização.</template>
+          <!-- Linha de estado: UMA linha diz onde a ficha está e o que falta.
+               Antes eram cinco banners concorrendo pelo mesmo espaço. -->
+          <p v-if="estado.aviso" class="cond-note mb-3 py-2" :class="`cond-note--${estado.tom}`">
+            <i :class="estado.icone" class="fas shrink-0 mt-0.5"></i>
+            <span class="text-xs leading-relaxed">
+              <strong>{{ estado.aviso }}</strong>
+              <template v-if="estado.detalhe"> {{ estado.detalhe }}</template>
             </span>
-          </div>
-
-          <!-- Banner: Em Autorização -->
-          <div
-            v-else-if="detail.status === 'pending_approval'"
-            class="flex items-center gap-2 mb-3 px-3 py-2 bg-accent-soft border border-accent/30 rounded-lg text-accent text-xs"
-          >
-            <i class="fas fa-clock"></i>
-            <span>
-              Em autorização — aguardando um autorizador.
-              <template v-if="canAuthorize"> Você pode autorizar esta ficha.</template>
-            </span>
-          </div>
-
-          <!-- Banner: Encerrada -->
-          <div
-            v-else-if="detail.status === 'closed'"
-            class="flex items-center gap-2 mb-3 px-3 py-2 bg-surface-sunken/60 border border-gray-300 dark:border-gray-700 rounded-lg text-ink-muted text-xs"
-          >
-            <i class="fas fa-flag-checkered"></i>
-            <span>
-              Empreendimento encerrado — esta ficha está congelada como histórico.
-              <template v-if="canAuthorize"> Use "Reabrir" para retomar a evolução mensal.</template>
-            </span>
-          </div>
-
-          <!-- Banner: alterações não salvas -->
-          <div
-            v-else-if="isDirty && !isLocked"
-            class="flex items-center justify-between gap-2 mb-3 px-3 py-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 rounded-lg text-amber-800 dark:text-amber-300 text-xs"
-          >
-            <div class="flex items-center gap-2">
-              <i class="fas fa-circle-dot animate-pulse"></i>
-              <span>Alterações não salvas — clique em <strong>Salvar Tudo</strong> para não perder os dados.</span>
-            </div>
-          </div>
+          </p>
 
           <!-- Tabs (views) -->
           <div class="flex gap-0 overflow-x-auto scrollbar-hide -mb-px">
@@ -618,10 +321,10 @@
               :key="tab.id"
               @click="activeTab = tab.id"
               :class="[
-                'flex items-center gap-1.5 px-4 py-2.5 text-xs font-semibold whitespace-nowrap border-b-2 transition',
+                'flex items-center gap-1.5 px-4 py-2.5 text-xs font-semibold whitespace-nowrap border-b-2 transition duration-200 ease-out-expo',
                 activeTab === tab.id
-                  ? 'border-blue-600 text-accent'
-                  : 'border-transparent text-ink-muted hover:text-gray-700 dark:hover:text-gray-200'
+                  ? 'border-accent text-accent'
+                  : 'border-transparent text-ink-muted hover:text-ink'
               ]"
             >
               <i :class="tab.icon" class="text-xs"></i>
@@ -644,18 +347,37 @@
             <!-- Navegação compacta (telas < xl, onde o índice flutuante não cabe) -->
             <div v-if="activeTab === 'modules' && localModules.length" class="xl:hidden mb-3 flex gap-1.5 overflow-x-auto scrollbar-hide">
               <button v-for="(mod, i) in localModules" :key="mod.id ?? i" @click="selectModule(i)" :class="['flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap border transition', activeModuleIndex === i ? 'bg-accent-soft border-accent/30 text-accent' : 'border-line text-ink-muted bg-surface-raised']">
-                <i :class="mod.idetapa ? 'fas fa-box' : 'fas fa-cube'" class="text-[10px]"></i>{{ mod.module_name || 'Novo módulo' }}
+                <i :class="mod.idetapa ? 'fas fa-box' : 'fas fa-cube'" class="text-micro"></i>{{ mod.module_name || 'Novo módulo' }}
               </button>
             </div>
             <div v-if="activeTab === 'modules' && activeModule" class="xl:hidden mb-4 flex gap-1.5 overflow-x-auto scrollbar-hide">
-              <button v-for="sec in moduleSections" :key="sec.id" @click="scrollToSection(sec.id)" :class="['px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap border transition', activeSection === sec.id ? 'bg-accent-soft border-accent/30 text-accent' : 'border-line text-ink-muted bg-surface-raised']">{{ sec.label }}</button>
+              <button v-for="sec in moduleSections" :key="sec.id" @click="scrollToSection(sec.id)" :class="['px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap border transition duration-120 ease-out-expo', activeSection === sec.id ? 'bg-accent-soft border-accent/30 text-accent' : 'border-line text-ink-muted bg-surface-raised']">{{ sec.label }}</button>
+            </div>
+
+            <!-- Resumo em telas < xl: sem a lateral, o documento e o PDF ficariam
+                 inalcançáveis no celular. Paridade — os dois fazem tudo. -->
+            <div v-if="activeTab === 'summary'" class="xl:hidden mb-4 space-y-2">
+              <div v-if="localModules.length > 1" class="flex gap-1.5 overflow-x-auto scrollbar-hide">
+                <button v-for="(mod, i) in localModules" :key="mod.id ?? i" @click="selectModule(i)"
+                  :class="['flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap border transition duration-120 ease-out-expo', activeModuleIndex === i ? 'bg-accent-soft border-accent/30 text-accent' : 'border-line text-ink-muted bg-surface-raised']">
+                  <i :class="mod.idetapa ? 'fas fa-box' : 'fas fa-cube'" class="text-micro"></i>{{ mod.module_name || 'Novo módulo' }}
+                </button>
+              </div>
+              <div class="flex gap-2">
+                <Button variant="outline" size="sm" icon="fas fa-file-contract" class="flex-1"
+                  @click="summaryRef?.openDoc?.()">Ver documento</Button>
+                <Button variant="danger" size="sm" icon="fas fa-file-pdf" class="flex-1"
+                  @click="summaryRef?.printModule?.()">Exportar PDF</Button>
+              </div>
+              <p class="text-micro text-ink-subtle leading-snug">
+                O PDF sai com <strong>todos</strong> os módulos; a tela mostra um por vez.
+              </p>
             </div>
 
         <!-- Módulos -->
         <div v-show="activeTab === 'modules'">
           <ModuleSection
             :modules="localModules"
-            :hide-chrome="true"
             v-model:active-index="activeModuleIndex"
             :condition-id="detail.id"
             :condition-status="detail.status"
@@ -685,7 +407,6 @@
           <SummaryExport
             ref="summaryRef"
             :detail="detail"
-            :hide-chrome="true"
             v-model:active-index="activeModuleIndex"
             :local-modules="localModules"
             :price-tables="store.priceTables"
@@ -720,7 +441,7 @@
         <div v-if="activeTab === 'history'">
           <div class="bg-surface-raised rounded-2xl border border-line shadow-sm p-6 max-w-3xl">
             <p class="text-xs font-semibold text-ink-muted uppercase tracking-wide mb-5 flex items-center gap-2">
-              <i class="fas fa-timeline text-indigo-500"></i> Linha do tempo: quem, quando, o quê e onde
+              <i class="fas fa-timeline text-accent"></i> Linha do tempo: quem, quando, o quê e onde
             </p>
             <div v-if="timeline.length" class="relative">
               <div
@@ -736,7 +457,7 @@
                 <div class="flex-1 min-w-0">
                   <p class="text-sm font-medium text-ink">{{ eventLabel(ev.action) }}</p>
                   <p class="text-xs text-ink-subtle">
-                    <i class="fas fa-user text-[10px] mr-1"></i>{{ ev.username || 'Sistema' }}
+                    <i class="fas fa-user text-micro mr-1"></i>{{ ev.username || 'Sistema' }}
                     <span class="mx-1">·</span>
                     {{ formatDateFull(ev.at) }}
                   </p>
@@ -766,31 +487,39 @@
                       <span v-for="(f, k) in moduleCompleteness(mod)" :key="k" class="w-1 h-1 rounded-full" :class="f ? 'bg-accent' : 'bg-surface-sunken'"></span>
                     </span>
                   </button>
-                  <button v-if="canEdit && !isLocked" @click="removeModule(i)" class="shrink-0 w-7 h-7 flex items-center justify-center rounded-lg text-ink-subtle hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition" title="Remover módulo">
-                    <i class="fas fa-trash text-[11px]"></i>
+                  <button v-if="canEdit && !isLocked" @click="removeModule(i)" class="shrink-0 w-7 h-7 flex items-center justify-center rounded-lg text-ink-subtle hover:text-data-neg hover:bg-data-neg/10 transition" title="Remover módulo">
+                    <i class="fas fa-trash text-micro"></i>
                   </button>
                 </div>
                 <!-- Ações do Resumo (na view Resumo): exportar PDF / ver documento -->
+                <!-- Documento: ver e exportar andam juntos. O conteúdo é o mesmo
+                     que a aba Resumo já mostra, então travar um e liberar o
+                     outro só escondia a prévia de quem ia exportar assim mesmo. -->
                 <template v-if="activeTab === 'summary'">
-                  <p class="cond-toc__grp">Ações</p>
-                  <button @click="summaryRef?.printModule?.()" class="w-full flex items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-semibold text-white bg-red-600 hover:bg-red-700 transition">
-                    <i class="fas fa-file-pdf"></i> Exportar PDF
-                  </button>
-                  <button v-if="canAuthorize && detail.status === 'pending_approval'" @click="summaryRef?.openDoc?.()" class="w-full flex items-center gap-2 rounded-lg px-2.5 py-2 mt-1.5 text-xs font-semibold text-accent bg-accent-soft hover:bg-accent-soft/70 transition">
+                  <p class="cond-toc__grp">Documento</p>
+                  <button @click="summaryRef?.openDoc?.()"
+                    class="w-full flex items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-semibold text-accent bg-accent-soft hover:bg-accent-soft/70 transition duration-120 ease-out-expo">
                     <i class="fas fa-file-contract"></i> Ver documento
                   </button>
+                  <button @click="summaryRef?.printModule?.()"
+                    class="w-full flex items-center gap-2 rounded-lg px-2.5 py-2 mt-1.5 text-xs font-semibold text-white bg-data-neg hover:bg-data-neg/85 transition duration-120 ease-out-expo">
+                    <i class="fas fa-file-pdf"></i> Exportar PDF
+                  </button>
+                  <p class="text-micro text-ink-subtle px-2.5 pt-1.5 leading-snug">
+                    O PDF sai com <strong>todos</strong> os módulos; a tela mostra um por vez.
+                  </p>
                 </template>
 
                 <button v-if="canEdit && !isLocked && activeTab === 'modules'" @click="showAddModuleMenu = !showAddModuleMenu" class="cond-toc__add">
-                  <i class="fas fa-plus text-[10px] mr-1.5"></i> Adicionar módulo
+                  <i class="fas fa-plus text-micro mr-1.5"></i> Adicionar módulo
                 </button>
                 <div v-if="showAddModuleMenu && activeTab === 'modules'" class="ml-1 my-1 pl-2 border-l-2 border-line space-y-0.5">
-                  <p v-if="availableStages.length" class="text-[10px] font-semibold text-ink-subtle uppercase px-1 pt-1">Etapas do CV</p>
+                  <p v-if="availableStages.length" class="text-micro font-semibold text-ink-subtle uppercase px-1 pt-1">Etapas do CV</p>
                   <button v-for="s in availableStages" :key="s.idetapa" @click="addStageModule(s)" class="w-full flex items-center gap-2 px-2 py-1 text-xs text-ink-muted hover:bg-accent-soft hover:text-accent rounded text-left transition">
-                    <i class="fas fa-layer-group text-[10px]"></i> <span class="truncate">{{ s.nome }}</span>
+                    <i class="fas fa-layer-group text-micro"></i> <span class="truncate">{{ s.nome }}</span>
                   </button>
                   <button @click="addCustomModule" class="w-full flex items-center gap-2 px-2 py-1 text-xs text-ink-muted hover:bg-surface-hover rounded text-left transition">
-                    <i class="fas fa-cube text-[10px]"></i> Módulo avulso
+                    <i class="fas fa-cube text-micro"></i> Módulo avulso
                   </button>
                 </div>
 
@@ -821,6 +550,15 @@ import ModuleSection from './components/ModuleSection.vue';
 import SummaryExport from './components/SummaryExport.vue';
 import SignaturePanel from './components/SignaturePanel.vue';
 
+import Modal from '@/components/UI/Modal.vue';
+import Button from '@/components/UI/Button.vue';
+import Input from '@/components/UI/Input.vue';
+import Select from '@/components/UI/Select.vue';
+import Badge from '@/components/UI/Badge.vue';
+import IconButton from '@/components/UI/IconButton.vue';
+import Skeleton from '@/components/UI/Skeleton.vue';
+import PageHelp from '@/components/UI/PageHelp.vue';
+
 const route = useRoute();
 const router = useRouter();
 const store = useConditionsStore();
@@ -833,7 +571,6 @@ const can = useCan('/comercial/conditions');
 // Permissões vindas do backend (admin sempre true; demais conforme listas das configurações).
 const canEdit = computed(() => !!store.permissions?.canEdit);
 const canAuthorize = computed(() => !!store.permissions?.canAuthorize);
-const canManage = computed(() => canEdit.value || canAuthorize.value);
 
 // Ficha editável quando: tem permissão de editar E (é rascunho, ou é autorizada e o
 // usuário também pode autorizar — caso em que salvar desbloqueia automaticamente).
@@ -849,7 +586,6 @@ const isLocked = computed(() => {
 const canSave = computed(() => !isLocked.value);
 
 const isClosed = computed(() => detail.value?.status === 'closed');
-const isApproved = computed(() => detail.value?.status === 'approved');
 const isAvulsa = computed(() => detail.value && !detail.value.idempreendimento);
 const headerTitle = computed(() => {
     if (!detail.value) return '...';
@@ -922,13 +658,51 @@ const isDirty = ref(false);
 
 const enterpriseOptions = ref([]);
 
-const STATUS_MAP = {
-    draft:            { label: 'Rascunho',       cls: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' },
-    pending_approval: { label: 'Em Autorização', cls: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
-    approved:         { label: 'Autorizado',     cls: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },
-    published:        { label: 'Autorizado',     cls: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },
-    closed:           { label: 'Encerrado',      cls: 'bg-gray-200 text-gray-700 dark:bg-gray-800 dark:text-gray-300' },
-};
+// Estado da ficha numa fonte só: o rótulo do selo, o tom da linha de aviso e o
+// texto dela. A ordem importa — "reprovada" e "não salvo" ganham do status cru,
+// porque é isso que a pessoa precisa ler primeiro.
+const estado = computed(() => {
+    const d = detail.value;
+    if (!d) return { rotulo: '—', variant: 'neutral', tom: 'neutral', icone: 'fa-circle' };
+
+    if (wasRejected.value && d.status === 'draft') {
+        return {
+            rotulo: 'Reprovada', variant: 'danger', tom: 'neg', icone: 'fa-ban',
+            aviso: 'Autorização reprovada.',
+            detalhe: [rejectionNote.value, 'Corrija as informações e envie novamente.'].filter(Boolean).join(' '),
+        };
+    }
+    if (d.status === 'approved' || d.status === 'published') {
+        return {
+            rotulo: 'Autorizado', variant: 'success', tom: 'pos', icone: 'fa-circle-check',
+            aviso: 'Ficha autorizada.',
+            detalhe: [
+                d.approved_at ? `Aprovada em ${formatDateFull(d.approved_at)}.` : '',
+                canAuthorize.value ? 'Edições nesta ficha irão cancelar a autorização.' : '',
+            ].filter(Boolean).join(' '),
+        };
+    }
+    if (d.status === 'pending_approval') {
+        return {
+            rotulo: 'Em autorização', variant: 'accent', tom: 'info', icone: 'fa-clock',
+            aviso: 'Em autorização — aguardando um autorizador.',
+            detalhe: canAuthorize.value ? 'Você pode autorizar esta ficha.' : '',
+        };
+    }
+    if (d.status === 'closed') {
+        return {
+            rotulo: 'Encerrado', variant: 'neutral', tom: 'neutral', icone: 'fa-flag-checkered',
+            aviso: 'Empreendimento encerrado — esta ficha está congelada como histórico.',
+            detalhe: canAuthorize.value ? 'Use "Reabrir" para retomar a evolução mensal.' : '',
+        };
+    }
+    const sujo = isDirty.value && !isLocked.value;
+    return {
+        rotulo: 'Rascunho', variant: 'warning', tom: 'warn', icone: 'fa-circle-dot',
+        aviso: sujo ? 'Alterações não salvas.' : '',
+        detalhe: sujo ? 'Clique em "Salvar tudo" para não perder os dados.' : '',
+    };
+});
 
 const ALL_TABS = [
     { id: 'modules', label: 'Módulos', icon: 'fas fa-layer-group', adminOnly: false },
@@ -964,8 +738,6 @@ const newerItem = computed(() => {
 // ── Navegação lateral (estilo Academy, controla módulo ativo + seções) ────────
 const activeModuleIndex = ref(0);
 const activeSection = ref('data');
-const sidebarCollapsed = ref(false);
-const sidebarMobileOpen = ref(false);
 const showAddModuleMenu = ref(false);
 const summaryRef = ref(null); // ref do SummaryExport (p/ acionar Exportar PDF pela lateral)
 
@@ -1001,22 +773,13 @@ function moduleCompleteness(mod) {
     ];
 }
 
-function navItemClass(active) {
-    return [
-        'group relative w-full flex items-center gap-2.5 h-9 px-2.5 rounded-lg text-sm font-medium transition',
-        active ? 'bg-accent-soft text-accent' : 'text-ink-muted hover:bg-surface-hover hover:text-ink',
-    ];
-}
-
 function selectModule(i) {
     activeModuleIndex.value = i;
     activeSection.value = 'data';
-    sidebarMobileOpen.value = false;
 }
 function scrollToSection(id) {
     activeSection.value = id;
     document.getElementById(`modsec-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    sidebarMobileOpen.value = false;
 }
 function addStageModule(stage) {
     const newMod = moduleDefaults({ idetapa: stage.idetapa, module_name: stage.nome || `Etapa ${stage.idetapa}`, sort_order: localModules.value.length });
@@ -1436,6 +1199,17 @@ async function onLinkEnterpriseChange() {
     }
 }
 
+// Opções dos selects do modal de vínculo — o `Select` do sistema recebe lista
+// pronta, então a conversão fica aqui e não no template.
+const linkEnterpriseOptions = computed(() => [
+    { value: null, label: 'Selecionar empreendimento...' },
+    ...cvEnterprises.value.map(e => ({ value: e.idempreendimento, label: e.nome })),
+]);
+const linkStageOptions = computed(() => [
+    { value: null, label: 'Manter livre' },
+    ...linkCvStages.value.map(s => ({ value: s.idetapa, label: s.nome })),
+]);
+
 async function handleLinkToCv() {
     if (!linkCvEnterpriseId.value) return;
     linkLoading.value = true;
@@ -1671,34 +1445,43 @@ function formatDateFull(d) {
     if (!d) return '—';
     return new Date(d).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
-function badgeClass(s) { return STATUS_MAP[s]?.cls ?? 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'; }
-function statusLabel(s) { return STATUS_MAP[s]?.label ?? s; }
 
 // ─── Histórico de eventos ─────────────────────────────────────────────────────
-const EVENT_META = {
-    created:                 { label: 'Ficha criada',                    icon: 'fa-plus',        cls: 'bg-blue-100 text-blue-600 dark:bg-blue-900/30',    type: 'approval' },
-    auto_created:            { label: 'Gerada automaticamente',          icon: 'fa-robot',       cls: 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400',       type: 'approval' },
-    submitted_for_approval:  { label: 'Enviada para autorização',        icon: 'fa-paper-plane', cls: 'bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30', type: 'approval' },
-    approved:                { label: 'Autorizada',                      icon: 'fa-check',       cls: 'bg-green-100 text-green-600 dark:bg-green-900/30', type: 'approval' },
-    unlocked:                { label: 'Desbloqueada para edição',        icon: 'fa-lock-open',   cls: 'bg-amber-100 text-amber-600 dark:bg-amber-900/30', type: 'approval' },
-    closed:                  { label: 'Empreendimento encerrado',        icon: 'fa-flag-checkered', cls: 'bg-gray-200 text-gray-700 dark:bg-gray-800 dark:text-gray-300', type: 'approval' },
-    approval_cancelled:      { label: 'Autorização cancelada',           icon: 'fa-times',       cls: 'bg-red-100 text-red-600 dark:bg-red-900/30',       type: 'approval' },
-    approval_rejected:       { label: 'Autorização reprovada',           icon: 'fa-ban',         cls: 'bg-red-100 text-red-700 dark:bg-red-900/40',       type: 'approval' },
-    saved:                   { label: 'Alterações salvas (rascunho)',     icon: 'fa-floppy-disk',   cls: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300',         type: 'change' },
-    edited_after_unlock:     { label: 'Editado após desbloqueio',        icon: 'fa-pen-to-square', cls: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30',   type: 'change' },
-    module_copied:           { label: 'Módulo copiado',                  icon: 'fa-copy',          cls: 'bg-purple-100 text-purple-600 dark:bg-purple-900/30', type: 'change' },
-    modules_updated:         { label: 'Módulo(s) adicionado(s)',         icon: 'fa-layer-group',   cls: 'bg-blue-100 text-blue-600 dark:bg-blue-900/30',       type: 'change' },
-    module_edited:           { label: 'Módulo editado',                 icon: 'fa-pen',           cls: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',   type: 'change' },
-    linked_to_cv:            { label: 'Vinculada ao CV',                icon: 'fa-link',          cls: 'bg-teal-100 text-teal-700 dark:bg-teal-900/30',       type: 'approval' },
-    campaign_template_updated: { label: 'Campanha atualizada via biblioteca', icon: 'fa-bullhorn', cls: 'bg-teal-100 text-teal-700 dark:bg-teal-900/30',  type: 'change' },
-    signature_sent:      { label: 'Enviada para assinatura (DocuSign)', icon: 'fa-file-signature', cls: 'bg-violet-100 text-violet-700 dark:bg-violet-900/30', type: 'approval' },
-    signature_resent:    { label: 'Convite de assinatura reenviado',    icon: 'fa-paper-plane',    cls: 'bg-violet-100 text-violet-700 dark:bg-violet-900/30', type: 'approval' },
-    signature_completed: { label: 'Documento assinado por todos',       icon: 'fa-file-circle-check', cls: 'bg-green-100 text-green-700 dark:bg-green-900/30', type: 'approval' },
-    signature_voided:    { label: 'Envelope de assinatura anulado',     icon: 'fa-ban',            cls: 'bg-gray-200 text-gray-700 dark:bg-gray-800 dark:text-gray-300', type: 'approval' },
+// Cada evento tem um TOM, não uma cor própria: 20 pares de cor na mão viraram
+// cinco estados. As classes ficam escritas por extenso porque o Tailwind lê o
+// texto do arquivo — classe montada em runtime nunca gera CSS.
+const TOM_EVENTO = {
+    neutro: 'bg-surface-sunken text-ink-muted',
+    info:   'bg-accent/10 text-accent',
+    pos:    'bg-data-pos/10 text-data-pos',
+    warn:   'bg-data-warn/10 text-data-warn',
+    neg:    'bg-data-neg/10 text-data-neg',
 };
-function eventLabel(action)     { return EVENT_META[action]?.label    ?? action; }
-function eventIcon(action)      { return EVENT_META[action]?.icon     ?? 'fa-circle'; }
-function eventIconClass(action) { return EVENT_META[action]?.cls      ?? 'bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-500'; }
+
+const EVENT_META = {
+    created:                   { label: 'Ficha criada',                        icon: 'fa-plus',              tom: 'info' },
+    auto_created:              { label: 'Gerada automaticamente',              icon: 'fa-robot',             tom: 'neutro' },
+    submitted_for_approval:    { label: 'Enviada para autorização',            icon: 'fa-paper-plane',       tom: 'info' },
+    approved:                  { label: 'Autorizada',                          icon: 'fa-check',             tom: 'pos' },
+    unlocked:                  { label: 'Desbloqueada para edição',            icon: 'fa-lock-open',         tom: 'warn' },
+    closed:                    { label: 'Empreendimento encerrado',            icon: 'fa-flag-checkered',    tom: 'neutro' },
+    approval_cancelled:        { label: 'Autorização cancelada',               icon: 'fa-times',             tom: 'neg' },
+    approval_rejected:         { label: 'Autorização reprovada',               icon: 'fa-ban',               tom: 'neg' },
+    saved:                     { label: 'Alterações salvas (rascunho)',        icon: 'fa-floppy-disk',       tom: 'neutro' },
+    edited_after_unlock:       { label: 'Editado após desbloqueio',            icon: 'fa-pen-to-square',     tom: 'warn' },
+    module_copied:             { label: 'Módulo copiado',                      icon: 'fa-copy',              tom: 'info' },
+    modules_updated:           { label: 'Módulo(s) adicionado(s)',             icon: 'fa-layer-group',       tom: 'info' },
+    module_edited:             { label: 'Módulo editado',                      icon: 'fa-pen',               tom: 'neutro' },
+    linked_to_cv:              { label: 'Vinculada ao CV',                     icon: 'fa-link',              tom: 'info' },
+    campaign_template_updated: { label: 'Campanha atualizada via biblioteca',  icon: 'fa-bullhorn',          tom: 'info' },
+    signature_sent:            { label: 'Enviada para assinatura (DocuSign)',  icon: 'fa-file-signature',    tom: 'info' },
+    signature_resent:          { label: 'Convite de assinatura reenviado',     icon: 'fa-paper-plane',       tom: 'info' },
+    signature_completed:       { label: 'Documento assinado por todos',        icon: 'fa-file-circle-check', tom: 'pos' },
+    signature_voided:          { label: 'Envelope de assinatura anulado',      icon: 'fa-ban',               tom: 'neutro' },
+};
+function eventLabel(action)     { return EVENT_META[action]?.label ?? action; }
+function eventIcon(action)      { return EVENT_META[action]?.icon  ?? 'fa-circle'; }
+function eventIconClass(action) { return TOM_EVENTO[EVENT_META[action]?.tom ?? 'neutro']; }
 
 // Linha do tempo única (cronológica reversa): quem, quando, o quê, onde (na nota).
 const timeline = computed(() => {
@@ -1759,10 +1542,20 @@ onMounted(() => loadDetail(route.params.id));
 <style scoped>
 .fade-enter-active, .fade-leave-active { transition: opacity .3s; }
 .fade-enter-from, .fade-leave-to { opacity: 0; }
-.nav-grp { @apply px-2 pt-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-ink-subtle; }
+/* Aviso dentro de diálogo: o tom carrega o significado, o ícone repete ele. */
+.cond-note { @apply flex items-start gap-3 p-3.5 rounded-xl border text-sm; }
+.cond-note--neg  { @apply bg-data-neg/10  border-data-neg/25  text-data-neg; }
+.cond-note--warn { @apply bg-data-warn/10 border-data-warn/25 text-data-warn; }
+.cond-note--pos  { @apply bg-data-pos/10  border-data-pos/25  text-data-pos; }
+.cond-note--info { @apply bg-accent/10    border-accent/25    text-accent; }
+.cond-note--neutral { @apply bg-surface-sunken border-line text-ink-muted; }
+.cond-label { @apply block text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1.5; }
+.cond-textarea { @apply w-full px-3.5 py-2.5 text-sm text-ink bg-surface-sunken border border-line rounded-lg
+    placeholder:text-ink-subtle outline-none transition duration-120 ease-out-expo resize-none
+    focus:border-accent focus:ring-2 focus:ring-accent/15; }
 .cond-toc { @apply border border-line rounded-2xl bg-surface-raised p-2.5 overflow-y-auto shadow-sm; max-height: calc(100dvh - 3rem - var(--cond-header-h, 120px) - 3rem); }
-.cond-toc__title { @apply text-[11px] font-bold uppercase tracking-wider text-ink-subtle px-2 pb-1.5 flex items-center; }
-.cond-toc__grp { @apply text-[10px] font-bold uppercase tracking-wider text-ink-subtle px-2 pt-2.5 pb-1; }
+.cond-toc__title { @apply text-micro font-bold uppercase tracking-wider text-ink-subtle px-2 pb-1.5 flex items-center; }
+.cond-toc__grp { @apply text-micro font-bold uppercase tracking-wider text-ink-subtle px-2 pt-2.5 pb-1; }
 .cond-toc__link { @apply w-full flex items-center text-left rounded-lg px-2.5 py-1.5 text-sm text-ink-muted transition; border-left: 2px solid transparent; }
 .cond-toc__link:hover { @apply bg-surface-sunken text-ink; }
 .cond-toc__link.is-active { @apply bg-accent-soft text-accent font-semibold; border-left-color: currentColor; }

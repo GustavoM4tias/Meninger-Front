@@ -16,7 +16,7 @@
         :href="modelValue"
         target="_blank"
         rel="noopener"
-        class="flex-shrink-0 w-10 h-10 flex items-center justify-center border border-line bg-surface-sunken text-gray-500 dark:text-gray-300 rounded-md hover:bg-blue-50 hover:border-blue-300 hover:text-blue-600 dark:hover:bg-blue-900/20 dark:hover:border-blue-700 dark:hover:text-blue-400 transition"
+        class="flex-shrink-0 w-10 h-10 flex items-center justify-center border border-line bg-surface-sunken text-ink-muted rounded-md hover:bg-accent/10 hover:border-accent hover:text-accent    transition"
         title="Abrir link"
       >
         <i class="fas fa-external-link-alt text-xs"></i>
@@ -24,7 +24,7 @@
       <button
         type="button"
         @click="openModal"
-        class="flex-shrink-0 flex items-center gap-1.5 px-3 h-10 border border-line bg-surface-sunken text-ink-muted text-xs font-semibold rounded-md hover:bg-blue-50 hover:border-blue-300 hover:text-blue-600 dark:hover:bg-blue-900/20 dark:hover:border-blue-700 dark:hover:text-blue-400 transition"
+        class="flex-shrink-0 flex items-center gap-1.5 px-3 h-10 border border-line bg-surface-sunken text-ink-muted text-xs font-semibold rounded-md hover:bg-accent/10 hover:border-accent hover:text-accent    transition"
         title="Buscar ou enviar arquivo"
       >
         <i class="fas fa-paperclip text-xs"></i>
@@ -33,32 +33,13 @@
     </div>
     <p v-if="hint" class="mt-1.5 text-xs text-ink-subtle">{{ hint }}</p>
 
-    <!-- ── Modal ──────────────────────────────────────────────────────────── -->
-    <teleport to="body">
-      <transition name="modal-fade">
-        <!-- z-[10000]: modal aninhado, precisa ficar ACIMA do Modal padrão (z-[9999]).
-             Não baixar para z-50, senão some atrás de drawers como o de eventos. -->
-        <div
-          v-if="modalOpen"
-          class="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-          @click.self="closeModal"
-        >
-          <div class="bg-surface-raised rounded-2xl shadow-2xl border border-line w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden">
-
-            <!-- Header -->
-            <div class="flex items-center justify-between px-5 py-4 border-b border-line flex-shrink-0">
-              <h3 class="text-sm font-bold text-ink flex items-center gap-2">
-                <i class="fas fa-paperclip text-blue-500"></i>
-                Vincular Arquivo
-              </h3>
-              <button
-                @click="closeModal"
-                class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-surface-hover transition"
-              >
-                <i class="fas fa-times text-sm"></i>
-              </button>
-            </div>
-
+    <!-- ── Modal ──────────────────────────────────────────────────────────
+         Aninhado: pode abrir POR CIMA de outro modal (ex.: copiar módulo), por
+         isso o z acima do padrão. Rolagem é do corpo, não do modal — as abas
+         precisam ficar fixas no topo. -->
+    <Modal :open="modalOpen" size="lg" title="Vincular arquivo"
+      :padded="false" :scrollable="false" :z-index="10000" @close="closeModal">
+      <div class="flex flex-col h-full">
             <!-- Tabs -->
             <div class="flex border-b border-line flex-shrink-0 px-5">
               <button
@@ -68,8 +49,8 @@
                 :class="[
                   'flex items-center gap-1.5 px-3 py-3 text-xs font-semibold border-b-2 transition whitespace-nowrap',
                   activeTab === tab.id
-                    ? 'border-blue-600 text-accent'
-                    : 'border-transparent text-ink-muted hover:text-gray-700 dark:hover:text-gray-200'
+                    ? 'border-accent text-accent'
+                    : 'border-transparent text-ink-muted hover:text-ink dark:hover:text-ink'
                 ]"
               >
                 <i :class="tab.icon" class="text-xs"></i>
@@ -96,16 +77,16 @@
                   />
                 </div>
                 <div v-if="urlInput" class="flex items-center gap-3 p-3 bg-accent-soft border border-accent/30 rounded-md">
-                  <i class="fas fa-link text-blue-500 text-sm flex-shrink-0"></i>
+                  <i class="fas fa-link text-accent text-sm flex-shrink-0"></i>
                   <span class="text-xs text-accent break-all flex-1">{{ urlInput }}</span>
-                  <a :href="urlInput" target="_blank" class="text-blue-500 hover:text-blue-700 text-xs flex-shrink-0">
+                  <a :href="urlInput" target="_blank" class="text-accent hover:text-accent text-xs flex-shrink-0">
                     <i class="fas fa-external-link-alt"></i>
                   </a>
                 </div>
                 <button
                   @click="confirmUrl"
                   :disabled="!urlInput"
-                  class="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-accent-hover disabled:opacity-40 transition"
+                  class="flex items-center gap-2 px-4 py-2.5 bg-accent text-white text-sm font-semibold rounded-lg hover:bg-accent-hover disabled:opacity-40 transition"
                 >
                   <i class="fas fa-check text-xs"></i> Usar este link
                 </button>
@@ -119,10 +100,10 @@
 
                 <!-- Drop zone -->
                 <label
-                  class="flex flex-col items-center justify-center gap-3 w-full h-36 border-2 border-dashed rounded-xl cursor-pointer transition"
+                  class="flex flex-col items-center justify-center gap-3 w-full h-36 border-dashed rounded-xl cursor-pointer transition"
                   :class="uploadFile
-                    ? 'border-blue-400 bg-accent-soft'
-                    : 'border-line bg-surface-sunken/30 hover:border-blue-300 dark:hover:border-blue-700'"
+                    ? 'border-accent bg-accent-soft'
+                    : 'border-line bg-surface-sunken/30 hover:border-accent '"
                 >
                   <input type="file" class="sr-only" @change="handleFileSelect" :accept="accept" />
                   <div v-if="!uploadFile" class="text-center">
@@ -131,12 +112,12 @@
                     <p class="text-xs text-ink-subtle mt-0.5">{{ uploadHint }}</p>
                   </div>
                   <div v-else class="flex items-center gap-3 px-4">
-                    <i class="fas fa-file text-blue-500 text-xl flex-shrink-0"></i>
+                    <i class="fas fa-file text-accent text-xl flex-shrink-0"></i>
                     <div class="min-w-0">
                       <p class="text-sm font-semibold text-ink truncate">{{ uploadFile.name }}</p>
                       <p class="text-xs text-ink-subtle">{{ formatSize(uploadFile.size) }}</p>
                     </div>
-                    <button type="button" @click.prevent="uploadFile = null" class="ml-auto text-gray-400 hover:text-red-500 transition">
+                    <button type="button" @click.prevent="uploadFile = null" class="ml-auto text-ink-subtle hover:text-data-neg transition">
                       <i class="fas fa-times text-xs"></i>
                     </button>
                   </div>
@@ -144,10 +125,10 @@
 
                 <!-- Progress -->
                 <div v-if="uploading" class="w-full h-1.5 bg-surface-sunken rounded-full overflow-hidden">
-                  <div class="h-full bg-blue-500 rounded-full" style="width: 100%; animation: indeterminate 1.2s ease-in-out infinite;"></div>
+                  <div class="h-full bg-accent rounded-full" style="width: 100%; animation: indeterminate 1.2s ease-in-out infinite;"></div>
                 </div>
 
-                <div v-if="uploadError" class="flex items-center gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md text-red-700 dark:text-red-400 text-xs">
+                <div v-if="uploadError" class="flex items-center gap-2 p-3 bg-data-neg/20 border border-data-neg/25 rounded-md text-data-neg text-xs">
                   <i class="fas fa-exclamation-circle flex-shrink-0"></i>
                   {{ uploadError }}
                 </div>
@@ -155,7 +136,7 @@
                 <button
                   @click="handleUpload"
                   :disabled="!uploadFile || uploading"
-                  class="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-accent-hover disabled:opacity-40 transition"
+                  class="flex items-center gap-2 px-4 py-2.5 bg-accent text-white text-sm font-semibold rounded-lg hover:bg-accent-hover disabled:opacity-40 transition"
                 >
                   <i :class="uploading ? 'fa-spinner fa-spin' : 'fa-upload'" class="fas text-xs"></i>
                   {{ uploading ? 'Enviando...' : 'Enviar Arquivo' }}
@@ -168,7 +149,7 @@
                 <!-- Seleção de Site -->
                 <div v-if="!sp.selectedSite">
                   <p class="text-xs text-ink-muted mb-3">Selecione o site do SharePoint:</p>
-                  <div v-if="sp.loading" class="flex items-center justify-center py-8 text-gray-400">
+                  <div v-if="sp.loading" class="flex items-center justify-center py-8 text-ink-subtle">
                     <i class="fas fa-spinner fa-spin text-xl"></i>
                   </div>
                   <div v-else class="space-y-1">
@@ -176,15 +157,15 @@
                       v-for="site in sp.sites"
                       :key="site.id"
                       @click="sp.selectSite(site)"
-                      class="w-full flex items-center gap-3 px-4 py-3 text-left text-sm text-ink bg-surface-sunken/40 border border-line rounded-md hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 dark:hover:bg-blue-950/20 dark:hover:border-blue-800 dark:hover:text-blue-300 transition"
+                      class="w-full flex items-center gap-3 px-4 py-3 text-left text-sm text-ink bg-surface-sunken/40 border border-line rounded-md hover:bg-accent/10 hover:border-accent hover:text-accent    transition"
                     >
-                      <i class="fab fa-microsoft text-blue-500 flex-shrink-0"></i>
+                      <i class="fab fa-microsoft text-accent flex-shrink-0"></i>
                       <div class="min-w-0 flex-1">
                         <p class="font-semibold truncate">{{ site.displayName }}</p>
                         <p class="text-xs text-ink-subtle truncate">{{ site.webUrl }}</p>
                       </div>
                     </button>
-                    <div v-if="!sp.sites.length && !sp.loading" class="text-sm text-gray-400 py-4 text-center">
+                    <div v-if="!sp.sites.length && !sp.loading" class="text-sm text-ink-subtle py-4 text-center">
                       Nenhum site encontrado.
                     </div>
                   </div>
@@ -196,7 +177,7 @@
                   <div class="flex items-center gap-2 flex-wrap">
                     <button
                       @click="resetSpSite"
-                      class="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition"
+                      class="text-xs text-ink-subtle hover:text-ink-muted dark:hover:text-ink transition"
                     >
                       <i class="fas fa-arrow-left mr-1"></i>Sites
                     </button>
@@ -216,7 +197,7 @@
 
                   <!-- Busca -->
                   <div v-if="sp.selectedDrive" class="relative">
-                    <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none"></i>
+                    <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-ink-subtle text-xs pointer-events-none"></i>
                     <input
                       v-model="sp.searchQuery"
                       @keyup.enter="sp.doSearch()"
@@ -228,16 +209,16 @@
 
                   <!-- Folder breadcrumb -->
                   <div v-if="sp.breadcrumb.length" class="flex items-center gap-1.5 flex-wrap text-xs">
-                    <button @click="sp.navigateToBreadcrumb(-1)" class="text-blue-500 hover:text-blue-700 transition">
+                    <button @click="sp.navigateToBreadcrumb(-1)" class="text-accent hover:text-accent transition">
                       <i class="fas fa-folder text-xs mr-1"></i>Raiz
                     </button>
                     <template v-for="(crumb, ci) in sp.breadcrumb" :key="crumb.id">
-                      <span class="text-gray-400">/</span>
+                      <span class="text-ink-subtle">/</span>
                       <button
                         @click="sp.navigateToBreadcrumb(ci)"
                         :class="ci === sp.breadcrumb.length - 1
                           ? 'text-ink font-semibold'
-                          : 'text-blue-500 hover:text-blue-700'"
+                          : 'text-accent hover:text-accent'"
                         class="transition"
                       >
                         {{ crumb.name }}
@@ -246,7 +227,7 @@
                   </div>
 
                   <!-- Aviso quando pode selecionar pasta -->
-                  <div v-if="allowFolderSelection && !sp.loading && !sp.isSearching" class="flex items-start gap-2 p-2.5 bg-blue-50/60 dark:bg-blue-950/20 border border-accent/20 rounded-lg text-[11px] text-accent">
+                  <div v-if="allowFolderSelection && !sp.loading && !sp.isSearching" class="flex items-start gap-2 p-2.5 bg-accent/10  border border-accent/20 rounded-lg text-micro text-accent">
                     <i class="fas fa-info-circle mt-0.5"></i>
                     <span>Você pode selecionar uma <strong>pasta inteira</strong> — clique em "Selecionar pasta" ao lado dela. Ou abra a pasta e selecione "Selecionar esta pasta atual" no topo.</span>
                   </div>
@@ -255,17 +236,17 @@
                   <button
                     v-if="allowFolderSelection && currentFolder && !sp.loading && !sp.isSearching"
                     @click="selectFolder(currentFolder)"
-                    class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-accent-hover transition shadow-sm"
+                    class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-accent text-white text-sm font-semibold rounded-lg hover:bg-accent-hover transition shadow-sm"
                   >
                     <i class="fas fa-folder-plus text-xs"></i>
                     Selecionar esta pasta atual: <strong class="font-bold">{{ currentFolder.name }}</strong>
                   </button>
 
                   <!-- Lista de arquivos -->
-                  <div v-if="sp.loading || sp.isSearching" class="flex items-center justify-center py-8 text-gray-400">
+                  <div v-if="sp.loading || sp.isSearching" class="flex items-center justify-center py-8 text-ink-subtle">
                     <i class="fas fa-spinner fa-spin text-xl"></i>
                   </div>
-                  <div v-else class="border border-line rounded-xl overflow-hidden divide-y divide-gray-100 dark:divide-gray-800">
+                  <div v-else class="border border-line rounded-xl overflow-hidden divide-y divide-line">
                     <template v-for="item in displayedItems" :key="item.id">
                       <!-- Pasta -->
                       <div
@@ -277,7 +258,7 @@
                           @click="enterFolder(item)"
                           class="flex-1 flex items-center gap-3 min-w-0 text-left"
                         >
-                          <i class="fas fa-folder text-yellow-500 w-4 text-sm"></i>
+                          <i class="fas fa-folder text-data-warn w-4 text-sm"></i>
                           <span class="text-sm text-ink flex-1 truncate">{{ item.name }}</span>
                           <i class="fas fa-chevron-right text-ink-subtle text-xs"></i>
                         </button>
@@ -285,10 +266,10 @@
                           v-if="allowFolderSelection"
                           type="button"
                           @click.stop="selectFolder(item)"
-                          class="flex-shrink-0 ml-2 px-2.5 py-1 text-[11px] font-semibold rounded bg-accent-soft text-accent border border-accent/30 hover:bg-accent-soft transition"
+                          class="flex-shrink-0 ml-2 px-2.5 py-1 text-micro font-semibold rounded bg-accent-soft text-accent border border-accent/30 hover:bg-accent-soft transition"
                           title="Selecionar esta pasta inteira"
                         >
-                          <i class="fas fa-folder-plus text-[10px] mr-1"></i>Selecionar pasta
+                          <i class="fas fa-folder-plus text-micro mr-1"></i>Selecionar pasta
                         </button>
                       </div>
                       <!-- Arquivo -->
@@ -297,16 +278,16 @@
                         @click="selectSpFile(item)"
                         class="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-accent-soft group transition"
                       >
-                        <i :class="fileIcon(item.name)" class="w-4 text-sm text-gray-400 group-hover:text-blue-500"></i>
+                        <i :class="fileIcon(item.name)" class="w-4 text-sm text-ink-subtle group-hover:text-accent"></i>
                         <div class="flex-1 min-w-0">
-                          <p class="text-sm text-ink group-hover:text-blue-700 dark:group-hover:text-blue-300 truncate">
+                          <p class="text-sm text-ink group-hover:text-accent  truncate">
                             {{ item.name }}
                           </p>
                           <p v-if="item.lastModifiedAt" class="text-xs text-ink-subtle">
                             {{ formatDate(item.lastModifiedAt) }}{{ item.size ? ` · ${formatSize(item.size)}` : '' }}
                           </p>
                         </div>
-                        <span class="flex-shrink-0 text-xs text-blue-500 opacity-0 group-hover:opacity-100 font-semibold transition">
+                        <span class="flex-shrink-0 text-xs text-accent opacity-0 group-hover:opacity-100 font-semibold transition">
                           Selecionar
                         </span>
                       </button>
@@ -320,14 +301,13 @@
               </div>
 
             </div>
-          </div>
-        </div>
-      </transition>
-    </teleport>
+      </div>
+    </Modal>
   </div>
 </template>
 
 <script setup>
+import Modal from '@/components/UI/Modal.vue';
 import { ref, computed, watch } from 'vue';
 import { useUploadStore } from '@/stores/Config/uploadStore';
 import { useMicrosoftStore } from '@/stores/Microsoft/microsoftStore';
@@ -483,18 +463,18 @@ function formatDate(d) {
 }
 function fileIcon(name) {
     const ext = (name || '').split('.').pop()?.toLowerCase();
-    if (ext === 'pdf') return 'fas fa-file-pdf text-red-500';
-    if (['doc','docx'].includes(ext)) return 'fas fa-file-word text-blue-600';
-    if (['xls','xlsx'].includes(ext)) return 'fas fa-file-excel text-green-600';
-    if (['png','jpg','jpeg','gif','webp'].includes(ext)) return 'fas fa-file-image text-purple-500';
-    return 'fas fa-file text-gray-400';
+    if (ext === 'pdf') return 'fas fa-file-pdf text-data-neg';
+    if (['doc','docx'].includes(ext)) return 'fas fa-file-word text-accent';
+    if (['xls','xlsx'].includes(ext)) return 'fas fa-file-excel text-data-pos';
+    if (['png','jpg','jpeg','gif','webp'].includes(ext)) return 'fas fa-file-image text-accent';
+    return 'fas fa-file text-ink-subtle';
 }
 </script>
 
 <style scoped>
 .lbl    { @apply block text-xs font-semibold text-ink-muted uppercase tracking-wide mb-1.5; }
-.inp    { @apply w-full px-3.5 py-2.5 text-sm text-ink bg-surface-raised/60 border border-line rounded-md shadow-sm placeholder:text-gray-400 dark:placeholder:text-gray-500 outline-none focus:border-blue-400 dark:focus:border-accent focus:ring-2 focus:ring-blue-500/15 transition-all duration-150; }
-.inp-sp { @apply w-full pl-9 pr-3.5 py-2.5 text-sm text-ink bg-surface-raised/60 border border-line rounded-md shadow-sm placeholder:text-gray-400 dark:placeholder:text-gray-500 outline-none focus:border-blue-400 dark:focus:border-accent focus:ring-2 focus:ring-blue-500/15 transition-all duration-150; }
+.inp    { @apply w-full px-3.5 py-2.5 text-sm text-ink bg-surface-raised/60 border border-line rounded-md shadow-sm placeholder:text-ink-subtle dark:placeholder:text-ink-muted outline-none focus:border-accent dark:focus:border-accent focus:ring-accent/15 transition-all duration-150; }
+.inp-sp { @apply w-full pl-9 pr-3.5 py-2.5 text-sm text-ink bg-surface-raised/60 border border-line rounded-md shadow-sm placeholder:text-ink-subtle dark:placeholder:text-ink-muted outline-none focus:border-accent dark:focus:border-accent focus:ring-accent/15 transition-all duration-150; }
 
 .modal-fade-enter-active, .modal-fade-leave-active { transition: opacity .2s; }
 .modal-fade-enter-from, .modal-fade-leave-to { opacity: 0; }

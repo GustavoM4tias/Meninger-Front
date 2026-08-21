@@ -5,7 +5,7 @@
       <div class="flex items-center gap-2">
         <select
           v-model="selectedStage"
-          class="text-xs px-2 py-1 border border-line rounded bg-white dark:bg-gray-700 text-ink"
+          class="text-xs px-2 py-1 border border-line rounded bg-surface-sunken text-ink"
           @change="$emit('filter-stage', selectedStage)"
         >
           <option value="">Todos os módulos</option>
@@ -13,7 +13,7 @@
             {{ mod.module_name }}
           </option>
         </select>
-        <button @click="$emit('refresh')" class="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition">
+        <button @click="$emit('refresh')" class="text-xs text-ink-subtle hover:text-ink-muted dark:hover:text-ink transition">
           <i class="fas fa-sync-alt"></i>
         </button>
       </div>
@@ -27,8 +27,8 @@
         :class="[
           'px-3 py-1.5 rounded-lg border text-xs',
           t.vigente
-            ? 'border-green-300 bg-green-50 dark:bg-green-900/20 dark:border-green-700 text-green-700 dark:text-green-300'
-            : 'border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-ink-muted'
+            ? 'border-data-pos bg-data-pos/20  text-data-pos'
+            : 'border-line bg-surface-sunken text-ink-muted'
         ]"
       >
         <div class="font-medium">{{ t.nome }}</div>
@@ -87,7 +87,7 @@
               <span
                 v-for="u in group.units"
                 :key="u.idunidade"
-                class="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded text-xs text-ink-muted"
+                class="px-1.5 py-0.5 bg-surface-sunken rounded text-xs text-ink-muted"
                 :title="formatCurrency(u.valor)"
               >
                 {{ u.nome }}
@@ -95,7 +95,7 @@
             </div>
             <button
               @click="expandedGroup = expandedGroup === i ? null : i"
-              class="text-xs text-blue-500 hover:text-blue-700 mt-0.5"
+              class="text-xs text-accent hover:text-accent mt-0.5"
             >
               {{ expandedGroup === i ? 'ocultar unidades' : `ver ${group.units.length} unidades` }}
             </button>
