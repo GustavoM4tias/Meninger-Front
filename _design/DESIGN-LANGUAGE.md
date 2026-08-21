@@ -444,6 +444,22 @@ Não recrie nenhum destes. Se faltar uma variante, adicione ao primitivo.
 Card escrito à mão (`bg-surface-raised border border-line rounded-xl shadow-soft`)
 vira `.panel`. Clicável vira `.panel-focus`.
 
+### `Panel` × `Surface` (decidido em 2026-08-20)
+
+Os dois existem e fazem coisas parecidas. A regra:
+
+- **`Panel` é o bloco de conteúdo do sistema.** Tem cabeçalho, ação no canto,
+  carga e vazio embutidos. É o que se usa quando o bloco TEM UM ASSUNTO.
+- **`Surface` é só uma superfície** com padding e variante. Serve para agrupar
+  visualmente algo que não tem título nem estado.
+
+Tela nova nasce em `Panel`. Tela migrada troca `Surface` por `Panel` no mesmo
+passo em que é migrada - **nunca numa varredura à parte**.
+
+> **Dívida registrada:** 54 arquivos usam `Surface` e 3 usam `Panel`. A troca em
+> massa NÃO está autorizada e não deve entrar de carona em outra tarefa: mexe em
+> tela que ninguém revisou. Cada tela troca quando for a vez dela.
+
 ---
 
 ## Gráficos
