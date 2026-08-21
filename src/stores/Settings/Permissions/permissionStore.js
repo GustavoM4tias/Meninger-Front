@@ -20,6 +20,16 @@ export const usePermissionStore = defineStore('permissions', () => {
     const capabilities = ref({});
     const isAdmin = ref(false);
     const loaded = ref(false);
+    /* DE ONDE veio o que está carregado. É o que separa "avaliei e você não tem
+       direito" de "não consegui avaliar":
+         'servidor' → confirmado agora; negar é uma decisão
+         'cache'    → veio do localStorage; negar seria um chute
+         'nenhuma'  → nem cache havia
+       Sem este sinal, o guard tratava os três como negativa e derrubava a
+       sessão. Para ADMIN era garantido: o cache guarda lista de rotas vazia
+       (a API manda `routes: null`) e `isAdmin` nunca volta do cache de
+       propósito, então sem servidor o admin não "tem" rota nenhuma. */
+    const origem = ref('nenhuma');
 
     // ── Carrega do backend as permissões do usuário logado ───────────────────
     async function fetchMyPermissions() {
@@ -30,17 +40,21 @@ export const usePermissionStore = defineStore('permissions', () => {
             adminOnlyRoutes.value = data.adminOnlyRoutes ?? [];
             capabilities.value = data.capabilities ?? {};
             loaded.value = true;
+            origem.value = 'servidor';
             // Cache local só das ROTAS (evita flicker do menu no reload).
             // isAdmin nunca vai para o cache: admin só vale confirmado pelo servidor.
             localStorage.setItem('_perm', JSON.stringify({
                 routes: allowedRoutes.value,
                 adminOnlyRoutes: adminOnlyRoutes.value,
             }));
-        } catch {
+        } catch (err) {
             // Fallback para cache local em caso de falha de rede (só rotas;
-            // isAdmin permanece false — fail-closed para telas admin)
+            // isAdmin permanece false — fail-closed para telas admin).
+            // `origem` registra que isto NÃO é palavra do servidor.
             _loadFromCache();
             loaded.value = true;
+            origem.value = localStorage.getItem('_perm') ? 'cache' : 'nenhuma';
+            console.warn('[permissoes] sem resposta do servidor; usando', origem.value, '-', err?.message || err);
         }
     }
 
@@ -49,7 +63,12 @@ export const usePermissionStore = defineStore('permissions', () => {
         if (!loaded.value) {
             _loadFromCache(); // carrega imediatamente do cache para não bloquear
             await fetchMyPermissions(); // depois sincroniza com o servidor
+            return;
         }
+        /* Já carregou, mas do cache: tenta de novo. Sem isto a sessão ficava
+           presa no cache até um F5 - quem perdeu o servidor por um minuto
+           continuaria sem alçada depois que ele voltasse. */
+        if (origem.value !== 'servidor') await fetchMyPermissions();
     }
 
     // ── Verifica se o usuário pode acessar uma rota ──────────────────────────
@@ -103,6 +122,7 @@ export const usePermissionStore = defineStore('permissions', () => {
         capabilities.value = {};
         isAdmin.value = false;
         loaded.value = false;
+        origem.value = 'nenhuma';
         localStorage.removeItem('_perm');
     }
 
@@ -127,6 +147,7 @@ export const usePermissionStore = defineStore('permissions', () => {
         can,
         isAdmin,
         loaded,
+        origem,
         fetchMyPermissions,
         ensureLoaded,
         hasAccess,

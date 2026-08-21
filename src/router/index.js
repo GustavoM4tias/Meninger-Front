@@ -79,6 +79,25 @@ function backToLogin(next, authStore) {
   return next(isAcademyHost() ? { name: 'AcademyLogin' } : { name: 'login', query: { motivo: 'acesso' } });
 }
 
+/**
+ * Negado porque NÃO DEU PARA AVALIAR - não porque a pessoa não tem direito.
+ *
+ * Negar acesso e encerrar a sessão viraram a mesma coisa aqui, e não são. Com o
+ * servidor fora, `hasRole` e `hasAccess` respondem "não" por falta de dado, e o
+ * `backToLogin` apagava token e refresh_token de quem estava perfeitamente
+ * logado: bastava um F5 durante um restart da API para o Office inteiro
+ * deslogar (para ADMIN em qualquer tela, porque o cache de permissão guarda
+ * lista vazia e `isAdmin` não volta do cache).
+ *
+ * Aqui a porta continua fechada - fail-closed, o backend é o portão de verdade
+ * - mas a sessão fica de pé e se recupera sozinha quando a API responde.
+ */
+function negarSemDeslogar(next, to, motivo) {
+  console.warn(`[guard] acesso a "${to.fullPath}" negado sem avaliação (${motivo}); sessão mantida.`);
+  // A home é sempre permitida; mandar a home para a home seria laço.
+  return to.path === '/' ? next() : next({ path: '/', query: { indisponivel: '1' } });
+}
+
 // ✅ Guard unificado: autenticação + role + admin + permissões de alçada
 router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore();
@@ -95,8 +114,19 @@ router.beforeEach(async (to, from, next) => {
   //     um F5 numa rota admin negaria acesso antes do fetchMe terminar.
   //     Falha de rede: segue sem user → checks de role negam (fail-closed),
   //     sem deslogar o usuário.
+  /* `semServidor` acompanha o guard inteiro: qualquer negativa daqui para
+     baixo pode ser falta de dado, e não falta de direito. */
+  let semServidor = false;
+
   if (requiresAuth && authStore.isAuthenticated() && !authStore.user) {
-    try { await authStore.fetchMe(); } catch { /* fail-closed nos checks abaixo */ }
+    try {
+      await authStore.fetchMe();
+    } catch (err) {
+      // 401/403 = o servidor negou a credencial; o resto = não houve resposta.
+      const negadoPeloServidor = err?.status === 401 || err?.status === 403;
+      if (negadoPeloServidor) return backToLogin(next, authStore);
+      semServidor = true;
+    }
   }
 
   // 2. Checks de position e role
@@ -104,10 +134,12 @@ router.beforeEach(async (to, from, next) => {
   const allowedRole     = to.meta?.allowedRole;
 
   if (allowedPosition && !authStore.hasPosition(allowedPosition)) {
+    if (semServidor || !authStore.user) return negarSemDeslogar(next, to, 'cargo não confirmado');
     return backToLogin(next, authStore);
   }
 
   if (allowedRole && !authStore.hasRole(allowedRole)) {
+    if (semServidor || !authStore.user) return negarSemDeslogar(next, to, 'perfil não confirmado');
     return backToLogin(next, authStore);
   }
 
@@ -117,6 +149,9 @@ router.beforeEach(async (to, from, next) => {
     const permStore = usePermissionStore();
     await permStore.ensureLoaded();
 
+    /* Permissão que veio do cache (ou nem isso) não sustenta uma negativa. */
+    const alcadaConfirmada = permStore.origem === 'servidor';
+
     // 3a. Rotas admin: por CÓDIGO (meta.requiresAdmin/adminOnly em qualquer
     //     nível do match) ou por CONFIGURAÇÃO (tela travada como somente-admin
     //     na tela de Alçadas). Exige admin confirmado pelo servidor
@@ -124,6 +159,7 @@ router.beforeEach(async (to, from, next) => {
     const needsAdmin = to.matched.some(r => r.meta?.requiresAdmin || r.meta?.adminOnly)
       || permStore.isRouteAdminOnly(to.path);
     if (needsAdmin && !permStore.isAdmin) {
+      if (!alcadaConfirmada) return negarSemDeslogar(next, to, 'alçada não confirmada');
       return backToLogin(next, authStore);
     }
 
@@ -132,6 +168,7 @@ router.beforeEach(async (to, from, next) => {
     //     gerenciado e qualquer logado entraria pela URL.
     const inherited = to.matched.map(r => r.meta?.permissionRoute).filter(Boolean).pop();
     if (inherited && !permStore.hasAccess(inherited)) {
+      if (!alcadaConfirmada) return negarSemDeslogar(next, to, 'alçada não confirmada');
       return backToLogin(next, authStore);
     }
 
@@ -141,6 +178,7 @@ router.beforeEach(async (to, from, next) => {
     );
 
     if (isManagedRoute && !permStore.hasAccess(to.path)) {
+      if (!alcadaConfirmada) return negarSemDeslogar(next, to, 'alçada não confirmada');
       return backToLogin(next, authStore);
     }
   }
