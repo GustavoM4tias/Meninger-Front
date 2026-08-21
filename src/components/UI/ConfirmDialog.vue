@@ -92,8 +92,11 @@ const TONES = {
     </div>
 
     <template #footer>
-      <!-- Cancelar à esquerda, ação à direita: sempre nesta ordem. -->
-      <Button variant="ghost" :disabled="loading" @click="cancelar">{{ cancelLabel }}</Button>
+      <!-- Cancelar à esquerda, ação à direita: sempre nesta ordem.
+           E cancelar NUNCA fica desabilitado: `disabled` no Button vira
+           `pointer-events-none`, então o clique morria em silêncio e só o Esc
+           fechava - a saída de uma decisão não pode depender do teclado. -->
+      <Button variant="ghost" @click="cancelar">{{ cancelLabel }}</Button>
       <Button :variant="(TONES[tone] || TONES.danger).botao" :loading="loading" @click="confirmar">
         {{ confirmLabel }}
       </Button>

@@ -96,47 +96,81 @@ const alcancePorRota = computed(() => {
   return mapa;
 });
 
-/* ── Filas de trabalho (a barra de pendências) ───────────────────────────── */
-const naoAdmins = computed(() => users.value.filter(u => u.role !== 'admin'));
-const semPerfil = computed(() => naoAdmins.value.filter(u => !u.permission_profile_id));
-const semGrant = computed(() => naoAdmins.value.filter(u => !(grantsBulk.value.user?.[String(u.id)] || []).length));
-const comExcecao = computed(() => naoAdmins.value.filter(u =>
-  (u.permission?.routes_extra?.length || 0) + (u.permission?.routes_removed?.length || 0) > 0));
-const semNenhumaTela = computed(() => naoAdmins.value.filter(u => !(u.effectiveRoutes || []).length));
+/* ── Tipo de pessoa ────────────────────────────────────────────────────────
+   O backend resolve `tipo` a partir do auth_provider: INTERNAL e MICROSOFT são
+   a EQUIPE; o resto vem do CV e é EXTERNO (corretor, imobiliária,
+   correspondente). O domínio do e-mail NÃO serve para isso - há gente da equipe
+   com e-mail pessoal e externo com e-mail que parece corporativo. */
+const KIND_LABEL = { BROKER: 'Corretor', REALESTATE: 'Imobiliária', CORRESPONDENT: 'Correspondente' };
+const rotuloExterno = (u) => KIND_LABEL[u.external_kind] || 'Externo';
+
+const tipoFiltro = ref('todos');
+const tiposOpcoes = [
+  { value: 'todos', label: 'Todos', icon: 'fas fa-users' },
+  { value: 'equipe', label: 'Equipe', icon: 'fas fa-id-badge' },
+  { value: 'externo', label: 'Externos', icon: 'fas fa-user-tag' },
+];
+
+/* ── Filas de trabalho (a barra de pendências) ─────────────────────────────
+   UM predicado por fila, usado pelo cartão E pela lista. Antes o cartão contava
+   sem admin e a lista filtrava com admin junto: o cartão dizia 15 e a lista
+   entregava 22. O número que se clica tem que ser o número que se recebe.
+
+   Fila é só da EQUIPE. Externo sem perfil é o estado normal dele - perfil aqui
+   é "Padrão - <departamento>", e corretor não tem departamento. Contá-lo como
+   pendência encheria a fila de gente que não tem nada de errado. */
+const elegivelFila = (u) => u.role !== 'admin' && u.tipo !== 'externo';
 
 const recorte = ref('');
 const FILAS = {
-  'sem-perfil': { label: 'sem perfil', teste: (u) => !u.permission_profile_id },
-  'sem-grant': { label: 'sem liberação de dados', teste: (u) => !(grantsBulk.value.user?.[String(u.id)] || []).length },
-  'excecao': { label: 'com exceção individual', teste: (u) => (u.permission?.routes_extra?.length || 0) + (u.permission?.routes_removed?.length || 0) > 0 },
-  'sem-tela': { label: 'sem nenhuma tela', teste: (u) => !(u.effectiveRoutes || []).length },
+  'sem-perfil': { label: 'sem perfil',
+    teste: (u) => elegivelFila(u) && !u.permission_profile_id },
+  'sem-grant': { label: 'sem liberação de dados',
+    teste: (u) => elegivelFila(u) && !(grantsBulk.value.user?.[String(u.id)] || []).length },
+  'excecao': { label: 'com exceção individual',
+    teste: (u) => elegivelFila(u) && (u.permission?.routes_extra?.length || 0) + (u.permission?.routes_removed?.length || 0) > 0 },
+  'sem-tela': { label: 'sem nenhuma tela',
+    teste: (u) => elegivelFila(u) && !(u.effectiveRoutes || []).length },
 };
+
+const naFila = (chave) => users.value.filter(FILAS[chave].teste);
+const equipe = computed(() => users.value.filter(u => u.tipo !== 'externo'));
+const externos = computed(() => users.value.filter(u => u.tipo === 'externo'));
 
 /* Fila é trabalho, não medida: `value` pronto (sem count-up), sem série e sem
    variação. Clicar recorta o MESTRE; clicar de novo desliga. */
-const pendencias = computed(() => [
-  { key: 'todos', label: 'Pessoas', value: String(naoAdmins.value.length),
-    hint: `${users.value.length - naoAdmins.value.length} administradores`,
-    icon: 'fas fa-users', tone: 'accent', tooltip: 'Ver todas as pessoas' },
-  { key: 'sem-perfil', label: 'Sem perfil', value: String(semPerfil.value.length),
-    hint: 'rodando no pacote antigo', icon: 'fas fa-user-slash',
-    tone: semPerfil.value.length ? 'warn' : 'neutral', tooltip: 'Ver quem está sem perfil' },
-  { key: 'sem-grant', label: 'Sem dados liberados', value: String(semGrant.value.length),
-    hint: 'telas abrem vazias', icon: 'fas fa-building-lock',
-    tone: semGrant.value.length ? 'neg' : 'neutral', tooltip: 'Ver quem não enxerga empreendimento nenhum' },
-  { key: 'excecao', label: 'Com exceção', value: String(comExcecao.value.length),
-    hint: 'fora do perfil', icon: 'fas fa-code-branch',
-    tone: comExcecao.value.length ? 2 : 'neutral', tooltip: 'Ver quem tem exceção individual' },
-  { key: 'sem-tela', label: 'Sem nenhuma tela', value: String(semNenhumaTela.value.length),
-    hint: 'não abrem nada', icon: 'fas fa-ban',
-    tone: semNenhumaTela.value.length ? 'neg' : 'neutral', tooltip: 'Ver quem está sem acesso a tela alguma' },
-]);
+const pendencias = computed(() => {
+  const n = (k) => naFila(k).length;
+  return [
+    { key: 'todos', label: 'Pessoas', value: String(users.value.length),
+      hint: `${equipe.value.length} da equipe · ${externos.value.length} externo${externos.value.length === 1 ? '' : 's'}`,
+      icon: 'fas fa-users', tone: 'accent', tooltip: 'Ver todas as pessoas' },
+    { key: 'sem-perfil', label: 'Sem perfil', value: String(n('sem-perfil')),
+      hint: 'equipe no pacote antigo', icon: 'fas fa-user-slash',
+      tone: n('sem-perfil') ? 'warn' : 'neutral', tooltip: 'Ver quem da equipe está sem perfil' },
+    { key: 'sem-grant', label: 'Sem dados liberados', value: String(n('sem-grant')),
+      hint: 'telas abrem vazias', icon: 'fas fa-building-lock',
+      tone: n('sem-grant') ? 'neg' : 'neutral', tooltip: 'Ver quem não enxerga empreendimento nenhum' },
+    { key: 'excecao', label: 'Com exceção', value: String(n('excecao')),
+      hint: 'fora do perfil', icon: 'fas fa-code-branch',
+      tone: n('excecao') ? 2 : 'neutral', tooltip: 'Ver quem tem exceção individual' },
+    { key: 'sem-tela', label: 'Sem nenhuma tela', value: String(n('sem-tela')),
+      hint: 'não abrem nada', icon: 'fas fa-ban',
+      tone: n('sem-tela') ? 'neg' : 'neutral', tooltip: 'Ver quem está sem acesso a tela alguma' },
+  ];
+});
 
+/* Fila e tipo são dois cortes da mesma lista e valem UM DE CADA VEZ: as filas já
+   são só da equipe, então "externos + sem perfil" não significaria nada - e
+   combinar os dois quebraria a promessa de que o número do cartão é o número da
+   lista. */
 function aoClicarPendencia(item) {
   aba.value = 'users';
+  tipoFiltro.value = 'todos';
   recorte.value = (item.key === 'todos' || recorte.value === item.key) ? '' : item.key;
 }
 const filaAtiva = computed(() => FILAS[recorte.value] || null);
+watch(tipoFiltro, () => { recorte.value = ''; });
 
 /* ── Mestre: usuários ────────────────────────────────────────────────────── */
 const busca = ref('');
@@ -145,7 +179,9 @@ const selectedUser = ref(null);
 const usuariosVisiveis = computed(() => {
   const q = busca.value.trim().toLowerCase();
   return naoAdminsPrimeiro.value.filter(u => {
-    if (filaAtiva.value && !filaAtiva.value.teste(u)) return false;
+    /* O corte é um só: ou a fila do cartão, ou o tipo. */
+    if (filaAtiva.value) { if (!filaAtiva.value.teste(u)) return false; }
+    else if (tipoFiltro.value !== 'todos' && u.tipo !== tipoFiltro.value) return false;
     if (!q) return true;
     return u.username.toLowerCase().includes(q) || u.email.toLowerCase().includes(q);
   });
@@ -284,10 +320,18 @@ const departmentOptions = computed(() => [
   { value: '', label: 'Nenhum (perfil avulso)' },
   ...departments.value.map(d => ({ value: String(d.id), label: d.name })),
 ]);
-const profileOptions = computed(() => [
-  { value: '', label: 'Sem perfil' },
-  ...profiles.value.map(p => ({ value: String(p.id), label: p.name })),
-]);
+/* Só perfil ATIVO é oferecido - inativo não concede tela nenhuma. O perfil já
+   aplicado continua na lista mesmo inativo, rotulado: sumir com a opção faria
+   parecer que a pessoa está sem perfil. */
+const profileOptions = computed(() => {
+  const atual = String(localProfileId.value || '');
+  return [
+    { value: '', label: 'Sem perfil' },
+    ...profiles.value
+      .filter(p => p.active !== false || String(p.id) === atual)
+      .map(p => ({ value: String(p.id), label: p.active === false ? `${p.name} (inativo)` : p.name })),
+  ];
+});
 const usersByProfile = computed(() => {
   const m = new Map();
   for (const u of users.value) {
@@ -543,6 +587,9 @@ onMounted(carregarTudo);
           :tips="[
             'Travar uma tela na aba Telas tira ela de todos os não-administradores de uma vez, sem depender de perfil - e o aviso diz quantas pessoas perdem o acesso.',
             'A aba Telas também mostra as AÇÕES de cada tela: o que a alçada libera por dentro e o que continua sendo só de administrador.',
+            'A lista tem gente da equipe e gente de fora (corretor, imobiliária, correspondente, que entram pelo CV). O seletor no topo da lista separa os dois, e externo sempre aparece com selo azul - o e-mail não serve para distinguir.',
+            'As pendências contam só a equipe: externo sem perfil é o estado normal dele, porque perfil aqui é por departamento.',
+            'O número do cartão é exatamente o número da lista: clicar num cartão desfaz o filtro de tipo, e trocar o tipo desfaz o cartão.',
             'Selo cinza é herança do perfil; azul é exceção liberada; âmbar é exceção negada. Exceção é o que se revisa depois.',
             'Rota aposentada volta a sair no próximo reinício: religar por exceção não adianta, está listado na aba Telas.',
           ]"
@@ -601,7 +648,10 @@ onMounted(carregarTudo);
               </button>
             </template>
 
-            <div class="p-3 border-b border-line-subtle">
+            <div class="p-3 border-b border-line-subtle space-y-2.5">
+              <!-- Tipo é um corte do mesmo mestre, então mora aqui e não vira
+                   painel de filtro: um controle, três estados. -->
+              <SegmentedControl v-model="tipoFiltro" :options="tiposOpcoes" size="sm" />
               <Input v-model="busca" placeholder="Buscar por nome ou e-mail" iconLeft="fas fa-magnifying-glass" />
             </div>
 
@@ -621,7 +671,13 @@ onMounted(carregarTudo);
                     <span class="block text-sm font-medium text-ink truncate">{{ u.username }}</span>
                     <span class="block text-micro text-ink-subtle truncate">{{ u.email }}</span>
                   </span>
-                  <Badge v-if="u.role === 'admin'" variant="accent" size="sm">admin</Badge>
+                  <!-- Externo ganha selo porque é a exceção e não dá para
+                       saber olhando; equipe fica quieta, que é o caso comum.
+                       "Sem perfil" não vale para externo: é o normal dele. -->
+                  <Badge v-if="u.tipo === 'externo'" variant="info" size="sm" class="shrink-0">
+                    {{ rotuloExterno(u) }}
+                  </Badge>
+                  <Badge v-else-if="u.role === 'admin'" variant="accent" size="sm">admin</Badge>
                   <Badge v-else-if="!u.permission_profile_id" variant="warning" size="sm">sem perfil</Badge>
                   <span v-else class="text-micro text-ink-subtle tabular-nums shrink-0">
                     {{ (u.effectiveRoutes || []).length }}
@@ -673,9 +729,29 @@ onMounted(carregarTudo);
               </div>
 
               <!-- Avisos de estado do sujeito -->
+              <!-- Tipo: fica ao lado do e-mail porque muda a leitura de tudo
+                   que vem abaixo (perfil de departamento não serve a externo). -->
+              <div class="mt-2 flex flex-wrap items-center gap-2 text-micro text-ink-subtle">
+                <Badge :variant="selectedUser.tipo === 'externo' ? 'info' : 'neutral'" size="sm">
+                  <i :class="selectedUser.tipo === 'externo' ? 'fas fa-user-tag' : 'fas fa-id-badge'"
+                    class="text-micro"></i>
+                  {{ selectedUser.tipo === 'externo' ? rotuloExterno(selectedUser) : 'Equipe' }}
+                </Badge>
+                <span class="font-mono">{{ selectedUser.auth_provider }}</span>
+              </div>
+
               <div v-if="selectedUser.role === 'admin'"
                 class="mt-3 rounded-lg border border-accent/25 bg-accent-soft p-3 text-xs text-accent">
                 Administrador enxerga todas as telas e todos os empreendimentos. Não há alçada para editar.
+              </div>
+              <div v-else-if="selectedUser.tipo === 'externo'"
+                class="mt-3 rounded-lg border border-line bg-surface-sunken p-3 text-xs text-ink-muted
+                       flex items-start gap-2">
+                <i class="fas fa-circle-info mt-0.5 shrink-0 text-accent"></i>
+                <span>
+                  Pessoa de fora, vinda do CV. Os perfis desta tela são por departamento e não se
+                  aplicam a ela: libere as telas uma a uma, como exceção.
+                </span>
               </div>
               <div v-else-if="!(grantsBulk.user?.[String(selectedUser.id)] || []).length"
                 class="mt-3 rounded-lg border border-data-neg/25 bg-data-neg/10 p-3 text-xs text-data-neg
@@ -859,27 +935,31 @@ onMounted(carregarTudo);
       hint="Reversível: destravar devolve a tela a quem já tinha pelo perfil."
       confirm-label="Travar tela" ask-note note-label="Motivo (fica registrado)"
       note-placeholder="Ex.: tela em manutenção" :loading="dialogoBusy"
-      @confirm="confirmarTravar" @cancel="dialogo = ''" />
+      @confirm="confirmarTravar" @cancel="dialogo = ''"
+      @update:open="v => { if (!v) dialogo = '' }" />
 
     <ConfirmDialog :open="dialogo === 'excluir-perfil'" tone="danger"
       :title="`Excluir o perfil ${selectedProfile?.name}?`"
       :consequence="`${usersByProfile.get(selectedProfile?.id) || 0} pessoa(s) perdem as telas do perfil e ficam só com as exceções individuais.`"
       hint="As exceções de cada pessoa continuam como estão."
       confirm-label="Excluir perfil" :loading="dialogoBusy"
-      @confirm="confirmarExcluirPerfil" @cancel="dialogo = ''" />
+      @confirm="confirmarExcluirPerfil" @cancel="dialogo = ''"
+      @update:open="v => { if (!v) dialogo = '' }" />
 
     <ConfirmDialog :open="dialogo === 'restaurar-perfil'" tone="accent"
       title="Restaurar as telas padrão do departamento?"
       consequence="As telas escolhidas à mão neste perfil são substituídas pelo conjunto padrão do departamento."
       hint="Depois disso o perfil volta a ser mantido em dia quando o sistema ganhar telas novas."
       confirm-label="Restaurar padrão" :loading="dialogoBusy"
-      @confirm="confirmarRestaurarPerfil" @cancel="dialogo = ''" />
+      @confirm="confirmarRestaurarPerfil" @cancel="dialogo = ''"
+      @update:open="v => { if (!v) dialogo = '' }" />
 
     <ConfirmDialog :open="dialogo === 'revogar'" tone="danger"
       :title="`Tirar todas as telas de ${selectedUser?.username}?`"
       :consequence="`As ${efetivasPrevistas} telas viram exceção negada. A pessoa continua entrando no Office, mas sem abrir nada.`"
       hint="Ainda não é definitivo: só vale quando você salvar."
-      confirm-label="Tirar todas" @confirm="confirmarRevogar" @cancel="dialogo = ''" />
+      confirm-label="Tirar todas" @confirm="confirmarRevogar" @cancel="dialogo = ''"
+      @update:open="v => { if (!v) dialogo = '' }" />
 
     <ConfirmDialog :open="dialogo === 'descartar'" tone="accent"
       title="Descartar as alterações?"
