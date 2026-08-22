@@ -2750,7 +2750,7 @@
       "group": "",
       "cat": "",
       "sub": "",
-      "lines": 1088,
+      "lines": 1101,
       "pageContainer": true,
       "pageHeader": true,
       "pageHelp": true,
@@ -2776,7 +2776,7 @@
           "tableMobile": false
         }
       ],
-      "totalLines": 1262,
+      "totalLines": 1275,
       "totalHardcoded": 0,
       "totalTiny": 27,
       "totalCharts": 0,
@@ -3069,7 +3069,7 @@
       "group": "",
       "cat": "",
       "sub": "",
-      "lines": 1280,
+      "lines": 1363,
       "pageContainer": true,
       "pageHeader": true,
       "pageHelp": true,
@@ -3082,7 +3082,7 @@
       "chart": false,
       "spinner": true,
       "skeleton": true,
-      "breakpoints": 15,
+      "breakpoints": 16,
       "divClick": 0,
       "kids": [
         {
@@ -3104,7 +3104,7 @@
           "tableMobile": false
         }
       ],
-      "totalLines": 2618,
+      "totalLines": 2701,
       "totalHardcoded": 6,
       "totalTiny": 0,
       "totalCharts": 0,
@@ -4893,7 +4893,7 @@
         },
         {
           "file": "views/Office/Comercial/Sales-Projection/components/ProjectionChartsModal.vue",
-          "lines": 1110,
+          "lines": 1102,
           "hardcoded": 4,
           "tinyText": 18,
           "chart": true,
@@ -6071,7 +6071,7 @@
           "tableMobile": false
         }
       ],
-      "totalLines": 56170,
+      "totalLines": 56162,
       "totalHardcoded": 320,
       "totalTiny": 738,
       "totalCharts": 7,

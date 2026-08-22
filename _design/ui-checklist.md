@@ -158,7 +158,7 @@ Score 95+. Já são referência. Só revalidar depois que os primitivos novos ex
 - [ ] **Checklists** `/checklists` · ` 96`
       <sub>views/Office/Checklist/Index.vue · 3017L (+14 comp.) · 3 cor fixa, 18 texto micro, 1 tabela</sub>
 - [ ] **Cancelamentos CV × Sienge** `/cancelamento-reservas` · ` 96`
-      <sub>views/Office/Comercial/CancelamentoReservas/Index.vue · 1262L (+1 comp.) · 27 texto micro, 1 tabela</sub>
+      <sub>views/Office/Comercial/CancelamentoReservas/Index.vue · 1275L (+1 comp.) · 27 texto micro, 1 tabela</sub>
 - [ ] **Reservas** `/reservas-report` · ` 97`
       <sub>views/Office/Comercial/Reservas/Index.vue · 985L (+1 comp.) · 8 cor fixa, 1 tabela</sub>
 - [ ] **Pré-Cadastros** `/precadastros` · ` 98`
@@ -168,7 +168,7 @@ Score 95+. Já são referência. Só revalidar depois que os primitivos novos ex
 - [ ] **Consulta de nº CEF** `/consulta-cef` · ` 98`
       <sub>views/Office/Financeiro/ConsultaCef/Index.vue · 352L · 13 texto micro, 1 tabela</sub>
 - [ ] **Boleto Caixa** `/boleto-caixa` · ` 98`
-      <sub>views/Office/Financeiro/BoletoCaixa/Index.vue · 2618L (+2 comp.) · 6 cor fixa, 2 tabela</sub>
+      <sub>views/Office/Financeiro/BoletoCaixa/Index.vue · 2701L (+2 comp.) · 6 cor fixa, 2 tabela</sub>
 - [ ] **Stand de Vendas** `/stand-vendas` · ` 99`
       <sub>views/Office/Marketing/StandVendas/Index.vue · 730L (+3 comp.) · 7 texto micro, 1 tabela</sub>
 - [ ] **Imobiliárias** `/imobiliarias` · ` 99`
@@ -223,7 +223,7 @@ Não seguem o esqueleto de página por natureza (login, shell, home da Eme, inst
 - [ ] **Config** `/` · `--`
       <sub>views/Office/Config/OfficeShell.vue · 212L (+2 comp.) · sem container, sem header, sem help, 1 gráfico</sub>
 - [ ] **Home**  · `--`
-      <sub>views/Office/Home.vue · 56170L (+199 comp.) · sem container, sem header, sem help, 320 cor fixa, 738 texto micro, 7 gráfico, 23 tabela sem mobile</sub>
+      <sub>views/Office/Home.vue · 56162L (+199 comp.) · sem container, sem header, sem help, 320 cor fixa, 738 texto micro, 7 gráfico, 23 tabela sem mobile</sub>
 - [ ] **layouts** `/academy` · `--`
       <sub>views/Academy/layouts/AcademyOfficeArea.vue · 483L (+3 comp.) · sem container, sem header, sem help, 129 cor fixa</sub>
 
