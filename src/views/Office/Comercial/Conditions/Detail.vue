@@ -542,6 +542,22 @@
       </div>
     </template>
   </div>
+
+  <ConfirmDialog :open="!!aRemover" tone="danger"
+    :title="`Remover o módulo ${aRemover?.nome}?`"
+    :consequence="aRemover?.mod?.id
+      ? 'Preços, negociação, documentação, campanhas e operacional deste módulo somem junto.'
+      : 'O módulo ainda não foi salvo, então some só desta tela.'"
+    hint="Os outros módulos da ficha não mudam."
+    confirm-label="Remover módulo"
+    @confirm="confirmarRemocaoModulo" @cancel="aRemover = null" />
+
+  <ConfirmDialog :open="!!saidaPendente" tone="danger"
+    title="Sair sem salvar?"
+    consequence="As alterações feitas nesta ficha e ainda não salvas se perdem."
+    hint="Cancelar traz você de volta para salvar antes."
+    confirm-label="Sair e descartar" cancel-label="Continuar editando"
+    @confirm="confirmarSaida" @cancel="cancelarSaida" />
 </template>
 
 <script setup>
@@ -554,6 +570,7 @@ import SummaryExport from './components/SummaryExport.vue';
 import SignaturePanel from './components/SignaturePanel.vue';
 
 import Modal from '@/components/UI/Modal.vue';
+import ConfirmDialog from '@/components/UI/ConfirmDialog.vue';
 import Button from '@/components/UI/Button.vue';
 import Input from '@/components/UI/Input.vue';
 import Select from '@/components/UI/Select.vue';
@@ -658,6 +675,9 @@ const unlockNote = ref('');
 const cancelApprovalNote = ref('');
 const fetchError = ref(null);
 const isDirty = ref(false);
+/* Remover módulo apaga as condições dele; o `confirm` do navegador não dizia
+   isso nem quantas seções vão junto. */
+const aRemover = ref(null);
 
 const enterpriseOptions = ref([]);
 
@@ -805,17 +825,23 @@ function addCustomModule() {
 function removeModule(i) {
     const mod = localModules.value[i];
     if (!mod) return;
-    const name = mod.module_name || 'este módulo';
-    if (!window.confirm(`Remover "${name}"? Esta ação não pode ser desfeita.`)) return;
-    if (mod.id) {
-        handleDeleteModule(mod.id);
-    } else {
-        localModules.value = localModules.value.filter((_, idx) => idx !== i);
-        if (activeModuleIndex.value >= localModules.value.length) {
-            activeModuleIndex.value = Math.max(0, localModules.value.length - 1);
-        }
-        isDirty.value = true;
+    aRemover.value = { i, mod, nome: mod.module_name || 'este módulo' };
+}
+
+/* Módulo já salvo some no servidor; módulo novo some só da tela. */
+function confirmarRemocaoModulo() {
+    const alvo = aRemover.value;
+    aRemover.value = null;
+    if (!alvo) return;
+    if (alvo.mod.id) {
+        handleDeleteModule(alvo.mod.id);
+        return;
     }
+    localModules.value = localModules.value.filter((_, idx) => idx !== alvo.i);
+    if (activeModuleIndex.value >= localModules.value.length) {
+        activeModuleIndex.value = Math.max(0, localModules.value.length - 1);
+    }
+    isDirty.value = true;
 }
 
 // Mantém o índice ativo no range quando a lista muda (ex.: após remover módulo).
@@ -966,10 +992,17 @@ function onModulesChange(newModules) {
     isDirty.value = true;
 }
 
+/* O guarda de rota e sincrono, mas o dialogo do sistema nao: seguramos o
+   `next` e so resolvemos quando a pessoa decide. O `beforeunload` (fechar
+   a aba) continua nativo - o navegador nao aceita outra coisa ali. */
+const saidaPendente = ref(null);
+function confirmarSaida() { const n = saidaPendente.value; saidaPendente.value = null; n?.(); }
+function cancelarSaida() { const n = saidaPendente.value; saidaPendente.value = null; n?.(false); }
+
 onBeforeRouteLeave((to, from, next) => {
     if (isDirty.value) {
-        const ok = window.confirm('Você tem alterações não salvas.\nDeseja realmente sair e perder as alterações?');
-        ok ? next() : next(false);
+        saidaPendente.value = next;
+
     } else {
         next();
     }

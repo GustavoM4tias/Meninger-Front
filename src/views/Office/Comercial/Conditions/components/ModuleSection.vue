@@ -793,10 +793,18 @@
     </div>
 
   </div>
+
+    <ConfirmDialog :open="!!aRemoverModulo" tone="danger"
+        :title="`Remover o módulo ${aRemoverModulo?.nome}?`"
+        consequence="Preços, negociação, documentação, campanhas e operacional deste módulo somem junto."
+        hint="Os outros módulos da ficha não mudam."
+        confirm-label="Remover módulo"
+        @confirm="confirmarRemoverModulo" @cancel="aRemoverModulo = null" />
 </template>
 
 <script setup>
 import Modal from '@/components/UI/Modal.vue';
+import ConfirmDialog from '@/components/UI/ConfirmDialog.vue';
 import Button from '@/components/UI/Button.vue';
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue';
 import { useConditionsStore } from '@/stores/Comercial/Conditions/conditionsStore';
@@ -836,6 +844,7 @@ const activeIdx = computed({
 });
 const activeSubTab = ref('data');
 const copying      = ref(false);
+const aRemoverModulo = ref(null);   // modulo aguardando confirmacao
 const showAddPanel = ref(false);
 
 const STATUS_LABELS = {
@@ -1137,8 +1146,15 @@ watch(() => props.modules, (mods) => {
 
 function handleDeleteModule(mod) {
     const name = mod.module_name || `Módulo #${mod.id}`;
-    if (!window.confirm(`Remover o módulo "${name}"?\n\nEsta ação não pode ser desfeita.`)) return;
-    emit('delete-module', mod.id);
+    aRemoverModulo.value = { mod, nome: name };
+}
+
+/* O modulo ja salvo some no servidor; o novo some so da tela. */
+function confirmarRemoverModulo() {
+    const alvo = aRemoverModulo.value;
+    aRemoverModulo.value = null;
+    if (!alvo) return;
+    emit('delete-module', alvo.mod.id);
 }
 
 // ── Patch helpers ─────────────────────────────────────────────────────────────
