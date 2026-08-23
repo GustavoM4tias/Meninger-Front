@@ -3,6 +3,7 @@
 // configuração interna (notes, priority, archived).
 
 import { ref, computed, watch } from 'vue';
+import { useToast } from 'vue-toastification';
 import { useCampaignsStore } from '@/stores/Marketing/Campaigns/campaignsStore';
 import Button from '@/components/UI/Button.vue';
 import EnterpriseMultiSelect from '@/components/Marketing/EnterpriseMultiSelect.vue';
@@ -22,6 +23,7 @@ const props = defineProps({
 const emit = defineEmits(['update:open', 'saved']);
 
 const store = useCampaignsStore();
+const toast = useToast();
 
 const campaign = ref(null);
 const leads = ref([]);
@@ -184,7 +186,7 @@ async function saveInternal() {
     if (updated) {
         campaign.value = { ...campaign.value, ...updated };
         emit('saved', updated);
-        window.alert('Salvo.');
+        toast.success('Salvo.');
     }
 }
 

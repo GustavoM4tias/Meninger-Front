@@ -7,6 +7,7 @@
 // moraram aqui até 2026-07-23 — agora vivem na aba Credenciais da Central Meta.
 
 import { onMounted, ref, computed } from 'vue';
+import { useToast } from 'vue-toastification';
 import { useMarketingSettingsStore } from '@/stores/Marketing/Settings/marketingSettingsStore';
 import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 import Surface from '@/components/UI/Surface.vue';
@@ -15,6 +16,7 @@ import Input from '@/components/UI/Input.vue';
 import Switch from '@/components/UI/Switch.vue';
 
 const store = useMarketingSettingsStore();
+const toast = useToast();
 const authStore = useAuthStore();
 
 // Buffer de edição separado da config persistida — usuário edita sem afetar
@@ -84,7 +86,7 @@ async function save() {
     };
     const ok = await store.updateConfig(patch);
     if (ok) {
-        window.alert('Configuração salva.');
+        toast.success('Configuração salva.');
         await store.fetchConfig();
         resetDraft();
     }

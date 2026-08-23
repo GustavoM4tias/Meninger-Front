@@ -7,6 +7,7 @@
 // (lib/screenCapabilities.js) e chega pronta — ver composables/useCan.js.
 
 import { ref, onMounted } from 'vue';
+import ConfirmDialog from '@/components/UI/ConfirmDialog.vue';
 import { useMuralAdminStore } from '@/stores/Mural/muralAdminStore';
 import { useCan } from '@/composables/useCan';
 import PageContainer from '@/components/UI/PageContainer.vue';
@@ -20,6 +21,9 @@ import AdherencePanel from './components/AdherencePanel.vue';
 import { kindMeta, formatDate } from '@/utils/Mural/muralFormat';
 
 const store = useMuralAdminStore();
+
+/* Excluir comunicado nao tem desfazer e some da tela de quem ja recebeu. */
+const aExcluir = ref(null);
 const can = useCan('/mural/admin');
 
 const editOpen = ref(false);
@@ -74,8 +78,14 @@ async function reactivate(c) {
     catch (e) { actionError.value = e.message; }
 }
 
-async function remove(c) {
-    if (!window.confirm(`Excluir o comunicado "${c.title}"? Esta ação não pode ser desfeita.`)) return;
+function remove(c) {
+    aExcluir.value = c;
+}
+
+async function excluirConfirmado() {
+    const c = aExcluir.value;
+    aExcluir.value = null;
+    if (!c) return;
     actionError.value = '';
     const ok = await store.remove(c.id);
     if (!ok) actionError.value = store.error || 'Erro ao excluir.';
@@ -181,4 +191,11 @@ function onFilter(s) { statusFilter.value = s; store.fetchList(s || undefined); 
     <ComunicadoEditModal v-model:open="editOpen" :comunicado="editing" @saved="onSaved" />
     <AdherencePanel v-model:open="adherenceOpen" :comunicado-id="adherenceId" />
   </div>
+
+  <ConfirmDialog :open="!!aExcluir" tone="danger"
+    :title="`Excluir o comunicado ${aExcluir?.title}?`"
+    consequence="Ele some do Mural de todo mundo que o recebeu, junto com o registro de quem já tinha dado ciência."
+    hint="Não tem desfazer. Para tirar de circulação guardando o histórico, despublique em vez de excluir."
+    confirm-label="Excluir comunicado"
+    @confirm="excluirConfirmado" @cancel="aExcluir = null" />
 </template>

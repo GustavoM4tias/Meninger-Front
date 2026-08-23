@@ -3,6 +3,7 @@
 // ativo inline, tudo num card único seguindo o padrão do SalesTable.
 
 import { computed, ref, watch } from 'vue';
+import { useToast } from 'vue-toastification';
 import { useLeadFormsStore } from '@/stores/Marketing/Capture/leadFormsStore';
 import Surface from '@/components/UI/Surface.vue';
 import Button from '@/components/UI/Button.vue';
@@ -23,6 +24,7 @@ const ctlClass = [
 const emit = defineEmits(['edit']);
 
 const store = useLeadFormsStore();
+const toast = useToast();
 
 // As contagens de leads (colunas/resumo) são recortadas pelo período mestre da
 // store (store.periodo, default mês atual — sem picker na tela). O filtro de
@@ -50,8 +52,8 @@ function lpUrl(f) { return `${LP_HOST}/${f.slug}`; }
 
 async function copyLpUrl(e, f) {
     e.stopPropagation();
-    try { await navigator.clipboard.writeText(lpUrl(f)); window.alert('URL da LP copiada.'); }
-    catch { window.alert('Não consegui copiar.'); }
+    try { await navigator.clipboard.writeText(lpUrl(f)); toast.success('URL da LP copiada.'); }
+    catch { toast.error('Não consegui copiar.'); }
 }
 
 function fmtDate(iso) {

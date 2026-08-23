@@ -12,6 +12,7 @@
 // Read-only + atalho pra ação. A vinculação em si acontece no modal de campanha.
 
 import { onMounted, ref, computed } from 'vue';
+import ConfirmDialog from '@/components/UI/ConfirmDialog.vue';
 import { useCampaignsStore } from '@/stores/Marketing/Campaigns/campaignsStore';
 import Surface from '@/components/UI/Surface.vue';
 import Button from '@/components/UI/Button.vue';
@@ -35,10 +36,18 @@ onMounted(reload);
 const sending = ref(false);
 const sendResult = ref(null);
 
-async function enviarRecuperaveis() {
+/* Enviar represado despacha lead de verdade ao CRM. O `confirm` do navegador
+   nao deixava claro QUANTOS saem de uma vez. */
+const pedindoEnvio = ref(false);
+
+function enviarRecuperaveis() {
     const total = summary.value.leads_recoverable || 0;
     if (!total) return;
-    if (!window.confirm(`Enviar ${total} lead(s) represado(s) ao CV?\n\nSão leads de campanhas que já têm vínculo — serão roteados e enviados ao CRM (upsert, sem duplicar).`)) return;
+    pedindoEnvio.value = true;
+}
+
+async function enviarConfirmado() {
+    pedindoEnvio.value = false;
     sending.value = true;
     sendResult.value = null;
     try {
@@ -383,4 +392,20 @@ function statusBadge(s) {
       <!-- Modal de campanha (vincular) -->
       <CampaignDetailModal v-model:open="detailOpen" :campaign-id="detailId" @saved="reload" />
   </div>
+
+  <ConfirmDialog :open="pedindoEnvio" tone="accent"
+    :title="`Enviar ${summary.leads_recoverable || 0} lead(s) represado(s) ao CV?`"
+    consequence="Eles são roteados e despachados ao CRM agora. São leads de campanhas que já têm vínculo."
+    hint="É upsert: lead que já existe no CV é atualizado, não duplicado."
+    :confirm-label="`Enviar ${summary.leads_recoverable || 0}`"
+    :loading="sending"
+    @confirm="enviarConfirmado" @cancel="pedindoEnvio = false" />
+
+  <ConfirmDialog :open="pedindoEnvio" tone="accent"
+    :title="`Enviar ${summary.leads_recoverable || 0} lead(s) represado(s) ao CV?`"
+    consequence="Eles são roteados e despachados ao CRM agora. São leads de campanhas que já têm vínculo."
+    hint="É upsert: lead que já existe no CV é atualizado, não duplicado."
+    :confirm-label="`Enviar ${summary.leads_recoverable || 0}`"
+    :loading="sending"
+    @confirm="enviarConfirmado" @cancel="pedindoEnvio = false" />
 </template>
