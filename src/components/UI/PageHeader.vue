@@ -31,7 +31,7 @@ defineProps({
     </div>
 
     <div v-if="$slots.actions"
-         class="flex items-center gap-2 flex-wrap shrink-0 -mx-1 px-1
+         class="flex items-center gap-2 flex-wrap shrink-0 -mx-1 px-1 -my-1 py-1
                 overflow-x-auto sm:overflow-visible no-scrollbar">
       <slot name="actions" />
     </div>

@@ -72,10 +72,15 @@ const normalizedSteps = computed(() =>
     :aria-label="label">
     <i class="far fa-circle-question text-base text-accent"></i>
     <span class="hidden sm:inline">{{ label }}</span>
-    <!-- Pulso de 1ª visita -->
-    <span v-if="!seen" class="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+    <!-- Pulso de 1ª visita.
+         Fica EM LINHA, dentro do botão, e não grudado no canto de fora. Como
+         `absolute -top-1 -right-1`, o ponto e o `ping` (que cresce 2x) saíam da
+         caixa do botão; no celular o cabeçalho vira `overflow-x-auto`, que também
+         corta na vertical, e a bolinha aparecia cortada em toda tela.
+         Aqui a folga vertical do `h-9` (6px de cada lado) segura o ping inteiro. -->
+    <span v-if="!seen" class="relative flex h-2 w-2 shrink-0" aria-hidden="true">
       <span class="absolute inline-flex h-full w-full rounded-full bg-accent opacity-75 animate-ping"></span>
-      <span class="relative inline-flex h-2.5 w-2.5 rounded-full bg-accent"></span>
+      <span class="relative inline-flex h-2 w-2 rounded-full bg-accent"></span>
     </span>
   </button>
 
