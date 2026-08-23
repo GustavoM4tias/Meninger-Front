@@ -20,6 +20,21 @@
         </p>
       </div>
       <div class="flex items-center gap-3">
+        <PageHelp
+          storage-key="gravacao-presencial"
+          label=""
+          title="Como gravar uma reunião presencial"
+          intro="Esta tela usa o microfone deste aparelho para transcrever a conversa em tempo real. A transcrição fica salva; o resumo da Eme é um passo separado, depois."
+          :steps="[
+            { title: 'Deixe a tela aberta', text: 'A captura depende desta aba estar viva. Continuar trabalhando minimiza a gravação sem parar - fechar a aba, não.' },
+            { title: 'Acompanhe o texto', text: 'As falas aparecem conforme são reconhecidas. Nome de pessoa e sigla costumam sair errados, e isso se ajusta depois no texto salvo.' },
+            { title: 'Encerre ao final', text: 'Encerrar salva a transcrição. Só depois disso dá para pedir o resumo com a Eme.' },
+          ]"
+          :tips="[
+            'Microfone longe de quem fala é o que mais estraga a transcrição: o aparelho no meio da mesa rende mais que o volume alto.',
+            'Avise os presentes que a conversa está sendo transcrita.',
+            'Sem internet a transcrição para; a gravação já feita não se perde.',
+          ]" />
         <span class="hidden sm:inline-flex items-center gap-1 text-xs text-ink-subtle">
           <i class="fas fa-users"></i>
           <span class="font-mono tabular-nums">{{ store.attendees.length || 1 }}</span>
@@ -202,7 +217,8 @@ import { useRouter } from 'vue-router';
 import { useInPersonRecordingStore } from '@/stores/Microsoft/inPersonRecording';
 
 import Modal from '@/components/UI/Modal.vue';
-import Button from '@/components/UI/Button.vue';
+import Button from '@/components/UI/Button.vue'
+import PageHelp from '@/components/UI/PageHelp.vue';
 import Surface from '@/components/UI/Surface.vue';
 
 const router = useRouter();

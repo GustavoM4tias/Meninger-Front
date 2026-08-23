@@ -116,7 +116,27 @@ const cards = (s) => [
         <div v-if="!stats.perUser.length" class="px-4 py-6 text-center text-xs text-ink-muted">
           Nenhum usuário com alertas ainda.
         </div>
-        <table v-else class="w-full text-sm">
+        <!-- Celular: cartao. Seis colunas num telefone nao se le, e a regra
+             do sistema e que toda tabela tenha plano mobile. -->
+        <ul v-else class="sm:hidden divide-y divide-line">
+          <li v-for="u in stats.perUser" :key="u.user_id" class="px-4 py-3">
+            <p class="font-medium text-ink">{{ u.username }}</p>
+            <p v-if="u.email" class="text-micro text-ink-subtle">{{ u.email }}</p>
+            <div class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-ink-muted">
+              <span><span class="text-ink-subtle">alertas</span>
+                <strong class="text-ink font-mono tabular-nums ml-1">{{ u.rulesCount }}</strong></span>
+              <span><span class="text-ink-subtle">ativos</span>
+                <strong class="text-ink font-mono tabular-nums ml-1">{{ u.enabledCount }}</strong></span>
+              <span><span class="text-ink-subtle">disparos</span>
+                <strong class="text-ink font-mono tabular-nums ml-1">{{ u.triggersTotal }}</strong></span>
+              <span><span class="text-ink-subtle">7 dias</span>
+                <strong class="text-ink font-mono tabular-nums ml-1">{{ u.triggers7d }}</strong></span>
+            </div>
+            <p class="mt-1 text-micro text-ink-subtle">último disparo: {{ fmtDate(u.lastTriggeredAt) }}</p>
+          </li>
+        </ul>
+
+        <table v-if="stats.perUser.length" class="hidden sm:table w-full text-sm">
           <thead>
             <tr class="text-left text-micro font-mono uppercase tracking-wider text-ink-subtle border-y border-line bg-surface-sunken/40">
               <th class="px-4 py-2 font-medium">Usuário</th>
