@@ -282,7 +282,7 @@ const CLASSIFICACAO_TRIBUTARIA = [
 
                     <div v-if="showQuestions"
                         class="mt-2 rounded-xl border border-data-warn/25 bg-data-warn/20 overflow-hidden">
-                        <div class="flex items-center justify-between px-4 py-2.5 border-data-warn/25">
+                        <div class="flex items-center justify-between px-4 py-2.5 border-b border-data-warn/25">
                             <span class="text-xs font-semibold text-data-warn">
                                 Campos que precisam ser preenchidos pelo fornecedor
                             </span>

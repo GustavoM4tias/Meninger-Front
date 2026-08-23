@@ -180,7 +180,7 @@ const cardBorderClass = computed(() => {
     :class="cardBorderClass">
 
     <!-- Header -->
-    <div class="flex items-center justify-between gap-3 px-4 py-2.5 bg-surface-sunken/40 border-line">
+    <div class="flex items-center justify-between gap-3 px-4 py-2.5 bg-surface-sunken/40 border-b border-line">
       <div class="flex items-center gap-2 min-w-0">
         <i :class="stageIconClass"></i>
         <span class="text-xs font-semibold text-ink truncate">{{ stageMeta.label }}</span>

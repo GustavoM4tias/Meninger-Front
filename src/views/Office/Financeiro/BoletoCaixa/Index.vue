@@ -382,7 +382,7 @@
           <div v-else class="overflow-x-auto -mx-3">
             <table class="w-full text-sm">
               <thead>
-                <tr class="bg-surface-sunken/60 border-line">
+                <tr class="bg-surface-sunken/60 border-b border-line">
                   <th class="text-left px-3 py-2 text-micro font-mono uppercase tracking-wider text-ink-subtle">ID Emp.</th>
                   <th class="text-left px-3 py-2 text-micro font-mono uppercase tracking-wider text-ink-subtle">Empreendimento</th>
                   <th class="text-right px-3 py-2 text-micro font-mono uppercase tracking-wider text-ink-subtle">% Boleto</th>
@@ -394,7 +394,7 @@
               </thead>
               <tbody>
                 <tr v-for="rule in store.rules" :key="rule.id"
-                  class="border-line/60 hover:bg-surface-hover/40 transition-colors">
+                  class="border-b border-line/60 hover:bg-surface-hover/40 transition-colors">
                   <td class="px-3 py-2 font-mono text-accent">{{ rule.idempreendimento_cv }}</td>
                   <td class="px-3 py-2 text-ink">{{ rule.empreendimento_nome || '—' }}</td>
                   <td class="px-3 py-2 text-right font-mono tabular-nums font-semibold">

@@ -804,7 +804,7 @@ onMounted(async () => {
                             </div>
 
                             <button
-                                class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border-line text-ink-muted hover:border-accent hover:text-accent transition"
+                                class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border-2 border-dashed border-line text-ink-muted hover:border-accent hover:text-accent transition"
                                 @click="extraInputRef?.click()">
                                 <i class="fas fa-plus"></i> Adicionar
                             </button>
@@ -830,7 +830,7 @@ onMounted(async () => {
                             <option v-for="t in store.launchTypes" :key="t.id" :value="t.name">{{ t.name }}</option>
                         </select>
                         <button v-if="can('configure')" type="button"
-                            class="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-lg border-line text-ink-subtle hover:border-accent hover:text-accent transition"
+                            class="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-lg border-2 border-dashed border-line text-ink-subtle hover:border-accent hover:text-accent transition"
                             title="Adicionar novo tipo (admin)" @click="showAddType = !showAddType">
                             <i class="fas fa-plus text-sm"></i>
                         </button>

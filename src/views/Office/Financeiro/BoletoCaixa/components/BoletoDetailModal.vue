@@ -701,42 +701,42 @@ async function copyLink() {
           <div class="rounded-lg border border-line overflow-hidden">
             <table class="w-full text-sm">
               <tbody>
-                <tr class="border-line/60">
+                <tr class="border-b border-line/60">
                   <td class="px-3 py-2 text-ink-subtle w-[35%]">Titular</td>
                   <td class="px-3 py-2 text-ink">{{ live?.titular_nome || '—' }}</td>
                 </tr>
-                <tr class="border-line/60">
+                <tr class="border-b border-line/60">
                   <td class="px-3 py-2 text-ink-subtle">Empreendimento</td>
                   <td class="px-3 py-2 text-ink">{{ live?.empreendimento || '—' }}</td>
                 </tr>
-                <tr class="border-line/60">
+                <tr class="border-b border-line/60">
                   <td class="px-3 py-2 text-ink-subtle">Nosso Número</td>
                   <td class="px-3 py-2 text-ink font-mono">{{ live?.nosso_numero || '—' }}</td>
                 </tr>
-                <tr class="border-line/60">
+                <tr class="border-b border-line/60">
                   <td class="px-3 py-2 text-ink-subtle">Nº Documento</td>
                   <td class="px-3 py-2 text-ink font-mono">{{ live?.seu_numero || '—' }}</td>
                 </tr>
-                <tr class="border-line/60">
+                <tr class="border-b border-line/60">
                   <td class="px-3 py-2 text-ink-subtle">CNPJ Empresa</td>
                   <td class="px-3 py-2 text-ink font-mono text-xs">{{ live?.cnpj_empresa || '—' }}</td>
                 </tr>
-                <tr class="border-line/60">
+                <tr class="border-b border-line/60">
                   <td class="px-3 py-2 text-ink-subtle">Emitido em</td>
                   <td class="px-3 py-2 text-xs">{{ formatDateTime(live?.createdAt || live?.created_at) }}</td>
                 </tr>
-                <tr v-if="live?.last_checked_at" class="border-line/60">
+                <tr v-if="live?.last_checked_at" class="border-b border-line/60">
                   <td class="px-3 py-2 text-ink-subtle">Última verificação</td>
                   <td class="px-3 py-2 text-xs">
                     {{ formatDateTime(live.last_checked_at) }}
                     <span v-if="live.last_check_situation" class="ml-2 text-ink">· {{ live.last_check_situation }}</span>
                   </td>
                 </tr>
-                <tr v-if="live?.paid_at" class="border-line/60">
+                <tr v-if="live?.paid_at" class="border-b border-line/60">
                   <td class="px-3 py-2 text-ink-subtle">Pago em</td>
                   <td class="px-3 py-2 text-xs font-semibold">{{ formatDateTime(live.paid_at) }}</td>
                 </tr>
-                <tr v-if="live?.cancelled_at" class="border-line/60">
+                <tr v-if="live?.cancelled_at" class="border-b border-line/60">
                   <td class="px-3 py-2 text-ink-subtle">Baixado em</td>
                   <td class="px-3 py-2 text-xs font-semibold">{{ formatDateTime(live.cancelled_at) }}</td>
                 </tr>
@@ -856,7 +856,7 @@ async function copyLink() {
                   </div>
                 </li>
               </ul>
-              <p class="text-micro uppercase tracking-wider text-ink-subtle font-semibold mt-4 pt-3 border-line/60">
+              <p class="text-micro uppercase tracking-wider text-ink-subtle font-semibold mt-4 pt-3 border-t border-line/60">
                 Linha do tempo completa
               </p>
             </div>
@@ -869,8 +869,8 @@ async function copyLink() {
             </div>
             <ul v-else class="space-y-3">
               <li v-for="ev in enrichedTimeline" :key="ev.id"
-                class="flex items-start gap-3 pb-3 border-line/40 last:border-b-0"
-                :class="ev._virtual ? 'bg-accent/5 border border-accent/30 rounded-lg p-3' : ''">
+                class="flex items-start gap-3 pb-3 border-b border-line/40 last:border-b-0"
+                :class="ev._virtual ? 'bg-accent/5 border border-dashed border-accent/30 rounded-lg p-3' : ''">
                 <div class="h-8 w-8 rounded-full grid place-items-center shrink-0"
                   :class="ev._virtual ? 'bg-accent/15 text-accent' : eventIconBg(ev.severity)">
                   <i :class="eventIcon(ev.type, ev.severity)" class="text-sm"
