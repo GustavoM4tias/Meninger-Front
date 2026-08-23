@@ -327,7 +327,7 @@ const save = async () => {
 
       <div v-if="loadingContract" class="py-10 flex justify-center"><Spinner size="lg" /></div>
 
-      <p v-if="loadError" class="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-700 dark:text-red-300">
+      <p v-if="loadError" class="rounded-lg border border-data-neg/20 bg-data-neg/10 px-3 py-2 text-xs text-data-neg">
         {{ loadError }}
       </p>
 
@@ -404,8 +404,8 @@ const save = async () => {
         </div>
 
         <!-- Antes / depois -->
-        <div v-if="preview" class="rounded-xl border border-amber-500/30 bg-amber-500/5 p-3">
-          <p class="text-micro font-medium text-amber-700 dark:text-amber-400 mb-1">{{ preview.label }}</p>
+        <div v-if="preview" class="rounded-xl border border-data-warn/30 bg-data-warn/5 p-3">
+          <p class="text-micro font-medium text-data-warn mb-1">{{ preview.label }}</p>
           <div class="flex items-center gap-2 text-sm flex-wrap">
             <span class="text-ink-muted line-through tabular-nums">{{ preview.before }}</span>
             <i class="fas fa-arrow-right text-[10px] text-ink-subtle"></i>
@@ -416,7 +416,7 @@ const save = async () => {
         <!-- Motivo -->
         <div>
           <label class="block text-xs font-medium text-ink-muted mb-1">
-            Motivo contábil <span class="text-red-500">*</span>
+            Motivo contábil <span class="text-data-neg">*</span>
           </label>
           <textarea v-model="reason" rows="2"
             class="w-full rounded-lg border border-line bg-surface-raised px-3 py-2 text-sm text-ink
@@ -426,12 +426,12 @@ const save = async () => {
         </div>
 
         <p v-if="saveError"
-          class="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-700 dark:text-red-300">
+          class="rounded-lg border border-data-neg/20 bg-data-neg/10 px-3 py-2 text-xs text-data-neg">
           {{ saveError }}
         </p>
 
         <p v-if="divergenceWarning > 0"
-          class="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-300">
+          class="rounded-lg border border-data-warn/30 bg-data-warn/10 px-3 py-2 text-xs text-data-warn">
           <i class="fas fa-triangle-exclamation mr-1"></i>
           Ajuste salvo. Ele mexeu em mês já consolidado:
           {{ divergenceWarning }} divergência(s) registrada(s) e os admins foram notificados.

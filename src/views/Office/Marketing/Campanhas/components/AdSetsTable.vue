@@ -23,11 +23,11 @@ function fmtPct(v) { return v == null ? '—' : `${Number(v).toFixed(2)}%`; }
 
 function statusBadge(a) {
     const s = String(a.effective_status || a.status || '').toUpperCase();
-    if (s.includes('ACTIVE'))   return { label: 'Ativo',     cls: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 border-emerald-500/20' };
-    if (s.includes('PAUSED'))   return { label: 'Pausado',   cls: 'bg-amber-500/10 text-amber-600 dark:text-amber-300 border-amber-500/20' };
-    if (s.includes('DELETED'))  return { label: 'Excluído',  cls: 'bg-red-500/10 text-red-600 dark:text-red-300 border-red-500/20' };
-    if (s.includes('ARCHIVED')) return { label: 'Arquivado', cls: 'bg-slate-500/10 text-slate-500 border-slate-500/20' };
-    return { label: s || '—', cls: 'bg-slate-500/10 text-slate-500 border-slate-500/20' };
+    if (s.includes('ACTIVE'))   return { label: 'Ativo',     cls: 'bg-data-pos/10 text-data-pos border-data-pos/20' };
+    if (s.includes('PAUSED'))   return { label: 'Pausado',   cls: 'bg-data-warn/10 text-data-warn border-data-warn/20' };
+    if (s.includes('DELETED'))  return { label: 'Excluído',  cls: 'bg-data-neg/10 text-data-neg border-data-neg/20' };
+    if (s.includes('ARCHIVED')) return { label: 'Arquivado', cls: 'bg-slate-500/10 text-ink-muted border-line/20' };
+    return { label: s || '—', cls: 'bg-slate-500/10 text-ink-muted border-line/20' };
 }
 
 // Otimização legível (LEAD_GENERATION → Leads, etc.)

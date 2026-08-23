@@ -80,7 +80,7 @@ const facebookLink = computed(() => {
             <div v-else class="text-white/30 text-5xl"><i class="fas fa-video"></i></div>
             <div class="absolute inset-0 flex items-center justify-center bg-black/30">
               <div class="text-center text-white px-4">
-                <i class="fas fa-circle-exclamation text-4xl mb-2 text-amber-400"></i>
+                <i class="fas fa-circle-exclamation text-4xl mb-2 text-data-warn"></i>
                 <p class="font-medium">Vídeo não pode ser reproduzido aqui</p>
                 <p class="text-xs text-white/70 mt-1 max-w-md">
                   Vídeos de anúncio do Facebook precisam ser abertos no Ads Manager
@@ -92,11 +92,11 @@ const facebookLink = computed(() => {
 
           <div class="p-3 flex flex-wrap items-center justify-center gap-2 bg-surface-sunken/40">
             <a v-if="facebookLink" :href="facebookLink" target="_blank" rel="noopener"
-              class="inline-flex items-center gap-2 px-3 py-1.5 rounded bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors">
+              class="inline-flex items-center gap-2 px-3 py-1.5 rounded bg-accent hover:bg-accent-hover text-white text-sm font-medium transition-colors">
               <i class="fab fa-facebook"></i>Abrir no Facebook
             </a>
             <a v-if="videoId" :href="`https://business.facebook.com/ads/library/?id=${videoId}`" target="_blank" rel="noopener"
-              class="inline-flex items-center gap-2 px-3 py-1.5 rounded border border-white/20 text-white/80 hover:bg-white/10 text-sm transition-colors">
+              class="inline-flex items-center gap-2 px-3 py-1.5 rounded border border-white/20 text-white/80 hover:bg-surface-raised/10 text-sm transition-colors">
               <i class="fas fa-book"></i>Ad Library
             </a>
             <span class="text-micro text-white/40 font-mono px-2">video_id: {{ videoId }}</span>
@@ -118,7 +118,7 @@ const facebookLink = computed(() => {
     </div>
 
     <div class="text-center text-white/40 text-xs pb-3 shrink-0">
-      <kbd class="px-1.5 py-0.5 rounded bg-white/10 text-white/80">Esc</kbd> ou clique fora pra fechar
+      <kbd class="px-1.5 py-0.5 rounded bg-surface-raised/10 text-white/80">Esc</kbd> ou clique fora pra fechar
     </div>
   </div>
 </template>

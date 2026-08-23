@@ -41,8 +41,8 @@ const cards = computed(() => [
     sub: isNet.value ? 'VGV (descontos ignorados)' : 'VGV + DC (descontos somam)',
     icon: isNet.value ? 'fas fa-money-bill-wave' : 'fas fa-sack-dollar',
     accent: isNet.value
-      ? 'text-emerald-500 bg-emerald-500/10'
-      : 'text-amber-500 bg-amber-500/10',
+      ? 'text-data-pos bg-data-pos/10'
+      : 'text-data-warn bg-data-warn/10',
     tooltip: isNet.value
       ? 'Soma do VGV das vendas (descontos não somam)'
       : 'Soma do VGV+DC (descontos somam ao valor total)',
@@ -54,8 +54,8 @@ const cards = computed(() => [
     sub: isNet.value ? 'VGV médio por venda' : 'VGV + DC médio por venda',
     icon: isNet.value ? 'fas fa-receipt' : 'fas fa-file-invoice-dollar',
     accent: isNet.value
-      ? 'text-purple-500 bg-purple-500/10'
-      : 'text-cyan-500 bg-cyan-500/10',
+      ? 'text-accent bg-accent/10'
+      : 'text-accent bg-accent/10',
     tooltip: 'Valor total dividido pela quantidade de vendas',
   },
 ]);

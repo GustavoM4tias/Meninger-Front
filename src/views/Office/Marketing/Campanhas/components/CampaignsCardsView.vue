@@ -24,11 +24,11 @@ function fmtShortDate(iso) {
 }
 function statusBadge(c) {
     const s = String(c.effective_status || c.status || '').toUpperCase();
-    if (s.includes('ACTIVE'))   return { label: 'Ativa',     cls: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30' };
-    if (s.includes('PAUSED'))   return { label: 'Pausada',   cls: 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30' };
-    if (s.includes('DELETED'))  return { label: 'Excluída',  cls: 'bg-red-500/15 text-red-700 dark:text-red-300 border-red-500/30' };
-    if (s.includes('ARCHIVED')) return { label: 'Arquivada', cls: 'bg-slate-500/15 text-slate-500 dark:text-slate-400 border-slate-500/30' };
-    return { label: s || '—', cls: 'bg-slate-500/15 text-slate-500 dark:text-slate-400 border-slate-500/30' };
+    if (s.includes('ACTIVE'))   return { label: 'Ativa',     cls: 'bg-data-pos/15 text-data-pos border-data-pos/30' };
+    if (s.includes('PAUSED'))   return { label: 'Pausada',   cls: 'bg-data-warn/15 text-data-warn border-data-warn/30' };
+    if (s.includes('DELETED'))  return { label: 'Excluída',  cls: 'bg-data-neg/15 text-data-neg border-data-neg/30' };
+    if (s.includes('ARCHIVED')) return { label: 'Arquivada', cls: 'bg-slate-500/15 text-ink-muted border-line/30' };
+    return { label: s || '—', cls: 'bg-slate-500/15 text-ink-muted border-line/30' };
 }
 function isActive(c) {
     return String(c.effective_status || c.status || '').toUpperCase().includes('ACTIVE');
@@ -78,7 +78,7 @@ function objectiveLabel(o) {
           {{ statusBadge(c).label }}
         </span>
         <span v-if="isLeadAds(c)"
-          class="inline-flex shrink-0 items-center gap-1 rounded-md border border-violet-500/30 bg-violet-500/10 text-violet-700 dark:text-violet-300 px-2 py-0.5 text-micro font-medium"
+          class="inline-flex shrink-0 items-center gap-1 rounded-md border border-accent/30 bg-accent/10 text-accent px-2 py-0.5 text-micro font-medium"
           title="Campanha de Lead Ads — coleta leads via formulário Meta. Os leads chegam pela Captação se a integração estiver configurada.">
           <i class="fas fa-file-lines text-[9px]"></i>Lead Ads
         </span>
@@ -106,7 +106,7 @@ function objectiveLabel(o) {
             <i class="fas fa-flag-checkered text-[7px] mr-0.5"></i>Encerramento
           </div>
           <div v-if="c.stop_time" class="text-xs font-mono text-ink">{{ fmtShortDate(c.stop_time) }}</div>
-          <div v-else-if="isActive(c)" class="text-xs font-medium text-emerald-600 dark:text-emerald-300">
+          <div v-else-if="isActive(c)" class="text-xs font-medium text-data-pos">
             <i class="fas fa-circle-play text-[8px]"></i> em andamento
           </div>
           <div v-else class="text-xs text-ink-subtle italic">sem data</div>
@@ -117,11 +117,11 @@ function objectiveLabel(o) {
       <div class="grid grid-cols-3 gap-1 px-3 pb-3 mt-auto">
         <div class="rounded bg-surface-sunken/40 p-2">
           <div class="text-micro uppercase tracking-wider text-ink-subtle">Gasto</div>
-          <div class="text-sm font-semibold text-blue-600 dark:text-blue-300 leading-tight">{{ fmtMoney(c.spend, c.currency || currency) }}</div>
+          <div class="text-sm font-semibold text-accent leading-tight">{{ fmtMoney(c.spend, c.currency || currency) }}</div>
         </div>
         <div class="rounded bg-surface-sunken/40 p-2">
           <div class="text-micro uppercase tracking-wider text-ink-subtle">Leads</div>
-          <div class="text-sm font-semibold text-emerald-600 dark:text-emerald-300 leading-tight">{{ fmtInt(c.office_leads || 0) }}</div>
+          <div class="text-sm font-semibold text-data-pos leading-tight">{{ fmtInt(c.office_leads || 0) }}</div>
           <div class="text-micro text-ink-subtle leading-tight">nossa base</div>
         </div>
         <div class="rounded bg-surface-sunken/40 p-2">

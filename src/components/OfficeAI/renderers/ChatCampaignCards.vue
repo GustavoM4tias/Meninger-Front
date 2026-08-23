@@ -53,8 +53,8 @@ function openFicha(c) {
           </div>
           <span class="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-micro font-medium border"
             :class="c.autorizada
-              ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400'
-              : 'bg-amber-500/10 border-amber-500/20 text-amber-600 dark:text-amber-400'"
+              ? 'bg-data-pos/10 border-data-pos/20 text-data-pos'
+              : 'bg-data-warn/10 border-data-warn/20 text-data-warn'"
             :title="c.autorizada ? 'Dados de ficha autorizada' : 'Ficha ainda NÃO autorizada — dados sujeitos a alteração'">
             <i class="fas text-[9px]" :class="c.autorizada ? 'fa-circle-check' : 'fa-triangle-exclamation'"></i>
             {{ c.mes_referencia }} · {{ c.status }}

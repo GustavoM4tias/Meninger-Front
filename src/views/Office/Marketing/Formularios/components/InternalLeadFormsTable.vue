@@ -190,9 +190,9 @@ const summary = computed(() => {
 });
 
 function priorityDot(p) {
-    if (p === 'high')   return { cls: 'bg-red-500',     title: 'Prioridade alta' };
+    if (p === 'high')   return { cls: 'bg-data-neg',     title: 'Prioridade alta' };
     if (p === 'low')    return { cls: 'bg-slate-400',   title: 'Prioridade baixa' };
-    return { cls: 'bg-emerald-500', title: 'Prioridade normal' };
+    return { cls: 'bg-data-pos', title: 'Prioridade normal' };
 }
 
 function fmtRelative(iso) {
@@ -246,27 +246,27 @@ function fmtShortDate(iso) {
             <i class="fas fa-circle-exclamation"></i>Com erro
           </div>
           <div class="mt-1 text-xl font-semibold leading-none"
-            :class="summary.failed > 0 ? 'text-red-600 dark:text-red-400' : 'text-ink'">{{ summary.failed }}</div>
-          <div v-if="summary.failed > 0" class="mt-1 text-micro text-red-500">falha/recusa no CV</div>
+            :class="summary.failed > 0 ? 'text-data-neg' : 'text-ink'">{{ summary.failed }}</div>
+          <div v-if="summary.failed > 0" class="mt-1 text-micro text-data-neg">falha/recusa no CV</div>
         </div>
         <div class="px-4 py-3">
           <div class="flex items-center gap-1.5 text-micro uppercase tracking-wider text-ink-subtle">
             <i class="fas fa-circle-check"></i>Entregues ao CV
           </div>
-          <div class="mt-1 text-xl font-semibold text-emerald-600 dark:text-emerald-400 leading-none">{{ summary.delivered }}</div>
+          <div class="mt-1 text-xl font-semibold text-data-pos leading-none">{{ summary.delivered }}</div>
         </div>
         <div class="px-4 py-3">
           <div class="flex items-center gap-1.5 text-micro uppercase tracking-wider text-ink-subtle">
             <i class="fas fa-hourglass-half"></i>Em held
           </div>
-          <div class="mt-1 text-xl font-semibold text-amber-600 dark:text-amber-400 leading-none">{{ summary.held }}</div>
+          <div class="mt-1 text-xl font-semibold text-data-warn leading-none">{{ summary.held }}</div>
         </div>
       </div>
     </Surface>
 
     <!-- Erro -->
     <div v-if="store.error"
-      class="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-300 flex items-start gap-2">
+      class="rounded-lg border border-data-neg/20 bg-data-neg/10 px-3 py-2 text-sm text-data-neg flex items-start gap-2">
       <i class="fas fa-circle-exclamation mt-0.5"></i>
       <div>{{ store.error }}</div>
     </div>
@@ -396,7 +396,7 @@ function fmtShortDate(iso) {
                   <span v-if="f.start_date">{{ fmtShortDate(f.start_date) }}</span>
                   <span v-else class="text-ink-subtle italic">desde criação</span>
                 </div>
-                <div class="text-micro mt-0.5" :class="endedAlready(f) ? 'text-red-500 font-medium' : 'text-ink-subtle'">
+                <div class="text-micro mt-0.5" :class="endedAlready(f) ? 'text-data-neg font-medium' : 'text-ink-subtle'">
                   <template v-if="f.end_date">→ {{ fmtShortDate(f.end_date) }}<span v-if="endedAlready(f)"> (encerrado)</span></template>
                   <template v-else>sem fim</template>
                 </div>
@@ -415,7 +415,7 @@ function fmtShortDate(iso) {
                   {{ f.stats?.total || 0 }}
                 </div>
                 <div class="text-micro leading-tight mt-0.5"
-                  :class="f.stats?.failed ? 'text-red-500 font-medium' : 'text-ink-subtle'">
+                  :class="f.stats?.failed ? 'text-data-neg font-medium' : 'text-ink-subtle'">
                   <span v-if="f.stats?.failed">{{ f.stats.failed }} com erro</span>
                   <span v-else>—</span>
                 </div>
@@ -426,11 +426,11 @@ function fmtShortDate(iso) {
                 <template v-if="deliveryRate(f.stats) !== null">
                   <div class="inline-flex items-center gap-1.5">
                     <div class="w-12 h-1.5 rounded-full bg-surface-sunken border border-line/40 overflow-hidden">
-                      <div class="h-full bg-emerald-500" :style="{ width: deliveryRate(f.stats) + '%' }"></div>
+                      <div class="h-full bg-data-pos" :style="{ width: deliveryRate(f.stats) + '%' }"></div>
                     </div>
                     <span class="text-micro font-medium text-ink">{{ deliveryRate(f.stats) }}%</span>
                   </div>
-                  <div v-if="f.stats.held" class="text-micro text-amber-600 dark:text-amber-400 mt-0.5">{{ f.stats.held }} held</div>
+                  <div v-if="f.stats.held" class="text-micro text-data-warn mt-0.5">{{ f.stats.held }} held</div>
                 </template>
                 <span v-else class="text-micro text-ink-subtle italic">—</span>
               </td>
@@ -446,8 +446,8 @@ function fmtShortDate(iso) {
                   :title="f.active ? 'Clique para desativar' : 'Clique para ativar'"
                   :class="['inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-micro font-medium transition-colors',
                     f.active
-                      ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20'
-                      : 'bg-slate-500/10 text-slate-500 dark:text-slate-400 border-slate-500/20 hover:bg-slate-500/20']">
+                      ? 'bg-data-pos/10 text-data-pos border-data-pos/20 hover:bg-data-pos/20'
+                      : 'bg-slate-500/10 text-ink-muted border-line/20 hover:bg-surface-sunken']">
                   <i :class="f.active ? 'fas fa-circle-check' : 'fas fa-circle-pause'" class="text-[10px]"></i>
                   {{ f.active ? 'Ativo' : 'Inativo' }}
                 </button>

@@ -36,10 +36,10 @@ const effectivePlaceholder = computed(() =>
 
 const containerStateClass = computed(() => ({
   OFF:        '',
-  ARMED:      'border-blue-500/50 ring-2 ring-blue-500/20',
-  LISTENING:  'border-red-500/60 ring-2 ring-red-500/20',
-  PROCESSING: 'border-purple-500/60 ring-2 ring-purple-500/20',
-  SPEAKING:   'border-amber-500/50 ring-2 ring-amber-500/20',
+  ARMED:      'border-accent/50 ring-2 ring-accent/20',
+  LISTENING:  'border-data-neg/60 ring-2 ring-data-neg/20',
+  PROCESSING: 'border-accent/60 ring-2 ring-accent/20',
+  SPEAKING:   'border-data-warn/50 ring-2 ring-data-warn/20',
 }[voice.state.value] || ''));
 
 // alwaysOn persistido: true = voz ativa (entre sessões). false = desligada.
@@ -51,14 +51,14 @@ const alwaysOnPersisted = computed(() =>
 
 const micIconClass = computed(() => {
   if (voice.state.value === 'OFF' && alwaysOnPersisted.value) {
-    return 'fas fa-microphone text-amber-500 animate-pulse';  // user ativou mas voz caiu
+    return 'fas fa-microphone text-data-warn animate-pulse';  // user ativou mas voz caiu
   }
   return ({
     OFF:        'fas fa-microphone text-ink-subtle',
-    ARMED:      'fas fa-microphone text-blue-500',
-    LISTENING:  'fas fa-waveform-lines text-red-500 animate-pulse',
-    PROCESSING: 'fas fa-circle-notch fa-spin text-purple-500',
-    SPEAKING:   'fas fa-volume-high text-amber-500',
+    ARMED:      'fas fa-microphone text-accent',
+    LISTENING:  'fas fa-waveform-lines text-data-neg animate-pulse',
+    PROCESSING: 'fas fa-circle-notch fa-spin text-accent',
+    SPEAKING:   'fas fa-volume-high text-data-warn',
   }[voice.state.value]);
 });
 
@@ -137,9 +137,9 @@ defineExpose({ focus: () => textareaEl.value?.focus() });
       <!-- Selo do assistente (landing) -->
       <span v-if="assistantBadge"
         class="inline-flex items-center gap-1.5 text-xs font-medium text-ink-muted
-               bg-surface-sunken border border-emerald-500/30 px-2.5 py-1.5 rounded-full select-none
+               bg-surface-sunken border border-data-pos/30 px-2.5 py-1.5 rounded-full select-none
                animate-glow-green">
-        <span class="h-2 w-2 rounded-full bg-emerald-500 animate-dot-pulse"></span>
+        <span class="h-2 w-2 rounded-full bg-data-pos animate-dot-pulse"></span>
         Eme · Assistente
       </span>
       <button v-else-if="showHistoryButton" type="button" @click="$emit('history')"
@@ -158,10 +158,10 @@ defineExpose({ focus: () => textareaEl.value?.focus() });
             'rounded-full grid place-items-center transition-all duration-150',
             'bg-surface-sunken hover:bg-accent-soft border border-line',
             voice.isActive.value ? 'ring-2 ring-offset-1 ring-offset-surface' : '',
-            voice.state.value === 'LISTENING' ? 'ring-red-500/40' : '',
-            voice.state.value === 'ARMED' ? 'ring-blue-500/40' : '',
-            voice.state.value === 'PROCESSING' ? 'ring-purple-500/40' : '',
-            voice.state.value === 'SPEAKING' ? 'ring-amber-500/40' : '',
+            voice.state.value === 'LISTENING' ? 'ring-data-neg/40' : '',
+            voice.state.value === 'ARMED' ? 'ring-accent/40' : '',
+            voice.state.value === 'PROCESSING' ? 'ring-accent/40' : '',
+            voice.state.value === 'SPEAKING' ? 'ring-data-warn/40' : '',
           ]">
           <i :class="[micIconClass, size === 'lg' ? 'text-sm' : 'text-xs']"></i>
         </button>

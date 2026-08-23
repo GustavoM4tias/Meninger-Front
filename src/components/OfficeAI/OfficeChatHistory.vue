@@ -29,8 +29,8 @@ function fromNow(d) { return dayjs(d).fromNow(); }
 
 const storagePercent = computed(() => aiStore.storageUsage?.percent ?? 0);
 const storageColor = computed(() =>
-  storagePercent.value >= 90 ? 'bg-red-500' :
-  storagePercent.value >= 70 ? 'bg-amber-500' :
+  storagePercent.value >= 90 ? 'bg-data-neg' :
+  storagePercent.value >= 70 ? 'bg-data-warn' :
   'bg-accent'
 );
 </script>
@@ -87,11 +87,11 @@ const storageColor = computed(() =>
             </div>
             <div class="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
               <button @click.stop="aiStore.favoriteSession(s.id)"
-                class="h-7 w-7 grid place-items-center rounded-md text-amber-400 hover:bg-amber-400/10 transition-colors">
+                class="h-7 w-7 grid place-items-center rounded-md text-data-warn hover:bg-data-warn/10 transition-colors">
                 <i class="fas fa-star text-xs"></i>
               </button>
               <button @click.stop="aiStore.deleteSession(s.id)"
-                class="h-7 w-7 grid place-items-center rounded-md text-ink-subtle hover:text-red-500 hover:bg-red-500/10 transition-colors">
+                class="h-7 w-7 grid place-items-center rounded-md text-ink-subtle hover:text-data-neg hover:bg-data-neg/10 transition-colors">
                 <i class="far fa-trash-can text-xs"></i>
               </button>
             </div>
@@ -118,11 +118,11 @@ const storageColor = computed(() =>
             </div>
             <div class="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
               <button @click.stop="aiStore.favoriteSession(s.id)"
-                class="h-7 w-7 grid place-items-center rounded-md text-ink-subtle hover:text-amber-400 hover:bg-amber-400/10 transition-colors">
+                class="h-7 w-7 grid place-items-center rounded-md text-ink-subtle hover:text-data-warn hover:bg-data-warn/10 transition-colors">
                 <i class="far fa-star text-xs"></i>
               </button>
               <button @click.stop="aiStore.deleteSession(s.id)"
-                class="h-7 w-7 grid place-items-center rounded-md text-ink-subtle hover:text-red-500 hover:bg-red-500/10 transition-colors">
+                class="h-7 w-7 grid place-items-center rounded-md text-ink-subtle hover:text-data-neg hover:bg-data-neg/10 transition-colors">
                 <i class="far fa-trash-can text-xs"></i>
               </button>
             </div>

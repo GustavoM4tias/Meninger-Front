@@ -21,9 +21,9 @@ const router = useRouter();
 
 const TONES = {
     accent: 'text-accent bg-accent-soft border-accent/20',
-    emerald: 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/20',
-    amber: 'text-amber-600 dark:text-amber-400 bg-amber-500/10 border-amber-500/20',
-    rose: 'text-rose-600 dark:text-rose-400 bg-rose-500/10 border-rose-500/20',
+    emerald: 'text-data-pos bg-data-pos/10 border-data-pos/20',
+    amber: 'text-data-warn bg-data-warn/10 border-data-warn/20',
+    rose: 'text-data-neg bg-data-neg/10 border-data-neg/20',
     slate: 'text-ink-muted bg-surface-sunken border-line',
 };
 function toneClass(t) { return TONES[t] || TONES.accent; }
@@ -89,8 +89,8 @@ function embedUrl(url) {
                         {{ card.linkLabel || 'Abrir' }}
                     </button>
                     <button v-if="card.videoUrl && embedUrl(card.videoUrl)" type="button" @click="toggleVideo(i)"
-                        class="inline-flex items-center justify-center gap-1 rounded-lg border border-red-500/30 bg-red-500/10 px-2.5 py-1
-                               text-xs font-medium text-red-600 transition hover:bg-red-600 hover:text-white dark:text-red-400">
+                        class="inline-flex items-center justify-center gap-1 rounded-lg border border-data-neg/30 bg-data-neg/10 px-2.5 py-1
+                               text-xs font-medium text-data-neg transition hover:bg-data-neg hover:text-white ">
                         <i :class="openVideos.has(i) ? 'fa-solid fa-chevron-up' : 'fa-solid fa-play'" class="text-[10px]"></i>
                         {{ openVideos.has(i) ? 'Fechar' : 'Vídeo' }}
                     </button>

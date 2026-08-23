@@ -1,10 +1,10 @@
 <template>
     <div
-        class="h-full w-full flex flex-col rounded-2xl overflow-hidden bg-gray-50 dark:bg-gray-800 border border-gray-200/60 dark:border-gray-700/60">
+        class="h-full w-full flex flex-col rounded-2xl overflow-hidden bg-surface-sunken border border-line/60">
 
         <!-- Header -->
         <div
-            class="px-4 py-3 md:px-6 border-b border-gray-200 dark:border-gray-700 flex flex-col md:flex-row items-start md:items-center gap-3">
+            class="px-4 py-3 md:px-6 border-b border-line flex flex-col md:flex-row items-start md:items-center gap-3">
             <div class="min-w-0 flex">
                 <RouterLink to="/validator?section=Validador"
                     class="text-base md:text-xl font-semibold inline-flex items-center gap-2">
@@ -16,24 +16,24 @@
 
             <!-- KPIs -->
             <div class="flex-1 grid grid-cols-2 gap-2 ps-2 md:ps-4">
-                <div class="rounded-lg px-3 py-2 bg-white/60 dark:bg-gray-900/40 border-l-4 border-indigo-500">
-                    <p class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 truncate">Validações</p>
-                    <p class="font-semibold text-gray-800 dark:text-gray-100 md:text-lg leading-tight">
+                <div class="rounded-lg px-3 py-2 bg-surface border-l-4 border-accent">
+                    <p class="text-xs uppercase tracking-wide text-ink-muted truncate">Validações</p>
+                    <p class="font-semibold text-ink md:text-lg leading-tight">
                         {{ totals.aprovados + totals.reprovados }}
                     </p>
                     <p class="font-light text-micro leading-tight"
-                        :class="delta.validacoes >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'">
+                        :class="delta.validacoes >= 0 ? 'text-data-pos' : 'text-data-neg'">
                         {{ delta.validacoes >= 0 ? '+' : '' }}{{ delta.validacoes.toFixed(1) }}%
                     </p>
                 </div>
 
-                <div class="rounded-lg px-3 py-2 bg-white/60 dark:bg-gray-900/40 border-l-4 border-emerald-500">
-                    <p class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 truncate">Aprovação</p>
-                    <p class="font-semibold text-gray-800 dark:text-gray-100 md:text-lg leading-tight">
+                <div class="rounded-lg px-3 py-2 bg-surface border-l-4 border-data-pos">
+                    <p class="text-xs uppercase tracking-wide text-ink-muted truncate">Aprovação</p>
+                    <p class="font-semibold text-ink md:text-lg leading-tight">
                         {{ approvalRate }}%
                     </p>
                     <p class="font-light text-micro leading-tight"
-                        :class="delta.aprovacao >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'">
+                        :class="delta.aprovacao >= 0 ? 'text-data-pos' : 'text-data-neg'">
                         {{ delta.aprovacao >= 0 ? '+' : '' }}{{ delta.aprovacao.toFixed(1) }}%
                     </p>
                 </div>
@@ -46,13 +46,13 @@
                 <VChart v-if="!loading" :option="chartOption" autoresize class="absolute inset-0 h-full w-full" />
                 <div v-else role="status" class="absolute inset-0 overflow-hidden p-4 md:p-6 animate-pulse">
                     <div class="flex h-full items-end gap-3">
-                        <div class="flex-1 bg-gray-200 dark:bg-gray-700 rounded-t-lg h-24"></div>
-                        <div class="flex-1 bg-gray-200 dark:bg-gray-700 rounded-t-lg h-48"></div>
-                        <div class="flex-1 bg-gray-200 dark:bg-gray-700 rounded-t-lg h-28"></div>
-                        <div class="flex-1 bg-gray-200 dark:bg-gray-700 rounded-t-lg h-52"></div>
-                        <div class="flex-1 bg-gray-200 dark:bg-gray-700 rounded-t-lg h-20"></div>
-                        <div class="flex-1 bg-gray-200 dark:bg-gray-700 rounded-t-lg h-36"></div>
-                        <div class="flex-1 bg-gray-200 dark:bg-gray-700 rounded-t-lg h-40"></div>
+                        <div class="flex-1 bg-surface-sunken rounded-t-lg h-24"></div>
+                        <div class="flex-1 bg-surface-sunken rounded-t-lg h-48"></div>
+                        <div class="flex-1 bg-surface-sunken rounded-t-lg h-28"></div>
+                        <div class="flex-1 bg-surface-sunken rounded-t-lg h-52"></div>
+                        <div class="flex-1 bg-surface-sunken rounded-t-lg h-20"></div>
+                        <div class="flex-1 bg-surface-sunken rounded-t-lg h-36"></div>
+                        <div class="flex-1 bg-surface-sunken rounded-t-lg h-40"></div>
                     </div>
                 </div>
             </div>
@@ -61,7 +61,7 @@
         <!-- Controles -->
         <div class="w-full flex items-center justify-start gap-2 p-4 pt-0 -mt-6">
             <select v-model="selectedPeriod"
-                class="h-9 rounded-md bg-white/70 dark:bg-gray-900/40 border border-gray-300 dark:border-gray-700 text-xs">
+                class="h-9 rounded-md bg-surface border border-line text-xs">
                 <option v-for="o in periodOptions" :key="o.value" :value="o.value">{{ o.label }}</option>
             </select>
         </div>

@@ -34,10 +34,10 @@ const unitStats = computed(() => [
 ])
 
 const colorMap = {
-  emerald: 'bg-emerald-500/10 text-emerald-400 ring-emerald-500/20',
-  red:     'bg-red-500/10 text-red-400 ring-red-500/20',
-  amber:   'bg-amber-500/10 text-amber-400 ring-amber-500/20',
-  slate:   'bg-slate-500/10 text-slate-400 ring-slate-500/20',
+  emerald: 'bg-data-pos/10 text-data-pos ring-data-pos/20',
+  red:     'bg-data-neg/10 text-data-neg ring-data-neg/20',
+  amber:   'bg-data-warn/10 text-data-warn ring-data-warn/20',
+  slate:   'bg-slate-500/10 text-ink-subtle ring-slate-500/20',
 }
 
 // Mapa: só em localizacao
@@ -68,7 +68,7 @@ const showUnitTotal = computed(() => unidades.value.total > 0 && (focus.value ==
         :href="routeUrl"
         target="_blank"
         rel="noopener noreferrer"
-        class="absolute bottom-2 right-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-slate-900/90 text-white hover:bg-slate-800 backdrop-blur-sm transition shadow-lg"
+        class="absolute bottom-2 right-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-surface text-white hover:bg-surface-sunken backdrop-blur-sm transition shadow-lg"
       >
         <i class="fas fa-route text-[10px]" />
         Traçar Rota
@@ -76,16 +76,16 @@ const showUnitTotal = computed(() => unidades.value.total > 0 && (focus.value ==
     </div>
 
     <!-- Unidades completo (breakdown por status) -->
-    <div v-if="showUnitsBreakdown" class="rounded-2xl bg-white/[.02] border border-white/5 p-3">
+    <div v-if="showUnitsBreakdown" class="rounded-2xl bg-surface-raised/[.02] border border-white/5 p-3">
       <div class="flex items-center justify-between mb-2.5">
-        <span class="text-micro text-slate-500 uppercase tracking-wide font-medium">
+        <span class="text-micro text-ink-muted uppercase tracking-wide font-medium">
           Unidades · {{ unidades.total }} total
         </span>
         <a
           :href="cvMapUrl"
           target="_blank"
           rel="noopener noreferrer"
-          class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 ring-1 ring-indigo-500/20 transition"
+          class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-accent/10 hover:bg-accent/20 text-accent ring-1 ring-accent/20 transition"
         >
           <i class="fas fa-map text-[10px]" />
           Mapa de Disponibilidade
@@ -106,7 +106,7 @@ const showUnitTotal = computed(() => unidades.value.total > 0 && (focus.value ==
 
     <!-- Total simples de unidades (geral/sienge) + link cadastro simplificado -->
     <div v-if="showUnitTotal" class="flex items-center gap-3">
-      <span class="text-xs text-slate-500">
+      <span class="text-xs text-ink-muted">
         <i class="fas fa-building mr-1 text-[10px]" />
         {{ unidades.total }} unidades no total
       </span>
@@ -115,7 +115,7 @@ const showUnitTotal = computed(() => unidades.value.total > 0 && (focus.value ==
         :href="crmUrl"
         target="_blank"
         rel="noopener noreferrer"
-        class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-500/10 hover:bg-slate-500/20 text-slate-400 hover:text-slate-300 ring-1 ring-slate-500/20 transition"
+        class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-500/10 hover:bg-surface-sunken text-ink-subtle hover:text-ink-subtle ring-1 ring-slate-500/20 transition"
       >
         <i class="fas fa-arrow-up-right-from-square text-[10px]" />
         Cadastro no CRM
@@ -128,7 +128,7 @@ const showUnitTotal = computed(() => unidades.value.total > 0 && (focus.value ==
         :href="crmUrl"
         target="_blank"
         rel="noopener noreferrer"
-        class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-500/10 hover:bg-slate-500/20 text-slate-400 hover:text-slate-300 ring-1 ring-slate-500/20 transition"
+        class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-500/10 hover:bg-surface-sunken text-ink-subtle hover:text-ink-subtle ring-1 ring-slate-500/20 transition"
       >
         <i class="fas fa-arrow-up-right-from-square text-[10px]" />
         Cadastro no CRM

@@ -68,23 +68,23 @@ onUnmounted(() => {
     </div>
 
     <!-- Controles de Navegação -->
-    <button @click="prev" class="absolute top-1/2 left-4 -translate-y-1/2 text-gray-100 p-3">
+    <button @click="prev" class="absolute top-1/2 left-4 -translate-y-1/2 text-ink p-3">
       <i class="fas fa-chevron-left"></i>
     </button>
-    <button @click="next" class="absolute top-1/2 right-4 -translate-y-1/2 text-gray-100 p-3">
+    <button @click="next" class="absolute top-1/2 right-4 -translate-y-1/2 text-ink p-3">
       <i class="fas fa-chevron-right"></i>
     </button>
     <!-- Marcadores de Páginas -->
     <div class="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
       <div v-for="(event, index) in props.eventos" :key="event.id" @click="goToSlide(index)" :class="{
         'w-7 h-1 rounded-full': true,
-        'bg-gray-100': currentIndex !== index,
+        'bg-surface-sunken': currentIndex !== index,
         'bg-gray-400': currentIndex === index,
         'cursor-pointer': true
       }"></div>
     </div>
   </div>
-  <div class="relative rounded-xl overflow-hidden h-[350px] bg-gray-200 dark:bg-gray-700 flex" v-else>
-    <p class="m-auto text-xl md:text-3xl text-gray-500 dark:text-slate-400">Nenhum evento em andamento.</p>
+  <div class="relative rounded-xl overflow-hidden h-[350px] bg-surface-sunken flex" v-else>
+    <p class="m-auto text-xl md:text-3xl text-ink-muted">Nenhum evento em andamento.</p>
   </div>
 </template>

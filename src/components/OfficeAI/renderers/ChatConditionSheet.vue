@@ -37,10 +37,10 @@ const fmtPct = (v) => (v == null ? '—' : `${Number(v).toLocaleString('pt-BR')}
 
 const statusClass = (fonte) => {
   const s = fonte?.status || ''
-  if (s === 'Autorizada')      return 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 ring-emerald-500/20'
-  if (s === 'Encerrada')       return 'bg-slate-500/10 text-slate-600 dark:text-slate-400 ring-slate-500/20'
-  if (s === 'Em autorização')  return 'bg-amber-500/10 text-amber-600 dark:text-amber-400 ring-amber-500/20'
-  return 'bg-gray-500/10 text-gray-600 dark:text-gray-400 ring-gray-500/20' // Rascunho
+  if (s === 'Autorizada')      return 'bg-data-pos/10 text-data-pos ring-data-pos/20'
+  if (s === 'Encerrada')       return 'bg-slate-500/10 text-ink-muted ring-slate-500/20'
+  if (s === 'Em autorização')  return 'bg-data-warn/10 text-data-warn ring-data-warn/20'
+  return 'bg-gray-500/10 text-ink-muted ring-gray-500/20' // Rascunho
 }
 
 // ── Indicadores principais (módulo com fallback pro nível da ficha) ──────────
@@ -152,7 +152,7 @@ function send(prompt) {
 
     <!-- Aviso: nenhuma autorizada -->
     <div v-if="action.sem_ficha_autorizada"
-      class="flex items-start gap-2 px-4 py-2 bg-amber-500/10 border-b border-amber-500/20 text-micro text-amber-700 dark:text-amber-300">
+      class="flex items-start gap-2 px-4 py-2 bg-data-warn/10 border-b border-data-warn/20 text-micro text-data-warn">
       <i class="fas fa-triangle-exclamation mt-0.5" />
       <span>Nenhuma ficha desta série está autorizada — dados em elaboração, sujeitos a alteração.</span>
     </div>

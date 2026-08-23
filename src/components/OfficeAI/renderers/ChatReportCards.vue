@@ -8,8 +8,8 @@ const props = defineProps({ action: { type: Object, required: true } });
 const router = useRouter();
 
 const VIS = {
-    public: { label: 'Público', cls: 'text-amber-600 dark:text-amber-400 bg-amber-500/10 border-amber-500/20', icon: 'fas fa-globe' },
-    internal: { label: 'Interno', cls: 'text-sky-600 dark:text-sky-400 bg-sky-500/10 border-sky-500/20', icon: 'fas fa-building' },
+    public: { label: 'Público', cls: 'text-data-warn bg-data-warn/10 border-data-warn/20', icon: 'fas fa-globe' },
+    internal: { label: 'Interno', cls: 'text-accent bg-accent/10 border-accent/20', icon: 'fas fa-building' },
     private: { label: 'Privado', cls: 'text-ink-muted bg-surface-sunken border-line', icon: 'fas fa-lock' },
 };
 const vis = (v) => VIS[v] || VIS.private;
@@ -58,7 +58,7 @@ function open(link) {
                     <i class="fas fa-cube mr-1 text-[9px]"></i>{{ c.blocos }} bloco{{ c.blocos === 1 ? '' : 's' }}
                 </span>
                 <span class="rounded-md border px-1.5 py-0.5 text-micro font-medium"
-                    :class="c.modo === 'live' ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/20' : 'text-ink-muted bg-surface-sunken border-line'">
+                    :class="c.modo === 'live' ? 'text-data-pos bg-data-pos/10 border-data-pos/20' : 'text-ink-muted bg-surface-sunken border-line'">
                     <i :class="c.modo === 'live' ? 'fas fa-bolt' : 'fas fa-thumbtack'" class="mr-1 text-[9px]"></i>{{ c.modo === 'live' ? 'Ao vivo' : 'Fixo' }}
                 </span>
                 <span v-if="c.origem === 'compartilhado' && c.dono"

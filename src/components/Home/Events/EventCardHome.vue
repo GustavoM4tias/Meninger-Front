@@ -31,27 +31,27 @@ const formatDate = (dateString) => {
                 <div class="flex justify-between">
                     <h1 class="truncate filter md:text-xl font-semibold drop-shadow-md">{{ event.title }}</h1>
                     <p
-                        class="text-gray-200 font-semibold filter drop-shadow cursor-pointer duration-200 hover:text-gray-100 text-wrap text-sm bottom-0 right-0 m-1 md:m-2">
+                        class="text-ink font-semibold filter drop-shadow cursor-pointer duration-200 hover:text-ink text-wrap text-sm bottom-0 right-0 m-1 md:m-2">
                         {{ formatDate(event.event_date) }}
                     </p>
                 </div>
 
                 <ul class="flex flex-wrap">
-                    <li class="hover:bg-gray-100 hover:text-gray-800 text-gray-200 text-xs border border-gray-300 cursor-pointer filter drop-shadow duration-300 shadow px-2 py-0.5 m-0.5 rounded-lg"
+                    <li class="hover:bg-surface-sunken hover:text-ink text-xs border border-line cursor-pointer filter drop-shadow duration-300 shadow px-2 py-0.5 m-0.5 rounded-lg"
                         v-for="tag in event.tags" :key="tag">{{ tag }}</li>
                 </ul>
             </div>
 
             <!-- Descrição do evento -->
             <div class="descricao flex justify-between">
-                <p class="text-md md:text-lg text-gray-300 cursor-pointer duration-200 hover:text-gray-100 -mt-1">
+                <p class="text-md md:text-lg text-ink-subtle cursor-pointer duration-200 hover:text-ink -mt-1">
                     <!-- Cidade  -->
                 </p>
                 <RouterLink :to="{
                     path: '/marketing/events',
                     query: { busca: event.title, section: 'Geral' }
                 }"
-                    class="border rounded-md md:rounded-lg text-white text-md md:text-lg text-wrap hover:bg-gray-100 hover:text-gray-800 duration-300 py-0.5 px-1 md:py-1 md:px-3 ml-4">
+                    class="border rounded-md md:rounded-lg text-white text-md md:text-lg text-wrap hover:bg-surface-sunken hover:text-ink duration-300 py-0.5 px-1 md:py-1 md:px-3 ml-4">
                     Ver Mais
                 </RouterLink>
             </div>

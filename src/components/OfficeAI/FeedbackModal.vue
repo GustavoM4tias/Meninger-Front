@@ -33,8 +33,8 @@ const isUp = () => props.rating === 'up';
       <div class="flex items-center gap-3">
         <div class="h-10 w-10 grid place-items-center rounded-xl"
           :class="isUp()
-            ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'
-            : 'bg-red-500/10 text-red-500 border border-red-500/20'">
+            ? 'bg-data-pos/10 text-data-pos border border-data-pos/20'
+            : 'bg-data-neg/10 text-data-neg border border-data-neg/20'">
           <i :class="isUp() ? 'fas fa-thumbs-up' : 'fas fa-thumbs-down'"></i>
         </div>
         <div>

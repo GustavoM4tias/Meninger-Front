@@ -534,14 +534,14 @@ const escapeHtml = (v) =>
 // com rótulo em versalete. Vai como HTML porque o tippy renderiza string — as
 // classes são literais, então o Tailwind as mantém no bundle.
 const LEAD_BANNER_GRADIENT = {
-  'Vendido': 'from-emerald-700 via-emerald-600 to-teal-600',
-  'Venda Realizada': 'from-emerald-700 via-emerald-600 to-teal-600',
+  'Vendido': 'from-data-pos via-emerald-600 to-teal-600',
+  'Venda Realizada': 'from-data-pos via-emerald-600 to-teal-600',
   'Cancelado': 'from-slate-700 via-slate-600 to-slate-700',
   'Descartado': 'from-slate-700 via-slate-600 to-slate-700',
-  'Em Negociação': 'from-amber-700 via-orange-600 to-amber-600',
-  'Reservado': 'from-amber-700 via-orange-600 to-amber-600',
-  'Com Reserva': 'from-amber-700 via-orange-600 to-amber-600',
-  'Em Análise de Crédito': 'from-purple-700 via-violet-600 to-purple-600',
+  'Em Negociação': 'from-data-warn via-orange-600 to-data-warn',
+  'Reservado': 'from-data-warn via-orange-600 to-data-warn',
+  'Com Reserva': 'from-data-warn via-orange-600 to-data-warn',
+  'Em Análise de Crédito': 'from-accent via-violet-600 to-accent',
 };
 
 // Bloco "rótulo em cima, valor embaixo" — o mesmo par usado nas seções do modal.
@@ -566,18 +566,18 @@ const leadTooltipOf = (sale) => {
   const lead = leadOf(sale);
   if (!lead) return '';
 
-  const gradiente = LEAD_BANNER_GRADIENT[lead.situacao_nome] || 'from-blue-700 via-blue-600 to-indigo-600';
+  const gradiente = LEAD_BANNER_GRADIENT[lead.situacao_nome] || 'from-accent via-blue-600 to-accent';
   const campanha = lead.campanha || lead.utm_campaign;
 
   const banner = `
     <div class="relative bg-gradient-to-br ${gradiente} text-white px-4 pt-4 pb-10 overflow-hidden">
       <div class="pointer-events-none absolute inset-0 opacity-30"
         style="background-image: radial-gradient(circle, rgba(255,255,255,.2) 1px, transparent 1px); background-size: 18px 18px;"></div>
-      <div class="pointer-events-none absolute -top-16 -right-16 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
+      <div class="pointer-events-none absolute -top-16 -right-16 w-64 h-64 bg-surface-raised/10 rounded-full blur-3xl"></div>
       <div class="relative">
         <div class="flex items-center gap-2 flex-wrap mb-1.5">
-          <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-micro font-medium bg-white/20 backdrop-blur border border-white/20 text-white">
-            <span class="h-1.5 w-1.5 rounded-full bg-white"></span>${escapeHtml(lead.situacao_nome || 'Lead')}
+          <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-micro font-medium bg-surface-raised/20 backdrop-blur border border-white/20 text-white">
+            <span class="h-1.5 w-1.5 rounded-full bg-surface-raised"></span>${escapeHtml(lead.situacao_nome || 'Lead')}
           </span>
           <span class="text-micro text-white/70 font-mono">#${escapeHtml(lead.idlead)}</span>
         </div>
@@ -593,7 +593,7 @@ const leadTooltipOf = (sale) => {
       <div class="rounded-xl bg-surface-raised border border-line shadow-elevated p-3 surface-gradient">
         <div class="grid grid-cols-2 gap-3">
           ${leadField('E-mail', lead.email, '<i class="far fa-envelope text-accent text-[9px] mr-1"></i>')}
-          ${leadField('Telefone', lead.telefone, '<i class="fab fa-whatsapp text-emerald-500 text-[9px] mr-1"></i>')}
+          ${leadField('Telefone', lead.telefone, '<i class="fab fa-whatsapp text-data-pos text-[9px] mr-1"></i>')}
         </div>
       </div>
     </div>`;
@@ -807,20 +807,20 @@ function achievementBarColor(pct) {
   if (pct == null) return 'bg-surface-sunken';
   const elapsed = props.timeElapsedPct || 0;
   const ratio = elapsed > 0 ? pct / elapsed : (pct >= 100 ? 1.2 : 0.5);
-  if (ratio >= 1.1) return 'bg-emerald-500';
-  if (ratio >= 0.8) return 'bg-blue-500';
-  if (ratio >= 0.4) return 'bg-yellow-500';
-  return 'bg-red-500';
+  if (ratio >= 1.1) return 'bg-data-pos';
+  if (ratio >= 0.8) return 'bg-accent';
+  if (ratio >= 0.4) return 'bg-data-warn';
+  return 'bg-data-neg';
 }
 
 function achievementTextColor(pct) {
   if (pct == null) return 'text-ink-subtle';
   const elapsed = props.timeElapsedPct || 0;
   const ratio = elapsed > 0 ? pct / elapsed : (pct >= 100 ? 1.2 : 0.5);
-  if (ratio >= 1.1) return 'text-emerald-600 dark:text-emerald-400';
+  if (ratio >= 1.1) return 'text-data-pos';
   if (ratio >= 0.8) return 'text-accent';
-  if (ratio >= 0.4) return 'text-yellow-600 dark:text-yellow-400';
-  return 'text-red-600 dark:text-red-400';
+  if (ratio >= 0.4) return 'text-data-warn';
+  return 'text-data-neg';
 }
 
 const baseGross = (c) => contractsStore.contractBaseGross(c);
@@ -1009,9 +1009,9 @@ const viewModeOptions = computed(() => {
 // KPI Strip
 const kpiCards = computed(() => [
   { key: 'total',   label: 'Total de vendas',   value: totalSales.value,                   sub: 'no período',                              icon: 'fas fa-chart-line',     accent: 'text-accent bg-accent-soft', mono: true },
-  { key: 'value',   label: `Valor total ${valueModeLabel.value}`, value: formatCurrency(totalValue.value),     sub: showLandOnlyNote.value ? 'Cálculo pelo "Observação"' : (contractsStore.isNet ? 'VGV (descontos ignorados)' : 'VGV + DC (descontos somam)'),  icon: contractsStore.isNet ? 'fas fa-money-bill-wave' : 'fas fa-sack-dollar', accent: 'text-emerald-500 bg-emerald-500/10' },
-  { key: 'ticket',  label: `Ticket médio ${valueModeLabel.value}`, value: formatCurrency(avgTicket.value),      sub: 'valor médio por venda',                   icon: 'fas fa-receipt',        accent: 'text-purple-500 bg-purple-500/10' },
-  { key: 'clients', label: 'Clientes únicos',   value: uniqueCustomers.value,              sub: 'pessoas distintas',                       icon: 'fas fa-users',          accent: 'text-amber-500 bg-amber-500/10', mono: true },
+  { key: 'value',   label: `Valor total ${valueModeLabel.value}`, value: formatCurrency(totalValue.value),     sub: showLandOnlyNote.value ? 'Cálculo pelo "Observação"' : (contractsStore.isNet ? 'VGV (descontos ignorados)' : 'VGV + DC (descontos somam)'),  icon: contractsStore.isNet ? 'fas fa-money-bill-wave' : 'fas fa-sack-dollar', accent: 'text-data-pos bg-data-pos/10' },
+  { key: 'ticket',  label: `Ticket médio ${valueModeLabel.value}`, value: formatCurrency(avgTicket.value),      sub: 'valor médio por venda',                   icon: 'fas fa-receipt',        accent: 'text-accent bg-accent/10' },
+  { key: 'clients', label: 'Clientes únicos',   value: uniqueCustomers.value,              sub: 'pessoas distintas',                       icon: 'fas fa-users',          accent: 'text-data-warn bg-data-warn/10', mono: true },
 ]);
 
 const closeModal = () => emit('close');
@@ -1104,7 +1104,7 @@ const closeModal = () => emit('close');
             <!-- Unidades -->
             <Surface variant="raised" padding="md">
               <div class="flex items-center gap-2 mb-3">
-                <i class="fas fa-key text-violet-500"></i>
+                <i class="fas fa-key text-accent"></i>
                 <span class="text-sm font-semibold text-ink">Vendas (unidades)</span>
               </div>
               <div class="flex items-end gap-1 mb-1">
@@ -1130,7 +1130,7 @@ const closeModal = () => emit('close');
             <!-- VGV -->
             <Surface variant="raised" padding="md">
               <div class="flex items-center gap-2 mb-3">
-                <i class="fas fa-bullseye text-sky-500"></i>
+                <i class="fas fa-bullseye text-accent"></i>
                 <span class="text-sm font-semibold text-ink">{{ valueModeLabel }}</span>
               </div>
               <div class="flex items-end gap-1 mb-1">
@@ -1215,7 +1215,7 @@ const closeModal = () => emit('close');
               class="rounded-xl border bg-surface-raised overflow-hidden transition-all duration-200 ease-out-expo
                      hover:shadow-soft hover:border-accent/30"
               :class="saleIsProjection(sale)
-                ? 'border-emerald-500/30 bg-emerald-500/5'
+                ? 'border-data-pos/30 bg-data-pos/5'
                 : 'border-line surface-gradient'">
 
               <!-- Linha principal -->
@@ -1224,7 +1224,7 @@ const closeModal = () => emit('close');
                   <!-- Avatar/ícone -->
                   <div class="h-9 w-9 shrink-0 rounded-lg grid place-items-center text-sm border"
                     :class="saleIsProjection(sale)
-                      ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+                      ? 'bg-data-pos/10 text-data-pos border-data-pos/20'
                       : 'bg-accent-soft text-accent border-accent/20'">
                     <i :class="saleIsProjection(sale) ? 'fas fa-chart-line' : 'fas fa-handshake'"></i>
                   </div>
@@ -1266,7 +1266,7 @@ const closeModal = () => emit('close');
                         <Badge v-if="saleIsProjection(sale)" variant="success" size="sm">
                           <i class="fas fa-chart-line text-[9px]"></i>Projeção
                         </Badge>
-                        <span class="text-sm font-semibold text-emerald-600 dark:text-emerald-400 tabular-nums">
+                        <span class="text-sm font-semibold text-data-pos tabular-nums">
                           {{ formatCurrency(getSaleValue(sale)) }}
                         </span>
                       </div>
@@ -1275,7 +1275,7 @@ const closeModal = () => emit('close');
                     <!-- Linha 2: metadados -->
                     <div class="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-xs text-ink-muted">
                       <span v-if="hasRepasse" class="inline-flex items-center gap-1.5 max-w-[200px] truncate">
-                        <i class="fas fa-store text-[10px] text-indigo-500"></i>
+                        <i class="fas fa-store text-[10px] text-accent"></i>
                         {{ imobiliariaOf(sale) }}
                       </span>
                       <a v-if="hasRepasse" :href="repasseLinkOf(sale)" target="_blank" rel="noopener"
@@ -1286,23 +1286,23 @@ const closeModal = () => emit('close');
                         <span class="truncate">{{ repasseStatusOf(sale) || '—' }}</span>
                       </a>
                       <span v-if="hasRepasse" class="inline-flex items-center gap-1.5 max-w-[200px] truncate">
-                        <i class="fas fa-building text-[10px] text-cyan-500"></i>
+                        <i class="fas fa-building text-[10px] text-accent"></i>
                         {{ empreendimentoOf(sale) }}
                       </span>
                       <span v-if="hasRepasse && etapaOf(sale) !== '—'" class="inline-flex items-center gap-1.5">
-                        <i class="fas fa-layer-group text-[10px] text-purple-500"></i>
+                        <i class="fas fa-layer-group text-[10px] text-accent"></i>
                         {{ etapaOf(sale) }}
                       </span>
                       <span v-if="hasRepasse && blocoOf(sale) !== '—'" class="inline-flex items-center gap-1.5">
-                        <i class="fas fa-cube text-[10px] text-amber-500"></i>
+                        <i class="fas fa-cube text-[10px] text-data-warn"></i>
                         {{ blocoOf(sale) }}
                       </span>
                       <span class="inline-flex items-center gap-1.5">
-                        <i class="fas fa-hashtag text-[10px] text-rose-500"></i>
+                        <i class="fas fa-hashtag text-[10px] text-data-neg"></i>
                         <span class="font-mono">{{ sale.unit_name || reservaUnitOf(sale) }}</span>
                       </span>
                       <span class="inline-flex items-center gap-1.5">
-                        <i class="far fa-calendar text-[10px] text-orange-500"></i>
+                        <i class="far fa-calendar text-[10px] text-data-warn"></i>
                         <span class="font-mono">{{ formatDate(sale.financial_institution_date || reservaDateOf(sale)) }}</span>
                       </span>
                     </div>
@@ -1347,7 +1347,7 @@ const closeModal = () => emit('close');
                     <!-- Data ajustada: mostra de onde veio, senão o número muda sem explicação -->
                     <div v-if="contract.original_financial_institution_date
                       && contract.original_financial_institution_date !== contract.financial_institution_date"
-                      class="mb-3 text-micro text-sky-700 dark:text-sky-400 font-mono">
+                      class="mb-3 text-micro text-accent font-mono">
                       <i class="fas fa-wand-magic-sparkles text-[9px]"></i>
                       Data ajustada: {{ formatDate(contract.original_financial_institution_date) }}
                       → {{ formatDate(contract.financial_institution_date) }}
@@ -1389,7 +1389,7 @@ const closeModal = () => emit('close');
                           </button>
                         </div>
                         <div class="text-base font-semibold tabular-nums"
-                          :class="isDiscount(condition) ? 'text-red-500' : 'text-emerald-600 dark:text-emerald-400'">
+                          :class="isDiscount(condition) ? 'text-data-neg' : 'text-data-pos'">
                           {{ formatCurrency(condition.total_value) }}
                           <span v-if="isDiscount(condition)" class="text-micro ml-1 text-ink-subtle font-normal">(desconto)</span>
                         </div>

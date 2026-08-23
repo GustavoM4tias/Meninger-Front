@@ -80,8 +80,8 @@ async function toggle(pref, canal) {
                         <p class="truncate text-xs font-medium text-ink" :title="p.description || ''">
                             {{ p.label }}
                             <span v-if="!p.userOptional"
-                                class="ml-1 rounded border border-amber-500/30 bg-amber-500/10 px-1 py-px text-micro font-medium
-                                       text-amber-600 dark:text-amber-400" title="Notificação obrigatória">
+                                class="ml-1 rounded border border-data-warn/30 bg-data-warn/10 px-1 py-px text-micro font-medium
+                                       text-data-warn" title="Notificação obrigatória">
                                 obrigatória
                             </span>
                         </p>
@@ -96,11 +96,11 @@ async function toggle(pref, canal) {
                                 class="inline-flex min-h-[28px] items-center gap-1 rounded-lg border px-2 py-1 text-micro font-medium
                                        transition disabled:cursor-not-allowed"
                                 :class="p[ch.key]
-                                    ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                                    ? 'border-data-pos/30 bg-data-pos/10 text-data-pos'
                                     : 'border-line bg-surface-sunken text-ink-subtle hover:text-ink-muted'">
                                 <i v-if="savingKey === `${p.type}:${ch.key}`" class="fas fa-circle-notch fa-spin"></i>
-                                <i v-else-if="savedKey === `${p.type}:${ch.key}`" class="fas fa-check text-emerald-500"></i>
-                                <i v-else-if="errorKey === `${p.type}:${ch.key}`" class="fas fa-triangle-exclamation text-rose-500"></i>
+                                <i v-else-if="savedKey === `${p.type}:${ch.key}`" class="fas fa-check text-data-pos"></i>
+                                <i v-else-if="errorKey === `${p.type}:${ch.key}`" class="fas fa-triangle-exclamation text-data-neg"></i>
                                 <i v-else :class="ch.icon"></i>
                                 {{ ch.label }}
                             </button>

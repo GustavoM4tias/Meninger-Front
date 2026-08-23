@@ -101,21 +101,21 @@ function fmtRelative(iso) {
 }
 
 function statusColor(s) {
-    if (s === 'delivered')               return 'text-emerald-600 dark:text-emerald-300';
-    if (s === 'held')                    return 'text-amber-600 dark:text-amber-300';
-    if (s === 'historical')              return 'text-violet-600 dark:text-violet-300';
-    if (s === 'spam')                    return 'text-red-500';
-    if (s === 'failed' || s === 'rejected') return 'text-red-600 dark:text-red-300';
+    if (s === 'delivered')               return 'text-data-pos';
+    if (s === 'held')                    return 'text-data-warn';
+    if (s === 'historical')              return 'text-accent';
+    if (s === 'spam')                    return 'text-data-neg';
+    if (s === 'failed' || s === 'rejected') return 'text-data-neg';
     return 'text-ink-muted';
 }
 
 const statusBadge = computed(() => {
     const s = String(props.form?.status || '').toUpperCase();
-    if (s === 'ACTIVE')   return { label: 'Ativo na Meta',  cls: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 border-emerald-500/20' };
-    if (s === 'ARCHIVED') return { label: 'Arquivado',      cls: 'bg-amber-500/10 text-amber-600 dark:text-amber-300 border-amber-500/20' };
-    if (s === 'DELETED')  return { label: 'Excluído',       cls: 'bg-red-500/10 text-red-600 dark:text-red-300 border-red-500/20' };
-    if (s === 'DRAFT')    return { label: 'Rascunho',       cls: 'bg-slate-500/10 text-slate-500 border-slate-500/20' };
-    return { label: s || '—', cls: 'bg-slate-500/10 text-slate-500 border-slate-500/20' };
+    if (s === 'ACTIVE')   return { label: 'Ativo na Meta',  cls: 'bg-data-pos/10 text-data-pos border-data-pos/20' };
+    if (s === 'ARCHIVED') return { label: 'Arquivado',      cls: 'bg-data-warn/10 text-data-warn border-data-warn/20' };
+    if (s === 'DELETED')  return { label: 'Excluído',       cls: 'bg-data-neg/10 text-data-neg border-data-neg/20' };
+    if (s === 'DRAFT')    return { label: 'Rascunho',       cls: 'bg-slate-500/10 text-ink-muted border-line/20' };
+    return { label: s || '—', cls: 'bg-slate-500/10 text-ink-muted border-line/20' };
 });
 
 const stats = computed(() => props.form?.stats || { total: 0, last_30d: 0, delivered: 0, held: 0, spam: 0, failed: 0, last_lead_at: null });
@@ -241,11 +241,11 @@ const sections = [
         </div>
         <div class="text-center">
           <div class="text-micro uppercase tracking-wider text-ink-subtle">Entregues</div>
-          <div class="text-lg font-semibold text-emerald-600 dark:text-emerald-300">{{ fmtInt(stats.delivered) }}</div>
+          <div class="text-lg font-semibold text-data-pos">{{ fmtInt(stats.delivered) }}</div>
         </div>
         <div class="text-center">
           <div class="text-micro uppercase tracking-wider text-ink-subtle">Pendentes</div>
-          <div class="text-lg font-semibold text-amber-600 dark:text-amber-300">{{ fmtInt(stats.held) }}</div>
+          <div class="text-lg font-semibold text-data-warn">{{ fmtInt(stats.held) }}</div>
         </div>
         <div class="text-center col-span-2 sm:col-span-1">
           <div class="text-micro uppercase tracking-wider text-ink-subtle">Último lead</div>
@@ -279,8 +279,8 @@ const sections = [
             <p class="text-xs text-ink-subtle">
               Pra cada pergunta da Meta, escolha qual campo do CV vai receber a resposta.
               Em branco = o sistema usa <b>auto-detecção</b> (sugestão mostrada em cinza).
-              <span class="text-violet-700 dark:text-violet-300">extra_fields</span> = mantém em JSONB custom.
-              <span class="text-red-600 dark:text-red-300">Ignorar</span> = não envia ao CV.
+              <span class="text-accent">extra_fields</span> = mantém em JSONB custom.
+              <span class="text-data-neg">Ignorar</span> = não envia ao CV.
             </p>
           </div>
 
@@ -318,7 +318,7 @@ const sections = [
 
                 <button v-if="fmDraft[item.question_key]"
                   @click="resetMappingToAuto(item.question_key)"
-                  class="text-micro text-ink-subtle hover:text-red-500" title="Voltar ao automático">
+                  class="text-micro text-ink-subtle hover:text-data-neg" title="Voltar ao automático">
                   <i class="fas fa-rotate-left"></i>
                 </button>
               </div>
@@ -329,10 +329,10 @@ const sections = [
                 <span class="text-ink-subtle">Vai pra:</span>
                 <span class="font-mono px-1.5 py-0.5 rounded"
                   :class="effectiveMapping(item) === 'ignore'
-                    ? 'bg-red-500/10 text-red-600 dark:text-red-300'
+                    ? 'bg-data-neg/10 text-data-neg'
                     : effectiveMapping(item) === 'extra'
-                      ? 'bg-violet-500/10 text-violet-700 dark:text-violet-300'
-                      : 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'">
+                      ? 'bg-accent/10 text-accent'
+                      : 'bg-data-pos/10 text-data-pos'">
                   {{ targetLabel(effectiveMapping(item)) }}
                 </span>
                 <span v-if="!fmDraft[item.question_key] && item.auto_detected" class="text-micro text-ink-subtle italic">
@@ -383,7 +383,7 @@ const sections = [
             </div>
           </div>
 
-          <div v-if="localError" class="rounded border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-300">
+          <div v-if="localError" class="rounded border border-data-neg/20 bg-data-neg/10 px-3 py-2 text-sm text-data-neg">
             <i class="fas fa-circle-exclamation mr-1.5"></i>{{ localError }}
           </div>
 
@@ -425,7 +425,7 @@ const sections = [
                   </td>
                   <td class="px-3 py-2 text-micro font-mono text-ink-muted">{{ l.midia_slug || '—' }}</td>
                   <td class="px-3 py-2 text-center">
-                    <span v-if="l.cv_idlead" class="inline-flex items-center gap-1 text-micro font-mono text-emerald-600 dark:text-emerald-300">
+                    <span v-if="l.cv_idlead" class="inline-flex items-center gap-1 text-micro font-mono text-data-pos">
                       <i class="fas fa-check-circle text-[9px]"></i>#{{ l.cv_idlead }}
                     </span>
                     <span v-else class="text-micro text-ink-subtle italic">sem match</span>

@@ -138,35 +138,35 @@ function onKeydown(e) {
     <div class="w-full h-full" tabindex="0" @keydown="onKeydown">
         <!-- CARD (só calendário) -->
         <div
-            class="rounded-2xl w-full h-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm overflow-hidden flex flex-col">
+            class="rounded-2xl w-full h-full border border-line bg-surface-raised shadow-sm overflow-hidden flex flex-col">
 
             <div
-                class="px-4 py-2 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between gap-2 shrink-0">
+                class="px-4 py-2 border-b border-line flex items-center justify-between gap-2 shrink-0">
                 <div class="min-w-0 truncate">
-                    <p class="text-xs text-gray-500 dark:text-gray-400">{{ yearLabel }}</p>
-                    <p class="text-base -mt-1 font-semibold text-gray-900 dark:text-gray-100 capitalize truncate">
+                    <p class="text-xs text-ink-muted">{{ yearLabel }}</p>
+                    <p class="text-base -mt-1 font-semibold text-ink capitalize truncate">
                         {{ monthLabel }}
                     </p>
                 </div>
 
                 <div class="flex items-center gap-1">
                     <button
-                        class="w-8 h-8 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-950"
+                        class="w-8 h-8 rounded-xl border border-line bg-surface-sunken text-ink hover:bg-surface-sunken"
                         @click="prevMonth" type="button" aria-label="Mês anterior">
                         <i class="fas fa-chevron-left"></i>
                     </button>
                     <button
-                        class="w-8 h-8 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-950"
+                        class="w-8 h-8 rounded-xl border border-line bg-surface-sunken text-ink hover:bg-surface-sunken"
                         @click="nextMonth" type="button" aria-label="Próximo mês">
                         <i class="fas fa-chevron-right"></i>
                     </button>
                     <button
-                        class="w-12 h-8 text-xs rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-950"
+                        class="w-12 h-8 text-xs rounded-xl border border-line bg-surface-sunken text-ink hover:bg-surface-sunken"
                         @click="goToday" type="button">
                         Hoje
                     </button>
                     <button
-                        class="w-14 h-8 text-xs border border-gray-200 dark:border-gray-700 truncate rounded-xl bg-gray-900 text-white hover:bg-gray-950"
+                        class="w-14 h-8 text-xs border border-line truncate rounded-xl bg-surface text-white hover:bg-surface-sunken"
                         @click="openMonthList" type="button">
                         <i class="fas fa-list-ul"></i>
                         Lista
@@ -178,32 +178,32 @@ function onKeydown(e) {
 
                 <div class="grid grid-cols-7 gap-2 mb-1 shrink-0">
                     <div v-for="w in weekdays" :key="w"
-                        class="text-center text-micro font-semibold text-gray-500 dark:text-gray-400">
+                        class="text-center text-micro font-semibold text-ink-muted">
                         {{ w }}
                     </div>
                 </div>
 
                 <div class="grid grid-cols-7 gap-1 flex-1 overflow-y-auto content-start pr-1 pb-1 pt-1">
                     <button v-for="cell in daysGrid" :key="cell.key" type="button"
-                        class="relative h-10 rounded-xl border transition focus:outline-none focus:ring-2 focus:ring-blue-500/35"
+                        class="relative h-10 rounded-xl border transition focus:outline-none focus:ring-2 focus:ring-accent/35"
                         :class="[
                             cell.inMonth
-                                ? 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700'
-                                : 'border-gray-100 dark:border-gray-800 bg-gray-50/60 dark:bg-gray-900/40 text-gray-400 dark:text-gray-600',
-                            cell.isSelected ? 'ring-2 ring-blue-500/25' : '',
+                                ? 'border-line bg-surface-raised hover:bg-surface-sunken'
+                                : 'border-line bg-surface text-ink-subtle',
+                            cell.isSelected ? 'ring-2 ring-accent/25' : '',
                             cell.isToday ? 'shadow-[0_0_0_1px_rgba(59,130,246,0.35)]' : '',
                             cell.hasEvents ? 'cursor-pointer' : 'cursor-default'
                         ]" @click="cell.hasEvents ? openDay(cell.date) : (selectedDay = cell.date)">
                         <div class="h-full w-full flex items-center justify-center">
                             <span class="text-sm font-semibold"
-                                :class="cell.inMonth ? 'text-gray-900 dark:text-gray-100' : 'text-gray-400 dark:text-gray-600'">
+                                :class="cell.inMonth ? 'text-ink' : 'text-ink-subtle'">
                                 {{ cell.dayNumber }}
                             </span>
                         </div>
 
                         <div v-if="cell.hasEvents" class="absolute bottom-1.5 left-0 right-0 flex justify-center gap-1">
                             <span v-if="cell.hasPast" class="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
-                            <span v-if="cell.hasUpcoming" class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                            <span v-if="cell.hasUpcoming" class="w-1.5 h-1.5 rounded-full bg-accent"></span>
                         </div>
                     </button>
                 </div>
@@ -216,27 +216,27 @@ function onKeydown(e) {
                 <div class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
 
                 <div
-                    class="relative w-full max-w-3xl rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-2xl overflow-hidden">
+                    class="relative w-full max-w-3xl rounded-2xl bg-surface-raised border border-line shadow-2xl overflow-hidden">
                     <div
-                        class="px-5 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between gap-3">
+                        class="px-5 py-4 border-b border-line flex items-center justify-between gap-3">
                         <div>
-                            <p class="text-xs text-gray-500 dark:text-gray-400">Eventos do dia</p>
-                            <p class="text-lg font-semibold text-gray-900 dark:text-gray-100 capitalize">
+                            <p class="text-xs text-ink-muted">Eventos do dia</p>
+                            <p class="text-lg font-semibold text-ink capitalize">
                                 {{ selectedDayLabel }}
                             </p>
                         </div>
 
                         <div class="flex items-center gap-2">
                             <button
-                                class="px-3 py-2 text-xs rounded-xl border border-gray-200 dark:border-gray-700
-                       bg-gray-50 dark:bg-gray-900 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-950"
+                                class="px-3 py-2 text-xs rounded-xl border border-line
+                       bg-surface-sunken text-ink hover:bg-surface-sunken"
                                 @click="isDayModalOpen = false; isMonthModalOpen = true" type="button">
                                 <i class="fas fa-list-ul mr-2"></i> Lista do mês
                             </button>
 
                             <button
-                                class="w-10 h-10 rounded-xl border border-gray-200 dark:border-gray-700
-                       bg-gray-50 dark:bg-gray-900 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-950"
+                                class="w-10 h-10 rounded-xl border border-line
+                       bg-surface-sunken text-ink hover:bg-surface-sunken"
                                 @click="isDayModalOpen = false" type="button" aria-label="Fechar">
                                 <i class="fas fa-xmark"></i>
                             </button>
@@ -245,20 +245,20 @@ function onKeydown(e) {
 
                     <div class="p-4 max-h-[70vh] overflow-y-auto">
                         <div v-if="selectedEvents.length === 0"
-                            class="text-center py-10 text-gray-500 dark:text-gray-400">
+                            class="text-center py-10 text-ink-muted">
                             Nenhum evento neste dia.
                         </div>
 
                         <div v-else class="space-y-2">
                             <div v-for="item in selectedEvents" :key="item.id"
-                                class="rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+                                class="rounded-xl border border-line overflow-hidden">
                                 <EventText :item="item" />
                             </div>
                         </div>
                     </div>
 
-                    <div class="px-5 py-3 border-t border-gray-200 dark:border-gray-700 flex justify-end">
-                        <button class="px-4 py-2 text-sm rounded-xl bg-gray-900 text-white hover:bg-gray-950"
+                    <div class="px-5 py-3 border-t border-line flex justify-end">
+                        <button class="px-4 py-2 text-sm rounded-xl bg-surface text-white hover:bg-surface-sunken"
                             @click="isDayModalOpen = false" type="button">
                             Fechar
                         </button>
@@ -274,46 +274,46 @@ function onKeydown(e) {
                 <div class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
 
                 <div
-                    class="relative w-full max-w-4xl rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-2xl overflow-hidden">
+                    class="relative w-full max-w-4xl rounded-2xl bg-surface-raised border border-line shadow-2xl overflow-hidden">
                     <div
-                        class="px-5 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between gap-3">
+                        class="px-5 py-4 border-b border-line flex items-center justify-between gap-3">
                         <div>
-                            <p class="text-xs text-gray-500 dark:text-gray-400">Lista do mês</p>
-                            <p class="text-lg font-semibold text-gray-900 dark:text-gray-100 capitalize">
+                            <p class="text-xs text-ink-muted">Lista do mês</p>
+                            <p class="text-lg font-semibold text-ink capitalize">
                                 {{ monthLabel }}
                             </p>
-                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                            <p class="text-xs text-ink-muted mt-0.5">
                                 {{ monthEvents.length }} evento(s)
                             </p>
                         </div>
 
                         <button
-                            class="w-10 h-10 rounded-xl border border-gray-200 dark:border-gray-700
-                     bg-gray-50 dark:bg-gray-900 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-950"
+                            class="w-10 h-10 rounded-xl border border-line
+                     bg-surface-sunken text-ink hover:bg-surface-sunken"
                             @click="isMonthModalOpen = false" type="button" aria-label="Fechar">
                             <i class="fas fa-xmark"></i>
                         </button>
                     </div>
 
                     <div class="p-4 max-h-[70vh] overflow-y-auto">
-                        <div v-if="monthEvents.length === 0" class="text-center py-10 text-gray-500 dark:text-gray-400">
+                        <div v-if="monthEvents.length === 0" class="text-center py-10 text-ink-muted">
                             Nenhum evento neste mês.
                         </div>
 
                         <div v-else class="space-y-4">
                             <div v-for="[dayKey, events] in monthGrouped" :key="dayKey"
-                                class="rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-                                <div class="px-4 py-2 bg-gray-50 dark:bg-gray-900 flex items-center justify-between">
-                                    <p class="text-sm font-semibold text-gray-800 dark:text-gray-200">
+                                class="rounded-xl border border-line overflow-hidden">
+                                <div class="px-4 py-2 bg-surface-sunken flex items-center justify-between">
+                                    <p class="text-sm font-semibold text-ink">
                                         {{ dayjs(dayKey).format('DD/MM') }}
                                         <span
-                                            class="text-xs font-normal text-gray-500 dark:text-gray-400 ml-2 capitalize">
+                                            class="text-xs font-normal text-ink-muted ml-2 capitalize">
                                             {{ dayjs(dayKey).format('dddd') }}
                                         </span>
                                     </p>
 
-                                    <button class="text-xs px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700
-                           bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
+                                    <button class="text-xs px-3 py-2 rounded-xl border border-line
+                           bg-surface-raised hover:bg-surface-sunken"
                                         @click="selectedDay = dayjs(dayKey); isMonthModalOpen = false; isDayModalOpen = true"
                                         type="button">
                                         Ver dia
@@ -329,8 +329,8 @@ function onKeydown(e) {
                         </div>
                     </div>
 
-                    <div class="px-5 py-3 border-t border-gray-200 dark:border-gray-700 flex justify-end">
-                        <button class="px-4 py-2 text-sm rounded-xl bg-gray-900 text-white hover:bg-gray-950"
+                    <div class="px-5 py-3 border-t border-line flex justify-end">
+                        <button class="px-4 py-2 text-sm rounded-xl bg-surface text-white hover:bg-surface-sunken"
                             @click="isMonthModalOpen = false" type="button">
                             Fechar
                         </button>

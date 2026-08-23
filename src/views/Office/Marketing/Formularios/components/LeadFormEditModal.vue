@@ -420,10 +420,10 @@ function fmtRelative(iso) {
 }
 
 function statusColor(s) {
-  if (s === 'delivered')               return 'text-emerald-600 dark:text-emerald-300';
-  if (s === 'held')                    return 'text-amber-600 dark:text-amber-300';
-  if (s === 'spam')                    return 'text-red-500';
-  if (s === 'failed' || s === 'rejected') return 'text-red-600 dark:text-red-300';
+  if (s === 'delivered')               return 'text-data-pos';
+  if (s === 'held')                    return 'text-data-warn';
+  if (s === 'spam')                    return 'text-data-neg';
+  if (s === 'failed' || s === 'rejected') return 'text-data-neg';
   return 'text-ink-muted';
 }
 
@@ -466,8 +466,8 @@ const sections = computed(() => {
         </div>
         <span v-if="isEdit" :class="['inline-flex shrink-0 rounded-md border px-2 py-0.5 text-micro font-medium',
           form?.active
-            ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 border-emerald-500/20'
-            : 'bg-slate-500/10 text-slate-500 dark:text-slate-400 border-slate-500/20']">
+            ? 'bg-data-pos/10 text-data-pos border-data-pos/20'
+            : 'bg-slate-500/10 text-ink-muted border-line/20']">
           {{ form?.active ? 'Ativo' : 'Inativo' }}
         </span>
         <button @click="close" class="shrink-0 text-ink-subtle hover:text-ink p-1">
@@ -487,11 +487,11 @@ const sections = computed(() => {
         </div>
         <div class="text-center">
           <div class="text-micro uppercase tracking-wider text-ink-subtle">Entregues</div>
-          <div class="text-lg font-semibold text-emerald-600 dark:text-emerald-300">{{ stats.delivered }}</div>
+          <div class="text-lg font-semibold text-data-pos">{{ stats.delivered }}</div>
         </div>
         <div class="text-center">
           <div class="text-micro uppercase tracking-wider text-ink-subtle">Pendentes</div>
-          <div class="text-lg font-semibold text-amber-600 dark:text-amber-300">{{ stats.held }}</div>
+          <div class="text-lg font-semibold text-data-warn">{{ stats.held }}</div>
         </div>
         <div class="text-center col-span-2 sm:col-span-1">
           <div class="text-micro uppercase tracking-wider text-ink-subtle">Último lead</div>
@@ -640,7 +640,7 @@ const sections = computed(() => {
 }'
             class="w-full rounded border border-line bg-surface px-3 py-2 text-xs font-mono text-ink placeholder-ink-subtle focus:outline-none focus:border-accent/40 resize-y" />
           <div v-if="cvExtraError"
-            class="rounded border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-700 dark:text-red-300">
+            class="rounded border border-data-neg/20 bg-data-neg/10 px-3 py-2 text-xs text-data-neg">
             <i class="fas fa-circle-exclamation mr-1"></i>{{ cvExtraError }}
           </div>
         </section>
@@ -664,7 +664,7 @@ const sections = computed(() => {
               </span>
               <span class="text-micro text-ink-subtle">atualiza conforme você edita</span>
             </div>
-            <div class="p-5 sm:p-8 flex bg-slate-900" :class="cardJustifyClass(previewConfig)" :style="previewBg">
+            <div class="p-5 sm:p-8 flex bg-surface" :class="cardJustifyClass(previewConfig)" :style="previewBg">
               <div :class="['w-full pointer-events-none select-none', cardWidthClass(previewConfig)]">
                 <LeadFormCard
                   :page-config="previewConfig"
@@ -880,7 +880,7 @@ const sections = computed(() => {
           <div>
             <div class="text-xs text-ink-muted mb-1.5">QR code da LP (imprima/cole onde quiser — não expira):</div>
             <div class="flex items-start gap-3">
-              <img v-if="qrDataUrl" :src="qrDataUrl" alt="QR code" class="h-32 w-32 rounded border border-line bg-white shrink-0" />
+              <img v-if="qrDataUrl" :src="qrDataUrl" alt="QR code" class="h-32 w-32 rounded border border-line bg-surface-raised shrink-0" />
               <div v-else class="h-32 w-32 rounded border border-line bg-surface-sunken grid place-items-center text-ink-subtle text-xs shrink-0">
                 <i class="fas fa-circle-notch fa-spin"></i>
               </div>
@@ -956,7 +956,7 @@ const sections = computed(() => {
 
         <!-- Erro local -->
         <div v-if="localError"
-          class="rounded border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-300">
+          class="rounded border border-data-neg/20 bg-data-neg/10 px-3 py-2 text-sm text-data-neg">
           <i class="fas fa-circle-exclamation mr-1.5"></i>{{ localError }}
         </div>
       </div>

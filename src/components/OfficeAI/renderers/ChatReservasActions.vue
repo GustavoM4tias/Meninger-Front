@@ -167,22 +167,22 @@ function sendMessage(text) {
 }
 
 const colorMap = {
-  indigo:  'bg-indigo-500/10  hover:bg-indigo-500/20  text-indigo-400  dark:text-indigo-400  ring-indigo-500/20',
-  cyan:    'bg-cyan-500/10    hover:bg-cyan-500/20    text-cyan-500    dark:text-cyan-400    ring-cyan-500/20',
-  violet:  'bg-violet-500/10  hover:bg-violet-500/20  text-violet-500  dark:text-violet-400  ring-violet-500/20',
-  emerald: 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 ring-emerald-500/20',
-  amber:   'bg-amber-500/10   hover:bg-amber-500/20   text-amber-600   dark:text-amber-400   ring-amber-500/20',
-  rose:    'bg-rose-500/10    hover:bg-rose-500/20    text-rose-500    dark:text-rose-400    ring-rose-500/20',
-  slate:   'bg-slate-500/10   hover:bg-slate-500/20   text-slate-600   dark:text-slate-400   ring-slate-500/20',
+  indigo:  'bg-accent/10  hover:bg-accent/20  text-accent    ring-accent/20',
+  cyan:    'bg-accent/10    hover:bg-accent/20    text-accent    ring-accent/20',
+  violet:  'bg-accent/10  hover:bg-accent/20  text-accent  ring-accent/20',
+  emerald: 'bg-data-pos/10 hover:bg-data-pos/20 text-data-pos ring-data-pos/20',
+  amber:   'bg-data-warn/10   hover:bg-data-warn/20   text-data-warn   ring-data-warn/20',
+  rose:    'bg-data-neg/10    hover:bg-data-neg/20    text-data-neg    ring-data-neg/20',
+  slate:   'bg-slate-500/10   hover:bg-surface-sunken   text-ink-muted   ring-slate-500/20',
   teal:    'bg-teal-500/10    hover:bg-teal-500/20    text-teal-600    dark:text-teal-400    ring-teal-500/20',
-  blue:    'bg-blue-500/10    hover:bg-blue-500/20    text-blue-500    dark:text-blue-400    ring-blue-500/20',
-  sky:     'bg-sky-500/10     hover:bg-sky-500/20     text-sky-500     dark:text-sky-400     ring-sky-500/20',
+  blue:    'bg-accent/10    hover:bg-accent/20    text-accent    ring-accent/20',
+  sky:     'bg-accent/10     hover:bg-accent/20     text-accent     ring-accent/20',
 }
 </script>
 
 <template>
-  <div class="mt-3 pt-3 border-t border-gray-200 dark:border-white/5">
-    <p class="text-micro text-gray-400 dark:text-slate-600 uppercase tracking-wide mb-2">Sugestões</p>
+  <div class="mt-3 pt-3 border-t border-line dark:border-white/5">
+    <p class="text-micro text-ink-subtle uppercase tracking-wide mb-2">Sugestões</p>
     <div class="flex flex-wrap gap-1.5">
       <button
         v-for="btn in buttons"

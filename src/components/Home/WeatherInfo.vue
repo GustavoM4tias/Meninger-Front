@@ -48,10 +48,10 @@ const weatherIcon = computed(() => {
 })
 
 const iconColor = computed(() => {
-    if (code.value === 0) return 'text-yellow-400'
-    if (code.value === 95) return 'text-amber-300'
-    if ([61, 63, 65].includes(code.value)) return 'text-sky-300'
-    return 'text-slate-200'
+    if (code.value === 0) return 'text-data-warn'
+    if (code.value === 95) return 'text-data-warn'
+    if ([61, 63, 65].includes(code.value)) return 'text-accent'
+    return 'text-ink'
 })
 
 /* ================================

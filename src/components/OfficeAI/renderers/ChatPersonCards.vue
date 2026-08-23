@@ -51,8 +51,8 @@ function open(link) {
                             Admin
                         </span>
                         <span v-if="card.equipeTotal"
-                            class="rounded-md border border-emerald-500/20 bg-emerald-500/10 px-1.5 py-0.5 text-micro font-medium
-                                   text-emerald-600 dark:text-emerald-400">
+                            class="rounded-md border border-data-pos/20 bg-data-pos/10 px-1.5 py-0.5 text-micro font-medium
+                                   text-data-pos">
                             Gestor · {{ card.equipeTotal }}
                         </span>
                     </div>
@@ -74,8 +74,8 @@ function open(link) {
             <!-- contato rápido -->
             <div v-if="card.telefone || card.email" class="mt-2 flex flex-wrap gap-1.5">
                 <a v-if="card.telefone" :href="whatsappUrl(card.telefone)" target="_blank" rel="noopener"
-                    class="inline-flex items-center gap-1 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2 py-1
-                           text-micro font-medium text-emerald-600 transition hover:bg-emerald-600 hover:text-white dark:text-emerald-400">
+                    class="inline-flex items-center gap-1 rounded-lg border border-data-pos/30 bg-data-pos/10 px-2 py-1
+                           text-micro font-medium text-data-pos transition hover:bg-data-pos hover:text-white ">
                     <i class="fab fa-whatsapp"></i>{{ card.telefone }}
                 </a>
                 <a v-if="card.email" :href="mailtoUrl(card.email)"
@@ -131,8 +131,8 @@ function open(link) {
                     <p class="text-micro font-semibold uppercase tracking-wide text-ink-subtle">Contato</p>
                     <div class="mt-1.5 flex flex-wrap gap-1.5">
                         <a v-if="detail.telefone" :href="whatsappUrl(detail.telefone)" target="_blank" rel="noopener"
-                            class="inline-flex items-center gap-1 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2 py-1
-                                   text-xs font-medium text-emerald-600 transition hover:bg-emerald-600 hover:text-white dark:text-emerald-400">
+                            class="inline-flex items-center gap-1 rounded-lg border border-data-pos/30 bg-data-pos/10 px-2 py-1
+                                   text-xs font-medium text-data-pos transition hover:bg-data-pos hover:text-white ">
                             <i class="fab fa-whatsapp"></i>{{ detail.telefone }}
                         </a>
                         <a v-if="detail.email" :href="mailtoUrl(detail.email)"

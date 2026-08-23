@@ -222,21 +222,21 @@ function downloadImage() {
   </div>
 
   <!-- ── Card exibido no chat ───────────────────────────────────────────── -->
-  <div class="rounded-2xl overflow-hidden bg-white dark:bg-slate-900 mt-2 shadow">
-    <div class="px-4 py-3 bg-slate-300/20 dark:bg-slate-800/60 flex items-center justify-between gap-2 border-b border-white/5">
+  <div class="rounded-2xl overflow-hidden bg-surface-raised mt-2 shadow">
+    <div class="px-4 py-3 bg-slate-300/20 bg-surface-sunken flex items-center justify-between gap-2 border-b border-white/5">
       <div class="flex items-center gap-2 min-w-0">
-        <span class="w-1.5 h-5 rounded-full bg-blue-500 flex-shrink-0" />
-        <span class="text-sm font-medium dark:text-gray-200">Cronograma de Eventos</span>
+        <span class="w-1.5 h-5 rounded-full bg-accent flex-shrink-0" />
+        <span class="text-sm font-medium text-ink">Cronograma de Eventos</span>
       </div>
       <div v-if="imageUrl" class="flex items-center gap-1.5 flex-shrink-0">
         <button @click="copyImage"
-          class="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-700/60 hover:bg-slate-700 text-gray-400 hover:text-gray-200 text-xs transition"
+          class="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-surface-sunken hover:bg-surface-raised text-ink-subtle hover:text-ink text-xs transition"
           title="Copiar imagem para a área de transferência">
-          <i :class="copied ? 'fas fa-check text-green-400' : 'far fa-copy'" />
+          <i :class="copied ? 'fas fa-check text-data-pos' : 'far fa-copy'" />
           <span>{{ copied ? 'Copiado' : 'Copiar' }}</span>
         </button>
         <button @click="downloadImage"
-          class="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 hover:text-blue-300 text-xs transition"
+          class="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-accent/10 hover:bg-accent/20 text-accent hover:text-accent text-xs transition"
           title="Baixar como JPG">
           <i class="fas fa-download" />
           <span>Baixar</span>
@@ -245,11 +245,11 @@ function downloadImage() {
     </div>
 
     <div class="p-3">
-      <div v-if="generating" class="h-36 flex flex-col items-center justify-center gap-3 text-slate-500 dark:text-slate-400">
-        <i class="fas fa-spinner fa-spin text-xl text-blue-400" />
+      <div v-if="generating" class="h-36 flex flex-col items-center justify-center gap-3 text-ink-muted">
+        <i class="fas fa-spinner fa-spin text-xl text-accent" />
         <span class="text-sm">Carregando imagens e gerando relatório...</span>
       </div>
-      <div v-else-if="genError" class="py-6 text-center text-sm text-rose-400">
+      <div v-else-if="genError" class="py-6 text-center text-sm text-data-neg">
         <i class="fas fa-exclamation-circle mr-1" />{{ genError }}
       </div>
       <img v-else-if="imageUrl" :src="imageUrl" class="w-full rounded-xl" alt="Cronograma de Eventos" />

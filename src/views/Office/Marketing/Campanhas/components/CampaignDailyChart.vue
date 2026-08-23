@@ -120,12 +120,12 @@ const option = computed(() => ({
         </h2>
         <p class="mt-1 flex items-baseline gap-3 flex-wrap">
           <span>
-            <span class="inline-block w-2.5 h-2.5 rounded-[3px] bg-blue-500 mr-1.5"></span>
+            <span class="inline-block w-2.5 h-2.5 rounded-[3px] bg-accent mr-1.5"></span>
             <span class="text-lg font-bold text-ink tabular-nums">{{ moneyFmt.format(totalSpend) }}</span>
             <span class="text-xs text-ink-muted ml-1">investidos</span>
           </span>
           <span>
-            <span class="inline-block w-2.5 h-[3px] rounded-full bg-emerald-500 mr-1.5 align-middle"></span>
+            <span class="inline-block w-2.5 h-[3px] rounded-full bg-data-pos mr-1.5 align-middle"></span>
             <span class="text-lg font-bold text-ink tabular-nums">{{ intFmt.format(totalLeads) }}</span>
             <span class="text-xs text-ink-muted ml-1">leads na base</span>
           </span>

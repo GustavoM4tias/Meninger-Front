@@ -125,11 +125,11 @@ const scopeLabel = computed(() => {
 
 const statusBadge = computed(() => {
     const s = String(campaign.value?.effective_status || campaign.value?.status || '').toUpperCase();
-    if (s.includes('ACTIVE'))   return { label: s.replace(/_/g, ' '), cls: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 border-emerald-500/20' };
-    if (s.includes('PAUSED'))   return { label: s.replace(/_/g, ' '), cls: 'bg-amber-500/10 text-amber-600 dark:text-amber-300 border-amber-500/20' };
-    if (s.includes('DELETED'))  return { label: s.replace(/_/g, ' '), cls: 'bg-red-500/10 text-red-600 dark:text-red-300 border-red-500/20' };
-    if (s.includes('ARCHIVED')) return { label: s.replace(/_/g, ' '), cls: 'bg-slate-500/10 text-slate-500 border-slate-500/20' };
-    return { label: s || '—', cls: 'bg-slate-500/10 text-slate-500 border-slate-500/20' };
+    if (s.includes('ACTIVE'))   return { label: s.replace(/_/g, ' '), cls: 'bg-data-pos/10 text-data-pos border-data-pos/20' };
+    if (s.includes('PAUSED'))   return { label: s.replace(/_/g, ' '), cls: 'bg-data-warn/10 text-data-warn border-data-warn/20' };
+    if (s.includes('DELETED'))  return { label: s.replace(/_/g, ' '), cls: 'bg-data-neg/10 text-data-neg border-data-neg/20' };
+    if (s.includes('ARCHIVED')) return { label: s.replace(/_/g, ' '), cls: 'bg-slate-500/10 text-ink-muted border-line/20' };
+    return { label: s || '—', cls: 'bg-slate-500/10 text-ink-muted border-line/20' };
 });
 
 const kpis = computed(() => {
@@ -170,10 +170,10 @@ const dailyTotals = computed(() => {
 });
 
 function statusColor(s) {
-    if (s === 'delivered')               return 'text-emerald-600 dark:text-emerald-300';
-    if (s === 'held')                    return 'text-amber-600 dark:text-amber-300';
-    if (s === 'spam')                    return 'text-red-500';
-    if (s === 'failed' || s === 'rejected') return 'text-red-600 dark:text-red-300';
+    if (s === 'delivered')               return 'text-data-pos';
+    if (s === 'held')                    return 'text-data-warn';
+    if (s === 'spam')                    return 'text-data-neg';
+    if (s === 'failed' || s === 'rejected') return 'text-data-neg';
     return 'text-ink-muted';
 }
 
@@ -360,9 +360,9 @@ function collapseAllAdsets() {
 }
 
 function pacingBadge(pace) {
-    if (pace === 'on_track') return { label: 'No ritmo', cls: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 border-emerald-500/20', icon: 'fas fa-bullseye' };
-    if (pace === 'fast')     return { label: 'Acelerado', cls: 'bg-amber-500/10 text-amber-600 dark:text-amber-300 border-amber-500/20', icon: 'fas fa-gauge-high' };
-    if (pace === 'slow')     return { label: 'Lento',     cls: 'bg-sky-500/10 text-sky-600 dark:text-sky-300 border-sky-500/20', icon: 'fas fa-gauge-simple-low' };
+    if (pace === 'on_track') return { label: 'No ritmo', cls: 'bg-data-pos/10 text-data-pos border-data-pos/20', icon: 'fas fa-bullseye' };
+    if (pace === 'fast')     return { label: 'Acelerado', cls: 'bg-data-warn/10 text-data-warn border-data-warn/20', icon: 'fas fa-gauge-high' };
+    if (pace === 'slow')     return { label: 'Lento',     cls: 'bg-accent/10 text-accent border-accent/20', icon: 'fas fa-gauge-simple-low' };
     return null;
 }
 
@@ -373,11 +373,11 @@ function isVideoAd(ad) {
 
 function adStatusBadge(s) {
     const status = String(s || '').toUpperCase();
-    if (status.includes('ACTIVE'))   return { label: 'Ativo',     cls: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 border-emerald-500/20' };
-    if (status.includes('PAUSED'))   return { label: 'Pausado',   cls: 'bg-amber-500/10 text-amber-600 dark:text-amber-300 border-amber-500/20' };
-    if (status.includes('DELETED'))  return { label: 'Excluído',  cls: 'bg-red-500/10 text-red-600 dark:text-red-300 border-red-500/20' };
-    if (status.includes('ARCHIVED')) return { label: 'Arquivado', cls: 'bg-slate-500/10 text-slate-500 border-slate-500/20' };
-    return { label: status || '—', cls: 'bg-slate-500/10 text-slate-500 border-slate-500/20' };
+    if (status.includes('ACTIVE'))   return { label: 'Ativo',     cls: 'bg-data-pos/10 text-data-pos border-data-pos/20' };
+    if (status.includes('PAUSED'))   return { label: 'Pausado',   cls: 'bg-data-warn/10 text-data-warn border-data-warn/20' };
+    if (status.includes('DELETED'))  return { label: 'Excluído',  cls: 'bg-data-neg/10 text-data-neg border-data-neg/20' };
+    if (status.includes('ARCHIVED')) return { label: 'Arquivado', cls: 'bg-slate-500/10 text-ink-muted border-line/20' };
+    return { label: status || '—', cls: 'bg-slate-500/10 text-ink-muted border-line/20' };
 }
 
 const filteredAds = computed(() => {
@@ -606,7 +606,7 @@ function onFormEditorSaved() {
               <!-- Total gasto -->
               <div>
                 <div class="text-micro uppercase tracking-wider text-ink-subtle">Gasto total</div>
-                <div class="text-2xl font-semibold text-blue-600 dark:text-blue-300 leading-tight">
+                <div class="text-2xl font-semibold text-accent leading-tight">
                   {{ fmtMoney(campaign.spend, campaign.currency) }}
                 </div>
                 <div v-if="campaign.daily_avg_spend != null" class="text-micro text-ink-subtle">
@@ -629,12 +629,12 @@ function onFormEditorSaved() {
               <div>
                 <div class="text-micro uppercase tracking-wider text-ink-subtle">Encerra em</div>
                 <div class="text-2xl font-semibold leading-tight"
-                  :class="campaign.days_remaining === 0 ? 'text-red-500' : campaign.days_remaining != null && campaign.days_remaining <= 3 ? 'text-amber-500' : 'text-ink'">
+                  :class="campaign.days_remaining === 0 ? 'text-data-neg' : campaign.days_remaining != null && campaign.days_remaining <= 3 ? 'text-data-warn' : 'text-ink'">
                   <template v-if="campaign.days_remaining != null">
                     {{ campaign.days_remaining }}<span class="text-base text-ink-subtle ml-1">{{ campaign.days_remaining === 1 ? 'dia' : 'dias' }}</span>
                   </template>
                   <template v-else>
-                    <span class="text-emerald-600 dark:text-emerald-300 text-base">em andamento</span>
+                    <span class="text-data-pos text-base">em andamento</span>
                   </template>
                 </div>
                 <div class="text-micro text-ink-subtle">
@@ -675,8 +675,8 @@ function onFormEditorSaved() {
               </div>
               <div class="w-full h-2 rounded-full bg-surface-sunken overflow-hidden">
                 <div :class="['h-full transition-all',
-                  campaign.budget_consumed_pct >= 95 ? 'bg-red-500' :
-                  campaign.budget_consumed_pct >= 80 ? 'bg-amber-500' : 'bg-blue-500']"
+                  campaign.budget_consumed_pct >= 95 ? 'bg-data-neg' :
+                  campaign.budget_consumed_pct >= 80 ? 'bg-data-warn' : 'bg-accent']"
                   :style="{ width: Math.min(100, campaign.budget_consumed_pct) + '%' }"></div>
               </div>
             </div>
@@ -726,14 +726,14 @@ function onFormEditorSaved() {
               <div class="flex items-center gap-2">
                 <span class="text-xs text-ink-muted w-24">Impressões</span>
                 <div class="flex-1 h-5 rounded bg-surface relative overflow-hidden">
-                  <div class="h-full bg-blue-500/30" :style="{ width: '100%' }"></div>
+                  <div class="h-full bg-accent/30" :style="{ width: '100%' }"></div>
                   <span class="absolute inset-0 flex items-center px-2 text-micro font-mono text-ink">{{ fmtInt(kpis.impressions) }}</span>
                 </div>
               </div>
               <div class="flex items-center gap-2">
                 <span class="text-xs text-ink-muted w-24">Cliques</span>
                 <div class="flex-1 h-5 rounded bg-surface relative overflow-hidden">
-                  <div class="h-full bg-sky-500/30"
+                  <div class="h-full bg-accent/30"
                     :style="{ width: kpis.impressions > 0 ? Math.max(2, (kpis.clicks / kpis.impressions) * 100) + '%' : '0%' }"></div>
                   <span class="absolute inset-0 flex items-center px-2 text-micro font-mono text-ink">
                     {{ fmtInt(kpis.clicks) }}
@@ -744,7 +744,7 @@ function onFormEditorSaved() {
               <div class="flex items-center gap-2">
                 <span class="text-xs text-ink-muted w-24">Leads</span>
                 <div class="flex-1 h-5 rounded bg-surface relative overflow-hidden">
-                  <div class="h-full bg-emerald-500/30"
+                  <div class="h-full bg-data-pos/30"
                     :style="{ width: kpis.impressions > 0 ? Math.max(2, (kpis.leads / kpis.impressions) * 100) + '%' : '0%' }"></div>
                   <span class="absolute inset-0 flex items-center px-2 text-micro font-mono text-ink">
                     {{ fmtInt(kpis.leads) }}
@@ -813,7 +813,7 @@ function onFormEditorSaved() {
           <!-- Mídia + origem + tags -->
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div class="sm:col-span-2">
-              <label class="text-sm font-medium text-ink block mb-1">Mídia <span class="text-red-500">*</span></label>
+              <label class="text-sm font-medium text-ink block mb-1">Mídia <span class="text-data-neg">*</span></label>
               <input v-model="vinculo.midia_slug" type="text" placeholder="meta-lancamento-wish"
                 class="w-full rounded border border-line bg-surface px-3 py-1.5 text-sm text-ink placeholder-ink-subtle focus:outline-none focus:border-accent/40 font-mono" />
             </div>
@@ -853,15 +853,15 @@ function onFormEditorSaved() {
 
           <!-- Preview -->
           <div class="rounded-lg border px-3 py-2.5"
-            :class="willRoute ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-amber-500/30 bg-amber-500/5'">
-            <div class="text-xs font-medium" :class="willRoute ? 'text-emerald-700 dark:text-emerald-300' : 'text-amber-700 dark:text-amber-300'">
+            :class="willRoute ? 'border-data-pos/30 bg-data-pos/5' : 'border-data-warn/30 bg-data-warn/5'">
+            <div class="text-xs font-medium" :class="willRoute ? 'text-data-pos' : 'text-data-warn'">
               <i :class="willRoute ? 'fas fa-bolt' : 'fas fa-hand'" class="mr-1.5"></i>
               <template v-if="willRoute">Próximo lead desta campanha vira <span class="font-mono">routed</span>.</template>
               <template v-else>Próximo lead fica em <span class="font-mono">held</span>.</template>
             </div>
           </div>
 
-          <div v-if="vinculoError" class="rounded border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-300">
+          <div v-if="vinculoError" class="rounded border border-data-neg/20 bg-data-neg/10 px-3 py-2 text-sm text-data-neg">
             <i class="fas fa-circle-exclamation mr-1.5"></i>{{ vinculoError }}
           </div>
 
@@ -920,7 +920,7 @@ function onFormEditorSaved() {
 
           <!-- Aviso pós-sync -->
           <div v-if="adsLastSync"
-            class="rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-3 py-2 text-xs text-emerald-700 dark:text-emerald-300">
+            class="rounded-lg border border-data-pos/20 bg-data-pos/5 px-3 py-2 text-xs text-data-pos">
             <i class="fas fa-circle-check mr-1"></i>
             Sincronizado: <b>{{ adsLastSync.ads_total }}</b> ads ({{ adsLastSync.ads_new }} novos, {{ adsLastSync.ads_updated }} atualizados)<template v-if="adsLastSync.adsets_total"> · <b>{{ adsLastSync.adsets_total }}</b> conjuntos ({{ adsLastSync.adsets_new }} novos)</template>
           </div>
@@ -934,11 +934,11 @@ function onFormEditorSaved() {
             </div>
             <div class="rounded-lg border border-line/60 bg-surface-sunken/30 px-3 py-2">
               <div class="text-micro uppercase tracking-wider text-ink-subtle">Gasto</div>
-              <div class="text-sm font-semibold text-blue-600 dark:text-blue-300">{{ fmtMoney(adsTotals.spend, campaign?.currency) }}</div>
+              <div class="text-sm font-semibold text-accent">{{ fmtMoney(adsTotals.spend, campaign?.currency) }}</div>
             </div>
             <div class="rounded-lg border border-line/60 bg-surface-sunken/30 px-3 py-2">
               <div class="text-micro uppercase tracking-wider text-ink-subtle">Leads (base)</div>
-              <div class="text-sm font-semibold text-emerald-600 dark:text-emerald-300">{{ fmtInt(adsTotals.leads) }}</div>
+              <div class="text-sm font-semibold text-data-pos">{{ fmtInt(adsTotals.leads) }}</div>
             </div>
             <div class="rounded-lg border border-line/60 bg-surface-sunken/30 px-3 py-2">
               <div class="text-micro uppercase tracking-wider text-ink-subtle">Impr. / Cliques</div>
@@ -980,7 +980,7 @@ function onFormEditorSaved() {
                         adStatusBadge(group.adset.effective_status || group.adset.status).cls]">
                       {{ adStatusBadge(group.adset.effective_status || group.adset.status).label }}
                     </span>
-                    <span class="inline-flex rounded bg-slate-500/10 text-slate-600 dark:text-slate-300 border border-slate-500/20 px-1.5 py-0.5 text-micro font-medium">
+                    <span class="inline-flex rounded bg-slate-500/10 text-ink-muted border border-line/20 px-1.5 py-0.5 text-micro font-medium">
                       <i class="fas fa-rectangle-ad text-[8px] mr-1"></i>{{ group.adsCount }} {{ group.adsCount === 1 ? 'ad' : 'ads' }}
                     </span>
                   </div>
@@ -996,11 +996,11 @@ function onFormEditorSaved() {
                 <div class="hidden sm:flex items-center gap-3 shrink-0 text-right">
                   <div>
                     <div class="text-micro uppercase tracking-wider text-ink-subtle">Gasto</div>
-                    <div class="text-xs font-semibold text-blue-600 dark:text-blue-300">{{ fmtMoney(group.totals.spend, campaign?.currency) }}</div>
+                    <div class="text-xs font-semibold text-accent">{{ fmtMoney(group.totals.spend, campaign?.currency) }}</div>
                   </div>
                   <div>
                     <div class="text-micro uppercase tracking-wider text-ink-subtle">Leads</div>
-                    <div class="text-xs font-semibold text-emerald-600 dark:text-emerald-300">{{ fmtInt(group.totals.leads) }}</div>
+                    <div class="text-xs font-semibold text-data-pos">{{ fmtInt(group.totals.leads) }}</div>
                   </div>
                   <div>
                     <div class="text-micro uppercase tracking-wider text-ink-subtle">Impr.</div>
@@ -1043,7 +1043,7 @@ function onFormEditorSaved() {
                       <!-- Play overlay pra vídeos -->
                       <div v-if="isVideoAd(ad)"
                         class="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/40 transition-colors">
-                        <div class="w-14 h-14 rounded-full bg-white/90 group-hover:bg-white flex items-center justify-center shadow-2xl transition-all group-hover:scale-110">
+                        <div class="w-14 h-14 rounded-full bg-surface-raised/90 group-hover:bg-surface-raised flex items-center justify-center shadow-2xl transition-all group-hover:scale-110">
                           <i class="fas fa-play text-xl text-black ml-1"></i>
                         </div>
                       </div>
@@ -1055,7 +1055,7 @@ function onFormEditorSaved() {
 
                       <!-- Lead Ad badge (top-left) -->
                       <span v-if="ad.lead_form_id"
-                        class="absolute top-2 left-2 inline-flex items-center gap-1 rounded-md bg-violet-500/40 text-white border border-violet-300/50 backdrop-blur-sm px-2 py-0.5 text-micro font-medium"
+                        class="absolute top-2 left-2 inline-flex items-center gap-1 rounded-md bg-accent/40 text-white border border-accent/50 backdrop-blur-sm px-2 py-0.5 text-micro font-medium"
                         title="Lead Ad — form vinculado">
                         <i class="fas fa-file-lines text-[9px]"></i>Lead Ad
                       </span>
@@ -1084,11 +1084,11 @@ function onFormEditorSaved() {
                       <div class="grid grid-cols-4 gap-1.5 mt-3 pt-2 border-t border-line/60">
                         <div>
                           <div class="text-micro uppercase tracking-wider text-ink-subtle">Gasto</div>
-                          <div class="text-xs font-semibold text-blue-600 dark:text-blue-300">{{ fmtMoney(ad.spend, campaign?.currency) }}</div>
+                          <div class="text-xs font-semibold text-accent">{{ fmtMoney(ad.spend, campaign?.currency) }}</div>
                         </div>
                         <div>
                           <div class="text-micro uppercase tracking-wider text-ink-subtle">Leads</div>
-                          <div class="text-xs font-semibold text-emerald-600 dark:text-emerald-300">{{ fmtInt(ad.office_leads) }}</div>
+                          <div class="text-xs font-semibold text-data-pos">{{ fmtInt(ad.office_leads) }}</div>
                         </div>
                         <div>
                           <div class="text-micro uppercase tracking-wider text-ink-subtle">CTR</div>
@@ -1111,7 +1111,7 @@ function onFormEditorSaved() {
                         <button v-if="ad.lead_form_id"
                           @click.stop="openFormDetail(ad)"
                           :title="ad.lead_form?.name ? `Ver perguntas do form '${ad.lead_form.name}'` : `Form #${ad.lead_form_id} (não sincronizado)`"
-                          class="inline-flex items-center gap-1 rounded border border-violet-500/30 bg-violet-500/10 text-violet-700 dark:text-violet-300 px-1.5 py-0.5 text-micro font-medium hover:bg-violet-500/20 transition-colors max-w-full">
+                          class="inline-flex items-center gap-1 rounded border border-accent/30 bg-accent/10 text-accent px-1.5 py-0.5 text-micro font-medium hover:bg-accent/20 transition-colors max-w-full">
                           <i class="fas fa-file-lines text-[9px] shrink-0"></i>
                           <span class="truncate">
                             <template v-if="ad.lead_form">{{ ad.lead_form.name || `Form #${ad.lead_form_id}` }}</template>
@@ -1180,11 +1180,11 @@ function onFormEditorSaved() {
           <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
             <div class="rounded-lg border border-line/60 bg-surface-sunken/30 px-3 py-2">
               <div class="text-micro uppercase tracking-wider text-ink-subtle">Gasto 30d</div>
-              <div class="text-sm font-semibold text-blue-600 dark:text-blue-300">{{ fmtMoney(dailyTotals.spend, campaign?.currency) }}</div>
+              <div class="text-sm font-semibold text-accent">{{ fmtMoney(dailyTotals.spend, campaign?.currency) }}</div>
             </div>
             <div class="rounded-lg border border-line/60 bg-surface-sunken/30 px-3 py-2">
               <div class="text-micro uppercase tracking-wider text-ink-subtle">Leads na base</div>
-              <div class="text-sm font-semibold text-emerald-600 dark:text-emerald-300">{{ fmtInt(dailyTotals.leads) }}</div>
+              <div class="text-sm font-semibold text-data-pos">{{ fmtInt(dailyTotals.leads) }}</div>
             </div>
             <div class="rounded-lg border border-line/60 bg-surface-sunken/30 px-3 py-2">
               <div class="text-micro uppercase tracking-wider text-ink-subtle">Impr. / Cliques</div>
@@ -1214,10 +1214,10 @@ function onFormEditorSaved() {
                 <tbody class="divide-y divide-line/40">
                   <tr v-for="(d, i) in [...daily].reverse()" :key="i">
                     <td class="px-2 py-1 text-ink-muted">{{ d.day }}</td>
-                    <td class="px-2 py-1 text-right text-blue-600 dark:text-blue-300 font-mono">{{ fmtMoney(d.spend, campaign?.currency) }}</td>
+                    <td class="px-2 py-1 text-right text-accent font-mono">{{ fmtMoney(d.spend, campaign?.currency) }}</td>
                     <td class="px-2 py-1 text-right text-ink-muted">{{ fmtInt(d.impressions) }}</td>
                     <td class="px-2 py-1 text-right text-ink-muted">{{ fmtInt(d.clicks) }}</td>
-                    <td class="px-2 py-1 text-right text-emerald-600 dark:text-emerald-300">{{ fmtInt(d.office_leads) }}</td>
+                    <td class="px-2 py-1 text-right text-data-pos">{{ fmtInt(d.office_leads) }}</td>
                   </tr>
                 </tbody>
               </table>
@@ -1268,7 +1268,7 @@ function onFormEditorSaved() {
     <div v-if="formDetailOpen && formDetailData" class="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4" @click.self="closeFormDetail">
       <div class="bg-surface text-ink w-full max-w-2xl rounded-xl shadow-xl border border-line max-h-[85vh] flex flex-col">
         <header class="flex items-start gap-3 px-5 pt-5 pb-3 border-b border-line shrink-0">
-          <div class="shrink-0 w-10 h-10 rounded-lg bg-violet-500/10 text-violet-600 dark:text-violet-300 flex items-center justify-center">
+          <div class="shrink-0 w-10 h-10 rounded-lg bg-accent/10 text-accent flex items-center justify-center">
             <i class="fas fa-file-lines text-lg"></i>
           </div>
           <div class="flex-1 min-w-0">
@@ -1295,10 +1295,10 @@ function onFormEditorSaved() {
             <div class="rounded-lg border border-line/60 bg-surface-sunken/30 px-3 py-2">
               <div class="text-micro uppercase tracking-wider text-ink-subtle">Roteamento</div>
               <div class="text-sm font-medium">
-                <span v-if="formDetailData.mapping_active && formDetailData.midia_slug" class="text-emerald-600 dark:text-emerald-300">
+                <span v-if="formDetailData.mapping_active && formDetailData.midia_slug" class="text-data-pos">
                   <i class="fas fa-bolt text-xs"></i> Auto
                 </span>
-                <span v-else class="text-amber-600 dark:text-amber-300">
+                <span v-else class="text-data-warn">
                   <i class="fas fa-hand text-xs"></i> Manual (held)
                 </span>
               </div>

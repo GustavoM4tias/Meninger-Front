@@ -105,7 +105,7 @@ function openLightbox(ad) {
             </span>
           </div>
           <span :class="['absolute top-1.5 right-1.5 w-2 h-2 rounded-full ring-2 ring-black/20',
-            isActive(ad) ? 'bg-emerald-400' : 'bg-slate-400']"
+            isActive(ad) ? 'bg-data-pos' : 'bg-slate-400']"
             :title="isActive(ad) ? 'Ativo' : 'Inativo'"></span>
 
           <!-- Zoom hint -->

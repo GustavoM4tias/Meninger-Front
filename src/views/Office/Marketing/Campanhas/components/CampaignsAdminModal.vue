@@ -96,7 +96,7 @@ async function doMigrateMappings() {
     <div class="bg-surface text-ink w-full max-w-3xl rounded-xl shadow-xl border border-line max-h-[92vh] flex flex-col">
 
       <header class="flex items-center gap-3 px-5 pt-5 pb-3 border-b border-line shrink-0">
-        <div class="shrink-0 w-10 h-10 rounded-lg bg-red-500/10 text-red-600 dark:text-red-300 flex items-center justify-center">
+        <div class="shrink-0 w-10 h-10 rounded-lg bg-data-neg/10 text-data-neg flex items-center justify-center">
           <i class="fas fa-screwdriver-wrench text-lg"></i>
         </div>
         <div class="flex-1">
@@ -160,9 +160,9 @@ async function doMigrateMappings() {
           <!-- Resultado do último full sync -->
           <div v-if="store.lastFullSync" class="mt-4 rounded-lg border border-line bg-surface p-3 space-y-1.5">
             <div class="text-xs font-medium text-ink flex items-center gap-2">
-              <i :class="store.lastFullSync.errors?.length ? 'fas fa-triangle-exclamation text-amber-500' : 'fas fa-circle-check text-emerald-500'"></i>
+              <i :class="store.lastFullSync.errors?.length ? 'fas fa-triangle-exclamation text-data-warn' : 'fas fa-circle-check text-data-pos'"></i>
               Última execução em {{ store.lastFullSync.duration_sec }}s
-              <span v-if="store.lastFullSync.errors?.length" class="text-amber-600 dark:text-amber-300 ml-auto">
+              <span v-if="store.lastFullSync.errors?.length" class="text-data-warn ml-auto">
                 {{ store.lastFullSync.errors.length }} erro(s) total
               </span>
             </div>
@@ -175,7 +175,7 @@ async function doMigrateMappings() {
               </li>
               <li v-if="store.lastFullSync.ads">
                 <b>Anúncios:</b> {{ store.lastFullSync.ads.ads_total }} em {{ store.lastFullSync.ads.campaigns_processed }} campanhas
-                <span v-if="store.lastFullSync.ads.errors" class="text-amber-600 dark:text-amber-300">· {{ store.lastFullSync.ads.errors }} erros</span>
+                <span v-if="store.lastFullSync.ads.errors" class="text-data-warn">· {{ store.lastFullSync.ads.errors }} erros</span>
               </li>
               <li v-if="store.lastFullSync.historical">
                 <b>Histórico:</b> {{ store.lastFullSync.historical.inserted }} novos, {{ store.lastFullSync.historical.duplicates }} dup
@@ -190,7 +190,7 @@ async function doMigrateMappings() {
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <button @click="doSync" class="rounded-lg border border-line p-3 hover:border-accent/30 transition-colors text-left">
             <div class="flex items-center gap-2 mb-1">
-              <i class="fab fa-meta text-blue-500"></i>
+              <i class="fab fa-meta text-accent"></i>
               <span class="font-medium text-sm text-ink">Sincronizar Meta</span>
               <span v-if="store.syncing" class="ml-auto"><i class="fas fa-circle-notch fa-spin text-xs text-accent"></i></span>
             </div>
@@ -199,7 +199,7 @@ async function doMigrateMappings() {
 
           <button @click="doImportHistorical" class="rounded-lg border border-line p-3 hover:border-accent/30 transition-colors text-left">
             <div class="flex items-center gap-2 mb-1">
-              <i class="fas fa-cloud-arrow-down text-violet-500"></i>
+              <i class="fas fa-cloud-arrow-down text-accent"></i>
               <span class="font-medium text-sm text-ink">Importar histórico</span>
               <span v-if="store.importing" class="ml-auto"><i class="fas fa-circle-notch fa-spin text-xs text-accent"></i></span>
             </div>
@@ -208,15 +208,15 @@ async function doMigrateMappings() {
 
           <button @click="doReparse" class="rounded-lg border border-line p-3 hover:border-accent/30 transition-colors text-left">
             <div class="flex items-center gap-2 mb-1">
-              <i class="fas fa-wand-magic-sparkles text-emerald-500"></i>
+              <i class="fas fa-wand-magic-sparkles text-data-pos"></i>
               <span class="font-medium text-sm text-ink">Re-processar leads</span>
             </div>
             <p class="text-micro text-ink-muted">Aplica parser novo no raw_payload de leads antigos.</p>
           </button>
 
-          <button @click="doDispatchHistorical" class="rounded-lg border border-emerald-500/40 bg-emerald-500/5 p-3 hover:border-emerald-500/60 transition-colors text-left">
+          <button @click="doDispatchHistorical" class="rounded-lg border border-data-pos/40 bg-data-pos/5 p-3 hover:border-data-pos/60 transition-colors text-left">
             <div class="flex items-center gap-2 mb-1">
-              <i class="fas fa-paper-plane text-emerald-600"></i>
+              <i class="fas fa-paper-plane text-data-pos"></i>
               <span class="font-medium text-sm text-ink">Disparar histórico ao CV</span>
               <span v-if="store.dispatching" class="ml-auto"><i class="fas fa-circle-notch fa-spin text-xs text-accent"></i></span>
             </div>
@@ -225,7 +225,7 @@ async function doMigrateMappings() {
 
           <button @click="doMigrateMappings" class="rounded-lg border border-line p-3 hover:border-accent/30 transition-colors text-left sm:col-span-2">
             <div class="flex items-center gap-2 mb-1">
-              <i class="fas fa-shuffle text-sky-500"></i>
+              <i class="fas fa-shuffle text-accent"></i>
               <span class="font-medium text-sm text-ink">Migrar mapping form → campanha</span>
             </div>
             <p class="text-micro text-ink-muted">Copia mídia/empreendimento dos forms pras campanhas. Rodar 1× na migração.</p>
@@ -236,13 +236,13 @@ async function doMigrateMappings() {
         <div v-if="store.ops?.length" class="rounded-lg border border-line/60 bg-surface-sunken/30 p-3">
           <div class="text-micro uppercase tracking-wider text-ink-subtle mb-2 flex items-center justify-between">
             <span>Últimas operações</span>
-            <button @click="store.clearOps()" class="text-ink-subtle hover:text-red-500 normal-case">limpar</button>
+            <button @click="store.clearOps()" class="text-ink-subtle hover:text-data-neg normal-case">limpar</button>
           </div>
           <ul class="space-y-1 text-xs max-h-40 overflow-y-auto">
             <li v-for="op in store.ops.slice(0, 10)" :key="op.id" class="flex items-start gap-2 py-0.5">
-              <i :class="op.status === 'running' ? 'fas fa-circle-notch fa-spin text-sky-500' :
-                          op.status === 'success' ? 'fas fa-circle-check text-emerald-500' :
-                          'fas fa-circle-xmark text-red-500'" class="mt-0.5 text-[10px]"></i>
+              <i :class="op.status === 'running' ? 'fas fa-circle-notch fa-spin text-accent' :
+                          op.status === 'success' ? 'fas fa-circle-check text-data-pos' :
+                          'fas fa-circle-xmark text-data-neg'" class="mt-0.5 text-[10px]"></i>
               <span class="flex-1 truncate">{{ op.label }}</span>
               <span class="text-ink-subtle text-micro whitespace-nowrap">
                 {{ new Date(op.started_at).toLocaleTimeString('pt-BR') }}

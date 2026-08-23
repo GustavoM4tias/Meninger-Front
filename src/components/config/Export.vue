@@ -1,42 +1,42 @@
 <template>
     <div v-if="modelValue" class="fixed inset-0 z-50 overflow-y-auto export-modal" @click="emitClose">
         <div class="flex items-start justify-center min-h-screen pt-6 px-4 pb-12 text-center sm:p-0">
-            <div class="fixed inset-0 bg-gray-900/60 transition-opacity"></div>
+            <div class="fixed inset-0 bg-surface transition-opacity"></div>
 
-            <div class="relative inline-block w-full max-w-7xl my-8 overflow-hidden text-left align-middle transition-all transform bg-gray-50 dark:bg-gray-800 shadow-xl rounded-2xl"
+            <div class="relative inline-block w-full max-w-7xl my-8 overflow-hidden text-left align-middle transition-all transform bg-surface-sunken shadow-xl rounded-2xl"
                 @click.stop>
                 <!-- Header -->
-                <div class="px-6 py-4 bg-white  dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+                <div class="px-6 py-4 bg-surface-raised border-b border-line">
                     <div class="flex items-center justify-between gap-4">
                         <div class="min-w-0">
                             <h3 class="text-xl font-bold truncate">{{ title }}</h3>
-                            <p class="text-xs text-gray-500 dark:text-gray-400">
+                            <p class="text-xs text-ink-muted">
                                 Selecione os campos para exportar (funciona com qualquer JSON)
                             </p>
                         </div>
 
                         <div class="flex items-center gap-2">
-                            <div class="inline-flex rounded-md border dark:border-gray-600 overflow-hidden">
+                            <div class="inline-flex rounded-md border border-line overflow-hidden">
                                 <button type="button" @click="panel = 'fields'" :class="[
                                     'px-3 py-1 text-sm font-medium',
                                     panel === 'fields'
-                                        ? 'bg-purple-600 text-white'
-                                        : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-100'
+                                        ? 'bg-accent text-white'
+                                        : 'bg-surface-sunken text-ink'
                                 ]">
                                     Campos
                                 </button>
                                 <button type="button" @click="panel = 'preview'" :class="[
-                                    'px-3 py-1 text-sm font-medium border-l border-gray-300 dark:border-gray-700',
+                                    'px-3 py-1 text-sm font-medium border-l border-line',
                                     panel === 'preview'
-                                        ? 'bg-purple-600 text-white'
-                                        : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-100'
+                                        ? 'bg-accent text-white'
+                                        : 'bg-surface-sunken text-ink'
                                 ]">
                                     Prévia
                                 </button>
                             </div>
 
                             <button type="button" @click="emitClose"
-                                class="text-dark hover:text-gray-700 ps-3 pt-1 dark:text-white dark:hover:text-blue-100 text-2xl transition-colors">
+                                class="text-dark hover:text-ink ps-3 pt-1 dark:text-white  text-2xl transition-colors">
                                 <i class="fas fa-times"></i>
                             </button>
                         </div>
@@ -47,17 +47,17 @@
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-0">
                     <!-- LEFT: Controls -->
                     <div
-                        class="lg:border-r flex flex-col h-full justify-between border-gray-200 dark:border-gray-700 p-4 gap-4 bg-white/60 dark:bg-gray-900/30">
+                        class="lg:border-r flex flex-col h-full justify-between border-line p-4 gap-4 bg-surface">
                         <div class="flex flex-col gap-4 overflow-y-auto pr-1 min-h-0">
                             <!-- Mini-header (compacto) -->
-                            <div class="flex items-center gap-3 pb-3 border-b border-gray-200 dark:border-gray-700">
+                            <div class="flex items-center gap-3 pb-3 border-b border-line">
                                 <img :src="logo" alt="" :class="['h-8 w-auto object-contain flex-shrink-0', invertLogo ? 'logo-invert' : '']"
                                     @error="$event.target.style.display='none'" />
                                 <div class="min-w-0 flex-1">
-                                    <p class="text-sm font-semibold text-gray-800 dark:text-gray-100 truncate leading-tight" :title="suggestedTitle">
+                                    <p class="text-sm font-semibold text-ink truncate leading-tight" :title="suggestedTitle">
                                         {{ suggestedTitle }}
                                     </p>
-                                    <p class="text-micro text-gray-500 dark:text-gray-400 truncate">
+                                    <p class="text-micro text-ink-muted truncate">
                                         Emitido por {{ issuerName }}
                                     </p>
                                 </div>
@@ -66,7 +66,7 @@
                             <!-- Filtros aplicados (chips inline) -->
                             <div v-if="normalizedFilters.length" class="flex flex-wrap gap-1">
                                 <span v-for="f in normalizedFilters" :key="f.label"
-                                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-200 text-micro"
+                                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-accent/10 text-accent text-micro"
                                     :title="`${f.label}: ${f.value}`">
                                     <span class="opacity-70">{{ f.label }}:</span>
                                     <span class="max-w-[140px] truncate font-medium">{{ f.value }}</span>
@@ -75,44 +75,44 @@
 
                             <!-- Busca de campos -->
                             <div class="relative">
-                                <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+                                <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-ink-subtle text-xs"></i>
                                 <input v-model="fieldSearch" type="text"
                                     placeholder="Buscar campos…"
                                     aria-label="Filtrar campos"
-                                    class="w-full pl-8 pr-3 py-2 border rounded-lg bg-transparent text-sm text-gray-700 dark:text-gray-100 border-gray-200 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500/40 focus:border-purple-500" />
+                                    class="w-full pl-8 pr-3 py-2 border rounded-lg bg-transparent text-sm text-ink border-line focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent" />
                             </div>
 
                             <!-- Atalhos inline + contador discreto -->
                             <div class="flex items-center flex-wrap gap-x-3 gap-y-1 text-xs">
                                 <button type="button" @click="selectRecommended()"
-                                    class="inline-flex items-center gap-1 text-purple-700 dark:text-purple-300 font-medium hover:underline focus:outline-none focus:underline">
+                                    class="inline-flex items-center gap-1 text-accent font-medium hover:underline focus:outline-none focus:underline">
                                     <i class="fas fa-magic-wand-sparkles text-[10px]"></i> Recomendado
                                 </button>
-                                <span class="text-gray-300 dark:text-gray-700">·</span>
-                                <button type="button" @click="selectAllVisible()" class="text-gray-600 dark:text-gray-300 hover:underline focus:outline-none focus:underline">Marcar visíveis</button>
-                                <span class="text-gray-300 dark:text-gray-700">·</span>
-                                <button type="button" @click="selectCommon()" class="text-gray-600 dark:text-gray-300 hover:underline focus:outline-none focus:underline" title="Apenas campos presentes em 100% dos registros">Só comuns</button>
-                                <span class="text-gray-300 dark:text-gray-700">·</span>
-                                <button type="button" @click="clearSelection()" class="text-gray-500 dark:text-gray-400 hover:text-red-600 focus:outline-none focus:underline">Limpar</button>
+                                <span class="text-ink">·</span>
+                                <button type="button" @click="selectAllVisible()" class="text-ink-muted hover:underline focus:outline-none focus:underline">Marcar visíveis</button>
+                                <span class="text-ink">·</span>
+                                <button type="button" @click="selectCommon()" class="text-ink-muted hover:underline focus:outline-none focus:underline" title="Apenas campos presentes em 100% dos registros">Só comuns</button>
+                                <span class="text-ink">·</span>
+                                <button type="button" @click="clearSelection()" class="text-ink-muted hover:text-data-neg focus:outline-none focus:underline">Limpar</button>
                             </div>
 
                             <!-- Opções avançadas -->
-                            <div class="border-t border-gray-200 dark:border-gray-700 pt-3">
+                            <div class="border-t border-line pt-3">
                                 <button type="button" @click="showAdvanced = !showAdvanced"
-                                    class="text-micro font-medium text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-100 focus:outline-none">
+                                    class="text-micro font-medium text-ink-muted hover:text-ink dark:hover:text-ink focus:outline-none">
                                     <i :class="['fas', showAdvanced ? 'fa-chevron-down' : 'fa-chevron-right', 'mr-1 text-[10px]']"></i>
                                     Opções avançadas
                                 </button>
                                 <div v-show="showAdvanced" class="mt-3 grid grid-cols-1 gap-3">
                                     <div>
-                                        <label for="exp-array-mode" class="flex items-center gap-1 text-micro font-medium text-gray-600 dark:text-gray-300 mb-1">
+                                        <label for="exp-array-mode" class="flex items-center gap-1 text-micro font-medium text-ink-muted mb-1">
                                             O que fazer com listas?
-                                            <span class="text-gray-400" title="Quando um campo é uma lista (ex.: várias parcelas), define como apresentar os valores no relatório.">
+                                            <span class="text-ink-subtle" title="Quando um campo é uma lista (ex.: várias parcelas), define como apresentar os valores no relatório.">
                                                 <i class="fas fa-circle-info text-[10px]"></i>
                                             </span>
                                         </label>
                                         <select id="exp-array-mode" v-model="arrayMode"
-                                            class="w-full px-2 py-1.5 border rounded-md bg-transparent text-sm text-gray-700 dark:text-gray-100 border-gray-200 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500/40 focus:border-purple-500">
+                                            class="w-full px-2 py-1.5 border rounded-md bg-transparent text-sm text-ink border-line focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent">
                                             <option value="join">Juntar com " | "</option>
                                             <option value="expand-rows">Quebrar em linhas</option>
                                             <option value="expand-cols">Quebrar em colunas</option>
@@ -121,16 +121,16 @@
                                         </select>
                                     </div>
                                     <div>
-                                        <label for="exp-filename" class="block text-micro font-medium text-gray-600 dark:text-gray-300 mb-1">Nome do arquivo</label>
+                                        <label for="exp-filename" class="block text-micro font-medium text-ink-muted mb-1">Nome do arquivo</label>
                                         <input id="exp-filename" v-model="baseFilename" type="text" :placeholder="suggestedFilename"
-                                            class="w-full px-2 py-1.5 border rounded-md bg-transparent text-sm text-gray-700 dark:text-gray-100 border-gray-200 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500/40 focus:border-purple-500" />
+                                            class="w-full px-2 py-1.5 border rounded-md bg-transparent text-sm text-ink border-line focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent" />
                                     </div>
                                     <div>
-                                        <label for="exp-delimiter" class="block text-micro font-medium text-gray-600 dark:text-gray-300 mb-1">
+                                        <label for="exp-delimiter" class="block text-micro font-medium text-ink-muted mb-1">
                                             Delimitador do CSV
                                         </label>
                                         <select id="exp-delimiter" v-model="delimiter"
-                                            class="w-full px-2 py-1.5 border rounded-md bg-transparent text-sm text-gray-700 dark:text-gray-100 border-gray-200 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500/40 focus:border-purple-500">
+                                            class="w-full px-2 py-1.5 border rounded-md bg-transparent text-sm text-ink border-line focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent">
                                             <option value=",">Vírgula (,)</option>
                                             <option value=";">Ponto e vírgula (;)</option>
                                             <option :value="'\t'">Tabulação (Tab)</option>
@@ -142,35 +142,35 @@
                         </div>
 
                         <!-- Footer: status + ações -->
-                        <div class="flex flex-col gap-2 border-t border-gray-200 dark:border-gray-700 pt-3">
-                            <p aria-live="polite" class="text-micro text-gray-500 dark:text-gray-400 flex items-center justify-between gap-2">
+                        <div class="flex flex-col gap-2 border-t border-line pt-3">
+                            <p aria-live="polite" class="text-micro text-ink-muted flex items-center justify-between gap-2">
                                 <span>
-                                    <span class="font-semibold text-gray-700 dark:text-gray-200">{{ selection.size }}</span> campos
+                                    <span class="font-semibold text-ink">{{ selection.size }}</span> campos
                                 </span>
                                 <span>·</span>
                                 <span>
-                                    <span class="font-semibold text-gray-700 dark:text-gray-200">{{ exportedRowCount.toLocaleString('pt-BR') }}</span>
+                                    <span class="font-semibold text-ink">{{ exportedRowCount.toLocaleString('pt-BR') }}</span>
                                     {{ exportedRowCount === 1 ? 'linha' : 'linhas' }}
                                 </span>
                                 <span v-if="arrayMode === 'expand-cols'">·</span>
                                 <span v-if="arrayMode === 'expand-cols'">
-                                    <span class="font-semibold text-gray-700 dark:text-gray-200">{{ previewPaths.length }}</span> cols
+                                    <span class="font-semibold text-ink">{{ previewPaths.length }}</span> cols
                                 </span>
                             </p>
                             <button type="button" @click="pedirExport('xlsx')" :disabled="!selection.size || exporting"
-                                class="flex items-center justify-center gap-2 w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:cursor-not-allowed text-white text-sm font-semibold px-4 py-2.5 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/40 transition active:scale-[0.99]">
+                                class="flex items-center justify-center gap-2 w-full bg-data-pos hover:bg-data-pos/85 disabled:bg-gray-300 dark:disabled:bg-surface-sunken disabled:cursor-not-allowed text-white text-sm font-semibold px-4 py-2.5 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-data-pos/40 transition active:scale-[0.99]">
                                 <i :class="['fas', exporting ? 'fa-spinner fa-spin' : 'fa-file-excel']"></i>
                                 <span>{{ exporting ? 'Gerando…' : 'Exportar Excel' }}</span>
                             </button>
-                            <div class="flex items-center justify-center gap-1.5 text-micro text-gray-400 dark:text-gray-500">
+                            <div class="flex items-center justify-center gap-1.5 text-micro text-ink-subtle">
                                 <span>ou exportar como</span>
                                 <button type="button" @click="pedirExport('csv')" :disabled="!selection.size || exporting"
-                                    class="hover:text-gray-700 dark:hover:text-gray-200 disabled:opacity-40 focus:outline-none focus:underline underline-offset-2">
+                                    class="hover:text-ink dark:hover:text-ink disabled:opacity-40 focus:outline-none focus:underline underline-offset-2">
                                     CSV
                                 </button>
                                 <span>·</span>
                                 <button type="button" @click="pedirExport('pdf')" :disabled="!selection.size || exporting"
-                                    class="hover:text-gray-700 dark:hover:text-gray-200 disabled:opacity-40 focus:outline-none focus:underline underline-offset-2">
+                                    class="hover:text-ink dark:hover:text-ink disabled:opacity-40 focus:outline-none focus:underline underline-offset-2">
                                     PDF
                                 </button>
                             </div>
@@ -181,9 +181,9 @@
                     <div class="lg:col-span-2 p-4">
                         <template v-if="panel === 'fields'">
                             <div
-                                class="min-h-[70vh] max-h-[70vh] overflow-y-auto rounded-lg border border-gray-200 dark:border-gray-700">
+                                class="min-h-[70vh] max-h-[70vh] overflow-y-auto rounded-lg border border-line">
                                 <div
-                                    class="text-xs px-3 py-2 bg-gray-100 dark:bg-gray-900/60 border-b border-gray-200 dark:border-gray-700 flex items-center gap-3 sticky top-0 z-10">
+                                    class="text-xs px-3 py-2 bg-surface-sunken border-b border-line flex items-center gap-3 sticky top-0 z-10">
                                     <label class="inline-flex items-center gap-2 cursor-pointer">
                                         <input type="checkbox" :checked="allVisibleChecked"
                                             @change="toggleAllVisible($event)" />
@@ -209,14 +209,14 @@
                         </template>
 
                         <template v-else>
-                            <div class="mb-2 text-xs text-gray-500 dark:text-gray-400 flex items-center justify-between">
+                            <div class="mb-2 text-xs text-ink-muted flex items-center justify-between">
                                 <span>Prévia (máx. {{ maxPreviewRows }} linhas-fonte)</span>
                                 <span v-if="previewPaths.length">{{ previewPaths.length }} colunas · {{ previewRows.length }} linhas</span>
                             </div>
                             <div
-                                class="overflow-auto border border-gray-200 dark:border-gray-700 rounded-lg min-h-[70vh] max-h-[70vh]">
+                                class="overflow-auto border border-line rounded-lg min-h-[70vh] max-h-[70vh]">
                                 <table class="w-full text-xs">
-                                    <thead class="bg-gray-100 dark:bg-gray-900/60 sticky top-0">
+                                    <thead class="bg-surface-sunken sticky top-0">
                                         <tr>
                                             <th v-for="p in previewPaths" :key="p"
                                                 class="px-3 py-2 text-left font-semibold whitespace-nowrap" :title="p">
@@ -226,7 +226,7 @@
                                     </thead>
                                     <tbody>
                                         <tr v-for="(row, i) in previewRows" :key="i"
-                                            class="border-b border-gray-100 dark:border-gray-800">
+                                            class="border-b border-line">
                                             <td v-for="p in previewPaths" :key="p"
                                                 class="px-3 py-1 align-top whitespace-pre-wrap">
                                                 {{ formatCell(row[p]) }}
@@ -1442,7 +1442,7 @@ const FieldNode = defineComponent({
                 'div',
                 {
                     class:
-                        'flex items-start gap-2 px-2 py-1 hover:bg-gray-50 dark:hover:bg-gray-900 rounded'
+                        'flex items-start gap-2 px-2 py-1 hover:bg-surface-sunken rounded'
                 },
                 [
                     h('div', { style: { paddingLeft: pad }, class: 'flex items-center' }, [
@@ -1460,7 +1460,7 @@ const FieldNode = defineComponent({
                     h('div', { class: 'text-micro text-right w-14 shrink-0' }, `${cov}%`),
                     h(
                         'div',
-                        { class: 'text-micro text-gray-500 dark:text-gray-400 w-32 shrink-0 truncate' },
+                        { class: 'text-micro text-ink-muted w-32 shrink-0 truncate' },
                         types
                     )
                 ]

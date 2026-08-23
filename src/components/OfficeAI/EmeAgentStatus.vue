@@ -45,8 +45,8 @@ const showCancel = computed(() => elapsed.value >= 8)
       class="flex items-center gap-2 text-xs text-ink-subtle min-w-0">
       <i class="shrink-0"
         :class="s.status === 'error'
-          ? 'fas fa-circle-exclamation text-amber-500'
-          : 'fas fa-circle-check text-emerald-500'" />
+          ? 'fas fa-circle-exclamation text-data-warn'
+          : 'fas fa-circle-check text-data-pos'" />
       <span class="truncate">{{ s.label }}</span>
       <span v-if="s.ms != null" class="shrink-0 font-mono text-micro opacity-70">
         {{ (s.ms / 1000).toFixed(1) }}s
@@ -62,14 +62,14 @@ const showCancel = computed(() => elapsed.value >= 8)
       <span class="truncate">{{ currentLabel }}</span>
       <span class="shrink-0 font-mono text-micro text-ink-subtle">{{ elapsed }}s</span>
       <button v-if="showCancel" type="button" @click="aiStore.cancelStream()"
-        class="shrink-0 ml-1 text-micro text-ink-subtle hover:text-red-500 underline underline-offset-2 transition-colors">
+        class="shrink-0 ml-1 text-micro text-ink-subtle hover:text-data-neg underline underline-offset-2 transition-colors">
         cancelar
       </button>
     </div>
 
     <!-- Conexão instável (watchdog: sem bytes do servidor há 45s+) -->
     <p v-if="aiStore.streamStale"
-      class="flex items-start gap-1.5 text-micro text-amber-600 dark:text-amber-400">
+      class="flex items-start gap-1.5 text-micro text-data-warn">
       <i class="fas fa-triangle-exclamation mt-0.5 shrink-0"></i>
       <span>A resposta está demorando mais que o normal (conexão instável). Você pode aguardar ou cancelar.</span>
     </p>

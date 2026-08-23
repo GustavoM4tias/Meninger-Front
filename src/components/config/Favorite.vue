@@ -47,7 +47,7 @@ onMounted(() => { favoritesStore.loadFavorites(); });
   <!-- Componente somente de texto para mostrar o favorito na pagina -->
   <i @click="toggleFavorite"
     :class="[
-      isFavorited ? 'fas fa-star text-amber-200 dark:text-amber-300' : 'far fa-star text-gray-500 dark:text-gray-400',
+      isFavorited ? 'fas fa-star text-data-warn ' : 'far fa-star text-ink-muted',
       busy ? 'opacity-50 pointer-events-none' : 'cursor-pointer'
     ]"
     class="ml-2 text-lg md:text-2xl"></i>

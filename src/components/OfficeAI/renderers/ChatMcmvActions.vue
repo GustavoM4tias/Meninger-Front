@@ -32,13 +32,13 @@ function buildPrompt(topic) {
 
 <template>
   <div class="mt-3 pt-3 border-t border-white/5">
-    <p class="text-micro text-slate-600 dark:text-slate-300 uppercase tracking-wide mb-2">Sugestões</p>
+    <p class="text-micro text-ink-muted uppercase tracking-wide mb-2">Sugestões</p>
     <div class="flex flex-wrap gap-1.5">
       <button
         @click="openDashboard"
         :disabled="aiStore.isStreaming"
         class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium ring-1 transition disabled:opacity-40
-               bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 ring-indigo-500/20"
+               bg-accent/10 hover:bg-accent/20 text-accent ring-accent/20"
       >
         <i class="fas fa-arrow-up-right-from-square text-[10px]" />
         Abrir Dashboard
@@ -48,7 +48,7 @@ function buildPrompt(topic) {
         @click="ask(buildPrompt('anterior'))"
         :disabled="aiStore.isStreaming"
         class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium ring-1 transition disabled:opacity-40
-               bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 ring-amber-500/20"
+               bg-data-warn/10 hover:bg-data-warn/20 text-data-warn ring-data-warn/20"
       >
         <i class="fas fa-clock-rotate-left text-[10px]" />
         Valor Anterior
@@ -58,7 +58,7 @@ function buildPrompt(topic) {
         @click="ask(buildPrompt('populacao'))"
         :disabled="aiStore.isStreaming"
         class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium ring-1 transition disabled:opacity-40
-               bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 ring-cyan-500/20"
+               bg-accent/10 hover:bg-accent/20 text-accent ring-accent/20"
       >
         <i class="fas fa-users text-[10px]" />
         População
@@ -68,7 +68,7 @@ function buildPrompt(topic) {
         @click="ask(buildPrompt('faixa3'))"
         :disabled="aiStore.isStreaming"
         class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium ring-1 transition disabled:opacity-40
-               bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 ring-blue-500/20"
+               bg-accent/10 hover:bg-accent/20 text-accent ring-accent/20"
       >
         <i class="fas fa-layer-group text-[10px]" />
         Teto Faixa 3
@@ -78,7 +78,7 @@ function buildPrompt(topic) {
         @click="ask(buildPrompt('classificacao'))"
         :disabled="aiStore.isStreaming"
         class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium ring-1 transition disabled:opacity-40
-               bg-violet-500/10 hover:bg-violet-500/20 text-violet-400 ring-violet-500/20"
+               bg-accent/10 hover:bg-accent/20 text-accent ring-accent/20"
       >
         <i class="fas fa-sitemap text-[10px]" />
         Classificação

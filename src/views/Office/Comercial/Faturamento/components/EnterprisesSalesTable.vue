@@ -527,7 +527,7 @@ const onViewChange = (mode) => {
     <div v-else class="md:hidden divide-y divide-line">
       <article v-for="(enterprise, idx) in sortedData" :key="enterprise.key"
         class="flex items-start gap-3 p-3 cursor-pointer hover:bg-surface-sunken/40 transition-colors"
-        :class="enterprise.onlyProjectionRow ? 'bg-emerald-500/5' : ''" @click="openSingle(enterprise)">
+        :class="enterprise.onlyProjectionRow ? 'bg-data-pos/5' : ''" @click="openSingle(enterprise)">
         <input type="checkbox" :checked="selectedKeys.has(enterprise.key)" @click.stop
           @change="toggleOne(enterprise.key, $event)" class="mt-1 shrink-0 accent-accent" />
 
@@ -538,7 +538,7 @@ const onViewChange = (mode) => {
             <p class="text-sm font-medium text-ink truncate flex items-center gap-1.5" :title="rowTitle(enterprise)">
               {{ enterprise.name }}
               <span v-if="!enterprise.onlyProjectionRow && enterprise.proj_count > 0" v-tippy="'Projeção vinculada'"
-                class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
+                class="h-1.5 w-1.5 rounded-full bg-data-pos animate-pulse shrink-0"></span>
             </p>
             <i class="fas fa-chevron-right text-xs text-ink-subtle mt-1 shrink-0"></i>
           </div>
@@ -547,24 +547,24 @@ const onViewChange = (mode) => {
             <span class="text-ink-muted font-mono">
               <span class="text-ink font-semibold">{{ realizedCount(enterprise) }}</span> venda(s)
               <span v-if="!enterprise.onlyProjectionRow && enterprise.proj_count"
-                class="text-emerald-500 font-semibold">+{{ enterprise.proj_count }}</span>
+                class="text-data-pos font-semibold">+{{ enterprise.proj_count }}</span>
               <span v-if="!enterprise.onlyProjectionRow && distratoCount(enterprise) > 0"
-                class="text-amber-500 font-semibold"
+                class="text-data-warn font-semibold"
                 v-tippy="'Distratada(s) depois da venda — contabilizadas no período'">
                 <i class="fas fa-file-circle-xmark text-[10px]"></i>{{ distratoCount(enterprise) }}</span>
               <span v-if="!enterprise.onlyProjectionRow && adjustedCount(enterprise) > 0"
-                class="text-sky-500 font-semibold"
+                class="text-accent font-semibold"
                 v-tippy="'Venda(s) com ajuste contábil — o valor exibido já vem corrigido'">
                 <i class="fas fa-wand-magic-sparkles text-[10px]"></i>{{ adjustedCount(enterprise) }}</span>
             </span>
           </div>
 
           <div class="flex items-baseline gap-2 mt-1">
-            <span class="text-sm font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
+            <span class="text-sm font-bold text-data-pos tabular-nums">
               {{ formatCurrency(baseValue(enterprise)) }}
             </span>
             <span v-if="!enterprise.onlyProjectionRow && appendedValue(enterprise) > 0"
-              class="text-micro text-emerald-500 font-mono tabular-nums">
+              class="text-micro text-data-pos font-mono tabular-nums">
               +{{ formatCurrency(appendedValue(enterprise)) }}
             </span>
           </div>
@@ -618,7 +618,7 @@ const onViewChange = (mode) => {
 
         <tbody class="divide-y divide-line">
           <tr v-for="(enterprise, idx) in sortedData" :key="enterprise.key" class="transition-colors" :class="enterprise.onlyProjectionRow
-            ? 'bg-emerald-500/5 hover:bg-emerald-500/10'
+            ? 'bg-data-pos/5 hover:bg-data-pos/10'
             : 'hover:bg-surface-sunken/40'">
             <td class="px-4 py-3">
               <input type="checkbox" :checked="selectedKeys.has(enterprise.key)"
@@ -633,7 +633,7 @@ const onViewChange = (mode) => {
                   {{ enterprise.name }}
                 </span>
                 <span v-if="!enterprise.onlyProjectionRow && enterprise.proj_count > 0" v-tippy="'Projeção vinculada'"
-                  class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
+                  class="h-2 w-2 rounded-full bg-data-pos animate-pulse shrink-0"></span>
                 <Badge v-if="isUnlinked(enterprise)" variant="warning" size="sm"
                   v-tippy="'Esta projeção não achou o empreendimento correspondente no Sienge, por isso aparece em linha separada. Um admin resolve na engrenagem, aba Vínculo CV ↔ Sienge.'">
                   <i class="fas fa-link-slash text-[9px]"></i>Sem vínculo
@@ -655,13 +655,13 @@ const onViewChange = (mode) => {
                 {{ realizedCount(enterprise) }}
 
                 <span v-if="!enterprise.onlyProjectionRow && enterprise.proj_count"
-                  class="absolute -top-3 -right-2 text-micro font-bold text-emerald-500 font-mono"
+                  class="absolute -top-3 -right-2 text-micro font-bold text-data-pos font-mono"
                   v-tippy="'Projeção'">
                   +{{ enterprise.proj_count }}
                 </span>
 
                 <span v-if="!enterprise.onlyProjectionRow && distratoCount(enterprise) > 0"
-                  class="absolute -bottom-3 -right-2 text-micro font-bold text-amber-500 font-mono"
+                  class="absolute -bottom-3 -right-2 text-micro font-bold text-data-warn font-mono"
                   v-tippy="'Distratada(s) depois da venda — contabilizadas no período'">
                   <i class="fas fa-file-circle-xmark text-[9px]"></i>{{ distratoCount(enterprise) }}
                 </span>
@@ -670,15 +670,15 @@ const onViewChange = (mode) => {
 
             <!-- Valor -->
             <td class="px-4 py-3 text-right">
-              <div class="text-sm font-semibold text-emerald-600 dark:text-emerald-400 tabular-nums">
+              <div class="text-sm font-semibold text-data-pos tabular-nums">
                 {{ formatCurrency(baseValue(enterprise)) }}
               </div>
               <div v-if="!enterprise.onlyProjectionRow && appendedValue(enterprise) > 0"
-                class="text-micro text-emerald-500 font-mono tabular-nums">
+                class="text-micro text-data-pos font-mono tabular-nums">
                 +{{ formatCurrency(appendedValue(enterprise)) }}
               </div>
               <div v-if="!enterprise.onlyProjectionRow && distratoValue(enterprise) > 0"
-                class="text-micro text-amber-500 font-mono tabular-nums"
+                class="text-micro text-data-warn font-mono tabular-nums"
                 v-tippy="'Valor de vendas distratadas — incluído no total'">
                 <i class="fas fa-file-circle-xmark text-[9px]"></i> {{ formatCurrency(distratoValue(enterprise)) }}
               </div>

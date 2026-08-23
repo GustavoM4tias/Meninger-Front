@@ -32,7 +32,7 @@ const showBuildingDetails = () => {
                         }}
                     </h1>
                     <!-- <p
-                        class="text-gray-200 font-semibold filter drop-shadow cursor-pointer duration-200 hover:text-gray-100 text-wrap text-sm bottom-0 right-0 m-1 md:m-2">
+                        class="text-ink font-semibold filter drop-shadow cursor-pointer duration-200 hover:text-ink text-wrap text-sm bottom-0 right-0 m-1 md:m-2">
                         {{ building.data_entrega }}
                     </p> -->
                 </div>
@@ -40,7 +40,7 @@ const showBuildingDetails = () => {
                 <Flag class="top-3 right-0" :stage="building.situacao_comercial[0]?.nome" />
 
                 <!-- <ul class="flex flex-wrap">
-                    <li class="hover:bg-gray-100 hover:text-gray-800 text-gray-200 border border-gray-300 cursor-pointer filter drop-shadow duration-300 shadow px-2 py- m-1 rounded-lg"
+                    <li class="hover:bg-surface-sunken hover:text-ink border border-line cursor-pointer filter drop-shadow duration-300 shadow px-2 py- m-1 rounded-lg"
                         v-for="tag in building.tags" :key="3">{{ tag }}</li>
                 </ul>  -->
             </div>
@@ -48,13 +48,13 @@ const showBuildingDetails = () => {
             <!-- Descrição do evento -->
             <div class="descricao flex-1 flex items-end justify-between">
                 <p
-                    class="text-lg md:text-xl text-gray-100 cursor-pointer duration-200 filter drop-shadow hover:text-gray-200 -mt-1">
+                    class="text-lg md:text-xl text-ink cursor-pointer duration-200 filter drop-shadow hover:text-ink -mt-1">
                     {{ building.cidade }}/{{ building.estado }}
                 </p>
                 <RouterLink :to="{
                     path: '/comercial/buildings',
                     query: { search: building.nome, section: 'Geral' }
-                }" class="border rounded-md md:rounded-lg text-white text-md md:text-lg text-wrap hover:bg-gray-100 hover:text-gray-800 duration-300 py-1 px-2 md:py-2 md:px-4 ml-4">
+                }" class="border rounded-md md:rounded-lg text-white text-md md:text-lg text-wrap hover:bg-surface-sunken hover:text-ink duration-300 py-1 px-2 md:py-2 md:px-4 ml-4">
                     Ver Mais
                 </RouterLink>
             </div>

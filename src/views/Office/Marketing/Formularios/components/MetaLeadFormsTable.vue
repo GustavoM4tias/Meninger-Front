@@ -82,17 +82,17 @@ const summary = computed(() => {
 
 function statusBadge(status) {
     const s = String(status || '').toUpperCase();
-    if (s === 'ACTIVE')   return { label: 'Ativo',     cls: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 border-emerald-500/20' };
-    if (s === 'ARCHIVED') return { label: 'Arquivado', cls: 'bg-amber-500/10 text-amber-600 dark:text-amber-300 border-amber-500/20' };
-    if (s === 'DELETED')  return { label: 'Excluído',  cls: 'bg-red-500/10 text-red-600 dark:text-red-300 border-red-500/20' };
-    if (s === 'DRAFT')    return { label: 'Rascunho',  cls: 'bg-slate-500/10 text-slate-500 border-slate-500/20' };
-    return { label: s || '—', cls: 'bg-slate-500/10 text-slate-500 border-slate-500/20' };
+    if (s === 'ACTIVE')   return { label: 'Ativo',     cls: 'bg-data-pos/10 text-data-pos border-data-pos/20' };
+    if (s === 'ARCHIVED') return { label: 'Arquivado', cls: 'bg-data-warn/10 text-data-warn border-data-warn/20' };
+    if (s === 'DELETED')  return { label: 'Excluído',  cls: 'bg-data-neg/10 text-data-neg border-data-neg/20' };
+    if (s === 'DRAFT')    return { label: 'Rascunho',  cls: 'bg-slate-500/10 text-ink-muted border-line/20' };
+    return { label: s || '—', cls: 'bg-slate-500/10 text-ink-muted border-line/20' };
 }
 
 function priorityDot(p) {
-    if (p === 'high')   return { cls: 'bg-red-500',     title: 'Prioridade alta' };
+    if (p === 'high')   return { cls: 'bg-data-neg',     title: 'Prioridade alta' };
     if (p === 'low')    return { cls: 'bg-slate-400',   title: 'Prioridade baixa' };
-    return { cls: 'bg-emerald-500', title: 'Prioridade normal' };
+    return { cls: 'bg-data-pos', title: 'Prioridade normal' };
 }
 
 function fmtRelative(iso) {
@@ -142,11 +142,11 @@ function fmtShortDate(iso) {
       </div>
       <div>
         <div class="text-micro uppercase tracking-wider text-ink-subtle">Entregues ao CV</div>
-        <div class="text-xl font-semibold text-emerald-600 dark:text-emerald-300">{{ summary.delivered }}</div>
+        <div class="text-xl font-semibold text-data-pos">{{ summary.delivered }}</div>
       </div>
       <div>
         <div class="text-micro uppercase tracking-wider text-ink-subtle">Em held</div>
-        <div class="text-xl font-semibold text-amber-600 dark:text-amber-300">{{ summary.held }}</div>
+        <div class="text-xl font-semibold text-data-warn">{{ summary.held }}</div>
       </div>
     </Surface>
 
@@ -193,8 +193,8 @@ function fmtShortDate(iso) {
     <div v-if="store.lastSync"
       :class="['rounded-lg border px-3 py-2.5 text-sm',
         store.lastSync.errors?.length
-          ? 'border-amber-500/30 bg-amber-500/5 text-amber-800 dark:text-amber-200'
-          : 'border-emerald-500/20 bg-emerald-500/5 text-emerald-700 dark:text-emerald-300']">
+          ? 'border-data-warn/30 bg-data-warn/5 text-data-warn'
+          : 'border-data-pos/20 bg-data-pos/5 text-data-pos']">
       <div class="flex items-start gap-2">
         <i :class="store.lastSync.errors?.length ? 'fas fa-triangle-exclamation' : 'fas fa-circle-check'" class="mt-0.5"></i>
         <div class="flex-1 min-w-0">
@@ -205,9 +205,9 @@ function fmtShortDate(iso) {
           </div>
           <div v-if="store.lastSync.errors?.length" class="mt-1.5 space-y-1">
             <div v-for="(e, i) in store.lastSync.errors" :key="i"
-              class="text-xs rounded border border-amber-500/30 bg-amber-500/10 px-2 py-1.5">
+              class="text-xs rounded border border-data-warn/30 bg-data-warn/10 px-2 py-1.5">
               <div class="font-medium"><i class="fas fa-circle-exclamation mr-1"></i>{{ e.page_name || 'Página' }} <span class="text-ink-subtle font-mono">#{{ e.page_id }}</span></div>
-              <div class="text-amber-700 dark:text-amber-300 mt-0.5 font-mono text-micro break-words">{{ e.error }}</div>
+              <div class="text-data-warn mt-0.5 font-mono text-micro break-words">{{ e.error }}</div>
             </div>
           </div>
           <div v-else-if="store.lastSync.forms_total === 0 && store.lastSync.pages_count > 0"
@@ -221,7 +221,7 @@ function fmtShortDate(iso) {
 
     <!-- Erro -->
     <div v-if="store.error"
-      class="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-300 flex items-start gap-2">
+      class="rounded-lg border border-data-neg/20 bg-data-neg/10 px-3 py-2 text-sm text-data-neg flex items-start gap-2">
       <i class="fas fa-circle-exclamation mt-0.5"></i>
       <div>{{ store.error }}</div>
     </div>
@@ -317,11 +317,11 @@ function fmtShortDate(iso) {
               <!-- Roteamento -->
               <td class="px-3 py-2.5 text-center">
                 <span v-if="f.mapping_active && f.midia_slug"
-                  class="inline-flex items-center gap-1 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 border border-emerald-500/20 px-1.5 py-0.5 text-micro font-medium">
+                  class="inline-flex items-center gap-1 rounded-md bg-data-pos/10 text-data-pos border border-data-pos/20 px-1.5 py-0.5 text-micro font-medium">
                   <i class="fas fa-bolt text-[9px]"></i>Auto
                 </span>
                 <span v-else
-                  class="inline-flex items-center gap-1 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-300 border border-amber-500/20 px-1.5 py-0.5 text-micro font-medium">
+                  class="inline-flex items-center gap-1 rounded-md bg-data-warn/10 text-data-warn border border-data-warn/20 px-1.5 py-0.5 text-micro font-medium">
                   <i class="fas fa-hand text-[9px]"></i>Manual
                 </span>
               </td>
@@ -340,11 +340,11 @@ function fmtShortDate(iso) {
                 <template v-if="deliveryRate(f.stats) !== null">
                   <div class="inline-flex items-center gap-1.5">
                     <div class="w-12 h-1.5 rounded-full bg-surface-sunken overflow-hidden">
-                      <div class="h-full bg-emerald-500" :style="{ width: deliveryRate(f.stats) + '%' }"></div>
+                      <div class="h-full bg-data-pos" :style="{ width: deliveryRate(f.stats) + '%' }"></div>
                     </div>
                     <span class="text-micro font-medium text-ink">{{ deliveryRate(f.stats) }}%</span>
                   </div>
-                  <div v-if="f.stats.held" class="text-micro text-amber-600 dark:text-amber-300">{{ f.stats.held }} held</div>
+                  <div v-if="f.stats.held" class="text-micro text-data-warn">{{ f.stats.held }} held</div>
                 </template>
                 <span v-else class="text-micro text-ink-subtle italic">—</span>
               </td>

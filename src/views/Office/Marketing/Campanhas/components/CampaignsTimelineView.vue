@@ -107,11 +107,11 @@ const nowPos = computed(() => posPct(window.value.now));
 
 function barColor(c) {
     const s = String(c.effective_status || c.status || '').toUpperCase();
-    if (s.includes('ACTIVE'))   return 'bg-emerald-500/70 hover:bg-emerald-500 border-emerald-700';
-    if (s.includes('PAUSED'))   return 'bg-amber-500/60 hover:bg-amber-500 border-amber-700';
-    if (s.includes('DELETED'))  return 'bg-red-500/50 hover:bg-red-500 border-red-700';
-    if (s.includes('ARCHIVED')) return 'bg-slate-400/40 hover:bg-slate-400 border-slate-600';
-    return 'bg-slate-400/40 hover:bg-slate-400 border-slate-600';
+    if (s.includes('ACTIVE'))   return 'bg-data-pos/70 hover:bg-data-pos border-data-pos';
+    if (s.includes('PAUSED'))   return 'bg-data-warn/60 hover:bg-data-warn border-data-warn';
+    if (s.includes('DELETED'))  return 'bg-data-neg/50 hover:bg-data-neg border-data-neg';
+    if (s.includes('ARCHIVED')) return 'bg-slate-400/40 hover:bg-surface-sunken border-line';
+    return 'bg-slate-400/40 hover:bg-surface-sunken border-line';
 }
 
 function fmtMoney(v) {
@@ -149,9 +149,9 @@ const sorted = computed(() => {
         </span>
       </div>
       <!-- Marca "hoje" -->
-      <div class="absolute top-0 bottom-0 w-px bg-red-500/80 z-10"
+      <div class="absolute top-0 bottom-0 w-px bg-data-neg/80 z-10"
         :style="{ left: nowPos + '%' }">
-        <div class="absolute -top-1 -translate-x-1/2 text-micro font-mono text-red-500 bg-surface px-1 rounded whitespace-nowrap">
+        <div class="absolute -top-1 -translate-x-1/2 text-micro font-mono text-data-neg bg-surface px-1 rounded whitespace-nowrap">
           hoje
         </div>
       </div>
@@ -160,7 +160,7 @@ const sorted = computed(() => {
     <!-- Linhas de campanha -->
     <div class="relative max-h-[60vh] overflow-y-auto">
       <!-- Marca "hoje" full height -->
-      <div class="absolute top-0 bottom-0 w-px bg-red-500/40 z-10 pointer-events-none"
+      <div class="absolute top-0 bottom-0 w-px bg-data-neg/40 z-10 pointer-events-none"
         :style="{ left: nowPos + '%' }"></div>
 
       <div v-for="c in sorted" :key="c.id"
@@ -196,8 +196,8 @@ const sorted = computed(() => {
 
     <!-- Legenda -->
     <div class="px-3 py-2 border-t border-line/60 bg-surface-sunken/30 flex flex-wrap items-center gap-3 text-micro text-ink-subtle">
-      <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-emerald-500/70"></span>Ativa</span>
-      <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-amber-500/60"></span>Pausada</span>
+      <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-data-pos/70"></span>Ativa</span>
+      <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-data-warn/60"></span>Pausada</span>
       <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-slate-400/40"></span>Arquivada / Outras</span>
       <span class="ml-auto">{{ sorted.length }} campanha(s) no período</span>
     </div>

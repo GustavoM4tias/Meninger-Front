@@ -1,9 +1,9 @@
 <template>
     <div
-        class="h-full w-full flex flex-col rounded-2xl overflow-hidden bg-gray-50 dark:bg-gray-800 border border-gray-200/60 dark:border-gray-700/60">
+        class="h-full w-full flex flex-col rounded-2xl overflow-hidden bg-surface-sunken border border-line/60">
         <!-- Header -->
         <div
-            class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex flex-col md:flex-row items-start md:items-center gap-3">
+            class="px-4 py-3 border-b border-line flex flex-col md:flex-row items-start md:items-center gap-3">
             <div class="min-w-0 my-auto">
                 <RouterLink to="/marketing/leads?section=Leads"
                     class="text-base md:text-xl font-semibold truncate inline-flex items-center gap-2">
@@ -11,36 +11,36 @@
                     Leads
                 </RouterLink>
                 <Favorite class="m-auto" :router="'/marketing/leads'" :section="'Leads'" />
-                <p class="text-micro md:text-xs text-gray-500 dark:text-gray-400">
+                <p class="text-micro md:text-xs text-ink-muted">
                     {{ rangeLabels.this }} | {{ rangeLabels.prev }}
                 </p>
             </div>
 
             <!-- KPIs -->
             <div class="flex-1 grid grid-cols-2 gap-2 ps-2 md:ps-4">
-                <div class="rounded-lg my-auto ps-3 p-1.5 bg-white/60 dark:bg-gray-900/40 border-l-4 border-indigo-500">
-                    <p class="text-micro uppercase tracking-wide text-gray-500 dark:text-gray-400 truncate">
+                <div class="rounded-lg my-auto ps-3 p-1.5 bg-surface border-l-4 border-accent">
+                    <p class="text-micro uppercase tracking-wide text-ink-muted truncate">
                         {{ legend.this }}
                     </p>
-                    <p class="font-semibold text-gray-800 dark:text-gray-100 md:text-lg leading-tight">
+                    <p class="font-semibold text-ink md:text-lg leading-tight">
                         {{ kpis.cur }}
                     </p>
                     <p class="font-light text-micro leading-tight"
-                        :class="kpis.deltaPct >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'">
+                        :class="kpis.deltaPct >= 0 ? 'text-data-pos' : 'text-data-neg'">
                         {{ kpis.deltaPct >= 0 ? '+' : '' }}{{ kpis.deltaPct.toFixed(1) }}%
                     </p>
                 </div>
 
-                <div class="rounded-lg px-3 py-2 bg-white/60 dark:bg-gray-900/40 border-l-4"
-                    :class="kpis.deltaPct >= 0 ? 'border-emerald-500' : 'border-rose-600'">
-                    <p class="text-micro uppercase tracking-wide text-gray-500 dark:text-gray-400 truncate">
+                <div class="rounded-lg px-3 py-2 bg-surface border-l-4"
+                    :class="kpis.deltaPct >= 0 ? 'border-data-pos' : 'border-data-neg'">
+                    <p class="text-micro uppercase tracking-wide text-ink-muted truncate">
                         {{ legend.prev }}
                     </p>
-                    <p class="font-semibold text-gray-800 dark:text-gray-100 md:text-lg leading-tight">
+                    <p class="font-semibold text-ink md:text-lg leading-tight">
                         {{ kpis.prv }}
                     </p>
                     <p v-if="mode === 'day'"
-                        class="text-micro md:text-micro truncate text-gray-500 dark:text-gray-400 mt-0.5">
+                        class="text-micro md:text-micro truncate text-ink-muted mt-0.5">
                         Até {{ nowHour }}h: {{ progressPct.toFixed(1) }}% do dia anterior
                     </p>
                 </div>
@@ -53,12 +53,12 @@
                 <VChart v-if="!loading" :option="chartOption" autoresize class="absolute inset-0 h-full w-full" />
                 <div v-else role="status" class="absolute inset-0 overflow-hidden p-4 md:p-6 animate-pulse">
                     <div class="flex h-full items-end gap-3">
-                        <div class="flex-1 bg-gray-200 dark:bg-gray-700 rounded-t-lg h-32" />
-                        <div class="flex-1 bg-gray-200 dark:bg-gray-700 rounded-t-lg h-48" />
-                        <div class="flex-1 bg-gray-200 dark:bg-gray-700 rounded-t-lg h-28" />
-                        <div class="flex-1 bg-gray-200 dark:bg-gray-700 rounded-t-lg h-44" />
-                        <div class="flex-1 bg-gray-200 dark:bg-gray-700 rounded-t-lg h-36" />
-                        <div class="flex-1 bg-gray-200 dark:bg-gray-700 rounded-t-lg h-40" />
+                        <div class="flex-1 bg-surface-sunken rounded-t-lg h-32" />
+                        <div class="flex-1 bg-surface-sunken rounded-t-lg h-48" />
+                        <div class="flex-1 bg-surface-sunken rounded-t-lg h-28" />
+                        <div class="flex-1 bg-surface-sunken rounded-t-lg h-44" />
+                        <div class="flex-1 bg-surface-sunken rounded-t-lg h-36" />
+                        <div class="flex-1 bg-surface-sunken rounded-t-lg h-40" />
                     </div>
                 </div>
             </div>
@@ -67,7 +67,7 @@
         <!-- Controles -->
         <div class="w-full flex items-center gap-2 px-4 pb-4 -mt-4">
             <select v-model="mode"
-                class="h-9 rounded-md bg-white/70 dark:bg-gray-900/40 border border-gray-300 dark:border-gray-700 text-xs">
+                class="h-9 rounded-md bg-surface border border-line text-xs">
                 <option value="day">Dia × Dia</option>
                 <option value="rolling7">Últimos 7 dias</option>
                 <option value="week">Semana × Semana</option>

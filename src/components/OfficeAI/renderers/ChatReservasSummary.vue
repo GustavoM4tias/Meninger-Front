@@ -28,12 +28,12 @@ const tempos = computed(() => [
 ])
 
 const colorMap = {
-  indigo:  'bg-indigo-500/10  text-indigo-400  ring-indigo-500/20',
-  yellow:  'bg-yellow-500/10  text-yellow-400  ring-yellow-500/20',
-  violet:  'bg-violet-500/10  text-violet-400  ring-violet-500/20',
-  sky:     'bg-sky-500/10     text-sky-400     ring-sky-500/20',
-  emerald: 'bg-emerald-500/10 text-emerald-400 ring-emerald-500/20',
-  rose:    'bg-rose-500/10    text-rose-400    ring-rose-500/20',
+  indigo:  'bg-accent/10  text-accent  ring-accent/20',
+  yellow:  'bg-data-warn/10  text-data-warn  ring-data-warn/20',
+  violet:  'bg-accent/10  text-accent  ring-accent/20',
+  sky:     'bg-accent/10     text-accent     ring-accent/20',
+  emerald: 'bg-data-pos/10 text-data-pos ring-data-pos/20',
+  rose:    'bg-data-neg/10    text-data-neg    ring-data-neg/20',
 }
 
 function fmtNum(v) {
@@ -51,14 +51,14 @@ function fmtRate(v) {
   <div class="space-y-3 mt-1">
     <!-- Título -->
     <div class="flex items-center gap-2">
-      <i class="fas fa-bookmark text-xs text-gray-400 dark:text-slate-500" />
-      <span class="text-xs font-medium text-gray-700 dark:text-gray-300">{{ a.title }}</span>
+      <i class="fas fa-bookmark text-xs text-ink-subtle" />
+      <span class="text-xs font-medium text-ink">{{ a.title }}</span>
     </div>
 
     <!-- Aviso vendida=S -->
     <div
       v-if="a.vendida > 0"
-      class="bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-300 rounded-xl px-3 py-2 text-micro flex items-start gap-2"
+      class="bg-data-warn/10 border border-data-warn/20 text-data-warn rounded-xl px-3 py-2 text-micro flex items-start gap-2"
     >
       <i class="fas fa-circle-info mt-0.5" />
       <span>
@@ -72,7 +72,7 @@ function fmtRate(v) {
       <div
         v-for="k in kpis"
         :key="k.label"
-        class="bg-slate-50 dark:bg-slate-800/60 ring-1 ring-inset rounded-xl p-3"
+        class="bg-surface-sunken ring-1 ring-inset rounded-xl p-3"
         :class="colorMap[k.color]"
       >
         <div class="flex items-center gap-2 text-micro uppercase tracking-wide font-medium opacity-80">
@@ -89,7 +89,7 @@ function fmtRate(v) {
       <div
         v-for="r in rates"
         :key="r.label"
-        class="bg-slate-50 dark:bg-slate-800/60 ring-1 ring-inset rounded-xl p-3"
+        class="bg-surface-sunken ring-1 ring-inset rounded-xl p-3"
         :class="colorMap[r.color]"
         :title="r.tooltip"
       >
@@ -105,7 +105,7 @@ function fmtRate(v) {
       <div
         v-for="t in tempos"
         :key="t.label"
-        class="bg-slate-50 dark:bg-slate-800/60 ring-1 ring-inset rounded-xl p-3"
+        class="bg-surface-sunken ring-1 ring-inset rounded-xl p-3"
         :class="colorMap[t.color]"
         :title="t.tooltip"
       >
@@ -119,7 +119,7 @@ function fmtRate(v) {
     <!-- Caso vazio -->
     <div
       v-if="a.total === 0"
-      class="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-4 text-xs text-gray-500 dark:text-slate-400 text-center"
+      class="bg-surface-sunken rounded-xl p-4 text-xs text-ink-muted text-center"
     >
       Nenhuma reserva encontrada no período com esses filtros.
     </div>

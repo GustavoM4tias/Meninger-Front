@@ -104,7 +104,7 @@ onMounted(loadData);
 
       <!-- Erro -->
       <div v-if="contractsStore.error"
-        class="mb-4 rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-700 dark:text-red-300 flex items-center justify-between gap-3">
+        class="mb-4 rounded-xl border border-data-neg/20 bg-data-neg/10 p-4 text-sm text-data-neg flex items-center justify-between gap-3">
         <div class="flex items-center gap-2">
           <i class="fas fa-circle-exclamation"></i>
           <span>Erro ao carregar dados: {{ contractsStore.error }}</span>

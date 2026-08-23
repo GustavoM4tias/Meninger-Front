@@ -10,10 +10,10 @@ const router = useRouter();
 
 // Cores por state_class — mesmas da tela (TaskPreview.vue).
 const STATE = {
-    TODO: { label: 'A fazer', cls: 'text-slate-500 bg-slate-500/10 border-slate-500/20', dot: '#94a3b8' },
-    IN_PROGRESS: { label: 'Em andamento', cls: 'text-sky-600 dark:text-sky-400 bg-sky-500/10 border-sky-500/20', dot: '#3b82f6' },
-    BLOCKED: { label: 'Bloqueada', cls: 'text-rose-600 dark:text-rose-400 bg-rose-500/10 border-rose-500/20', dot: '#ef4444' },
-    DONE: { label: 'Concluída', cls: 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/20', dot: '#22c55e' },
+    TODO: { label: 'A fazer', cls: 'text-ink-muted bg-slate-500/10 border-line/20', dot: '#94a3b8' },
+    IN_PROGRESS: { label: 'Em andamento', cls: 'text-accent bg-accent/10 border-accent/20', dot: '#3b82f6' },
+    BLOCKED: { label: 'Bloqueada', cls: 'text-data-neg bg-data-neg/10 border-data-neg/20', dot: '#ef4444' },
+    DONE: { label: 'Concluída', cls: 'text-data-pos bg-data-pos/10 border-data-pos/20', dot: '#22c55e' },
     CANCELLED: { label: 'Cancelada', cls: 'text-ink-muted bg-surface-sunken border-line', dot: '#9ca3af' },
 };
 const st = (sc) => STATE[sc] || STATE.TODO;
@@ -56,7 +56,7 @@ function open(link) {
                     <div class="flex items-center justify-between text-micro text-ink-subtle">
                         <span>{{ c.progresso.done }}/{{ c.progresso.total }} concluídas</span>
                         <span class="flex items-center gap-2">
-                            <span v-if="c.progresso.overdue" class="text-rose-500">{{ c.progresso.overdue }} atrasada(s)</span>
+                            <span v-if="c.progresso.overdue" class="text-data-neg">{{ c.progresso.overdue }} atrasada(s)</span>
                             <span class="font-semibold text-ink-muted">{{ c.progresso.pct }}%</span>
                         </span>
                     </div>
@@ -78,7 +78,7 @@ function open(link) {
                         <div class="mt-1 flex flex-wrap items-center gap-1">
                             <span class="rounded-md border px-1.5 py-0.5 text-micro font-medium" :class="st(c.state_class).cls">{{ c.statusLabel }}</span>
                             <span v-if="c.aprovacao"
-                                class="rounded-md border border-amber-500/20 bg-amber-500/10 px-1.5 py-0.5 text-micro font-medium text-amber-600 dark:text-amber-400">
+                                class="rounded-md border border-data-warn/20 bg-data-warn/10 px-1.5 py-0.5 text-micro font-medium text-data-warn">
                                 <i class="fas fa-stamp mr-1 text-[9px]"></i>{{ c.aprovacao }}
                             </span>
                             <span v-if="c.responsavel" class="rounded-md border border-line bg-surface-sunken px-1.5 py-0.5 text-micro text-ink-muted">

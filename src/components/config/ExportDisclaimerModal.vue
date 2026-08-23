@@ -43,8 +43,8 @@ const autorLinha = computed(() => {
   <Modal :open="open" size="lg" @close="emit('cancelar')">
     <template #header>
       <div class="flex items-center gap-3">
-        <div class="h-9 w-9 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400
-                    border border-amber-500/20 grid place-items-center shrink-0">
+        <div class="h-9 w-9 rounded-lg bg-data-warn/10 text-data-warn
+                    border border-data-warn/20 grid place-items-center shrink-0">
           <i class="fas fa-shield-halved text-sm"></i>
         </div>
         <div class="min-w-0">

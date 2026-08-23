@@ -35,7 +35,7 @@ const kpis = computed(() => {
             value: moneyFmt.value.format(s.spend || 0),
             sub: 'gasto total',
             icon: 'fas fa-sack-dollar',
-            accent: 'text-blue-500 bg-blue-500/10',
+            accent: 'text-accent bg-accent/10',
         },
         {
             key: 'leadsMeta',
@@ -43,7 +43,7 @@ const kpis = computed(() => {
             value: intFmt.format(s.leadsMeta || 0),
             sub: 'segundo insights',
             icon: 'fab fa-meta',
-            accent: 'text-violet-500 bg-violet-500/10',
+            accent: 'text-accent bg-accent/10',
         },
         {
             key: 'cac',
@@ -51,7 +51,7 @@ const kpis = computed(() => {
             value: s.cacMedio ? moneyFmt.value.format(s.cacMedio) : '—',
             sub: 'investimento / lead',
             icon: 'fas fa-coins',
-            accent: 'text-amber-500 bg-amber-500/10',
+            accent: 'text-data-warn bg-data-warn/10',
         },
         {
             key: 'clicks',
@@ -59,7 +59,7 @@ const kpis = computed(() => {
             value: intFmt.format(s.clicks || 0),
             sub: `CTR ${s.ctrAgg ? s.ctrAgg.toFixed(2) + '%' : '—'}`,
             icon: 'fas fa-hand-pointer',
-            accent: 'text-sky-500 bg-sky-500/10',
+            accent: 'text-accent bg-accent/10',
         },
         {
             key: 'impressions',
@@ -67,7 +67,7 @@ const kpis = computed(() => {
             value: intFmt.format(s.impressions || 0),
             sub: 'alcance × frequência',
             icon: 'fas fa-eye',
-            accent: 'text-cyan-500 bg-cyan-500/10',
+            accent: 'text-accent bg-accent/10',
         },
         {
             key: 'campaigns',
@@ -75,7 +75,7 @@ const kpis = computed(() => {
             value: intFmt.format(props.totalCampaigns),
             sub: 'no filtro',
             icon: 'fas fa-bullhorn',
-            accent: 'text-orange-500 bg-orange-500/10',
+            accent: 'text-data-warn bg-data-warn/10',
         },
     ];
 });

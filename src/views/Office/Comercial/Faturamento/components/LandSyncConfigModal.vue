@@ -752,7 +752,7 @@ const closeModal = () => emit('close');
         <div v-if="activeTab === 'links'" class="p-4 sm:p-5 space-y-4">
 
           <div v-if="erpLinksStore.error"
-            class="rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2.5 text-xs text-red-700 dark:text-red-300 flex items-center gap-2">
+            class="rounded-xl border border-data-neg/20 bg-data-neg/10 px-3 py-2.5 text-xs text-data-neg flex items-center gap-2">
             <i class="fas fa-circle-exclamation"></i>{{ erpLinksStore.error }}
           </div>
 
@@ -800,7 +800,7 @@ const closeModal = () => emit('close');
                 <li v-for="p in [...unresolved, ...resolved]"
                   :key="`${p.cv_enterprise_name}|${p.cv_stage_name || ''}`"
                   class="px-3 py-2.5 flex items-start justify-between gap-2 hover:bg-surface-hover transition-colors"
-                  :class="!p.via ? 'bg-red-500/5' : (p.alerta_sem_codigo_etapa ? 'bg-amber-500/5' : '')">
+                  :class="!p.via ? 'bg-data-neg/5' : (p.alerta_sem_codigo_etapa ? 'bg-data-warn/5' : '')">
                   <div class="min-w-0">
                     <p class="text-xs font-medium text-ink truncate">
                       {{ p.cv_enterprise_name }}
@@ -818,7 +818,7 @@ const closeModal = () => emit('close');
                       <span class="text-ink">{{ p.erp_enterprise_id }}</span>
                       {{ p.erp_enterprise_name || '(sem contrato no período)' }}
                     </p>
-                    <p v-else class="text-micro text-red-600 dark:text-red-400 mt-0.5">
+                    <p v-else class="text-micro text-data-neg mt-0.5">
                       Não achou centro de custo. Aparece como linha separada no dashboard.
                     </p>
 
@@ -835,7 +835,7 @@ const closeModal = () => emit('close');
                     </div>
 
                     <p v-if="p.alerta_sem_codigo_etapa"
-                      class="text-micro text-amber-600 dark:text-amber-400 mt-1">
+                      class="text-micro text-data-warn mt-1">
                       <i class="fas fa-triangle-exclamation text-[9px] mr-0.5"></i>
                       A fase não tem código no CV, então a resolução caiu no nível do empreendimento
                       e todas as fases dele vão para este mesmo centro de custo. O certo é preencher
@@ -947,7 +947,7 @@ const closeModal = () => emit('close');
                         <span class="hidden sm:inline">Editar</span>
                       </Button>
                       <Button variant="ghost" size="sm" icon="fas fa-trash"
-                        class="!text-red-500 hover:!bg-red-500/10"
+                        class="!text-data-neg hover:!bg-data-neg/10"
                         @click="handleLinkRemove(link.id)" />
                     </div>
                   </li>
@@ -961,7 +961,7 @@ const closeModal = () => emit('close');
         <div v-if="activeTab === 'obstit'" class="p-4 sm:p-5 space-y-4">
 
           <div v-if="landSyncStore.error"
-            class="rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2.5 text-xs text-red-700 dark:text-red-300 flex items-center gap-2">
+            class="rounded-xl border border-data-neg/20 bg-data-neg/10 px-3 py-2.5 text-xs text-data-neg flex items-center gap-2">
             <i class="fas fa-circle-exclamation"></i>{{ landSyncStore.error }}
           </div>
           <div v-if="landSyncStore.loading"
@@ -998,7 +998,7 @@ const closeModal = () => emit('close');
                       </p>
                     </div>
                     <Button variant="ghost" size="sm" icon="fas fa-trash"
-                      class="!text-red-500 hover:!bg-red-500/10"
+                      class="!text-data-neg hover:!bg-data-neg/10"
                       @click="handleLandRemove(item.id)">
                       <span class="hidden sm:inline">Remover</span>
                     </Button>
@@ -1027,7 +1027,7 @@ const closeModal = () => emit('close');
 
               <div class="flex items-center justify-between gap-2 pt-1 flex-wrap">
                 <p class="text-micro text-ink-subtle inline-flex items-center gap-1.5">
-                  <span class="inline-flex w-2 h-2 rounded-full bg-emerald-500"></span>
+                  <span class="inline-flex w-2 h-2 rounded-full bg-data-pos"></span>
                   Ao salvar, o próximo job de OBSTIT usará essa configuração.
                 </p>
                 <Button size="sm" icon="fas fa-plus"
@@ -1043,7 +1043,7 @@ const closeModal = () => emit('close');
         <!-- ═══════════════ TAB: OCULTAR EMPREENDIMENTOS ═══════════════ -->
         <div v-if="activeTab === 'hidden'" class="p-4 sm:p-5 space-y-4">
 
-          <div class="rounded-xl border border-amber-500/20 bg-amber-500/10 p-3 text-xs text-amber-700 dark:text-amber-300 flex items-start gap-2">
+          <div class="rounded-xl border border-data-warn/20 bg-data-warn/10 p-3 text-xs text-data-warn flex items-start gap-2">
             <i class="fas fa-circle-info mt-0.5 shrink-0"></i>
             <span>
               Empreendimentos ocultos <strong>não aparecem na listagem</strong> e
@@ -1053,7 +1053,7 @@ const closeModal = () => emit('close');
           </div>
 
           <div v-if="hiddenStore.error"
-            class="rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2.5 text-xs text-red-700 dark:text-red-300 flex items-center gap-2">
+            class="rounded-xl border border-data-neg/20 bg-data-neg/10 px-3 py-2.5 text-xs text-data-neg flex items-center gap-2">
             <i class="fas fa-circle-exclamation"></i>{{ hiddenStore.error }}
           </div>
           <div v-if="hiddenStore.loading"
@@ -1092,7 +1092,7 @@ const closeModal = () => emit('close');
                         <span class="ml-1">({{ group.items.length }})</span>
                       </p>
                       <button type="button"
-                        class="shrink-0 text-micro font-medium text-emerald-600 dark:text-emerald-400 hover:underline disabled:opacity-50"
+                        class="shrink-0 text-micro font-medium text-data-pos hover:underline disabled:opacity-50"
                         :disabled="hiddenRemoving"
                         v-tippy="'Restaurar todos os empreendimentos deste grupo'"
                         @click="handleHiddenRemoveGroup(group)">
@@ -1108,7 +1108,7 @@ const closeModal = () => emit('close');
                           <span class="text-ink-muted"> - {{ item.enterprise_name || 'Sem nome' }}</span>
                         </p>
                         <Button variant="ghost" size="sm" icon="fas fa-eye"
-                          class="!text-emerald-600 hover:!bg-emerald-500/10 shrink-0"
+                          class="!text-data-pos hover:!bg-data-pos/10 shrink-0"
                           :disabled="hiddenRemoving"
                           v-tippy="'Restaurar visibilidade'"
                           @click="handleHiddenRemove(item.id)" />
@@ -1147,7 +1147,7 @@ const closeModal = () => emit('close');
                 </p>
                 <Button size="sm"
                   :icon="hiddenSaving ? 'fas fa-circle-notch fa-spin' : 'fas fa-eye-slash'"
-                  class="!bg-amber-500 hover:!bg-amber-600 ml-auto"
+                  class="!bg-data-warn hover:!bg-data-warn ml-auto"
                   :disabled="!selectedHiddenLabels.length || hiddenSaving"
                   @click="handleHiddenAdd">
                   {{ hiddenSaving ? 'Ocultando...' : 'Ocultar selecionados' }}
@@ -1170,7 +1170,7 @@ const closeModal = () => emit('close');
           </div>
 
           <div v-if="commissionRulesStore.error"
-            class="rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2.5 text-xs text-red-700 dark:text-red-300 flex items-center gap-2">
+            class="rounded-xl border border-data-neg/20 bg-data-neg/10 px-3 py-2.5 text-xs text-data-neg flex items-center gap-2">
             <i class="fas fa-circle-exclamation"></i>{{ commissionRulesStore.error }}
           </div>
           <div v-if="commissionRulesStore.loading"
@@ -1213,7 +1213,7 @@ const closeModal = () => emit('close');
                         </span>
                         <span v-if="rule.stage_name" class="truncate">({{ rule.stage_name }})</span>
                         <span>·</span>
-                        <span class="text-emerald-600 dark:text-emerald-400 font-semibold tabular-nums">
+                        <span class="text-data-pos font-semibold tabular-nums">
                           {{ (rule.commission_pct * 100).toFixed(2) }}%
                         </span>
                       </p>
@@ -1226,7 +1226,7 @@ const closeModal = () => emit('close');
                         <span class="hidden sm:inline">Editar</span>
                       </Button>
                       <Button variant="ghost" size="sm" icon="fas fa-trash"
-                        class="!text-red-500 hover:!bg-red-500/10"
+                        class="!text-data-neg hover:!bg-data-neg/10"
                         @click="handleCommissionRemove(rule.id)" />
                     </div>
                   </li>
@@ -1302,7 +1302,7 @@ const closeModal = () => emit('close');
           </div>
 
           <div v-if="trSatStore.error"
-            class="rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2.5 text-xs text-red-700 dark:text-red-300 flex items-center gap-2">
+            class="rounded-xl border border-data-neg/20 bg-data-neg/10 px-3 py-2.5 text-xs text-data-neg flex items-center gap-2">
             <i class="fas fa-circle-exclamation"></i>{{ trSatStore.error }}
           </div>
           <div v-if="trSatStore.loading"
@@ -1358,7 +1358,7 @@ const closeModal = () => emit('close');
                         <span class="hidden sm:inline">Editar</span>
                       </Button>
                       <Button variant="ghost" size="sm" icon="fas fa-trash"
-                        class="!text-red-500 hover:!bg-red-500/10"
+                        class="!text-data-neg hover:!bg-data-neg/10"
                         @click="handleTrSatRemove(item.id)" />
                     </div>
                   </li>
@@ -1426,7 +1426,7 @@ const closeModal = () => emit('close');
         <div v-if="activeTab === 'value'" class="p-4 sm:p-5 space-y-4">
 
           <div v-if="valueRulesStore.error"
-            class="rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2.5 text-xs text-red-700 dark:text-red-300 flex items-center gap-2">
+            class="rounded-xl border border-data-neg/20 bg-data-neg/10 px-3 py-2.5 text-xs text-data-neg flex items-center gap-2">
             <i class="fas fa-circle-exclamation"></i>{{ valueRulesStore.error }}
           </div>
 
@@ -1477,7 +1477,7 @@ const closeModal = () => emit('close');
                         <span class="hidden sm:inline">Editar</span>
                       </Button>
                       <Button variant="ghost" size="sm" icon="fas fa-trash"
-                        class="!text-red-500 hover:!bg-red-500/10"
+                        class="!text-data-neg hover:!bg-data-neg/10"
                         @click="handleValueRuleRemove(rule.id)" />
                     </div>
                   </li>
@@ -1541,12 +1541,12 @@ const closeModal = () => emit('close');
         <div v-if="activeTab === 'adjust'" class="p-4 sm:p-5 space-y-4">
 
           <div v-if="adjustmentsStore.error"
-            class="rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2.5 text-xs text-red-700 dark:text-red-300 flex items-center gap-2">
+            class="rounded-xl border border-data-neg/20 bg-data-neg/10 px-3 py-2.5 text-xs text-data-neg flex items-center gap-2">
             <i class="fas fa-circle-exclamation"></i>{{ adjustmentsStore.error }}
           </div>
 
           <div v-if="adjustFeedback"
-            class="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-2.5 text-xs text-emerald-700 dark:text-emerald-300 flex items-center gap-2">
+            class="rounded-xl border border-data-pos/20 bg-data-pos/10 px-3 py-2.5 text-xs text-data-pos flex items-center gap-2">
             <i class="fas fa-circle-check"></i>{{ adjustFeedback }}
           </div>
 
@@ -1554,7 +1554,7 @@ const closeModal = () => emit('close');
             Corrige, só para o relatório, o dado que veio errado do Sienge: data da instituição
             financeira, série adicionada à mão ou série editada. Nada é gravado no Sienge - a
             correção é uma máscara aplicada na leitura, e toda venda ajustada mostra o selo
-            <span class="text-sky-600 dark:text-sky-400 font-medium">Ajustada</span> na listagem.
+            <span class="text-accent font-medium">Ajustada</span> na listagem.
             Ajuste em mês já consolidado registra divergência na hora.
             <br>
             A máscara sobrevive ao sync e ao backup: fica em tabela própria e só sai se um admin
@@ -1564,7 +1564,7 @@ const closeModal = () => emit('close');
           </div>
 
           <div v-if="adjustmentsStore.needsReview.length"
-            class="rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2.5 text-micro text-amber-700 dark:text-amber-300">
+            class="rounded-xl border border-data-warn/30 bg-data-warn/10 px-3 py-2.5 text-micro text-data-warn">
             <i class="fas fa-triangle-exclamation mr-1"></i>
             {{ adjustmentsStore.needsReview.length }} ajuste(s) para conferir: o dado mudou no
             Sienge depois da correção. A correção continua valendo no relatório - decida manter
@@ -1605,7 +1605,7 @@ const closeModal = () => emit('close');
                   class="px-3 py-2.5 flex items-start justify-between gap-2 hover:bg-surface-hover transition-colors">
                   <div class="min-w-0">
                     <div class="flex items-center gap-1.5 flex-wrap">
-                      <i :class="ADJ_TYPE_ICON[item.type]" class="text-[10px] text-sky-500"></i>
+                      <i :class="ADJ_TYPE_ICON[item.type]" class="text-[10px] text-accent"></i>
                       <span class="text-xs font-medium text-ink">{{ ADJ_TYPE_LABEL[item.type] || item.type }}</span>
                       <Badge :variant="ADJ_STATUS_VARIANT[item.status] || 'neutral'" size="sm"
                         v-tippy="item.status === 'auto_resolved'
@@ -1628,7 +1628,7 @@ const closeModal = () => emit('close');
                     <p v-if="item.status_message"
                       class="text-micro mt-0.5"
                       :class="item.status === 'needs_review'
-                        ? 'text-amber-600 dark:text-amber-400'
+                        ? 'text-data-warn'
                         : 'text-ink-subtle'">
                       {{ item.status_message }}
                     </p>
@@ -1638,7 +1638,7 @@ const closeModal = () => emit('close');
                   </div>
                   <div class="flex items-center gap-0.5 shrink-0">
                     <Button v-if="item.status === 'needs_review'" variant="ghost" size="sm"
-                      icon="fas fa-check" class="!text-emerald-600 hover:!bg-emerald-500/10"
+                      icon="fas fa-check" class="!text-data-pos hover:!bg-data-pos/10"
                       v-tippy="'Manter o ajuste como está e adotar a origem atual como referência'"
                       @click="handleAdjustmentReview(item)">
                       <span class="hidden sm:inline">Já conferi</span>
@@ -1647,7 +1647,7 @@ const closeModal = () => emit('close');
                       <span class="hidden sm:inline">Editar</span>
                     </Button>
                     <Button variant="ghost" size="sm" icon="fas fa-trash"
-                      class="!text-red-500 hover:!bg-red-500/10"
+                      class="!text-data-neg hover:!bg-data-neg/10"
                       @click="handleAdjustmentRemove(item)" />
                   </div>
                 </li>
@@ -1691,7 +1691,7 @@ const closeModal = () => emit('close');
       <Button variant="ghost" @click="closeModal">Fechar</Button>
       <Button v-if="activeTab === 'obstit'"
         :icon="landSyncStore.syncLoading ? 'fas fa-circle-notch fa-spin' : 'fas fa-play'"
-        class="!bg-emerald-600 hover:!bg-emerald-700"
+        class="!bg-data-pos hover:!bg-data-pos"
         :disabled="landSyncStore.syncLoading"
         @click="handleRunSync">
         {{ landSyncStore.syncLoading ? 'Sincronizando...' : 'Sincronizar' }}

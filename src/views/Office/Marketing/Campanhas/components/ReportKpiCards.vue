@@ -41,13 +41,13 @@ const kpis = computed(() => {
     return [
         {
             key: 'spend', label: 'Investido', icon: 'fas fa-sack-dollar',
-            accent: 'text-blue-500 bg-blue-500/10',
+            accent: 'text-accent bg-accent/10',
             value: moneyFmt0.value.format(t.spend || 0),
             delta: delta(t.spend, p.spend), invert: false,
         },
         {
             key: 'leads', label: 'Leads', icon: 'fas fa-user-check',
-            accent: 'text-violet-500 bg-violet-500/10',
+            accent: 'text-accent bg-accent/10',
             value: intFmt.format(t.office_leads || 0),
             delta: delta(t.office_leads, p.office_leads), invert: false,
             // Leads da NOSSA base (inbound_leads), não a contagem da Meta: só
@@ -59,32 +59,32 @@ const kpis = computed(() => {
         },
         {
             key: 'cac', label: 'CAC', icon: 'fas fa-coins',
-            accent: 'text-amber-500 bg-amber-500/10',
+            accent: 'text-data-warn bg-data-warn/10',
             value: t.cac != null ? moneyFmt.value.format(t.cac) : '—',
             delta: delta(t.cac, p.cac), invert: true,     // menor = melhor
             hint: 'Investido ÷ leads da nossa base no período.',
         },
         {
             key: 'ctr', label: 'CTR', icon: 'fas fa-arrow-pointer',
-            accent: 'text-sky-500 bg-sky-500/10',
+            accent: 'text-accent bg-accent/10',
             value: t.ctr != null ? `${Number(t.ctr).toFixed(2)}%` : '—',
             delta: delta(t.ctr, p.ctr), invert: false,
         },
         {
             key: 'cpm', label: 'CPM', icon: 'fas fa-bullseye',
-            accent: 'text-rose-500 bg-rose-500/10',
+            accent: 'text-data-neg bg-data-neg/10',
             value: t.cpm != null ? moneyFmt.value.format(t.cpm) : '—',
             delta: delta(t.cpm, p.cpm), invert: true,     // menor = melhor
         },
         {
             key: 'clicks', label: 'Cliques', icon: 'fas fa-hand-pointer',
-            accent: 'text-emerald-500 bg-emerald-500/10',
+            accent: 'text-data-pos bg-data-pos/10',
             value: intFmt.format(t.clicks || 0),
             delta: delta(t.clicks, p.clicks), invert: false,
         },
         {
             key: 'impressions', label: 'Impressões', icon: 'fas fa-eye',
-            accent: 'text-cyan-500 bg-cyan-500/10',
+            accent: 'text-accent bg-accent/10',
             value: intFmt.format(t.impressions || 0),
             delta: delta(t.impressions, p.impressions), invert: false,
         },
@@ -99,8 +99,8 @@ function deltaView(item) {
         text: `${up ? '+' : ''}${item.delta.toFixed(item.delta >= 100 ? 0 : 1)}%`,
         icon: up ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down',
         cls: good
-            ? 'text-emerald-600 dark:text-emerald-300 bg-emerald-500/10'
-            : 'text-red-600 dark:text-red-300 bg-red-500/10',
+            ? 'text-data-pos bg-data-pos/10'
+            : 'text-data-neg bg-data-neg/10',
     };
 }
 </script>

@@ -99,29 +99,29 @@ const healthCopy = computed(() => {
 });
 
 const toneClasses = {
-    ok:     { wrap: 'border-emerald-500/30 bg-emerald-500/5', icon: 'fas fa-circle-check text-emerald-500', ring: 'text-emerald-600 dark:text-emerald-300' },
-    warn:   { wrap: 'border-amber-500/30 bg-amber-500/5',     icon: 'fas fa-triangle-exclamation text-amber-500', ring: 'text-amber-600 dark:text-amber-300' },
-    danger: { wrap: 'border-red-500/30 bg-red-500/5',         icon: 'fas fa-circle-exclamation text-red-500', ring: 'text-red-600 dark:text-red-300' },
+    ok:     { wrap: 'border-data-pos/30 bg-data-pos/5', icon: 'fas fa-circle-check text-data-pos', ring: 'text-data-pos' },
+    warn:   { wrap: 'border-data-warn/30 bg-data-warn/5',     icon: 'fas fa-triangle-exclamation text-data-warn', ring: 'text-data-warn' },
+    danger: { wrap: 'border-data-neg/30 bg-data-neg/5',         icon: 'fas fa-circle-exclamation text-data-neg', ring: 'text-data-neg' },
 };
 
 // Cards do funil
 const funnelCards = computed(() => {
     const f = funnel.value;
     return [
-        { key: 'delivered',  label: 'Entregues ao CV', value: f.delivered,  icon: 'fas fa-circle-check', accent: 'text-emerald-500 bg-emerald-500/10' },
-        { key: 'held',       label: 'Represados',       value: f.held,       icon: 'fas fa-hand',         accent: 'text-red-500 bg-red-500/10' },
-        { key: 'pending',    label: 'Aguardando envio', value: f.pending,    icon: 'fas fa-hourglass-half', accent: 'text-sky-500 bg-sky-500/10' },
-        { key: 'failed',     label: 'Falhas',           value: f.failed,     icon: 'fas fa-circle-xmark', accent: 'text-orange-500 bg-orange-500/10' },
+        { key: 'delivered',  label: 'Entregues ao CV', value: f.delivered,  icon: 'fas fa-circle-check', accent: 'text-data-pos bg-data-pos/10' },
+        { key: 'held',       label: 'Represados',       value: f.held,       icon: 'fas fa-hand',         accent: 'text-data-neg bg-data-neg/10' },
+        { key: 'pending',    label: 'Aguardando envio', value: f.pending,    icon: 'fas fa-hourglass-half', accent: 'text-accent bg-accent/10' },
+        { key: 'failed',     label: 'Falhas',           value: f.failed,     icon: 'fas fa-circle-xmark', accent: 'text-data-warn bg-data-warn/10' },
     ];
 });
 
 function statusBadge(s) {
     const up = String(s || '').toUpperCase();
-    if (up.includes('ACTIVE'))   return { label: 'Ativa',     cls: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 border-emerald-500/20' };
-    if (up.includes('PAUSED'))   return { label: 'Pausada',   cls: 'bg-amber-500/10 text-amber-600 dark:text-amber-300 border-amber-500/20' };
-    if (up.includes('ARCHIVED')) return { label: 'Arquivada', cls: 'bg-slate-500/10 text-slate-500 border-slate-500/20' };
-    if (up.includes('DELETED'))  return { label: 'Excluída',  cls: 'bg-red-500/10 text-red-600 dark:text-red-300 border-red-500/20' };
-    return { label: up || '—', cls: 'bg-slate-500/10 text-slate-500 border-slate-500/20' };
+    if (up.includes('ACTIVE'))   return { label: 'Ativa',     cls: 'bg-data-pos/10 text-data-pos border-data-pos/20' };
+    if (up.includes('PAUSED'))   return { label: 'Pausada',   cls: 'bg-data-warn/10 text-data-warn border-data-warn/20' };
+    if (up.includes('ARCHIVED')) return { label: 'Arquivada', cls: 'bg-slate-500/10 text-ink-muted border-line/20' };
+    if (up.includes('DELETED'))  return { label: 'Excluída',  cls: 'bg-data-neg/10 text-data-neg border-data-neg/20' };
+    return { label: up || '—', cls: 'bg-slate-500/10 text-ink-muted border-line/20' };
 }
 </script>
 
@@ -189,18 +189,18 @@ function statusBadge(s) {
         <section class="mb-5">
           <div class="flex items-center gap-2 mb-2">
             <h2 class="text-sm font-semibold text-ink flex items-center gap-2">
-              <i class="fas fa-triangle-exclamation text-red-500"></i>
+              <i class="fas fa-triangle-exclamation text-data-neg"></i>
               Campanhas sem vínculo represando leads
             </h2>
             <span v-if="held.campaigns.filter(c => !c.is_bound).length"
-              class="inline-flex rounded-full bg-red-500/10 text-red-600 dark:text-red-300 text-micro font-semibold px-2 py-0.5">
+              class="inline-flex rounded-full bg-data-neg/10 text-data-neg text-micro font-semibold px-2 py-0.5">
               {{ held.campaigns.filter(c => !c.is_bound).length }}
             </span>
           </div>
 
           <Surface variant="raised" padding="none" class="overflow-hidden">
             <div v-if="!held.campaigns.filter(c => !c.is_bound).length" class="px-4 py-8 text-center text-ink-subtle text-sm">
-              <i class="fas fa-circle-check text-emerald-500 text-xl mb-1.5 block"></i>
+              <i class="fas fa-circle-check text-data-pos text-xl mb-1.5 block"></i>
               Nenhuma campanha sem vínculo com leads represados. 🎉
             </div>
             <table v-else class="min-w-full text-sm">
@@ -241,7 +241,7 @@ function statusBadge(s) {
                     <span v-else>sem mídia definida</span>
                   </td>
                   <td class="px-3 py-2.5 text-right">
-                    <span class="inline-flex items-center gap-1 font-semibold text-red-600 dark:text-red-300">
+                    <span class="inline-flex items-center gap-1 font-semibold text-data-neg">
                       {{ fmtInt(c.held_count) }}
                     </span>
                   </td>
@@ -263,7 +263,7 @@ function statusBadge(s) {
           <div class="flex items-center justify-between gap-2 mb-2 flex-wrap">
             <div class="flex items-center gap-2">
               <h2 class="text-sm font-semibold text-ink flex items-center gap-2">
-                <i class="fas fa-rotate-right text-sky-500"></i>
+                <i class="fas fa-rotate-right text-accent"></i>
                 Represados recuperáveis
               </h2>
               <span class="text-micro text-ink-subtle">campanha já tem vínculo — só falta enviar ao CV</span>
@@ -277,8 +277,8 @@ function statusBadge(s) {
 
           <!-- Resultado do envio -->
           <div v-if="sendResult" class="mb-2 rounded-lg border px-3 py-2.5 text-sm"
-            :class="sendResult.failed ? 'border-amber-500/30 bg-amber-500/5 text-amber-800 dark:text-amber-200'
-                                      : 'border-emerald-500/20 bg-emerald-500/5 text-emerald-700 dark:text-emerald-300'">
+            :class="sendResult.failed ? 'border-data-warn/30 bg-data-warn/5 text-data-warn'
+                                      : 'border-data-pos/20 bg-data-pos/5 text-data-pos'">
             <i :class="sendResult.failed ? 'fas fa-triangle-exclamation' : 'fas fa-circle-check'" class="mr-1.5"></i>
             <b>{{ fmtInt(sendResult.delivered) }}</b> entregue(s) ao CV,
             <b>{{ fmtInt(sendResult.recoverable) }}</b> recuperado(s)
@@ -308,7 +308,7 @@ function statusBadge(s) {
         <section v-if="activeUnbound.length" class="mb-5">
           <div class="flex items-center gap-2 mb-2">
             <h2 class="text-sm font-semibold text-ink flex items-center gap-2">
-              <i class="fas fa-shield-halved text-amber-500"></i>
+              <i class="fas fa-shield-halved text-data-warn"></i>
               Campanhas ativas sem vínculo (preventivo)
             </h2>
             <span class="text-micro text-ink-subtle">ainda sem leads represados, mas vão gerar</span>
@@ -341,14 +341,14 @@ function statusBadge(s) {
         <!-- ══ Backlog pronto pra enviar ════════════════════════════════════ -->
         <section v-if="backlog && (backlog.historical_total > 0 || backlog.routed_pending > 0)" class="mb-5">
           <Surface variant="raised" padding="md" class="flex items-start gap-3">
-            <i class="fas fa-paper-plane text-violet-500 text-lg mt-0.5"></i>
+            <i class="fas fa-paper-plane text-accent text-lg mt-0.5"></i>
             <div class="flex-1 min-w-0">
               <div class="text-sm font-medium text-ink">Backlog pronto pra enviar ao CV</div>
               <div class="text-xs text-ink-muted mt-0.5">
                 <b>{{ fmtInt(backlog.historical_total) }}</b> histórico(s)
                 <template v-if="backlog.routed_pending"> · <b>{{ fmtInt(backlog.routed_pending) }}</b> na fila</template>
                 aguardando disparo (desde {{ backlog.cutoff }}).
-                <span v-if="backlog.shadow_mode" class="text-amber-600 dark:text-amber-300">Modo sombra ligado — desligue antes de disparar.</span>
+                <span v-if="backlog.shadow_mode" class="text-data-warn">Modo sombra ligado — desligue antes de disparar.</span>
               </div>
             </div>
             <RouterLink to="/meta?tab=campanhas"
@@ -384,7 +384,7 @@ function statusBadge(s) {
 
       <!-- Erro -->
       <div v-if="store.error && !ov"
-        class="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-300 flex items-start gap-2">
+        class="rounded-lg border border-data-neg/20 bg-data-neg/10 px-3 py-2 text-sm text-data-neg flex items-start gap-2">
         <i class="fas fa-circle-exclamation mt-0.5"></i>
         <div>{{ store.error }}</div>
       </div>

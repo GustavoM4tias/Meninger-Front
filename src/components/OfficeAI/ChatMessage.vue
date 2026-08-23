@@ -49,23 +49,23 @@ const warning = computed(() => props.message.metadata?.warning || null);
 //  notice     → avisos legados (resposta cortada, filtro do modelo)
 const warningStyle = computed(() => ({
   corrected: {
-    box: 'bg-sky-500/10 border-sky-500/25 text-sky-700 dark:text-sky-300',
-    icon: 'fas fa-wand-magic-sparkles text-sky-500',
+    box: 'bg-accent/10 border-accent/25 text-accent',
+    icon: 'fas fa-wand-magic-sparkles text-accent',
     title: 'Resposta corrigida automaticamente',
   },
   blocked: {
-    box: 'bg-amber-500/10 border-amber-500/25 text-amber-700 dark:text-amber-300',
-    icon: 'fas fa-shield-halved text-amber-500',
+    box: 'bg-data-warn/10 border-data-warn/25 text-data-warn',
+    icon: 'fas fa-shield-halved text-data-warn',
     title: 'Resposta substituída pelos dados reais',
   },
   unreliable: {
-    box: 'bg-red-500/10 border-red-500/30 text-red-700 dark:text-red-300',
-    icon: 'fas fa-circle-exclamation text-red-500',
+    box: 'bg-data-neg/10 border-data-neg/30 text-data-neg',
+    icon: 'fas fa-circle-exclamation text-data-neg',
     title: 'Resposta não confiável',
   },
   notice: {
-    box: 'bg-amber-500/10 border-amber-500/20 text-amber-700 dark:text-amber-300',
-    icon: 'fas fa-triangle-exclamation text-amber-500',
+    box: 'bg-data-warn/10 border-data-warn/20 text-data-warn',
+    icon: 'fas fa-triangle-exclamation text-data-warn',
     title: null,
   },
 }[warning.value?.kind || 'notice']));
@@ -110,7 +110,7 @@ const stepsOpen = ref(false);
     <div class="flex-1 min-w-0" :class="compact ? 'space-y-1.5' : 'space-y-2'">
       <!-- Erro com limite de storage -->
       <div v-if="isError && message.metadata?.storageLimit"
-        class="flex items-start gap-2 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-sm text-amber-700 dark:text-amber-300">
+        class="flex items-start gap-2 p-3 rounded-xl bg-data-warn/10 border border-data-warn/20 text-sm text-data-warn">
         <i class="fas fa-database mt-0.5 shrink-0"></i>
         <span>
           Limite de 20 MB atingido.
@@ -131,7 +131,7 @@ const stepsOpen = ref(false);
 
         <!-- Resposta interrompida (cancelamento/timeout preservou o parcial) -->
         <p v-if="message.metadata?.interrupted"
-          class="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
+          class="flex items-center gap-1.5 text-xs text-data-warn">
           <i class="fas fa-triangle-exclamation"></i>
           Resposta interrompida antes do fim.
         </p>
@@ -207,14 +207,14 @@ const stepsOpen = ref(false);
         <div v-if="!streaming && steps.length" class="text-micro text-ink-subtle">
           <button type="button" @click="stepsOpen = !stepsOpen"
             class="inline-flex items-center gap-1.5 hover:text-ink-muted transition-colors">
-            <i class="fas fa-circle-check text-emerald-500/80"></i>
+            <i class="fas fa-circle-check text-data-pos"></i>
             <span>{{ steps.length }} consulta{{ steps.length > 1 ? 's' : '' }}<template v-if="elapsedSec"> · {{ elapsedSec }}s</template></span>
             <i class="fas text-[9px]" :class="stepsOpen ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
           </button>
           <ul v-if="stepsOpen" class="mt-1 space-y-0.5 pl-0.5">
             <li v-for="(s, i) in steps" :key="i" class="flex items-center gap-1.5">
               <i class="shrink-0 text-[10px]"
-                :class="s.status === 'error' ? 'fas fa-circle-exclamation text-amber-500' : 'fas fa-check text-emerald-500/80'"></i>
+                :class="s.status === 'error' ? 'fas fa-circle-exclamation text-data-warn' : 'fas fa-check text-data-pos'"></i>
               <span class="truncate">{{ s.label }}</span>
               <span v-if="s.ms != null" class="shrink-0 font-mono text-micro opacity-70">{{ (s.ms / 1000).toFixed(1) }}s</span>
             </li>
@@ -226,16 +226,16 @@ const stepsOpen = ref(false);
           <button @click="$emit('feedback', 'up')"
             class="h-7 w-7 grid place-items-center rounded-md transition text-xs"
             :class="message.feedback === 'up'
-              ? 'text-emerald-500 bg-emerald-500/10'
-              : 'text-ink-subtle hover:text-emerald-500 hover:bg-emerald-500/10'"
+              ? 'text-data-pos bg-data-pos/10'
+              : 'text-ink-subtle hover:text-data-pos hover:bg-data-pos/10'"
             title="Boa resposta">
             <i class="fas fa-thumbs-up"></i>
           </button>
           <button @click="$emit('feedback', 'down')"
             class="h-7 w-7 grid place-items-center rounded-md transition text-xs"
             :class="message.feedback === 'down'
-              ? 'text-red-500 bg-red-500/10'
-              : 'text-ink-subtle hover:text-red-500 hover:bg-red-500/10'"
+              ? 'text-data-neg bg-data-neg/10'
+              : 'text-ink-subtle hover:text-data-neg hover:bg-data-neg/10'"
             title="Resposta ruim">
             <i class="fas fa-thumbs-down"></i>
           </button>

@@ -42,10 +42,10 @@ const composerPlaceholder = computed(() => {
 
 const composerStateClass = computed(() => ({
   OFF:        'border-line focus-within:border-accent focus-within:ring-2 focus-within:ring-accent-ring/20',
-  ARMED:      'border-blue-500/50 ring-2 ring-blue-500/20',
-  LISTENING:  'border-red-500/60 ring-2 ring-red-500/20',
-  PROCESSING: 'border-purple-500/60 ring-2 ring-purple-500/20',
-  SPEAKING:   'border-amber-500/50 ring-2 ring-amber-500/20',
+  ARMED:      'border-accent/50 ring-2 ring-accent/20',
+  LISTENING:  'border-data-neg/60 ring-2 ring-data-neg/20',
+  PROCESSING: 'border-accent/60 ring-2 ring-accent/20',
+  SPEAKING:   'border-data-warn/50 ring-2 ring-data-warn/20',
 }[voice.state.value] || ''))
 
 const alwaysOnPersisted = computed(() =>
@@ -54,14 +54,14 @@ const alwaysOnPersisted = computed(() =>
 
 const micIconClass = computed(() => {
   if (voice.state.value === 'OFF' && alwaysOnPersisted.value) {
-    return 'fas fa-microphone text-amber-500 animate-pulse'
+    return 'fas fa-microphone text-data-warn animate-pulse'
   }
   return ({
     OFF:        'fas fa-microphone text-ink-subtle',
-    ARMED:      'fas fa-microphone text-blue-500',
-    LISTENING:  'fas fa-waveform-lines text-red-500 animate-pulse',
-    PROCESSING: 'fas fa-circle-notch fa-spin text-purple-500',
-    SPEAKING:   'fas fa-volume-high text-amber-500',
+    ARMED:      'fas fa-microphone text-accent',
+    LISTENING:  'fas fa-waveform-lines text-data-neg animate-pulse',
+    PROCESSING: 'fas fa-circle-notch fa-spin text-accent',
+    SPEAKING:   'fas fa-volume-high text-data-warn',
   }[voice.state.value])
 })
 
@@ -204,10 +204,10 @@ async function confirmFeedback({ comment }) {
               'w-8 h-8 rounded-full flex items-center justify-center transition',
               'bg-surface-raised hover:bg-accent-soft border border-line',
               voice.isActive.value ? 'ring-2 ring-offset-1 ring-offset-surface' : '',
-              voice.state.value === 'LISTENING' ? 'ring-red-500/40' : '',
-              voice.state.value === 'ARMED' ? 'ring-blue-500/40' : '',
-              voice.state.value === 'PROCESSING' ? 'ring-purple-500/40' : '',
-              voice.state.value === 'SPEAKING' ? 'ring-amber-500/40' : '',
+              voice.state.value === 'LISTENING' ? 'ring-data-neg/40' : '',
+              voice.state.value === 'ARMED' ? 'ring-accent/40' : '',
+              voice.state.value === 'PROCESSING' ? 'ring-accent/40' : '',
+              voice.state.value === 'SPEAKING' ? 'ring-data-warn/40' : '',
             ]">
             <i :class="micIconClass" class="text-xs" />
           </button>

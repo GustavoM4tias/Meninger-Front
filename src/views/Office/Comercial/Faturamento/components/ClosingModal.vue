@@ -418,7 +418,7 @@ const closeModal = () => emit('close');
       </div>
 
       <div v-if="error"
-        class="rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2.5 text-xs text-red-700 dark:text-red-300 flex items-center gap-2">
+        class="rounded-xl border border-data-neg/20 bg-data-neg/10 px-3 py-2.5 text-xs text-data-neg flex items-center gap-2">
         <i class="fas fa-circle-exclamation"></i>{{ error }}
       </div>
 
@@ -439,12 +439,12 @@ const closeModal = () => emit('close');
         <Button variant="ghost" size="sm" icon="fas fa-rotate-left" @click="resetPeriodo">
           Ano atual
         </Button>
-        <p v-if="periodoInvalido" class="text-micro text-red-500 ml-auto">
+        <p v-if="periodoInvalido" class="text-micro text-data-neg ml-auto">
           O mês inicial está depois do final.
         </p>
         <p v-else class="text-micro text-ink-subtle ml-auto font-mono">
           {{ resumoPeriodo.total }} mês(es) ·
-          <span class="text-emerald-600 dark:text-emerald-400">{{ resumoPeriodo.consolidados }} consolidado(s)</span> ·
+          <span class="text-data-pos">{{ resumoPeriodo.consolidados }} consolidado(s)</span> ·
           {{ resumoPeriodo.abertos }} aberto(s)
         </p>
       </div>
@@ -525,7 +525,7 @@ const closeModal = () => emit('close');
                       <span class="font-mono text-ink-subtle">{{ e.id }}</span> - {{ e.name }}
                     </span>
                     <span class="shrink-0 font-mono tabular-nums text-ink-muted">
-                      {{ e.count }}v · <span class="text-emerald-600 dark:text-emerald-400 font-semibold">{{ formatCurrency(e.vgv_net) }}</span>
+                      {{ e.count }}v · <span class="text-data-pos font-semibold">{{ formatCurrency(e.vgv_net) }}</span>
                     </span>
                   </div>
                 </div>
@@ -534,7 +534,7 @@ const closeModal = () => emit('close');
               <!-- Divergências -->
               <div>
                 <h4 class="text-xs font-semibold text-ink mb-2 flex items-center gap-2">
-                  <i class="fas fa-triangle-exclamation text-[10px] text-amber-500"></i>
+                  <i class="fas fa-triangle-exclamation text-[10px] text-data-warn"></i>
                   Divergências detectadas depois do fechamento
                   <Badge v-if="openDivergences.length" variant="danger" size="sm">{{ openDivergences.length }} aberta(s)</Badge>
                 </h4>
@@ -547,7 +547,7 @@ const closeModal = () => emit('close');
                 <ul v-else class="rounded-lg border border-line bg-surface-raised divide-y divide-line">
                   <li v-for="d in [...openDivergences, ...reviewedDivergences]" :key="d.id"
                     class="px-3 py-2.5 flex items-start justify-between gap-2"
-                    :class="d.status === 'open' ? 'bg-red-500/5' : 'opacity-60'">
+                    :class="d.status === 'open' ? 'bg-data-neg/5' : 'opacity-60'">
                     <div class="min-w-0 text-xs">
                       <p class="font-medium text-ink">
                         {{ KIND_LABEL[d.kind] || d.kind }}
@@ -584,7 +584,7 @@ const closeModal = () => emit('close');
                 <ul class="rounded-lg border border-line bg-surface-raised divide-y divide-line">
                   <li v-for="v in versoes" :key="v.version"
                     class="px-3 py-2.5 flex items-start justify-between gap-2"
-                    :class="v.vigente ? 'bg-emerald-500/5' : ''">
+                    :class="v.vigente ? 'bg-data-pos/5' : ''">
                     <div class="min-w-0">
                       <p class="text-xs font-medium text-ink flex items-center gap-1.5 flex-wrap">
                         <span class="font-mono">v{{ v.version }}</span>
@@ -593,7 +593,7 @@ const closeModal = () => emit('close');
                       </p>
                       <p class="text-micro text-ink-muted font-mono mt-0.5">
                         {{ v.totals?.count ?? '—' }} venda(s) ·
-                        <span class="text-emerald-600 dark:text-emerald-400 font-semibold">{{ formatCurrency(v.totals?.vgv_net) }}</span>
+                        <span class="text-data-pos font-semibold">{{ formatCurrency(v.totals?.vgv_net) }}</span>
                         <span v-if="v.totals?.vgv_gross"> · VGV+DC {{ formatCurrency(v.totals.vgv_gross) }}</span>
                       </p>
                     </div>
@@ -633,7 +633,7 @@ const closeModal = () => emit('close');
 
       <div class="rounded-xl px-3 py-2.5 text-xs flex items-start gap-2"
         :class="pendente.isRedo
-          ? 'border border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300'
+          ? 'border border-data-warn/30 bg-data-warn/10 text-data-warn'
           : 'border border-accent/30 bg-accent-soft text-ink-muted'">
         <i class="fas fa-triangle-exclamation mt-0.5 shrink-0"></i>
         <span v-if="pendente.isRedo">
@@ -660,7 +660,7 @@ const closeModal = () => emit('close');
           <span class="text-ink font-medium">
             {{ pendente.isRedo ? `Vai gravar (v${(pendente.atual?.version || 0) + 1})` : 'Vai gravar (v1)' }}
           </span>
-          <span class="font-mono tabular-nums text-emerald-600 dark:text-emerald-400 font-semibold">
+          <span class="font-mono tabular-nums text-data-pos font-semibold">
             {{ pendente.totals.count }} venda(s) · {{ formatCurrency(pendente.totals.vgv_net) }}
           </span>
         </div>
@@ -668,7 +668,7 @@ const closeModal = () => emit('close');
           class="px-3 py-2 bg-surface-sunken border-t border-line flex items-center justify-between gap-2 text-xs">
           <span class="text-ink-muted">Diferença</span>
           <span class="font-mono tabular-nums font-semibold"
-            :class="delta.vgv >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500'">
+            :class="delta.vgv >= 0 ? 'text-data-pos' : 'text-data-neg'">
             {{ delta.count >= 0 ? '+' : '' }}{{ delta.count }} venda(s) ·
             {{ delta.vgv >= 0 ? '+' : '' }}{{ formatCurrency(delta.vgv) }}
           </span>
@@ -684,7 +684,7 @@ const closeModal = () => emit('close');
       </p>
 
       <div v-if="error"
-        class="rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-700 dark:text-red-300">
+        class="rounded-xl border border-data-neg/20 bg-data-neg/10 px-3 py-2 text-xs text-data-neg">
         {{ error }}
       </div>
     </div>
@@ -692,7 +692,7 @@ const closeModal = () => emit('close');
     <template #footer>
       <Button variant="ghost" :disabled="gravando" @click="cancelarConsolidacao">Cancelar</Button>
       <Button :icon="gravando ? 'fas fa-circle-notch fa-spin' : (pendente?.isRedo ? 'fas fa-rotate' : 'fas fa-lock')"
-        :class="pendente?.isRedo ? '!bg-amber-500 hover:!bg-amber-600' : ''"
+        :class="pendente?.isRedo ? '!bg-data-warn hover:!bg-data-warn' : ''"
         :disabled="gravando" @click="confirmarConsolidacao">
         {{ gravando ? 'Gravando...' : (pendente?.isRedo ? 'Substituir' : 'Consolidar') }}
       </Button>

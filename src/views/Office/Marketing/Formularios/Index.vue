@@ -31,7 +31,7 @@ onMounted(() => store.fetchAll());
 
       <!-- Aviso sobre forms Meta -->
       <div class="mb-4 flex items-start gap-2.5 rounded-lg border border-line bg-surface-sunken/30 px-3 py-2.5 text-xs text-ink-muted">
-        <i class="fab fa-meta text-blue-500 mt-0.5"></i>
+        <i class="fab fa-meta text-accent mt-0.5"></i>
         <div>
           <b class="text-ink">Forms da Meta?</b> São gerenciados em
           <RouterLink to="/meta?tab=campanhas" class="text-accent hover:underline">Campanhas → abrir campanha → aba Anúncios → badge do form</RouterLink>.

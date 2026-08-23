@@ -411,18 +411,18 @@ function fmtRelative(iso) {
 
 function statusBadge(c) {
     const s = String(c.effective_status || c.status || '').toUpperCase();
-    if (s.includes('ACTIVE'))   return { label: 'Ativa',     cls: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 border-emerald-500/20' };
-    if (s.includes('PAUSED'))   return { label: 'Pausada',   cls: 'bg-amber-500/10 text-amber-600 dark:text-amber-300 border-amber-500/20' };
-    if (s.includes('DELETED'))  return { label: 'Excluída',  cls: 'bg-red-500/10 text-red-600 dark:text-red-300 border-red-500/20' };
-    if (s.includes('ARCHIVED')) return { label: 'Arquivada', cls: 'bg-slate-500/10 text-slate-500 border-slate-500/20' };
-    if (s.includes('COMPLETED')) return { label: 'Concluída', cls: 'bg-slate-500/10 text-slate-500 border-slate-500/20' };
-    return { label: s || '—', cls: 'bg-slate-500/10 text-slate-500 border-slate-500/20' };
+    if (s.includes('ACTIVE'))   return { label: 'Ativa',     cls: 'bg-data-pos/10 text-data-pos border-data-pos/20' };
+    if (s.includes('PAUSED'))   return { label: 'Pausada',   cls: 'bg-data-warn/10 text-data-warn border-data-warn/20' };
+    if (s.includes('DELETED'))  return { label: 'Excluída',  cls: 'bg-data-neg/10 text-data-neg border-data-neg/20' };
+    if (s.includes('ARCHIVED')) return { label: 'Arquivada', cls: 'bg-slate-500/10 text-ink-muted border-line/20' };
+    if (s.includes('COMPLETED')) return { label: 'Concluída', cls: 'bg-slate-500/10 text-ink-muted border-line/20' };
+    return { label: s || '—', cls: 'bg-slate-500/10 text-ink-muted border-line/20' };
 }
 
 function priorityDot(p) {
-    if (p === 'high')   return { cls: 'bg-red-500',     title: 'Prioridade alta' };
+    if (p === 'high')   return { cls: 'bg-data-neg',     title: 'Prioridade alta' };
     if (p === 'low')    return { cls: 'bg-slate-400',   title: 'Prioridade baixa' };
-    return { cls: 'bg-emerald-500', title: 'Prioridade normal' };
+    return { cls: 'bg-data-pos', title: 'Prioridade normal' };
 }
 
 // Contador aparece quando o dado do nível já está carregado (senão null = oculto).
@@ -471,7 +471,7 @@ const levelTabs = computed(() => [
 
       <!-- Banner: série diária sem cobertura no período -->
       <div v-if="needsBackfill && level !== 'forms'"
-        class="mb-4 rounded-lg border border-sky-500/30 bg-sky-500/5 px-3 py-2.5 text-sm text-sky-800 dark:text-sky-200 flex items-start gap-2.5 flex-wrap">
+        class="mb-4 rounded-lg border border-accent/30 bg-accent/5 px-3 py-2.5 text-sm text-accent flex items-start gap-2.5 flex-wrap">
         <i class="fas fa-database mt-0.5"></i>
         <div class="flex-1 min-w-[220px]">
           <b>Sem dados diários pra este período/nível.</b>
@@ -506,8 +506,8 @@ const levelTabs = computed(() => [
       <div v-if="store.lastSync"
         :class="['rounded-lg border px-3 py-2.5 text-sm mb-3',
           store.lastSync.errors?.length
-            ? 'border-amber-500/30 bg-amber-500/5 text-amber-800 dark:text-amber-200'
-            : 'border-emerald-500/20 bg-emerald-500/5 text-emerald-700 dark:text-emerald-300']">
+            ? 'border-data-warn/30 bg-data-warn/5 text-data-warn'
+            : 'border-data-pos/20 bg-data-pos/5 text-data-pos']">
         <div class="flex items-start gap-2">
           <i :class="store.lastSync.errors?.length ? 'fas fa-triangle-exclamation' : 'fas fa-circle-check'" class="mt-0.5"></i>
           <div class="flex-1">
@@ -519,9 +519,9 @@ const levelTabs = computed(() => [
             </div>
             <div v-if="store.lastSync.errors?.length" class="mt-1.5 space-y-1">
               <div v-for="(e, i) in store.lastSync.errors" :key="i"
-                class="text-xs rounded border border-amber-500/30 bg-amber-500/10 px-2 py-1.5">
+                class="text-xs rounded border border-data-warn/30 bg-data-warn/10 px-2 py-1.5">
                 <div class="font-medium"><i class="fas fa-circle-exclamation mr-1"></i>{{ e.account_name || 'Conta' }} <span class="text-ink-subtle font-mono">#{{ e.account_id }}</span></div>
-                <div class="text-amber-700 dark:text-amber-300 mt-0.5 font-mono text-micro break-words">{{ e.error }}</div>
+                <div class="text-data-warn mt-0.5 font-mono text-micro break-words">{{ e.error }}</div>
               </div>
             </div>
           </div>
@@ -535,25 +535,25 @@ const levelTabs = computed(() => [
             <i class="fas fa-clock-rotate-left text-ink-subtle"></i>
             Operações recentes ({{ store.ops.length }})
           </div>
-          <button @click="store.clearOps()" class="text-micro text-ink-subtle hover:text-red-500">limpar</button>
+          <button @click="store.clearOps()" class="text-micro text-ink-subtle hover:text-data-neg">limpar</button>
         </div>
         <ul class="divide-y divide-line/60 max-h-60 overflow-y-auto">
           <li v-for="op in store.ops" :key="op.id" class="px-3 py-2 text-xs flex items-start gap-2.5">
             <span class="mt-0.5 shrink-0 w-5 text-center">
-              <i v-if="op.status === 'running'" class="fas fa-circle-notch fa-spin text-sky-500"></i>
-              <i v-else-if="op.status === 'success'" class="fas fa-circle-check text-emerald-500"></i>
-              <i v-else class="fas fa-circle-xmark text-red-500"></i>
+              <i v-if="op.status === 'running'" class="fas fa-circle-notch fa-spin text-accent"></i>
+              <i v-else-if="op.status === 'success'" class="fas fa-circle-check text-data-pos"></i>
+              <i v-else class="fas fa-circle-xmark text-data-neg"></i>
             </span>
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2 flex-wrap">
                 <span :class="[
                   'inline-flex rounded text-micro px-1.5 py-0.5 font-mono uppercase',
-                  op.type === 'sync'      ? 'bg-blue-500/10 text-blue-700 dark:text-blue-300' :
-                  op.type === 'import'    ? 'bg-violet-500/10 text-violet-700 dark:text-violet-300' :
-                  op.type === 'backfill'  ? 'bg-sky-500/10 text-sky-700 dark:text-sky-300' :
-                  op.type === 'reconcile' ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300' :
-                  op.type === 'ads'       ? 'bg-amber-500/10 text-amber-700 dark:text-amber-300' :
-                  'bg-slate-500/10 text-slate-600 dark:text-slate-300'
+                  op.type === 'sync'      ? 'bg-accent/10 text-accent' :
+                  op.type === 'import'    ? 'bg-accent/10 text-accent' :
+                  op.type === 'backfill'  ? 'bg-accent/10 text-accent' :
+                  op.type === 'reconcile' ? 'bg-data-pos/10 text-data-pos' :
+                  op.type === 'ads'       ? 'bg-data-warn/10 text-data-warn' :
+                  'bg-slate-500/10 text-ink-muted'
                 ]">{{ op.type }}</span>
                 <span class="font-medium text-ink truncate">{{ op.label }}</span>
                 <span class="text-micro text-ink-subtle ml-auto whitespace-nowrap">
@@ -567,18 +567,18 @@ const levelTabs = computed(() => [
               <div v-else-if="op.status === 'success' && op.type === 'sync'" class="text-micro text-ink-muted mt-0.5">
                 <b>{{ op.result.campaigns_total }}</b> campanhas em {{ op.result.accounts_count }} contas
                 ({{ op.result.campaigns_new }} novas)
-                <span v-if="op.result.errors?.length" class="text-amber-600 dark:text-amber-300">· {{ op.result.errors.length }} erros</span>
+                <span v-if="op.result.errors?.length" class="text-data-warn">· {{ op.result.errors.length }} erros</span>
               </div>
 
               <div v-else-if="op.status === 'success' && op.type === 'import'" class="text-micro text-ink-muted mt-0.5">
                 <b>{{ op.result.inserted }}</b> novos · {{ op.result.duplicates }} duplicados · {{ op.result.forms_count }} forms
-                <span v-if="op.result.errors?.length" class="text-amber-600 dark:text-amber-300">· {{ op.result.errors.length }} erros</span>
+                <span v-if="op.result.errors?.length" class="text-data-warn">· {{ op.result.errors.length }} erros</span>
               </div>
 
               <div v-else-if="op.status === 'success' && op.type === 'backfill'" class="text-micro text-ink-muted mt-0.5">
                 <b>{{ fmtInt(op.result.rows_written) }}</b> linhas diárias · {{ op.result.accounts_count }} contas
                 · níveis: {{ (op.result.levels || []).join(', ') }}
-                <span v-if="op.result.errors?.length" class="text-amber-600 dark:text-amber-300">· {{ op.result.errors.length }} erros</span>
+                <span v-if="op.result.errors?.length" class="text-data-warn">· {{ op.result.errors.length }} erros</span>
               </div>
 
               <div v-else-if="op.status === 'success' && op.type === 'reconcile'" class="text-micro text-ink-muted mt-0.5">
@@ -589,12 +589,12 @@ const levelTabs = computed(() => [
                 <b>{{ op.result.ads_total }}</b> ads · {{ op.result.ads_new }} novos · {{ op.result.ads_updated }} atualizados
               </div>
 
-              <div v-else-if="op.status === 'error'" class="text-micro text-red-600 dark:text-red-300 mt-0.5 break-words">
+              <div v-else-if="op.status === 'error'" class="text-micro text-data-neg mt-0.5 break-words">
                 {{ op.error || 'erro desconhecido' }}
               </div>
 
               <details v-if="op.result?.errors?.length" class="mt-1">
-                <summary class="text-micro text-amber-600 dark:text-amber-300 cursor-pointer">ver detalhes dos {{ op.result.errors.length }} erro(s)</summary>
+                <summary class="text-micro text-data-warn cursor-pointer">ver detalhes dos {{ op.result.errors.length }} erro(s)</summary>
                 <ul class="mt-1 ml-2 space-y-0.5 text-micro text-ink-muted font-mono max-h-32 overflow-y-auto">
                   <li v-for="(e, i) in op.result.errors.slice(0, 20)" :key="i">
                     <b>{{ e.form_name || e.page_name || e.account_name || '?' }}:</b> {{ e.error }}
@@ -609,7 +609,7 @@ const levelTabs = computed(() => [
 
       <!-- Resultado import histórico -->
       <div v-if="store.lastImport"
-        class="rounded-lg border border-blue-500/30 bg-blue-500/5 px-3 py-2.5 text-sm text-blue-700 dark:text-blue-300 mb-3">
+        class="rounded-lg border border-accent/30 bg-accent/5 px-3 py-2.5 text-sm text-accent mb-3">
         <div class="flex items-start gap-2">
           <i class="fas fa-cloud-arrow-down mt-0.5"></i>
           <div class="flex-1">
@@ -619,7 +619,7 @@ const levelTabs = computed(() => [
               <b>{{ store.lastImport.duplicates }}</b> duplicado(s)
               · janela desde {{ store.lastImport.since }}
             </div>
-            <div v-if="store.lastImport.errors?.length" class="mt-1.5 text-xs text-amber-700 dark:text-amber-300">
+            <div v-if="store.lastImport.errors?.length" class="mt-1.5 text-xs text-data-warn">
               ⚠️ {{ store.lastImport.errors.length }} form(s) com erro
               <span v-for="(e, i) in store.lastImport.errors.slice(0, 3)" :key="i" class="block font-mono text-micro mt-0.5">
                 {{ e.form_name }}: {{ e.error }}
@@ -634,7 +634,7 @@ const levelTabs = computed(() => [
 
       <!-- Erro -->
       <div v-if="store.error"
-        class="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-300 flex items-start gap-2 mb-3">
+        class="rounded-lg border border-data-neg/20 bg-data-neg/10 px-3 py-2 text-sm text-data-neg flex items-start gap-2 mb-3">
         <i class="fas fa-circle-exclamation mt-0.5"></i>
         <div>{{ store.error }}</div>
       </div>
@@ -727,7 +727,7 @@ const levelTabs = computed(() => [
                 <div class="text-sm font-semibold text-ink truncate" :title="a.name">{{ a.name }}</div>
                 <div class="text-micro font-mono text-ink-subtle truncate">{{ a.id }}</div>
               </div>
-              <span v-if="a.active" class="inline-flex rounded-md border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-micro font-medium text-emerald-600 dark:text-emerald-300 whitespace-nowrap">
+              <span v-if="a.active" class="inline-flex rounded-md border border-data-pos/20 bg-data-pos/10 px-2 py-0.5 text-micro font-medium text-data-pos whitespace-nowrap">
                 {{ a.active }} ativa{{ a.active > 1 ? 's' : '' }}
               </span>
             </div>
@@ -918,7 +918,7 @@ const levelTabs = computed(() => [
       <template v-else>
         <div class="flex items-center justify-between gap-2 mb-3 flex-wrap">
           <p class="text-xs text-ink-muted">
-            <i class="fab fa-meta text-blue-500 mr-1"></i>
+            <i class="fab fa-meta text-accent mr-1"></i>
             Formulários de Lead Ads da Página. O vínculo (empreendimento/mídia) vive na <b>campanha</b>;
             aqui você mapeia os <b>campos</b> (pergunta → CV) e vê os leads recentes de cada form.
           </p>
@@ -952,8 +952,8 @@ const levelTabs = computed(() => [
               </div>
               <span :class="['inline-flex rounded-md border px-2 py-0.5 text-micro font-medium whitespace-nowrap',
                 String(f.status).toUpperCase() === 'ACTIVE'
-                  ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300'
-                  : 'border-slate-500/20 bg-slate-500/10 text-slate-500']">
+                  ? 'border-data-pos/20 bg-data-pos/10 text-data-pos'
+                  : 'border-line/20 bg-slate-500/10 text-ink-muted']">
                 {{ String(f.status).toUpperCase() === 'ACTIVE' ? 'Ativo' : (f.status || '—') }}
               </span>
             </div>

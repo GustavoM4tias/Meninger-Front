@@ -167,36 +167,36 @@ function downloadCSV() {
 </script>
 
 <template>
-  <div class="rounded-2xl overflow-hidden bg-white dark:bg-slate-900 mt-2 shadow">
+  <div class="rounded-2xl overflow-hidden bg-surface-raised mt-2 shadow">
     <!-- Header -->
-    <div class="px-4 py-3 bg-slate-300/20 dark:bg-slate-800/60 flex items-center justify-between gap-2 border-b border-white/5">
+    <div class="px-4 py-3 bg-slate-300/20 bg-surface-sunken flex items-center justify-between gap-2 border-b border-white/5">
       <div class="flex items-center gap-2 min-w-0">
-        <span class="w-1.5 h-5 rounded-full bg-indigo-500 flex-shrink-0" />
+        <span class="w-1.5 h-5 rounded-full bg-accent flex-shrink-0" />
         <div class="min-w-0">
           <div class="flex items-baseline gap-2">
-            <span class="text-sm font-medium dark:text-gray-200 truncate">{{ title || 'Gráfico' }}</span>
-            <span v-if="total != null" class="text-xs text-indigo-600 dark:text-indigo-400 font-semibold tabular-nums whitespace-nowrap">
+            <span class="text-sm font-medium text-ink truncate">{{ title || 'Gráfico' }}</span>
+            <span v-if="total != null" class="text-xs text-accent font-semibold tabular-nums whitespace-nowrap">
               Total: {{ fmtNumber(total) }}
             </span>
           </div>
-          <p v-if="subtitle" class="text-micro text-gray-500 dark:text-slate-500 truncate mt-0.5">{{ subtitle }}</p>
+          <p v-if="subtitle" class="text-micro text-ink-muted truncate mt-0.5">{{ subtitle }}</p>
         </div>
       </div>
 
       <div class="flex items-center gap-1.5 flex-shrink-0">
         <!-- Toggle bar/pie -->
-        <div v-if="canToggle" class="flex bg-white hover:bg-slate-100 dark:bg-slate-700/60 dark:hover:bg-slate-700 shadow-sm hover:shadow rounded-lg p-0.5 mr-1">
+        <div v-if="canToggle" class="flex bg-surface-raised hover:bg-surface-sunken shadow-sm hover:shadow rounded-lg p-0.5 mr-1">
           <button
             @click="activeType = 'bar'"
             class="px-2 py-0.5 rounded-md text-xs transition"
-            :class="activeType === 'bar' ? 'bg-indigo-500 text-white' : 'text-slate-600 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'"
+            :class="activeType === 'bar' ? 'bg-accent text-white' : 'text-ink-muted hover:text-ink-subtle dark:hover:text-ink'"
           >
             <i class="fas fa-chart-bar" />
           </button>
           <button
             @click="activeType = 'pie'"
             class="px-2 py-0.5 rounded-md text-xs transition"
-            :class="activeType === 'pie' ? 'bg-indigo-500 text-white' : 'text-slate-600 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'"
+            :class="activeType === 'pie' ? 'bg-accent text-white' : 'text-ink-muted hover:text-ink-subtle dark:hover:text-ink'"
           >
             <i class="fas fa-chart-pie" />
           </button>
@@ -204,15 +204,15 @@ function downloadCSV() {
 
         <button
           @click="copyImage"
-          class="flex items-center gap-1 px-2.5 py-1 rounded-lg shadow-sm hover:shadow duration-300 bg-white hover:bg-slate-100 dark:bg-slate-700/60 dark:hover:bg-slate-700 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 text-xs transition"
+          class="flex items-center gap-1 px-2.5 py-1 rounded-lg shadow-sm hover:shadow duration-300 bg-surface-raised hover:bg-surface-sunken text-ink-muted hover:text-ink-subtle dark:hover:text-ink text-xs transition"
           title="Copiar imagem para a área de transferência"
         >
-          <i :class="copied ? 'fas fa-check text-green-400' : 'far fa-copy'" />
+          <i :class="copied ? 'fas fa-check text-data-pos' : 'far fa-copy'" />
           <span>{{ copied ? 'Copiado' : 'Copiar' }}</span>
         </button>
         <button
           @click="downloadCSV"
-          class="flex items-center gap-1 px-2.5 py-1 rounded-lg shadow-sm hover:shadow duration-300 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 hover:text-emerald-600 dark:bg-emerald-400/20 dark:hover:bg-emerald-400/40 dark:text-emerald-100 dark:hover:text-emerald-200 text-xs transition"
+          class="flex items-center gap-1 px-2.5 py-1 rounded-lg shadow-sm hover:shadow duration-300 bg-data-pos/10 hover:bg-data-pos/10/85 text-data-pos hover:text-data-pos     text-xs transition"
           title="Exportar dados como CSV"
         >
           <i class="fas fa-file-csv" />
@@ -224,16 +224,16 @@ function downloadCSV() {
     <!-- Top breakdown (chips com top 3 categorias) -->
     <div
       v-if="topBreakdown.length"
-      class="px-4 py-2 flex flex-wrap gap-1.5 border-b border-white/5 bg-slate-50/50 dark:bg-slate-800/30"
+      class="px-4 py-2 flex flex-wrap gap-1.5 border-b border-white/5 bg-surface-sunken"
     >
       <span
         v-for="(t, i) in topBreakdown"
         :key="i"
-        class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-micro bg-white dark:bg-slate-700/60 ring-1 ring-slate-200 dark:ring-slate-600/40"
+        class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-micro bg-surface-sunken ring-1 ring-slate-200 dark:ring-slate-600/40"
       >
-        <span class="font-medium text-gray-700 dark:text-gray-200">{{ t.label }}</span>
-        <span class="tabular-nums text-indigo-600 dark:text-indigo-400">{{ fmtNumber(t.value) }}</span>
-        <span v-if="t.percent != null" class="tabular-nums text-gray-400 dark:text-slate-500">{{ t.percent }}%</span>
+        <span class="font-medium text-ink">{{ t.label }}</span>
+        <span class="tabular-nums text-accent">{{ fmtNumber(t.value) }}</span>
+        <span v-if="t.percent != null" class="tabular-nums text-ink-subtle">{{ t.percent }}%</span>
       </span>
     </div>
 
@@ -243,7 +243,7 @@ function downloadCSV() {
       <Transition name="fade">
         <div v-if="loading" class="h-52 flex items-end gap-2 px-4 py-4 animate-pulse">
           <div v-for="i in 7" :key="i"
-            class="flex-1 rounded-t-lg bg-slate-700/60"
+            class="flex-1 rounded-t-lg bg-surface-sunken"
             :style="{ height: (30 + Math.random() * 70) + '%' }"
           />
         </div>

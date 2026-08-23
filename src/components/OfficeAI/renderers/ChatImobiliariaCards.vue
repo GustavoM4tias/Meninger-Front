@@ -18,9 +18,9 @@ const router = useRouter();
 
 const TONES = {
     accent: 'text-accent bg-accent-soft border-accent/20',
-    emerald: 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/20',
-    amber: 'text-amber-600 dark:text-amber-400 bg-amber-500/10 border-amber-500/20',
-    rose: 'text-rose-600 dark:text-rose-400 bg-rose-500/10 border-rose-500/20',
+    emerald: 'text-data-pos bg-data-pos/10 border-data-pos/20',
+    amber: 'text-data-warn bg-data-warn/10 border-data-warn/20',
+    rose: 'text-data-neg bg-data-neg/10 border-data-neg/20',
     slate: 'text-ink-muted bg-surface-sunken border-line',
 };
 const toneClass = (t) => TONES[t] || TONES.accent;
@@ -116,8 +116,8 @@ async function copyInvite(url, i) {
                     class="mt-2 flex flex-wrap gap-1.5">
                     <a v-for="tel in [card.contato.celular, card.contato.telefone].filter(Boolean)" :key="tel"
                         :href="whatsappUrl(tel)" target="_blank" rel="noopener"
-                        class="inline-flex items-center gap-1 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2 py-1
-                               text-micro font-medium text-emerald-600 transition hover:bg-emerald-600 hover:text-white dark:text-emerald-400">
+                        class="inline-flex items-center gap-1 rounded-lg border border-data-pos/30 bg-data-pos/10 px-2 py-1
+                               text-micro font-medium text-data-pos transition hover:bg-data-pos hover:text-white ">
                         <i class="fab fa-whatsapp"></i>{{ tel }}
                     </a>
                     <a v-if="card.contato.email" :href="mailtoUrl(card.contato.email)"
@@ -133,8 +133,8 @@ async function copyInvite(url, i) {
                     <div class="mt-1 flex flex-wrap items-center gap-1.5">
                         <span class="text-xs font-medium text-ink">{{ card.gerente.nome }}</span>
                         <a v-if="card.gerente.celular" :href="whatsappUrl(card.gerente.celular)" target="_blank" rel="noopener"
-                            class="inline-flex items-center gap-1 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-1.5 py-0.5
-                                   text-micro font-medium text-emerald-600 transition hover:bg-emerald-600 hover:text-white dark:text-emerald-400">
+                            class="inline-flex items-center gap-1 rounded-md border border-data-pos/30 bg-data-pos/10 px-1.5 py-0.5
+                                   text-micro font-medium text-data-pos transition hover:bg-data-pos hover:text-white ">
                             <i class="fab fa-whatsapp"></i>{{ card.gerente.celular }}
                         </a>
                         <a v-if="card.gerente.email" :href="mailtoUrl(card.gerente.email)"
